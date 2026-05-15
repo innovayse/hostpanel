@@ -27,6 +27,9 @@ client/.vite/
 CLAUDE.md
 client/CLAUDE.md
 
+# Docs / plans
+docs/
+
 # Playwright MCP logs
 .playwright-mcp/
 

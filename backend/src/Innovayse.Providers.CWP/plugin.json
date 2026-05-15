@@ -1,0 +1,19 @@
+{
+  "id": "innovayse-cwp",
+  "name": "CentOS Web Panel",
+  "version": "1.0.0",
+  "author": "Innovayse",
+  "description": "Provisioning provider for CentOS Web Panel (CWP).",
+  "type": "Provisioning",
+  "category": "Hosting / Provisioning",
+  "color": "#1a73e8",
+  "entryPoint": "Innovayse.Providers.CWP.CwpProvisioningProvider",
+  "sdkVersion": "1.0",
+  "showInIntegrations": true,
+  "integrationsCategory": "Provisioning",
+  "fields": [
+    { "key": "host",    "label": "CWP Host", "type": "text",   "required": true  },
+    { "key": "port",    "label": "Port",      "type": "text",   "required": false },
+    { "key": "api_key", "label": "API Key",   "type": "secret", "required": true  }
+  ]
+}

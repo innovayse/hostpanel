@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Settings inherited from Directory.Build.props -->
+  </PropertyGroup>
+</Project>

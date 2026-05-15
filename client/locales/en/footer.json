@@ -1,0 +1,34 @@
+{
+  "footer": {
+    "description": "Full-cycle digital agency delivering innovative solutions in development, SEO, PPC, and ready-to-use SaaS products.",
+    "columns": {
+      "navigation": "Navigation",
+      "services": "Services",
+      "contact": "Contact"
+    },
+    "nav": {
+      "home": "Home",
+      "about": "About",
+      "portfolio": "Portfolio",
+      "blog": "Blog",
+      "announcements": "Announcements",
+      "knowledgebase": "Knowledgebase",
+      "faq": "FAQ",
+      "contact": "Contact"
+    },
+    "services": {
+      "webDevelopment": "Web Development",
+      "seoServices": "SEO Services",
+      "ppcAdvertising": "PPC Advertising",
+      "saasProducts": "SaaS Products"
+    },
+    "bottom": {
+      "rights": "All rights reserved.",
+      "privacy": "Privacy Policy",
+      "cookies": "Cookie Policy",
+      "terms": "Terms of Service",
+      "refund": "Refund Policy",
+      "secure": "Secure SSL"
+    }
+  }
+}

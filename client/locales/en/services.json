@@ -1,0 +1,140 @@
+{
+  "services": {
+    "badge": "What We Do",
+    "title": "Our Services",
+    "subtitle": "End-to-end digital solutions to grow your business",
+    "viewAll": "View All Services",
+    "learnMore": "Learn more",
+    "hero": {
+      "badge": "Services",
+      "title": "Full-cycle {highlight}",
+      "highlight": "Digital Services",
+      "description": "From concept to launch and beyond. We provide comprehensive digital solutions that drive real business results.",
+      "stats": {
+        "services": "Services",
+        "projects": "Projects",
+        "years": "Years"
+      }
+    },
+    "categories": {
+      "all": "All Services",
+      "development": "Development",
+      "seo": "SEO",
+      "ppc": "PPC"
+    },
+    "branches": {
+      "title": "Service Branches"
+    },
+    "more": "More",
+    "cta": {
+      "title": "Ready to get {highlight}",
+      "highlight": "started",
+      "description": "Tell us about your project and we'll get back to you within 24 hours",
+      "form": {
+        "name": {
+          "label": "Name",
+          "placeholder": "Your name"
+        },
+        "email": {
+          "label": "Email",
+          "placeholder": "your{'@'}email.com"
+        },
+        "service": {
+          "label": "Service Interested In",
+          "placeholder": "Select a service"
+        },
+        "message": {
+          "label": "Project Details",
+          "placeholder": "Tell us about your project..."
+        },
+        "submit": "Send Message",
+        "success": "Message sent! We'll contact you soon.",
+        "error": "Failed to send message. Please try again."
+      }
+    },
+    "types": {
+      "web-development": "Web Development",
+      "mobile-development": "Mobile Development",
+      "technical-seo": "Technical SEO",
+      "content-seo": "Content SEO",
+      "google-ads": "Google Ads",
+      "yandex-direct": "Yandex Direct",
+      "other": "Other / Not Sure"
+    },
+    "items": {
+      "web-development": {
+        "title": "Web Development",
+        "description": "Custom websites and web applications built with modern technologies",
+        "features": ["Corporate websites", "E-commerce platforms", "Web applications", "API integrations", "Custom CMS"],
+        "branches": {
+          "corporate": { "name": "Corporate Websites", "objective": "Professional online presence" },
+          "ecommerce": { "name": "E-commerce", "objective": "Online sales & revenue" },
+          "webapp": { "name": "Web Applications", "objective": "Custom business solutions" },
+          "landing": { "name": "Landing Pages", "objective": "Lead generation & conversion" },
+          "cms": { "name": "Custom CMS", "objective": "Content management" }
+        }
+      },
+      "mobile-development": {
+        "title": "Mobile Development",
+        "description": "Native and cross-platform mobile applications for iOS and Android",
+        "features": ["iOS & Android apps", "Cross-platform solutions", "App maintenance", "Backend integration"],
+        "branches": {
+          "ios": { "name": "Native iOS", "objective": "Premium iOS experience" },
+          "android": { "name": "Native Android", "objective": "Android market reach" },
+          "crossplatform": { "name": "Cross-platform", "objective": "Multi-platform efficiency" },
+          "pwa": { "name": "PWA", "objective": "Web-to-mobile conversion" }
+        }
+      },
+      "technical-seo": {
+        "title": "Technical SEO",
+        "description": "Comprehensive technical optimization for better search rankings",
+        "features": ["Site audits", "Core Web Vitals optimization", "Schema markup", "Crawlability improvements"],
+        "branches": {
+          "audit": { "name": "Technical Audit", "objective": "Site health analysis" },
+          "vitals": { "name": "Core Web Vitals", "objective": "Performance & UX" },
+          "schema": { "name": "Schema Markup", "objective": "Rich snippets" },
+          "crawl": { "name": "Crawlability", "objective": "Indexation optimization" }
+        }
+      },
+      "content-seo": {
+        "title": "Content SEO",
+        "description": "Strategic content optimization and creation for organic growth",
+        "features": ["Keyword research", "Content strategy", "On-page optimization", "Content creation"],
+        "branches": {
+          "keyword": { "name": "Keyword Research", "objective": "Search intent analysis" },
+          "strategy": { "name": "Content Strategy", "objective": "Content planning" },
+          "onpage": { "name": "On-page SEO", "objective": "Page optimization" },
+          "linkbuilding": { "name": "Link Building", "objective": "Authority growth" },
+          "local": { "name": "Local SEO", "objective": "Local visibility" },
+          "ecommerce": { "name": "E-commerce SEO", "objective": "Product visibility" },
+          "international": { "name": "International SEO", "objective": "Global reach" }
+        }
+      },
+      "google-ads": {
+        "title": "Google Ads",
+        "description": "Performance-driven PPC campaigns with measurable ROI",
+        "features": ["Search campaigns", "Display advertising", "Shopping ads", "Remarketing"],
+        "branches": {
+          "search": { "name": "Search", "objective": "Sales / Leads" },
+          "display": { "name": "Display", "objective": "Brand visibility" },
+          "social": { "name": "Social", "objective": "Targeted reach" },
+          "shopping": { "name": "Shopping", "objective": "E-commerce sales" },
+          "video": { "name": "Video (YouTube)", "objective": "Brand awareness" },
+          "remarketing": { "name": "Remarketing", "objective": "Return conversions" },
+          "app": { "name": "App Campaigns", "objective": "Install / engagement" }
+        }
+      },
+      "yandex-direct": {
+        "title": "Yandex Direct",
+        "description": "Targeted advertising on Russia's leading search engine",
+        "features": ["Search ads", "YAN (Yandex Ad Network)", "Performance optimization", "A/B testing"],
+        "branches": {
+          "search": { "name": "Search Ads", "objective": "Direct conversions" },
+          "yan": { "name": "YAN (Display)", "objective": "Brand awareness" },
+          "retargeting": { "name": "Retargeting", "objective": "Return visitors" },
+          "smart": { "name": "Smart Banners", "objective": "Automated reach" }
+        }
+      }
+    }
+  }
+}

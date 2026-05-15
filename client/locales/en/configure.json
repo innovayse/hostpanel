@@ -1,0 +1,15 @@
+{
+  "configure": {
+    "title": "Configure",
+    "back": "Back to Products",
+    "notFound": "Product not found.",
+    "includedFeatures": "Included Features",
+    "chooseBillingCycle": "Choose Billing Cycle",
+    "orderSummary": "Order Summary",
+    "setupFees": "Setup Fees",
+    "totalDueToday": "Total Due Today",
+    "continue": "Continue",
+    "haveQuestions": "Have questions? Contact our sales team.",
+    "clickHere": "Click here"
+  }
+}

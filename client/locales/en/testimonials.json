@@ -1,0 +1,42 @@
+{
+  "testimonials": {
+    "badge": "Testimonials",
+    "heading": "What Our",
+    "headingHighlight": "Clients",
+    "headingEnd": "Say",
+    "subtitle": "Trusted by companies worldwide",
+    "hint": "Swipe or wait for auto-scroll",
+    "stats": {
+      "satisfaction": "Client Satisfaction",
+      "projects": "Projects Delivered",
+      "clients": "Happy Clients",
+      "rating": "Average Rating"
+    },
+    "items": {
+      "testimonial-1": {
+        "text": "Working with Innovayse was a game-changer for our business. They delivered a scalable platform that exceeded our expectations. Their technical expertise and attention to detail are unmatched.",
+        "position": "CEO"
+      },
+      "testimonial-2": {
+        "text": "Professional team that truly understands both technical and business requirements. They helped us triple our revenue within the first year. Highly recommend!",
+        "position": "Founder"
+      },
+      "testimonial-3": {
+        "text": "The LegalTech platform they built is a game-changer for our law firm. It saves us hours every day and our clients love the automated document generation.",
+        "position": "Managing Partner"
+      },
+      "testimonial-4": {
+        "text": "TalentFlow transformed our entire hiring process. The AI-powered screening is incredibly accurate and has cut our time-to-hire by 50%. Outstanding work!",
+        "position": "Head of HR"
+      },
+      "testimonial-5": {
+        "text": "MetricsKit Pro gave us insights we never had before. The competitor tracking and AI recommendations have significantly improved our social media ROI.",
+        "position": "Marketing Director"
+      },
+      "testimonial-6": {
+        "text": "The tenant portal has reduced our support calls by 80%. Residents love the self-service features and online payment system. Excellent execution from start to finish.",
+        "position": "Operations Manager"
+      }
+    }
+  }
+}

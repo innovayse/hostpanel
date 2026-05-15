@@ -1,0 +1,110 @@
+{
+  "seo": {
+    "home": {
+      "title": "Innovayse - Digital Agency | Development, SEO, PPC & SaaS Products",
+      "h1": "Web & Mobile Development, SEO and PPC Services",
+      "description": "Full-cycle digital agency delivering innovative solutions in web development, SEO, PPC advertising, and ready-to-use SaaS products. 8+ years of experience, 150+ projects delivered.",
+      "keywords": "digital agency, web development, mobile app development, SEO services, PPC advertising, Google Ads, Yandex Direct, SaaS products, e-commerce development"
+    },
+    "about": {
+      "title": "About Us - Our Story & Team | Innovayse",
+      "description": "Learn about Innovayse - a digital agency with 8+ years of experience, 150+ projects, and 50+ team members delivering innovative solutions.",
+      "keywords": "about innovayse, digital agency team, company story, web development company, SEO agency, PPC experts"
+    },
+    "services": {
+      "title": "Professional Digital Solutions & Business Automation | Innovayse",
+      "description": "Comprehensive digital services for your business: Web & Mobile Development, Technical SEO, and PPC Marketing. Scale your brand with Innovayse.",
+      "keywords": "web development, mobile apps, SEO services, PPC advertising, Google Ads, business automation, digital marketing",
+      "categories": {
+        "development": {
+          "title": "Web & Mobile Development Services | Innovayse",
+          "description": "High-end web and mobile app development. Custom business solutions, CRM, and SaaS systems."
+        },
+        "seo": {
+          "title": "Technical SEO & Search Engine Optimization | Innovayse",
+          "description": "Boost your website visibility in search engines. Technical SEO, audit, and content strategy."
+        },
+        "ppc": {
+          "title": "PPC Advertising & Performance Marketing | Innovayse",
+          "description": "Google Ads and Yandex Direct campaigns with high ROI. Targeted advertising solutions for your business growth."
+        }
+      }
+    },
+    "products": {
+      "title": "White-label SaaS Products and Business Solutions | Innovayse",
+      "description": "Ready-to-launch white-label SaaS platforms for your business: SmartLearn LMS, PropSystem CRM, ShopKit Pro, and more. Scale fast with our enterprise-grade solutions.",
+      "keywords": "SaaS products, white label software, business automation, CRM systems, analytics, e-commerce, LMS platforms, SaaS development"
+    },
+    "portfolio": {
+      "title": "Portfolio - Our Projects & Case Studies | Innovayse",
+      "description": "Explore our portfolio of 150+ successful projects in web development, mobile apps, SEO, and PPC campaigns across 15+ industries.",
+      "keywords": "portfolio, case studies, web projects, mobile apps, SEO results, PPC campaigns, success stories"
+    },
+    "blog": {
+      "title": "Blog - Digital Marketing & Development Insights | Innovayse",
+      "description": "Latest insights on web development, SEO strategies, PPC optimization, and digital marketing trends from Innovayse experts.",
+      "keywords": "digital marketing blog, web development tips, SEO guides, PPC strategies, industry insights"
+    },
+    "faq": {
+      "title": "FAQ - Frequently Asked Questions | Innovayse",
+      "description": "Find answers to frequently asked questions about Innovayse services, products, development, SEO, PPC, and SaaS solutions.",
+      "keywords": "FAQ, questions, web development, SEO, PPC, SaaS, support, pricing, services, digital agency help"
+    },
+    "faqCategory": {
+      "general": {
+        "title": "General FAQ - Common Questions | Innovayse",
+        "h1": "General Questions",
+        "description": "Answers to the most common general questions about Innovayse — who we are, how we work, and what to expect.",
+        "keywords": "general FAQ, about innovayse, how we work, digital agency questions, getting started"
+      },
+      "development": {
+        "title": "Development FAQ - Web & App Development Questions | Innovayse",
+        "h1": "Development Questions",
+        "description": "Frequently asked questions about our web development, mobile app development, and e-commerce solutions.",
+        "keywords": "web development FAQ, app development questions, e-commerce development, technology stack, development process"
+      },
+      "seo": {
+        "title": "SEO FAQ - Search Engine Optimization Questions | Innovayse",
+        "h1": "SEO Questions",
+        "description": "Get answers to common SEO questions — how we improve rankings, what results to expect, and our optimization approach.",
+        "keywords": "SEO FAQ, search engine optimization questions, Google rankings, SEO results, technical SEO, content SEO"
+      },
+      "products": {
+        "title": "SaaS Products FAQ - Software & Platform Questions | Innovayse",
+        "h1": "Product Questions",
+        "description": "Answers to questions about our SaaS products — pricing, white-label options, setup, and support.",
+        "keywords": "SaaS FAQ, software products questions, white label, SmartLearn, PropSystem, ShopKit, product pricing"
+      }
+    },
+    "contact": {
+      "title": "Contact Us - Get in Touch | Innovayse",
+      "description": "Contact Innovayse for digital solutions. Located in Yerevan, Armenia. Email: contact{'@'}yourdomain.com, Phone: +1 000 000 0000. Free consultation available.",
+      "keywords": "contact innovayse, digital agency contact, web development inquiry, SEO consultation, PPC agency contact, Yerevan Armenia"
+    },
+    "hosting": {
+      "title": "Web Hosting Plans - Fast & Reliable Hosting | Innovayse",
+      "description": "Choose the perfect web hosting plan for your website. SSD storage, free SSL certificate, 99.9% uptime guarantee, and 24/7 expert support. Affordable plans starting today.",
+      "keywords": "web hosting, SSD hosting, cloud hosting, cheap hosting, web hosting plans, managed hosting, SSL hosting, Armenia hosting"
+    },
+    "hostingPlan": {
+      "title": "Hosting Plan Details | Innovayse",
+      "description": "Get detailed information about our hosting plan. SSD storage, free SSL, high performance, and 24/7 support included.",
+      "keywords": "hosting plan, web hosting, SSD storage, SSL certificate, managed hosting"
+    },
+    "domains": {
+      "title": "Domain Registration & Transfer | Innovayse",
+      "description": "Register or transfer your domain name at competitive prices. Search from hundreds of TLDs including .com, .net, .org, .am, and more. Free WHOIS privacy included.",
+      "keywords": "domain registration, domain transfer, buy domain, domain name search, cheap domains, .com domain, .am domain, WHOIS privacy"
+    },
+    "resources": {
+      "title": "Free SEO & Web Dev Resources: Checklists, Templates & Guides | Innovayse",
+      "description": "Download free practitioner-grade checklists, templates, and guides for SEO audits, Core Web Vitals, Google Ads, website launches, and mobile app planning. Used by our team on every project.",
+      "keywords": "free SEO checklist, technical SEO audit checklist, Core Web Vitals checklist, Google Ads audit template, website launch checklist, mobile app planning guide, local SEO action plan, free web development resources"
+    },
+    "writeForUs": {
+      "title": "Write for Us - Guest Post Guidelines | Innovayse",
+      "description": "Submit a guest post to Innovayse. We publish in-depth articles on web development, SEO, PPC, and digital marketing. Get a do-follow author bio link and reach 12,000+ monthly readers.",
+      "keywords": "write for us, guest post, submit article, digital marketing guest post, SEO guest post, web development write for us, do-follow link, guest blogging"
+    }
+  }
+}

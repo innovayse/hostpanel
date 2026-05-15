@@ -1,0 +1,17 @@
+**/node_modules
+**/bin
+**/obj
+**/.nuxt
+**/.output
+**/dist
+**/.git
+**/.logs
+**/.pids
+**/.codegraph
+**/.gitnexus
+**/.claude
+**/.playwright-mcp
+**/wg0.conf
+*.png
+docs/
+rules/

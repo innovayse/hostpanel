@@ -1,0 +1,115 @@
+{
+  "about": {
+    "hero": {
+      "badge": "About Us",
+      "title": "We Are",
+      "titleHighlight": "Innovayse",
+      "description": "A digital agency on a mission to transform ideas into successful digital products. Since 2016, we've been helping businesses innovate, grow, and succeed online.",
+      "stats": {
+        "years": "Years",
+        "projects": "Projects",
+        "teamMembers": "Team Members",
+        "clients": "Clients"
+      }
+    },
+    "values": {
+      "badge": "Our Values",
+      "title": "What Drives",
+      "titleHighlight": "Us",
+      "description": "The principles that guide everything we do",
+      "items": {
+        "resultsDriven": {
+          "title": "Results-driven",
+          "description": "We focus on measurable outcomes and ROI. Every decision is guided by data and aligned with your business goals."
+        },
+        "partnership": {
+          "title": "Partnership",
+          "description": "Your success is our success. We work as an extension of your team, committed to your long-term growth."
+        },
+        "innovation": {
+          "title": "Innovation",
+          "description": "We embrace new technologies and creative solutions. Staying ahead means constantly learning and evolving."
+        },
+        "dataInformed": {
+          "title": "Data-informed",
+          "description": "Every strategy is backed by research and analytics. We let data guide our decisions, not assumptions."
+        }
+      }
+    },
+    "timeline": {
+      "badge": "Our Journey",
+      "title": "Company",
+      "titleHighlight": "Timeline",
+      "description": "From a small startup to a leading digital agency",
+      "items": {
+        "2016": { "title": "Founded", "description": "Innovayse was founded by a team of passionate developers and marketers" },
+        "2018": { "title": "First 50 Projects", "description": "Reached milestone of 50 completed projects and expanded to 15 team members" },
+        "2020": { "title": "International Expansion", "description": "Started working with international clients across Europe and North America" },
+        "2022": { "title": "Launched SaaS Division", "description": "Released SmartLearn System and PropSystem Pro - our first SaaS products" },
+        "2023": { "title": "Team Growth", "description": "Grew to 50+ team members and opened new office space" },
+        "2024": { "title": "AI Integration", "description": "Integrated AI capabilities across all services and launched Kelpie AI" },
+        "2025": { "title": "Looking Forward", "description": "Expanding product line and focusing on enterprise solutions" }
+      }
+    },
+    "techStack": {
+      "badge": "Technologies",
+      "title": "Our",
+      "titleHighlight": "Tech Stack",
+      "description": "We work with cutting-edge technologies to deliver exceptional results",
+      "categories": {
+        "frontend": {
+          "name": "Frontend",
+          "technologies": {
+            "vue": "Vue.js",
+            "react": "React",
+            "nextjs": "Next.js",
+            "nuxt": "Nuxt",
+            "typescript": "TypeScript",
+            "tailwind": "Tailwind CSS"
+          }
+        },
+        "backend": {
+          "name": "Backend",
+          "technologies": {
+            "nodejs": "Node.js",
+            "python": "Python",
+            "laravel": "Laravel",
+            "fastapi": "FastAPI",
+            "postgresql": "PostgreSQL",
+            "mongodb": "MongoDB"
+          }
+        },
+        "mobile": {
+          "name": "Mobile",
+          "technologies": {
+            "reactNative": "React Native",
+            "flutter": "Flutter",
+            "swift": "Swift",
+            "kotlin": "Kotlin"
+          }
+        },
+        "cloudDevops": {
+          "name": "Cloud & DevOps",
+          "technologies": {
+            "aws": "AWS",
+            "googleCloud": "Google Cloud",
+            "vercel": "Vercel",
+            "docker": "Docker",
+            "cicd": "CI/CD",
+            "kubernetes": "Kubernetes"
+          }
+        }
+      }
+    },
+    "cta": {
+      "title": "Ready to",
+      "titleHighlight": "Work With Us",
+      "description": "Let's bring your ideas to life together",
+      "contact": {
+        "title": "Start a Project",
+        "description": "Let's discuss your ideas and bring them to life",
+        "button": "Get in Touch"
+      }
+    }
+  }
+}

@@ -1,0 +1,35 @@
+.logs/
+.pids/
+dist/
+node_modules/
+
+# VPN / network config
+client/wg0.conf
+
+# Vite cache
+admin/.vite/
+client/.vite/
+
+# Claude Code / AI tooling
+.claude/
+CLAUDE.md
+client/CLAUDE.md
+
+# Logs and test artifacts
+.logs/
+.playwright-mcp/
+
+# Admin local env files
+admin/.env.development
+admin/.env.production
+
+# Docker environment
+.env
+
+# Local dev screenshots
+*.png
+*.jpg
+*.jpeg
+
+# Junk folders
+undefined/

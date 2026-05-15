@@ -1,0 +1,11 @@
+{
+  "whatsapp": {
+    "contactUs": "Կապվեք մեզ հետ WhatsApp-ում",
+    "tooltip": "Զրուցեք մեզ հետ WhatsApp-ում",
+    "defaultMessage": "Բարև՛։ Հետաքրքրված եմ ձեր ծառայություններով։"
+  },
+  "telegram": {
+    "contactUs": "Կապվեք մեզ հետ Telegram-ում",
+    "tooltip": "Գրեք մեզ Telegram-ում"
+  }
+}

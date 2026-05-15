@@ -1,0 +1,15 @@
+{
+  "nav": {
+    "services": "Услуги",
+    "products": "Продукты",
+    "hosting": "Хостинг",
+    "domains": "Домены",
+    "portfolio": "Портфолио",
+    "blog": "Блог",
+    "about": "О нас",
+    "faq": "FAQ",
+    "contact": "Контакты",
+    "getStarted": "Начать",
+    "clientArea": "Личный кабинет"
+  }
+}

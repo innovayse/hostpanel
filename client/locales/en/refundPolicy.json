@@ -1,0 +1,59 @@
+{
+  "refundPolicy": {
+    "badge": "Financial Transparency",
+    "title": "Refund & Cancellation",
+    "subtitle": "Clear rules for service cancellations and refund requests for Innovayse products and agency services.",
+    "lastUpdated": "Last updated",
+    "sections": {
+      "general": {
+        "title": "General Principles",
+        "content": {
+          "0": "At Innovayse, we strive to ensure complete satisfaction with our services. However, due to the digital nature of our work, specific refund rules apply to different categories of products and services."
+        }
+      },
+      "saas": {
+        "title": "SaaS & Subscriptions",
+        "content": {
+          "0": "For our SaaS platforms (SmartLearn, PropSystem, etc.):",
+          "1": "Monthly subscriptions can be cancelled at any time. Refunds are not provided for partial months already billed. Upon cancellation, access remains active until the end of the current billing cycle.",
+          "2": "Yearly subscriptions: Refund requests made within 14 days of the initial purchase are eligible for a full refund. After 14 days, refunds are handled on a case-by-case basis at our discretion."
+        }
+      },
+      "custom": {
+        "title": "Custom Projects",
+        "content": {
+          "0": "For web development, mobile apps, and custom agency projects:",
+          "1": "Commitment Fees: The initial 50% deposit is non-refundable once work has commenced (UI/UX phase or architecture planning).",
+          "2": "Milestone Payments: Payments made upon the approval of specific milestones are non-refundable as they represent completed stages of production.",
+          "3": "Full Cancellation: If a project is cancelled before completion, the client is responsible for paying for all work completed up to the date of cancellation."
+        }
+      },
+      "hosting": {
+        "title": "Hosting Services",
+        "content": {
+          "0": "Innovayse hosting services follow a '30-Day Money-Back Guarantee' for new accounts. This excludes domain registration fees, which are non-refundable under industry standards.",
+          "1": "Renewal fees for hosting services are non-refundable once the new billing cycle starts."
+        }
+      },
+      "digital": {
+        "title": "Digital Marketing & SEO",
+        "content": {
+          "0": "SEO and PPC management fees are non-refundable for months where services have already been delivered or campaigns have been actively managed.",
+          "1": "Ad spend paid directly to platforms like Google or Meta is subject to their respective refund policies and is not managed by Innovayse."
+        }
+      },
+      "process": {
+        "title": "How to Request a Refund",
+        "content": {
+          "0": "To request a refund or cancel a service, please submit a support ticket via our Client Portal or email our billing department at billing{'@'}yourdomain.com.",
+          "1": "Requests are typically processed within 3-5 business days. Approved refunds will be credited back to the original payment method used during purchase."
+        }
+      }
+    },
+    "contact": {
+      "title": "Billing Questions?",
+      "description": "Our financial department is here to clarify any questions regarding your invoices or refund status.",
+      "link": "Contact Billing"
+    }
+  }
+}

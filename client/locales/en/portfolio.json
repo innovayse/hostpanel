@@ -1,0 +1,425 @@
+{
+  "portfolio": {
+    "title": "Our Success Stories",
+    "subtitle": "Explore our portfolio of successful projects across industries. From startups to enterprises, we deliver results.",
+    "badge": "Portfolio",
+    "heading": "Featured",
+    "headingHighlight": "Projects",
+    "description": "Showcasing our best work across industries",
+    "button": "View All Projects",
+    "stats": {
+      "projects": "Projects",
+      "industries": "Industries",
+      "successRate": "Success Rate"
+    },
+    "emptyState": "No projects found in this category",
+    "filters": {
+      "all": "All Projects",
+      "development": "Development",
+      "ecommerce": "E-commerce",
+      "saas": "SaaS",
+      "seo": "SEO"
+    },
+    "project": {
+      "challenge": "The Challenge",
+      "approach": "Our Approach",
+      "results": "Results Achieved",
+      "technologies": "Technologies Used",
+      "metrics": "Key Metrics",
+      "features": "Key Features",
+      "visitWebsite": "Visit Website",
+      "notFound": "Project Not Found",
+      "notFoundDescription": "The requested project doesn't exist.",
+      "duration": "Duration",
+      "teamSize": "Team Size"
+    },
+    "items": {
+      "kelpie-ai": {
+        "title": "Kelpie AI",
+        "industry": "AI & Technology",
+        "description": "AI-powered customer service automation platform",
+        "overview": "Kelpie AI is a cutting-edge SaaS platform that revolutionizes customer service through intelligent AI-powered chatbots. Built with modern technologies and powered by OpenAI GPT-4, this platform enables businesses to create, customize, and deploy sophisticated conversational AI agents that handle customer inquiries 24/7 with human-like understanding and responses.",
+        "task": "Build a scalable SaaS platform for AI chatbot creation and deployment",
+        "process": "Implemented Next.js frontend with Python/FastAPI backend, integrated OpenAI GPT-4, built custom training pipeline",
+        "results": ["10,000+ active users in 3 months", "95% customer satisfaction rate", "$500K ARR within first year"],
+        "metrics": {
+          "users": { "label": "Monthly Active Users", "value": "10,000+" },
+          "response": { "label": "Response Time", "value": "<2s" },
+          "uptime": { "label": "Uptime", "value": "99.9%" },
+          "satisfaction": { "label": "Customer Satisfaction", "value": "95%" }
+        },
+        "features": ["AI chatbot builder with visual interface", "Multi-language support (15+ languages)", "Custom training on company data", "Seamless integration with major platforms", "Real-time analytics dashboard", "White-label capabilities"],
+        "duration": "6 months",
+        "teamSize": "8 specialists",
+        "testimonial": {
+          "text": "Innovayse delivered beyond expectations. The platform is robust, scalable, and our users love it.",
+          "position": "CEO"
+        }
+      },
+      "uk-voshozhdenie": {
+        "title": "UK Voshozhdenie",
+        "industry": "Real Estate Management",
+        "description": "Modern management company portal with online payment processing and resident self-service",
+        "overview": "UK Voshozhdenie is a comprehensive digital transformation project that modernized a traditional property management company into a cutting-edge service provider. Built with Nuxt 3 and Vue 3, this platform features secure Stripe payment integration, automated notification systems, and a mobile-first design that serves over 2,500 residents with seamless self-service capabilities for payments, requests, and document management.",
+        "task": "Transform outdated real estate management website into a modern digital platform with comprehensive self-service portal for 2,500+ residents, enabling online payments, service requests, and document management.",
+        "process": "Conducted UX research with residents, redesigned entire platform with modern interface, built custom CMS with Nuxt 3 and Vue 3, integrated Stripe payment gateway, developed document management system, implemented automated notifications, and created mobile-first responsive design.",
+        "results": [
+          "80% reduction in support calls and inquiries",
+          "95% online payment adoption rate",
+          "4.8/5 average user satisfaction score",
+          "3x faster service request processing"
+        ],
+        "metrics": {
+          "residents": { "label": "Active Residents", "value": "2,500+" },
+          "payments": { "label": "Monthly Payments", "value": "$150K" },
+          "reduction": { "label": "Support Reduction", "value": "80%" },
+          "satisfaction": { "label": "User Satisfaction", "value": "4.8/5" }
+        },
+        "features": [
+          "Secure online payment processing with Stripe",
+          "Service request tracking system",
+          "Digital document management and storage",
+          "Resident communication hub with announcements",
+          "Automated email and SMS notifications",
+          "Mobile-first responsive design",
+          "Utility meter readings submission",
+          "Community event calendar"
+        ],
+        "duration": "4 months",
+        "teamSize": "5 specialists",
+        "testimonial": {
+          "text": "The new portal transformed how we interact with residents. Support calls dropped dramatically, and residents love the convenience of online payments and service requests.",
+          "position": "General Manager"
+        }
+      },
+      "eduzdrav": {
+        "title": "Eduzdrav",
+        "industry": "Medical Education & E-Learning",
+        "description": "Medical education e-commerce platform with automated certification and learning management",
+        "overview": "Eduzdrav is an innovative medical education platform combining headless e-commerce architecture with advanced learning management capabilities. Leveraging Shopify for seamless payment processing and React for the educational portal, this system features automated PDF certificate generation, comprehensive progress tracking, and integration with medical certification authorities, serving over 5,000 healthcare professionals seeking continuing education credits.",
+        "duration": "5 months",
+        "teamSize": "6 specialists",
+        "task": "Create comprehensive e-commerce and learning platform for selling medical education courses with automated certification, progress tracking, and content delivery for healthcare professionals seeking continuing education credits.",
+        "process": "Built headless e-commerce architecture with Shopify backend for payments and product management, developed custom React-based learning portal with video streaming, implemented automated certificate generation system with PDF templates, created student progress tracking, integrated with medical certification authorities, and built content management system for course creators.",
+        "results": [
+          "5,000+ students enrolled across medical specialties",
+          "500+ courses sold monthly with growing catalog",
+          "3x revenue increase year-over-year",
+          "92% course completion rate"
+        ],
+        "metrics": {
+          "students": { "label": "Active Students", "value": "5,000+" },
+          "courses": { "label": "Monthly Sales", "value": "500+" },
+          "revenue": { "label": "Revenue Growth", "value": "3x" },
+          "completion": { "label": "Completion Rate", "value": "92%" }
+        },
+        "features": [
+          "Headless e-commerce with Shopify integration",
+          "Video-based learning management system",
+          "Automated certificate generation",
+          "Progress tracking and analytics",
+          "Quiz and assessment engine",
+          "Mobile learning app",
+          "CME credit integration",
+          "Content creator dashboard"
+        ],
+        "testimonial": {
+          "text": "Innovayse delivered a professional platform that perfectly serves both our students and instructors. The automated certification system alone saved us hundreds of hours monthly.",
+          "position": "Founder & Medical Director"
+        }
+      },
+      "techstart": {
+        "title": "TechStart Accelerator",
+        "industry": "Venture Capital & Startups",
+        "description": "AI-powered accelerator platform connecting startups with investors through intelligent matching",
+        "overview": "TechStart Accelerator is a sophisticated networking platform that revolutionizes startup-investor connections through AI-powered matching algorithms. Built with Laravel and Vue 3, it features WebRTC video pitching capabilities, Algolia-powered smart search, and a comprehensive CRM pipeline for tracking investments, helping accelerators facilitate over $10M in capital raised across 200+ startups with 87% matching accuracy.",
+        "duration": "7 months",
+        "teamSize": "7 specialists",
+        "task": "Build comprehensive networking and accelerator platform that intelligently matches startups with suitable investors, facilitates video pitches, tracks investment pipeline, and provides analytics for both sides of the investment process.",
+        "process": "Developed AI-powered matching algorithm using Laravel and Vue 3, built WebRTC-based video pitch system, integrated with Algolia for smart search, created CRM pipeline for tracking investment stages, implemented real-time notifications, built analytics dashboard for accelerator managers, and created mobile apps for on-the-go networking.",
+        "results": [
+          "200+ startups successfully onboarded to platform",
+          "50+ confirmed investments facilitated",
+          "$10M+ capital raised through platform",
+          "Average 30 days from pitch to investment decision"
+        ],
+        "metrics": {
+          "startups": { "label": "Active Startups", "value": "200+" },
+          "investments": { "label": "Successful Deals", "value": "50+" },
+          "capital": { "label": "Capital Raised", "value": "$10M+" },
+          "matches": { "label": "Match Accuracy", "value": "87%" }
+        },
+        "features": [
+          "AI-powered investor-startup matching",
+          "WebRTC video pitch presentations",
+          "Investment pipeline CRM",
+          "Smart search with Algolia",
+          "Real-time chat and notifications",
+          "Analytics dashboard for accelerators",
+          "Document sharing and e-signatures",
+          "Mobile apps for iOS and Android"
+        ],
+        "testimonial": {
+          "text": "The platform revolutionized how we connect startups with investors. The AI matching saves us countless hours, and the video pitch feature lets us scale globally.",
+          "position": "Managing Partner"
+        }
+      },
+      "fitness-hub": {
+        "title": "FitnessHub",
+        "industry": "E-Commerce & Health",
+        "description": "Modern sports nutrition e-commerce platform with subscription management and personalized recommendations",
+        "overview": "FitnessHub is a high-performance e-commerce platform built from the ground up with Next.js and TypeScript, replacing a sluggish WooCommerce setup. Featuring flexible Stripe subscription management, AI-powered product recommendations, and automated inventory synchronization with suppliers through Supabase, this Vercel-deployed solution delivers lightning-fast performance with 40% higher conversion rates and serves over 2,000 active subscribers.",
+        "duration": "5 months",
+        "teamSize": "6 specialists",
+        "task": "Migrate from slow WooCommerce platform to high-performance custom Next.js solution with subscription billing, inventory management, personalized product recommendations, and supplier integrations for growing sports nutrition business.",
+        "process": "Built custom e-commerce platform with Next.js and TypeScript, implemented flexible subscription engine with Stripe, created automated inventory management with supplier API integrations, developed AI-powered product recommendation system, built customer portal for subscription management, integrated with Supabase for real-time data, and deployed on Vercel for optimal performance.",
+        "results": [
+          "40% increase in conversion rates",
+          "2,000+ active monthly subscribers",
+          "60% repeat purchase rate from customers",
+          "Page load times improved by 70%"
+        ],
+        "metrics": {
+          "conversions": { "label": "Conversion Increase", "value": "+40%" },
+          "subscribers": { "label": "Active Subscribers", "value": "2,000+" },
+          "repeat": { "label": "Repeat Purchases", "value": "60%" },
+          "growth": { "label": "Revenue Growth", "value": "+120%" }
+        },
+        "features": [
+          "Flexible subscription management system",
+          "AI-powered product recommendations",
+          "Automated inventory sync with suppliers",
+          "Customer subscription portal",
+          "One-click reordering",
+          "Loyalty rewards program",
+          "Nutrition calculator integration",
+          "Mobile-optimized checkout"
+        ],
+        "testimonial": {
+          "text": "Moving to the custom platform was the best decision for our business. Conversions are up, customers love the subscription flexibility, and we can finally scale without platform limitations.",
+          "position": "Co-Founder & CEO"
+        }
+      },
+      "legaltech": {
+        "title": "LegalTech Pro",
+        "industry": "Legal Services & Technology",
+        "description": "AI-powered legal document automation platform with e-signature and version control",
+        "overview": "LegalTech Pro is a comprehensive document automation platform built with React and Django that transforms legal workflows for law firms. Featuring an intelligent template engine, DocuSign integration for seamless e-signatures, robust version control with complete audit trails, and a searchable clause library, this platform serves 100+ law firms by reducing document preparation time by 70% while maintaining 99.2% accuracy in automated generation.",
+        "duration": "8 months",
+        "teamSize": "8 specialists",
+        "task": "Build comprehensive document automation platform for law firms to streamline contract and legal document generation, reduce manual work, ensure compliance, and integrate electronic signatures for faster deal closure.",
+        "process": "Developed intelligent template engine with React and Django, created variable extraction system for dynamic document generation, integrated DocuSign API for e-signatures, built version control system for document tracking, implemented clause library with search, created client portal for document review, integrated with case management systems, and built analytics dashboard for firms.",
+        "results": [
+          "100+ law firms actively using the platform",
+          "10,000+ documents generated automatically each month",
+          "70% reduction in document preparation time",
+          "99.2% accuracy rate in document generation"
+        ],
+        "metrics": {
+          "firms": { "label": "Active Law Firms", "value": "100+" },
+          "documents": { "label": "Monthly Documents", "value": "10,000+" },
+          "timesaved": { "label": "Time Savings", "value": "70%" },
+          "accuracy": { "label": "Accuracy Rate", "value": "99.2%" }
+        },
+        "features": [
+          "Intelligent document template engine",
+          "DocuSign e-signature integration",
+          "Version control and audit trail",
+          "Clause library with smart search",
+          "Client collaboration portal",
+          "Case management integration",
+          "Automated compliance checks",
+          "Analytics and reporting dashboard"
+        ],
+        "testimonial": {
+          "text": "LegalTech Pro completely transformed our document workflow. What used to take hours now takes minutes, and our clients love the speed and professionalism of digital signatures.",
+          "position": "Managing Partner"
+        }
+      },
+      "travel-booking": {
+        "title": "TravelEase",
+        "industry": "Travel & Tourism",
+        "description": "Multi-vendor marketplace platform connecting travelers with local tour operators worldwide",
+        "overview": "TravelEase is a scalable two-sided marketplace built with Vue 3 and Node.js that connects travelers with authentic local tour experiences. Featuring Google Maps integration for smart search, real-time booking engine with availability management, Stripe Connect for seamless payment splitting, and Socket.io-powered live chat, this platform has facilitated 50,000+ bookings across 500+ operators in 50 countries with a 4.9/5 customer satisfaction rating.",
+        "duration": "6 months",
+        "teamSize": "7 specialists",
+        "task": "Create comprehensive two-sided marketplace that connects travelers with local tour operators, enabling tour discovery, real-time booking, secure payments with commission splits, review management, and operator tools for availability and pricing management.",
+        "process": "Built scalable marketplace with Vue 3 and Node.js, developed smart search with Google Maps API integration, created real-time booking engine with availability management, implemented Stripe Connect for payment splitting between platform and operators, built review and rating system, created operator dashboard for tour management, integrated real-time chat with Socket.io, and developed mobile-responsive design.",
+        "results": [
+          "500+ tour operators onboarded across 50 countries",
+          "50,000+ bookings successfully processed",
+          "4.9/5 average customer satisfaction rating",
+          "35% month-over-month growth in bookings"
+        ],
+        "metrics": {
+          "operators": { "label": "Tour Operators", "value": "500+" },
+          "bookings": { "label": "Total Bookings", "value": "50,000+" },
+          "rating": { "label": "Customer Rating", "value": "4.9/5" },
+          "revenue": { "label": "GMV", "value": "$5M+" }
+        },
+        "features": [
+          "Smart search with map integration",
+          "Real-time availability booking engine",
+          "Stripe Connect payment splitting",
+          "Review and rating system",
+          "Operator dashboard and analytics",
+          "Real-time chat between travelers and operators",
+          "Multi-currency support",
+          "Automated booking confirmations"
+        ],
+        "testimonial": {
+          "text": "TravelEase gave us the platform we needed to scale globally. The payment system works flawlessly, and operators love how easy it is to manage their tours and availability.",
+          "position": "Founder & CEO"
+        }
+      },
+      "restaurant-pos": {
+        "title": "QuickServe POS",
+        "description": "Modern cloud-based POS system for restaurants with real-time inventory and analytics",
+        "industry": "Food Service & Hospitality",
+        "overview": "QuickServe POS is a revolutionary offline-first cloud POS ecosystem designed specifically for restaurants, featuring tablet-based order entry with real-time kitchen display integration, Stripe Terminal payment processing, and multi-location inventory management. With 99.9% uptime through its offline-capable architecture and centralized cloud sync, this system serves 200+ restaurants with 30% faster order processing and 40% reduction in inventory waste through intelligent tracking.",
+        "duration": "6 months",
+        "teamSize": "6 specialists",
+        "task": "Modernize legacy restaurant POS systems by creating a cloud-based solution with real-time order management, inventory tracking, multi-location support, and advanced analytics for restaurant chains and independent operators.",
+        "process": "Developed a comprehensive POS ecosystem with offline-first mobile app for tablets, cloud sync for inventory management, kitchen display integration, table management system, payment processing with Stripe Terminal, and real-time analytics dashboard. Implemented multi-location support with centralized reporting.",
+        "results": [
+          "200+ restaurants actively using the platform",
+          "99.9% uptime with offline-first architecture",
+          "30% faster order processing compared to legacy systems",
+          "40% reduction in inventory waste through smart tracking"
+        ],
+        "features": [
+          "Offline-first tablet POS with cloud sync",
+          "Real-time kitchen display integration",
+          "Multi-location inventory management",
+          "Staff scheduling and time tracking",
+          "Advanced analytics and reporting",
+          "Customer loyalty program",
+          "Online ordering integration",
+          "Payment processing with tip management"
+        ],
+        "metrics": {
+          "restaurants": {
+            "label": "Active Restaurants",
+            "value": "200+"
+          },
+          "uptime": {
+            "label": "System Uptime",
+            "value": "99.9%"
+          },
+          "faster": {
+            "label": "Faster Processing",
+            "value": "30%"
+          },
+          "revenue": {
+            "label": "Revenue Growth",
+            "value": "+45%"
+          }
+        },
+        "testimonial": {
+          "text": "QuickServe transformed our restaurant operations. The offline-first approach means we never miss an order, even when internet is down. The analytics help us optimize our menu and reduce waste significantly.",
+          "position": "CEO & Founder"
+        }
+      },
+      "hr-platform": {
+        "title": "TalentFlow",
+        "industry": "Human Resources & Recruiting",
+        "description": "AI-powered Applicant Tracking System with automated resume screening and interview management",
+        "overview": "TalentFlow is an intelligent Applicant Tracking System built with Next.js and Python/FastAPI that leverages OpenAI for revolutionary resume parsing and candidate scoring. Featuring a customizable drag-and-drop pipeline, automated interview scheduling with calendar integrations, collaborative evaluation tools, and seamless job board integration, this platform serves 150+ companies by reducing time-to-hire by 50% while achieving 92% accuracy in candidate-job matching.",
+        "duration": "7 months",
+        "teamSize": "8 specialists",
+        "task": "Build comprehensive ATS (Applicant Tracking System) with AI-powered resume screening, candidate pipeline management, automated interview scheduling, collaborative hiring workflows, and analytics for growing companies struggling with manual recruitment processes.",
+        "process": "Developed full-stack platform with Next.js and Python/FastAPI, integrated OpenAI for intelligent resume parsing and candidate scoring, built customizable candidate pipeline with drag-and-drop interface, created automated interview scheduler with calendar integrations, implemented collaborative evaluation tools for hiring teams, built analytics dashboard for recruitment metrics, and integrated with major job boards for posting automation.",
+        "results": [
+          "150+ companies actively using the platform",
+          "50% reduction in time-to-hire",
+          "10,000+ candidates processed through AI screening",
+          "92% accuracy in candidate-job matching"
+        ],
+        "metrics": {
+          "companies": { "label": "Active Companies", "value": "150+" },
+          "faster": { "label": "Faster Hiring", "value": "50%" },
+          "candidates": { "label": "Candidates Screened", "value": "10,000+" },
+          "accuracy": { "label": "Match Accuracy", "value": "92%" }
+        },
+        "features": [
+          "AI-powered resume parsing and screening",
+          "Customizable candidate pipeline",
+          "Automated interview scheduling",
+          "Collaborative evaluation workflows",
+          "Job board integration and auto-posting",
+          "Email and communication templates",
+          "Recruitment analytics dashboard",
+          "GDPR-compliant candidate data management"
+        ],
+        "testimonial": {
+          "text": "TalentFlow transformed our hiring process completely. The AI screening is incredibly accurate, saving our team hundreds of hours. We've cut our time-to-hire in half while improving candidate quality.",
+          "position": "Head of HR"
+        }
+      },
+      "irtekpro": {
+        "title": "IrtekPro",
+        "industry": "Legal Technology",
+        "description": "Legal information center with digital repository and database for legal materials",
+        "overview": "IrtekPro is a comprehensive legal information platform providing Armenian legal professionals with instant access to legislation, court decisions, and legal documents. Built with modern web technologies and powered by Elasticsearch for lightning-fast search, the platform serves thousands of lawyers, judges, and legal researchers with up-to-date legal information and advanced search capabilities.",
+        "duration": "7 months",
+        "teamSize": "5 specialists",
+        "task": "Create a modern legal information system with advanced search capabilities, document management, and user-friendly interface for legal professionals to access Armenian legislation and legal materials efficiently.",
+        "process": "Developed a Vue 3/Nuxt 3 frontend with responsive design, implemented Elasticsearch for full-text search across legal documents, built document versioning system, created user bookmarking and annotation features, integrated PostgreSQL for user data and Redis for caching, deployed with Docker for scalability.",
+        "results": [
+          "10,000+ legal documents indexed and searchable",
+          "2,500+ active legal professionals using the platform",
+          "50,000+ searches performed monthly",
+          "99.8% uptime reliability"
+        ],
+        "metrics": {
+          "documents": { "label": "Documents", "value": "10,000+" },
+          "users": { "label": "Active Users", "value": "2,500+" },
+          "searches": { "label": "Monthly Searches", "value": "50K+" },
+          "uptime": { "label": "Uptime", "value": "99.8%" }
+        },
+        "features": [
+          "Advanced full-text search with Elasticsearch",
+          "Document versioning and history tracking",
+          "User bookmarking and annotations",
+          "Multi-filter search capabilities",
+          "Mobile-responsive design",
+          "Document comparison tools",
+          "Real-time updates for new legislation",
+          "Export to PDF and Word formats"
+        ]
+      },
+      "stroy-istra": {
+        "title": "Stroy-Istra",
+        "industry": "Construction & Landscaping",
+        "description": "Construction company website with service booking and project portfolio",
+        "overview": "Stroy-Istra is a modern construction and landscaping company website featuring comprehensive service catalog, project portfolio, online quote requests, and client testimonials. Built with Nuxt 3 and integrated with MongoDB for content management, the platform showcases completed projects, allows clients to request quotes online, and provides detailed information about paving, asphalt work, and landscaping services.",
+        "duration": "3 months",
+        "teamSize": "4 specialists",
+        "task": "Create a professional website for construction company to showcase services, display project portfolio, enable online quote requests, and generate leads for paving installation, asphalt work, and landscaping services in Moscow Oblast.",
+        "process": "Designed and developed responsive Nuxt 3 website with Tailwind CSS, implemented project gallery with Cloudinary for image optimization, built quote request system with email notifications, created service pages with pricing calculators, integrated testimonials section, and implemented SEO optimization for local search visibility.",
+        "results": [
+          "150+ projects showcased in portfolio",
+          "80+ satisfied clients with testimonials",
+          "15,000+ square meters of completed work",
+          "4.9/5 average client rating"
+        ],
+        "metrics": {
+          "projects": { "label": "Projects", "value": "150+" },
+          "clients": { "label": "Clients", "value": "80+" },
+          "sqmeters": { "label": "Work Completed", "value": "15,000m²" },
+          "rating": { "label": "Client Rating", "value": "4.9/5" }
+        },
+        "features": [
+          "Responsive project portfolio gallery",
+          "Online quote request system",
+          "Service pricing calculator",
+          "Before/after project comparisons",
+          "Client testimonials with photos",
+          "Service area map integration",
+          "Equipment rental catalog",
+          "Contact form with instant notifications"
+        ]
+      }
+    }
+  }
+}

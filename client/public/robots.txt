@@ -1,0 +1,201 @@
+# ============================================
+# robots.txt for Innovayse
+# https://innovayse.com/robots.txt
+# Last updated: 2026-03-05
+# ============================================
+
+# Sitemap
+Sitemap: https://innovayse.com/sitemap_index.xml
+
+# ====================
+# PRIVATE / AUTH PAGES (all bots)
+# ====================
+User-agent: *
+Disallow: /client/
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /order/
+Disallow: /ru/client/
+Disallow: /ru/cart/
+Disallow: /ru/checkout/
+Disallow: /ru/order/
+Disallow: /hy/client/
+Disallow: /hy/cart/
+Disallow: /hy/checkout/
+Disallow: /hy/order/
+Allow: /
+
+# Allow all resources
+Allow: /*.css$
+Allow: /*.js$
+Allow: /*.json$
+Allow: /*.xml$
+Allow: /*.jpg$
+Allow: /*.jpeg$
+Allow: /*.png$
+Allow: /*.gif$
+Allow: /*.svg$
+Allow: /*.webp$
+Allow: /*.ico$
+Allow: /*.woff$
+Allow: /*.woff2$
+Allow: /*.ttf$
+Allow: /*.eot$
+Allow: /*.mp4$
+Allow: /*.webm$
+
+# ====================
+# GOOGLE
+# ====================
+User-agent: Googlebot
+Disallow: /client/
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /order/
+Disallow: /ru/client/
+Disallow: /ru/cart/
+Disallow: /ru/checkout/
+Disallow: /ru/order/
+Disallow: /hy/client/
+Disallow: /hy/cart/
+Disallow: /hy/checkout/
+Disallow: /hy/order/
+Allow: /
+Crawl-delay: 0
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Googlebot-Video
+Allow: /
+
+User-agent: Googlebot-Mobile
+Disallow: /client/
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /order/
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+# ====================
+# YANDEX
+# ====================
+User-agent: Yandex
+Disallow: /client/
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /order/
+Allow: /
+Crawl-delay: 0
+Host: innovayse.com
+
+User-agent: YandexBot
+Disallow: /client/
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /order/
+Allow: /
+Crawl-delay: 0
+
+User-agent: YandexImages
+Allow: /
+
+User-agent: YandexVideo
+Allow: /
+
+User-agent: YandexMedia
+Allow: /
+
+# ====================
+# BING / MICROSOFT
+# ====================
+User-agent: Bingbot
+Disallow: /client/
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /order/
+Allow: /
+Crawl-delay: 0
+
+User-agent: BingPreview
+Allow: /
+
+User-agent: msnbot
+Allow: /
+
+# ====================
+# OTHER SEARCH ENGINES
+# ====================
+User-agent: Slurp
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+# ====================
+# SOCIAL MEDIA
+# ====================
+User-agent: Twitterbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: TelegramBot
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+User-agent: Slackbot
+Allow: /
+
+# ====================
+# AI/LLM CRAWLERS
+# ====================
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+# ====================
+# SEO TOOLS
+# ====================
+User-agent: AhrefsBot
+Allow: /
+
+User-agent: SemrushBot
+Allow: /
+
+User-agent: MJ12bot
+Allow: /
+
+User-agent: DotBot
+Allow: /
+
+User-agent: PetalBot
+Allow: /
+
+User-agent: serpstatbot
+Allow: /
+
+User-agent: Screaming Frog SEO Spider
+Allow: /

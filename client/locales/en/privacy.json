@@ -1,0 +1,94 @@
+{
+  "privacy": {
+    "badge": "Privacy & Transparency",
+    "title": "Privacy Policy",
+    "subtitle": "At Innovayse, we value your trust. This policy explains how we handle your data across our digital agency services and SaaS platforms.",
+    "lastUpdated": "Last updated",
+    "sections": {
+      "collection": {
+        "title": "Information We Collect",
+        "content": {
+          "0": "To provide high-quality digital solutions, we collect several types of information from our clients and website visitors:"
+        },
+        "list": {
+          "0": "Identity data: Name, company name, and job title for project coordination.",
+          "1": "Contact data: Email address, phone number, and billing address for communication and invoicing.",
+          "2": "Technical data: IP addresses, browser types, and usage patterns on our website and SaaS platforms.",
+          "3": "Project data: Content, assets, and technical requirements provided for web or mobile development.",
+          "4": "Marketing data: Preferences in receiving updates about our services and SaaS products."
+        }
+      },
+      "usage": {
+        "title": "How We Use Your Data",
+        "content": {
+          "0": "Innovayse uses your personal and technical data to ensure seamless service delivery and platform stability:"
+        },
+        "list": {
+          "0": "Executing development contracts and delivering custom web or mobile applications.",
+          "1": "Ongoing maintenance and technical support for our SaaS products (SmartLearn, PropSystem, etc.).",
+          "2": "Optimizing SEO and PPC campaign performance based on analytical insights.",
+          "3": "Identifying and preventing technical issues or security threats on our platforms.",
+          "4": "Communicating project milestones and administrative updates via WHMCS or direct channels."
+        }
+      },
+      "sharing": {
+        "title": "Information Sharing",
+        "content": {
+          "0": "We never sell your data. We only share information with trusted partners to facilitate our services:",
+          "1": "Cloud hosting providers (e.g., for storing your applications and data); Third-party payment gateways for secure billing; Analytics providers to help us improve user experience. All partners are strictly bound by confidentiality agreements."
+        }
+      },
+      "cookies": {
+        "title": "Cookies and Analytics",
+        "content": {
+          "0": "We use essential cookies for user authentication and session management on our SaaS platforms. Additionally, we use analytics cookies to understand how visitors interact with our agency's website.",
+          "1": "You can manage your cookie preferences through our dedicated Cookie Banner or your browser settings. Note that disabling essential cookies may limit the functionality of our SaaS tools."
+        }
+      },
+      "security": {
+        "title": "Digital Protection",
+        "content": {
+          "0": "We employ enterprise-grade security measures, including SSL encryption, secure API protocols, and regular vulnerability scanning, to protect your data.",
+          "1": "Access to client project data is strictly limited to authorized team members involved in development or support."
+        }
+      },
+      "rights": {
+        "title": "Your Rights & Control",
+        "content": {
+          "0": "You have full control over your data stored with Innovayse. You may request:"
+        },
+        "list": {
+          "0": "A complete record of all personal data we hold about you.",
+          "1": "Immediate correction of any inaccurate contact or project information.",
+          "2": "Permanent deletion of your account and data, subject to legal retention rules.",
+          "3": "A pause on your data processing for marketing purposes."
+        }
+      },
+      "retention": {
+        "title": "Data Retention",
+        "content": {
+          "0": "We keep project-related data for the duration of our engagement and as required by law for financial auditing and legal compliance.",
+          "1": "Inactive SaaS account data is typically anonymized or deleted after 24 months of inactivity to ensure your privacy."
+        }
+      },
+      "children": {
+        "title": "Children's Privacy",
+        "content": {
+          "0": "Our services are exclusively designed for businesses and professionals. We do not knowingly collect data from individuals under 18 years of age."
+        }
+      },
+      "changes": {
+        "title": "Policy Updates",
+        "content": {
+          "0": "We may update this policy to reflect new SaaS features or changes in digital regulations. Significant updates will be communicated via our newsletter.",
+          "1": "We recommend checking this page occasionally to stay informed about our data protection standards."
+        }
+      }
+    },
+    "contact": {
+      "title": "Privacy Concerns?",
+      "description": "Our Data Protection Team is ready to assist you with any questions regarding your information at Innovayse.",
+      "link": "Get in Touch"
+    }
+  }
+}

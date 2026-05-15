@@ -1,0 +1,11 @@
+{
+  "whatsapp": {
+    "contactUs": "Связаться через WhatsApp",
+    "tooltip": "Напишите нам в WhatsApp",
+    "defaultMessage": "Здравствуйте! Меня интересуют ваши услуги."
+  },
+  "telegram": {
+    "contactUs": "Связаться через Telegram",
+    "tooltip": "Напишите нам в Telegram"
+  }
+}

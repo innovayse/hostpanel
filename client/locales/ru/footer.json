@@ -1,0 +1,34 @@
+{
+  "footer": {
+    "description": "Цифровое агентство полного цикла, предоставляющее инновационные решения в разработке, SEO, PPC и готовых SaaS продуктах.",
+    "columns": {
+      "navigation": "Навигация",
+      "services": "Услуги",
+      "contact": "Контакты"
+    },
+    "nav": {
+      "home": "Главная",
+      "about": "О нас",
+      "portfolio": "Портфолио",
+      "blog": "Блог",
+      "announcements": "Объявления",
+      "knowledgebase": "База знаний",
+      "faq": "FAQ",
+      "contact": "Контакты"
+    },
+    "services": {
+      "webDevelopment": "Веб-разработка",
+      "seoServices": "SEO услуги",
+      "ppcAdvertising": "PPC реклама",
+      "saasProducts": "SaaS продукты"
+    },
+    "bottom": {
+      "rights": "Все права защищены.",
+      "privacy": "Политика конфиденциальности",
+      "cookies": "Политика Cookie",
+      "terms": "Условия использования",
+      "refund": "Политика возврата",
+      "secure": "Безопасный SSL"
+    }
+  }
+}

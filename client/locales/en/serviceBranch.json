@@ -1,0 +1,135 @@
+{
+  "serviceBranch": {
+    "objective": "Primary Objective",
+    "whatWeDeliver": "What We Deliver",
+    "howItWorks": "How It Works",
+    "keyBenefits": "Key Benefits",
+    "highlights": {
+      "timeline": "Timeline",
+      "timelineValue": "2-4 weeks",
+      "teamSize": "Team Size",
+      "teamSizeValue": "3-5 experts",
+      "successRate": "Success Rate",
+      "successRateValue": "98%"
+    },
+    "deliverables": {
+      "strategy": {
+        "title": "Comprehensive Strategy",
+        "description": "Detailed {branch} strategy tailored to your business goals"
+      },
+      "plan": {
+        "title": "Implementation Plan",
+        "description": "Step-by-step roadmap with clear milestones and timelines"
+      },
+      "tracking": {
+        "title": "Performance Tracking",
+        "description": "Advanced analytics and reporting to measure success"
+      },
+      "optimization": {
+        "title": "Ongoing Optimization",
+        "description": "Continuous improvements based on data and performance metrics"
+      }
+    },
+    "process": {
+      "discovery": {
+        "title": "Discovery & Analysis",
+        "description": "We analyze your current state and define clear objectives for {branch}"
+      },
+      "strategy": {
+        "title": "Strategy Development",
+        "description": "Create a customized plan aligned with your business goals"
+      },
+      "implementation": {
+        "title": "Implementation",
+        "description": "Execute the strategy with best practices and proven methodologies"
+      },
+      "monitor": {
+        "title": "Monitor & Optimize",
+        "description": "Track performance and continuously improve results"
+      }
+    },
+    "benefits": {
+      "results": {
+        "title": "Measurable Results",
+        "description": "Track ROI with detailed analytics"
+      },
+      "team": {
+        "title": "Expert Team",
+        "description": "Experienced specialists in the field"
+      },
+      "delivery": {
+        "title": "Fast Delivery",
+        "description": "Quick implementation and results"
+      }
+    },
+    "packages": {
+      "starter": {
+        "name": "Starter",
+        "description": "Perfect for small businesses",
+        "price": "$499",
+        "billing": "one-time setup + $99/mo",
+        "features": [
+          "Initial setup and configuration",
+          "Basic optimization",
+          "Monthly reporting",
+          "Email support",
+          "3-month contract minimum"
+        ]
+      },
+      "professional": {
+        "name": "Professional",
+        "description": "Most popular for growing companies",
+        "price": "$999",
+        "billing": "one-time setup + $299/mo",
+        "features": [
+          "Advanced setup and strategy",
+          "Comprehensive optimization",
+          "Weekly reporting & insights",
+          "Priority support",
+          "Dedicated account manager",
+          "Quarterly strategy reviews"
+        ]
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "description": "For large-scale operations",
+        "price": "Custom",
+        "billing": "tailored to your needs",
+        "features": [
+          "Full-service implementation",
+          "Custom strategy development",
+          "Real-time reporting dashboard",
+          "24/7 priority support",
+          "Dedicated team",
+          "Monthly strategy sessions",
+          "Performance guarantees"
+        ]
+      }
+    },
+    "metrics": {
+      "projects": "Projects Completed",
+      "satisfaction": "Client Satisfaction",
+      "roi": "Average ROI Increase"
+    },
+    "ctaReady": "Ready to get started with",
+    "ctaDescription": "Let's discuss your project and create a custom strategy",
+    "defaultDescription": "Comprehensive {branch} services designed to help you achieve {objective}. Our expert team delivers measurable results through proven strategies and cutting-edge techniques.",
+    "pricing": {
+      "badge": "Pricing",
+      "title": "Choose Your",
+      "titleHighlight": "Package",
+      "subtitle": "Flexible pricing options to match your budget and goals",
+      "startingAt": "Starting at",
+      "recommended": "Recommended",
+      "getStarted": "Get Started",
+      "guarantee": "All packages include free consultation and 30-day money-back guarantee"
+    },
+    "successMetrics": "Success Metrics",
+    "cta": {
+      "startProject": "Start Your Project",
+      "viewAllServices": "View All Services"
+    },
+    "notFound": "Service Branch Not Found",
+    "notFoundDescription": "The requested service branch doesn't exist."
+  }
+}

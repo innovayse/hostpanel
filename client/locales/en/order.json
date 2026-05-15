@@ -1,0 +1,21 @@
+{
+  "order": {
+    "title": "Place Your Order",
+    "subtitle": "You're one step away from getting online.",
+    "selectedPlan": "Selected Plan",
+    "billingCycle": "Billing Cycle",
+    "domainRegistration": "Domain — New Registration",
+    "domainTransfer": "Domain — Transfer",
+    "available": "Available",
+    "includedSeePrice": "Included / See pricing",
+    "summary": "Order Summary",
+    "total": "Total",
+    "custom": "Custom",
+    "proceedToCheckout": "Proceed to Checkout",
+    "redirectNotice": "You will be redirected to our secure billing portal to complete your purchase.",
+    "portalError": "Billing portal URL not configured.",
+    "choosePlan": "Choose a Plan",
+    "choosePlanDesc": "Select a hosting plan to get started.",
+    "viewAllPlans": "View all plans"
+  }
+}

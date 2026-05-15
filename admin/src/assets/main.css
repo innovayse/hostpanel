@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand colors (matching innovayse.com) */
+  --color-primary-50:  #f0f9ff;
+  --color-primary-100: #e0f2fe;
+  --color-primary-200: #bae6fd;
+  --color-primary-300: #7dd3fc;
+  --color-primary-400: #38bdf8;
+  --color-primary-500: #0ea5e9;
+  --color-primary-600: #0284c7;
+  --color-primary-700: #0369a1;
+
+  --color-secondary-400: #c084fc;
+  --color-secondary-500: #a855f7;
+  --color-secondary-600: #9333ea;
+
+  /* App surfaces */
+  --color-surface-base:     #0a0a0f;
+  --color-surface-panel:    #0f0f17;
+  --color-surface-card:     #12121a;
+  --color-surface-elevated: #16161f;
+
+  /* Borders */
+  --color-border:        #1e1e2e;
+  --color-border-subtle: #161622;
+
+  /* Text */
+  --color-text-primary:   #f0f4ff;
+  --color-text-secondary: #8b90a8;
+  --color-text-muted:     #4a4f66;
+
+  /* Status */
+  --color-status-red:    #f87171;
+  --color-status-green:  #34d399;
+  --color-status-yellow: #fbbf24;
+
+  /* Fonts */
+  --font-display: 'Syne', sans-serif;
+  --font-sans:    'Inter', system-ui, sans-serif;
+}
+
+@layer base {
+  * { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+
+  h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
+
+  body { background-color: var(--color-surface-base); color: var(--color-text-primary); }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, #0ea5e9, #8b5cf6);
+    border-radius: 10px;
+  }
+  ::selection { background: rgba(14,165,233,0.25); color: #fff; }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #0f0f17 inset !important;
+    -webkit-text-fill-color: #e4e4ed !important;
+    caret-color: #e4e4ed !important;
+    transition: background-color 5000s ease-in-out 0s !important;
+    background-color: #0f0f17 !important;
+  }
+}
+
+@utility gradient-brand {
+  background: linear-gradient(135deg, #0ea5e9, #8b5cf6);
+}
+
+@utility gradient-brand-text {
+  background: linear-gradient(135deg, #0ea5e9, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

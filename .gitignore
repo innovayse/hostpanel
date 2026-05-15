@@ -10,6 +10,9 @@ client/wg0.conf
 admin/.vite/
 client/.vite/
 
+# GitNexus internal data
+.gitnexus/
+
 # Claude Code / AI tooling
 .claude/
 CLAUDE.md

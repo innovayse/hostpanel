@@ -44,7 +44,7 @@ A modern, self-hosted web hosting management platform — an open-source alterna
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-org/innovayse.git
+git clone https://github.com/innovayse/innovayse.git
 cd innovayse
 
 # 2. Copy and configure environment variables

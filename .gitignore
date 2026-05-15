@@ -1,7 +1,12 @@
+# Build output
+dist/
+
+# Dependencies
+node_modules/
+
+# Logs & PIDs
 .logs/
 .pids/
-dist/
-node_modules/
 
 # VPN / network config
 client/wg0.conf
@@ -13,13 +18,16 @@ client/.vite/
 # GitNexus internal data
 .gitnexus/
 
+# Code graph / review tools (local databases)
+.codegraph/
+.code-review-graph/
+
 # Claude Code / AI tooling
 .claude/
 CLAUDE.md
 client/CLAUDE.md
 
-# Logs and test artifacts
-.logs/
+# Playwright MCP logs
 .playwright-mcp/
 
 # Admin local env files

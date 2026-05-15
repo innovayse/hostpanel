@@ -1,0 +1,16 @@
+{
+  "cart": {
+    "title": "Your Cart",
+    "subtitle": "Review your selected plans before checkout",
+    "empty": "Your cart is empty",
+    "emptyHint": "Add a hosting plan or product to get started",
+    "browseHosting": "Browse Hosting Plans",
+    "summary": "Order Summary",
+    "total": "Total",
+    "remove": "Remove",
+    "clearCart": "Clear Cart",
+    "checkout": "Proceed to Checkout",
+    "secureCheckout": "Secure checkout — your data is encrypted",
+    "multipleCurrencies": "Multiple currencies"
+  }
+}

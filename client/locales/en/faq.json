@@ -1,0 +1,89 @@
+{
+  "faq": {
+    "badge": "FAQ",
+    "title": "Frequently Asked Questions",
+    "subtitle": "Find answers to common questions about our services, products, and processes",
+    "viewAll": "View All FAQs",
+    "noResults": "No questions found in this category.",
+    "backToAll": "Back to All FAQs",
+    "categories": {
+      "all": "All",
+      "general": "General",
+      "development": "Development",
+      "seo": "SEO",
+      "products": "Products"
+    },
+    "sections": {
+      "services": "About Our Services",
+      "pricing": "Pricing & Terms",
+      "technical": "Technical Questions"
+    },
+    "cta": {
+      "title": "Still have questions?",
+      "description": "Can't find the answer you're looking for? Please chat with our friendly team.",
+      "button": "Get in Touch"
+    },
+    "items": {
+      "faq-1": {
+        "question": "What services does Innovayse offer?",
+        "answer": "We offer full-cycle digital services including web & mobile development, SEO (technical, content, local, e-commerce, international), PPC advertising (Google Ads, Yandex Direct), and ready-to-use SaaS products."
+      },
+      "faq-2": {
+        "question": "How long does a typical project take?",
+        "answer": "Project timelines vary based on scope and complexity. A simple website takes 4-6 weeks, while complex web applications can take 3-6 months. We provide detailed timelines during the estimation phase."
+      },
+      "faq-3": {
+        "question": "Do you work with international clients?",
+        "answer": "Yes! We work with clients worldwide and have experience with projects in North America, Europe, and Asia. Our team is fluent in English and Russian."
+      },
+      "faq-4": {
+        "question": "What is your pricing model?",
+        "answer": "We offer flexible pricing: fixed-price for well-defined projects, time & materials for evolving requirements, and monthly retainers for ongoing support. Contact us for a custom quote."
+      },
+      "faq-5": {
+        "question": "Do you provide post-launch support?",
+        "answer": "Absolutely! We offer various support packages including bug fixes, updates, hosting management, and feature enhancements. All projects include 30 days of free post-launch support."
+      },
+      "faq-6": {
+        "question": "What technologies do you use?",
+        "answer": "We use modern tech stacks including React, Vue, Next.js, Nuxt, Node.js, Python, Laravel, and cloud platforms like AWS and Vercel. We choose technologies based on project requirements."
+      },
+      "faq-7": {
+        "question": "Can you integrate with existing systems?",
+        "answer": "Yes! We have extensive experience integrating with CRMs, ERPs, payment gateways, APIs, and legacy systems. We ensure seamless data flow between platforms."
+      },
+      "faq-8": {
+        "question": "Do you build mobile apps?",
+        "answer": "Yes, we develop native iOS/Android apps as well as cross-platform solutions using React Native and Flutter. We help you choose the best approach for your needs."
+      },
+      "faq-9": {
+        "question": "Will I own the source code?",
+        "answer": "Yes, you receive full ownership of all source code and assets upon project completion and final payment. We can also provide documentation and training."
+      },
+      "faq-10": {
+        "question": "How long does SEO take to show results?",
+        "answer": "SEO is a long-term strategy. You can expect to see initial improvements in 3-4 months, with significant results in 6-12 months. Timeline depends on competition and current site state."
+      },
+      "faq-11": {
+        "question": "Do you guarantee first page rankings?",
+        "answer": "We cannot guarantee specific rankings as search algorithms constantly change. However, we follow proven strategies and typically achieve first-page rankings for target keywords."
+      },
+      "faq-12": {
+        "question": "What is included in your SEO service?",
+        "answer": "Our SEO includes technical audits, keyword research, on-page optimization, content strategy, link building, Core Web Vitals optimization, and monthly reporting with actionable insights."
+      },
+      "faq-13": {
+        "question": "Do you handle international SEO?",
+        "answer": "Yes! We have experience with multi-language and multi-region SEO, including hreflang implementation, local search optimization, and international link building strategies."
+      },
+      "faq-14": {
+        "question": "Can I customize your SaaS products?",
+        "answer": "Yes! All our products offer customization options. Basic plans include theme customization, while Enterprise plans include custom features, integrations, and white-label options."
+      },
+      "faq-15": {
+        "question": "Do you offer free trials?",
+        "answer": "Yes, all our SaaS products offer 14-day free trials with no credit card required. You get full access to features during the trial period."
+      }
+    }
+  }
+}

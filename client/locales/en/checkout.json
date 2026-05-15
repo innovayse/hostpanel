@@ -1,0 +1,33 @@
+{
+  "checkout": {
+    "title": "Checkout",
+    "subtitle": "Complete your order",
+    "yourOrder": "Your Order",
+    "account": "Account",
+    "paymentMethod": "Payment Method",
+    "loggedInAs": "Logged in as",
+    "notYou": "Not you? Switch account",
+    "guestNotice": "You are checking out as a guest",
+    "signIn": "Sign in",
+    "placeOrder": "Place Order",
+    "processing": "Processing...",
+    "noPaymentMethods": "No payment methods available. Please contact support.",
+    "productConfig": "Service Configuration",
+    "fields": {
+      "firstname": "First Name",
+      "lastname": "Last Name",
+      "email": "Email Address",
+      "emailPlaceholder": "you{'@'}example.com",
+      "password": "Create Password",
+      "phonenumber": "Phone Number",
+      "domain": "Domain Address",
+      "username": "Hosting Username",
+      "hostPassword": "Hosting Password"
+    },
+    "errors": {
+      "fillRequired": "Please fill in all required fields",
+      "fillHostingDetails": "Please fill in all hosting configuration details",
+      "generic": "An error occurred. Please try again."
+    }
+  }
+}

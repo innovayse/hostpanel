@@ -1,0 +1,113 @@
+{
+  "writeForUs": {
+    "hero": {
+      "badge": "Write for Us",
+      "title": "Share Your Expertise",
+      "titleHighlight": "with Our Audience",
+      "subtitle": "We publish in-depth, practitioner-written articles on web development, SEO, PPC, and digital marketing. If you have real experience and actionable insights, we want to hear from you."
+    },
+    "stats": [
+      { "value": "12K+", "label": "Monthly readers" },
+      { "value": "3", "label": "Languages published" },
+      { "value": "DA 40+", "label": "Domain authority" },
+      { "value": "Do-follow", "label": "Author links" }
+    ],
+    "whyWrite": {
+      "title": "Why Write for Innovayse?",
+      "subtitle": "Real benefits for contributors who meet our editorial standards",
+      "items": [
+        {
+          "icon": "mdi:link-variant",
+          "color": "#0ea5e9",
+          "title": "Do-Follow Author Bio Link",
+          "desc": "Every accepted article includes a do-follow link in your author bio to your website or LinkedIn profile."
+        },
+        {
+          "icon": "mdi:account-group",
+          "color": "#8b5cf6",
+          "title": "Reach 12,000+ Monthly Readers",
+          "desc": "Our audience is decision-makers: business owners, marketing managers, and developers actively seeking solutions."
+        },
+        {
+          "icon": "mdi:translate",
+          "color": "#10b981",
+          "title": "Published in 3 Languages",
+          "desc": "Accepted articles are published in English, Russian, and Armenian — expanding your reach across the CIS market."
+        },
+        {
+          "icon": "mdi:share-variant",
+          "color": "#f59e0b",
+          "title": "Social Media Promotion",
+          "desc": "We share every accepted article across our LinkedIn, Twitter, and Telegram channels with your attribution."
+        }
+      ]
+    },
+    "topics": {
+      "title": "Topics We Accept",
+      "subtitle": "We prioritize original, experience-backed content in these areas",
+      "categories": [
+        {
+          "icon": "mdi:code-tags",
+          "color": "#0ea5e9",
+          "title": "Web & Mobile Development",
+          "items": ["Nuxt.js / Next.js / Vue tutorials", "Mobile app architecture", "Performance optimization", "API design & integrations", "Database optimization"]
+        },
+        {
+          "icon": "mdi:magnify",
+          "color": "#8b5cf6",
+          "title": "SEO & Content Marketing",
+          "items": ["Technical SEO case studies", "Core Web Vitals optimization", "Local SEO strategies", "Content strategy frameworks", "Link building tactics"]
+        },
+        {
+          "icon": "mdi:google-ads",
+          "color": "#f59e0b",
+          "title": "Paid Advertising",
+          "items": ["Google Ads campaign structures", "Yandex Direct strategies", "PPC bid management", "Conversion tracking setup", "Ad creative testing frameworks"]
+        },
+        {
+          "icon": "mdi:chart-line",
+          "color": "#10b981",
+          "title": "Digital Business & Growth",
+          "items": ["SaaS growth strategies", "CRO case studies", "Analytics & attribution", "E-commerce optimization", "Agency client management"]
+        }
+      ]
+    },
+    "guidelines": {
+      "title": "Editorial Guidelines",
+      "subtitle": "What we require from every submitted article",
+      "items": [
+        { "icon": "mdi:file-word-box", "color": "#0ea5e9", "title": "1,500+ word minimum", "desc": "We only publish comprehensive, in-depth articles. Listicles and thin content are rejected." },
+        { "icon": "mdi:account-check", "color": "#8b5cf6", "title": "Original, first-person experience", "desc": "Share real case studies, project outcomes, or learnings. We verify all factual claims." },
+        { "icon": "mdi:link-off", "color": "#ec4899", "title": "No self-promotional links in body", "desc": "One do-follow link in your author bio. No product/service links within the article body." },
+        { "icon": "mdi:image-multiple", "color": "#10b981", "title": "Original images or diagrams", "desc": "Include at least 2 original screenshots, diagrams, or data visualizations." },
+        { "icon": "mdi:check-all", "color": "#f59e0b", "title": "Not published elsewhere", "desc": "We only accept 100% original content not published or submitted elsewhere." },
+        { "icon": "mdi:clock-check", "color": "#3b82f6", "title": "Timely, 2025-relevant content", "desc": "Content must be current. No recycled posts from 2020-2022 with a new title." }
+      ]
+    },
+    "process": {
+      "title": "Submission Process",
+      "steps": [
+        { "number": "01", "title": "Submit Your Pitch", "desc": "Send us a 200-word pitch with your proposed title, key points, and a brief author bio via the form below. No need to write the full article first." },
+        { "number": "02", "title": "Editorial Review (5–7 days)", "desc": "Our editorial team reviews your pitch for topic fit, originality, and audience relevance. You'll receive a decision within 5–7 business days." },
+        { "number": "03", "title": "Write & Submit Draft", "desc": "If approved, write your full article following our style guide. Submit the draft as a Google Doc with editing access enabled." },
+        { "number": "04", "title": "Review & Publication", "desc": "We review for accuracy, style, and SEO optimization. Minor edits are made collaboratively. Publication typically within 2–3 weeks of draft submission." }
+      ]
+    },
+    "form": {
+      "title": "Submit Your Pitch",
+      "subtitle": "Tell us about your article idea. We respond to every submission.",
+      "button": "Send Pitch via Contact Form",
+      "note": "Please include 'Guest Post Pitch:' in your message subject line."
+    },
+    "notAccepted": {
+      "title": "We Do Not Accept",
+      "items": [
+        "AI-generated content (we verify with detection tools)",
+        "Content previously published on any platform",
+        "Articles promoting specific tools or products without disclosure",
+        "Content outside our defined topic areas",
+        "Articles under 1,500 words"
+      ]
+    }
+  }
+}

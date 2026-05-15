@@ -1,0 +1,25 @@
+{
+  "kb": {
+    "badge": "Help Center",
+    "title": "Knowledgebase",
+    "subtitle": "Browse articles and guides, or search for answers to your questions.",
+    "searchPlaceholder": "Enter a question here to search our knowledgebase for answers...",
+    "search": "Search",
+    "categories": "Categories",
+    "articles": "Articles",
+    "article": "Article",
+    "mostPopular": "Most Popular Articles",
+    "noResults": "No articles found for your search.",
+    "empty": "No articles available.",
+    "errorTitle": "Failed to load knowledgebase",
+    "errorDesc": "Please try again later.",
+    "backToKb": "Back to Knowledgebase",
+    "backToCategory": "Back",
+    "views": "views",
+    "lastUpdated": "Last updated",
+    "helpful": "Was this article helpful?",
+    "yes": "Yes",
+    "no": "No",
+    "relatedArticles": "Related Articles"
+  }
+}

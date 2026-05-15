@@ -1,0 +1,67 @@
+{
+  "contact": {
+    "hero": {
+      "badge": "Get in Touch",
+      "title": "Let's Build Something",
+      "titleHighlight": "Amazing",
+      "subtitle": "Have a project in mind? We'd love to hear about it. Our team is ready to turn your ideas into reality."
+    },
+    "form": {
+      "title": "Send us a message",
+      "name": "Full Name",
+      "email": "Email Address",
+      "phone": "Phone Number",
+      "service": "What are you interested in?",
+      "message": "Project Details",
+      "placeholders": {
+        "name": "John Doe",
+        "email": "john{'@'}example.com",
+        "phone": "+1 (555) 000-0000",
+        "service": "Select a service",
+        "message": "Tell us about your project, goals, timeline, and budget..."
+      },
+      "serviceOptions": {
+        "webDevelopment": "Web Development",
+        "mobileDevelopment": "Mobile Development",
+        "seo": "SEO Services",
+        "ppc": "PPC Advertising",
+        "saasProduct": "SaaS Product",
+        "consulting": "Consulting",
+        "other": "Other"
+      },
+      "consentPrefix": "I agree to the",
+      "consentLink": "Privacy Policy",
+      "consentSuffix": "and consent to be contacted about my inquiry",
+      "submit": "Send Message",
+      "submitting": "Sending...",
+      "success": {
+        "title": "Message sent successfully!",
+        "subtitle": "We'll get back to you within 24 hours."
+      },
+      "error": {
+        "consentRequired": "Please accept the privacy policy to continue",
+        "failed": "Failed to send message. Please try again later."
+      }
+    },
+    "info": {
+      "officeAddress": {
+        "title": "Office Address",
+        "street": "Vazgen Sargsyan 26/3",
+        "city": "Yerevan, Armenia"
+      },
+      "contactMethods": {
+        "title": "Contact Methods",
+        "email": "Email",
+        "phone": "Phone",
+        "workingHours": "Working Hours",
+        "workingHoursValue": "Mon-Fri: 9AM - 6PM PST"
+      },
+      "quickConnect": {
+        "title": "Quick Connect",
+        "telegram": "Telegram",
+        "whatsapp": "WhatsApp",
+        "liveChat": "Live Chat"
+      }
+    }
+  }
+}

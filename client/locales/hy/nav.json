@@ -1,0 +1,15 @@
+{
+  "nav": {
+    "services": "Ծառայություններ",
+    "products": "Ապրանքներ",
+    "hosting": "Հոսթինգ",
+    "domains": "Դոմեններ",
+    "portfolio": "Պորտֆոլիո",
+    "blog": "Բլոգ",
+    "about": "Մեր մասին",
+    "faq": "Հարցեր",
+    "contact": "Կապ",
+    "getStarted": "Սկսել",
+    "clientArea": "Անձնական էջ"
+  }
+}

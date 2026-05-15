@@ -1,0 +1,26 @@
+{
+  "invoicePay": {
+    "makePayment": "Произвести оплату",
+    "invoiceNum": "Счёт #{id}",
+    "paymentMethod": "Способ оплаты",
+    "enterCardBelow": "Введите данные новой карты ниже",
+    "newCard": "Ввести данные новой карты",
+    "cardNumber": "Номер карты",
+    "expiryDate": "Срок действия",
+    "cvv": "CVV/CVC2",
+    "whereIsFindThis": "Где это найти?",
+    "billingAddress": "Адрес для выставления счёта",
+    "addNewBillingAddress": "Добавить новый адрес",
+    "cardDescription": "Описание карты",
+    "cardDescriptionPlaceholder": "Введите название карты (Необязательно)",
+    "submitPayment": "Оплатить",
+    "processing": "Обработка...",
+    "paymentsToDate": "Оплачено на сегодня",
+    "balanceDue": "К оплате",
+    "alreadyPaid": "Этот счёт уже оплачен.",
+    "viewInvoice": "Посмотреть счёт",
+    "paymentSuccess": "Оплата прошла успешно!",
+    "paymentFailed": "Оплата не удалась. Попробуйте ещё раз.",
+    "securityNotice": "Все введённые данные передаются в зашифрованном виде для защиты от мошенничества"
+  }
+}

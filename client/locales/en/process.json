@@ -1,0 +1,26 @@
+{
+  "process": {
+    "badge": "Our Process",
+    "heading": "How We",
+    "headingHighlight": "Work",
+    "description": "A streamlined process designed to deliver exceptional results efficiently",
+    "steps": {
+      "discovery": {
+        "title": "Discovery",
+        "description": "We analyze your business needs, target audience, and competitors to create a comprehensive strategy."
+      },
+      "design": {
+        "title": "Design",
+        "description": "Our designers create stunning UI/UX mockups that align with your brand and user expectations."
+      },
+      "development": {
+        "title": "Development",
+        "description": "Our engineers build your solution using cutting-edge technologies with clean, scalable code."
+      },
+      "launch": {
+        "title": "Launch & Support",
+        "description": "We deploy your project and provide ongoing support, maintenance, and optimization."
+      }
+    }
+  }
+}

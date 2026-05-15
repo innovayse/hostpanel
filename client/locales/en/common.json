@@ -1,0 +1,42 @@
+{
+  "ui": {
+    "selectPlaceholder": "Select an option",
+    "noOptions": "No options available",
+    "theme": { "switchDark": "Switch to dark mode", "switchLight": "Switch to light mode" },
+    "pagination": {
+      "showing": "Showing {from}–{to} of {total} entries",
+      "show": "Show",
+      "entries": "entries",
+      "prev": "Previous",
+      "next": "Next",
+      "noResults": "No results match your search"
+    }
+  },
+  "common": {
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "learnMore": "Learn More",
+    "getStarted": "Get Started",
+    "viewAll": "View All",
+    "contact": "Contact",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close",
+    "home": "Home",
+    "services": "Services",
+    "products": "Products",
+    "portfolio": "Portfolio",
+    "allProjects": "All Projects",
+    "backToPortfolio": "Back to Portfolio",
+    "backToServices": "Back to Services",
+    "backToProducts": "Back to Products",
+    "notFound": "Not Found",
+    "industry": "Industry",
+    "duration": "Duration",
+    "teamSize": "Team Size",
+    "startingAt": "Starting at",
+    "scrollDown": "Scroll Down",
+    "scrollHorizontal": "Scroll to explore"
+  }
+}

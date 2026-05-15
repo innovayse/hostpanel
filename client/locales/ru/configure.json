@@ -1,0 +1,15 @@
+{
+  "configure": {
+    "title": "Настройка",
+    "back": "Назад к продуктам",
+    "notFound": "Продукт не найден.",
+    "includedFeatures": "Включённые функции",
+    "chooseBillingCycle": "Выберите цикл оплаты",
+    "orderSummary": "Сводка заказа",
+    "setupFees": "Стоимость настройки",
+    "totalDueToday": "Итого к оплате сегодня",
+    "continue": "Продолжить",
+    "haveQuestions": "Есть вопросы? Свяжитесь с нашей командой.",
+    "clickHere": "Нажмите здесь"
+  }
+}

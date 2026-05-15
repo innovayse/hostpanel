@@ -1,0 +1,54 @@
+{
+  "aup": {
+    "badge": "Infrastructure Security",
+    "title": "Acceptable Use Policy",
+    "subtitle": "Guidelines to ensure a safe, secure, and professional environment for all Innovayse hosting and SaaS users.",
+    "lastUpdated": "Last updated",
+    "sections": {
+      "purpose": {
+        "title": "Purpose of Policy",
+        "content": {
+          "0": "The Acceptable Use Policy (AUP) clarifies the limitations on the use of Innovayse's network, hosting infrastructure, and SaaS products. It is designed to protect our services, our clients, and the broader internet community from irresponsible or illegal activities."
+        }
+      },
+      "abuse": {
+        "title": "Prohibited Activities",
+        "content": {
+          "0": "Users are strictly prohibited from using Innovayse services for:",
+          "1": "Spamming: Sending unsolicited bulk emails or marketing messages without verified consent.",
+          "2": "Security Threats: Attempting to bypass authentication, scanning for vulnerabilities, or launching DDoS attacks against any system.",
+          "3": "Resource Abuse: Excessive use of server resources that degrades performance for other clients on shared hosting or SaaS platforms.",
+          "4": "Illegal Content: Storing or distributing copyrighted material without authorization, or hosting content that promotes violence or illegal acts."
+        }
+      },
+      "saas": {
+        "title": "SaaS Platform Use",
+        "content": {
+          "0": "For SmartLearn, PropSystem, and other SaaS tools:",
+          "1": "You may not share administrative accounts with unauthorized third parties.",
+          "2": "Automated scraping of data from our platforms is prohibited unless through an authorized API.",
+          "3": "Any attempt to reverse engineer or modify the SaaS source code is a violation of our intellectual property."
+        }
+      },
+      "hosting": {
+        "title": "Hosting & Server Conduct",
+        "content": {
+          "0": "Servers provided by Innovayse must not be used for hosting malware, phishing pages, or high-risk financial schemes (SCAM/HYIP).",
+          "1": "IRC bots, crypto-mining scripts, and proxy servers are generally prohibited on shared hosting plans as they impact overall infrastructure stability."
+        }
+      },
+      "enforcement": {
+        "title": "Monitoring & Enforcement",
+        "content": {
+          "0": "Innovayse reserves the right to monitor account activity to ensure compliance with this AUP. Violation of these rules may result in immediate suspension or termination of services without notice.",
+          "1": "We cooperate with law enforcement agencies and third-party security entities to investigate and resolve security breaches or illegal activities originating from our network."
+        }
+      }
+    },
+    "contact": {
+      "title": "Reporting Abuse",
+      "description": "If you witness or suspect a violation of this policy originating from our network, please contact our security team.",
+      "link": "Report Abuse"
+    }
+  }
+}

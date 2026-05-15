@@ -1,0 +1,24 @@
+{
+  "error": {
+    "goBack": "Go Back",
+    "goHome": "Go Home",
+    "helpText": "If you need assistance, feel free to",
+    "contactUs": "contact us",
+    "404": {
+      "title": "Page Not Found",
+      "message": "The page you're looking for doesn't exist or has been moved."
+    },
+    "500": {
+      "title": "Server Error",
+      "message": "Something went wrong on our end. We're working to fix it."
+    },
+    "403": {
+      "title": "Access Denied",
+      "message": "You don't have permission to access this page."
+    },
+    "default": {
+      "title": "Oops! Something Went Wrong",
+      "message": "An unexpected error occurred. Please try again later."
+    }
+  }
+}

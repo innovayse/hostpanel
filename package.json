@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@innovayse/geo-atlas": "^2.0.2"
+  }
+}

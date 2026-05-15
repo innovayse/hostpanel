@@ -1,0 +1,26 @@
+{
+  "invoicePay": {
+    "makePayment": "Make Payment",
+    "invoiceNum": "Invoice #{id}",
+    "paymentMethod": "Payment Method",
+    "enterCardBelow": "Enter New Card Information Below",
+    "newCard": "Enter New Card Information",
+    "cardNumber": "Card Number",
+    "expiryDate": "Expiry Date",
+    "cvv": "CVV/CVC2",
+    "whereIsFindThis": "Where do I find this?",
+    "billingAddress": "Billing Address",
+    "addNewBillingAddress": "Add new billing address",
+    "cardDescription": "Card Description",
+    "cardDescriptionPlaceholder": "Enter a name for this card (Optional)",
+    "submitPayment": "Submit Payment",
+    "processing": "Processing...",
+    "paymentsToDate": "Payments to Date",
+    "balanceDue": "Balance Due",
+    "alreadyPaid": "This invoice has already been paid.",
+    "viewInvoice": "View Invoice",
+    "paymentSuccess": "Payment processed successfully!",
+    "paymentFailed": "Payment failed. Please try again.",
+    "securityNotice": "Any data you enter here is submitted securely and is encrypted to reduce the risk of fraud"
+  }
+}

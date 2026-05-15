@@ -1,0 +1,43 @@
+{
+  "name": "Innovayse",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "^5.2.8",
+    "@fontsource/inter": "^5.2.8",
+    "@nuxt/eslint": "^1.13.0",
+    "@nuxt/icon": "^2.2.1",
+    "@nuxt/image": "^2.0.0",
+    "@nuxtjs/i18n": "^10.2.1",
+    "@pinia/nuxt": "^0.11.3",
+    "@stripe/stripe-js": "^8.9.0",
+    "@vueuse/motion": "^3.0.3",
+    "eslint": "^9.39.2",
+    "lucide-vue-next": "^0.564.0",
+    "nodemailer": "^7.0.13",
+    "nuxt": "^4.3.0",
+    "nuxt-gtag": "^4.1.0",
+    "nuxt-swiper": "^2.0.1",
+    "pinia": "^3.0.4",
+    "stripe": "^20.4.0",
+    "swiper": "^12.1.0",
+    "vue": "^3.5.27",
+    "vue-router": "^4.6.4",
+    "vue-tel-input": "^9.8.0"
+  },
+  "devDependencies": {
+    "@iconify-json/mdi": "^1.2.3",
+    "@nuxtjs/sitemap": "^7.6.0",
+    "@nuxtjs/tailwindcss": "^6.14.0",
+    "@types/node": "^25.2.2",
+    "@types/nodemailer": "^7.0.9"
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+}

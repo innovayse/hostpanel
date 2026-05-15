@@ -1,0 +1,42 @@
+{
+  "ui": {
+    "selectPlaceholder": "Ընտրեք տարբերակ",
+    "noOptions": "Տարբերակներ չկան",
+    "theme": { "switchDark": "Մուգ ռեժիմ", "switchLight": "Բաց ռեժիմ" },
+    "pagination": {
+      "showing": "{from}–{to} / {total} գրառում",
+      "show": "Ցույց տալ",
+      "entries": "գրառում",
+      "prev": "Նախ.",
+      "next": "Հաջ.",
+      "noResults": "Որոնմանը համապատասխան արդյունք չի գտնվել"
+    }
+  },
+  "common": {
+    "cancel": "Չեղարկել",
+    "confirm": "Հաստատել",
+    "learnMore": "Իմանալ ավելին",
+    "getStarted": "Սկսել",
+    "viewAll": "Դիտել բոլորը",
+    "contact": "Կապ",
+    "back": "Հետ",
+    "next": "Հաջորդ",
+    "previous": "Նախորդ",
+    "close": "Փակել",
+    "home": "Գլխավոր",
+    "services": "Ծառայություններ",
+    "products": "Ապրանքներ",
+    "portfolio": "Պորտֆոլիո",
+    "allProjects": "Բոլոր նախագծերը",
+    "backToPortfolio": "Վերադառնալ պորտֆոլիո",
+    "backToServices": "Վերադառնալ ծառայություններ",
+    "backToProducts": "Վերադառնալ ապրանքներ",
+    "notFound": "Չի գտնվել",
+    "industry": "Ոլորտ",
+    "duration": "Տևողություն",
+    "teamSize": "Թիմի չափ",
+    "startingAt": "Սկսած",
+    "scrollDown": "Ոլորել ներքև",
+    "scrollHorizontal": "Ոլորեք տեսնելու համար"
+  }
+}

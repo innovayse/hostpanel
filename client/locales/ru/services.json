@@ -1,0 +1,140 @@
+{
+  "services": {
+    "badge": "Чем мы занимаемся",
+    "title": "Наши услуги",
+    "subtitle": "Комплексные цифровые решения для роста вашего бизнеса",
+    "viewAll": "Все услуги",
+    "learnMore": "Узнать больше",
+    "hero": {
+      "badge": "Услуги",
+      "title": "Полный цикл {highlight}",
+      "highlight": "Цифровых услуг",
+      "description": "От концепции до запуска и далее. Мы предоставляем комплексные цифровые решения, обеспечивающие реальные бизнес-результаты.",
+      "stats": {
+        "services": "Услуг",
+        "projects": "Проектов",
+        "years": "Лет"
+      }
+    },
+    "categories": {
+      "all": "Все услуги",
+      "development": "Разработка",
+      "seo": "SEO",
+      "ppc": "PPC"
+    },
+    "branches": {
+      "title": "Направления услуг"
+    },
+    "more": "Ещё",
+    "cta": {
+      "title": "Готовы {highlight}",
+      "highlight": "начать",
+      "description": "Расскажите нам о вашем проекте, и мы свяжемся с вами в течение 24 часов",
+      "form": {
+        "name": {
+          "label": "Имя",
+          "placeholder": "Ваше имя"
+        },
+        "email": {
+          "label": "Email",
+          "placeholder": "ваш{'@'}email.com"
+        },
+        "service": {
+          "label": "Интересующая услуга",
+          "placeholder": "Выберите услугу"
+        },
+        "message": {
+          "label": "Детали проекта",
+          "placeholder": "Расскажите нам о вашем проекте..."
+        },
+        "submit": "Отправить сообщение",
+        "success": "Сообщение отправлено! Мы свяжемся с вами в ближайшее время.",
+        "error": "Не удалось отправить сообщение. Попробуйте снова."
+      }
+    },
+    "types": {
+      "web-development": "Веб-разработка",
+      "mobile-development": "Мобильная разработка",
+      "technical-seo": "Технический SEO",
+      "content-seo": "Контентный SEO",
+      "google-ads": "Google Ads",
+      "yandex-direct": "Яндекс.Директ",
+      "other": "Другое / Не уверен"
+    },
+    "items": {
+      "web-development": {
+        "title": "Веб-разработка",
+        "description": "Создание сайтов и веб-приложений с использованием современных технологий",
+        "features": ["Корпоративные сайты", "Интернет-магазины", "Веб-приложения", "API интеграции", "Кастомные CMS"],
+        "branches": {
+          "corporate": { "name": "Корпоративные сайты", "objective": "Профессиональное присутствие" },
+          "ecommerce": { "name": "Интернет-магазины", "objective": "Онлайн-продажи" },
+          "webapp": { "name": "Веб-приложения", "objective": "Бизнес-решения" },
+          "landing": { "name": "Лендинги", "objective": "Генерация лидов" },
+          "cms": { "name": "Кастомные CMS", "objective": "Управление контентом" }
+        }
+      },
+      "mobile-development": {
+        "title": "Мобильная разработка",
+        "description": "Нативные и кросс-платформенные мобильные приложения для iOS и Android",
+        "features": ["iOS и Android приложения", "Кросс-платформенные решения", "Поддержка приложений", "Интеграция с бэкендом"],
+        "branches": {
+          "ios": { "name": "Native iOS", "objective": "Премиум iOS опыт" },
+          "android": { "name": "Native Android", "objective": "Охват Android рынка" },
+          "crossplatform": { "name": "Кросс-платформа", "objective": "Мультиплатформенность" },
+          "pwa": { "name": "PWA", "objective": "Веб-в-мобайл" }
+        }
+      },
+      "technical-seo": {
+        "title": "Технический SEO",
+        "description": "Комплексная техническая оптимизация для улучшения позиций в поиске",
+        "features": ["Аудит сайта", "Оптимизация Core Web Vitals", "Schema разметка", "Улучшение индексации"],
+        "branches": {
+          "audit": { "name": "Технический аудит", "objective": "Анализ здоровья сайта" },
+          "vitals": { "name": "Core Web Vitals", "objective": "Производительность и UX" },
+          "schema": { "name": "Schema разметка", "objective": "Расширенные сниппеты" },
+          "crawl": { "name": "Индексация", "objective": "Оптимизация сканирования" }
+        }
+      },
+      "content-seo": {
+        "title": "Контентный SEO",
+        "description": "Стратегическая оптимизация и создание контента для органического роста",
+        "features": ["Исследование ключевых слов", "Контент-стратегия", "On-page оптимизация", "Создание контента"],
+        "branches": {
+          "keyword": { "name": "Исследование ключевых слов", "objective": "Анализ поискового интента" },
+          "strategy": { "name": "Контент-стратегия", "objective": "Планирование контента" },
+          "onpage": { "name": "On-page SEO", "objective": "Оптимизация страниц" },
+          "linkbuilding": { "name": "Линкбилдинг", "objective": "Рост авторитета" },
+          "local": { "name": "Локальный SEO", "objective": "Локальная видимость" },
+          "ecommerce": { "name": "E-commerce SEO", "objective": "Видимость товаров" },
+          "international": { "name": "Международный SEO", "objective": "Глобальный охват" }
+        }
+      },
+      "google-ads": {
+        "title": "Google Ads",
+        "description": "Эффективные PPC кампании с измеримым ROI",
+        "features": ["Поисковые кампании", "Медийная реклама", "Товарные объявления", "Ремаркетинг"],
+        "branches": {
+          "search": { "name": "Поиск", "objective": "Продажи / Лиды" },
+          "display": { "name": "Медийная реклама", "objective": "Узнаваемость бренда" },
+          "social": { "name": "Социальные сети", "objective": "Целевой охват" },
+          "shopping": { "name": "Shopping", "objective": "E-commerce продажи" },
+          "video": { "name": "Видео (YouTube)", "objective": "Узнаваемость бренда" },
+          "remarketing": { "name": "Ремаркетинг", "objective": "Возврат конверсий" },
+          "app": { "name": "App кампании", "objective": "Установки / вовлечение" }
+        }
+      },
+      "yandex-direct": {
+        "title": "Яндекс.Директ",
+        "description": "Таргетированная реклама в ведущей поисковой системе России",
+        "features": ["Поисковая реклама", "РСЯ (Рекламная сеть Яндекса)", "Оптимизация показателей", "A/B тестирование"],
+        "branches": {
+          "search": { "name": "Поисковая реклама", "objective": "Прямые конверсии" },
+          "yan": { "name": "РСЯ (медийная)", "objective": "Узнаваемость бренда" },
+          "retargeting": { "name": "Ретаргетинг", "objective": "Возврат посетителей" },
+          "smart": { "name": "Смарт-баннеры", "objective": "Автоматический охват" }
+        }
+      }
+    }
+  }
+}

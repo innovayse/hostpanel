@@ -1,0 +1,18 @@
+{
+  "hero": {
+    "badge": "Welcome to the future of digital innovation",
+    "title": "Innovate.\nCreate.\nElevate.",
+    "subtitle": "Full-cycle digital agency delivering cutting-edge solutions in Development, SEO, PPC & SaaS products",
+    "scroll": "Scroll to explore",
+    "cta": {
+      "primary": "Start Your Project",
+      "secondary": "View Our Work"
+    },
+    "stats": {
+      "projects": "Projects",
+      "years": "Years",
+      "team": "Team Members",
+      "clients": "Happy Clients"
+    }
+  }
+}

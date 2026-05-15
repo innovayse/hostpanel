@@ -1,0 +1,33 @@
+{
+  "checkout": {
+    "title": "Վճարում",
+    "subtitle": "Ավարտեք ձեր պատվերը",
+    "yourOrder": "Ձեր պատվերը",
+    "account": "Հաշիվ",
+    "paymentMethod": "Վճարման եղանակ",
+    "loggedInAs": "Մուտք գործված որպես",
+    "notYou": "Դուք չե՞ք: Փոխել հաշիվ",
+    "guestNotice": "Դուք պատվիրում եք որպես հյուր",
+    "signIn": "Մուտք գործել",
+    "placeOrder": "Կատարել պատվեր",
+    "processing": "Մշակվում է...",
+    "noPaymentMethods": "Վճարման եղանակներ հասանելի չեն։ Կապվեք աջակցության հետ։",
+    "productConfig": "Ծառայության կարգավորում",
+    "fields": {
+      "firstname": "Անուն",
+      "lastname": "Ազգանուն",
+      "email": "Էլ. հասցե",
+      "emailPlaceholder": "դուք{'@'}example.com",
+      "password": "Ստեղծել գաղտնաբառ",
+      "phonenumber": "Հեռախոսահամար",
+      "domain": "Դոմեյն հասցե",
+      "username": "Հոսթինգի օգտանուն",
+      "hostPassword": "Հոսթինգի գաղտնաբառ"
+    },
+    "errors": {
+      "fillRequired": "Լրացրեք բոլոր պարտադիր դաշտերը",
+      "fillHostingDetails": "Լրացրեք հոսթինգի բոլոր տվյալները",
+      "generic": "Սխալ է տեղի ունեցել: Կրկին փորձեք:"
+    }
+  }
+}

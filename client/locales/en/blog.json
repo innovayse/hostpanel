@@ -1,0 +1,90 @@
+{
+  "blog": {
+    "badge": "Blog",
+    "title": "Insights & Articles",
+    "subtitle": "Stay updated with the latest trends, tips, and insights in digital technology and business growth",
+    "readMore": "Read more",
+    "minRead": "min read",
+    "noPosts": "No posts found in this category",
+    "categories": {
+      "all": "All Posts",
+      "development": "Development",
+      "seo": "SEO",
+      "marketing": "Marketing",
+      "design": "Design",
+      "business": "Business"
+    },
+    "posts": {
+      "modern-web-development-2024": {
+        "title": "Modern Web Development in 2024: Trends and Technologies",
+        "excerpt": "Explore the cutting-edge technologies shaping web development this year, from AI-powered tools to new JavaScript frameworks and serverless architectures."
+      },
+      "seo-strategies-ai-era": {
+        "title": "SEO Strategies in the AI Era: What You Need to Know",
+        "excerpt": "How artificial intelligence is transforming search engine optimization and what strategies you need to adopt to stay ahead of the competition."
+      },
+      "ppc-optimization-tips": {
+        "title": "10 PPC Optimization Tips for Maximum ROI",
+        "excerpt": "Learn proven strategies to optimize your pay-per-click campaigns, reduce costs, and dramatically improve your return on investment."
+      },
+      "ui-ux-trends-2024": {
+        "title": "UI/UX Design Trends That Will Dominate 2024",
+        "excerpt": "From micro-interactions to AI-generated designs, discover the user interface and experience trends that are defining digital products this year."
+      },
+      "scaling-saas-business": {
+        "title": "Scaling Your SaaS Business: From Startup to Enterprise",
+        "excerpt": "A comprehensive guide to scaling your software-as-a-service business, covering product development, customer acquisition, and operational efficiency."
+      },
+      "typescript-best-practices": {
+        "title": "TypeScript Best Practices for Large-Scale Applications",
+        "excerpt": "Master TypeScript with these best practices for building maintainable, scalable, and type-safe applications that your team will love working on."
+      },
+      "ecommerce-website-development-2025": {
+        "title": "How to Build a High-Converting E-Commerce Website in 2025",
+        "excerpt": "A comprehensive guide to building e-commerce websites that convert visitors into customers — covering CRO, mobile-first design, checkout optimization, and data-driven growth strategies."
+      },
+      "technical-seo-audit-guide-2025": {
+        "title": "Complete Technical SEO Audit Guide: 15 Critical Checks for 2025",
+        "excerpt": "Discover the 15 essential technical SEO checks every website needs — from crawlability and Core Web Vitals to structured data and canonical tags — to rank higher in 2025."
+      },
+      "google-ads-vs-yandex-direct-2025": {
+        "title": "Google Ads vs Yandex Direct: Which Platform Wins for CIS Markets in 2025?",
+        "excerpt": "A detailed comparison of Google Ads and Yandex Direct for Russia, Armenia, and CIS markets — covering market share, targeting, costs, and how to build a dual-platform strategy."
+      },
+      "website-cost-guide-2025": {
+        "title": "How Much Does a Website Cost in 2025? A Complete Business Owner's Pricing Guide",
+        "excerpt": "Everything you need to know about website development costs in 2025 — from DIY builders to enterprise platforms, what drives costs, hidden fees, and how to evaluate agency proposals."
+      },
+      "mobile-app-development-cost-2025": {
+        "title": "Mobile App Development Cost in 2025: Complete Pricing Guide (iOS, Android & Cross-Platform)",
+        "excerpt": "How much does it cost to build a mobile app in 2025? Real cost ranges by platform, complexity, and team location — plus hidden fees, budget tips, and how to choose iOS vs Android vs Flutter."
+      },
+      "core-web-vitals-optimization-guide-2025": {
+        "title": "Core Web Vitals Optimization: Fix LCP, CLS & INP for Better Google Rankings in 2025",
+        "excerpt": "Your complete guide to Core Web Vitals in 2025 — understand LCP, CLS, and INP, measure them with the right tools, and get actionable fixes that improve both search rankings and conversions."
+      },
+      "wordpress-vs-custom-development-2025": {
+        "title": "WordPress vs Custom Development in 2025: Which Is Right for Your Business?",
+        "excerpt": "An honest, technical comparison of WordPress and custom web development — costs, performance, SEO, scalability, and the decision framework that helps you choose the right path for your business."
+      },
+      "local-seo-guide-2025": {
+        "title": "Local SEO Guide 2025: How to Dominate Google's Local Pack in Your City",
+        "excerpt": "Complete local SEO playbook: optimize your Google Business Profile, build citations, generate reviews, create local content, and claim your spot in the Local Pack for consistent lead generation."
+      }
+    },
+    "noRelatedPosts": "No related articles found",
+    "topics": {
+      "digitalMarketing": "Digital Marketing Trends",
+      "seoStrategy": "SEO Strategy & Guides",
+      "ppcSuccess": "PPC Advertising Success Stories",
+      "techInnovation": "Technology & Innovation",
+      "careerGrowth": "Career & Team Development"
+    },
+    "newsletter": {
+      "title": "Subscribe to Our Newsletter",
+      "description": "Get the latest articles, insights, and industry news delivered straight to your inbox. No spam, unsubscribe anytime.",
+      "placeholder": "Enter your email",
+      "button": "Subscribe"
+    }
+  }
+}

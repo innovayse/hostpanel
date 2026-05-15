@@ -1,0 +1,74 @@
+{
+  "terms": {
+    "badge": "Legal Framework",
+    "title": "Terms of Service",
+    "subtitle": "Clear and transparent rules for our professional partnership and SaaS subscriptions.",
+    "lastUpdated": "Last updated",
+    "sections": {
+      "acceptance": {
+        "title": "Acceptance of Terms",
+        "content": {
+          "0": "By commissioning services from Innovayse or subscribing to our SaaS platforms (including SmartLearn and PropSystem), you agree to comply with these professional terms. These rules ensure a secure and efficient environment for all our clients.",
+          "1": "These terms constitute a legally binding agreement between you (the Client) and Innovayse Digital Agency regarding all development, marketing, and software hosting services."
+        }
+      },
+      "services": {
+        "title": "Service Standards",
+        "content": {
+          "0": "Innovayse delivers high-end web development, mobile applications, technical SEO, and white-label SaaS solutions. We commit to industry standards and best practices in every line of code we write.",
+          "1": "Service specifications, including technical stacks and delivery milestones, are defined in the Project Roadmap/Service Level Agreement (SLA) provided during the onboarding phase.",
+          "2": "We reserve the right to upgrade our SaaS platforms and agency workflows to incorporate new technologies without direct notice, provided such changes do not diminish core functionality."
+        }
+      },
+      "accounts": {
+        "title": "Client Portals & SaaS Access",
+        "content": {
+          "0": "Access to our SaaS products and client management portals (WHMCS) requires authentic and verified credentials. You are responsible for maintaining the confidentiality of your administrative access.",
+          "1": "Any suspicious activity or unauthorized access must be reported to our support team immediately to prevent potential data breaches or service interruption."
+        }
+      },
+      "intellectual": {
+        "title": "IP Rights & Licensing",
+        "content": {
+          "0": "For custom development: Upon full payment of the project balance, the copyright and intellectual property of the final deliverable (source code/design) are transferred to the Client.",
+          "1": "Innovayse retains the right to use non-sensitive visual elements of the project for its professional portfolio and case studies, unless a Non-Disclosure Agreement (NDA) specifies otherwise.",
+          "2": "For SaaS products: Our platforms are provided under a 'License to Use' model. You may not decompile, reverse engineer, or redistribute our proprietary software code."
+        }
+      },
+      "payment": {
+        "title": "Payment & Financial Obligation",
+        "content": {
+          "0": "Custom Projects: A 50% commitment fee is usually required to initiate development. Subsequent payments are tied to verified project milestones.",
+          "1": "Hosting & SaaS: Subscriptions are billed on a recurring basis (monthly/yearly). Failure to renew may result in temporary service suspension within 7 days of the due date.",
+          "2": "Taxes: Prices listed on our website are exclusive of applicable taxes unless stated otherwise. All financial transactions are processed through secure, encrypted gateways."
+        }
+      },
+      "termination": {
+        "title": "Service Termination",
+        "content": {
+          "0": "Termination by Client: You may terminate an ongoing project at any stage; however, previously paid milestone amounts are non-refundable as they cover completed labor.",
+          "1": "Termination by Innovayse: We reserve the right to suspend services in cases of non-payment, violation of ethical guidelines, or use of our platforms for illegal activities."
+        }
+      },
+      "liability": {
+        "title": "Professional Liability",
+        "content": {
+          "0": "Innovayse strives for 99.9% uptime and bug-free releases. However, we are not liable for business losses resulting from third-party API failures, server migrations by external providers, or unapproved client modifications to the source code.",
+          "1": "Our maximum liability for any project is limited to 100% of the fees specifically paid for that component of the service."
+        }
+      },
+      "changes": {
+        "title": "Governance & Updates",
+        "content": {
+          "0": "We may refine these terms periodically to align with evolving digital laws and our agency's expansion. Continued use of our services after updates signifies your acceptance.",
+          "1": "Any major shifts in our legal framework will be highlighted in the Client Area of our website."
+        }
+      }
+    },
+    "contact": {
+      "title": "Need Legal Clarification?",
+      "description": "If you require further details regarding our project contracts or service agreements, our legal team is ready to assist.",
+      "link": "Contact Legal Support"
+    }
+  }
+}

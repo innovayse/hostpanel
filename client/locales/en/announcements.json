@@ -1,0 +1,14 @@
+{
+  "announcements": {
+    "badge": "News & Updates",
+    "title": "Announcements",
+    "subtitle": "Stay up to date with the latest news, updates and special offers.",
+    "allMonths": "All",
+    "readMore": "Continue reading",
+    "empty": "No announcements at this time.",
+    "errorTitle": "Failed to load announcements",
+    "errorDesc": "Please try again later.",
+    "backToList": "Back to Announcements",
+    "published": "Published"
+  }
+}

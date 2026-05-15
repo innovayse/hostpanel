@@ -1,0 +1,115 @@
+{
+  "about": {
+    "hero": {
+      "badge": "О нас",
+      "title": "Мы —",
+      "titleHighlight": "Innovayse",
+      "description": "Цифровое агентство с миссией превращать идеи в успешные цифровые продукты. С 2016 года мы помогаем бизнесу внедрять инновации, расти и добиваться успеха онлайн.",
+      "stats": {
+        "years": "Лет",
+        "projects": "Проектов",
+        "teamMembers": "Членов команды",
+        "clients": "Клиентов"
+      }
+    },
+    "values": {
+      "badge": "Наши ценности",
+      "title": "Что нами",
+      "titleHighlight": "движет",
+      "description": "Принципы, которые определяют все, что мы делаем",
+      "items": {
+        "resultsDriven": {
+          "title": "Ориентация на результат",
+          "description": "Мы фокусируемся на измеримых результатах и ROI. Каждое решение основано на данных и согласовано с вашими бизнес-целями."
+        },
+        "partnership": {
+          "title": "Партнерство",
+          "description": "Ваш успех — наш успех. Мы работаем как продолжение вашей команды, стремясь к вашему долгосрочному росту."
+        },
+        "innovation": {
+          "title": "Инновации",
+          "description": "Мы внедряем новые технологии и творческие решения. Быть впереди означает постоянно учиться и развиваться."
+        },
+        "dataInformed": {
+          "title": "Основа на данных",
+          "description": "Каждая стратегия подкреплена исследованиями и аналитикой. Мы позволяем данным руководить нашими решениями, а не предположениям."
+        }
+      }
+    },
+    "timeline": {
+      "badge": "Наш путь",
+      "title": "История",
+      "titleHighlight": "компании",
+      "description": "От небольшого стартапа до ведущего цифрового агентства",
+      "items": {
+        "2016": { "title": "Основание", "description": "Innovayse была основана командой увлеченных разработчиков и маркетологов" },
+        "2018": { "title": "Первые 50 проектов", "description": "Достигли рубежа в 50 завершенных проектов и расширились до 15 членов команды" },
+        "2020": { "title": "Международная экспансия", "description": "Начали работать с международными клиентами по всей Европе и Северной Америке" },
+        "2022": { "title": "Запуск SaaS-направления", "description": "Выпустили SmartLearn System и PropSystem Pro — наши первые SaaS-продукты" },
+        "2023": { "title": "Рост команды", "description": "Выросли до 50+ членов команды и открыли новый офис" },
+        "2024": { "title": "Интеграция AI", "description": "Интегрировали AI-возможности во все услуги и запустили Kelpie AI" },
+        "2025": { "title": "Взгляд в будущее", "description": "Расширяем линейку продуктов и фокусируемся на корпоративных решениях" }
+      }
+    },
+    "techStack": {
+      "badge": "Технологии",
+      "title": "Наш",
+      "titleHighlight": "технологический стек",
+      "description": "Мы работаем с передовыми технологиями для достижения исключительных результатов",
+      "categories": {
+        "frontend": {
+          "name": "Фронтенд",
+          "technologies": {
+            "vue": "Vue.js",
+            "react": "React",
+            "nextjs": "Next.js",
+            "nuxt": "Nuxt",
+            "typescript": "TypeScript",
+            "tailwind": "Tailwind CSS"
+          }
+        },
+        "backend": {
+          "name": "Бэкенд",
+          "technologies": {
+            "nodejs": "Node.js",
+            "python": "Python",
+            "laravel": "Laravel",
+            "fastapi": "FastAPI",
+            "postgresql": "PostgreSQL",
+            "mongodb": "MongoDB"
+          }
+        },
+        "mobile": {
+          "name": "Мобильная разработка",
+          "technologies": {
+            "reactNative": "React Native",
+            "flutter": "Flutter",
+            "swift": "Swift",
+            "kotlin": "Kotlin"
+          }
+        },
+        "cloudDevops": {
+          "name": "Облако и DevOps",
+          "technologies": {
+            "aws": "AWS",
+            "googleCloud": "Google Cloud",
+            "vercel": "Vercel",
+            "docker": "Docker",
+            "cicd": "CI/CD",
+            "kubernetes": "Kubernetes"
+          }
+        }
+      }
+    },
+    "cta": {
+      "title": "Готовы",
+      "titleHighlight": "работать с нами",
+      "description": "Давайте вместе воплотим ваши идеи в жизнь",
+      "contact": {
+        "title": "Начать проект",
+        "description": "Давайте обсудим ваши идеи и воплотим их в жизнь",
+        "button": "Связаться с нами"
+      }
+    }
+  }
+}

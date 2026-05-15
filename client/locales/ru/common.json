@@ -1,0 +1,42 @@
+{
+  "ui": {
+    "selectPlaceholder": "Выберите вариант",
+    "noOptions": "Нет доступных вариантов",
+    "theme": { "switchDark": "Тёмная тема", "switchLight": "Светлая тема" },
+    "pagination": {
+      "showing": "Показано {from}–{to} из {total}",
+      "show": "Показать",
+      "entries": "записей",
+      "prev": "Назад",
+      "next": "Вперёд",
+      "noResults": "По запросу ничего не найдено"
+    }
+  },
+  "common": {
+    "cancel": "Отмена",
+    "confirm": "Подтвердить",
+    "learnMore": "Узнать больше",
+    "getStarted": "Начать",
+    "viewAll": "Смотреть все",
+    "contact": "Контакты",
+    "back": "Назад",
+    "next": "Следующий",
+    "previous": "Предыдущий",
+    "close": "Закрыть",
+    "home": "Главная",
+    "services": "Услуги",
+    "products": "Продукты",
+    "portfolio": "Портфолио",
+    "allProjects": "Все проекты",
+    "backToPortfolio": "Назад к портфолио",
+    "backToServices": "Назад к услугам",
+    "backToProducts": "Назад к продуктам",
+    "notFound": "Не найдено",
+    "industry": "Отрасль",
+    "duration": "Длительность",
+    "teamSize": "Размер команды",
+    "startingAt": "От",
+    "scrollDown": "Прокрутите вниз",
+    "scrollHorizontal": "Прокрутите вбок"
+  }
+}

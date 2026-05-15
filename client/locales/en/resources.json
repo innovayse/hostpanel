@@ -1,0 +1,135 @@
+{
+  "resources": {
+    "hero": {
+      "badge": "Free Resources",
+      "title": "Free SEO & Web Dev",
+      "titleHighlight": "Toolkits",
+      "subtitle": "Practitioner-grade checklists, templates, and guides used by our team on every project — now free for you to download and use."
+    },
+    "stats": [
+      { "value": "12+", "label": "Free resources" },
+      { "value": "4,000+", "label": "Downloads" },
+      { "value": "100%", "label": "Free forever" }
+    ],
+    "categories": {
+      "all": "All Resources",
+      "seo": "SEO",
+      "webdev": "Web Development",
+      "ads": "Paid Ads",
+      "mobile": "Mobile"
+    },
+    "downloadCta": "Download Free",
+    "viewCta": "View Checklist",
+    "free": "FREE",
+    "pages": "pages",
+    "items": "items",
+    "updated": "Updated",
+    "items_list": [
+      {
+        "id": "technical-seo-audit-checklist",
+        "category": "seo",
+        "icon": "mdi:magnify-scan",
+        "color": "#8b5cf6",
+        "badge": "PDF",
+        "pages": 8,
+        "title": "Technical SEO Audit Checklist 2025",
+        "desc": "The exact 47-point checklist our SEO team uses on every client site: crawlability, Core Web Vitals, structured data, redirects, duplicate content, and mobile optimization.",
+        "tags": ["Technical SEO", "Audit", "Core Web Vitals", "Checklist"],
+        "updated": "March 2025"
+      },
+      {
+        "id": "website-launch-checklist",
+        "category": "webdev",
+        "icon": "mdi:rocket-launch",
+        "color": "#0ea5e9",
+        "badge": "PDF",
+        "pages": 6,
+        "title": "Website Launch Checklist: 52 Must-Do Items",
+        "desc": "Before you go live — 52 checks covering SEO setup, analytics configuration, security hardening, performance baseline, cross-browser testing, and post-launch monitoring.",
+        "tags": ["Website Launch", "SEO", "Analytics", "Security"],
+        "updated": "February 2025"
+      },
+      {
+        "id": "core-web-vitals-checklist",
+        "category": "seo",
+        "icon": "mdi:speedometer",
+        "color": "#10b981",
+        "badge": "Checklist",
+        "items": 35,
+        "title": "Core Web Vitals Fix Checklist: LCP, CLS & INP",
+        "desc": "Step-by-step remediation guide for all three Core Web Vitals. Covers image optimization, server response, JavaScript performance, layout stability, and monitoring setup.",
+        "tags": ["Core Web Vitals", "LCP", "CLS", "INP", "PageSpeed"],
+        "updated": "March 2025"
+      },
+      {
+        "id": "google-ads-account-audit",
+        "category": "ads",
+        "icon": "mdi:google-ads",
+        "color": "#f59e0b",
+        "badge": "Template",
+        "items": 40,
+        "title": "Google Ads Account Audit Template",
+        "desc": "Structured audit template covering campaign structure, Quality Score optimization, bidding strategy review, negative keyword gaps, audience targeting, and conversion tracking setup.",
+        "tags": ["Google Ads", "PPC", "Audit", "Quality Score"],
+        "updated": "January 2025"
+      },
+      {
+        "id": "content-seo-brief-template",
+        "category": "seo",
+        "icon": "mdi:file-document-edit",
+        "color": "#ec4899",
+        "badge": "Template",
+        "pages": 4,
+        "title": "SEO Content Brief Template",
+        "desc": "The exact content brief format our SEO writers use: target keyword analysis, competitor gap mapping, recommended word count, internal link structure, FAQ targets, and schema markup guidance.",
+        "tags": ["Content SEO", "Content Brief", "Keyword Research", "Writing"],
+        "updated": "February 2025"
+      },
+      {
+        "id": "mobile-app-planning-guide",
+        "category": "mobile",
+        "icon": "mdi:cellphone-check",
+        "color": "#3b82f6",
+        "badge": "Guide",
+        "pages": 12,
+        "title": "Mobile App Planning Guide & Scope Template",
+        "desc": "Define your app's scope, platform strategy, MVP feature set, technology stack, and budget range before your first developer conversation. Includes cost estimator framework.",
+        "tags": ["Mobile App", "MVP", "Flutter", "iOS", "Android"],
+        "updated": "March 2025"
+      },
+      {
+        "id": "local-seo-action-plan",
+        "category": "seo",
+        "icon": "mdi:map-marker-check",
+        "color": "#f59e0b",
+        "badge": "PDF",
+        "pages": 5,
+        "title": "Local SEO 90-Day Action Plan",
+        "desc": "Week-by-week action plan to build Local Pack presence in 90 days: GBP optimization, citation audit and fix, review generation workflow, and local content calendar template.",
+        "tags": ["Local SEO", "Google Business Profile", "Citations", "Reviews"],
+        "updated": "March 2025"
+      },
+      {
+        "id": "ecommerce-cro-checklist",
+        "category": "webdev",
+        "icon": "mdi:shopping-search",
+        "color": "#0ea5e9",
+        "badge": "Checklist",
+        "items": 45,
+        "title": "E-Commerce CRO Checklist: 45 Conversion Killers",
+        "desc": "Systematically identify and fix the checkout friction, trust signal gaps, and UX issues that are costing you conversions. Used on every e-commerce audit we conduct.",
+        "tags": ["E-Commerce", "CRO", "Checkout Optimization", "UX"],
+        "updated": "January 2025"
+      }
+    ],
+    "ctaSection": {
+      "title": "Need a Custom Audit?",
+      "subtitle": "Our team applies these checklists to your specific website and delivers a prioritized action plan with estimated impact for each recommendation.",
+      "button": "Request a Free Audit"
+    },
+    "partnership": {
+      "title": "Link to This Page",
+      "subtitle": "Are you a blogger, educator, or tool creator? We welcome links to our free resources. If you find our checklists useful, feel free to reference them in your own content — no permission needed."
+    }
+  }
+}

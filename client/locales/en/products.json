@@ -1,0 +1,111 @@
+{
+  "products": {
+    "hero": {
+      "badge": "Enterprise-grade SaaS Solutions",
+      "headline1": "Build Less.",
+      "headline2": "Launch Faster.",
+      "subtitle": "Skip months of development. Get production-ready SaaS platforms with {whiteLabel}, built-in payments, and enterprise features.",
+      "whiteLabelHighlight": "white-label capabilities",
+      "cta": {
+        "viewProducts": "View Products",
+        "bookDemo": "Book a Demo"
+      },
+      "trustBadges": {
+        "soc2": "SOC 2 Compliant",
+        "encryption": "256-bit Encryption",
+        "uptime": "99.9% Uptime SLA"
+      }
+    },
+    "products": {
+      "badge": "SaaS Solutions",
+      "title": "Our Products",
+      "subtitle": "Ready-to-use solutions built with cutting-edge technology",
+      "viewAll": "Explore All Products",
+      "keyFeatures": "Key Features",
+      "viewDemo": "View Demo",
+      "featured": "Featured"
+    },
+    "pricing": {
+      "title": "Choose Your Plan",
+      "trial": "Start Free Trial",
+      "getStarted": "Get Started",
+      "contactSales": "Contact Sales",
+      "cycles": {
+        "monthly": "Monthly",
+        "quarterly": "Quarterly",
+        "semiannually": "6 Months",
+        "annually": "Annually",
+        "biennially": "2 Years",
+        "triennially": "3 Years"
+      },
+      "popular": "⭐ Most Popular",
+      "guarantee": {
+        "title": "30-day money-back guarantee",
+        "subtitle": "No questions asked"
+      },
+      "cta": {
+        "viewDemo": "View Demo",
+        "learnMore": "Learn More"
+      }
+    },
+    "comparison": {
+      "title": "Compare Plans",
+      "headline": "Find Your {perfectMatch}",
+      "perfectMatchHighlight": "Perfect Match",
+      "subtitle": "All plans include 14-day free trial • No credit card required",
+      "headers": {
+        "product": "Product",
+        "starter": "Starter",
+        "starterDesc": "For individuals",
+        "professional": "Professional",
+        "professionalBadge": "Popular",
+        "enterprise": "Enterprise",
+        "enterpriseDesc": "For teams"
+      },
+      "footer": "Enterprise plans include custom pricing and dedicated support."
+    },
+    "benefits": {
+      "title": "Enterprise-grade {benefitsHighlight}",
+      "benefitsHighlight": "Benefits",
+      "subtitle": "Everything you need to launch and scale your SaaS business",
+      "whiteLabel": {
+        "title": "White-label",
+        "description": "Full customization with your branding. Remove all traces of Innovayse."
+      },
+      "support": {
+        "title": "24/7 Support",
+        "description": "Expert support team ready to help. Priority support for Pro+ plans."
+      },
+      "updates": {
+        "title": "Free Updates",
+        "description": "Continuous improvements and new features at no extra cost."
+      },
+      "api": {
+        "title": "API Access",
+        "description": "Full API documentation. Build custom integrations and workflows."
+      },
+      "additional": {
+        "trial": {
+          "title": "14-day Free Trial",
+          "description": "No credit card required"
+        },
+        "guarantee": {
+          "title": "Money-back Guarantee",
+          "description": "30 days, no questions asked"
+        },
+        "lifetime": {
+          "title": "Lifetime Updates",
+          "description": "Always get latest features"
+        }
+      }
+    },
+    "testimonials": {
+      "title": "Loved by {thousands}",
+      "thousandsHighlight": "Thousands",
+      "subtitle": "Real results from real customers"
+    },
+    "notFound": "Product Not Found",
+    "notFoundDescription": "The product you're looking for doesn't exist or has been removed.",
+    "relatedProducts": "Other Products"
+  }
+}

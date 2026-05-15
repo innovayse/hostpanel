@@ -1,0 +1,61 @@
+{
+  "cookiePolicy": {
+    "title": "Cookie Policy",
+    "lastUpdated": "Last Updated",
+    "sections": {
+      "introduction": {
+        "title": "Introduction",
+        "content": "Innovayse uses cookies and similar digital technologies to enhance your experience across our agency website and SaaS platforms. This policy explains what these technologies are, why we use them, and your rights to manage them."
+      },
+      "whatAreCookies": {
+        "title": "What Are Cookies?",
+        "content": "Cookies are small data files stored on your device that help us recognize you and remember your preferences. They are essential for modern web applications to function correctly and securely."
+      },
+      "typesOfCookies": {
+        "title": "Types of Cookies We Use",
+        "types": [
+          {
+            "title": "Strictly Necessary",
+            "description": "Essential for our SaaS platforms (SmartLearn, PropSystem) to handle authentication, security, and session management. Without these, you cannot log in or use your account."
+          },
+          {
+            "title": "Preferences & Settings",
+            "description": "These remember your language choices, localization settings, and interface preferences to provide a personalized experience during your next visit."
+          },
+          {
+            "title": "Performance & Analytics",
+            "description": "We use Google Analytics and internal tools to see how visitors interact with our services. This data helps us improve our agency's digital offerings and SaaS performance."
+          },
+          {
+            "title": "Targeted Advertising",
+            "description": "Used by our marketing team to deliver relevant updates about our new products and services based on your interests. We use these sparingly and professionally."
+          }
+        ]
+      },
+      "howWeUseCookies": {
+        "title": "How We Use Cookies",
+        "uses": [
+          "Authenticating users on our SaaS platforms and client portals.",
+          "Preventing security threats and unauthorized access to client data.",
+          "Analyzing website traffic to optimize our SEO and PPC campaigns.",
+          "Remembering project preferences and language settings.",
+          "Providing interactive support through our chat and contact tools.",
+          "Managing billing sessions and secure payment processes."
+        ]
+      },
+      "thirdPartyCookies": {
+        "title": "Third-Party Services",
+        "content": "Our website integrates services from partners like Google (Analytics), Meta (Social Tracking), and legal billing systems (WHMCS). These third parties may set their own cookies to monitor service performance or deliver specific content. We only integrate trusted, secure partners."
+      },
+      "managingCookies": {
+        "title": "Cookie Control",
+        "content": "Most browsers automatically accept cookies, but you can modify your settings to decline them. You can also clear your browser cache at any time to remove existing cookies.",
+        "note": "Disabling certain cookies may limit your ability to use specific features of our SaaS products, such as remaining logged in."
+      },
+      "contact": {
+        "title": "Questions?",
+        "content": "If you have questions about our cookie usage, our technical team is ready to assist at "
+      }
+    }
+  }
+}

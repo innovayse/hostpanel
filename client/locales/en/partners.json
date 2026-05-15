@@ -1,0 +1,34 @@
+{
+  "clients": {
+    "subtitle": "Trusted By",
+    "heading": "Our Clients",
+    "stats": {
+      "clients": "Clients Worldwide",
+      "countries": "Countries",
+      "revenue": "Revenue Generated",
+      "retention": "Retention Rate"
+    },
+    "items": {
+      "kelpie-ai": {
+        "description": "AI-powered customer service automation platform with intelligent chatbots",
+        "industry": "AI & Technology"
+      },
+      "uk-voshozhdenie": {
+        "description": "Investment management company licensed by Central Bank of Russia, managing investment funds and securities",
+        "industry": "Financial Services"
+      },
+      "eduzdrav": {
+        "description": "Healthcare education platform providing online courses, webinars, and training programs for medical administrators",
+        "industry": "Healthcare Education"
+      },
+      "irtekpro": {
+        "description": "Legal Information Center providing digital repository and database for legal materials and documents",
+        "industry": "Legal Technology"
+      },
+      "stroy-istra": {
+        "description": "Construction and landscaping company offering paving installation, asphalt work, and comprehensive outdoor development solutions",
+        "industry": "Construction & Landscaping"
+      }
+    }
+  }
+}

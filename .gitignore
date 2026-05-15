@@ -42,5 +42,15 @@ admin/.env.production
 *.jpg
 *.jpeg
 
+# IDEs
+.idea/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.code-workspace
+.vs/
+
 # Junk folders
 undefined/

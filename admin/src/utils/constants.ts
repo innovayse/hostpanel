@@ -85,3 +85,60 @@ export const DNS_RECORD_TYPE_OPTIONS = [
   { value: 'NS', label: 'NS' },
   { value: 'SRV', label: 'SRV' },
 ]
+
+/** Billing cycle options for service dropdowns. */
+export const BILLING_CYCLE_OPTIONS = [
+  { value: 'free', label: 'Free' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: 'quarterly', label: 'Quarterly' },
+  { value: 'semi-annual', label: 'Semi-Annual' },
+  { value: 'annual', label: 'Annual' },
+  { value: 'biennial', label: 'Biennial' },
+  { value: 'triennial', label: 'Triennial' },
+]
+
+/** Invoice action options for billable item forms. */
+export const INVOICE_ACTION_OPTIONS = [
+  { value: 'DontInvoice', label: "Don't Invoice for Now" },
+  { value: 'InvoiceOnNextCron', label: 'Invoice on Next Cron Run' },
+  { value: 'AddToNextInvoice', label: "Add to User's Next Invoice" },
+  { value: 'InvoiceForDueDate', label: 'Invoice as Normal for Due Date' },
+  { value: 'Recur', label: 'Recur' },
+]
+
+/** Recurrence period options for billable items. */
+export const RECURRENCE_PERIOD_OPTIONS = [
+  { value: 'Days', label: 'Days' },
+  { value: 'Weeks', label: 'Weeks' },
+  { value: 'Months', label: 'Months' },
+  { value: 'Years', label: 'Years' },
+]
+
+/** Invoice status options for filter dropdowns. */
+export const INVOICE_STATUS_OPTIONS = [
+  { value: '', label: 'All Statuses' },
+  { value: 'Draft', label: 'Draft' },
+  { value: 'Unpaid', label: 'Unpaid' },
+  { value: 'Paid', label: 'Paid' },
+  { value: 'Overdue', label: 'Overdue' },
+  { value: 'Cancelled', label: 'Cancelled' },
+  { value: 'Refunded', label: 'Refunded' },
+]
+
+/** Invoice status badge styles. */
+export const INVOICE_STATUS_STYLES: Record<string, string> = {
+  Draft: 'text-primary-400 bg-primary-500/10 border-primary-500/20',
+  Unpaid: 'text-status-yellow bg-status-yellow/10 border-status-yellow/20',
+  Paid: 'text-status-green bg-status-green/10 border-status-green/20',
+  Overdue: 'text-status-red bg-status-red/10 border-status-red/20',
+  Cancelled: 'text-text-muted bg-white/[0.04] border-border',
+  Refunded: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
+}
+
+/** Payment gateway options. */
+export const GATEWAY_OPTIONS = [
+  { value: 'None', label: 'None' },
+  { value: 'BankTransfer', label: 'Bank Transfer' },
+  { value: 'Stripe', label: 'Stripe' },
+  { value: 'PayPal', label: 'PayPal' },
+]

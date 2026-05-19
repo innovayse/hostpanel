@@ -22,6 +22,69 @@ namespace Innovayse.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Innovayse.Domain.Billing.BillableItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset>("DueDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("HoursQty")
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<string>("InvoiceAction")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<int>("InvoiceCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("InvoiceId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsHours")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("RecurrenceInterval")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RecurrenceLimit")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RecurrencePeriod")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int?>("ServiceId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId", "InvoiceId")
+                        .HasDatabaseName("IX_billable_items_ClientId_InvoiceId");
+
+                    b.ToTable("billable_items", (string)null);
+                });
+
             modelBuilder.Entity("Innovayse.Domain.Billing.Invoice", b =>
                 {
                     b.Property<int>("Id")
@@ -36,6 +99,9 @@ namespace Innovayse.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<decimal>("Credit")
+                        .HasColumnType("numeric(18,4)");
+
                     b.Property<DateTimeOffset>("DueDate")
                         .HasColumnType("timestamp with time zone");
 
@@ -43,13 +109,33 @@ namespace Innovayse.Infrastructure.Persistence.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<DateTimeOffset>("InvoiceDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
                     b.Property<DateTimeOffset?>("PaidAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PaymentMethod")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<decimal>("SubTotal")
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<decimal>("Tax")
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<decimal>("TaxRate")
+                        .HasColumnType("numeric(5,2)");
 
                     b.Property<decimal>("Total")
                         .HasColumnType("numeric(18,4)");
@@ -89,6 +175,54 @@ namespace Innovayse.Infrastructure.Persistence.Migrations
                     b.HasIndex("InvoiceId");
 
                     b.ToTable("invoice_items", (string)null);
+                });
+
+            modelBuilder.Entity("Innovayse.Domain.Billing.InvoiceTransaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<DateTimeOffset>("Date")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("Fees")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(18,4)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<string>("Gateway")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("InvoiceId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("TransactionId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvoiceId");
+
+                    b.ToTable("invoice_transactions", (string)null);
                 });
 
             modelBuilder.Entity("Innovayse.Domain.Clients.Client", b =>
@@ -1106,6 +1240,9 @@ namespace Innovayse.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("RecurringAmount")
                         .HasColumnType("numeric");
 
+                    b.Property<int?>("ServerId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");
@@ -1558,6 +1695,15 @@ namespace Innovayse.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Innovayse.Domain.Billing.InvoiceTransaction", b =>
+                {
+                    b.HasOne("Innovayse.Domain.Billing.Invoice", null)
+                        .WithMany("Transactions")
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Innovayse.Domain.Clients.ClientUser", b =>
                 {
                     b.HasOne("Innovayse.Domain.Clients.Client", null)
@@ -1703,6 +1849,8 @@ namespace Innovayse.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Innovayse.Domain.Billing.Invoice", b =>
                 {
                     b.Navigation("Items");
+
+                    b.Navigation("Transactions");
                 });
 
             modelBuilder.Entity("Innovayse.Domain.Clients.Client", b =>

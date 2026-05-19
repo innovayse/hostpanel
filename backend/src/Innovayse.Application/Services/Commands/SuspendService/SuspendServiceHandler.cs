@@ -3,10 +3,9 @@ namespace Innovayse.Application.Services.Commands.SuspendService;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Services.Interfaces;
 
-/// <summary>Suspends an active client service.</summary>
+/// <summary>Suspends an active client service. Provisioning is handled asynchronously via domain events.</summary>
 public sealed class SuspendServiceHandler(
     IClientServiceRepository repo,
-    IProvisioningProvider provisioner,
     IUnitOfWork uow)
 {
     /// <summary>
@@ -19,11 +18,6 @@ public sealed class SuspendServiceHandler(
     {
         var service = await repo.FindByIdAsync(cmd.ServiceId, ct)
             ?? throw new InvalidOperationException($"Service {cmd.ServiceId} not found.");
-
-        if (service.ProvisioningRef is not null)
-        {
-            await provisioner.SuspendAsync(service.ProvisioningRef, ct);
-        }
 
         service.Suspend();
         await uow.SaveChangesAsync(ct);

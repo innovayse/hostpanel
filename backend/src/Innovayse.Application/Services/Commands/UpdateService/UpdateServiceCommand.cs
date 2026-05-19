@@ -23,6 +23,9 @@ namespace Innovayse.Application.Services.Commands.UpdateService;
 /// <param name="PromotionCode">Promotion/coupon code (null to clear).</param>
 /// <param name="TerminatedAt">Termination date — admin override (null to clear).</param>
 /// <param name="Status">Service status (Active, Suspended, Terminated). Null to keep current.</param>
+/// <param name="ServerId">FK to the provisioning server (null to clear).</param>
+/// <param name="Quantity">Quantity ordered.</param>
+/// <param name="ProductId">FK to the product (null to keep current).</param>
 public record UpdateServiceCommand(
     int ServiceId,
     string? Domain,
@@ -43,4 +46,7 @@ public record UpdateServiceCommand(
     decimal FirstPaymentAmount,
     string? PromotionCode,
     DateTimeOffset? TerminatedAt,
-    string? Status);
+    string? Status,
+    int? ServerId,
+    int Quantity,
+    int? ProductId);

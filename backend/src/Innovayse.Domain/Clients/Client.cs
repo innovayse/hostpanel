@@ -341,9 +341,15 @@ public sealed class Client : AggregateRoot
     public void AddUser(string userId, ClientPermission permissions)
     {
         if (userId == UserId)
+        {
             throw new InvalidOperationException("Cannot add the account owner as an additional user.");
+        }
+
         if (_users.Any(u => u.UserId == userId))
+        {
             throw new InvalidOperationException($"User {userId} is already linked to this client.");
+        }
+
         _users.Add(ClientUser.Create(Id, userId, permissions));
     }
 
@@ -382,12 +388,16 @@ public sealed class Client : AggregateRoot
     public void TransferOwnership(string newOwnerUserId)
     {
         if (newOwnerUserId == UserId)
+        {
             throw new InvalidOperationException("This user is already the account owner.");
+        }
 
         // Remove new owner from additional users if they were linked
         var existing = _users.FirstOrDefault(u => u.UserId == newOwnerUserId);
         if (existing is not null)
+        {
             _users.Remove(existing);
+        }
 
         UserId = newOwnerUserId;
     }
@@ -409,7 +419,9 @@ public sealed class Client : AggregateRoot
     public void Close()
     {
         if (Status == ClientStatus.Closed)
+        {
             throw new InvalidOperationException("Account is already closed.");
+        }
 
         Status = ClientStatus.Closed;
     }

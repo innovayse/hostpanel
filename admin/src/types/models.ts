@@ -226,20 +226,78 @@ export interface Contact {
   createdAt: string
 }
 
+/** Single line item on an invoice. */
+export interface InvoiceItem {
+  /** Unique line item identifier. */
+  id: number
+  /** Human-readable charge description. */
+  description: string
+  /** Price per unit. */
+  unitPrice: number
+  /** Number of units. */
+  quantity: number
+  /** Line total (unitPrice x quantity). */
+  amount: number
+}
+
+/** Payment, refund, or credit transaction recorded against an invoice. */
+export interface InvoiceTransaction {
+  /** Unique transaction identifier. */
+  id: number
+  /** Transaction date (ISO 8601). */
+  date: string
+  /** Payment gateway used. */
+  gateway: string
+  /** Gateway transaction reference. */
+  transactionId: string
+  /** Transaction amount. */
+  amount: number
+  /** Transaction fees charged by the gateway. */
+  fees: number
+  /** Transaction type: Payment, Refund, or Credit. */
+  type: string
+  /** Optional admin notes. */
+  notes?: string
+}
+
 /** Represents an invoice. */
 export interface Invoice {
   /** Unique invoice identifier. */
   id: number
   /** Associated client identifier. */
   clientId: number
-  /** Total amount due. */
-  total: number
-  /** Invoice status (unpaid, paid, overdue, cancelled). */
+  /** Invoice status (Draft, Unpaid, Paid, Overdue, Cancelled, Refunded). */
   status: string
   /** ISO 8601 due date. */
   dueDate: string
   /** ISO 8601 creation timestamp. */
   createdAt: string
+  /** Total amount due. */
+  total: number
+  /** Optional admin notes. */
+  notes?: string
+  /** ISO 8601 invoice date. */
+  invoiceDate: string
+  /** Payment method label. */
+  paymentMethod?: string
+  /** Tax rate percentage. */
+  taxRate: number
+  /** Computed tax amount. */
+  tax: number
+  /** Sub-total before tax and credit. */
+  subTotal: number
+  /** Credit applied to the invoice. */
+  credit: number
+  /** ISO 8601 payment timestamp, if paid. */
+  paidAt?: string
+  /** Gateway transaction reference, if paid. */
+  gatewayTransactionId?: string
+  /** Display name of the owning client. */
+  clientName?: string
+  /** Line items on the invoice. */
+  items: InvoiceItem[]
+  /** Payment/refund/credit transactions. */
+  transactions: InvoiceTransaction[]
 }
 
 /** Represents a support ticket. */
@@ -587,6 +645,10 @@ export interface ServiceDetail {
   autoTerminateReason?: string
   /** Internal admin notes. */
   adminNotes?: string
+  /** FK to the assigned server, if any. */
+  serverId?: number
+  /** Display name of the assigned server. */
+  serverName?: string
 }
 
 /** Generic paginated response wrapper. */
@@ -653,6 +715,52 @@ export interface ClientUserItem {
   lastLoginAt: string | null
   /** When the user was linked. */
   createdAt: string
+}
+
+/** Represents a billable item that can be invoiced to a client. */
+export interface BillableItem {
+  /** Unique billable item identifier. */
+  id: number
+  /** Associated client identifier. */
+  clientId: number
+  /** FK to client service, if applicable. */
+  serviceId?: number
+  /** Product/service name from the linked service. */
+  serviceName?: string
+  /** Charge description. */
+  description: string
+  /** Total charge amount. */
+  amount: number
+  /** Hours or quantity value. */
+  hoursQty: number
+  /** Whether hoursQty represents hours (true) or quantity (false). */
+  isHours: boolean
+  /** How and when this item should be invoiced. */
+  invoiceAction: string
+  /** ISO 8601 due date. */
+  dueDate: string
+  /** FK to invoice if invoiced, null if uninvoiced. */
+  invoiceId?: number
+  /** Number of times this item has been invoiced. */
+  invoiceCount: number
+  /** Recurrence interval (recur every N periods). */
+  recurrenceInterval?: number
+  /** Recurrence period unit. */
+  recurrencePeriod?: string
+  /** Max number of recurrences (null = unlimited). */
+  recurrenceLimit?: number
+  /** ISO 8601 creation timestamp. */
+  createdAt: string
+}
+
+/** Response from the billable items list endpoint. */
+export interface BillableItemsResult {
+  /** All uninvoiced items for the client. */
+  uninvoicedItems: BillableItem[]
+  /** Sum of all uninvoiced item amounts. */
+  uninvoicedTotal: number
+  /** Paginated invoiced items. */
+  invoicedItems: PagedResult<BillableItem>
 }
 
 /** Labels for each permission flag, used for checkbox rendering. */

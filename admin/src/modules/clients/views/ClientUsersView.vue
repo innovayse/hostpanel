@@ -9,6 +9,7 @@ import { useApi } from '../../../composables/useApi'
 import { useUsersStore, type UserDetail } from '../stores/usersStore'
 import { PERMISSION_LABELS, ClientPermission, type ClientUserItem } from '../../../types/models'
 import { formatDate as sharedFormatDate } from '../../../utils/format'
+import AppCheckbox from '../../../components/AppCheckbox.vue'
 import UserFormModal from '../components/UserFormModal.vue'
 
 const route = useRoute()
@@ -479,7 +480,7 @@ onMounted(() => fetchUsers())
                 v-model="addUserSearchTerm"
                 type="text"
                 placeholder="Search by name or email..."
-                class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors"
+                class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors"
               />
               <span v-if="addUserSearchLoading" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-primary-500/20 border-t-primary-500 animate-spin" />
             </div>
@@ -507,12 +508,7 @@ onMounted(() => fetchUsers())
             <h4 class="text-[0.72rem] font-semibold uppercase tracking-[0.07em] text-text-muted mb-3">Permissions</h4>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <label v-for="perm in PERMISSION_LABELS" :key="perm.flag" class="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  :checked="hasAddPermission(perm.flag)"
-                  class="w-4 h-4 accent-primary-500 rounded"
-                  @change="toggleAddPermission(perm.flag)"
-                />
+                <AppCheckbox :model-value="hasAddPermission(perm.flag)" @update:model-value="toggleAddPermission(perm.flag)" />
                 <span class="text-[0.78rem] text-text-secondary">{{ perm.label }}</span>
               </label>
             </div>
@@ -540,7 +536,7 @@ onMounted(() => fetchUsers())
                 type="email"
                 placeholder="user@example.com"
                 required
-                class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors"
+                class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors"
               />
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -551,7 +547,7 @@ onMounted(() => fetchUsers())
                   type="text"
                   placeholder="John"
                   required
-                  class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors"
+                  class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors"
                 />
               </div>
               <div>
@@ -561,7 +557,7 @@ onMounted(() => fetchUsers())
                   type="text"
                   placeholder="Doe"
                   required
-                  class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors"
+                  class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors"
                 />
               </div>
             </div>
@@ -572,12 +568,7 @@ onMounted(() => fetchUsers())
             <h4 class="text-[0.72rem] font-semibold uppercase tracking-[0.07em] text-text-muted mb-3">Permissions</h4>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <label v-for="perm in PERMISSION_LABELS" :key="perm.flag" class="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  :checked="hasInvitePermission(perm.flag)"
-                  class="w-4 h-4 accent-primary-500 rounded"
-                  @change="toggleInvitePermission(perm.flag)"
-                />
+                <AppCheckbox :model-value="hasInvitePermission(perm.flag)" @update:model-value="toggleInvitePermission(perm.flag)" />
                 <span class="text-[0.78rem] text-text-secondary">{{ perm.label }}</span>
               </label>
             </div>

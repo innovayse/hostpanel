@@ -7,10 +7,10 @@
     <ProjectReference Include="..\Innovayse.SDK\Innovayse.SDK.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="FluentValidation" Version="11.11.0" />
-    <PackageReference Include="Fluid.Core" Version="2.31.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.1" />
-    <PackageReference Include="WolverineFx" Version="5.31.0" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="9.0.1" />
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="Fluid.Core" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+    <PackageReference Include="WolverineFx" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" />
   </ItemGroup>
 </Project>

@@ -144,6 +144,8 @@ docker_db() {
     local action="${1:-}"
     case "$action" in
         migrate)
+            info "Restoring packages..."
+            dc exec api dotnet restore
             info "Running EF Core migrations..."
             dc exec api dotnet ef database update \
                 --project src/Innovayse.Infrastructure/Innovayse.Infrastructure.csproj \
@@ -155,6 +157,7 @@ docker_db() {
             warn "This will DROP and recreate the database!"
             read -rp "Are you sure? [y/N] " confirm
             if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                dc exec api dotnet restore
                 dc exec api dotnet ef database drop --force \
                     --project src/Innovayse.Infrastructure/Innovayse.Infrastructure.csproj \
                     --startup-project src/Innovayse.API/Innovayse.API.csproj \

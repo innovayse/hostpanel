@@ -32,7 +32,9 @@ public sealed class AddUserToClientHandler(
             ?? throw new InvalidOperationException($"User {cmd.UserId} not found.");
 
         if ((cmd.Permissions & ~(int)ClientPermission.All) != 0)
+        {
             throw new InvalidOperationException($"Invalid permissions value: {cmd.Permissions}.");
+        }
 
         client.AddUser(cmd.UserId, (ClientPermission)cmd.Permissions);
         await uow.SaveChangesAsync(ct);

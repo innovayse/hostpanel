@@ -4,6 +4,7 @@
  * manage permissions, transfer ownership, and delete user.
  */
 import { ref, onMounted } from 'vue'
+import AppCheckbox from '../../../components/AppCheckbox.vue'
 import AppSelect from '../../../components/AppSelect.vue'
 import type { UserDetail } from '../stores/usersStore'
 import { PERMISSION_LABELS, ClientPermission } from '../../../types/models'
@@ -180,12 +181,10 @@ function handleDelete(): void {
           <!-- Permission checkboxes (2-column grid) -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <label v-for="perm in PERMISSION_LABELS" :key="perm.flag" class="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                :checked="props.isOwner ? true : hasPermission(perm.flag)"
+              <AppCheckbox
+                :model-value="props.isOwner ? true : hasPermission(perm.flag)"
                 :disabled="props.isOwner"
-                class="w-4 h-4 accent-primary-500 rounded"
-                @change="togglePermission(perm.flag)"
+                @update:model-value="togglePermission(perm.flag)"
               />
               <span class="text-[0.78rem] text-text-secondary">{{ perm.label }}</span>
             </label>
@@ -194,7 +193,7 @@ function handleDelete(): void {
           <!-- Make Owner (only for non-owners) -->
           <div v-if="!props.isOwner" class="mt-4 pt-3 border-t border-border">
             <label class="flex items-center gap-2.5 cursor-pointer">
-              <input type="checkbox" v-model="makeOwnerChecked" class="w-4 h-4 accent-primary-500" />
+              <AppCheckbox v-model="makeOwnerChecked" />
               <span class="text-[0.82rem] text-text-secondary">Transfer ownership to this user</span>
             </label>
           </div>

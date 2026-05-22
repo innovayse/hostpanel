@@ -66,4 +66,16 @@ public sealed class CPanelProvisioningProvider(
     {
         return client.GetCPanelSsoUrlAsync(provisioningRef, ct);
     }
+
+    /// <inheritdoc/>
+    public async Task ChangePasswordAsync(string provisioningRef, string newPassword, CancellationToken ct)
+    {
+        await client.ChangePasswordAsync(provisioningRef, newPassword, ct);
+    }
+
+    /// <inheritdoc/>
+    public async Task ChangePackageAsync(string provisioningRef, string newPackage, CancellationToken ct)
+    {
+        await client.ChangePackageAsync(provisioningRef, newPackage, ct);
+    }
 }

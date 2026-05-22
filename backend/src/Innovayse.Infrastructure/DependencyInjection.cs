@@ -17,7 +17,6 @@ using Innovayse.Domain.Settings.Interfaces;
 using Innovayse.Domain.Support.Interfaces;
 using Innovayse.Infrastructure.Auth;
 using Innovayse.Infrastructure.Billing;
-using Innovayse.Infrastructure.Security;
 using Innovayse.Infrastructure.Clients;
 using Innovayse.Infrastructure.Domains;
 using Innovayse.Infrastructure.Domains.NameAm;
@@ -28,6 +27,7 @@ using Innovayse.Infrastructure.Plugins;
 using Innovayse.Infrastructure.Products;
 using Innovayse.Infrastructure.Provisioning.CPanel;
 using Innovayse.Infrastructure.Repositories;
+using Innovayse.Infrastructure.Security;
 using Innovayse.Infrastructure.Servers;
 using Innovayse.Infrastructure.Services;
 using Innovayse.Infrastructure.Settings;
@@ -125,6 +125,9 @@ public static class DependencyInjection
 
         // Billing services
         services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+        services.AddScoped<IQuoteRepository, QuoteRepository>();
+        services.AddScoped<IClientTransactionRepository, ClientTransactionRepository>();
+        services.AddScoped<IBillableItemRepository, BillableItemRepository>();
         services.AddScoped<IPaymentGateway, NullPaymentGateway>();
 
         // Support

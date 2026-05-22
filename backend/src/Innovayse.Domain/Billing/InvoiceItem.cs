@@ -54,4 +54,29 @@ public sealed class InvoiceItem : Entity
             Amount = unitPrice * quantity,
         };
     }
+
+    /// <summary>
+    /// Updates the line item properties and recalculates <see cref="Amount"/>.
+    /// </summary>
+    /// <param name="description">New human-readable charge description.</param>
+    /// <param name="unitPrice">New price per unit (≥ 0).</param>
+    /// <param name="quantity">New number of units (≥ 1).</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="unitPrice"/> is negative or <paramref name="quantity"/> is less than 1.</exception>
+    public void Update(string description, decimal unitPrice, int quantity)
+    {
+        if (unitPrice < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(unitPrice), "Unit price must be >= 0.");
+        }
+
+        if (quantity < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity must be >= 1.");
+        }
+
+        Description = description;
+        UnitPrice = unitPrice;
+        Quantity = quantity;
+        Amount = unitPrice * quantity;
+    }
 }

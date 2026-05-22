@@ -37,4 +37,12 @@ internal sealed class StubProvisioningProvider : IProvisioningProvider
     /// <inheritdoc/>
     public Task<string> GetCPanelSsoUrlAsync(string provisioningRef, CancellationToken ct)
         => Task.FromResult("https://stub-cpanel.example.com/sso");
+
+    /// <inheritdoc/>
+    public Task ChangePasswordAsync(string provisioningRef, string newPassword, CancellationToken ct)
+        => Task.CompletedTask;
+
+    /// <inheritdoc/>
+    public Task ChangePackageAsync(string provisioningRef, string newPackage, CancellationToken ct)
+        => Task.CompletedTask;
 }

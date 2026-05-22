@@ -38,9 +38,14 @@ public sealed class AcceptInvitationHandler(
 
         // Validate invitation is still valid (don't mark accepted yet — user creation might fail)
         if (invitation.IsExpired)
+        {
             throw new InvalidOperationException("This invitation has expired.");
+        }
+
         if (invitation.IsAccepted)
+        {
             throw new InvalidOperationException("This invitation has already been accepted.");
+        }
 
         // Create the Identity user first — this can fail on password validation
         var userId = await userService.CreateAsync(invitation.Email, cmd.Password, ct);

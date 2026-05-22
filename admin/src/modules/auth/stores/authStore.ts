@@ -103,7 +103,30 @@ export const useAuthStore = defineStore('auth', () => {
       emailVerified.value = null
       return
     }
-    const parsed = userFromToken(stored)
+
+    // Check if the token is expired locally before making a network call
+    const payload = decodeJwt(stored)
+    const exp = payload?.['exp'] as number | undefined
+    if (exp && exp * 1000 < Date.now()) {
+      // Token expired — try silent refresh before hitting the API
+      try {
+        const res = await fetch('/api/auth/refresh', { method: 'POST' })
+        if (!res.ok) throw new Error('refresh failed')
+        const data = await res.json()
+        if (data.accessToken) {
+          setToken(data.accessToken)
+        } else {
+          throw new Error('no token')
+        }
+      } catch {
+        clearToken()
+        user.value = null
+        emailVerified.value = null
+        return
+      }
+    }
+
+    const parsed = userFromToken(localStorage.getItem('admin_token') ?? '')
     if (!parsed) {
       clearToken()
       user.value = null
@@ -111,7 +134,7 @@ export const useAuthStore = defineStore('auth', () => {
       return
     }
 
-    // Validate the token against the backend before trusting it
+    // Token is valid — fetch email verification status
     try {
       const data = await request<{ verified: boolean }>('/auth/email-verified')
       user.value = parsed

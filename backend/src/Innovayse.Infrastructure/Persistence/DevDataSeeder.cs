@@ -73,13 +73,19 @@ public sealed class DevDataSeeder(
             var client = Client.Create(user.Id, first, last, email, company);
 
             if (phone is not null)
+            {
                 client.Update(first, last, company, phone);
+            }
 
             if (street is not null)
+            {
                 client.UpdateAddress(street, null, city, state, postCode, country);
+            }
 
             if (status == ClientStatus.Suspended)
+            {
                 client.Suspend();
+            }
 
             db.Clients.Add(client);
             await db.SaveChangesAsync(ct);

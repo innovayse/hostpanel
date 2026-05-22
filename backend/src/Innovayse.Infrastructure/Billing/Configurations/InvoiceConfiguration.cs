@@ -21,9 +21,15 @@ public sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.Property(x => x.PaidAt);
         builder.Property(x => x.Total).HasColumnType("numeric(18,4)").IsRequired();
         builder.Property(x => x.GatewayTransactionId).HasMaxLength(255);
+        builder.Property(x => x.Notes).HasMaxLength(2000);
+        builder.Property(x => x.InvoiceDate).IsRequired();
+        builder.Property(x => x.PaymentMethod).HasMaxLength(100);
+        builder.Property(x => x.TaxRate).HasColumnType("numeric(5,2)").IsRequired();
+        builder.Property(x => x.Tax).HasColumnType("numeric(18,4)").IsRequired();
+        builder.Property(x => x.SubTotal).HasColumnType("numeric(18,4)").IsRequired();
+        builder.Property(x => x.Credit).HasColumnType("numeric(18,4)").IsRequired();
 
         // Navigation: Invoice owns a collection of InvoiceItems via private backing field _items.
-        // PropertyAccessMode.Field ensures EF reads/writes _items directly (readonly-safe).
         builder.HasMany(x => x.Items)
             .WithOne()
             .HasForeignKey(x => x.InvoiceId)
@@ -31,6 +37,16 @@ public sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
 
         builder.Navigation(x => x.Items)
             .HasField("_items")
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        // Navigation: Invoice owns a collection of InvoiceTransactions via private backing field _transactions.
+        builder.HasMany(x => x.Transactions)
+            .WithOne()
+            .HasForeignKey(x => x.InvoiceId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Navigation(x => x.Transactions)
+            .HasField("_transactions")
             .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

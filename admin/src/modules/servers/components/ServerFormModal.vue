@@ -9,6 +9,7 @@ import { ref, watch, computed } from 'vue'
 import type { ServerDto, ServerPayload, ServerModule } from '../types/server.types'
 import { MODULE_LABELS } from '../types/server.types'
 import AppSelect from '../../../components/AppSelect.vue'
+import AppNumberInput from '../../../components/AppNumberInput.vue'
 
 /** Props for ServerFormModal. */
 const props = defineProps<{
@@ -222,7 +223,7 @@ function validate(): boolean {
             <div>
               <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Name <span class="text-status-red">*</span></label>
               <input v-model="name" type="text" placeholder="My Production Server"
-                :class="['w-full bg-white/[0.04] border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:ring-1 transition-colors',
+                :class="['w-full bg-white/[0.04] border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:ring-1 transition-colors',
                   errors.name ? 'border-status-red focus:border-status-red focus:ring-status-red/10' : 'border-border focus:border-primary-500/50 focus:ring-primary-500/10']"
                 @input="errors.name = ''" />
               <p v-if="errors.name" class="text-[0.68rem] text-status-red mt-1">{{ errors.name }}</p>
@@ -231,7 +232,7 @@ function validate(): boolean {
             <div>
               <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Hostname <span class="text-status-red">*</span></label>
               <input v-model="hostname" type="text" placeholder="host3.innovayse.com"
-                :class="['w-full bg-white/[0.04] border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:ring-1 transition-colors',
+                :class="['w-full bg-white/[0.04] border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:ring-1 transition-colors',
                   errors.hostname ? 'border-status-red focus:border-status-red focus:ring-status-red/10' : 'border-border focus:border-primary-500/50 focus:ring-primary-500/10']"
                 @input="errors.hostname = ''" />
               <p v-if="errors.hostname" class="text-[0.68rem] text-status-red mt-1">{{ errors.hostname }}</p>
@@ -242,11 +243,11 @@ function validate(): boolean {
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">IP Address</label>
-              <input v-model="ipAddress" type="text" placeholder="207.180.221.80" class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+              <input v-model="ipAddress" type="text" placeholder="207.180.221.80" class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
             </div>
             <div>
               <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Monthly Cost (USD)</label>
-              <input v-model.number="monthlyCost" type="number" min="0" step="0.01" placeholder="0.00" class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+              <AppNumberInput v-model="monthlyCost" :min="0" :step="0.01" placeholder="0.00" />
             </div>
           </div>
 
@@ -256,24 +257,24 @@ function validate(): boolean {
               v-model="assignedIpAddresses"
               rows="3"
               placeholder="203.0.113.1&#10;203.0.113.2"
-              class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors resize-none"
+              class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors resize-none"
             />
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Datacenter / NOC</label>
-              <input v-model="datacenter" type="text" placeholder="Hetzner, OVH…" class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+              <input v-model="datacenter" type="text" placeholder="Hetzner, OVH…" class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
             </div>
             <div>
               <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Max Accounts</label>
-              <input v-model.number="maxAccounts" type="number" min="1" placeholder="Unlimited" class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+              <AppNumberInput v-model="maxAccounts" :min="1" placeholder="Unlimited" />
             </div>
           </div>
 
           <div>
             <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Server Status Address</label>
-            <input v-model="serverStatusAddress" type="text" placeholder="https://host.example.com/status/" class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+            <input v-model="serverStatusAddress" type="text" placeholder="https://host.example.com/status/" class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
             <p class="text-[0.68rem] text-text-muted mt-1">Full path to server status folder for the status page monitor.</p>
           </div>
 
@@ -321,7 +322,7 @@ function validate(): boolean {
                   :value="ns.h.value"
                   type="text"
                   :placeholder="`ns${i+1}.innovayse.com`"
-                  class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors"
+                  class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors"
                   @input="(e) => (ns.h.value = (e.target as HTMLInputElement).value)"
                 />
               </div>
@@ -332,7 +333,7 @@ function validate(): boolean {
                   :value="ns.ip.value"
                   type="text"
                   placeholder="0.0.0.0"
-                  class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors"
+                  class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors"
                   @input="(e) => (ns.ip.value = (e.target as HTMLInputElement).value)"
                 />
               </div>
@@ -351,7 +352,7 @@ function validate(): boolean {
           <div>
             <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Username <span class="text-status-red">*</span></label>
             <input v-model="username" type="text" placeholder="root"
-              :class="['w-full bg-white/[0.04] border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:ring-1 transition-colors',
+              :class="['w-full bg-white/[0.04] border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:ring-1 transition-colors',
                 errors.username ? 'border-status-red focus:border-status-red focus:ring-status-red/10' : 'border-border focus:border-primary-500/50 focus:ring-primary-500/10']"
               @input="errors.username = ''" />
             <p v-if="errors.username" class="text-[0.68rem] text-status-red mt-1">{{ errors.username }}</p>
@@ -362,13 +363,13 @@ function validate(): boolean {
               <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">
                 Password {{ props.server ? '(blank = keep)' : '' }}
               </label>
-              <input v-model="password" type="password" placeholder="••••••••" class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+              <input v-model="password" type="password" placeholder="••••••••" class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
             </div>
             <div>
               <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">
                 API Token {{ props.server ? '(blank = keep)' : '' }}
               </label>
-              <input v-model="apiToken" type="password" placeholder="••••••••" class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+              <input v-model="apiToken" type="password" placeholder="••••••••" class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
             </div>
           </div>
 

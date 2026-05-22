@@ -11,4 +11,7 @@ public sealed class CreateInvoiceRequest
 
     /// <summary>Gets or initialises the list of line items (must contain at least one).</summary>
     public required IReadOnlyList<CreateInvoiceItemRequest> Items { get; init; }
+
+    /// <summary>Gets or initialises whether to create the invoice as a draft. Defaults to false.</summary>
+    public bool IsDraft { get; init; }
 }

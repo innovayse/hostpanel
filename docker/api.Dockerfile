@@ -9,6 +9,7 @@ WORKDIR /app
 # Restore dependencies (cached layer)
 COPY backend/Innovayse.Backend.sln ./Innovayse.Backend.sln
 COPY backend/Directory.Build.props ./Directory.Build.props
+COPY backend/Directory.Packages.props ./Directory.Packages.props
 COPY backend/src/Directory.Build.props ./src/Directory.Build.props
 COPY backend/src/Innovayse.Domain/Innovayse.Domain.csproj ./src/Innovayse.Domain/
 COPY backend/src/Innovayse.Application/Innovayse.Application.csproj ./src/Innovayse.Application/
@@ -37,6 +38,7 @@ WORKDIR /src
 
 COPY backend/Innovayse.Backend.sln ./Innovayse.Backend.sln
 COPY backend/Directory.Build.props ./Directory.Build.props
+COPY backend/Directory.Packages.props ./Directory.Packages.props
 COPY backend/src/Directory.Build.props ./src/Directory.Build.props
 COPY backend/src/Innovayse.Domain/Innovayse.Domain.csproj ./src/Innovayse.Domain/
 COPY backend/src/Innovayse.Application/Innovayse.Application.csproj ./src/Innovayse.Application/

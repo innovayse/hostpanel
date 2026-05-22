@@ -6,6 +6,7 @@
 import { ref, computed } from 'vue'
 import { useApi } from '../../../composables/useApi'
 import { DNS_RECORD_TYPE_OPTIONS } from '../../../utils/constants'
+import AppNumberInput from '../../../components/AppNumberInput.vue'
 import AppSelect from '../../../components/AppSelect.vue'
 import type { DnsRecordItem } from '../../../types/models'
 
@@ -250,12 +251,10 @@ async function handleDelete(recordId: number): Promise<void> {
           />
         </div>
         <div>
-          <input
+          <AppNumberInput
             v-if="addNeedsPriority"
             v-model="addPriority"
-            type="number"
             placeholder="10"
-            class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors"
           />
           <span v-else class="text-[0.82rem] text-text-muted">&mdash;</span>
         </div>
@@ -347,11 +346,9 @@ async function handleDelete(recordId: number): Promise<void> {
             />
           </div>
           <div>
-            <input
+            <AppNumberInput
               v-if="editNeedsPriority"
               v-model="editPriority"
-              type="number"
-              class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors"
             />
             <span v-else class="text-[0.82rem] text-text-muted">&mdash;</span>
           </div>

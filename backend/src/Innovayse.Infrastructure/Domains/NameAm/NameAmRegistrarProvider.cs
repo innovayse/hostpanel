@@ -18,7 +18,10 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
     /// <inheritdoc/>
     public async Task<RegistrarResult> RegisterAsync(RegisterDomainRequest request, CancellationToken ct)
     {
-        if (!client.IsConfigured) return _notConfiguredResult;
+        if (!client.IsConfigured)
+        {
+            return _notConfiguredResult;
+        }
 
         var (name, tld) = SplitDomain(request.DomainName);
 
@@ -55,7 +58,10 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
     /// <inheritdoc/>
     public async Task<RegistrarResult> TransferAsync(TransferDomainRequest request, CancellationToken ct)
     {
-        if (!client.IsConfigured) return _notConfiguredResult;
+        if (!client.IsConfigured)
+        {
+            return _notConfiguredResult;
+        }
 
         var (name, tld) = SplitDomain(request.DomainName);
         var contacts = CreateDefaultContacts();
@@ -86,7 +92,10 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
     /// <inheritdoc/>
     public async Task<RegistrarResult> RenewAsync(RenewDomainRequest request, CancellationToken ct)
     {
-        if (!client.IsConfigured) return _notConfiguredResult;
+        if (!client.IsConfigured)
+        {
+            return _notConfiguredResult;
+        }
 
         var (name, tld) = SplitDomain(request.DomainName);
 
@@ -127,7 +136,10 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
         string registrarRef,
         CancellationToken ct)
     {
-        if (!client.IsConfigured) return _notConfiguredResult;
+        if (!client.IsConfigured)
+        {
+            return _notConfiguredResult;
+        }
 
         // Unlock the domain to permit outgoing transfer.
         return await SetRegistrarLockAsync(domainName, registrarRef, false, ct);
@@ -140,7 +152,10 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
         bool enabled,
         CancellationToken ct)
     {
-        if (!client.IsConfigured) return Task.FromResult(_notConfiguredResult);
+        if (!client.IsConfigured)
+        {
+            return Task.FromResult(_notConfiguredResult);
+        }
 
         // Name.am manages auto-renew on their side; no dedicated API endpoint.
         logger.LogInformation("Auto-renew for {DomainName} set to {Enabled} (managed by Name.am)",
@@ -156,7 +171,10 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
         bool enabled,
         CancellationToken ct)
     {
-        if (!client.IsConfigured) return _notConfiguredResult;
+        if (!client.IsConfigured)
+        {
+            return _notConfiguredResult;
+        }
 
         var payload = new { whoIsPrivacyStatus = enabled };
 
@@ -175,7 +193,10 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
         bool locked,
         CancellationToken ct)
     {
-        if (!client.IsConfigured) return _notConfiguredResult;
+        if (!client.IsConfigured)
+        {
+            return _notConfiguredResult;
+        }
 
         var payload = new { transferLock = locked };
 
@@ -193,7 +214,10 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
         string registrarRef,
         CancellationToken ct)
     {
-        if (!client.IsConfigured) return null;
+        if (!client.IsConfigured)
+        {
+            return null;
+        }
 
         logger.LogInformation("Retrieving EPP code for {DomainName} via Name.am", domainName);
 
@@ -214,7 +238,10 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
         IReadOnlyList<string> nameservers,
         CancellationToken ct)
     {
-        if (!client.IsConfigured) return _notConfiguredResult;
+        if (!client.IsConfigured)
+        {
+            return _notConfiguredResult;
+        }
 
         var nsList = nameservers.Select(ns => new { hostname = ns }).ToArray();
         var payload = new { nameServers = nsList };
@@ -233,7 +260,10 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
         string registrarRef,
         CancellationToken ct)
     {
-        if (!client.IsConfigured) return [];
+        if (!client.IsConfigured)
+        {
+            return [];
+        }
 
         using var doc = await client.GetAsync("/client/domains", ct);
 
@@ -281,7 +311,10 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
         DnsRecord record,
         CancellationToken ct)
     {
-        if (!client.IsConfigured) return _notConfiguredResult;
+        if (!client.IsConfigured)
+        {
+            return _notConfiguredResult;
+        }
 
         var existing = await GetDnsRecordsAsync(domainName, registrarRef, ct);
         var allRecords = existing.ToList();
@@ -297,7 +330,10 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
         DnsRecord record,
         CancellationToken ct)
     {
-        if (!client.IsConfigured) return _notConfiguredResult;
+        if (!client.IsConfigured)
+        {
+            return _notConfiguredResult;
+        }
 
         var existing = await GetDnsRecordsAsync(domainName, registrarRef, ct);
 
@@ -315,7 +351,10 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
         int recordId,
         CancellationToken ct)
     {
-        if (!client.IsConfigured) return _notConfiguredResult;
+        if (!client.IsConfigured)
+        {
+            return _notConfiguredResult;
+        }
 
         var existing = await GetDnsRecordsAsync(domainName, registrarRef, ct);
 
@@ -330,7 +369,10 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
     /// <inheritdoc/>
     public async Task<bool> CheckAvailabilityAsync(string domainName, CancellationToken ct)
     {
-        if (!client.IsConfigured) return false;
+        if (!client.IsConfigured)
+        {
+            return false;
+        }
 
         var (name, tld) = SplitDomain(domainName);
 
@@ -361,7 +403,10 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
     /// <inheritdoc/>
     public async Task<WhoisInfo?> GetWhoisAsync(string domainName, CancellationToken ct)
     {
-        if (!client.IsConfigured) return null;
+        if (!client.IsConfigured)
+        {
+            return null;
+        }
 
         using var doc = await client.GetAsync("/client/domains", ct);
 
@@ -419,7 +464,10 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
         DomainContact contact,
         CancellationToken ct)
     {
-        if (!client.IsConfigured) return _notConfiguredResult;
+        if (!client.IsConfigured)
+        {
+            return _notConfiguredResult;
+        }
 
         var contactObj = MapDomainContact(contact);
 

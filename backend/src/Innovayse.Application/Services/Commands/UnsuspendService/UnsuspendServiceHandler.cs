@@ -3,10 +3,9 @@ namespace Innovayse.Application.Services.Commands.UnsuspendService;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Services.Interfaces;
 
-/// <summary>Re-activates a previously suspended client service.</summary>
+/// <summary>Re-activates a previously suspended client service. Provisioning is handled asynchronously via domain events.</summary>
 public sealed class UnsuspendServiceHandler(
     IClientServiceRepository repo,
-    IProvisioningProvider provisioner,
     IUnitOfWork uow)
 {
     /// <summary>
@@ -19,11 +18,6 @@ public sealed class UnsuspendServiceHandler(
     {
         var service = await repo.FindByIdAsync(cmd.ServiceId, ct)
             ?? throw new InvalidOperationException($"Service {cmd.ServiceId} not found.");
-
-        if (service.ProvisioningRef is not null)
-        {
-            await provisioner.UnsuspendAsync(service.ProvisioningRef, ct);
-        }
 
         service.Unsuspend();
         await uow.SaveChangesAsync(ct);

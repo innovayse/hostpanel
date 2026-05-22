@@ -45,14 +45,18 @@ public sealed class ClientAccessService(
 
             // Owner has all permissions
             if (client.UserId == userId)
+            {
                 return (client.Id, ClientPermission.All);
+            }
 
             // Check additional user link
             var link = await clientUserRepo.FindAsync(userId, clientId.Value, ct)
                 ?? throw new UnauthorizedAccessException("You do not have access to this client account.");
 
             if (required != ClientPermission.None && !link.Permissions.HasFlag(required))
+            {
                 throw new UnauthorizedAccessException($"You do not have the required permission: {required}.");
+            }
 
             return (client.Id, link.Permissions);
         }
@@ -60,7 +64,9 @@ public sealed class ClientAccessService(
         // No clientId — try to resolve the single client this user owns
         var ownedClient = await clientRepo.FindByUserIdAsync(userId, ct);
         if (ownedClient is not null)
+        {
             return (ownedClient.Id, ClientPermission.All);
+        }
 
         // Check if user has any additional links
         var links = await clientUserRepo.FindByUserIdAsync(userId, ct);
@@ -68,12 +74,17 @@ public sealed class ClientAccessService(
         {
             var link = links[0];
             if (required != ClientPermission.None && !link.Permissions.HasFlag(required))
+            {
                 throw new UnauthorizedAccessException($"You do not have the required permission: {required}.");
+            }
+
             return (link.ClientId, link.Permissions);
         }
 
         if (links.Count > 1)
+        {
             throw new InvalidOperationException("Multiple client accounts found. Please specify a client ID.");
+        }
 
         throw new UnauthorizedAccessException("No client account found for this user.");
     }

@@ -367,7 +367,7 @@ onMounted(() => {
               <div>
                 <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Email <span class="text-status-red">*</span></label>
                 <input v-model="email" type="email" placeholder="client@example.com"
-                  :class="['w-full bg-white/[0.04] border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:ring-1 transition-colors',
+                  :class="['w-full bg-white/[0.04] border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:ring-1 transition-colors',
                     errors.email ? 'border-status-red focus:border-status-red focus:ring-status-red/10' : 'border-border focus:border-primary-500/50 focus:ring-primary-500/10']"
                   @input="errors.email = ''" />
                 <p v-if="errors.email" class="text-[0.68rem] text-status-red mt-1">{{ errors.email }}</p>
@@ -375,7 +375,7 @@ onMounted(() => {
               <div>
                 <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Password <span class="text-status-red">*</span></label>
                 <input v-model="password" type="password" placeholder="Min. 8 characters"
-                  :class="['w-full bg-white/[0.04] border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:ring-1 transition-colors',
+                  :class="['w-full bg-white/[0.04] border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:ring-1 transition-colors',
                     errors.password ? 'border-status-red focus:border-status-red focus:ring-status-red/10' : 'border-border focus:border-primary-500/50 focus:ring-primary-500/10']"
                   @input="errors.password = ''" />
                 <p v-if="errors.password" class="text-[0.68rem] text-status-red mt-1">{{ errors.password }}</p>
@@ -400,7 +400,7 @@ onMounted(() => {
               <template v-else>
                 <div class="relative">
                   <input v-model="userSearchTerm" type="text" placeholder="Search by name or email..."
-                    :class="['w-full bg-white/[0.04] border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:ring-1 transition-colors',
+                    :class="['w-full bg-white/[0.04] border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:ring-1 transition-colors',
                       errors.existingUser ? 'border-status-red focus:border-status-red focus:ring-status-red/10' : 'border-border focus:border-primary-500/50 focus:ring-primary-500/10']"
                     @input="errors.existingUser = ''" />
                   <span v-if="userSearchLoading" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-primary-500/20 border-t-primary-500 animate-spin" />
@@ -432,7 +432,7 @@ onMounted(() => {
                 <div>
                   <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">First Name <span class="text-status-red">*</span></label>
                   <input v-model="firstName" type="text" placeholder="John"
-                    :class="['w-full bg-white/[0.04] border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:ring-1 transition-colors',
+                    :class="['w-full bg-white/[0.04] border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:ring-1 transition-colors',
                       errors.firstName ? 'border-status-red focus:border-status-red focus:ring-status-red/10' : 'border-border focus:border-primary-500/50 focus:ring-primary-500/10']"
                     @input="errors.firstName = ''" />
                   <p v-if="errors.firstName" class="text-[0.68rem] text-status-red mt-1">{{ errors.firstName }}</p>
@@ -440,7 +440,7 @@ onMounted(() => {
                 <div>
                   <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Last Name <span class="text-status-red">*</span></label>
                   <input v-model="lastName" type="text" placeholder="Doe"
-                    :class="['w-full bg-white/[0.04] border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:ring-1 transition-colors',
+                    :class="['w-full bg-white/[0.04] border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:ring-1 transition-colors',
                       errors.lastName ? 'border-status-red focus:border-status-red focus:ring-status-red/10' : 'border-border focus:border-primary-500/50 focus:ring-primary-500/10']"
                     @input="errors.lastName = ''" />
                   <p v-if="errors.lastName" class="text-[0.68rem] text-status-red mt-1">{{ errors.lastName }}</p>
@@ -451,7 +451,7 @@ onMounted(() => {
                 <div>
                   <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Company Name</label>
                   <input v-model="companyName" type="text" placeholder="Acme Inc."
-                    class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+                    class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
                 </div>
                 <div>
                   <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Phone</label>
@@ -460,7 +460,7 @@ onMounted(() => {
                       <AppSelect v-model="phoneCountry" :options="phoneCodeOptions" searchable dropdown-width="18rem" />
                     </div>
                     <input v-model="phone" type="text" placeholder="Phone number"
-                      class="flex-1 min-w-0 bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+                      class="flex-1 min-w-0 bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
                   </div>
                 </div>
               </div>
@@ -487,12 +487,12 @@ onMounted(() => {
                 <div>
                   <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Address 1</label>
                   <input v-model="street" type="text" placeholder="123 Main Street"
-                    class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+                    class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
                 </div>
                 <div>
                   <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Address 2</label>
                   <input v-model="address2" type="text" placeholder="Suite 100"
-                    class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+                    class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
                 </div>
               </div>
 
@@ -500,12 +500,12 @@ onMounted(() => {
                 <div>
                   <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">City</label>
                   <input v-model="city" type="text" placeholder="New York"
-                    class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+                    class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
                 </div>
                 <div>
                   <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">State / Region</label>
                   <input v-model="state" type="text" placeholder="NY"
-                    class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+                    class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
                 </div>
               </div>
 
@@ -513,7 +513,7 @@ onMounted(() => {
                 <div>
                   <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Postcode</label>
                   <input v-model="postCode" type="text" placeholder="10001"
-                    class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+                    class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
                 </div>
                 <div>
                   <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Country</label>
@@ -529,14 +529,14 @@ onMounted(() => {
                 <div>
                   <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Payment Method</label>
                   <input v-model="paymentMethod" type="text" placeholder="Credit Card, Bank Transfer..."
-                    class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+                    class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
                 </div>
               </div>
 
               <div>
                 <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Billing Contact</label>
                 <input v-model="billingContact" type="text" placeholder="John Doe"
-                  class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+                  class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
               </div>
             </div>
           </div>
@@ -622,7 +622,7 @@ onMounted(() => {
           <div class="bg-surface-card border border-border rounded-2xl p-5">
             <h2 class="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-4">Admin Notes</h2>
             <textarea v-model="adminNotes" rows="4" placeholder="Internal notes visible only to admins..."
-              class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors resize-none" />
+              class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors resize-none" />
           </div>
 
         </div>

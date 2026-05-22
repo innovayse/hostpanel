@@ -1,5 +1,6 @@
 namespace Innovayse.API.Services;
 
+using Innovayse.API.Services.Requests;
 using Innovayse.Application.Common;
 using Innovayse.Application.Services.Commands.SuspendService;
 using Innovayse.Application.Services.Commands.TerminateService;
@@ -8,7 +9,6 @@ using Innovayse.Application.Services.Commands.UpdateService;
 using Innovayse.Application.Services.DTOs;
 using Innovayse.Application.Services.Queries.GetService;
 using Innovayse.Application.Services.Queries.GetServices;
-using Innovayse.API.Services.Requests;
 using Innovayse.Domain.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -83,7 +83,10 @@ public sealed class ServicesController(IMessageBus bus) : ControllerBase
             req.FirstPaymentAmount,
             req.PromotionCode,
             req.TerminatedAt,
-            req.Status), ct);
+            req.Status,
+            req.ServerId,
+            req.Quantity,
+            req.ProductId), ct);
         return NoContent();
     }
 

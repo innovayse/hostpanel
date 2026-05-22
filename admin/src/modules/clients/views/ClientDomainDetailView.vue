@@ -8,6 +8,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useApi } from '../../../composables/useApi'
 import { DOMAIN_STATUS_OPTIONS, PAYMENT_METHOD_OPTIONS } from '../../../utils/constants'
 import { formatDate, toDateInputValue } from '../../../utils/format'
+import AppDatePicker from '../../../components/AppDatePicker.vue'
+import AppNumberInput from '../../../components/AppNumberInput.vue'
 import AppSelect from '../../../components/AppSelect.vue'
 import ToggleSwitch from '../../../components/ToggleSwitch.vue'
 import DnsRecordsTable from '../components/DnsRecordsTable.vue'
@@ -49,6 +51,27 @@ const commandLoading = ref(false)
 
 /** Whether the contact modification modal is visible. */
 const showContactModal = ref(false)
+
+/** Whether the EPP code modal is visible. */
+const showEppModal = ref(false)
+
+/** Whether the renew modal is visible. */
+const showRenewModal = ref(false)
+
+/** Number of years to renew, bound to the renew modal input. */
+const renewYears = ref(1)
+
+/** EPP authorization code returned by the registrar. */
+const eppCode = ref<string | null>(null)
+
+/**
+ * Copies the EPP code to the clipboard.
+ *
+ * @returns Promise that resolves when the text is copied.
+ */
+async function copyEppCode(): Promise<void> {
+  if (eppCode.value) await navigator.clipboard.writeText(eppCode.value)
+}
 
 /** True while contact modification is being saved. */
 const contactSaving = ref(false)
@@ -212,11 +235,19 @@ async function handleRegister(): Promise<void> {
  * @returns Promise that resolves when the action completes.
  */
 async function handleRenew(): Promise<void> {
-  const input = prompt('Enter number of years to renew:', '1')
-  if (!input) return
-  const years = parseInt(input, 10)
-  if (isNaN(years) || years < 1) return
+  renewYears.value = 1
+  showRenewModal.value = true
+}
 
+/**
+ * Confirms the renew modal and submits the renewal request.
+ *
+ * @returns Promise that resolves when the renewal completes.
+ */
+async function confirmRenew(): Promise<void> {
+  const years = renewYears.value
+  if (isNaN(years) || years < 1) return
+  showRenewModal.value = false
   commandLoading.value = true
   try {
     await request(`/domains/${domainId.value}/renew`, {
@@ -240,7 +271,8 @@ async function handleGetEppCode(): Promise<void> {
   commandLoading.value = true
   try {
     const result = await request<{ eppCode: string }>(`/domains/${domainId.value}/initiate-outgoing-transfer`, { method: 'POST' })
-    alert(`EPP Code: ${result.eppCode}`)
+    eppCode.value = result.eppCode
+    showEppModal.value = true
   } catch {
     saveError.value = 'Failed to retrieve EPP code.'
   } finally {
@@ -468,13 +500,11 @@ onMounted(() => fetchDomain())
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">First Payment Amount</label>
-                    <input v-model.number="firstPaymentAmount" type="number" step="0.01" min="0"
-                      class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+                    <AppNumberInput v-model="firstPaymentAmount" :step="0.01" :min="0" />
                   </div>
                   <div>
                     <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Recurring Amount</label>
-                    <input v-model.number="recurringAmount" type="number" step="0.01" min="0"
-                      class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+                    <AppNumberInput v-model="recurringAmount" :step="0.01" :min="0" />
                   </div>
                 </div>
 
@@ -482,12 +512,12 @@ onMounted(() => fetchDomain())
                   <div>
                     <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Promotion Code</label>
                     <input v-model="promotionCode" type="text" placeholder="PROMO2026"
-                      class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+                      class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
                   </div>
                   <div>
                     <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Subscription ID</label>
                     <input v-model="subscriptionId" type="text" placeholder="sub_1234567890"
-                      class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+                      class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
                   </div>
                 </div>
               </div>
@@ -501,27 +531,27 @@ onMounted(() => fetchDomain())
                 <div>
                   <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Nameserver 1</label>
                   <input v-model="ns1" type="text" placeholder="ns1.example.com"
-                    class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+                    class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
                 </div>
                 <div>
                   <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Nameserver 2</label>
                   <input v-model="ns2" type="text" placeholder="ns2.example.com"
-                    class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+                    class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
                 </div>
                 <div>
                   <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Nameserver 3</label>
                   <input v-model="ns3" type="text" placeholder="ns3.example.com"
-                    class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+                    class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
                 </div>
                 <div>
                   <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Nameserver 4</label>
                   <input v-model="ns4" type="text" placeholder="ns4.example.com"
-                    class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+                    class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
                 </div>
                 <div>
                   <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Nameserver 5</label>
                   <input v-model="ns5" type="text" placeholder="ns5.example.com"
-                    class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+                    class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
                 </div>
               </div>
             </div>
@@ -591,14 +621,13 @@ onMounted(() => fetchDomain())
                   <div>
                     <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Registration Period</label>
                     <div class="flex items-center gap-2">
-                      <input v-model.number="registrationPeriod" type="number" min="1" max="10" step="1"
-                        class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+                      <AppNumberInput v-model="registrationPeriod" :min="1" :max="10" :step="1" />
                       <span class="text-[0.82rem] text-text-muted shrink-0">Years</span>
                     </div>
                   </div>
                   <div>
                     <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Registration Date</label>
-                    <div class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-muted">
+                    <div class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-muted">
                       {{ formatDate(domain.registeredAt) }}
                     </div>
                   </div>
@@ -607,13 +636,11 @@ onMounted(() => fetchDomain())
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Expiry Date</label>
-                    <input v-model="expiresAt" type="date"
-                      class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+                    <AppDatePicker v-model="expiresAt" />
                   </div>
                   <div>
                     <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Next Due Date</label>
-                    <input v-model="nextDueDate" type="date"
-                      class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
+                    <AppDatePicker v-model="nextDueDate" />
                   </div>
                 </div>
 
@@ -666,7 +693,7 @@ onMounted(() => fetchDomain())
             <div class="bg-surface-card border border-border rounded-2xl p-5 flex-1 flex flex-col">
               <h2 class="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-4">Admin Notes</h2>
               <textarea v-model="adminNotes" placeholder="Internal notes visible only to admins..."
-                class="w-full flex-1 min-h-[8rem] bg-white/[0.04] border border-border rounded-[10px] px-3 py-2.5 text-[0.875rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors resize-none" />
+                class="w-full flex-1 min-h-[8rem] bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors resize-none" />
             </div>
 
           </div>
@@ -701,6 +728,71 @@ onMounted(() => fetchDomain())
         @save="handleModifyContact"
         @close="showContactModal = false"
       />
+
+      <!-- Renew Modal -->
+      <Teleport to="body">
+        <div
+          v-if="showRenewModal"
+          class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+          @click.self="showRenewModal = false"
+        >
+          <div class="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div class="flex items-center justify-between">
+              <h2 class="text-white font-semibold text-lg">Renew Domain</h2>
+              <button class="text-zinc-400 hover:text-white transition" @click="showRenewModal = false">✕</button>
+            </div>
+            <div>
+              <label class="block text-zinc-400 text-sm mb-1">Number of years</label>
+              <AppNumberInput v-model="renewYears" :min="1" :max="10" />
+            </div>
+            <div class="flex justify-end gap-2">
+              <button
+                class="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white text-sm rounded-lg transition"
+                @click="showRenewModal = false"
+              >Cancel</button>
+              <button
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition"
+                @click="confirmRenew"
+              >Renew</button>
+            </div>
+          </div>
+        </div>
+      </Teleport>
+
+      <!-- EPP Code Modal -->
+      <Teleport to="body">
+        <div
+          v-if="showEppModal"
+          class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+          @click.self="showEppModal = false"
+        >
+          <div class="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl w-full max-w-md p-6 space-y-4">
+            <div class="flex items-center justify-between">
+              <h2 class="text-white font-semibold text-lg">EPP Authorization Code</h2>
+              <button
+                class="text-zinc-400 hover:text-white transition"
+                @click="showEppModal = false"
+              >✕</button>
+            </div>
+            <p class="text-zinc-400 text-sm">
+              Use this code to transfer your domain to another registrar. Keep it private.
+            </p>
+            <div class="flex items-center gap-2 bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3">
+              <span class="text-white font-mono tracking-widest flex-1 select-all">{{ eppCode }}</span>
+              <button
+                class="text-zinc-400 hover:text-white transition text-xs border border-zinc-600 rounded px-2 py-1"
+                @click="copyEppCode"
+              >Copy</button>
+            </div>
+            <div class="flex justify-end">
+              <button
+                class="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white text-sm rounded-lg transition"
+                @click="showEppModal = false"
+              >Close</button>
+            </div>
+          </div>
+        </div>
+      </Teleport>
 
     </template>
   </div>

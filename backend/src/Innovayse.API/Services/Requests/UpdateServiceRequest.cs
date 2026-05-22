@@ -20,6 +20,9 @@ namespace Innovayse.API.Services.Requests;
 /// <param name="PromotionCode">Promotion/coupon code (null to clear).</param>
 /// <param name="TerminatedAt">Termination date — admin override (null to clear).</param>
 /// <param name="Status">Service status (Active, Suspended, Terminated). Null to keep current.</param>
+/// <param name="ServerId">FK to the provisioning server (null to clear).</param>
+/// <param name="Quantity">Quantity ordered. Defaults to 1 for backward compatibility.</param>
+/// <param name="ProductId">FK to the product (null to keep current).</param>
 public record UpdateServiceRequest(
     string? Domain,
     string? DedicatedIp,
@@ -39,4 +42,7 @@ public record UpdateServiceRequest(
     decimal FirstPaymentAmount,
     string? PromotionCode,
     DateTimeOffset? TerminatedAt,
-    string? Status);
+    string? Status,
+    int? ServerId = null,
+    int Quantity = 1,
+    int? ProductId = null);

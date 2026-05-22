@@ -112,6 +112,46 @@ public sealed class CPanelClient
     }
 
     /// <summary>
+    /// Changes the password for an existing cPanel account via the WHM <c>passwd</c> API function.
+    /// </summary>
+    /// <param name="username">cPanel username of the account whose password will be changed.</param>
+    /// <param name="newPassword">The new password to set for the account.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the WHM API returns a failure status.
+    /// </exception>
+    public async Task ChangePasswordAsync(string username, string newPassword, CancellationToken ct)
+    {
+        var parameters = new Dictionary<string, string>
+        {
+            ["user"] = username,
+            ["password"] = newPassword
+        };
+
+        await CallApiAsync("passwd", parameters, ct);
+    }
+
+    /// <summary>
+    /// Changes the hosting package for an existing cPanel account via the WHM <c>changepackage</c> API function.
+    /// </summary>
+    /// <param name="username">cPanel username of the account whose package will be changed.</param>
+    /// <param name="newPackage">The name of the new hosting package to assign.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the WHM API returns a failure status.
+    /// </exception>
+    public async Task ChangePackageAsync(string username, string newPackage, CancellationToken ct)
+    {
+        var parameters = new Dictionary<string, string>
+        {
+            ["user"] = username,
+            ["pkg"] = newPackage
+        };
+
+        await CallApiAsync("changepackage", parameters, ct);
+    }
+
+    /// <summary>
     /// Generates a cPanel single-sign-on URL for the given username via the UAPI
     /// <c>create_user_session</c> endpoint.
     /// </summary>

@@ -12,6 +12,7 @@ import AppDatePicker from '../../../components/AppDatePicker.vue'
 import AppNumberInput from '../../../components/AppNumberInput.vue'
 import AppSelect from '../../../components/AppSelect.vue'
 import AppCheckbox from '../../../components/AppCheckbox.vue'
+import AppAlert from '../../../components/AppAlert.vue'
 import type { Invoice } from '../../../types/models'
 
 const props = defineProps<{
@@ -51,6 +52,9 @@ const submitting = ref(false)
 
 /** Whether this invoice is a draft. */
 const isDraft = computed(() => props.invoice.status === 'Draft')
+
+/** Whether this invoice is cancelled. */
+const isCancelled = computed(() => props.invoice.status === 'Cancelled')
 
 /** Payment transactions from the invoice. */
 const paymentTransactions = computed(() =>
@@ -131,11 +135,10 @@ function handleWithSelected(): void {
 async function saveItems(): Promise<void> {
   savingItems.value = true
   const items = editItems.value.map(i => ({
-    id: i.id ?? null,
+    id: i.id ?? undefined,
     description: i.description,
     unitPrice: i.amount,
     quantity: 1,
-    isDeleted: false,
   }))
   await store.updateItems(props.invoice.id, items)
   savingItems.value = false
@@ -180,6 +183,13 @@ onMounted(() => populateItems())
     <!-- Draft blocked -->
     <div v-if="isDraft" class="bg-surface-card border border-border rounded-2xl p-5">
       <p class="text-[0.82rem] text-text-muted">Publish the invoice before adding payments.</p>
+    </div>
+
+    <!-- Cancelled blocked -->
+    <div v-else-if="isCancelled" class="mb-5">
+      <AppAlert variant="warning">
+        Invoice is Cancelled: Please Mark Unpaid first to apply a payment.
+      </AppAlert>
     </div>
 
     <template v-else>

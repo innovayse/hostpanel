@@ -763,6 +763,113 @@ export interface BillableItemsResult {
   invoicedItems: PagedResult<BillableItem>
 }
 
+/** Quote stage values. */
+export type QuoteStage = 'Draft' | 'Delivered' | 'OnHold' | 'Accepted' | 'Lost' | 'Dead'
+
+/** Quote list item returned by the list endpoint. */
+export interface QuoteListItem {
+  /** Unique quote identifier. */
+  id: number
+  /** Associated client identifier. */
+  clientId: number
+  /** Quote subject line. */
+  subject: string
+  /** ISO 8601 creation date. */
+  dateCreated: string
+  /** ISO 8601 validity deadline. */
+  validUntil: string
+  /** Total quoted amount. */
+  total: number
+  /** Current stage of the quote. */
+  stage: QuoteStage
+}
+
+/** Quote line item. */
+export interface QuoteItem {
+  /** Unique line item identifier. */
+  id: number
+  /** Number of units. */
+  quantity: number
+  /** Human-readable charge description. */
+  description: string
+  /** Price per unit. */
+  unitPrice: number
+  /** Discount percentage (0-100). */
+  discountPercent: number
+  /** Whether the item is subject to tax. */
+  taxed: boolean
+  /** Computed line total. */
+  amount: number
+}
+
+/** Full quote detail returned by GET /api/quotes/{id}. */
+export interface Quote {
+  /** Unique quote identifier. */
+  id: number
+  /** Associated client identifier. */
+  clientId: number
+  /** Quote subject line. */
+  subject: string
+  /** Current stage of the quote. */
+  stage: QuoteStage
+  /** ISO 8601 creation date. */
+  dateCreated: string
+  /** ISO 8601 validity deadline. */
+  validUntil: string
+  /** Sub-total before tax. */
+  subTotal: number
+  /** Total quoted amount. */
+  total: number
+  /** Proposal/sales text sent to the client. */
+  proposalText?: string
+  /** Notes visible to the customer. */
+  customerNotes?: string
+  /** Internal admin-only notes. */
+  adminNotes?: string
+  /** Line items on the quote. */
+  items: QuoteItem[]
+}
+
+/** Client-level financial ledger entry. */
+export interface ClientTransaction {
+  /** Unique transaction identifier. */
+  id: number
+  /** Associated client identifier. */
+  clientId: number
+  /** ISO 8601 transaction date. */
+  date: string
+  /** Human-readable description of the transaction. */
+  description: string
+  /** External gateway transaction reference. */
+  transactionId: string
+  /** Optional linked invoice identifier. */
+  invoiceId: number | null
+  /** Payment method used (e.g. Stripe, Manual). */
+  paymentMethod: string
+  /** Amount received. */
+  amountIn: number
+  /** Amount sent out. */
+  amountOut: number
+  /** Gateway fees. */
+  fees: number
+  /** Whether this transaction affected client credit balance. */
+  addedToCredit: boolean
+}
+
+/** Response from the client transactions list endpoint with summary totals. */
+export interface ClientTransactionsResult {
+  /** Paginated transaction list. */
+  transactions: PagedResult<ClientTransaction>
+  /** Sum of all AmountIn values. */
+  totalIn: number
+  /** Sum of all AmountOut values. */
+  totalOut: number
+  /** Sum of all Fees values. */
+  totalFees: number
+  /** Calculated balance: TotalIn - TotalOut - TotalFees. */
+  balance: number
+}
+
 /** Labels for each permission flag, used for checkbox rendering. */
 export const PERMISSION_LABELS: { flag: ClientPermission; label: string }[] = [
   { flag: ClientPermission.ModifyMasterProfile, label: 'Modify Master Account Profile' },

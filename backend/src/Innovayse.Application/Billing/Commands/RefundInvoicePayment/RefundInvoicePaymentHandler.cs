@@ -1,13 +1,19 @@
 namespace Innovayse.Application.Billing.Commands.RefundInvoicePayment;
 
 using Innovayse.Application.Common;
+using Innovayse.Domain.Billing;
 using Innovayse.Domain.Billing.Interfaces;
+using Innovayse.Domain.Clients.Interfaces;
 
 /// <summary>
-/// Records a refund against a paid invoice.
-/// Supports three refund types: Gateway (via provider), Manual (external), and CreditBalance (adds to client credit).
+/// Records a refund against a paid invoice, creates a client-level transaction ledger entry,
+/// and optionally adds the refund amount to the client's credit balance (for CreditBalance refunds).
 /// </summary>
-public sealed class RefundInvoicePaymentHandler(IInvoiceRepository repo, IUnitOfWork uow)
+public sealed class RefundInvoicePaymentHandler(
+    IInvoiceRepository repo,
+    IClientTransactionRepository transactionRepo,
+    IClientRepository clientRepo,
+    IUnitOfWork uow)
 {
     /// <summary>
     /// Handles <see cref="RefundInvoicePaymentCommand"/>.
@@ -33,8 +39,30 @@ public sealed class RefundInvoicePaymentHandler(IInvoiceRepository repo, IUnitOf
         };
 
         var gateway = cmd.RefundType == "CreditBalance" ? "Credit Balance" : cmd.Gateway;
+        var addToCredit = cmd.RefundType == "CreditBalance";
 
         invoice.AddRefund(DateTimeOffset.UtcNow, gateway, txnRef, refundAmount, 0m, cmd.Notes);
+
+        var clientTx = ClientTransaction.Create(
+            invoice.ClientId,
+            DateTimeOffset.UtcNow,
+            $"Invoice #{cmd.InvoiceId} Refund",
+            txnRef,
+            cmd.InvoiceId,
+            gateway,
+            0m,
+            refundAmount,
+            0m,
+            addedToCredit: addToCredit);
+        transactionRepo.Add(clientTx);
+
+        if (addToCredit)
+        {
+            var client = await clientRepo.FindByIdAsync(invoice.ClientId, ct)
+                ?? throw new InvalidOperationException($"Client {invoice.ClientId} not found.");
+            client.AddCredit(refundAmount);
+        }
+
         await uow.SaveChangesAsync(ct);
     }
 }

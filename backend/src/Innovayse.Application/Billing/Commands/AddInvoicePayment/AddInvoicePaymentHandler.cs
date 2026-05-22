@@ -1,10 +1,17 @@
 namespace Innovayse.Application.Billing.Commands.AddInvoicePayment;
 
 using Innovayse.Application.Common;
+using Innovayse.Domain.Billing;
 using Innovayse.Domain.Billing.Interfaces;
 
-/// <summary>Records a manual payment transaction against an invoice.</summary>
-public sealed class AddInvoicePaymentHandler(IInvoiceRepository repo, IUnitOfWork uow)
+/// <summary>
+/// Records a manual payment transaction against an invoice
+/// and creates a corresponding client-level transaction ledger entry.
+/// </summary>
+public sealed class AddInvoicePaymentHandler(
+    IInvoiceRepository repo,
+    IClientTransactionRepository transactionRepo,
+    IUnitOfWork uow)
 {
     /// <summary>
     /// Handles <see cref="AddInvoicePaymentCommand"/>.
@@ -19,6 +26,20 @@ public sealed class AddInvoicePaymentHandler(IInvoiceRepository repo, IUnitOfWor
             ?? throw new InvalidOperationException($"Invoice {cmd.InvoiceId} not found.");
 
         invoice.AddPayment(cmd.Date, cmd.Gateway, cmd.TransactionId, cmd.Amount, cmd.Fees, cmd.Notes);
+
+        var clientTx = ClientTransaction.Create(
+            invoice.ClientId,
+            cmd.Date,
+            $"Invoice #{cmd.InvoiceId} Payment",
+            cmd.TransactionId,
+            cmd.InvoiceId,
+            cmd.Gateway,
+            cmd.Amount,
+            0m,
+            cmd.Fees,
+            addedToCredit: false);
+        transactionRepo.Add(clientTx);
+
         await uow.SaveChangesAsync(ct);
     }
 }

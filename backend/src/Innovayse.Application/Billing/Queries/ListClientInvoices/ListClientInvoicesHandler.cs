@@ -22,7 +22,7 @@ public sealed class ListClientInvoicesHandler(IInvoiceRepository repo)
             query.ClientId, page, pageSize, query.Status, query.From, query.To, ct);
 
         var dtos = items.Select(inv => new InvoiceListItemDto(
-            inv.Id, inv.ClientId, inv.Status, inv.DueDate, inv.CreatedAt, inv.Total, inv.SubTotal, inv.Tax, inv.InvoiceDate))
+            inv.Id, inv.ClientId, inv.Status, inv.DueDate, inv.CreatedAt, inv.Total, inv.SubTotal, inv.Tax, inv.InvoiceDate, inv.PaidAt, inv.PaymentMethod))
             .ToList();
 
         return new PagedResult<InvoiceListItemDto>(dtos, total, page, pageSize);

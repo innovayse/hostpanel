@@ -135,6 +135,27 @@ export const INVOICE_STATUS_STYLES: Record<string, string> = {
   Refunded: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
 }
 
+/** Quote stage options for filter dropdowns. */
+export const QUOTE_STAGE_OPTIONS = [
+  { value: '', label: 'All Stages' },
+  { value: 'Draft', label: 'Draft' },
+  { value: 'Delivered', label: 'Delivered' },
+  { value: 'OnHold', label: 'On Hold' },
+  { value: 'Accepted', label: 'Accepted' },
+  { value: 'Lost', label: 'Lost' },
+  { value: 'Dead', label: 'Dead' },
+]
+
+/** Quote stage badge styles. */
+export const QUOTE_STAGE_STYLES: Record<string, string> = {
+  Draft: 'text-text-muted bg-white/[0.06] border-white/10',
+  Delivered: 'text-primary-400 bg-primary-500/10 border-primary-500/20',
+  OnHold: 'text-status-yellow bg-status-yellow/10 border-status-yellow/20',
+  Accepted: 'text-status-green bg-status-green/10 border-status-green/20',
+  Lost: 'text-status-red bg-status-red/10 border-status-red/20',
+  Dead: 'text-text-muted bg-white/[0.04] border-border',
+}
+
 /** Payment gateway options. */
 export const GATEWAY_OPTIONS = [
   { value: 'None', label: 'None' },

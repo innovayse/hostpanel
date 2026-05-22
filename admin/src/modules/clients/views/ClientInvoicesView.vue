@@ -195,6 +195,35 @@ async function handleCreate(): Promise<void> {
   }
 }
 
+/** Invoice ID pending deletion. */
+const deleteTargetId = ref<number | null>(null)
+
+/** Whether the delete confirm modal is visible. */
+const showDeleteModal = ref(false)
+
+/**
+ * Opens the delete confirmation modal for an invoice.
+ *
+ * @param id - The invoice ID to delete.
+ */
+function confirmDelete(id: number): void {
+  deleteTargetId.value = id
+  showDeleteModal.value = true
+}
+
+/**
+ * Deletes the targeted invoice and refreshes the list.
+ *
+ * @returns Promise that resolves when deletion completes.
+ */
+async function executeDelete(): Promise<void> {
+  if (!deleteTargetId.value) return
+  await store.deleteInvoice(deleteTargetId.value)
+  showDeleteModal.value = false
+  deleteTargetId.value = null
+  await fetchInvoices()
+}
+
 /**
  * Returns the CSS class string for a status badge.
  *
@@ -267,16 +296,16 @@ onMounted(() => fetchInvoices())
       <!-- Table -->
       <div class="bg-surface-card border border-border rounded-2xl overflow-hidden">
         <!-- Header row -->
-        <div class="hidden sm:grid grid-cols-[40px_0.4fr_0.8fr_0.8fr_0.6fr_0.6fr_0.7fr_0.6fr_auto] gap-3 px-5 py-3 border-b border-border bg-white/[0.02]">
+        <div class="hidden sm:grid grid-cols-[40px_0.4fr_0.7fr_0.7fr_0.7fr_0.6fr_0.7fr_0.7fr_auto] gap-3 px-5 py-3 border-b border-border bg-white/[0.02]">
           <span class="flex items-center">
             <AppCheckbox :model-value="selectAll" @update:model-value="toggleSelectAll" />
           </span>
           <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">ID</span>
           <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Invoice Date</span>
           <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Due Date</span>
-          <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">SubTotal</span>
-          <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Tax</span>
+          <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Date Paid</span>
           <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Total</span>
+          <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Payment Method</span>
           <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Status</span>
           <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Actions</span>
         </div>
@@ -285,7 +314,7 @@ onMounted(() => fetchInvoices())
         <div
           v-for="invoice in store.clientInvoices"
           :key="invoice.id"
-          class="grid grid-cols-1 sm:grid-cols-[40px_0.4fr_0.8fr_0.8fr_0.6fr_0.6fr_0.7fr_0.6fr_auto] gap-2 sm:gap-3 px-5 py-3.5 border-b border-border last:border-0 hover:bg-white/[0.02] transition-colors"
+          class="grid grid-cols-1 sm:grid-cols-[40px_0.4fr_0.7fr_0.7fr_0.7fr_0.6fr_0.7fr_0.7fr_auto] gap-2 sm:gap-3 px-5 py-3.5 border-b border-border last:border-0 hover:bg-white/[0.02] transition-colors"
         >
           <span class="flex items-center">
             <AppCheckbox :model-value="selectedIds.has(invoice.id)" @update:model-value="toggleSelect(invoice.id)" />
@@ -293,9 +322,9 @@ onMounted(() => fetchInvoices())
           <span class="text-[0.82rem] text-text-muted font-mono hidden sm:block">#{{ invoice.id }}</span>
           <span class="text-[0.82rem] text-text-secondary hidden sm:block">{{ formatDate(invoice.invoiceDate) }}</span>
           <span class="text-[0.82rem] text-text-secondary hidden sm:block">{{ formatDate(invoice.dueDate) }}</span>
-          <span class="text-[0.82rem] text-text-secondary hidden sm:block">${{ invoice.subTotal.toFixed(2) }}</span>
-          <span class="text-[0.82rem] text-text-secondary hidden sm:block">${{ invoice.tax.toFixed(2) }}</span>
+          <span class="text-[0.82rem] text-text-secondary hidden sm:block">{{ invoice.paidAt ? formatDate(invoice.paidAt) : '-' }}</span>
           <span class="text-[0.82rem] text-text-primary font-medium hidden sm:block">${{ invoice.total.toFixed(2) }}</span>
+          <span class="text-[0.82rem] text-text-secondary hidden sm:block">{{ invoice.paymentMethod || '-' }}</span>
           <span class="hidden sm:block">
             <span
               class="inline-block px-2 py-0.5 rounded-full text-[0.7rem] font-medium border"
@@ -318,6 +347,13 @@ onMounted(() => fetchInvoices())
               @click="router.push(`/billing/${invoice.id}?mode=edit`)"
             >
               Edit
+            </button>
+            <button
+              type="button"
+              class="px-2.5 py-1 text-[0.72rem] font-medium text-status-red bg-status-red/10 border border-status-red/20 rounded-lg hover:bg-status-red/20 transition-colors"
+              @click="confirmDelete(invoice.id)"
+            >
+              Delete
             </button>
           </span>
         </div>
@@ -353,6 +389,19 @@ onMounted(() => fetchInvoices())
       </div>
 
     </template>
+
+    <!-- Delete Confirm Modal -->
+    <ConfirmModal
+      v-if="showDeleteModal"
+      title="Delete Invoice"
+      :message="`Are you sure you want to delete invoice #${deleteTargetId}?`"
+      confirm-label="Delete"
+      loading-label="Deleting..."
+      :loading="store.loading"
+      variant="danger"
+      @confirm="executeDelete"
+      @close="showDeleteModal = false"
+    />
 
     <!-- Bulk Confirm Modal -->
     <ConfirmModal

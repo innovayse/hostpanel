@@ -44,6 +44,8 @@ const reversePayment = ref(false)
 const sendEmail = ref(true)
 /** True while processing. */
 const processing = ref(false)
+/** Credit action choice: 'remove' or 'leave' — must be selected before refund. */
+const creditAction = ref('')
 
 /** Refund type options. */
 const refundTypeOptions = [
@@ -77,6 +79,31 @@ const allTransactions = computed(() => props.invoice.transactions ?? [])
 /** Whether manual refund type is selected. */
 const isManual = computed(() => refundType.value === 'Manual')
 
+/** Whether the invoice is already refunded (disable form). */
+const isRefunded = computed(() => props.invoice.status === 'Refunded')
+
+/** Whether the invoice is a draft (cannot refund). */
+const isDraft = computed(() => props.invoice.status === 'Draft')
+
+/** Whether the invoice is cancelled (cannot refund). */
+const isCancelled = computed(() => props.invoice.status === 'Cancelled')
+
+/** Whether the refund form should be hidden. */
+const formBlocked = computed(() => isDraft.value || isCancelled.value || isRefunded.value)
+
+/** The selected transaction object. */
+const selectedTransaction = computed(() =>
+  paymentTransactions.value.find(t => String(t.id) === selectedTransactionId.value),
+)
+
+/** Whether the credit warning should be shown (when a transaction is selected). */
+const showCreditWarning = computed(() => !!selectedTransaction.value)
+
+/** Whether the refund button is enabled — requires a transaction AND a credit action choice. */
+const canRefund = computed(() =>
+  !!selectedTransactionId.value && !!creditAction.value && !processing.value,
+)
+
 // ── Items editing state ──
 /** Editable items copy. */
 const editItems = ref<Array<{ id?: number; description: string; amount: number; taxed: boolean; selected: boolean }>>([])
@@ -99,8 +126,9 @@ const previewSubTotal = computed(() => editItems.value.reduce((sum, i) => sum + 
 /** Preview total. */
 const previewTotal = computed(() => previewSubTotal.value - (props.invoice.credit ?? 0))
 
-/** Auto-fill amount when a transaction is selected. */
+/** Auto-fill amount and reset credit action when a transaction is selected. */
 watch(selectedTransactionId, (newId) => {
+  creditAction.value = ''
   const txn = paymentTransactions.value.find(t => String(t.id) === newId)
   if (txn) {
     refundAmount.value = txn.amount
@@ -113,12 +141,13 @@ watch(selectedTransactionId, (newId) => {
  * @returns Promise that resolves when the refund is completed.
  */
 async function handleRefund(): Promise<void> {
-  if (!selectedTransactionId.value) return
+  if (!selectedTransactionId.value || !creditAction.value) return
   processing.value = true
+  const effectiveRefundType = creditAction.value === 'remove' ? 'CreditBalance' : refundType.value
   await store.refundPayment(props.invoice.id, {
     transactionId: selectedTransactionId.value,
     amount: refundAmount.value,
-    refundType: refundType.value,
+    refundType: effectiveRefundType,
     gateway: props.invoice.paymentMethod ?? 'None',
     refundTransactionId: isManual.value ? refundTransactionId.value : undefined,
     notes: undefined,
@@ -130,6 +159,7 @@ async function handleRefund(): Promise<void> {
   refundTransactionId.value = ''
   reversePayment.value = false
   sendEmail.value = true
+  creditAction.value = ''
   emit('updated')
 }
 
@@ -182,11 +212,10 @@ function handleWithSelected(): void {
 async function saveItems(): Promise<void> {
   savingItems.value = true
   const items = editItems.value.map(i => ({
-    id: i.id ?? null,
+    id: i.id ?? undefined,
     description: i.description,
     unitPrice: i.amount,
     quantity: 1,
-    isDeleted: false,
   }))
   await store.updateItems(props.invoice.id, items)
   savingItems.value = false
@@ -208,8 +237,19 @@ onMounted(() => populateItems())
       There are no transactions that are eligible for a refund.
     </AppAlert>
 
-    <!-- Refund form (edit mode only) -->
-    <div v-if="!readonly" class="bg-surface-card border border-border rounded-2xl p-5 mb-5">
+    <!-- Blocked warnings -->
+    <AppAlert v-if="!readonly && isDraft" variant="warning" class="mb-5">
+      Publish the invoice before requesting a refund.
+    </AppAlert>
+    <AppAlert v-else-if="!readonly && isCancelled" variant="warning" class="mb-5">
+      Cannot refund a cancelled invoice.
+    </AppAlert>
+    <AppAlert v-else-if="!readonly && isRefunded" variant="warning" class="mb-5">
+      This invoice has already been refunded.
+    </AppAlert>
+
+    <!-- Refund form (edit mode only, hidden when blocked) -->
+    <div v-if="!readonly && !formBlocked" class="bg-surface-card border border-border rounded-2xl p-5 mb-5">
       <div class="space-y-3">
         <div class="grid grid-cols-[140px_1fr] items-center gap-3">
           <label class="text-[0.82rem] text-text-secondary text-right">Transactions</label>
@@ -256,13 +296,47 @@ onMounted(() => populateItems())
             <span class="text-[0.78rem] text-text-muted">Check to Send Confirmation Email</span>
           </div>
         </div>
+
+        <!-- Credit warning with radio options -->
+        <div v-if="showCreditWarning" class="grid grid-cols-[140px_1fr] items-start gap-3">
+          <label class="text-[0.82rem] text-status-red text-right font-semibold pt-1">WARNING</label>
+          <div class="space-y-2">
+            <p class="text-[0.82rem] text-text-secondary">
+              These transactions resulted in a credit being given to the user in the amount of
+              <span class="font-medium text-text-primary">${{ (selectedTransaction?.amount ?? 0).toFixed(2) }} USD</span>.
+              The current credit balance is
+              <span class="font-medium text-text-primary">${{ (invoice.credit ?? 0).toFixed(2) }} USD</span>.
+            </p>
+            <p class="text-[0.82rem] text-text-muted">
+              We can therefore automatically remove the amount from the user's credit balance.
+            </p>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                v-model="creditAction"
+                type="radio"
+                value="remove"
+                class="accent-primary-500"
+              />
+              <span class="text-[0.82rem] text-text-secondary">Click here to remove the amount from the credit balance.</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                v-model="creditAction"
+                type="radio"
+                value="leave"
+                class="accent-primary-500"
+              />
+              <span class="text-[0.82rem] text-text-secondary">Click here to leave the credit untouched.</span>
+            </label>
+          </div>
+        </div>
       </div>
 
       <div class="flex justify-center mt-5">
         <button
           type="button"
-          :disabled="processing || !selectedTransactionId"
-          class="px-6 py-2 text-[0.84rem] font-medium text-text-secondary hover:text-text-primary bg-white/[0.04] border border-border rounded-[10px] transition-colors disabled:opacity-50"
+          :disabled="!canRefund"
+          class="px-6 py-2 text-[0.84rem] font-medium text-text-secondary hover:text-text-primary bg-white/[0.04] border border-border rounded-[10px] transition-colors disabled:opacity-50 disabled:pointer-events-none"
           @click="handleRefund"
         >
           {{ processing ? 'Processing...' : 'Refund' }}

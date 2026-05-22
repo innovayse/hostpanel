@@ -336,7 +336,7 @@ public sealed class Invoice : AggregateRoot
     /// <exception cref="InvalidOperationException">Thrown when the invoice is not Unpaid or Overdue.</exception>
     public void AddPayment(DateTimeOffset date, string gateway, string transactionId, decimal amount, decimal fees = 0m, string? notes = null)
     {
-        if (Status is not (InvoiceStatus.Unpaid or InvoiceStatus.Overdue))
+        if (Status is InvoiceStatus.Draft or InvoiceStatus.Cancelled)
         {
             throw new InvalidOperationException($"Cannot add payment to an invoice with status {Status}.");
         }
@@ -348,7 +348,7 @@ public sealed class Invoice : AggregateRoot
             .Where(t => t.Type == InvoiceTransactionType.Payment)
             .Sum(t => t.Amount);
 
-        if (totalPayments >= Total)
+        if (totalPayments >= Total && Status is InvoiceStatus.Unpaid or InvoiceStatus.Overdue or InvoiceStatus.Refunded)
         {
             MarkPaid(transactionId);
         }

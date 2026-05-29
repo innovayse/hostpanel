@@ -1,17 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref, reactive } from 'vue'
 import { useApi } from '../../../composables/useApi'
-<<<<<<< HEAD
 import type { Transaction, TransactionsResult } from '../../../types/models'
 
 /**
  * Pinia store for transaction management.
-=======
-import type { ClientTransaction, ClientTransactionsResult } from '../../../types/models'
-
-/**
- * Pinia store for client transaction management.
->>>>>>> origin/main
  *
  * Handles listing, creating, and deleting transactions for a client.
  * Maintains summary totals alongside the paginated transaction list.
@@ -20,11 +13,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
   const { request } = useApi()
 
   /** Loaded transactions for the current client. */
-<<<<<<< HEAD
   const transactions = ref<Transaction[]>([])
-=======
-  const transactions = ref<ClientTransaction[]>([])
->>>>>>> origin/main
 
   /** Total number of transactions across all pages. */
   const totalCount = ref(0)
@@ -63,11 +52,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
     loading.value = true
     error.value = null
     try {
-<<<<<<< HEAD
       const result = await request<TransactionsResult>(
-=======
-      const result = await request<ClientTransactionsResult>(
->>>>>>> origin/main
         `/transactions/client/${clientId}?page=${page}&pageSize=${pageSize}`,
       )
       transactions.value = result.transactions.items

@@ -11,7 +11,7 @@ using Innovayse.Domain.Clients.Interfaces;
 /// </summary>
 public sealed class RefundInvoicePaymentHandler(
     IInvoiceRepository repo,
-    IClientTransactionRepository transactionRepo,
+    ITransactionRepository transactionRepo,
     IClientRepository clientRepo,
     IUnitOfWork uow)
 {
@@ -43,7 +43,7 @@ public sealed class RefundInvoicePaymentHandler(
 
         invoice.AddRefund(DateTimeOffset.UtcNow, gateway, txnRef, refundAmount, 0m, cmd.Notes);
 
-        var clientTx = ClientTransaction.Create(
+        var clientTx = Transaction.Create(
             invoice.ClientId,
             DateTimeOffset.UtcNow,
             $"Invoice #{cmd.InvoiceId} Refund",

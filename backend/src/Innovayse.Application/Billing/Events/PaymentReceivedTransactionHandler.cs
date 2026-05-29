@@ -6,23 +6,23 @@ using Innovayse.Domain.Billing.Events;
 using Innovayse.Domain.Billing.Interfaces;
 
 /// <summary>
-/// Handles <see cref="PaymentReceivedEvent"/> by creating a client transaction record
+/// Handles <see cref="PaymentReceivedEvent"/> by creating a transaction record
 /// for the payment received on an invoice.
 /// </summary>
-/// <param name="transactionRepo">Client transaction repository.</param>
+/// <param name="transactionRepo">Transaction repository.</param>
 /// <param name="uow">Unit of work for persistence.</param>
 public sealed class PaymentReceivedTransactionHandler(
-    IClientTransactionRepository transactionRepo,
+    ITransactionRepository transactionRepo,
     IUnitOfWork uow)
 {
     /// <summary>
-    /// Creates a client transaction recording the payment.
+    /// Creates a transaction recording the payment.
     /// </summary>
     /// <param name="evt">The domain event carrying payment details.</param>
     /// <param name="ct">Cancellation token.</param>
     public async Task HandleAsync(PaymentReceivedEvent evt, CancellationToken ct)
     {
-        var transaction = ClientTransaction.Create(
+        var transaction = Transaction.Create(
             evt.ClientId,
             DateTimeOffset.UtcNow,
             $"Invoice #{evt.InvoiceId} Payment",

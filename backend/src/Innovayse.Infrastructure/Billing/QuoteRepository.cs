@@ -10,39 +10,50 @@ using Microsoft.EntityFrameworkCore;
 public sealed class QuoteRepository(AppDbContext db) : IQuoteRepository
 {
     /// <inheritdoc/>
-    public async Task<(IReadOnlyList<Quote> Items, int TotalCount)> ListByClientAsync(
-        int clientId, int page, int pageSize, CancellationToken ct)
-    {
-        var query = db.Quotes
-            .Include(x => x.Items)
-            .Where(x => x.ClientId == clientId)
-            .OrderByDescending(x => x.DateCreated);
-
-        var total = await query.CountAsync(ct);
-        var items = await query
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(ct);
-
-        return (items, total);
-    }
-
-    /// <inheritdoc/>
     public async Task<Quote?> FindByIdAsync(int id, CancellationToken ct) =>
         await db.Quotes
             .Include(x => x.Items)
             .FirstOrDefaultAsync(x => x.Id == id, ct);
 
     /// <inheritdoc/>
-    public async Task<IReadOnlyList<Quote>> FindByIdsAsync(IReadOnlyList<int> ids, CancellationToken ct) =>
+    public async Task<(IReadOnlyList<Quote> Items, int TotalCount)> ListAsync(
+        int page, int pageSize, CancellationToken ct)
+    {
+        var query = db.Quotes.OrderByDescending(x => x.CreatedAt);
+        var total = await query.CountAsync(ct);
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+        return (items, total);
+    }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<Quote>> ListByClientAsync(int clientId, CancellationToken ct) =>
         await db.Quotes
             .Include(x => x.Items)
-            .Where(x => ids.Contains(x.Id))
+            .Where(x => x.ClientId == clientId)
+            .OrderByDescending(x => x.CreatedAt)
             .ToListAsync(ct);
+
+    /// <inheritdoc/>
+    public async Task<(IReadOnlyList<Quote> Items, int TotalCount)> ListByClientAsync(
+        int clientId, int page, int pageSize, CancellationToken ct)
+    {
+        var query = db.Quotes
+            .Where(x => x.ClientId == clientId)
+            .OrderByDescending(x => x.CreatedAt);
+        var total = await query.CountAsync(ct);
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+        return (items, total);
+    }
 
     /// <inheritdoc/>
     public void Add(Quote quote) => db.Quotes.Add(quote);
 
     /// <inheritdoc/>
-    public void Remove(Quote quote) => db.Quotes.Remove(quote);
+    public void Delete(Quote quote) => db.Quotes.Remove(quote);
 }

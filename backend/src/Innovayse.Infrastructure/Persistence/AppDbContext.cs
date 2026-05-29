@@ -58,11 +58,11 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
     /// <summary>Gets the invoice items table.</summary>
     public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
 
+    /// <summary>Gets the transactions table.</summary>
+    public DbSet<Transaction> Transactions => Set<Transaction>();
+
     /// <summary>Gets the invoice transactions table.</summary>
     public DbSet<InvoiceTransaction> InvoiceTransactions => Set<InvoiceTransaction>();
-
-    /// <summary>Gets the client transactions table.</summary>
-    public DbSet<ClientTransaction> ClientTransactions => Set<ClientTransaction>();
 
     /// <summary>Gets the quotes table.</summary>
     public DbSet<Quote> Quotes => Set<Quote>();

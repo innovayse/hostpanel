@@ -6,7 +6,7 @@ using Innovayse.Domain.Billing.Interfaces;
 
 /// <summary>
 /// Converts a quote into a draft invoice by copying its line items.
-/// The quote stage is set to <see cref="QuoteStage.Accepted"/> after conversion.
+/// The quote status is set to <see cref="QuoteStatus.Accepted"/> after conversion.
 /// </summary>
 public sealed class ConvertQuoteToInvoiceHandler(
     IQuoteRepository quoteRepo,
@@ -27,8 +27,7 @@ public sealed class ConvertQuoteToInvoiceHandler(
 
         var itemData = quote.GetInvoiceItemData();
 
-        var dueDate = quote.ValidUntil ?? DateTimeOffset.UtcNow.AddDays(30);
-        var invoice = Invoice.Create(quote.ClientId, dueDate, isDraft: true);
+        var invoice = Invoice.CreateDraft(quote.ClientId, quote.ExpiryDate);
 
         foreach (var (description, unitPrice, quantity) in itemData)
         {
@@ -36,10 +35,7 @@ public sealed class ConvertQuoteToInvoiceHandler(
         }
 
         invoiceRepo.Add(invoice);
-
-        quote.UpdateDetails(
-            quote.Subject, QuoteStage.Accepted, quote.ValidUntil,
-            quote.ProposalText, quote.CustomerNotes, quote.AdminNotes);
+        quote.Accept();
 
         await uow.SaveChangesAsync(ct);
         return invoice.Id;

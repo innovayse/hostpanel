@@ -4,9 +4,7 @@ using Innovayse.Application.Common;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Billing.Interfaces;
 
-/// <summary>
-/// Creates a new quote with the provided line items and persists it.
-/// </summary>
+/// <summary>Creates a new quote with the provided line items and persists it.</summary>
 public sealed class CreateQuoteHandler(IQuoteRepository repo, IUnitOfWork uow)
 {
     /// <summary>
@@ -17,13 +15,11 @@ public sealed class CreateQuoteHandler(IQuoteRepository repo, IUnitOfWork uow)
     /// <returns>The newly created quote ID.</returns>
     public async Task<int> HandleAsync(CreateQuoteCommand cmd, CancellationToken ct)
     {
-        var quote = Quote.Create(
-            cmd.ClientId, cmd.Subject, cmd.Stage, cmd.ValidUntil,
-            cmd.ProposalText, cmd.CustomerNotes, cmd.AdminNotes);
+        var quote = Quote.Create(cmd.ClientId, cmd.Subject, cmd.ExpiryDate, cmd.Notes);
 
         foreach (var item in cmd.Items)
         {
-            quote.AddItem(item.Quantity, item.Description, item.UnitPrice, item.DiscountPercent, item.Taxed);
+            quote.AddItem(item.Description, item.UnitPrice, item.Quantity);
         }
 
         repo.Add(quote);

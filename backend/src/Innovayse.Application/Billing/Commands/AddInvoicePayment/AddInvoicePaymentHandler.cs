@@ -17,7 +17,7 @@ using Innovayse.Domain.Billing.Interfaces;
 /// <param name="ctx">Current request context providing admin identity and IP.</param>
 public sealed class AddInvoicePaymentHandler(
     IInvoiceRepository repo,
-    IClientTransactionRepository transactionRepo,
+    ITransactionRepository transactionRepo,
     IUnitOfWork uow,
     IActivityLogRepository activityLogRepo,
     ICurrentRequestContext ctx)
@@ -36,7 +36,7 @@ public sealed class AddInvoicePaymentHandler(
 
         invoice.AddPayment(cmd.Date, cmd.Gateway, cmd.TransactionId, cmd.Amount, cmd.Fees, cmd.Notes);
 
-        var clientTx = ClientTransaction.Create(
+        var clientTx = Transaction.Create(
             invoice.ClientId,
             cmd.Date,
             $"Invoice #{cmd.InvoiceId} Payment",

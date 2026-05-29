@@ -4,22 +4,18 @@ using Innovayse.Domain.Billing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-/// <summary>EF Core configuration for the <see cref="QuoteItem"/> entity.</summary>
+/// <summary>EF Core configuration for the <see cref="QuoteItem"/> owned entity.</summary>
 public sealed class QuoteItemConfiguration : IEntityTypeConfiguration<QuoteItem>
 {
-    /// <summary>Configures the <c>quote_items</c> table mapping.</summary>
-    /// <param name="builder">The entity type builder.</param>
+    /// <inheritdoc/>
     public void Configure(EntityTypeBuilder<QuoteItem> builder)
     {
         builder.ToTable("quote_items");
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.QuoteId).IsRequired();
-        builder.Property(x => x.Quantity).IsRequired();
-        builder.Property(x => x.Description).HasMaxLength(500).IsRequired();
+        builder.Property(x => x.Description).IsRequired().HasMaxLength(500);
         builder.Property(x => x.UnitPrice).HasColumnType("numeric(18,4)").IsRequired();
-        builder.Property(x => x.DiscountPercent).HasColumnType("numeric(5,2)").IsRequired();
-        builder.Property(x => x.Taxed).IsRequired();
-        builder.Property(x => x.Amount).HasColumnType("numeric(18,4)").IsRequired();
+        builder.Property(x => x.Quantity).IsRequired();
     }
 }

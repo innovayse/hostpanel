@@ -7,26 +7,26 @@ using Innovayse.Domain.Billing.Interfaces;
 using Innovayse.Domain.Clients.Interfaces;
 
 /// <summary>
-/// Handles <see cref="InvoiceRefundedEvent"/> by creating a client transaction record
+/// Handles <see cref="InvoiceRefundedEvent"/> by creating a transaction record
 /// for the refund and adding the refunded amount to the client's credit balance.
 /// </summary>
-/// <param name="transactionRepo">Client transaction repository.</param>
+/// <param name="transactionRepo">Transaction repository.</param>
 /// <param name="clientRepo">Client repository for credit adjustments.</param>
 /// <param name="uow">Unit of work for persistence.</param>
 public sealed class InvoiceRefundedTransactionHandler(
-    IClientTransactionRepository transactionRepo,
+    ITransactionRepository transactionRepo,
     IClientRepository clientRepo,
     IUnitOfWork uow)
 {
     /// <summary>
-    /// Creates a client transaction recording the refund and adds credit to the client.
+    /// Creates a transaction recording the refund and adds credit to the client.
     /// </summary>
     /// <param name="evt">The domain event carrying refund details.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="InvalidOperationException">Thrown when the client is not found.</exception>
     public async Task HandleAsync(InvoiceRefundedEvent evt, CancellationToken ct)
     {
-        var transaction = ClientTransaction.Create(
+        var transaction = Transaction.Create(
             evt.ClientId,
             DateTimeOffset.UtcNow,
             $"Invoice #{evt.InvoiceId} Refund",

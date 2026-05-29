@@ -19,16 +19,10 @@ public sealed class CreateTimeBillingEntriesHandler(IBillableItemRepository repo
     {
         var items = cmd.Entries.Select(entry => BillableItem.Create(
             cmd.ClientId,
-            entry.ServiceId,
             entry.Description,
             entry.Hours * entry.Rate,
-            entry.Hours,
-            isHours: true,
-            InvoiceAction.DontInvoice,
-            DateTimeOffset.UtcNow,
-            recurrenceInterval: null,
-            recurrencePeriod: null,
-            recurrenceLimit: null)).ToList();
+            "USD",
+            BillableItemType.OneTime)).ToList();
 
         repo.AddRange(items);
         await uow.SaveChangesAsync(ct);

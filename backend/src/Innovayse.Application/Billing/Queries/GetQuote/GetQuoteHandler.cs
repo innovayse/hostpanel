@@ -2,9 +2,10 @@ namespace Innovayse.Application.Billing.Queries.GetQuote;
 
 using Innovayse.Application.Billing.DTOs;
 using Innovayse.Domain.Billing.Interfaces;
+using Innovayse.Domain.Clients.Interfaces;
 
-/// <summary>Returns a full <see cref="QuoteDto"/> including line items.</summary>
-public sealed class GetQuoteHandler(IQuoteRepository repo)
+/// <summary>Returns a single quote with its line items and client name.</summary>
+public sealed class GetQuoteHandler(IQuoteRepository repo, IClientRepository clientRepo)
 {
     /// <summary>
     /// Handles <see cref="GetQuoteQuery"/>.
@@ -15,23 +16,30 @@ public sealed class GetQuoteHandler(IQuoteRepository repo)
     /// <exception cref="InvalidOperationException">Thrown when the quote is not found.</exception>
     public async Task<QuoteDto> HandleAsync(GetQuoteQuery query, CancellationToken ct)
     {
-        var quote = await repo.FindByIdAsync(query.QuoteId, ct)
-            ?? throw new InvalidOperationException($"Quote {query.QuoteId} not found.");
+        var quote = await repo.FindByIdAsync(query.Id, ct)
+            ?? throw new InvalidOperationException($"Quote {query.Id} not found.");
+
+        var client = await clientRepo.FindByIdAsync(quote.ClientId, ct);
+        var clientName = client != null ? $"{client.FirstName} {client.LastName}" : "Unknown";
+
+        var itemDtos = quote.Items.Select(item => new QuoteItemDto(
+            item.Id,
+            item.Description,
+            item.UnitPrice,
+            item.Quantity,
+            item.Amount))
+            .ToList();
 
         return new QuoteDto(
             quote.Id,
             quote.ClientId,
+            clientName,
             quote.Subject,
-            quote.Stage,
-            quote.DateCreated,
-            quote.ValidUntil,
-            quote.SubTotal,
+            quote.Status,
+            quote.ExpiryDate,
+            quote.Notes,
             quote.Total,
-            quote.ProposalText,
-            quote.CustomerNotes,
-            quote.AdminNotes,
-            quote.Items.Select(i => new QuoteItemDto(
-                i.Id, i.Quantity, i.Description, i.UnitPrice, i.DiscountPercent, i.Taxed, i.Amount))
-                .ToList());
+            quote.CreatedAt,
+            itemDtos);
     }
 }

@@ -3,7 +3,7 @@ namespace Innovayse.Domain.Billing;
 /// <summary>Lifecycle states for an <see cref="Invoice"/>.</summary>
 public enum InvoiceStatus
 {
-    /// <summary>Invoice has been created but not yet published to the client.</summary>
+    /// <summary>Invoice is saved but not yet sent to the client.</summary>
     Draft,
 
     /// <summary>Invoice has been issued and payment is expected.</summary>
@@ -18,6 +18,12 @@ public enum InvoiceStatus
     /// <summary>Invoice has been voided and will not be collected.</summary>
     Cancelled,
 
-    /// <summary>Invoice payment has been refunded to the client.</summary>
+    /// <summary>Payment has been refunded to the client.</summary>
     Refunded,
+
+    /// <summary>Invoice has been sent to a collections agency.</summary>
+    Collections,
+
+    /// <summary>Payment has been initiated and is awaiting confirmation.</summary>
+    PaymentPending,
 }

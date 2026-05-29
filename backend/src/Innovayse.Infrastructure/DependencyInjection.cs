@@ -136,9 +136,9 @@ public static class DependencyInjection
 
         // Billing services
         services.AddScoped<IInvoiceRepository, InvoiceRepository>();
-        services.AddScoped<IQuoteRepository, QuoteRepository>();
-        services.AddScoped<IClientTransactionRepository, ClientTransactionRepository>();
+        services.AddScoped<ITransactionRepository, TransactionRepository>();
         services.AddScoped<IBillableItemRepository, BillableItemRepository>();
+        services.AddScoped<IQuoteRepository, QuoteRepository>();
         services.AddScoped<IPaymentGateway, NullPaymentGateway>();
 
         // Stripe

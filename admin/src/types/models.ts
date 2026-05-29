@@ -266,7 +266,7 @@ export interface Invoice {
   id: number
   /** Associated client identifier. */
   clientId: number
-  /** Invoice status (Draft, Unpaid, Paid, Overdue, Cancelled, Refunded). */
+  /** Invoice status (Draft, Unpaid, Paid, Overdue, Cancelled, Refunded, Collections, PaymentPending). */
   status: string
   /** ISO 8601 due date. */
   dueDate: string
@@ -1045,7 +1045,7 @@ export interface Quote {
 }
 
 /** Client-level financial ledger entry. */
-export interface ClientTransaction {
+export interface Transaction {
   /** Unique transaction identifier. */
   id: number
   /** Associated client identifier. */
@@ -1070,10 +1070,10 @@ export interface ClientTransaction {
   addedToCredit: boolean
 }
 
-/** Response from the client transactions list endpoint with summary totals. */
-export interface ClientTransactionsResult {
+/** Response from the transactions list endpoint with summary totals. */
+export interface TransactionsResult {
   /** Paginated transaction list. */
-  transactions: PagedResult<ClientTransaction>
+  transactions: PagedResult<Transaction>
   /** Sum of all AmountIn values. */
   totalIn: number
   /** Sum of all AmountOut values. */

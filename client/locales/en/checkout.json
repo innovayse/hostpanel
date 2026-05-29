@@ -28,6 +28,16 @@
       "fillRequired": "Please fill in all required fields",
       "fillHostingDetails": "Please fill in all hosting configuration details",
       "generic": "An error occurred. Please try again."
+    },
+    "success": {
+      "title": "Payment Successful!",
+      "description": "Your order has been placed and payment confirmed. You can now set up your service.",
+      "orderNumber": "Order",
+      "status": "Payment",
+      "paid": "Paid",
+      "amount": "Amount",
+      "setupService": "Set Up My Service",
+      "viewInvoices": "View Invoices"
     }
   }
 }

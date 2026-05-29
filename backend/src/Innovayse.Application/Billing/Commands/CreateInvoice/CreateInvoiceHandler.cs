@@ -1,13 +1,23 @@
 namespace Innovayse.Application.Billing.Commands.CreateInvoice;
 
 using Innovayse.Application.Common;
+using Innovayse.Domain.Audit;
+using Innovayse.Domain.Audit.Interfaces;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Billing.Interfaces;
 
 /// <summary>
 /// Creates a new invoice with the provided line items and persists it.
 /// </summary>
-public sealed class CreateInvoiceHandler(IInvoiceRepository repo, IUnitOfWork uow)
+/// <param name="repo">Invoice repository.</param>
+/// <param name="uow">Unit of work for persistence.</param>
+/// <param name="activityLogRepo">Activity log repository for audit trail.</param>
+/// <param name="ctx">Current request context providing admin identity and IP.</param>
+public sealed class CreateInvoiceHandler(
+    IInvoiceRepository repo,
+    IUnitOfWork uow,
+    IActivityLogRepository activityLogRepo,
+    ICurrentRequestContext ctx)
 {
     /// <summary>
     /// Handles <see cref="CreateInvoiceCommand"/>.
@@ -27,6 +37,13 @@ public sealed class CreateInvoiceHandler(IInvoiceRepository repo, IUnitOfWork uo
 
         repo.Add(invoice);
         await uow.SaveChangesAsync(ct);
+
+        activityLogRepo.Add(ActivityLog.Create(
+            cmd.ClientId,
+            $"Created Manual Invoice - Invoice ID: {invoice.Id}",
+            ctx.AdminId, ctx.AdminName, ctx.AdminEmail, ctx.IpAddress));
+        await uow.SaveChangesAsync(ct);
+
         return invoice.Id;
     }
 }

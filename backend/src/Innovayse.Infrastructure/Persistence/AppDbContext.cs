@@ -1,9 +1,11 @@
 namespace Innovayse.Infrastructure.Persistence;
 
+using Innovayse.Domain.Audit;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Clients;
 using Innovayse.Domain.Domains;
 using Innovayse.Domain.Notifications;
+using Innovayse.Domain.Orders;
 using Innovayse.Domain.Products;
 using Innovayse.Domain.Servers;
 using Innovayse.Domain.Services;
@@ -20,6 +22,9 @@ using Microsoft.EntityFrameworkCore;
 /// </summary>
 public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbContext<AppUser>(options)
 {
+    /// <summary>Gets the activity log entries table.</summary>
+    public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
+
     /// <summary>Gets the refresh tokens table.</summary>
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
@@ -65,6 +70,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
     /// <summary>Gets the quote items table.</summary>
     public DbSet<QuoteItem> QuoteItems => Set<QuoteItem>();
 
+    /// <summary>Gets the orders table.</summary>
+    public DbSet<Order> Orders => Set<Order>();
+
+    /// <summary>Gets the order items table.</summary>
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+
     /// <summary>Gets the support tickets table.</summary>
     public DbSet<Ticket> Tickets => Set<Ticket>();
 
@@ -73,6 +84,21 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
 
     /// <summary>Gets the knowledge base articles table.</summary>
     public DbSet<KbArticle> KbArticles => Set<KbArticle>();
+
+    /// <summary>Gets the network issues table.</summary>
+    public DbSet<NetworkIssue> NetworkIssues => Set<NetworkIssue>();
+
+    /// <summary>Gets the predefined reply categories table.</summary>
+    public DbSet<PredefinedReplyCategory> PredefinedReplyCategories => Set<PredefinedReplyCategory>();
+
+    /// <summary>Gets the predefined replies table.</summary>
+    public DbSet<PredefinedReply> PredefinedReplies => Set<PredefinedReply>();
+
+    /// <summary>Gets the knowledge base categories table.</summary>
+    public DbSet<KbCategory> KbCategories => Set<KbCategory>();
+
+    /// <summary>Gets the announcements table.</summary>
+    public DbSet<Announcement> Announcements => Set<Announcement>();
 
     /// <summary>Gets the email templates table.</summary>
     public DbSet<EmailTemplate> EmailTemplates => Set<EmailTemplate>();

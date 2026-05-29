@@ -29,7 +29,10 @@ public sealed class GetMyServicesHandler(
                 productMap.GetValueOrDefault(svc.ProductId, "Unknown"),
                 svc.BillingCycle,
                 svc.Status,
-                svc.NextRenewalAt))
+                svc.NextRenewalAt,
+                svc.Domain,
+                svc.Username,
+                svc.RecurringAmount))
             .ToList();
     }
 }

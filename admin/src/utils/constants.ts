@@ -163,3 +163,90 @@ export const GATEWAY_OPTIONS = [
   { value: 'Stripe', label: 'Stripe' },
   { value: 'PayPal', label: 'PayPal' },
 ]
+
+/** Order status options for filter dropdowns. */
+export const ORDER_STATUS_OPTIONS = [
+  { value: '', label: 'All Statuses' },
+  { value: 'Pending', label: 'Pending' },
+  { value: 'Active', label: 'Active' },
+  { value: 'Cancelled', label: 'Cancelled' },
+  { value: 'Fraud', label: 'Fraud' },
+]
+
+/** Tailwind CSS classes for order status badges. */
+export const ORDER_STATUS_STYLES: Record<string, string> = {
+  Pending: 'text-status-yellow bg-status-yellow/10 border border-status-yellow/20',
+  Active: 'text-status-green bg-status-green/10 border border-status-green/20',
+  Cancelled: 'text-status-red bg-status-red/10 border border-status-red/20',
+  Fraud: 'text-status-red bg-status-red/10 border border-status-red/20',
+}
+
+/** Ticket filter button options for the support tickets page. */
+export const TICKET_FILTER_OPTIONS = [
+  { value: '', label: 'All Active Tickets' },
+  { value: 'flagged', label: 'Flagged' },
+  { value: 'Open', label: 'Open' },
+  { value: 'AwaitingReply', label: 'Answered' },
+  { value: 'Answered', label: 'Customer-Reply' },
+  { value: 'Closed', label: 'Closed' },
+]
+
+/** Available ticket status options for dropdowns. */
+export const TICKET_STATUS_OPTIONS = [
+  { value: 'Open', label: 'Open' },
+  { value: 'AwaitingReply', label: 'Awaiting Reply' },
+  { value: 'Answered', label: 'Answered' },
+  { value: 'Closed', label: 'Closed' },
+]
+
+/** Tailwind CSS classes for ticket status badges. */
+export const TICKET_STATUS_STYLES: Record<string, string> = {
+  Open: 'text-primary-400 bg-primary-500/10 border border-primary-500/20',
+  AwaitingReply: 'text-status-yellow bg-status-yellow/10 border border-status-yellow/20',
+  Answered: 'text-status-green bg-status-green/10 border border-status-green/20',
+  Closed: 'text-text-muted bg-white/[0.04] border border-border',
+}
+
+/** Available ticket priority options for dropdowns. */
+export const TICKET_PRIORITY_OPTIONS = [
+  { value: 'Low', label: 'Low' },
+  { value: 'Medium', label: 'Medium' },
+  { value: 'High', label: 'High' },
+]
+
+/** Network issue status filter options. */
+export const NETWORK_ISSUE_STATUS_OPTIONS = [
+  { value: '', label: 'All' },
+  { value: 'Open', label: 'Open' },
+  { value: 'Scheduled', label: 'Scheduled' },
+  { value: 'Resolved', label: 'Resolved' },
+]
+
+/** Tailwind CSS classes for network issue status badges. */
+export const NETWORK_ISSUE_STATUS_STYLES: Record<string, string> = {
+  Reported: 'text-status-yellow bg-status-yellow/10 border border-status-yellow/20',
+  Investigating: 'text-primary-400 bg-primary-500/10 border border-primary-500/20',
+  Scheduled: 'text-primary-400 bg-primary-500/10 border border-primary-500/20',
+  Resolved: 'text-status-green bg-status-green/10 border border-status-green/20',
+}
+
+/** Network issue priority options. */
+export const NETWORK_ISSUE_PRIORITY_OPTIONS = [
+  { value: 'Low', label: 'Low' },
+  { value: 'Medium', label: 'Medium' },
+  { value: 'High', label: 'High' },
+  { value: 'Critical', label: 'Critical' },
+]
+
+/** Network issue type options. */
+export const NETWORK_ISSUE_TYPE_OPTIONS = [
+  { value: 'Server', label: 'Server' },
+  { value: 'Other', label: 'Other' },
+]
+
+/** Tailwind CSS classes for ticket priority badges. */
+export const TICKET_PRIORITY_STYLES: Record<string, string> = {
+  Low: 'text-text-muted bg-white/[0.04] border border-border',
+  Medium: 'text-status-yellow bg-status-yellow/10 border border-status-yellow/20',
+  High: 'text-status-red bg-status-red/10 border border-status-red/20',
+}

@@ -3,104 +3,89 @@ namespace Innovayse.Domain.Billing;
 using Innovayse.Domain.Common;
 
 /// <summary>
-/// A payment transaction record for an invoice or client account.
-/// Records all monetary movements (credit, debit).
+/// Represents a financial transaction on a client's account.
+/// Tracks money in (payments), money out (refunds/withdrawals), fees, and credit adjustments.
 /// Stored in the <c>transactions</c> table.
 /// </summary>
-public sealed class Transaction : AggregateRoot
+public sealed class Transaction : Entity
 {
-    /// <summary>Gets the FK to the owning client.</summary>
+    /// <summary>Gets the FK to the owning <see cref="Clients.Client"/>.</summary>
     public int ClientId { get; private set; }
 
-    /// <summary>Gets the FK to the associated invoice; null for account-level transactions.</summary>
+    /// <summary>Gets the UTC timestamp of the transaction.</summary>
+    public DateTimeOffset Date { get; private set; }
+
+    /// <summary>Gets the human-readable description of the transaction.</summary>
+    public string Description { get; private set; } = string.Empty;
+
+    /// <summary>Gets the external transaction reference identifier.</summary>
+    public string TransactionId { get; private set; } = string.Empty;
+
+    /// <summary>Gets the optional FK to the related <see cref="Invoice"/>, or <see langword="null"/>.</summary>
     public int? InvoiceId { get; private set; }
 
-    /// <summary>Gets the transaction type (Credit or Debit).</summary>
-    public string Type { get; private set; } = null!;
+    /// <summary>Gets the payment method used (e.g. "Stripe", "Manual", "Refund").</summary>
+    public string PaymentMethod { get; private set; } = string.Empty;
 
-    /// <summary>Gets the transaction amount (always positive; use Type to determine direction).</summary>
-    public decimal Amount { get; private set; }
+    /// <summary>Gets the amount credited to the client's account.</summary>
+    public decimal AmountIn { get; private set; }
 
-    /// <summary>Gets the transaction fees (e.g. Stripe, PayPal fees).</summary>
+    /// <summary>Gets the amount debited from the client's account.</summary>
+    public decimal AmountOut { get; private set; }
+
+    /// <summary>Gets the transaction fees charged.</summary>
     public decimal Fees { get; private set; }
 
-    /// <summary>Gets the currency code (e.g. USD, EUR).</summary>
-    public string Currency { get; private set; } = null!;
-
-    /// <summary>Gets the payment gateway name (e.g. Stripe, PayPal, or null for manual).</summary>
-    public string? Gateway { get; private set; }
-
-    /// <summary>Gets the external transaction ID from the gateway; null for manual transactions.</summary>
-    public string? TransactionId { get; private set; }
-
-    /// <summary>Gets the human-readable description (e.g. "Invoice #123 Payment").</summary>
-    public string Description { get; private set; } = null!;
-
-    /// <summary>Gets the UTC timestamp when the transaction occurred.</summary>
-    public DateTimeOffset CreatedAt { get; private set; }
+    /// <summary>Gets whether this transaction was added to or deducted from the client's credit balance.</summary>
+    public bool AddedToCredit { get; private set; }
 
     /// <summary>EF Core parameterless constructor — do not call directly.</summary>
     private Transaction() : base(0) { }
 
     /// <summary>
-    /// Creates a new transaction record.
+    /// Creates a new transaction with the specified details.
     /// </summary>
-    /// <param name="clientId">FK to the client.</param>
-    /// <param name="invoiceId">Optional FK to the invoice.</param>
-    /// <param name="type">Credit or Debit.</param>
-    /// <param name="amount">Transaction amount (positive).</param>
-    /// <param name="fees">Transaction fees (e.g. gateway fees).</param>
-    /// <param name="currency">Currency code.</param>
+    /// <param name="clientId">FK to the owning client.</param>
+    /// <param name="date">UTC timestamp of the transaction.</param>
     /// <param name="description">Human-readable description.</param>
-    /// <param name="gateway">Optional gateway name.</param>
-    /// <param name="transactionId">Optional external transaction ID.</param>
-    /// <returns>A new transaction aggregate.</returns>
+    /// <param name="transactionId">External transaction reference.</param>
+    /// <param name="invoiceId">Optional related invoice ID.</param>
+    /// <param name="paymentMethod">Payment method used.</param>
+    /// <param name="amountIn">Amount credited (≥ 0).</param>
+    /// <param name="amountOut">Amount debited (≥ 0).</param>
+    /// <param name="fees">Transaction fees (≥ 0).</param>
+    /// <param name="addedToCredit">Whether this affects the client's credit balance.</param>
+    /// <returns>A new <see cref="Transaction"/>.</returns>
+    /// <exception cref="ArgumentException">Thrown when both <paramref name="amountIn"/> and <paramref name="amountOut"/> are 0.</exception>
     public static Transaction Create(
         int clientId,
-        int? invoiceId,
-        string type,
-        decimal amount,
-        decimal fees,
-        string currency,
+        DateTimeOffset date,
         string description,
-        string? gateway = null,
-        string? transactionId = null)
+        string transactionId,
+        int? invoiceId,
+        string paymentMethod,
+        decimal amountIn,
+        decimal amountOut,
+        decimal fees,
+        bool addedToCredit)
     {
+        if (amountIn <= 0 && amountOut <= 0)
+        {
+            throw new ArgumentException("At least one of AmountIn or AmountOut must be greater than 0.");
+        }
+
         return new Transaction
         {
             ClientId = clientId,
-            InvoiceId = invoiceId,
-            Type = type,
-            Amount = amount,
-            Fees = fees,
-            Currency = currency,
+            Date = date,
             Description = description,
-            Gateway = gateway,
             TransactionId = transactionId,
-            CreatedAt = DateTimeOffset.UtcNow,
+            InvoiceId = invoiceId,
+            PaymentMethod = paymentMethod,
+            AmountIn = amountIn,
+            AmountOut = amountOut,
+            Fees = fees,
+            AddedToCredit = addedToCredit,
         };
-    }
-
-    /// <summary>
-    /// Updates an existing transaction record.
-    /// </summary>
-    public void Update(
-        int clientId,
-        string type,
-        decimal amount,
-        decimal fees,
-        string currency,
-        string description,
-        string? gateway = null,
-        string? transactionId = null)
-    {
-        ClientId = clientId;
-        Type = type;
-        Amount = amount;
-        Fees = fees;
-        Currency = currency;
-        Description = description;
-        Gateway = gateway;
-        TransactionId = transactionId;
     }
 }

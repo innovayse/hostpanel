@@ -23,6 +23,26 @@ public sealed class DevDataSeeder(
     /// <returns>Task that completes when seeding is done.</returns>
     public async Task SeedAsync(CancellationToken ct = default)
     {
+        // Always ensure admin user exists
+        const string adminEmail = "admin@innovayse.com";
+        if (await userManager.FindByEmailAsync(adminEmail) is null)
+        {
+            var adminUser = new AppUser
+            {
+                UserName = adminEmail,
+                Email = adminEmail,
+                FirstName = "Admin",
+                LastName = "User",
+                EmailConfirmed = true,
+            };
+            var adminResult = await userManager.CreateAsync(adminUser, "Admin123!");
+            if (adminResult.Succeeded)
+            {
+                await userManager.AddToRoleAsync(adminUser, Roles.Admin);
+                logger.LogInformation("Admin user created: {Email}", adminEmail);
+            }
+        }
+
         var clientsExist = await db.Clients.AnyAsync(ct);
         var invoicesExist = await db.Invoices.AnyAsync(ct);
 
@@ -77,13 +97,19 @@ public sealed class DevDataSeeder(
             var client = Client.Create(user.Id, first, last, email, company);
 
             if (phone is not null)
+            {
                 client.Update(first, last, company, phone);
+            }
 
             if (street is not null)
+            {
                 client.UpdateAddress(street, null, city, state, postCode, country);
+            }
 
             if (status == ClientStatus.Suspended)
+            {
                 client.Suspend();
+            }
 
             db.Clients.Add(client);
             await db.SaveChangesAsync(ct);

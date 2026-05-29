@@ -116,7 +116,7 @@ onMounted(() => store.fetchAll())
 
         <span class="text-[0.82rem] text-text-secondary truncate">{{ domain.registrar ?? '—' }}</span>
 
-        <span class="text-[0.82rem] text-text-secondary">{{ formatPrice(domain.price, domain.priceCurrency) }}</span>
+        <span class="text-[0.82rem] text-text-secondary">{{ formatPrice(domain.recurringAmount, domain.priceCurrency) }}</span>
 
         <span class="text-[0.82rem] text-text-muted">{{ formatDate(domain.nextDueDate) }}</span>
 

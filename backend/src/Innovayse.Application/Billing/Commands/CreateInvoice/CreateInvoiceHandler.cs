@@ -18,7 +18,7 @@ public sealed class CreateInvoiceHandler(IInvoiceRepository repo, IUnitOfWork uo
     /// <exception cref="InvalidOperationException">Propagated from domain when invoice invariants are violated (e.g., invalid item price or quantity).</exception>
     public async Task<int> HandleAsync(CreateInvoiceCommand cmd, CancellationToken ct)
     {
-        var invoice = Invoice.Create(cmd.ClientId, cmd.DueDate);
+        var invoice = Invoice.Create(cmd.ClientId, cmd.DueDate, cmd.IsDraft);
 
         foreach (var item in cmd.Items)
         {

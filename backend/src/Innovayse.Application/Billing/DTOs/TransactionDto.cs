@@ -1,30 +1,26 @@
 namespace Innovayse.Application.Billing.DTOs;
 
-using Innovayse.Domain.Billing;
-
-/// <summary>DTO for a transaction in admin lists with client name.</summary>
+/// <summary>DTO representing a single transaction returned by the API.</summary>
 /// <param name="Id">Transaction primary key.</param>
 /// <param name="ClientId">FK to the owning client.</param>
-/// <param name="ClientName">Full name of the owning client.</param>
-/// <param name="InvoiceId">FK to the invoice if applicable.</param>
-/// <param name="Type">Credit or Debit.</param>
-/// <param name="Amount">Transaction amount.</param>
-/// <param name="Fees">Transaction fees.</param>
-/// <param name="Currency">Currency code.</param>
-/// <param name="Gateway">Payment gateway name (or null).</param>
-/// <param name="TransactionId">External transaction ID.</param>
+/// <param name="Date">UTC timestamp of the transaction.</param>
 /// <param name="Description">Human-readable description.</param>
-/// <param name="CreatedAt">Creation timestamp (UTC).</param>
+/// <param name="TransactionId">External transaction reference.</param>
+/// <param name="InvoiceId">Optional related invoice ID.</param>
+/// <param name="PaymentMethod">Payment method used.</param>
+/// <param name="AmountIn">Amount credited to the account.</param>
+/// <param name="AmountOut">Amount debited from the account.</param>
+/// <param name="Fees">Transaction fees charged.</param>
+/// <param name="AddedToCredit">Whether this affected the client's credit balance.</param>
 public record TransactionDto(
     int Id,
     int ClientId,
-    string ClientName,
-    int? InvoiceId,
-    string Type,
-    decimal Amount,
-    decimal Fees,
-    string Currency,
-    string? Gateway,
-    string? TransactionId,
+    DateTimeOffset Date,
     string Description,
-    DateTimeOffset CreatedAt);
+    string TransactionId,
+    int? InvoiceId,
+    string PaymentMethod,
+    decimal AmountIn,
+    decimal AmountOut,
+    decimal Fees,
+    bool AddedToCredit);

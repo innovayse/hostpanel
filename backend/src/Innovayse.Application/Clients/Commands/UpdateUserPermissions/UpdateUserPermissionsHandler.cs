@@ -26,7 +26,9 @@ public sealed class UpdateUserPermissionsHandler(
             ?? throw new InvalidOperationException($"Client {cmd.ClientId} not found.");
 
         if ((cmd.Permissions & ~(int)ClientPermission.All) != 0)
+        {
             throw new InvalidOperationException($"Invalid permissions value: {cmd.Permissions}.");
+        }
 
         client.UpdateUserPermissions(cmd.UserId, (ClientPermission)cmd.Permissions);
         await uow.SaveChangesAsync(ct);

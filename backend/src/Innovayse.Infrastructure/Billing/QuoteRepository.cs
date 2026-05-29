@@ -37,6 +37,21 @@ public sealed class QuoteRepository(AppDbContext db) : IQuoteRepository
             .ToListAsync(ct);
 
     /// <inheritdoc/>
+    public async Task<(IReadOnlyList<Quote> Items, int TotalCount)> ListByClientAsync(
+        int clientId, int page, int pageSize, CancellationToken ct)
+    {
+        var query = db.Quotes
+            .Where(x => x.ClientId == clientId)
+            .OrderByDescending(x => x.CreatedAt);
+        var total = await query.CountAsync(ct);
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+        return (items, total);
+    }
+
+    /// <inheritdoc/>
     public void Add(Quote quote) => db.Quotes.Add(quote);
 
     /// <inheritdoc/>

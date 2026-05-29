@@ -3,10 +3,9 @@ namespace Innovayse.Application.Billing.Queries.ListQuotes;
 using Innovayse.Application.Billing.DTOs;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Billing.Interfaces;
-using Innovayse.Domain.Clients.Interfaces;
 
-/// <summary>Returns a paginated list of all quotes for admin consumption with client names.</summary>
-public sealed class ListQuotesHandler(IQuoteRepository repo, IClientRepository clientRepo)
+/// <summary>Returns a paginated list of all quotes for admin consumption.</summary>
+public sealed class ListQuotesHandler(IQuoteRepository repo)
 {
     /// <summary>
     /// Handles <see cref="ListQuotesQuery"/>.
@@ -21,20 +20,14 @@ public sealed class ListQuotesHandler(IQuoteRepository repo, IClientRepository c
 
         var (items, total) = await repo.ListAsync(page, pageSize, ct);
 
-        // Batch-resolve client names
-        var clientIds = items.Select(q => q.ClientId).Distinct();
-        var clients = await clientRepo.FindByIdsAsync(clientIds, ct);
-        var clientMap = clients.ToDictionary(c => c.Id, c => $"{c.FirstName} {c.LastName}");
-
         var dtos = items.Select(q => new QuoteListItemDto(
             q.Id,
             q.ClientId,
-            clientMap.GetValueOrDefault(q.ClientId, "Unknown"),
             q.Subject,
-            q.Status,
+            q.CreatedAt,
             q.ExpiryDate,
             q.Total,
-            q.CreatedAt))
+            q.Status))
             .ToList();
 
         return new PagedResult<QuoteListItemDto>(dtos, total, page, pageSize);

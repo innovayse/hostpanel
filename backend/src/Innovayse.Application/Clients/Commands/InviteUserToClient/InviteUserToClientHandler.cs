@@ -76,7 +76,9 @@ public sealed class InviteUserToClientHandler(
 
         // Validate permissions value before casting
         if ((cmd.Permissions & ~(int)ClientPermission.All) != 0)
+        {
             throw new InvalidOperationException($"Invalid permissions value: {cmd.Permissions}.");
+        }
 
         // Create and persist the invitation
         var invitation = Invitation.Create(cmd.ClientId, cmd.Email, cmd.FirstName, cmd.LastName, (ClientPermission)cmd.Permissions);

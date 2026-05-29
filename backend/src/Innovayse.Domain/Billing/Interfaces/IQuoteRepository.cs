@@ -32,6 +32,16 @@ public interface IQuoteRepository
     Task<IReadOnlyList<Quote>> ListByClientAsync(int clientId, CancellationToken ct);
 
     /// <summary>
+    /// Returns a paginated list of quotes for a specific client.
+    /// </summary>
+    /// <param name="clientId">The client's primary key.</param>
+    /// <param name="page">1-based page number.</param>
+    /// <param name="pageSize">Number of items per page (max 100).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Tuple of items for the current page and total matching count.</returns>
+    Task<(IReadOnlyList<Quote> Items, int TotalCount)> ListByClientAsync(int clientId, int page, int pageSize, CancellationToken ct);
+
+    /// <summary>
     /// Adds a new quote to the repository.
     /// </summary>
     /// <param name="quote">The new quote aggregate.</param>

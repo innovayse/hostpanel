@@ -94,4 +94,25 @@ public sealed class BillableItem : AggregateRoot
     {
         NextDueDate = nextDueDate;
     }
+
+    /// <summary>
+    /// Advances <see cref="NextDueDate"/> to the next recurrence based on <see cref="RecurringPeriod"/>.
+    /// Resets <see cref="IsInvoiced"/> so the item is eligible for invoicing again.
+    /// </summary>
+    public void AdvanceDueDate()
+    {
+        if (NextDueDate is null) return;
+
+        NextDueDate = RecurringPeriod?.ToLowerInvariant() switch
+        {
+            "monthly" => NextDueDate.Value.AddMonths(1),
+            "quarterly" => NextDueDate.Value.AddMonths(3),
+            "annually" or "yearly" => NextDueDate.Value.AddYears(1),
+            "weekly" => NextDueDate.Value.AddDays(7),
+            _ => NextDueDate.Value.AddMonths(1),
+        };
+
+        IsInvoiced = false;
+        InvoiceId = null;
+    }
 }

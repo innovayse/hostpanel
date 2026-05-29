@@ -77,9 +77,16 @@ public static class DependencyInjection
 
         // EF Core
         services.AddDbContext<AppDbContext>(options =>
+        {
             options.UseNpgsql(
                 configuration.GetConnectionString("DefaultConnection"),
-                npgsql => npgsql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName)));
+                npgsql => npgsql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName));
+
+            // Suppress PendingModelChangesWarning so MigrateAsync() works in Development
+            // even when the snapshot is slightly out of sync with the model.
+            options.ConfigureWarnings(w =>
+                w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+        });
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 

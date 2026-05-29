@@ -111,6 +111,9 @@ public sealed class Client : AggregateRoot
     /// <summary>Gets whether single sign-on is allowed for this client.</summary>
     public bool AllowSso { get; private set; } = true;
 
+    /// <summary>Gets the client's credit balance available for future invoices.</summary>
+    public decimal CreditBalance { get; private set; }
+
     /// <summary>Gets the UTC timestamp when the client account was created.</summary>
     public DateTimeOffset CreatedAt { get; private set; }
 
@@ -341,9 +344,15 @@ public sealed class Client : AggregateRoot
     public void AddUser(string userId, ClientPermission permissions)
     {
         if (userId == UserId)
+        {
             throw new InvalidOperationException("Cannot add the account owner as an additional user.");
+        }
+
         if (_users.Any(u => u.UserId == userId))
+        {
             throw new InvalidOperationException($"User {userId} is already linked to this client.");
+        }
+
         _users.Add(ClientUser.Create(Id, userId, permissions));
     }
 
@@ -382,14 +391,55 @@ public sealed class Client : AggregateRoot
     public void TransferOwnership(string newOwnerUserId)
     {
         if (newOwnerUserId == UserId)
+        {
             throw new InvalidOperationException("This user is already the account owner.");
+        }
 
         // Remove new owner from additional users if they were linked
         var existing = _users.FirstOrDefault(u => u.UserId == newOwnerUserId);
         if (existing is not null)
+        {
             _users.Remove(existing);
+        }
 
         UserId = newOwnerUserId;
+    }
+
+    /// <summary>
+    /// Adds an amount to the client's credit balance.
+    /// </summary>
+    /// <param name="amount">The positive amount to add.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="amount"/> is not greater than 0.</exception>
+    public void AddCredit(decimal amount)
+    {
+        if (amount <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(amount), "Credit amount must be greater than 0.");
+        }
+
+        CreditBalance += amount;
+    }
+
+    /// <summary>
+    /// Deducts an amount from the client's credit balance.
+    /// </summary>
+    /// <param name="amount">The positive amount to deduct.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="amount"/> is not greater than 0.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the amount exceeds the current credit balance.</exception>
+    public void DeductCredit(decimal amount)
+    {
+        if (amount <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(amount), "Deduction amount must be greater than 0.");
+        }
+
+        if (amount > CreditBalance)
+        {
+            throw new InvalidOperationException(
+                $"Cannot deduct {amount} — current credit balance is {CreditBalance}.");
+        }
+
+        CreditBalance -= amount;
     }
 
     /// <summary>Suspends the account. Throws if already suspended or closed.</summary>
@@ -409,7 +459,9 @@ public sealed class Client : AggregateRoot
     public void Close()
     {
         if (Status == ClientStatus.Closed)
+        {
             throw new InvalidOperationException("Account is already closed.");
+        }
 
         Status = ClientStatus.Closed;
     }

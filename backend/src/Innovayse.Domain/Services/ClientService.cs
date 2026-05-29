@@ -77,6 +77,9 @@ public sealed class ClientService : AggregateRoot
     /// <summary>Gets the reason for auto-termination.</summary>
     public string? AutoTerminateReason { get; private set; }
 
+    /// <summary>Gets the FK to the provisioning server, or null if not assigned.</summary>
+    public int? ServerId { get; private set; }
+
     /// <summary>Gets the internal admin notes.</summary>
     public string? AdminNotes { get; private set; }
 
@@ -113,7 +116,9 @@ public sealed class ClientService : AggregateRoot
     public void Activate(string provisioningRef)
     {
         if (Status is not ServiceStatus.Pending)
+        {
             throw new InvalidOperationException($"Cannot activate a service with status {Status}. Only Pending services can be activated.");
+        }
 
         Status = ServiceStatus.Active;
         ProvisioningRef = provisioningRef;
@@ -132,7 +137,9 @@ public sealed class ClientService : AggregateRoot
     public void Suspend(string reason = "")
     {
         if (Status is not ServiceStatus.Active)
+        {
             throw new InvalidOperationException($"Cannot suspend a service with status {Status}. Only Active services can be suspended.");
+        }
 
         Status = ServiceStatus.Suspended;
         AddDomainEvent(new ClientServiceSuspendedEvent(Id, ClientId));
@@ -148,7 +155,9 @@ public sealed class ClientService : AggregateRoot
     public void Terminate(string reason = "")
     {
         if (Status is ServiceStatus.Terminated)
+        {
             throw new InvalidOperationException("Service is already terminated.");
+        }
 
         Status = ServiceStatus.Terminated;
         TerminatedAt = DateTimeOffset.UtcNow;
@@ -163,9 +172,12 @@ public sealed class ClientService : AggregateRoot
     public void Unsuspend()
     {
         if (Status is not ServiceStatus.Suspended)
+        {
             throw new InvalidOperationException($"Cannot unsuspend a service with status {Status}. Only Suspended services can be unsuspended.");
+        }
 
         Status = ServiceStatus.Active;
+        AddDomainEvent(new Provisioning.Events.ServiceUnsuspendedEvent(Id, ClientId));
     }
 
     /// <summary>
@@ -189,6 +201,9 @@ public sealed class ClientService : AggregateRoot
     /// <param name="firstPaymentAmount">First payment amount.</param>
     /// <param name="promotionCode">Promotion/coupon code.</param>
     /// <param name="terminatedAt">Termination date (admin override).</param>
+    /// <param name="serverId">FK to the provisioning server (null to clear).</param>
+    /// <param name="quantity">Quantity ordered.</param>
+    /// <param name="productId">FK to the product (null to keep current).</param>
     public void Update(string? domain, string? dedicatedIp, string? username,
         string? password, string billingCycle, decimal recurringAmount,
         string? paymentMethod, DateTimeOffset? nextRenewalAt,
@@ -196,7 +211,8 @@ public sealed class ClientService : AggregateRoot
         DateTimeOffset? suspendUntil, bool autoTerminateEndOfCycle,
         string? autoTerminateReason, string? adminNotes,
         string? provisioningRef, decimal firstPaymentAmount,
-        string? promotionCode, DateTimeOffset? terminatedAt)
+        string? promotionCode, DateTimeOffset? terminatedAt,
+        int? serverId, int quantity, int? productId)
     {
         Domain = domain;
         DedicatedIp = dedicatedIp;
@@ -216,5 +232,12 @@ public sealed class ClientService : AggregateRoot
         FirstPaymentAmount = firstPaymentAmount;
         PromotionCode = promotionCode;
         TerminatedAt = terminatedAt;
+        ServerId = serverId;
+        Quantity = quantity;
+
+        if (productId.HasValue)
+        {
+            ProductId = productId.Value;
+        }
     }
 }

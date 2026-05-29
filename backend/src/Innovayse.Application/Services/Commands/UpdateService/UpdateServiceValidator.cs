@@ -26,5 +26,8 @@ public sealed class UpdateServiceValidator : AbstractValidator<UpdateServiceComm
             .Must(s => Enum.TryParse<Domain.Services.ServiceStatus>(s, ignoreCase: true, out _))
             .WithMessage("Status must be one of: Pending, Active, Suspended, Terminated.")
             .When(x => x.Status is not null);
+        RuleFor(x => x.Quantity).GreaterThanOrEqualTo(1);
+        RuleFor(x => x.ProductId).GreaterThan(0).When(x => x.ProductId is not null);
+        RuleFor(x => x.ServerId).GreaterThan(0).When(x => x.ServerId is not null);
     }
 }

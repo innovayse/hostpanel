@@ -3,17 +3,19 @@ namespace Innovayse.Application.Services.Queries.GetService;
 using Innovayse.Application.Services.DTOs;
 using Innovayse.Domain.Clients.Interfaces;
 using Innovayse.Domain.Products.Interfaces;
+using Innovayse.Domain.Servers.Interfaces;
 using Innovayse.Domain.Services.Interfaces;
 
 /// <summary>Returns a single enriched client service for admin detail views.</summary>
 public sealed class GetServiceHandler(
     IClientServiceRepository serviceRepo,
     IProductRepository productRepo,
-    IClientRepository clientRepo)
+    IClientRepository clientRepo,
+    IServerRepository serverRepo)
 {
     /// <summary>
     /// Handles <see cref="GetServiceQuery"/> by loading the service and resolving
-    /// the product name and client name.
+    /// the product name, client name, and server name.
     /// </summary>
     /// <param name="qry">The query containing the service ID.</param>
     /// <param name="ct">Cancellation token.</param>
@@ -30,6 +32,13 @@ public sealed class GetServiceHandler(
         var clientName = client is not null
             ? $"{client.FirstName} {client.LastName}"
             : "Unknown";
+
+        string? serverName = null;
+        if (svc.ServerId.HasValue)
+        {
+            var server = await serverRepo.FindByIdAsync(svc.ServerId.Value, ct);
+            serverName = server?.Name;
+        }
 
         return new ServiceDetailDto(
             svc.Id,
@@ -57,6 +66,8 @@ public sealed class GetServiceHandler(
             svc.SuspendUntil,
             svc.AutoTerminateEndOfCycle,
             svc.AutoTerminateReason,
-            svc.AdminNotes);
+            svc.AdminNotes,
+            svc.ServerId,
+            serverName);
     }
 }

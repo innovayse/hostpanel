@@ -148,4 +148,57 @@ public sealed class Quote : AggregateRoot
 
         Status = QuoteStatus.Cancelled;
     }
+
+    /// <summary>
+    /// Updates the quote's mutable details.
+    /// </summary>
+    public void UpdateDetails(string subject, QuoteStatus status, DateTimeOffset expiryDate, string? notes)
+    {
+        Subject = subject;
+        Status = status;
+        ExpiryDate = expiryDate;
+        Notes = notes;
+    }
+
+    /// <summary>
+    /// Removes a line item by ID and recalculates <see cref="Total"/>.
+    /// </summary>
+    public void RemoveItem(int itemId)
+    {
+        var item = _items.FirstOrDefault(i => i.Id == itemId)
+            ?? throw new InvalidOperationException($"Quote item {itemId} not found.");
+        Total -= item.Amount;
+        _items.Remove(item);
+    }
+
+    /// <summary>
+    /// Updates an existing line item and recalculates <see cref="Total"/>.
+    /// </summary>
+    public void UpdateItem(int itemId, string description, decimal unitPrice, int quantity)
+    {
+        var item = _items.FirstOrDefault(i => i.Id == itemId)
+            ?? throw new InvalidOperationException($"Quote item {itemId} not found.");
+        Total -= item.Amount;
+        item.Update(description, unitPrice, quantity);
+        Total += item.Amount;
+    }
+
+    /// <summary>
+    /// Creates a new Draft copy of this quote (with all its line items).
+    /// </summary>
+    public Quote Duplicate()
+    {
+        var copy = Quote.Create(ClientId, Subject, ExpiryDate, Notes);
+        foreach (var item in _items)
+        {
+            copy.AddItem(item.Description, item.UnitPrice, item.Quantity);
+        }
+        return copy;
+    }
+
+    /// <summary>
+    /// Returns the line item data needed to generate an invoice.
+    /// </summary>
+    public IReadOnlyList<(string Description, decimal UnitPrice, int Quantity)> GetInvoiceItemData()
+        => _items.Select(i => (i.Description, i.UnitPrice, i.Quantity)).ToList();
 }

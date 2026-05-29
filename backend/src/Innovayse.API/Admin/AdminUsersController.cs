@@ -54,7 +54,11 @@ public sealed class AdminUsersController(
     public async Task<ActionResult<UserDetailDto>> GetByIdAsync(string id, CancellationToken ct)
     {
         var dto = await userService.GetUserWithAccountsAsync(id, ct);
-        if (dto is null) return NotFound();
+        if (dto is null)
+        {
+            return NotFound();
+        }
+
         return Ok(dto);
     }
 

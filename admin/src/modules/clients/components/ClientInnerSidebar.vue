@@ -54,6 +54,26 @@ const navItems = computed<InnerNavItem[]>(() => [
     label: 'Contacts',
     to: `/clients/${props.clientId}/contacts`,
   },
+  {
+    icon: 'billable',
+    label: 'Billable Items',
+    to: `/clients/${props.clientId}/billable-items`,
+  },
+  {
+    icon: 'invoices',
+    label: 'Invoices',
+    to: `/clients/${props.clientId}/invoices`,
+  },
+  {
+    icon: 'quotes',
+    label: 'Quotes',
+    to: `/clients/${props.clientId}/quotes`,
+  },
+  {
+    icon: 'transactions',
+    label: 'Transactions',
+    to: `/clients/${props.clientId}/transactions`,
+  },
 ])
 
 /**
@@ -140,6 +160,35 @@ function isActive(item: InnerNavItem): boolean {
         <svg v-else-if="item.icon === 'contacts'" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/>
           <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
+        </svg>
+
+        <!-- Billable Items icon -->
+        <svg v-else-if="item.icon === 'billable'" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="1" x2="12" y2="23" />
+          <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+        </svg>
+
+        <!-- Invoices icon (receipt/file-text) -->
+        <svg v-else-if="item.icon === 'invoices'" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+          <polyline points="10 9 9 9 8 9" />
+        </svg>
+
+        <!-- Quotes icon (clipboard) -->
+        <svg v-else-if="item.icon === 'quotes'" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2" />
+          <rect x="8" y="2" width="8" height="4" rx="1" />
+          <line x1="8" y1="11" x2="16" y2="11" />
+          <line x1="8" y1="15" x2="12" y2="15" />
+        </svg>
+
+        <!-- Transactions icon (credit card) -->
+        <svg v-else-if="item.icon === 'transactions'" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+          <line x1="1" y1="10" x2="23" y2="10" />
         </svg>
 
         <!-- Label -->

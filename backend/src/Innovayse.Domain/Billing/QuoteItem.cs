@@ -46,4 +46,14 @@ public sealed class QuoteItem
             Quantity = quantity,
         };
     }
+
+    /// <summary>Updates the item's details in place.</summary>
+    public void Update(string description, decimal unitPrice, int quantity)
+    {
+        if (unitPrice < 0) throw new ArgumentException("Unit price cannot be negative.", nameof(unitPrice));
+        if (quantity < 1) throw new ArgumentException("Quantity must be at least 1.", nameof(quantity));
+        Description = description;
+        UnitPrice = unitPrice;
+        Quantity = quantity;
+    }
 }

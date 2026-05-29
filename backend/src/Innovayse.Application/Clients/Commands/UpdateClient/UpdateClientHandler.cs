@@ -36,7 +36,9 @@ public sealed class UpdateClientHandler(IClientRepository clientRepo, IUnitOfWor
         if (cmd.Status is not null)
         {
             if (!Enum.TryParse<ClientStatus>(cmd.Status, ignoreCase: true, out var newStatus))
+            {
                 throw new InvalidOperationException($"Invalid client status: '{cmd.Status}'.");
+            }
 
             if (newStatus != client.Status)
             {

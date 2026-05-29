@@ -44,6 +44,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
     /// <summary>Gets the domains table.</summary>
     public DbSet<Domain> Domains => Set<Domain>();
 
+    /// <summary>Gets the billable items table.</summary>
+    public DbSet<BillableItem> BillableItems => Set<BillableItem>();
+
     /// <summary>Gets the invoices table.</summary>
     public DbSet<Invoice> Invoices => Set<Invoice>();
 
@@ -53,8 +56,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
     /// <summary>Gets the transactions table.</summary>
     public DbSet<Transaction> Transactions => Set<Transaction>();
 
-    /// <summary>Gets the billable items table.</summary>
-    public DbSet<BillableItem> BillableItems => Set<BillableItem>();
+    /// <summary>Gets the invoice transactions table.</summary>
+    public DbSet<InvoiceTransaction> InvoiceTransactions => Set<InvoiceTransaction>();
 
     /// <summary>Gets the quotes table.</summary>
     public DbSet<Quote> Quotes => Set<Quote>();

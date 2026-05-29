@@ -1,6 +1,7 @@
 namespace Innovayse.Application.Billing.Queries.ListTransactions;
 
-/// <summary>Query to fetch a paginated list of all transactions.</summary>
-/// <param name="Page">1-based page number (default 1).</param>
-/// <param name="PageSize">Items per page (default 20, max 100).</param>
-public sealed record ListTransactionsQuery(int Page = 1, int PageSize = 20);
+/// <summary>Query to list a client's transactions with financial summary.</summary>
+/// <param name="ClientId">The client's primary key.</param>
+/// <param name="Page">1-based page number.</param>
+/// <param name="PageSize">Number of items per page.</param>
+public record ListTransactionsQuery(int ClientId, int Page, int PageSize);

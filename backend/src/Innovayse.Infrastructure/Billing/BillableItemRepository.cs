@@ -41,6 +41,31 @@ public sealed class BillableItemRepository(AppDbContext db) : IBillableItemRepos
             .ToListAsync(ct);
 
     /// <inheritdoc/>
+    public async Task<IReadOnlyList<BillableItem>> GetDueForCronInvoicingAsync(CancellationToken ct)
+    {
+        var now = DateTimeOffset.UtcNow;
+        return await db.BillableItems
+            .Where(x => !x.IsInvoiced && x.Type == BillableItemType.OneTime && x.NextDueDate <= now)
+            .ToListAsync(ct);
+    }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<BillableItem>> GetDueForRecurrenceAsync(CancellationToken ct)
+    {
+        var now = DateTimeOffset.UtcNow;
+        return await db.BillableItems
+            .Where(x => x.Type == BillableItemType.Recurring && x.NextDueDate != null && x.NextDueDate <= now)
+            .ToListAsync(ct);
+    }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<BillableItem>> FindByIdsAsync(IReadOnlyList<int> ids, CancellationToken ct) =>
+        await db.BillableItems.Where(x => ids.Contains(x.Id)).ToListAsync(ct);
+
+    /// <inheritdoc/>
+    public void AddRange(IEnumerable<BillableItem> items) => db.BillableItems.AddRange(items);
+
+    /// <inheritdoc/>
     public void Add(BillableItem item) => db.BillableItems.Add(item);
 
     /// <inheritdoc/>

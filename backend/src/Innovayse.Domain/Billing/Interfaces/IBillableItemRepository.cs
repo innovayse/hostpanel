@@ -40,6 +40,26 @@ public interface IBillableItemRepository
     Task<IReadOnlyList<BillableItem>> ListRecurringAsync(int clientId, CancellationToken ct);
 
     /// <summary>
+    /// Returns all billable items due for cron-triggered invoicing.
+    /// </summary>
+    Task<IReadOnlyList<BillableItem>> GetDueForCronInvoicingAsync(CancellationToken ct);
+
+    /// <summary>
+    /// Returns all recurring billable items whose next due date has arrived.
+    /// </summary>
+    Task<IReadOnlyList<BillableItem>> GetDueForRecurrenceAsync(CancellationToken ct);
+
+    /// <summary>
+    /// Finds multiple billable items by their IDs.
+    /// </summary>
+    Task<IReadOnlyList<BillableItem>> FindByIdsAsync(IReadOnlyList<int> ids, CancellationToken ct);
+
+    /// <summary>
+    /// Adds multiple new billable items to the repository.
+    /// </summary>
+    void AddRange(IEnumerable<BillableItem> items);
+
+    /// <summary>
     /// Adds a new billable item to the repository.
     /// </summary>
     /// <param name="item">The new billable item aggregate.</param>

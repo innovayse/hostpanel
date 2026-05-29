@@ -41,6 +41,8 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<Client>
         builder.Property(x => x.BillingContact).HasMaxLength(256);
         builder.Property(x => x.AdminNotes).HasMaxLength(2000);
 
+        builder.Property(x => x.CreditBalance).HasColumnType("numeric(18,4)").HasDefaultValue(0m);
+
         builder.Property(x => x.CreatedAt).IsRequired();
 
         builder.Ignore(x => x.DomainEvents);

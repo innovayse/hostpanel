@@ -33,6 +33,7 @@ public sealed class ClientServiceConfiguration : IEntityTypeConfiguration<Client
             builder.Property(x => x.Password).HasMaxLength(256);
         }
 
+        builder.Property(x => x.ServerId);
         builder.Property(x => x.PaymentMethod).HasMaxLength(50);
         builder.Property(x => x.PromotionCode).HasMaxLength(50);
         builder.Property(x => x.SubscriptionId).HasMaxLength(256);

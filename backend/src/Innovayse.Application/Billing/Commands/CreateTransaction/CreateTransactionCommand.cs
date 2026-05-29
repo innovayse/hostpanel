@@ -1,20 +1,24 @@
 namespace Innovayse.Application.Billing.Commands.CreateTransaction;
 
-/// <summary>Command to create a new transaction record.</summary>
-/// <param name="ClientId">FK to the client.</param>
-/// <param name="Type">Transaction type (Credit or Debit).</param>
-/// <param name="Amount">Transaction amount (always positive).</param>
-/// <param name="Fees">Transaction fees.</param>
-/// <param name="Currency">Currency code (e.g. USD).</param>
+/// <summary>Command to create a new transaction and optionally adjust credit balance.</summary>
+/// <param name="ClientId">FK to the owning client.</param>
+/// <param name="Date">UTC timestamp of the transaction.</param>
 /// <param name="Description">Human-readable description.</param>
-/// <param name="Gateway">Optional payment gateway name (e.g. Stripe).</param>
-/// <param name="TransactionId">Optional external transaction ID.</param>
-public sealed record CreateTransactionCommand(
+/// <param name="TransactionId">External transaction reference.</param>
+/// <param name="InvoiceId">Optional related invoice ID.</param>
+/// <param name="PaymentMethod">Payment method used.</param>
+/// <param name="AmountIn">Amount credited to the account (≥ 0).</param>
+/// <param name="AmountOut">Amount debited from the account (≥ 0).</param>
+/// <param name="Fees">Transaction fees (≥ 0).</param>
+/// <param name="AddToCredit">When true, adjusts the client's credit balance accordingly.</param>
+public record CreateTransactionCommand(
     int ClientId,
-    string Type,
-    decimal Amount,
-    decimal Fees,
-    string Currency,
+    DateTimeOffset Date,
     string Description,
-    string? Gateway = null,
-    string? TransactionId = null);
+    string TransactionId,
+    int? InvoiceId,
+    string PaymentMethod,
+    decimal AmountIn,
+    decimal AmountOut,
+    decimal Fees,
+    bool AddToCredit);

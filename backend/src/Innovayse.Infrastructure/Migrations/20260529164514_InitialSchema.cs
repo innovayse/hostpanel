@@ -15,6 +15,41 @@ namespace Innovayse.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "activity_logs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ClientId = table.Column<int>(type: "integer", nullable: false),
+                    Description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
+                    AdminId = table.Column<string>(type: "character varying(450)", maxLength: 450, nullable: true),
+                    AdminName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    AdminEmail = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    IpAddress = table.Column<string>(type: "character varying(45)", maxLength: 45, nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_activity_logs", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "announcements",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Title = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    Content = table.Column<string>(type: "text", nullable: false),
+                    IsPublished = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_announcements", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AspNetRoles",
                 columns: table => new
                 {
@@ -328,6 +363,92 @@ namespace Innovayse.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "kb_categories",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    Description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
+                    IsHidden = table.Column<bool>(type: "boolean", nullable: false),
+                    ParentCategoryId = table.Column<int>(type: "integer", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_kb_categories", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "network_issues",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Title = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    Type = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Server = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    Priority = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    StartDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    EndDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    Description = table.Column<string>(type: "text", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_network_issues", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Orders",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    OrderNumber = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    ClientId = table.Column<int>(type: "integer", nullable: false),
+                    Status = table.Column<string>(type: "text", nullable: false),
+                    PaymentMethod = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    InvoiceId = table.Column<int>(type: "integer", nullable: true),
+                    IpAddress = table.Column<string>(type: "character varying(45)", maxLength: 45, nullable: true),
+                    Notes = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Orders", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "predefined_replies",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    Content = table.Column<string>(type: "text", nullable: false),
+                    CategoryId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_predefined_replies", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "predefined_reply_categories",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    ParentCategoryId = table.Column<int>(type: "integer", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_predefined_reply_categories", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "product_groups",
                 columns: table => new
                 {
@@ -404,7 +525,8 @@ namespace Innovayse.Infrastructure.Migrations
                     Priority = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
                     DepartmentId = table.Column<int>(type: "integer", nullable: true),
                     AssignedToStaffId = table.Column<int>(type: "integer", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    IsFlagged = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -760,6 +882,33 @@ namespace Innovayse.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "OrderItems",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    OrderId = table.Column<int>(type: "integer", nullable: false),
+                    ProductId = table.Column<int>(type: "integer", nullable: false),
+                    ProductName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    BillingCycle = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    Domain = table.Column<string>(type: "character varying(253)", maxLength: 253, nullable: true),
+                    Hostname = table.Column<string>(type: "character varying(253)", maxLength: 253, nullable: true),
+                    FirstPaymentAmount = table.Column<decimal>(type: "numeric", nullable: false),
+                    RecurringAmount = table.Column<decimal>(type: "numeric", nullable: false),
+                    Status = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OrderItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_OrderItems_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "products",
                 columns: table => new
                 {
@@ -891,6 +1040,16 @@ namespace Innovayse.Infrastructure.Migrations
                     { 4, "<p>Your hosting service has been provisioned.</p>", "Sent when service provisioned", true, "service-provisioned", "Your Service is Ready" },
                     { 5, "<p>We received your support request.</p>", "Sent when ticket created", true, "ticket-created", "Support Ticket #{{ticket.id}} Created" }
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_activity_logs_ClientId",
+                table: "activity_logs",
+                column: "ClientId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_activity_logs_CreatedAt",
+                table: "activity_logs",
+                column: "CreatedAt");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
@@ -1031,9 +1190,35 @@ namespace Innovayse.Infrastructure.Migrations
                 column: "IsPublished");
 
             migrationBuilder.CreateIndex(
+                name: "IX_kb_categories_Name",
+                table: "kb_categories",
+                column: "Name");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_nameservers_DomainId",
                 table: "nameservers",
                 column: "DomainId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_network_issues_Status",
+                table: "network_issues",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderItems_OrderId",
+                table: "OrderItems",
+                column: "OrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Orders_OrderNumber",
+                table: "Orders",
+                column: "OrderNumber",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_predefined_replies_CategoryId",
+                table: "predefined_replies",
+                column: "CategoryId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_products_GroupId",
@@ -1091,6 +1276,12 @@ namespace Innovayse.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "activity_logs");
+
+            migrationBuilder.DropTable(
+                name: "announcements");
+
             migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 
@@ -1152,7 +1343,22 @@ namespace Innovayse.Infrastructure.Migrations
                 name: "kb_articles");
 
             migrationBuilder.DropTable(
+                name: "kb_categories");
+
+            migrationBuilder.DropTable(
                 name: "nameservers");
+
+            migrationBuilder.DropTable(
+                name: "network_issues");
+
+            migrationBuilder.DropTable(
+                name: "OrderItems");
+
+            migrationBuilder.DropTable(
+                name: "predefined_replies");
+
+            migrationBuilder.DropTable(
+                name: "predefined_reply_categories");
 
             migrationBuilder.DropTable(
                 name: "products");
@@ -1186,6 +1392,9 @@ namespace Innovayse.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "domains");
+
+            migrationBuilder.DropTable(
+                name: "Orders");
 
             migrationBuilder.DropTable(
                 name: "product_groups");

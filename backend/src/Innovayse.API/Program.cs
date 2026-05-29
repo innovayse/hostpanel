@@ -5,8 +5,10 @@ using Innovayse.API.Billing;
 using Innovayse.API.Domains;
 using Innovayse.Domain.Auth;
 using Innovayse.Infrastructure;
+using Innovayse.Infrastructure.Persistence;
 using Innovayse.Infrastructure.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.IdentityModel.Tokens;
@@ -163,6 +165,14 @@ try
 
 
     var app = builder.Build();
+
+    // Auto-apply EF Core migrations in Development only
+    if (app.Environment.IsDevelopment())
+    {
+        using var migrScope = app.Services.CreateScope();
+        var dbCtx = migrScope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await dbCtx.Database.MigrateAsync();
+    }
 
     // Seed roles — skip in Testing environment (migrations run after host starts via factory)
     if (!app.Environment.IsEnvironment("Testing"))

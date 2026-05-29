@@ -37,6 +37,9 @@ public sealed class Ticket : AggregateRoot
     /// <summary>Gets the UTC timestamp when this ticket was created.</summary>
     public DateTimeOffset CreatedAt { get; private set; }
 
+    /// <summary>Gets whether this ticket has been flagged by staff for attention.</summary>
+    public bool IsFlagged { get; private set; }
+
     /// <summary>Gets a read-only view of all replies on this ticket.</summary>
     public IReadOnlyList<TicketReply> Replies => _replies.AsReadOnly();
 
@@ -118,5 +121,36 @@ public sealed class Ticket : AggregateRoot
 
         Status = TicketStatus.Closed;
         AddDomainEvent(new TicketClosedEvent(Id, ClientId));
+    }
+
+    /// <summary>
+    /// Changes the priority level of this ticket.
+    /// </summary>
+    /// <param name="priority">The new priority level.</param>
+    public void ChangePriority(TicketPriority priority) => Priority = priority;
+
+    /// <summary>
+    /// Changes the department assignment of this ticket.
+    /// </summary>
+    /// <param name="departmentId">FK to the new department, or <see langword="null"/> to unassign.</param>
+    public void ChangeDepartment(int? departmentId) => DepartmentId = departmentId;
+
+    /// <summary>
+    /// Toggles the flagged state of this ticket.
+    /// </summary>
+    public void ToggleFlag() => IsFlagged = !IsFlagged;
+
+    /// <summary>
+    /// Reopens a closed ticket by setting status back to <see cref="TicketStatus.Open"/>.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown when the ticket is not currently closed.</exception>
+    public void Reopen()
+    {
+        if (Status != TicketStatus.Closed)
+        {
+            throw new InvalidOperationException("Only closed tickets can be reopened.");
+        }
+
+        Status = TicketStatus.Open;
     }
 }

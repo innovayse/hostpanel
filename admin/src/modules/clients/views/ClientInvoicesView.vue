@@ -48,8 +48,8 @@ const bulkActionValue = ref('')
 /** Whether the bulk confirm modal is visible. */
 const showBulkConfirmModal = ref(false)
 
-/** Whether the create invoice modal is visible. */
-const showCreateModal = ref(false)
+/** Whether the inline create form is visible. */
+const showCreateForm = ref(false)
 
 /** New invoice due date. */
 const newDueDate = ref('')
@@ -158,12 +158,14 @@ function handleBulkApply(): void {
   showBulkConfirmModal.value = true
 }
 
-/** Opens the create modal pre-filled with client ID. */
-function openCreateModal(): void {
-  newDueDate.value = ''
-  newItems.value = [{ description: '', unitPrice: 0, quantity: 1 }]
-  newIsDraft.value = true
-  showCreateModal.value = true
+/** Toggles the inline create form visibility. */
+function toggleCreateForm(): void {
+  showCreateForm.value = !showCreateForm.value
+  if (showCreateForm.value) {
+    newDueDate.value = ''
+    newItems.value = [{ description: '', unitPrice: 0, quantity: 1 }]
+    newIsDraft.value = true
+  }
 }
 
 /** Adds a blank line item. */
@@ -190,7 +192,7 @@ async function handleCreate(): Promise<void> {
   const id = await store.createInvoice(Number(clientId.value), newDueDate.value, newItems.value, newIsDraft.value)
   creating.value = false
   if (id) {
-    showCreateModal.value = false
+    showCreateForm.value = false
     router.push(`/billing/${id}`)
   }
 }
@@ -246,11 +248,91 @@ onMounted(() => fetchInvoices())
       <button
         type="button"
         class="gradient-brand px-5 py-2 text-[0.84rem] font-semibold text-white rounded-[10px] transition-opacity"
-        @click="openCreateModal"
+        @click="toggleCreateForm"
       >
         + Create Invoice
       </button>
     </div>
+
+    <!-- Inline Create Invoice Form -->
+    <Transition
+      enter-active-class="transition-all duration-300 ease-out"
+      enter-from-class="opacity-0 max-h-0 -translate-y-2"
+      enter-to-class="opacity-100 max-h-[600px] translate-y-0"
+      leave-active-class="transition-all duration-200 ease-in"
+      leave-from-class="opacity-100 max-h-[600px] translate-y-0"
+      leave-to-class="opacity-0 max-h-0 -translate-y-2"
+    >
+      <div v-if="showCreateForm" class="bg-surface-card border border-border rounded-2xl p-5 mb-5 overflow-hidden">
+        <h2 class="text-[0.82rem] font-semibold text-text-primary mb-4">New Invoice</h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Due Date</label>
+            <AppDatePicker v-model="newDueDate" placeholder="Select due date" />
+          </div>
+          <div class="flex items-end">
+            <label class="flex items-center gap-2 text-[0.82rem] text-text-secondary cursor-pointer pb-2">
+              <AppCheckbox v-model="newIsDraft" />
+              Create as Draft
+            </label>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-2 block">Line Items</label>
+          <div v-for="(item, idx) in newItems" :key="idx" class="flex gap-2 mb-2">
+            <input
+              v-model="item.description"
+              type="text"
+              placeholder="Description"
+              class="flex-1 bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors"
+            />
+            <div class="w-28">
+              <AppNumberInput v-model="item.unitPrice" :step="0.01" :min="0" placeholder="Price" />
+            </div>
+            <div class="w-20">
+              <AppNumberInput v-model="item.quantity" :min="1" placeholder="Qty" />
+            </div>
+            <button
+              v-if="newItems.length > 1"
+              type="button"
+              class="text-status-red hover:text-status-red/80 transition-colors px-1"
+              @click="removeNewItem(idx)"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+              </svg>
+            </button>
+          </div>
+          <button
+            type="button"
+            class="text-primary-400 text-[0.78rem] hover:text-primary-300 transition-colors"
+            @click="addNewItem"
+          >
+            + Add Item
+          </button>
+        </div>
+
+        <div class="flex justify-end gap-2.5">
+          <button
+            type="button"
+            class="px-4 py-2 text-[0.82rem] font-medium text-text-secondary bg-white/[0.04] border border-border rounded-[10px] hover:bg-white/[0.08] transition-colors"
+            @click="showCreateForm = false"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            :disabled="creating"
+            class="gradient-brand px-5 py-2 text-[0.82rem] font-semibold text-white rounded-[10px] transition-opacity disabled:opacity-50"
+            @click="handleCreate"
+          >
+            {{ creating ? 'Creating...' : 'Create Invoice' }}
+          </button>
+        </div>
+      </div>
+    </Transition>
 
     <!-- Filter bar -->
     <div class="flex items-center gap-2.5 mb-5 flex-wrap">
@@ -416,83 +498,5 @@ onMounted(() => fetchInvoices())
       @close="showBulkConfirmModal = false"
     />
 
-    <!-- Create Invoice Modal -->
-    <Teleport to="body">
-      <div
-        v-if="showCreateModal"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
-        @click.self="showCreateModal = false"
-      >
-        <div class="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-          <div class="flex items-center justify-between">
-            <h2 class="text-white font-semibold text-lg">Create Invoice</h2>
-            <button class="text-zinc-400 hover:text-white transition" @click="showCreateModal = false">&#10005;</button>
-          </div>
-
-          <div class="space-y-3">
-            <div class="text-zinc-400 text-sm">
-              Client #{{ clientId }}
-            </div>
-            <div>
-              <label class="block text-zinc-400 text-sm mb-1">Due Date</label>
-              <AppDatePicker v-model="newDueDate" />
-            </div>
-            <div>
-              <label class="flex items-center gap-2 text-zinc-400 text-sm cursor-pointer">
-                <AppCheckbox v-model="newIsDraft" />
-                Create as Draft
-              </label>
-            </div>
-
-            <div>
-              <label class="block text-zinc-400 text-sm mb-2">Line Items</label>
-              <div v-for="(item, idx) in newItems" :key="idx" class="flex gap-2 mb-2">
-                <input
-                  v-model="item.description"
-                  type="text"
-                  placeholder="Description"
-                  class="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-                <div class="w-24">
-                  <AppNumberInput v-model="item.unitPrice" :step="0.01" :min="0" placeholder="Price" />
-                </div>
-                <div class="w-16">
-                  <AppNumberInput v-model="item.quantity" :min="1" placeholder="Qty" />
-                </div>
-                <button
-                  v-if="newItems.length > 1"
-                  type="button"
-                  class="text-status-red hover:text-status-red/80 transition-colors px-1"
-                  @click="removeNewItem(idx)"
-                >
-                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-                  </svg>
-                </button>
-              </div>
-              <button
-                type="button"
-                class="text-primary-400 text-sm hover:underline"
-                @click="addNewItem"
-              >
-                + Add Item
-              </button>
-            </div>
-          </div>
-
-          <div class="flex justify-end gap-2">
-            <button
-              class="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white text-sm rounded-lg transition"
-              @click="showCreateModal = false"
-            >Cancel</button>
-            <button
-              :disabled="creating"
-              class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition disabled:opacity-50"
-              @click="handleCreate"
-            >{{ creating ? 'Creating...' : 'Create Invoice' }}</button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
   </div>
 </template>

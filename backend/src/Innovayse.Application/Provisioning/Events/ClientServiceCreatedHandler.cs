@@ -1,20 +1,26 @@
 namespace Innovayse.Application.Provisioning.Events;
 
-using Innovayse.Application.Provisioning.Commands.ProvisionService;
 using Innovayse.Domain.Services.Events;
-using Wolverine;
+using Microsoft.Extensions.Logging;
 
 /// <summary>
-/// Handles <see cref="ClientServiceCreatedEvent"/> to trigger automatic provisioning
-/// of the newly ordered hosting service.
+/// Handles <see cref="ClientServiceCreatedEvent"/>.
+/// Auto-provisioning is disabled — services stay in Pending status until
+/// the client completes the setup wizard, which triggers provisioning explicitly.
 /// </summary>
-public sealed class ClientServiceCreatedHandler(IMessageBus bus)
+public sealed class ClientServiceCreatedHandler(ILogger<ClientServiceCreatedHandler> logger)
 {
     /// <summary>
-    /// Dispatches a <see cref="ProvisionServiceCommand"/> when a service is created.
+    /// Logs the service creation event without triggering provisioning.
+    /// Provisioning is now client-driven via the setup wizard.
     /// </summary>
     /// <param name="evt">The domain event carrying the new service identifier.</param>
     /// <param name="ct">Cancellation token.</param>
-    public async Task HandleAsync(ClientServiceCreatedEvent evt, CancellationToken ct)
-        => await bus.InvokeAsync(new ProvisionServiceCommand(evt.ServiceId), ct);
+    public Task HandleAsync(ClientServiceCreatedEvent evt, CancellationToken ct)
+    {
+        logger.LogInformation(
+            "Service {ServiceId} created for client {ClientId}, product {ProductId} — awaiting client setup",
+            evt.ServiceId, evt.ClientId, evt.ProductId);
+        return Task.CompletedTask;
+    }
 }

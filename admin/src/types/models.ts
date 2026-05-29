@@ -300,7 +300,53 @@ export interface Invoice {
   transactions: InvoiceTransaction[]
 }
 
-/** Represents a support ticket. */
+/** Represents a single admin activity log entry for a client. */
+export interface ActivityLog {
+  /** Unique identifier. */
+  id: number
+  /** Human-readable description of the action performed. */
+  description: string
+  /** Display name of the admin who performed the action. */
+  adminName: string | null
+  /** Email of the admin who performed the action. */
+  adminEmail: string | null
+  /** IP address from which the action originated. */
+  ipAddress: string | null
+  /** UTC ISO timestamp of the action. */
+  createdAt: string
+}
+
+/** Represents a single email log entry. */
+export interface EmailLog {
+  /** Unique identifier. */
+  id: number
+  /** Recipient email address. */
+  to: string
+  /** Email subject line. */
+  subject: string
+  /** UTC timestamp of the send attempt. */
+  sentAt: string
+  /** Whether the email was delivered successfully. */
+  success: boolean
+  /** Error message if delivery failed; null on success. */
+  error: string | null
+}
+
+/** DTO representing a support ticket reply. */
+export interface TicketReply {
+  /** Reply primary key. */
+  id: number
+  /** Reply message body. */
+  message: string
+  /** Display name of the reply author. */
+  authorName: string
+  /** Whether this reply was posted by a staff member. */
+  isStaffReply: boolean
+  /** ISO 8601 creation timestamp. */
+  createdAt: string
+}
+
+/** Full DTO representing a single support ticket with all its replies. */
 export interface Ticket {
   /** Unique ticket identifier. */
   id: number
@@ -308,12 +354,180 @@ export interface Ticket {
   clientId: number
   /** Ticket subject line. */
   subject: string
-  /** Ticket status (open, answered, closed). */
+  /** Initial message body. */
+  message: string
+  /** Current lifecycle status (Open, AwaitingReply, Answered, Closed). */
   status: string
-  /** Ticket priority (low, medium, high, urgent). */
+  /** Priority level (Low, Medium, High). */
+  priority: string
+  /** Department FK, if assigned. */
+  departmentId: number | null
+  /** Department name, if assigned. */
+  departmentName: string | null
+  /** Assigned staff member FK, if any. */
+  assignedToStaffId: number | null
+  /** Assigned staff member name, if any. */
+  assignedToStaffName: string | null
+  /** ISO 8601 creation timestamp. */
+  createdAt: string
+  /** All replies on this ticket. */
+  replies: TicketReply[]
+}
+
+/** Summary DTO for ticket list views. */
+export interface TicketListItem {
+  /** Ticket primary key. */
+  id: number
+  /** Ticket subject line. */
+  subject: string
+  /** Current lifecycle status as a string. */
+  status: string
+  /** Priority level as a string. */
   priority: string
   /** ISO 8601 creation timestamp. */
   createdAt: string
+  /** Total number of replies. */
+  replyCount: number
+  /** Department name, if assigned. */
+  departmentName: string | null
+  /** ISO 8601 timestamp of the most recent reply, if any. */
+  lastReplyAt: string | null
+  /** Whether this ticket has been flagged by staff. */
+  isFlagged: boolean
+  /** FK to the client who opened the ticket. */
+  clientId: number
+}
+
+/** Support overview dashboard statistics. */
+export interface SupportOverviewStats {
+  /** Number of new tickets in the period. */
+  newTickets: number
+  /** Number of client replies in the period. */
+  clientReplies: number
+  /** Number of staff replies in the period. */
+  staffReplies: number
+  /** Number of tickets with no staff reply in the period. */
+  ticketsWithoutReply: number
+  /** Average time to first staff response, or null when no data. */
+  averageFirstResponse: string | null
+  /** Array of 24 integers representing ticket counts per hour (0-23). */
+  ticketsByHour: number[]
+}
+
+/** Ticket statistics for a client, broken down by time period. */
+export interface ClientTicketStats {
+  /** Tickets opened in the current calendar month. */
+  openedThisMonth: number
+  /** Tickets opened in the previous calendar month. */
+  openedLastMonth: number
+  /** Tickets opened in the current calendar year. */
+  openedThisYear: number
+  /** Tickets opened in the previous calendar year. */
+  openedLastYear: number
+}
+
+/** DTO representing a support department. */
+export interface Department {
+  /** Department primary key. */
+  id: number
+  /** Department name. */
+  name: string
+  /** Department email address. */
+  email: string
+}
+
+/** DTO representing an announcement. */
+export interface Announcement {
+  /** Announcement primary key. */
+  id: number
+  /** Announcement title. */
+  title: string
+  /** HTML content body. */
+  content: string
+  /** Whether the announcement is published. */
+  isPublished: boolean
+  /** ISO 8601 creation timestamp. */
+  createdAt: string
+}
+
+/** DTO representing a network issue. */
+export interface NetworkIssue {
+  /** Network issue primary key. */
+  id: number
+  /** Issue title. */
+  title: string
+  /** Issue type (Server, Other). */
+  type: string
+  /** Server name, if applicable. */
+  server: string | null
+  /** Priority level (Low, Medium, High, Critical). */
+  priority: string
+  /** Lifecycle status (Reported, Investigating, Scheduled, Resolved). */
+  status: string
+  /** ISO 8601 start date. */
+  startDate: string
+  /** ISO 8601 end date, if any. */
+  endDate: string | null
+  /** HTML description body. */
+  description: string
+  /** ISO 8601 creation timestamp. */
+  createdAt: string
+}
+
+/** DTO representing a predefined reply category. */
+export interface PredefinedReplyCategory {
+  /** Category primary key. */
+  id: number
+  /** Category display name. */
+  name: string
+  /** Parent category ID, or null if top-level. */
+  parentCategoryId: number | null
+  /** Number of replies in this category. */
+  replyCount: number
+}
+
+/** DTO representing a predefined reply. */
+export interface PredefinedReply {
+  /** Reply primary key. */
+  id: number
+  /** Reply display name. */
+  name: string
+  /** Reply content body. */
+  content: string
+  /** FK to the category. */
+  categoryId: number
+  /** Category name, if resolved. */
+  categoryName: string | null
+}
+
+/** DTO representing a knowledge base category. */
+export interface KbCategory {
+  /** Category primary key. */
+  id: number
+  /** Category display name. */
+  name: string
+  /** Category description. */
+  description: string
+  /** Whether hidden from clients. */
+  isHidden: boolean
+  /** Parent category ID, or null if top-level. */
+  parentCategoryId: number | null
+  /** Number of articles in this category. */
+  articleCount: number
+}
+
+/** DTO representing a knowledge base article. */
+export interface KbArticle {
+  /** Article primary key. */
+  id: number
+  /** Article title. */
+  title: string
+  /** Article body content. */
+  content: string
+  /** Category name. */
+  category: string
+  /** Whether published and visible to clients. */
+  isPublished: boolean
 }
 
 /** Represents a domain registration. */
@@ -868,6 +1082,114 @@ export interface ClientTransactionsResult {
   totalFees: number
   /** Calculated balance: TotalIn - TotalOut - TotalFees. */
   balance: number
+}
+
+/** Invoice count and total for a single status. */
+export interface InvoiceStatusCount {
+  /** Number of invoices in this status. */
+  count: number
+  /** Sum of totals for invoices in this status. */
+  total: number
+}
+
+/** Aggregated summary data for the client profile dashboard. */
+export interface ClientSummaryData {
+  /** Draft invoice stats. */
+  draft: InvoiceStatusCount
+  /** Unpaid invoice stats. */
+  unpaid: InvoiceStatusCount
+  /** Paid invoice stats. */
+  paid: InvoiceStatusCount
+  /** Overdue invoice stats. */
+  overdue: InvoiceStatusCount
+  /** Cancelled invoice stats. */
+  cancelled: InvoiceStatusCount
+  /** Refunded invoice stats. */
+  refunded: InvoiceStatusCount
+  /** Total income from transactions. */
+  grossRevenue: number
+  /** Total outgoing from transactions. */
+  clientExpenses: number
+  /** Total transaction fees. */
+  totalFees: number
+  /** Computed: grossRevenue - clientExpenses - totalFees. */
+  netIncome: number
+  /** Current credit balance. */
+  creditBalance: number
+  /** Services with Active status. */
+  activeServicesCount: number
+  /** Total number of services. */
+  totalServicesCount: number
+  /** Total number of domains. */
+  totalDomainsCount: number
+  /** Quotes with Accepted stage. */
+  acceptedQuotesCount: number
+  /** Total number of quotes. */
+  totalQuotesCount: number
+  /** Open tickets. */
+  openTicketsCount: number
+  /** Total tickets. */
+  totalTicketsCount: number
+  /** Last 5 email log entries. */
+  recentEmails: EmailLog[]
+}
+
+/** DTO for order list items in admin view. */
+export interface OrderListItem {
+  /** Unique order identifier. */
+  id: number
+  /** Human-readable order number (e.g. "ORD-0001"). */
+  orderNumber: string
+  /** FK to the owning client. */
+  clientId: number
+  /** Client display name. */
+  clientName: string
+  /** Current order status. */
+  status: 'Pending' | 'Active' | 'Cancelled' | 'Fraud'
+  /** Payment gateway module name. */
+  paymentMethod: string
+  /** Total order amount. */
+  total: number
+  /** Linked invoice ID, if any. */
+  invoiceId: number | null
+  /** Number of items in the order. */
+  itemCount: number
+  /** ISO 8601 creation timestamp. */
+  createdAt: string
+}
+
+/** DTO for full order details in admin view. */
+export interface OrderDetail extends OrderListItem {
+  /** Invoice status if invoice exists. */
+  invoiceStatus: string | null
+  /** Client IP address at checkout. */
+  ipAddress: string | null
+  /** Admin notes. */
+  notes: string | null
+  /** Order line items. */
+  items: OrderItemDetail[]
+}
+
+/** DTO for an individual order item. */
+export interface OrderItemDetail {
+  /** Item ID. */
+  id: number
+  /** Product ID. */
+  productId: number
+  /** Product name snapshot at order time. */
+  productName: string
+  /** Billing cycle. */
+  billingCycle: string
+  /** Domain name if applicable. */
+  domain: string | null
+  /** Hostname if applicable. */
+  hostname: string | null
+  /** First payment amount. */
+  firstPaymentAmount: number
+  /** Recurring amount. */
+  recurringAmount: number
+  /** Item status. */
+  status: 'Pending' | 'Active' | 'Cancelled'
 }
 
 /** Labels for each permission flag, used for checkbox rendering. */

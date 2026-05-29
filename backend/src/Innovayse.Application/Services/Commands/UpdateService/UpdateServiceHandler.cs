@@ -42,12 +42,17 @@ public sealed class UpdateServiceHandler(
             cmd.ProvisioningRef,
             cmd.FirstPaymentAmount,
             cmd.PromotionCode,
-            cmd.TerminatedAt);
+            cmd.TerminatedAt,
+            cmd.ServerId,
+            cmd.Quantity,
+            cmd.ProductId);
 
         if (cmd.Status is not null)
         {
             if (!Enum.TryParse<ServiceStatus>(cmd.Status, ignoreCase: true, out var newStatus))
+            {
                 throw new InvalidOperationException($"Invalid service status: '{cmd.Status}'.");
+            }
 
             if (newStatus != service.Status)
             {

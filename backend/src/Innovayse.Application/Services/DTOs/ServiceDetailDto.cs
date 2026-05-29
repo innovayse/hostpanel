@@ -27,6 +27,8 @@ namespace Innovayse.Application.Services.DTOs;
 /// <param name="AutoTerminateEndOfCycle">Whether to auto-terminate at end of billing cycle.</param>
 /// <param name="AutoTerminateReason">Reason for auto-termination.</param>
 /// <param name="AdminNotes">Internal admin notes.</param>
+/// <param name="ServerId">FK to the provisioning server, or <see langword="null"/> if not assigned.</param>
+/// <param name="ServerName">Display name of the assigned server, or <see langword="null"/> if not assigned.</param>
 public record ServiceDetailDto(
     int Id,
     int ClientId,
@@ -53,4 +55,6 @@ public record ServiceDetailDto(
     DateTimeOffset? SuspendUntil,
     bool AutoTerminateEndOfCycle,
     string? AutoTerminateReason,
-    string? AdminNotes);
+    string? AdminNotes,
+    int? ServerId,
+    string? ServerName);

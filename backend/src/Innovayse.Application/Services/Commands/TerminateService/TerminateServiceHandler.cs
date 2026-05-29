@@ -3,10 +3,9 @@ namespace Innovayse.Application.Services.Commands.TerminateService;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Services.Interfaces;
 
-/// <summary>Permanently terminates a client service.</summary>
+/// <summary>Permanently terminates a client service. Provisioning is handled asynchronously via domain events.</summary>
 public sealed class TerminateServiceHandler(
     IClientServiceRepository repo,
-    IProvisioningProvider provisioner,
     IUnitOfWork uow)
 {
     /// <summary>
@@ -19,11 +18,6 @@ public sealed class TerminateServiceHandler(
     {
         var service = await repo.FindByIdAsync(cmd.ServiceId, ct)
             ?? throw new InvalidOperationException($"Service {cmd.ServiceId} not found.");
-
-        if (service.ProvisioningRef is not null)
-        {
-            await provisioner.TerminateAsync(service.ProvisioningRef, ct);
-        }
 
         service.Terminate();
         await uow.SaveChangesAsync(ct);

@@ -1,10 +1,13 @@
 namespace Innovayse.API.Provisioning;
 
+using Innovayse.Application.Provisioning.Commands.ChangePackage;
+using Innovayse.Application.Provisioning.Commands.ChangePassword;
 using Innovayse.Application.Provisioning.Commands.ProvisionService;
 using Innovayse.Application.Provisioning.Commands.SuspendService;
 using Innovayse.Application.Provisioning.Commands.TerminateService;
 using Innovayse.Application.Provisioning.Commands.UnsuspendService;
 using Innovayse.Application.Provisioning.DTOs;
+using Innovayse.Application.Provisioning.Queries.GetCPanelSsoUrl;
 using Innovayse.Application.Provisioning.Queries.GetServiceCredentials;
 using Innovayse.Domain.Auth;
 using Microsoft.AspNetCore.Authorization;
@@ -85,5 +88,46 @@ public sealed class ProvisioningController(IMessageBus bus) : ControllerBase
         var result = await bus.InvokeAsync<ServiceCredentialsDto>(
             new GetServiceCredentialsQuery(id), ct);
         return Ok(result);
+    }
+
+    /// <summary>Changes the hosting account password on the provisioning server.</summary>
+    /// <param name="id">Client service primary key.</param>
+    /// <param name="request">Request body containing the new password.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK on success.</returns>
+    [HttpPost("{id:int}/change-password")]
+    public async Task<IActionResult> ChangePasswordAsync(
+        int id,
+        [FromBody] ChangePasswordRequest request,
+        CancellationToken ct)
+    {
+        await bus.InvokeAsync(new ChangePasswordCommand(id, request.NewPassword), ct);
+        return Ok();
+    }
+
+    /// <summary>Changes the hosting package on the provisioning server.</summary>
+    /// <param name="id">Client service primary key.</param>
+    /// <param name="request">Request body containing the new package name.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK on success.</returns>
+    [HttpPost("{id:int}/change-package")]
+    public async Task<IActionResult> ChangePackageAsync(
+        int id,
+        [FromBody] ChangePackageRequest request,
+        CancellationToken ct)
+    {
+        await bus.InvokeAsync(new ChangePackageCommand(id, request.NewPackage), ct);
+        return Ok();
+    }
+
+    /// <summary>Generates a single-sign-on URL for direct cPanel access.</summary>
+    /// <param name="id">Client service primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with a JSON object containing the SSO URL.</returns>
+    [HttpGet("{id:int}/cpanel-sso")]
+    public async Task<IActionResult> GetCPanelSsoUrlAsync(int id, CancellationToken ct)
+    {
+        var url = await bus.InvokeAsync<string>(new GetCPanelSsoUrlQuery(id), ct);
+        return Ok(new { url });
     }
 }

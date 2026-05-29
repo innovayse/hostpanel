@@ -28,7 +28,9 @@ public sealed class ListDomainsHandler(IDomainRepository repo, IClientRepository
         {
             var client = await clientRepo.FindByIdAsync(cid, ct);
             if (client is not null)
+            {
                 clients[cid] = $"{client.FirstName} {client.LastName}";
+            }
         }
 
         var dtos = items

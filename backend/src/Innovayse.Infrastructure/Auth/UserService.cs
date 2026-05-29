@@ -77,7 +77,9 @@ public sealed class UserService(UserManager<AppUser> userManager, IClientReposit
         {
             var user = await userManager.FindByIdAsync(id);
             if (user?.Email is not null)
+            {
                 result[id] = user.Email;
+            }
         }
         return result;
     }
@@ -124,7 +126,11 @@ public sealed class UserService(UserManager<AppUser> userManager, IClientReposit
     public async Task<bool> ConfirmEmailAsync(string email, string token, CancellationToken ct)
     {
         var user = await userManager.FindByEmailAsync(email);
-        if (user is null) return false;
+        if (user is null)
+        {
+            return false;
+        }
+
         var result = await userManager.ConfirmEmailAsync(user, token);
         return result.Succeeded;
     }
@@ -173,7 +179,10 @@ public sealed class UserService(UserManager<AppUser> userManager, IClientReposit
     public async Task<UserDetailDto?> GetUserWithAccountsAsync(string userId, CancellationToken ct)
     {
         var user = await userManager.FindByIdAsync(userId);
-        if (user is null) return null;
+        if (user is null)
+        {
+            return null;
+        }
 
         var client = await clientRepo.FindByUserIdAsync(userId, ct);
         var accounts = client is not null
@@ -261,7 +270,10 @@ public sealed class UserService(UserManager<AppUser> userManager, IClientReposit
     public async Task<bool> ResetPasswordWithTokenAsync(string email, string token, string newPassword, CancellationToken ct)
     {
         var user = await userManager.FindByEmailAsync(email);
-        if (user is null) return false;
+        if (user is null)
+        {
+            return false;
+        }
 
         var result = await userManager.ResetPasswordAsync(user, token, newPassword);
         if (result.Succeeded)

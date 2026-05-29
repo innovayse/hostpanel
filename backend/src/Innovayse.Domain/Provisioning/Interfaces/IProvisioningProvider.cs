@@ -65,4 +65,26 @@ public interface IProvisioningProvider
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A time-limited cPanel SSO URL string.</returns>
     Task<string> GetCPanelSsoUrlAsync(string provisioningRef, CancellationToken ct);
+
+    /// <summary>
+    /// Changes the password of a provisioned hosting account.
+    /// </summary>
+    /// <param name="provisioningRef">Provider-assigned reference for the account.</param>
+    /// <param name="newPassword">The new password to set on the hosting account.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <exception cref="System.InvalidOperationException">
+    /// Thrown when the account does not exist or the password change fails.
+    /// </exception>
+    Task ChangePasswordAsync(string provisioningRef, string newPassword, CancellationToken ct);
+
+    /// <summary>
+    /// Changes the hosting package assigned to a provisioned account.
+    /// </summary>
+    /// <param name="provisioningRef">Provider-assigned reference for the account.</param>
+    /// <param name="newPackage">The name of the new hosting package to assign.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <exception cref="System.InvalidOperationException">
+    /// Thrown when the account does not exist or the package change fails.
+    /// </exception>
+    Task ChangePackageAsync(string provisioningRef, string newPackage, CancellationToken ct);
 }

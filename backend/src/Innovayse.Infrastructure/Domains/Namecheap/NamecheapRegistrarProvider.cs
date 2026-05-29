@@ -16,7 +16,11 @@ public sealed class NamecheapRegistrarProvider(NamecheapClient client) : IRegist
     /// <inheritdoc/>
     public async Task<RegistrarResult> RegisterAsync(RegisterDomainRequest request, CancellationToken ct)
     {
-        if (!client.IsConfigured) return _notConfiguredResult;
+        if (!client.IsConfigured)
+        {
+            return _notConfiguredResult;
+        }
+
         var (sld, tld) = SplitDomain(request.DomainName);
 
         var parameters = new Dictionary<string, string>
@@ -52,7 +56,11 @@ public sealed class NamecheapRegistrarProvider(NamecheapClient client) : IRegist
     /// <inheritdoc/>
     public async Task<RegistrarResult> TransferAsync(TransferDomainRequest request, CancellationToken ct)
     {
-        if (!client.IsConfigured) return _notConfiguredResult;
+        if (!client.IsConfigured)
+        {
+            return _notConfiguredResult;
+        }
+
         var (sld, tld) = SplitDomain(request.DomainName);
 
         var parameters = new Dictionary<string, string>
@@ -84,7 +92,11 @@ public sealed class NamecheapRegistrarProvider(NamecheapClient client) : IRegist
     /// <inheritdoc/>
     public async Task<RegistrarResult> RenewAsync(RenewDomainRequest request, CancellationToken ct)
     {
-        if (!client.IsConfigured) return _notConfiguredResult;
+        if (!client.IsConfigured)
+        {
+            return _notConfiguredResult;
+        }
+
         var (sld, tld) = SplitDomain(request.DomainName);
 
         var parameters = new Dictionary<string, string>
@@ -138,7 +150,11 @@ public sealed class NamecheapRegistrarProvider(NamecheapClient client) : IRegist
         bool enabled,
         CancellationToken ct)
     {
-        if (!client.IsConfigured) return _notConfiguredResult;
+        if (!client.IsConfigured)
+        {
+            return _notConfiguredResult;
+        }
+
         var (sld, tld) = SplitDomain(domainName);
 
         var parameters = new Dictionary<string, string>
@@ -159,7 +175,10 @@ public sealed class NamecheapRegistrarProvider(NamecheapClient client) : IRegist
         bool enabled,
         CancellationToken ct)
     {
-        if (!client.IsConfigured) return _notConfiguredResult;
+        if (!client.IsConfigured)
+        {
+            return _notConfiguredResult;
+        }
         // Step 1: Get the WhoisguardID from domain info
         var (sld, tld) = SplitDomain(domainName);
 
@@ -203,7 +222,11 @@ public sealed class NamecheapRegistrarProvider(NamecheapClient client) : IRegist
         bool locked,
         CancellationToken ct)
     {
-        if (!client.IsConfigured) return _notConfiguredResult;
+        if (!client.IsConfigured)
+        {
+            return _notConfiguredResult;
+        }
+
         var (sld, tld) = SplitDomain(domainName);
 
         var parameters = new Dictionary<string, string>
@@ -223,7 +246,11 @@ public sealed class NamecheapRegistrarProvider(NamecheapClient client) : IRegist
         string registrarRef,
         CancellationToken ct)
     {
-        if (!client.IsConfigured) return null;
+        if (!client.IsConfigured)
+        {
+            return null;
+        }
+
         var (sld, tld) = SplitDomain(domainName);
 
         var parameters = new Dictionary<string, string>
@@ -249,7 +276,11 @@ public sealed class NamecheapRegistrarProvider(NamecheapClient client) : IRegist
         IReadOnlyList<string> nameservers,
         CancellationToken ct)
     {
-        if (!client.IsConfigured) return _notConfiguredResult;
+        if (!client.IsConfigured)
+        {
+            return _notConfiguredResult;
+        }
+
         var (sld, tld) = SplitDomain(domainName);
 
         var parameters = new Dictionary<string, string>
@@ -269,7 +300,11 @@ public sealed class NamecheapRegistrarProvider(NamecheapClient client) : IRegist
         string registrarRef,
         CancellationToken ct)
     {
-        if (!client.IsConfigured) return [];
+        if (!client.IsConfigured)
+        {
+            return [];
+        }
+
         var (sld, tld) = SplitDomain(domainName);
 
         var parameters = new Dictionary<string, string>
@@ -361,7 +396,11 @@ public sealed class NamecheapRegistrarProvider(NamecheapClient client) : IRegist
     /// <inheritdoc/>
     public async Task<bool> CheckAvailabilityAsync(string domainName, CancellationToken ct)
     {
-        if (!client.IsConfigured) return false;
+        if (!client.IsConfigured)
+        {
+            return false;
+        }
+
         var parameters = new Dictionary<string, string>
         {
             ["DomainList"] = domainName,
@@ -443,7 +482,11 @@ public sealed class NamecheapRegistrarProvider(NamecheapClient client) : IRegist
     /// <inheritdoc/>
     public async Task<WhoisInfo?> GetWhoisAsync(string domainName, CancellationToken ct)
     {
-        if (!client.IsConfigured) return null;
+        if (!client.IsConfigured)
+        {
+            return null;
+        }
+
         var (sld, tld) = SplitDomain(domainName);
 
         var parameters = new Dictionary<string, string>

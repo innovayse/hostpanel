@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Innovayse.API;
+using Innovayse.API.Billing;
 using Innovayse.API.Domains;
 using Innovayse.Domain.Auth;
 using Innovayse.Infrastructure;
@@ -152,6 +153,9 @@ try
 
     // Domain scheduled jobs — daily expiry check (09:00 UTC) and auto-renew (10:00 UTC)
     builder.Services.AddHostedService<DomainScheduledJobsStartup>();
+
+    // Billing scheduled jobs — daily billable items cron processing (06:00 UTC)
+    builder.Services.AddHostedService<BillingScheduledJobsStartup>();
 
     // Infrastructure
     using var bootstrapLoggerFactory = LoggerFactory.Create(b => b.AddConsole());

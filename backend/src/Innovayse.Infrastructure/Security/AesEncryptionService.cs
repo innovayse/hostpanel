@@ -40,7 +40,9 @@ public sealed class AesEncryptionService : IEncryptionService
     {
         _key = Convert.FromBase64String(base64Key);
         if (_key.Length != 32)
+        {
             throw new ArgumentException("Encryption key must be exactly 32 bytes (256 bits).", nameof(base64Key));
+        }
     }
 
     /// <inheritdoc/>
@@ -73,7 +75,9 @@ public sealed class AesEncryptionService : IEncryptionService
 
             // IV is 16 bytes; ciphertext must be at least one AES block (16 bytes)
             if (fullBytes.Length < 17)
+            {
                 return ciphertext; // Too short to be encrypted — legacy plaintext
+            }
 
             using var aes = Aes.Create();
             aes.Key = _key;

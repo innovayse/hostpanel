@@ -53,7 +53,6 @@ const router = createRouter({
             { path: 'domains/:domainId', component: () => import('../modules/clients/views/ClientDomainDetailView.vue') },
           ],
         },
-<<<<<<< HEAD
         {
           path: 'billing',
           children: [
@@ -70,10 +69,6 @@ const router = createRouter({
             { path: 'gateway-log', component: () => import('../modules/billing/views/GatewayLogView.vue') },
           ],
         },
-=======
-        { path: 'billing', component: () => import('../modules/billing/views/InvoicesListView.vue') },
-        { path: 'billing/:id', component: () => import('../modules/billing/views/InvoiceDetailView.vue') },
->>>>>>> origin/main
         { path: 'quotes/new', component: () => import('../modules/billing/views/QuoteDetailView.vue') },
         { path: 'quotes/:id', component: () => import('../modules/billing/views/QuoteDetailView.vue') },
         { path: 'services', component: () => import('../modules/services/views/ServicesListView.vue') },

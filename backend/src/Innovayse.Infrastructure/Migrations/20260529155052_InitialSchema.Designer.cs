@@ -9,11 +9,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Innovayse.Infrastructure.Persistence.Migrations
+namespace Innovayse.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260529103709_AddSupportModule")]
-    partial class AddSupportModule
+    [Migration("20260529155052_InitialSchema")]
+    partial class InitialSchema
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -86,105 +86,37 @@ namespace Innovayse.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<DateTimeOffset>("DueDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("HoursQty")
-                        .HasColumnType("numeric(18,4)");
-
-                    b.Property<string>("InvoiceAction")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
-
-                    b.Property<int>("InvoiceCount")
-                        .HasColumnType("integer");
-
                     b.Property<int?>("InvoiceId")
                         .HasColumnType("integer");
 
-                    b.Property<bool>("IsHours")
+                    b.Property<bool>("IsInvoiced")
                         .HasColumnType("boolean");
 
-                    b.Property<int?>("RecurrenceInterval")
-                        .HasColumnType("integer");
+                    b.Property<DateTimeOffset?>("NextDueDate")
+                        .HasColumnType("timestamp with time zone");
 
-                    b.Property<int?>("RecurrenceLimit")
-                        .HasColumnType("integer");
+                    b.Property<string>("RecurringPeriod")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
-                    b.Property<string>("RecurrencePeriod")
+                    b.Property<string>("Type")
+                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<int?>("ServiceId")
-                        .HasColumnType("integer");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("ClientId", "InvoiceId")
-                        .HasDatabaseName("IX_billable_items_ClientId_InvoiceId");
 
                     b.ToTable("billable_items", (string)null);
-                });
-
-            modelBuilder.Entity("Innovayse.Domain.Billing.ClientTransaction", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("AddedToCredit")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.Property<decimal>("AmountIn")
-                        .HasColumnType("numeric(18,4)");
-
-                    b.Property<decimal>("AmountOut")
-                        .HasColumnType("numeric(18,4)");
-
-                    b.Property<int>("ClientId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("Date")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<decimal>("Fees")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("numeric(18,4)")
-                        .HasDefaultValue(0m);
-
-                    b.Property<int?>("InvoiceId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("PaymentMethod")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("TransactionId")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ClientId");
-
-                    b.ToTable("client_transactions", (string)null);
                 });
 
             modelBuilder.Entity("Innovayse.Domain.Billing.Invoice", b =>
@@ -335,31 +267,23 @@ namespace Innovayse.Infrastructure.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("AdminNotes")
-                        .HasMaxLength(5000)
-                        .HasColumnType("character varying(5000)");
-
                     b.Property<int>("ClientId")
                         .HasColumnType("integer");
 
-                    b.Property<string>("CustomerNotes")
-                        .HasMaxLength(5000)
-                        .HasColumnType("character varying(5000)");
-
-                    b.Property<DateTimeOffset>("DateCreated")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("ProposalText")
-                        .HasMaxLength(10000)
-                        .HasColumnType("character varying(10000)");
+                    b.Property<DateTimeOffset>("ExpiryDate")
+                        .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Stage")
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
-
-                    b.Property<decimal>("SubTotal")
-                        .HasColumnType("numeric(18,4)");
 
                     b.Property<string>("Subject")
                         .IsRequired()
@@ -368,9 +292,6 @@ namespace Innovayse.Infrastructure.Persistence.Migrations
 
                     b.Property<decimal>("Total")
                         .HasColumnType("numeric(18,4)");
-
-                    b.Property<DateTimeOffset?>("ValidUntil")
-                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
@@ -385,25 +306,16 @@ namespace Innovayse.Infrastructure.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("numeric(18,4)");
-
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
-
-                    b.Property<decimal>("DiscountPercent")
-                        .HasColumnType("numeric(5,2)");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
                     b.Property<int>("QuoteId")
                         .HasColumnType("integer");
-
-                    b.Property<bool>("Taxed")
-                        .HasColumnType("boolean");
 
                     b.Property<decimal>("UnitPrice")
                         .HasColumnType("numeric(18,4)");
@@ -413,6 +325,61 @@ namespace Innovayse.Infrastructure.Persistence.Migrations
                     b.HasIndex("QuoteId");
 
                     b.ToTable("quote_items", (string)null);
+                });
+
+            modelBuilder.Entity("Innovayse.Domain.Billing.Transaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("AddedToCredit")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<decimal>("AmountIn")
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<decimal>("AmountOut")
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("Date")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<decimal>("Fees")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(18,4)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<int?>("InvoiceId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("TransactionId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId");
+
+                    b.ToTable("transactions", (string)null);
                 });
 
             modelBuilder.Entity("Innovayse.Domain.Clients.Client", b =>

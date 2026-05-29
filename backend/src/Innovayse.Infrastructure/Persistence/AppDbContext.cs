@@ -50,6 +50,18 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
     /// <summary>Gets the invoice items table.</summary>
     public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
 
+    /// <summary>Gets the transactions table.</summary>
+    public DbSet<Transaction> Transactions => Set<Transaction>();
+
+    /// <summary>Gets the billable items table.</summary>
+    public DbSet<BillableItem> BillableItems => Set<BillableItem>();
+
+    /// <summary>Gets the quotes table.</summary>
+    public DbSet<Quote> Quotes => Set<Quote>();
+
+    /// <summary>Gets the quote items table.</summary>
+    public DbSet<QuoteItem> QuoteItems => Set<QuoteItem>();
+
     /// <summary>Gets the support tickets table.</summary>
     public DbSet<Ticket> Tickets => Set<Ticket>();
 

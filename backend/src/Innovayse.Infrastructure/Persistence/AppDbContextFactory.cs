@@ -19,7 +19,7 @@ public sealed class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseNpgsql(
-                "Host=localhost;Database=innovayse_dev;Username=postgres;Password=password",
+                "Host=postgres;Database=innovayse_dev;Username=postgres;Password=postgres",
                 npgsql => npgsql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName))
             .Options;
 

@@ -226,6 +226,20 @@ export interface Contact {
   createdAt: string
 }
 
+/** Represents an invoice item. */
+export interface InvoiceItem {
+  /** Unique item identifier. */
+  id?: number
+  /** Human-readable description. */
+  description: string
+  /** Unit price. */
+  amount: number
+  /** Number of units. */
+  quantity: number
+  /** Whether the item is taxed. */
+  taxed: boolean
+}
+
 /** Represents an invoice. */
 export interface Invoice {
   /** Unique invoice identifier. */
@@ -234,12 +248,114 @@ export interface Invoice {
   clientId: number
   /** Total amount due. */
   total: number
-  /** Invoice status (unpaid, paid, overdue, cancelled). */
+  /** Invoice status (Draft, Unpaid, Paid, Overdue, Cancelled, Refunded, Collections, PaymentPending). */
   status: string
   /** ISO 8601 due date. */
   dueDate: string
   /** ISO 8601 creation timestamp. */
   createdAt: string
+  /** Payment gateway (e.g., Stripe, PayPal). */
+  gateway?: string
+  /** Invoice line items. */
+  items?: InvoiceItem[]
+  /** Associated transactions. */
+  transactions?: Transaction[]
+  /** Optional updated timestamp. */
+  updatedAt?: string
+}
+
+/** Represents a payment transaction. */
+export interface Transaction {
+  /** Unique transaction identifier. */
+  id: number
+  /** Associated client identifier. */
+  clientId: number
+  /** Full name of the owning client. */
+  clientName: string
+  /** Associated invoice identifier (if applicable). */
+  invoiceId?: number
+  /** Transaction type (Credit or Debit). */
+  type: string
+  /** Transaction amount. */
+  amount: number
+  /** Transaction fees. */
+  fees: number
+  /** Currency code (e.g. USD). */
+  currency: string
+  /** Payment gateway name (or null for manual). */
+  gateway?: string
+  /** External transaction ID. */
+  transactionId?: string
+  /** Human-readable description. */
+  description: string
+  /** ISO 8601 creation timestamp. */
+  createdAt: string
+}
+
+/** Represents a billable item. */
+export interface BillableItem {
+  /** Unique billable item identifier. */
+  id: number
+  /** Associated client identifier. */
+  clientId: number
+  /** Full name of the owning client. */
+  clientName: string
+  /** Human-readable description. */
+  description: string
+  /** Unit price. */
+  amount: number
+  /** Currency code. */
+  currency: string
+  /** Item type (OneTime or Recurring). */
+  type: string
+  /** Recurring period (Monthly, Quarterly, Annual). */
+  recurringPeriod?: string
+  /** Whether the item has been invoiced. */
+  isInvoiced: boolean
+  /** Associated invoice ID (if invoiced). */
+  invoiceId?: number
+  /** Next due date for recurring items. */
+  nextDueDate?: string
+  /** ISO 8601 creation timestamp. */
+  createdAt: string
+}
+
+/** Represents a quote line item. */
+export interface QuoteItem {
+  /** Unique item identifier. */
+  id: number
+  /** Human-readable description. */
+  description: string
+  /** Price per unit. */
+  unitPrice: number
+  /** Number of units. */
+  quantity: number
+  /** Total for this line item. */
+  amount: number
+}
+
+/** Represents a quote. */
+export interface Quote {
+  /** Unique quote identifier. */
+  id: number
+  /** Associated client identifier. */
+  clientId: number
+  /** Full name of the owning client. */
+  clientName: string
+  /** Quote subject/title. */
+  subject: string
+  /** Quote status (draft, sent, accepted, declined, expired, cancelled). */
+  status: string
+  /** ISO 8601 expiry date. */
+  expiryDate: string
+  /** Optional notes or terms. */
+  notes?: string
+  /** Total amount. */
+  total: number
+  /** ISO 8601 creation timestamp. */
+  createdAt: string
+  /** Line items on the quote. */
+  items: QuoteItem[]
 }
 
 /** Represents a support ticket. */

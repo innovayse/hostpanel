@@ -42,6 +42,26 @@ public sealed class Invoice : AggregateRoot
     private Invoice() : base(0) { }
 
     /// <summary>
+    /// Creates a new draft invoice (not yet sent to client) and raises <see cref="InvoiceCreatedEvent"/>.
+    /// </summary>
+    /// <param name="clientId">FK to the client being invoiced.</param>
+    /// <param name="dueDate">Payment due date (UTC).</param>
+    /// <returns>A new <see cref="Invoice"/> with <see cref="InvoiceStatus.Draft"/> status.</returns>
+    public static Invoice CreateDraft(int clientId, DateTimeOffset dueDate)
+    {
+        var invoice = new Invoice
+        {
+            ClientId = clientId,
+            Status = InvoiceStatus.Draft,
+            DueDate = dueDate,
+            CreatedAt = DateTimeOffset.UtcNow,
+            Total = 0m,
+        };
+        invoice.AddDomainEvent(new InvoiceCreatedEvent(0, clientId));
+        return invoice;
+    }
+
+    /// <summary>
     /// Creates a new unpaid invoice and raises <see cref="InvoiceCreatedEvent"/>.
     /// </summary>
     /// <param name="clientId">FK to the client being invoiced.</param>
@@ -62,15 +82,29 @@ public sealed class Invoice : AggregateRoot
     }
 
     /// <summary>
+    /// Publishes a draft invoice, transitioning it to Unpaid status.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown when the invoice is not in Draft status.</exception>
+    public void Publish()
+    {
+        if (Status != InvoiceStatus.Draft)
+        {
+            throw new InvalidOperationException($"Only Draft invoices can be published; current status is {Status}.");
+        }
+
+        Status = InvoiceStatus.Unpaid;
+    }
+
+    /// <summary>
     /// Adds a line item and recalculates <see cref="Total"/>.
     /// </summary>
     /// <param name="description">Human-readable charge description.</param>
     /// <param name="unitPrice">Price per unit (≥ 0).</param>
     /// <param name="quantity">Number of units (≥ 1).</param>
-    /// <exception cref="InvalidOperationException">Thrown when the invoice is already paid or cancelled.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the invoice is not editable (Draft or Unpaid).</exception>
     public void AddItem(string description, decimal unitPrice, int quantity)
     {
-        if (Status is InvoiceStatus.Paid or InvoiceStatus.Overdue or InvoiceStatus.Cancelled)
+        if (Status is not (InvoiceStatus.Draft or InvoiceStatus.Unpaid))
         {
             throw new InvalidOperationException($"Cannot add items to an invoice with status {Status}.");
         }
@@ -131,5 +165,21 @@ public sealed class Invoice : AggregateRoot
         }
 
         Status = InvoiceStatus.Cancelled;
+    }
+
+    /// <summary>
+    /// Refunds a paid invoice and marks it as Refunded.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown when the invoice is not paid.</exception>
+    public void Refund()
+    {
+        if (Status != InvoiceStatus.Paid)
+        {
+            throw new InvalidOperationException($"Only Paid invoices can be refunded; current status is {Status}.");
+        }
+
+        Status = InvoiceStatus.Refunded;
+        PaidAt = null;
+        GatewayTransactionId = null;
     }
 }

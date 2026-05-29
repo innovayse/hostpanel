@@ -18,7 +18,7 @@ public sealed class ListInvoicesHandler(IInvoiceRepository repo)
         var page = Math.Max(1, query.Page);
         var pageSize = Math.Clamp(query.PageSize, 1, 100);
 
-        var (items, total) = await repo.ListAsync(page, pageSize, ct);
+        var (items, total) = await repo.ListAsync(page, pageSize, query.Status, ct);
 
         var dtos = items.Select(inv => new InvoiceListItemDto(
             inv.Id, inv.ClientId, inv.Status, inv.DueDate, inv.CreatedAt, inv.Total))

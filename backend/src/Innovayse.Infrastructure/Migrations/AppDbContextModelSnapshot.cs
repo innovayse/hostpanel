@@ -39,16 +39,90 @@ namespace Innovayse.Infrastructure.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+<<<<<<< HEAD:backend/src/Innovayse.Infrastructure/Migrations/AppDbContextModelSnapshot.cs
                     b.Property<string>("Currency")
                         .IsRequired()
                         .HasMaxLength(3)
                         .HasColumnType("character varying(3)");
+=======
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset>("DueDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("HoursQty")
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<string>("InvoiceAction")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<int>("InvoiceCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("InvoiceId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsHours")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("RecurrenceInterval")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RecurrenceLimit")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RecurrencePeriod")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int?>("ServiceId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId", "InvoiceId")
+                        .HasDatabaseName("IX_billable_items_ClientId_InvoiceId");
+
+                    b.ToTable("billable_items", (string)null);
+                });
+
+            modelBuilder.Entity("Innovayse.Domain.Billing.ClientTransaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("AddedToCredit")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<decimal>("AmountIn")
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<decimal>("AmountOut")
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("Date")
+                        .HasColumnType("timestamp with time zone");
+>>>>>>> origin/main:backend/src/Innovayse.Infrastructure/Persistence/Migrations/AppDbContextModelSnapshot.cs
 
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+<<<<<<< HEAD:backend/src/Innovayse.Infrastructure/Migrations/AppDbContextModelSnapshot.cs
                     b.Property<int?>("InvoiceId")
                         .HasColumnType("integer");
 
@@ -70,6 +144,31 @@ namespace Innovayse.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("billable_items", (string)null);
+=======
+                    b.Property<decimal>("Fees")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(18,4)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<int?>("InvoiceId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("TransactionId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId");
+
+                    b.ToTable("client_transactions", (string)null);
+>>>>>>> origin/main:backend/src/Innovayse.Infrastructure/Persistence/Migrations/AppDbContextModelSnapshot.cs
                 });
 
             modelBuilder.Entity("Innovayse.Domain.Billing.Invoice", b =>
@@ -220,6 +319,7 @@ namespace Innovayse.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+<<<<<<< HEAD:backend/src/Innovayse.Infrastructure/Migrations/AppDbContextModelSnapshot.cs
                     b.Property<int>("ClientId")
                         .HasColumnType("integer");
 
@@ -234,10 +334,37 @@ namespace Innovayse.Infrastructure.Migrations
                         .HasColumnType("character varying(2000)");
 
                     b.Property<string>("Status")
+=======
+                    b.Property<string>("AdminNotes")
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)");
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CustomerNotes")
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)");
+
+                    b.Property<DateTimeOffset>("DateCreated")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ProposalText")
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)");
+
+                    b.Property<string>("Stage")
+>>>>>>> origin/main:backend/src/Innovayse.Infrastructure/Persistence/Migrations/AppDbContextModelSnapshot.cs
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+<<<<<<< HEAD:backend/src/Innovayse.Infrastructure/Migrations/AppDbContextModelSnapshot.cs
+=======
+                    b.Property<decimal>("SubTotal")
+                        .HasColumnType("numeric(18,4)");
+
+>>>>>>> origin/main:backend/src/Innovayse.Infrastructure/Persistence/Migrations/AppDbContextModelSnapshot.cs
                     b.Property<string>("Subject")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -246,6 +373,12 @@ namespace Innovayse.Infrastructure.Migrations
                     b.Property<decimal>("Total")
                         .HasColumnType("numeric(18,4)");
 
+<<<<<<< HEAD:backend/src/Innovayse.Infrastructure/Migrations/AppDbContextModelSnapshot.cs
+=======
+                    b.Property<DateTimeOffset?>("ValidUntil")
+                        .HasColumnType("timestamp with time zone");
+
+>>>>>>> origin/main:backend/src/Innovayse.Infrastructure/Persistence/Migrations/AppDbContextModelSnapshot.cs
                     b.HasKey("Id");
 
                     b.ToTable("quotes", (string)null);
@@ -259,17 +392,35 @@ namespace Innovayse.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+<<<<<<< HEAD:backend/src/Innovayse.Infrastructure/Migrations/AppDbContextModelSnapshot.cs
+=======
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric(18,4)");
+
+>>>>>>> origin/main:backend/src/Innovayse.Infrastructure/Persistence/Migrations/AppDbContextModelSnapshot.cs
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+<<<<<<< HEAD:backend/src/Innovayse.Infrastructure/Migrations/AppDbContextModelSnapshot.cs
+=======
+                    b.Property<decimal>("DiscountPercent")
+                        .HasColumnType("numeric(5,2)");
+
+>>>>>>> origin/main:backend/src/Innovayse.Infrastructure/Persistence/Migrations/AppDbContextModelSnapshot.cs
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
                     b.Property<int>("QuoteId")
                         .HasColumnType("integer");
 
+<<<<<<< HEAD:backend/src/Innovayse.Infrastructure/Migrations/AppDbContextModelSnapshot.cs
+=======
+                    b.Property<bool>("Taxed")
+                        .HasColumnType("boolean");
+
+>>>>>>> origin/main:backend/src/Innovayse.Infrastructure/Persistence/Migrations/AppDbContextModelSnapshot.cs
                     b.Property<decimal>("UnitPrice")
                         .HasColumnType("numeric(18,4)");
 
@@ -280,6 +431,7 @@ namespace Innovayse.Infrastructure.Migrations
                     b.ToTable("quote_items", (string)null);
                 });
 
+<<<<<<< HEAD:backend/src/Innovayse.Infrastructure/Migrations/AppDbContextModelSnapshot.cs
             modelBuilder.Entity("Innovayse.Domain.Billing.Transaction", b =>
                 {
                     b.Property<int>("Id")
@@ -335,6 +487,8 @@ namespace Innovayse.Infrastructure.Migrations
                     b.ToTable("transactions", (string)null);
                 });
 
+=======
+>>>>>>> origin/main:backend/src/Innovayse.Infrastructure/Persistence/Migrations/AppDbContextModelSnapshot.cs
             modelBuilder.Entity("Innovayse.Domain.Clients.Client", b =>
                 {
                     b.Property<int>("Id")

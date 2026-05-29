@@ -10,7 +10,11 @@ using Innovayse.Domain.Billing.Interfaces;
 /// </summary>
 public sealed class AddInvoicePaymentHandler(
     IInvoiceRepository repo,
+<<<<<<< HEAD
     ITransactionRepository transactionRepo,
+=======
+    IClientTransactionRepository transactionRepo,
+>>>>>>> origin/main
     IUnitOfWork uow)
 {
     /// <summary>
@@ -27,7 +31,11 @@ public sealed class AddInvoicePaymentHandler(
 
         invoice.AddPayment(cmd.Date, cmd.Gateway, cmd.TransactionId, cmd.Amount, cmd.Fees, cmd.Notes);
 
+<<<<<<< HEAD
         var clientTx = Transaction.Create(
+=======
+        var clientTx = ClientTransaction.Create(
+>>>>>>> origin/main
             invoice.ClientId,
             cmd.Date,
             $"Invoice #{cmd.InvoiceId} Payment",

@@ -21,7 +21,11 @@ public sealed class ListClientQuotesHandler(IQuoteRepository repo)
         var (items, total) = await repo.ListByClientAsync(query.ClientId, page, pageSize, ct);
 
         var dtos = items.Select(q => new QuoteListItemDto(
+<<<<<<< HEAD
             q.Id, q.ClientId, q.Subject, q.CreatedAt, q.ExpiryDate, q.Total, q.Status))
+=======
+            q.Id, q.ClientId, q.Subject, q.DateCreated, q.ValidUntil, q.Total, q.Stage))
+>>>>>>> origin/main
             .ToList();
 
         return new PagedResult<QuoteListItemDto>(dtos, total, page, pageSize);

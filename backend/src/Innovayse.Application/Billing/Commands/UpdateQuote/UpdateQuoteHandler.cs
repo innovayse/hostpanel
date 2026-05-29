@@ -20,7 +20,13 @@ public sealed class UpdateQuoteHandler(IQuoteRepository repo, IUnitOfWork uow)
         var quote = await repo.FindByIdAsync(cmd.QuoteId, ct)
             ?? throw new InvalidOperationException($"Quote {cmd.QuoteId} not found.");
 
+<<<<<<< HEAD
         quote.UpdateDetails(cmd.Subject, cmd.Status, cmd.ExpiryDate, cmd.Notes);
+=======
+        quote.UpdateDetails(
+            cmd.Subject, cmd.Stage, cmd.ValidUntil,
+            cmd.ProposalText, cmd.CustomerNotes, cmd.AdminNotes);
+>>>>>>> origin/main
 
         foreach (var entry in cmd.Items)
         {
@@ -30,11 +36,21 @@ public sealed class UpdateQuoteHandler(IQuoteRepository repo, IUnitOfWork uow)
             }
             else if (entry.Id.HasValue)
             {
+<<<<<<< HEAD
                 quote.UpdateItem(entry.Id.Value, entry.Description, entry.UnitPrice, entry.Quantity);
             }
             else
             {
                 quote.AddItem(entry.Description, entry.UnitPrice, entry.Quantity);
+=======
+                quote.UpdateItem(entry.Id.Value, entry.Quantity, entry.Description,
+                    entry.UnitPrice, entry.DiscountPercent, entry.Taxed);
+            }
+            else
+            {
+                quote.AddItem(entry.Quantity, entry.Description,
+                    entry.UnitPrice, entry.DiscountPercent, entry.Taxed);
+>>>>>>> origin/main
             }
         }
 

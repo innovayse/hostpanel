@@ -26,7 +26,7 @@ using Innovayse.Domain.Support.Interfaces;
 /// <param name="emailLogRepo">Email log repository for recent emails.</param>
 public sealed class GetClientSummaryHandler(
     IInvoiceRepository invoiceRepo,
-    IClientTransactionRepository transactionRepo,
+    ITransactionRepository transactionRepo,
     IClientRepository clientRepo,
     IClientServiceRepository serviceRepo,
     IDomainRepository domainRepo,
@@ -78,7 +78,7 @@ public sealed class GetClientSummaryHandler(
             ActiveServicesCount: services.Count(s => s.Status == ServiceStatus.Active),
             TotalServicesCount: services.Count,
             TotalDomainsCount: domains.Count,
-            AcceptedQuotesCount: quotes.Count(q => q.Stage == QuoteStage.Accepted),
+            AcceptedQuotesCount: quotes.Count(q => q.Status == QuoteStatus.Accepted),
             TotalQuotesCount: quotes.Count,
             OpenTicketsCount: tickets.Count(t => t.Status == TicketStatus.Open),
             TotalTicketsCount: tickets.Count,

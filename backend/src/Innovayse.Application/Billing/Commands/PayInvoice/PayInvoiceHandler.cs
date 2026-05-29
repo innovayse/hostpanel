@@ -1,16 +1,25 @@
 namespace Innovayse.Application.Billing.Commands.PayInvoice;
 
 using Innovayse.Application.Common;
+using Innovayse.Domain.Audit;
+using Innovayse.Domain.Audit.Interfaces;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Billing.Interfaces;
 
 /// <summary>
 /// Charges the client via <see cref="IPaymentGateway"/> and marks the invoice as paid.
 /// </summary>
+/// <param name="repo">Invoice repository.</param>
+/// <param name="gateway">Payment gateway for charging the client.</param>
+/// <param name="uow">Unit of work for persistence.</param>
+/// <param name="activityLogRepo">Activity log repository for audit trail.</param>
+/// <param name="ctx">Current request context providing admin identity and IP.</param>
 public sealed class PayInvoiceHandler(
     IInvoiceRepository repo,
     IPaymentGateway gateway,
-    IUnitOfWork uow)
+    IUnitOfWork uow,
+    IActivityLogRepository activityLogRepo,
+    ICurrentRequestContext ctx)
 {
     /// <summary>
     /// Handles <see cref="PayInvoiceCommand"/>.
@@ -39,6 +48,10 @@ public sealed class PayInvoiceHandler(
         }
 
         invoice.MarkPaid(result.TransactionId);
+        activityLogRepo.Add(ActivityLog.Create(
+            invoice.ClientId,
+            $"Invoice Marked Paid - Invoice ID: {invoice.Id}",
+            ctx.AdminId, ctx.AdminName, ctx.AdminEmail, ctx.IpAddress));
         await uow.SaveChangesAsync(ct);
     }
 }

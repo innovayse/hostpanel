@@ -20,6 +20,7 @@
     "@stripe/stripe-js": "^8.9.0",
     "@vueuse/motion": "^3.0.3",
     "eslint": "^9.39.2",
+    "libphonenumber-js": "^1.13.3",
     "lucide-vue-next": "^0.564.0",
     "nodemailer": "^7.0.13",
     "nuxt": "^4.3.0",

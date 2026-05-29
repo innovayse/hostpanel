@@ -1,6 +1,8 @@
 namespace Innovayse.Application.Billing.Commands.CreateClientTransaction;
 
 using Innovayse.Application.Common;
+using Innovayse.Domain.Audit;
+using Innovayse.Domain.Audit.Interfaces;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Billing.Interfaces;
 using Innovayse.Domain.Clients.Interfaces;
@@ -11,10 +13,14 @@ using Innovayse.Domain.Clients.Interfaces;
 /// <param name="transactionRepo">Client transaction repository.</param>
 /// <param name="clientRepo">Client repository for credit adjustments.</param>
 /// <param name="uow">Unit of work for persistence.</param>
+/// <param name="activityLogRepo">Activity log repository for audit trail.</param>
+/// <param name="ctx">Current request context providing admin identity and IP.</param>
 public sealed class CreateClientTransactionHandler(
     IClientTransactionRepository transactionRepo,
     IClientRepository clientRepo,
-    IUnitOfWork uow)
+    IUnitOfWork uow,
+    IActivityLogRepository activityLogRepo,
+    ICurrentRequestContext ctx)
 {
     /// <summary>
     /// Handles <see cref="CreateClientTransactionCommand"/>.
@@ -56,6 +62,13 @@ public sealed class CreateClientTransactionHandler(
         }
 
         await uow.SaveChangesAsync(ct);
+
+        activityLogRepo.Add(ActivityLog.Create(
+            cmd.ClientId,
+            $"Added Transaction - Transaction ID: {transaction.Id}",
+            ctx.AdminId, ctx.AdminName, ctx.AdminEmail, ctx.IpAddress));
+        await uow.SaveChangesAsync(ct);
+
         return transaction.Id;
     }
 }

@@ -367,7 +367,7 @@ interface WhmcsCurrency {
 }
 
 interface WhmcsPlan {
-  pid: number; name: string; translated_name?: string; tagline?: string; translated_tagline?: string;
+  id?: number; pid: number; name: string; translated_name?: string; tagline?: string; translated_tagline?: string;
   shortdescription?: string; translated_shortdescription?: string; description: string; translated_description?: string;
   is_featured?: string; pricing: Record<string, WhmcsCurrency>;
 }
@@ -497,7 +497,7 @@ function addToCartHelper(plan: WhmcsPlan) {
   const c = getCurrencyHelper(plan); const amt = getPlanPriceRawHelper(plan, selectedCycle.value)
   const priceLabel = amt ? (locale.value === 'hy' && c?.prefix === '֏' ? `${formatAmountHelper(amt)} ${c.prefix}` : `${c?.prefix}${formatAmountHelper(amt)}`) : $t('hosting.custom')
   cart.addItem({
-    pid: plan.pid, name: plan.translated_name || plan.name, billingcycle: selectedCycle.value,
+    pid: plan.pid || plan.id || 0, name: plan.translated_name || plan.name, billingcycle: selectedCycle.value,
     cycleLabel: $t(`hosting.cycles.${selectedCycle.value}`), price: priceLabel, prefix: c?.prefix ?? '', rawPrice: amt || '0'
   })
 }

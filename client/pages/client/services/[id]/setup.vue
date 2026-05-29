@@ -241,6 +241,13 @@ async function finishSetup() {
       body: setupData
     })
     
+    // Invalidate cached services so pages fetch fresh data
+    const store = useClientStore()
+    store.servicesLoaded = false
+
+    // Clear Nuxt data cache for this service so the detail page refetches
+    clearNuxtData()
+
     // Success - redirect to the service management page
     await navigateTo(`/client/services/${serviceId}`)
   } catch (err: any) {

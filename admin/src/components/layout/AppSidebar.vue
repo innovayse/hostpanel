@@ -79,12 +79,26 @@ const navItems: NavItem[] = [
     icon: 'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z',
   },
   {
+    to: '/orders', label: 'Orders',
+    icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 7h6m-6 4h4',
+  },
+  {
     to: '/domains', label: 'Domains',
     icon: 'M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9',
   },
   {
     to: '/support', label: 'Support',
     icon: 'M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z',
+    children: [
+      { to: '/support/overview', label: 'Support Overview' },
+      { to: '/support/tickets', label: 'Support Tickets' },
+      { to: '/support/tickets/new', label: 'Open New Ticket' },
+      { to: '/support/predefined-replies', label: 'Predefined Replies' },
+      { to: '/support/announcements', label: 'Announcements' },
+      { to: '/support/downloads', label: 'Downloads' },
+      { to: '/support/knowledgebase', label: 'Knowledgebase' },
+      { to: '/support/network-issues', label: 'Network Issues' },
+    ],
   },
   {
     to: '/plugins', label: 'Plugins',

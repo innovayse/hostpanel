@@ -7,6 +7,7 @@ using Innovayse.Application.Clients.Queries.GetMyProfile;
 using Innovayse.Application.Provisioning.Queries.GetCPanelSsoUrl;
 using Innovayse.Application.Services.Commands.CancelService;
 using Innovayse.Application.Services.Commands.OrderService;
+using Innovayse.Application.Services.Commands.SetupService;
 using Innovayse.Application.Services.Queries.GetCancellationStatus;
 using Innovayse.Application.Services.Queries.GetMyServices;
 using Innovayse.Domain.Auth;
@@ -81,6 +82,23 @@ public sealed class MyServicesController(IMessageBus bus) : ControllerBase
     {
         await bus.InvokeAsync(
             new CancelServiceCommand(id, request.Type, request.Reason), ct);
+        return Ok();
+    }
+
+    /// <summary>
+    /// Sets up a pending service with hosting details (domain, username, password)
+    /// and triggers provisioning.
+    /// </summary>
+    /// <param name="id">Client service primary key.</param>
+    /// <param name="request">Setup request body with domain, username, and password.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK on successful setup and provisioning.</returns>
+    [HttpPost("{id:int}/setup")]
+    public async Task<IActionResult> SetupAsync(
+        int id, [FromBody] SetupServiceRequest request, CancellationToken ct)
+    {
+        await bus.InvokeAsync(
+            new SetupServiceCommand(id, request.Domain, request.Username, request.Password), ct);
         return Ok();
     }
 

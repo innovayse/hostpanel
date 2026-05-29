@@ -3,6 +3,7 @@ import { authMiddleware } from '../middleware/auth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+  scrollBehavior: () => ({ top: 0 }),
   routes: [
     {
       path: '/setup',
@@ -52,8 +53,27 @@ const router = createRouter({
             { path: 'domains/:domainId', component: () => import('../modules/clients/views/ClientDomainDetailView.vue') },
           ],
         },
+<<<<<<< HEAD
+        {
+          path: 'billing',
+          children: [
+            { path: '', redirect: 'invoices' },
+            { path: 'invoices', component: () => import('../modules/billing/views/InvoicesListView.vue') },
+            { path: 'invoices/:id/:action', component: () => import('../modules/billing/views/InvoiceDetailView.vue') },
+            { path: ':id', component: () => import('../modules/billing/views/InvoiceDetailView.vue') },
+            { path: 'billable-items', component: () => import('../modules/billing/views/BillableItemsView.vue') },
+            { path: 'billable-items/add', component: () => import('../modules/billing/views/AddBillableItemView.vue') },
+            { path: 'quotes', component: () => import('../modules/billing/views/QuotesListView.vue') },
+            { path: 'quotes/add', component: () => import('../modules/billing/views/AddQuoteView.vue') },
+            { path: 'offline-cc', component: () => import('../modules/billing/views/OfflineCCView.vue') },
+            { path: 'disputes', component: () => import('../modules/billing/views/DisputesView.vue') },
+            { path: 'gateway-log', component: () => import('../modules/billing/views/GatewayLogView.vue') },
+          ],
+        },
+=======
         { path: 'billing', component: () => import('../modules/billing/views/InvoicesListView.vue') },
         { path: 'billing/:id', component: () => import('../modules/billing/views/InvoiceDetailView.vue') },
+>>>>>>> origin/main
         { path: 'quotes/new', component: () => import('../modules/billing/views/QuoteDetailView.vue') },
         { path: 'quotes/:id', component: () => import('../modules/billing/views/QuoteDetailView.vue') },
         { path: 'services', component: () => import('../modules/services/views/ServicesListView.vue') },

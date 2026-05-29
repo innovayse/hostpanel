@@ -2,6 +2,13 @@ namespace Innovayse.API.Billing;
 
 using Innovayse.API.Billing.Requests;
 using Innovayse.Application.Billing.Commands.CreateBillableItem;
+<<<<<<< HEAD
+using Innovayse.Application.Billing.Commands.DeleteBillableItem;
+using Innovayse.Application.Billing.DTOs;
+using Innovayse.Application.Billing.Queries.ListBillableItems;
+using Innovayse.Application.Common;
+using Innovayse.Domain.Auth;
+=======
 using Innovayse.Application.Billing.Commands.CreateTimeBillingEntries;
 using Innovayse.Application.Billing.Commands.DeleteBillableItem;
 using Innovayse.Application.Billing.Commands.InvoiceSelectedItems;
@@ -9,12 +16,42 @@ using Innovayse.Application.Billing.DTOs;
 using Innovayse.Application.Billing.Queries.ListBillableItems;
 using Innovayse.Domain.Auth;
 using Innovayse.Domain.Billing;
+>>>>>>> origin/main
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;
 
 /// <summary>
+<<<<<<< HEAD
+/// Admin endpoints for managing billable items.
+/// </summary>
+/// <param name="bus">Wolverine message bus.</param>
+[ApiController]
+[Route("api/billing/billable-items")]
+[Authorize(Roles = Roles.Admin)]
+public sealed class BillableItemsController(IMessageBus bus) : ControllerBase
+{
+    /// <summary>Returns a paginated list of billable items with optional type filter.</summary>
+    /// <param name="page">1-based page number (default 1).</param>
+    /// <param name="pageSize">Items per page (default 20, max 100).</param>
+    /// <param name="type">Optional type filter (OneTime or Recurring).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Paginated billable item list.</returns>
+    [HttpGet]
+    public async Task<ActionResult<PagedResult<BillableItemDto>>> GetAllAsync(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? type = null,
+        CancellationToken ct = default)
+    {
+        var result = await bus.InvokeAsync<PagedResult<BillableItemDto>>(
+            new ListBillableItemsQuery(page, pageSize, type), ct);
+        return Ok(result);
+    }
+
+    /// <summary>Creates a new billable item.</summary>
+=======
 /// Admin and Reseller endpoints for managing billable items.
 /// </summary>
 /// <param name="bus">Wolverine message bus.</param>
@@ -43,11 +80,25 @@ public sealed class BillableItemsController(IMessageBus bus) : ControllerBase
 
     /// <summary>Creates a new billable item for a client.</summary>
     /// <param name="clientId">The client's primary key.</param>
+>>>>>>> origin/main
     /// <param name="request">Billable item creation request.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>201 Created with the new billable item ID.</returns>
     [HttpPost]
     public async Task<ActionResult<int>> CreateAsync(
+<<<<<<< HEAD
+        [FromBody] CreateBillableItemRequest request,
+        CancellationToken ct)
+    {
+        var cmd = new CreateBillableItemCommand(
+            request.ClientId,
+            request.Description,
+            request.Amount,
+            request.Currency,
+            request.Type,
+            request.RecurringPeriod,
+            request.NextDueDate);
+=======
         int clientId,
         [FromBody] CreateBillableItemRequest request,
         CancellationToken ct)
@@ -69,11 +120,20 @@ public sealed class BillableItemsController(IMessageBus bus) : ControllerBase
             request.RecurrenceInterval,
             recurrencePeriod,
             request.RecurrenceLimit);
+>>>>>>> origin/main
 
         var id = await bus.InvokeAsync<int>(cmd, ct);
         return StatusCode(StatusCodes.Status201Created, id);
     }
 
+<<<<<<< HEAD
+    /// <summary>Deletes a billable item.</summary>
+    /// <param name="id">Billable item primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 No Content.</returns>
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> DeleteAsync(int id, CancellationToken ct)
+=======
     /// <summary>Creates multiple time billing entries as billable items.</summary>
     /// <param name="clientId">The client's primary key.</param>
     /// <param name="request">Time billing entries request.</param>
@@ -117,6 +177,7 @@ public sealed class BillableItemsController(IMessageBus bus) : ControllerBase
     /// <returns>204 No Content.</returns>
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteAsync(int clientId, int id, CancellationToken ct)
+>>>>>>> origin/main
     {
         await bus.InvokeAsync(new DeleteBillableItemCommand(id), ct);
         return NoContent();

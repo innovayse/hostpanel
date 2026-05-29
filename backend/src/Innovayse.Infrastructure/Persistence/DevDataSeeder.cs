@@ -1,6 +1,7 @@
 namespace Innovayse.Infrastructure.Persistence;
 
 using Innovayse.Domain.Auth;
+using Innovayse.Domain.Billing;
 using Innovayse.Domain.Clients;
 using Innovayse.Infrastructure.Auth;
 using Microsoft.AspNetCore.Identity;
@@ -22,9 +23,32 @@ public sealed class DevDataSeeder(
     /// <returns>Task that completes when seeding is done.</returns>
     public async Task SeedAsync(CancellationToken ct = default)
     {
-        if (await db.Clients.AnyAsync(ct))
+        // Always ensure admin user exists
+        const string adminEmail = "admin@innovayse.com";
+        if (await userManager.FindByEmailAsync(adminEmail) is null)
         {
-            logger.LogInformation("Dev seed skipped — clients already exist");
+            var adminUser = new AppUser
+            {
+                UserName = adminEmail,
+                Email = adminEmail,
+                FirstName = "Admin",
+                LastName = "User",
+                EmailConfirmed = true,
+            };
+            var adminResult = await userManager.CreateAsync(adminUser, "Admin123!");
+            if (adminResult.Succeeded)
+            {
+                await userManager.AddToRoleAsync(adminUser, Roles.Admin);
+                logger.LogInformation("Admin user created: {Email}", adminEmail);
+            }
+        }
+
+        var clientsExist = await db.Clients.AnyAsync(ct);
+        var invoicesExist = await db.Invoices.AnyAsync(ct);
+
+        if (clientsExist && invoicesExist)
+        {
+            logger.LogInformation("Dev seed skipped — data already exists");
             return;
         }
 
@@ -105,6 +129,57 @@ public sealed class DevDataSeeder(
             }
         }
 
-        logger.LogInformation("Dev seed complete — {Count} clients created", clients.Count);
+        // Seed invoices
+        if (!invoicesExist)
+        {
+            var clientsList = await db.Clients.ToListAsync(ct);
+            var random = new Random();
+            var invoiceCount = 0;
+
+            foreach (var client in clientsList.Take(10))
+            {
+                var dueDate = DateTimeOffset.UtcNow.AddDays(30);
+
+                // Unpaid invoice
+                var unpaidInvoice = Invoice.Create(client.Id, dueDate);
+                unpaidInvoice.AddItem("Hosting Services", 99.99m, 1);
+                db.Invoices.Add(unpaidInvoice);
+                invoiceCount++;
+
+                // Paid invoice
+                var paidInvoice = Invoice.Create(client.Id, dueDate.AddDays(-60));
+                paidInvoice.AddItem("Domain Registration", 14.99m, 1);
+                paidInvoice.MarkPaid("stripe_transaction_" + random.Next(100000, 999999));
+                db.Invoices.Add(paidInvoice);
+                invoiceCount++;
+
+                // Overdue invoice
+                var overdueInvoice = Invoice.Create(client.Id, dueDate.AddDays(-90));
+                overdueInvoice.AddItem("Email Hosting", 49.99m, 1);
+                overdueInvoice.MarkOverdue();
+                db.Invoices.Add(overdueInvoice);
+                invoiceCount++;
+
+                // Refunded invoice
+                var refundedInvoice = Invoice.Create(client.Id, dueDate.AddDays(-120));
+                refundedInvoice.AddItem("SSL Certificate", 79.99m, 1);
+                refundedInvoice.MarkPaid("stripe_transaction_" + random.Next(100000, 999999));
+                refundedInvoice.Refund();
+                db.Invoices.Add(refundedInvoice);
+                invoiceCount++;
+
+                // Draft invoice
+                var draftInvoice = Invoice.CreateDraft(client.Id, dueDate.AddDays(60));
+                draftInvoice.AddItem("Monthly Hosting Plan", 129.99m, 1);
+                db.Invoices.Add(draftInvoice);
+                invoiceCount++;
+            }
+            await db.SaveChangesAsync(ct);
+            logger.LogInformation("Dev seed complete — {Count} clients and {Count} invoices created", clients.Count, invoiceCount);
+        }
+        else if (!clientsExist)
+        {
+            logger.LogInformation("Dev seed complete — {Count} clients created", clients.Count);
+        }
     }
 }

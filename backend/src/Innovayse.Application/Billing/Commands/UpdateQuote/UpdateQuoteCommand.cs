@@ -5,20 +5,32 @@ using Innovayse.Domain.Billing;
 /// <summary>Command to update an existing quote's details and line items.</summary>
 /// <param name="QuoteId">The quote to update.</param>
 /// <param name="Subject">New quote subject / title.</param>
+<<<<<<< HEAD
+/// <param name="Status">New lifecycle status.</param>
+/// <param name="ExpiryDate">New expiry date (UTC).</param>
+/// <param name="Notes">Optional notes or terms; null to clear.</param>
+=======
 /// <param name="Stage">New lifecycle stage.</param>
 /// <param name="ValidUntil">New expiry date; null for no expiry.</param>
 /// <param name="ProposalText">New proposal text; null to clear.</param>
 /// <param name="CustomerNotes">New customer notes; null to clear.</param>
 /// <param name="AdminNotes">New admin notes; null to clear.</param>
+>>>>>>> origin/main
 /// <param name="Items">Full list of item changes (add, update, or delete).</param>
 public record UpdateQuoteCommand(
     int QuoteId,
     string Subject,
+<<<<<<< HEAD
+    QuoteStatus Status,
+    DateTimeOffset ExpiryDate,
+    string? Notes,
+=======
     QuoteStage Stage,
     DateTimeOffset? ValidUntil,
     string? ProposalText,
     string? CustomerNotes,
     string? AdminNotes,
+>>>>>>> origin/main
     IReadOnlyList<UpdateQuoteItemEntry> Items);
 
 /// <summary>
@@ -27,6 +39,17 @@ public record UpdateQuoteCommand(
 /// When <paramref name="IsDeleted"/> is true, the item is removed.
 /// </summary>
 /// <param name="Id">Existing item ID; null for new items.</param>
+<<<<<<< HEAD
+/// <param name="Description">Human-readable description.</param>
+/// <param name="UnitPrice">Price per unit (>= 0).</param>
+/// <param name="Quantity">Number of units (>= 1).</param>
+/// <param name="IsDeleted">When true, the item with this ID will be removed.</param>
+public record UpdateQuoteItemEntry(
+    int? Id,
+    string Description,
+    decimal UnitPrice,
+    int Quantity,
+=======
 /// <param name="Quantity">Number of units (>= 1).</param>
 /// <param name="Description">Human-readable description.</param>
 /// <param name="UnitPrice">Price per unit (>= 0).</param>
@@ -40,4 +63,5 @@ public record UpdateQuoteItemEntry(
     decimal UnitPrice,
     decimal DiscountPercent,
     bool Taxed,
+>>>>>>> origin/main
     bool IsDeleted = false);

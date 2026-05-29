@@ -3,7 +3,11 @@ namespace Innovayse.Application.Billing.Queries.ListInvoices;
 /// <summary>Paginated, optionally filtered query for all invoices — admin view.</summary>
 /// <param name="Page">1-based page number.</param>
 /// <param name="PageSize">Number of items per page (max 100).</param>
+<<<<<<< HEAD
+/// <param name="Status">Optional status filter (e.g. Paid, Unpaid, Overdue, Draft, etc.).</param>
+=======
 /// <param name="Status">Optional status filter.</param>
+>>>>>>> origin/main
 /// <param name="From">Optional start date filter (inclusive, UTC).</param>
 /// <param name="To">Optional end date filter (inclusive, UTC).</param>
 public record ListInvoicesQuery(

@@ -40,7 +40,11 @@ public sealed class BillingController(IMessageBus bus) : ControllerBase
     /// <summary>Returns a paginated, optionally filtered list of all invoices.</summary>
     /// <param name="page">1-based page number (default 1).</param>
     /// <param name="pageSize">Items per page (default 20, max 100).</param>
+<<<<<<< HEAD
+    /// <param name="status">Optional status filter (Paid, Unpaid, Overdue, Draft, Cancelled, Refunded, Collections, PaymentPending).</param>
+=======
     /// <param name="status">Optional status filter (e.g. "Unpaid", "Paid").</param>
+>>>>>>> origin/main
     /// <param name="from">Optional start date filter (inclusive, UTC).</param>
     /// <param name="to">Optional end date filter (inclusive, UTC).</param>
     /// <param name="ct">Cancellation token.</param>

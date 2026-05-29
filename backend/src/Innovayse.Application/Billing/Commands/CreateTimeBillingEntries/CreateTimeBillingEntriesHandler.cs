@@ -19,6 +19,12 @@ public sealed class CreateTimeBillingEntriesHandler(IBillableItemRepository repo
     {
         var items = cmd.Entries.Select(entry => BillableItem.Create(
             cmd.ClientId,
+<<<<<<< HEAD
+            entry.Description,
+            entry.Hours * entry.Rate,
+            "USD",
+            BillableItemType.OneTime)).ToList();
+=======
             entry.ServiceId,
             entry.Description,
             entry.Hours * entry.Rate,
@@ -29,6 +35,7 @@ public sealed class CreateTimeBillingEntriesHandler(IBillableItemRepository repo
             recurrenceInterval: null,
             recurrencePeriod: null,
             recurrenceLimit: null)).ToList();
+>>>>>>> origin/main
 
         repo.AddRange(items);
         await uow.SaveChangesAsync(ct);

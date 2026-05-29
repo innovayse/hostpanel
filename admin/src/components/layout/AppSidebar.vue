@@ -77,6 +77,15 @@ const navItems: NavItem[] = [
   {
     to: '/billing', label: 'Billing',
     icon: 'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z',
+    children: [
+      { to: '/billing/transactions', label: 'Transactions List' },
+      { to: '/billing/invoices', label: 'Invoices' },
+      { to: '/billing/billable-items', label: 'Billable Items' },
+      { to: '/billing/quotes', label: 'Quotes' },
+      { to: '/billing/offline-cc', label: 'Offline CC Processing' },
+      { to: '/billing/disputes', label: 'Disputes' },
+      { to: '/billing/gateway-log', label: 'Gateway Log' },
+    ],
   },
   {
     to: '/domains', label: 'Domains',

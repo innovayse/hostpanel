@@ -103,7 +103,7 @@ definePageMeta({ layout: 'client', middleware: 'client-auth' })
 const store = useClientStore()
 const { format: formatAmount } = useCurrency()
 
-await useAsyncData('client-services', () => store.fetchServices())
+await useAsyncData('client-services', () => store.fetchServices(true))
 
 const servicesNeedingSetup = computed(() => store.services.filter(s => !s.username))
 </script>

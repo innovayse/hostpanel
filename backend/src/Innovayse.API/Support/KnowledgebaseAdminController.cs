@@ -2,11 +2,15 @@ namespace Innovayse.API.Support;
 
 using Innovayse.API.Support.Requests;
 using Innovayse.Application.Support.Commands.CreateKbArticle;
+using Innovayse.Application.Support.Commands.CreateKbCategory;
 using Innovayse.Application.Support.Commands.DeleteKbArticle;
+using Innovayse.Application.Support.Commands.DeleteKbCategory;
 using Innovayse.Application.Support.Commands.PublishKbArticle;
 using Innovayse.Application.Support.Commands.UpdateKbArticle;
+using Innovayse.Application.Support.Commands.UpdateKbCategory;
 using Innovayse.Application.Support.DTOs;
 using Innovayse.Application.Support.Queries.ListKbArticles;
+using Innovayse.Application.Support.Queries.ListKbCategories;
 using Innovayse.Domain.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -77,5 +81,54 @@ public sealed class KnowledgebaseAdminController(IMessageBus bus) : ControllerBa
     {
         await bus.InvokeAsync(new PublishKbArticleCommand(id, true), ct);
         return Ok();
+    }
+
+    /// <summary>Returns all knowledge base categories with article counts.</summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>List of category DTOs.</returns>
+    [HttpGet("categories")]
+    public async Task<ActionResult<IReadOnlyList<KbCategoryDto>>> GetCategoriesAsync(CancellationToken ct)
+    {
+        var result = await bus.InvokeAsync<IReadOnlyList<KbCategoryDto>>(
+            new ListKbCategoriesQuery(), ct);
+        return Ok(result);
+    }
+
+    /// <summary>Creates a new knowledge base category.</summary>
+    /// <param name="request">Category details.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>201 Created with the new category ID.</returns>
+    [HttpPost("categories")]
+    public async Task<ActionResult<int>> CreateCategoryAsync(
+        [FromBody] CreateKbCategoryRequest request, CancellationToken ct)
+    {
+        var id = await bus.InvokeAsync<int>(
+            new CreateKbCategoryCommand(request.Name, request.Description, request.IsHidden, request.ParentCategoryId), ct);
+        return StatusCode(201, id);
+    }
+
+    /// <summary>Updates an existing knowledge base category.</summary>
+    /// <param name="id">Category primary key.</param>
+    /// <param name="request">Updated category details.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 No Content on success.</returns>
+    [HttpPut("categories/{id:int}")]
+    public async Task<IActionResult> UpdateCategoryAsync(
+        int id, [FromBody] UpdateKbCategoryRequest request, CancellationToken ct)
+    {
+        await bus.InvokeAsync(
+            new UpdateKbCategoryCommand(id, request.Name, request.Description, request.IsHidden), ct);
+        return NoContent();
+    }
+
+    /// <summary>Deletes a knowledge base category.</summary>
+    /// <param name="id">Category primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 No Content on success.</returns>
+    [HttpDelete("categories/{id:int}")]
+    public async Task<IActionResult> DeleteCategoryAsync(int id, CancellationToken ct)
+    {
+        await bus.InvokeAsync(new DeleteKbCategoryCommand(id), ct);
+        return NoContent();
     }
 }

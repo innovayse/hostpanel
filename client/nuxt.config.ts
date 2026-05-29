@@ -72,6 +72,7 @@ export default defineNuxtConfig({
     public: {
       baseUrl: process.env.NUXT_PUBLIC_BASE_URL || 'https://innovayse.com',
       whmcsUrl: (process.env.WHMCS_URL || '').replace(/\/+$/, ''),
+      stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
     }
   },
 

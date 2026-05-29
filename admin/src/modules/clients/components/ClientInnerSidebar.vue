@@ -30,6 +30,11 @@ interface InnerNavItem {
 /** Inner sidebar navigation items. */
 const navItems = computed<InnerNavItem[]>(() => [
   {
+    icon: 'summary',
+    label: 'Summary',
+    to: `/clients/${props.clientId}/summary`,
+  },
+  {
     icon: 'profile',
     label: 'Profile',
     to: `/clients/${props.clientId}/profile`,
@@ -74,6 +79,21 @@ const navItems = computed<InnerNavItem[]>(() => [
     label: 'Transactions',
     to: `/clients/${props.clientId}/transactions`,
   },
+  {
+    icon: 'tickets',
+    label: 'Tickets',
+    to: `/clients/${props.clientId}/tickets`,
+  },
+  {
+    icon: 'emails',
+    label: 'Emails',
+    to: `/clients/${props.clientId}/emails`,
+  },
+  {
+    icon: 'log',
+    label: 'Log',
+    to: `/clients/${props.clientId}/log`,
+  },
 ])
 
 /**
@@ -110,9 +130,26 @@ function isActive(item: InnerNavItem): boolean {
           class="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[18px] rounded-r-full gradient-brand"
         />
 
+        <!-- Summary icon (dashboard grid) -->
+        <svg
+          v-if="item.icon === 'summary'"
+          class="w-5 h-5 shrink-0"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <rect x="3" y="3" width="7" height="7" rx="1" />
+          <rect x="14" y="3" width="7" height="4" rx="1" />
+          <rect x="14" y="11" width="7" height="10" rx="1" />
+          <rect x="3" y="14" width="7" height="7" rx="1" />
+        </svg>
+
         <!-- Profile icon -->
         <svg
-          v-if="item.icon === 'profile'"
+          v-else-if="item.icon === 'profile'"
           class="w-5 h-5 shrink-0"
           viewBox="0 0 24 24"
           fill="none"
@@ -189,6 +226,25 @@ function isActive(item: InnerNavItem): boolean {
         <svg v-else-if="item.icon === 'transactions'" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
           <line x1="1" y1="10" x2="23" y2="10" />
+        </svg>
+
+        <!-- Tickets icon (message bubble) -->
+        <svg v-else-if="item.icon === 'tickets'" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+
+        <!-- Emails icon (mail envelope) -->
+        <svg v-else-if="item.icon === 'emails'" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+          <polyline points="22,6 12,13 2,6" />
+        </svg>
+
+        <!-- Log icon (list/clipboard with lines) -->
+        <svg v-else-if="item.icon === 'log'" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
+          <rect x="9" y="3" width="6" height="4" rx="1" />
+          <line x1="9" y1="12" x2="15" y2="12" />
+          <line x1="9" y1="16" x2="13" y2="16" />
         </svg>
 
         <!-- Label -->

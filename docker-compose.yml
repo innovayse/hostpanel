@@ -110,6 +110,7 @@ services:
     environment:
       API_URL: http://api:5148
       NUXT_PUBLIC_BASE_URL: http://localhost:3000
+      STRIPE_PUBLISHABLE_KEY: pk_test_51Tc3tOEHRuUOoZmggqrvyuddpdtx6FtKaUSvqQXkwokJakOBFCLRDlX6troVkkjFw966agSmLKnu1NSlOAki6u9600PatIOktW
       SMTP_HOST: mailhog
       SMTP_PORT: 1025
       WATCHPACK_POLLING: "true"

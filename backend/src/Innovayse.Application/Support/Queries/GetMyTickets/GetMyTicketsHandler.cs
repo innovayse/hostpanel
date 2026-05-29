@@ -24,7 +24,11 @@ public sealed class GetMyTicketsHandler(ITicketRepository repo)
                 t.Status.ToString(),
                 t.Priority.ToString(),
                 t.CreatedAt,
-                t.Replies.Count))
+                t.Replies.Count,
+                null,
+                t.Replies.Count > 0 ? t.Replies.Max(r => r.CreatedAt) : null,
+                t.IsFlagged,
+                t.ClientId))
             .ToList();
     }
 }

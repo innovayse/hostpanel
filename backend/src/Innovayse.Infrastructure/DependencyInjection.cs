@@ -4,27 +4,34 @@ using Innovayse.Application.Admin.Plugins.Interfaces;
 using Innovayse.Application.Admin.Servers.Interfaces;
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Clients.Services;
+using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Common;
 using Innovayse.Application.Notifications.Services;
+using Innovayse.Domain.Audit.Interfaces;
 using Innovayse.Domain.Billing.Interfaces;
 using Innovayse.Domain.Clients.Interfaces;
 using Innovayse.Domain.Domains.Interfaces;
 using Innovayse.Domain.Notifications.Interfaces;
+using Innovayse.Domain.Orders.Interfaces;
 using Innovayse.Domain.Products.Interfaces;
 using Innovayse.Domain.Servers.Interfaces;
 using Innovayse.Domain.Services.Interfaces;
 using Innovayse.Domain.Settings.Interfaces;
 using Innovayse.Domain.Support.Interfaces;
+using Innovayse.Infrastructure.Audit;
 using Innovayse.Infrastructure.Auth;
 using Innovayse.Infrastructure.Billing;
 using Innovayse.Infrastructure.Clients;
+using Innovayse.Infrastructure.Common;
 using Innovayse.Infrastructure.Domains;
 using Innovayse.Infrastructure.Domains.NameAm;
 using Innovayse.Infrastructure.Domains.Namecheap;
 using Innovayse.Infrastructure.Notifications;
+using Innovayse.Infrastructure.Orders;
 using Innovayse.Infrastructure.Persistence;
 using Innovayse.Infrastructure.Plugins;
 using Innovayse.Infrastructure.Products;
+using Innovayse.Infrastructure.Provisioning;
 using Innovayse.Infrastructure.Provisioning.CPanel;
 using Innovayse.Infrastructure.Repositories;
 using Innovayse.Infrastructure.Security;
@@ -120,8 +127,12 @@ public static class DependencyInjection
                 "Authorization",
                 $"WHM {settings.Username}:{settings.ApiToken}");
         });
-        services.AddScoped<IProvisioningProvider, CPanelProvisioningProvider>();
+        // Use NullCPanelProvisioningProvider in dev — swap to CPanelProvisioningProvider when a real server is configured
+        services.AddScoped<IProvisioningProvider, NullCPanelProvisioningProvider>();
         services.AddScoped<Innovayse.Domain.Services.Interfaces.IProvisioningProvider, NullProvisioningProvider>();
+
+        // Orders
+        services.AddScoped<IOrderRepository, OrderRepository>();
 
         // Billing services
         services.AddScoped<IInvoiceRepository, InvoiceRepository>();
@@ -130,10 +141,23 @@ public static class DependencyInjection
         services.AddScoped<IQuoteRepository, QuoteRepository>();
         services.AddScoped<IPaymentGateway, NullPaymentGateway>();
 
+        // Stripe
+        services.Configure<StripeSettings>(configuration.GetSection("Stripe"));
+        services.AddScoped<IStripeService, StripeService>();
+
+        // Audit
+        services.AddHttpContextAccessor();
+        services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
+        services.AddScoped<ICurrentRequestContext, HttpCurrentRequestContext>();
+
         // Support
         services.AddScoped<ITicketRepository, TicketRepository>();
         services.AddScoped<IDepartmentRepository, DepartmentRepository>();
         services.AddScoped<IKbArticleRepository, KbArticleRepository>();
+        services.AddScoped<IAnnouncementRepository, AnnouncementRepository>();
+        services.AddScoped<IKbCategoryRepository, KbCategoryRepository>();
+        services.AddScoped<INetworkIssueRepository, NetworkIssueRepository>();
+        services.AddScoped<IPredefinedReplyRepository, PredefinedReplyRepository>();
 
         // Notifications
         services.Configure<SmtpSettings>(configuration.GetSection("Smtp"));

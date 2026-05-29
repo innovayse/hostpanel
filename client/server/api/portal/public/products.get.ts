@@ -14,7 +14,10 @@ export default defineCachedEventHandler(async (event) => {
   if (query.gids)  params.set('gids',  String(query.gids))
 
   const qs = params.toString()
-  return await internalApiCall<unknown[]>(event, `/products${qs ? `?${qs}` : ''}`)
+  const products = await internalApiCall<Record<string, unknown>[]>(event, `/products${qs ? `?${qs}` : ''}`)
+
+  // Map backend "id" to "pid" for frontend compatibility (WHMCS naming convention)
+  return products.map(p => ({ ...p, pid: p.id }))
 }, {
   name: 'backend-products',
   maxAge: 3600,

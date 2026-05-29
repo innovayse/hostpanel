@@ -15,6 +15,7 @@ using Innovayse.Application.Clients.Commands.UpdateContact;
 using Innovayse.Application.Clients.Commands.UpdateUserPermissions;
 using Innovayse.Application.Clients.DTOs;
 using Innovayse.Application.Clients.Queries.GetClient;
+using Innovayse.Application.Clients.Queries.GetClientSummary;
 using Innovayse.Application.Clients.Queries.GetClientUsers;
 using Innovayse.Application.Clients.Queries.ListClients;
 using Innovayse.Application.Common;
@@ -334,5 +335,16 @@ public sealed class ClientsController(IMessageBus bus, IUserService userService)
     {
         await bus.InvokeAsync(new InviteUserToClientCommand(id, request.Email, request.FirstName, request.LastName, request.Permissions), ct);
         return NoContent();
+    }
+
+    /// <summary>Returns aggregated summary data for a client profile dashboard.</summary>
+    /// <param name="id">The client's primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Aggregated client summary including invoice stats, income, counts, and recent emails.</returns>
+    [HttpGet("{id:int}/summary")]
+    public async Task<ActionResult<ClientSummaryDto>> GetSummaryAsync(int id, CancellationToken ct)
+    {
+        var result = await bus.InvokeAsync<ClientSummaryDto>(new GetClientSummaryQuery(id), ct);
+        return Ok(result);
     }
 }

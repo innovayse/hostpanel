@@ -141,19 +141,19 @@
               </div>
 
               <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <label v-for="method in paymentMethods" 
+                <label v-for="method in paymentMethods"
                        :key="method.module"
                        class="relative flex flex-col p-4 rounded-2xl border cursor-pointer transition-all duration-300 group"
-                       :class="selectedMethod === method.module 
-                         ? 'border-cyan-500/60 bg-cyan-500/10 shadow-[0_0_20px_rgba(6,182,212,0.15)]' 
+                       :class="selectedMethod === method.module
+                         ? 'border-cyan-500/60 bg-cyan-500/10 shadow-[0_0_20px_rgba(6,182,212,0.15)]'
                          : 'border-white/10 hover:border-white/20 bg-white/5'">
                   <div class="flex items-center justify-between mb-2">
                     <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
                       <CreditCard :size="16" :class="selectedMethod === method.module ? 'text-cyan-400' : 'text-gray-500'" />
                     </div>
-                    <input v-model="selectedMethod" 
-                           type="radio" 
-                           :value="method.module" 
+                    <input v-model="selectedMethod"
+                           type="radio"
+                           :value="method.module"
                            class="w-4 h-4 accent-cyan-500" />
                   </div>
                   <span class="text-sm font-bold mt-auto" :class="selectedMethod === method.module ? 'text-white' : 'text-gray-400'">
@@ -161,6 +161,14 @@
                   </span>
                 </label>
               </div>
+
+              <!-- Stripe Card Form -->
+              <Transition enter-active-class="transition-all duration-300" enter-from-class="opacity-0 max-h-0" enter-to-class="opacity-100 max-h-40"
+                          leave-active-class="transition-all duration-300" leave-from-class="opacity-100 max-h-40" leave-to-class="opacity-0 max-h-0">
+                <div v-if="selectedMethod === 'stripe'" class="mt-6 overflow-hidden">
+                  <CheckoutStripeCardForm ref="stripeCardFormRef" />
+                </div>
+              </Transition>
             </section>
 
             <!-- Removed: Product Configuration Step (Now moved to post-payment Setup Wizard) -->
@@ -324,17 +332,18 @@ const totalLabel = computed(() => {
 
 const submitting = ref(false)
 const orderError = ref('')
+const stripeCardFormRef = ref<{ confirmPayment: (clientSecret: string) => Promise<{ id: string }> } | null>(null)
 
 async function submitOrder() {
   if (!selectedMethod.value || submitting.value) return
   orderError.value = ''
 
   const body: Record<string, unknown> = {
-      items: cart.items.map(i => ({ 
-        pid: i.pid, 
-        billingcycle: i.billingcycle
-      })),
-      paymentmethod: selectedMethod.value
+    items: cart.items.map(i => ({
+      pid: i.pid,
+      billingcycle: i.billingcycle,
+    })),
+    paymentmethod: selectedMethod.value,
   }
 
   if (!isLoggedIn.value) {
@@ -345,32 +354,52 @@ async function submitOrder() {
     Object.assign(body, { ...form })
   }
 
-  // Hosting detail validation moved to post-payment setup wizard
-
-
   submitting.value = true
   try {
-    const result = await apiFetch<{ orderId: number; invoiceId: number; invoiceUrl: string }>(
+    // Step 1: Place the order (Order + Invoice created on backend)
+    const result = await apiFetch<{ orderId: number; invoiceId: number }>(
       '/api/portal/order/create',
       { method: 'POST', body }
     )
 
-    cart.clear()
-
     // Auto-login guest after account creation
     if (!isLoggedIn.value && form.email && form.password) {
-      try { await login(form.email, form.password) } catch { /* ignore — middleware will handle */ }
+      try { await login(form.email, form.password) } catch { /* middleware handles */ }
     }
 
-    // Redirect to our own invoice pay page
-    if (result.invoiceId) {
-      await navigateTo(localePath(`/client/invoices/${result.invoiceId}/pay`))
+    if (selectedMethod.value === 'stripe') {
+      // Step 2: Create PaymentIntent
+      const { clientSecret } = await apiFetch<{ clientSecret: string }>(
+        `/api/portal/order/${result.orderId}/create-payment-intent`,
+        { method: 'POST' }
+      )
+
+      // Step 3: Confirm card payment via Stripe.js
+      if (!stripeCardFormRef.value) throw new Error('Card form not ready')
+      const paymentIntent = await stripeCardFormRef.value.confirmPayment(clientSecret)
+
+      // Step 4: Tell backend payment succeeded — auto-accepts order, creates services
+      await apiFetch(`/api/portal/order/${result.orderId}/confirm-payment`, {
+        method: 'POST',
+        body: { paymentIntentId: paymentIntent.id },
+      })
+
+      cart.clear()
+      await navigateTo(localePath(`/client/order-success?order=ORD-${String(result.orderId).padStart(4, '0')}&amount=${totalLabel.value}`))
     } else {
-      await navigateTo(localePath('/client/invoices'))
+      // Bank transfer / other methods: order stays Pending, redirect to invoice
+      cart.clear()
+      if (result.invoiceId) {
+        await navigateTo(localePath(`/client/invoices/${result.invoiceId}/pay`))
+      } else {
+        await navigateTo(localePath('/client/invoices'))
+      }
     }
   } catch (err: unknown) {
-    const msg = (err as { data?: { statusMessage?: string }; message?: string })?.data?.statusMessage
-      ?? (err as { message?: string })?.message
+    const stripeErr = err as { message?: string }
+    const fetchErr = err as { data?: { statusMessage?: string }; message?: string }
+    const msg = fetchErr?.data?.statusMessage
+      ?? stripeErr?.message
       ?? $t('checkout.errors.generic')
     orderError.value = msg
   } finally {

@@ -67,7 +67,7 @@ definePageMeta({ layout: 'client', middleware: 'client-auth' })
 const { t } = useI18n()
 const store = useClientStore()
 
-await useAsyncData('client-invoices', () => store.fetchInvoices())
+await useAsyncData('client-invoices', () => store.fetchInvoices(true))
 
 const activeTab = ref('all')
 

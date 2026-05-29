@@ -1,6 +1,8 @@
 namespace Innovayse.Application.Billing.Commands.AddInvoicePayment;
 
 using Innovayse.Application.Common;
+using Innovayse.Domain.Audit;
+using Innovayse.Domain.Audit.Interfaces;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Billing.Interfaces;
 
@@ -8,10 +10,17 @@ using Innovayse.Domain.Billing.Interfaces;
 /// Records a manual payment transaction against an invoice
 /// and creates a corresponding client-level transaction ledger entry.
 /// </summary>
+/// <param name="repo">Invoice repository.</param>
+/// <param name="transactionRepo">Client transaction repository for the ledger entry.</param>
+/// <param name="uow">Unit of work for persistence.</param>
+/// <param name="activityLogRepo">Activity log repository for audit trail.</param>
+/// <param name="ctx">Current request context providing admin identity and IP.</param>
 public sealed class AddInvoicePaymentHandler(
     IInvoiceRepository repo,
     ITransactionRepository transactionRepo,
-    IUnitOfWork uow)
+    IUnitOfWork uow,
+    IActivityLogRepository activityLogRepo,
+    ICurrentRequestContext ctx)
 {
     /// <summary>
     /// Handles <see cref="AddInvoicePaymentCommand"/>.
@@ -39,6 +48,11 @@ public sealed class AddInvoicePaymentHandler(
             cmd.Fees,
             addedToCredit: false);
         transactionRepo.Add(clientTx);
+
+        activityLogRepo.Add(ActivityLog.Create(
+            invoice.ClientId,
+            $"Added Invoice Payment - Invoice ID: {invoice.Id}",
+            ctx.AdminId, ctx.AdminName, ctx.AdminEmail, ctx.IpAddress));
 
         await uow.SaveChangesAsync(ct);
     }

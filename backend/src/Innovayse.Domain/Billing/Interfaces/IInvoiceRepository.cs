@@ -15,13 +15,28 @@ public interface IInvoiceRepository
     Task<Invoice?> FindByIdAsync(int id, CancellationToken ct);
 
     /// <summary>
-    /// Returns a paginated list of all invoices (admin view).
+    /// Returns a paginated list of all invoices (admin view), optionally filtered by status.
     /// </summary>
     /// <param name="page">1-based page number.</param>
     /// <param name="pageSize">Number of items per page (max 100).</param>
+    /// <param name="status">Optional status filter (null for all statuses).</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Tuple of items for the current page and total matching count.</returns>
-    Task<(IReadOnlyList<Invoice> Items, int TotalCount)> ListAsync(int page, int pageSize, CancellationToken ct);
+    Task<(IReadOnlyList<Invoice> Items, int TotalCount)> ListAsync(int page, int pageSize, string? status, CancellationToken ct);
+
+    /// <summary>
+    /// Returns a paginated, filtered list of all invoices (admin view).
+    /// </summary>
+    /// <param name="page">1-based page number.</param>
+    /// <param name="pageSize">Number of items per page (max 100).</param>
+    /// <param name="status">Optional status filter; null returns all statuses.</param>
+    /// <param name="from">Optional start date filter (inclusive); null for no lower bound.</param>
+    /// <param name="to">Optional end date filter (inclusive); null for no upper bound.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Tuple of items for the current page and total matching count.</returns>
+    Task<(IReadOnlyList<Invoice> Items, int TotalCount)> ListAsync(
+        int page, int pageSize, InvoiceStatus? status,
+        DateTimeOffset? from, DateTimeOffset? to, CancellationToken ct);
 
     /// <summary>
     /// Returns a paginated, filtered list of all invoices (admin view).

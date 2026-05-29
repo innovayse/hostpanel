@@ -17,6 +17,8 @@
     "@innovayse/geo-atlas": "^2.0.2",
     "@tailwindcss/vite": "^4.2.2",
     "axios": "^1.15.0",
+    "daterangepicker": "^3.1.0",
+    "moment": "^2.30.1",
     "pinia": "^3.0.4",
     "tailwindcss": "^4.2.2",
     "vue": "^3.5.31",

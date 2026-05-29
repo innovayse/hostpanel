@@ -18,7 +18,11 @@ public sealed class DeleteQuoteHandler(IQuoteRepository repo, IUnitOfWork uow)
         var quote = await repo.FindByIdAsync(cmd.QuoteId, ct)
             ?? throw new InvalidOperationException($"Quote {cmd.QuoteId} not found.");
 
+<<<<<<< HEAD
+        repo.Delete(quote);
+=======
         repo.Remove(quote);
+>>>>>>> origin/main
         await uow.SaveChangesAsync(ct);
     }
 }

@@ -24,19 +24,21 @@ using Wolverine;
 [Authorize(Roles = $"{Roles.Admin},{Roles.Reseller}")]
 public sealed class BillingController(IMessageBus bus) : ControllerBase
 {
-    /// <summary>Returns a paginated list of all invoices.</summary>
+    /// <summary>Returns a paginated list of all invoices, optionally filtered by status.</summary>
     /// <param name="page">1-based page number (default 1).</param>
     /// <param name="pageSize">Items per page (default 20, max 100).</param>
+    /// <param name="status">Optional status filter (Paid, Unpaid, Overdue, Draft, Cancelled, Refunded, Collections, PaymentPending).</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Paginated invoice list.</returns>
     [HttpGet]
     public async Task<ActionResult<PagedResult<InvoiceListItemDto>>> GetAllAsync(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
+        [FromQuery] string? status = null,
         CancellationToken ct = default)
     {
         var result = await bus.InvokeAsync<PagedResult<InvoiceListItemDto>>(
-            new ListInvoicesQuery(page, pageSize), ct);
+            new ListInvoicesQuery(page, pageSize, status), ct);
         return Ok(result);
     }
 

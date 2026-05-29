@@ -12,23 +12,38 @@ export const useBillingStore = defineStore('billing', () => {
   /** Loaded invoices list. */
   const invoices = ref<Invoice[]>([])
 
+  /** Total count of invoices. */
+  const totalCount = ref(0)
+
   /** True while a request is in flight. */
   const loading = ref(false)
 
   /** Error message, null when no error. */
   const error = ref<string | null>(null)
 
+  /** Current page. */
+  const page = ref(1)
+
+  /** Page size. */
+  const pageSize = ref(20)
+
   /**
    * Fetches all invoices from the backend.
    *
+   * @param p Page number (1-based)
+   * @param ps Page size
    * @returns Promise that resolves when data is loaded.
    */
-  async function fetchAll(): Promise<void> {
+  async function fetchAll(p = 1, ps = 20): Promise<void> {
+    page.value = p
+    pageSize.value = ps
     loading.value = true
     error.value = null
     try {
-      const result = await request<PagedResult<Invoice>>('/billing')
+      const query = new URLSearchParams({ page: String(p), pageSize: String(ps) }).toString()
+      const result = await request<PagedResult<Invoice>>(`/billing?${query}`)
       invoices.value = result.items
+      totalCount.value = result.totalCount
     } catch {
       error.value = 'Failed to load invoices.'
     } finally {
@@ -36,5 +51,5 @@ export const useBillingStore = defineStore('billing', () => {
     }
   }
 
-  return { invoices, loading, error, fetchAll }
+  return { invoices, totalCount, loading, error, page, pageSize, fetchAll }
 })

@@ -61,6 +61,9 @@ services:
       - "5148:5148"
     volumes:
       - ./backend:/app
+      - backend_bin:/app/src/Innovayse.API/bin
+      - backend_obj:/app/src/Innovayse.API/obj
+      - backend_packages:/root/.nuget/packages
     environment:
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-innovayse_dev};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}"
       ASPNETCORE_ENVIRONMENT: Development
@@ -145,3 +148,6 @@ volumes:
   pgdata:
   client_node_modules:
   admin_node_modules:
+  backend_bin:
+  backend_obj:
+  backend_packages:

@@ -17,9 +17,19 @@ public sealed class InvoiceRepository(AppDbContext db) : IInvoiceRepository
 
     /// <inheritdoc/>
     public async Task<(IReadOnlyList<Invoice> Items, int TotalCount)> ListAsync(
-        int page, int pageSize, CancellationToken ct)
+        int page, int pageSize, string? status, CancellationToken ct)
     {
-        var query = db.Invoices.OrderByDescending(x => x.CreatedAt);
+        var query = db.Invoices.AsQueryable();
+
+        if (!string.IsNullOrEmpty(status))
+        {
+            if (Enum.TryParse<InvoiceStatus>(status, out var statusEnum))
+            {
+                query = query.Where(x => x.Status == statusEnum);
+            }
+        }
+
+        query = query.OrderByDescending(x => x.CreatedAt);
         var total = await query.CountAsync(ct);
         var items = await query
             .Skip((page - 1) * pageSize)

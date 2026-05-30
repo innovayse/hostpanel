@@ -40,6 +40,17 @@ public interface IBillableItemRepository
     Task<IReadOnlyList<BillableItem>> ListRecurringAsync(int clientId, CancellationToken ct);
 
     /// <summary>
+    /// Returns a paginated list of invoiced billable items for a specific client.
+    /// </summary>
+    /// <param name="clientId">The client's primary key.</param>
+    /// <param name="page">1-based page number.</param>
+    /// <param name="pageSize">Number of items per page.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Tuple of items for the current page and total matching count.</returns>
+    Task<(IReadOnlyList<BillableItem> Items, int TotalCount)> ListInvoicedByClientAsync(
+        int clientId, int page, int pageSize, CancellationToken ct);
+
+    /// <summary>
     /// Returns all billable items due for cron-triggered invoicing.
     /// </summary>
     Task<IReadOnlyList<BillableItem>> GetDueForCronInvoicingAsync(CancellationToken ct);

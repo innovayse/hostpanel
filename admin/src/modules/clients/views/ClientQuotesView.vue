@@ -108,7 +108,7 @@ onMounted(() => fetchQuotes())
       <button
         type="button"
         class="gradient-brand px-5 py-2 text-[0.84rem] font-semibold text-white rounded-[10px] transition-opacity"
-        @click="router.push(`/quotes/new?clientId=${clientId}`)"
+        @click="router.push(`/billing/quotes/add?clientId=${clientId}`)"
       >
         + Create New Quote
       </button>

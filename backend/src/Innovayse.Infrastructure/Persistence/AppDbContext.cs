@@ -121,6 +121,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
     /// <summary>Gets the server groups table.</summary>
     public DbSet<ServerGroup> ServerGroups => Set<ServerGroup>();
 
+    /// <summary>Gets the download categories table.</summary>
+    public DbSet<DownloadCategory> DownloadCategories => Set<DownloadCategory>();
+
+    /// <summary>Gets the downloads table.</summary>
+    public DbSet<Download> Downloads => Set<Download>();
+
     /// <inheritdoc/>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

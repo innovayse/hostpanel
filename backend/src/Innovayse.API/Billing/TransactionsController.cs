@@ -3,7 +3,9 @@ namespace Innovayse.API.Billing;
 using Innovayse.API.Billing.Requests;
 using Innovayse.Application.Billing.Commands.CreateTransaction;
 using Innovayse.Application.Billing.Commands.DeleteTransaction;
+using Innovayse.Application.Billing.Commands.UpdateTransaction;
 using Innovayse.Application.Billing.DTOs;
+using Innovayse.Application.Billing.Queries.GetTransaction;
 using Innovayse.Application.Billing.Queries.ListTransactions;
 using Innovayse.Domain.Auth;
 using Microsoft.AspNetCore.Authorization;
@@ -52,6 +54,40 @@ public sealed class TransactionsController(IMessageBus bus) : ControllerBase
         var result = await bus.InvokeAsync<TransactionsResultDto>(
             new ListTransactionsQuery(clientId, page, pageSize), ct);
         return Ok(result);
+    }
+
+    /// <summary>Returns a single transaction by ID.</summary>
+    /// <param name="id">Transaction primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<TransactionDto>> GetByIdAsync(int id, CancellationToken ct)
+    {
+        var result = await bus.InvokeAsync<TransactionDto>(new GetTransactionByIdQuery(id), ct);
+        return Ok(result);
+    }
+
+    /// <summary>Updates an existing transaction.</summary>
+    /// <param name="id">Transaction primary key.</param>
+    /// <param name="request">Transaction update request.</param>
+    /// <param name="ct">Cancellation token.</param>
+    [HttpPut("{id:int}")]
+    [Authorize(Roles = Roles.Admin)]
+    public async Task<IActionResult> UpdateAsync(
+        int id,
+        [FromBody] UpdateTransactionRequest request,
+        CancellationToken ct)
+    {
+        await bus.InvokeAsync(new UpdateTransactionCommand(
+            id,
+            request.Date,
+            request.Description,
+            request.TransactionId,
+            request.InvoiceId,
+            request.PaymentMethod,
+            request.AmountIn,
+            request.AmountOut,
+            request.Fees), ct);
+        return NoContent();
     }
 
     /// <summary>Creates a new transaction.</summary>

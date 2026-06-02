@@ -331,7 +331,7 @@ onMounted(() => {
               Add Billable Item
             </RouterLink>
             <RouterLink
-              :to="`/quotes/new?clientId=${clientId}`"
+              :to="`/billing/quotes/add?clientId=${clientId}`"
               class="text-primary-400 hover:text-primary-300 text-[0.78rem] font-medium"
             >
               Create New Quote

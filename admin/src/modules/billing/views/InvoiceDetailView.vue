@@ -471,7 +471,7 @@ onMounted(() => {
                 />
               </div>
               <div class="flex items-center gap-3">
-                <input type="checkbox" v-model="sendPaymentEmail" class="w-4 h-4 rounded border border-border bg-white/[0.05] text-primary-500 cursor-pointer focus:ring-2 focus:ring-primary-500/30 transition-colors" />
+                <AppCheckbox v-model="sendPaymentEmail" />
                 <label class="text-[0.82rem] text-text-secondary">Send Confirmation Email</label>
               </div>
             </div>
@@ -696,11 +696,11 @@ onMounted(() => {
           <div class="space-y-4">
             <div class="space-y-3">
               <div class="flex items-center gap-3">
-                <input type="checkbox" v-model="reversePayment" class="w-4 h-4 rounded border border-border bg-white/[0.05] text-primary-500 cursor-pointer focus:ring-2 focus:ring-primary-500/30 transition-colors" />
+                <AppCheckbox v-model="reversePayment" />
                 <label class="text-[0.82rem] text-text-secondary">Reverse Payment</label>
               </div>
               <div class="flex items-center gap-3">
-                <input type="checkbox" v-model="sendRefundEmail" class="w-4 h-4 rounded border border-border bg-white/[0.05] text-primary-500 cursor-pointer focus:ring-2 focus:ring-primary-500/30 transition-colors" />
+                <AppCheckbox v-model="sendRefundEmail" />
                 <label class="text-[0.82rem] text-text-secondary">Send Email</label>
               </div>
             </div>
@@ -710,11 +710,11 @@ onMounted(() => {
               <p class="text-[0.82rem] text-text-secondary"><strong>Credit Information:</strong></p>
               <div class="space-y-2">
                 <div class="flex items-center gap-3">
-                  <input type="checkbox" v-model="createCredit" class="w-4 h-4 rounded border border-border bg-white/[0.05] text-primary-500 cursor-pointer focus:ring-2 focus:ring-primary-500/30 transition-colors" />
+                  <AppCheckbox v-model="createCredit" />
                   <label class="text-[0.82rem] text-text-secondary">Create Credit for Invoice</label>
                 </div>
                 <div class="flex items-center gap-3">
-                  <input type="checkbox" v-model="noRefundCredit" class="w-4 h-4 rounded border border-border bg-white/[0.05] text-primary-500 cursor-pointer focus:ring-2 focus:ring-primary-500/30 transition-colors" />
+                  <AppCheckbox v-model="noRefundCredit" />
                   <label class="text-[0.82rem] text-text-secondary">No Refund of Credit</label>
                 </div>
               </div>
@@ -823,12 +823,7 @@ onMounted(() => {
           <div>
             <div v-for="item in editableItems" :key="item._tempId" class="grid grid-cols-[40px_1fr_100px_60px_40px] px-6 py-2 border-b border-border items-center text-[0.82rem]">
               <div class="flex items-center justify-center">
-                <input
-                  type="checkbox"
-                  :checked="selectedItemIds.has(item._tempId)"
-                  @change="toggleItemSelection(item._tempId)"
-                  class="w-4 h-4 rounded border border-border bg-white/[0.05] text-primary-500 cursor-pointer focus:ring-2 focus:ring-primary-500/30 transition-colors"
-                />
+                <AppCheckbox :model-value="selectedItemIds.has(item._tempId)" @update:model-value="toggleItemSelection(item._tempId)" />
               </div>
               <input
                 v-model="item.description"
@@ -845,11 +840,7 @@ onMounted(() => {
                 class="border-l border-border pl-4 px-3 py-2 text-[0.82rem] text-text-primary bg-white/[0.05] border border-border rounded-[6px] placeholder:text-text-muted focus:outline-none focus:border-primary-500/40 transition-colors text-right"
               />
               <div class="border-l border-border pl-4 flex items-center justify-center">
-                <input
-                  type="checkbox"
-                  v-model="item.taxed"
-                  class="w-4 h-4 rounded border border-border bg-white/[0.05] text-primary-500 cursor-pointer focus:ring-2 focus:ring-primary-500/30 transition-colors"
-                />
+                <AppCheckbox v-model="item.taxed" />
               </div>
               <button
                 @click="showDeleteConfirm(item._tempId)"

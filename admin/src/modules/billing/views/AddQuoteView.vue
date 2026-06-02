@@ -492,11 +492,7 @@ onMounted(() => {
 
               <!-- Taxed (checkbox) -->
               <div class="flex justify-center">
-                <input
-                  v-model="item.taxed"
-                  type="checkbox"
-                  class="w-4 h-4 rounded border border-border bg-white/[0.05] text-primary-500 cursor-pointer focus:ring-2 focus:ring-primary-500/30 transition-colors"
-                />
+                <AppCheckbox v-model="item.taxed" />
               </div>
 
               <!-- Delete Button -->

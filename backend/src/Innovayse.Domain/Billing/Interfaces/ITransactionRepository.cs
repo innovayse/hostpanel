@@ -25,6 +25,10 @@ public interface ITransactionRepository
     Task<(IReadOnlyList<Transaction> Items, int TotalCount)> ListByClientAsync(
         int clientId, int page, int pageSize, CancellationToken ct);
 
+    /// <summary>Returns a paginated list of all transactions across all clients, ordered newest first.</summary>
+    Task<(IReadOnlyList<Transaction> Items, int TotalCount)> ListAllAsync(
+        int page, int pageSize, CancellationToken ct);
+
     /// <summary>
     /// Computes the aggregate financial summary for a client's transactions.
     /// </summary>

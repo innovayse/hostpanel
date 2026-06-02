@@ -251,12 +251,10 @@ onMounted(() => {
 
       <!-- Header row -->
       <div class="hidden sm:grid grid-cols-[40px_0.5fr_1.5fr_1.5fr_0.75fr_1fr_1.5fr_1fr] gap-4 px-5 py-3 border-b border-border bg-white/[0.02]">
-        <input
+        <AppCheckbox
           v-if="filteredItems.length > 0"
-          type="checkbox"
-          :checked="selectedItems.size === filteredItems.length && filteredItems.length > 0"
-          @change="toggleSelectAll"
-          class="w-4 h-4 rounded border border-border bg-white/[0.05] text-primary-500 cursor-pointer focus:ring-2 focus:ring-primary-500/30 transition-colors"
+          :model-value="selectedItems.size === filteredItems.length && filteredItems.length > 0"
+          @update:model-value="toggleSelectAll"
         />
         <div v-else></div>
         <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">ID</span>
@@ -275,12 +273,7 @@ onMounted(() => {
           :key="item.id"
           class="grid grid-cols-1 sm:grid-cols-[40px_0.5fr_1.5fr_1.5fr_0.75fr_1fr_1.5fr_1fr] gap-2 sm:gap-4 px-5 py-3.5 border-b border-border last:border-0 hover:bg-white/[0.02] transition-colors items-center"
         >
-          <input
-            type="checkbox"
-            :checked="selectedItems.has(item.id)"
-            @change="toggleSelection(item.id)"
-            class="w-4 h-4 rounded border border-border bg-white/[0.05] text-primary-500 cursor-pointer focus:ring-2 focus:ring-primary-500/30 transition-colors"
-          />
+          <AppCheckbox :model-value="selectedItems.has(item.id)" @update:model-value="toggleSelection(item.id)" />
 
           <span class="text-[0.82rem] text-text-muted font-mono hidden sm:block">{{ item.id }}</span>
 

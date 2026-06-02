@@ -163,7 +163,7 @@ onMounted(() => fetchQuotes())
             <button
               type="button"
               class="px-2.5 py-1 text-[0.72rem] font-medium text-primary-400 bg-primary-500/10 border border-primary-500/20 rounded-lg hover:bg-primary-500/20 transition-colors"
-              @click="router.push(`/quotes/${quote.id}`)"
+              @click="router.push(`/billing/quotes/${quote.id}`)"
             >
               Edit
             </button>

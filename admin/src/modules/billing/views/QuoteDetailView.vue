@@ -175,7 +175,7 @@ async function handleSave(): Promise<void> {
       })),
     })
     if (id) {
-      router.push(`/quotes/${id}`)
+      router.push(`/billing/quotes/${id}`)
     }
   } else {
     await store.updateQuote(quoteId.value, {
@@ -205,7 +205,7 @@ async function handleSave(): Promise<void> {
 async function handleDuplicate(): Promise<void> {
   const newId = await store.duplicateQuote(quoteId.value)
   if (newId) {
-    router.push(`/quotes/${newId}`)
+    router.push(`/billing/quotes/${newId}`)
   }
 }
 

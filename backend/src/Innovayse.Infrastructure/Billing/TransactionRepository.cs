@@ -51,6 +51,16 @@ public sealed class TransactionRepository(AppDbContext db) : ITransactionReposit
     }
 
     /// <inheritdoc/>
+    public async Task<(IReadOnlyList<Transaction> Items, int TotalCount)> ListAllAsync(
+        int page, int pageSize, CancellationToken ct)
+    {
+        var query = db.Transactions.OrderByDescending(x => x.Date);
+        var total = await query.CountAsync(ct);
+        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+        return (items, total);
+    }
+
+    /// <inheritdoc/>
     public void Add(Transaction transaction) => db.Transactions.Add(transaction);
 
     /// <inheritdoc/>

@@ -12,6 +12,15 @@ import type { Quote, QuoteListItem, QuoteStage, PagedResult } from '../../../typ
 export const useQuoteStore = defineStore('quotes', () => {
   const { request } = useApi()
 
+  /** Global quotes list (billing section). */
+  const quotes = ref<QuoteListItem[]>([])
+
+  /** Total count for global quotes. */
+  const totalCount = ref(0)
+
+  /** Page size for global quotes. */
+  const pageSize = ref(25)
+
   /** Client-scoped quotes list. */
   const clientQuotes = ref<QuoteListItem[]>([])
 
@@ -26,6 +35,28 @@ export const useQuoteStore = defineStore('quotes', () => {
 
   /** Error message, null when no error. */
   const error = ref<string | null>(null)
+
+  /**
+   * Fetches all quotes (global billing view) with pagination.
+   *
+   * @param page - Page number (1-based).
+   * @param size - Items per page.
+   * @returns Promise that resolves when data is loaded.
+   */
+  async function fetchAll(page = 1, size?: number): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      const ps = size ?? pageSize.value
+      const result = await request<PagedResult<QuoteListItem>>(`/billing/quotes?page=${page}&pageSize=${ps}`)
+      quotes.value = result.items
+      totalCount.value = result.totalCount
+    } catch {
+      error.value = 'Failed to load quotes.'
+    } finally {
+      loading.value = false
+    }
+  }
 
   /**
    * Fetches quotes for a specific client with pagination.
@@ -197,11 +228,15 @@ export const useQuoteStore = defineStore('quotes', () => {
   }
 
   return {
+    quotes,
+    totalCount,
+    pageSize,
     clientQuotes,
     clientQuotesTotal,
     currentQuote,
     loading,
     error,
+    fetchAll,
     fetchClientQuotes,
     fetchById,
     createQuote,

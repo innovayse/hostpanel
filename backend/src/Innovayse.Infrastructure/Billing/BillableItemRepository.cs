@@ -41,6 +41,21 @@ public sealed class BillableItemRepository(AppDbContext db) : IBillableItemRepos
             .ToListAsync(ct);
 
     /// <inheritdoc/>
+    public async Task<(IReadOnlyList<BillableItem> Items, int TotalCount)> ListInvoicedByClientAsync(
+        int clientId, int page, int pageSize, CancellationToken ct)
+    {
+        var query = db.BillableItems
+            .Where(x => x.ClientId == clientId && x.IsInvoiced)
+            .OrderByDescending(x => x.CreatedAt);
+        var total = await query.CountAsync(ct);
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+        return (items, total);
+    }
+
+    /// <inheritdoc/>
     public async Task<IReadOnlyList<BillableItem>> GetDueForCronInvoicingAsync(CancellationToken ct)
     {
         var now = DateTimeOffset.UtcNow;

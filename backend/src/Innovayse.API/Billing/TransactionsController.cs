@@ -20,7 +20,23 @@ using Wolverine;
 [Authorize(Roles = $"{Roles.Admin},{Roles.Reseller}")]
 public sealed class TransactionsController(IMessageBus bus) : ControllerBase
 {
-    /// <summary>Returns a paginated list of transactions for a specific client with financial summary.</summary>
+    /// <summary>Returns a paginated list of all transactions.</summary>
+    /// <param name="page">1-based page number (default 1).</param>
+    /// <param name="pageSize">Items per page (default 25, max 100).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Paginated transactions with summary totals.</returns>
+    [HttpGet]
+    public async Task<ActionResult<TransactionsResultDto>> GetAllAsync(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25,
+        CancellationToken ct = default)
+    {
+        var result = await bus.InvokeAsync<TransactionsResultDto>(
+            new ListTransactionsQuery(null, page, pageSize), ct);
+        return Ok(result);
+    }
+
+    /// <summary>Returns a paginated list of transactions for a specific client.</summary>
     /// <param name="clientId">The client's primary key.</param>
     /// <param name="page">1-based page number (default 1).</param>
     /// <param name="pageSize">Items per page (default 25, max 100).</param>

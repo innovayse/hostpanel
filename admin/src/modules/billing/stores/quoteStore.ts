@@ -43,7 +43,7 @@ export const useQuoteStore = defineStore('quotes', () => {
     loading.value = true
     error.value = null
     try {
-      const url = `/quotes/client/${clientId}?page=${page}&pageSize=${pageSize}`
+      const url = `/billing/quotes/client/${clientId}?page=${page}&pageSize=${pageSize}`
       const result = await request<PagedResult<QuoteListItem>>(url)
       clientQuotes.value = result.items
       clientQuotesTotal.value = result.totalCount

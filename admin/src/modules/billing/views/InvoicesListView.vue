@@ -11,6 +11,7 @@ import DateRangePicker from '../../../components/DateRangePicker.vue'
 const store = useBillingStore()
 const router = useRouter()
 const page = ref(1)
+const pageSize = ref(25)
 const isFilterOpen = ref(false)
 const selectedInvoices = ref<Set<number>>(new Set())
 const clients = ref<{ id: number; name: string; email?: string; status?: string }[]>([])
@@ -52,7 +53,7 @@ const filterLastCaptureAttemptRange = ref<[string, string] | null>(null)
 const filterTotalDueFrom = ref(0)
 const filterTotalDueTo = ref(0)
 
-const totalPages = computed(() => Math.max(1, Math.ceil(store.totalCount / store.pageSize)))
+const totalPages = computed(() => Math.max(1, Math.ceil(store.totalCount / pageSize.value)))
 
 const pageString = computed({
   get: () => String(page.value),
@@ -85,7 +86,7 @@ const stats = computed(() => {
 
 function applyFilters(): void {
   page.value = 1
-  store.fetchAll(1, store.pageSize)
+  store.fetchAll(1, pageSize.value)
 }
 
 function clearFilters(): void {
@@ -103,13 +104,13 @@ function clearFilters(): void {
   filterTotalDueFrom.value = 0
   filterTotalDueTo.value = 0
   page.value = 1
-  store.fetchAll(1, store.pageSize)
+  store.fetchAll(1, pageSize.value)
 }
 
 function goToPage(p: number): void {
   if (p < 1 || p > totalPages.value) return
   page.value = p
-  store.fetchAll(p, store.pageSize)
+  store.fetchAll(p, pageSize.value)
 }
 
 function toggleInvoiceSelection(invoiceId: number): void {
@@ -138,7 +139,7 @@ function loadClients() {
 }
 
 onMounted(() => {
-  store.fetchAll(1, store.pageSize)
+  store.fetchAll(1, pageSize.value)
   loadClients()
 })
 </script>
@@ -270,7 +271,7 @@ onMounted(() => {
     <!-- Record Count & Pagination Info -->
     <div v-if="store.invoices.length > 0" class="flex items-center justify-between mb-4 text-[0.82rem] text-text-secondary">
       <div>
-        {{ store.totalCount }} Records Found, Showing {{ (page - 1) * store.pageSize + 1 }} to {{ Math.min(page * store.pageSize, store.totalCount) }}
+        {{ store.totalCount }} Records Found, Showing {{ (page - 1) * pageSize + 1 }} to {{ Math.min(page * pageSize, store.totalCount) }}
       </div>
       <div class="flex items-center gap-2">
         <span>Jump to Page:</span>
@@ -290,7 +291,7 @@ onMounted(() => {
       <!-- Header row -->
       <div class="hidden sm:grid grid-cols-[0.3fr_0.8fr_1fr_0.9fr_0.9fr_0.9fr_0.8fr_0.9fr_0.8fr_1fr] gap-3 px-5 py-3 border-b border-border bg-white/[0.02]">
         <div class="flex items-center">
-          <input type="checkbox" @change="toggleSelectAll" :checked="selectedInvoices.size === store.invoices.length && store.invoices.length > 0" class="w-4 h-4 rounded border border-border bg-white/[0.05] text-primary-500 cursor-pointer focus:ring-2 focus:ring-primary-500/30 transition-colors" />
+          <AppCheckbox :model-value="selectedInvoices.size === store.invoices.length && store.invoices.length > 0" @update:model-value="toggleSelectAll" />
         </div>
         <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Invoice #</span>
         <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Client Name</span>
@@ -311,7 +312,7 @@ onMounted(() => {
           class="grid grid-cols-1 sm:grid-cols-[0.3fr_0.8fr_1fr_0.9fr_0.9fr_0.9fr_0.8fr_0.9fr_0.8fr_1fr] gap-2 sm:gap-3 px-5 py-3.5 border-b border-border last:border-0 hover:bg-white/[0.02] transition-colors items-center"
         >
           <div class="flex items-center">
-            <input type="checkbox" @change="toggleInvoiceSelection(invoice.id)" :checked="selectedInvoices.has(invoice.id)" class="w-4 h-4 rounded border border-border bg-white/[0.05] text-primary-500 cursor-pointer focus:ring-2 focus:ring-primary-500/30 transition-colors" />
+            <AppCheckbox :model-value="selectedInvoices.has(invoice.id)" @update:model-value="toggleInvoiceSelection(invoice.id)" />
           </div>
           <span class="text-[0.82rem] text-text-muted font-mono">#{{ invoice.id }}</span>
 

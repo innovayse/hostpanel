@@ -4,6 +4,7 @@ using Innovayse.API.Billing.Requests;
 using Innovayse.Application.Billing.Commands.CreateQuote;
 using Innovayse.Application.Billing.DTOs;
 using Innovayse.Application.Billing.Queries.GetQuote;
+using Innovayse.Application.Billing.Queries.ListClientQuotes;
 using Innovayse.Application.Billing.Queries.ListQuotes;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Auth;
@@ -34,6 +35,24 @@ public sealed class QuotesController(IMessageBus bus) : ControllerBase
     {
         var result = await bus.InvokeAsync<PagedResult<QuoteListItemDto>>(
             new ListQuotesQuery(page, pageSize), ct);
+        return Ok(result);
+    }
+
+    /// <summary>Returns a paginated list of quotes for a specific client.</summary>
+    /// <param name="clientId">The client's primary key.</param>
+    /// <param name="page">1-based page number (default 1).</param>
+    /// <param name="pageSize">Items per page (default 20).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Paginated quote list for the client.</returns>
+    [HttpGet("client/{clientId:int}")]
+    public async Task<ActionResult<PagedResult<QuoteListItemDto>>> GetByClientAsync(
+        int clientId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken ct = default)
+    {
+        var result = await bus.InvokeAsync<PagedResult<QuoteListItemDto>>(
+            new ListClientQuotesQuery(clientId, page, pageSize), ct);
         return Ok(result);
     }
 

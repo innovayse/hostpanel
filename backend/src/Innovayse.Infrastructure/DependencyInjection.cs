@@ -165,6 +165,7 @@ public static class DependencyInjection
         services.AddScoped<IKbCategoryRepository, KbCategoryRepository>();
         services.AddScoped<INetworkIssueRepository, NetworkIssueRepository>();
         services.AddScoped<IPredefinedReplyRepository, PredefinedReplyRepository>();
+        services.AddScoped<IDownloadRepository, DownloadRepository>();
 
         // Notifications
         services.Configure<SmtpSettings>(configuration.GetSection("Smtp"));

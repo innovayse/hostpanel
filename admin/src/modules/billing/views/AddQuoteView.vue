@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import AppSelect from '../../../components/AppSelect.vue'
 import AppClientSelect from '../../../components/AppClientSelect.vue'
 import AppSpinner from '../../../components/AppSpinner.vue'
@@ -12,6 +12,7 @@ import AppCheckbox from '../../../components/AppCheckbox.vue'
 import { useQuotesStore } from '../stores/quotesStore'
 import { useApi } from '../../../composables/useApi'
 
+const route = useRoute()
 const router = useRouter()
 const store = useQuotesStore()
 const { request } = useApi()
@@ -86,13 +87,18 @@ const form = ref({
   termsAndConditions: '',
 })
 
-function loadClients() {
-  clients.value = [
-    { id: 1, name: 'John Doe', email: 'john@example.com', status: 'active' },
-    { id: 2, name: 'Jane Smith (Acme Corp)', email: 'jane@example.com', status: 'active' },
-    { id: 3, name: 'Bob Johnson', email: 'bob@example.com', status: 'active' },
-    { id: 4, name: 'Alice Williams (Tech Inc)', email: 'alice@example.com', status: 'inactive' },
-  ]
+async function loadClients() {
+  try {
+    const result = await request<{ items: Array<{ id: number; firstName: string; lastName: string; companyName?: string; email: string; status: string }> }>('/clients?page=1&pageSize=100')
+    clients.value = result.items.map(c => ({
+      id: c.id,
+      name: c.companyName ? `${c.firstName} ${c.lastName} (${c.companyName})` : `${c.firstName} ${c.lastName}`,
+      email: c.email,
+      status: c.status,
+    }))
+  } catch {
+    clients.value = []
+  }
 }
 
 function openProductModal() {
@@ -155,6 +161,11 @@ async function submit() {
 
 onMounted(() => {
   loadClients()
+  const qClientId = route.query.clientId as string | undefined
+  if (qClientId) {
+    form.value.clientId = qClientId
+    form.value.quoteType = 'existing'
+  }
 })
 </script>
 

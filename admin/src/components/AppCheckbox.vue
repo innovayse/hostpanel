@@ -1,24 +1,55 @@
 <script setup lang="ts">
-defineProps<{
+/**
+ * Custom dark-themed checkbox matching the admin panel design.
+ * Replaces native <input type="checkbox"> whose appearance cannot be themed.
+ * Unchecked: dark surface with border. Checked: primary-500 fill with white checkmark.
+ */
+
+const props = withDefaults(defineProps<{
   modelValue: boolean
-  label?: string
   disabled?: boolean
+}>(), {
+  disabled: false,
+})
+
+const emit = defineEmits<{
+  'update:modelValue': [value: boolean]
+  change: []
 }>()
 
-defineEmits<{
-  'update:modelValue': [value: boolean]
-}>()
+function toggle(): void {
+  if (props.disabled) return
+  emit('update:modelValue', !props.modelValue)
+  emit('change')
+}
 </script>
 
 <template>
-  <label class="flex items-center gap-2 cursor-pointer">
-    <input
-      type="checkbox"
-      :checked="modelValue"
-      :disabled="disabled"
-      @change="(e) => $emit('update:modelValue', (e.target as HTMLInputElement).checked)"
-      class="w-4 h-4 rounded border border-border bg-white/[0.05] text-primary-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-primary-500/30 focus:ring-offset-0 transition-colors"
-    />
-    <span v-if="label" class="text-[0.82rem] text-text-primary">{{ label }}</span>
-  </label>
+  <button
+    type="button"
+    role="checkbox"
+    :aria-checked="modelValue"
+    :disabled="disabled"
+    class="w-4 h-4 rounded-[4px] border flex items-center justify-center shrink-0 transition-colors focus:outline-none focus:ring-1 focus:ring-primary-500/20"
+    :class="[
+      modelValue
+        ? 'bg-primary-500 border-primary-500'
+        : 'bg-white/[0.04] border-border hover:border-text-muted',
+      disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+    ]"
+    @click="toggle"
+  >
+    <svg
+      v-if="modelValue"
+      class="w-2.5 h-2.5 text-white"
+      viewBox="0 0 12 10"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <polyline points="1 5.5 4 8.5 11 1.5" />
+    </svg>
+  </button>
 </template>

@@ -577,7 +577,7 @@ onMounted(() => {
             v-for="quote in summaryStore.quotes"
             :key="quote.id"
             class="grid grid-cols-1 sm:grid-cols-[0.4fr_1fr_0.7fr_0.7fr_0.6fr_0.6fr_50px] gap-2 sm:gap-3 px-5 py-3.5 border-b border-border last:border-0 hover:bg-white/[0.02] transition-colors cursor-pointer"
-            @click="router.push(`/quotes/${quote.id}`)"
+            @click="router.push(`/billing/quotes/${quote.id}`)"
           >
             <span class="text-[0.82rem] text-text-muted font-mono hidden sm:block">#{{ quote.id }}</span>
             <span class="text-[0.82rem] text-text-primary font-medium hidden sm:block truncate">{{ quote.subject }}</span>
@@ -596,7 +596,7 @@ onMounted(() => {
               <button
                 type="button"
                 class="text-text-muted hover:text-text-primary transition-colors"
-                @click.stop="router.push(`/quotes/${quote.id}`)"
+                @click.stop="router.push(`/billing/quotes/${quote.id}`)"
               >
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />

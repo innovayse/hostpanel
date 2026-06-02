@@ -92,7 +92,7 @@ export const useClientSummaryStore = defineStore('clientSummary', () => {
   async function fetchRecentQuotes(clientId: number): Promise<void> {
     try {
       const result = await request<PagedResult<QuoteListItem>>(
-        `/quotes/client/${clientId}?page=1&pageSize=5`,
+        `/billing/quotes/client/${clientId}?page=1&pageSize=5`,
       )
       quotes.value = result.items
     } catch {

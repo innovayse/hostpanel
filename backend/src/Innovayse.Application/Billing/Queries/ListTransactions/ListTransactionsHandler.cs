@@ -15,10 +15,13 @@ public sealed class ListTransactionsHandler(ITransactionRepository repo)
     public async Task<TransactionsResultDto> HandleAsync(
         ListTransactionsQuery query, CancellationToken ct)
     {
-        var (items, totalCount) = await repo.ListByClientAsync(
-            query.ClientId, query.Page, query.PageSize, ct);
+        var (items, totalCount) = query.ClientId.HasValue
+            ? await repo.ListByClientAsync(query.ClientId.Value, query.Page, query.PageSize, ct)
+            : await repo.ListAllAsync(query.Page, query.PageSize, ct);
 
-        var (totalIn, totalOut, totalFees) = await repo.GetClientSummaryAsync(query.ClientId, ct);
+        var (totalIn, totalOut, totalFees) = query.ClientId.HasValue
+            ? await repo.GetClientSummaryAsync(query.ClientId.Value, ct)
+            : (0m, 0m, 0m);
 
         var dtos = items.Select(t => new TransactionDto(
             t.Id, t.ClientId, t.Date, t.Description, t.TransactionId,

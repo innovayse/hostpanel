@@ -7,12 +7,25 @@ export const useTransactionsStore = defineStore('billing-transactions', () => {
   const { request } = useApi()
 
   const transactions = ref<Transaction[]>([])
+  const currentTransaction = ref<Transaction | null>(null)
   const totalCount = ref(0)
   const loading = ref(false)
   const error = ref<string | null>(null)
   const page = ref(1)
   const pageSize = ref(25)
   const summary = reactive({ totalIn: 0, totalOut: 0, totalFees: 0, balance: 0 })
+
+  async function fetchById(id: number): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      currentTransaction.value = await request<Transaction>(`/transactions/${id}`)
+    } catch {
+      error.value = 'Failed to load transaction.'
+    } finally {
+      loading.value = false
+    }
+  }
 
   async function fetchAll(p = 1, ps = 25): Promise<void> {
     page.value = p
@@ -64,6 +77,32 @@ export const useTransactionsStore = defineStore('billing-transactions', () => {
     }
   }
 
+  async function update(id: number, payload: {
+    date: string
+    description: string
+    transactionId: string
+    invoiceId: number | null
+    paymentMethod: string
+    amountIn: number
+    amountOut: number
+    fees: number
+  }): Promise<boolean> {
+    loading.value = true
+    error.value = null
+    try {
+      await request(`/transactions/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      })
+      return true
+    } catch {
+      error.value = 'Failed to update transaction.'
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function remove(id: number): Promise<void> {
     loading.value = true
     error.value = null
@@ -77,5 +116,5 @@ export const useTransactionsStore = defineStore('billing-transactions', () => {
     }
   }
 
-  return { transactions, totalCount, summary, loading, error, page, pageSize, fetchAll, create, remove }
+  return { transactions, currentTransaction, totalCount, summary, loading, error, page, pageSize, fetchAll, fetchById, create, update, remove }
 })

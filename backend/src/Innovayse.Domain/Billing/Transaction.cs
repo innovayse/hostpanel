@@ -88,4 +88,39 @@ public sealed class Transaction : Entity
             AddedToCredit = addedToCredit,
         };
     }
+
+    /// <summary>Updates the editable fields of this transaction.</summary>
+    /// <param name="date">UTC timestamp of the transaction.</param>
+    /// <param name="description">Human-readable description.</param>
+    /// <param name="transactionId">External transaction reference.</param>
+    /// <param name="invoiceId">Optional related invoice ID.</param>
+    /// <param name="paymentMethod">Payment method used.</param>
+    /// <param name="amountIn">Amount credited (≥ 0).</param>
+    /// <param name="amountOut">Amount debited (≥ 0).</param>
+    /// <param name="fees">Transaction fees (≥ 0).</param>
+    /// <exception cref="ArgumentException">Thrown when both amounts are 0.</exception>
+    public void Update(
+        DateTimeOffset date,
+        string description,
+        string transactionId,
+        int? invoiceId,
+        string paymentMethod,
+        decimal amountIn,
+        decimal amountOut,
+        decimal fees)
+    {
+        if (amountIn <= 0 && amountOut <= 0)
+        {
+            throw new ArgumentException("At least one of AmountIn or AmountOut must be greater than 0.");
+        }
+
+        Date = date;
+        Description = description;
+        TransactionId = transactionId;
+        InvoiceId = invoiceId;
+        PaymentMethod = paymentMethod;
+        AmountIn = amountIn;
+        AmountOut = amountOut;
+        Fees = fees;
+    }
 }

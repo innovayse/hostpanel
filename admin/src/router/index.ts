@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { authMiddleware } from '../middleware/auth'
+import { REPORTS } from '../modules/reports/reports'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -85,22 +86,7 @@ const router = createRouter({
           component: () => import('../modules/reports/ReportsLayout.vue'),
           children: [
             { path: '', redirect: '/reports/daily-performance' },
-            { path: 'daily-performance', component: () => import('../modules/reports/views/DailyPerformanceView.vue') },
-            { path: 'annual-income', component: () => import('../modules/reports/views/AnnualIncomeView.vue') },
-            { path: 'income-forecast', component: () => import('../modules/reports/views/IncomeForecastView.vue') },
-            { path: 'aging-invoices', component: () => import('../modules/reports/views/AgingInvoicesView.vue') },
-            { path: 'monthly-transactions', component: () => import('../modules/reports/views/MonthlyTransactionsView.vue') },
-            { path: 'income-by-product', component: () => import('../modules/reports/views/IncomeByProductView.vue') },
-            { path: 'top-clients', component: () => import('../modules/reports/views/TopClientsView.vue') },
-            { path: 'sales-tax', component: () => import('../modules/reports/views/SalesTaxView.vue') },
-            { path: 'new-customers', component: () => import('../modules/reports/views/NewCustomersView.vue') },
-            { path: 'clients-by-country', component: () => import('../modules/reports/views/ClientsByCountryView.vue') },
-            { path: 'client-sources', component: () => import('../modules/reports/views/ClientSourcesView.vue') },
-            { path: 'monthly-orders', component: () => import('../modules/reports/views/MonthlyOrdersView.vue') },
-            { path: 'services', component: () => import('../modules/reports/views/ServicesReportView.vue') },
-            { path: 'domains', component: () => import('../modules/reports/views/DomainsReportView.vue') },
-            { path: 'support-tickets', component: () => import('../modules/reports/views/SupportTicketsReportView.vue') },
-            { path: 'promotions', component: () => import('../modules/reports/views/PromotionsView.vue') },
+            ...REPORTS.map(r => ({ path: r.slug, component: r.component })),
           ],
         },
         { path: 'orders', component: () => import('../modules/orders/views/OrdersListView.vue') },

@@ -16,14 +16,17 @@ public sealed class DevDataSeeder(
     UserManager<AppUser> userManager,
     ILogger<DevDataSeeder> logger)
 {
-    /// <summary>
-    /// Seeds test clients with contacts and addresses.
-    /// </summary>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>Task that completes when seeding is done.</returns>
+    private static readonly Random Rng = new(42);
+
+    private static DateTimeOffset MonthsAgo(int months, int day = 15) =>
+        new DateTimeOffset(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, TimeSpan.Zero)
+            .AddMonths(-months)
+            .AddDays(day - 1);
+
+    /// <summary>Seeds test clients, invoices, transactions, quotes and billable items.</summary>
     public async Task SeedAsync(CancellationToken ct = default)
     {
-        // Always ensure admin user exists
+        // ── Admin user ───────────────────────────────────────────────────────
         const string adminEmail = "admin@innovayse.com";
         if (await userManager.FindByEmailAsync(adminEmail) is null)
         {
@@ -37,16 +40,10 @@ public sealed class DevDataSeeder(
             };
             var adminResult = await userManager.CreateAsync(adminUser, "Admin123!");
             if (adminResult.Succeeded)
-            {
                 await userManager.AddToRoleAsync(adminUser, Roles.Admin);
-                logger.LogInformation("Admin user created: {Email}", adminEmail);
-            }
         }
 
-        var clientsExist = await db.Clients.AnyAsync(ct);
-        var invoicesExist = await db.Invoices.AnyAsync(ct);
-
-        if (clientsExist && invoicesExist)
+        if (await db.Clients.AnyAsync(ct) && await db.Invoices.AnyAsync(ct) && await db.Quotes.AnyAsync(ct))
         {
             logger.LogInformation("Dev seed skipped — data already exists");
             return;
@@ -54,7 +51,8 @@ public sealed class DevDataSeeder(
 
         logger.LogInformation("Seeding dev test data…");
 
-        var clients = new List<(string Email, string First, string Last, string? Company, string? Phone, string? Street, string? City, string? State, string? PostCode, string? Country, ClientStatus Status)>
+        // ── Clients ──────────────────────────────────────────────────────────
+        var clientDefs = new List<(string Email, string First, string Last, string? Company, string? Phone, string? Street, string? City, string? State, string? PostCode, string? Country, ClientStatus Status)>
         {
             ("john.doe@example.com", "John", "Doe", "Doe Enterprises", "+1-555-0101", "123 Main St", "New York", "NY", "10001", "US", ClientStatus.Active),
             ("jane.smith@example.com", "Jane", "Smith", "Smith & Co", "+1-555-0102", "456 Oak Ave", "San Francisco", "CA", "94102", "US", ClientStatus.Active),
@@ -73,113 +71,193 @@ public sealed class DevDataSeeder(
             ("james.harris@example.com", "James", "Harris", null, "+1-555-0115", "77 Sunset Blvd", "Los Angeles", "CA", "90028", "US", ClientStatus.Active),
         };
 
-        foreach (var (email, first, last, company, phone, street, city, state, postCode, country, status) in clients)
+        if (!await db.Clients.AnyAsync(ct))
         {
-            var user = new AppUser
+            var clientIdx = 0;
+            foreach (var (email, first, last, company, phone, street, city, state, postCode, country, status) in clientDefs)
             {
-                UserName = email,
-                Email = email,
-                FirstName = first,
-                LastName = last,
-                EmailConfirmed = true,
-            };
+                var user = new AppUser { UserName = email, Email = email, FirstName = first, LastName = last, EmailConfirmed = true };
+                var result = await userManager.CreateAsync(user, "Test@12345");
+                if (!result.Succeeded) continue;
+                await userManager.AddToRoleAsync(user, Roles.Client);
 
-            var result = await userManager.CreateAsync(user, "Test@12345");
-            if (!result.Succeeded)
-            {
-                logger.LogWarning("Failed to create user {Email}: {Errors}", email,
-                    string.Join(", ", result.Errors.Select(e => e.Description)));
-                continue;
-            }
+                var client = Client.Create(user.Id, first, last, email, company);
+                if (phone is not null) client.Update(first, last, company, phone);
+                if (street is not null) client.UpdateAddress(street, null, city, state, postCode, country);
+                if (status == ClientStatus.Suspended) client.Suspend();
 
-            await userManager.AddToRoleAsync(user, Roles.Client);
+                db.Clients.Add(client);
 
-            var client = Client.Create(user.Id, first, last, email, company);
+                // Spread signups across the last 6 months for the New Customers report
+                var signupMonthsBack = 5 - (clientIdx * 6 / clientDefs.Count);
+                db.Entry(client).Property(nameof(Client.CreatedAt)).CurrentValue = MonthsAgo(signupMonthsBack, Rng.Next(1, 28));
+                clientIdx++;
 
-            if (phone is not null)
-            {
-                client.Update(first, last, company, phone);
-            }
-
-            if (street is not null)
-            {
-                client.UpdateAddress(street, null, city, state, postCode, country);
-            }
-
-            if (status == ClientStatus.Suspended)
-            {
-                client.Suspend();
-            }
-
-            db.Clients.Add(client);
-            await db.SaveChangesAsync(ct);
-
-            // Add contacts to some clients
-            if (company is not null)
-            {
-                client.AddContact(
-                    first, last, company, email, phone, ContactType.Billing,
-                    null, null, null, null, null, null,
-                    true, true, true, true, true, true);
-                client.AddContact(
-                    "Support", $"at {company}", company, $"support@{email.Split('@')[1]}", null, ContactType.Technical,
-                    null, null, null, null, null, null,
-                    true, true, true, true, true, true);
                 await db.SaveChangesAsync(ct);
+
+                if (company is not null)
+                {
+                    client.AddContact(first, last, company, email, phone, ContactType.Billing, null, null, null, null, null, null, true, true, true, true, true, true);
+                    await db.SaveChangesAsync(ct);
+                }
             }
         }
 
-        // Seed invoices
-        if (!invoicesExist)
-        {
-            var clientsList = await db.Clients.ToListAsync(ct);
-            var random = new Random();
-            var invoiceCount = 0;
+        var clients = await db.Clients.ToListAsync(ct);
 
-            foreach (var client in clientsList.Take(10))
+        // ── Invoices spread across 6 months ─────────────────────────────────
+        // Gated on Quotes being empty: this is the one-time "top-up" sentinel, so the
+        // backdated invoices are added once even when single-date invoices already exist.
+        if (!await db.Quotes.AnyAsync(ct))
+        {
+            var invoices = new List<Invoice>();
+
+            // Products and amounts for realistic data
+            string[] products = ["Shared Hosting Basic", "Shared Hosting Pro", "VPS Server", "Dedicated Server", "SSL Certificate", "Domain Registration", "Email Hosting", "CDN Service", "Backup Service", "Firewall Service"];
+            decimal[] prices = [9.99m, 29.99m, 49.99m, 99.99m, 14.99m, 12.99m, 19.99m, 24.99m, 7.99m, 39.99m];
+
+            foreach (var client in clients)
             {
-                var dueDate = DateTimeOffset.UtcNow.AddDays(30);
+                // One invoice per month for last 6 months
+                for (int monthsBack = 5; monthsBack >= 0; monthsBack--)
+                {
+                    var invoiceDate = MonthsAgo(monthsBack, Rng.Next(1, 20));
+                    var dueDate = invoiceDate.AddDays(30);
+                    var productIndex = Rng.Next(products.Length);
 
-                // Unpaid invoice
-                var unpaidInvoice = Invoice.Create(client.Id, dueDate);
-                unpaidInvoice.AddItem("Hosting Services", 99.99m, 1);
-                db.Invoices.Add(unpaidInvoice);
-                invoiceCount++;
+                    var invoice = Invoice.Create(client.Id, dueDate);
+                    invoice.AddItem(products[productIndex], prices[productIndex], 1);
 
-                // Paid invoice
-                var paidInvoice = Invoice.Create(client.Id, dueDate.AddDays(-60));
-                paidInvoice.AddItem("Domain Registration", 14.99m, 1);
-                paidInvoice.MarkPaid("stripe_transaction_" + random.Next(100000, 999999));
-                db.Invoices.Add(paidInvoice);
-                invoiceCount++;
+                    // Add extra item sometimes
+                    if (Rng.Next(3) == 0)
+                    {
+                        var idx2 = Rng.Next(products.Length);
+                        invoice.AddItem(products[idx2], prices[idx2], 1);
+                    }
 
-                // Overdue invoice
-                var overdueInvoice = Invoice.Create(client.Id, dueDate.AddDays(-90));
-                overdueInvoice.AddItem("Email Hosting", 49.99m, 1);
-                overdueInvoice.MarkOverdue();
-                db.Invoices.Add(overdueInvoice);
-                invoiceCount++;
+                    // Assign status based on age
+                    if (monthsBack >= 4)
+                    {
+                        invoice.MarkPaid("stripe_" + Rng.Next(100000, 999999));
+                    }
+                    else if (monthsBack == 3)
+                    {
+                        if (Rng.Next(2) == 0)
+                            invoice.MarkPaid("stripe_" + Rng.Next(100000, 999999));
+                        else
+                            invoice.MarkOverdue();
+                    }
+                    else if (monthsBack == 2)
+                    {
+                        if (Rng.Next(3) == 0)
+                            invoice.MarkOverdue();
+                    }
+                    // Recent months: unpaid
 
-                // Refunded invoice
-                var refundedInvoice = Invoice.Create(client.Id, dueDate.AddDays(-120));
-                refundedInvoice.AddItem("SSL Certificate", 79.99m, 1);
-                refundedInvoice.MarkPaid("stripe_transaction_" + random.Next(100000, 999999));
-                refundedInvoice.Refund();
-                db.Invoices.Add(refundedInvoice);
-                invoiceCount++;
+                    db.Invoices.Add(invoice);
+                    invoices.Add(invoice);
 
-                // Draft invoice
-                var draftInvoice = Invoice.CreateDraft(client.Id, dueDate.AddDays(60));
-                draftInvoice.AddItem("Monthly Hosting Plan", 129.99m, 1);
-                db.Invoices.Add(draftInvoice);
-                invoiceCount++;
+                    // Backdate CreatedAt through the change tracker (no raw SQL)
+                    db.Entry(invoice).Property(nameof(Invoice.CreatedAt)).CurrentValue = invoiceDate;
+                }
             }
+
             await db.SaveChangesAsync(ct);
-            logger.LogInformation("Dev seed complete — {Count} clients and {Count} invoices created", clients.Count, invoiceCount);
+            logger.LogInformation("Seeded {Count} invoices across 6 months", invoices.Count);
         }
-        else if (!clientsExist)
+
+        // ── Invoice Transactions (payments) ──────────────────────────────────
+        if (!await db.InvoiceTransactions.AnyAsync(ct))
         {
-            logger.LogInformation("Dev seed complete — {Count} clients created", clients.Count);
+            var paidInvoices = await db.Invoices
+                .Where(i => i.Status == InvoiceStatus.Paid)
+                .ToListAsync(ct);
+
+            foreach (var inv in paidInvoices)
+            {
+                var payDate = inv.DueDate.AddDays(-Rng.Next(1, 10));
+                var gateway = Rng.Next(3) switch { 0 => "Stripe", 1 => "PayPal", _ => "Bank Transfer" };
+                var fees = Math.Round(inv.Total * 0.029m + 0.30m, 2);
+
+                var tx = InvoiceTransaction.Create(
+                    inv.Id, payDate, gateway,
+                    $"txn_{Rng.Next(100000, 999999)}",
+                    inv.Total, InvoiceTransactionType.Payment, fees);
+
+                db.InvoiceTransactions.Add(tx);
+            }
+
+            await db.SaveChangesAsync(ct);
+            logger.LogInformation("Seeded {Count} invoice transactions", paidInvoices.Count);
         }
+
+        // ── Client Transactions ───────────────────────────────────────────────
+        if (!await db.Transactions.AnyAsync(ct))
+        {
+            var activeClients = clients.Where(c => c.Status == ClientStatus.Active).ToList();
+
+            foreach (var client in activeClients.Take(8))
+            {
+                // Credit payment (client paid money)
+                for (int m = 0; m < 3; m++)
+                {
+                    var date = MonthsAgo(m * 2, Rng.Next(1, 28));
+                    var amount = Math.Round((decimal)(Rng.NextDouble() * 200 + 50), 2);
+                    var tx = Transaction.Create(
+                        client.Id, date, "Monthly hosting payment",
+                        "txn_" + Rng.Next(100000, 999999), null, "Stripe",
+                        amount, 0m, Math.Round(amount * 0.029m, 2), false);
+                    db.Transactions.Add(tx);
+                }
+            }
+
+            await db.SaveChangesAsync(ct);
+            logger.LogInformation("Seeded client transactions");
+        }
+
+        // ── Quotes ────────────────────────────────────────────────────────────
+        if (!await db.Quotes.AnyAsync(ct))
+        {
+            string[] quoteSubjects = [
+                "Enterprise Hosting Package", "Custom VPS Solution", "Annual Hosting Plan",
+                "E-commerce Hosting Bundle", "Managed WordPress Hosting", "Cloud Migration Package"
+            ];
+
+            foreach (var client in clients.Take(8))
+            {
+                var subject = quoteSubjects[Rng.Next(quoteSubjects.Length)];
+                var expiryDate = DateTimeOffset.UtcNow.AddDays(30 + Rng.Next(30));
+                var quote = Quote.Create(client.Id, subject, expiryDate, "Please review and accept this quote.");
+                quote.AddItem("Setup Fee", 99.00m, 1);
+                quote.AddItem("Monthly Hosting (12 months)", 29.99m, 12);
+                if (Rng.Next(2) == 0)
+                    quote.AddItem("SSL Certificate", 14.99m, 1);
+                db.Quotes.Add(quote);
+            }
+
+            await db.SaveChangesAsync(ct);
+            logger.LogInformation("Seeded quotes");
+        }
+
+        // ── Billable Items ────────────────────────────────────────────────────
+        if (!await db.BillableItems.AnyAsync(ct))
+        {
+            string[] itemDescs = ["Extra Bandwidth", "Additional Storage", "Premium Support", "Setup Fee", "Custom Development"];
+            decimal[] itemPrices = [5.00m, 10.00m, 25.00m, 50.00m, 150.00m];
+
+            foreach (var client in clients.Take(6))
+            {
+                var idx = Rng.Next(itemDescs.Length);
+                var item = BillableItem.Create(
+                    client.Id, itemDescs[idx], itemPrices[idx], "USD",
+                    BillableItemType.OneTime, null, DateTimeOffset.UtcNow);
+                db.BillableItems.Add(item);
+            }
+
+            await db.SaveChangesAsync(ct);
+            logger.LogInformation("Seeded billable items");
+        }
+
+        logger.LogInformation("Dev seed complete");
     }
 }

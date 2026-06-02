@@ -5,6 +5,7 @@ using Innovayse.Domain.Billing;
 /// <summary>DTO for a single row in paginated quote lists (no line items).</summary>
 /// <param name="Id">Quote primary key.</param>
 /// <param name="ClientId">FK to the owning client.</param>
+/// <param name="ClientName">Display name of the owning client.</param>
 /// <param name="Subject">Quote subject / title.</param>
 /// <param name="CreatedAt">Creation timestamp (UTC).</param>
 /// <param name="ExpiryDate">Quote expiry date (UTC).</param>
@@ -13,6 +14,7 @@ using Innovayse.Domain.Billing;
 public record QuoteListItemDto(
     int Id,
     int ClientId,
+    string ClientName,
     string Subject,
     DateTimeOffset CreatedAt,
     DateTimeOffset ExpiryDate,

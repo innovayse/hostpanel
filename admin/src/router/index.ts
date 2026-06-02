@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { authMiddleware } from '../middleware/auth'
+import { REPORTS } from '../modules/reports/reports'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -78,6 +79,14 @@ const router = createRouter({
             { path: 'transactions', component: () => import('../modules/billing/views/TransactionsListView.vue') },
             { path: 'add-transaction', component: () => import('../modules/billing/views/AddTransactionView.vue') },
             { path: 'transactions/:id/edit', component: () => import('../modules/billing/views/EditTransactionView.vue') },
+          ],
+        },
+        {
+          path: 'reports',
+          component: () => import('../modules/reports/ReportsLayout.vue'),
+          children: [
+            { path: '', redirect: '/reports/daily-performance' },
+            ...REPORTS.map(r => ({ path: r.slug, component: r.component })),
           ],
         },
         { path: 'orders', component: () => import('../modules/orders/views/OrdersListView.vue') },

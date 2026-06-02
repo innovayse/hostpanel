@@ -167,6 +167,9 @@ public static class DependencyInjection
         services.AddScoped<IPredefinedReplyRepository, PredefinedReplyRepository>();
         services.AddScoped<IDownloadRepository, DownloadRepository>();
 
+        // Reports
+        services.AddScoped<Innovayse.Application.Reports.Interfaces.IReportRepository, Innovayse.Infrastructure.Reports.ReportRepository>();
+
         // Notifications
         services.Configure<SmtpSettings>(configuration.GetSection("Smtp"));
         services.AddScoped<IEmailSender, MailKitEmailSender>();

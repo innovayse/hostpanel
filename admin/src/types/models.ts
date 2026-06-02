@@ -986,6 +986,8 @@ export interface QuoteListItem {
   id: number
   /** Associated client identifier. */
   clientId: number
+  /** Display name of the owning client. */
+  clientName: string
   /** Quote subject line. */
   subject: string
   /** ISO 8601 creation date. */

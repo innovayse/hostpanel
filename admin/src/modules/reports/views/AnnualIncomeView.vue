@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { Bar } from 'vue-chartjs'
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js'
 import ReportPage from '../components/ReportPage.vue'
+import AppSelect from '../../../components/AppSelect.vue'
 import { useApi } from '../../../composables/useApi'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
@@ -12,7 +13,10 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const selectedYear = ref(new Date().getFullYear())
 const rows = ref<{ month: string; amount: number }[]>([])
-const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
+const yearOptions = Array.from({ length: 5 }, (_, i) => {
+  const y = new Date().getFullYear() - i
+  return { value: y, label: String(y) }
+})
 
 const chartData = ref({
   labels: [] as string[],
@@ -46,11 +50,13 @@ onMounted(load)
     <template #filters>
       <div class="bg-surface-card border border-border rounded-2xl p-4 mb-6">
         <div class="flex items-end gap-4">
-          <div>
+          <div class="w-32">
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Year</label>
-            <select v-model="selectedYear" @change="load" class="px-3 py-2 text-[0.82rem] text-text-primary bg-white/[0.05] border border-border rounded-[9px] focus:outline-none focus:border-primary-500/40">
-              <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
-            </select>
+            <AppSelect
+              v-model="selectedYear"
+              :options="yearOptions"
+              @update:model-value="load"
+            />
           </div>
         </div>
       </div>

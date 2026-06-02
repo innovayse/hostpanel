@@ -13,15 +13,14 @@ const chartData = computed(() => {
   const dailyData: Record<string, number> = {}
 
   props.transactions.forEach(tx => {
-    const date = new Date(tx.createdAt).toISOString().split('T')[0]
+    const parsed = new Date(tx.date)
+    if (isNaN(parsed.getTime())) return
+    const date = parsed.toISOString().split('T')[0]
     if (!dailyData[date]) {
       dailyData[date] = 0
     }
-    if (tx.type === 'Credit') {
-      dailyData[date] += tx.amount - tx.fees
-    } else {
-      dailyData[date] -= tx.amount + tx.fees
-    }
+    // Net = money in − money out − fees
+    dailyData[date] += (tx.amountIn || 0) - (tx.amountOut || 0) - (tx.fees || 0)
   })
 
   // Get last 30 days

@@ -16,4 +16,16 @@ public interface IReportRepository
 
     /// <summary>Returns monthly new customer and order metrics.</summary>
     Task<IReadOnlyList<NewCustomerDto>> GetNewCustomersAsync(int year, CancellationToken ct);
+
+    /// <summary>Returns monthly transaction aggregates for the given year.</summary>
+    Task<IReadOnlyList<MonthlyTransactionDto>> GetMonthlyTransactionsAsync(int year, CancellationToken ct);
+
+    /// <summary>Returns the top clients ranked by paid-invoice income.</summary>
+    Task<IReadOnlyList<TopClientDto>> GetTopClientsAsync(int take, CancellationToken ct);
+
+    /// <summary>Returns income aggregated by product (paid invoice line items).</summary>
+    Task<IReadOnlyList<IncomeByProductDto>> GetIncomeByProductAsync(CancellationToken ct);
+
+    /// <summary>Returns client counts and revenue grouped by country.</summary>
+    Task<IReadOnlyList<ClientsByCountryDto>> GetClientsByCountryAsync(CancellationToken ct);
 }

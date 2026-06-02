@@ -61,41 +61,43 @@ async function loadTransaction() {
   const id = route.params.id as string
   await store.fetchById(parseInt(id))
 
-  if (store.currentTransaction) {
-    const tx = store.currentTransaction
+  const tx = store.currentTransaction
+  if (tx) {
+    const parsed = new Date(tx.date)
     form.value = {
-      date: new Date(tx.createdAt).toISOString().split('T')[0],
+      date: isNaN(parsed.getTime()) ? new Date().toISOString().split('T')[0] : parsed.toISOString().split('T')[0],
       clientId: String(tx.clientId),
       transactionId: tx.transactionId || '',
-      paymentMethod: tx.gateway || '',
+      paymentMethod: tx.paymentMethod || '',
       description: tx.description,
-      amountIn: tx.type === 'Credit' ? tx.amount : 0,
-      amountOut: tx.type === 'Debit' ? tx.amount : 0,
+      amountIn: tx.amountIn,
+      amountOut: tx.amountOut,
       fees: tx.fees,
-      currency: tx.currency,
+      currency: 'USD',
       invoiceIds: tx.invoiceId ? String(tx.invoiceId) : '',
-      addToCredit: false,
+      addToCredit: tx.addedToCredit,
     }
   }
 }
 
 async function submit() {
-  try {
-    const id = parseInt(route.params.id as string)
-    await store.update(id, {
-      clientId: parseInt(form.value.clientId),
-      description: form.value.description,
-      amount: form.value.amountIn > 0 ? form.value.amountIn : form.value.amountOut,
-      fees: form.value.fees,
-      currency: form.value.currency,
-      gateway: form.value.paymentMethod,
-      transactionId: form.value.transactionId,
-      type: form.value.amountIn > 0 ? 'Credit' : 'Debit'
-    })
-    router.push('/billing/transactions')
-  } catch (e) {
-    console.error(e)
-  }
+  const id = parseInt(route.params.id as string)
+  const firstInvoice = form.value.invoiceIds
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean)[0]
+
+  const ok = await store.update(id, {
+    date: form.value.date,
+    description: form.value.description,
+    transactionId: form.value.transactionId,
+    invoiceId: firstInvoice ? parseInt(firstInvoice) : null,
+    paymentMethod: form.value.paymentMethod,
+    amountIn: form.value.amountIn,
+    amountOut: form.value.amountOut,
+    fees: form.value.fees,
+  })
+  if (ok) router.push('/billing/transactions')
 }
 
 onMounted(() => {

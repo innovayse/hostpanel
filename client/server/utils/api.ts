@@ -29,6 +29,7 @@ export async function internalApiCall<T>(
   options: {
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
     body?: unknown
+    headers?: Record<string, string>
   } = {}
 ): Promise<T> {
   const config = useRuntimeConfig()
@@ -37,6 +38,7 @@ export async function internalApiCall<T>(
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    ...options.headers,
   }
 
   if (token) {

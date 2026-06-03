@@ -3,6 +3,7 @@ using System;
 using Innovayse.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Innovayse.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260603115605_AddClientDeviceInfo")]
+    partial class AddClientDeviceInfo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -264,19 +267,11 @@ namespace Innovayse.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("AdminNotes")
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)");
-
                     b.Property<int>("ClientId")
                         .HasColumnType("integer");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CustomerNotes")
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)");
 
                     b.Property<DateTimeOffset>("ExpiryDate")
                         .HasColumnType("timestamp with time zone");
@@ -285,11 +280,7 @@ namespace Innovayse.Infrastructure.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
-                    b.Property<string>("ProposalText")
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)");
-
-                    b.Property<string>("Stage")
+                    b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
@@ -320,17 +311,11 @@ namespace Innovayse.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<decimal>("DiscountPercent")
-                        .HasColumnType("numeric");
-
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
                     b.Property<int>("QuoteId")
                         .HasColumnType("integer");
-
-                    b.Property<bool>("Taxed")
-                        .HasColumnType("boolean");
 
                     b.Property<decimal>("UnitPrice")
                         .HasColumnType("numeric(18,4)");

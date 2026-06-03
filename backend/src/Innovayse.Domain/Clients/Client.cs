@@ -117,6 +117,21 @@ public sealed class Client : AggregateRoot
     /// <summary>Gets the UTC timestamp when the client account was created.</summary>
     public DateTimeOffset CreatedAt { get; private set; }
 
+    /// <summary>Gets the IP address captured during self-registration, or <see langword="null"/> for admin-created clients.</summary>
+    public string? RegistrationIp { get; private set; }
+
+    /// <summary>Gets the raw browser/device user-agent captured during self-registration, or <see langword="null"/> for admin-created clients.</summary>
+    public string? RegistrationUserAgent { get; private set; }
+
+    /// <summary>Gets the device type (Desktop, Mobile, Tablet) parsed from the user-agent, or <see langword="null"/> for admin-created clients.</summary>
+    public string? DeviceType { get; private set; }
+
+    /// <summary>Gets the operating system parsed from the user-agent, or <see langword="null"/> for admin-created clients.</summary>
+    public string? OperatingSystem { get; private set; }
+
+    /// <summary>Gets the browser name and version parsed from the user-agent, or <see langword="null"/> for admin-created clients.</summary>
+    public string? Browser { get; private set; }
+
     /// <summary>Gets the additional contacts linked to this client.</summary>
     public IReadOnlyList<Contact> Contacts => _contacts.AsReadOnly();
 
@@ -134,8 +149,13 @@ public sealed class Client : AggregateRoot
     /// <param name="lastName">The client's last name.</param>
     /// <param name="email">The client's email address (used for the domain event).</param>
     /// <param name="companyName">Optional company name.</param>
+    /// <param name="registrationIp">IP address from self-registration; null for admin-created clients.</param>
+    /// <param name="registrationUserAgent">Raw user-agent from self-registration; null for admin-created clients.</param>
+    /// <param name="deviceType">Parsed device type (Desktop, Mobile, Tablet); null for admin-created clients.</param>
+    /// <param name="operatingSystem">Parsed OS name from user-agent; null for admin-created clients.</param>
+    /// <param name="browser">Parsed browser name and version; null for admin-created clients.</param>
     /// <returns>A new, unpersisted <see cref="Client"/> instance.</returns>
-    public static Client Create(string userId, string firstName, string lastName, string email, string? companyName = null)
+    public static Client Create(string userId, string firstName, string lastName, string email, string? companyName = null, string? registrationIp = null, string? registrationUserAgent = null, string? deviceType = null, string? operatingSystem = null, string? browser = null)
     {
         var client = new Client
         {
@@ -144,7 +164,12 @@ public sealed class Client : AggregateRoot
             LastName = lastName,
             CompanyName = companyName,
             Status = ClientStatus.Active,
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
+            RegistrationIp = registrationIp,
+            RegistrationUserAgent = registrationUserAgent,
+            DeviceType = deviceType,
+            OperatingSystem = operatingSystem,
+            Browser = browser,
         };
 
         // ClientId is 0 here — EF Core assigns the real Id after SaveChanges.

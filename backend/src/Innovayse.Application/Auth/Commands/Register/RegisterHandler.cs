@@ -44,7 +44,12 @@ public sealed class RegisterHandler(
         await refreshTokenRepo.AddAsync(userId, refreshToken, refreshExpiresAt, ct);
         await uow.SaveChangesAsync(ct);
 
-        await bus.PublishAsync(new ClientRegisteredIntegrationEvent(userId, cmd.Email, cmd.FirstName, cmd.LastName));
+        var parsed = UserAgentParser.Parse(cmd.UserAgent);
+
+        await bus.PublishAsync(new ClientRegisteredIntegrationEvent(
+            userId, cmd.Email, cmd.FirstName, cmd.LastName,
+            cmd.IpAddress, cmd.UserAgent,
+            parsed?.DeviceType, parsed?.OperatingSystem, parsed?.Browser));
 
         return new AuthWithRefreshDto(new AuthResultDto(accessToken, expiresAt, Roles.Client), refreshToken);
     }

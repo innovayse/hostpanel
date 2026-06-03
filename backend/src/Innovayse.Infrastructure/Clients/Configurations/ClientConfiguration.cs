@@ -45,6 +45,12 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<Client>
 
         builder.Property(x => x.CreatedAt).IsRequired();
 
+        builder.Property(x => x.RegistrationIp).HasMaxLength(45);
+        builder.Property(x => x.RegistrationUserAgent).HasMaxLength(500);
+        builder.Property(x => x.DeviceType).HasMaxLength(20);
+        builder.Property(x => x.OperatingSystem).HasMaxLength(50);
+        builder.Property(x => x.Browser).HasMaxLength(50);
+
         builder.Ignore(x => x.DomainEvents);
 
         builder.HasMany(x => x.Contacts)

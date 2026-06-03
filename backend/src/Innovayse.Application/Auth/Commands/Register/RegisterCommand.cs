@@ -8,4 +8,6 @@ namespace Innovayse.Application.Auth.Commands.Register;
 /// <param name="Password">Plain-text password. Will be hashed by Identity.</param>
 /// <param name="FirstName">User's first name.</param>
 /// <param name="LastName">User's last name.</param>
-public record RegisterCommand(string Email, string Password, string FirstName, string LastName);
+/// <param name="IpAddress">IP address from the registration request; null if unavailable.</param>
+/// <param name="UserAgent">Browser/device user-agent from the registration request; null if unavailable.</param>
+public record RegisterCommand(string Email, string Password, string FirstName, string LastName, string? IpAddress = null, string? UserAgent = null);

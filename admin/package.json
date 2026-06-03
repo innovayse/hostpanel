@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@innovayse/geo-atlas": "^2.0.2",
+    "@svg-maps/world": "^2.0.0",
     "@tailwindcss/vite": "^4.2.2",
     "axios": "^1.15.0",
     "chart.js": "^4.5.1",
@@ -25,7 +26,8 @@
     "tailwindcss": "^4.2.2",
     "vue": "^3.5.31",
     "vue-chartjs": "^5.3.3",
-    "vue-router": "^5.0.4"
+    "vue-router": "^5.0.4",
+    "vue-svg-map": "^2.0.0-beta.1"
   },
   "devDependencies": {
     "@tsconfig/node24": "^24.0.4",

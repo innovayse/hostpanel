@@ -515,7 +515,7 @@ const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
         <span v-else class="text-sm text-text-muted">Select date range</span>
         <div class="flex gap-2">
           <button type="button" @click="clearRange" class="px-4 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors">Clear</button>
-          <button type="button" @click="applyRange" class="px-4 py-2 text-sm bg-primary-500 text-white rounded hover:bg-primary-600 transition-colors font-semibold">Apply</button>
+          <button type="button" @click="applyRange" class="px-4 py-2 text-sm gradient-brand text-white rounded-[9px] transition-opacity hover:opacity-90 font-semibold">Apply</button>
         </div>
       </div>
     </div>

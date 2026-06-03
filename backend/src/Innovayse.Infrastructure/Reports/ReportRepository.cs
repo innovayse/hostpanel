@@ -224,4 +224,207 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
                 TotalRevenue: revenue.FirstOrDefault(r => r.Country == x.Country)?.Total ?? 0m))
             .ToList();
     }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<ClientsByCityDto>> GetClientsByCityAsync(CancellationToken ct)
+    {
+        var clients = await db.Clients
+            .Where(c => c.City != null && c.City != "" && c.Country != null && c.Country != "")
+            .Select(c => new { c.City, c.Country })
+            .ToListAsync(ct);
+
+        return clients
+            .GroupBy(c => new { c.City, c.Country })
+            .Select(g => new ClientsByCityDto(g.Key.City!, g.Key.Country!, g.Count()))
+            .OrderByDescending(x => x.ClientCount)
+            .ToList();
+    }
+
+    /// <inheritdoc/>
+    public async Task<InvoiceReportResultDto> GetInvoicesReportAsync(
+        string? status, DateOnly? createdFrom, DateOnly? createdTo,
+        DateOnly? dueFrom, DateOnly? dueTo, DateOnly? paidFrom, DateOnly? paidTo,
+        int page, int pageSize, CancellationToken ct)
+    {
+        var query = db.Invoices
+            .Join(db.Clients, i => i.ClientId, c => c.Id,
+                (i, c) => new { i, ClientName = c.FirstName + " " + c.LastName });
+
+        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<InvoiceStatus>(status, true, out var parsed))
+            query = query.Where(x => x.i.Status == parsed);
+
+        if (createdFrom.HasValue)
+            query = query.Where(x => x.i.CreatedAt >= createdFrom.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc));
+        if (createdTo.HasValue)
+            query = query.Where(x => x.i.CreatedAt <= createdTo.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc));
+        if (dueFrom.HasValue)
+            query = query.Where(x => x.i.DueDate >= dueFrom.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc));
+        if (dueTo.HasValue)
+            query = query.Where(x => x.i.DueDate <= dueTo.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc));
+        if (paidFrom.HasValue)
+            query = query.Where(x => x.i.PaidAt != null && x.i.PaidAt >= paidFrom.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc));
+        if (paidTo.HasValue)
+            query = query.Where(x => x.i.PaidAt != null && x.i.PaidAt <= paidTo.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc));
+
+        var totalCount = await query.CountAsync(ct);
+
+        var rows = await query
+            .OrderByDescending(x => x.i.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(x => new InvoiceReportRowDto(
+                x.i.Id,
+                x.i.ClientId,
+                x.ClientName,
+                null,
+                x.i.CreatedAt.ToString("yyyy-MM-dd"),
+                x.i.DueDate.ToString("yyyy-MM-dd"),
+                x.i.PaidAt != null ? x.i.PaidAt.Value.ToString("yyyy-MM-dd") : null,
+                null,
+                x.i.Status == InvoiceStatus.Cancelled ? x.i.CreatedAt.ToString("yyyy-MM-dd") : null,
+                x.i.SubTotal,
+                x.i.Credit,
+                x.i.Tax,
+                x.i.TaxRate,
+                x.i.Total,
+                x.i.Status.ToString(),
+                x.i.PaymentMethod,
+                x.i.Notes))
+            .ToListAsync(ct);
+
+        return new InvoiceReportResultDto(rows, totalCount);
+    }
+
+    /// <inheritdoc/>
+    public async Task<TransactionReportResultDto> GetTransactionsReportAsync(
+        DateOnly? dateFrom, DateOnly? dateTo, string? paymentMethod,
+        int page, int pageSize, CancellationToken ct)
+    {
+        var query = db.Transactions
+            .Join(db.Clients, t => t.ClientId, c => c.Id,
+                (t, c) => new { t, ClientName = c.FirstName + " " + c.LastName });
+
+        if (dateFrom.HasValue)
+            query = query.Where(x => x.t.Date >= dateFrom.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc));
+        if (dateTo.HasValue)
+            query = query.Where(x => x.t.Date <= dateTo.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc));
+        if (!string.IsNullOrWhiteSpace(paymentMethod))
+            query = query.Where(x => x.t.PaymentMethod == paymentMethod);
+
+        var totalCount = await query.CountAsync(ct);
+
+        var rows = await query
+            .OrderByDescending(x => x.t.Date)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(x => new TransactionReportRowDto(
+                x.t.Id,
+                x.t.ClientId,
+                x.ClientName,
+                "USD",
+                x.t.PaymentMethod,
+                x.t.Date.ToString("yyyy-MM-dd HH:mm:ss"),
+                x.t.Description,
+                null,
+                x.t.TransactionId,
+                x.t.AmountIn,
+                x.t.Fees,
+                x.t.AmountOut))
+            .ToListAsync(ct);
+
+        return new TransactionReportResultDto(rows, totalCount);
+    }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<TopClientByIncomeDto>> GetTopClientsByIncomeAsync(int take, CancellationToken ct)
+    {
+        var grouped = await db.Transactions
+            .GroupBy(t => t.ClientId)
+            .Select(g => new
+            {
+                ClientId = g.Key,
+                TotalIn = g.Sum(t => t.AmountIn),
+                TotalFees = g.Sum(t => t.Fees),
+                TotalOut = g.Sum(t => t.AmountOut),
+            })
+            .OrderByDescending(x => x.TotalIn)
+            .Take(take)
+            .Join(db.Clients, x => x.ClientId, c => c.Id,
+                (x, c) => new TopClientByIncomeDto(
+                    x.ClientId,
+                    c.FirstName + " " + c.LastName,
+                    x.TotalIn,
+                    x.TotalFees,
+                    x.TotalOut,
+                    x.TotalIn - x.TotalOut - x.TotalFees))
+            .ToListAsync(ct);
+
+        return grouped;
+    }
+
+    /// <inheritdoc/>
+    public async Task<ClientStatementDto> GetClientStatementAsync(int clientId, DateOnly? from, DateOnly? to, CancellationToken ct)
+    {
+        var fromDate = from?.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc)
+            ?? DateTimeOffset.MinValue;
+        var toDate = to?.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc)
+            ?? DateTimeOffset.UtcNow;
+
+        var client = await db.Clients.FirstOrDefaultAsync(c => c.Id == clientId, ct)
+            ?? throw new InvalidOperationException($"Client {clientId} not found.");
+        var clientName = $"{client.FirstName} {client.LastName}";
+
+        // Previous balance: sum of all invoices & transactions before the period
+        var prevInvoiceDebit = await db.Invoices
+            .Where(i => i.ClientId == clientId && i.CreatedAt < fromDate)
+            .SumAsync(i => i.Total, ct);
+
+        var prevTxCredit = await db.Transactions
+            .Where(t => t.ClientId == clientId && t.Date < fromDate)
+            .SumAsync(t => t.AmountIn - t.AmountOut, ct);
+
+        var previousBalance = prevInvoiceDebit - prevTxCredit;
+
+        // Invoices in range
+        var invoices = await db.Invoices
+            .Where(i => i.ClientId == clientId && i.CreatedAt >= fromDate && i.CreatedAt <= toDate)
+            .OrderBy(i => i.CreatedAt)
+            .Select(i => new { i.Id, i.CreatedAt, i.Total })
+            .ToListAsync(ct);
+
+        // Transactions in range
+        var transactions = await db.Transactions
+            .Where(t => t.ClientId == clientId && t.Date >= fromDate && t.Date <= toDate)
+            .OrderBy(t => t.Date)
+            .Select(t => new { t.Id, t.Date, t.Description, t.AmountIn, t.AmountOut })
+            .ToListAsync(ct);
+
+        // Merge and sort
+        var lines = new List<(DateTimeOffset Date, string Type, string Desc, decimal Debit, decimal Credit)>();
+
+        foreach (var inv in invoices)
+            lines.Add((inv.CreatedAt, "Invoice", $"Invoice Payment - #{inv.Id}", inv.Total, 0m));
+
+        foreach (var tx in transactions)
+            lines.Add((tx.Date, "Transaction", tx.Description, tx.AmountOut, tx.AmountIn));
+
+        lines.Sort((a, b) => a.Date.CompareTo(b.Date));
+
+        // Build running balance
+        var running = previousBalance;
+        var result = new List<ClientStatementLineDto>();
+        foreach (var line in lines)
+        {
+            running = running + line.Debit - line.Credit;
+            result.Add(new ClientStatementLineDto(
+                line.Type,
+                line.Date.ToString("yyyy-MM-dd"),
+                line.Desc,
+                line.Debit,
+                line.Credit,
+                running));
+        }
+
+        return new ClientStatementDto(clientId, clientName, previousBalance, result, running);
+    }
 }

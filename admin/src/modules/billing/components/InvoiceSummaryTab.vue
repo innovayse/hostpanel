@@ -313,7 +313,7 @@ onMounted(() => populateItems())
               v-if="canPay"
               type="button"
               :disabled="markingPaid"
-              class="px-4 py-2 text-[0.82rem] font-semibold text-white bg-primary-500 rounded-[10px] hover:bg-primary-400 transition-colors disabled:opacity-50"
+              class="px-4 py-2 text-[0.82rem] font-semibold text-white gradient-brand rounded-[9px] transition-opacity hover:opacity-90 disabled:opacity-50"
               @click="handleMarkPaid"
             >
               {{ markingPaid ? 'Processing...' : 'Mark Paid' }}
@@ -427,7 +427,7 @@ onMounted(() => populateItems())
             <button
               v-if="withSelectedAction"
               type="button"
-              class="px-3 py-1.5 text-[0.78rem] font-medium text-white bg-primary-500 rounded-lg hover:bg-primary-400 transition-colors"
+              class="px-3 py-1.5 text-[0.78rem] font-medium text-white gradient-brand rounded-[9px] transition-opacity hover:opacity-90"
               @click="handleWithSelected"
             >
               Go

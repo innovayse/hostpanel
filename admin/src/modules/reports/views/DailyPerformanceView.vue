@@ -13,7 +13,7 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const dateRange = ref<[string, string] | null>(null)
 
-const rows = ref<{ date: string; completedOrders: number; newInvoices: number; paidInvoices: number; failedGateways: number; ticketReplies: number; cancellations: number }[]>([])
+const rows = ref<{ date: string; completedOrders: number; newInvoices: number; paidInvoices: number; openedTickets: number; ticketReplies: number; cancellationRequests: number }[]>([])
 
 const chartData = ref({
   labels: [] as string[],
@@ -21,8 +21,9 @@ const chartData = ref({
     { label: 'Completed Orders', data: [] as number[], borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.1)', fill: true, tension: 0.4 },
     { label: 'New Invoices', data: [] as number[], borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.4 },
     { label: 'Paid Invoices', data: [] as number[], borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', fill: true, tension: 0.4 },
-    { label: 'Failed Gateways', data: [] as number[], borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', fill: true, tension: 0.4 },
-    { label: 'Cancellations', data: [] as number[], borderColor: '#ec4899', backgroundColor: 'rgba(236,72,153,0.1)', fill: true, tension: 0.4 },
+    { label: 'Opened Tickets', data: [] as number[], borderColor: '#06b6d4', backgroundColor: 'rgba(6,182,212,0.1)', fill: true, tension: 0.4 },
+    { label: 'Ticket Replies', data: [] as number[], borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.1)', fill: true, tension: 0.4 },
+    { label: 'Cancellation Requests', data: [] as number[], borderColor: '#ec4899', backgroundColor: 'rgba(236,72,153,0.1)', fill: true, tension: 0.4 },
   ],
 })
 
@@ -46,8 +47,9 @@ async function load() {
     chartData.value.datasets[0].data = data.map(r => r.completedOrders)
     chartData.value.datasets[1].data = data.map(r => r.newInvoices)
     chartData.value.datasets[2].data = data.map(r => r.paidInvoices)
-    chartData.value.datasets[3].data = data.map(r => r.failedGateways)
-    chartData.value.datasets[4].data = data.map(r => r.cancellations)
+    chartData.value.datasets[3].data = data.map(r => r.openedTickets)
+    chartData.value.datasets[4].data = data.map(r => r.ticketReplies)
+    chartData.value.datasets[5].data = data.map(r => r.cancellationRequests)
   } catch { error.value = 'Failed to load report.' } finally { loading.value = false }
 }
 
@@ -76,17 +78,18 @@ onMounted(load)
     </div>
 
     <div class="bg-surface-card border border-border rounded-2xl overflow-hidden">
-      <div class="grid grid-cols-6 gap-4 px-5 py-3 border-b border-border bg-white/[0.02]">
-        <span v-for="h in ['Date','Completed Orders','New Invoices','Paid Invoices','Failed Gateways','Cancellations']" :key="h" class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">{{ h }}</span>
+      <div class="grid grid-cols-7 gap-4 px-5 py-3 border-b border-border bg-white/[0.02]">
+        <span v-for="h in ['Date','Completed Orders','New Invoices','Paid Invoices','Opened Tickets','Ticket Replies','Cancellation Requests']" :key="h" class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">{{ h }}</span>
       </div>
       <div v-if="rows.length === 0" class="px-5 py-8 text-center text-text-secondary text-[0.82rem]">No data found.</div>
-      <div v-for="row in rows" :key="row.date" class="grid grid-cols-6 gap-4 px-5 py-3 border-b border-border last:border-0 hover:bg-white/[0.02] transition-colors text-[0.82rem]">
+      <div v-for="row in rows" :key="row.date" class="grid grid-cols-7 gap-4 px-5 py-3 border-b border-border last:border-0 hover:bg-white/[0.02] transition-colors text-[0.82rem]">
         <span class="text-text-muted font-mono">{{ row.date }}</span>
         <span>{{ row.completedOrders }}</span>
         <span>{{ row.newInvoices }}</span>
         <span class="text-status-green">{{ row.paidInvoices }}</span>
-        <span class="text-status-red">{{ row.failedGateways }}</span>
-        <span>{{ row.cancellations }}</span>
+        <span>{{ row.openedTickets }}</span>
+        <span>{{ row.ticketReplies }}</span>
+        <span>{{ row.cancellationRequests }}</span>
       </div>
     </div>
   </ReportPage>

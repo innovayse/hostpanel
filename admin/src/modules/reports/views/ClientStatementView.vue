@@ -24,10 +24,8 @@ function fmt(n: number) { return `$${n.toFixed(2)}` }
 async function loadClients() {
   clientsLoading.value = true
   try {
-    const res = await request<{ id: number; firstName: string; lastName: string; email: string }[]>('/clients')
-    clientOptions.value = res.map(c => ({ id: c.id, name: `${c.firstName} ${c.lastName}`, email: c.email }))
-    if (clientOptions.value.length > 0 && !selectedClient.value)
-      selectedClient.value = String(clientOptions.value[0].id)
+    const res = await request<{ id: number; name: string }[]>('/reports/client-picker')
+    clientOptions.value = res.map(c => ({ id: c.id, name: c.name, email: '' }))
   } catch { /* ignore */ } finally { clientsLoading.value = false }
 }
 
@@ -43,26 +41,24 @@ async function load() {
 
 function printReport() { window.print() }
 
-onMounted(async () => { await loadClients(); await load() })
+onMounted(loadClients)
 </script>
 
 <template>
   <ReportPage title="Client Account Register Balance" description="This report provides a statement of account for individual client accounts." :loading :error>
     <template #filters>
       <div class="bg-surface-card border border-border rounded-2xl p-4 mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-          <div>
+        <div class="flex items-end gap-3">
+          <div class="flex-1">
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Select Client</label>
             <AppClientSelect v-model="selectedClient" :clients="clientOptions" placeholder="Select a client..." />
           </div>
-          <div>
+          <div class="flex-1">
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Date Range</label>
             <DateRangePicker v-model="dateRange" />
           </div>
-          <div class="flex gap-3">
-            <button class="px-4 py-2 gradient-brand text-white text-[0.82rem] font-semibold rounded-[9px] transition-opacity hover:opacity-90" @click="load">Generate</button>
-            <button class="px-4 py-2 bg-white/[0.04] border border-border text-text-secondary text-[0.82rem] font-medium rounded-[10px] hover:bg-white/[0.08] transition-colors" @click="printReport">Print</button>
-          </div>
+          <button class="px-5 py-2 gradient-brand text-white text-[0.82rem] font-semibold rounded-[9px] transition-opacity hover:opacity-90 shrink-0" @click="load">Generate</button>
+          <button class="px-4 py-2 bg-white/[0.04] border border-border text-text-secondary text-[0.78rem] font-medium rounded-[9px] hover:bg-white/[0.08] transition-colors shrink-0" @click="printReport">Print</button>
         </div>
       </div>
     </template>

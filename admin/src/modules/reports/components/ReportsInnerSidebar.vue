@@ -14,6 +14,7 @@ function isActive(slug: string): boolean {
 function iconFor(name: string): string {
   return REPORT_ICONS[name] ?? REPORT_ICONS['bar-chart']
 }
+
 </script>
 
 <template>

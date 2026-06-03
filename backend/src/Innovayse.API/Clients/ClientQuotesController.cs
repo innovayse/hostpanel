@@ -65,11 +65,12 @@ public sealed class ClientQuotesController(IMessageBus bus) : ControllerBase
         [FromBody] CreateQuoteRequest request, CancellationToken ct)
     {
         var items = request.Items
-            .Select(i => new QuoteItemRequest(i.Description, i.UnitPrice, i.Quantity))
+            .Select(i => new QuoteItemRequest(i.Description, i.UnitPrice, i.Quantity, i.DiscountPercent, i.Taxed))
             .ToList();
 
         var cmd = new CreateQuoteCommand(
-            request.ClientId, request.Subject, request.ExpiryDate, request.Notes, items);
+            request.ClientId, request.Subject, request.ValidUntil, request.Notes, items,
+            request.ProposalText, request.CustomerNotes, request.AdminNotes);
 
         var id = await bus.InvokeAsync<int>(cmd, ct);
         return StatusCode(StatusCodes.Status201Created, id);
@@ -87,11 +88,12 @@ public sealed class ClientQuotesController(IMessageBus bus) : ControllerBase
     {
         var items = request.Items
             .Select(i => new UpdateQuoteItemEntry(
-                i.Id, i.Description, i.UnitPrice, i.Quantity, i.IsDeleted))
+                i.Id, i.Description, i.UnitPrice, i.Quantity, i.DiscountPercent, i.Taxed, i.IsDeleted))
             .ToList();
 
         var cmd = new UpdateQuoteCommand(
-            id, request.Subject, request.Status, request.ExpiryDate, request.Notes, items);
+            id, request.Subject, request.Stage, request.ValidUntil, request.Notes,
+            request.ProposalText, request.CustomerNotes, request.AdminNotes, items);
 
         await bus.InvokeAsync(cmd, ct);
         return NoContent();

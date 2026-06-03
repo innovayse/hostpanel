@@ -978,7 +978,7 @@ export interface BillableItemsResult {
 }
 
 /** Quote stage values. */
-export type QuoteStage = 'Draft' | 'Delivered' | 'OnHold' | 'Accepted' | 'Lost' | 'Dead'
+export type QuoteStage = 'Draft' | 'Delivered' | 'OnHold' | 'Accepted' | 'Lost' | 'Expired' | 'Dead'
 
 /** Quote list item returned by the list endpoint. */
 export interface QuoteListItem {

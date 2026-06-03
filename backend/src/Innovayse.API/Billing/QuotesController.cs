@@ -1,7 +1,11 @@
 namespace Innovayse.API.Billing;
 
 using Innovayse.API.Billing.Requests;
+using Innovayse.Application.Billing.Commands.ConvertQuoteToInvoice;
 using Innovayse.Application.Billing.Commands.CreateQuote;
+using Innovayse.Application.Billing.Commands.DeleteQuote;
+using Innovayse.Application.Billing.Commands.DuplicateQuote;
+using Innovayse.Application.Billing.Commands.UpdateQuote;
 using Innovayse.Application.Billing.DTOs;
 using Innovayse.Application.Billing.Queries.GetQuote;
 using Innovayse.Application.Billing.Queries.ListClientQuotes;
@@ -77,17 +81,73 @@ public sealed class QuotesController(IMessageBus bus) : ControllerBase
         CancellationToken ct)
     {
         var items = request.Items
-            .Select(i => new QuoteItemRequest(i.Description, i.UnitPrice, i.Quantity))
+            .Select(i => new QuoteItemRequest(i.Description, i.UnitPrice, i.Quantity, i.DiscountPercent, i.Taxed))
             .ToList();
 
         var cmd = new CreateQuoteCommand(
             request.ClientId,
             request.Subject,
-            request.ExpiryDate,
+            request.ValidUntil,
             request.Notes,
-            items);
+            items,
+            request.ProposalText,
+            request.CustomerNotes,
+            request.AdminNotes);
 
         var id = await bus.InvokeAsync<int>(cmd, ct);
         return StatusCode(StatusCodes.Status201Created, id);
+    }
+
+    /// <summary>Updates an existing quote's details and line items.</summary>
+    /// <param name="id">Quote primary key.</param>
+    /// <param name="request">Updated quote data.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 No Content on success.</returns>
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> UpdateAsync(
+        int id,
+        [FromBody] UpdateQuoteRequest request,
+        CancellationToken ct)
+    {
+        var items = request.Items
+            .Select(i => new UpdateQuoteItemEntry(i.Id, i.Description, i.UnitPrice, i.Quantity, i.DiscountPercent, i.Taxed, i.IsDeleted))
+            .ToList();
+
+        var cmd = new UpdateQuoteCommand(id, request.Subject, request.Stage, request.ValidUntil, request.Notes, request.ProposalText, request.CustomerNotes, request.AdminNotes, items);
+        await bus.InvokeAsync(cmd, ct);
+        return NoContent();
+    }
+
+    /// <summary>Duplicates an existing quote as a new draft.</summary>
+    /// <param name="id">Quote primary key to duplicate.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>201 Created with the new quote ID.</returns>
+    [HttpPost("{id:int}/duplicate")]
+    public async Task<ActionResult<int>> DuplicateAsync(int id, CancellationToken ct)
+    {
+        var newId = await bus.InvokeAsync<int>(new DuplicateQuoteCommand(id), ct);
+        return StatusCode(StatusCodes.Status201Created, newId);
+    }
+
+    /// <summary>Converts a quote into a draft invoice.</summary>
+    /// <param name="id">Quote primary key to convert.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>201 Created with the new invoice ID.</returns>
+    [HttpPost("{id:int}/convert-to-invoice")]
+    public async Task<ActionResult<int>> ConvertToInvoiceAsync(int id, CancellationToken ct)
+    {
+        var invoiceId = await bus.InvokeAsync<int>(new ConvertQuoteToInvoiceCommand(id), ct);
+        return StatusCode(StatusCodes.Status201Created, invoiceId);
+    }
+
+    /// <summary>Permanently deletes a quote.</summary>
+    /// <param name="id">Quote primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 No Content on success.</returns>
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> DeleteAsync(int id, CancellationToken ct)
+    {
+        await bus.InvokeAsync(new DeleteQuoteCommand(id), ct);
+        return NoContent();
     }
 }

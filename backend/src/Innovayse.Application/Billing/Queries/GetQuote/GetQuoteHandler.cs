@@ -27,6 +27,8 @@ public sealed class GetQuoteHandler(IQuoteRepository repo, IClientRepository cli
             item.Description,
             item.UnitPrice,
             item.Quantity,
+            item.DiscountPercent,
+            item.Taxed,
             item.Amount))
             .ToList();
 
@@ -35,11 +37,15 @@ public sealed class GetQuoteHandler(IQuoteRepository repo, IClientRepository cli
             quote.ClientId,
             clientName,
             quote.Subject,
-            quote.Status,
+            quote.Stage,
+            quote.CreatedAt,
             quote.ExpiryDate,
             quote.Notes,
+            quote.ProposalText,
+            quote.CustomerNotes,
+            quote.AdminNotes,
             quote.Total,
-            quote.CreatedAt,
+            quote.Total,
             itemDtos);
     }
 }

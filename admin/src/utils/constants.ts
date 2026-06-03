@@ -143,6 +143,7 @@ export const QUOTE_STAGE_OPTIONS = [
   { value: 'OnHold', label: 'On Hold' },
   { value: 'Accepted', label: 'Accepted' },
   { value: 'Lost', label: 'Lost' },
+  { value: 'Expired', label: 'Expired' },
   { value: 'Dead', label: 'Dead' },
 ]
 
@@ -153,6 +154,7 @@ export const QUOTE_STAGE_STYLES: Record<string, string> = {
   OnHold: 'text-status-yellow bg-status-yellow/10 border-status-yellow/20',
   Accepted: 'text-status-green bg-status-green/10 border-status-green/20',
   Lost: 'text-status-red bg-status-red/10 border-status-red/20',
+  Expired: 'text-status-yellow bg-status-yellow/10 border-status-yellow/20',
   Dead: 'text-text-muted bg-white/[0.04] border-border',
 }
 

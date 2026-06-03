@@ -33,7 +33,7 @@ public sealed class ListQuotesHandler(IQuoteRepository repo, IClientRepository c
             q.CreatedAt,
             q.ExpiryDate,
             q.Total,
-            q.Status))
+            q.Stage))
             .ToList();
 
         return new PagedResult<QuoteListItemDto>(dtos, total, page, pageSize);

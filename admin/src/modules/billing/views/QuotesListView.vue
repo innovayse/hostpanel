@@ -5,31 +5,22 @@ import AppSelect from '../../../components/AppSelect.vue'
 import AppClientSelect from '../../../components/AppClientSelect.vue'
 import AppSpinner from '../../../components/AppSpinner.vue'
 import DateRangePicker from '../../../components/DateRangePicker.vue'
-import { useQuotesStore } from '../stores/quotesStore'
+import { useQuoteStore } from '../stores/quoteStore'
 
-const store = useQuotesStore()
+const store = useQuoteStore()
 const router = useRouter()
 const page = ref(1)
 const isFilterOpen = ref(false)
 const clients = ref<{ id: number; name: string; email?: string; status?: string }[]>([])
 
-const statusOptions = [
-  { value: 'any', label: 'Any' },
-  { value: 'Draft', label: 'Draft' },
-  { value: 'Sent', label: 'Sent' },
-  { value: 'Accepted', label: 'Accepted' },
-  { value: 'Declined', label: 'Declined' },
-  { value: 'Expired', label: 'Expired' },
-  { value: 'Cancelled', label: 'Cancelled' },
-]
-
 const stageOptions = [
   { value: 'any', label: 'Any' },
   { value: 'Draft', label: 'Draft' },
   { value: 'Delivered', label: 'Delivered' },
-  { value: 'On Hold', label: 'On Hold' },
+  { value: 'OnHold', label: 'On Hold' },
   { value: 'Accepted', label: 'Accepted' },
   { value: 'Lost', label: 'Lost' },
+  { value: 'Expired', label: 'Expired' },
   { value: 'Dead', label: 'Dead' },
 ]
 
@@ -41,11 +32,12 @@ const validityPeriodOptions = [
 
 const statusColorMap = {
   'Draft': 'bg-primary-500/15 text-primary-400',
-  'Sent': 'bg-status-blue/15 text-status-blue',
+  'Delivered': 'bg-status-blue/15 text-status-blue',
+  'OnHold': 'bg-status-yellow/15 text-status-yellow',
   'Accepted': 'bg-status-green/15 text-status-green',
-  'Declined': 'bg-status-red/15 text-status-red',
+  'Lost': 'bg-status-red/15 text-status-red',
   'Expired': 'bg-text-muted/15 text-text-muted',
-  'Cancelled': 'bg-status-red/15 text-status-red'
+  'Dead': 'bg-text-muted/15 text-text-muted',
 }
 
 const filters = ref({
@@ -59,10 +51,10 @@ const filteredQuotes = computed(() => {
   return store.quotes.filter(quote => {
     if (filters.value.clientId && String(quote.clientId) !== String(filters.value.clientId)) return false
     if (filters.value.subject && !quote.subject.toLowerCase().includes(filters.value.subject.toLowerCase())) return false
-    if (filters.value.stage !== 'any' && quote.status !== filters.value.stage) return false
+    if (filters.value.stage !== 'any' && quote.stage !== filters.value.stage) return false
 
     if (filters.value.validityPeriod !== 'any') {
-      const expiryDate = new Date(quote.expiryDate)
+      const expiryDate = new Date(quote.validUntil)
       const today = new Date()
       const isExpired = expiryDate < today
       if (filters.value.validityPeriod === 'expired' && !isExpired) return false
@@ -290,18 +282,18 @@ onMounted(() => {
 
           <span>
             <span
-              :class="statusColorMap[quote.status as keyof typeof statusColorMap] || 'bg-text-muted/15 text-text-muted'"
+              :class="statusColorMap[quote.stage as keyof typeof statusColorMap] || 'bg-text-muted/15 text-text-muted'"
               class="px-2 py-1 rounded-full text-[0.72rem] font-medium inline-block"
             >
-              {{ quote.status }}
+              {{ quote.stage }}
             </span>
           </span>
 
           <span class="text-[0.82rem] font-medium text-text-primary">{{ quote.total.toFixed(2) }} USD</span>
 
-          <span class="text-[0.82rem] text-text-muted">{{ new Date(quote.expiryDate).toLocaleDateString() }}</span>
+          <span class="text-[0.82rem] text-text-muted">{{ new Date(quote.validUntil).toLocaleDateString() }}</span>
 
-          <span class="text-[0.82rem] text-text-muted">{{ new Date(quote.createdAt).toLocaleDateString() }}</span>
+          <span class="text-[0.82rem] text-text-muted">{{ new Date(quote.dateCreated).toLocaleDateString() }}</span>
         </div>
       </template>
 

@@ -15,11 +15,11 @@ public sealed class CreateQuoteHandler(IQuoteRepository repo, IUnitOfWork uow)
     /// <returns>The newly created quote ID.</returns>
     public async Task<int> HandleAsync(CreateQuoteCommand cmd, CancellationToken ct)
     {
-        var quote = Quote.Create(cmd.ClientId, cmd.Subject, cmd.ExpiryDate, cmd.Notes);
+        var quote = Quote.Create(cmd.ClientId, cmd.Subject, cmd.ExpiryDate, cmd.Notes, cmd.ProposalText, cmd.CustomerNotes, cmd.AdminNotes);
 
         foreach (var item in cmd.Items)
         {
-            quote.AddItem(item.Description, item.UnitPrice, item.Quantity);
+            quote.AddItem(item.Description, item.UnitPrice, item.Quantity, item.DiscountPercent, item.Taxed);
         }
 
         repo.Add(quote);

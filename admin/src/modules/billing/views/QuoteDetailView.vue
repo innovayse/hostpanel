@@ -152,6 +152,7 @@ function populateForm(): void {
  * @returns Promise that resolves when save completes.
  */
 async function handleSave(): Promise<void> {
+  store.successMessage = null
   if (isNew.value) {
     const cid = Number(queryClientId.value || 0)
     if (!cid) {
@@ -203,6 +204,7 @@ async function handleSave(): Promise<void> {
  * @returns Promise that resolves when duplication completes.
  */
 async function handleDuplicate(): Promise<void> {
+  store.successMessage = null
   const newId = await store.duplicateQuote(quoteId.value)
   if (newId) {
     router.push(`/billing/quotes/${newId}`)
@@ -303,6 +305,11 @@ onMounted(() => {
           >
             {{ stageLabel(stage) }}
           </span>
+        </div>
+
+        <!-- Success feedback -->
+        <div v-if="store.successMessage" class="px-4 py-2.5 text-[0.82rem] text-status-green bg-status-green/10 border border-status-green/20 rounded-xl">
+          {{ store.successMessage }}
         </div>
 
         <!-- Error feedback -->

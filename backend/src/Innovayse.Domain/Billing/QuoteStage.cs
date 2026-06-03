@@ -18,6 +18,9 @@ public enum QuoteStage
     /// <summary>Quote was not accepted and the opportunity is lost.</summary>
     Lost,
 
+    /// <summary>Quote expiry date has passed and it is no longer valid.</summary>
+    Expired,
+
     /// <summary>Quote has been permanently abandoned.</summary>
     Dead,
 }

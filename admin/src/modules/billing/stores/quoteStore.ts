@@ -95,7 +95,7 @@ export const useQuoteStore = defineStore('quotes', () => {
     loading.value = true
     error.value = null
     try {
-      currentQuote.value = await request<Quote>(`/quotes/${id}`)
+      currentQuote.value = await request<Quote>(`/billing/quotes/${id}`)
     } catch {
       error.value = 'Failed to load quote.'
     } finally {
@@ -122,7 +122,7 @@ export const useQuoteStore = defineStore('quotes', () => {
     loading.value = true
     error.value = null
     try {
-      const result = await request<{ id: number }>('/quotes', {
+      const result = await request<{ id: number }>('/billing/quotes', {
         method: 'POST',
         body: JSON.stringify(payload),
       })
@@ -157,7 +157,7 @@ export const useQuoteStore = defineStore('quotes', () => {
     loading.value = true
     error.value = null
     try {
-      await request(`/quotes/${id}`, {
+      await request(`/billing/quotes/${id}`, {
         method: 'PUT',
         body: JSON.stringify(payload),
       })
@@ -179,7 +179,7 @@ export const useQuoteStore = defineStore('quotes', () => {
     loading.value = true
     error.value = null
     try {
-      const result = await request<{ id: number }>(`/quotes/${id}/duplicate`, { method: 'POST' })
+      const result = await request<{ id: number }>(`/billing/quotes/${id}/duplicate`, { method: 'POST' })
       return result.id
     } catch {
       error.value = 'Failed to duplicate quote.'
@@ -199,7 +199,7 @@ export const useQuoteStore = defineStore('quotes', () => {
     loading.value = true
     error.value = null
     try {
-      const result = await request<{ id: number }>(`/quotes/${id}/convert-to-invoice`, { method: 'POST' })
+      const result = await request<{ id: number }>(`/billing/quotes/${id}/convert-to-invoice`, { method: 'POST' })
       return result.id
     } catch {
       error.value = 'Failed to convert quote to invoice.'
@@ -219,7 +219,7 @@ export const useQuoteStore = defineStore('quotes', () => {
     loading.value = true
     error.value = null
     try {
-      await request(`/quotes/${id}`, { method: 'DELETE' })
+      await request(`/billing/quotes/${id}`, { method: 'DELETE' })
     } catch {
       error.value = 'Failed to delete quote.'
     } finally {

@@ -9,12 +9,13 @@ import AppDatePickerFuture from '../../../components/AppDatePickerFuture.vue'
 import AppPhoneInput from '../../../components/AppPhoneInput.vue'
 import AppCountrySelect from '../../../components/AppCountrySelect.vue'
 import AppCheckbox from '../../../components/AppCheckbox.vue'
-import { useQuotesStore } from '../stores/quotesStore'
+import { useQuoteStore } from '../stores/quoteStore'
+import type { QuoteStage } from '../../../types/models'
 import { useApi } from '../../../composables/useApi'
 
 const route = useRoute()
 const router = useRouter()
-const store = useQuotesStore()
+const store = useQuoteStore()
 const { request } = useApi()
 
 const clients = ref<{ id: number; name: string; email?: string; status?: string }[]>([])
@@ -142,18 +143,24 @@ function calculateTotal(): number {
 
 async function submit() {
   try {
-    await store.create({
+    const id = await store.createQuote({
       clientId: parseInt(form.value.clientId),
       subject: form.value.subject,
-      expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      notes: form.value.proposalText,
+      stage: form.value.stage as QuoteStage,
+      validUntil: form.value.validUntil || '',
+      proposalText: form.value.proposalText || undefined,
+      customerNotes: form.value.customNotes || undefined,
+      adminNotes: form.value.termsAndConditions || undefined,
       items: form.value.lineItems.map(item => ({
+        quantity: item.quantity,
         description: item.description,
         unitPrice: item.unitPrice,
-        quantity: item.quantity
-      }))
+        discountPercent: item.discount,
+        taxed: item.taxed,
+      })),
     })
-    router.push('/billing/quotes')
+    if (id) router.push(`/billing/quotes/${id}`)
+    else router.push('/billing/quotes')
   } catch (e) {
     console.error(e)
   }
@@ -230,51 +237,9 @@ onMounted(() => {
         <div class="flex items-center justify-start gap-2 pt-4 border-t border-border flex-wrap">
           <button
             type="submit"
-            class="px-4 py-2 text-[0.82rem] font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded transition-colors"
+            class="gradient-brand px-5 py-2 text-[0.84rem] font-semibold text-white rounded-[10px] transition-opacity hover:opacity-90"
           >
-            Save Changes
-          </button>
-          <button
-            type="button"
-            class="px-4 py-2 text-[0.82rem] font-semibold text-text-primary border border-border rounded hover:bg-white/[0.05] transition-colors"
-          >
-            Duplicate
-          </button>
-          <button
-            type="button"
-            class="px-4 py-2 text-[0.82rem] font-semibold text-text-primary border border-border rounded hover:bg-white/[0.05] transition-colors"
-          >
-            Printable Version
-          </button>
-          <button
-            type="button"
-            class="px-4 py-2 text-[0.82rem] font-semibold text-text-primary border border-border rounded hover:bg-white/[0.05] transition-colors"
-          >
-            View PDF
-          </button>
-          <button
-            type="button"
-            class="px-4 py-2 text-[0.82rem] font-semibold text-text-primary border border-border rounded hover:bg-white/[0.05] transition-colors"
-          >
-            Download PDF
-          </button>
-          <button
-            type="button"
-            class="px-4 py-2 text-[0.82rem] font-semibold text-text-primary border border-border rounded hover:bg-white/[0.05] transition-colors"
-          >
-            Email as PDF
-          </button>
-          <button
-            type="button"
-            class="px-4 py-2 text-[0.82rem] font-semibold text-text-primary border border-border rounded hover:bg-white/[0.05] transition-colors"
-          >
-            Convert to Invoice
-          </button>
-          <button
-            type="button"
-            class="px-4 py-2 text-[0.82rem] font-semibold text-white bg-status-red hover:bg-status-red/90 rounded transition-colors ml-auto"
-          >
-            Delete
+            Create Quote
           </button>
         </div>
       </div>
@@ -592,51 +557,9 @@ onMounted(() => {
         <div class="flex items-center gap-2 flex-wrap">
           <button
             type="submit"
-            class="px-4 py-2 text-[0.82rem] font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded transition-colors"
+            class="gradient-brand px-5 py-2 text-[0.84rem] font-semibold text-white rounded-[10px] transition-opacity hover:opacity-90"
           >
-            Save Changes
-          </button>
-          <button
-            type="button"
-            class="px-4 py-2 text-[0.82rem] font-semibold text-text-primary border border-border rounded hover:bg-white/[0.05] transition-colors"
-          >
-            Duplicate
-          </button>
-          <button
-            type="button"
-            class="px-4 py-2 text-[0.82rem] font-semibold text-text-primary border border-border rounded hover:bg-white/[0.05] transition-colors"
-          >
-            Printable Version
-          </button>
-          <button
-            type="button"
-            class="px-4 py-2 text-[0.82rem] font-semibold text-text-primary border border-border rounded hover:bg-white/[0.05] transition-colors"
-          >
-            View PDF
-          </button>
-          <button
-            type="button"
-            class="px-4 py-2 text-[0.82rem] font-semibold text-text-primary border border-border rounded hover:bg-white/[0.05] transition-colors"
-          >
-            Download PDF
-          </button>
-          <button
-            type="button"
-            class="px-4 py-2 text-[0.82rem] font-semibold text-text-primary border border-border rounded hover:bg-white/[0.05] transition-colors"
-          >
-            Email as PDF
-          </button>
-          <button
-            type="button"
-            class="px-4 py-2 text-[0.82rem] font-semibold text-text-primary border border-border rounded hover:bg-white/[0.05] transition-colors"
-          >
-            Convert to Invoice
-          </button>
-          <button
-            type="button"
-            class="px-4 py-2 text-[0.82rem] font-semibold text-white bg-status-red hover:bg-status-red/90 rounded transition-colors ml-auto"
-          >
-            Delete
+            Create Quote
           </button>
         </div>
       </div>

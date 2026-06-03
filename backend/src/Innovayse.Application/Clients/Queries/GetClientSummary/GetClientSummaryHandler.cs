@@ -78,7 +78,7 @@ public sealed class GetClientSummaryHandler(
             ActiveServicesCount: services.Count(s => s.Status == ServiceStatus.Active),
             TotalServicesCount: services.Count,
             TotalDomainsCount: domains.Count,
-            AcceptedQuotesCount: quotes.Count(q => q.Status == QuoteStatus.Accepted),
+            AcceptedQuotesCount: quotes.Count(q => q.Stage == QuoteStage.Accepted),
             TotalQuotesCount: quotes.Count,
             OpenTicketsCount: tickets.Count(t => t.Status == TicketStatus.Open),
             TotalTicketsCount: tickets.Count,

@@ -25,7 +25,7 @@ public sealed class ListClientQuotesHandler(IQuoteRepository repo, IClientReposi
         var clientName = client is not null ? $"{client.FirstName} {client.LastName}" : "Unknown";
 
         var dtos = items.Select(q => new QuoteListItemDto(
-            q.Id, q.ClientId, clientName, q.Subject, q.CreatedAt, q.ExpiryDate, q.Total, q.Status))
+            q.Id, q.ClientId, clientName, q.Subject, q.CreatedAt, q.ExpiryDate, q.Total, q.Stage))
             .ToList();
 
         return new PagedResult<QuoteListItemDto>(dtos, total, page, pageSize);

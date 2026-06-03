@@ -19,14 +19,23 @@ public sealed class Quote : AggregateRoot
     /// <summary>Gets the quote subject/title.</summary>
     public string Subject { get; private set; } = null!;
 
-    /// <summary>Gets the current lifecycle status.</summary>
-    public QuoteStatus Status { get; private set; }
+    /// <summary>Gets the current lifecycle stage.</summary>
+    public QuoteStage Stage { get; private set; }
 
     /// <summary>Gets the quote expiry date (UTC).</summary>
     public DateTimeOffset ExpiryDate { get; private set; }
 
     /// <summary>Gets optional notes or terms for the quote.</summary>
     public string? Notes { get; private set; }
+
+    /// <summary>Gets the proposal text displayed at the top of the quote.</summary>
+    public string? ProposalText { get; private set; }
+
+    /// <summary>Gets the customer-facing notes displayed as a footer.</summary>
+    public string? CustomerNotes { get; private set; }
+
+    /// <summary>Gets the admin-only internal notes (not visible to client).</summary>
+    public string? AdminNotes { get; private set; }
 
     /// <summary>Gets the running total of all line items.</summary>
     public decimal Total { get; private set; }
@@ -47,16 +56,22 @@ public sealed class Quote : AggregateRoot
     /// <param name="subject">Quote subject/title.</param>
     /// <param name="expiryDate">Quote expiry date (UTC).</param>
     /// <param name="notes">Optional notes or terms.</param>
-    /// <returns>A new <see cref="Quote"/> with <see cref="QuoteStatus.Draft"/> status.</returns>
-    public static Quote Create(int clientId, string subject, DateTimeOffset expiryDate, string? notes = null)
+    /// <param name="proposalText">Optional proposal text shown at the top.</param>
+    /// <param name="customerNotes">Optional customer-facing footer notes.</param>
+    /// <param name="adminNotes">Optional admin-only internal notes.</param>
+    /// <returns>A new <see cref="Quote"/> with <see cref="QuoteStage.Draft"/> stage.</returns>
+    public static Quote Create(int clientId, string subject, DateTimeOffset expiryDate, string? notes = null, string? proposalText = null, string? customerNotes = null, string? adminNotes = null)
     {
         return new Quote
         {
             ClientId = clientId,
             Subject = subject,
-            Status = QuoteStatus.Draft,
+            Stage = QuoteStage.Draft,
             ExpiryDate = expiryDate,
             Notes = notes,
+            ProposalText = proposalText,
+            CustomerNotes = customerNotes,
+            AdminNotes = adminNotes,
             Total = 0m,
             CreatedAt = DateTimeOffset.UtcNow,
         };
@@ -68,101 +83,131 @@ public sealed class Quote : AggregateRoot
     /// <param name="description">Human-readable charge description.</param>
     /// <param name="unitPrice">Price per unit (≥ 0).</param>
     /// <param name="quantity">Number of units (≥ 1).</param>
-    /// <exception cref="InvalidOperationException">Thrown when the quote is not in an editable status.</exception>
-    public void AddItem(string description, decimal unitPrice, int quantity)
+    /// <param name="discountPercent">Discount percentage (0–100). Defaults to 0.</param>
+    /// <param name="taxed">Whether this item is taxed. Defaults to false.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the quote is not in an editable stage.</exception>
+    public void AddItem(string description, decimal unitPrice, int quantity, decimal discountPercent = 0, bool taxed = false)
     {
-        if (Status is not (QuoteStatus.Draft or QuoteStatus.Sent))
+        if (Stage is not (QuoteStage.Draft or QuoteStage.Delivered or QuoteStage.OnHold))
         {
-            throw new InvalidOperationException($"Cannot add items to a quote with status {Status}.");
+            throw new InvalidOperationException($"Cannot add items to a quote with stage {Stage}.");
         }
 
-        var item = QuoteItem.Create(description, unitPrice, quantity);
+        var item = QuoteItem.Create(description, unitPrice, quantity, discountPercent, taxed);
         _items.Add(item);
         Total += item.Amount;
     }
 
     /// <summary>
-    /// Sends the quote to the client (Draft → Sent).
+    /// Delivers the quote to the client (Draft → Delivered).
     /// </summary>
-    /// <exception cref="InvalidOperationException">Thrown when the quote is not in Draft status.</exception>
-    public void Send()
+    /// <exception cref="InvalidOperationException">Thrown when the quote is not in Draft stage.</exception>
+    public void Deliver()
     {
-        if (Status != QuoteStatus.Draft)
+        if (Stage != QuoteStage.Draft)
         {
-            throw new InvalidOperationException($"Only Draft quotes can be sent; current status is {Status}.");
+            throw new InvalidOperationException($"Only Draft quotes can be delivered; current stage is {Stage}.");
         }
 
-        Status = QuoteStatus.Sent;
+        Stage = QuoteStage.Delivered;
+    }
+
+    /// <summary>
+    /// Puts the quote on hold.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown when the quote cannot be put on hold.</exception>
+    public void PutOnHold()
+    {
+        if (Stage is not (QuoteStage.Draft or QuoteStage.Delivered))
+        {
+            throw new InvalidOperationException($"Only Draft or Delivered quotes can be put on hold; current stage is {Stage}.");
+        }
+
+        Stage = QuoteStage.OnHold;
     }
 
     /// <summary>
     /// Marks the quote as accepted by the client.
     /// </summary>
-    /// <exception cref="InvalidOperationException">Thrown when the quote is not in a receivable status.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the quote is not in an acceptable stage.</exception>
     public void Accept()
     {
-        if (Status is not (QuoteStatus.Draft or QuoteStatus.Sent))
+        if (Stage is not (QuoteStage.Draft or QuoteStage.Delivered or QuoteStage.OnHold))
         {
-            throw new InvalidOperationException($"Only Draft or Sent quotes can be accepted; current status is {Status}.");
+            throw new InvalidOperationException($"Only Draft, Delivered, or OnHold quotes can be accepted; current stage is {Stage}.");
         }
 
-        Status = QuoteStatus.Accepted;
+        Stage = QuoteStage.Accepted;
     }
 
     /// <summary>
-    /// Marks the quote as declined by the client.
+    /// Marks the quote as lost (declined by the client).
     /// </summary>
-    /// <exception cref="InvalidOperationException">Thrown when the quote is not in a receivable status.</exception>
-    public void Decline()
+    /// <exception cref="InvalidOperationException">Thrown when the quote cannot be marked as lost.</exception>
+    public void MarkLost()
     {
-        if (Status is QuoteStatus.Accepted or QuoteStatus.Declined or QuoteStatus.Expired or QuoteStatus.Cancelled)
+        if (Stage is QuoteStage.Accepted or QuoteStage.Lost or QuoteStage.Expired or QuoteStage.Dead)
         {
-            throw new InvalidOperationException($"Cannot decline a quote with status {Status}.");
+            throw new InvalidOperationException($"Cannot mark a quote as lost with stage {Stage}.");
         }
 
-        Status = QuoteStatus.Declined;
+        Stage = QuoteStage.Lost;
     }
 
     /// <summary>
     /// Marks the quote as expired.
     /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown when the quote cannot be marked as expired.</exception>
     public void MarkExpired()
     {
-        if (Status is not (QuoteStatus.Draft or QuoteStatus.Sent))
+        if (Stage is not (QuoteStage.Draft or QuoteStage.Delivered or QuoteStage.OnHold))
         {
-            throw new InvalidOperationException($"Only Draft or Sent quotes can be marked expired; current status is {Status}.");
+            throw new InvalidOperationException($"Only Draft, Delivered, or OnHold quotes can be marked expired; current stage is {Stage}.");
         }
 
-        Status = QuoteStatus.Expired;
+        Stage = QuoteStage.Expired;
     }
 
     /// <summary>
-    /// Cancels the quote so it will not be pursued.
+    /// Marks the quote as dead (permanently abandoned).
     /// </summary>
-    public void Cancel()
+    /// <exception cref="InvalidOperationException">Thrown when the quote cannot be marked as dead.</exception>
+    public void MarkDead()
     {
-        if (Status is QuoteStatus.Accepted or QuoteStatus.Declined or QuoteStatus.Expired or QuoteStatus.Cancelled)
+        if (Stage is QuoteStage.Accepted or QuoteStage.Dead)
         {
-            throw new InvalidOperationException($"Cannot cancel a quote with status {Status}.");
+            throw new InvalidOperationException($"Cannot mark a quote as dead with stage {Stage}.");
         }
 
-        Status = QuoteStatus.Cancelled;
+        Stage = QuoteStage.Dead;
     }
 
     /// <summary>
     /// Updates the quote's mutable details.
     /// </summary>
-    public void UpdateDetails(string subject, QuoteStatus status, DateTimeOffset expiryDate, string? notes)
+    /// <param name="subject">New quote subject/title.</param>
+    /// <param name="stage">New lifecycle stage.</param>
+    /// <param name="expiryDate">New expiry date (UTC).</param>
+    /// <param name="notes">Optional notes or terms; null to clear.</param>
+    /// <param name="proposalText">Optional proposal text; null to clear.</param>
+    /// <param name="customerNotes">Optional customer-facing notes; null to clear.</param>
+    /// <param name="adminNotes">Optional admin-only notes; null to clear.</param>
+    public void UpdateDetails(string subject, QuoteStage stage, DateTimeOffset expiryDate, string? notes, string? proposalText = null, string? customerNotes = null, string? adminNotes = null)
     {
         Subject = subject;
-        Status = status;
+        Stage = stage;
         ExpiryDate = expiryDate;
         Notes = notes;
+        ProposalText = proposalText;
+        CustomerNotes = customerNotes;
+        AdminNotes = adminNotes;
     }
 
     /// <summary>
     /// Removes a line item by ID and recalculates <see cref="Total"/>.
     /// </summary>
+    /// <param name="itemId">The ID of the item to remove.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the item is not found.</exception>
     public void RemoveItem(int itemId)
     {
         var item = _items.FirstOrDefault(i => i.Id == itemId)
@@ -174,24 +219,31 @@ public sealed class Quote : AggregateRoot
     /// <summary>
     /// Updates an existing line item and recalculates <see cref="Total"/>.
     /// </summary>
-    public void UpdateItem(int itemId, string description, decimal unitPrice, int quantity)
+    /// <param name="itemId">The ID of the item to update.</param>
+    /// <param name="description">New description.</param>
+    /// <param name="unitPrice">New unit price.</param>
+    /// <param name="quantity">New quantity.</param>
+    /// <param name="discountPercent">New discount percentage (0–100).</param>
+    /// <param name="taxed">Whether this item is taxed.</param>
+    public void UpdateItem(int itemId, string description, decimal unitPrice, int quantity, decimal discountPercent = 0, bool taxed = false)
     {
         var item = _items.FirstOrDefault(i => i.Id == itemId)
             ?? throw new InvalidOperationException($"Quote item {itemId} not found.");
         Total -= item.Amount;
-        item.Update(description, unitPrice, quantity);
+        item.Update(description, unitPrice, quantity, discountPercent, taxed);
         Total += item.Amount;
     }
 
     /// <summary>
     /// Creates a new Draft copy of this quote (with all its line items).
     /// </summary>
+    /// <returns>A new draft <see cref="Quote"/> with copies of all line items.</returns>
     public Quote Duplicate()
     {
-        var copy = Quote.Create(ClientId, Subject, ExpiryDate, Notes);
+        var copy = Quote.Create(ClientId, Subject, ExpiryDate, Notes, ProposalText, CustomerNotes, AdminNotes);
         foreach (var item in _items)
         {
-            copy.AddItem(item.Description, item.UnitPrice, item.Quantity);
+            copy.AddItem(item.Description, item.UnitPrice, item.Quantity, item.DiscountPercent, item.Taxed);
         }
         return copy;
     }
@@ -199,6 +251,7 @@ public sealed class Quote : AggregateRoot
     /// <summary>
     /// Returns the line item data needed to generate an invoice.
     /// </summary>
+    /// <returns>Read-only list of item tuples (Description, UnitPrice, Quantity).</returns>
     public IReadOnlyList<(string Description, decimal UnitPrice, int Quantity)> GetInvoiceItemData()
         => _items.Select(i => (i.Description, i.UnitPrice, i.Quantity)).ToList();
 }

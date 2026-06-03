@@ -6,7 +6,7 @@ using Innovayse.Domain.Billing.Interfaces;
 
 /// <summary>
 /// Converts a quote into a draft invoice by copying its line items.
-/// The quote status is set to <see cref="QuoteStatus.Accepted"/> after conversion.
+/// The quote stage is set to <see cref="QuoteStage.Accepted"/> after conversion.
 /// </summary>
 public sealed class ConvertQuoteToInvoiceHandler(
     IQuoteRepository quoteRepo,

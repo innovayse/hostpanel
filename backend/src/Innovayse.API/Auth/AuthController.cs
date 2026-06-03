@@ -64,8 +64,13 @@ public sealed class AuthController(IMessageBus bus, IUserService userService, IC
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> RegisterAsync([FromBody] RegisterRequest request, CancellationToken ct)
     {
+        var ipAddress = Request.Headers["X-Forwarded-For"].FirstOrDefault()
+            ?? HttpContext.Connection.RemoteIpAddress?.ToString();
+        var userAgent = Request.Headers["X-Real-User-Agent"].FirstOrDefault()
+            ?? Request.Headers.UserAgent.ToString();
+
         var result = await bus.InvokeAsync<AuthWithRefreshDto>(
-            new RegisterCommand(request.Email, request.Password, request.FirstName, request.LastName), ct);
+            new RegisterCommand(request.Email, request.Password, request.FirstName, request.LastName, ipAddress, userAgent), ct);
 
         SetRefreshTokenCookie(result.RefreshToken);
         return Ok(result.Auth);

@@ -15,9 +15,16 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
+    const clientIp = getRequestIP(event, { xForwardedFor: true }) ?? ''
+    const clientUserAgent = getRequestHeader(event, 'user-agent') ?? ''
+
     return await internalApiCall<Record<string, unknown>>(event, '/auth/register', {
       method: 'POST',
-      body: { firstName: firstname, lastName: lastname, email, password }
+      body: { firstName: firstname, lastName: lastname, email, password },
+      headers: {
+        'X-Forwarded-For': clientIp,
+        'X-Real-User-Agent': clientUserAgent,
+      },
     })
   } catch (err: unknown) {
     const e = err as { statusCode?: number; statusMessage?: string }

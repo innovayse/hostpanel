@@ -28,7 +28,9 @@ public sealed class CreateClientOnRegisterHandler(IClientRepository clientRepo, 
             return;
         }
 
-        var client = Client.Create(evt.UserId, evt.FirstName, evt.LastName, evt.Email);
+        var client = Client.Create(evt.UserId, evt.FirstName, evt.LastName, evt.Email,
+            registrationIp: evt.IpAddress, registrationUserAgent: evt.UserAgent,
+            deviceType: evt.DeviceType, operatingSystem: evt.OperatingSystem, browser: evt.Browser);
         clientRepo.Add(client);
         await uow.SaveChangesAsync(ct);
     }

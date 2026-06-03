@@ -3,6 +3,7 @@ namespace Innovayse.API.Reports;
 using System.Text;
 using Innovayse.Application.Reports.DTOs;
 using Innovayse.Application.Reports.Queries.AgingInvoices;
+using Innovayse.Application.Reports.Interfaces;
 using Innovayse.Application.Reports.Queries.AnnualIncome;
 using Innovayse.Application.Reports.Queries.ClientsByCity;
 using Innovayse.Application.Reports.Queries.ClientsByCountry;
@@ -21,7 +22,7 @@ using Wolverine;
 [ApiController]
 [Route("api/reports")]
 [Authorize(Roles = $"{Roles.Admin},{Roles.Reseller}")]
-public sealed class ReportsController(IMessageBus bus) : ControllerBase
+public sealed class ReportsController(IMessageBus bus, IReportRepository reportRepo) : ControllerBase
 {
     /// <summary>Returns daily performance metrics.</summary>
     /// <param name="from">Start date (yyyy-MM-dd). Defaults to 30 days ago.</param>
@@ -59,6 +60,15 @@ public sealed class ReportsController(IMessageBus bus) : ControllerBase
     public async Task<ActionResult<IReadOnlyList<AgingInvoiceDto>>> GetAgingInvoicesAsync(CancellationToken ct)
     {
         var result = await bus.InvokeAsync<IReadOnlyList<AgingInvoiceDto>>(new AgingInvoicesQuery(), ct);
+        return Ok(result);
+    }
+
+    /// <summary>Returns aging invoices summary grouped by period and currency.</summary>
+    [HttpGet("aging-invoices-summary")]
+    public async Task<ActionResult<AgingInvoiceSummaryDto>> GetAgingInvoicesSummaryAsync(CancellationToken ct)
+    {
+        var result = await bus.InvokeAsync<AgingInvoiceSummaryDto>(
+            new AgingInvoicesSummaryQuery(), ct);
         return Ok(result);
     }
 
@@ -206,6 +216,14 @@ public sealed class ReportsController(IMessageBus bus) : ControllerBase
     {
         var result = await bus.InvokeAsync<IReadOnlyList<ClientsByCountryDto>>(
             new ClientsByCountryQuery(), ct);
+        return Ok(result);
+    }
+
+    /// <summary>Returns a lightweight list of clients for dropdown pickers.</summary>
+    [HttpGet("client-picker")]
+    public async Task<ActionResult<IReadOnlyList<ClientPickerDto>>> GetClientPickerAsync(CancellationToken ct)
+    {
+        var result = await reportRepo.GetClientPickerListAsync(ct);
         return Ok(result);
     }
 

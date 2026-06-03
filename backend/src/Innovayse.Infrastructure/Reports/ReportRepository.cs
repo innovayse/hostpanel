@@ -41,6 +41,12 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
             .Select(g => new { Date = new { g.Key.Year, g.Key.Month, g.Key.Day }, Count = g.Count() })
             .ToListAsync(ct);
 
+        var openedTickets = await db.Tickets
+            .Where(t => t.CreatedAt >= fromUtc && t.CreatedAt <= toUtc)
+            .GroupBy(t => new { t.CreatedAt.Year, t.CreatedAt.Month, t.CreatedAt.Day })
+            .Select(g => new { Date = new { g.Key.Year, g.Key.Month, g.Key.Day }, Count = g.Count() })
+            .ToListAsync(ct);
+
         var days = Enumerable.Range(0, to.DayNumber - from.DayNumber + 1).Select(i => from.AddDays(i));
 
         return days.Select(day => new DailyPerformanceDto(
@@ -48,9 +54,9 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
             CompletedOrders: orders.FirstOrDefault(x => x.Date.Year == day.Year && x.Date.Month == day.Month && x.Date.Day == day.Day)?.Count ?? 0,
             NewInvoices: newInvoices.FirstOrDefault(x => x.Date.Year == day.Year && x.Date.Month == day.Month && x.Date.Day == day.Day)?.Count ?? 0,
             PaidInvoices: paidInvoices.FirstOrDefault(x => x.Date.Year == day.Year && x.Date.Month == day.Month && x.Date.Day == day.Day)?.Count ?? 0,
-            FailedGateways: 0,
+            OpenedTickets: openedTickets.FirstOrDefault(x => x.Date.Year == day.Year && x.Date.Month == day.Month && x.Date.Day == day.Day)?.Count ?? 0,
             TicketReplies: 0,
-            Cancellations: cancellations.FirstOrDefault(x => x.Date.Year == day.Year && x.Date.Month == day.Month && x.Date.Day == day.Day)?.Count ?? 0
+            CancellationRequests: cancellations.FirstOrDefault(x => x.Date.Year == day.Year && x.Date.Month == day.Month && x.Date.Day == day.Day)?.Count ?? 0
         )).ToList();
     }
 
@@ -95,6 +101,49 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
                 DaysOutstanding: Math.Max(0, days),
                 Bucket: bucket);
         }).ToList();
+    }
+
+    /// <inheritdoc/>
+    public async Task<AgingInvoiceSummaryDto> GetAgingInvoicesSummaryAsync(CancellationToken ct)
+    {
+        var unpaidStatuses = new[] { InvoiceStatus.Unpaid, InvoiceStatus.Overdue };
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        var invoices = await db.Invoices
+            .Where(i => unpaidStatuses.Contains(i.Status))
+            .Join(db.Clients, inv => inv.ClientId, c => c.Id,
+                (inv, c) => new { inv.Total, inv.DueDate, Currency = c.Currency ?? "USD" })
+            .ToListAsync(ct);
+
+        var periodNames = new[] { "0 - 30", "30 - 60", "60 - 90", "90 - 120", "120 +" };
+        // Always show standard currencies even if no invoices exist for them
+        var defaultCurrencies = new[] { "USD", "EUR", "AMD", "RUB" };
+        var invoiceCurrencies = invoices.Select(x => x.Currency).Distinct();
+        var currencies = defaultCurrencies.Union(invoiceCurrencies).Distinct().OrderBy(c => c).ToList();
+
+        var periods = new List<AgingPeriodDto>();
+        var totals = new Dictionary<string, decimal>();
+        foreach (var c in currencies) totals[c] = 0m;
+
+        foreach (var periodName in periodNames)
+        {
+            var amounts = new Dictionary<string, decimal>();
+            foreach (var c in currencies) amounts[c] = 0m;
+
+            foreach (var inv in invoices)
+            {
+                var due = DateOnly.FromDateTime(inv.DueDate.DateTime);
+                var days = today.DayNumber - due.DayNumber;
+                var bucket = days <= 30 ? "0 - 30" : days <= 60 ? "30 - 60" : days <= 90 ? "60 - 90" : days <= 120 ? "90 - 120" : "120 +";
+                if (bucket != periodName) continue;
+                amounts[inv.Currency] += inv.Total;
+                totals[inv.Currency] += inv.Total;
+            }
+
+            periods.Add(new AgingPeriodDto(periodName, amounts));
+        }
+
+        return new AgingInvoiceSummaryDto(periods, totals, currencies);
     }
 
     /// <inheritdoc/>
@@ -360,6 +409,15 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
             .ToListAsync(ct);
 
         return grouped;
+    }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<ClientPickerDto>> GetClientPickerListAsync(CancellationToken ct)
+    {
+        return await db.Clients
+            .OrderBy(c => c.FirstName).ThenBy(c => c.LastName)
+            .Select(c => new ClientPickerDto(c.Id, c.FirstName + " " + c.LastName))
+            .ToListAsync(ct);
     }
 
     /// <inheritdoc/>

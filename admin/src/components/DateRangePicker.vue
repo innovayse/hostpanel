@@ -423,7 +423,7 @@ const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
     />
 
     <!-- Popup -->
-    <div v-if="isOpen" class="absolute top-full mt-2 right-0 z-50 bg-surface-card rounded-[10px] shadow-2xl p-0 w-[900px] border border-border">
+    <div v-if="isOpen" class="absolute top-full mt-2 left-0 z-50 bg-surface-card rounded-[10px] shadow-2xl p-0 w-[900px] max-w-[calc(100vw-4rem)] border border-border">
       <div class="flex h-[400px]">
         <!-- Left sidebar with presets -->
         <div class="w-[150px] border-r border-border p-4 flex flex-col gap-2">

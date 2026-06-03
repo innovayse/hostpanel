@@ -14,6 +14,9 @@ public interface IReportRepository
     /// <summary>Returns unpaid invoices with aging buckets.</summary>
     Task<IReadOnlyList<AgingInvoiceDto>> GetAgingInvoicesAsync(CancellationToken ct);
 
+    /// <summary>Returns aging invoices summary grouped by period and currency.</summary>
+    Task<AgingInvoiceSummaryDto> GetAgingInvoicesSummaryAsync(CancellationToken ct);
+
     /// <summary>Returns monthly new customer and order metrics.</summary>
     Task<IReadOnlyList<NewCustomerDto>> GetNewCustomersAsync(int year, CancellationToken ct);
 
@@ -45,6 +48,9 @@ public interface IReportRepository
 
     /// <summary>Returns top clients ranked by transaction income.</summary>
     Task<IReadOnlyList<TopClientByIncomeDto>> GetTopClientsByIncomeAsync(int take, CancellationToken ct);
+
+    /// <summary>Returns a lightweight list of all clients (id + name) for dropdowns.</summary>
+    Task<IReadOnlyList<ClientPickerDto>> GetClientPickerListAsync(CancellationToken ct);
 
     /// <summary>Returns a client account statement for the given date range.</summary>
     Task<ClientStatementDto> GetClientStatementAsync(int clientId, DateOnly? from, DateOnly? to, CancellationToken ct);

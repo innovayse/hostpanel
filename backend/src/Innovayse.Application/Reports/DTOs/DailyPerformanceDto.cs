@@ -6,6 +6,6 @@ public record DailyPerformanceDto(
     int CompletedOrders,
     int NewInvoices,
     int PaidInvoices,
-    int FailedGateways,
+    int OpenedTickets,
     int TicketReplies,
-    int Cancellations);
+    int CancellationRequests);

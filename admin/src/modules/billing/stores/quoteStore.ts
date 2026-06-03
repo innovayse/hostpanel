@@ -36,6 +36,9 @@ export const useQuoteStore = defineStore('quotes', () => {
   /** Error message, null when no error. */
   const error = ref<string | null>(null)
 
+  /** Success message, null when no success. */
+  const successMessage = ref<string | null>(null)
+
   /**
    * Fetches all quotes (global billing view) with pagination.
    *
@@ -95,7 +98,7 @@ export const useQuoteStore = defineStore('quotes', () => {
     loading.value = true
     error.value = null
     try {
-      currentQuote.value = await request<Quote>(`/billing/quotes/${id}`)
+      currentQuote.value = await request<Quote>(`/quotes/${id}`)
     } catch {
       error.value = 'Failed to load quote.'
     } finally {
@@ -122,11 +125,11 @@ export const useQuoteStore = defineStore('quotes', () => {
     loading.value = true
     error.value = null
     try {
-      const result = await request<{ id: number }>('/billing/quotes', {
+      const id = await request<number>('/billing/quotes', {
         method: 'POST',
         body: JSON.stringify(payload),
       })
-      return result.id
+      return id
     } catch {
       error.value = 'Failed to create quote.'
       return null
@@ -157,7 +160,7 @@ export const useQuoteStore = defineStore('quotes', () => {
     loading.value = true
     error.value = null
     try {
-      await request(`/billing/quotes/${id}`, {
+      await request(`/quotes/${id}`, {
         method: 'PUT',
         body: JSON.stringify(payload),
       })
@@ -179,8 +182,9 @@ export const useQuoteStore = defineStore('quotes', () => {
     loading.value = true
     error.value = null
     try {
-      const result = await request<{ id: number }>(`/billing/quotes/${id}/duplicate`, { method: 'POST' })
-      return result.id
+      const newId = await request<number>(`/quotes/${id}/duplicate`, { method: 'POST' })
+      successMessage.value = `Quote duplicated successfully. New quote #${newId} created.`
+      return newId
     } catch {
       error.value = 'Failed to duplicate quote.'
       return null
@@ -199,8 +203,9 @@ export const useQuoteStore = defineStore('quotes', () => {
     loading.value = true
     error.value = null
     try {
-      const result = await request<{ id: number }>(`/billing/quotes/${id}/convert-to-invoice`, { method: 'POST' })
-      return result.id
+      const invoiceId = await request<number>(`/quotes/${id}/convert-to-invoice`, { method: 'POST' })
+      successMessage.value = `Quote converted to invoice #${invoiceId} successfully.`
+      return invoiceId
     } catch {
       error.value = 'Failed to convert quote to invoice.'
       return null
@@ -219,7 +224,7 @@ export const useQuoteStore = defineStore('quotes', () => {
     loading.value = true
     error.value = null
     try {
-      await request(`/billing/quotes/${id}`, { method: 'DELETE' })
+      await request(`/quotes/${id}`, { method: 'DELETE' })
     } catch {
       error.value = 'Failed to delete quote.'
     } finally {
@@ -236,6 +241,7 @@ export const useQuoteStore = defineStore('quotes', () => {
     currentQuote,
     loading,
     error,
+    successMessage,
     fetchAll,
     fetchClientQuotes,
     fetchById,

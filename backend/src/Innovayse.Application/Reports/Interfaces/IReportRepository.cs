@@ -28,4 +28,24 @@ public interface IReportRepository
 
     /// <summary>Returns client counts and revenue grouped by country.</summary>
     Task<IReadOnlyList<ClientsByCountryDto>> GetClientsByCountryAsync(CancellationToken ct);
+
+    /// <summary>Returns client counts grouped by city and country.</summary>
+    Task<IReadOnlyList<ClientsByCityDto>> GetClientsByCityAsync(CancellationToken ct);
+
+    /// <summary>Returns a filtered, paginated list of invoices for reporting.</summary>
+    Task<InvoiceReportResultDto> GetInvoicesReportAsync(
+        string? status, DateOnly? createdFrom, DateOnly? createdTo,
+        DateOnly? dueFrom, DateOnly? dueTo, DateOnly? paidFrom, DateOnly? paidTo,
+        int page, int pageSize, CancellationToken ct);
+
+    /// <summary>Returns a filtered, paginated list of transactions for reporting.</summary>
+    Task<TransactionReportResultDto> GetTransactionsReportAsync(
+        DateOnly? dateFrom, DateOnly? dateTo, string? paymentMethod,
+        int page, int pageSize, CancellationToken ct);
+
+    /// <summary>Returns top clients ranked by transaction income.</summary>
+    Task<IReadOnlyList<TopClientByIncomeDto>> GetTopClientsByIncomeAsync(int take, CancellationToken ct);
+
+    /// <summary>Returns a client account statement for the given date range.</summary>
+    Task<ClientStatementDto> GetClientStatementAsync(int clientId, DateOnly? from, DateOnly? to, CancellationToken ct);
 }

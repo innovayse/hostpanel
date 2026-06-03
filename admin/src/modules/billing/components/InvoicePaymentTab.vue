@@ -337,7 +337,7 @@ onMounted(() => populateItems())
               <button
                 v-if="withSelectedAction"
                 type="button"
-                class="px-3 py-1.5 text-[0.78rem] font-medium text-white bg-primary-500 rounded-lg hover:bg-primary-400 transition-colors"
+                class="px-3 py-1.5 text-[0.78rem] font-medium text-white gradient-brand rounded-[9px] transition-opacity hover:opacity-90"
                 @click="handleWithSelected"
               >
                 Go

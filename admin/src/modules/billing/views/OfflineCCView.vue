@@ -98,7 +98,7 @@ onMounted(() => {
             @update:modelValue="(val) => goToPage(Number(val))"
           />
         </div>
-        <button class="px-3 py-1.5 text-[0.82rem] font-semibold text-white bg-primary-500 hover:bg-primary-600 rounded-[6px] transition-colors">
+        <button class="px-3 py-1.5 text-[0.82rem] font-semibold text-white gradient-brand rounded-[9px] transition-opacity hover:opacity-90">
           Go
         </button>
       </div>

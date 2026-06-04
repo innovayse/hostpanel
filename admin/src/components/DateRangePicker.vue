@@ -18,6 +18,24 @@ const currentMonth = ref(new Date())
 
 const popupRef = ref<HTMLElement | null>(null)
 const inputRef = ref<HTMLInputElement | null>(null)
+const wrapperRef = ref<HTMLElement | null>(null)
+
+const popupStyle = ref({ top: '0px', left: '0px' })
+
+function updatePopupPosition() {
+  if (!wrapperRef.value) return
+  const rect = wrapperRef.value.getBoundingClientRect()
+  const popupWidth = Math.min(900, window.innerWidth - 32)
+  let left = rect.left
+  if (left + popupWidth > window.innerWidth - 16) {
+    left = window.innerWidth - popupWidth - 16
+  }
+  if (left < 8) left = 8
+  popupStyle.value = {
+    top: `${rect.bottom + window.scrollY + 8}px`,
+    left: `${left}px`,
+  }
+}
 const inputText = ref('')
 const previewStart = ref<Date | null>(null)
 const previewEnd = ref<Date | null>(null)
@@ -99,7 +117,10 @@ onUnmounted(() => {
 })
 
 const handleClickOutside = (e: MouseEvent) => {
-  if (popupRef.value && !popupRef.value.contains(e.target as Node)) {
+  if (
+    popupRef.value && !popupRef.value.contains(e.target as Node) &&
+    wrapperRef.value && !wrapperRef.value.contains(e.target as Node)
+  ) {
     isOpen.value = false
   }
 }
@@ -409,21 +430,22 @@ const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
 </script>
 
 <template>
-  <div class="relative" ref="popupRef">
+  <div class="relative" ref="wrapperRef">
     <!-- Input field -->
     <input
       ref="inputRef"
       v-model="inputText"
       type="text"
       placeholder="DD/MM/YYYY - DD/MM/YYYY"
-      @click="isOpen = true"
+      @click="() => { updatePopupPosition(); isOpen = true }"
       @input="handleInput"
-      @focus="isOpen = true"
+      @focus="() => { updatePopupPosition(); isOpen = true }"
       class="w-full px-3 py-2 text-[0.82rem] text-text-primary bg-white/[0.05] border border-border rounded-[9px] focus:outline-none focus:border-primary-500/40 transition-colors"
     />
 
-    <!-- Popup -->
-    <div v-if="isOpen" class="absolute top-full mt-2 left-0 z-50 bg-surface-card rounded-[10px] shadow-2xl p-0 w-[900px] max-w-[calc(100vw-4rem)] border border-border">
+    <!-- Popup teleported to body -->
+    <Teleport to="body">
+    <div v-if="isOpen" ref="popupRef" :style="{ position: 'fixed', top: popupStyle.top, left: popupStyle.left, width: '900px', maxWidth: 'calc(100vw - 32px)' }" class="z-[9999] bg-surface-card rounded-[10px] shadow-2xl p-0 border border-border">
       <div class="flex h-[400px]">
         <!-- Left sidebar with presets -->
         <div class="w-[150px] border-r border-border p-4 flex flex-col gap-2">
@@ -519,5 +541,6 @@ const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
         </div>
       </div>
     </div>
+    </Teleport>
   </div>
 </template>

@@ -227,6 +227,137 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
         return Ok(result);
     }
 
+    /// <summary>Returns income by product grouped by product group for a given month.</summary>
+    [HttpGet("income-by-product-grouped")]
+    public async Task<ActionResult<IncomeByProductGroupedDto>> GetIncomeByProductGroupedAsync(
+        [FromQuery] int? year, [FromQuery] int? month,
+        CancellationToken ct = default)
+    {
+        var now = DateTime.UtcNow;
+        var result = await reportRepo.GetIncomeByProductGroupedAsync(
+            year ?? now.Year, month ?? now.Month, ct);
+        return Ok(result);
+    }
+
+    /// <summary>Returns monthly orders grouped by product group.</summary>
+    [HttpGet("monthly-orders")]
+    public async Task<ActionResult<MonthlyOrdersDto>> GetMonthlyOrdersAsync(
+        [FromQuery] int? year, [FromQuery] int? month,
+        CancellationToken ct = default)
+    {
+        var now = DateTime.UtcNow;
+        var result = await reportRepo.GetMonthlyOrdersAsync(
+            year ?? now.Year, month ?? now.Month, ct);
+        return Ok(result);
+    }
+
+    /// <summary>Returns a filtered, paginated list of services for reporting.</summary>
+    [HttpGet("services")]
+    public async Task<ActionResult<ServiceReportResultDto>> GetServicesReportAsync(
+        [FromQuery] string? status,
+        [FromQuery] string? billingCycle,
+        [FromQuery] string? createdFrom, [FromQuery] string? createdTo,
+        [FromQuery] string? nextDueFrom, [FromQuery] string? nextDueTo,
+        [FromQuery] string? terminatedFrom, [FromQuery] string? terminatedTo,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 50,
+        CancellationToken ct = default)
+    {
+        var result = await reportRepo.GetServicesReportAsync(
+            status, billingCycle,
+            createdFrom is not null ? DateOnly.Parse(createdFrom) : null,
+            createdTo is not null ? DateOnly.Parse(createdTo) : null,
+            nextDueFrom is not null ? DateOnly.Parse(nextDueFrom) : null,
+            nextDueTo is not null ? DateOnly.Parse(nextDueTo) : null,
+            terminatedFrom is not null ? DateOnly.Parse(terminatedFrom) : null,
+            terminatedTo is not null ? DateOnly.Parse(terminatedTo) : null,
+            page, pageSize, ct);
+        return Ok(result);
+    }
+
+    /// <summary>Returns a filtered, paginated list of domains for reporting.</summary>
+    [HttpGet("domains")]
+    public async Task<ActionResult<DomainReportResultDto>> GetDomainsReportAsync(
+        [FromQuery] string? status,
+        [FromQuery] string? registrar,
+        [FromQuery] string? registeredFrom, [FromQuery] string? registeredTo,
+        [FromQuery] string? expiresFrom, [FromQuery] string? expiresTo,
+        [FromQuery] string? nextDueFrom, [FromQuery] string? nextDueTo,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 50,
+        CancellationToken ct = default)
+    {
+        var result = await reportRepo.GetDomainsReportAsync(
+            status, registrar,
+            registeredFrom is not null ? DateOnly.Parse(registeredFrom) : null,
+            registeredTo is not null ? DateOnly.Parse(registeredTo) : null,
+            expiresFrom is not null ? DateOnly.Parse(expiresFrom) : null,
+            expiresTo is not null ? DateOnly.Parse(expiresTo) : null,
+            nextDueFrom is not null ? DateOnly.Parse(nextDueFrom) : null,
+            nextDueTo is not null ? DateOnly.Parse(nextDueTo) : null,
+            page, pageSize, ct);
+        return Ok(result);
+    }
+
+    /// <summary>Returns a filtered, paginated list of clients for reporting.</summary>
+    [HttpGet("clients")]
+    public async Task<ActionResult<ClientReportResultDto>> GetClientsReportAsync(
+        [FromQuery] string? status,
+        [FromQuery] string? country,
+        [FromQuery] string? createdFrom, [FromQuery] string? createdTo,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 50,
+        CancellationToken ct = default)
+    {
+        var result = await reportRepo.GetClientsReportAsync(
+            status, country,
+            createdFrom is not null ? DateOnly.Parse(createdFrom) : null,
+            createdTo is not null ? DateOnly.Parse(createdTo) : null,
+            page, pageSize, ct);
+        return Ok(result);
+    }
+
+    /// <summary>Returns all suspended services.</summary>
+    [HttpGet("product-suspensions")]
+    public async Task<ActionResult<IReadOnlyList<ProductSuspensionRowDto>>> GetProductSuspensionsAsync(CancellationToken ct)
+    {
+        var result = await reportRepo.GetProductSuspensionsAsync(ct);
+        return Ok(result);
+    }
+
+    /// <summary>Returns support ticket replies per admin per day for a given month.</summary>
+    [HttpGet("support-ticket-replies")]
+    public async Task<ActionResult<SupportTicketRepliesDto>> GetSupportTicketRepliesAsync(
+        [FromQuery] int? year, [FromQuery] int? month,
+        CancellationToken ct = default)
+    {
+        var now = DateTime.UtcNow;
+        var result = await reportRepo.GetSupportTicketRepliesAsync(
+            year ?? now.Year, month ?? now.Month, ct);
+        return Ok(result);
+    }
+
+    /// <summary>Returns sales tax liability for the given date range.</summary>
+    [HttpGet("sales-tax")]
+    public async Task<ActionResult<SalesTaxReportDto>> GetSalesTaxAsync(
+        [FromQuery] string? from, [FromQuery] string? to,
+        CancellationToken ct = default)
+    {
+        var result = await reportRepo.GetSalesTaxReportAsync(
+            from is not null ? DateOnly.Parse(from) : null,
+            to is not null ? DateOnly.Parse(to) : null, ct);
+        return Ok(result);
+    }
+
+    /// <summary>Returns daily transaction aggregates for a given month.</summary>
+    [HttpGet("daily-transactions")]
+    public async Task<ActionResult<MonthlyTransactionsReportDto>> GetDailyTransactionsAsync(
+        [FromQuery] int? year, [FromQuery] int? month,
+        CancellationToken ct = default)
+    {
+        var now = DateTime.UtcNow;
+        var result = await reportRepo.GetDailyTransactionsAsync(
+            year ?? now.Year, month ?? now.Month, ct);
+        return Ok(result);
+    }
+
     /// <summary>Returns a client account statement.</summary>
     [HttpGet("client-statement")]
     public async Task<ActionResult<ClientStatementDto>> GetClientStatementAsync(

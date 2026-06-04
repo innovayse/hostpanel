@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { Pie } from 'vue-chartjs'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import ReportPage from '../components/ReportPage.vue'
+import ReportTimestamp from '../components/ReportTimestamp.vue'
 import { useApi } from '../../../composables/useApi'
 
 ChartJS.register(ArcElement, Tooltip, Legend)
@@ -100,5 +101,6 @@ onMounted(load)
 
     <div class="text-[0.68rem] text-text-muted mt-4">* denotes converted to default currency</div>
     <div class="text-[0.68rem] text-text-muted mt-1 text-right">Report Generated at {{ new Date().toLocaleString() }}</div>
-  </ReportPage>
+    <ReportTimestamp />
+</ReportPage>
 </template>

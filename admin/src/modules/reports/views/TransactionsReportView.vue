@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import ReportPage from '../components/ReportPage.vue'
+import ReportTimestamp from '../components/ReportTimestamp.vue'
 import FilterCard from '../../../components/FilterCard.vue'
 import AdvancedFilters, { type FilterRow, type FieldOption } from '../../../components/AdvancedFilters.vue'
 import FieldSelector from '../../../components/FieldSelector.vue'
@@ -179,5 +180,6 @@ onMounted(load)
     </div>
 
     <div class="text-[0.68rem] text-text-muted mt-4 text-right">Report Generated at {{ new Date().toLocaleString() }}</div>
-  </ReportPage>
+    <ReportTimestamp />
+</ReportPage>
 </template>

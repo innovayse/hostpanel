@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { Line } from 'vue-chartjs'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js'
 import ReportPage from '../components/ReportPage.vue'
+import ReportTimestamp from '../components/ReportTimestamp.vue'
 import { useApi } from '../../../composables/useApi'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
@@ -58,5 +59,6 @@ onMounted(load)
         <span class="text-status-green font-medium">${{ row.total.toFixed(2) }}</span>
       </div>
     </div>
-  </ReportPage>
+    <ReportTimestamp />
+</ReportPage>
 </template>

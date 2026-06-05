@@ -3,6 +3,9 @@ namespace Innovayse.Infrastructure.Persistence;
 using Innovayse.Domain.Auth;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Clients;
+using Innovayse.Domain.Orders;
+using Innovayse.Domain.Products;
+using Innovayse.Domain.Services;
 using Innovayse.Infrastructure.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -43,7 +46,12 @@ public sealed class DevDataSeeder(
                 await userManager.AddToRoleAsync(adminUser, Roles.Admin);
         }
 
-        if (await db.Clients.AnyAsync(ct) && await db.Invoices.AnyAsync(ct) && await db.Quotes.AnyAsync(ct))
+        var productNames = await db.Products.Select(p => p.Name).ToListAsync(ct);
+        var hasProductInvoices = productNames.Count > 0 && await db.InvoiceItems
+            .AnyAsync(ii => productNames.Contains(ii.Description), ct);
+
+        if (await db.Clients.AnyAsync(ct) && await db.Invoices.AnyAsync(ct) && await db.Quotes.AnyAsync(ct)
+            && await db.ProductGroups.AnyAsync(ct) && await db.Orders.AnyAsync(ct) && hasProductInvoices)
         {
             logger.LogInformation("Dev seed skipped — data already exists");
             return;
@@ -256,6 +264,127 @@ public sealed class DevDataSeeder(
 
             await db.SaveChangesAsync(ct);
             logger.LogInformation("Seeded billable items");
+        }
+
+        // ── Product Groups + Products ─────────────────────────────────────────
+        if (!await db.ProductGroups.AnyAsync(ct))
+        {
+            var groupDefs = new[]
+            {
+                ("Web Hosting",       ProductType.SharedHosting, new[] { ("Starter Hosting", 4.99m, 49.99m), ("Business Hosting", 9.99m, 99.99m), ("Pro Hosting", 19.99m, 199.99m) }),
+                ("VPS Servers",       ProductType.Vps,           new[] { ("VPS Basic", 29.99m, 299.99m), ("VPS Pro", 59.99m, 599.99m), ("VPS Enterprise", 99.99m, 999.99m) }),
+                ("Dedicated Servers", ProductType.Dedicated,     new[] { ("Dedicated Starter", 89.99m, 899.99m), ("Dedicated Pro", 149.99m, 1499.99m) }),
+                ("SSL Certificates",  ProductType.Ssl,           new[] { ("SSL Basic", 9.99m, 89.99m), ("SSL Wildcard", 29.99m, 279.99m) }),
+                ("Email Hosting",     ProductType.Other,         new[] { ("Email Basic", 2.99m, 29.99m), ("Email Pro", 7.99m, 79.99m) }),
+            };
+
+            foreach (var (groupName, productType, products) in groupDefs)
+            {
+                var group = ProductGroup.Create(groupName, null);
+                db.ProductGroups.Add(group);
+                await db.SaveChangesAsync(ct);
+
+                foreach (var (name, monthly, annual) in products)
+                {
+                    var product = Product.Create(group.Id, name, null, null, productType, monthly, annual);
+                    db.Products.Add(product);
+                }
+            }
+
+            await db.SaveChangesAsync(ct);
+            logger.LogInformation("Seeded product groups and products");
+        }
+
+        // ── Client Services ───────────────────────────────────────────────────
+        if (!await db.ClientServices.AnyAsync(ct))
+        {
+            var products = await db.Products.ToListAsync(ct);
+            var activeClients = await db.Clients.Where(c => c.Status == ClientStatus.Active).ToListAsync(ct);
+            var billingCycles = new[] { "monthly", "annual" };
+
+            foreach (var client in activeClients)
+            {
+                var numServices = Rng.Next(1, 4);
+                for (int i = 0; i < numServices; i++)
+                {
+                    var product = products[Rng.Next(products.Count)];
+                    var cycle = billingCycles[Rng.Next(2)];
+                    var svc = ClientService.Create(client.Id, product.Id, cycle);
+                    var monthsBack = Rng.Next(1, 12);
+                    db.Entry(svc).Property(nameof(ClientService.CreatedAt)).CurrentValue = MonthsAgo(monthsBack);
+                    svc.Activate("prov_" + Rng.Next(10000, 99999));
+                    db.ClientServices.Add(svc);
+                }
+            }
+
+            await db.SaveChangesAsync(ct);
+            logger.LogInformation("Seeded client services");
+        }
+
+        // ── Product-matched invoices (for Income by Product report) ──────────
+        // Seed paid invoices whose item descriptions match real product names,
+        // so GetIncomeByProductGroupedAsync can join them correctly.
+        if (!hasProductInvoices)
+        {
+            var products = await db.Products.ToListAsync(ct);
+            var activeClients = await db.Clients.Where(c => c.Status == ClientStatus.Active).ToListAsync(ct);
+
+            // Seed paid invoices for the last 3 months
+            for (int monthsBack = 2; monthsBack >= 0; monthsBack--)
+            {
+                var invoicesThisMonth = Rng.Next(5, 12);
+                for (int i = 0; i < invoicesThisMonth; i++)
+                {
+                    var client = activeClients[Rng.Next(activeClients.Count)];
+                    var product = products[Rng.Next(products.Count)];
+                    var invoiceDate = MonthsAgo(monthsBack, Rng.Next(1, 25));
+
+                    var invoice = Invoice.Create(client.Id, invoiceDate.AddDays(30));
+                    invoice.AddItem(product.Name, product.MonthlyPrice, 1);
+                    if (Rng.Next(3) == 0)
+                    {
+                        var p2 = products[Rng.Next(products.Count)];
+                        invoice.AddItem(p2.Name, p2.MonthlyPrice, 1);
+                    }
+                    invoice.MarkPaid("stripe_" + Rng.Next(100000, 999999));
+
+                    db.Invoices.Add(invoice);
+                    db.Entry(invoice).Property(nameof(Invoice.CreatedAt)).CurrentValue = invoiceDate;
+                }
+            }
+
+            await db.SaveChangesAsync(ct);
+            logger.LogInformation("Seeded product-matched invoices for Income by Product report");
+        }
+
+        // ── Orders ────────────────────────────────────────────────────────────
+        if (!await db.Orders.AnyAsync(ct))
+        {
+            var products = await db.Products.ToListAsync(ct);
+            var activeClients = await db.Clients.Where(c => c.Status == ClientStatus.Active).ToListAsync(ct);
+            var gateways = new[] { "Stripe", "PayPal", "Bank Transfer" };
+
+            for (int month = 11; month >= 0; month--)
+            {
+                var ordersThisMonth = Rng.Next(3, 8);
+                for (int o = 0; o < ordersThisMonth; o++)
+                {
+                    var client = activeClients[Rng.Next(activeClients.Count)];
+                    var product = products[Rng.Next(products.Count)];
+                    var gateway = gateways[Rng.Next(gateways.Length)];
+                    var orderDate = MonthsAgo(month, Rng.Next(1, 28));
+
+                    var order = Order.Create($"ORD-{Rng.Next(10000, 99999)}", client.Id, gateway, null);
+                    order.AddItem(product.Id, product.Name, "monthly", product.MonthlyPrice, product.MonthlyPrice, null, null);
+                    order.Accept();
+
+                    db.Orders.Add(order);
+                    db.Entry(order).Property(nameof(Order.CreatedAt)).CurrentValue = orderDate;
+                }
+            }
+
+            await db.SaveChangesAsync(ct);
+            logger.LogInformation("Seeded orders across 12 months");
         }
 
         logger.LogInformation("Dev seed complete");

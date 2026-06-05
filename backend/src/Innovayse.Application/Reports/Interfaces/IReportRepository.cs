@@ -54,4 +54,43 @@ public interface IReportRepository
 
     /// <summary>Returns a client account statement for the given date range.</summary>
     Task<ClientStatementDto> GetClientStatementAsync(int clientId, DateOnly? from, DateOnly? to, CancellationToken ct);
+
+    /// <summary>Returns monthly orders grouped by product group.</summary>
+    Task<MonthlyOrdersDto> GetMonthlyOrdersAsync(int year, int month, CancellationToken ct);
+
+    /// <summary>Returns income by product grouped by product group for a given month.</summary>
+    Task<IncomeByProductGroupedDto> GetIncomeByProductGroupedAsync(int year, int month, CancellationToken ct);
+
+    /// <summary>Returns a filtered, paginated list of services for reporting.</summary>
+    Task<ServiceReportResultDto> GetServicesReportAsync(
+        string? status, string? billingCycle,
+        DateOnly? createdFrom, DateOnly? createdTo,
+        DateOnly? nextDueFrom, DateOnly? nextDueTo,
+        DateOnly? terminatedFrom, DateOnly? terminatedTo,
+        int page, int pageSize, CancellationToken ct);
+
+    /// <summary>Returns a filtered, paginated list of domains for reporting.</summary>
+    Task<DomainReportResultDto> GetDomainsReportAsync(
+        string? status, string? registrar,
+        DateOnly? registeredFrom, DateOnly? registeredTo,
+        DateOnly? expiresFrom, DateOnly? expiresTo,
+        DateOnly? nextDueFrom, DateOnly? nextDueTo,
+        int page, int pageSize, CancellationToken ct);
+
+    /// <summary>Returns a filtered, paginated list of clients for reporting.</summary>
+    Task<ClientReportResultDto> GetClientsReportAsync(
+        string? status, string? country, DateOnly? createdFrom, DateOnly? createdTo,
+        int page, int pageSize, CancellationToken ct);
+
+    /// <summary>Returns daily transaction aggregates for a given month.</summary>
+    Task<MonthlyTransactionsReportDto> GetDailyTransactionsAsync(int year, int month, CancellationToken ct);
+
+    /// <summary>Returns sales tax liability for the given date range.</summary>
+    Task<SalesTaxReportDto> GetSalesTaxReportAsync(DateOnly? from, DateOnly? to, CancellationToken ct);
+
+    /// <summary>Returns support ticket replies per admin per day for a given month.</summary>
+    Task<SupportTicketRepliesDto> GetSupportTicketRepliesAsync(int year, int month, CancellationToken ct);
+
+    /// <summary>Returns all suspended services with suspension details.</summary>
+    Task<IReadOnlyList<ProductSuspensionRowDto>> GetProductSuspensionsAsync(CancellationToken ct);
 }

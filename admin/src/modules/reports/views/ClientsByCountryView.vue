@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { Bar } from 'vue-chartjs'
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js'
 import ReportPage from '../components/ReportPage.vue'
+import ReportTimestamp from '../components/ReportTimestamp.vue'
 import WorldMap from '../components/WorldMap.vue'
 import { useApi } from '../../../composables/useApi'
 
@@ -138,5 +139,6 @@ onMounted(load)
       </div>
       <div class="text-[0.68rem] text-text-muted">Report Generated at {{ new Date().toLocaleString() }}</div>
     </div>
-  </ReportPage>
+    <ReportTimestamp />
+</ReportPage>
 </template>

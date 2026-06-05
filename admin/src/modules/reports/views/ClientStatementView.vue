@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import ReportPage from '../components/ReportPage.vue'
+import ReportTimestamp from '../components/ReportTimestamp.vue'
 import AppClientSelect from '../../../components/AppClientSelect.vue'
 import DateRangePicker from '../../../components/DateRangePicker.vue'
 import { useApi } from '../../../composables/useApi'
@@ -101,5 +102,6 @@ onMounted(loadClients)
 
       <div class="text-[0.68rem] text-text-muted mt-4 text-right">Report Generated at {{ new Date().toLocaleString() }}</div>
     </template>
-  </ReportPage>
+    <ReportTimestamp />
+</ReportPage>
 </template>

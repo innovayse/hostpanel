@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { Bar } from 'vue-chartjs'
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js'
 import ReportPage from '../components/ReportPage.vue'
+import ReportTimestamp from '../components/ReportTimestamp.vue'
 import AppSelect from '../../../components/AppSelect.vue'
 import { useApi } from '../../../composables/useApi'
 
@@ -76,5 +77,6 @@ onMounted(load)
         <span class="text-status-green font-medium">${{ row.amount.toFixed(2) }}</span>
       </div>
     </div>
-  </ReportPage>
+    <ReportTimestamp />
+</ReportPage>
 </template>

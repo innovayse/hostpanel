@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import ReportPage from '../components/ReportPage.vue'
+import ReportTimestamp from '../components/ReportTimestamp.vue'
 import FilterCard from '../../../components/FilterCard.vue'
 import AdvancedFilters, { type FilterRow, type FieldOption } from '../../../components/AdvancedFilters.vue'
 import FieldSelector from '../../../components/FieldSelector.vue'
@@ -230,5 +231,6 @@ onMounted(load)
     <div v-if="totalPages > 1" class="flex items-center justify-center gap-2 mt-4">
       <button v-for="p in totalPages" :key="p" class="px-3 py-1 rounded-lg text-[0.78rem] transition-colors" :class="p === page ? 'bg-primary-500 text-white' : 'bg-white/[0.04] text-text-secondary hover:bg-white/[0.08]'" @click="goPage(p)">{{ p }}</button>
     </div>
-  </ReportPage>
+    <ReportTimestamp />
+</ReportPage>
 </template>

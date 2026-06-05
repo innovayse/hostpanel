@@ -82,6 +82,11 @@ onUnmounted(() => document.removeEventListener('mousedown', onOutsideClick))
             </label>
           </div>
         </div>
+
+        <!-- Apply -->
+        <div class="px-3 pb-3 pt-1 border-t border-border flex justify-end">
+          <button type="button" class="px-3 py-1 gradient-brand text-white text-[0.72rem] font-semibold rounded-[7px] transition-opacity hover:opacity-90" @click="open = false">Apply</button>
+        </div>
       </div>
     </Transition>
   </div>

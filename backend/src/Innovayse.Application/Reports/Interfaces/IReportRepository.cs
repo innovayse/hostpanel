@@ -93,4 +93,40 @@ public interface IReportRepository
 
     /// <summary>Returns all suspended services with suspension details.</summary>
     Task<IReadOnlyList<ProductSuspensionRowDto>> GetProductSuspensionsAsync(CancellationToken ct);
+
+    /// <summary>Returns credits issued to clients for the given filters.</summary>
+    Task<CreditsReviewerDto> GetCreditsReviewerAsync(
+        int? clientId, DateOnly? from, DateOnly? to,
+        decimal? minAmount, decimal? maxAmount,
+        CancellationToken ct);
+
+    /// <summary>Returns average customer retention time grouped by product group.</summary>
+    Task<CustomerRetentionDto> GetCustomerRetentionAsync(bool includeActive, CancellationToken ct);
+
+    /// <summary>Returns unpaid invoices assigned to the Direct Debit payment method.</summary>
+    Task<DirectDebitDto> GetDirectDebitAsync(CancellationToken ct);
+
+    /// <summary>Returns domain renewal reminder emails with optional filters.</summary>
+    Task<DomainRenewalEmailsDto> GetDomainRenewalEmailsAsync(
+        int? clientId, string? registrar, string? domain,
+        DateOnly? from, DateOnly? to,
+        CancellationToken ct);
+
+    /// <summary>Returns ticket feedback comments for a given date range and optional staff filter.</summary>
+    Task<TicketFeedbackCommentsDto> GetTicketFeedbackCommentsAsync(
+        string? staffName, DateOnly? from, DateOnly? to, CancellationToken ct);
+
+    /// <summary>Returns per-staff average feedback scores for a given date range.</summary>
+    Task<TicketFeedbackScoresDto> GetTicketFeedbackScoresAsync(
+        DateOnly? from, DateOnly? to, CancellationToken ct);
+
+    /// <summary>Returns rated tickets for review, filtered by min rating and date range.</summary>
+    Task<TicketRatingsReviewerDto> GetTicketRatingsReviewerAsync(
+        int? minRating, DateOnly? from, DateOnly? to, CancellationToken ct);
+
+    /// <summary>Returns all ticket tags with usage counts for a given date range.</summary>
+    Task<TicketTagsDto> GetTicketTagsAsync(DateOnly? from, DateOnly? to, CancellationToken ct);
+
+    /// <summary>Returns VAT MOSS settlement data for the given quarter.</summary>
+    Task<VatMossDto> GetVatMossAsync(int year, int quarter, CancellationToken ct);
 }

@@ -1,6 +1,7 @@
 namespace Innovayse.Infrastructure.Persistence;
 
 using Innovayse.Domain.Auth;
+using Innovayse.Domain.Ssl;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Clients;
 using Innovayse.Domain.Orders;
@@ -385,6 +386,29 @@ public sealed class DevDataSeeder(
 
             await db.SaveChangesAsync(ct);
             logger.LogInformation("Seeded orders across 12 months");
+        }
+
+        // ── SSL check cache (seed only, no real domains created) ─────────────
+        if (!await db.SslChecks.AnyAsync(ct))
+        {
+            var now = DateTimeOffset.UtcNow;
+            (string domain, bool hasSsl, string? issuer, DateTimeOffset? expires, bool isActive)[] sslDefs =
+            [
+                ("google.com",      true,  "Google Trust Services", now.AddDays(60),  true),
+                ("github.com",      true,  "DigiCert Inc",          now.AddDays(45),  true),
+                ("cloudflare.com",  true,  "Google Trust Services", now.AddDays(75),  true),
+                ("microsoft.com",   true,  "DigiCert Inc",          now.AddDays(200), true),
+                ("amazon.com",      true,  "Amazon",                now.AddDays(250), true),
+                ("letsencrypt.org", true,  "Let's Encrypt",         now.AddDays(20),  true),
+                ("expired.local",   false, null,                    null,             false),
+                ("no-ssl.local",    false, null,                    null,             true),
+            ];
+
+            foreach (var (domain, hasSsl, issuer, expires, isActive) in sslDefs)
+                db.SslChecks.Add(SslCheck.Create(domain, hasSsl, issuer, expires, isActive));
+
+            await db.SaveChangesAsync(ct);
+            logger.LogInformation("Seeded SSL checks");
         }
 
         logger.LogInformation("Dev seed complete");

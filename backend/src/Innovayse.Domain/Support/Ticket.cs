@@ -13,6 +13,9 @@ public sealed class Ticket : AggregateRoot
     /// <summary>Internal mutable list of replies on this ticket.</summary>
     private readonly List<TicketReply> _replies = [];
 
+    /// <summary>Internal mutable list of tags on this ticket.</summary>
+    private readonly List<TicketTag> _tags = [];
+
     /// <summary>Gets the FK to the client who opened this ticket.</summary>
     public int ClientId { get; private set; }
 
@@ -40,8 +43,23 @@ public sealed class Ticket : AggregateRoot
     /// <summary>Gets whether this ticket has been flagged by staff for attention.</summary>
     public bool IsFlagged { get; private set; }
 
+    /// <summary>Gets the client feedback rating (1–10), or null if not yet rated.</summary>
+    public int? Rating { get; private set; }
+
+    /// <summary>Gets the optional feedback comment left by the client.</summary>
+    public string? FeedbackComment { get; private set; }
+
+    /// <summary>Gets the name of the client who left the feedback.</summary>
+    public string? FeedbackLeftBy { get; private set; }
+
+    /// <summary>Gets the UTC timestamp when feedback was submitted, or null if not yet rated.</summary>
+    public DateTimeOffset? FeedbackAt { get; private set; }
+
     /// <summary>Gets a read-only view of all replies on this ticket.</summary>
     public IReadOnlyList<TicketReply> Replies => _replies.AsReadOnly();
+
+    /// <summary>Gets a read-only view of all tags on this ticket.</summary>
+    public IReadOnlyList<TicketTag> Tags => _tags.AsReadOnly();
 
     /// <summary>EF Core parameterless constructor — do not call directly.</summary>
     private Ticket() : base(0) { }
@@ -152,5 +170,40 @@ public sealed class Ticket : AggregateRoot
         }
 
         Status = TicketStatus.Open;
+    }
+
+    /// <summary>
+    /// Records client feedback for this ticket.
+    /// </summary>
+    /// <param name="rating">Score from 1 to 10.</param>
+    /// <param name="comment">Optional feedback comment.</param>
+    /// <param name="leftBy">Display name of the client submitting the feedback.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when rating is outside 1–10.</exception>
+    public void LeaveFeedback(int rating, string? comment, string leftBy)
+    {
+        if (rating < 1 || rating > 10)
+            throw new ArgumentOutOfRangeException(nameof(rating), "Rating must be between 1 and 10.");
+
+        Rating = rating;
+        FeedbackComment = comment;
+        FeedbackLeftBy = leftBy;
+        FeedbackAt = DateTimeOffset.UtcNow;
+    }
+
+    /// <summary>Adds a tag to this ticket. Duplicate tags are ignored.</summary>
+    public void AddTag(string tag)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(tag);
+        tag = tag.Trim().ToLowerInvariant();
+        if (_tags.Any(t => t.Name == tag)) return;
+        _tags.Add(new TicketTag(Id, tag));
+    }
+
+    /// <summary>Removes a tag from this ticket.</summary>
+    public void RemoveTag(string tag)
+    {
+        tag = tag.Trim().ToLowerInvariant();
+        var existing = _tags.FirstOrDefault(t => t.Name == tag);
+        if (existing is not null) _tags.Remove(existing);
     }
 }

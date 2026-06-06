@@ -31,6 +31,8 @@ public sealed class GetTicketHandler(ITicketRepository repo, IDepartmentReposito
             .Select(r => new TicketReplyDto(r.Id, r.Message, r.AuthorName, r.IsStaffReply, r.CreatedAt))
             .ToList();
 
+        var tags = ticket.Tags.Select(t => t.Name).ToList();
+
         return new TicketDto(
             ticket.Id,
             ticket.ClientId,
@@ -44,6 +46,11 @@ public sealed class GetTicketHandler(ITicketRepository repo, IDepartmentReposito
             null,
             ticket.CreatedAt,
             ticket.IsFlagged,
-            replies);
+            replies,
+            tags,
+            ticket.Rating,
+            ticket.FeedbackComment,
+            ticket.FeedbackLeftBy,
+            ticket.FeedbackAt);
     }
 }

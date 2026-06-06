@@ -169,6 +169,8 @@ public static class DependencyInjection
 
         // Reports
         services.AddScoped<Innovayse.Application.Reports.Interfaces.IReportRepository, Innovayse.Infrastructure.Reports.ReportRepository>();
+        services.AddScoped<Innovayse.Application.Reports.Interfaces.ISslMonitoringService, Innovayse.Infrastructure.Reports.SslMonitoringService>();
+        services.AddScoped<Innovayse.Application.Reports.Interfaces.IDiskUsageService, Innovayse.Infrastructure.Reports.DiskUsageService>();
 
         // Notifications
         services.Configure<SmtpSettings>(configuration.GetSection("Smtp"));

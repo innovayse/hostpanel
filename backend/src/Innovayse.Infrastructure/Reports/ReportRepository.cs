@@ -769,6 +769,55 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
     }
 
     /// <inheritdoc/>
+    public async Task<CreditsReviewerDto> GetCreditsReviewerAsync(
+        int? clientId, DateOnly? from, DateOnly? to,
+        decimal? minAmount, decimal? maxAmount,
+        CancellationToken ct)
+    {
+        var query = db.Transactions
+            .Where(t => t.AddedToCredit && t.AmountIn > 0);
+
+        if (clientId.HasValue)
+            query = query.Where(t => t.ClientId == clientId.Value);
+
+        if (from.HasValue)
+        {
+            var fromDt = new DateTimeOffset(from.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc));
+            query = query.Where(t => t.Date >= fromDt);
+        }
+        if (to.HasValue)
+        {
+            var toDt = new DateTimeOffset(to.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc));
+            query = query.Where(t => t.Date <= toDt);
+        }
+        if (minAmount.HasValue)
+            query = query.Where(t => t.AmountIn >= minAmount.Value);
+        if (maxAmount.HasValue)
+            query = query.Where(t => t.AmountIn <= maxAmount.Value);
+
+        var raw = await query
+            .OrderByDescending(t => t.Date)
+            .Join(db.Clients, t => t.ClientId, c => c.Id, (t, c) => new
+            {
+                t.Id,
+                ClientId   = c.Id,
+                ClientName = c.FirstName + " " + c.LastName,
+                t.Date,
+                t.Description,
+                Amount     = t.AmountIn,
+                AdminUser  = (string?)null,
+            })
+            .ToListAsync(ct);
+
+        var rows = raw.Select(r => new CreditsReviewerRowDto(
+            r.Id, r.ClientId, r.ClientName,
+            r.Date.ToString("dd/MM/yyyy"),
+            r.Description, r.Amount, r.AdminUser)).ToList();
+
+        return new CreditsReviewerDto(rows.Count, rows.Sum(r => r.Amount), rows);
+    }
+
+    /// <inheritdoc/>
     public async Task<IReadOnlyList<ProductSuspensionRowDto>> GetProductSuspensionsAsync(CancellationToken ct)
     {
         var raw = await db.ClientServices
@@ -865,6 +914,127 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
     }
 
     /// <inheritdoc/>
+    public async Task<DirectDebitDto> GetDirectDebitAsync(CancellationToken ct)
+    {
+        var raw = await db.Invoices
+            .Where(i => i.Status == InvoiceStatus.Unpaid &&
+                        (i.PaymentMethod != null && i.PaymentMethod.ToLower().Contains("direct")))
+            .Join(db.Clients, i => i.ClientId, c => c.Id, (i, c) => new
+            {
+                InvoiceId   = i.Id,
+                ClientName  = c.FirstName + " " + c.LastName,
+                InvoiceDate = i.CreatedAt,
+                DueDate     = i.DueDate,
+                Subtotal    = i.SubTotal,
+                Tax         = i.Tax,
+                Credit      = i.Credit,
+                Total       = i.Total,
+            })
+            .OrderBy(r => r.DueDate)
+            .ToListAsync(ct);
+
+        var rows = raw.Select(r => new DirectDebitRowDto(
+            r.InvoiceId,
+            r.ClientName,
+            r.InvoiceDate.ToString("dd/MM/yyyy"),
+            r.DueDate.ToString("dd/MM/yyyy"),
+            r.Subtotal, r.Tax, r.Credit, r.Total,
+            null, null, null, null)).ToList();
+
+        return new DirectDebitDto(rows);
+    }
+
+    /// <inheritdoc/>
+    public async Task<CustomerRetentionDto> GetCustomerRetentionAsync(bool includeActive, CancellationToken ct)
+    {
+        // ── Services ─────────────────────────────────────────────────────────
+        var servicesQuery = db.ClientServices.AsQueryable();
+        if (!includeActive)
+            servicesQuery = servicesQuery.Where(s => s.Status == Domain.Services.ServiceStatus.Terminated);
+
+        var serviceRaw = await servicesQuery
+            .Join(db.Products, s => s.ProductId, p => p.Id, (s, p) => new { s, p })
+            .Join(db.ProductGroups, x => x.p.GroupId, g => g.Id, (x, g) => new
+            {
+                GroupName   = g.Name,
+                ProductName = x.p.Name,
+                BillingCycle = x.s.BillingCycle,
+                CreatedAt   = x.s.CreatedAt,
+                EndAt       = x.s.Status == Domain.Services.ServiceStatus.Terminated
+                              ? x.s.TerminatedAt
+                              : x.s.NextRenewalAt,
+            })
+            .ToListAsync(ct);
+
+        // ── Domains ───────────────────────────────────────────────────────────
+        var domainQuery = db.Domains.AsQueryable();
+        if (!includeActive)
+            domainQuery = domainQuery.Where(d => d.Status == Domain.Domains.DomainStatus.Expired ||
+                                                 d.Status == Domain.Domains.DomainStatus.Cancelled);
+
+        var domainRaw = await domainQuery
+            .Select(d => new
+            {
+                GroupName    = "TLD",
+                ProductName  = d.Tld,
+                BillingCycle = "1 Years",
+                CreatedAt    = d.RegisteredAt,
+                EndAt        = (DateTimeOffset?)d.ExpiresAt,
+            })
+            .ToListAsync(ct);
+
+        // ── Combine and group ─────────────────────────────────────────────────
+        var allRows = serviceRaw
+            .Select(r => new
+            {
+                r.GroupName, r.ProductName, r.BillingCycle,
+                Days = r.EndAt.HasValue
+                       ? (int)(r.EndAt.Value - r.CreatedAt).TotalDays
+                       : (int)(DateTimeOffset.UtcNow - r.CreatedAt).TotalDays,
+            })
+            .Concat(domainRaw.Select(r => new
+            {
+                r.GroupName, r.ProductName, r.BillingCycle,
+                Days = r.EndAt.HasValue
+                       ? (int)(r.EndAt.Value - r.CreatedAt).TotalDays
+                       : (int)(DateTimeOffset.UtcNow - r.CreatedAt).TotalDays,
+            }))
+            .ToList();
+
+        static string FormatYearsMonths(int days)
+        {
+            int years  = days / 365;
+            int months = (days % 365) / 30;
+            if (years > 0 && months > 0) return $"{years} Years {months} Months";
+            if (years > 0)               return $"{years} Years";
+            if (months > 0)              return $"{months} Months";
+            return $"{days} Days";
+        }
+
+        var groups = allRows
+            .GroupBy(r => r.GroupName)
+            .Select(grp => new CustomerRetentionGroupDto(
+                grp.Key,
+                grp.GroupBy(r => new { r.ProductName, r.BillingCycle })
+                   .Select(g =>
+                   {
+                       int avg = g.Any() ? (int)g.Average(r => r.Days) : 0;
+                       return new CustomerRetentionRowDto(
+                           g.Key.ProductName,
+                           g.Key.BillingCycle,
+                           g.Count(),
+                           avg,
+                           FormatYearsMonths(avg));
+                   })
+                   .OrderBy(r => r.ProductName)
+                   .ToList()))
+            .OrderBy(g => g.GroupName)
+            .ToList();
+
+        return new CustomerRetentionDto(groups);
+    }
+
+    /// <inheritdoc/>
     public async Task<MonthlyTransactionsReportDto> GetDailyTransactionsAsync(int year, int month, CancellationToken ct)
     {
         var from = new DateTimeOffset(year, month, 1, 0, 0, 0, TimeSpan.Zero);
@@ -910,4 +1080,256 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
             rows.Sum(r => r.Fees),
             rows.Sum(r => r.AmountOut));
     }
+
+    /// <inheritdoc/>
+    public async Task<DomainRenewalEmailsDto> GetDomainRenewalEmailsAsync(
+        int? clientId, string? registrar, string? domain,
+        DateOnly? from, DateOnly? to,
+        CancellationToken ct)
+    {
+        var query =
+            from rem in db.Set<Innovayse.Domain.Domains.DomainReminder>()
+            join d in db.Domains on rem.DomainId equals d.Id
+            join c in db.Clients on d.ClientId equals c.Id
+            select new { rem, d, c };
+
+        if (clientId.HasValue)
+            query = query.Where(x => x.d.ClientId == clientId.Value);
+
+        if (!string.IsNullOrWhiteSpace(registrar))
+            query = query.Where(x => x.d.Registrar != null && x.d.Registrar.ToLower() == registrar.ToLower());
+
+        if (!string.IsNullOrWhiteSpace(domain))
+            query = query.Where(x => x.d.Name.ToLower().Contains(domain.ToLower()));
+
+        if (from.HasValue)
+        {
+            var fromDto = new DateTimeOffset(from.Value.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+            query = query.Where(x => x.rem.SentAt >= fromDto);
+        }
+
+        if (to.HasValue)
+        {
+            var toDto = new DateTimeOffset(to.Value.ToDateTime(TimeOnly.MaxValue), TimeSpan.Zero);
+            query = query.Where(x => x.rem.SentAt <= toDto);
+        }
+
+        var raw = await query
+            .OrderByDescending(x => x.rem.SentAt)
+            .ToListAsync(ct);
+
+        var rows = raw.Select(x => new DomainRenewalEmailRowDto(
+            x.c.FirstName + " " + x.c.LastName,
+            x.d.Name,
+            x.rem.SentAt,
+            x.rem.ReminderType,
+            x.rem.SentTo))
+            .ToList();
+
+        return new DomainRenewalEmailsDto(rows);
+    }
+
+    /// <inheritdoc/>
+    public async Task<TicketFeedbackCommentsDto> GetTicketFeedbackCommentsAsync(
+        string? staffName, DateOnly? from, DateOnly? to, CancellationToken ct)
+    {
+        var query = db.Tickets
+            .Where(t => t.Rating != null);
+
+        if (from.HasValue)
+        {
+            var fromDto = new DateTimeOffset(from.Value.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+            query = query.Where(t => t.FeedbackAt >= fromDto);
+        }
+        if (to.HasValue)
+        {
+            var toDto = new DateTimeOffset(to.Value.ToDateTime(TimeOnly.MaxValue), TimeSpan.Zero);
+            query = query.Where(t => t.FeedbackAt <= toDto);
+        }
+
+        var raw = await query.OrderByDescending(t => t.FeedbackAt).ToListAsync(ct);
+
+        // StaffName: use AssignedToStaffId if available (no User table join — use "Staff #{id}")
+        var rows = raw
+            .Where(t => !string.IsNullOrWhiteSpace(staffName) ? (t.AssignedToStaffId.HasValue && $"Staff #{t.AssignedToStaffId}" == staffName) : true)
+            .Select(t => new TicketFeedbackCommentRowDto(
+                t.Id,
+                t.AssignedToStaffId.HasValue ? $"Staff #{t.AssignedToStaffId}" : "Unassigned",
+                t.Subject,
+                t.FeedbackComment,
+                t.Rating!.Value,
+                t.FeedbackLeftBy ?? "",
+                t.FeedbackAt!.Value))
+            .ToList();
+
+        return new TicketFeedbackCommentsDto(rows);
+    }
+
+    /// <inheritdoc/>
+    public async Task<TicketFeedbackScoresDto> GetTicketFeedbackScoresAsync(
+        DateOnly? from, DateOnly? to, CancellationToken ct)
+    {
+        var query = db.Tickets.Where(t => t.Rating != null);
+
+        if (from.HasValue)
+        {
+            var fromDto = new DateTimeOffset(from.Value.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+            query = query.Where(t => t.FeedbackAt >= fromDto);
+        }
+        if (to.HasValue)
+        {
+            var toDto = new DateTimeOffset(to.Value.ToDateTime(TimeOnly.MaxValue), TimeSpan.Zero);
+            query = query.Where(t => t.FeedbackAt <= toDto);
+        }
+
+        var raw = await query.ToListAsync(ct);
+
+        var rows = raw
+            .GroupBy(t => t.AssignedToStaffId.HasValue ? $"Staff #{t.AssignedToStaffId}" : "Unassigned")
+            .Select(g =>
+            {
+                int cnt(int r) => g.Count(t => t.Rating == r);
+                return new TicketFeedbackScoreRowDto(
+                    g.Key,
+                    cnt(1), cnt(2), cnt(3), cnt(4), cnt(5),
+                    cnt(6), cnt(7), cnt(8), cnt(9), cnt(10),
+                    g.Count(),
+                    Math.Round(g.Average(t => (double)t.Rating!.Value), 2));
+            })
+            .OrderByDescending(r => r.TotalRatings)
+            .ToList();
+
+        return new TicketFeedbackScoresDto(rows);
+    }
+
+    /// <inheritdoc/>
+    public async Task<TicketRatingsReviewerDto> GetTicketRatingsReviewerAsync(
+        int? minRating, DateOnly? from, DateOnly? to, CancellationToken ct)
+    {
+        var query = db.Tickets.Where(t => t.Rating != null);
+
+        if (minRating.HasValue)
+            query = query.Where(t => t.Rating >= minRating.Value);
+
+        if (from.HasValue)
+        {
+            var fromDto = new DateTimeOffset(from.Value.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+            query = query.Where(t => t.FeedbackAt >= fromDto);
+        }
+        if (to.HasValue)
+        {
+            var toDto = new DateTimeOffset(to.Value.ToDateTime(TimeOnly.MaxValue), TimeSpan.Zero);
+            query = query.Where(t => t.FeedbackAt <= toDto);
+        }
+
+        var raw = await query.OrderByDescending(t => t.FeedbackAt).ToListAsync(ct);
+
+        var rows = raw.Select(t => new TicketRatingRowDto(
+            t.Id,
+            t.FeedbackAt!.Value,
+            t.FeedbackComment ?? t.Subject,
+            t.AssignedToStaffId.HasValue ? $"Staff #{t.AssignedToStaffId}" : "Unassigned",
+            t.Rating!.Value))
+            .ToList();
+
+        return new TicketRatingsReviewerDto(rows);
+    }
+
+    /// <inheritdoc/>
+    public async Task<TicketTagsDto> GetTicketTagsAsync(DateOnly? from, DateOnly? to, CancellationToken ct)
+    {
+        var tagQuery = db.Set<Innovayse.Domain.Support.TicketTag>().AsQueryable();
+
+        if (from.HasValue || to.HasValue)
+        {
+            // Filter by ticket creation date
+            var ticketIds = db.Tickets.AsQueryable();
+            if (from.HasValue)
+            {
+                var fromDto = new DateTimeOffset(from.Value.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+                ticketIds = ticketIds.Where(t => t.CreatedAt >= fromDto);
+            }
+            if (to.HasValue)
+            {
+                var toDto = new DateTimeOffset(to.Value.ToDateTime(TimeOnly.MaxValue), TimeSpan.Zero);
+                ticketIds = ticketIds.Where(t => t.CreatedAt <= toDto);
+            }
+            var ids = await ticketIds.Select(t => t.Id).ToListAsync(ct);
+            tagQuery = tagQuery.Where(tag => ids.Contains(tag.TicketId));
+        }
+
+        var raw = await tagQuery
+            .GroupBy(t => t.Name)
+            .Select(g => new { Tag = g.Key, Count = g.Count() })
+            .OrderByDescending(x => x.Count)
+            .ToListAsync(ct);
+
+        var rows = raw.Select(x => new TicketTagRowDto(x.Tag, x.Count)).ToList();
+        return new TicketTagsDto(rows);
+    }
+
+    /// <inheritdoc/>
+    public async Task<VatMossDto> GetVatMossAsync(int year, int quarter, CancellationToken ct)
+    {
+        // Quarter date range
+        var (startMonth, endMonth) = quarter switch
+        {
+            1 => (1, 3),
+            2 => (4, 6),
+            3 => (7, 9),
+            _ => (10, 12),
+        };
+        var from = new DateTimeOffset(new DateTime(year, startMonth, 1), TimeSpan.Zero);
+        var to   = new DateTimeOffset(new DateTime(year, endMonth,
+            DateTime.DaysInMonth(year, endMonth), 23, 59, 59), TimeSpan.Zero);
+
+        var quarterNames = new[] { "", "January - March", "April - June", "July - September", "October - December" };
+        var monthNames   = new[] { "", "January", "February", "March", "April", "May", "June",
+                                       "July", "August", "September", "October", "November", "December" };
+        var periodLabel  = $"For Period 1st {monthNames[startMonth]} {year} to " +
+                           $"{DateTime.DaysInMonth(year, endMonth)}th {monthNames[endMonth]} {year}";
+
+        // Paid invoices with VAT in the period
+        var raw = await db.Invoices
+            .Where(inv => inv.Status == InvoiceStatus.Paid
+                && inv.Tax > 0
+                && inv.PaidAt != null
+                && inv.PaidAt >= from
+                && inv.PaidAt <= to)
+            .Join(db.Clients, inv => inv.ClientId, c => c.Id,
+                (inv, c) => new { c.Country, inv.TaxRate, inv.SubTotal, inv.Tax })
+            .Where(x => x.Country != null)
+            .ToListAsync(ct);
+
+        var grouped = raw
+            .GroupBy(x => new { x.Country, x.TaxRate })
+            .Select(g => new VatMossRowDto(
+                CountryName(g.Key.Country!),
+                g.Key.Country!,
+                g.Key.TaxRate,
+                g.Count(),
+                g.Sum(x => x.SubTotal),
+                g.Sum(x => x.Tax),
+                "USD"))
+            .OrderBy(r => r.CountryName)
+            .ToList();
+
+        return new VatMossDto(periodLabel, grouped);
+    }
+
+    private static string CountryName(string code) => code switch
+    {
+        "AT" => "Austria",       "BE" => "Belgium",      "BG" => "Bulgaria",
+        "CY" => "Cyprus",        "CZ" => "Czech Republic","DE" => "Germany",
+        "DK" => "Denmark",       "EE" => "Estonia",      "ES" => "Spain",
+        "FI" => "Finland",       "FR" => "France",       "GB" => "United Kingdom",
+        "GR" => "Greece",        "HR" => "Croatia",      "HU" => "Hungary",
+        "IE" => "Ireland",       "IT" => "Italy",        "LT" => "Lithuania",
+        "LU" => "Luxembourg",    "LV" => "Latvia",       "MT" => "Malta",
+        "NL" => "Netherlands",   "PL" => "Poland",       "PT" => "Portugal",
+        "RO" => "Romania",       "SE" => "Sweden",       "SI" => "Slovenia",
+        "SK" => "Slovakia",      "AM" => "Armenia",      "RU" => "Russia",
+        "US" => "United States", "UA" => "Ukraine",      "TR" => "Turkey",
+        _ => code,
+    };
 }

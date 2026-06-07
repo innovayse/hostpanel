@@ -25,8 +25,7 @@ export default defineEventHandler(async (event) => {
       `${apiUrl}/api/auth/login`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: { email, password },
       }
     )
 

@@ -76,7 +76,6 @@ export async function tryRefreshToken(event: H3Event): Promise<string | null> {
         {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
             Cookie: `refreshToken=${refreshToken}`,
           },
         }
@@ -149,7 +148,7 @@ export async function internalApiCall<T>(
     $fetch<T>(`${apiUrl}/api${endpoint}`, {
       method: options.method ?? 'GET',
       headers: buildHeaders(bearerToken),
-      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      body: options.body,
     })
 
   try {

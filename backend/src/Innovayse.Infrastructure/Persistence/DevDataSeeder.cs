@@ -287,7 +287,7 @@ public sealed class DevDataSeeder(
 
                 foreach (var (name, monthly, annual) in products)
                 {
-                    var product = Product.Create(group.Id, name, null, null, productType, monthly, annual);
+                    var product = Product.Create(group.Id, name, null, null, null, productType, monthly, annual);
                     db.Products.Add(product);
                 }
             }

@@ -26,6 +26,9 @@ public sealed class TestIntegrationConnectionHandler(ISettingRepository settings
         ["plesk"] = ("Plesk", "Hosting / Provisioning", ["host", "username", "password"], ["host", "port", "username", "password"]),
         ["cwp"] = ("CentOS Web Panel", "Hosting / Provisioning", ["host", "api_key"], ["host", "port", "api_key"]),
         ["cwp7"] = ("CWP7", "Hosting / Provisioning", [], []),
+        ["touchestate"] = ("TouchEstate", "provisioning",
+            ["base_url", "public_key", "secret_key"],
+            ["base_url", "public_key", "secret_key"]),
         ["smtp"] = ("SMTP Server", "Email / SMTP", ["host", "username", "password", "from_address"], ["host", "port", "username", "password", "from_address", "encryption"]),
         ["maxmind"] = ("MaxMind", "Fraud Protection", ["account_id", "license_key"], ["account_id", "license_key"]),
     };

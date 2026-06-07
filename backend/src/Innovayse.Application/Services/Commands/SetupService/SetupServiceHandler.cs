@@ -51,6 +51,12 @@ public sealed class SetupServiceHandler(
         var product = await productRepo.FindByIdAsync(service.ProductId, ct);
         if (product is not null)
         {
+            if (product.Type == Domain.Products.ProductType.ManagedSiteTouchestate)
+            {
+                throw new InvalidOperationException(
+                    "ManagedSiteTouchestate services must use the SetupManagedSite command.");
+            }
+
             module = MapProductTypeToModule(product.Type);
         }
 

@@ -11,6 +11,9 @@ using Innovayse.Domain.Products;
 /// <param name="Type">Product type.</param>
 /// <param name="MonthlyPrice">Monthly price (≥ 0).</param>
 /// <param name="AnnualPrice">Annual price (≥ 0).</param>
+/// <param name="DeployRepoUrl">Optional Git repository URL for managed site deployment.</param>
+/// <param name="DeployBranch">Optional Git branch to clone.</param>
+/// <param name="DeployScript">Optional shell script to run after cloning the repo.</param>
 public record CreateProductCommand(
     int GroupId,
     string Name,
@@ -19,4 +22,7 @@ public record CreateProductCommand(
     string? Slug,
     ProductType Type,
     decimal MonthlyPrice,
-    decimal AnnualPrice);
+    decimal AnnualPrice,
+    string? DeployRepoUrl,
+    string? DeployBranch,
+    string? DeployScript);

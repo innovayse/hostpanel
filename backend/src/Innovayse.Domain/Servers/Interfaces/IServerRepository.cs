@@ -17,6 +17,12 @@ public interface IServerRepository
     /// <returns>List of matching servers.</returns>
     Task<List<Server>> ListAsync(ServerModule? module, CancellationToken ct);
 
+    /// <summary>Returns servers matching the supplied identifiers.</summary>
+    /// <param name="ids">Server identifiers to look up.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The matching servers (may be fewer than requested if some IDs don't exist).</returns>
+    Task<IReadOnlyList<Server>> FindByIdsAsync(IEnumerable<int> ids, CancellationToken ct);
+
     /// <summary>Queues a new server for insertion on the next SaveChanges.</summary>
     /// <param name="server">The server to add.</param>
     void Add(Server server);

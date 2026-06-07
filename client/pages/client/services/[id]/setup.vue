@@ -41,13 +41,105 @@
 
         <!-- Progress Bar -->
         <div class="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mb-12">
-          <div 
+          <div
             class="h-full bg-gradient-to-r from-cyan-500 to-primary-500 transition-all duration-500"
             :style="{ width: `${(currentStep / totalSteps) * 100}%` }" />
         </div>
 
-        <!-- Step 1: Choose Domain -->
-        <div v-if="currentStep === 1" 
+        <!-- MANAGED SITE FLOW: Step 1 — Domain + TouchEstate Keys -->
+        <div v-if="isManagedSite && currentStep === 1"
+             v-motion
+             :initial="{ opacity: 0, x: 20 }"
+             :enter="{ opacity: 1, x: 0 }"
+             class="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-xl">
+          <div class="flex items-center gap-4 mb-8">
+            <div class="w-12 h-12 rounded-2xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+              <Globe :size="24" />
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-white">Your Website</h3>
+              <p class="text-sm text-gray-500">Domain and TouchEstate API credentials</p>
+            </div>
+          </div>
+
+          <div class="space-y-6">
+            <UiInput v-model="setupData.domain" label="Domain Name" placeholder="example.com" required />
+            <p class="text-xs text-gray-500">
+              Enter the domain where your website will be deployed. You'll need to point its DNS to us later.
+            </p>
+
+            <UiInput v-model="setupData.touchEstatePublicKey" label="TouchEstate Public Key" placeholder="pk_live_..." required />
+            <UiInput v-model="setupData.touchEstateSecretKey" label="TouchEstate Secret Key" placeholder="sk_live_..." required />
+            <p class="text-xs text-gray-500">
+              Your TouchEstate API keys are used to connect your property listings. You can find them in your TouchEstate dashboard.
+            </p>
+
+            <UiButton
+              full-width
+              size="lg"
+              :disabled="!setupData.domain || !setupData.touchEstatePublicKey || !setupData.touchEstateSecretKey"
+              @click="nextStep"
+            >
+              Continue
+              <ArrowRight :size="18" class="ml-2" />
+            </UiButton>
+          </div>
+        </div>
+
+        <!-- MANAGED SITE FLOW: Step 2 — Confirm & Deploy -->
+        <div v-if="isManagedSite && currentStep === 2"
+             v-motion
+             :initial="{ opacity: 0, scale: 0.95 }"
+             :enter="{ opacity: 1, scale: 1 }"
+             class="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-xl">
+          <div class="text-center mb-8">
+            <div class="w-20 h-20 rounded-full bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mx-auto mb-6 text-cyan-400">
+              <Rocket :size="32" />
+            </div>
+            <h3 class="text-xl font-bold text-white">Ready to Deploy?</h3>
+            <p class="text-gray-400 mt-2">We're about to deploy your website with the following details:</p>
+          </div>
+
+          <div class="space-y-3 mb-8 p-4 rounded-2xl bg-white/5 border border-white/5">
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Plan:</span>
+              <span class="text-white font-medium">{{ service.name }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Domain:</span>
+              <span class="text-white font-medium">{{ setupData.domain }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Public Key:</span>
+              <span class="text-white font-medium">{{ maskKey(setupData.touchEstatePublicKey) }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Secret Key:</span>
+              <span class="text-white font-medium">{{ maskKey(setupData.touchEstateSecretKey) }}</span>
+            </div>
+          </div>
+
+          <!-- Error Message if any -->
+          <div v-if="setupError" class="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex gap-3">
+            <AlertCircle :size="18" class="shrink-0" />
+            <p>{{ setupError }}</p>
+          </div>
+
+          <div class="space-y-3">
+            <UiButton variant="primary" full-width size="lg" :loading="submitting" @click="finishSetup">
+              <Zap v-if="!submitting" :size="18" class="mr-2" />
+              Deploy My Website
+            </UiButton>
+            <UiButton variant="ghost" full-width :disabled="submitting" @click="prevStep">I need to change something</UiButton>
+          </div>
+
+          <p class="text-[10px] text-center text-gray-500 mt-6 uppercase tracking-widest font-bold">
+            Deploying your website takes about 60 seconds
+          </p>
+        </div>
+
+        <!-- STANDARD FLOW: Step 1 — Choose Domain -->
+        <div v-if="!isManagedSite && currentStep === 1"
              v-motion
              :initial="{ opacity: 0, x: 20 }"
              :enter="{ opacity: 1, x: 0 }"
@@ -74,8 +166,8 @@
           </div>
         </div>
 
-        <!-- Step 2: Credentials -->
-        <div v-if="currentStep === 2" 
+        <!-- STANDARD FLOW: Step 2 — Credentials -->
+        <div v-if="!isManagedSite && currentStep === 2"
              v-motion
              :initial="{ opacity: 0, x: 20 }"
              :enter="{ opacity: 1, x: 0 }"
@@ -113,8 +205,8 @@
           </div>
         </div>
 
-        <!-- Step 3: Confirmation -->
-        <div v-if="currentStep === 3" 
+        <!-- STANDARD FLOW: Step 3 — Confirmation -->
+        <div v-if="!isManagedSite && currentStep === 3"
              v-motion
              :initial="{ opacity: 0, scale: 0.95 }"
              :enter="{ opacity: 1, scale: 1 }"
@@ -166,6 +258,13 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * Setup wizard for new services.
+ *
+ * Shows a 2-step flow for ManagedSiteTouchestate products (domain + TouchEstate keys, then confirm)
+ * and a 3-step flow for all other products (domain, credentials, then confirm).
+ */
+
 import { Globe, Lock, Rocket, ArrowRight, Zap, CheckCircle, AlertCircle } from 'lucide-vue-next'
 import { useClientStore } from '~/stores/client'
 
@@ -175,28 +274,43 @@ const { t } = useI18n()
 const route = useRoute()
 const serviceId = route.params.id as string
 
-/** Simplified interface for the service for template usage */
+/** Simplified interface for the service for template usage. */
 interface ClientService {
+  /** Service primary key. */
   id: number
+  /** Display name of the product. */
   name: string
+  /** Current lifecycle status. */
   status: string
+  /** Linked domain name. */
   domain: string
+  /** Hosting account username. */
   username: string
+  /** Product type discriminator from the backend. */
+  productType: string
 }
 
 const { data: service, pending, error } = await useApi<ClientService>(`/api/portal/client/services/${serviceId}`)
 
+/** Whether this service is a ManagedSiteTouchestate product. */
+const isManagedSite = computed(() => service.value?.productType === 'ManagedSiteTouchestate')
+
+/** Total number of steps in the wizard based on product type. */
+const totalSteps = computed(() => isManagedSite.value ? 2 : 3)
+
 const currentStep = ref(1)
-const totalSteps = 3
 const setupError = ref('')
 const submitting = ref(false)
 
 const setupData = reactive({
   domain: '',
   username: '',
-  password: ''
+  password: '',
+  touchEstatePublicKey: '',
+  touchEstateSecretKey: '',
 })
 
+/** Validation error for the username field. */
 const usernameError = computed(() => {
   const u = setupData.username
   if (!u) return ''
@@ -206,41 +320,81 @@ const usernameError = computed(() => {
   return ''
 })
 
+/** Strips invalid characters from the username input. */
 function sanitizeUsername() {
   setupData.username = setupData.username.toLowerCase().replace(/[^a-z0-9]/g, '')
 }
 
+/**
+ * Masks an API key for display, showing only the first 6 and last 4 characters.
+ *
+ * @param key - The key string to mask.
+ * @returns Masked string.
+ */
+function maskKey(key: string): string {
+  if (key.length <= 10) return '****'
+  return `${key.slice(0, 6)}...${key.slice(-4)}`
+}
+
+/** Title for the current wizard step. */
 const stepTitle = computed(() => {
+  if (isManagedSite.value) {
+    return currentStep.value === 1 ? 'Configure Your Website' : 'Final Review'
+  }
   if (currentStep.value === 1) return 'Pick your domain'
   if (currentStep.value === 2) return 'Set your credentials'
   return 'Final Review'
 })
 
+/** Subtitle for the current wizard step. */
 const stepSubtitle = computed(() => {
+  if (isManagedSite.value) {
+    return currentStep.value === 1
+      ? 'Set up your domain and connect your TouchEstate account'
+      : 'Double check everything before we deploy your website'
+  }
   if (currentStep.value === 1) return 'Choose the address for your new website'
   if (currentStep.value === 2) return 'These details will be used to log in to your control panel'
   return 'Double check everything before we create your account'
 })
 
+/** Advances to the next wizard step. */
 function nextStep() {
-  if (currentStep.value < totalSteps) currentStep.value++
+  if (currentStep.value < totalSteps.value) currentStep.value++
 }
 
+/** Returns to the previous wizard step. */
 function prevStep() {
   if (currentStep.value > 1) currentStep.value--
 }
 
+/**
+ * Submits the setup data to the backend and redirects on success.
+ *
+ * Sends different payloads for managed site vs standard hosting services.
+ */
 async function finishSetup() {
   submitting.value = true
   setupError.value = ''
-  
+
   try {
-    // This API endpoint will need to be created or updated to handle service provisioning
+    const body = isManagedSite.value
+      ? {
+          domain: setupData.domain,
+          touchEstatePublicKey: setupData.touchEstatePublicKey,
+          touchEstateSecretKey: setupData.touchEstateSecretKey,
+        }
+      : {
+          domain: setupData.domain,
+          username: setupData.username,
+          password: setupData.password,
+        }
+
     await apiFetch(`/api/portal/client/services/${serviceId}/setup`, {
       method: 'POST',
-      body: setupData
+      body,
     })
-    
+
     // Invalidate cached services so pages fetch fresh data
     const store = useClientStore()
     store.servicesLoaded = false
@@ -250,8 +404,9 @@ async function finishSetup() {
 
     // Success - redirect to the service management page
     await navigateTo(`/client/services/${serviceId}`)
-  } catch (err: any) {
-    setupError.value = err?.data?.statusMessage || 'An error occurred during setup. Please try again or contact support.'
+  } catch (err: unknown) {
+    const apiErr = err as { data?: { statusMessage?: string } }
+    setupError.value = apiErr?.data?.statusMessage || 'An error occurred during setup. Please try again or contact support.'
   } finally {
     submitting.value = false
   }

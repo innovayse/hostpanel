@@ -166,6 +166,18 @@ export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
       { key: 'secure', label: 'Use SSL for Connections', type: 'select', options: ['Yes', 'No'] },
     ],
   },
+  touchestate: {
+    slug: 'touchestate',
+    color: 'bg-[#10b981]',
+    logo: '/integrations/touchestate.svg',
+    shortDescription: 'Managed real estate websites with TouchEstate themes',
+    category: 'provisioning',
+    fields: [
+      { key: 'base_url', label: 'API Base URL', type: 'text' },
+      { key: 'public_key', label: 'Public Key', type: 'text' },
+      { key: 'secret_key', label: 'Secret Key', type: 'password' },
+    ],
+  },
   smtp: {
     slug: 'smtp',
     color: 'bg-teal-700',

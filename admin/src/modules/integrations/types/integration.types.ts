@@ -19,6 +19,7 @@ export type IntegrationSlug =
   | 'plesk'
   | 'cwp'
   | 'cwp7'
+  | 'touchestate'
   | 'smtp'
   | 'maxmind'
 

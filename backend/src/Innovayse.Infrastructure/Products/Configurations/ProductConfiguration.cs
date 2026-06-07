@@ -21,6 +21,9 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(x => x.MonthlyPrice).IsRequired().HasColumnType("numeric(18,4)");
         builder.Property(x => x.AnnualPrice).IsRequired().HasColumnType("numeric(18,4)");
         builder.Property(x => x.CreatedAt).IsRequired();
+        builder.Property(x => x.DeployRepoUrl).HasMaxLength(500);
+        builder.Property(x => x.DeployBranch).HasMaxLength(100);
+        builder.Property(x => x.DeployScript).HasColumnType("text");
         builder.Ignore(x => x.DomainEvents);
     }
 }

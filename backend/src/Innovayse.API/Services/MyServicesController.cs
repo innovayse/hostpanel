@@ -7,8 +7,11 @@ using Innovayse.Application.Clients.Queries.GetMyProfile;
 using Innovayse.Application.Provisioning.Queries.GetCPanelSsoUrl;
 using Innovayse.Application.Services.Commands.CancelService;
 using Innovayse.Application.Services.Commands.OrderService;
+using Innovayse.Application.Services.Commands.SetupManagedSite;
 using Innovayse.Application.Services.Commands.SetupService;
 using Innovayse.Application.Services.Queries.GetCancellationStatus;
+using Innovayse.Application.Services.Queries.GetServiceProductType;
+using Innovayse.Domain.Products;
 using Innovayse.Application.Services.Queries.GetMyServices;
 using Innovayse.Domain.Auth;
 using Microsoft.AspNetCore.Authorization;
@@ -86,19 +89,53 @@ public sealed class MyServicesController(IMessageBus bus) : ControllerBase
     }
 
     /// <summary>
-    /// Sets up a pending service with hosting details (domain, username, password)
-    /// and triggers provisioning.
+    /// Sets up a pending service and triggers provisioning.
+    /// For standard hosting products (SharedHosting, Vps, Dedicated), provide domain, username, and password.
+    /// For ManagedSiteTouchestate products, provide domain, touchEstatePublicKey, and touchEstateSecretKey.
     /// </summary>
     /// <param name="id">Client service primary key.</param>
-    /// <param name="request">Setup request body with domain, username, and password.</param>
+    /// <param name="request">Setup request body.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>200 OK on successful setup and provisioning.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when required fields for the detected product type are missing.
+    /// </exception>
     [HttpPost("{id:int}/setup")]
     public async Task<IActionResult> SetupAsync(
         int id, [FromBody] SetupServiceRequest request, CancellationToken ct)
     {
-        await bus.InvokeAsync(
-            new SetupServiceCommand(id, request.Domain, request.Username, request.Password), ct);
+        var productType = await bus.InvokeAsync<ProductType>(
+            new GetServiceProductTypeQuery(id), ct);
+
+        if (productType == ProductType.ManagedSiteTouchestate)
+        {
+            if (string.IsNullOrWhiteSpace(request.TouchEstatePublicKey)
+                || string.IsNullOrWhiteSpace(request.TouchEstateSecretKey))
+            {
+                return BadRequest(
+                    "touchEstatePublicKey and touchEstateSecretKey are required for ManagedSiteTouchestate services.");
+            }
+
+            await bus.InvokeAsync(
+                new SetupManagedSiteCommand(
+                    id,
+                    request.Domain,
+                    request.TouchEstatePublicKey,
+                    request.TouchEstateSecretKey),
+                ct);
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(request.Username)
+                || string.IsNullOrWhiteSpace(request.Password))
+            {
+                return BadRequest("username and password are required for this service type.");
+            }
+
+            await bus.InvokeAsync(
+                new SetupServiceCommand(id, request.Domain, request.Username, request.Password), ct);
+        }
+
         return Ok();
     }
 

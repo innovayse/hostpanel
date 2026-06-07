@@ -17,7 +17,8 @@ public sealed class UpdateProductHandler(IProductRepository repo, IUnitOfWork uo
         var product = await repo.FindByIdAsync(cmd.Id, ct)
             ?? throw new InvalidOperationException($"Product {cmd.Id} not found.");
 
-        product.Update(cmd.Name, cmd.Description, cmd.Website, cmd.Slug, cmd.MonthlyPrice, cmd.AnnualPrice);
+        product.Update(cmd.Name, cmd.Description, cmd.Website, cmd.Slug, cmd.MonthlyPrice, cmd.AnnualPrice,
+            cmd.DeployRepoUrl, cmd.DeployBranch, cmd.DeployScript);
         await uow.SaveChangesAsync(ct);
     }
 }

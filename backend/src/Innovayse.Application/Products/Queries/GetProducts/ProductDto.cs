@@ -12,6 +12,9 @@ using Innovayse.Domain.Products;
 /// <param name="Type">Product type.</param>
 /// <param name="Status">Current status.</param>
 /// <param name="Pricing">Monthly and annual pricing.</param>
+/// <param name="DeployRepoUrl">Optional Git repository URL for managed site deployment.</param>
+/// <param name="DeployBranch">Optional Git branch to clone.</param>
+/// <param name="DeployScript">Optional shell script to run after cloning the repo.</param>
 public record ProductDto(
     int Id,
     int GroupId,
@@ -21,4 +24,7 @@ public record ProductDto(
     string? Slug,
     ProductType Type,
     ProductStatus Status,
-    ProductPricingDto Pricing);
+    ProductPricingDto Pricing,
+    string? DeployRepoUrl,
+    string? DeployBranch,
+    string? DeployScript);

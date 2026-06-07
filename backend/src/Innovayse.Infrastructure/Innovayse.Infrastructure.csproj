@@ -28,5 +28,6 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
     <PackageReference Include="WolverineFx" />
     <PackageReference Include="WolverineFx.Postgresql" />
+    <PackageReference Include="SSH.NET" />
   </ItemGroup>
 </Project>

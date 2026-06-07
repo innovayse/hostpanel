@@ -24,7 +24,10 @@ public sealed class GetProductsHandler(IProductRepository repo)
                 p.Slug,
                 p.Type,
                 p.Status,
-                new ProductPricingDto(p.MonthlyPrice, p.AnnualPrice)))
+                new ProductPricingDto(p.MonthlyPrice, p.AnnualPrice),
+                p.DeployRepoUrl,
+                p.DeployBranch,
+                p.DeployScript))
             .ToList();
     }
 }

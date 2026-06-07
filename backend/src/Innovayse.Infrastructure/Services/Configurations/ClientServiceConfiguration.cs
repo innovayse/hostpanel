@@ -39,6 +39,8 @@ public sealed class ClientServiceConfiguration : IEntityTypeConfiguration<Client
         builder.Property(x => x.SubscriptionId).HasMaxLength(256);
         builder.Property(x => x.AutoTerminateReason).HasMaxLength(2000);
         builder.Property(x => x.AdminNotes).HasMaxLength(2000);
+        builder.Property(x => x.TouchEstatePublicKey).HasMaxLength(200);
+        builder.Property(x => x.TouchEstateSecretKey).HasMaxLength(200);
         builder.Ignore(x => x.DomainEvents);
     }
 }

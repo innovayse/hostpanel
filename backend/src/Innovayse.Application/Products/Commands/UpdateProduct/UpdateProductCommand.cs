@@ -8,4 +8,17 @@ namespace Innovayse.Application.Products.Commands.UpdateProduct;
 /// <param name="Slug">URL-friendly slug, or null to clear.</param>
 /// <param name="MonthlyPrice">New monthly price.</param>
 /// <param name="AnnualPrice">New annual price.</param>
-public record UpdateProductCommand(int Id, string Name, string? Description, string? Website, string? Slug, decimal MonthlyPrice, decimal AnnualPrice);
+/// <param name="DeployRepoUrl">Git repository URL for managed site deployment, or null to clear.</param>
+/// <param name="DeployBranch">Git branch to clone, or null to clear.</param>
+/// <param name="DeployScript">Shell script to run after cloning, or null to clear.</param>
+public record UpdateProductCommand(
+    int Id,
+    string Name,
+    string? Description,
+    string? Website,
+    string? Slug,
+    decimal MonthlyPrice,
+    decimal AnnualPrice,
+    string? DeployRepoUrl,
+    string? DeployBranch,
+    string? DeployScript);

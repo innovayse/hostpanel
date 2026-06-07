@@ -34,6 +34,7 @@ const productTypes = [
   { value: 'SharedHosting', label: 'Shared Hosting', icon: 'rack' },
   { value: 'Vps', label: 'VPS', icon: 'cloud' },
   { value: 'Dedicated', label: 'Dedicated', icon: 'server' },
+  { value: 'ManagedSiteTouchestate', label: 'Managed Site', icon: 'globe' },
   { value: 'Other', label: 'Other', icon: 'box' },
 ] as const
 
@@ -64,6 +65,15 @@ const annualPrice = ref(0)
 /** Whether the product is hidden (maps to Inactive status). */
 const isHidden = ref(false)
 
+/** Git repository URL for managed site deployment. */
+const deployRepoUrl = ref('')
+
+/** Git branch to clone for managed site deployment. */
+const deployBranch = ref('main')
+
+/** Shell deploy script to run after cloning the repo. */
+const deployScript = ref('')
+
 /**
  * Initializes or resets form fields based on the product prop.
  *
@@ -81,6 +91,9 @@ watch(() => props.product, (p) => {
     monthlyPrice.value = p.pricing.monthly
     annualPrice.value = p.pricing.annual
     isHidden.value = p.status === 'Inactive'
+    deployRepoUrl.value = p.deployRepoUrl ?? ''
+    deployBranch.value = p.deployBranch ?? 'main'
+    deployScript.value = p.deployScript ?? ''
   } else {
     type.value = 'SharedHosting'
     groupId.value = props.groups.length > 0 ? props.groups[0].id : 0
@@ -91,6 +104,9 @@ watch(() => props.product, (p) => {
     monthlyPrice.value = 0
     annualPrice.value = 0
     isHidden.value = false
+    deployRepoUrl.value = ''
+    deployBranch.value = 'main'
+    deployScript.value = ''
   }
 }, { immediate: true })
 
@@ -129,6 +145,9 @@ function handleSubmit(): void {
     type: type.value,
     monthlyPrice: monthlyPrice.value,
     annualPrice: annualPrice.value,
+    deployRepoUrl: deployRepoUrl.value || null,
+    deployBranch: deployBranch.value || null,
+    deployScript: deployScript.value || null,
   })
 }
 </script>
@@ -189,6 +208,12 @@ function handleSubmit(): void {
                 <rect x="2" y="14" width="20" height="8" rx="2" />
                 <line x1="6" y1="6" x2="6.01" y2="6" />
                 <line x1="6" y1="18" x2="6.01" y2="18" />
+              </svg>
+              <!-- Globe icon -->
+              <svg v-else-if="pt.icon === 'globe'" class="w-5 h-5 shrink-0" :class="type === pt.value ? 'text-primary-400' : 'text-text-muted'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="2" y1="12" x2="22" y2="12" />
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
               </svg>
               <!-- Box icon -->
               <svg v-else class="w-5 h-5 shrink-0" :class="type === pt.value ? 'text-primary-400' : 'text-text-muted'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -278,6 +303,42 @@ function handleSubmit(): void {
                 placeholder="0.00"
                 class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors"
               />
+            </div>
+          </div>
+        </div>
+
+        <!-- Deploy Config (Managed Site only) -->
+        <div v-if="type === 'ManagedSiteTouchestate'" class="mt-5 pt-5 border-t border-border">
+          <h3 class="text-sm font-semibold text-text-primary mb-3">Deploy Configuration</h3>
+
+          <div class="flex flex-col gap-3">
+            <div>
+              <label class="block text-xs text-text-secondary mb-1">Git Repository URL</label>
+              <input
+                v-model="deployRepoUrl"
+                type="text"
+                placeholder="https://github.com/org/theme-repo.git"
+                class="w-full bg-[#1a1a2e] border border-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 transition-colors"
+              />
+            </div>
+            <div>
+              <label class="block text-xs text-text-secondary mb-1">Branch</label>
+              <input
+                v-model="deployBranch"
+                type="text"
+                placeholder="main"
+                class="w-full bg-[#1a1a2e] border border-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 transition-colors"
+              />
+            </div>
+            <div>
+              <label class="block text-xs text-text-secondary mb-1">Deploy Script</label>
+              <textarea
+                v-model="deployScript"
+                rows="4"
+                placeholder="composer install --no-dev&#10;php artisan migrate --force&#10;npm run build"
+                class="w-full bg-[#1a1a2e] border border-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 transition-colors resize-none font-mono text-xs"
+              />
+              <p class="text-[0.65rem] text-text-muted mt-1">Shell commands to run after cloning the repo</p>
             </div>
           </div>
         </div>

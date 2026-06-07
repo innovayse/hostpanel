@@ -40,6 +40,7 @@ using Innovayse.Infrastructure.Servers;
 using Innovayse.Infrastructure.Services;
 using Innovayse.Infrastructure.Settings;
 using Innovayse.Infrastructure.Slides;
+using Innovayse.Infrastructure.Ssh;
 using Innovayse.Infrastructure.Support;
 using Innovayse.Providers.CWP;
 using Microsoft.AspNetCore.Identity;
@@ -189,6 +190,9 @@ public static class DependencyInjection
 
         // Settings
         services.AddScoped<ISettingRepository, SettingRepository>();
+
+        // SSH
+        services.AddScoped<ISshExecutor, SshExecutor>();
 
         // Servers
         services.AddScoped<IServerRepository, ServerRepository>();

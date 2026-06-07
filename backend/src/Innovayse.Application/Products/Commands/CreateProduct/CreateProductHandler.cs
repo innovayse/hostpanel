@@ -23,7 +23,8 @@ public sealed class CreateProductHandler(
             ?? throw new InvalidOperationException($"Product group {cmd.GroupId} not found.");
 
         var product = Product.Create(
-            cmd.GroupId, cmd.Name, cmd.Description, cmd.Website, cmd.Slug, cmd.Type, cmd.MonthlyPrice, cmd.AnnualPrice);
+            cmd.GroupId, cmd.Name, cmd.Description, cmd.Website, cmd.Slug, cmd.Type, cmd.MonthlyPrice, cmd.AnnualPrice,
+            cmd.DeployRepoUrl, cmd.DeployBranch, cmd.DeployScript);
 
         repo.Add(product);
         await uow.SaveChangesAsync(ct);

@@ -34,7 +34,7 @@
         </div>
         <div class="flex items-center gap-3">
           <UiButton
-            v-if="service.serverhostname && service.status === 'Active'"
+            v-if="service.serverhostname && service.status === 'Active' && !isManagedSite"
             variant="primary"
             size="sm"
             :loading="ssoLoading"
@@ -140,7 +140,7 @@
           </div>
 
           <!-- Quick Links section -->
-          <div v-if="service.serverhostname" class="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 overflow-hidden">
+          <div v-if="service.serverhostname && !isManagedSite" class="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 overflow-hidden">
             <div class="px-4 py-2.5 border-b border-gray-100 dark:border-white/10 flex items-center gap-2">
               <Link2 :size="13" :stroke-width="2" class="text-gray-400 dark:text-gray-500" />
               <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
@@ -207,8 +207,51 @@
               </dl>
             </UiCard>
 
-            <!-- Server Info -->
-            <UiCard class="mb-4">
+            <!-- Managed Site Info -->
+            <UiCard v-if="isManagedSite" class="mb-4">
+              <h2 class="text-base font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+                <ServerIcon :size="18" :stroke-width="2" class="text-cyan-500 dark:text-cyan-400" />
+                {{ $t('client.services.serverInfo') }}
+              </h2>
+              <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-5">
+                <UiDescriptionItem :label="$t('client.services.domain')" :value="service.domain || '\u2014'" />
+                <UiDescriptionItem :label="$t('client.services.ipAddress')" :value="service.serverip || '\u2014'" value-class="font-mono text-xs" />
+                <UiDescriptionItem :label="$t('client.services.nameserver1')">
+                  <span class="text-sm font-mono text-gray-900 dark:text-white">{{ service.ns1 || `ns1.${service.serverhostname}` }}</span>
+                </UiDescriptionItem>
+                <UiDescriptionItem :label="$t('client.services.nameserver2')">
+                  <span class="text-sm font-mono text-gray-900 dark:text-white">{{ service.ns2 || `ns2.${service.serverhostname}` }}</span>
+                </UiDescriptionItem>
+                <UiDescriptionItem v-if="service.touchEstatePublicKey" :label="$t('client.services.tePublicKey')">
+                  <span class="text-sm font-mono text-gray-900 dark:text-white">{{ maskKey(service.touchEstatePublicKey) }}</span>
+                </UiDescriptionItem>
+                <UiDescriptionItem v-if="service.touchEstateSecretKey" :label="$t('client.services.teSecretKey')">
+                  <span class="text-sm font-mono text-gray-900 dark:text-white">{{ maskKey(service.touchEstateSecretKey) }}</span>
+                </UiDescriptionItem>
+              </dl>
+
+              <div class="mt-5 p-3 bg-cyan-500/5 border border-cyan-500/20 rounded-lg">
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ $t('client.services.managedSiteDnsNotice') }}
+                </p>
+              </div>
+
+              <!-- Visit Website -->
+              <div v-if="service.domain" class="mt-6 pt-6 border-t border-gray-100 dark:border-white/10 flex flex-wrap gap-3">
+                <a
+                  :href="`https://${service.domain}`"
+                  target="_blank"
+                  rel="noopener"
+                  class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                >
+                  <Globe :size="15" :stroke-width="2" />
+                  {{ $t('client.services.visitWebsite') }}
+                </a>
+              </div>
+            </UiCard>
+
+            <!-- Server Info (hosting services only) -->
+            <UiCard v-if="!isManagedSite" class="mb-4">
               <h2 class="text-base font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
                 <ServerIcon :size="18" :stroke-width="2" class="text-cyan-500 dark:text-cyan-400" />
                 {{ $t('client.services.serverInfo') }}
@@ -304,7 +347,7 @@
             </UiCard>
 
             <!-- SSH Access -->
-            <UiCard v-if="sshInfo?.hasAccess" class="mb-4">
+            <UiCard v-if="sshInfo?.hasAccess && !isManagedSite" class="mb-4">
               <h2 class="text-base font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
                 <Terminal :size="18" :stroke-width="2" class="text-cyan-500 dark:text-cyan-400" />
                 {{ $t('client.services.sshAccess') }}
@@ -350,7 +393,7 @@
             <div class="mb-4 p-5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5">
               <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">{{ $t('client.services.whatToday') }}</h3>
               <ul class="space-y-2">
-                <li v-if="service.serverhostname">
+                <li v-if="service.serverhostname && !isManagedSite">
                   <button :disabled="ssoLoading" class="text-primary-600 dark:text-primary-400 text-sm hover:underline flex items-center gap-1.5 disabled:opacity-60" @click="loginToCpanel">
                     <Loader v-if="ssoLoading" :size="14" :stroke-width="2" class="animate-spin" />
                     <ChevronRight v-else :size="14" :stroke-width="2" />
@@ -590,6 +633,11 @@ const { data: service, pending, error } = await useApi<{
   bwusage: string
   bwlimit: string
   lastupdate: string
+  productType: string
+  ns1: string
+  ns2: string
+  touchEstatePublicKey: string
+  touchEstateSecretKey: string
   configoptions?: {
     configoption?: Array<{ id: number; option: string; type: string; value: string }>
   }
@@ -634,14 +682,29 @@ function copySSHCommand() {
 // ── Computed ──────────────────────────────────────────────────────────────────
 const configOptions = computed(() => service.value?.configoptions?.configoption || [])
 
+/** Whether this service is a managed site (TouchEstate) — no hosting access. */
+const isManagedSite = computed(() => service.value?.productType === 'ManagedSiteTouchestate')
+
+/** Masks a key string, showing only the first 6 characters. */
+function maskKey(key: string): string {
+  if (!key || key.length <= 6) return key || '\u2014'
+  return `${key.slice(0, 6)}${'•'.repeat(12)}`
+}
+
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 const activeTab = ref('overview')
 
-const tabs = computed(() => [
-  { key: 'overview',  label: t('client.services.tabOverview'),        icon: LayoutGrid },
-  { key: 'password',  label: t('client.services.tabChangePassword'),  icon: KeyRound   },
-  { key: 'cancel',    label: t('client.services.tabCancel'),          icon: XCircle    },
-])
+const tabs = computed(() => {
+  const all = [
+    { key: 'overview',  label: t('client.services.tabOverview'),        icon: LayoutGrid },
+    { key: 'password',  label: t('client.services.tabChangePassword'),  icon: KeyRound   },
+    { key: 'cancel',    label: t('client.services.tabCancel'),          icon: XCircle    },
+  ]
+  if (isManagedSite.value) {
+    return all.filter(tab => tab.key !== 'password')
+  }
+  return all
+})
 
 // ── Password Change ───────────────────────────────────────────────────────────
 const newPassword = ref('')
@@ -741,7 +804,9 @@ async function loginToCpanel() {
 // Check if setup is needed
 watch(service, (s) => {
   if (!pending.value && s && s.status !== 'Terminated' && s.status !== 'Cancelled' && !s.username) {
-    // Only redirect hosting products (they usually have a username field in WHMCS if provisioned)
+    // Managed sites have no username — don't redirect them to setup
+    if (s.productType === 'ManagedSiteTouchestate') return
+    // Only redirect hosting products (they usually have a username field if provisioned)
     // If username is empty, it needs setup.
     navigateTo(`/client/services/${serviceId}/setup`)
   }

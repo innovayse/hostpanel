@@ -37,6 +37,15 @@ public sealed class Product : AggregateRoot
     /// <summary>Gets the annual price.</summary>
     public decimal AnnualPrice { get; private set; }
 
+    /// <summary>Gets the Git repository URL for managed site deployment.</summary>
+    public string? DeployRepoUrl { get; private set; }
+
+    /// <summary>Gets the Git branch to clone (defaults to main).</summary>
+    public string? DeployBranch { get; private set; }
+
+    /// <summary>Gets the shell script to run after cloning the repo.</summary>
+    public string? DeployScript { get; private set; }
+
     /// <summary>Gets the UTC timestamp when the product was created.</summary>
     public DateTimeOffset CreatedAt { get; private set; }
 
@@ -54,6 +63,9 @@ public sealed class Product : AggregateRoot
     /// <param name="type">Product type.</param>
     /// <param name="monthlyPrice">Monthly price (≥ 0).</param>
     /// <param name="annualPrice">Annual price (≥ 0).</param>
+    /// <param name="deployRepoUrl">Optional Git repository URL for managed site deployment.</param>
+    /// <param name="deployBranch">Optional Git branch to clone (defaults to main).</param>
+    /// <param name="deployScript">Optional shell script to run after cloning the repo.</param>
     /// <returns>A new active <see cref="Product"/>.</returns>
     public static Product Create(
         int groupId,
@@ -63,7 +75,10 @@ public sealed class Product : AggregateRoot
         string? slug,
         ProductType type,
         decimal monthlyPrice,
-        decimal annualPrice)
+        decimal annualPrice,
+        string? deployRepoUrl = null,
+        string? deployBranch = null,
+        string? deployScript = null)
     {
         var product = new Product
         {
@@ -76,6 +91,9 @@ public sealed class Product : AggregateRoot
             Status = ProductStatus.Active,
             MonthlyPrice = monthlyPrice,
             AnnualPrice = annualPrice,
+            DeployRepoUrl = deployRepoUrl,
+            DeployBranch = deployBranch,
+            DeployScript = deployScript,
             CreatedAt = DateTimeOffset.UtcNow,
         };
         product.AddDomainEvent(new ProductCreatedEvent(0, name, groupId));
@@ -83,7 +101,7 @@ public sealed class Product : AggregateRoot
     }
 
     /// <summary>
-    /// Updates the product name, description, website, and prices.
+    /// Updates the product name, description, website, prices, and optional deploy config.
     /// </summary>
     /// <param name="name">New display name.</param>
     /// <param name="description">New description.</param>
@@ -91,7 +109,11 @@ public sealed class Product : AggregateRoot
     /// <param name="slug">New URL-friendly slug, or null to clear.</param>
     /// <param name="monthlyPrice">New monthly price.</param>
     /// <param name="annualPrice">New annual price.</param>
-    public void Update(string name, string? description, string? website, string? slug, decimal monthlyPrice, decimal annualPrice)
+    /// <param name="deployRepoUrl">Git repository URL for managed site deployment, or null to clear.</param>
+    /// <param name="deployBranch">Git branch to clone, or null to clear.</param>
+    /// <param name="deployScript">Shell script to run after cloning, or null to clear.</param>
+    public void Update(string name, string? description, string? website, string? slug, decimal monthlyPrice, decimal annualPrice,
+        string? deployRepoUrl = null, string? deployBranch = null, string? deployScript = null)
     {
         Name = name;
         Description = description;
@@ -99,6 +121,9 @@ public sealed class Product : AggregateRoot
         Slug = slug;
         MonthlyPrice = monthlyPrice;
         AnnualPrice = annualPrice;
+        DeployRepoUrl = deployRepoUrl;
+        DeployBranch = deployBranch;
+        DeployScript = deployScript;
     }
 
     /// <summary>Marks the product inactive so it cannot be ordered.</summary>

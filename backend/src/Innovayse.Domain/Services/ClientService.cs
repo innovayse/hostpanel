@@ -83,6 +83,12 @@ public sealed class ClientService : AggregateRoot
     /// <summary>Gets the internal admin notes.</summary>
     public string? AdminNotes { get; private set; }
 
+    /// <summary>Gets the customer's TouchEstate public API key (for managed sites).</summary>
+    public string? TouchEstatePublicKey { get; private set; }
+
+    /// <summary>Gets the customer's TouchEstate secret API key (for managed sites).</summary>
+    public string? TouchEstateSecretKey { get; private set; }
+
     /// <summary>EF Core parameterless constructor — do not call directly.</summary>
     private ClientService() : base(0) { }
 
@@ -239,5 +245,14 @@ public sealed class ClientService : AggregateRoot
         {
             ProductId = productId.Value;
         }
+    }
+
+    /// <summary>Sets the TouchEstate API keys for managed site services.</summary>
+    /// <param name="publicKey">TouchEstate public key.</param>
+    /// <param name="secretKey">TouchEstate secret key.</param>
+    public void SetTouchEstateKeys(string publicKey, string secretKey)
+    {
+        TouchEstatePublicKey = publicKey;
+        TouchEstateSecretKey = secretKey;
     }
 }

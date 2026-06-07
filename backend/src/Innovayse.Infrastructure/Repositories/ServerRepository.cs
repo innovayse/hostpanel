@@ -26,6 +26,18 @@ public sealed class ServerRepository(AppDbContext db) : IServerRepository
     }
 
     /// <inheritdoc/>
+    public async Task<IReadOnlyList<Server>> FindByIdsAsync(IEnumerable<int> ids, CancellationToken ct)
+    {
+        var idList = ids.Distinct().ToList();
+        if (idList.Count == 0)
+        {
+            return [];
+        }
+
+        return await db.Servers.Where(s => idList.Contains(s.Id)).ToListAsync(ct);
+    }
+
+    /// <inheritdoc/>
     public void Add(Server server) => db.Servers.Add(server);
 
     /// <inheritdoc/>

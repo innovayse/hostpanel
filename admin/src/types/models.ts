@@ -772,6 +772,12 @@ export interface Product {
   status: string
   /** Monthly and annual pricing. */
   pricing: { monthly: number; annual: number }
+  /** Git repo URL for managed site deployment. */
+  deployRepoUrl: string | null
+  /** Git branch to clone. */
+  deployBranch: string | null
+  /** Shell deploy script. */
+  deployScript: string | null
 }
 
 /** Represents a product group. */
@@ -806,6 +812,12 @@ export interface CreateProductPayload {
   monthlyPrice: number
   /** Annual price. */
   annualPrice: number
+  /** Git repo URL for managed site deployment. */
+  deployRepoUrl: string | null
+  /** Git branch to clone. */
+  deployBranch: string | null
+  /** Shell deploy script. */
+  deployScript: string | null
 }
 
 /** Payload for updating an existing product. */
@@ -822,6 +834,12 @@ export interface UpdateProductPayload {
   monthlyPrice: number
   /** Annual price. */
   annualPrice: number
+  /** Git repo URL for managed site deployment. */
+  deployRepoUrl: string | null
+  /** Git branch to clone. */
+  deployBranch: string | null
+  /** Shell deploy script. */
+  deployScript: string | null
 }
 
 /**

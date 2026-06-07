@@ -20,4 +20,7 @@ public enum ProductType
 
     /// <summary>Other or custom service.</summary>
     Other,
+
+    /// <summary>Managed website using a TouchEstate theme — no client server access.</summary>
+    ManagedSiteTouchestate,
 }

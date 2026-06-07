@@ -1,16 +1,22 @@
 namespace Innovayse.Application.Provisioning.Commands.UnsuspendService;
 
 using Innovayse.Application.Common;
+using Innovayse.Domain.Provisioning.Interfaces;
+using Innovayse.Domain.Servers.Interfaces;
 using Innovayse.Domain.Services.Interfaces;
-using IProvisioningProvider = Innovayse.Domain.Provisioning.Interfaces.IProvisioningProvider;
 
 /// <summary>
-/// Re-activates a suspended hosting service by calling the provisioning provider
-/// and restoring the service aggregate to active status.
+/// Re-activates a suspended hosting service by looking up the assigned server,
+/// calling the provisioning provider, and restoring the service to active status.
 /// </summary>
+/// <param name="serviceRepo">Client service repository.</param>
+/// <param name="serverRepo">Server repository to look up the assigned server.</param>
+/// <param name="providerFactory">Factory to create per-server provisioning providers.</param>
+/// <param name="unitOfWork">Unit of work for persistence.</param>
 public sealed class UnsuspendServiceHandler(
     IClientServiceRepository serviceRepo,
-    IProvisioningProvider provisioningProvider,
+    IServerRepository serverRepo,
+    IProvisioningProviderFactory providerFactory,
     IUnitOfWork unitOfWork)
 {
     /// <summary>
@@ -31,7 +37,15 @@ public sealed class UnsuspendServiceHandler(
             throw new InvalidOperationException($"ClientService {cmd.ServiceId} has no provisioning reference.");
         }
 
-        await provisioningProvider.UnsuspendAsync(service.ProvisioningRef, ct);
+        if (service.ServerId is not null)
+        {
+            var server = await serverRepo.FindByIdAsync(service.ServerId.Value, ct);
+            if (server is not null)
+            {
+                var provider = providerFactory.CreateFor(server);
+                await provider.UnsuspendAsync(service.ProvisioningRef, ct);
+            }
+        }
 
         service.Unsuspend();
 

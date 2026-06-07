@@ -50,6 +50,12 @@ public sealed class GetIntegrationHandler(ISettingRepository settings, IPluginRe
             new("api_username", "API Username",          "text",     Required: true),
             new("client_ip",    "Whitelisted Client IP", "text",     Required: true),
         ]),
+        ["nameam"] = ("Name.am", "Domain Registrars",
+        [
+            new("email",    "Account Email",    "text",     Required: true),
+            new("password", "Account Password", "password", Required: true),
+            new("api_url",  "API URL",          "text",     Required: false),
+        ]),
         ["resellerclub"] = ("ResellerClub", "Domain Registrars",
         [
             new("reseller_id", "Reseller ID", "text",     Required: true),
@@ -80,6 +86,7 @@ public sealed class GetIntegrationHandler(ISettingRepository settings, IPluginRe
             new("port",    "Port",     "text",     Required: false),
             new("api_key", "API Key",  "password", Required: true),
         ]),
+        ["cwp7"] = ("CWP7", "Hosting / Provisioning", []),
         ["smtp"] = ("SMTP Server", "Email / SMTP",
         [
             new("host",         "SMTP Host",          "text",     Required: true),

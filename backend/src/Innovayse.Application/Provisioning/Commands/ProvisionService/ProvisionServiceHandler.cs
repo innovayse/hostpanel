@@ -2,17 +2,25 @@ namespace Innovayse.Application.Provisioning.Commands.ProvisionService;
 
 using System.Security.Cryptography;
 using Innovayse.Application.Common;
+using Innovayse.Application.Servers;
 using Innovayse.Domain.Provisioning;
+using Innovayse.Domain.Provisioning.Interfaces;
+using Innovayse.Domain.Servers;
 using Innovayse.Domain.Services.Interfaces;
-using IProvisioningProvider = Innovayse.Domain.Provisioning.Interfaces.IProvisioningProvider;
 
 /// <summary>
-/// Provisions a pending hosting service by calling the configured provisioning provider,
-/// activating the service aggregate, and persisting all changes.
+/// Provisions a pending hosting service by selecting the best server,
+/// calling the appropriate provisioning provider, activating the service,
+/// and persisting all changes.
 /// </summary>
+/// <param name="serviceRepo">Client service repository.</param>
+/// <param name="providerFactory">Factory to create per-server provisioning providers.</param>
+/// <param name="serverSelector">Selects the optimal server using proportional fill strategy.</param>
+/// <param name="unitOfWork">Unit of work for persistence.</param>
 public sealed class ProvisionServiceHandler(
     IClientServiceRepository serviceRepo,
-    IProvisioningProvider provisioningProvider,
+    IProvisioningProviderFactory providerFactory,
+    IServerSelector serverSelector,
     IUnitOfWork unitOfWork)
 {
     /// <summary>
@@ -21,21 +29,27 @@ public sealed class ProvisionServiceHandler(
     /// <param name="cmd">The provision command containing the service identifier.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when the service is not found or provisioning fails on the provider.
+    /// Thrown when the service is not found, no server is available, or provisioning fails.
     /// </exception>
     public async Task HandleAsync(ProvisionServiceCommand cmd, CancellationToken ct)
     {
         var service = await serviceRepo.FindByIdAsync(cmd.ServiceId, ct)
             ?? throw new InvalidOperationException($"ClientService {cmd.ServiceId} not found.");
 
+        // Select the best CWP7 server
+        var server = await serverSelector.SelectAsync(ServerModule.Cwp7, ct)
+            ?? throw new InvalidOperationException("No eligible CWP7 server available for provisioning.");
+
+        var provider = providerFactory.CreateFor(server);
+
         var request = new ProvisionRequest(
             service.Id,
-            service.ProvisioningRef ?? $"temp{service.Id}.example.com",
-            $"user{service.Id}",
+            service.Domain ?? $"temp{service.Id}.example.com",
+            service.Username ?? $"user{service.Id}",
             GeneratePassword(),
             "default");
 
-        var result = await provisioningProvider.ProvisionAsync(request, ct);
+        var result = await provider.ProvisionAsync(request, ct);
 
         if (!result.Success)
         {

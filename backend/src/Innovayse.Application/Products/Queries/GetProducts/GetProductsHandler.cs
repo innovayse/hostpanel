@@ -21,6 +21,7 @@ public sealed class GetProductsHandler(IProductRepository repo)
                 p.Name,
                 p.Description,
                 p.Website,
+                p.Slug,
                 p.Type,
                 p.Status,
                 new ProductPricingDto(p.MonthlyPrice, p.AnnualPrice)))

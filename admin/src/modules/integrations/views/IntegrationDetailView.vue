@@ -24,9 +24,17 @@ const slug = route.params.slug as string
 /** True when the current integration is the CWP plugin. */
 const isCwp = slug === 'cwp'
 
+/** True when the current integration is CWP7. */
+const isCwp7 = slug === 'cwp7'
+
 /** Async CWP integration page — only loaded when slug is "cwp". */
 const CwpIntegrationPage = defineAsyncComponent(
   () => import('./CwpIntegrationPage.vue'),
+)
+
+/** Async CWP7 integration page — only loaded when slug is "cwp7". */
+const Cwp7IntegrationPage = defineAsyncComponent(
+  () => import('./Cwp7IntegrationPage.vue'),
 )
 
 onMounted(() => {
@@ -35,6 +43,9 @@ onMounted(() => {
     if (storeRef.integrations.length > 0 && !storeRef.integrations.some(i => i.slug === 'cwp')) {
       router.replace({ path: '/plugins' })
     }
+    return
+  }
+  if (isCwp7) {
     return
   }
   store.fetchOne(slug)
@@ -65,6 +76,7 @@ async function handleTest(): Promise<void> {
 
 <template>
   <CwpIntegrationPage v-if="isCwp" />
+  <Cwp7IntegrationPage v-else-if="isCwp7" />
 
   <div v-else class="p-4 sm:p-6 lg:p-8 max-w-5xl w-full">
 

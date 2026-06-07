@@ -22,6 +22,9 @@ public sealed class Product : AggregateRoot
     /// <summary>Gets the optional website URL for this product's landing page.</summary>
     public string? Website { get; private set; }
 
+    /// <summary>Gets the optional URL-friendly slug for this product.</summary>
+    public string? Slug { get; private set; }
+
     /// <summary>Gets the product type (hosting, VPS, domain, etc.).</summary>
     public ProductType Type { get; private set; }
 
@@ -47,6 +50,7 @@ public sealed class Product : AggregateRoot
     /// <param name="name">Product display name.</param>
     /// <param name="description">Optional description.</param>
     /// <param name="website">Optional website URL for the product's landing page.</param>
+    /// <param name="slug">Optional URL-friendly slug for the product.</param>
     /// <param name="type">Product type.</param>
     /// <param name="monthlyPrice">Monthly price (≥ 0).</param>
     /// <param name="annualPrice">Annual price (≥ 0).</param>
@@ -56,6 +60,7 @@ public sealed class Product : AggregateRoot
         string name,
         string? description,
         string? website,
+        string? slug,
         ProductType type,
         decimal monthlyPrice,
         decimal annualPrice)
@@ -66,6 +71,7 @@ public sealed class Product : AggregateRoot
             Name = name,
             Description = description,
             Website = website,
+            Slug = slug,
             Type = type,
             Status = ProductStatus.Active,
             MonthlyPrice = monthlyPrice,
@@ -82,13 +88,15 @@ public sealed class Product : AggregateRoot
     /// <param name="name">New display name.</param>
     /// <param name="description">New description.</param>
     /// <param name="website">New website URL, or null to clear.</param>
+    /// <param name="slug">New URL-friendly slug, or null to clear.</param>
     /// <param name="monthlyPrice">New monthly price.</param>
     /// <param name="annualPrice">New annual price.</param>
-    public void Update(string name, string? description, string? website, decimal monthlyPrice, decimal annualPrice)
+    public void Update(string name, string? description, string? website, string? slug, decimal monthlyPrice, decimal annualPrice)
     {
         Name = name;
         Description = description;
         Website = website;
+        Slug = slug;
         MonthlyPrice = monthlyPrice;
         AnnualPrice = annualPrice;
     }

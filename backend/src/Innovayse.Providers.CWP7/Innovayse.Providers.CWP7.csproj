@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>12</LangVersion>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <RootNamespace>Innovayse.Providers.CWP7</RootNamespace>
+    <AssemblyName>Innovayse.Providers.CWP7</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Innovayse.SDK\Innovayse.SDK.csproj" />
+    <ProjectReference Include="..\Innovayse.Domain\Innovayse.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="plugin.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>Innovayse.Infrastructure</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+</Project>

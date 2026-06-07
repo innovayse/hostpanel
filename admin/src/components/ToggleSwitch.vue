@@ -25,7 +25,7 @@ const emit = defineEmits<{
   >
     <div
       class="w-4 h-4 rounded-full bg-white shadow transition-transform duration-200"
-      :class="modelValue ? 'translate-x-4' : 'translate-x-0'"
+      :class="modelValue ? 'translate-x-[14px]' : 'translate-x-0'"
     />
   </button>
 </template>

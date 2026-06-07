@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import type { Setting, EmailTemplate, Product, Gateway } from '../../../types/models'
+import type { Setting, EmailTemplate, Product, ProductGroup, CreateProductPayload, UpdateProductPayload, Gateway } from '../../../types/models'
 
 /**
  * Pinia store for admin settings, email templates, products, and gateways.
@@ -17,6 +17,9 @@ export const useSettingsStore = defineStore('settings', () => {
 
   /** Products list. */
   const products = ref<Product[]>([])
+
+  /** Product groups list. */
+  const productGroups = ref<ProductGroup[]>([])
 
   /** Payment gateways list. */
   const gateways = ref<Gateway[]>([])
@@ -62,7 +65,7 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   /**
-   * Fetches products from the backend.
+   * Fetches all products from the backend (including inactive).
    *
    * @returns Promise that resolves when data is loaded.
    */
@@ -70,13 +73,59 @@ export const useSettingsStore = defineStore('settings', () => {
     loading.value = true
     error.value = null
     try {
-      const result = await request<{ items: Product[] }>('/products')
-      products.value = result.items
+      products.value = await request<Product[]>('/products?activeOnly=false')
     } catch {
       error.value = 'Failed to load products.'
     } finally {
       loading.value = false
     }
+  }
+
+  /**
+   * Fetches all product groups from the backend.
+   *
+   * @returns Promise that resolves when data is loaded.
+   */
+  async function fetchProductGroups(): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      productGroups.value = await request<ProductGroup[]>('/products/groups?activeOnly=false')
+    } catch {
+      error.value = 'Failed to load product groups.'
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * Creates a new product.
+   *
+   * @param payload - Product creation data.
+   * @returns Promise resolving to the new product ID.
+   */
+  async function createProduct(payload: CreateProductPayload): Promise<number> {
+    const id = await request<number>('/products', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+    await fetchProducts()
+    return id
+  }
+
+  /**
+   * Updates an existing product.
+   *
+   * @param id - Product ID.
+   * @param payload - Updated product data.
+   * @returns Promise that resolves when update is complete.
+   */
+  async function updateProduct(id: number, payload: UpdateProductPayload): Promise<void> {
+    await request(`/products/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ id, ...payload }),
+    })
+    await fetchProducts()
   }
 
   /**
@@ -97,8 +146,9 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   return {
-    settings, emailTemplates, products, gateways,
+    settings, emailTemplates, products, productGroups, gateways,
     loading, error,
-    fetchSettings, fetchEmailTemplates, fetchProducts, fetchGateways,
+    fetchSettings, fetchEmailTemplates, fetchProducts, fetchProductGroups,
+    createProduct, updateProduct, fetchGateways,
   }
 })

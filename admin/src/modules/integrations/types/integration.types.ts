@@ -12,11 +12,13 @@ export type IntegrationSlug =
   | 'paypal'
   | 'bank-transfer'
   | 'namecheap'
+  | 'nameam'
   | 'resellerclub'
   | 'enom'
   | 'cpanel'
   | 'plesk'
   | 'cwp'
+  | 'cwp7'
   | 'smtp'
   | 'maxmind'
 
@@ -91,6 +93,10 @@ export interface IntegrationMeta {
   slug: string
   /** Tailwind background color class for the logo block (e.g. "bg-[#635bff]"). */
   color: string
+  /** Path to the SVG logo in /public/integrations/ (e.g. "/integrations/stripe.svg"). */
+  logo: string
+  /** Short description shown on the integration card. */
+  shortDescription: string
   /** Category this integration belongs to. */
   category: IntegrationCategory
   /** Ordered list of config field keys and their labels. */

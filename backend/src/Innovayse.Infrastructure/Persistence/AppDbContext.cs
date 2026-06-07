@@ -10,6 +10,7 @@ using Innovayse.Domain.Products;
 using Innovayse.Domain.Servers;
 using Innovayse.Domain.Services;
 using Innovayse.Domain.Settings;
+using Innovayse.Domain.Slides;
 using Innovayse.Domain.Hosting;
 using Innovayse.Domain.Ssl;
 using Innovayse.Domain.Support;
@@ -134,6 +135,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
 
     /// <summary>Disk and bandwidth usage stats cached from hosting servers.</summary>
     public DbSet<DiskUsageStat> DiskUsageStats => Set<DiskUsageStat>();
+
+    /// <summary>Gets the homepage slides table.</summary>
+    public DbSet<Slide> Slides => Set<Slide>();
+
+    /// <summary>Gets the slide per-locale translations table.</summary>
+    public DbSet<SlideTranslation> SlideTranslations => Set<SlideTranslation>();
 
     /// <inheritdoc/>
     protected override void OnModelCreating(ModelBuilder modelBuilder)

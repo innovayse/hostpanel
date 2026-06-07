@@ -203,6 +203,7 @@ try
     }
 
     app.UseMiddleware<ExceptionMiddleware>();
+    app.UseStaticFiles();
     app.UseCors();
     app.UseAuthentication();
     app.UseAuthorization();

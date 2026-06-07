@@ -6,6 +6,7 @@
  * Emits save and test events to the parent.
  */
 import { ref, watch } from 'vue'
+import ToggleSwitch from '@/components/ToggleSwitch.vue'
 import { INTEGRATION_META } from '../types/integration.meta'
 import type { IntegrationDetailDto, IntegrationConfigPayload, IntegrationSlug } from '../types/integration.types'
 
@@ -68,17 +69,7 @@ function handleSave(): void {
 
       <!-- Enable/disable toggle -->
       <label class="flex items-center gap-2.5 cursor-pointer shrink-0">
-        <button
-          type="button"
-          class="relative w-9 h-5 rounded-full transition-colors duration-200 focus:outline-none"
-          :class="isEnabled ? 'bg-primary-500' : 'bg-border'"
-          @click="isEnabled = !isEnabled"
-        >
-          <span
-            class="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200"
-            :class="isEnabled ? 'translate-x-4' : 'translate-x-0.5'"
-          />
-        </button>
+        <ToggleSwitch v-model="isEnabled" />
         <span
           class="text-[0.75rem] font-semibold"
           :class="isEnabled ? 'text-status-green' : 'text-text-muted'"

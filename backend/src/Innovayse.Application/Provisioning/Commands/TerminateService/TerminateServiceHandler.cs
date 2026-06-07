@@ -2,16 +2,22 @@ namespace Innovayse.Application.Provisioning.Commands.TerminateService;
 
 using Innovayse.Application.Common;
 using Innovayse.Domain.Provisioning;
+using Innovayse.Domain.Provisioning.Interfaces;
+using Innovayse.Domain.Servers.Interfaces;
 using Innovayse.Domain.Services.Interfaces;
-using IProvisioningProvider = Innovayse.Domain.Provisioning.Interfaces.IProvisioningProvider;
 
 /// <summary>
-/// Permanently terminates a hosting service by calling the provisioning provider
-/// and marking the service aggregate as terminated.
+/// Permanently terminates a hosting service by looking up the assigned server,
+/// calling the provisioning provider, and marking the service as terminated.
 /// </summary>
+/// <param name="serviceRepo">Client service repository.</param>
+/// <param name="serverRepo">Server repository to look up the assigned server.</param>
+/// <param name="providerFactory">Factory to create per-server provisioning providers.</param>
+/// <param name="unitOfWork">Unit of work for persistence.</param>
 public sealed class TerminateServiceHandler(
     IClientServiceRepository serviceRepo,
-    IProvisioningProvider provisioningProvider,
+    IServerRepository serverRepo,
+    IProvisioningProviderFactory providerFactory,
     IUnitOfWork unitOfWork)
 {
     /// <summary>
@@ -32,8 +38,16 @@ public sealed class TerminateServiceHandler(
             throw new InvalidOperationException($"ClientService {cmd.ServiceId} has no provisioning reference.");
         }
 
-        var request = new TerminateRequest(service.Id, service.ProvisioningRef, cmd.Reason);
-        await provisioningProvider.TerminateAsync(request, ct);
+        if (service.ServerId is not null)
+        {
+            var server = await serverRepo.FindByIdAsync(service.ServerId.Value, ct);
+            if (server is not null)
+            {
+                var provider = providerFactory.CreateFor(server);
+                var request = new TerminateRequest(service.Id, service.ProvisioningRef, cmd.Reason);
+                await provider.TerminateAsync(request, ct);
+            }
+        }
 
         service.Terminate(cmd.Reason);
 

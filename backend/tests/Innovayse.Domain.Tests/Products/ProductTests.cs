@@ -15,6 +15,7 @@ public class ProductTests
             name: "Starter",
             description: "Entry plan",
             website: null,
+            slug: null,
             type: ProductType.SharedHosting,
             monthlyPrice: 5.99m,
             annualPrice: 59.99m);
@@ -33,8 +34,8 @@ public class ProductTests
     [Fact]
     public void Update_ChangesNameAndPrices()
     {
-        var product = Product.Create(1, "Old", null, null, ProductType.SharedHosting, 5m, 50m);
-        product.Update("New", "desc", null, 9m, 90m);
+        var product = Product.Create(1, "Old", null, null, null, ProductType.SharedHosting, 5m, 50m);
+        product.Update("New", "desc", null, null, 9m, 90m);
         Assert.Equal("New", product.Name);
         Assert.Equal(9m, product.MonthlyPrice);
         Assert.Equal(90m, product.AnnualPrice);
@@ -44,7 +45,7 @@ public class ProductTests
     [Fact]
     public void Deactivate_ChangesStatus()
     {
-        var product = Product.Create(1, "P", null, null, ProductType.SharedHosting, 5m, 50m);
+        var product = Product.Create(1, "P", null, null, null, ProductType.SharedHosting, 5m, 50m);
         product.Deactivate();
         Assert.Equal(ProductStatus.Inactive, product.Status);
     }

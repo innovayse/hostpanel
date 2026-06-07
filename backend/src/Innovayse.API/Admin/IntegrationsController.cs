@@ -5,6 +5,7 @@ using Innovayse.Application.Admin.Integrations.Commands.SaveIntegrationConfig;
 using Innovayse.Application.Admin.Integrations.Commands.TestIntegrationConnection;
 using Innovayse.Application.Admin.Integrations.DTOs;
 using Innovayse.Application.Admin.Integrations.Queries.GetCwpServerInfo;
+using Innovayse.Application.Admin.Integrations.Queries.GetCwp7ServerInfo;
 using Innovayse.Application.Admin.Integrations.Queries.GetIntegration;
 using Innovayse.Application.Admin.Integrations.Queries.ListIntegrations;
 using Innovayse.Domain.Auth;
@@ -78,6 +79,11 @@ public sealed class IntegrationsController(IMessageBus bus, IMemoryCache cache) 
             cache.Remove("cwp:server-info");
         }
 
+        if (slug.Equals("cwp7", StringComparison.OrdinalIgnoreCase))
+        {
+            cache.Remove("cwp7:server-info");
+        }
+
         return NoContent();
     }
 
@@ -99,6 +105,11 @@ public sealed class IntegrationsController(IMessageBus bus, IMemoryCache cache) 
             cache.Remove("cwp:server-info");
         }
 
+        if (slug.Equals("cwp7", StringComparison.OrdinalIgnoreCase))
+        {
+            cache.Remove("cwp7:server-info");
+        }
+
         return Ok(result);
     }
 
@@ -110,6 +121,17 @@ public sealed class IntegrationsController(IMessageBus bus, IMemoryCache cache) 
     public async Task<ActionResult<CwpServerInfoDto>> GetCwpServerInfoAsync(CancellationToken ct)
     {
         var result = await bus.InvokeAsync<CwpServerInfoDto>(new GetCwpServerInfoQuery(), ct);
+        return Ok(result);
+    }
+
+    /// <summary>Returns live CWP7 server status (cached 5 minutes).</summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>CWP7 server info including connection status and package count.</returns>
+    [HttpGet("cwp7/server-info")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<Cwp7ServerInfoDto>> GetCwp7ServerInfoAsync(CancellationToken ct)
+    {
+        var result = await bus.InvokeAsync<Cwp7ServerInfoDto>(new GetCwp7ServerInfoQuery(), ct);
         return Ok(result);
     }
 }

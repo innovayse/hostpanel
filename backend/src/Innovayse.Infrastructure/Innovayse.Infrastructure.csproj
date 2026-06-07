@@ -7,6 +7,7 @@
     <ProjectReference Include="..\Innovayse.Application\Innovayse.Application.csproj" />
     <ProjectReference Include="..\Innovayse.SDK\Innovayse.SDK.csproj" />
     <ProjectReference Include="..\Innovayse.Providers.CWP\Innovayse.Providers.CWP.csproj" />
+    <ProjectReference Include="..\Innovayse.Providers.CWP7\Innovayse.Providers.CWP7.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FluentValidation" />

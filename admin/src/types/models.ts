@@ -756,16 +756,72 @@ export interface ServiceListItem {
 export interface Product {
   /** Unique product identifier. */
   id: number
+  /** Parent product group ID. */
+  groupId: number
   /** Product name. */
   name: string
-  /** Product type (hosting, vps, domain, etc.). */
+  /** Optional description. */
+  description: string | null
+  /** Optional website URL. */
+  website: string | null
+  /** Optional URL-friendly slug. */
+  slug: string | null
+  /** Product type (SharedHosting, Vps, Dedicated, Domain, Ssl, Other). */
   type: string
-  /** Price per billing cycle. */
-  price: number
-  /** Billing cycle (monthly, annual, etc.). */
-  billingCycle: string
-  /** Whether the product is publicly visible. */
+  /** Current status (Active, Inactive). */
+  status: string
+  /** Monthly and annual pricing. */
+  pricing: { monthly: number; annual: number }
+}
+
+/** Represents a product group. */
+export interface ProductGroup {
+  /** Unique group identifier. */
+  id: number
+  /** Group display name. */
+  name: string
+  /** Optional description. */
+  description: string | null
+  /** Whether this group is publicly visible. */
   isActive: boolean
+  /** Number of products in this group. */
+  productCount: number
+}
+
+/** Payload for creating a new product. */
+export interface CreateProductPayload {
+  /** Parent group ID. */
+  groupId: number
+  /** Product name. */
+  name: string
+  /** Optional description. */
+  description: string | null
+  /** Optional website URL. */
+  website: string | null
+  /** Optional URL slug. */
+  slug: string | null
+  /** Product type. */
+  type: string
+  /** Monthly price. */
+  monthlyPrice: number
+  /** Annual price. */
+  annualPrice: number
+}
+
+/** Payload for updating an existing product. */
+export interface UpdateProductPayload {
+  /** Product name. */
+  name: string
+  /** Optional description. */
+  description: string | null
+  /** Optional website URL. */
+  website: string | null
+  /** Optional URL slug. */
+  slug: string | null
+  /** Monthly price. */
+  monthlyPrice: number
+  /** Annual price. */
+  annualPrice: number
 }
 
 /**

@@ -1,0 +1,19 @@
+{
+  "id": "innovayse-cwp7",
+  "name": "CWP7",
+  "version": "1.0.0",
+  "author": "Innovayse",
+  "description": "Provisioning provider for Control Web Panel 7 (CWP7).",
+  "type": "Provisioning",
+  "category": "Hosting / Provisioning",
+  "color": "#0369a1",
+  "entryPoint": "Innovayse.Providers.CWP7.Cwp7ProvisioningProvider",
+  "sdkVersion": "1.0",
+  "showInIntegrations": true,
+  "integrationsCategory": "Provisioning",
+  "fields": [
+    { "key": "hostname",     "label": "Hostname",     "type": "text",   "required": true  },
+    { "key": "port",         "label": "API Port",     "type": "text",   "required": false },
+    { "key": "access_hash",  "label": "Access Hash",  "type": "secret", "required": true  }
+  ]
+}

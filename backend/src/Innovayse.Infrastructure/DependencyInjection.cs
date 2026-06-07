@@ -134,9 +134,12 @@ public static class DependencyInjection
                 "Authorization",
                 $"WHM {settings.Username}:{settings.ApiToken}");
         });
-        // Use NullCPanelProvisioningProvider in dev — swap to CPanelProvisioningProvider when a real server is configured
+        // Use NullCPanelProvisioningProvider as fallback for unmigrated code
         services.AddScoped<IProvisioningProvider, NullCPanelProvisioningProvider>();
         services.AddScoped<Innovayse.Domain.Services.Interfaces.IProvisioningProvider, NullProvisioningProvider>();
+
+        // Provisioning provider factory — creates per-server providers (CWP7, cPanel, etc.)
+        services.AddScoped<Innovayse.Domain.Provisioning.Interfaces.IProvisioningProviderFactory, Innovayse.Infrastructure.Provisioning.ProvisioningProviderFactory>();
 
         // Orders
         services.AddScoped<IOrderRepository, OrderRepository>();
@@ -186,9 +189,16 @@ public static class DependencyInjection
         services.AddScoped<IServerRepository, ServerRepository>();
         services.AddScoped<IServerGroupRepository, ServerGroupRepository>();
         services.AddScoped<IServerConnectionTester, ServerConnectionTester>();
+        services.AddScoped<Innovayse.Application.Servers.IServerSelector, Innovayse.Application.Servers.ServerSelector>();
 
         // CWP API client
         services.AddHttpClient<Innovayse.SDK.Plugins.ICwpApiClient, Innovayse.Providers.CWP.CwpApiClient>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(15);
+        });
+
+        // CWP7 API client
+        services.AddHttpClient<Innovayse.SDK.Plugins.ICwp7ApiClient, Innovayse.Providers.CWP7.Cwp7ApiClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
         });

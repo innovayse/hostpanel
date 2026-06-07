@@ -1,31 +1,39 @@
 namespace Innovayse.Application.Services.Commands.SetupService;
 
 using Innovayse.Application.Common;
+using Innovayse.Application.Servers;
 using Innovayse.Domain.Provisioning;
+using Innovayse.Domain.Provisioning.Interfaces;
+using Innovayse.Domain.Products.Interfaces;
+using Innovayse.Domain.Servers;
 using Innovayse.Domain.Services;
 using Innovayse.Domain.Services.Interfaces;
-using IProvisioningProvider = Innovayse.Domain.Provisioning.Interfaces.IProvisioningProvider;
 
 /// <summary>
-/// Handles <see cref="SetupServiceCommand"/> by updating the service with
-/// client-provided hosting details and triggering provisioning.
+/// Handles <see cref="SetupServiceCommand"/> by selecting the best server,
+/// provisioning the hosting account via the appropriate provider,
+/// and activating the service.
 /// </summary>
 /// <param name="serviceRepo">Client service repository.</param>
-/// <param name="provisioningProvider">Provisioning provider (cPanel, etc.).</param>
+/// <param name="productRepo">Product repository to determine server module type.</param>
+/// <param name="providerFactory">Factory to create per-server provisioning providers.</param>
+/// <param name="serverSelector">Selects the optimal server using proportional fill strategy.</param>
 /// <param name="unitOfWork">Unit of work for persisting changes.</param>
 public sealed class SetupServiceHandler(
     IClientServiceRepository serviceRepo,
-    IProvisioningProvider provisioningProvider,
+    IProductRepository productRepo,
+    IProvisioningProviderFactory providerFactory,
+    IServerSelector serverSelector,
     IUnitOfWork unitOfWork)
 {
     /// <summary>
     /// Sets up the service with the provided domain, username, and password,
-    /// then provisions it via the configured provider.
+    /// selects the best available server, provisions the account, and activates the service.
     /// </summary>
     /// <param name="cmd">The setup command with hosting details.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when the service is not found, not in Pending status, or provisioning fails.
+    /// Thrown when the service is not found, not in Pending status, no server is available, or provisioning fails.
     /// </exception>
     public async Task HandleAsync(SetupServiceCommand cmd, CancellationToken ct)
     {
@@ -38,6 +46,23 @@ public sealed class SetupServiceHandler(
                 $"Cannot set up a service with status {service.Status}. Only Pending services can be set up.");
         }
 
+        // Determine the server module type from the product (default to CWP7 for now)
+        var module = ServerModule.Cwp7;
+        var product = await productRepo.FindByIdAsync(service.ProductId, ct);
+        if (product is not null)
+        {
+            module = MapProductTypeToModule(product.Type);
+        }
+
+        // Select the best available server using proportional fill
+        var server = await serverSelector.SelectAsync(module, ct)
+            ?? throw new InvalidOperationException(
+                $"No eligible {module} server available for provisioning.");
+
+        // Create a provider for the selected server
+        var provider = providerFactory.CreateFor(server);
+
+        // Provision the account
         var request = new ProvisionRequest(
             service.Id,
             cmd.Domain,
@@ -45,7 +70,7 @@ public sealed class SetupServiceHandler(
             cmd.Password,
             "default");
 
-        var result = await provisioningProvider.ProvisionAsync(request, ct);
+        var result = await provider.ProvisionAsync(request, ct);
 
         if (!result.Success)
         {
@@ -53,7 +78,7 @@ public sealed class SetupServiceHandler(
                 $"Provisioning failed for service {cmd.ServiceId}: {result.ErrorMessage}");
         }
 
-        // Save the client-provided hosting details before activating
+        // Save the client-provided hosting details and assign the server
         service.Update(
             domain: cmd.Domain,
             dedicatedIp: service.DedicatedIp,
@@ -73,7 +98,7 @@ public sealed class SetupServiceHandler(
             firstPaymentAmount: service.FirstPaymentAmount,
             promotionCode: service.PromotionCode,
             terminatedAt: service.TerminatedAt,
-            serverId: service.ServerId,
+            serverId: server.Id,
             quantity: service.Quantity,
             productId: null);
 
@@ -81,4 +106,18 @@ public sealed class SetupServiceHandler(
 
         await unitOfWork.SaveChangesAsync(ct);
     }
+
+    /// <summary>
+    /// Maps a product type to the server module that provisions it.
+    /// Currently all hosting products use CWP7.
+    /// </summary>
+    /// <param name="type">The product type.</param>
+    /// <returns>The corresponding server module.</returns>
+    private static ServerModule MapProductTypeToModule(Domain.Products.ProductType type) => type switch
+    {
+        Domain.Products.ProductType.SharedHosting => ServerModule.Cwp7,
+        Domain.Products.ProductType.Vps => ServerModule.Cwp7,
+        Domain.Products.ProductType.Dedicated => ServerModule.Cwp7,
+        _ => ServerModule.Cwp7,
+    };
 }

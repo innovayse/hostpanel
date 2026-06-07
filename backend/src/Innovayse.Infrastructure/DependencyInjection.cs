@@ -17,6 +17,7 @@ using Innovayse.Domain.Products.Interfaces;
 using Innovayse.Domain.Servers.Interfaces;
 using Innovayse.Domain.Services.Interfaces;
 using Innovayse.Domain.Settings.Interfaces;
+using Innovayse.Domain.Slides.Interfaces;
 using Innovayse.Domain.Support.Interfaces;
 using Innovayse.Infrastructure.Audit;
 using Innovayse.Infrastructure.Auth;
@@ -38,6 +39,7 @@ using Innovayse.Infrastructure.Security;
 using Innovayse.Infrastructure.Servers;
 using Innovayse.Infrastructure.Services;
 using Innovayse.Infrastructure.Settings;
+using Innovayse.Infrastructure.Slides;
 using Innovayse.Infrastructure.Support;
 using Innovayse.Providers.CWP;
 using Microsoft.AspNetCore.Identity;
@@ -120,6 +122,9 @@ public static class DependencyInjection
         // Product services
         services.AddScoped<IProductGroupRepository, ProductGroupRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
+
+        // Slides
+        services.AddScoped<ISlideRepository, SlideRepository>();
 
         // Service provisioning
         services.AddScoped<IClientServiceRepository, ClientServiceRepository>();

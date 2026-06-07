@@ -7,6 +7,7 @@ using Innovayse.Domain.Clients;
 using Innovayse.Domain.Orders;
 using Innovayse.Domain.Products;
 using Innovayse.Domain.Services;
+using Innovayse.Domain.Slides;
 using Innovayse.Infrastructure.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -54,6 +55,12 @@ public sealed class DevDataSeeder(
         if (await db.Clients.AnyAsync(ct) && await db.Invoices.AnyAsync(ct) && await db.Quotes.AnyAsync(ct)
             && await db.ProductGroups.AnyAsync(ct) && await db.Orders.AnyAsync(ct) && hasProductInvoices)
         {
+            // Main data exists — but seed slides if they're missing (added later)
+            if (!await db.Slides.AnyAsync(ct))
+            {
+                await SeedSlidesAsync(db, logger, ct);
+            }
+
             logger.LogInformation("Dev seed skipped — data already exists");
             return;
         }
@@ -411,6 +418,89 @@ public sealed class DevDataSeeder(
             logger.LogInformation("Seeded SSL checks");
         }
 
+        // ── Slider slides ─────────────────────────────────────────────────────
+        if (!await db.Slides.AnyAsync(ct))
+        {
+            await SeedSlidesAsync(db, logger, ct);
+        }
+
         logger.LogInformation("Dev seed complete");
+    }
+
+    /// <summary>Seeds the initial homepage slider slides with English translations.</summary>
+    /// <param name="db">Database context.</param>
+    /// <param name="logger">Logger instance.</param>
+    /// <param name="ct">Cancellation token.</param>
+    private static async Task SeedSlidesAsync(AppDbContext db, ILogger logger, CancellationToken ct)
+    {
+        (string Key, string Icon, string Color, string Image, string? DemoUrl, string LearnMoreUrl,
+         string Title, string Tagline, string Description, string Features, string CtaText)[] slideDefs =
+        [
+            ("web-hosting", "cloud-check", "#0ea5e9", "/images/products/hosting.jpg",
+                null, "/hosting",
+                "Web Hosting", "Fast & Reliable Hosting",
+                "Launch your website on high-performance servers with 99.9% uptime SLA, free SSL, and one-click app installs.",
+                "[\"Free SSL certificate\",\"99.9% uptime SLA\",\"One-click app installs\",\"24/7 expert support\",\"Daily backups\"]",
+                "Get Started"),
+            ("domains", "earth", "#3b82f6", "/images/products/domains.jpg",
+                null, "/domains",
+                "Domain Registration", "Find & Register Your Domain",
+                "Search and register your perfect domain name with competitive pricing and instant activation.",
+                "[\"Free DNS management\",\"WHOIS privacy protection\",\"Auto-renewal options\"]",
+                "Get Started"),
+            ("kelpie-ai", "brain", "#7c3aed", "/images/products/kelpie-ai.jpg",
+                "https://kelpie-ai.ai", "/products/kelpie-ai",
+                "Kelpie AI", "AI-Powered Automation Platform",
+                "Harness the power of artificial intelligence to automate workflows, generate insights, and scale your business faster.",
+                "[\"Natural language processing\",\"Workflow automation\",\"Real-time analytics\",\"API integrations\",\"Enterprise security\"]",
+                "Get Started"),
+            ("metricskit-pro", "chart-bar", "#ec4899", "/images/products/metricskit-pro.jpg",
+                "#", "/products/metricskit-pro",
+                "MetricsKit Pro", "Advanced Analytics & Reporting",
+                "Track every metric that matters. Beautiful dashboards, real-time data, and actionable insights for your business.",
+                "[\"Real-time dashboards\",\"Custom reports\",\"Multi-source data\",\"Automated alerts\",\"White-label ready\"]",
+                "Get Started"),
+            ("smartlearn-system", "school", "#8b5cf6", "/images/products/smartlearn-system.jpg",
+                "#", "/products/smartlearn-system",
+                "SmartLearn System", "Modern E-Learning Platform",
+                "Deliver engaging online courses, track learner progress, and grow your educational business with a full-featured LMS.",
+                "[\"Course builder\",\"Progress tracking\",\"Certificates & badges\",\"Live sessions\",\"White-label branding\"]",
+                "Get Started"),
+            ("propsystem-pro", "office-building", "#06b6d4", "/images/products/propsystem-pro.jpg",
+                "#", "/products/propsystem-pro",
+                "PropSystem Pro", "Complete Property Management",
+                "Manage properties, tenants, maintenance requests, and payments all in one platform built for real estate professionals.",
+                "[\"Tenant portal\",\"Online rent collection\",\"Maintenance tracking\",\"Financial reporting\",\"Document storage\"]",
+                "Get Started"),
+            ("shopkit-pro", "cart", "#f59e0b", "/images/products/shopkit-pro.jpg",
+                "#", "/products/shopkit-pro",
+                "ShopKit Pro", "E-Commerce Made Simple",
+                "Launch your online store in minutes with built-in payments, inventory management, and multi-channel selling tools.",
+                "[\"Built-in payments\",\"Inventory management\",\"Multi-channel selling\",\"SEO optimized\",\"Mobile storefront\"]",
+                "Get Started"),
+            ("quickbite", "silverware-fork-knife", "#ef4444", "/images/products/quickbite.jpg",
+                "#", "/products/quickbite",
+                "QuickBite", "Restaurant & Food Ordering System",
+                "Power your restaurant with online ordering, table management, and kitchen display integration — all in one platform.",
+                "[\"Online ordering\",\"Table management\",\"Kitchen display\",\"Menu builder\",\"Delivery integration\"]",
+                "Get Started"),
+            ("taskero", "view-dashboard", "#10b981", "/images/products/taskero.jpg",
+                "#", "/products/taskero",
+                "Taskero", "Project & Task Management",
+                "Organise projects, assign tasks, and collaborate with your team using a clean and intuitive project management platform.",
+                "[\"Kanban & list views\",\"Time tracking\",\"Team collaboration\",\"Reporting & insights\",\"Integrations\"]",
+                "Get Started"),
+        ];
+
+        for (var sortOrder = 0; sortOrder < slideDefs.Length; sortOrder++)
+        {
+            var (key, icon, color, image, demoUrl, learnMoreUrl, title, tagline, description, features, ctaText) = slideDefs[sortOrder];
+            var slide = Slide.Create(icon, color, image, demoUrl, learnMoreUrl, null, sortOrder, true, SlideAudience.All, null, null);
+            slide.SetTranslation("en", title, tagline, description, features, ctaText, learnMoreUrl);
+            db.Slides.Add(slide);
+        }
+
+        await db.SaveChangesAsync(ct);
+        logger.LogInformation("Seeded {Count} slides with translations", slideDefs.Length);
     }
 }

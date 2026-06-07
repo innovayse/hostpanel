@@ -237,89 +237,85 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * Full-screen product slider hero section.
+ *
+ * Fetches slides from the backend API and displays them in a Swiper carousel
+ * with Ken Burns background, floating icon animations, and staggered feature badges.
+ */
 import { ArrowRight, PlayCircle, ChevronLeft, ChevronRight, ChevronDown, CheckCircle } from 'lucide-vue-next'
 import { Swiper, SwiperSlide } from 'swiper/vue'
 import { Autoplay, Navigation, Pagination } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/navigation'
 import 'swiper/css/pagination'
-import { products as visualData } from '~/lib/data'
 
-const { t, locale } = useI18n()
+/** Shape of the slide DTO returned by the backend. */
+interface SlidePublicDto {
+  /** Unique slide identifier. */
+  id: number
+  /** MDI icon name (without the `mdi:` prefix). */
+  iconName: string
+  /** Hex brand color for the slide. */
+  brandColor: string
+  /** Background image path. */
+  imageUrl: string
+  /** Optional live demo URL. */
+  demoUrl: string | null
+  /** URL for the "Learn More" page. */
+  learnMoreUrl: string | null
+  /** Associated product ID, if any. */
+  productId: number | null
+  /** Monthly price, if applicable. */
+  monthlyPrice: number | null
+  /** Annual price, if applicable. */
+  annualPrice: number | null
+  /** Resolved translated title. */
+  title: string
+  /** Short tagline text. */
+  tagline: string | null
+  /** Longer description text. */
+  description: string | null
+  /** Feature bullet points. */
+  features: string[] | null
+  /** Call-to-action button text. */
+  ctaText: string | null
+  /** Call-to-action button URL. */
+  ctaUrl: string | null
+}
+
+const { locale } = useI18n()
 const localePath = useLocalePath()
 const modules = [Autoplay, Navigation, Pagination]
 const sectionRef = ref<HTMLElement | null>(null)
 
-// Visual config not available in WHMCS: icon, color, image, demoUrl
-// Maps product id → visual data from lib/data.ts
-const visualMap = Object.fromEntries(visualData.map(p => [p.id, p]))
-
-// Fetch SaaS products (gids 3-9)
-const allGids = productGids.join(',')
-const { data: whmcsRaw } = await useApi<unknown[]>('/api/portal/public/products', {
-  query: computed(() => ({ lang: locale.value, gids: allGids })),
+/** Fetch slides from the backend API. */
+const { data: slidesRaw } = await useApi<SlidePublicDto[]>('/api/portal/public/slides', {
+  query: computed(() => ({ lang: locale.value })),
   default: () => []
 })
 
-/** Build slider items from WHMCS data + visual config */
+/** Maps API slide data to the shape expected by the template. */
 const sliderItems = computed(() => {
-  const raw = (whmcsRaw.value ?? []) as any[]
-  const items: {
-    id: string; name: string; tagline: string; description: string; features: string[]
-    icon: string; color: string; image: string; demoUrl: string; learnMoreUrl: string
-  }[] = []
+  const slides = slidesRaw.value ?? []
 
-  // ── Domains (static — no WHMCS product gid) ──
-  const domainsVisual = visualMap['domains']
-  items.push({
-    id: 'domains',
-    name: t('domains.card.name'),
-    tagline: t('domains.card.tagline'),
-    description: t('domains.card.description'),
-    features: [t('domains.card.f1'), t('domains.card.f2'), t('domains.card.f3')],
-    icon: 'earth',
-    color: '#3b82f6',
-    image: domainsVisual?.image || '/images/products/domains.jpg',
-    demoUrl: '',
-    learnMoreUrl: '/domains'
-  })
-
-  // ── All product groups (gids 1, 3-9) ──
-  for (const gid of productGids) {
-    const cfgKey = productGidToKey[gid]
-    if (!cfgKey) continue
-    const cfg = productConfig[cfgKey]
-    if (!cfg) continue
-
-    const group = raw.filter(p => Number(p.gid) === gid)
-    // Try exact slug match, then nameToKey match, then first in group
-    const parent = group.find(p => p.slug?.trim() === cfgKey)
-      ?? group.find(p => nameToKey(p.name) === cfgKey)
-      ?? group[0]
-    if (!parent) continue
-
-    // group_translations may only be on the parent product — find it in the group
-    const pGt = group.find(p => p.group_translations?.translated_name) ?? parent
-    const visual = visualMap[cfgKey]
-    const headline = getGt(pGt, 'headline')
-    const desc = (parent.translated_shortdescription || parent.shortdescription || (parent.translated_description || parent.description || '').split('\n')[0] || '').trim()
-    items.push({
-      id: cfgKey,
-      name: getGt(pGt, 'name') || cfg.name,
-      tagline: headline || getGt(pGt, 'tagline') || cfg.name,
-      description: desc || getGt(pGt, 'tagline') || headline,
-      features: getGroupFeatures(pGt).slice(0, 5),
-      icon: cfg.icon || visual?.icon || '',
-      color: cfg.color,
-      image: visual?.image || '',
-      demoUrl: cfg.demoUrl,
-      learnMoreUrl: cfg.learnMoreUrl
-    })
-  }
-
-  return items
+  return slides.map((slide) => ({
+    id: String(slide.id),
+    name: slide.title,
+    tagline: slide.tagline ?? '',
+    description: slide.description ?? '',
+    features: slide.features ?? [],
+    icon: slide.iconName,
+    color: slide.brandColor,
+    image: slide.imageUrl,
+    demoUrl: slide.demoUrl ?? '',
+    learnMoreUrl: slide.learnMoreUrl ?? slide.ctaUrl ?? '/'
+  }))
 })
 
+/**
+ * Scrolls the viewport down to the bottom of this section.
+ */
 function scrollDown() {
   const section = sectionRef.value
   if (!section) return

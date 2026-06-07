@@ -10,6 +10,8 @@ using Innovayse.Domain.Products;
 using Innovayse.Domain.Servers;
 using Innovayse.Domain.Services;
 using Innovayse.Domain.Settings;
+using Innovayse.Domain.Hosting;
+using Innovayse.Domain.Ssl;
 using Innovayse.Domain.Support;
 using Innovayse.Infrastructure.Auth;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -126,6 +128,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
 
     /// <summary>Gets the downloads table.</summary>
     public DbSet<Download> Downloads => Set<Download>();
+
+    /// <summary>SSL certificate check results.</summary>
+    public DbSet<SslCheck> SslChecks => Set<SslCheck>();
+
+    /// <summary>Disk and bandwidth usage stats cached from hosting servers.</summary>
+    public DbSet<DiskUsageStat> DiskUsageStats => Set<DiskUsageStat>();
 
     /// <inheritdoc/>
     protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -58,7 +58,7 @@ onUnmounted(() => document.removeEventListener('mousedown', onOutsideClick))
       leave-from-class="opacity-100 scale-100 translate-y-0"
       leave-to-class="opacity-0 scale-95 -translate-y-1"
     >
-      <div v-if="open" class="absolute z-50 mt-1.5 left-0 bg-surface-card border border-border rounded-[10px] shadow-xl w-[420px] max-h-[320px] overflow-hidden">
+      <div v-if="open" class="absolute z-50 mt-1.5 left-0 bg-surface-card border border-border rounded-[10px] shadow-xl w-[320px] overflow-hidden">
         <!-- Select All / Clear All -->
         <div class="flex items-center justify-between px-3 py-2 border-b border-border bg-white/[0.02]">
           <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Fields</span>

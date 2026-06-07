@@ -12,7 +12,7 @@ public sealed class TicketRepository(AppDbContext db) : ITicketRepository
     /// <inheritdoc/>
     public async Task<Ticket?> FindByIdAsync(int id, CancellationToken ct) =>
         await db.Tickets
-            .Include(t => t.Replies)
+            .Include(t => t.Replies).Include(t => t.Tags)
             .FirstOrDefaultAsync(t => t.Id == id, ct);
 
     /// <inheritdoc/>
@@ -21,7 +21,7 @@ public sealed class TicketRepository(AppDbContext db) : ITicketRepository
     /// <inheritdoc/>
     public async Task<IReadOnlyList<Ticket>> ListAsync(int page, int pageSize, CancellationToken ct) =>
         await db.Tickets
-            .Include(t => t.Replies)
+            .Include(t => t.Replies).Include(t => t.Tags)
             .OrderByDescending(t => t.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -31,7 +31,7 @@ public sealed class TicketRepository(AppDbContext db) : ITicketRepository
     public async Task<(IReadOnlyList<Ticket> Items, int TotalCount)> ListAsync(
         int page, int pageSize, TicketStatus? status, string? search, bool flaggedOnly, CancellationToken ct)
     {
-        var query = db.Tickets.Include(t => t.Replies).AsQueryable();
+        var query = db.Tickets.Include(t => t.Replies).Include(t => t.Tags).AsQueryable();
 
         if (status.HasValue)
         {
@@ -63,7 +63,7 @@ public sealed class TicketRepository(AppDbContext db) : ITicketRepository
     public async Task<IReadOnlyList<Ticket>> ListByDateRangeAsync(
         DateTimeOffset from, DateTimeOffset to, CancellationToken ct) =>
         await db.Tickets
-            .Include(t => t.Replies)
+            .Include(t => t.Replies).Include(t => t.Tags)
             .Where(t => t.CreatedAt >= from && t.CreatedAt < to)
             .OrderByDescending(t => t.CreatedAt)
             .ToListAsync(ct);
@@ -71,7 +71,7 @@ public sealed class TicketRepository(AppDbContext db) : ITicketRepository
     /// <inheritdoc/>
     public async Task<IReadOnlyList<Ticket>> ListByClientIdAsync(int clientId, CancellationToken ct) =>
         await db.Tickets
-            .Include(t => t.Replies)
+            .Include(t => t.Replies).Include(t => t.Tags)
             .Where(t => t.ClientId == clientId)
             .OrderByDescending(t => t.CreatedAt)
             .ToListAsync(ct);
@@ -85,7 +85,7 @@ public sealed class TicketRepository(AppDbContext db) : ITicketRepository
         int clientId, int page, int pageSize, string? search, CancellationToken ct)
     {
         var query = db.Tickets
-            .Include(t => t.Replies)
+            .Include(t => t.Replies).Include(t => t.Tags)
             .Where(t => t.ClientId == clientId);
 
         if (!string.IsNullOrWhiteSpace(search))

@@ -9,7 +9,10 @@ using Innovayse.Application.Support.Commands.DeleteTicket;
 using Innovayse.Application.Support.Commands.ReplyToTicket;
 using Innovayse.Application.Support.Commands.UpdateTicket;
 using Innovayse.Application.Support.DTOs;
+using Innovayse.Application.Support.Commands.AddTicketTag;
 using Innovayse.Application.Support.Commands.BulkUpdateTickets;
+using Innovayse.Application.Support.Commands.LeaveFeedback;
+using Innovayse.Application.Support.Commands.RemoveTicketTag;
 using Innovayse.Application.Support.Commands.ToggleTicketFlag;
 using Innovayse.Application.Support.Queries.GetClientTicketStats;
 using Innovayse.Application.Support.Queries.GetSupportOverview;
@@ -214,6 +217,30 @@ public sealed class TicketsController(IMessageBus bus) : ControllerBase
     public async Task<IActionResult> BulkActionAsync([FromBody] BulkActionRequest request, CancellationToken ct)
     {
         await bus.InvokeAsync(new BulkUpdateTicketsCommand(request.TicketIds, request.Action), ct);
+        return NoContent();
+    }
+
+    /// <summary>Records client feedback (rating + comment) for a ticket.</summary>
+    [HttpPost("{id:int}/feedback")]
+    public async Task<IActionResult> LeaveFeedbackAsync(int id, [FromBody] LeaveFeedbackRequest request, CancellationToken ct)
+    {
+        await bus.InvokeAsync(new LeaveFeedbackCommand(id, request.Rating, request.Comment, request.LeftBy), ct);
+        return NoContent();
+    }
+
+    /// <summary>Adds a tag to a ticket.</summary>
+    [HttpPost("{id:int}/tags")]
+    public async Task<IActionResult> AddTagAsync(int id, [FromBody] TicketTagRequest request, CancellationToken ct)
+    {
+        await bus.InvokeAsync(new AddTicketTagCommand(id, request.Tag), ct);
+        return NoContent();
+    }
+
+    /// <summary>Removes a tag from a ticket.</summary>
+    [HttpDelete("{id:int}/tags/{tag}")]
+    public async Task<IActionResult> RemoveTagAsync(int id, string tag, CancellationToken ct)
+    {
+        await bus.InvokeAsync(new RemoveTicketTagCommand(id, tag), ct);
         return NoContent();
     }
 }

@@ -165,7 +165,7 @@ onMounted(load)
         <template #fields>
           <div class="flex flex-wrap gap-3 items-end">
             <div class="min-w-[140px]">
-              <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Fields</label>
+              <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Fields to Include</label>
               <FieldSelector :fields="allColumns" :selected="visibleCols" @toggle="toggleCol" @select-all="selectAllCols" @clear-all="clearAllCols" />
             </div>
             <div class="min-w-[150px] flex-1">

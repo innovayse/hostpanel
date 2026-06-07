@@ -3,11 +3,14 @@
  * Layout wrapper for client detail pages.
  * Shows a compact header with client info and the inner sidebar alongside the active sub-page.
  */
-import { onMounted, watch } from 'vue'
+import { onMounted, watch, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useClientsStore } from '../stores/clientsStore'
 import { CLIENT_STATUS_STYLES } from '../../../utils/constants'
 import ClientInnerSidebar from '../components/ClientInnerSidebar.vue'
+import ClientExportModal from '../components/ClientExportModal.vue'
+
+const showExportModal = ref(false)
 
 const route = useRoute()
 const router = useRouter()
@@ -72,7 +75,7 @@ onMounted(() => {
         </div>
 
         <!-- Name + status + company -->
-        <div>
+        <div class="flex-1">
           <h1 class="font-display font-bold text-[1.25rem] text-text-primary leading-none">
             {{ store.current.firstName }} {{ store.current.lastName }}
           </h1>
@@ -88,7 +91,27 @@ onMounted(() => {
             </span>
           </div>
         </div>
+
+        <!-- Export Data button -->
+        <button
+          @click="showExportModal = true"
+          class="flex items-center gap-1.5 px-3 py-1.5 text-[0.78rem] font-medium text-text-secondary bg-white/[0.04] border border-border rounded-[9px] hover:bg-white/[0.08] transition-colors shrink-0"
+        >
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Export Data
+        </button>
       </div>
+
+      <ClientExportModal
+        v-if="showExportModal"
+        :client-id="Number(route.params.id)"
+        :client-name="`${store.current.firstName} ${store.current.lastName}`"
+        @close="showExportModal = false"
+      />
 
       <!-- Body: sidebar + content -->
       <div class="flex flex-1 min-h-0">

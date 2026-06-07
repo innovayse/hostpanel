@@ -14,6 +14,11 @@ namespace Innovayse.Application.Support.DTOs;
 /// <param name="CreatedAt">UTC timestamp when the ticket was created.</param>
 /// <param name="IsFlagged">Whether this ticket has been flagged by staff.</param>
 /// <param name="Replies">All replies on this ticket.</param>
+/// <param name="Tags">Tags attached to this ticket.</param>
+/// <param name="Rating">Client feedback rating (1–10), or null if not yet rated.</param>
+/// <param name="FeedbackComment">Optional feedback comment from the client.</param>
+/// <param name="FeedbackLeftBy">Name of the client who left feedback.</param>
+/// <param name="FeedbackAt">UTC timestamp when feedback was submitted.</param>
 public record TicketDto(
     int Id,
     int ClientId,
@@ -27,4 +32,9 @@ public record TicketDto(
     string? AssignedToStaffName,
     DateTimeOffset CreatedAt,
     bool IsFlagged,
-    IReadOnlyList<TicketReplyDto> Replies);
+    IReadOnlyList<TicketReplyDto> Replies,
+    IReadOnlyList<string> Tags,
+    int? Rating,
+    string? FeedbackComment,
+    string? FeedbackLeftBy,
+    DateTimeOffset? FeedbackAt);

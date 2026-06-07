@@ -130,7 +130,7 @@ onMounted(load)
         <template #fields>
           <div class="grid grid-cols-2 gap-3 items-end">
             <div>
-              <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Fields</label>
+              <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Fields to Include</label>
               <FieldSelector :fields="allColumns" :selected="visibleCols" @toggle="toggleCol" @select-all="selectAllCols" @clear-all="clearAllCols" />
             </div>
             <div>

@@ -26,6 +26,11 @@ public sealed class TicketConfiguration : IEntityTypeConfiguration<Ticket>
         builder.HasIndex(x => x.ClientId);
         builder.HasIndex(x => x.Status);
 
+        builder.Property(x => x.Rating);
+        builder.Property(x => x.FeedbackComment).HasMaxLength(2000);
+        builder.Property(x => x.FeedbackLeftBy).HasMaxLength(200);
+        builder.Property(x => x.FeedbackAt);
+
         builder.HasMany(x => x.Replies)
             .WithOne()
             .HasForeignKey("TicketId")
@@ -33,6 +38,15 @@ public sealed class TicketConfiguration : IEntityTypeConfiguration<Ticket>
 
         builder.Navigation(x => x.Replies)
             .HasField("_replies")
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.HasMany(x => x.Tags)
+            .WithOne()
+            .HasForeignKey(t => t.TicketId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Navigation(x => x.Tags)
+            .HasField("_tags")
             .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

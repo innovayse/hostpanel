@@ -22,7 +22,7 @@ using Wolverine;
 [ApiController]
 [Route("api/reports")]
 [Authorize(Roles = $"{Roles.Admin},{Roles.Reseller}")]
-public sealed class ReportsController(IMessageBus bus, IReportRepository reportRepo) : ControllerBase
+public sealed class ReportsController(IMessageBus bus, IReportRepository reportRepo, ISslMonitoringService sslService, IDiskUsageService diskService) : ControllerBase
 {
     /// <summary>Returns daily performance metrics.</summary>
     /// <param name="from">Start date (yyyy-MM-dd). Defaults to 30 days ago.</param>
@@ -314,6 +314,22 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
         return Ok(result);
     }
 
+    /// <summary>Returns credits issued to clients.</summary>
+    [HttpGet("credits-reviewer")]
+    public async Task<ActionResult<CreditsReviewerDto>> GetCreditsReviewerAsync(
+        [FromQuery] int? clientId,
+        [FromQuery] string? from, [FromQuery] string? to,
+        [FromQuery] decimal? minAmount, [FromQuery] decimal? maxAmount,
+        CancellationToken ct = default)
+    {
+        var result = await reportRepo.GetCreditsReviewerAsync(
+            clientId,
+            from is not null ? DateOnly.Parse(from) : null,
+            to is not null ? DateOnly.Parse(to) : null,
+            minAmount, maxAmount, ct);
+        return Ok(result);
+    }
+
     /// <summary>Returns all suspended services.</summary>
     [HttpGet("product-suspensions")]
     public async Task<ActionResult<IReadOnlyList<ProductSuspensionRowDto>>> GetProductSuspensionsAsync(CancellationToken ct)
@@ -355,6 +371,141 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
         var now = DateTime.UtcNow;
         var result = await reportRepo.GetDailyTransactionsAsync(
             year ?? now.Year, month ?? now.Month, ct);
+        return Ok(result);
+    }
+
+    /// <summary>Returns cached disk and bandwidth usage stats grouped by server.</summary>
+    [HttpGet("disk-usage")]
+    public async Task<ActionResult<DiskUsageDto>> GetDiskUsageAsync(CancellationToken ct = default)
+    {
+        var result = await diskService.GetReportAsync(ct);
+        return Ok(result);
+    }
+
+    /// <summary>Triggers a fresh fetch from all servers and returns updated disk usage stats.</summary>
+    [HttpPost("disk-usage/update")]
+    public async Task<ActionResult<DiskUsageDto>> UpdateDiskUsageAsync(CancellationToken ct = default)
+    {
+        var result = await diskService.UpdateNowAsync(ct);
+        return Ok(result);
+    }
+
+    /// <summary>Returns unpaid invoices assigned to the Direct Debit payment method.</summary>
+    [HttpGet("direct-debit")]
+    public async Task<ActionResult<DirectDebitDto>> GetDirectDebitAsync(CancellationToken ct = default)
+    {
+        var result = await reportRepo.GetDirectDebitAsync(ct);
+        return Ok(result);
+    }
+
+    /// <summary>Returns average customer retention grouped by product group.</summary>
+    [HttpGet("customer-retention")]
+    public async Task<ActionResult<CustomerRetentionDto>> GetCustomerRetentionAsync(
+        [FromQuery] bool includeActive = true,
+        CancellationToken ct = default)
+    {
+        var result = await reportRepo.GetCustomerRetentionAsync(includeActive, ct);
+        return Ok(result);
+    }
+
+    /// <summary>Returns cached SSL monitoring results grouped by expiry bucket.</summary>
+    [HttpGet("ssl-monitoring")]
+    public async Task<ActionResult<SslMonitoringDto>> GetSslMonitoringAsync(
+        [FromQuery] bool includeInactive = false,
+        CancellationToken ct = default)
+    {
+        var result = await sslService.GetReportAsync(includeInactive, ct);
+        return Ok(result);
+    }
+
+    /// <summary>Re-checks all domains and returns fresh SSL monitoring results.</summary>
+    [HttpPost("ssl-monitoring/revalidate")]
+    public async Task<ActionResult<SslMonitoringDto>> RevalidateSslAsync(
+        [FromQuery] bool includeInactive = false,
+        CancellationToken ct = default)
+    {
+        var result = await sslService.RevalidateAsync(includeInactive, ct);
+        return Ok(result);
+    }
+
+    /// <summary>Returns domain renewal reminder emails with optional filters.</summary>
+    [HttpGet("domain-renewal-emails")]
+    public async Task<ActionResult<DomainRenewalEmailsDto>> GetDomainRenewalEmailsAsync(
+        [FromQuery] int? clientId,
+        [FromQuery] string? registrar,
+        [FromQuery] string? domain,
+        [FromQuery] string? from, [FromQuery] string? to,
+        CancellationToken ct = default)
+    {
+        var result = await reportRepo.GetDomainRenewalEmailsAsync(
+            clientId, registrar, domain,
+            from is not null ? DateOnly.Parse(from) : null,
+            to is not null ? DateOnly.Parse(to) : null, ct);
+        return Ok(result);
+    }
+
+    /// <summary>Returns VAT MOSS settlement data for the given quarter.</summary>
+    [HttpGet("vat-moss")]
+    public async Task<ActionResult<VatMossDto>> GetVatMossAsync(
+        [FromQuery] int? year, [FromQuery] int? quarter,
+        CancellationToken ct = default)
+    {
+        var now = DateTime.UtcNow;
+        var y = year ?? now.Year;
+        var q = quarter ?? ((now.Month - 1) / 3 + 1);
+        var result = await reportRepo.GetVatMossAsync(y, q, ct);
+        return Ok(result);
+    }
+
+    /// <summary>Returns ticket feedback comments with optional filters.</summary>
+    [HttpGet("ticket-feedback-comments")]
+    public async Task<ActionResult<TicketFeedbackCommentsDto>> GetTicketFeedbackCommentsAsync(
+        [FromQuery] string? staffName,
+        [FromQuery] string? from, [FromQuery] string? to,
+        CancellationToken ct = default)
+    {
+        var result = await reportRepo.GetTicketFeedbackCommentsAsync(
+            staffName,
+            from is not null ? DateOnly.Parse(from) : null,
+            to is not null ? DateOnly.Parse(to) : null, ct);
+        return Ok(result);
+    }
+
+    /// <summary>Returns per-staff average feedback scores.</summary>
+    [HttpGet("ticket-feedback-scores")]
+    public async Task<ActionResult<TicketFeedbackScoresDto>> GetTicketFeedbackScoresAsync(
+        [FromQuery] string? from, [FromQuery] string? to,
+        CancellationToken ct = default)
+    {
+        var result = await reportRepo.GetTicketFeedbackScoresAsync(
+            from is not null ? DateOnly.Parse(from) : null,
+            to is not null ? DateOnly.Parse(to) : null, ct);
+        return Ok(result);
+    }
+
+    /// <summary>Returns rated tickets for review.</summary>
+    [HttpGet("ticket-ratings-reviewer")]
+    public async Task<ActionResult<TicketRatingsReviewerDto>> GetTicketRatingsReviewerAsync(
+        [FromQuery] int? minRating,
+        [FromQuery] string? from, [FromQuery] string? to,
+        CancellationToken ct = default)
+    {
+        var result = await reportRepo.GetTicketRatingsReviewerAsync(
+            minRating,
+            from is not null ? DateOnly.Parse(from) : null,
+            to is not null ? DateOnly.Parse(to) : null, ct);
+        return Ok(result);
+    }
+
+    /// <summary>Returns ticket tags with usage counts.</summary>
+    [HttpGet("ticket-tags")]
+    public async Task<ActionResult<TicketTagsDto>> GetTicketTagsAsync(
+        [FromQuery] string? from, [FromQuery] string? to,
+        CancellationToken ct = default)
+    {
+        var result = await reportRepo.GetTicketTagsAsync(
+            from is not null ? DateOnly.Parse(from) : null,
+            to is not null ? DateOnly.Parse(to) : null, ct);
         return Ok(result);
     }
 

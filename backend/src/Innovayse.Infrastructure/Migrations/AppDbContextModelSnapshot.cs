@@ -980,6 +980,52 @@ namespace Innovayse.Infrastructure.Migrations
                     b.ToTable("nameservers", (string)null);
                 });
 
+            modelBuilder.Entity("Innovayse.Domain.Hosting.DiskUsageStat", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<long>("BwLimitMb")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("BwUsageMb")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ClientName")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<long>("DiskLimitMb")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("DiskUsageMb")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Domain")
+                        .IsRequired()
+                        .HasMaxLength(253)
+                        .HasColumnType("character varying(253)");
+
+                    b.Property<string>("ServerName")
+                        .IsRequired()
+                        .HasMaxLength(253)
+                        .HasColumnType("character varying(253)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Domain")
+                        .IsUnique();
+
+                    b.ToTable("disk_usage_stats", (string)null);
+                });
+
             modelBuilder.Entity("Innovayse.Domain.Notifications.EmailLog", b =>
                 {
                     b.Property<int>("Id")
@@ -1589,6 +1635,43 @@ namespace Innovayse.Infrastructure.Migrations
                     b.ToTable("settings", (string)null);
                 });
 
+            modelBuilder.Entity("Innovayse.Domain.Ssl.SslCheck", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CheckedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DomainName")
+                        .IsRequired()
+                        .HasMaxLength(253)
+                        .HasColumnType("character varying(253)");
+
+                    b.Property<DateTimeOffset?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("HasSsl")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Issuer")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DomainName")
+                        .IsUnique();
+
+                    b.ToTable("ssl_checks", (string)null);
+                });
+
             modelBuilder.Entity("Innovayse.Domain.Support.Announcement", b =>
                 {
                     b.Property<int>("Id")
@@ -1911,6 +1994,17 @@ namespace Innovayse.Infrastructure.Migrations
                     b.Property<int?>("DepartmentId")
                         .HasColumnType("integer");
 
+                    b.Property<DateTimeOffset?>("FeedbackAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FeedbackComment")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("FeedbackLeftBy")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<bool>("IsFlagged")
                         .HasColumnType("boolean");
 
@@ -1922,6 +2016,9 @@ namespace Innovayse.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
+
+                    b.Property<int?>("Rating")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -1973,6 +2070,32 @@ namespace Innovayse.Infrastructure.Migrations
                     b.HasIndex("TicketId");
 
                     b.ToTable("ticket_replies", (string)null);
+                });
+
+            modelBuilder.Entity("Innovayse.Domain.Support.TicketTag", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("TicketId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name");
+
+                    b.HasIndex("TicketId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("ticket_tags", (string)null);
                 });
 
             modelBuilder.Entity("Innovayse.Infrastructure.Auth.AppUser", b =>
@@ -2349,6 +2472,15 @@ namespace Innovayse.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Innovayse.Domain.Support.TicketTag", b =>
+                {
+                    b.HasOne("Innovayse.Domain.Support.Ticket", null)
+                        .WithMany("Tags")
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Innovayse.Infrastructure.Auth.RefreshToken", b =>
                 {
                     b.HasOne("Innovayse.Infrastructure.Auth.AppUser", "User")
@@ -2459,6 +2591,8 @@ namespace Innovayse.Infrastructure.Migrations
             modelBuilder.Entity("Innovayse.Domain.Support.Ticket", b =>
                 {
                     b.Navigation("Replies");
+
+                    b.Navigation("Tags");
                 });
 #pragma warning restore 612, 618
         }

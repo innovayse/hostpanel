@@ -28,6 +28,8 @@ const titles: Record<string, string> = {
   '/servers':     'Servers',
   '/integrations':'Integrations',
   '/settings':    'Settings',
+  '/reports':     'Reports',
+  '/orders':      'Orders',
 }
 
 /** Current page title derived from the active route. */

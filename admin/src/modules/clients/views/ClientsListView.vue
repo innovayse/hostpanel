@@ -193,12 +193,13 @@ onMounted(() => store.fetchAll())
     <div v-else-if="store.clients.length > 0" class="bg-surface-card border border-border rounded-2xl overflow-hidden">
 
       <!-- Header row -->
-      <div class="hidden sm:grid grid-cols-[0.5fr_2fr_2fr_1.5fr_1fr_1fr] gap-4 px-5 py-3 border-b border-border bg-white/[0.02]">
+      <div class="hidden sm:grid grid-cols-[0.5fr_2fr_2fr_1.5fr_1fr_0.7fr_1fr] gap-4 px-5 py-3 border-b border-border bg-white/[0.02]">
         <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">ID</span>
         <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Name</span>
         <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Email</span>
         <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Company</span>
         <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Status</span>
+        <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">2FA</span>
         <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Joined</span>
       </div>
 
@@ -207,7 +208,7 @@ onMounted(() => store.fetchAll())
         v-for="client in store.clients"
         :key="client.id"
         :to="`/clients/${client.id}`"
-        class="grid grid-cols-1 sm:grid-cols-[0.5fr_2fr_2fr_1.5fr_1fr_1fr] gap-2 sm:gap-4 px-5 py-3.5 border-b border-border last:border-0 hover:bg-white/[0.02] transition-colors no-underline"
+        class="grid grid-cols-1 sm:grid-cols-[0.5fr_2fr_2fr_1.5fr_1fr_0.7fr_1fr] gap-2 sm:gap-4 px-5 py-3.5 border-b border-border last:border-0 hover:bg-white/[0.02] transition-colors no-underline"
       >
         <span class="text-[0.82rem] text-text-muted font-mono hidden sm:block">{{ client.id }}</span>
 
@@ -237,6 +238,27 @@ onMounted(() => store.fetchAll())
             :class="statusStyles[client.status] ?? statusStyles.Inactive"
           >
             {{ client.status }}
+          </span>
+        </div>
+
+        <!-- 2FA badge -->
+        <div class="hidden sm:flex items-center">
+          <span
+            v-if="client.twoFactorEnabled"
+            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.68rem] font-semibold text-status-green bg-status-green/10 border border-status-green/20"
+            title="Two-Factor Authentication enabled"
+          >
+            <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            On
+          </span>
+          <span
+            v-else
+            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.68rem] font-semibold text-text-muted bg-white/[0.04] border border-border"
+            title="Two-Factor Authentication disabled"
+          >
+            Off
           </span>
         </div>
 

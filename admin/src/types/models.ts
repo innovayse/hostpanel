@@ -32,6 +32,8 @@ export interface ClientListItem {
   status: string
   /** True if the linked Identity user has been deleted. */
   isUserDeleted: boolean
+  /** True if the user has TOTP 2FA enabled. */
+  twoFactorEnabled: boolean
   /** ISO 8601 creation timestamp. */
   createdAt: string
 }
@@ -88,6 +90,8 @@ export interface ClientDetail extends ClientListItem {
   statusUpdate: boolean
   /** Whether the client may use single sign-on. */
   allowSso: boolean
+  /** True if the user has TOTP 2FA enabled. */
+  twoFactorEnabled: boolean
   /** Associated contacts. */
   contacts: Contact[]
 }

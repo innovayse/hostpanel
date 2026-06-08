@@ -213,6 +213,10 @@ onMounted(() => {
             <span class="text-[0.82rem] font-medium" :class="client.lateFees ? 'text-status-green' : 'text-status-red'">
               {{ client.lateFees ? 'Yes' : 'No' }}
             </span>
+            <span class="text-[0.75rem] text-text-muted">Two-Factor Auth</span>
+            <span class="text-[0.82rem] font-medium" :class="client.twoFactorEnabled ? 'text-status-green' : 'text-status-red'">
+              {{ client.twoFactorEnabled ? 'Enabled' : 'Disabled' }}
+            </span>
           </div>
         </div>
 

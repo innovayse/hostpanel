@@ -18,10 +18,10 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   const apiUrl = (config.apiUrl as string) || 'http://localhost:5000'
 
-  let accessToken: string
+  let loginResult: { accessToken?: string; twoFactorRequired?: boolean; pendingToken?: string }
 
   try {
-    const response = await $fetch.raw<{ accessToken: string; expiresAt: string; role: string }>(
+    const response = await $fetch.raw<{ accessToken?: string; twoFactorRequired?: boolean; pendingToken?: string }>(
       `${apiUrl}/api/auth/login`,
       {
         method: 'POST',
@@ -29,7 +29,14 @@ export default defineEventHandler(async (event) => {
       }
     )
 
-    accessToken = response._data?.accessToken ?? ''
+    loginResult = response._data ?? {}
+
+    // 2FA required — return pending token to client without setting auth cookies
+    if (loginResult.twoFactorRequired) {
+      return { twoFactorRequired: true, pendingToken: loginResult.pendingToken }
+    }
+
+    const accessToken = loginResult.accessToken ?? ''
     if (!accessToken) {
       throw createError({ statusCode: 502, statusMessage: 'Backend returned no access token' })
     }
@@ -47,6 +54,13 @@ export default defineEventHandler(async (event) => {
         break
       }
     }
+
+    // Fetch full user profile with the new token
+    const user = await $fetch(`${apiUrl}/api/clients/me`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+
+    return user
   } catch (err: unknown) {
     if ((err as { statusCode?: number })?.statusCode === 400 || (err as { statusCode?: number })?.statusCode === 502) {
       throw err
@@ -59,11 +73,4 @@ export default defineEventHandler(async (event) => {
       statusMessage: data?.error ?? data?.message ?? 'Login failed',
     })
   }
-
-  // Fetch full user profile with the new token
-  const user = await $fetch(`${(useRuntimeConfig().apiUrl as string) || 'http://localhost:5000'}/api/clients/me`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  })
-
-  return user
 })

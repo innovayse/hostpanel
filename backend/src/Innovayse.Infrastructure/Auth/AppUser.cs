@@ -22,4 +22,7 @@ public sealed class AppUser : IdentityUser
 
     /// <summary>Gets or sets the UTC timestamp when the account was created.</summary>
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+
+    /// <summary>Gets or sets the Base32-encoded TOTP secret. Null when 2FA is not configured.</summary>
+    public string? TwoFactorSecret { get; set; }
 }

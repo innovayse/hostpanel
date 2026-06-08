@@ -6,6 +6,7 @@ using Innovayse.Application.Common;
 using Innovayse.Domain.Clients.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using OtpNet;
 
 /// <summary>
 /// Implements <see cref="IUserService"/> using ASP.NET Core Identity's <see cref="UserManager{TUser}"/>.
@@ -292,5 +293,63 @@ public sealed class UserService(UserManager<AppUser> userManager, IClientReposit
             ?? throw new InvalidOperationException($"User {userId} not found.");
         user.LastLoginAt = DateTimeOffset.UtcNow;
         await userManager.UpdateAsync(user);
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> IsTwoFactorEnabledAsync(string userId, CancellationToken ct)
+    {
+        var user = await userManager.FindByIdAsync(userId);
+        return user?.TwoFactorEnabled ?? false;
+    }
+
+    /// <inheritdoc/>
+    public async Task<string> GenerateTwoFactorSecretAsync(string userId, CancellationToken ct)
+    {
+        var user = await userManager.FindByIdAsync(userId)
+            ?? throw new InvalidOperationException($"User {userId} not found.");
+        var secretBytes = KeyGeneration.GenerateRandomKey(20);
+        var secret = Base32Encoding.ToString(secretBytes);
+        user.TwoFactorSecret = secret;
+        await userManager.UpdateAsync(user);
+        return secret;
+    }
+
+    /// <inheritdoc/>
+    public async Task<string?> GetTwoFactorSecretAsync(string userId, CancellationToken ct)
+    {
+        var user = await userManager.FindByIdAsync(userId);
+        return user?.TwoFactorSecret;
+    }
+
+    /// <inheritdoc/>
+    public async Task EnableTwoFactorAsync(string userId, CancellationToken ct)
+    {
+        var user = await userManager.FindByIdAsync(userId)
+            ?? throw new InvalidOperationException($"User {userId} not found.");
+        await userManager.SetTwoFactorEnabledAsync(user, true);
+    }
+
+    /// <inheritdoc/>
+    public async Task DisableTwoFactorAsync(string userId, CancellationToken ct)
+    {
+        var user = await userManager.FindByIdAsync(userId)
+            ?? throw new InvalidOperationException($"User {userId} not found.");
+        user.TwoFactorSecret = null;
+        await userManager.SetTwoFactorEnabledAsync(user, false);
+        await userManager.UpdateAsync(user);
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> VerifyTwoFactorCodeAsync(string userId, string code, CancellationToken ct)
+    {
+        var user = await userManager.FindByIdAsync(userId);
+        if (user?.TwoFactorSecret is null)
+        {
+            return false;
+        }
+
+        var secretBytes = Base32Encoding.ToBytes(user.TwoFactorSecret);
+        var totp = new Totp(secretBytes);
+        return totp.VerifyTotp(DateTime.UtcNow, code, out _, VerificationWindow.RfcSpecifiedNetworkDelay);
     }
 }

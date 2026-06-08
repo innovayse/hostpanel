@@ -27,15 +27,17 @@ public sealed class GetMyProfileHandler(IClientRepository clientRepo, IUserServi
 
         var user = await userService.FindByIdAsync(client.UserId, ct);
         var email = user?.Email ?? "";
+        var twoFactorEnabled = await userService.IsTwoFactorEnabledAsync(client.UserId, ct);
 
-        return MapToDto(client, email);
+        return MapToDto(client, email, twoFactorEnabled);
     }
 
     /// <summary>Maps a <see cref="Client"/> aggregate to <see cref="ClientDto"/>.</summary>
     /// <param name="client">The client aggregate to map.</param>
     /// <param name="email">The email from the Identity user.</param>
+    /// <param name="twoFactorEnabled">True if the user has TOTP 2FA enabled.</param>
     /// <returns>The mapped DTO.</returns>
-    private static ClientDto MapToDto(Client client, string email) =>
+    private static ClientDto MapToDto(Client client, string email, bool twoFactorEnabled) =>
         new(
             client.Id,
             client.UserId,
@@ -69,6 +71,7 @@ public sealed class GetMyProfileHandler(IClientRepository clientRepo, IUserServi
             client.MarketingOptIn,
             client.StatusUpdate,
             client.AllowSso,
+            twoFactorEnabled,
             client.CreatedAt,
             client.Contacts.Select(c => new ContactDto(
                 c.Id, c.FirstName, c.LastName, c.CompanyName,

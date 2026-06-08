@@ -35,6 +35,7 @@ using Innovayse.Domain.Clients;
 /// <param name="MarketingOptIn">Marketing emails opt-in.</param>
 /// <param name="StatusUpdate">Status update emails sent.</param>
 /// <param name="AllowSso">Single sign-on allowed.</param>
+/// <param name="TwoFactorEnabled">True if the user has TOTP 2FA enabled.</param>
 /// <param name="CreatedAt">Account creation timestamp.</param>
 /// <param name="Contacts">Additional contacts linked to this client.</param>
 public record ClientDto(
@@ -70,5 +71,6 @@ public record ClientDto(
     bool MarketingOptIn,
     bool StatusUpdate,
     bool AllowSso,
+    bool TwoFactorEnabled,
     DateTimeOffset CreatedAt,
     IReadOnlyList<ContactDto> Contacts);

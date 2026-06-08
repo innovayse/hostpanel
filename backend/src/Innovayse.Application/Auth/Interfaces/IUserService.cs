@@ -171,4 +171,53 @@ public interface IUserService
     /// <param name="userId">The user's unique identifier.</param>
     /// <param name="ct">Cancellation token.</param>
     Task UpdateLastLoginAsync(string userId, CancellationToken ct);
+
+    /// <summary>
+    /// Returns whether two-factor authentication is currently enabled for the user.
+    /// </summary>
+    /// <param name="userId">The user's unique identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True if 2FA is enabled; false otherwise.</returns>
+    Task<bool> IsTwoFactorEnabledAsync(string userId, CancellationToken ct);
+
+    /// <summary>
+    /// Generates and persists a new Base32-encoded TOTP secret for the user.
+    /// Does not enable 2FA — the caller must confirm with a valid code first.
+    /// </summary>
+    /// <param name="userId">The user's unique identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The newly generated Base32-encoded TOTP secret.</returns>
+    Task<string> GenerateTwoFactorSecretAsync(string userId, CancellationToken ct);
+
+    /// <summary>
+    /// Retrieves the stored Base32-encoded TOTP secret for the user, or null if not set.
+    /// </summary>
+    /// <param name="userId">The user's unique identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The TOTP secret, or null if 2FA has not been configured.</returns>
+    Task<string?> GetTwoFactorSecretAsync(string userId, CancellationToken ct);
+
+    /// <summary>
+    /// Marks two-factor authentication as enabled for the user in Identity.
+    /// </summary>
+    /// <param name="userId">The user's unique identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task EnableTwoFactorAsync(string userId, CancellationToken ct);
+
+    /// <summary>
+    /// Disables two-factor authentication for the user and clears the stored TOTP secret.
+    /// </summary>
+    /// <param name="userId">The user's unique identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task DisableTwoFactorAsync(string userId, CancellationToken ct);
+
+    /// <summary>
+    /// Verifies a 6-digit TOTP code against the user's stored secret.
+    /// Accepts codes within the RFC-specified network delay window.
+    /// </summary>
+    /// <param name="userId">The user's unique identifier.</param>
+    /// <param name="code">The 6-digit TOTP code from the authenticator app.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True if the code is valid within the allowed time window; false otherwise.</returns>
+    Task<bool> VerifyTwoFactorCodeAsync(string userId, string code, CancellationToken ct);
 }

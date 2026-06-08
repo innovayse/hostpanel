@@ -39,12 +39,29 @@ export function useClientAuth() {
 
   /**
    * Log in with email + password.
-   * Sets both cookies server-side and updates local user state.
+   * If 2FA is enabled, returns { twoFactorRequired: true, pendingToken } without setting cookies.
+   * Otherwise sets auth cookies and updates local user state.
    */
   async function login(email: string, password: string) {
-    const data = await apiFetch<ClientUser>('/api/portal/auth/login', {
+    const data = await apiFetch<ClientUser | { twoFactorRequired: true; pendingToken: string }>(
+      '/api/portal/auth/login',
+      { method: 'POST', body: { email, password } }
+    )
+    if ('twoFactorRequired' in data && data.twoFactorRequired) {
+      return data
+    }
+    user.value = data as ClientUser
+    return data
+  }
+
+  /**
+   * Complete 2FA login with TOTP code.
+   * Sets auth cookies server-side and updates local user state.
+   */
+  async function loginWithTwoFactor(pendingToken: string, code: string) {
+    const data = await apiFetch<ClientUser>('/api/portal/auth/2fa-login', {
       method: 'POST',
-      body: { email, password }
+      body: { pendingToken, code }
     })
     user.value = data
     return data
@@ -80,6 +97,7 @@ export function useClientAuth() {
     isLoggedIn,
     fetchUser,
     login,
+    loginWithTwoFactor,
     logout,
     register
   }

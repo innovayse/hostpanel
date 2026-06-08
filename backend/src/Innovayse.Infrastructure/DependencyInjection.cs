@@ -109,6 +109,7 @@ public static class DependencyInjection
 
         // Auth services
         services.AddSingleton<TokenRevocationCache>();
+        services.AddSingleton<ITwoFactorPendingCache, TwoFactorPendingCache>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IUserService, UserService>();

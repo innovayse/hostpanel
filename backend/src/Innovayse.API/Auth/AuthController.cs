@@ -1,10 +1,14 @@
 namespace Innovayse.API.Auth;
 
 using Innovayse.API.Auth.Requests;
+using Innovayse.Application.Auth.Commands.Disable2Fa;
+using Innovayse.Application.Auth.Commands.Enable2Fa;
 using Innovayse.Application.Auth.Commands.Login;
 using Innovayse.Application.Auth.Commands.Logout;
 using Innovayse.Application.Auth.Commands.RefreshToken;
 using Innovayse.Application.Auth.Commands.Register;
+using Innovayse.Application.Auth.Commands.Setup2Fa;
+using Innovayse.Application.Auth.Commands.TwoFactorLogin;
 using Innovayse.Application.Auth.DTOs;
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Clients.Commands.AcceptInvitation;
@@ -15,7 +19,7 @@ using Microsoft.AspNetCore.Mvc;
 using Wolverine;
 
 /// <summary>
-/// Handles authentication — login, register, token refresh, and logout.
+/// Handles authentication — login, register, token refresh, logout, and TOTP 2FA management.
 /// Access tokens are returned in the response body.
 /// Refresh tokens are set/read as httpOnly cookies named <c>refreshToken</c>.
 /// </summary>
@@ -30,24 +34,157 @@ public sealed class AuthController(IMessageBus bus, IUserService userService, IC
     private const string RefreshTokenCookieName = "refreshToken";
 
     /// <summary>
-    /// Authenticates a user and returns an access token.
-    /// Sets the refresh token as an httpOnly cookie.
+    /// Authenticates a user and returns an access token, or a pending 2FA challenge when 2FA is enabled.
+    /// Sets the refresh token as an httpOnly cookie when login completes in a single step.
     /// </summary>
     /// <param name="request">Login credentials.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Access token and expiry.</returns>
+    /// <returns>
+    /// Access token and expiry, or <c>{ twoFactorRequired: true, pendingToken: "..." }</c>
+    /// when the account requires TOTP verification.
+    /// </returns>
     [HttpPost("login")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(Innovayse.Application.Auth.DTOs.AuthResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AuthResultDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> LoginAsync([FromBody] LoginRequest request, CancellationToken ct)
     {
-        var result = await bus.InvokeAsync<AuthWithRefreshDto>(
+        var result = await bus.InvokeAsync<LoginResultDto>(
             new LoginCommand(request.Email, request.Password), ct);
+
+        if (result.TwoFactorRequired)
+        {
+            return Ok(new { twoFactorRequired = true, pendingToken = result.PendingToken });
+        }
+
+        SetRefreshTokenCookie(result.RefreshToken!);
+        return Ok(result.Auth);
+    }
+
+    /// <summary>
+    /// Completes login by verifying a TOTP code against a pending pre-auth session.
+    /// Called after a login attempt returns <c>twoFactorRequired = true</c>.
+    /// Sets the refresh token as an httpOnly cookie on success.
+    /// </summary>
+    /// <param name="request">Pending token and 6-digit TOTP code.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Access token and expiry on success, or 401 with an error message.</returns>
+    [HttpPost("2fa/login")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(AuthResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> TwoFactorLoginAsync([FromBody] TwoFactorLoginRequest request, CancellationToken ct)
+    {
+        AuthWithRefreshDto result;
+        try
+        {
+            result = await bus.InvokeAsync<AuthWithRefreshDto>(
+                new TwoFactorLoginCommand(request.PendingToken, request.Code), ct);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { error = ex.Message });
+        }
 
         SetRefreshTokenCookie(result.RefreshToken);
         return Ok(result.Auth);
+    }
+
+    /// <summary>
+    /// Returns whether 2FA is currently enabled for the authenticated user.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Object with <c>enabled</c> boolean.</returns>
+    [HttpGet("2fa/status")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> TwoFactorStatusAsync(CancellationToken ct)
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        var enabled = await userService.IsTwoFactorEnabledAsync(userId, ct);
+        return Ok(new { enabled });
+    }
+
+    /// <summary>
+    /// Generates a new TOTP secret and returns the QR code URI for authenticator app setup.
+    /// Does NOT enable 2FA yet — call <c>POST /2fa/enable</c> with a valid code to confirm and activate.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The Base32 secret and the <c>otpauth://</c> URI to be rendered as a QR code.</returns>
+    [HttpPost("2fa/setup")]
+    [Authorize]
+    [ProducesResponseType(typeof(TwoFactorSetupDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Setup2FaAsync(CancellationToken ct)
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? string.Empty;
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        var result = await bus.InvokeAsync<TwoFactorSetupDto>(new Setup2FaCommand(userId, email), ct);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Enables 2FA after the user confirms setup with a valid TOTP code.
+    /// The user must have called <c>POST /2fa/setup</c> first to receive the secret.
+    /// </summary>
+    /// <param name="request">The 6-digit TOTP code from the authenticator app.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Success confirmation, or 400 with an error message when the code is invalid.</returns>
+    [HttpPost("2fa/enable")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Enable2FaAsync([FromBody] Enable2FaRequest request, CancellationToken ct)
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            await bus.InvokeAsync(new Enable2FaCommand(userId, request.Code), ct);
+            return Ok(new { success = true });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Disables 2FA for the authenticated user and removes the stored TOTP secret.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Success confirmation.</returns>
+    [HttpPost("2fa/disable")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Disable2FaAsync(CancellationToken ct)
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        await bus.InvokeAsync(new Disable2FaCommand(userId), ct);
+        return Ok(new { success = true });
     }
 
     /// <summary>
@@ -59,7 +196,7 @@ public sealed class AuthController(IMessageBus bus, IUserService userService, IC
     /// <returns>Access token and expiry.</returns>
     [HttpPost("register")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(Innovayse.Application.Auth.DTOs.AuthResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AuthResultDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> RegisterAsync([FromBody] RegisterRequest request, CancellationToken ct)
@@ -83,7 +220,7 @@ public sealed class AuthController(IMessageBus bus, IUserService userService, IC
     /// <returns>New access token and expiry.</returns>
     [HttpPost("refresh")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(Innovayse.Application.Auth.DTOs.AuthResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AuthResultDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> RefreshAsync(CancellationToken ct)
     {
@@ -344,7 +481,7 @@ public sealed class AuthController(IMessageBus bus, IUserService userService, IC
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ResetPasswordAsync([FromBody] Requests.ResetPasswordRequest request, CancellationToken ct)
+    public async Task<IActionResult> ResetPasswordAsync([FromBody] ResetPasswordRequest request, CancellationToken ct)
     {
         if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Token) || string.IsNullOrEmpty(request.NewPassword))
         {

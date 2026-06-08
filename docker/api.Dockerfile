@@ -17,6 +17,7 @@ COPY backend/src/Innovayse.Infrastructure/Innovayse.Infrastructure.csproj ./src/
 COPY backend/src/Innovayse.API/Innovayse.API.csproj ./src/Innovayse.API/
 COPY backend/src/Innovayse.SDK/Innovayse.SDK.csproj ./src/Innovayse.SDK/
 COPY backend/src/Innovayse.Providers.CWP/Innovayse.Providers.CWP.csproj ./src/Innovayse.Providers.CWP/
+COPY backend/src/Innovayse.Providers.CWP7/Innovayse.Providers.CWP7.csproj ./src/Innovayse.Providers.CWP7/
 COPY backend/tests/Innovayse.Domain.Tests/Innovayse.Domain.Tests.csproj ./tests/Innovayse.Domain.Tests/
 COPY backend/tests/Innovayse.Application.Tests/Innovayse.Application.Tests.csproj ./tests/Innovayse.Application.Tests/
 COPY backend/tests/Innovayse.Integration.Tests/Innovayse.Integration.Tests.csproj ./tests/Innovayse.Integration.Tests/
@@ -46,6 +47,7 @@ COPY backend/src/Innovayse.Infrastructure/Innovayse.Infrastructure.csproj ./src/
 COPY backend/src/Innovayse.API/Innovayse.API.csproj ./src/Innovayse.API/
 COPY backend/src/Innovayse.SDK/Innovayse.SDK.csproj ./src/Innovayse.SDK/
 COPY backend/src/Innovayse.Providers.CWP/Innovayse.Providers.CWP.csproj ./src/Innovayse.Providers.CWP/
+COPY backend/src/Innovayse.Providers.CWP7/Innovayse.Providers.CWP7.csproj ./src/Innovayse.Providers.CWP7/
 COPY backend/tests/Innovayse.Domain.Tests/Innovayse.Domain.Tests.csproj ./tests/Innovayse.Domain.Tests/
 COPY backend/tests/Innovayse.Application.Tests/Innovayse.Application.Tests.csproj ./tests/Innovayse.Application.Tests/
 COPY backend/tests/Innovayse.Integration.Tests/Innovayse.Integration.Tests.csproj ./tests/Innovayse.Integration.Tests/

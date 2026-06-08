@@ -1,13 +1,17 @@
 namespace Innovayse.Infrastructure.Persistence;
 
 using Innovayse.Domain.Auth;
+using Innovayse.Domain.Domains;
 using Innovayse.Domain.Ssl;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Clients;
 using Innovayse.Domain.Orders;
 using Innovayse.Domain.Products;
+using Innovayse.Domain.Servers;
 using Innovayse.Domain.Services;
+using Innovayse.Domain.Settings;
 using Innovayse.Domain.Slides;
+using Innovayse.Domain.Support;
 using Innovayse.Infrastructure.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -32,7 +36,7 @@ public sealed class DevDataSeeder(
     public async Task SeedAsync(CancellationToken ct = default)
     {
         // ── Admin user ───────────────────────────────────────────────────────
-        const string adminEmail = "admin@innovayse.com";
+        const string adminEmail = "admin@hostpanel.com";
         if (await userManager.FindByEmailAsync(adminEmail) is null)
         {
             var adminUser = new AppUser
@@ -55,11 +59,23 @@ public sealed class DevDataSeeder(
         if (await db.Clients.AnyAsync(ct) && await db.Invoices.AnyAsync(ct) && await db.Quotes.AnyAsync(ct)
             && await db.ProductGroups.AnyAsync(ct) && await db.Orders.AnyAsync(ct) && hasProductInvoices)
         {
-            // Main data exists — but seed slides if they're missing (added later)
             if (!await db.Slides.AnyAsync(ct))
-            {
                 await SeedSlidesAsync(db, logger, ct);
-            }
+
+            if (!await db.Departments.AnyAsync(ct))
+                await SeedSupportAsync(db, ct, logger);
+
+            if (!await db.Domains.AnyAsync(ct))
+                await SeedDomainsAsync(db, ct, logger);
+
+            if (!await db.ServerGroups.AnyAsync(ct))
+                await SeedServersAsync(db, ct, logger);
+
+            if (!await db.Settings.AnyAsync(ct))
+                await SeedSettingsAsync(db, ct, logger);
+
+            if (!await db.Announcements.AnyAsync(ct))
+                await SeedAnnouncementsAsync(db, ct, logger);
 
             logger.LogInformation("Dev seed skipped — data already exists");
             return;
@@ -70,21 +86,26 @@ public sealed class DevDataSeeder(
         // ── Clients ──────────────────────────────────────────────────────────
         var clientDefs = new List<(string Email, string First, string Last, string? Company, string? Phone, string? Street, string? City, string? State, string? PostCode, string? Country, ClientStatus Status)>
         {
-            ("john.doe@example.com", "John", "Doe", "Doe Enterprises", "+1-555-0101", "123 Main St", "New York", "NY", "10001", "US", ClientStatus.Active),
-            ("jane.smith@example.com", "Jane", "Smith", "Smith & Co", "+1-555-0102", "456 Oak Ave", "San Francisco", "CA", "94102", "US", ClientStatus.Active),
-            ("alex.petrosyan@example.com", "Alex", "Petrosyan", "DigiTech AM", "+374-91-123456", "15 Tumanyan St", "Yerevan", null, "0001", "AM", ClientStatus.Active),
-            ("maria.garcia@example.com", "Maria", "Garcia", null, "+34-612-345678", "Calle Mayor 22", "Madrid", null, "28013", "ES", ClientStatus.Active),
-            ("oliver.brown@example.com", "Oliver", "Brown", "Brown Web Solutions", "+44-20-7946-0958", "10 Downing Rd", "London", null, "SW1A 2AA", "GB", ClientStatus.Active),
-            ("emma.wilson@example.com", "Emma", "Wilson", null, "+1-555-0106", "789 Pine Ln", "Chicago", "IL", "60601", "US", ClientStatus.Suspended),
-            ("liam.johnson@example.com", "Liam", "Johnson", "Johnson Hosting", "+1-555-0107", "321 Elm St", "Austin", "TX", "73301", "US", ClientStatus.Active),
-            ("sophia.lee@example.com", "Sophia", "Lee", "Lee Digital", "+82-10-1234-5678", "Gangnam-gu", "Seoul", null, "06000", "KR", ClientStatus.Active),
-            ("noah.martin@example.com", "Noah", "Martin", null, "+33-6-12-34-56-78", "8 Rue de Rivoli", "Paris", null, "75001", "FR", ClientStatus.Inactive),
-            ("ava.taylor@example.com", "Ava", "Taylor", "Taylor Media", "+61-2-1234-5678", "42 George St", "Sydney", "NSW", "2000", "AU", ClientStatus.Active),
-            ("ethan.davis@example.com", "Ethan", "Davis", null, null, null, null, null, null, null, ClientStatus.Active),
-            ("mia.anderson@example.com", "Mia", "Anderson", "Anderson Corp", "+1-555-0112", "555 Broadway", "New York", "NY", "10012", "US", ClientStatus.Active),
-            ("lucas.thomas@example.com", "Lucas", "Thomas", null, "+49-30-12345678", "Friedrichstr. 100", "Berlin", null, "10117", "DE", ClientStatus.Active),
-            ("isabella.white@example.com", "Isabella", "White", "White Cloud Hosting", "+1-555-0114", "900 Cloud Dr", "Seattle", "WA", "98101", "US", ClientStatus.Closed),
-            ("james.harris@example.com", "James", "Harris", null, "+1-555-0115", "77 Sunset Blvd", "Los Angeles", "CA", "90028", "US", ClientStatus.Active),
+            ("owner@hostpanel.com",     "Owner",     "One",     "Owner Enterprises",    "+1-555-0101", "123 Main St",        "New York",      "NY",  "10001",    "US", ClientStatus.Active),
+            ("owner2@hostpanel.com",    "Owner",     "Two",     "Owner & Co",           "+1-555-0102", "456 Oak Ave",        "San Francisco", "CA",  "94102",    "US", ClientStatus.Active),
+            ("owner3@hostpanel.com",    "Owner",     "Three",   "DigiTech Solutions",   "+374-91-123456", "15 Tumanyan St",  "Yerevan",       null,  "0001",     "AM", ClientStatus.Active),
+            ("customer@hostpanel.com",  "Customer",  "One",     null,                   "+34-612-345678", "Calle Mayor 22",  "Madrid",        null,  "28013",    "ES", ClientStatus.Active),
+            ("customer2@hostpanel.com", "Customer",  "Two",     "Customer Web Solutions", "+44-20-7946-0958", "10 Downing Rd", "London",     null,  "SW1A 2AA", "GB", ClientStatus.Active),
+            ("customer3@hostpanel.com", "Customer",  "Three",   null,                   "+1-555-0106", "789 Pine Ln",        "Chicago",       "IL",  "60601",    "US", ClientStatus.Suspended),
+            ("customer4@hostpanel.com", "Customer",  "Four",    "Customer Hosting",     "+1-555-0107", "321 Elm St",         "Austin",        "TX",  "73301",    "US", ClientStatus.Active),
+            ("customer5@hostpanel.com", "Customer",  "Five",    "Customer Digital",     "+82-10-1234-5678", "Gangnam-gu",  "Seoul",         null,  "06000",    "KR", ClientStatus.Active),
+            ("developer@hostpanel.com", "Developer", "One",     null,                   "+33-6-12-34-56-78", "8 Rue de Rivoli", "Paris",     null,  "75001",    "FR", ClientStatus.Inactive),
+            ("developer2@hostpanel.com","Developer", "Two",     "Dev Media",            "+61-2-1234-5678", "42 George St",   "Sydney",        "NSW", "2000",     "AU", ClientStatus.Active),
+            ("manager@hostpanel.com",   "Manager",   "One",     null,                   null,          null,                 null,            null,  null,       null, ClientStatus.Active),
+            ("manager2@hostpanel.com",  "Manager",   "Two",     "Manager Corp",         "+1-555-0112", "555 Broadway",       "New York",      "NY",  "10012",    "US", ClientStatus.Active),
+            ("partner@hostpanel.com",   "Partner",   "One",     null,                   "+49-30-12345678", "Friedrichstr. 100", "Berlin",   null,  "10117",    "DE", ClientStatus.Active),
+            ("reseller@hostpanel.com",  "Reseller",  "One",     "Reseller Cloud Hosting", "+1-555-0114", "900 Cloud Dr",   "Seattle",       "WA",  "98101",    "US", ClientStatus.Closed),
+            ("reseller2@hostpanel.com", "Reseller",  "Two",     null,                   "+1-555-0115", "77 Sunset Blvd",     "Los Angeles",   "CA",  "90028",    "US", ClientStatus.Active),
+            ("customer6@hostpanel.com", "Customer",  "Six",     "Six Tech Ltd",         "+1-416-555-0101", "200 Bay St",     "Toronto",       "ON",  "M5J 2J3",  "CA", ClientStatus.Active),
+            ("customer7@hostpanel.com", "Customer",  "Seven",   null,                   "+55-11-91234-5678", "Av. Paulista 1000", "São Paulo", null, "01310-100", "BR", ClientStatus.Active),
+            ("developer3@hostpanel.com","Developer", "Three",   "Dev Studio AM",        "+374-55-987654", "20 Baghramyan", "Yerevan",       null,  "0019",     "AM", ClientStatus.Active),
+            ("partner2@hostpanel.com",  "Partner",   "Two",     "Partner Solutions",    "+971-50-123-4567", "Sheikh Zayed Rd", "Dubai",      null,  "00000",    "AE", ClientStatus.Active),
+            ("reseller3@hostpanel.com", "Reseller",  "Three",   "Reseller Networks",    "+65-9123-4567", "1 Raffles Place",  "Singapore",     null,  "048616",   "SG", ClientStatus.Suspended),
         };
 
         if (!await db.Clients.AnyAsync(ct))
@@ -104,7 +125,6 @@ public sealed class DevDataSeeder(
 
                 db.Clients.Add(client);
 
-                // Spread signups across the last 6 months for the New Customers report
                 var signupMonthsBack = 5 - (clientIdx * 6 / clientDefs.Count);
                 db.Entry(client).Property(nameof(Client.CreatedAt)).CurrentValue = MonthsAgo(signupMonthsBack, Rng.Next(1, 28));
                 clientIdx++;
@@ -122,19 +142,15 @@ public sealed class DevDataSeeder(
         var clients = await db.Clients.ToListAsync(ct);
 
         // ── Invoices spread across 6 months ─────────────────────────────────
-        // Gated on Quotes being empty: this is the one-time "top-up" sentinel, so the
-        // backdated invoices are added once even when single-date invoices already exist.
         if (!await db.Quotes.AnyAsync(ct))
         {
             var invoices = new List<Invoice>();
 
-            // Products and amounts for realistic data
             string[] products = ["Shared Hosting Basic", "Shared Hosting Pro", "VPS Server", "Dedicated Server", "SSL Certificate", "Domain Registration", "Email Hosting", "CDN Service", "Backup Service", "Firewall Service"];
             decimal[] prices = [9.99m, 29.99m, 49.99m, 99.99m, 14.99m, 12.99m, 19.99m, 24.99m, 7.99m, 39.99m];
 
             foreach (var client in clients)
             {
-                // One invoice per month for last 6 months
                 for (int monthsBack = 5; monthsBack >= 0; monthsBack--)
                 {
                     var invoiceDate = MonthsAgo(monthsBack, Rng.Next(1, 20));
@@ -144,36 +160,26 @@ public sealed class DevDataSeeder(
                     var invoice = Invoice.Create(client.Id, dueDate);
                     invoice.AddItem(products[productIndex], prices[productIndex], 1);
 
-                    // Add extra item sometimes
                     if (Rng.Next(3) == 0)
                     {
                         var idx2 = Rng.Next(products.Length);
                         invoice.AddItem(products[idx2], prices[idx2], 1);
                     }
 
-                    // Assign status based on age
                     if (monthsBack >= 4)
-                    {
                         invoice.MarkPaid("stripe_" + Rng.Next(100000, 999999));
-                    }
                     else if (monthsBack == 3)
                     {
-                        if (Rng.Next(2) == 0)
-                            invoice.MarkPaid("stripe_" + Rng.Next(100000, 999999));
-                        else
-                            invoice.MarkOverdue();
+                        if (Rng.Next(2) == 0) invoice.MarkPaid("stripe_" + Rng.Next(100000, 999999));
+                        else invoice.MarkOverdue();
                     }
                     else if (monthsBack == 2)
                     {
-                        if (Rng.Next(3) == 0)
-                            invoice.MarkOverdue();
+                        if (Rng.Next(3) == 0) invoice.MarkOverdue();
                     }
-                    // Recent months: unpaid
 
                     db.Invoices.Add(invoice);
                     invoices.Add(invoice);
-
-                    // Backdate CreatedAt through the change tracker (no raw SQL)
                     db.Entry(invoice).Property(nameof(Invoice.CreatedAt)).CurrentValue = invoiceDate;
                 }
             }
@@ -182,7 +188,7 @@ public sealed class DevDataSeeder(
             logger.LogInformation("Seeded {Count} invoices across 6 months", invoices.Count);
         }
 
-        // ── Invoice Transactions (payments) ──────────────────────────────────
+        // ── Invoice Transactions ──────────────────────────────────────────────
         if (!await db.InvoiceTransactions.AnyAsync(ct))
         {
             var paidInvoices = await db.Invoices
@@ -214,7 +220,6 @@ public sealed class DevDataSeeder(
 
             foreach (var client in activeClients.Take(8))
             {
-                // Credit payment (client paid money)
                 for (int m = 0; m < 3; m++)
                 {
                     var date = MonthsAgo(m * 2, Rng.Next(1, 28));
@@ -329,15 +334,12 @@ public sealed class DevDataSeeder(
             logger.LogInformation("Seeded client services");
         }
 
-        // ── Product-matched invoices (for Income by Product report) ──────────
-        // Seed paid invoices whose item descriptions match real product names,
-        // so GetIncomeByProductGroupedAsync can join them correctly.
+        // ── Product-matched invoices ──────────────────────────────────────────
         if (!hasProductInvoices)
         {
             var products = await db.Products.ToListAsync(ct);
             var activeClients = await db.Clients.Where(c => c.Status == ClientStatus.Active).ToListAsync(ct);
 
-            // Seed paid invoices for the last 3 months
             for (int monthsBack = 2; monthsBack >= 0; monthsBack--)
             {
                 var invoicesThisMonth = Rng.Next(5, 12);
@@ -395,20 +397,20 @@ public sealed class DevDataSeeder(
             logger.LogInformation("Seeded orders across 12 months");
         }
 
-        // ── SSL check cache (seed only, no real domains created) ─────────────
+        // ── SSL checks ────────────────────────────────────────────────────────
         if (!await db.SslChecks.AnyAsync(ct))
         {
             var now = DateTimeOffset.UtcNow;
             (string domain, bool hasSsl, string? issuer, DateTimeOffset? expires, bool isActive)[] sslDefs =
             [
-                ("google.com",      true,  "Google Trust Services", now.AddDays(60),  true),
-                ("github.com",      true,  "DigiCert Inc",          now.AddDays(45),  true),
-                ("cloudflare.com",  true,  "Google Trust Services", now.AddDays(75),  true),
-                ("microsoft.com",   true,  "DigiCert Inc",          now.AddDays(200), true),
-                ("amazon.com",      true,  "Amazon",                now.AddDays(250), true),
-                ("letsencrypt.org", true,  "Let's Encrypt",         now.AddDays(20),  true),
-                ("expired.local",   false, null,                    null,             false),
-                ("no-ssl.local",    false, null,                    null,             true),
+                ("hostpanel.com",       true,  "Let's Encrypt",         now.AddDays(60),  true),
+                ("google.com",          true,  "Google Trust Services", now.AddDays(75),  true),
+                ("github.com",          true,  "DigiCert Inc",          now.AddDays(45),  true),
+                ("cloudflare.com",      true,  "Google Trust Services", now.AddDays(90),  true),
+                ("microsoft.com",       true,  "DigiCert Inc",          now.AddDays(200), true),
+                ("letsencrypt.org",     true,  "Let's Encrypt",         now.AddDays(20),  true),
+                ("expired-demo.local",  false, null,                    null,             false),
+                ("no-ssl.local",        false, null,                    null,             true),
             ];
 
             foreach (var (domain, hasSsl, issuer, expires, isActive) in sslDefs)
@@ -418,19 +420,313 @@ public sealed class DevDataSeeder(
             logger.LogInformation("Seeded SSL checks");
         }
 
-        // ── Slider slides ─────────────────────────────────────────────────────
+        // ── Slides ────────────────────────────────────────────────────────────
         if (!await db.Slides.AnyAsync(ct))
-        {
             await SeedSlidesAsync(db, logger, ct);
-        }
+
+        // ── Support: Departments, Tickets, KB ────────────────────────────────
+        if (!await db.Departments.AnyAsync(ct))
+            await SeedSupportAsync(db, ct, logger);
+
+        // ── Domains ───────────────────────────────────────────────────────────
+        if (!await db.Domains.AnyAsync(ct))
+            await SeedDomainsAsync(db, ct, logger);
+
+        // ── Servers ───────────────────────────────────────────────────────────
+        if (!await db.ServerGroups.AnyAsync(ct))
+            await SeedServersAsync(db, ct, logger);
+
+        // ── Settings ──────────────────────────────────────────────────────────
+        if (!await db.Settings.AnyAsync(ct))
+            await SeedSettingsAsync(db, ct, logger);
+
+        // ── Announcements ─────────────────────────────────────────────────────
+        if (!await db.Announcements.AnyAsync(ct))
+            await SeedAnnouncementsAsync(db, ct, logger);
 
         logger.LogInformation("Dev seed complete");
     }
 
+    // ── Support ───────────────────────────────────────────────────────────────
+
+    private static async Task SeedSupportAsync(AppDbContext db, CancellationToken ct, ILogger logger)
+    {
+        // Departments
+        var deptDefs = new[]
+        {
+            ("Technical Support", "support@hostpanel.com"),
+            ("Billing",           "billing@hostpanel.com"),
+            ("Sales",             "sales@hostpanel.com"),
+            ("General",           "hello@hostpanel.com"),
+        };
+
+        var departments = new List<Department>();
+        foreach (var (name, email) in deptDefs)
+        {
+            var dept = Department.Create(name, email);
+            db.Departments.Add(dept);
+            departments.Add(dept);
+        }
+        await db.SaveChangesAsync(ct);
+
+        // KB Categories
+        var kbCatDefs = new[]
+        {
+            ("Getting Started",   "Guides to help you get up and running quickly."),
+            ("Billing & Payments","Information about invoices, payment methods, and refunds."),
+            ("Domains",           "Domain registration, DNS management, and transfers."),
+            ("Hosting",           "Shared hosting, VPS, and server management guides."),
+            ("Security",          "SSL certificates, 2FA, and account security tips."),
+        };
+
+        var kbCategories = new List<KbCategory>();
+        foreach (var (name, desc) in kbCatDefs)
+        {
+            var cat = KbCategory.Create(name, desc, false);
+            db.KbCategories.Add(cat);
+            kbCategories.Add(cat);
+        }
+        await db.SaveChangesAsync(ct);
+
+        // KB Articles
+        (string Title, string Content, string Category)[] articleDefs =
+        [
+            ("How to log in to your client portal",
+             "Visit the client portal at your panel URL and enter your email and password. If you have 2FA enabled, you will also be prompted for your authenticator code.",
+             "Getting Started"),
+            ("How to enable Two-Factor Authentication",
+             "Go to your Account page, find the Security section, and click Enable 2FA. Scan the QR code with an authenticator app such as Google Authenticator or Authy, then enter the 6-digit code to confirm.",
+             "Getting Started"),
+            ("How to pay an invoice",
+             "Open the Billing section from the navigation menu, select the invoice you wish to pay, and click Pay Now. We accept credit/debit cards and bank transfers.",
+             "Billing & Payments"),
+            ("Understanding your invoice",
+             "Each invoice lists the services you are being billed for, the due date, and the total amount. Invoices marked Overdue have passed their due date without payment.",
+             "Billing & Payments"),
+            ("How to register a domain",
+             "Go to the Domains section and click Register Domain. Search for your desired domain name, select it, and complete the registration form. Domains are activated within minutes.",
+             "Domains"),
+            ("How to update your DNS records",
+             "Open the domain you want to manage, click DNS Management, and use the Add Record form to create A, CNAME, MX, or TXT entries. Changes propagate within 24–48 hours.",
+             "Domains"),
+            ("Choosing a hosting plan",
+             "Starter Hosting is ideal for small websites. Business Hosting suits growing businesses that need more resources. Pro Hosting is recommended for high-traffic sites and developers.",
+             "Hosting"),
+            ("How to upgrade your hosting plan",
+             "Contact our support team via a ticket or open the Services section to request an upgrade. Upgrades are applied within one business day.",
+             "Hosting"),
+            ("How SSL certificates protect your site",
+             "An SSL certificate encrypts the connection between your visitors and your server, protecting sensitive data and improving trust. All plans include a free Let's Encrypt SSL certificate.",
+             "Security"),
+            ("Keeping your account secure",
+             "Use a strong, unique password and enable Two-Factor Authentication. Never share your login credentials. If you suspect unauthorized access, change your password immediately and contact support.",
+             "Security"),
+        ];
+
+        foreach (var (title, content, category) in articleDefs)
+        {
+            var article = KbArticle.Create(title, content, category);
+            article.Publish();
+            db.KbArticles.Add(article);
+        }
+        await db.SaveChangesAsync(ct);
+
+        // Tickets
+        var clients = await db.Clients.Where(c => c.Status == ClientStatus.Active).ToListAsync(ct);
+        if (clients.Count == 0 || departments.Count == 0)
+        {
+            logger.LogInformation("Skipping ticket seeding — no active clients or departments");
+            return;
+        }
+
+        (string Subject, string Message, TicketPriority Priority, int DeptIndex, bool HasReply, bool IsClosed)[] ticketDefs =
+        [
+            ("Unable to access my control panel", "I have been trying to log into cPanel for the past hour but I keep getting an invalid password error. I have already reset my password but still cannot log in.", TicketPriority.High, 0, true, false),
+            ("Invoice #1042 shows incorrect amount", "My latest invoice shows a charge for Dedicated Server Pro but I am subscribed to Business Hosting. Please review and correct this.", TicketPriority.Medium, 1, true, true),
+            ("Request to upgrade to VPS Pro", "I would like to upgrade my current Starter Hosting plan to VPS Pro. Could you provide the steps and confirm the new monthly pricing?", TicketPriority.Low, 2, true, false),
+            ("Website loading very slowly", "My website has been loading extremely slowly since yesterday. I have not made any changes on my end. Please investigate.", TicketPriority.High, 0, true, false),
+            ("Domain transfer status", "I submitted a domain transfer request three days ago and have not received any confirmation. Could you provide an update on the status?", TicketPriority.Medium, 0, false, false),
+            ("How do I add an email account?", "I would like to set up an email address using my domain. Could you guide me through the process?", TicketPriority.Low, 3, true, true),
+            ("SSL certificate not renewing", "My SSL certificate expired yesterday and my website is showing an insecure warning. The auto-renewal was supposed to handle this.", TicketPriority.High, 0, true, false),
+            ("Refund request for cancelled service", "I cancelled my VPS Basic service last week but I have not received my refund yet. The billing period still had 18 days remaining.", TicketPriority.Medium, 1, false, false),
+            ("Need help with DNS configuration", "I am trying to point my domain to an external service and need to add a CNAME record. I am not sure which values to use.", TicketPriority.Low, 0, true, true),
+            ("Account password reset not working", "I am not receiving the password reset email. I have checked my spam folder and nothing is there. Please assist.", TicketPriority.Medium, 3, true, false),
+        ];
+
+        var rng = new Random(42);
+        for (var i = 0; i < ticketDefs.Length; i++)
+        {
+            var (subject, message, priority, deptIndex, hasReply, isClosed) = ticketDefs[i];
+            var client = clients[i % clients.Count];
+            var dept = departments[deptIndex % departments.Count];
+
+            var ticket = Ticket.Create(client.Id, subject, message, dept.Id, priority);
+            db.Entry(ticket).Property(nameof(Ticket.CreatedAt)).CurrentValue = MonthsAgo(rng.Next(0, 3), rng.Next(1, 28));
+
+            if (hasReply)
+                ticket.AddReply("Thank you for contacting us. We are looking into this and will get back to you shortly.", "Support Team", true);
+
+            if (isClosed)
+                ticket.Close();
+
+            db.Tickets.Add(ticket);
+        }
+
+        await db.SaveChangesAsync(ct);
+        logger.LogInformation("Seeded departments, KB categories, KB articles, and tickets");
+    }
+
+    // ── Domains ───────────────────────────────────────────────────────────────
+
+    private static async Task SeedDomainsAsync(AppDbContext db, CancellationToken ct, ILogger logger)
+    {
+        var clients = await db.Clients.Where(c => c.Status == ClientStatus.Active).ToListAsync(ct);
+        if (clients.Count == 0) return;
+
+        var now = DateTimeOffset.UtcNow;
+
+        (string Name, decimal Price, int ExpiresInDays, bool AutoRenew, bool WhoisPrivacy, string Registrar)[] domainDefs =
+        [
+            ("hostpanel.com",        12.99m, 365,  true,  true,  "Namecheap"),
+            ("ownerbusiness.com",    12.99m, 180,  true,  false, "Namecheap"),
+            ("customershop.net",     11.99m, 90,   true,  true,  "Name.am"),
+            ("developerlab.io",      39.99m, 270,  false, false, "Namecheap"),
+            ("managerhub.com",       12.99m, 400,  true,  true,  "Namecheap"),
+            ("partnersolutions.org", 10.99m,  25,  true,  false, "Name.am"),
+            ("resellerpro.com",      12.99m, 500,  true,  true,  "Namecheap"),
+            ("ownersite.am",          8.99m, 60,   false, false, "Name.am"),
+        ];
+
+        for (var i = 0; i < domainDefs.Length; i++)
+        {
+            var (name, price, expiresInDays, autoRenew, whoisPrivacy, registrar) = domainDefs[i];
+            var client = clients[i % clients.Count];
+            var expiresAt = now.AddDays(expiresInDays);
+
+            var domain = Domain.Register(client.Id, name, expiresAt, autoRenew, whoisPrivacy,
+                price, price, "USD", registrar, 1);
+
+            domain.Activate("REG-" + (100000 + i));
+            domain.SetLock(true);
+            domain.SetNameservers(["ns1.hostpanel.com", "ns2.hostpanel.com"]);
+
+            db.Domains.Add(domain);
+        }
+
+        await db.SaveChangesAsync(ct);
+        logger.LogInformation("Seeded {Count} domains", domainDefs.Length);
+    }
+
+    // ── Servers ───────────────────────────────────────────────────────────────
+
+    private static async Task SeedServersAsync(AppDbContext db, CancellationToken ct, ILogger logger)
+    {
+        // Server Groups
+        var sharedGroup = ServerGroup.Create("Shared Hosting Cluster", ServerFillType.LeastFull);
+        var vpsGroup    = ServerGroup.Create("VPS Cluster", ServerFillType.FillUntilFull);
+        db.ServerGroups.Add(sharedGroup);
+        db.ServerGroups.Add(vpsGroup);
+        await db.SaveChangesAsync(ct);
+
+        // Servers
+        var serverDefs = new[]
+        {
+            new ServerDetails("Shared US-01", "shared01.hostpanel.com", "192.168.1.10", null,
+                ServerModule.CPanel, "root", "changeme", null, null,
+                true, 500, true, false, 150m, "US-East DC", null,
+                "ns1.hostpanel.com", "192.168.1.1", "ns2.hostpanel.com", "192.168.1.2",
+                null, null, null, null, null, null),
+
+            new ServerDetails("Shared EU-01", "shared01-eu.hostpanel.com", "10.0.0.10", null,
+                ServerModule.CPanel, "root", "changeme", null, null,
+                true, 500, false, false, 150m, "EU-West DC", null,
+                "ns1.hostpanel.com", "192.168.1.1", "ns2.hostpanel.com", "192.168.1.2",
+                null, null, null, null, null, null),
+
+            new ServerDetails("VPS US-01", "vps01.hostpanel.com", "172.16.0.10", null,
+                ServerModule.Plesk, "admin", "changeme", null, null,
+                true, 100, true, false, 350m, "US-East DC", null,
+                "ns1.hostpanel.com", "192.168.1.1", "ns2.hostpanel.com", "192.168.1.2",
+                null, null, null, null, null, null),
+
+            new ServerDetails("Dedicated US-01", "dedicated01.hostpanel.com", "203.0.113.10", null,
+                ServerModule.DirectAdmin, "admin", "changeme", null, null,
+                true, 50, false, false, 800m, "US-West DC", null,
+                "ns1.hostpanel.com", "192.168.1.1", "ns2.hostpanel.com", "192.168.1.2",
+                null, null, null, null, null, null),
+        };
+
+        var groupIds = new[] { sharedGroup.Id, sharedGroup.Id, vpsGroup.Id, vpsGroup.Id };
+        for (var i = 0; i < serverDefs.Length; i++)
+        {
+            var server = Server.Create(serverDefs[i]);
+            server.AssignToGroup(groupIds[i]);
+            server.RecordConnectionTest(true, 10 + i * 5);
+            db.Servers.Add(server);
+        }
+
+        await db.SaveChangesAsync(ct);
+        logger.LogInformation("Seeded 2 server groups and {Count} servers", serverDefs.Length);
+    }
+
+    // ── Settings ──────────────────────────────────────────────────────────────
+
+    private static async Task SeedSettingsAsync(AppDbContext db, CancellationToken ct, ILogger logger)
+    {
+        (string Key, string Value, string Description)[] settingDefs =
+        [
+            ("company.name",              "HostPanel",                       "Company display name"),
+            ("company.email",             "hello@hostpanel.com",             "Primary contact email"),
+            ("company.phone",             "+1-800-HOSTPANEL",                "Primary support phone number"),
+            ("company.address",           "123 Server Street, New York, NY", "Company mailing address"),
+            ("company.logo",              "/images/logo.png",                "Path to company logo"),
+            ("billing.currency",          "USD",                             "Default billing currency"),
+            ("billing.tax_rate",          "0",                               "Default tax rate percentage"),
+            ("billing.late_fee",          "5",                               "Late fee percentage applied to overdue invoices"),
+            ("billing.payment_gateway",   "Stripe",                          "Default payment gateway"),
+            ("support.ticket_auto_close", "14",                              "Days after last reply before a ticket is auto-closed"),
+            ("support.department_default","1",                               "Default department ID for new tickets"),
+            ("domain.registrar_default",  "Namecheap",                       "Default domain registrar module"),
+            ("domain.ns1",                "ns1.hostpanel.com",               "Primary nameserver"),
+            ("domain.ns2",                "ns2.hostpanel.com",               "Secondary nameserver"),
+            ("mail.from_address",         "noreply@hostpanel.com",           "From address used for outgoing emails"),
+            ("mail.from_name",            "HostPanel",                       "From name used for outgoing emails"),
+        ];
+
+        foreach (var (key, value, description) in settingDefs)
+            db.Settings.Add(Setting.Create(key, value, description));
+
+        await db.SaveChangesAsync(ct);
+        logger.LogInformation("Seeded {Count} system settings", settingDefs.Length);
+    }
+
+    // ── Announcements ─────────────────────────────────────────────────────────
+
+    private static async Task SeedAnnouncementsAsync(AppDbContext db, CancellationToken ct, ILogger logger)
+    {
+        (string Title, string Content, bool IsPublished)[] announcementDefs =
+        [
+            ("Welcome to HostPanel",
+             "We are excited to have you on board! HostPanel gives you everything you need to manage your hosting, domains, billing, and support in one place. If you have any questions, our support team is here to help 24/7.",
+             true),
+            ("Scheduled Maintenance — June 15",
+             "We will be performing scheduled maintenance on our shared hosting servers on June 15 between 02:00 and 04:00 UTC. During this window, websites may experience brief downtime. We apologise for any inconvenience.",
+             true),
+            ("New Feature: Two-Factor Authentication",
+             "We have added Two-Factor Authentication (2FA) to the client portal. We strongly recommend enabling it for added account security. Visit your Account page to set it up in under a minute.",
+             true),
+        ];
+
+        foreach (var (title, content, isPublished) in announcementDefs)
+            db.Announcements.Add(Announcement.Create(title, content, isPublished));
+
+        await db.SaveChangesAsync(ct);
+        logger.LogInformation("Seeded {Count} announcements", announcementDefs.Length);
+    }
+
+    // ── Slides ────────────────────────────────────────────────────────────────
+
     /// <summary>Seeds the initial homepage slider slides with English translations.</summary>
-    /// <param name="db">Database context.</param>
-    /// <param name="logger">Logger instance.</param>
-    /// <param name="ct">Cancellation token.</param>
     private static async Task SeedSlidesAsync(AppDbContext db, ILogger logger, CancellationToken ct)
     {
         (string Key, string Icon, string Color, string Image, string? DemoUrl, string LearnMoreUrl,

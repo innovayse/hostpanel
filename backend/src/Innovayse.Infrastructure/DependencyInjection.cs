@@ -18,7 +18,9 @@ using Innovayse.Domain.Servers.Interfaces;
 using Innovayse.Domain.Services.Interfaces;
 using Innovayse.Domain.Settings.Interfaces;
 using Innovayse.Domain.Slides.Interfaces;
+using Innovayse.Domain.Migration.Interfaces;
 using Innovayse.Domain.Support.Interfaces;
+using Innovayse.Infrastructure.Persistence.Repositories;
 using Innovayse.Infrastructure.Audit;
 using Innovayse.Infrastructure.Auth;
 using Innovayse.Infrastructure.Billing;
@@ -207,6 +209,14 @@ public static class DependencyInjection
         services.AddHttpClient<Innovayse.SDK.Plugins.ICwp7ApiClient, Innovayse.Providers.CWP7.Cwp7ApiClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
+        });
+
+        // Migration
+        services.AddScoped<IMigrationJobRepository, MigrationJobRepository>();
+        services.AddScoped<Innovayse.Application.Migration.Services.MigrationPullWorker>();
+        services.AddHttpClient("migration", client =>
+        {
+            client.Timeout = TimeSpan.FromMinutes(5);
         });
 
         // Domains

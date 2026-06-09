@@ -12,6 +12,7 @@ using Innovayse.Domain.Services;
 using Innovayse.Domain.Settings;
 using Innovayse.Domain.Slides;
 using Innovayse.Domain.Hosting;
+using Innovayse.Domain.Migration;
 using Innovayse.Domain.Ssl;
 using Innovayse.Domain.Support;
 using Innovayse.Infrastructure.Auth;
@@ -138,6 +139,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
 
     /// <summary>Gets the homepage slides table.</summary>
     public DbSet<Slide> Slides => Set<Slide>();
+
+    /// <summary>Gets the migration jobs table.</summary>
+    public DbSet<MigrationJob> MigrationJobs => Set<MigrationJob>();
 
     /// <summary>Gets the slide per-locale translations table.</summary>
     public DbSet<SlideTranslation> SlideTranslations => Set<SlideTranslation>();

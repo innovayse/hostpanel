@@ -28,5 +28,22 @@ public sealed class MigrationJobConfiguration : IEntityTypeConfiguration<Migrati
         builder.Property(x => x.ExportServices).IsRequired().HasDefaultValue(true);
         builder.Property(x => x.ExportDomains).IsRequired().HasDefaultValue(true);
         builder.Property(x => x.ExportTickets).IsRequired().HasDefaultValue(true);
+        builder.Property(x => x.ExportProducts).IsRequired().HasDefaultValue(true);
+        builder.Property(x => x.ExportOrders).IsRequired().HasDefaultValue(true);
+        builder.Property(x => x.ExportTransactions).IsRequired().HasDefaultValue(true);
+        builder.Property(x => x.ExportQuotes).IsRequired().HasDefaultValue(true);
+        builder.Property(x => x.ExportKnowledgebase).IsRequired().HasDefaultValue(true);
+        builder.Property(x => x.ExportContacts).IsRequired().HasDefaultValue(true);
+        builder.Property(x => x.ExportTicketReplies).IsRequired().HasDefaultValue(true);
+        builder.Property(x => x.ExportAnnouncements).IsRequired().HasDefaultValue(true);
+        builder.Property(x => x.ExportDownloads).IsRequired().HasDefaultValue(true);
+        builder.Property(x => x.ExportNetworkIssues).IsRequired().HasDefaultValue(true);
+
+        builder.Property(x => x.AnnouncementsTotal).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.AnnouncementsImported).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.DownloadsTotal).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.DownloadsImported).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.NetworkIssuesTotal).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.NetworkIssuesImported).IsRequired().HasDefaultValue(0);
     }
 }

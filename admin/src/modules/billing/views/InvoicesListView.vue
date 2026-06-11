@@ -316,7 +316,7 @@ onMounted(() => {
           </div>
           <span class="text-[0.82rem] text-text-muted font-mono">#{{ invoice.id }}</span>
 
-          <span class="text-[0.82rem] text-text-secondary">{{ invoice.clientId }}</span>
+          <span class="text-[0.82rem] text-text-secondary">{{ invoice.clientName }}</span>
 
           <span class="text-[0.82rem] text-text-muted">{{ new Date(invoice.createdAt).toLocaleDateString() }}</span>
 
@@ -326,7 +326,7 @@ onMounted(() => {
 
           <span class="text-[0.82rem] font-medium text-text-primary">{{ invoice.total.toFixed(2) }} USD</span>
 
-          <span class="text-[0.82rem] text-text-muted">{{ invoice.gateway || '—' }}</span>
+          <span class="text-[0.82rem] text-text-muted">{{ invoice.paymentMethod || '—' }}</span>
 
           <span>
             <span

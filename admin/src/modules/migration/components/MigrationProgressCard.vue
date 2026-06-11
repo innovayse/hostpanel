@@ -31,19 +31,33 @@ async function startImport() {
 }
 
 const ENTITY_LABELS: Record<string, string> = {
-  clients:  'Clients',
-  invoices: 'Invoices',
-  services: 'Services',
-  domains:  'Domains',
-  tickets:  'Tickets',
+  clients:       'Clients',
+  invoices:      'Invoices',
+  services:      'Services',
+  domains:       'Domains',
+  tickets:       'Tickets',
+  products:      'Products',
+  orders:        'Orders',
+  transactions:  'Transactions',
+  quotes:        'Quotes',
+  knowledgebase: 'Knowledgebase',
+  contacts:      'Contacts',
+  ticketReplies: 'Ticket Replies',
 }
 
 const ENTITY_ICONS: Record<string, string> = {
-  clients:  'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z',
-  invoices: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8',
-  services: 'M22 12H2M5 12V7M19 12V7M8 12V5M12 12V3M16 12V5',
-  domains:  'M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zM2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20',
-  tickets:  'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z',
+  clients:       'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z',
+  invoices:      'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8',
+  services:      'M22 12H2M5 12V7M19 12V7M8 12V5M12 12V3M16 12V5',
+  domains:       'M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zM2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20',
+  tickets:       'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z',
+  products:      'M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16',
+  orders:        'M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0',
+  transactions:  'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6',
+  quotes:        'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8',
+  knowledgebase: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z',
+  contacts:      'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75',
+  ticketReplies: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2zM8 10h8M8 14h5',
 }
 </script>
 
@@ -92,7 +106,7 @@ const ENTITY_ICONS: Record<string, string> = {
     <!-- Per-entity progress -->
     <div class="flex flex-col gap-3">
       <div
-        v-for="(key) in ['clients', 'invoices', 'services', 'domains', 'tickets']"
+        v-for="(key) in ['clients', 'invoices', 'services', 'domains', 'tickets', 'products', 'orders', 'transactions', 'quotes', 'knowledgebase', 'contacts', 'ticketReplies']"
         v-show="(job.entitySelection as any)[key]"
         :key="key"
         class="flex items-center gap-3"

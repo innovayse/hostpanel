@@ -41,6 +41,36 @@ public sealed class MigrationJob : AggregateRoot
     /// <summary>Whether support tickets should be exported.</summary>
     public bool ExportTickets { get; private set; } = true;
 
+    /// <summary>Whether products should be exported.</summary>
+    public bool ExportProducts { get; private set; } = true;
+
+    /// <summary>Whether orders should be exported.</summary>
+    public bool ExportOrders { get; private set; } = true;
+
+    /// <summary>Whether transactions should be exported.</summary>
+    public bool ExportTransactions { get; private set; } = true;
+
+    /// <summary>Whether quotes should be exported.</summary>
+    public bool ExportQuotes { get; private set; } = true;
+
+    /// <summary>Whether knowledgebase articles should be exported.</summary>
+    public bool ExportKnowledgebase { get; private set; } = true;
+
+    /// <summary>Whether client contacts should be exported.</summary>
+    public bool ExportContacts { get; private set; } = true;
+
+    /// <summary>Whether ticket replies should be exported.</summary>
+    public bool ExportTicketReplies { get; private set; } = true;
+
+    /// <summary>Whether announcements should be exported.</summary>
+    public bool ExportAnnouncements { get; private set; } = true;
+
+    /// <summary>Whether downloadable files should be exported.</summary>
+    public bool ExportDownloads { get; private set; } = true;
+
+    /// <summary>Whether network issues should be exported.</summary>
+    public bool ExportNetworkIssues { get; private set; } = true;
+
     // ── Connection ───────────────────────────────────────────────────────────
 
     /// <summary>Last time a successful connection test was performed.</summary>
@@ -73,6 +103,56 @@ public sealed class MigrationJob : AggregateRoot
     /// <summary>Number of tickets imported so far.</summary>
     public int TicketsImported { get; private set; }
 
+    /// <summary>Total number of products to import.</summary>
+    public int ProductsTotal { get; private set; }
+    /// <summary>Number of products imported so far.</summary>
+    public int ProductsImported { get; private set; }
+
+    /// <summary>Total number of orders to import.</summary>
+    public int OrdersTotal { get; private set; }
+    /// <summary>Number of orders imported so far.</summary>
+    public int OrdersImported { get; private set; }
+
+    /// <summary>Total number of transactions to import.</summary>
+    public int TransactionsTotal { get; private set; }
+    /// <summary>Number of transactions imported so far.</summary>
+    public int TransactionsImported { get; private set; }
+
+    /// <summary>Total number of quotes to import.</summary>
+    public int QuotesTotal { get; private set; }
+    /// <summary>Number of quotes imported so far.</summary>
+    public int QuotesImported { get; private set; }
+
+    /// <summary>Total number of knowledgebase articles to import.</summary>
+    public int KnowledgebaseTotal { get; private set; }
+    /// <summary>Number of knowledgebase articles imported so far.</summary>
+    public int KnowledgebaseImported { get; private set; }
+
+    /// <summary>Total number of contacts to import.</summary>
+    public int ContactsTotal { get; private set; }
+    /// <summary>Number of contacts imported so far.</summary>
+    public int ContactsImported { get; private set; }
+
+    /// <summary>Total number of ticket replies to import.</summary>
+    public int TicketRepliesTotal { get; private set; }
+    /// <summary>Number of ticket replies imported so far.</summary>
+    public int TicketRepliesImported { get; private set; }
+
+    /// <summary>Total number of announcements to import.</summary>
+    public int AnnouncementsTotal { get; private set; }
+    /// <summary>Number of announcements imported so far.</summary>
+    public int AnnouncementsImported { get; private set; }
+
+    /// <summary>Total number of downloads to import.</summary>
+    public int DownloadsTotal { get; private set; }
+    /// <summary>Number of downloads imported so far.</summary>
+    public int DownloadsImported { get; private set; }
+
+    /// <summary>Total number of network issues to import.</summary>
+    public int NetworkIssuesTotal { get; private set; }
+    /// <summary>Number of network issues imported so far.</summary>
+    public int NetworkIssuesImported { get; private set; }
+
     /// <summary>When the job was created.</summary>
     public DateTimeOffset CreatedAt { get; private set; }
 
@@ -89,20 +169,40 @@ public sealed class MigrationJob : AggregateRoot
         bool exportInvoices,
         bool exportServices,
         bool exportDomains,
-        bool exportTickets)
+        bool exportTickets,
+        bool exportProducts,
+        bool exportOrders,
+        bool exportTransactions,
+        bool exportQuotes,
+        bool exportKnowledgebase,
+        bool exportContacts,
+        bool exportTicketReplies,
+        bool exportAnnouncements = true,
+        bool exportDownloads = true,
+        bool exportNetworkIssues = true)
     {
         return new MigrationJob
         {
-            Key            = Guid.NewGuid().ToString("N"),
-            Status         = MigrationJobStatus.Pending,
-            Label          = label,
-            SourceUrl      = sourceUrl.TrimEnd('/'),
-            ExportClients  = exportClients,
-            ExportInvoices = exportInvoices,
-            ExportServices = exportServices,
-            ExportDomains  = exportDomains,
-            ExportTickets  = exportTickets,
-            CreatedAt      = DateTimeOffset.UtcNow,
+            Key                  = Guid.NewGuid().ToString("N"),
+            Status               = MigrationJobStatus.Pending,
+            Label                = label,
+            SourceUrl            = sourceUrl.TrimEnd('/'),
+            ExportClients        = exportClients,
+            ExportInvoices       = exportInvoices,
+            ExportServices       = exportServices,
+            ExportDomains        = exportDomains,
+            ExportTickets        = exportTickets,
+            ExportProducts       = exportProducts,
+            ExportOrders         = exportOrders,
+            ExportTransactions   = exportTransactions,
+            ExportQuotes         = exportQuotes,
+            ExportKnowledgebase  = exportKnowledgebase,
+            ExportContacts       = exportContacts,
+            ExportTicketReplies  = exportTicketReplies,
+            ExportAnnouncements  = exportAnnouncements,
+            ExportDownloads      = exportDownloads,
+            ExportNetworkIssues  = exportNetworkIssues,
+            CreatedAt            = DateTimeOffset.UtcNow,
         };
     }
 
@@ -110,14 +210,39 @@ public sealed class MigrationJob : AggregateRoot
     public void RecordPing() => LastPingAt = DateTimeOffset.UtcNow;
 
     /// <summary>Marks the job as in-progress and sets totals.</summary>
-    public void Start(int clientsTotal, int invoicesTotal, int servicesTotal, int domainsTotal, int ticketsTotal)
+    public void Start(
+        int clientsTotal,
+        int invoicesTotal,
+        int servicesTotal,
+        int domainsTotal,
+        int ticketsTotal,
+        int productsTotal,
+        int ordersTotal,
+        int transactionsTotal,
+        int quotesTotal,
+        int knowledgebaseTotal,
+        int contactsTotal,
+        int ticketRepliesTotal,
+        int announcementsTotal = 0,
+        int downloadsTotal = 0,
+        int networkIssuesTotal = 0)
     {
-        Status        = MigrationJobStatus.InProgress;
-        ClientsTotal  = clientsTotal;
-        InvoicesTotal = invoicesTotal;
-        ServicesTotal = servicesTotal;
-        DomainsTotal  = domainsTotal;
-        TicketsTotal  = ticketsTotal;
+        Status               = MigrationJobStatus.InProgress;
+        ClientsTotal         = clientsTotal;
+        InvoicesTotal        = invoicesTotal;
+        ServicesTotal        = servicesTotal;
+        DomainsTotal         = domainsTotal;
+        TicketsTotal         = ticketsTotal;
+        ProductsTotal        = productsTotal;
+        OrdersTotal          = ordersTotal;
+        TransactionsTotal    = transactionsTotal;
+        QuotesTotal          = quotesTotal;
+        KnowledgebaseTotal   = knowledgebaseTotal;
+        ContactsTotal        = contactsTotal;
+        TicketRepliesTotal   = ticketRepliesTotal;
+        AnnouncementsTotal   = announcementsTotal;
+        DownloadsTotal       = downloadsTotal;
+        NetworkIssuesTotal   = networkIssuesTotal;
     }
 
     /// <summary>Updates the imported count for a given entity type.</summary>
@@ -125,11 +250,21 @@ public sealed class MigrationJob : AggregateRoot
     {
         switch (entityType)
         {
-            case MigrationEntityType.Clients:  ClientsImported  = importedCount; break;
-            case MigrationEntityType.Invoices: InvoicesImported = importedCount; break;
-            case MigrationEntityType.Services: ServicesImported = importedCount; break;
-            case MigrationEntityType.Domains:  DomainsImported  = importedCount; break;
-            case MigrationEntityType.Tickets:  TicketsImported  = importedCount; break;
+            case MigrationEntityType.Clients:       ClientsImported       = importedCount; break;
+            case MigrationEntityType.Invoices:      InvoicesImported      = importedCount; break;
+            case MigrationEntityType.Services:      ServicesImported      = importedCount; break;
+            case MigrationEntityType.Domains:       DomainsImported       = importedCount; break;
+            case MigrationEntityType.Tickets:       TicketsImported       = importedCount; break;
+            case MigrationEntityType.Products:      ProductsImported      = importedCount; break;
+            case MigrationEntityType.Orders:        OrdersImported        = importedCount; break;
+            case MigrationEntityType.Transactions:  TransactionsImported  = importedCount; break;
+            case MigrationEntityType.Quotes:        QuotesImported        = importedCount; break;
+            case MigrationEntityType.Knowledgebase:   KnowledgebaseImported   = importedCount; break;
+            case MigrationEntityType.Contacts:        ContactsImported        = importedCount; break;
+            case MigrationEntityType.TicketReplies:   TicketRepliesImported   = importedCount; break;
+            case MigrationEntityType.Announcements:   AnnouncementsImported   = importedCount; break;
+            case MigrationEntityType.Downloads:       DownloadsImported       = importedCount; break;
+            case MigrationEntityType.NetworkIssues:   NetworkIssuesImported   = importedCount; break;
         }
     }
 
@@ -152,9 +287,13 @@ public sealed class MigrationJob : AggregateRoot
     public int OverallPercent()
     {
         if (Status == MigrationJobStatus.Completed) return 100;
-        var total    = ClientsTotal + InvoicesTotal + ServicesTotal + DomainsTotal + TicketsTotal;
+        var total    = ClientsTotal + InvoicesTotal + ServicesTotal + DomainsTotal + TicketsTotal
+                     + ProductsTotal + OrdersTotal + TransactionsTotal + QuotesTotal + KnowledgebaseTotal
+                     + ContactsTotal + TicketRepliesTotal + AnnouncementsTotal + DownloadsTotal + NetworkIssuesTotal;
         if (total == 0) return 0;
-        var imported = ClientsImported + InvoicesImported + ServicesImported + DomainsImported + TicketsImported;
+        var imported = ClientsImported + InvoicesImported + ServicesImported + DomainsImported + TicketsImported
+                     + ProductsImported + OrdersImported + TransactionsImported + QuotesImported + KnowledgebaseImported
+                     + ContactsImported + TicketRepliesImported + AnnouncementsImported + DownloadsImported + NetworkIssuesImported;
         return (int)Math.Round(imported * 100.0 / total);
     }
 }

@@ -10,6 +10,13 @@ export interface MigrationProgress {
   services: MigrationEntityProgress
   domains: MigrationEntityProgress
   tickets: MigrationEntityProgress
+  products: MigrationEntityProgress
+  orders: MigrationEntityProgress
+  transactions: MigrationEntityProgress
+  quotes: MigrationEntityProgress
+  knowledgebase: MigrationEntityProgress
+  contacts: MigrationEntityProgress
+  ticketReplies: MigrationEntityProgress
 }
 
 export interface MigrationEntitySelection {
@@ -18,6 +25,29 @@ export interface MigrationEntitySelection {
   services: boolean
   domains: boolean
   tickets: boolean
+  products: boolean
+  orders: boolean
+  transactions: boolean
+  quotes: boolean
+  knowledgebase: boolean
+  contacts: boolean
+  ticketReplies: boolean
+}
+
+export interface MigrationLogEntry {
+  id: number
+  entityType: 'Clients' | 'Invoices' | 'Services' | 'Domains' | 'Tickets' | 'Products' | 'Orders' | 'Transactions' | 'Quotes' | 'Knowledgebase' | 'Contacts' | 'TicketReplies'
+  identifier: string
+  action: 'Imported' | 'Skipped' | 'Failed'
+  reason: string | null
+  createdAt: string
+}
+
+export interface MigrationLogPage {
+  items: MigrationLogEntry[]
+  totalCount: number
+  page: number
+  pageSize: number
 }
 
 export interface MigrationJob {

@@ -213,6 +213,7 @@ public static class DependencyInjection
 
         // Migration
         services.AddScoped<IMigrationJobRepository, MigrationJobRepository>();
+        services.AddScoped<IMigrationLogRepository, MigrationLogRepository>();
         services.AddScoped<Innovayse.Application.Migration.Services.MigrationPullWorker>();
         services.AddHttpClient("migration", client =>
         {

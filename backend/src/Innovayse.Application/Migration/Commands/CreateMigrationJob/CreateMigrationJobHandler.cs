@@ -17,7 +17,14 @@ public sealed class CreateMigrationJobHandler(IMigrationJobRepository repo)
             cmd.ExportInvoices,
             cmd.ExportServices,
             cmd.ExportDomains,
-            cmd.ExportTickets);
+            cmd.ExportTickets,
+            cmd.ExportProducts,
+            cmd.ExportOrders,
+            cmd.ExportTransactions,
+            cmd.ExportQuotes,
+            cmd.ExportKnowledgebase,
+            cmd.ExportContacts,
+            cmd.ExportTicketReplies);
 
         await repo.AddAsync(job, ct);
         await repo.SaveAsync(ct);

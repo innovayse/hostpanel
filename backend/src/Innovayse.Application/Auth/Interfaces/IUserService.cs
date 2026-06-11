@@ -12,12 +12,14 @@ public interface IUserService
     /// <param name="email">The user's email address (also used as username).</param>
     /// <param name="password">The plain-text password to hash and store.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <param name="firstName">Optional first name to set on the user profile.</param>
+    /// <param name="lastName">Optional last name to set on the user profile.</param>
     /// <returns>
     /// The newly created user's ID on success.
     /// Throws <see cref="InvalidOperationException"/> on failure.
     /// </returns>
     /// <exception cref="InvalidOperationException">Thrown when user creation fails with Identity errors.</exception>
-    Task<string> CreateAsync(string email, string password, CancellationToken ct);
+    Task<string> CreateAsync(string email, string password, CancellationToken ct, string? firstName = null, string? lastName = null);
 
     /// <summary>
     /// Assigns a role to an existing user.
@@ -37,6 +39,14 @@ public interface IUserService
     /// Tuple of user ID and email if credentials are valid; <see langword="null"/> otherwise.
     /// </returns>
     Task<(string Id, string Email)?> FindByEmailAndPasswordAsync(string email, string password, CancellationToken ct);
+
+    /// <summary>
+    /// Finds a user by their exact email address (case-insensitive).
+    /// </summary>
+    /// <param name="email">The exact email address to look up.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Tuple of user ID and email, or <see langword="null"/> if not found.</returns>
+    Task<(string Id, string Email)?> FindByEmailAsync(string email, CancellationToken ct);
 
     /// <summary>
     /// Finds a user by their unique identifier.

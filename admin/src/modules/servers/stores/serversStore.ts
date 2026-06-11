@@ -104,18 +104,6 @@ export const useServersStore = defineStore('servers', () => {
   }
 
   /**
-   * Tests the connection to a server, persists the result, and refreshes the list.
-   *
-   * @param id - Server identifier.
-   * @returns The test result DTO.
-   */
-  async function testConnection(id: number): Promise<TestConnectionResultDto> {
-    const result = await request<TestConnectionResultDto>(`/admin/servers/${id}/test-connection`, { method: 'POST' })
-    await fetchServers()
-    return result
-  }
-
-  /**
    * Creates a new server group and refreshes both servers and groups.
    *
    * @param payload - Group creation data.

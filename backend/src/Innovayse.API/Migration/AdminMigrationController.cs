@@ -5,6 +5,7 @@ using Innovayse.Application.Migration.Commands.CreateMigrationJob;
 using Innovayse.Application.Migration.Commands.DeleteMigrationJob;
 using Innovayse.Application.Migration.Commands.StartMigrationPull;
 using Innovayse.Application.Migration.DTOs;
+using Innovayse.Application.Migration.Queries.GetMigrationLogs;
 using Innovayse.Application.Migration.Queries.GetMigrationStatus;
 using Innovayse.Application.Migration.Queries.ListMigrationJobs;
 using Innovayse.Application.Migration.Queries.TestMigrationConnection;
@@ -43,7 +44,14 @@ public sealed class AdminMigrationController(IMessageBus bus) : ControllerBase
                 req.ExportInvoices,
                 req.ExportServices,
                 req.ExportDomains,
-                req.ExportTickets), ct);
+                req.ExportTickets,
+                req.ExportProducts,
+                req.ExportOrders,
+                req.ExportTransactions,
+                req.ExportQuotes,
+                req.ExportKnowledgebase,
+                req.ExportContacts,
+                req.ExportTicketReplies), ct);
         return Ok(result);
     }
 
@@ -102,5 +110,20 @@ public sealed class AdminMigrationController(IMessageBus bus) : ControllerBase
         {
             return BadRequest(new { error = ex.Message });
         }
+    }
+
+    /// <summary>Returns a paginated import report for a migration job.</summary>
+    [HttpGet("{id:int}/logs")]
+    public async Task<ActionResult<MigrationLogPageDto>> GetLogsAsync(
+        int id,
+        [FromQuery] string? action,
+        [FromQuery] string? entityType,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        CancellationToken ct = default)
+    {
+        var result = await bus.InvokeAsync<MigrationLogPageDto>(
+            new GetMigrationLogsQuery(id, action, entityType, page, pageSize), ct);
+        return Ok(result);
     }
 }

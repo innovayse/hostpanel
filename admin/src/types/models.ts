@@ -297,7 +297,7 @@ export interface Invoice {
   /** Gateway transaction reference, if paid. */
   gatewayTransactionId?: string
   /** Display name of the owning client. */
-  clientName?: string
+  clientName: string
   /** Line items on the invoice. */
   items: InvoiceItem[]
   /** Payment/refund/credit transactions. */
@@ -1112,6 +1112,8 @@ export interface Transaction {
   id: number
   /** Associated client identifier. */
   clientId: number
+  /** Full name of the owning client. */
+  clientName: string
   /** ISO 8601 transaction date. */
   date: string
   /** Human-readable description of the transaction. */

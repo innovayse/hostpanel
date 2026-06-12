@@ -19,14 +19,14 @@ using OtpNet;
 public sealed class UserService(UserManager<AppUser> userManager, IClientRepository clientRepo, IUnitOfWork uow, IRefreshTokenRepository refreshTokenRepo, TokenRevocationCache revocationCache) : IUserService
 {
     /// <inheritdoc/>
-    public async Task<string> CreateAsync(string email, string password, CancellationToken ct)
+    public async Task<string> CreateAsync(string email, string password, CancellationToken ct, string? firstName = null, string? lastName = null)
     {
         var user = new AppUser
         {
             UserName = email,
             Email = email,
-            FirstName = string.Empty,
-            LastName = string.Empty,
+            FirstName = firstName ?? string.Empty,
+            LastName = lastName ?? string.Empty,
         };
 
         var result = await userManager.CreateAsync(user, password);
@@ -61,6 +61,13 @@ public sealed class UserService(UserManager<AppUser> userManager, IClientReposit
 
         var valid = await userManager.CheckPasswordAsync(user, password);
         return valid ? (user.Id, user.Email!) : null;
+    }
+
+    /// <inheritdoc/>
+    public async Task<(string Id, string Email)?> FindByEmailAsync(string email, CancellationToken ct)
+    {
+        var user = await userManager.FindByEmailAsync(email);
+        return user is null ? null : (user.Id, user.Email!);
     }
 
     /// <inheritdoc/>

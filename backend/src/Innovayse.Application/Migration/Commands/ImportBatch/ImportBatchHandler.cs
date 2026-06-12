@@ -27,7 +27,14 @@ public sealed class ImportBatchHandler(IMigrationJobRepository repo)
                 cmd.Totals.Invoices,
                 cmd.Totals.Services,
                 cmd.Totals.Domains,
-                cmd.Totals.Tickets);
+                cmd.Totals.Tickets,
+                cmd.Totals.Products,
+                cmd.Totals.Orders,
+                cmd.Totals.Transactions,
+                cmd.Totals.Quotes,
+                cmd.Totals.Knowledgebase,
+                cmd.Totals.Contacts,
+                cmd.Totals.TicketReplies);
         }
 
         var batchCount = cmd.EntityType switch

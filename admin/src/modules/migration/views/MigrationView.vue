@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useMigrationStore } from '../stores/migrationStore'
 import MigrationProgressCard from '../components/MigrationProgressCard.vue'
+import MigrationReportTable from '../components/MigrationReportTable.vue'
 import AppCheckbox from '../../../components/AppCheckbox.vue'
 import type { MigrationJob } from '../types/migration.types'
 
@@ -13,11 +14,18 @@ const newJobSourceUrl = ref('')
 const creatingJob = ref(false)
 const copiedKey = ref(false)
 
-const exportClients  = ref(true)
-const exportInvoices = ref(true)
-const exportServices = ref(true)
-const exportDomains  = ref(true)
-const exportTickets  = ref(true)
+const exportClients       = ref(true)
+const exportInvoices      = ref(true)
+const exportServices      = ref(true)
+const exportDomains       = ref(true)
+const exportTickets       = ref(true)
+const exportProducts      = ref(true)
+const exportOrders        = ref(true)
+const exportTransactions  = ref(true)
+const exportQuotes        = ref(true)
+const exportKnowledgebase = ref(true)
+const exportContacts      = ref(true)
+const exportTicketReplies = ref(true)
 
 onMounted(store.fetchAll)
 onUnmounted(store.stopPolling)
@@ -28,11 +36,18 @@ async function handleCreateJob() {
     const job = await store.createJob({
       label:          newJobLabel.value || undefined,
       sourceUrl:      newJobSourceUrl.value,
-      exportClients:  exportClients.value,
-      exportInvoices: exportInvoices.value,
-      exportServices: exportServices.value,
-      exportDomains:  exportDomains.value,
-      exportTickets:  exportTickets.value,
+      exportClients:       exportClients.value,
+      exportInvoices:      exportInvoices.value,
+      exportServices:      exportServices.value,
+      exportDomains:       exportDomains.value,
+      exportTickets:       exportTickets.value,
+      exportProducts:      exportProducts.value,
+      exportOrders:        exportOrders.value,
+      exportTransactions:  exportTransactions.value,
+      exportQuotes:        exportQuotes.value,
+      exportKnowledgebase:  exportKnowledgebase.value,
+      exportContacts:       exportContacts.value,
+      exportTicketReplies:  exportTicketReplies.value,
     })
     store.setActiveJob(job)
     store.startPolling(job.id)
@@ -107,6 +122,11 @@ const PLUGIN_DOWNLOAD_URL = '/api/migrations/plugin/download'
           v-if="store.activeJob"
           :job="store.activeJob"
         />
+
+        <!-- Import report (show for completed or failed jobs) -->
+        <div v-if="store.activeJob && (store.activeJob.status === 'Completed' || store.activeJob.status === 'Failed')" class="mt-4">
+          <MigrationReportTable :job-id="store.activeJob.id" />
+        </div>
 
         <!-- Key + instructions (show only for Pending jobs) -->
         <div
@@ -278,7 +298,7 @@ const PLUGIN_DOWNLOAD_URL = '/api/migrations/plugin/download'
           />
 
           <p class="text-[0.78rem] font-medium text-text-secondary mb-2">Data to export</p>
-          <div class="flex flex-col gap-2 mb-5">
+          <div class="grid grid-cols-2 gap-x-4 gap-y-2 mb-5">
             <label class="flex items-center gap-3 cursor-pointer select-none">
               <AppCheckbox v-model="exportClients" />
               <span class="text-[0.82rem] text-text-secondary">Clients</span>
@@ -298,6 +318,34 @@ const PLUGIN_DOWNLOAD_URL = '/api/migrations/plugin/download'
             <label class="flex items-center gap-3 cursor-pointer select-none">
               <AppCheckbox v-model="exportTickets" />
               <span class="text-[0.82rem] text-text-secondary">Support tickets</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer select-none">
+              <AppCheckbox v-model="exportProducts" />
+              <span class="text-[0.82rem] text-text-secondary">Products & groups</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer select-none">
+              <AppCheckbox v-model="exportOrders" />
+              <span class="text-[0.82rem] text-text-secondary">Orders</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer select-none">
+              <AppCheckbox v-model="exportTransactions" />
+              <span class="text-[0.82rem] text-text-secondary">Transactions</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer select-none">
+              <AppCheckbox v-model="exportQuotes" />
+              <span class="text-[0.82rem] text-text-secondary">Quotes</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer select-none">
+              <AppCheckbox v-model="exportKnowledgebase" />
+              <span class="text-[0.82rem] text-text-secondary">Knowledgebase</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer select-none">
+              <AppCheckbox v-model="exportContacts" />
+              <span class="text-[0.82rem] text-text-secondary">Contacts</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer select-none">
+              <AppCheckbox v-model="exportTicketReplies" />
+              <span class="text-[0.82rem] text-text-secondary">Ticket Replies</span>
             </label>
           </div>
 

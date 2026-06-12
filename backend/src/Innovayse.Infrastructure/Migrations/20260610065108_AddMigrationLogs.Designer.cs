@@ -3,6 +3,7 @@ using System;
 using Innovayse.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Innovayse.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260610065108_AddMigrationLogs")]
+    partial class AddMigrationLogs
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -363,10 +366,6 @@ namespace Innovayse.Infrastructure.Migrations
 
                     b.Property<int>("ClientId")
                         .HasColumnType("integer");
-
-                    b.Property<string>("Currency")
-                        .HasMaxLength(3)
-                        .HasColumnType("character varying(3)");
 
                     b.Property<DateTimeOffset>("Date")
                         .HasColumnType("timestamp with time zone");
@@ -1038,16 +1037,6 @@ namespace Innovayse.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AnnouncementsImported")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<int>("AnnouncementsTotal")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
                     b.Property<int>("ClientsImported")
                         .HasColumnType("integer");
 
@@ -1056,12 +1045,6 @@ namespace Innovayse.Infrastructure.Migrations
 
                     b.Property<DateTimeOffset?>("CompletedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("ContactsImported")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ContactsTotal")
-                        .HasColumnType("integer");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1072,31 +1055,11 @@ namespace Innovayse.Infrastructure.Migrations
                     b.Property<int>("DomainsTotal")
                         .HasColumnType("integer");
 
-                    b.Property<int>("DownloadsImported")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<int>("DownloadsTotal")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
                     b.Property<string>("ErrorMessage")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
-                    b.Property<bool>("ExportAnnouncements")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
                     b.Property<bool>("ExportClients")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
-                    b.Property<bool>("ExportContacts")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(true);
@@ -1106,37 +1069,7 @@ namespace Innovayse.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(true);
 
-                    b.Property<bool>("ExportDownloads")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
                     b.Property<bool>("ExportInvoices")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
-                    b.Property<bool>("ExportKnowledgebase")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
-                    b.Property<bool>("ExportNetworkIssues")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
-                    b.Property<bool>("ExportOrders")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
-                    b.Property<bool>("ExportProducts")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
-                    b.Property<bool>("ExportQuotes")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(true);
@@ -1146,17 +1079,7 @@ namespace Innovayse.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(true);
 
-                    b.Property<bool>("ExportTicketReplies")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
                     b.Property<bool>("ExportTickets")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
-                    b.Property<bool>("ExportTransactions")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(true);
@@ -1172,46 +1095,12 @@ namespace Innovayse.Infrastructure.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
-                    b.Property<int>("KnowledgebaseImported")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("KnowledgebaseTotal")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Label")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
                     b.Property<DateTimeOffset?>("LastPingAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("NetworkIssuesImported")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<int>("NetworkIssuesTotal")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<int>("OrdersImported")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("OrdersTotal")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ProductsImported")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ProductsTotal")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("QuotesImported")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("QuotesTotal")
-                        .HasColumnType("integer");
 
                     b.Property<int>("ServicesImported")
                         .HasColumnType("integer");
@@ -1231,22 +1120,10 @@ namespace Innovayse.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<int>("TicketRepliesImported")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TicketRepliesTotal")
-                        .HasColumnType("integer");
-
                     b.Property<int>("TicketsImported")
                         .HasColumnType("integer");
 
                     b.Property<int>("TicketsTotal")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TransactionsImported")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TransactionsTotal")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");

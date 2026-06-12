@@ -8,4 +8,11 @@ public sealed record CreateMigrationJobRequest(
     bool ExportInvoices = true,
     bool ExportServices = true,
     bool ExportDomains = true,
-    bool ExportTickets = true);
+    bool ExportTickets = true,
+    bool ExportProducts = true,
+    bool ExportOrders = true,
+    bool ExportTransactions = true,
+    bool ExportQuotes = true,
+    bool ExportKnowledgebase = true,
+    bool ExportContacts = true,
+    bool ExportTicketReplies = true);

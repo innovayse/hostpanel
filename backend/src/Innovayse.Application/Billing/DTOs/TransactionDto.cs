@@ -3,6 +3,7 @@ namespace Innovayse.Application.Billing.DTOs;
 /// <summary>DTO representing a single transaction returned by the API.</summary>
 /// <param name="Id">Transaction primary key.</param>
 /// <param name="ClientId">FK to the owning client.</param>
+/// <param name="ClientName">Full name of the owning client.</param>
 /// <param name="Date">UTC timestamp of the transaction.</param>
 /// <param name="Description">Human-readable description.</param>
 /// <param name="TransactionId">External transaction reference.</param>
@@ -15,6 +16,7 @@ namespace Innovayse.Application.Billing.DTOs;
 public record TransactionDto(
     int Id,
     int ClientId,
+    string ClientName,
     DateTimeOffset Date,
     string Description,
     string TransactionId,

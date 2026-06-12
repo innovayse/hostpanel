@@ -4,9 +4,10 @@ using Innovayse.Application.Billing.DTOs;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Billing.Interfaces;
+using Innovayse.Domain.Clients.Interfaces;
 
 /// <summary>Returns a paginated, optionally filtered list of all invoices for admin consumption.</summary>
-public sealed class ListInvoicesHandler(IInvoiceRepository repo)
+public sealed class ListInvoicesHandler(IInvoiceRepository repo, IClientRepository clientRepo)
 {
     /// <summary>
     /// Handles <see cref="ListInvoicesQuery"/>.
@@ -27,8 +28,14 @@ public sealed class ListInvoicesHandler(IInvoiceRepository repo)
 
         var (items, total) = await repo.ListAsync(page, pageSize, status, query.From, query.To, ct);
 
+        var clientIds = items.Select(i => i.ClientId).Distinct().ToList();
+        var clients = await clientRepo.FindByIdsAsync(clientIds, ct);
+        var clientMap = clients.ToDictionary(c => c.Id, c => $"{c.FirstName} {c.LastName}".Trim());
+
         var dtos = items.Select(inv => new InvoiceListItemDto(
-            inv.Id, inv.ClientId, inv.Status, inv.DueDate, inv.CreatedAt, inv.Total, inv.SubTotal, inv.Tax, inv.InvoiceDate, inv.PaidAt, inv.PaymentMethod))
+            inv.Id, inv.ClientId,
+            clientMap.TryGetValue(inv.ClientId, out var name) ? name : $"Client #{inv.ClientId}",
+            inv.Status, inv.DueDate, inv.CreatedAt, inv.Total, inv.SubTotal, inv.Tax, inv.InvoiceDate, inv.PaidAt, inv.PaymentMethod))
             .ToList();
 
         return new PagedResult<InvoiceListItemDto>(dtos, total, page, pageSize);

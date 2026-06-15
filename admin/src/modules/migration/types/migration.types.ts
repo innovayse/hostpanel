@@ -1,5 +1,6 @@
 export interface MigrationEntityProgress {
   imported: number
+  skipped: number
   total: number
   done: boolean
 }
@@ -17,6 +18,9 @@ export interface MigrationProgress {
   knowledgebase: MigrationEntityProgress
   contacts: MigrationEntityProgress
   ticketReplies: MigrationEntityProgress
+  announcements: MigrationEntityProgress
+  downloads: MigrationEntityProgress
+  networkIssues: MigrationEntityProgress
 }
 
 export interface MigrationEntitySelection {
@@ -32,11 +36,14 @@ export interface MigrationEntitySelection {
   knowledgebase: boolean
   contacts: boolean
   ticketReplies: boolean
+  announcements: boolean
+  downloads: boolean
+  networkIssues: boolean
 }
 
 export interface MigrationLogEntry {
   id: number
-  entityType: 'Clients' | 'Invoices' | 'Services' | 'Domains' | 'Tickets' | 'Products' | 'Orders' | 'Transactions' | 'Quotes' | 'Knowledgebase' | 'Contacts' | 'TicketReplies'
+  entityType: 'Clients' | 'Invoices' | 'Services' | 'Domains' | 'Tickets' | 'Products' | 'Orders' | 'Transactions' | 'Quotes' | 'Knowledgebase' | 'Contacts' | 'TicketReplies' | 'Announcements' | 'Downloads' | 'NetworkIssues'
   identifier: string
   action: 'Imported' | 'Skipped' | 'Failed'
   reason: string | null

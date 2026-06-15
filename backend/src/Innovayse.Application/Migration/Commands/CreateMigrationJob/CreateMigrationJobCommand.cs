@@ -15,4 +15,7 @@ public sealed record CreateMigrationJobCommand(
     bool ExportQuotes,
     bool ExportKnowledgebase,
     bool ExportContacts,
-    bool ExportTicketReplies);
+    bool ExportTicketReplies,
+    bool ExportAnnouncements,
+    bool ExportDownloads,
+    bool ExportNetworkIssues);

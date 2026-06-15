@@ -51,7 +51,10 @@ public sealed class AdminMigrationController(IMessageBus bus) : ControllerBase
                 req.ExportQuotes,
                 req.ExportKnowledgebase,
                 req.ExportContacts,
-                req.ExportTicketReplies), ct);
+                req.ExportTicketReplies,
+                req.ExportAnnouncements,
+                req.ExportDownloads,
+                req.ExportNetworkIssues), ct);
         return Ok(result);
     }
 

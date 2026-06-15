@@ -57,4 +57,8 @@ public sealed class ClientServiceRepository(AppDbContext db) : IClientServiceRep
     /// <inheritdoc/>
     public async Task<IReadOnlyList<ClientService>> GetAllAsync(CancellationToken ct) =>
         await db.ClientServices.ToListAsync(ct);
+
+    /// <inheritdoc/>
+    public async Task<ClientService?> FindByClientAndDomainAsync(int clientId, string domain, CancellationToken ct) =>
+        await db.ClientServices.FirstOrDefaultAsync(s => s.ClientId == clientId && s.Domain != null && s.Domain.ToLower() == domain.ToLower(), ct);
 }

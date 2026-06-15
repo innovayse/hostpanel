@@ -3,6 +3,7 @@ using System;
 using Innovayse.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Innovayse.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260614101638_AddInvoiceExternalId")]
+    partial class AddInvoiceExternalId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1046,11 +1049,6 @@ namespace Innovayse.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
-                    b.Property<int>("AnnouncementsSkipped")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
                     b.Property<int>("AnnouncementsTotal")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
@@ -1058,11 +1056,6 @@ namespace Innovayse.Infrastructure.Migrations
 
                     b.Property<int>("ClientsImported")
                         .HasColumnType("integer");
-
-                    b.Property<int>("ClientsSkipped")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
 
                     b.Property<int>("ClientsTotal")
                         .HasColumnType("integer");
@@ -1073,11 +1066,6 @@ namespace Innovayse.Infrastructure.Migrations
                     b.Property<int>("ContactsImported")
                         .HasColumnType("integer");
 
-                    b.Property<int>("ContactsSkipped")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
                     b.Property<int>("ContactsTotal")
                         .HasColumnType("integer");
 
@@ -1087,20 +1075,10 @@ namespace Innovayse.Infrastructure.Migrations
                     b.Property<int>("DomainsImported")
                         .HasColumnType("integer");
 
-                    b.Property<int>("DomainsSkipped")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
                     b.Property<int>("DomainsTotal")
                         .HasColumnType("integer");
 
                     b.Property<int>("DownloadsImported")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<int>("DownloadsSkipped")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
@@ -1192,11 +1170,6 @@ namespace Innovayse.Infrastructure.Migrations
                     b.Property<int>("InvoicesImported")
                         .HasColumnType("integer");
 
-                    b.Property<int>("InvoicesSkipped")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
                     b.Property<int>("InvoicesTotal")
                         .HasColumnType("integer");
 
@@ -1207,11 +1180,6 @@ namespace Innovayse.Infrastructure.Migrations
 
                     b.Property<int>("KnowledgebaseImported")
                         .HasColumnType("integer");
-
-                    b.Property<int>("KnowledgebaseSkipped")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
 
                     b.Property<int>("KnowledgebaseTotal")
                         .HasColumnType("integer");
@@ -1228,11 +1196,6 @@ namespace Innovayse.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
-                    b.Property<int>("NetworkIssuesSkipped")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
                     b.Property<int>("NetworkIssuesTotal")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
@@ -1241,21 +1204,11 @@ namespace Innovayse.Infrastructure.Migrations
                     b.Property<int>("OrdersImported")
                         .HasColumnType("integer");
 
-                    b.Property<int>("OrdersSkipped")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
                     b.Property<int>("OrdersTotal")
                         .HasColumnType("integer");
 
                     b.Property<int>("ProductsImported")
                         .HasColumnType("integer");
-
-                    b.Property<int>("ProductsSkipped")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
 
                     b.Property<int>("ProductsTotal")
                         .HasColumnType("integer");
@@ -1263,21 +1216,11 @@ namespace Innovayse.Infrastructure.Migrations
                     b.Property<int>("QuotesImported")
                         .HasColumnType("integer");
 
-                    b.Property<int>("QuotesSkipped")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
                     b.Property<int>("QuotesTotal")
                         .HasColumnType("integer");
 
                     b.Property<int>("ServicesImported")
                         .HasColumnType("integer");
-
-                    b.Property<int>("ServicesSkipped")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
 
                     b.Property<int>("ServicesTotal")
                         .HasColumnType("integer");
@@ -1297,32 +1240,17 @@ namespace Innovayse.Infrastructure.Migrations
                     b.Property<int>("TicketRepliesImported")
                         .HasColumnType("integer");
 
-                    b.Property<int>("TicketRepliesSkipped")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
                     b.Property<int>("TicketRepliesTotal")
                         .HasColumnType("integer");
 
                     b.Property<int>("TicketsImported")
                         .HasColumnType("integer");
 
-                    b.Property<int>("TicketsSkipped")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
                     b.Property<int>("TicketsTotal")
                         .HasColumnType("integer");
 
                     b.Property<int>("TransactionsImported")
                         .HasColumnType("integer");
-
-                    b.Property<int>("TransactionsSkipped")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
 
                     b.Property<int>("TransactionsTotal")
                         .HasColumnType("integer");

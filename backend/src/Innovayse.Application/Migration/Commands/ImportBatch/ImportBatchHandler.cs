@@ -57,7 +57,7 @@ public sealed class ImportBatchHandler(IMigrationJobRepository repo)
             _ => 0,
         };
 
-        job.UpdateProgress(cmd.EntityType, currentImported + batchCount);
+        job.UpdateProgress(cmd.EntityType, currentImported + batchCount, 0);
 
         // Complete when last batch of last entity type arrives
         if (cmd.Page >= cmd.TotalPages && cmd.EntityType == MigrationEntityType.Tickets)

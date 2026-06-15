@@ -71,7 +71,7 @@ switch ($action) {
             'products'           => _safeCount('tblproducts'),
             'orders'             => _safeCount('tblorders'),
             'transactions'       => _safeCount('tblaccounts'),
-            'quotes'             => _safeCount('tblquotes'),
+            'quotes'             => (int) Capsule::table('tblquotes')->whereIn('userid', Capsule::table('tblclients')->pluck('id'))->count(),
             'knowledgebase'      => _safeCount('tblknowledgebase'),
             'contacts'           => _safeCount('tblcontacts'),
             'ticketReplies'      => _safeCount('tblticketreplies'),

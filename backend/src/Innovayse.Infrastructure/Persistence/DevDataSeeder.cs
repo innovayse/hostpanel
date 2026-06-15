@@ -197,6 +197,7 @@ public sealed class DevDataSeeder(
 
             foreach (var inv in paidInvoices)
             {
+                if (inv.Total <= 0) continue;
                 var payDate = inv.DueDate.AddDays(-Rng.Next(1, 10));
                 var gateway = Rng.Next(3) switch { 0 => "Stripe", 1 => "PayPal", _ => "Bank Transfer" };
                 var fees = Math.Round(inv.Total * 0.029m + 0.30m, 2);

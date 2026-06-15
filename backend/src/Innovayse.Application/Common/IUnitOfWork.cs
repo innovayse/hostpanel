@@ -13,4 +13,7 @@ public interface IUnitOfWork
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The number of state entries written to the database.</returns>
     Task<int> SaveChangesAsync(CancellationToken ct = default);
+
+    /// <summary>Detaches all tracked entities to clear any dirty/failed state.</summary>
+    void DetachAll();
 }

@@ -52,6 +52,9 @@ public sealed class Invoice : AggregateRoot
     /// <summary>Gets the payment gateway transaction reference; null until paid.</summary>
     public string? GatewayTransactionId { get; private set; }
 
+    /// <summary>Gets the external system ID (e.g. source system invoice ID) used for migration deduplication.</summary>
+    public string? ExternalId { get; private set; }
+
     /// <summary>Gets optional notes for this invoice.</summary>
     public string? Notes { get; private set; }
 
@@ -118,6 +121,9 @@ public sealed class Invoice : AggregateRoot
         invoice.AddDomainEvent(new InvoiceCreatedEvent(0, clientId));
         return invoice;
     }
+
+    /// <summary>Sets the external system ID for migration deduplication.</summary>
+    public void SetExternalId(string externalId) => ExternalId = externalId;
 
     /// <summary>
     /// Publishes a draft invoice, transitioning it to Unpaid status.

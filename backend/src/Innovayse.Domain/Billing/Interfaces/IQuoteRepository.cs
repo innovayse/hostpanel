@@ -52,4 +52,7 @@ public interface IQuoteRepository
     /// </summary>
     /// <param name="quote">The quote to delete.</param>
     void Delete(Quote quote);
+
+    /// <summary>Finds a quote by client and subject (case-insensitive).</summary>
+    Task<Quote?> FindByClientAndSubjectAsync(int clientId, string subject, CancellationToken ct);
 }

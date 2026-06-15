@@ -41,9 +41,25 @@ public sealed class MigrationJobConfiguration : IEntityTypeConfiguration<Migrati
 
         builder.Property(x => x.AnnouncementsTotal).IsRequired().HasDefaultValue(0);
         builder.Property(x => x.AnnouncementsImported).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.AnnouncementsSkipped).IsRequired().HasDefaultValue(0);
         builder.Property(x => x.DownloadsTotal).IsRequired().HasDefaultValue(0);
         builder.Property(x => x.DownloadsImported).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.DownloadsSkipped).IsRequired().HasDefaultValue(0);
         builder.Property(x => x.NetworkIssuesTotal).IsRequired().HasDefaultValue(0);
         builder.Property(x => x.NetworkIssuesImported).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.NetworkIssuesSkipped).IsRequired().HasDefaultValue(0);
+
+        builder.Property(x => x.ClientsSkipped).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.InvoicesSkipped).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.ServicesSkipped).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.DomainsSkipped).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.TicketsSkipped).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.ProductsSkipped).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.OrdersSkipped).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.TransactionsSkipped).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.QuotesSkipped).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.KnowledgebaseSkipped).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.ContactsSkipped).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.TicketRepliesSkipped).IsRequired().HasDefaultValue(0);
     }
 }

@@ -43,4 +43,7 @@ public interface IOrderRepository
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The next order number integer (e.g. 1, 2, 3…).</returns>
     Task<int> GetNextOrderNumberAsync(CancellationToken ct);
+
+    /// <summary>Finds an order by its order number string.</summary>
+    Task<Order?> FindByOrderNumberAsync(string orderNumber, CancellationToken ct);
 }

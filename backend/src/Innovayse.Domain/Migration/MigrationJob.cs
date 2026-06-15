@@ -80,78 +80,108 @@ public sealed class MigrationJob : AggregateRoot
 
     /// <summary>Total number of clients to import.</summary>
     public int ClientsTotal { get; private set; }
-    /// <summary>Number of clients imported so far.</summary>
+    /// <summary>Number of clients successfully imported (new records created).</summary>
     public int ClientsImported { get; private set; }
+    /// <summary>Number of clients skipped (already existed — deduplication).</summary>
+    public int ClientsSkipped { get; private set; }
 
     /// <summary>Total number of invoices to import.</summary>
     public int InvoicesTotal { get; private set; }
-    /// <summary>Number of invoices imported so far.</summary>
+    /// <summary>Number of invoices successfully imported.</summary>
     public int InvoicesImported { get; private set; }
+    /// <summary>Number of invoices skipped (already existed).</summary>
+    public int InvoicesSkipped { get; private set; }
 
     /// <summary>Total number of services to import.</summary>
     public int ServicesTotal { get; private set; }
-    /// <summary>Number of services imported so far.</summary>
+    /// <summary>Number of services successfully imported.</summary>
     public int ServicesImported { get; private set; }
+    /// <summary>Number of services skipped (already existed).</summary>
+    public int ServicesSkipped { get; private set; }
 
     /// <summary>Total number of domains to import.</summary>
     public int DomainsTotal { get; private set; }
-    /// <summary>Number of domains imported so far.</summary>
+    /// <summary>Number of domains successfully imported.</summary>
     public int DomainsImported { get; private set; }
+    /// <summary>Number of domains skipped (already existed).</summary>
+    public int DomainsSkipped { get; private set; }
 
     /// <summary>Total number of tickets to import.</summary>
     public int TicketsTotal { get; private set; }
-    /// <summary>Number of tickets imported so far.</summary>
+    /// <summary>Number of tickets successfully imported.</summary>
     public int TicketsImported { get; private set; }
+    /// <summary>Number of tickets skipped (already existed).</summary>
+    public int TicketsSkipped { get; private set; }
 
     /// <summary>Total number of products to import.</summary>
     public int ProductsTotal { get; private set; }
-    /// <summary>Number of products imported so far.</summary>
+    /// <summary>Number of products successfully imported.</summary>
     public int ProductsImported { get; private set; }
+    /// <summary>Number of products skipped (already existed).</summary>
+    public int ProductsSkipped { get; private set; }
 
     /// <summary>Total number of orders to import.</summary>
     public int OrdersTotal { get; private set; }
-    /// <summary>Number of orders imported so far.</summary>
+    /// <summary>Number of orders successfully imported.</summary>
     public int OrdersImported { get; private set; }
+    /// <summary>Number of orders skipped (already existed).</summary>
+    public int OrdersSkipped { get; private set; }
 
     /// <summary>Total number of transactions to import.</summary>
     public int TransactionsTotal { get; private set; }
-    /// <summary>Number of transactions imported so far.</summary>
+    /// <summary>Number of transactions successfully imported.</summary>
     public int TransactionsImported { get; private set; }
+    /// <summary>Number of transactions skipped (already existed).</summary>
+    public int TransactionsSkipped { get; private set; }
 
     /// <summary>Total number of quotes to import.</summary>
     public int QuotesTotal { get; private set; }
-    /// <summary>Number of quotes imported so far.</summary>
+    /// <summary>Number of quotes successfully imported.</summary>
     public int QuotesImported { get; private set; }
+    /// <summary>Number of quotes skipped (already existed).</summary>
+    public int QuotesSkipped { get; private set; }
 
     /// <summary>Total number of knowledgebase articles to import.</summary>
     public int KnowledgebaseTotal { get; private set; }
-    /// <summary>Number of knowledgebase articles imported so far.</summary>
+    /// <summary>Number of knowledgebase articles successfully imported.</summary>
     public int KnowledgebaseImported { get; private set; }
+    /// <summary>Number of knowledgebase articles skipped (already existed).</summary>
+    public int KnowledgebaseSkipped { get; private set; }
 
     /// <summary>Total number of contacts to import.</summary>
     public int ContactsTotal { get; private set; }
-    /// <summary>Number of contacts imported so far.</summary>
+    /// <summary>Number of contacts successfully imported.</summary>
     public int ContactsImported { get; private set; }
+    /// <summary>Number of contacts skipped (already existed).</summary>
+    public int ContactsSkipped { get; private set; }
 
     /// <summary>Total number of ticket replies to import.</summary>
     public int TicketRepliesTotal { get; private set; }
-    /// <summary>Number of ticket replies imported so far.</summary>
+    /// <summary>Number of ticket replies successfully imported.</summary>
     public int TicketRepliesImported { get; private set; }
+    /// <summary>Number of ticket replies skipped.</summary>
+    public int TicketRepliesSkipped { get; private set; }
 
     /// <summary>Total number of announcements to import.</summary>
     public int AnnouncementsTotal { get; private set; }
-    /// <summary>Number of announcements imported so far.</summary>
+    /// <summary>Number of announcements successfully imported.</summary>
     public int AnnouncementsImported { get; private set; }
+    /// <summary>Number of announcements skipped.</summary>
+    public int AnnouncementsSkipped { get; private set; }
 
     /// <summary>Total number of downloads to import.</summary>
     public int DownloadsTotal { get; private set; }
-    /// <summary>Number of downloads imported so far.</summary>
+    /// <summary>Number of downloads successfully imported.</summary>
     public int DownloadsImported { get; private set; }
+    /// <summary>Number of downloads skipped.</summary>
+    public int DownloadsSkipped { get; private set; }
 
     /// <summary>Total number of network issues to import.</summary>
     public int NetworkIssuesTotal { get; private set; }
-    /// <summary>Number of network issues imported so far.</summary>
+    /// <summary>Number of network issues successfully imported.</summary>
     public int NetworkIssuesImported { get; private set; }
+    /// <summary>Number of network issues skipped.</summary>
+    public int NetworkIssuesSkipped { get; private set; }
 
     /// <summary>When the job was created.</summary>
     public DateTimeOffset CreatedAt { get; private set; }
@@ -245,26 +275,41 @@ public sealed class MigrationJob : AggregateRoot
         NetworkIssuesTotal   = networkIssuesTotal;
     }
 
-    /// <summary>Updates the imported count for a given entity type.</summary>
-    public void UpdateProgress(MigrationEntityType entityType, int importedCount)
+    /// <summary>Updates the imported and skipped counts for a given entity type.</summary>
+    public void UpdateProgress(MigrationEntityType entityType, int importedCount, int skippedCount)
     {
         switch (entityType)
         {
-            case MigrationEntityType.Clients:       ClientsImported       = importedCount; break;
-            case MigrationEntityType.Invoices:      InvoicesImported      = importedCount; break;
-            case MigrationEntityType.Services:      ServicesImported      = importedCount; break;
-            case MigrationEntityType.Domains:       DomainsImported       = importedCount; break;
-            case MigrationEntityType.Tickets:       TicketsImported       = importedCount; break;
-            case MigrationEntityType.Products:      ProductsImported      = importedCount; break;
-            case MigrationEntityType.Orders:        OrdersImported        = importedCount; break;
-            case MigrationEntityType.Transactions:  TransactionsImported  = importedCount; break;
-            case MigrationEntityType.Quotes:        QuotesImported        = importedCount; break;
-            case MigrationEntityType.Knowledgebase:   KnowledgebaseImported   = importedCount; break;
-            case MigrationEntityType.Contacts:        ContactsImported        = importedCount; break;
-            case MigrationEntityType.TicketReplies:   TicketRepliesImported   = importedCount; break;
-            case MigrationEntityType.Announcements:   AnnouncementsImported   = importedCount; break;
-            case MigrationEntityType.Downloads:       DownloadsImported       = importedCount; break;
-            case MigrationEntityType.NetworkIssues:   NetworkIssuesImported   = importedCount; break;
+            case MigrationEntityType.Clients:
+                ClientsImported = importedCount; ClientsSkipped = skippedCount; break;
+            case MigrationEntityType.Invoices:
+                InvoicesImported = importedCount; InvoicesSkipped = skippedCount; break;
+            case MigrationEntityType.Services:
+                ServicesImported = importedCount; ServicesSkipped = skippedCount; break;
+            case MigrationEntityType.Domains:
+                DomainsImported = importedCount; DomainsSkipped = skippedCount; break;
+            case MigrationEntityType.Tickets:
+                TicketsImported = importedCount; TicketsSkipped = skippedCount; break;
+            case MigrationEntityType.Products:
+                ProductsImported = importedCount; ProductsSkipped = skippedCount; break;
+            case MigrationEntityType.Orders:
+                OrdersImported = importedCount; OrdersSkipped = skippedCount; break;
+            case MigrationEntityType.Transactions:
+                TransactionsImported = importedCount; TransactionsSkipped = skippedCount; break;
+            case MigrationEntityType.Quotes:
+                QuotesImported = importedCount; QuotesSkipped = skippedCount; break;
+            case MigrationEntityType.Knowledgebase:
+                KnowledgebaseImported = importedCount; KnowledgebaseSkipped = skippedCount; break;
+            case MigrationEntityType.Contacts:
+                ContactsImported = importedCount; ContactsSkipped = skippedCount; break;
+            case MigrationEntityType.TicketReplies:
+                TicketRepliesImported = importedCount; TicketRepliesSkipped = skippedCount; break;
+            case MigrationEntityType.Announcements:
+                AnnouncementsImported = importedCount; AnnouncementsSkipped = skippedCount; break;
+            case MigrationEntityType.Downloads:
+                DownloadsImported = importedCount; DownloadsSkipped = skippedCount; break;
+            case MigrationEntityType.NetworkIssues:
+                NetworkIssuesImported = importedCount; NetworkIssuesSkipped = skippedCount; break;
         }
     }
 
@@ -291,9 +336,21 @@ public sealed class MigrationJob : AggregateRoot
                      + ProductsTotal + OrdersTotal + TransactionsTotal + QuotesTotal + KnowledgebaseTotal
                      + ContactsTotal + TicketRepliesTotal + AnnouncementsTotal + DownloadsTotal + NetworkIssuesTotal;
         if (total == 0) return 0;
-        var imported = ClientsImported + InvoicesImported + ServicesImported + DomainsImported + TicketsImported
-                     + ProductsImported + OrdersImported + TransactionsImported + QuotesImported + KnowledgebaseImported
-                     + ContactsImported + TicketRepliesImported + AnnouncementsImported + DownloadsImported + NetworkIssuesImported;
-        return (int)Math.Round(imported * 100.0 / total);
+        var processed = ClientsImported + ClientsSkipped
+                      + InvoicesImported + InvoicesSkipped
+                      + ServicesImported + ServicesSkipped
+                      + DomainsImported + DomainsSkipped
+                      + TicketsImported + TicketsSkipped
+                      + ProductsImported + ProductsSkipped
+                      + OrdersImported + OrdersSkipped
+                      + TransactionsImported + TransactionsSkipped
+                      + QuotesImported + QuotesSkipped
+                      + KnowledgebaseImported + KnowledgebaseSkipped
+                      + ContactsImported + ContactsSkipped
+                      + TicketRepliesImported + TicketRepliesSkipped
+                      + AnnouncementsImported + AnnouncementsSkipped
+                      + DownloadsImported + DownloadsSkipped
+                      + NetworkIssuesImported + NetworkIssuesSkipped;
+        return (int)Math.Round(processed * 100.0 / total);
     }
 }

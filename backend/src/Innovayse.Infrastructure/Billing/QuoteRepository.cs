@@ -56,4 +56,8 @@ public sealed class QuoteRepository(AppDbContext db) : IQuoteRepository
 
     /// <inheritdoc/>
     public void Delete(Quote quote) => db.Quotes.Remove(quote);
+
+    /// <inheritdoc/>
+    public async Task<Quote?> FindByClientAndSubjectAsync(int clientId, string subject, CancellationToken ct) =>
+        await db.Quotes.FirstOrDefaultAsync(q => q.ClientId == clientId && q.Subject.ToLower() == subject.ToLower(), ct);
 }

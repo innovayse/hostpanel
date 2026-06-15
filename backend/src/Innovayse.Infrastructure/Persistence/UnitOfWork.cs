@@ -12,4 +12,11 @@ public sealed class UnitOfWork(AppDbContext db) : IUnitOfWork
     /// <inheritdoc/>
     public Task<int> SaveChangesAsync(CancellationToken ct = default) =>
         db.SaveChangesAsync(ct);
+
+    /// <inheritdoc/>
+    public void DetachAll()
+    {
+        foreach (var entry in db.ChangeTracker.Entries().ToList())
+            entry.State = Microsoft.EntityFrameworkCore.EntityState.Detached;
+    }
 }

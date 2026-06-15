@@ -45,4 +45,7 @@ public interface IKbArticleRepository
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A read-only list of published articles.</returns>
     Task<IReadOnlyList<KbArticle>> ListPublishedAsync(CancellationToken ct);
+
+    /// <summary>Finds a KB article by title (case-insensitive).</summary>
+    Task<KbArticle?> FindByTitleAsync(string title, CancellationToken ct);
 }

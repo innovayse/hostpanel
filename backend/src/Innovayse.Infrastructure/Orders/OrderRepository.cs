@@ -47,4 +47,8 @@ public sealed class OrderRepository(AppDbContext db) : IOrderRepository
         await db.Orders.AnyAsync(ct)
             ? await db.Orders.MaxAsync(o => o.Id, ct) + 1
             : 1;
+
+    /// <inheritdoc/>
+    public async Task<Order?> FindByOrderNumberAsync(string orderNumber, CancellationToken ct) =>
+        await db.Orders.FirstOrDefaultAsync(o => o.OrderNumber == orderNumber, ct);
 }

@@ -101,4 +101,7 @@ public interface ITicketRepository
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Number of matching tickets.</returns>
     Task<int> CountByClientIdAndDateRangeAsync(int clientId, DateTimeOffset from, DateTimeOffset to, CancellationToken ct);
+
+    /// <summary>Finds a ticket by client and subject (case-insensitive).</summary>
+    Task<Ticket?> FindByClientAndSubjectAsync(int clientId, string subject, CancellationToken ct);
 }

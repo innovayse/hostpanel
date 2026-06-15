@@ -33,4 +33,8 @@ public sealed class KbArticleRepository(AppDbContext db) : IKbArticleRepository
             .OrderBy(a => a.Category)
             .ThenBy(a => a.Title)
             .ToListAsync(ct);
+
+    /// <inheritdoc/>
+    public async Task<KbArticle?> FindByTitleAsync(string title, CancellationToken ct) =>
+        await db.KbArticles.FirstOrDefaultAsync(a => a.Title.ToLower() == title.ToLower(), ct);
 }

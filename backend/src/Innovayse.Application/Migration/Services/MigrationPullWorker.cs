@@ -76,6 +76,8 @@ public sealed class MigrationPullWorker(
             logger.LogError(ex, "Migration pull failed for job {JobId}", jobId);
             try
             {
+                // Clear any pending/failed EF change tracker state before saving failure
+                uow.DetachAll();
                 var job = await repo.GetByIdAsync(jobId, ct);
                 if (job is not null)
                 {
@@ -175,7 +177,7 @@ public sealed class MigrationPullWorker(
 
     private async Task PullClientsAsync(HttpClient http, MigrationJob job, CancellationToken ct)
     {
-        int imported = 0;
+        int imported = 0, skipped = 0;
 
         await foreach (var page in PagesAsync<ClientRecord>(http, job, "clients", ct))
         {
@@ -185,6 +187,7 @@ public sealed class MigrationPullWorker(
                 {
                     var result = await ImportClientAsync(rec, ct);
                     if (result == ImportResult.Imported) imported++;
+                    else if (result == ImportResult.Skipped) skipped++;
                     await WriteLogAsync(MigrationEntityType.Clients, rec.Email, result, reason: null, ct);
                 }
                 catch (Exception ex)
@@ -194,7 +197,7 @@ public sealed class MigrationPullWorker(
                 }
             }
 
-            job.UpdateProgress(MigrationEntityType.Clients, imported);
+            job.UpdateProgress(MigrationEntityType.Clients, imported, skipped);
             await repo.SaveAsync(ct);
         }
     }
@@ -248,7 +251,7 @@ public sealed class MigrationPullWorker(
 
     private async Task PullInvoicesAsync(HttpClient http, MigrationJob job, CancellationToken ct)
     {
-        int imported = 0;
+        int imported = 0, skipped = 0;
 
         await foreach (var page in PagesAsync<InvoiceRecord>(http, job, "invoices", ct))
         {
@@ -258,6 +261,7 @@ public sealed class MigrationPullWorker(
                 {
                     var result = await ImportInvoiceAsync(rec, ct);
                     if (result.Action == ImportResult.Imported) imported++;
+                    else if (result.Action == ImportResult.Skipped) skipped++;
                     await WriteLogAsync(MigrationEntityType.Invoices, rec.ClientEmail, result.Action, result.Reason, ct);
                 }
                 catch (Exception ex)
@@ -267,7 +271,7 @@ public sealed class MigrationPullWorker(
                 }
             }
 
-            job.UpdateProgress(MigrationEntityType.Invoices, imported);
+            job.UpdateProgress(MigrationEntityType.Invoices, imported, skipped);
             await repo.SaveAsync(ct);
         }
     }
@@ -279,6 +283,14 @@ public sealed class MigrationPullWorker(
         {
             logger.LogWarning("Invoice skipped — client {Email} not found", rec.ClientEmail);
             return (ImportResult.Skipped, $"Client '{rec.ClientEmail}' not found");
+        }
+
+        // Dedup by ExternalId (source system invoice ID)
+        if (!string.IsNullOrWhiteSpace(rec.ExternalId))
+        {
+            var existing = await invoiceRepo.FindByExternalIdAsync(rec.ExternalId, ct);
+            if (existing is not null)
+                return (ImportResult.Skipped, $"Invoice #{rec.ExternalId} already imported");
         }
 
         // Draft invoices need a different factory — Create() produces Unpaid directly.
@@ -325,6 +337,9 @@ public sealed class MigrationPullWorker(
                 break;
         }
 
+        if (!string.IsNullOrWhiteSpace(rec.ExternalId))
+            invoice.SetExternalId(rec.ExternalId);
+
         invoiceRepo.Add(invoice);
         await uow.SaveChangesAsync(ct);
         return (ImportResult.Imported, null);
@@ -334,7 +349,7 @@ public sealed class MigrationPullWorker(
 
     private async Task PullServicesAsync(HttpClient http, MigrationJob job, CancellationToken ct)
     {
-        int imported = 0;
+        int imported = 0, skipped = 0;
 
         var allProducts = await productRepo.ListAsync(null, false, ct);
 
@@ -346,6 +361,7 @@ public sealed class MigrationPullWorker(
                 {
                     var result = await ImportServiceAsync(rec, allProducts, ct);
                     if (result.Action == ImportResult.Imported) imported++;
+                    else if (result.Action == ImportResult.Skipped) skipped++;
                     await WriteLogAsync(MigrationEntityType.Services, rec.ClientEmail, result.Action, result.Reason, ct);
                 }
                 catch (Exception ex)
@@ -355,7 +371,7 @@ public sealed class MigrationPullWorker(
                 }
             }
 
-            job.UpdateProgress(MigrationEntityType.Services, imported);
+            job.UpdateProgress(MigrationEntityType.Services, imported, skipped);
             await repo.SaveAsync(ct);
         }
     }
@@ -370,6 +386,14 @@ public sealed class MigrationPullWorker(
         {
             logger.LogWarning("Service skipped — client {Email} not found", rec.ClientEmail);
             return (ImportResult.Skipped, $"Client '{rec.ClientEmail}' not found");
+        }
+
+        // Dedup by clientId + domain (if domain present)
+        if (!string.IsNullOrWhiteSpace(rec.Domain))
+        {
+            var existingSvc = await serviceRepo.FindByClientAndDomainAsync(clientId.Value, rec.Domain, ct);
+            if (existingSvc is not null)
+                return (ImportResult.Skipped, $"Service for domain '{rec.Domain}' already exists");
         }
 
         var product = allProducts.FirstOrDefault(p =>
@@ -433,7 +457,7 @@ public sealed class MigrationPullWorker(
 
     private async Task PullDomainsAsync(HttpClient http, MigrationJob job, CancellationToken ct)
     {
-        int imported = 0;
+        int imported = 0, skipped = 0;
 
         await foreach (var page in PagesAsync<DomainRecord>(http, job, "domains", ct))
         {
@@ -443,6 +467,7 @@ public sealed class MigrationPullWorker(
                 {
                     var result = await ImportDomainAsync(rec, ct);
                     if (result.Action == ImportResult.Imported) imported++;
+                    else if (result.Action == ImportResult.Skipped) skipped++;
                     await WriteLogAsync(MigrationEntityType.Domains, rec.DomainName, result.Action, result.Reason, ct);
                 }
                 catch (Exception ex)
@@ -452,7 +477,7 @@ public sealed class MigrationPullWorker(
                 }
             }
 
-            job.UpdateProgress(MigrationEntityType.Domains, imported);
+            job.UpdateProgress(MigrationEntityType.Domains, imported, skipped);
             await repo.SaveAsync(ct);
         }
     }
@@ -526,7 +551,7 @@ public sealed class MigrationPullWorker(
 
     private async Task PullTicketsAsync(HttpClient http, MigrationJob job, CancellationToken ct)
     {
-        int imported = 0;
+        int imported = 0, skipped = 0;
 
         var departments = await departmentRepo.ListAllAsync(ct);
         var defaultDeptId = departments.FirstOrDefault()?.Id ?? 1;
@@ -543,7 +568,8 @@ public sealed class MigrationPullWorker(
 
                     var result = await ImportTicketAsync(rec, deptId, ct);
                     if (result.Action == ImportResult.Imported) imported++;
-                    await WriteLogAsync(MigrationEntityType.Tickets, rec.ClientEmail, result.Action, result.Reason, ct);
+                    else if (result.Action == ImportResult.Skipped) skipped++;
+                    await WriteLogAsync(MigrationEntityType.Tickets, rec.Subject, result.Action, result.Reason, ct);
                 }
                 catch (Exception ex)
                 {
@@ -552,7 +578,7 @@ public sealed class MigrationPullWorker(
                 }
             }
 
-            job.UpdateProgress(MigrationEntityType.Tickets, imported);
+            job.UpdateProgress(MigrationEntityType.Tickets, imported, skipped);
             await repo.SaveAsync(ct);
         }
     }
@@ -565,6 +591,10 @@ public sealed class MigrationPullWorker(
             logger.LogWarning("Ticket skipped — client {Email} not found", rec.ClientEmail);
             return (ImportResult.Skipped, $"Client '{rec.ClientEmail}' not found");
         }
+
+        var existingTicket = await ticketRepo.FindByClientAndSubjectAsync(clientId.Value, rec.Subject, ct);
+        if (existingTicket is not null)
+            return (ImportResult.Skipped, "Ticket already exists");
 
         var priority = rec.Priority switch
         {
@@ -618,7 +648,7 @@ public sealed class MigrationPullWorker(
         }
 
         // Step 2: page through products
-        int imported   = 0;
+        int imported = 0, skipped = 0;
         var allProducts = await productRepo.ListAsync(null, false, ct);
 
         await foreach (var page in PagesAsync<ProductRecord>(http, job, "products", ct))
@@ -633,12 +663,14 @@ public sealed class MigrationPullWorker(
                     if (exists)
                     {
                         await WriteLogAsync(MigrationEntityType.Products, rec.Name, ImportResult.Skipped, "Product already exists", ct);
+                        skipped++;
                         continue;
                     }
 
                     if (!groupIdMap.TryGetValue(rec.GroupId, out var localGroupId))
                     {
                         await WriteLogAsync(MigrationEntityType.Products, rec.Name, ImportResult.Skipped, $"Group {rec.GroupId} not resolved", ct);
+                        skipped++;
                         continue;
                     }
 
@@ -664,7 +696,7 @@ public sealed class MigrationPullWorker(
                 }
             }
 
-            job.UpdateProgress(MigrationEntityType.Products, imported);
+            job.UpdateProgress(MigrationEntityType.Products, imported, skipped);
             await repo.SaveAsync(ct);
         }
     }
@@ -673,7 +705,7 @@ public sealed class MigrationPullWorker(
 
     private async Task PullOrdersAsync(HttpClient http, MigrationJob job, CancellationToken ct)
     {
-        int imported = 0;
+        int imported = 0, skipped = 0;
 
         await foreach (var page in PagesAsync<OrderRecord>(http, job, "orders", ct))
         {
@@ -686,6 +718,15 @@ public sealed class MigrationPullWorker(
                     {
                         logger.LogWarning("Order skipped — client {Email} not found", rec.ClientEmail);
                         await WriteLogAsync(MigrationEntityType.Orders, rec.OrderNumber, ImportResult.Skipped, $"Client '{rec.ClientEmail}' not found", ct);
+                        skipped++;
+                        continue;
+                    }
+
+                    var existingOrder = await orderRepo.FindByOrderNumberAsync(rec.OrderNumber, ct);
+                    if (existingOrder is not null)
+                    {
+                        await WriteLogAsync(MigrationEntityType.Orders, rec.OrderNumber, ImportResult.Skipped, "Order already exists", ct);
+                        skipped++;
                         continue;
                     }
 
@@ -696,7 +737,7 @@ public sealed class MigrationPullWorker(
                         var allProducts = await productRepo.ListAsync(null, false, ct);
                         foreach (var item in rec.Items)
                         {
-                            // Resolve by name — WHMCS product IDs differ from local IDs
+                            // Resolve by name — product IDs differ from local IDs
                             var product = allProducts.FirstOrDefault(p =>
                                               string.Equals(p.Name, item.ProductName, StringComparison.OrdinalIgnoreCase))
                                           ?? allProducts.FirstOrDefault();
@@ -726,7 +767,7 @@ public sealed class MigrationPullWorker(
                 }
             }
 
-            job.UpdateProgress(MigrationEntityType.Orders, imported);
+            job.UpdateProgress(MigrationEntityType.Orders, imported, skipped);
             await repo.SaveAsync(ct);
         }
     }
@@ -735,7 +776,7 @@ public sealed class MigrationPullWorker(
 
     private async Task PullTransactionsAsync(HttpClient http, MigrationJob job, CancellationToken ct)
     {
-        int imported = 0;
+        int imported = 0, skipped = 0;
 
         await foreach (var page in PagesAsync<TransactionRecord>(http, job, "transactions", ct))
         {
@@ -748,6 +789,15 @@ public sealed class MigrationPullWorker(
                     {
                         logger.LogWarning("Transaction skipped — client {Email} not found", rec.ClientEmail);
                         await WriteLogAsync(MigrationEntityType.Transactions, rec.TransactionId, ImportResult.Skipped, $"Client '{rec.ClientEmail}' not found", ct);
+                        skipped++;
+                        continue;
+                    }
+
+                    var existingTx = await transactionRepo.FindByTransactionIdAsync(rec.TransactionId, ct);
+                    if (existingTx is not null)
+                    {
+                        await WriteLogAsync(MigrationEntityType.Transactions, rec.TransactionId, ImportResult.Skipped, "Transaction already exists", ct);
+                        skipped++;
                         continue;
                     }
 
@@ -776,7 +826,7 @@ public sealed class MigrationPullWorker(
                 }
             }
 
-            job.UpdateProgress(MigrationEntityType.Transactions, imported);
+            job.UpdateProgress(MigrationEntityType.Transactions, imported, skipped);
             await repo.SaveAsync(ct);
         }
     }
@@ -785,7 +835,7 @@ public sealed class MigrationPullWorker(
 
     private async Task PullQuotesAsync(HttpClient http, MigrationJob job, CancellationToken ct)
     {
-        int imported = 0;
+        int imported = 0, skipped = 0;
 
         await foreach (var page in PagesAsync<QuoteRecord>(http, job, "quotes", ct))
         {
@@ -798,6 +848,15 @@ public sealed class MigrationPullWorker(
                     {
                         logger.LogWarning("Quote skipped — client {Email} not found", rec.ClientEmail);
                         await WriteLogAsync(MigrationEntityType.Quotes, rec.Subject, ImportResult.Skipped, $"Client '{rec.ClientEmail}' not found", ct);
+                        skipped++;
+                        continue;
+                    }
+
+                    var existingQuote = await quoteRepo.FindByClientAndSubjectAsync(clientId.Value, rec.Subject, ct);
+                    if (existingQuote is not null)
+                    {
+                        await WriteLogAsync(MigrationEntityType.Quotes, rec.Subject, ImportResult.Skipped, "Quote already exists", ct);
+                        skipped++;
                         continue;
                     }
 
@@ -828,7 +887,7 @@ public sealed class MigrationPullWorker(
                 }
             }
 
-            job.UpdateProgress(MigrationEntityType.Quotes, imported);
+            job.UpdateProgress(MigrationEntityType.Quotes, imported, skipped);
             await repo.SaveAsync(ct);
         }
     }
@@ -863,7 +922,7 @@ public sealed class MigrationPullWorker(
         }
 
         // Step 2: page through articles
-        int imported = 0;
+        int imported = 0, skipped = 0;
 
         await foreach (var page in PagesAsync<KbArticleRecord>(http, job, "knowledgebase", ct))
         {
@@ -874,6 +933,14 @@ public sealed class MigrationPullWorker(
                     var categoryName = rec.CategoryId.HasValue && catNameMap.TryGetValue(rec.CategoryId.Value, out var n) && !string.IsNullOrWhiteSpace(n)
                         ? n
                         : "General";
+
+                    var existingArticle = await kbArticleRepo.FindByTitleAsync(rec.Title, ct);
+                    if (existingArticle is not null)
+                    {
+                        await WriteLogAsync(MigrationEntityType.Knowledgebase, rec.Title, ImportResult.Skipped, "Article already exists", ct);
+                        skipped++;
+                        continue;
+                    }
 
                     var article = KbArticle.Create(rec.Title, rec.Content, categoryName);
 
@@ -891,7 +958,7 @@ public sealed class MigrationPullWorker(
                 }
             }
 
-            job.UpdateProgress(MigrationEntityType.Knowledgebase, imported);
+            job.UpdateProgress(MigrationEntityType.Knowledgebase, imported, skipped);
             await repo.SaveAsync(ct);
         }
     }
@@ -900,7 +967,7 @@ public sealed class MigrationPullWorker(
 
     private async Task PullContactsAsync(HttpClient http, MigrationJob job, CancellationToken ct)
     {
-        int imported = 0;
+        int imported = 0, skipped = 0;
         bool hasAny  = false;
 
         await foreach (var page in PagesAsync<ContactRecord>(http, job, "contacts", ct))
@@ -915,6 +982,7 @@ public sealed class MigrationPullWorker(
                     {
                         logger.LogWarning("Contact skipped — client {Email} not found", rec.ClientEmail);
                         await WriteLogAsync(MigrationEntityType.Contacts, rec.Email, ImportResult.Skipped, $"Client '{rec.ClientEmail}' not found", ct);
+                        skipped++;
                         continue;
                     }
 
@@ -922,6 +990,14 @@ public sealed class MigrationPullWorker(
                     if (client2 is null)
                     {
                         await WriteLogAsync(MigrationEntityType.Contacts, rec.Email, ImportResult.Skipped, "Client record not found", ct);
+                        skipped++;
+                        continue;
+                    }
+
+                    if (client2.Contacts.Any(c => string.Equals(c.Email, rec.Email, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        await WriteLogAsync(MigrationEntityType.Contacts, rec.Email, ImportResult.Skipped, "Contact already exists", ct);
+                        skipped++;
                         continue;
                     }
 
@@ -942,7 +1018,7 @@ public sealed class MigrationPullWorker(
                 }
             }
 
-            job.UpdateProgress(MigrationEntityType.Contacts, imported);
+            job.UpdateProgress(MigrationEntityType.Contacts, imported, skipped);
             await repo.SaveAsync(ct);
         }
 
@@ -954,7 +1030,7 @@ public sealed class MigrationPullWorker(
 
     private async Task PullTicketRepliesAsync(HttpClient http, MigrationJob job, CancellationToken ct)
     {
-        int imported = 0;
+        int imported = 0, skipped = 0;
         bool hasAny  = false;
 
         await foreach (var page in PagesAsync<TicketReplyRecord>(http, job, "ticket_replies", ct))
@@ -969,6 +1045,7 @@ public sealed class MigrationPullWorker(
                     {
                         logger.LogWarning("Ticket reply skipped — client {Email} not found", rec.ClientEmail);
                         await WriteLogAsync(MigrationEntityType.TicketReplies, rec.TicketSubject, ImportResult.Skipped, $"Client '{rec.ClientEmail}' not found", ct);
+                        skipped++;
                         continue;
                     }
 
@@ -979,12 +1056,14 @@ public sealed class MigrationPullWorker(
                     if (ticket is null)
                     {
                         await WriteLogAsync(MigrationEntityType.TicketReplies, rec.TicketSubject, ImportResult.Skipped, "Ticket not found", ct);
+                        skipped++;
                         continue;
                     }
 
                     if (ticket.Status == Innovayse.Domain.Support.TicketStatus.Closed)
                     {
                         await WriteLogAsync(MigrationEntityType.TicketReplies, rec.TicketSubject, ImportResult.Skipped, "Ticket is closed", ct);
+                        skipped++;
                         continue;
                     }
 
@@ -1004,7 +1083,7 @@ public sealed class MigrationPullWorker(
                 }
             }
 
-            job.UpdateProgress(MigrationEntityType.TicketReplies, imported);
+            job.UpdateProgress(MigrationEntityType.TicketReplies, imported, skipped);
             await repo.SaveAsync(ct);
         }
 
@@ -1016,7 +1095,7 @@ public sealed class MigrationPullWorker(
 
     private async Task PullAnnouncementsAsync(HttpClient http, MigrationJob job, CancellationToken ct)
     {
-        int imported = 0;
+        int imported = 0, skipped = 0;
 
         await foreach (var page in PagesAsync<AnnouncementRecord>(http, job, "announcements", ct))
         {
@@ -1026,6 +1105,7 @@ public sealed class MigrationPullWorker(
                 {
                     var result = await ImportAnnouncementAsync(rec, ct);
                     if (result == ImportResult.Imported) imported++;
+                    else if (result == ImportResult.Skipped) skipped++;
                     await WriteLogAsync(MigrationEntityType.Announcements, rec.Title, result, null, ct);
                 }
                 catch (Exception ex)
@@ -1035,7 +1115,7 @@ public sealed class MigrationPullWorker(
                 }
             }
 
-            job.UpdateProgress(MigrationEntityType.Announcements, imported);
+            job.UpdateProgress(MigrationEntityType.Announcements, imported, skipped);
             await repo.SaveAsync(ct);
         }
     }
@@ -1067,7 +1147,7 @@ public sealed class MigrationPullWorker(
         }
 
         // Step 2: files
-        int imported = 0;
+        int imported = 0, skipped = 0;
 
         await foreach (var page in PagesAsync<DownloadRecord>(http, job, "downloads", ct))
         {
@@ -1079,8 +1159,12 @@ public sealed class MigrationPullWorker(
                         ? localCatId
                         : catIdMap.Values.FirstOrDefault();
 
+                    var resolvedTitle = !string.IsNullOrWhiteSpace(rec.Title) ? rec.Title
+                        : !string.IsNullOrWhiteSpace(rec.Filename) ? rec.Filename
+                        : "Untitled";
+
                     var download = Download.Create(
-                        string.IsNullOrWhiteSpace(rec.Title) ? rec.Filename : rec.Title,
+                        resolvedTitle,
                         rec.Description ?? string.Empty,
                         rec.Type,
                         rec.Filename,
@@ -1101,7 +1185,7 @@ public sealed class MigrationPullWorker(
                 }
             }
 
-            job.UpdateProgress(MigrationEntityType.Downloads, imported);
+            job.UpdateProgress(MigrationEntityType.Downloads, imported, skipped);
             await repo.SaveAsync(ct);
         }
     }
@@ -1110,7 +1194,7 @@ public sealed class MigrationPullWorker(
 
     private async Task PullNetworkIssuesAsync(HttpClient http, MigrationJob job, CancellationToken ct)
     {
-        int imported = 0;
+        int imported = 0, skipped = 0;
 
         await foreach (var page in PagesAsync<NetworkIssueRecord>(http, job, "network_issues", ct))
         {
@@ -1120,6 +1204,7 @@ public sealed class MigrationPullWorker(
                 {
                     var result = await ImportNetworkIssueAsync(rec, ct);
                     if (result == ImportResult.Imported) imported++;
+                    else if (result == ImportResult.Skipped) skipped++;
                     await WriteLogAsync(MigrationEntityType.NetworkIssues, rec.Title, result, null, ct);
                 }
                 catch (Exception ex)
@@ -1129,7 +1214,7 @@ public sealed class MigrationPullWorker(
                 }
             }
 
-            job.UpdateProgress(MigrationEntityType.NetworkIssues, imported);
+            job.UpdateProgress(MigrationEntityType.NetworkIssues, imported, skipped);
             await repo.SaveAsync(ct);
         }
     }

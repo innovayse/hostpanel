@@ -138,4 +138,8 @@ public sealed class InvoiceRepository(AppDbContext db) : IInvoiceRepository
     /// <inheritdoc/>
     public async Task<IReadOnlyList<Invoice>> GetAllAsync(CancellationToken ct) =>
         await db.Invoices.ToListAsync(ct);
+
+    /// <inheritdoc/>
+    public async Task<Invoice?> FindByExternalIdAsync(string externalId, CancellationToken ct) =>
+        await db.Invoices.FirstOrDefaultAsync(i => i.ExternalId == externalId, ct);
 }

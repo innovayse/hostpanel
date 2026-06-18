@@ -6,6 +6,18 @@ A modern, self-hosted web hosting management platform — an open-source alterna
 
 ---
 
+## 🌐 Live Demo
+
+**[https://hostpanel.innovayse.com](https://hostpanel.innovayse.com)**
+
+| Role     | Email                    | Password  |
+|----------|--------------------------|-----------|
+| Admin    | superadmin@hostpanel.com | Admin123! |
+| Reseller | reseller@hostpanel.com   | Admin123! |
+| Client   | customer@hostpanel.com   | Admin123! |
+
+---
+
 ## Features
 
 - **Client Portal** — order services, manage domains, view invoices, open support tickets

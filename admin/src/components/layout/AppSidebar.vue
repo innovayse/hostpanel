@@ -194,20 +194,8 @@ function isExpanded(item: NavItem): boolean {
   <aside class="flex flex-col w-[220px] min-h-screen shrink-0 bg-surface-panel border-r border-border">
 
     <!-- Logo -->
-    <div class="flex items-center gap-2.5 px-5 py-[18px] border-b border-border">
-      <div class="flex items-center justify-center w-8 h-8 rounded-[8px] shrink-0 bg-primary-500/8 border border-primary-500/20">
-        <svg width="16" height="16" viewBox="0 0 22 22" fill="none">
-          <path d="M11 2L20 7V15L11 20L2 15V7L11 2Z" stroke="url(#sb-g)" stroke-width="1.5" fill="none"/>
-          <path d="M11 7L16 10V14L11 17L6 14V10L11 7Z" fill="url(#sb-g)" opacity="0.7"/>
-          <defs>
-            <linearGradient id="sb-g" x1="2" y1="2" x2="20" y2="20">
-              <stop offset="0%" stop-color="#0ea5e9"/>
-              <stop offset="100%" stop-color="#a855f7"/>
-            </linearGradient>
-          </defs>
-        </svg>
-      </div>
-      <span class="font-display font-bold text-[1rem] gradient-brand-text">Innovayse</span>
+    <div class="flex items-center px-5 py-[18px] border-b border-border">
+      <img src="/logo.svg" alt="Hostpanel" class="h-7 w-auto" />
     </div>
 
     <!-- Nav links -->

@@ -24,7 +24,7 @@
     <div class="w-full max-w-md relative z-10">
       <div class="text-center mb-8">
         <NuxtLink to="/" class="inline-block mb-6">
-          <NuxtImg src="/logo.png" alt="Innovayse" width="160" height="48" loading="eager" class="h-12 w-auto mx-auto" />
+          <NuxtImg src="/logo.svg" alt="Innovayse" width="160" height="48" loading="eager" class="h-12 w-auto mx-auto" />
         </NuxtLink>
         <h1 class="text-2xl font-bold text-white">{{ $t('client.register.title') }}</h1>
         <p class="text-gray-400 text-sm mt-1">{{ $t('client.register.subtitle') }}</p>

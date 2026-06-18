@@ -8,7 +8,7 @@
         <!-- Logo -->
         <NuxtLink :to="localePath('/')" class="flex items-center">
           <NuxtImg
-            src="/logo.png"
+            src="/logo.svg"
             alt="Innovayse"
             width="200"
             height="60"

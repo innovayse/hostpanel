@@ -14,7 +14,7 @@
         <div>
           <div class="flex items-center mb-8 group cursor-pointer">
             <NuxtImg
-              src="/logo.png"
+              src="/logo.svg"
               alt="Innovayse"
               width="240"
               height="80"

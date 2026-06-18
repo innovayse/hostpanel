@@ -87,12 +87,7 @@ export default defineNuxtConfig({
     ],
     defaultLocale: 'en',
     strategy: 'prefix_except_default',
-    detectBrowserLanguage: {
-      useCookie: true,
-      cookieKey: 'i18n_locale',
-      redirectOn: 'root',
-      fallbackLocale: 'en'
-    }
+    detectBrowserLanguage: false
   },
 
   // Sitemap configuration

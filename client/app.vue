@@ -82,6 +82,7 @@ useHead({
         g.async=true;
         s.parentNode.insertBefore(g,s);
         g.onload=function(){
+          if (!window.chatwootSDK) return;
           window.chatwootSDK.run({
             websiteToken: '${currentToken.value}',
             baseUrl: BASE_URL

@@ -45,6 +45,10 @@ admin/.env.production
 *.jpg
 *.jpeg
 
+# Allow client public placeholder assets
+!client/public/logo.png
+!client/public/images/**
+
 # IDEs
 .idea/
 .vscode/

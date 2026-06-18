@@ -1,0 +1,23 @@
+# Server overlay: disables the built-in nginx container and exposes
+# services on localhost ports so the host nginx can reverse-proxy them.
+services:
+  api:
+    ports:
+      - "127.0.0.1:5148:5148"
+
+  client:
+    ports:
+      - "127.0.0.1:3200:3000"
+    environment:
+      NUXT_API_URL: http://api:5148
+
+  admin:
+    ports:
+      - "127.0.0.1:5173:80"
+    build:
+      args:
+        VITE_BASE_URL: /admin
+
+  nginx:
+    profiles:
+      - disabled

@@ -55,7 +55,7 @@ COPY backend/tests/Innovayse.CWP.Tests/Innovayse.CWP.Tests.csproj ./tests/Innova
 RUN dotnet restore Innovayse.Backend.sln
 
 COPY backend/ .
-RUN dotnet publish src/Innovayse.API/Innovayse.API.csproj -c Release -o /out --no-restore
+RUN dotnet publish src/Innovayse.API/Innovayse.API.csproj -c Release -o /out --no-restore /p:ErrorOnDuplicatePublishOutputFiles=false
 
 # ── Prod target ───────────────────────────────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS prod

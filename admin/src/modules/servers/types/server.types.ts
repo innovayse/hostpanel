@@ -3,6 +3,7 @@ export type ServerModule =
   | 'CPanel'
   | 'Plesk'
   | 'DirectAdmin'
+  | 'Centos'
   | 'Cwp7'
   | 'Lukittu'
   | 'InnovayseWordPressHosting'
@@ -149,7 +150,8 @@ export const MODULE_LABELS: Record<ServerModule, string> = {
   CPanel: 'cPanel / WHM',
   Plesk: 'Plesk',
   DirectAdmin: 'DirectAdmin',
-  Cwp7: 'CentOS Web Panel',
+  Centos: 'CentOS Web Panel',
+  Cwp7: 'CWP7',
   Lukittu: 'Lukittu',
   InnovayseWordPressHosting: 'Innovayse WordPress Hosting',
   Virtualmin: 'Virtualmin',

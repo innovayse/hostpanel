@@ -33,7 +33,24 @@ public sealed class OrderServiceHandler(
             throw new InvalidOperationException($"Product {cmd.ProductId} is not available for ordering.");
         }
 
+        var cyclePrice = cmd.BillingCycle == "annual" ? product.AnnualPrice : product.MonthlyPrice;
+        var firstPayment = cmd.FirstPaymentAmount > 0 ? cmd.FirstPaymentAmount : cyclePrice;
+        var recurring = cmd.RecurringAmount > 0 ? cmd.RecurringAmount : cyclePrice;
+
         var service = ClientService.Create(cmd.ClientId, cmd.ProductId, cmd.BillingCycle);
+
+        service.Update(
+            domain: null, dedicatedIp: null, username: null,
+            password: null, billingCycle: cmd.BillingCycle,
+            recurringAmount: recurring, paymentMethod: cmd.PaymentMethod,
+            nextRenewalAt: null, subscriptionId: null,
+            overrideAutoSuspend: false, suspendUntil: null,
+            autoTerminateEndOfCycle: false, autoTerminateReason: null,
+            adminNotes: null, provisioningRef: null,
+            firstPaymentAmount: firstPayment,
+            promotionCode: null, terminatedAt: null,
+            serverId: null, quantity: 1, productId: null);
+
         serviceRepo.Add(service);
         await uow.SaveChangesAsync(ct);
         return service.Id;

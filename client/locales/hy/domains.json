@@ -9,6 +9,7 @@
     "taken": "Արդեն գրանցված է",
     "registerNow": "Գրանցել հիմա",
     "checkFailed": "Դոմենի ստուգումը ձախողվեց։ Խնդրում ենք փորձել կրկին։",
+    "invalidDomain": "Մուտքագրեք դոմեն ընդլայնումով (օր.՝ mysite.com)",
     "tabRegister": "Գրանցում",
     "tabTransfer": "Փոխանցում",
     "transferPlaceholder": "Մուտքագրեք փոխանցվող դոմենը (օր.՝ mysite.com)",

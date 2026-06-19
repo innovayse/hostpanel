@@ -770,6 +770,8 @@ export interface Product {
   website: string | null
   /** Optional URL-friendly slug. */
   slug: string | null
+  /** Optional hosting package name used for provisioning. */
+  packageName: string | null
   /** Product type (SharedHosting, Vps, Dedicated, Domain, Ssl, Other). */
   type: string
   /** Current status (Active, Inactive). */
@@ -804,6 +806,8 @@ export interface CreateProductPayload {
   website: string | null
   /** Optional URL slug. */
   slug: string | null
+  /** Optional hosting package name. */
+  packageName: string | null
   /** Product type. */
   type: string
   /** Monthly price. */
@@ -822,6 +826,8 @@ export interface UpdateProductPayload {
   website: string | null
   /** Optional URL slug. */
   slug: string | null
+  /** Optional hosting package name. */
+  packageName: string | null
   /** Monthly price. */
   monthlyPrice: number
   /** Annual price. */

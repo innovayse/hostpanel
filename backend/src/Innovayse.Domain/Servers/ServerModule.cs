@@ -14,7 +14,10 @@ public enum ServerModule
     /// <summary>DirectAdmin provisioning module.</summary>
     DirectAdmin,
 
-    /// <summary>CentOS Web Panel (CWP7) provisioning module.</summary>
+    /// <summary>CentOS Web Panel provisioning module (legacy).</summary>
+    Centos,
+
+    /// <summary>Control Web Panel 7 (CWP7) provisioning module.</summary>
     Cwp7,
 
     /// <summary>Lukittu license server module.</summary>

@@ -80,6 +80,7 @@ async function handleSave(payload: CreateProductPayload): Promise<void> {
         description: payload.description,
         website: payload.website,
         slug: payload.slug,
+        packageName: payload.packageName,
         monthlyPrice: payload.monthlyPrice,
         annualPrice: payload.annualPrice,
       })

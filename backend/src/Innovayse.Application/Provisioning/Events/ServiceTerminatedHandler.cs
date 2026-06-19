@@ -37,8 +37,15 @@ public sealed class ServiceTerminatedHandler(
             return;
         }
 
-        var provider = providerFactory.CreateFor(server);
-        var request = new TerminateRequest(service.Id, service.ProvisioningRef, evt.Reason);
-        await provider.TerminateAsync(request, ct);
+        try
+        {
+            var provider = providerFactory.CreateFor(server);
+            var request = new TerminateRequest(service.Id, service.ProvisioningRef, evt.Reason);
+            await provider.TerminateAsync(request, ct);
+        }
+        catch
+        {
+            // Account may already be terminated on the server by the command handler — safe to ignore
+        }
     }
 }

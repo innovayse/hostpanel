@@ -8,6 +8,7 @@
     "available": "Available!",
     "taken": "Already registered",
     "registerNow": "Register Now",
+    "invalidDomain": "Please enter a valid domain with extension (e.g. mysite.com)",
     "checkFailed": "Domain check failed. Please try again.",
     "tabRegister": "Register",
     "tabTransfer": "Transfer",

@@ -38,6 +38,15 @@ public interface IClientServiceRepository
     /// <param name="service">The new client service aggregate.</param>
     void Add(ClientService service);
 
+    /// <summary>
+    /// Returns all active services whose next renewal date is on or before <paramref name="asOf"/>.
+    /// Used by the renewal invoice cron to generate renewal invoices.
+    /// </summary>
+    /// <param name="asOf">The reference point in time; services with NextRenewalAt &lt;= this are due.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Active services due for renewal.</returns>
+    Task<IReadOnlyList<ClientService>> ListDueForRenewalAsync(DateTimeOffset asOf, CancellationToken ct);
+
     /// <summary>Returns all client services without pagination. Used for report calculations.</summary>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>All client service instances in the system.</returns>

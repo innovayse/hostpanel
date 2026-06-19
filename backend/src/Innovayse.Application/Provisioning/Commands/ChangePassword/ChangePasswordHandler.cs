@@ -1,14 +1,16 @@
 namespace Innovayse.Application.Provisioning.Commands.ChangePassword;
 
+using Innovayse.Domain.Provisioning.Interfaces;
+using Innovayse.Domain.Servers.Interfaces;
 using Innovayse.Domain.Services.Interfaces;
-using IProvisioningProvider = Innovayse.Domain.Provisioning.Interfaces.IProvisioningProvider;
 
 /// <summary>
 /// Changes the password of a provisioned hosting account by calling the provisioning provider.
 /// </summary>
 public sealed class ChangePasswordHandler(
     IClientServiceRepository serviceRepo,
-    IProvisioningProvider provisioningProvider)
+    IServerRepository serverRepo,
+    IProvisioningProviderFactory providerFactory)
 {
     /// <summary>
     /// Handles <see cref="ChangePasswordCommand"/>.
@@ -16,7 +18,7 @@ public sealed class ChangePasswordHandler(
     /// <param name="cmd">The command containing the service identifier and new password.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when the service is not found or has no provisioning reference.
+    /// Thrown when the service is not found, has no provisioning reference, or has no server assigned.
     /// </exception>
     public async Task HandleAsync(ChangePasswordCommand cmd, CancellationToken ct)
     {
@@ -28,6 +30,16 @@ public sealed class ChangePasswordHandler(
             throw new InvalidOperationException($"ClientService {cmd.ServiceId} has no provisioning reference.");
         }
 
-        await provisioningProvider.ChangePasswordAsync(service.ProvisioningRef, cmd.NewPassword, ct);
+        var server = service.ServerId.HasValue
+            ? await serverRepo.FindByIdAsync(service.ServerId.Value, ct)
+            : null;
+
+        if (server is null)
+        {
+            throw new InvalidOperationException($"ClientService {cmd.ServiceId} has no server assigned.");
+        }
+
+        var provider = providerFactory.CreateFor(server);
+        await provider.ChangePasswordAsync(service.ProvisioningRef, cmd.NewPassword, ct);
     }
 }

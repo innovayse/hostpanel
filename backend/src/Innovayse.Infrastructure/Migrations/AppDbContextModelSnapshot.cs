@@ -1623,6 +1623,10 @@ namespace Innovayse.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<string>("PackageName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
                     b.Property<string>("Slug")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");

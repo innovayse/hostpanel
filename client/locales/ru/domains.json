@@ -9,6 +9,7 @@
     "taken": "Уже занят",
     "registerNow": "Зарегистрировать",
     "checkFailed": "Не удалось проверить домен. Попробуйте ещё раз.",
+    "invalidDomain": "Введите домен с расширением (например, mysite.com)",
     "tabRegister": "Регистрация",
     "tabTransfer": "Перенос",
     "transferPlaceholder": "Введите домен для переноса (например, mysite.com)",

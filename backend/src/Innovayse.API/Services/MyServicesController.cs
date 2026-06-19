@@ -4,6 +4,8 @@ using System.Security.Claims;
 using Innovayse.API.Services.Requests;
 using Innovayse.Application.Clients.DTOs;
 using Innovayse.Application.Clients.Queries.GetMyProfile;
+using Innovayse.API.Provisioning;
+using Innovayse.Application.Provisioning.Commands.ChangePassword;
 using Innovayse.Application.Provisioning.Queries.GetCPanelSsoUrl;
 using Innovayse.Application.Services.Commands.CancelService;
 using Innovayse.Application.Services.Commands.OrderService;
@@ -53,7 +55,7 @@ public sealed class MyServicesController(IMessageBus bus) : ControllerBase
 
         var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(userId), ct);
 
-        var cmd = new OrderServiceCommand(profile.Id, request.ProductId, request.BillingCycle);
+        var cmd = new OrderServiceCommand(profile.Id, request.ProductId, request.BillingCycle, 0, 0);
         var id = await bus.InvokeAsync<int>(cmd, ct);
         return StatusCode(StatusCodes.Status201Created, id);
     }
@@ -113,6 +115,19 @@ public sealed class MyServicesController(IMessageBus bus) : ControllerBase
         var result = await bus.InvokeAsync<CancellationStatusDto>(
             new GetCancellationStatusQuery(id), ct);
         return Ok(result);
+    }
+
+    /// <summary>Changes the hosting account password for a client service.</summary>
+    /// <param name="id">Client service primary key.</param>
+    /// <param name="request">Request body containing the new password.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK on success.</returns>
+    [HttpPost("{id:int}/change-password")]
+    public async Task<IActionResult> ChangePasswordAsync(
+        int id, [FromBody] ChangePasswordRequest request, CancellationToken ct)
+    {
+        await bus.InvokeAsync(new ChangePasswordCommand(id, request.NewPassword), ct);
+        return Ok();
     }
 
     /// <summary>Extracts the authenticated user's Identity ID from JWT claims.</summary>

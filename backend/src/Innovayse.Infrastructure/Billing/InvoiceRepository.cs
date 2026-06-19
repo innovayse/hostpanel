@@ -136,6 +136,12 @@ public sealed class InvoiceRepository(AppDbContext db) : IInvoiceRepository
             .ToListAsync(ct);
 
     /// <inheritdoc/>
+    public async Task<IReadOnlyList<Invoice>> ListUnpaidOverdueAsync(DateTimeOffset asOf, CancellationToken ct) =>
+        await db.Invoices
+            .Where(i => i.Status == InvoiceStatus.Unpaid && i.DueDate < asOf)
+            .ToListAsync(ct);
+
+    /// <inheritdoc/>
     public async Task<IReadOnlyList<Invoice>> GetAllAsync(CancellationToken ct) =>
         await db.Invoices.ToListAsync(ct);
 

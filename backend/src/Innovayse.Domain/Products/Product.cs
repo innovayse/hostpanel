@@ -25,6 +25,9 @@ public sealed class Product : AggregateRoot
     /// <summary>Gets the optional URL-friendly slug for this product.</summary>
     public string? Slug { get; private set; }
 
+    /// <summary>Gets the optional hosting package name used for provisioning (e.g. "starter", "pro").</summary>
+    public string? PackageName { get; private set; }
+
     /// <summary>Gets the product type (hosting, VPS, domain, etc.).</summary>
     public ProductType Type { get; private set; }
 
@@ -51,6 +54,7 @@ public sealed class Product : AggregateRoot
     /// <param name="description">Optional description.</param>
     /// <param name="website">Optional website URL for the product's landing page.</param>
     /// <param name="slug">Optional URL-friendly slug for the product.</param>
+    /// <param name="packageName">Optional hosting package name used for provisioning.</param>
     /// <param name="type">Product type.</param>
     /// <param name="monthlyPrice">Monthly price (≥ 0).</param>
     /// <param name="annualPrice">Annual price (≥ 0).</param>
@@ -61,6 +65,7 @@ public sealed class Product : AggregateRoot
         string? description,
         string? website,
         string? slug,
+        string? packageName,
         ProductType type,
         decimal monthlyPrice,
         decimal annualPrice)
@@ -72,6 +77,7 @@ public sealed class Product : AggregateRoot
             Description = description,
             Website = website,
             Slug = slug,
+            PackageName = packageName,
             Type = type,
             Status = ProductStatus.Active,
             MonthlyPrice = monthlyPrice,
@@ -89,14 +95,16 @@ public sealed class Product : AggregateRoot
     /// <param name="description">New description.</param>
     /// <param name="website">New website URL, or null to clear.</param>
     /// <param name="slug">New URL-friendly slug, or null to clear.</param>
+    /// <param name="packageName">New hosting package name, or null to clear.</param>
     /// <param name="monthlyPrice">New monthly price.</param>
     /// <param name="annualPrice">New annual price.</param>
-    public void Update(string name, string? description, string? website, string? slug, decimal monthlyPrice, decimal annualPrice)
+    public void Update(string name, string? description, string? website, string? slug, string? packageName, decimal monthlyPrice, decimal annualPrice)
     {
         Name = name;
         Description = description;
         Website = website;
         Slug = slug;
+        PackageName = packageName;
         MonthlyPrice = monthlyPrice;
         AnnualPrice = annualPrice;
     }

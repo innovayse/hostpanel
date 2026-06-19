@@ -12,5 +12,7 @@ public sealed class OrderServiceValidator : AbstractValidator<OrderServiceComman
         RuleFor(x => x.ProductId).GreaterThan(0);
         RuleFor(x => x.BillingCycle).Must(c => c == "monthly" || c == "annual")
             .WithMessage("BillingCycle must be 'monthly' or 'annual'.");
+        RuleFor(x => x.FirstPaymentAmount).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.RecurringAmount).GreaterThanOrEqualTo(0);
     }
 }

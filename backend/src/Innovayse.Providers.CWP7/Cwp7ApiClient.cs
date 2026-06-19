@@ -32,6 +32,33 @@ internal sealed class Cwp7ApiClient : ICwp7ApiClient
     }
 
     /// <summary>
+    /// Reads the HTTP response body and parses it as <see cref="Cwp7ApiResponse"/>.
+    /// CWP7 sometimes returns HTML instead of JSON, so this handles both gracefully.
+    /// </summary>
+    /// <param name="response">The HTTP response message.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Parsed CWP7 response.</returns>
+    private async Task<Cwp7ApiResponse> ParseResponseAsync(HttpResponseMessage response, CancellationToken ct)
+    {
+        var raw = await response.Content.ReadAsStringAsync(ct);
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            throw new InvalidOperationException("CWP7 API returned an empty response body.");
+        }
+
+        try
+        {
+            return System.Text.Json.JsonSerializer.Deserialize<Cwp7ApiResponse>(raw)
+                ?? throw new InvalidOperationException("CWP7 API returned null JSON.");
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            _logger.LogDebug("CWP7 API returned non-JSON response, treating as success: {Raw}", raw);
+            return new Cwp7ApiResponse { Status = "OK", Msj = raw };
+        }
+    }
+
+    /// <summary>
     /// Creates a new hosting account on the CWP7 server.
     /// </summary>
     /// <param name="host">CWP7 server base URL including port.</param>
@@ -180,8 +207,7 @@ internal sealed class Cwp7ApiClient : ICwp7ApiClient
         using var response = await _http.PostAsync(url, content, ct);
         response.EnsureSuccessStatusCode();
 
-        var result = await response.Content.ReadFromJsonAsync<Cwp7ApiResponse>(ct)
-            ?? throw new InvalidOperationException("CWP7 API returned an empty response body.");
+        var result = await ParseResponseAsync(response, ct);
 
         _logger.LogDebug("CWP7 ChangePassword response: status={Status} message={Message}", result.Status, result.Message);
         return result;
@@ -197,24 +223,34 @@ internal sealed class Cwp7ApiClient : ICwp7ApiClient
     /// <param name="package">New package name or ID (prefix ID with @).</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The CWP7 API response indicating success or failure.</returns>
-    public Task<Cwp7ApiResponse> ChangePackageAsync(
+    public async Task<Cwp7ApiResponse> ChangePackageAsync(
         string host,
         string apiKey,
         string username,
         string email,
         string package,
-        CancellationToken ct) =>
-        SendAccountAsync(
-            host,
-            new Cwp7AccountRequest
-            {
-                Key = apiKey,
-                Action = "udp",
-                User = username,
-                Email = email,
-                Package = package,
-            },
-            ct);
+        CancellationToken ct)
+    {
+        var url = $"{host}/v1/changepack";
+        _logger.LogDebug("CWP7 API request: ChangePackage url={Url} user={User} package={Package}", url, username, package);
+
+        using var content = new FormUrlEncodedContent(
+        [
+            new KeyValuePair<string, string>("key", apiKey),
+            new KeyValuePair<string, string>("action", "udp"),
+            new KeyValuePair<string, string>("user", username),
+            new KeyValuePair<string, string>("email", email),
+            new KeyValuePair<string, string>("newpackage", package),
+        ]);
+
+        using var response = await _http.PostAsync(url, content, ct);
+        response.EnsureSuccessStatusCode();
+
+        var result = await ParseResponseAsync(response, ct);
+
+        _logger.LogDebug("CWP7 ChangePackage response: status={Status} message={Message}", result.Status, result.Message);
+        return result;
+    }
 
     /// <summary>
     /// Generates an auto-login (SSO) URL for the given user.
@@ -243,8 +279,7 @@ internal sealed class Cwp7ApiClient : ICwp7ApiClient
         using var response = await _http.PostAsync(url, content, ct);
         response.EnsureSuccessStatusCode();
 
-        var result = await response.Content.ReadFromJsonAsync<Cwp7ApiResponse>(ct)
-            ?? throw new InvalidOperationException("CWP7 API returned an empty response body.");
+        var result = await ParseResponseAsync(response, ct);
 
         _logger.LogDebug("CWP7 AutoLogin response: status={Status}", result.Status);
         return result;
@@ -309,8 +344,7 @@ internal sealed class Cwp7ApiClient : ICwp7ApiClient
 
         response.EnsureSuccessStatusCode();
 
-        var result = await response.Content.ReadFromJsonAsync<Cwp7ApiResponse>(ct)
-            ?? throw new InvalidOperationException("CWP7 API returned an empty response body.");
+        var result = await ParseResponseAsync(response, ct);
 
         _logger.LogDebug(
             "CWP7 API response: status={Status} message={Message}",

@@ -34,10 +34,14 @@ public sealed class GetServiceHandler(
             : "Unknown";
 
         string? serverName = null;
+        string? serverHostname = null;
+        string? serverIp = null;
         if (svc.ServerId.HasValue)
         {
             var server = await serverRepo.FindByIdAsync(svc.ServerId.Value, ct);
             serverName = server?.Name;
+            serverHostname = server?.Hostname;
+            serverIp = server?.IpAddress;
         }
 
         return new ServiceDetailDto(
@@ -68,6 +72,8 @@ public sealed class GetServiceHandler(
             svc.AutoTerminateReason,
             svc.AdminNotes,
             svc.ServerId,
-            serverName);
+            serverName,
+            serverHostname,
+            serverIp);
     }
 }

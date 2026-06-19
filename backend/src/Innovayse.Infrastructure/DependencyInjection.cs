@@ -205,10 +205,14 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromSeconds(15);
         });
 
-        // CWP7 API client
+        // CWP7 API client (named + typed so the factory can also resolve it by name)
+        services.AddHttpClient("Cwp7", client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(120);
+        });
         services.AddHttpClient<Innovayse.SDK.Plugins.ICwp7ApiClient, Innovayse.Providers.CWP7.Cwp7ApiClient>(client =>
         {
-            client.Timeout = TimeSpan.FromSeconds(15);
+            client.Timeout = TimeSpan.FromSeconds(120);
         });
 
         // Migration

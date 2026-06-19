@@ -15,6 +15,6 @@ export default defineEventHandler(async (event) => {
 
   return await internalApiCall<Record<string, unknown>>(event, `/me/services/${id}/change-password`, {
     method: 'POST',
-    body: { password: body.password },
+    body: { newPassword: body.password },
   })
 })

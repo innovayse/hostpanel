@@ -11,6 +11,7 @@ public sealed class CreateProductValidator : AbstractValidator<CreateProductComm
         RuleFor(x => x.GroupId).GreaterThan(0);
         RuleFor(x => x.Name).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Description).MaximumLength(1000).When(x => x.Description is not null);
+        RuleFor(x => x.PackageName).MaximumLength(100).When(x => x.PackageName is not null);
         RuleFor(x => x.MonthlyPrice).GreaterThanOrEqualTo(0);
         RuleFor(x => x.AnnualPrice).GreaterThanOrEqualTo(0);
     }

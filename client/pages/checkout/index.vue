@@ -384,8 +384,9 @@ async function submitOrder() {
         body: { paymentIntentId: paymentIntent.id },
       })
 
+      const finalAmount = totalLabel.value
       cart.clear()
-      await navigateTo(localePath(`/client/order-success?order=ORD-${String(result.orderId).padStart(4, '0')}&amount=${totalLabel.value}`))
+      await navigateTo(localePath(`/client/order-success?order=ORD-${String(result.orderId).padStart(4, '0')}&amount=${finalAmount}`))
     } else {
       // Bank transfer / other methods: order stays Pending, redirect to invoice
       cart.clear()

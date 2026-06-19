@@ -29,6 +29,8 @@ namespace Innovayse.Application.Services.DTOs;
 /// <param name="AdminNotes">Internal admin notes.</param>
 /// <param name="ServerId">FK to the provisioning server, or <see langword="null"/> if not assigned.</param>
 /// <param name="ServerName">Display name of the assigned server, or <see langword="null"/> if not assigned.</param>
+/// <param name="ServerHostname">Hostname of the assigned server, or <see langword="null"/> if not assigned.</param>
+/// <param name="ServerIp">IP address of the assigned server, or <see langword="null"/> if not assigned.</param>
 public record ServiceDetailDto(
     int Id,
     int ClientId,
@@ -57,4 +59,6 @@ public record ServiceDetailDto(
     string? AutoTerminateReason,
     string? AdminNotes,
     int? ServerId,
-    string? ServerName);
+    string? ServerName,
+    string? ServerHostname,
+    string? ServerIp);

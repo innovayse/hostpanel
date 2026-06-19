@@ -36,7 +36,8 @@ public sealed class AcceptOrderHandler(
         foreach (var item in order.Items)
         {
             await bus.InvokeAsync<int>(
-                new OrderServiceCommand(order.ClientId, item.ProductId, item.BillingCycle), ct);
+                new OrderServiceCommand(order.ClientId, item.ProductId, item.BillingCycle,
+                    item.FirstPaymentAmount, item.RecurringAmount, order.PaymentMethod), ct);
         }
     }
 }

@@ -64,8 +64,12 @@ const store = useClientStore()
 /** Order number from query params. */
 const orderNumber = computed(() => (route.query.order as string) || '—')
 
-/** Formatted amount from query params. */
-const amount = computed(() => (route.query.amount as string) || '—')
+/** Formatted amount from query params; shows dash when zero or missing. */
+const amount = computed(() => {
+  const raw = (route.query.amount as string) || ''
+  if (!raw || raw === '0' || raw === '0.00' || raw === '$0.00') return '—'
+  return raw
+})
 
 /**
  * Forces a fresh fetch of services before navigating.

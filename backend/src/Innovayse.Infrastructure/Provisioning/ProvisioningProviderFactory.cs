@@ -47,8 +47,7 @@ public sealed class ProvisioningProviderFactory(
         var host = $"https://{server.Hostname}:{DefaultCwp7Port}";
         var serverIp = server.IpAddress ?? server.Hostname;
 
-        var httpClient = httpClientFactory.CreateClient();
-        httpClient.Timeout = TimeSpan.FromSeconds(30);
+        var httpClient = httpClientFactory.CreateClient("Cwp7");
 
         var client = new Cwp7ApiClient(httpClient, loggerFactory.CreateLogger<Cwp7ApiClient>());
 

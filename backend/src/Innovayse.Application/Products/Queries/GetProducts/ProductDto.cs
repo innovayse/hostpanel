@@ -9,6 +9,7 @@ using Innovayse.Domain.Products;
 /// <param name="Description">Optional description.</param>
 /// <param name="Website">Optional website URL for the product's landing page.</param>
 /// <param name="Slug">Optional URL-friendly slug.</param>
+/// <param name="PackageName">Optional hosting package name used for provisioning.</param>
 /// <param name="Type">Product type.</param>
 /// <param name="Status">Current status.</param>
 /// <param name="Pricing">Monthly and annual pricing.</param>
@@ -19,6 +20,7 @@ public record ProductDto(
     string? Description,
     string? Website,
     string? Slug,
+    string? PackageName,
     ProductType Type,
     ProductStatus Status,
     ProductPricingDto Pricing);

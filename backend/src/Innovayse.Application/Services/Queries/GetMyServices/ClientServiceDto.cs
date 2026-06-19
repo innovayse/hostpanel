@@ -12,6 +12,12 @@ using Innovayse.Domain.Services;
 /// <param name="Domain">Linked domain name.</param>
 /// <param name="Username">Hosting account username.</param>
 /// <param name="Price">Recurring charge amount.</param>
+/// <param name="FirstPaymentAmount">Amount charged on the first invoice.</param>
+/// <param name="PaymentMethod">Payment method used, or <see langword="null"/> if not set.</param>
+/// <param name="ServerId">FK to the provisioning server, or <see langword="null"/> if not assigned.</param>
+/// <param name="ServerName">Display name of the assigned server, or <see langword="null"/> if not assigned.</param>
+/// <param name="ServerHostname">Hostname of the assigned server, or <see langword="null"/> if not assigned.</param>
+/// <param name="ServerIp">IP address of the assigned server, or <see langword="null"/> if not assigned.</param>
 public record ClientServiceDto(
     int Id,
     int ProductId,
@@ -21,4 +27,10 @@ public record ClientServiceDto(
     DateTimeOffset? NextRenewalAt,
     string? Domain,
     string? Username,
-    decimal Price);
+    decimal Price,
+    decimal FirstPaymentAmount,
+    string? PaymentMethod,
+    int? ServerId,
+    string? ServerName,
+    string? ServerHostname,
+    string? ServerIp);

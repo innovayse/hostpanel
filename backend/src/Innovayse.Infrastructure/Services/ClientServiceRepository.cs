@@ -55,6 +55,12 @@ public sealed class ClientServiceRepository(AppDbContext db) : IClientServiceRep
     public void Add(ClientService service) => db.ClientServices.Add(service);
 
     /// <inheritdoc/>
+    public async Task<IReadOnlyList<ClientService>> ListDueForRenewalAsync(DateTimeOffset asOf, CancellationToken ct) =>
+        await db.ClientServices
+            .Where(s => s.Status == ServiceStatus.Active && s.NextRenewalAt != null && s.NextRenewalAt <= asOf)
+            .ToListAsync(ct);
+
+    /// <inheritdoc/>
     public async Task<IReadOnlyList<ClientService>> GetAllAsync(CancellationToken ct) =>
         await db.ClientServices.ToListAsync(ct);
 }

@@ -319,23 +319,37 @@ const mode = ref('register')
 // Register: domain availability search
 const searchQuery = ref(typeof route.query.domain === 'string' ? route.query.domain : '')
 const searching = ref(false)
-const result = ref<{ domain: string; available: boolean; status: string } | null>(null)
+/** Shape of the DomainCheckResultDto from the backend. */
+interface DomainCheckResult {
+  /** The fully-qualified domain name that was checked (e.g. "example.com"). */
+  domain: string
+  /** Whether the domain is available for registration. */
+  available: boolean
+  /** Human-readable status string: "available" or "taken". */
+  status: string
+}
+
+const result = ref<DomainCheckResult | null>(null)
 const searchError = ref('')
 
+/** Checks domain availability via the backend API. */
 async function searchDomain() {
   const domain = searchQuery.value.trim()
   if (!domain) return
+  if (!domain.includes('.')) {
+    searchError.value = $t('domains.invalidDomain')
+    return
+  }
   searching.value = true
   result.value = null
   searchError.value = ''
   try {
-    const data = await apiFetch('/api/portal/public/domain-check', {
+    result.value = await apiFetch<DomainCheckResult>('/api/portal/public/domain-check', {
       method: 'POST',
       body: { domain }
-    }) as any
-    result.value = data
-  } catch (err: any) {
-    searchError.value = err?.data?.statusMessage || $t('domains.checkFailed')
+    })
+  } catch (err: unknown) {
+    searchError.value = (err as { data?: { statusMessage?: string } })?.data?.statusMessage || $t('domains.checkFailed')
   } finally {
     searching.value = false
   }
@@ -346,24 +360,49 @@ onMounted(() => {
   if (searchQuery.value) searchDomain()
 })
 
+/**
+ * Performs a quick domain search using the current base name with the given TLD extension.
+ *
+ * @param ext - TLD extension (e.g. "com", "net").
+ */
 function quickSearch(ext: string) {
   const base = searchQuery.value.trim().split('.')[0] || 'example'
   searchQuery.value = `${base}.${ext}`
   nextTick(() => searchDomain())
 }
 
+/** Price entries keyed by period in years. */
+interface TldPriceEntry {
+  /** Registration prices keyed by period in years. */
+  register: Record<string, string>
+  /** Transfer prices keyed by period in years. */
+  transfer: Record<string, string>
+  /** Renewal prices keyed by period in years. */
+  renew: Record<string, string>
+  /** Category tags for filtering. */
+  categories: string[]
+}
+
+/** Top-level TLD pricing response shape from the backend. */
+interface TldPricingResponse {
+  /** Currency metadata. */
+  currency: { code: string; prefix: string }
+  /** TLD pricing dictionary keyed by extension. */
+  pricing: Record<string, TldPriceEntry>
+}
+
 // TLD Pricing
-const { data: tldPricing, pending: pricingPending } = await useApi('/api/portal/public/tld-pricing', {
+const { data: tldPricing, pending: pricingPending } = await useApi<TldPricingResponse>('/api/portal/public/tld-pricing', {
   key: `tld-pricing-${locale.value}`
 })
 
 const activeCategory = ref<string | null>(null)
 
-// Collect unique categories with counts
+/** Collects unique TLD categories with counts from the pricing data. */
 const allCategories = computed(() => {
   if (!tldPricing.value?.pricing) return []
   const cats = new Map<string, number>()
-  for (const tld of Object.values(tldPricing.value.pricing as Record<string, any>)) {
+  for (const tld of Object.values(tldPricing.value.pricing)) {
     for (const cat of (tld.categories ?? [])) {
       cats.set(cat, (cats.get(cat) ?? 0) + 1)
     }
@@ -373,15 +412,21 @@ const allCategories = computed(() => {
 
 const totalTldCount = computed(() => Object.keys(tldPricing.value?.pricing ?? {}).length)
 
-const filteredEntries = computed(() => {
+const filteredEntries = computed<[string, TldPriceEntry][]>(() => {
   if (!tldPricing.value?.pricing) return []
-  const entries = Object.entries(tldPricing.value.pricing as Record<string, any>)
+  const entries = Object.entries(tldPricing.value.pricing) as [string, TldPriceEntry][]
   if (!activeCategory.value) return entries
   return entries.filter(([, tld]) => (tld.categories ?? []).includes(activeCategory.value))
 })
 
-const displayedTlds = computed(() => Object.fromEntries(filteredEntries.value))
+const displayedTlds = computed(() => Object.fromEntries(filteredEntries.value) as Record<string, TldPriceEntry>)
 
+/**
+ * Formats a price string with currency prefix and code.
+ *
+ * @param price - Price value as a string.
+ * @returns Formatted price string or "N/A" for unavailable prices.
+ */
 function formatPrice(price: string) {
   if (!price || price === '-1' || price === '0.00') return 'N/A'
   const currency = tldPricing.value?.currency
@@ -389,6 +434,12 @@ function formatPrice(price: string) {
   return currency ? `${currency.prefix}${price}${code}` : `$${price} USD`
 }
 
+/**
+ * Translates a TLD category name using i18n, falling back to the raw name.
+ *
+ * @param name - Category name to translate.
+ * @returns Translated category name or the original name if no translation exists.
+ */
 function translateCategory(name: string) {
   if (!name) return ''
   const key = name.toLowerCase().replace(/\s+/g, '-')

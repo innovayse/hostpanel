@@ -27,6 +27,9 @@ export const useDomainsStore = defineStore('domains', () => {
   /** Total number of matching items. */
   const totalCount = ref(0)
 
+  /** Search term for filtering domains by name. */
+  const search = ref('')
+
   /** True while a request is in flight. */
   const loading = ref(false)
 
@@ -42,7 +45,14 @@ export const useDomainsStore = defineStore('domains', () => {
     loading.value = true
     error.value = null
     try {
-      const result = await request<PagedResult<DomainRegistration>>(`/domains?page=${page.value}&pageSize=${pageSize.value}`)
+      const params = new URLSearchParams({
+        page: String(page.value),
+        pageSize: String(pageSize.value),
+      })
+      if (search.value.trim()) {
+        params.set('search', search.value.trim())
+      }
+      const result = await request<PagedResult<DomainRegistration>>(`/domains?${params.toString()}`)
       domains.value = result.items
       totalCount.value = result.totalCount
     } catch {
@@ -244,7 +254,7 @@ export const useDomainsStore = defineStore('domains', () => {
   }
 
   return {
-    domains, clientDomains, current, page, pageSize, totalCount, loading, error,
+    domains, clientDomains, current, page, pageSize, totalCount, search, loading, error,
     fetchAll, fetchByClient, fetchById, update, renew,
     setAutoRenew, setWhoisPrivacy, setLock, setDnsManagement, setEmailForwarding,
     modifyContact, getEppCode,

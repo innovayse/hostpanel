@@ -409,13 +409,14 @@ async function handleSuspend(): Promise<void> {
   showSuspendModal.value = false
   commandLoading.value = true
   try {
-    await request(`/services/${serviceId.value}/suspend`, { method: 'POST' })
-    await fetchService()
+    await request(`/provisioning/${serviceId.value}/suspend`, { method: 'POST', body: JSON.stringify({ reason: 'Admin suspended' }) })
   } catch {
     saveError.value = 'Failed to suspend service.'
+    return
   } finally {
     commandLoading.value = false
   }
+  try { await fetchService() } catch { /* refresh may lag — ignore */ }
 }
 
 /**
@@ -426,13 +427,14 @@ async function handleSuspend(): Promise<void> {
 async function handleUnsuspend(): Promise<void> {
   commandLoading.value = true
   try {
-    await request(`/services/${serviceId.value}/unsuspend`, { method: 'POST' })
-    await fetchService()
+    await request(`/provisioning/${serviceId.value}/unsuspend`, { method: 'POST' })
   } catch {
     saveError.value = 'Failed to unsuspend service.'
+    return
   } finally {
     commandLoading.value = false
   }
+  try { await fetchService() } catch { /* refresh may lag — ignore */ }
 }
 
 /**
@@ -444,13 +446,14 @@ async function handleTerminate(): Promise<void> {
   showTerminateModal.value = false
   commandLoading.value = true
   try {
-    await request(`/services/${serviceId.value}/terminate`, { method: 'POST' })
-    await fetchService()
+    await request(`/provisioning/${serviceId.value}/terminate`, { method: 'POST', body: JSON.stringify({ reason: 'Admin terminated' }) })
   } catch {
     saveError.value = 'Failed to terminate service.'
+    return
   } finally {
     commandLoading.value = false
   }
+  try { await fetchService() } catch { /* refresh may lag — ignore */ }
 }
 
 // Populate form when service data changes

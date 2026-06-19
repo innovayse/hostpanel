@@ -8,6 +8,7 @@ using Innovayse.Domain.Products;
 /// <param name="Description">Optional description.</param>
 /// <param name="Website">Optional website URL for the product's landing page.</param>
 /// <param name="Slug">Optional URL-friendly slug for the product.</param>
+/// <param name="PackageName">Optional hosting package name used for provisioning.</param>
 /// <param name="Type">Product type.</param>
 /// <param name="MonthlyPrice">Monthly price (≥ 0).</param>
 /// <param name="AnnualPrice">Annual price (≥ 0).</param>
@@ -17,6 +18,7 @@ public record CreateProductCommand(
     string? Description,
     string? Website,
     string? Slug,
+    string? PackageName,
     ProductType Type,
     decimal MonthlyPrice,
     decimal AnnualPrice);

@@ -1,6 +1,7 @@
 namespace Innovayse.Infrastructure.Persistence;
 
 using Innovayse.Domain.Auth;
+using Innovayse.Domain.Notifications;
 using Innovayse.Domain.Ssl;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Clients;
@@ -55,7 +56,12 @@ public sealed class DevDataSeeder(
         if (await db.Clients.AnyAsync(ct) && await db.Invoices.AnyAsync(ct) && await db.Quotes.AnyAsync(ct)
             && await db.ProductGroups.AnyAsync(ct) && await db.Orders.AnyAsync(ct) && hasProductInvoices)
         {
-            // Main data exists — but seed slides if they're missing (added later)
+            // Main data exists — but seed email templates and slides if they're missing (added later)
+            if (!await db.EmailTemplates.AnyAsync(ct))
+            {
+                await SeedEmailTemplatesAsync(db, logger, ct);
+            }
+
             if (!await db.Slides.AnyAsync(ct))
             {
                 await SeedSlidesAsync(db, logger, ct);
@@ -294,7 +300,7 @@ public sealed class DevDataSeeder(
 
                 foreach (var (name, monthly, annual) in products)
                 {
-                    var product = Product.Create(group.Id, name, null, null, null, productType, monthly, annual);
+                    var product = Product.Create(group.Id, name, null, null, null, null, productType, monthly, annual);
                     db.Products.Add(product);
                 }
             }
@@ -418,6 +424,12 @@ public sealed class DevDataSeeder(
             logger.LogInformation("Seeded SSL checks");
         }
 
+        // ── Email templates ───────────────────────────────────────────────────
+        if (!await db.EmailTemplates.AnyAsync(ct))
+        {
+            await SeedEmailTemplatesAsync(db, logger, ct);
+        }
+
         // ── Slider slides ─────────────────────────────────────────────────────
         if (!await db.Slides.AnyAsync(ct))
         {
@@ -425,6 +437,122 @@ public sealed class DevDataSeeder(
         }
 
         logger.LogInformation("Dev seed complete");
+    }
+
+    /// <summary>Seeds the default email templates used by notification handlers.</summary>
+    /// <param name="db">Database context.</param>
+    /// <param name="logger">Logger instance.</param>
+    /// <param name="ct">Cancellation token.</param>
+    private static async Task SeedEmailTemplatesAsync(AppDbContext db, ILogger logger, CancellationToken ct)
+    {
+        (string Slug, string Subject, string Body, string Description)[] templateDefs =
+        [
+            ("domain-registered",
+                "Domain Registered: {{ domain.name }}",
+                """
+                <h2>Domain Registered Successfully</h2>
+                <p>Your domain <strong>{{ domain.name }}</strong> has been registered successfully.</p>
+                <ul>
+                    <li><strong>Registrar:</strong> {{ domain.registrar }}</li>
+                    <li><strong>Expiry Date:</strong> {{ domain.expiresAt }}</li>
+                </ul>
+                <p>You can manage your domain from your client area at any time.</p>
+                """,
+                "Sent when a new domain registration is activated by the registrar."),
+
+            ("domain-transferred",
+                "Domain Transfer Complete: {{ domain.name }}",
+                """
+                <h2>Domain Transfer Complete</h2>
+                <p>The transfer of <strong>{{ domain.name }}</strong> to our platform has been completed successfully.</p>
+                <ul>
+                    <li><strong>Registrar:</strong> {{ domain.registrar }}</li>
+                    <li><strong>Expiry Date:</strong> {{ domain.expiresAt }}</li>
+                </ul>
+                <p>You can now manage your domain from your client area.</p>
+                """,
+                "Sent when an incoming domain transfer is completed."),
+
+            ("domain-renewed",
+                "Domain Renewed: {{ domain.name }}",
+                """
+                <h2>Domain Renewed Successfully</h2>
+                <p>Your domain <strong>{{ domain.name }}</strong> has been renewed successfully.</p>
+                <ul>
+                    <li><strong>New Expiry Date:</strong> {{ domain.newExpiresAt }}</li>
+                </ul>
+                <p>No further action is required. Your domain will continue to operate normally.</p>
+                """,
+                "Sent when a domain is successfully renewed."),
+
+            ("domain-expiring",
+                "Domain Expiring Soon: {{ domain.name }}",
+                """
+                <h2>Domain Expiring Soon</h2>
+                <p>Your domain <strong>{{ domain.name }}</strong> is expiring in <strong>{{ domain.daysUntilExpiry }}</strong> day(s).</p>
+                <ul>
+                    <li><strong>Expiry Date:</strong> {{ domain.expiresAt }}</li>
+                </ul>
+                <p>Please renew your domain before the expiry date to avoid service interruption.
+                You can renew from your client area.</p>
+                """,
+                "Sent as a warning when a domain is approaching its expiry date (30, 14, 7, 1 days)."),
+
+            ("domain-expired",
+                "Domain Expired: {{ domain.name }}",
+                """
+                <h2>Domain Has Expired</h2>
+                <p>Your domain <strong>{{ domain.name }}</strong> has expired.</p>
+                <p>If you wish to keep this domain, please renew it as soon as possible.
+                After the redemption grace period, the domain may become available for registration by others.</p>
+                <p>Any linked hosting services may be suspended until the domain is renewed.</p>
+                """,
+                "Sent when a domain transitions to the Expired status."),
+
+            ("service-provisioned",
+                "Service Ready: Your Hosting Account is Active",
+                """
+                <h2>Your Service Is Ready</h2>
+                <p>Your hosting account has been set up and is now active.</p>
+                <ul>
+                    <li><strong>Domain:</strong> {{ service.domain }}</li>
+                    <li><strong>Username:</strong> {{ service.username }}</li>
+                    <li><strong>Provisioning Ref:</strong> {{ service.provisioningRef }}</li>
+                </ul>
+                <p>You can manage your service from your client area.</p>
+                """,
+                "Sent when a hosting service is provisioned and ready to use."),
+
+            ("invoice-created",
+                "New Invoice #{{ invoice.id }}",
+                """
+                <h2>New Invoice</h2>
+                <p>A new invoice <strong>#{{ invoice.id }}</strong> has been generated for your account.</p>
+                <p>Please log in to your client area to view and pay this invoice.</p>
+                """,
+                "Sent when a new invoice is created for a client."),
+
+            ("payment-received",
+                "Payment Received — Invoice #{{ invoice.id }}",
+                """
+                <h2>Payment Received</h2>
+                <p>We have received your payment for invoice <strong>#{{ invoice.id }}</strong>.</p>
+                <ul>
+                    <li><strong>Amount:</strong> {{ invoice.amount }}</li>
+                    <li><strong>Transaction ID:</strong> {{ invoice.transactionId }}</li>
+                </ul>
+                <p>Thank you for your payment.</p>
+                """,
+                "Sent when a payment is received for an invoice."),
+        ];
+
+        foreach (var (slug, subject, body, description) in templateDefs)
+        {
+            db.EmailTemplates.Add(EmailTemplate.Create(slug, subject, body.Trim(), description));
+        }
+
+        await db.SaveChangesAsync(ct);
+        logger.LogInformation("Seeded {Count} email templates", templateDefs.Length);
     }
 
     /// <summary>Seeds the initial homepage slider slides with English translations.</summary>

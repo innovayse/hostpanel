@@ -8,6 +8,8 @@
 import { ref, watch, computed } from 'vue'
 import type { Product, ProductGroup, CreateProductPayload } from '@/types/models'
 import ToggleSwitch from '@/components/ToggleSwitch.vue'
+import AppSelect from '@/components/AppSelect.vue'
+import AppNumberInput from '@/components/AppNumberInput.vue'
 
 /** Props for ProductFormModal. */
 const props = defineProps<{
@@ -49,6 +51,9 @@ const name = ref('')
 /** URL slug input value. */
 const slug = ref('')
 
+/** Hosting package name input value. */
+const packageName = ref('')
+
 /** Whether the user has manually edited the slug field. */
 const slugManuallyEdited = ref(false)
 
@@ -77,22 +82,29 @@ watch(() => props.product, (p) => {
     name.value = p.name
     slug.value = p.slug ?? ''
     slugManuallyEdited.value = true
+    packageName.value = p.packageName ?? ''
     description.value = p.description ?? ''
     monthlyPrice.value = p.pricing.monthly
     annualPrice.value = p.pricing.annual
     isHidden.value = p.status === 'Inactive'
   } else {
     type.value = 'SharedHosting'
-    groupId.value = props.groups.length > 0 ? props.groups[0].id : 0
+    groupId.value = props.groups[0]?.id ?? 0
     name.value = ''
     slug.value = ''
     slugManuallyEdited.value = false
+    packageName.value = ''
     description.value = ''
     monthlyPrice.value = 0
     annualPrice.value = 0
     isHidden.value = false
   }
 }, { immediate: true })
+
+/** Options formatted for the AppSelect component. */
+const groupOptions = computed(() =>
+  props.groups.map(g => ({ value: g.id, label: g.name }))
+)
 
 /**
  * Auto-generates the slug from the product name.
@@ -126,6 +138,7 @@ function handleSubmit(): void {
     description: description.value || null,
     website: null,
     slug: slug.value || null,
+    packageName: packageName.value || null,
     type: type.value,
     monthlyPrice: monthlyPrice.value,
     annualPrice: annualPrice.value,
@@ -206,15 +219,11 @@ function handleSubmit(): void {
         <!-- Product Group -->
         <div>
           <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Product Group</label>
-          <select
+          <AppSelect
             v-model="groupId"
-            required
-            class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors appearance-none"
-          >
-            <option v-for="g in groups" :key="g.id" :value="g.id">
-              {{ g.name }}
-            </option>
-          </select>
+            :options="groupOptions"
+            placeholder="Select a group"
+          />
         </div>
 
         <!-- Product Name -->
@@ -242,6 +251,18 @@ function handleSubmit(): void {
           <p class="mt-1 text-[0.7rem] text-text-muted">Auto-generated from name. Edit to override.</p>
         </div>
 
+        <!-- Package Name -->
+        <div>
+          <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Package Name</label>
+          <input
+            v-model="packageName"
+            type="text"
+            placeholder="e.g. starter, pro, business"
+            class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors"
+          />
+          <p class="mt-1 text-[0.7rem] text-text-muted">Hosting package name used for server provisioning. Optional.</p>
+        </div>
+
         <!-- Description -->
         <div>
           <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Description</label>
@@ -259,24 +280,20 @@ function handleSubmit(): void {
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-[0.68rem] text-text-muted mb-1">Monthly Price</label>
-              <input
-                v-model.number="monthlyPrice"
-                type="number"
-                min="0"
-                step="0.01"
+              <AppNumberInput
+                v-model="monthlyPrice"
+                :min="0"
+                :step="0.01"
                 placeholder="0.00"
-                class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors"
               />
             </div>
             <div>
               <label class="block text-[0.68rem] text-text-muted mb-1">Annual Price</label>
-              <input
-                v-model.number="annualPrice"
-                type="number"
-                min="0"
-                step="0.01"
+              <AppNumberInput
+                v-model="annualPrice"
+                :min="0"
+                :step="0.01"
                 placeholder="0.00"
-                class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors"
               />
             </div>
           </div>

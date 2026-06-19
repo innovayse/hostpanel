@@ -2,7 +2,7 @@
  * PUT /api/portal/client/domains/:id/idprotect
  * Toggles WHOIS privacy protection for a domain via the C# backend.
  *
- * Body: { idprotect: boolean }
+ * Body: { enabled: boolean }
  */
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')

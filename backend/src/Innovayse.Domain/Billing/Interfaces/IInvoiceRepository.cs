@@ -94,6 +94,15 @@ public interface IInvoiceRepository
     Task<IReadOnlyList<Invoice>> GetPaidBetweenAsync(DateTimeOffset start, DateTimeOffset end, CancellationToken ct);
 
     /// <summary>
+    /// Returns all unpaid invoices whose due date has passed.
+    /// Used by the overdue invoice cron to transition invoices to Overdue status.
+    /// </summary>
+    /// <param name="asOf">The reference point in time; invoices with DueDate before this are considered overdue.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Unpaid invoices whose DueDate is before <paramref name="asOf"/>.</returns>
+    Task<IReadOnlyList<Invoice>> ListUnpaidOverdueAsync(DateTimeOffset asOf, CancellationToken ct);
+
+    /// <summary>
     /// Returns all invoices regardless of status, without pagination.
     /// Used for aggregate stats calculations.
     /// </summary>

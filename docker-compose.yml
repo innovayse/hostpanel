@@ -84,6 +84,8 @@ services:
       Smtp__UseSsl: "false"
       AdminBaseUrl: ${ADMIN_BASE_URL:-http://localhost:5173}
       DOTNET_USE_POLLING_FILE_WATCHER: 1
+      DOTNET_NUGET_SIGNATURE_VERIFICATION: "false"
+      NUGET_AUDIT: "false"
     depends_on:
       postgres:
         condition: service_healthy

@@ -16,8 +16,26 @@ export default defineCachedEventHandler(async (event) => {
   const qs = params.toString()
   const products = await internalApiCall<Record<string, unknown>[]>(event, `/products${qs ? `?${qs}` : ''}`)
 
-  // Map backend "id" to "pid" for frontend compatibility (WHMCS naming convention)
-  return products.map(p => ({ ...p, pid: p.id }))
+  // Map backend fields to frontend WHMCS-compatible format
+  return products.map(p => {
+    const pricing = p.pricing as { monthly?: number; annual?: number } | undefined
+    return {
+      ...p,
+      pid: p.id,
+      pricing: {
+        USD: {
+          prefix: '$',
+          suffix: '',
+          monthly: pricing?.monthly?.toFixed(2) ?? '-1.00',
+          quarterly: '-1.00',
+          semiannually: '-1.00',
+          annually: pricing?.annual?.toFixed(2) ?? '-1.00',
+          biennially: '-1.00',
+          triennially: '-1.00',
+        },
+      },
+    }
+  })
 }, {
   name: 'backend-products',
   maxAge: 3600,

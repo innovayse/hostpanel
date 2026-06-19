@@ -184,17 +184,17 @@
           >
             <div class="flex items-center gap-3 min-w-0">
               <Globe :size="16" :stroke-width="2" class="text-primary-400 flex-shrink-0" />
-              <span class="text-gray-900 dark:text-white text-sm font-medium truncate">{{ domain.domainname }}</span>
+              <span class="text-gray-900 dark:text-white text-sm font-medium truncate">{{ domain.name }}</span>
             </div>
             <div class="flex items-center gap-2 flex-shrink-0">
               <span class="text-gray-500 text-xs">
                 {{
-                  domain.expirydate && !domain.expirydate.startsWith('0000')
-                    ? $t('client.dashboard.exp') + ' ' + domain.expirydate
-                    : domain.nextduedate && !domain.nextduedate.startsWith('0000')
-                      ? $t('client.dashboard.due') + ' ' + domain.nextduedate
-                      : domain.regdate && !domain.regdate.startsWith('0000')
-                        ? $t('client.dashboard.reg') + ' ' + domain.regdate
+                  domain.expiresAt && !domain.expiresAt.startsWith('0001')
+                    ? $t('client.dashboard.exp') + ' ' + new Date(domain.expiresAt).toLocaleDateString()
+                    : domain.nextDueDate && !domain.nextDueDate.startsWith('0001')
+                      ? $t('client.dashboard.due') + ' ' + new Date(domain.nextDueDate).toLocaleDateString()
+                      : domain.registeredAt && !domain.registeredAt.startsWith('0001')
+                        ? $t('client.dashboard.reg') + ' ' + new Date(domain.registeredAt).toLocaleDateString()
                         : '—'
                 }}
               </span>
@@ -314,8 +314,8 @@ async function refresh() {
 const expiringDomains = computed(() => {
   const cutoff = Date.now() + 45 * 86_400_000
   return store.domains.filter(d => {
-    if (!d.expirydate || d.expirydate.startsWith('0000')) return false
-    return new Date(d.expirydate).getTime() <= cutoff
+    if (!d.expiresAt || d.expiresAt.startsWith('0001')) return false
+    return new Date(d.expiresAt).getTime() <= cutoff
   })
 })
 

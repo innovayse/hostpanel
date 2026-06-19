@@ -181,6 +181,23 @@ public sealed class ClientService : AggregateRoot
     }
 
     /// <summary>
+    /// Advances <see cref="NextRenewalAt"/> by one billing cycle (monthly or annual).
+    /// Call after generating a renewal invoice for the current period.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown when <see cref="NextRenewalAt"/> is null.</exception>
+    public void AdvanceRenewal()
+    {
+        if (NextRenewalAt is null)
+        {
+            throw new InvalidOperationException("Cannot advance renewal on a service with no renewal date.");
+        }
+
+        NextRenewalAt = BillingCycle == "annual"
+            ? NextRenewalAt.Value.AddYears(1)
+            : NextRenewalAt.Value.AddMonths(1);
+    }
+
+    /// <summary>
     /// Updates the editable service fields.
     /// </summary>
     /// <param name="domain">Linked domain name.</param>

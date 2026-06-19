@@ -28,8 +28,8 @@
             <Globe :size="22" :stroke-width="2" class="text-primary-400" />
           </div>
           <div>
-            <h1 class="text-xl font-bold text-gray-900 dark:text-white">{{ domain.domainname }}</h1>
-            <p class="text-gray-500 dark:text-gray-400 text-sm">{{ $t('client.domains.expires') }} {{ formatDate(domain.expirydate) }}</p>
+            <h1 class="text-xl font-bold text-gray-900 dark:text-white">{{ fullDomainName }}</h1>
+            <p class="text-gray-500 dark:text-gray-400 text-sm">{{ $t('client.domains.expires') }} {{ formatDate(domain.expiresAt) }}</p>
           </div>
         </div>
         <ClientStatusBadge :status="domain.status" />
@@ -110,32 +110,15 @@
             <!-- Details grid -->
             <UiCard>
               <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-5">
-                <UiDescriptionItem :label="$t('client.domains.fieldDomain')" :value="domain.domainname" value-class="font-medium" />
-                <UiDescriptionItem :label="$t('client.domains.fieldFirstPayment')" :value="domain.firstpaymentamount ? `$${domain.firstpaymentamount} USD` : '—'" />
-                <UiDescriptionItem :label="$t('client.domains.fieldRegistrationDate')" :value="formatDate(domain.regdate)" />
-                <UiDescriptionItem :label="$t('client.domains.fieldRecurring')" :value="`$${domain.recurringamount} / ${domain.regperiod}yr`" />
-                <UiDescriptionItem :label="$t('client.domains.fieldNextDueDate')" :value="formatDate(domain.nextduedate)" />
-                <UiDescriptionItem :label="$t('client.domains.fieldPaymentMethod')" :value="domain.paymentmethod || '—'" value-class="capitalize" />
+                <UiDescriptionItem :label="$t('client.domains.fieldDomain')" :value="fullDomainName" value-class="font-medium" />
+                <UiDescriptionItem :label="$t('client.domains.fieldFirstPayment')" :value="domain.firstPaymentAmount ? `$${domain.firstPaymentAmount} USD` : '—'" />
+                <UiDescriptionItem :label="$t('client.domains.fieldRegistrationDate')" :value="formatDate(domain.registeredAt)" />
+                <UiDescriptionItem :label="$t('client.domains.fieldRecurring')" :value="`$${domain.recurringAmount} / ${domain.registrationPeriod}yr`" />
+                <UiDescriptionItem :label="$t('client.domains.fieldNextDueDate')" :value="formatDate(domain.nextDueDate)" />
+                <UiDescriptionItem :label="$t('client.domains.fieldPaymentMethod')" :value="domain.paymentMethod || '—'" value-class="capitalize" />
                 <UiDescriptionItem :label="$t('client.domains.fieldStatus')">
                   <ClientStatusBadge :status="domain.status" />
                 </UiDescriptionItem>
-
-                <!-- SSL fields — shown only when WHMCS returns them -->
-                <template v-if="domain.sslstatus">
-                  <UiDescriptionItem :label="$t('client.domains.fieldSslStatus')">
-                    <span class="flex items-center gap-1.5">
-                      <ShieldCheck
-                        :size="14"
-                        :stroke-width="2"
-                        :class="domain.sslstatus?.toLowerCase().includes('valid') ? 'text-green-500' : 'text-gray-400'"
-                      />
-                      {{ domain.sslstatus }}
-                    </span>
-                  </UiDescriptionItem>
-                  <UiDescriptionItem :label="$t('client.domains.fieldSslStartDate')" :value="formatDate(domain.sslstartdate || '')" />
-                  <UiDescriptionItem :label="$t('client.domains.fieldSslIssuer')" :value="domain.sslissuer || '—'" />
-                  <UiDescriptionItem :label="$t('client.domains.fieldSslExpiry')" :value="formatDate(domain.sslexpirydate || '')" />
-                </template>
               </dl>
             </UiCard>
 
@@ -200,9 +183,9 @@
               <!-- Domain row -->
               <div class="flex items-center justify-between gap-4 py-4 border-b border-gray-100 dark:border-white/10 mb-5">
                 <div>
-                  <p class="font-semibold text-gray-900 dark:text-white">{{ domain.domainname }}</p>
+                  <p class="font-semibold text-gray-900 dark:text-white">{{ fullDomainName }}</p>
                   <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                    {{ $t('client.domains.renewExpiry') }} {{ formatDate(domain.expirydate) }}
+                    {{ $t('client.domains.renewExpiry') }} {{ formatDate(domain.expiresAt) }}
                   </p>
                 </div>
                 <span
@@ -234,7 +217,7 @@
                   <div class="px-4 py-4 space-y-2">
                     <div class="flex justify-between text-sm">
                       <span class="text-gray-500 dark:text-gray-400">{{ $t('client.domains.renewDomain') }}</span>
-                      <span class="text-gray-900 dark:text-white font-medium">{{ domain.domainname }}</span>
+                      <span class="text-gray-900 dark:text-white font-medium">{{ fullDomainName }}</span>
                     </div>
                     <div class="flex justify-between text-sm">
                       <span class="text-gray-500 dark:text-gray-400">{{ $t('client.domains.renewPeriod') }}</span>
@@ -242,7 +225,7 @@
                     </div>
                     <div class="flex justify-between text-sm pt-2 border-t border-gray-100 dark:border-white/10">
                       <span class="text-gray-500 dark:text-gray-400">{{ $t('client.domains.renewAmount') }}</span>
-                      <span class="text-gray-900 dark:text-white font-semibold">${{ (parseFloat(domain.recurringamount) * renewYears).toFixed(2) }} USD</span>
+                      <span class="text-gray-900 dark:text-white font-semibold">${{ (domain.recurringAmount * renewYears).toFixed(2) }} USD</span>
                     </div>
                   </div>
                 </div>
@@ -339,7 +322,7 @@
                 <div v-for="n in 5" :key="n" class="flex items-center gap-3">
                   <span class="text-sm text-gray-500 dark:text-gray-400 w-24 flex-shrink-0">Nameserver {{ n }}</span>
                   <UiInput
-                    v-model="nsForm[`ns${n}`]"
+                    v-model="nsForm[`ns${n}` as keyof typeof nsForm]"
                     :placeholder="`ns${n}.example.com`"
                     :disabled="!nsUseCustom"
                     type="text"
@@ -508,23 +491,22 @@
                 <!-- Contact form -->
                 <UiForm :error="whoisError" :success="whoisSuccess" spacing="sm" @submit="saveWhois">
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <UiInput v-model="whoisForm[activeContact].First_Name" :label="$t('client.domains.contactFirstName')" :disabled="contactUseExisting[activeContact]" size="sm" />
-                    <UiInput v-model="whoisForm[activeContact].Last_Name" :label="$t('client.domains.contactLastName')" :disabled="contactUseExisting[activeContact]" size="sm" />
+                    <UiInput v-model="whoisForm[activeContact].firstName" :label="$t('client.domains.contactFirstName')" :disabled="contactUseExisting[activeContact]" size="sm" />
+                    <UiInput v-model="whoisForm[activeContact].lastName" :label="$t('client.domains.contactLastName')" :disabled="contactUseExisting[activeContact]" size="sm" />
                   </div>
-                  <UiInput v-model="whoisForm[activeContact].Company_Name" :label="$t('client.domains.contactCompany')" :disabled="contactUseExisting[activeContact]" size="sm" />
-                  <UiInput v-model="whoisForm[activeContact].Email" :label="$t('client.domains.contactEmail')" type="email" :disabled="contactUseExisting[activeContact]" size="sm" />
-                  <UiInput v-model="whoisForm[activeContact].Address_1" :label="$t('client.domains.contactAddress1')" :disabled="contactUseExisting[activeContact]" size="sm" />
-                  <UiInput v-model="whoisForm[activeContact].Address_2" :label="$t('client.domains.contactAddress2')" :disabled="contactUseExisting[activeContact]" size="sm" />
+                  <UiInput v-model="whoisForm[activeContact].organization" :label="$t('client.domains.contactCompany')" :disabled="contactUseExisting[activeContact]" size="sm" />
+                  <UiInput v-model="whoisForm[activeContact].email" :label="$t('client.domains.contactEmail')" type="email" :disabled="contactUseExisting[activeContact]" size="sm" />
+                  <UiInput v-model="whoisForm[activeContact].address1" :label="$t('client.domains.contactAddress1')" :disabled="contactUseExisting[activeContact]" size="sm" />
+                  <UiInput v-model="whoisForm[activeContact].address2" :label="$t('client.domains.contactAddress2')" :disabled="contactUseExisting[activeContact]" size="sm" />
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <UiInput v-model="whoisForm[activeContact].City" :label="$t('client.domains.contactCity')" :disabled="contactUseExisting[activeContact]" size="sm" />
-                    <UiInput v-model="whoisForm[activeContact].State" :label="$t('client.domains.contactState')" :disabled="contactUseExisting[activeContact]" size="sm" />
+                    <UiInput v-model="whoisForm[activeContact].city" :label="$t('client.domains.contactCity')" :disabled="contactUseExisting[activeContact]" size="sm" />
+                    <UiInput v-model="whoisForm[activeContact].state" :label="$t('client.domains.contactState')" :disabled="contactUseExisting[activeContact]" size="sm" />
                   </div>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <UiInput v-model="whoisForm[activeContact].Postcode" :label="$t('client.domains.contactPostcode')" :disabled="contactUseExisting[activeContact]" size="sm" />
-                    <UiInput v-model="whoisForm[activeContact].Country" :label="$t('client.domains.contactCountry')" :disabled="contactUseExisting[activeContact]" size="sm" />
+                    <UiInput v-model="whoisForm[activeContact].postalCode" :label="$t('client.domains.contactPostcode')" :disabled="contactUseExisting[activeContact]" size="sm" />
+                    <UiInput v-model="whoisForm[activeContact].country" :label="$t('client.domains.contactCountry')" :disabled="contactUseExisting[activeContact]" size="sm" />
                   </div>
-                  <UiInput v-model="whoisForm[activeContact].Phone" :label="$t('client.domains.contactPhone')" type="tel" :disabled="contactUseExisting[activeContact]" size="sm" />
-                  <UiInput v-model="whoisForm[activeContact].Fax" :label="$t('client.domains.contactFax')" type="tel" :disabled="contactUseExisting[activeContact]" size="sm" />
+                  <UiInput v-model="whoisForm[activeContact].phone" :label="$t('client.domains.contactPhone')" type="tel" :disabled="contactUseExisting[activeContact]" size="sm" />
                   <template #actions>
                     <UiButton type="button" size="sm" variant="ghost" @click="cancelWhois">
                       {{ $t('client.domains.cancelChanges') }}
@@ -558,31 +540,59 @@ const { t } = useI18n()
 const route = useRoute()
 const domainId = route.params.id as string
 
-// ── Domain ────────────────────────────────────────────────────────────────────
-const { data: domain, pending } = await useApi<{
+/** Shape of the DomainDto returned by the C# backend. */
+interface DomainDetail {
+  /** Domain primary key. */
   id: number
-  domainname: string
-  registrar: string
+  /** Domain name (e.g. "example"). */
+  name: string
+  /** Top-level domain including the dot (e.g. ".com"). */
+  tld: string
+  /** Current lifecycle status. */
   status: string
-  regdate: string
-  nextduedate: string
-  expirydate: string
-  firstpaymentamount: string
-  recurringamount: string
-  paymentmethod: string
-  regperiod: number
-  donotrenew: boolean
-  lockstatus: boolean
-  idprotection: boolean
-  sslstatus?: string
-  sslstartdate?: string
-  sslexpirydate?: string
-  sslissuer?: string
-}>(`/api/portal/client/domains/${domainId}`)
+  /** ISO 8601 registration date. */
+  registeredAt: string
+  /** ISO 8601 expiration date. */
+  expiresAt: string
+  /** ISO 8601 next renewal payment due date. */
+  nextDueDate: string
+  /** One-time registration cost. */
+  firstPaymentAmount: number
+  /** Recurring registration price. */
+  recurringAmount: number
+  /** Payment method label. */
+  paymentMethod: string | null
+  /** Registration period in years. */
+  registrationPeriod: number
+  /** Whether the domain is set to auto-renew at expiration. */
+  autoRenew: boolean
+  /** Whether the domain is locked against unauthorized transfers. */
+  isLocked: boolean
+  /** Whether WHOIS privacy is enabled. */
+  whoisPrivacy: boolean
+  /** Name of the registrar module. */
+  registrar: string | null
+}
+
+// ── Domain ────────────────────────────────────────────────────────────────────
+const { data: _domainRaw, pending } = await useApi<DomainDetail>(`/api/portal/client/domains/${domainId}`)
+const domain = computed(() => _domainRaw.value as DomainDetail | null)
+
+/** Full domain name (the backend's Name field is already the FQDN). */
+const fullDomainName = computed(() => domain.value?.name ?? '')
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Formats an ISO 8601 date string for display, returning a dash for invalid dates.
+ *
+ * @param d - ISO 8601 date string.
+ * @returns Localized date string or em-dash placeholder.
+ */
 function formatDate(d: string): string {
-  return d && !d.startsWith('0000') ? d : '—'
+  if (!d || d.startsWith('0000') || d.startsWith('0001')) return '—'
+  const date = new Date(d)
+  return isNaN(date.getTime()) ? '—' : date.toLocaleDateString()
 }
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
@@ -597,12 +607,15 @@ const tabs = computed(() => [
 ])
 
 // ── Renew ─────────────────────────────────────────────────────────────────────
+/** Whether the domain status is Expired. */
 const isExpired = computed(() =>
-  domain.value?.status?.toLowerCase() === 'expired'
+  domain.value?.status === 'Expired'
 )
+
+/** Whether the domain expires within the next 30 days. */
 const isExpiringSoon = computed(() => {
-  const d = domain.value?.expirydate
-  if (!d || d.startsWith('0000')) return false
+  const d = domain.value?.expiresAt
+  if (!d || d.startsWith('0001')) return false
   const diff = (new Date(d).getTime() - Date.now()) / 86400000
   return diff <= 30 && diff > 0
 })
@@ -646,26 +659,26 @@ async function placeRenewal() {
       { method: 'POST', body: { years: renewYears.value, paymentmethod: renewPayMethod.value } }
     )
     renewSuccess.value = res
-  } catch (err: any) {
-    renewError.value = err?.data?.statusMessage || t('client.domains.renewError')
+  } catch (err: unknown) {
+    renewError.value = (err as { data?: { statusMessage?: string } })?.data?.statusMessage || t('client.domains.renewError')
   } finally {
     renewSaving.value = false
   }
 }
 
 // ── Auto Renew ────────────────────────────────────────────────────────────────
-// donotrenew=1/true means auto-renew is OFF; coerce with !! to handle int 0/1
 const autoRenewEnabled = ref(false)
 const autoRenewSaving  = ref(false)
-watch(domain, (d) => { if (d) autoRenewEnabled.value = !d.donotrenew }, { immediate: true })
+watch(domain, (d) => { if (d) autoRenewEnabled.value = d.autoRenew }, { immediate: true })
 
+/** Toggles auto-renew for the domain via the backend API. */
 async function toggleAutoRenew() {
   autoRenewSaving.value = true
   const newVal = !autoRenewEnabled.value
   try {
     await apiFetch(`/api/portal/client/domains/${domainId}/autorenew`, {
       method: 'PUT',
-      body: { autorenew: newVal },
+      body: { enabled: newVal },
     })
     autoRenewEnabled.value = newVal
   } catch { /* keep current state */ } finally {
@@ -677,16 +690,16 @@ async function toggleAutoRenew() {
 const lockEnabled  = ref(false)
 const lockSaving   = ref(false)
 
-// lockstatus is set server-side as a boolean after DomainGetLockingStatus
-watch(domain, (d) => { if (d) lockEnabled.value = !!d.lockstatus }, { immediate: true })
+watch(domain, (d) => { if (d) lockEnabled.value = d.isLocked }, { immediate: true })
 
+/** Toggles the registrar transfer lock for the domain via the backend API. */
 async function toggleLock() {
   lockSaving.value = true
   const newLocked = !lockEnabled.value
   try {
     await apiFetch(`/api/portal/client/domains/${domainId}/lock`, {
       method: 'PUT',
-      body: { lockstatus: newLocked ? 'on' : 'off' }
+      body: { enabled: newLocked }
     })
     lockEnabled.value = newLocked
   } catch { /* keep current state */ } finally {
@@ -694,20 +707,20 @@ async function toggleLock() {
   }
 }
 
-// ── ID Protection ─────────────────────────────────────────────────────────────
+// ── WHOIS Privacy ─────────────────────────────────────────────────────────────
 const idProtectEnabled = ref(false)
 const idProtectSaving  = ref(false)
 
-// idprotection returns 0/1 int from WHMCS — coerce to boolean
-watch(domain, (d) => { if (d) idProtectEnabled.value = !!d.idprotection }, { immediate: true })
+watch(domain, (d) => { if (d) idProtectEnabled.value = d.whoisPrivacy }, { immediate: true })
 
+/** Toggles WHOIS privacy protection for the domain via the backend API. */
 async function toggleIdProtect() {
   idProtectSaving.value = true
   const newVal = !idProtectEnabled.value
   try {
     await apiFetch(`/api/portal/client/domains/${domainId}/idprotect`, {
       method: 'PUT',
-      body: { idprotect: newVal }
+      body: { enabled: newVal }
     })
     idProtectEnabled.value = newVal
   } catch { /* keep current state */ } finally {
@@ -716,6 +729,15 @@ async function toggleIdProtect() {
 }
 
 // ── Nameservers ───────────────────────────────────────────────────────────────
+
+/** Shape of nameserver entries returned by the backend. */
+interface NameserverEntry {
+  /** Nameserver record primary key. */
+  id: number
+  /** Nameserver hostname (e.g. "ns1.example.com"). */
+  host: string
+}
+
 const nsLoading   = ref(false)
 const nsSaving    = ref(false)
 const nsError     = ref('')
@@ -726,25 +748,36 @@ const nsForm      = reactive({ ns1: '', ns2: '', ns3: '', ns4: '', ns5: '' })
 onMounted(async () => {
   nsLoading.value = true
   try {
-    const data = await apiFetch<Record<string, string>>(
+    const data = await apiFetch<NameserverEntry[]>(
       `/api/portal/client/domains/${domainId}/nameservers`
     )
-    Object.assign(nsForm, data)
-    nsUseCustom.value = !!(data.ns1 || data.ns2)
+    // Map array of { id, host } to ns1..ns5 form fields
+    data.forEach((ns, i) => {
+      const key = `ns${i + 1}` as keyof typeof nsForm
+      if (key in nsForm) nsForm[key] = ns.host
+    })
+    nsUseCustom.value = !!(nsForm.ns1 || nsForm.ns2)
   } catch { /* silently ignore */ } finally {
     nsLoading.value = false
   }
 })
 
+/** Saves the nameserver configuration via the backend API. */
 async function saveNameservers() {
   nsSaving.value  = true
   nsError.value   = ''
   nsSuccess.value = ''
   try {
-    await apiFetch(`/api/portal/client/domains/${domainId}/nameservers`, { method: 'PUT', body: nsForm })
+    // Collect non-empty nameservers into the array format the backend expects
+    const nameservers = [nsForm.ns1, nsForm.ns2, nsForm.ns3, nsForm.ns4, nsForm.ns5]
+      .filter(ns => ns.trim() !== '')
+    await apiFetch(`/api/portal/client/domains/${domainId}/nameservers`, {
+      method: 'PUT',
+      body: { nameservers }
+    })
     nsSuccess.value = t('client.domains.nsSuccess')
-  } catch (err: any) {
-    const msg = (err?.data?.statusMessage || '') as string
+  } catch (err: unknown) {
+    const msg = ((err as { data?: { statusMessage?: string } })?.data?.statusMessage || '') as string
     nsError.value = msg.toLowerCase().includes('registrar')
       ? t('client.domains.nsRegistrarError')
       : msg || t('client.domains.nsError')
@@ -758,37 +791,59 @@ const eppSending = ref(false)
 const eppMessage = ref('')
 const eppError   = ref(false)
 
+/** Requests the EPP authorization code from the backend. */
 async function requestEpp() {
   eppSending.value = true
   eppMessage.value = ''
   eppError.value   = false
   try {
-    const res = await apiFetch<{ message: string }>(
+    const res = await apiFetch<{ eppCode: string }>(
       `/api/portal/client/domains/${domainId}/epp`, { method: 'POST' }
     )
-    eppMessage.value = res.message
-  } catch (err: any) {
+    eppMessage.value = res.eppCode
+  } catch (err: unknown) {
     eppError.value   = true
-    eppMessage.value = err?.data?.statusMessage || t('client.domains.eppError')
+    eppMessage.value = (err as { data?: { statusMessage?: string } })?.data?.statusMessage || t('client.domains.eppError')
   } finally {
     eppSending.value = false
   }
 }
 
 // ── WHOIS / Contact ───────────────────────────────────────────────────────────
-type ContactFields = {
-  First_Name: string; Last_Name: string; Company_Name: string; Email: string
-  Address_1: string; Address_2: string; City: string; State: string
-  Postcode: string; Country: string; Phone: string; Fax: string
+/** Contact fields matching the backend ModifyContactRequest shape. */
+interface ContactFields {
+  /** Registrant first name. */
+  firstName: string
+  /** Registrant last name. */
+  lastName: string
+  /** Organization name. */
+  organization: string
+  /** Contact email address. */
+  email: string
+  /** Street address line 1. */
+  address1: string
+  /** Street address line 2. */
+  address2: string
+  /** City. */
+  city: string
+  /** State or province. */
+  state: string
+  /** Postal/zip code. */
+  postalCode: string
+  /** ISO 3166-1 alpha-2 country code. */
+  country: string
+  /** Contact phone number. */
+  phone: string
 }
 
 const contactTypes = ['Registrant', 'Admin', 'Tech', 'Billing'] as const
 type ContactType = typeof contactTypes[number]
 
+/** Creates an empty contact fields object. */
 const emptyContact = (): ContactFields => ({
-  First_Name: '', Last_Name: '', Company_Name: '', Email: '',
-  Address_1: '', Address_2: '', City: '', State: '',
-  Postcode: '', Country: '', Phone: '', Fax: ''
+  firstName: '', lastName: '', organization: '', email: '',
+  address1: '', address2: '', city: '', state: '',
+  postalCode: '', country: '', phone: ''
 })
 
 const activeContact = ref<ContactType>('Registrant')
@@ -812,7 +867,7 @@ const whoisInitial = reactive<Record<ContactType, ContactFields>>({
   Billing:    emptyContact(),
 })
 
-// Contacts list for "Choose Contact" dropdown
+/** A selectable contact entry for the "Choose Contact" dropdown. */
 interface ContactEntry { id: string; label: string; fields: Partial<ContactFields> }
 const contactsList = ref<ContactEntry[]>([])
 let clientCache: Record<string, string> | null = null
@@ -832,7 +887,7 @@ const contactOptions = computed(() => [
   ...contactsList.value.map(c => ({ label: c.label, value: c.id })),
 ])
 
-/** Pre-fill form for the given contact type from the chosen contact */
+/** Pre-fill form for the given contact type from the chosen contact. */
 async function applySelectedContact(ct: ContactType) {
   const id = selectedContactId[ct]
   if (id === 'primary') {
@@ -840,18 +895,17 @@ async function applySelectedContact(ct: ContactType) {
       clientCache = await apiFetch('/api/portal/client/me') as Record<string, string>
     }
     Object.assign(whoisForm[ct], {
-      First_Name:   clientCache.firstname    || '',
-      Last_Name:    clientCache.lastname     || '',
-      Company_Name: clientCache.companyname  || '',
-      Email:        clientCache.email        || '',
-      Address_1:    clientCache.address1     || '',
-      Address_2:    clientCache.address2     || '',
-      City:         clientCache.city         || '',
-      State:        clientCache.state        || '',
-      Postcode:     clientCache.postcode     || '',
-      Country:      clientCache.country      || '',
-      Phone:        clientCache.phonenumber  || '',
-      Fax:          '',
+      firstName:    clientCache.firstname    || '',
+      lastName:     clientCache.lastname     || '',
+      organization: clientCache.companyname  || '',
+      email:        clientCache.email        || '',
+      address1:     clientCache.address1     || '',
+      address2:     clientCache.address2     || '',
+      city:         clientCache.city         || '',
+      state:        clientCache.state        || '',
+      postalCode:   clientCache.postcode     || '',
+      country:      clientCache.country      || '',
+      phone:        clientCache.phonenumber  || '',
     })
   } else {
     const entry = contactsList.value.find(c => c.id === id)
@@ -878,11 +932,11 @@ watch(activeTab, async (tab) => {
       id:    c.id,
       label: `${c.firstname} ${c.lastname}`.trim(),
       fields: {
-        First_Name:   c.firstname   || '',
-        Last_Name:    c.lastname    || '',
-        Company_Name: c.companyname || '',
-        Email:        c.email       || '',
-        Phone:        c.phonenumber || '',
+        firstName:    c.firstname   || '',
+        lastName:     c.lastname    || '',
+        organization: c.companyname || '',
+        email:        c.email       || '',
+        phone:        c.phonenumber || '',
       },
     }))
     whoisLoaded = true
@@ -911,8 +965,8 @@ async function saveWhois() {
     // Update snapshot so cancel reflects saved state
     for (const ct of contactTypes) Object.assign(whoisInitial[ct], whoisForm[ct])
     whoisSuccess.value = t('client.domains.contactSaved')
-  } catch (err: any) {
-    whoisError.value = err?.data?.statusMessage || t('client.domains.contactError')
+  } catch (err: unknown) {
+    whoisError.value = (err as { data?: { statusMessage?: string } })?.data?.statusMessage || t('client.domains.contactError')
   } finally {
     whoisSaving.value = false
   }

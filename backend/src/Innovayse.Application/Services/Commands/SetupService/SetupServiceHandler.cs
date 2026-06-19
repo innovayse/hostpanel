@@ -68,7 +68,7 @@ public sealed class SetupServiceHandler(
             cmd.Domain,
             cmd.Username,
             cmd.Password,
-            "default");
+            product?.PackageName ?? "default");
 
         var result = await provider.ProvisionAsync(request, ct);
 

@@ -1,6 +1,8 @@
 namespace Innovayse.API.Billing;
 
+using Innovayse.Application.Billing.Commands.CheckOverdueInvoicesCron;
 using Innovayse.Application.Billing.Commands.ProcessBillableItemsCron;
+using Innovayse.Application.Billing.Commands.ProcessRenewalsCron;
 using Wolverine;
 
 /// <summary>
@@ -12,7 +14,13 @@ public sealed class BillingScheduledJobsStartup(
     ILogger<BillingScheduledJobsStartup> logger) : IHostedService
 {
     /// <summary>Hour (UTC) at which <see cref="ProcessBillableItemsCronCommand"/> should execute.</summary>
-    private const int CronHour = 6;
+    private const int BillableItemsCronHour = 6;
+
+    /// <summary>Hour (UTC) at which <see cref="CheckOverdueInvoicesCronCommand"/> should execute.</summary>
+    private const int OverdueCronHour = 7;
+
+    /// <summary>Hour (UTC) at which <see cref="ProcessRenewalsCronCommand"/> should execute.</summary>
+    private const int RenewalsCronHour = 5;
 
     /// <summary>
     /// Schedules the billable items cron job for its next daily occurrence.
@@ -21,15 +29,26 @@ public sealed class BillingScheduledJobsStartup(
     /// <returns>A <see cref="Task"/> that completes once the message is enqueued.</returns>
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        var nextRun = NextDailyOccurrence(CronHour);
-
         await using var scope = scopeFactory.CreateAsyncScope();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
-        await bus.ScheduleAsync(new ProcessBillableItemsCronCommand(), nextRun);
+        var billableItemsRun = NextDailyOccurrence(BillableItemsCronHour);
+        await bus.ScheduleAsync(new ProcessBillableItemsCronCommand(), billableItemsRun);
         logger.LogInformation(
             "ProcessBillableItemsCronCommand scheduled for {ScheduledAt:u}.",
-            nextRun);
+            billableItemsRun);
+
+        var overdueRun = NextDailyOccurrence(OverdueCronHour);
+        await bus.ScheduleAsync(new CheckOverdueInvoicesCronCommand(), overdueRun);
+        logger.LogInformation(
+            "CheckOverdueInvoicesCronCommand scheduled for {ScheduledAt:u}.",
+            overdueRun);
+
+        var renewalsRun = NextDailyOccurrence(RenewalsCronHour);
+        await bus.ScheduleAsync(new ProcessRenewalsCronCommand(), renewalsRun);
+        logger.LogInformation(
+            "ProcessRenewalsCronCommand scheduled for {ScheduledAt:u}.",
+            renewalsRun);
     }
 
     /// <summary>

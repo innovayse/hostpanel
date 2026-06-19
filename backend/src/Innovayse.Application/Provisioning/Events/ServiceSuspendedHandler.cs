@@ -37,8 +37,15 @@ public sealed class ServiceSuspendedHandler(
             return;
         }
 
-        var provider = providerFactory.CreateFor(server);
-        var request = new SuspendRequest(service.Id, service.ProvisioningRef, evt.Reason);
-        await provider.SuspendAsync(request, ct);
+        try
+        {
+            var provider = providerFactory.CreateFor(server);
+            var request = new SuspendRequest(service.Id, service.ProvisioningRef, evt.Reason);
+            await provider.SuspendAsync(request, ct);
+        }
+        catch
+        {
+            // Account may already be suspended on the server by the command handler — safe to ignore
+        }
     }
 }

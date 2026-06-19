@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using Innovayse.Application.Common;
 using Innovayse.Application.Servers;
 using Innovayse.Domain.Provisioning;
+using Innovayse.Domain.Products.Interfaces;
 using Innovayse.Domain.Provisioning.Interfaces;
 using Innovayse.Domain.Servers;
 using Innovayse.Domain.Services.Interfaces;
@@ -14,11 +15,13 @@ using Innovayse.Domain.Services.Interfaces;
 /// and persisting all changes.
 /// </summary>
 /// <param name="serviceRepo">Client service repository.</param>
+/// <param name="productRepo">Product repository to look up package name.</param>
 /// <param name="providerFactory">Factory to create per-server provisioning providers.</param>
 /// <param name="serverSelector">Selects the optimal server using proportional fill strategy.</param>
 /// <param name="unitOfWork">Unit of work for persistence.</param>
 public sealed class ProvisionServiceHandler(
     IClientServiceRepository serviceRepo,
+    IProductRepository productRepo,
     IProvisioningProviderFactory providerFactory,
     IServerSelector serverSelector,
     IUnitOfWork unitOfWork)
@@ -42,12 +45,15 @@ public sealed class ProvisionServiceHandler(
 
         var provider = providerFactory.CreateFor(server);
 
+        // Look up the product to get the hosting package name
+        var product = await productRepo.FindByIdAsync(service.ProductId, ct);
+
         var request = new ProvisionRequest(
             service.Id,
             service.Domain ?? $"temp{service.Id}.example.com",
             service.Username ?? $"user{service.Id}",
             GeneratePassword(),
-            "default");
+            product?.PackageName ?? "default");
 
         var result = await provider.ProvisionAsync(request, ct);
 

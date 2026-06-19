@@ -16,6 +16,7 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(x => x.Name).IsRequired().HasMaxLength(200);
         builder.Property(x => x.Description).HasMaxLength(1000);
         builder.Property(x => x.Slug).HasMaxLength(200);
+        builder.Property(x => x.PackageName).HasMaxLength(100);
         builder.Property(x => x.Type).IsRequired().HasConversion<string>();
         builder.Property(x => x.Status).IsRequired().HasConversion<string>();
         builder.Property(x => x.MonthlyPrice).IsRequired().HasColumnType("numeric(18,4)");

@@ -36,7 +36,14 @@ public sealed class ServiceUnsuspendedHandler(
             return;
         }
 
-        var provider = providerFactory.CreateFor(server);
-        await provider.UnsuspendAsync(service.ProvisioningRef, ct);
+        try
+        {
+            var provider = providerFactory.CreateFor(server);
+            await provider.UnsuspendAsync(service.ProvisioningRef, ct);
+        }
+        catch
+        {
+            // Account may already be unsuspended on the server by the command handler — safe to ignore
+        }
     }
 }

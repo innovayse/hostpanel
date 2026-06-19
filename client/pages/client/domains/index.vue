@@ -14,74 +14,6 @@
       </NuxtLink>
     </div>
 
-    <!-- Action buttons toolbar -->
-    <div class="flex flex-wrap items-center gap-2 mb-4 p-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10">
-      <UiButton variant="subtle" size="sm" @click="handleAction(`${whmcsUrl}/clientarea.php?action=domaindetails&modop=custom&a=manage`)">
-        <Network :size="14" :stroke-width="2" class="mr-1.5" />
-        {{ $t('client.domains.actionNameservers') }}
-      </UiButton>
-      <UiButton variant="subtle" size="sm" @click="handleAction(`${whmcsUrl}/clientarea.php?action=contacts`)">
-        <UserCog :size="14" :stroke-width="2" class="mr-1.5" />
-        {{ $t('client.domains.actionContacts') }}
-      </UiButton>
-      <UiButton variant="subtle" size="sm" @click="handleAction(`${whmcsUrl}/cart.php?a=add&domain=renew`)">
-        <RefreshCw :size="14" :stroke-width="2" class="mr-1.5" />
-        {{ $t('client.domains.actionRenew') }}
-      </UiButton>
-
-      <!-- More dropdown -->
-      <div ref="moreRef" class="relative">
-        <UiButton variant="subtle" size="sm" @click="moreOpen = !moreOpen">
-          {{ $t('client.domains.actionMore') }}
-          <ChevronDown :size="14" :stroke-width="2" :class="moreOpen ? 'rotate-180' : ''" class="ml-1 transition-transform duration-200" />
-        </UiButton>
-        <Transition
-          enter-active-class="transition duration-150 ease-out"
-          enter-from-class="opacity-0 translate-y-1 scale-95"
-          enter-to-class="opacity-100 translate-y-0 scale-100"
-          leave-active-class="transition duration-100 ease-in"
-          leave-from-class="opacity-100 translate-y-0 scale-100"
-          leave-to-class="opacity-0 translate-y-1 scale-95"
-        >
-          <div
-            v-if="moreOpen"
-            class="absolute left-0 top-full mt-1.5 w-52 rounded-xl border border-gray-200 dark:border-white/15 bg-white dark:bg-[#0d0d14] shadow-xl shadow-black/10 dark:shadow-black/40 py-1 z-50"
-          >
-            <UiButton
-              variant="ghost" size="sm"
-              class="w-full !justify-start gap-3 !rounded-none px-4"
-              @click="handleAction(`${whmcsUrl}/clientarea.php?action=domainshosting`); moreOpen = false"
-            >
-              <RefreshCcw :size="14" :stroke-width="2" class="text-gray-400 flex-shrink-0" />
-              {{ $t('client.domains.actionAutoRenew') }}
-            </UiButton>
-            <UiButton
-              variant="ghost" size="sm"
-              class="w-full !justify-start gap-3 !rounded-none px-4"
-              @click="handleAction(`${whmcsUrl}/clientarea.php?action=domainshosting`); moreOpen = false"
-            >
-              <Lock :size="14" :stroke-width="2" class="text-gray-400 flex-shrink-0" />
-              {{ $t('client.domains.actionToggleLock') }}
-            </UiButton>
-          </div>
-        </Transition>
-      </div>
-    </div>
-
-    <!-- No-selection warning -->
-    <Transition
-      enter-active-class="transition duration-200 ease-out"
-      enter-from-class="opacity-0 -translate-y-1"
-      enter-to-class="opacity-100 translate-y-0"
-      leave-active-class="transition duration-150 ease-in"
-      leave-from-class="opacity-100 translate-y-0"
-      leave-to-class="opacity-0 -translate-y-1"
-    >
-      <UiAlert v-if="noSelectionWarning" :icon-size="16" class="mb-4 !py-3">
-        {{ $t('client.domains.selectWarning') }}
-      </UiAlert>
-    </Transition>
-
     <!-- Filter tabs -->
     <UiTabs
       :tabs="tabs.map(t => ({ value: t.key, label: t.label, badge: t.count }))"
@@ -99,9 +31,6 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <p class="text-sm text-gray-500 dark:text-gray-400">
           {{ $t('ui.pagination.showing', { from: pageFrom, to: pageTo, total: filtered.length }) }}
-          <span v-if="selected.size > 0" class="ml-2 text-primary-600 dark:text-primary-400 font-medium">
-            ({{ $t('client.domains.selectedCount', { n: selected.size }) }})
-          </span>
         </p>
         <UiSearchInput
           v-model="search"
@@ -128,16 +57,6 @@
       <UiTable v-else>
         <UiTableHead>
           <UiTableRow :hoverable="false">
-            <!-- Select-all checkbox -->
-            <UiTableTh class="w-10">
-              <input
-                ref="selectAllRef"
-                type="checkbox"
-                :checked="allSelected"
-                class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 accent-primary-500 cursor-pointer"
-                @change="toggleAll"
-              />
-            </UiTableTh>
             <UiTableTh>{{ $t('client.domains.colDomain') }}</UiTableTh>
             <UiTableTh class="hidden lg:table-cell">{{ $t('client.domains.colRegistrationDate') }}</UiTableTh>
             <UiTableTh class="hidden md:table-cell">{{ $t('client.domains.colNextDueDate') }}</UiTableTh>
@@ -150,27 +69,18 @@
             v-for="domain in paged"
             :key="domain.id"
             group
-            :class="selected.has(domain.id) ? 'bg-primary-50/50 dark:bg-primary-500/5' : ''"
           >
-            <UiTableTd class="w-10">
-              <input
-                type="checkbox"
-                :checked="selected.has(domain.id)"
-                class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 accent-primary-500 cursor-pointer"
-                @change="toggleRow(domain.id)"
-              />
-            </UiTableTd>
             <UiTableTd>
               <div class="flex items-center gap-3">
                 <Globe :size="16" :stroke-width="2" class="text-primary-400 flex-shrink-0" />
-                <span class="text-gray-900 dark:text-white font-medium text-sm">{{ domain.domainname }}</span>
+                <span class="text-gray-900 dark:text-white font-medium text-sm">{{ domain.name }}</span>
               </div>
             </UiTableTd>
-            <UiTableTd class="text-gray-500 dark:text-gray-400 hidden lg:table-cell text-sm">{{ formatExpiry(domain.regdate) }}</UiTableTd>
+            <UiTableTd class="text-gray-500 dark:text-gray-400 hidden lg:table-cell text-sm">{{ formatExpiry(domain.registeredAt) }}</UiTableTd>
             <UiTableTd class="hidden md:table-cell">
-              <div class="text-sm" :class="isExpiringSoon(domain.nextduedate) ? 'text-orange-400 font-medium' : 'text-gray-500 dark:text-gray-400'">
-                {{ formatExpiry(domain.nextduedate) }}
-                <span v-if="isExpiringSoon(domain.nextduedate)" class="ml-2 text-xs text-orange-400">({{ $t('client.domains.expiringSoon') }})</span>
+              <div class="text-sm" :class="isExpiringSoon(domain.expiresAt) ? 'text-orange-400 font-medium' : 'text-gray-500 dark:text-gray-400'">
+                {{ formatExpiry(domain.expiresAt) }}
+                <span v-if="isExpiringSoon(domain.expiresAt)" class="ml-2 text-xs text-orange-400">({{ $t('client.domains.expiringSoon') }})</span>
               </div>
             </UiTableTd>
             <UiTableTd align="center">
@@ -199,16 +109,13 @@
 </template>
 
 <script setup lang="ts">
-import { Globe, Plus, Network, UserCog, RefreshCw, RefreshCcw, ChevronDown, Lock } from 'lucide-vue-next'
-import { onClickOutside } from '@vueuse/core'
+import { Globe, Plus } from 'lucide-vue-next'
 import { useClientStore } from '~/stores/client'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
 const { t } = useI18n()
 const store = useClientStore()
-const config = useRuntimeConfig()
-const whmcsUrl = config.public.whmcsUrl
 
 await useAsyncData('client-domains', () => store.fetchDomains())
 
@@ -231,7 +138,7 @@ const filtered = computed(() => {
     ? store.domains
     : store.domains.filter(d => d.status === activeTab.value)
   const q = search.value.trim().toLowerCase()
-  if (q) list = list.filter(d => d.domainname.toLowerCase().includes(q))
+  if (q) list = list.filter(d => d.name.toLowerCase().includes(q))
   return list
 })
 
@@ -240,64 +147,28 @@ const paged      = computed(() => filtered.value.slice((page.value - 1) * perPag
 const pageFrom   = computed(() => filtered.value.length === 0 ? 0 : (page.value - 1) * perPage.value + 1)
 const pageTo     = computed(() => Math.min(page.value * perPage.value, filtered.value.length))
 
-// ── Bulk selection ────────────────────────────────────────────────────────────
-const selected      = reactive(new Set<number>())
-const selectAllRef  = ref<HTMLInputElement | null>(null)
-
-const allSelected  = computed(() => paged.value.length > 0 && paged.value.every(d => selected.has(d.id)))
-const someSelected = computed(() => paged.value.some(d => selected.has(d.id)) && !allSelected.value)
-
-// Keep native checkbox indeterminate state in sync
-watch(someSelected, (v) => {
-  if (selectAllRef.value) selectAllRef.value.indeterminate = v
-}, { immediate: true })
-
-function toggleAll() {
-  if (allSelected.value) {
-    paged.value.forEach(d => selected.delete(d.id))
-  } else {
-    paged.value.forEach(d => selected.add(d.id))
-  }
-  noSelectionWarning.value = false
-}
-
-function toggleRow(id: number) {
-  selected.has(id) ? selected.delete(id) : selected.add(id)
-  noSelectionWarning.value = false
-}
-
-// Clear selection when filter/page changes
-watch([activeTab, search, page], () => selected.clear())
-
-// ── Actions ───────────────────────────────────────────────────────────────────
-const noSelectionWarning = ref(false)
-let warningTimer: ReturnType<typeof setTimeout> | null = null
-
-function handleAction(url: string) {
-  if (selected.size === 0) {
-    noSelectionWarning.value = true
-    if (warningTimer) clearTimeout(warningTimer)
-    warningTimer = setTimeout(() => { noSelectionWarning.value = false }, 4000)
-    return
-  }
-  noSelectionWarning.value = false
-  const params = [...selected].map(id => `domainid[]=${id}`).join('&')
-  window.open(`${url}&${params}`, '_blank')
-}
-
-// ── More dropdown ─────────────────────────────────────────────────────────────
-const moreOpen = ref(false)
-const moreRef  = ref<HTMLElement | null>(null)
-onClickOutside(moreRef, () => { moreOpen.value = false })
-
+/** Checks whether the given date string represents a valid date. */
 function isValidDate(d: string): boolean {
   return !!d && !d.startsWith('0000') && !isNaN(new Date(d).getTime())
 }
 
+/**
+ * Formats a date string for display, returning a dash for invalid dates.
+ *
+ * @param d - ISO 8601 date string.
+ * @returns Formatted date or em-dash placeholder.
+ */
 function formatExpiry(d: string): string {
-  return isValidDate(d) ? d : '—'
+  if (!isValidDate(d)) return '—'
+  return new Date(d).toLocaleDateString()
 }
 
+/**
+ * Checks whether a domain expires within the next 30 days.
+ *
+ * @param expiryDate - ISO 8601 expiration date string.
+ * @returns True if the domain expires within 30 days.
+ */
 function isExpiringSoon(expiryDate: string): boolean {
   if (!isValidDate(expiryDate)) return false
   const daysLeft = (new Date(expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)

@@ -11,6 +11,7 @@ using Innovayse.Domain.Clients;
 /// <param name="CompanyName">Company name (null for individuals).</param>
 /// <param name="Status">Current account status.</param>
 /// <param name="IsUserDeleted">True if the linked Identity user no longer exists.</param>
+/// <param name="TwoFactorEnabled">True if the user has TOTP 2FA enabled.</param>
 /// <param name="CreatedAt">Account creation timestamp.</param>
 public record ClientListItemDto(
     int Id,
@@ -21,4 +22,5 @@ public record ClientListItemDto(
     string? CompanyName,
     ClientStatus Status,
     bool IsUserDeleted,
+    bool TwoFactorEnabled,
     DateTimeOffset CreatedAt);

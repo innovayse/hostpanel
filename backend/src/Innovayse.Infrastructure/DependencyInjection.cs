@@ -18,7 +18,9 @@ using Innovayse.Domain.Servers.Interfaces;
 using Innovayse.Domain.Services.Interfaces;
 using Innovayse.Domain.Settings.Interfaces;
 using Innovayse.Domain.Slides.Interfaces;
+using Innovayse.Domain.Migration.Interfaces;
 using Innovayse.Domain.Support.Interfaces;
+using Innovayse.Infrastructure.Persistence.Repositories;
 using Innovayse.Infrastructure.Audit;
 using Innovayse.Infrastructure.Auth;
 using Innovayse.Infrastructure.Billing;
@@ -109,6 +111,7 @@ public static class DependencyInjection
 
         // Auth services
         services.AddSingleton<TokenRevocationCache>();
+        services.AddSingleton<ITwoFactorPendingCache, TwoFactorPendingCache>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IUserService, UserService>();
@@ -210,6 +213,15 @@ public static class DependencyInjection
         services.AddHttpClient<Innovayse.SDK.Plugins.ICwp7ApiClient, Innovayse.Providers.CWP7.Cwp7ApiClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(120);
+        });
+
+        // Migration
+        services.AddScoped<IMigrationJobRepository, MigrationJobRepository>();
+        services.AddScoped<IMigrationLogRepository, MigrationLogRepository>();
+        services.AddScoped<Innovayse.Application.Migration.Services.MigrationPullWorker>();
+        services.AddHttpClient("migration", client =>
+        {
+            client.Timeout = TimeSpan.FromMinutes(5);
         });
 
         // Domains

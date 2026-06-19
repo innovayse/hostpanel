@@ -51,4 +51,7 @@ public interface IClientServiceRepository
     /// <param name="ct">Cancellation token.</param>
     /// <returns>All client service instances in the system.</returns>
     Task<IReadOnlyList<ClientService>> GetAllAsync(CancellationToken ct);
+
+    /// <summary>Finds a client service by client ID and domain name.</summary>
+    Task<ClientService?> FindByClientAndDomainAsync(int clientId, string domain, CancellationToken ct);
 }

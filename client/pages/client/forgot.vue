@@ -30,7 +30,7 @@
       <div class="text-center mb-8">
         <NuxtLink to="/" class="inline-block mb-6">
           <NuxtImg
-            src="/logo.png"
+            src="/logo.svg"
             alt="Innovayse"
             width="160"
             height="48"

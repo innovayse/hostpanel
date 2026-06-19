@@ -39,6 +39,9 @@ public sealed class Transaction : Entity
     /// <summary>Gets whether this transaction was added to or deducted from the client's credit balance.</summary>
     public bool AddedToCredit { get; private set; }
 
+    /// <summary>Gets the ISO 4217 currency code for this transaction (e.g. "USD", "AMD"); null when not specified.</summary>
+    public string? Currency { get; private set; }
+
     /// <summary>EF Core parameterless constructor — do not call directly.</summary>
     private Transaction() : base(0) { }
 
@@ -55,6 +58,7 @@ public sealed class Transaction : Entity
     /// <param name="amountOut">Amount debited (≥ 0).</param>
     /// <param name="fees">Transaction fees (≥ 0).</param>
     /// <param name="addedToCredit">Whether this affects the client's credit balance.</param>
+    /// <param name="currency">ISO 4217 currency code (e.g. "USD"); null when not specified.</param>
     /// <returns>A new <see cref="Transaction"/>.</returns>
     /// <exception cref="ArgumentException">Thrown when both <paramref name="amountIn"/> and <paramref name="amountOut"/> are 0.</exception>
     public static Transaction Create(
@@ -67,7 +71,8 @@ public sealed class Transaction : Entity
         decimal amountIn,
         decimal amountOut,
         decimal fees,
-        bool addedToCredit)
+        bool addedToCredit,
+        string? currency = null)
     {
         if (amountIn <= 0 && amountOut <= 0)
         {
@@ -86,6 +91,7 @@ public sealed class Transaction : Entity
             AmountOut = amountOut,
             Fees = fees,
             AddedToCredit = addedToCredit,
+            Currency = currency,
         };
     }
 

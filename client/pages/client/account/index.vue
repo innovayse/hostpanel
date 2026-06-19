@@ -22,14 +22,30 @@
       </div>
 
       <div v-else-if="store.user">
-        <!-- Avatar + name -->
+        <!-- Avatar + name + 2FA badge -->
         <UiCard class="mb-6 flex items-center gap-5">
           <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/30 to-primary-500/20 flex items-center justify-center text-white font-bold text-2xl border border-cyan-500/30 flex-shrink-0">
             {{ store.userInitial }}
           </div>
-          <div>
+          <div class="flex-1 min-w-0">
             <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ store.fullName }}</h2>
             <p class="text-gray-500 dark:text-gray-400 text-sm mt-0.5">{{ store.user.email }}</p>
+          </div>
+          <div class="flex-shrink-0">
+            <span
+              v-if="twoFactorEnabled"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-green-500/10 text-green-400 border border-green-500/20"
+            >
+              <ShieldCheck :size="12" :stroke-width="2.5" />
+              {{ $t('client.twoFactor.enabled') }}
+            </span>
+            <span
+              v-else
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-500/10 text-gray-400 border border-gray-500/20"
+            >
+              <ShieldOff :size="12" :stroke-width="2.5" />
+              {{ $t('client.twoFactor.disabled') }}
+            </span>
           </div>
         </UiCard>
 
@@ -98,6 +114,46 @@
               </dl>
             </UiCard>
           </div>
+
+          <!-- 2FA card -->
+          <UiCard class="mt-6">
+            <div class="flex items-center justify-between gap-4">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                  :class="twoFactorEnabled ? 'bg-green-500/10 border border-green-500/20' : 'bg-gray-500/10 border border-gray-500/20'"
+                >
+                  <ShieldCheck v-if="twoFactorEnabled" :size="18" :stroke-width="1.5" class="text-green-400" />
+                  <ShieldOff v-else :size="18" :stroke-width="1.5" class="text-gray-400" />
+                </div>
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ $t('client.twoFactor.title') }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    {{ twoFactorEnabled ? $t('client.twoFactor.descEnabled') : $t('client.twoFactor.descDisabled') }}
+                  </p>
+                </div>
+              </div>
+              <div class="flex-shrink-0">
+                <UiButton
+                  v-if="!twoFactorEnabled"
+                  size="sm"
+                  variant="subtle"
+                  :loading="tfaLoading"
+                  @click="startSetup2FA"
+                >
+                  {{ $t('client.twoFactor.enable') }}
+                </UiButton>
+                <UiButton
+                  v-else
+                  size="sm"
+                  variant="outline"
+                  :loading="tfaLoading"
+                  @click="disable2FA"
+                >
+                  {{ $t('client.twoFactor.disable') }}
+                </UiButton>
+              </div>
+            </div>
+          </UiCard>
 
           <!-- Email preferences view -->
           <UiCard class="mt-6" :title="$t('client.profile.emailPrefs')">
@@ -773,6 +829,86 @@
     </Transition>
   </Teleport>
 
+  <!-- ── 2FA Setup Modal ──────────────────────────────────────────────── -->
+  <Teleport to="body">
+    <Transition
+      enter-active-class="transition-opacity duration-200 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition-opacity duration-150 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-if="tfaModal.open"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        @click.self="tfaModal.open = false"
+      >
+        <Transition
+          enter-active-class="transition-all duration-200 ease-out"
+          enter-from-class="opacity-0 scale-95 translate-y-2"
+          enter-to-class="opacity-100 scale-100 translate-y-0"
+          leave-active-class="transition-all duration-150 ease-in"
+          leave-from-class="opacity-100 scale-100 translate-y-0"
+          leave-to-class="opacity-0 scale-95 translate-y-2"
+        >
+          <div
+            v-if="tfaModal.open"
+            class="w-full max-w-md rounded-2xl bg-white dark:bg-[#13131a] border border-gray-200 dark:border-white/10 shadow-2xl"
+          >
+            <!-- Header -->
+            <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-white/10">
+              <h2 class="text-lg font-bold text-gray-900 dark:text-white">{{ $t('client.twoFactor.setupTitle') }}</h2>
+              <button
+                type="button"
+                class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                @click="tfaModal.open = false"
+              >
+                <X :size="18" :stroke-width="2" />
+              </button>
+            </div>
+
+            <!-- Body -->
+            <div class="px-6 py-5 space-y-5">
+              <p class="text-sm text-gray-500 dark:text-gray-400">{{ $t('client.twoFactor.setupDesc') }}</p>
+
+              <!-- QR Code -->
+              <div v-if="tfaModal.qrCodeUri" class="flex flex-col items-center gap-3">
+                <div class="p-3 bg-white rounded-xl border border-gray-200 dark:border-white/10 inline-flex">
+                  <img :src="`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(tfaModal.qrCodeUri)}`" alt="QR Code" width="180" height="180" class="rounded" />
+                </div>
+                <p class="text-xs text-gray-400 text-center">{{ $t('client.twoFactor.setupScanHint') }}</p>
+              </div>
+
+              <!-- Manual secret -->
+              <div v-if="tfaModal.secret" class="bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 p-3">
+                <p class="text-xs text-gray-500 mb-1">{{ $t('client.twoFactor.setupSecretLabel') }}</p>
+                <p class="text-sm font-mono text-gray-900 dark:text-white tracking-widest break-all">{{ tfaModal.secret }}</p>
+              </div>
+
+              <!-- Verify code -->
+              <UiForm :error="tfaModal.error" spacing="sm" @submit="confirmEnable2FA">
+                <UiOtpInput
+                  v-model="tfaModal.code"
+                  :length="6"
+                  :label="$t('client.twoFactor.codeLabel')"
+                  :error="tfaModal.error ? ' ' : ''"
+                  class="py-2"
+                />
+                <template #actions>
+                  <UiButton type="submit" :loading="tfaModal.saving">
+                    <ShieldCheck v-if="!tfaModal.saving" :size="15" :stroke-width="2" class="mr-1.5" />
+                    {{ tfaModal.saving ? $t('client.login.submitting') : $t('client.twoFactor.confirmEnable') }}
+                  </UiButton>
+                </template>
+              </UiForm>
+            </div>
+          </div>
+        </Transition>
+      </div>
+    </Transition>
+  </Teleport>
+
   <!-- ── Confirm Dialog ──────────────────────────────────────────────── -->
   <UiConfirmModal
     :open="confirmDialog.open"
@@ -787,7 +923,7 @@
 </template>
 
 <script setup lang="ts">
-import { Pencil, Check, AlertCircle, Users, UserMinus, Send, Mail, CreditCard, Plus, Trash2, Star, X } from 'lucide-vue-next'
+import { Pencil, Check, AlertCircle, Users, UserMinus, Send, Mail, CreditCard, Plus, Trash2, Star, X, ShieldCheck, ShieldOff } from 'lucide-vue-next'
 import { useClientStore, type ClientUser } from '~/stores/client'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
@@ -1122,6 +1258,66 @@ async function doDeleteContact(id: string) {
     confirmDialog.open = false
   } finally {
     confirmDialog.loading = false
+  }
+}
+
+// ── Two-Factor Authentication ─────────────────────────────────────────────────
+const twoFactorEnabled = ref(false)
+const tfaLoading = ref(false)
+
+const tfaModal = reactive({
+  open: false,
+  secret: '',
+  qrCodeUri: '',
+  code: '',
+  saving: false,
+  error: ''
+})
+
+// Load 2FA status on mount
+const { data: tfaStatus } = await useApi<{ enabled: boolean }>('/api/portal/auth/2fa-status', { default: () => ({ enabled: false }) })
+twoFactorEnabled.value = tfaStatus.value?.enabled ?? false
+
+async function startSetup2FA() {
+  tfaLoading.value = true
+  try {
+    const data = await apiFetch<{ secret: string; qrCodeUri: string }>('/api/portal/auth/2fa-setup', { method: 'POST' })
+    tfaModal.secret = data.secret
+    tfaModal.qrCodeUri = data.qrCodeUri
+    tfaModal.code = ''
+    tfaModal.error = ''
+    tfaModal.saving = false
+    tfaModal.open = true
+  } catch (err: any) {
+    // show nothing — user stays on page
+  } finally {
+    tfaLoading.value = false
+  }
+}
+
+async function confirmEnable2FA() {
+  tfaModal.saving = true
+  tfaModal.error = ''
+  try {
+    await apiFetch('/api/portal/auth/2fa-enable', { method: 'POST', body: { code: tfaModal.code } })
+    twoFactorEnabled.value = true
+    tfaModal.open = false
+  } catch (err: any) {
+    tfaModal.error = err?.data?.statusMessage || t('client.twoFactor.errorInvalid')
+  } finally {
+    tfaModal.saving = false
+  }
+}
+
+async function disable2FA() {
+  tfaLoading.value = true
+  try {
+    await apiFetch('/api/portal/auth/2fa-disable', { method: 'POST' })
+    twoFactorEnabled.value = false
+  } catch {
+    // ignore
+  } finally {
+    tfaLoading.value = false
   }
 }
 

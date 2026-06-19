@@ -24,6 +24,7 @@ public sealed class TransactionConfiguration : IEntityTypeConfiguration<Transact
         builder.Property(x => x.AmountOut).HasColumnType("numeric(18,4)").IsRequired();
         builder.Property(x => x.Fees).HasColumnType("numeric(18,4)").IsRequired().HasDefaultValue(0m);
         builder.Property(x => x.AddedToCredit).IsRequired().HasDefaultValue(false);
+        builder.Property(x => x.Currency).HasMaxLength(3);
 
         builder.HasIndex(x => x.ClientId);
     }

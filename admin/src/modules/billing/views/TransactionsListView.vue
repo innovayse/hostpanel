@@ -439,8 +439,8 @@ onMounted(() => store.fetchAll())
             :key="tx.id"
             class="grid grid-cols-1 sm:grid-cols-[1.2fr_0.9fr_1.2fr_1.5fr_1fr_0.9fr_0.9fr_0.8fr] gap-2 sm:gap-4 px-5 py-3.5 border-b border-border last:border-0 hover:bg-white/[0.02] transition-colors items-center"
           >
-            <!-- Client ID -->
-            <span class="text-[0.82rem] text-text-secondary">Client #{{ tx.clientId }}</span>
+            <!-- Client Name -->
+            <span class="text-[0.82rem] text-text-secondary">{{ tx.clientName }}</span>
 
             <!-- Date -->
             <span class="text-[0.82rem] text-text-muted">{{ new Date(tx.date).toLocaleDateString() }}</span>

@@ -32,6 +32,8 @@ export interface ClientListItem {
   status: string
   /** True if the linked Identity user has been deleted. */
   isUserDeleted: boolean
+  /** True if the user has TOTP 2FA enabled. */
+  twoFactorEnabled: boolean
   /** ISO 8601 creation timestamp. */
   createdAt: string
 }
@@ -88,6 +90,8 @@ export interface ClientDetail extends ClientListItem {
   statusUpdate: boolean
   /** Whether the client may use single sign-on. */
   allowSso: boolean
+  /** True if the user has TOTP 2FA enabled. */
+  twoFactorEnabled: boolean
   /** Associated contacts. */
   contacts: Contact[]
 }
@@ -293,7 +297,7 @@ export interface Invoice {
   /** Gateway transaction reference, if paid. */
   gatewayTransactionId?: string
   /** Display name of the owning client. */
-  clientName?: string
+  clientName: string
   /** Line items on the invoice. */
   items: InvoiceItem[]
   /** Payment/refund/credit transactions. */
@@ -1114,6 +1118,8 @@ export interface Transaction {
   id: number
   /** Associated client identifier. */
   clientId: number
+  /** Full name of the owning client. */
+  clientName: string
   /** ISO 8601 transaction date. */
   date: string
   /** Human-readable description of the transaction. */

@@ -12,12 +12,14 @@ public interface IUserService
     /// <param name="email">The user's email address (also used as username).</param>
     /// <param name="password">The plain-text password to hash and store.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <param name="firstName">Optional first name to set on the user profile.</param>
+    /// <param name="lastName">Optional last name to set on the user profile.</param>
     /// <returns>
     /// The newly created user's ID on success.
     /// Throws <see cref="InvalidOperationException"/> on failure.
     /// </returns>
     /// <exception cref="InvalidOperationException">Thrown when user creation fails with Identity errors.</exception>
-    Task<string> CreateAsync(string email, string password, CancellationToken ct);
+    Task<string> CreateAsync(string email, string password, CancellationToken ct, string? firstName = null, string? lastName = null);
 
     /// <summary>
     /// Assigns a role to an existing user.
@@ -37,6 +39,14 @@ public interface IUserService
     /// Tuple of user ID and email if credentials are valid; <see langword="null"/> otherwise.
     /// </returns>
     Task<(string Id, string Email)?> FindByEmailAndPasswordAsync(string email, string password, CancellationToken ct);
+
+    /// <summary>
+    /// Finds a user by their exact email address (case-insensitive).
+    /// </summary>
+    /// <param name="email">The exact email address to look up.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Tuple of user ID and email, or <see langword="null"/> if not found.</returns>
+    Task<(string Id, string Email)?> FindByEmailAsync(string email, CancellationToken ct);
 
     /// <summary>
     /// Finds a user by their unique identifier.
@@ -171,4 +181,53 @@ public interface IUserService
     /// <param name="userId">The user's unique identifier.</param>
     /// <param name="ct">Cancellation token.</param>
     Task UpdateLastLoginAsync(string userId, CancellationToken ct);
+
+    /// <summary>
+    /// Returns whether two-factor authentication is currently enabled for the user.
+    /// </summary>
+    /// <param name="userId">The user's unique identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True if 2FA is enabled; false otherwise.</returns>
+    Task<bool> IsTwoFactorEnabledAsync(string userId, CancellationToken ct);
+
+    /// <summary>
+    /// Generates and persists a new Base32-encoded TOTP secret for the user.
+    /// Does not enable 2FA — the caller must confirm with a valid code first.
+    /// </summary>
+    /// <param name="userId">The user's unique identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The newly generated Base32-encoded TOTP secret.</returns>
+    Task<string> GenerateTwoFactorSecretAsync(string userId, CancellationToken ct);
+
+    /// <summary>
+    /// Retrieves the stored Base32-encoded TOTP secret for the user, or null if not set.
+    /// </summary>
+    /// <param name="userId">The user's unique identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The TOTP secret, or null if 2FA has not been configured.</returns>
+    Task<string?> GetTwoFactorSecretAsync(string userId, CancellationToken ct);
+
+    /// <summary>
+    /// Marks two-factor authentication as enabled for the user in Identity.
+    /// </summary>
+    /// <param name="userId">The user's unique identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task EnableTwoFactorAsync(string userId, CancellationToken ct);
+
+    /// <summary>
+    /// Disables two-factor authentication for the user and clears the stored TOTP secret.
+    /// </summary>
+    /// <param name="userId">The user's unique identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task DisableTwoFactorAsync(string userId, CancellationToken ct);
+
+    /// <summary>
+    /// Verifies a 6-digit TOTP code against the user's stored secret.
+    /// Accepts codes within the RFC-specified network delay window.
+    /// </summary>
+    /// <param name="userId">The user's unique identifier.</param>
+    /// <param name="code">The 6-digit TOTP code from the authenticator app.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True if the code is valid within the allowed time window; false otherwise.</returns>
+    Task<bool> VerifyTwoFactorCodeAsync(string userId, string code, CancellationToken ct);
 }

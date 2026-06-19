@@ -651,6 +651,27 @@
       "prefDomainDesc": "Registration/Transfer Confirmation & Renewal Notices",
       "prefAffiliate": "Affiliate Emails",
       "prefAffiliateDesc": "Receive Affiliate Notifications"
+    },
+    "twoFactor": {
+      "title": "Two-Factor Authentication",
+      "enabled": "2FA Enabled",
+      "disabled": "2FA Disabled",
+      "descEnabled": "Your account is protected with an authenticator app.",
+      "descDisabled": "Add an extra layer of security to your account.",
+      "enable": "Enable",
+      "disable": "Disable",
+      "setupTitle": "Set Up Two-Factor Authentication",
+      "setupDesc": "Scan the QR code below with your authenticator app (e.g. Google Authenticator), then enter the 6-digit code to confirm.",
+      "setupScanHint": "Can't scan? Enter the secret key manually.",
+      "setupSecretLabel": "Manual secret key",
+      "confirmEnable": "Activate 2FA",
+      "codeLabel": "Authentication Code",
+      "codePlaceholder": "000000",
+      "stepTitle": "Two-Factor Authentication",
+      "stepSubtitle": "Enter the 6-digit code from your authenticator app.",
+      "verify": "Verify",
+      "back": "Back to sign in",
+      "errorInvalid": "Invalid or expired code. Please try again."
     }
   }
 }

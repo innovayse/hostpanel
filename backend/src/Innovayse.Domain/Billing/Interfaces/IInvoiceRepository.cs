@@ -83,6 +83,9 @@ public interface IInvoiceRepository
     /// <param name="invoice">The invoice to remove.</param>
     void Remove(Invoice invoice);
 
+    /// <summary>Finds an invoice by its external system ID (for migration deduplication).</summary>
+    Task<Invoice?> FindByExternalIdAsync(string externalId, CancellationToken ct);
+
     /// <summary>
     /// Returns all paid invoices whose payment date falls within the given range.
     /// Used for revenue reports.

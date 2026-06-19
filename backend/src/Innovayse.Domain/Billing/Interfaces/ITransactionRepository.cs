@@ -51,4 +51,7 @@ public interface ITransactionRepository
     /// </summary>
     /// <param name="transaction">The transaction to remove.</param>
     void Remove(Transaction transaction);
+
+    /// <summary>Finds a transaction by its external transaction ID string.</summary>
+    Task<Transaction?> FindByTransactionIdAsync(string transactionId, CancellationToken ct);
 }

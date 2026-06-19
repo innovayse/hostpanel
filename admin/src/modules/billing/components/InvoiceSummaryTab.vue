@@ -216,7 +216,7 @@ onMounted(() => populateItems())
           <div class="grid grid-cols-[140px_1fr] gap-2 items-center">
             <span class="text-[0.82rem] text-text-muted text-right">Client Name</span>
             <span class="text-[0.82rem] text-text-primary font-medium">
-              {{ invoice.clientName || `Client #${invoice.clientId}` }}
+              {{ invoice.clientName }}
               <button
                 type="button"
                 class="text-primary-400 hover:underline ml-1 text-[0.78rem]"

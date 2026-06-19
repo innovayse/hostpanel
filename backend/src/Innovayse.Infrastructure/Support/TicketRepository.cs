@@ -115,4 +115,8 @@ public sealed class TicketRepository(AppDbContext db) : ITicketRepository
     public async Task<int> CountByClientIdAndDateRangeAsync(
         int clientId, DateTimeOffset from, DateTimeOffset to, CancellationToken ct) =>
         await db.Tickets.CountAsync(t => t.ClientId == clientId && t.CreatedAt >= from && t.CreatedAt < to, ct);
+
+    /// <inheritdoc/>
+    public async Task<Ticket?> FindByClientAndSubjectAsync(int clientId, string subject, CancellationToken ct) =>
+        await db.Tickets.FirstOrDefaultAsync(t => t.ClientId == clientId && t.Subject.ToLower() == subject.ToLower(), ct);
 }

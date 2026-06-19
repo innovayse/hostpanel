@@ -20,7 +20,7 @@ const meta = INTEGRATION_META[props.integration.slug as IntegrationSlug]
 
 <template>
   <RouterLink
-    :to="`/integrations/${integration.slug}`"
+    :to="`/integrations/${integration.slug}/configure`"
     class="group relative flex flex-col bg-surface-card border border-border rounded-xl p-6 transition-all duration-200 hover:border-primary-500/40 hover:shadow-lg hover:shadow-primary-500/5 no-underline cursor-pointer"
   >
     <!-- Status badge -->

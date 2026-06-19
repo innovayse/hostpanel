@@ -65,4 +65,8 @@ public sealed class TransactionRepository(AppDbContext db) : ITransactionReposit
 
     /// <inheritdoc/>
     public void Remove(Transaction transaction) => db.Transactions.Remove(transaction);
+
+    /// <inheritdoc/>
+    public async Task<Transaction?> FindByTransactionIdAsync(string transactionId, CancellationToken ct) =>
+        await db.Transactions.FirstOrDefaultAsync(t => t.TransactionId == transactionId, ct);
 }

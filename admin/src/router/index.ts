@@ -109,8 +109,16 @@ const router = createRouter({
         { path: 'support/network-issues/:id/edit', component: () => import('../modules/support/views/NetworkIssueFormView.vue') },
         { path: 'plugins', component: () => import('../modules/plugins/views/PluginsView.vue') },
         { path: 'servers', component: () => import('../modules/servers/views/ServersView.vue') },
-        { path: 'integrations', component: () => import('../modules/integrations/views/IntegrationsView.vue') },
-        { path: 'integrations/:slug', component: () => import('../modules/integrations/views/IntegrationDetailView.vue') },
+        { path: 'integrations/:slug/configure', component: () => import('../modules/integrations/views/IntegrationDetailView.vue') },
+        { path: 'migration', component: () => import('../modules/migration/views/MigrationView.vue') },
+        {
+          path: 'integrations',
+          component: () => import('../modules/integrations/IntegrationsLayout.vue'),
+          children: [
+            { path: '', redirect: '/integrations/payments' },
+            { path: ':category', component: () => import('../modules/integrations/views/IntegrationsView.vue') },
+          ],
+        },
         { path: 'settings', component: () => import('../modules/settings/views/SystemSettingsView.vue') },
         { path: 'settings/email-templates', component: () => import('../modules/settings/views/EmailTemplatesView.vue') },
         { path: 'settings/products', component: () => import('../modules/settings/views/ProductsView.vue') },

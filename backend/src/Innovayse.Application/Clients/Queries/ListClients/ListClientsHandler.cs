@@ -46,10 +46,18 @@ public sealed class ListClientsHandler(IClientRepository clientRepo, IUserServic
             query.Phone, statusFilter, emailUserIds, ct);
 
         // Batch-fetch emails for the returned page
-        var userIds = items.Select(c => c.UserId).Distinct();
+        var userIds = items.Select(c => c.UserId).Distinct().ToList();
         var emails = await userService.GetEmailsByIdsAsync(userIds, ct);
 
-        var dtos = items.Select(c => MapToListItem(c, emails)).ToList();
+        // Batch-fetch 2FA status
+        var twoFactorStatuses = new Dictionary<string, bool>();
+        await Task.WhenAll(userIds.Select(async uid =>
+        {
+            var enabled = await userService.IsTwoFactorEnabledAsync(uid, ct);
+            lock (twoFactorStatuses) twoFactorStatuses[uid] = enabled;
+        }));
+
+        var dtos = items.Select(c => MapToListItem(c, emails, twoFactorStatuses)).ToList();
 
         return new PagedResult<ClientListItemDto>(dtos, totalCount, page, pageSize);
     }
@@ -57,9 +65,10 @@ public sealed class ListClientsHandler(IClientRepository clientRepo, IUserServic
     /// <summary>Maps a <see cref="Client"/> to <see cref="ClientListItemDto"/>.</summary>
     /// <param name="client">The client to map.</param>
     /// <param name="emails">User ID to email lookup.</param>
+    /// <param name="twoFactorStatuses">User ID to 2FA enabled status lookup.</param>
     /// <returns>The list item DTO.</returns>
-    private static ClientListItemDto MapToListItem(Client client, Dictionary<string, string> emails) =>
+    private static ClientListItemDto MapToListItem(Client client, Dictionary<string, string> emails, Dictionary<string, bool> twoFactorStatuses) =>
         new(client.Id, client.UserId, emails.GetValueOrDefault(client.UserId, ""),
             client.FirstName, client.LastName, client.CompanyName, client.Status,
-            !emails.ContainsKey(client.UserId), client.CreatedAt);
+            !emails.ContainsKey(client.UserId), twoFactorStatuses.GetValueOrDefault(client.UserId, false), client.CreatedAt);
 }

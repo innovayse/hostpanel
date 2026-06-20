@@ -104,69 +104,99 @@ public sealed class MigrationPullWorker(
         // 1. Fetch totals from plugin
         var totalsResp = await PostActionAsync<TotalsResponse>(client, job.SourceUrl, job.Key, "totals", null, ct);
         job.Start(
-            job.ExportClients        ? totalsResp.Clients             : 0,
-            job.ExportInvoices       ? totalsResp.Invoices            : 0,
-            job.ExportServices       ? totalsResp.Services            : 0,
-            job.ExportDomains        ? totalsResp.Domains             : 0,
-            job.ExportTickets        ? totalsResp.Tickets             : 0,
-            job.ExportProducts       ? totalsResp.Products            : 0,
-            job.ExportOrders         ? totalsResp.Orders              : 0,
-            job.ExportTransactions   ? totalsResp.Transactions        : 0,
-            job.ExportQuotes         ? totalsResp.Quotes              : 0,
-            job.ExportKnowledgebase  ? totalsResp.Knowledgebase       : 0,
-            job.ExportContacts       ? totalsResp.Contacts            : 0,
-            job.ExportTicketReplies  ? totalsResp.TicketReplies       : 0,
-            job.ExportAnnouncements  ? totalsResp.Announcements       : 0,
-            job.ExportDownloads      ? totalsResp.Downloads           : 0,
-            job.ExportNetworkIssues  ? totalsResp.NetworkIssues       : 0);
+            job.ExportClients ? totalsResp.Clients : 0,
+            job.ExportInvoices ? totalsResp.Invoices : 0,
+            job.ExportServices ? totalsResp.Services : 0,
+            job.ExportDomains ? totalsResp.Domains : 0,
+            job.ExportTickets ? totalsResp.Tickets : 0,
+            job.ExportProducts ? totalsResp.Products : 0,
+            job.ExportOrders ? totalsResp.Orders : 0,
+            job.ExportTransactions ? totalsResp.Transactions : 0,
+            job.ExportQuotes ? totalsResp.Quotes : 0,
+            job.ExportKnowledgebase ? totalsResp.Knowledgebase : 0,
+            job.ExportContacts ? totalsResp.Contacts : 0,
+            job.ExportTicketReplies ? totalsResp.TicketReplies : 0,
+            job.ExportAnnouncements ? totalsResp.Announcements : 0,
+            job.ExportDownloads ? totalsResp.Downloads : 0,
+            job.ExportNetworkIssues ? totalsResp.NetworkIssues : 0);
         await repo.SaveAsync(ct);
 
         // 2. Pull and import each entity type in dependency order:
         //    Clients first (invoices/services/domains/tickets reference them)
         if (job.ExportClients)
+        {
             await PullClientsAsync(client, job, ct);
+        }
 
         if (job.ExportProducts)
+        {
             await PullProductsAsync(client, job, ct);
+        }
 
         if (job.ExportInvoices)
+        {
             await PullInvoicesAsync(client, job, ct);
+        }
 
         if (job.ExportServices)
+        {
             await PullServicesAsync(client, job, ct);
+        }
 
         if (job.ExportDomains)
+        {
             await PullDomainsAsync(client, job, ct);
+        }
 
         if (job.ExportTickets)
+        {
             await PullTicketsAsync(client, job, ct);
+        }
 
         if (job.ExportOrders)
+        {
             await PullOrdersAsync(client, job, ct);
+        }
 
         if (job.ExportTransactions)
+        {
             await PullTransactionsAsync(client, job, ct);
+        }
 
         if (job.ExportQuotes)
+        {
             await PullQuotesAsync(client, job, ct);
+        }
 
         if (job.ExportKnowledgebase)
+        {
             await PullKnowledgebaseAsync(client, job, ct);
+        }
 
         if (job.ExportContacts)
+        {
             await PullContactsAsync(client, job, ct);
+        }
 
         if (job.ExportTicketReplies)
+        {
             await PullTicketRepliesAsync(client, job, ct);
+        }
 
         if (job.ExportAnnouncements)
+        {
             await PullAnnouncementsAsync(client, job, ct);
+        }
 
         if (job.ExportDownloads)
+        {
             await PullDownloadsAsync(client, job, ct);
+        }
 
         if (job.ExportNetworkIssues)
+        {
             await PullNetworkIssuesAsync(client, job, ct);
+        }
 
         job.Complete();
         await repo.SaveAsync(ct);
@@ -186,8 +216,15 @@ public sealed class MigrationPullWorker(
                 try
                 {
                     var result = await ImportClientAsync(rec, ct);
-                    if (result == ImportResult.Imported) imported++;
-                    else if (result == ImportResult.Skipped) skipped++;
+                    if (result == ImportResult.Imported)
+                    {
+                        imported++;
+                    }
+                    else if (result == ImportResult.Skipped)
+                    {
+                        skipped++;
+                    }
+
                     await WriteLogAsync(MigrationEntityType.Clients, rec.Email, result, reason: null, ct);
                 }
                 catch (Exception ex)
@@ -222,25 +259,31 @@ public sealed class MigrationPullWorker(
         if (!string.IsNullOrWhiteSpace(rec.Address) || !string.IsNullOrWhiteSpace(rec.City))
         {
             clientEntity.UpdateAddress(
-                street:   rec.Address  ?? string.Empty,
+                street: rec.Address ?? string.Empty,
                 address2: null,
-                city:     rec.City     ?? string.Empty,
-                state:    rec.State    ?? string.Empty,
+                city: rec.City ?? string.Empty,
+                state: rec.State ?? string.Empty,
                 postCode: rec.PostCode ?? string.Empty,
-                country:  rec.Country  ?? string.Empty);
+                country: rec.Country ?? string.Empty);
         }
 
         if (!string.IsNullOrWhiteSpace(rec.Currency))
+        {
             clientEntity.UpdatePreferences(rec.Currency, null, null, null);
+        }
 
         if (rec.TaxExempt)
+        {
             clientEntity.UpdateSettings(
                 lateFees: false, overdueNotices: false, taxExempt: true,
                 separateInvoices: false, disableCcProcessing: false,
                 marketingOptIn: false, statusUpdate: false, allowSso: false);
+        }
 
         if (rec.CreditBalance > 0)
+        {
             clientEntity.AddCredit(rec.CreditBalance);
+        }
 
         clientRepo.Add(clientEntity);
         await uow.SaveChangesAsync(ct);
@@ -260,8 +303,15 @@ public sealed class MigrationPullWorker(
                 try
                 {
                     var result = await ImportInvoiceAsync(rec, ct);
-                    if (result.Action == ImportResult.Imported) imported++;
-                    else if (result.Action == ImportResult.Skipped) skipped++;
+                    if (result.Action == ImportResult.Imported)
+                    {
+                        imported++;
+                    }
+                    else if (result.Action == ImportResult.Skipped)
+                    {
+                        skipped++;
+                    }
+
                     await WriteLogAsync(MigrationEntityType.Invoices, rec.ClientEmail, result.Action, result.Reason, ct);
                 }
                 catch (Exception ex)
@@ -290,7 +340,9 @@ public sealed class MigrationPullWorker(
         {
             var existing = await invoiceRepo.FindByExternalIdAsync(rec.ExternalId, ct);
             if (existing is not null)
+            {
                 return (ImportResult.Skipped, $"Invoice #{rec.ExternalId} already imported");
+            }
         }
 
         // Draft invoices need a different factory — Create() produces Unpaid directly.
@@ -300,10 +352,14 @@ public sealed class MigrationPullWorker(
             : Invoice.Create(clientId.Value, rec.DueDate); // starts as Unpaid
 
         foreach (var item in rec.Items)
+        {
             invoice.AddItem(item.Description, item.Amount, item.Quantity);
+        }
 
         if (!string.IsNullOrWhiteSpace(rec.PaymentMethod))
+        {
             invoice.UpdateOptions(rec.Date, rec.DueDate, rec.PaymentMethod, 0);
+        }
 
         switch (rec.Status)
         {
@@ -338,7 +394,9 @@ public sealed class MigrationPullWorker(
         }
 
         if (!string.IsNullOrWhiteSpace(rec.ExternalId))
+        {
             invoice.SetExternalId(rec.ExternalId);
+        }
 
         invoiceRepo.Add(invoice);
         await uow.SaveChangesAsync(ct);
@@ -360,8 +418,15 @@ public sealed class MigrationPullWorker(
                 try
                 {
                     var result = await ImportServiceAsync(rec, allProducts, ct);
-                    if (result.Action == ImportResult.Imported) imported++;
-                    else if (result.Action == ImportResult.Skipped) skipped++;
+                    if (result.Action == ImportResult.Imported)
+                    {
+                        imported++;
+                    }
+                    else if (result.Action == ImportResult.Skipped)
+                    {
+                        skipped++;
+                    }
+
                     await WriteLogAsync(MigrationEntityType.Services, rec.ClientEmail, result.Action, result.Reason, ct);
                 }
                 catch (Exception ex)
@@ -393,7 +458,9 @@ public sealed class MigrationPullWorker(
         {
             var existingSvc = await serviceRepo.FindByClientAndDomainAsync(clientId.Value, rec.Domain, ct);
             if (existingSvc is not null)
+            {
                 return (ImportResult.Skipped, $"Service for domain '{rec.Domain}' already exists");
+            }
         }
 
         var product = allProducts.FirstOrDefault(p =>
@@ -409,27 +476,27 @@ public sealed class MigrationPullWorker(
         var svc = ClientService.Create(clientId.Value, product.Id, rec.BillingCycle);
 
         svc.Update(
-            domain:                 rec.Domain,
-            dedicatedIp:            null,
-            username:               rec.Username,
-            password:               null,
-            billingCycle:           rec.BillingCycle,
-            recurringAmount:        rec.RecurringAmount,
-            paymentMethod:          rec.PaymentMethod,
-            nextRenewalAt:          rec.NextDueDate,
-            subscriptionId:         rec.SubscriptionId,
-            overrideAutoSuspend:    false,
-            suspendUntil:           null,
-            autoTerminateEndOfCycle:false,
-            autoTerminateReason:    null,
-            adminNotes:             rec.AdminNotes,
-            provisioningRef:        null,
-            firstPaymentAmount:     rec.FirstPaymentAmount,
-            promotionCode:          null,
-            terminatedAt:           rec.TerminatedAt,
-            serverId:               null,
-            quantity:               1,
-            productId:              null);
+            domain: rec.Domain,
+            dedicatedIp: null,
+            username: rec.Username,
+            password: null,
+            billingCycle: rec.BillingCycle,
+            recurringAmount: rec.RecurringAmount,
+            paymentMethod: rec.PaymentMethod,
+            nextRenewalAt: rec.NextDueDate,
+            subscriptionId: rec.SubscriptionId,
+            overrideAutoSuspend: false,
+            suspendUntil: null,
+            autoTerminateEndOfCycle: false,
+            autoTerminateReason: null,
+            adminNotes: rec.AdminNotes,
+            provisioningRef: null,
+            firstPaymentAmount: rec.FirstPaymentAmount,
+            promotionCode: null,
+            terminatedAt: rec.TerminatedAt,
+            serverId: null,
+            quantity: 1,
+            productId: null);
 
         switch (rec.Status)
         {
@@ -466,8 +533,15 @@ public sealed class MigrationPullWorker(
                 try
                 {
                     var result = await ImportDomainAsync(rec, ct);
-                    if (result.Action == ImportResult.Imported) imported++;
-                    else if (result.Action == ImportResult.Skipped) skipped++;
+                    if (result.Action == ImportResult.Imported)
+                    {
+                        imported++;
+                    }
+                    else if (result.Action == ImportResult.Skipped)
+                    {
+                        skipped++;
+                    }
+
                     await WriteLogAsync(MigrationEntityType.Domains, rec.DomainName, result.Action, result.Reason, ct);
                 }
                 catch (Exception ex)
@@ -540,7 +614,9 @@ public sealed class MigrationPullWorker(
             rec.ExpiresAt, rec.NextDueDate ?? rec.ExpiresAt, 1, domain.Status);
 
         if (rec.Nameservers is { Count: > 0 })
+        {
             domain.SetNameservers(rec.Nameservers);
+        }
 
         domainRepo.Add(domain);
         await uow.SaveChangesAsync(ct);
@@ -567,8 +643,15 @@ public sealed class MigrationPullWorker(
                                  ?.Id ?? defaultDeptId;
 
                     var result = await ImportTicketAsync(rec, deptId, ct);
-                    if (result.Action == ImportResult.Imported) imported++;
-                    else if (result.Action == ImportResult.Skipped) skipped++;
+                    if (result.Action == ImportResult.Imported)
+                    {
+                        imported++;
+                    }
+                    else if (result.Action == ImportResult.Skipped)
+                    {
+                        skipped++;
+                    }
+
                     await WriteLogAsync(MigrationEntityType.Tickets, rec.Subject, result.Action, result.Reason, ct);
                 }
                 catch (Exception ex)
@@ -594,13 +677,15 @@ public sealed class MigrationPullWorker(
 
         var existingTicket = await ticketRepo.FindByClientAndSubjectAsync(clientId.Value, rec.Subject, ct);
         if (existingTicket is not null)
+        {
             return (ImportResult.Skipped, "Ticket already exists");
+        }
 
         var priority = rec.Priority switch
         {
             "High" => TicketPriority.High,
-            "Low"  => TicketPriority.Low,
-            _      => TicketPriority.Medium,
+            "Low" => TicketPriority.Low,
+            _ => TicketPriority.Medium,
         };
 
         var ticket = Ticket.Create(
@@ -611,7 +696,9 @@ public sealed class MigrationPullWorker(
             priority);
 
         if (rec.Status is "Closed" or "Answered")
+        {
             ticket.Close();
+        }
 
         ticketRepo.Add(ticket);
         await uow.SaveChangesAsync(ct);
@@ -624,7 +711,7 @@ public sealed class MigrationPullWorker(
     {
         // Step 1: fetch all product groups, create missing ones, build whmcsId→localId map
         var localGroups = await productGroupRepo.ListAsync(ct);
-        var groupIdMap  = new Dictionary<int, int>(); // whmcsId → localGroupId
+        var groupIdMap = new Dictionary<int, int>(); // whmcsId → localGroupId
 
         await foreach (var page in PagesAsync<ProductGroupRecord>(http, job, "product_groups", ct))
         {
@@ -678,6 +765,7 @@ public sealed class MigrationPullWorker(
                         localGroupId,
                         rec.Name,
                         rec.Description,
+                        null,
                         null,
                         null,
                         ProductType.Other,
@@ -743,16 +831,22 @@ public sealed class MigrationPullWorker(
                                           ?? allProducts.FirstOrDefault();
 
                             if (product is not null)
+                            {
                                 order.AddItem(product.Id, item.ProductName, item.BillingCycle,
                                     item.FirstPaymentAmount, item.RecurringAmount,
                                     item.Domain, item.Hostname);
+                            }
                         }
                     }
 
                     switch (rec.Status)
                     {
-                        case "Active":    order.Accept(); break;
-                        case "Cancelled": order.Cancel(); break;
+                        case "Active":
+                            order.Accept();
+                            break;
+                        case "Cancelled":
+                            order.Cancel();
+                            break;
                     }
 
                     orderRepo.Add(order);
@@ -865,14 +959,24 @@ public sealed class MigrationPullWorker(
                         customerNotes: rec.CustomerNotes);
 
                     foreach (var item in rec.Items)
+                    {
                         quote.AddItem(item.Description, item.UnitPrice, item.Quantity, item.DiscountPercent);
+                    }
 
                     switch (rec.Stage)
                     {
-                        case "Delivered": quote.Deliver();   break;
-                        case "Accepted":  quote.Accept();    break;
-                        case "Lost":      quote.MarkLost();  break;
-                        case "Dead":      quote.MarkDead();  break;
+                        case "Delivered":
+                            quote.Deliver();
+                            break;
+                        case "Accepted":
+                            quote.Accept();
+                            break;
+                        case "Lost":
+                            quote.MarkLost();
+                            break;
+                        case "Dead":
+                            quote.MarkDead();
+                            break;
                     }
 
                     quoteRepo.Add(quote);
@@ -897,7 +1001,7 @@ public sealed class MigrationPullWorker(
     private async Task PullKnowledgebaseAsync(HttpClient http, MigrationJob job, CancellationToken ct)
     {
         // Step 1: fetch categories, create missing ones, build whmcsCatId→localCategoryName map
-        var localCats  = await kbCategoryRepo.ListAllAsync(ct);
+        var localCats = await kbCategoryRepo.ListAllAsync(ct);
         var catNameMap = new Dictionary<int, string>(); // whmcsCatId → local category name
 
         await foreach (var page in PagesAsync<KbCategoryRecord>(http, job, "knowledgebase_categories", ct))
@@ -968,7 +1072,7 @@ public sealed class MigrationPullWorker(
     private async Task PullContactsAsync(HttpClient http, MigrationJob job, CancellationToken ct)
     {
         int imported = 0, skipped = 0;
-        bool hasAny  = false;
+        bool hasAny = false;
 
         await foreach (var page in PagesAsync<ContactRecord>(http, job, "contacts", ct))
         {
@@ -1023,7 +1127,9 @@ public sealed class MigrationPullWorker(
         }
 
         if (!hasAny)
+        {
             logger.LogInformation("No contacts found in WHMCS — skipping.");
+        }
     }
 
     // ── Ticket Replies ────────────────────────────────────────────────────────
@@ -1031,7 +1137,7 @@ public sealed class MigrationPullWorker(
     private async Task PullTicketRepliesAsync(HttpClient http, MigrationJob job, CancellationToken ct)
     {
         int imported = 0, skipped = 0;
-        bool hasAny  = false;
+        bool hasAny = false;
 
         await foreach (var page in PagesAsync<TicketReplyRecord>(http, job, "ticket_replies", ct))
         {
@@ -1050,7 +1156,7 @@ public sealed class MigrationPullWorker(
                     }
 
                     var tickets = await ticketRepo.ListByClientIdAsync(clientId.Value, ct);
-                    var ticket  = tickets.FirstOrDefault(t =>
+                    var ticket = tickets.FirstOrDefault(t =>
                         string.Equals(t.Subject, rec.TicketSubject, StringComparison.OrdinalIgnoreCase));
 
                     if (ticket is null)
@@ -1088,7 +1194,9 @@ public sealed class MigrationPullWorker(
         }
 
         if (!hasAny)
+        {
             logger.LogInformation("No ticket replies found in WHMCS — skipping.");
+        }
     }
 
     // ── Announcements ─────────────────────────────────────────────────────────
@@ -1104,8 +1212,15 @@ public sealed class MigrationPullWorker(
                 try
                 {
                     var result = await ImportAnnouncementAsync(rec, ct);
-                    if (result == ImportResult.Imported) imported++;
-                    else if (result == ImportResult.Skipped) skipped++;
+                    if (result == ImportResult.Imported)
+                    {
+                        imported++;
+                    }
+                    else if (result == ImportResult.Skipped)
+                    {
+                        skipped++;
+                    }
+
                     await WriteLogAsync(MigrationEntityType.Announcements, rec.Title, result, null, ct);
                 }
                 catch (Exception ex)
@@ -1203,8 +1318,15 @@ public sealed class MigrationPullWorker(
                 try
                 {
                     var result = await ImportNetworkIssueAsync(rec, ct);
-                    if (result == ImportResult.Imported) imported++;
-                    else if (result == ImportResult.Skipped) skipped++;
+                    if (result == ImportResult.Imported)
+                    {
+                        imported++;
+                    }
+                    else if (result == ImportResult.Skipped)
+                    {
+                        skipped++;
+                    }
+
                     await WriteLogAsync(MigrationEntityType.NetworkIssues, rec.Title, result, null, ct);
                 }
                 catch (Exception ex)
@@ -1224,15 +1346,15 @@ public sealed class MigrationPullWorker(
         var type = rec.Type?.ToLowerInvariant() switch
         {
             "server" => NetworkIssueType.Server,
-            _        => NetworkIssueType.Other,
+            _ => NetworkIssueType.Other,
         };
 
         var priority = rec.Priority?.ToLowerInvariant() switch
         {
             "critical" => NetworkIssuePriority.Critical,
-            "high"     => NetworkIssuePriority.High,
-            "low"      => NetworkIssuePriority.Low,
-            _          => NetworkIssuePriority.Medium,
+            "high" => NetworkIssuePriority.High,
+            "low" => NetworkIssuePriority.Low,
+            _ => NetworkIssuePriority.Medium,
         };
 
         var issue = NetworkIssue.Create(
@@ -1244,7 +1366,9 @@ public sealed class MigrationPullWorker(
             string.IsNullOrWhiteSpace(rec.Description) ? "(no description)" : rec.Description);
 
         if (rec.Status?.ToLowerInvariant() == "resolved")
+        {
             issue.Resolve();
+        }
 
         networkIssueRepo.Add(issue);
         await uow.SaveChangesAsync(ct);
@@ -1257,7 +1381,10 @@ public sealed class MigrationPullWorker(
     private async Task<int?> ResolveClientIdAsync(string email, CancellationToken ct)
     {
         var user = await userService.FindByEmailAsync(email, ct);
-        if (user is null) return null;
+        if (user is null)
+        {
+            return null;
+        }
 
         var (userId, _) = user.Value;
         var client = await clientRepo.FindByUserIdAsync(userId, ct);
@@ -1275,8 +1402,8 @@ public sealed class MigrationPullWorker(
         var logAction = action switch
         {
             ImportResult.Imported => MigrationLogAction.Imported,
-            ImportResult.Skipped  => MigrationLogAction.Skipped,
-            _                     => MigrationLogAction.Failed,
+            ImportResult.Skipped => MigrationLogAction.Skipped,
+            _ => MigrationLogAction.Failed,
         };
 
         logRepo.Add(MigrationLog.Create(_jobId, entityType, identifier, logAction, reason));
@@ -1300,10 +1427,14 @@ public sealed class MigrationPullWorker(
             var resp = await PostActionAsync<PagedResponse<T>>(http, job.SourceUrl, job.Key, action, extra, ct);
 
             if (resp.Items is { Count: > 0 })
+            {
                 yield return resp.Items;
+            }
 
             if (page >= resp.TotalPages || resp.TotalPages == 0)
+            {
                 break;
+            }
 
             page++;
         }
@@ -1319,7 +1450,12 @@ public sealed class MigrationPullWorker(
     {
         var payload = new Dictionary<string, object> { ["key"] = key, ["action"] = action };
         if (extra is not null)
-            foreach (var kv in extra) payload[kv.Key] = kv.Value;
+        {
+            foreach (var kv in extra)
+            {
+                payload[kv.Key] = kv.Value;
+            }
+        }
 
         var response = await client.PostAsJsonAsync(sourceUrl, payload, ct);
         if (!response.IsSuccessStatusCode)
@@ -1343,28 +1479,28 @@ public sealed class MigrationPullWorker(
 
     private sealed class TotalsResponse
     {
-        public int Clients            { get; set; }
-        public int Invoices           { get; set; }
-        public int Services           { get; set; }
-        public int Domains            { get; set; }
-        public int Tickets            { get; set; }
-        public int Products           { get; set; }
-        public int Orders             { get; set; }
-        public int Transactions       { get; set; }
-        public int Quotes             { get; set; }
-        public int Knowledgebase      { get; set; }
-        public int Contacts           { get; set; }
-        public int TicketReplies      { get; set; }
-        public int Announcements      { get; set; }
-        public int Downloads          { get; set; }
+        public int Clients { get; set; }
+        public int Invoices { get; set; }
+        public int Services { get; set; }
+        public int Domains { get; set; }
+        public int Tickets { get; set; }
+        public int Products { get; set; }
+        public int Orders { get; set; }
+        public int Transactions { get; set; }
+        public int Quotes { get; set; }
+        public int Knowledgebase { get; set; }
+        public int Contacts { get; set; }
+        public int TicketReplies { get; set; }
+        public int Announcements { get; set; }
+        public int Downloads { get; set; }
         public int DownloadCategories { get; set; }
-        public int NetworkIssues      { get; set; }
+        public int NetworkIssues { get; set; }
     }
 
     private sealed class PagedResponse<T>
     {
-        public List<T>? Items      { get; set; }
-        public int      TotalPages { get; set; }
+        public List<T>? Items { get; set; }
+        public int TotalPages { get; set; }
     }
 
     // ── Plugin record shapes (mapped from JSON) ───────────────────────────────

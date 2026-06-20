@@ -22,7 +22,9 @@ public sealed class SslMonitoringService(AppDbContext db) : ISslMonitoringServic
     {
         var query = db.SslChecks.AsQueryable();
         if (!includeInactive)
+        {
             query = query.Where(x => x.IsActive);
+        }
 
         var checks = await query.OrderBy(x => x.DomainName).ToListAsync(ct);
         return BuildReport(checks);
@@ -61,13 +63,17 @@ public sealed class SslMonitoringService(AppDbContext db) : ISslMonitoringServic
             try
             {
                 var sslResult = await CheckSslAsync(domain.Name);
-            var hasSsl = sslResult.hasSsl;
-            var issuer = sslResult.issuer;
-            var expiresAt = sslResult.expiresAt;
+                var hasSsl = sslResult.hasSsl;
+                var issuer = sslResult.issuer;
+                var expiresAt = sslResult.expiresAt;
                 if (existing.TryGetValue(domain.Name, out var record))
+                {
                     record.Update(hasSsl, issuer, expiresAt, domain.IsActive);
+                }
                 else
+                {
                     db.SslChecks.Add(SslCheck.Create(domain.Name, hasSsl, issuer, expiresAt, domain.IsActive));
+                }
             }
             finally { semaphore.Release(); }
         });
@@ -90,7 +96,9 @@ public sealed class SslMonitoringService(AppDbContext db) : ISslMonitoringServic
             await ssl.AuthenticateAsClientAsync(hostname);
 
             if (ssl.RemoteCertificate is not X509Certificate2 cert)
+            {
                 return (false, null, null);
+            }
 
             var expiry = new DateTimeOffset(cert.NotAfter, TimeSpan.Zero);
             var issuerCn = cert.Issuer
@@ -119,20 +127,48 @@ public sealed class SslMonitoringService(AppDbContext db) : ISslMonitoringServic
 
         string GetGroup(SslCheck c)
         {
-            if (!c.HasSsl || c.ExpiresAt is null) return "No SSL Detected";
+            if (!c.HasSsl || c.ExpiresAt is null)
+            {
+                return "No SSL Detected";
+            }
+
             var days = (c.ExpiresAt.Value - now).TotalDays;
-            if (days <= 30)  return "Expires within 30 Days";
-            if (days <= 90)  return "Expires within 90 Days";
-            if (days <= 180) return "Expires within 180 Days";
+            if (days <= 30)
+            {
+                return "Expires within 30 Days";
+            }
+
+            if (days <= 90)
+            {
+                return "Expires within 90 Days";
+            }
+
+            if (days <= 180)
+            {
+                return "Expires within 180 Days";
+            }
+
             return "Expires in over 180 Days";
         }
 
         static string FormatLastUpdate(DateTimeOffset checkedAt)
         {
             var diff = DateTimeOffset.UtcNow - checkedAt;
-            if (diff.TotalMinutes < 1)  return "just now";
-            if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes} minutes ago";
-            if (diff.TotalHours < 24)   return $"{(int)diff.TotalHours} hours ago";
+            if (diff.TotalMinutes < 1)
+            {
+                return "just now";
+            }
+
+            if (diff.TotalMinutes < 60)
+            {
+                return $"{(int)diff.TotalMinutes} minutes ago";
+            }
+
+            if (diff.TotalHours < 24)
+            {
+                return $"{(int)diff.TotalHours} hours ago";
+            }
+
             return $"{(int)diff.TotalDays} days ago";
         }
 

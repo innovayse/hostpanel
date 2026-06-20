@@ -30,14 +30,9 @@ public sealed class ChangePasswordHandler(
             throw new InvalidOperationException($"ClientService {cmd.ServiceId} has no provisioning reference.");
         }
 
-        var server = service.ServerId.HasValue
+        var server = (service.ServerId.HasValue
             ? await serverRepo.FindByIdAsync(service.ServerId.Value, ct)
-            : null;
-
-        if (server is null)
-        {
-            throw new InvalidOperationException($"ClientService {cmd.ServiceId} has no server assigned.");
-        }
+            : null) ?? throw new InvalidOperationException($"ClientService {cmd.ServiceId} has no server assigned.");
 
         var provider = providerFactory.CreateFor(server);
         await provider.ChangePasswordAsync(service.ProvisioningRef, cmd.NewPassword, ct);

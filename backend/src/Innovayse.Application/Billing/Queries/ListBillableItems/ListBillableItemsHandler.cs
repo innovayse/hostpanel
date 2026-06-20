@@ -27,9 +27,13 @@ public sealed class ListBillableItemsHandler(IBillableItemRepository repo, IClie
         if (!string.IsNullOrEmpty(query.Type))
         {
             if (query.Type == "Recurring")
+            {
                 filtered = items.Where(x => x.Type == BillableItemType.Recurring).ToList();
+            }
             else if (query.Type == "OneTime")
+            {
                 filtered = items.Where(x => x.Type == BillableItemType.OneTime).ToList();
+            }
         }
 
         // Batch-resolve client names

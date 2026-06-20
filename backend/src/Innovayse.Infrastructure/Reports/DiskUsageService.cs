@@ -57,9 +57,13 @@ public sealed class DiskUsageService(
             {
                 CpanelWhmApi api;
                 if (!string.IsNullOrEmpty(server.ApiToken))
+                {
                     api = CpanelWhmApi.Create(server.Hostname, server.Username, server.ApiToken, httpFactory);
+                }
                 else if (!string.IsNullOrEmpty(server.AccessHash))
+                {
                     api = CpanelWhmApi.CreateWithHash(server.Hostname, server.Username, server.AccessHash, httpFactory);
+                }
                 else
                 {
                     logger.LogWarning("Server {Name} has no ApiToken or AccessHash — skipping disk usage poll.", server.Name);
@@ -105,8 +109,16 @@ public sealed class DiskUsageService(
     {
         static string FormatMb(long mb)
         {
-            if (mb == 0) return "∞";
-            if (mb >= 1024) return $"{mb / 1024.0:F2} GB";
+            if (mb == 0)
+            {
+                return "∞";
+            }
+
+            if (mb >= 1024)
+            {
+                return $"{mb / 1024.0:F2} GB";
+            }
+
             return $"{mb} MB";
         }
 

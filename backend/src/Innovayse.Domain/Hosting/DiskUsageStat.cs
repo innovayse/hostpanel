@@ -36,14 +36,14 @@ public sealed class DiskUsageStat : Entity
         long diskUsageMb, long diskLimitMb, long bwUsageMb, long bwLimitMb)
         => new()
         {
-            ServerName  = serverName,
-            Domain      = domain,
-            ClientName  = clientName,
+            ServerName = serverName,
+            Domain = domain,
+            ClientName = clientName,
             DiskUsageMb = diskUsageMb,
             DiskLimitMb = diskLimitMb,
-            BwUsageMb   = bwUsageMb,
-            BwLimitMb   = bwLimitMb,
-            UpdatedAt   = DateTimeOffset.UtcNow,
+            BwUsageMb = bwUsageMb,
+            BwLimitMb = bwLimitMb,
+            UpdatedAt = DateTimeOffset.UtcNow,
         };
 
     /// <summary>Updates this stat with fresh values.</summary>
@@ -51,8 +51,8 @@ public sealed class DiskUsageStat : Entity
     {
         DiskUsageMb = diskUsageMb;
         DiskLimitMb = diskLimitMb;
-        BwUsageMb   = bwUsageMb;
-        BwLimitMb   = bwLimitMb;
-        UpdatedAt   = DateTimeOffset.UtcNow;
+        BwUsageMb = bwUsageMb;
+        BwLimitMb = bwLimitMb;
+        UpdatedAt = DateTimeOffset.UtcNow;
     }
 }

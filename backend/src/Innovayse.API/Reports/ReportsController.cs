@@ -2,8 +2,8 @@ namespace Innovayse.API.Reports;
 
 using System.Text;
 using Innovayse.Application.Reports.DTOs;
-using Innovayse.Application.Reports.Queries.AgingInvoices;
 using Innovayse.Application.Reports.Interfaces;
+using Innovayse.Application.Reports.Queries.AgingInvoices;
 using Innovayse.Application.Reports.Queries.AnnualIncome;
 using Innovayse.Application.Reports.Queries.ClientsByCity;
 using Innovayse.Application.Reports.Queries.ClientsByCountry;
@@ -150,7 +150,9 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
         var sb = new StringBuilder();
         sb.AppendLine("ID,Client ID,Client Name,Status,Created Date,Due Date,Date Paid,SubTotal,Credit,Tax,Tax Rate,Total,Payment Method,Notes");
         foreach (var r in result.Items)
+        {
             sb.AppendLine($"{r.Id},{r.ClientId},\"{r.ClientName}\",{r.Status},{r.CreatedDate},{r.DueDate},{r.DatePaid},{r.SubTotal},{r.Credit},{r.Tax},{r.TaxRate},{r.Total},\"{r.PaymentMethod}\",\"{r.Notes}\"");
+        }
 
         return File(Encoding.UTF8.GetBytes(sb.ToString()), "text/csv", "invoices-report.csv");
     }
@@ -185,7 +187,9 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
         var sb = new StringBuilder();
         sb.AppendLine("ID,Client ID,Client Name,Currency,Payment Method,Date,Description,Invoice ID,Transaction ID,Amount In,Fees,Amount Out");
         foreach (var r in result.Items)
+        {
             sb.AppendLine($"{r.Id},{r.ClientId},\"{r.ClientName}\",{r.Currency},\"{r.PaymentMethod}\",{r.Date},\"{r.Description}\",{r.InvoiceId},{r.TransactionId},{r.AmountIn},{r.Fees},{r.AmountOut}");
+        }
 
         return File(Encoding.UTF8.GetBytes(sb.ToString()), "text/csv", "transactions-report.csv");
     }

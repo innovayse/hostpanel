@@ -26,7 +26,10 @@ public sealed class GetSlideHandler(ISlideRepository slideRepo, IProductReposito
     public async Task<SlideAdminDto?> HandleAsync(GetSlideQuery query, CancellationToken ct)
     {
         var slide = await slideRepo.FindByIdAsync(query.Id, ct);
-        if (slide is null) return null;
+        if (slide is null)
+        {
+            return null;
+        }
 
         string? productName = null;
         if (slide.ProductId.HasValue)
@@ -82,7 +85,10 @@ public sealed class GetSlideHandler(ISlideRepository slideRepo, IProductReposito
     /// <returns>Deserialized string array, or null if the input is null or cannot be parsed.</returns>
     private static string[]? DeserializeFeatures(string? featuresJson)
     {
-        if (featuresJson is null) return null;
+        if (featuresJson is null)
+        {
+            return null;
+        }
 
         try
         {

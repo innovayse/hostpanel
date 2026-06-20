@@ -21,7 +21,10 @@ public sealed class BulkUpdateTicketsHandler(ITicketRepository repo, IUnitOfWork
         foreach (var ticketId in command.TicketIds)
         {
             var ticket = await repo.FindByIdAsync(ticketId, ct);
-            if (ticket is null) continue;
+            if (ticket is null)
+            {
+                continue;
+            }
 
             switch (action)
             {

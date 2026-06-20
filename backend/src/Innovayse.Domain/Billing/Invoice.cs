@@ -203,7 +203,11 @@ public sealed class Invoice : AggregateRoot
     /// </summary>
     public void ApplyCredit(decimal amount)
     {
-        if (amount <= 0) throw new ArgumentException("Credit amount must be positive.", nameof(amount));
+        if (amount <= 0)
+        {
+            throw new ArgumentException("Credit amount must be positive.", nameof(amount));
+        }
+
         Credit += amount;
         RecalculateTotals();
     }
@@ -213,7 +217,11 @@ public sealed class Invoice : AggregateRoot
     /// </summary>
     public void RemoveCredit(decimal amount)
     {
-        if (amount <= 0) throw new ArgumentException("Amount must be positive.", nameof(amount));
+        if (amount <= 0)
+        {
+            throw new ArgumentException("Amount must be positive.", nameof(amount));
+        }
+
         Credit = Math.Max(0, Credit - amount);
         RecalculateTotals();
     }
@@ -245,7 +253,10 @@ public sealed class Invoice : AggregateRoot
     /// </summary>
     public void MarkOverdue()
     {
-        if (Status == InvoiceStatus.Overdue) return;
+        if (Status == InvoiceStatus.Overdue)
+        {
+            return;
+        }
 
         if (Status != InvoiceStatus.Unpaid)
         {

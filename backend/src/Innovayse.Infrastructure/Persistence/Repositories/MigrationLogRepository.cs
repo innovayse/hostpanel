@@ -25,10 +25,14 @@ public sealed class MigrationLogRepository(AppDbContext db) : IMigrationLogRepos
         var query = db.MigrationLogs.Where(l => l.JobId == jobId);
 
         if (action.HasValue)
+        {
             query = query.Where(l => l.Action == action.Value);
+        }
 
         if (entityType.HasValue)
+        {
             query = query.Where(l => l.EntityType == entityType.Value);
+        }
 
         var total = await query.CountAsync(ct);
 

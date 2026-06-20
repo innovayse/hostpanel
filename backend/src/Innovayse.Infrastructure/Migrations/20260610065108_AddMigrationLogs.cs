@@ -1,11 +1,11 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-
 #nullable disable
 
 namespace Innovayse.Infrastructure.Migrations
 {
+    using System;
+    using Microsoft.EntityFrameworkCore.Migrations;
+    using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+
     /// <inheritdoc />
     public partial class AddMigrationLogs : Migration
     {

@@ -23,10 +23,16 @@ public sealed class InvoiceCreatedHandler(
     public async Task HandleAsync(InvoiceCreatedEvent evt, CancellationToken ct)
     {
         var client = await clientRepo.FindByIdAsync(evt.ClientId, ct);
-        if (client is null) return;
+        if (client is null)
+        {
+            return;
+        }
 
         var user = await userService.FindByIdAsync(client.UserId, ct);
-        if (user is null) return;
+        if (user is null)
+        {
+            return;
+        }
 
         var data = new
         {

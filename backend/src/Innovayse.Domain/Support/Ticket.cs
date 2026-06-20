@@ -182,7 +182,9 @@ public sealed class Ticket : AggregateRoot
     public void LeaveFeedback(int rating, string? comment, string leftBy)
     {
         if (rating < 1 || rating > 10)
+        {
             throw new ArgumentOutOfRangeException(nameof(rating), "Rating must be between 1 and 10.");
+        }
 
         Rating = rating;
         FeedbackComment = comment;
@@ -195,7 +197,11 @@ public sealed class Ticket : AggregateRoot
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(tag);
         tag = tag.Trim().ToLowerInvariant();
-        if (_tags.Any(t => t.Name == tag)) return;
+        if (_tags.Any(t => t.Name == tag))
+        {
+            return;
+        }
+
         _tags.Add(new TicketTag(Id, tag));
     }
 
@@ -204,6 +210,9 @@ public sealed class Ticket : AggregateRoot
     {
         tag = tag.Trim().ToLowerInvariant();
         var existing = _tags.FirstOrDefault(t => t.Name == tag);
-        if (existing is not null) _tags.Remove(existing);
+        if (existing is not null)
+        {
+            _tags.Remove(existing);
+        }
     }
 }

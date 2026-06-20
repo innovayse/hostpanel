@@ -79,7 +79,11 @@ public sealed class AdminMigrationController(IMessageBus bus) : ControllerBase
     {
         var result = await bus.InvokeAsync<MigrationJobDto?>(
             new GetMigrationStatusQuery(id), ct);
-        if (result is null) return NotFound();
+        if (result is null)
+        {
+            return NotFound();
+        }
+
         return Ok(result);
     }
 

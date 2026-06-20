@@ -54,7 +54,10 @@ public sealed class ListClientsHandler(IClientRepository clientRepo, IUserServic
         await Task.WhenAll(userIds.Select(async uid =>
         {
             var enabled = await userService.IsTwoFactorEnabledAsync(uid, ct);
-            lock (twoFactorStatuses) twoFactorStatuses[uid] = enabled;
+            lock (twoFactorStatuses)
+            {
+                twoFactorStatuses[uid] = enabled;
+            }
         }));
 
         var dtos = items.Select(c => MapToListItem(c, emails, twoFactorStatuses)).ToList();

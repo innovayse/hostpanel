@@ -20,7 +20,9 @@ public sealed class StartMigrationPullHandler(
             ?? throw new InvalidOperationException("Migration job not found.");
 
         if (job.Status != MigrationJobStatus.Pending)
+        {
             throw new InvalidOperationException($"Cannot start a migration job with status '{job.Status}'.");
+        }
 
         var jobId = job.Id;
 

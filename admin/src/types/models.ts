@@ -778,6 +778,8 @@ export interface Product {
   status: string
   /** Monthly and annual pricing. */
   pricing: { monthly: number; annual: number }
+  /** Optional FK to the server group for provisioning. */
+  serverGroupId: number | null
 }
 
 /** Represents a product group. */
@@ -814,6 +816,8 @@ export interface CreateProductPayload {
   monthlyPrice: number
   /** Annual price. */
   annualPrice: number
+  /** Optional FK to the server group for provisioning. */
+  serverGroupId: number | null
 }
 
 /** Payload for updating an existing product. */
@@ -832,6 +836,8 @@ export interface UpdateProductPayload {
   monthlyPrice: number
   /** Annual price. */
   annualPrice: number
+  /** Optional FK to the server group for provisioning. */
+  serverGroupId: number | null
 }
 
 /**

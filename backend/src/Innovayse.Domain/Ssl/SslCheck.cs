@@ -30,20 +30,20 @@ public sealed class SslCheck : Entity
         => new()
         {
             DomainName = domainName,
-            HasSsl     = hasSSL,
-            Issuer     = issuer,
-            ExpiresAt  = expiresAt,
-            CheckedAt  = DateTimeOffset.UtcNow,
-            IsActive   = isActive,
+            HasSsl = hasSSL,
+            Issuer = issuer,
+            ExpiresAt = expiresAt,
+            CheckedAt = DateTimeOffset.UtcNow,
+            IsActive = isActive,
         };
 
     /// <summary>Updates this SSL check with fresh results.</summary>
     public void Update(bool hasSSL, string? issuer, DateTimeOffset? expiresAt, bool isActive)
     {
-        HasSsl    = hasSSL;
-        Issuer    = issuer;
+        HasSsl = hasSSL;
+        Issuer = issuer;
         ExpiresAt = expiresAt;
         CheckedAt = DateTimeOffset.UtcNow;
-        IsActive  = isActive;
+        IsActive = isActive;
     }
 }

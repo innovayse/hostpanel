@@ -2,9 +2,9 @@ namespace Innovayse.Application.Services.Commands.SetupService;
 
 using Innovayse.Application.Common;
 using Innovayse.Application.Servers;
+using Innovayse.Domain.Products.Interfaces;
 using Innovayse.Domain.Provisioning;
 using Innovayse.Domain.Provisioning.Interfaces;
-using Innovayse.Domain.Products.Interfaces;
 using Innovayse.Domain.Servers;
 using Innovayse.Domain.Services;
 using Innovayse.Domain.Services.Interfaces;

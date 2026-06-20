@@ -67,4 +67,10 @@ public sealed class ClientServiceRepository(AppDbContext db) : IClientServiceRep
     /// <inheritdoc/>
     public async Task<ClientService?> FindByClientAndDomainAsync(int clientId, string domain, CancellationToken ct) =>
         await db.ClientServices.FirstOrDefaultAsync(s => s.ClientId == clientId && s.Domain != null && s.Domain.ToLower() == domain.ToLower(), ct);
+
+    /// <inheritdoc/>
+    public async Task<List<ClientService>> ListSuspendedBeforeAsync(DateTimeOffset threshold, CancellationToken ct) =>
+        await db.ClientServices
+            .Where(s => s.Status == ServiceStatus.Suspended && s.SuspendedAt != null && s.SuspendedAt <= threshold)
+            .ToListAsync(ct);
 }

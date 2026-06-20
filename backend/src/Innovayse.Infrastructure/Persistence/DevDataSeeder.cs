@@ -1,16 +1,16 @@
 namespace Innovayse.Infrastructure.Persistence;
 
 using Innovayse.Domain.Auth;
-using Innovayse.Domain.Domains;
-using Innovayse.Domain.Ssl;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Clients;
+using Innovayse.Domain.Domains;
 using Innovayse.Domain.Orders;
 using Innovayse.Domain.Products;
 using Innovayse.Domain.Servers;
 using Innovayse.Domain.Services;
 using Innovayse.Domain.Settings;
 using Innovayse.Domain.Slides;
+using Innovayse.Domain.Ssl;
 using Innovayse.Domain.Support;
 using Innovayse.Infrastructure.Auth;
 using Microsoft.AspNetCore.Identity;
@@ -49,7 +49,9 @@ public sealed class DevDataSeeder(
             };
             var adminResult = await userManager.CreateAsync(adminUser, "Admin123!");
             if (adminResult.Succeeded)
+            {
                 await userManager.AddToRoleAsync(adminUser, Roles.Admin);
+            }
         }
 
         var productNames = await db.Products.Select(p => p.Name).ToListAsync(ct);
@@ -60,22 +62,34 @@ public sealed class DevDataSeeder(
             && await db.ProductGroups.AnyAsync(ct) && await db.Orders.AnyAsync(ct) && hasProductInvoices)
         {
             if (!await db.Slides.AnyAsync(ct))
+            {
                 await SeedSlidesAsync(db, logger, ct);
+            }
 
             if (!await db.Departments.AnyAsync(ct))
+            {
                 await SeedSupportAsync(db, ct, logger);
+            }
 
             if (!await db.Domains.AnyAsync(ct))
+            {
                 await SeedDomainsAsync(db, ct, logger);
+            }
 
             if (!await db.ServerGroups.AnyAsync(ct))
+            {
                 await SeedServersAsync(db, ct, logger);
+            }
 
             if (!await db.Settings.AnyAsync(ct))
+            {
                 await SeedSettingsAsync(db, ct, logger);
+            }
 
             if (!await db.Announcements.AnyAsync(ct))
+            {
                 await SeedAnnouncementsAsync(db, ct, logger);
+            }
 
             logger.LogInformation("Dev seed skipped — data already exists");
             return;
@@ -115,13 +129,28 @@ public sealed class DevDataSeeder(
             {
                 var user = new AppUser { UserName = email, Email = email, FirstName = first, LastName = last, EmailConfirmed = true };
                 var result = await userManager.CreateAsync(user, "Test@12345");
-                if (!result.Succeeded) continue;
+                if (!result.Succeeded)
+                {
+                    continue;
+                }
+
                 await userManager.AddToRoleAsync(user, Roles.Client);
 
                 var client = Client.Create(user.Id, first, last, email, company);
-                if (phone is not null) client.Update(first, last, company, phone);
-                if (street is not null) client.UpdateAddress(street, null, city, state, postCode, country);
-                if (status == ClientStatus.Suspended) client.Suspend();
+                if (phone is not null)
+                {
+                    client.Update(first, last, company, phone);
+                }
+
+                if (street is not null)
+                {
+                    client.UpdateAddress(street, null, city, state, postCode, country);
+                }
+
+                if (status == ClientStatus.Suspended)
+                {
+                    client.Suspend();
+                }
 
                 db.Clients.Add(client);
 
@@ -167,15 +196,26 @@ public sealed class DevDataSeeder(
                     }
 
                     if (monthsBack >= 4)
+                    {
                         invoice.MarkPaid("stripe_" + Rng.Next(100000, 999999));
+                    }
                     else if (monthsBack == 3)
                     {
-                        if (Rng.Next(2) == 0) invoice.MarkPaid("stripe_" + Rng.Next(100000, 999999));
-                        else invoice.MarkOverdue();
+                        if (Rng.Next(2) == 0)
+                        {
+                            invoice.MarkPaid("stripe_" + Rng.Next(100000, 999999));
+                        }
+                        else
+                        {
+                            invoice.MarkOverdue();
+                        }
                     }
                     else if (monthsBack == 2)
                     {
-                        if (Rng.Next(3) == 0) invoice.MarkOverdue();
+                        if (Rng.Next(3) == 0)
+                        {
+                            invoice.MarkOverdue();
+                        }
                     }
 
                     db.Invoices.Add(invoice);
@@ -197,7 +237,11 @@ public sealed class DevDataSeeder(
 
             foreach (var inv in paidInvoices)
             {
-                if (inv.Total <= 0) continue;
+                if (inv.Total <= 0)
+                {
+                    continue;
+                }
+
                 var payDate = inv.DueDate.AddDays(-Rng.Next(1, 10));
                 var gateway = Rng.Next(3) switch { 0 => "Stripe", 1 => "PayPal", _ => "Bank Transfer" };
                 var fees = Math.Round(inv.Total * 0.029m + 0.30m, 2);
@@ -253,7 +297,10 @@ public sealed class DevDataSeeder(
                 quote.AddItem("Setup Fee", 99.00m, 1);
                 quote.AddItem("Monthly Hosting (12 months)", 29.99m, 12);
                 if (Rng.Next(2) == 0)
+                {
                     quote.AddItem("SSL Certificate", 14.99m, 1);
+                }
+
                 db.Quotes.Add(quote);
             }
 
@@ -415,7 +462,9 @@ public sealed class DevDataSeeder(
             ];
 
             foreach (var (domain, hasSsl, issuer, expires, isActive) in sslDefs)
+            {
                 db.SslChecks.Add(SslCheck.Create(domain, hasSsl, issuer, expires, isActive));
+            }
 
             await db.SaveChangesAsync(ct);
             logger.LogInformation("Seeded SSL checks");
@@ -423,27 +472,39 @@ public sealed class DevDataSeeder(
 
         // ── Slides ────────────────────────────────────────────────────────────
         if (!await db.Slides.AnyAsync(ct))
+        {
             await SeedSlidesAsync(db, logger, ct);
+        }
 
         // ── Support: Departments, Tickets, KB ────────────────────────────────
         if (!await db.Departments.AnyAsync(ct))
+        {
             await SeedSupportAsync(db, ct, logger);
+        }
 
         // ── Domains ───────────────────────────────────────────────────────────
         if (!await db.Domains.AnyAsync(ct))
+        {
             await SeedDomainsAsync(db, ct, logger);
+        }
 
         // ── Servers ───────────────────────────────────────────────────────────
         if (!await db.ServerGroups.AnyAsync(ct))
+        {
             await SeedServersAsync(db, ct, logger);
+        }
 
         // ── Settings ──────────────────────────────────────────────────────────
         if (!await db.Settings.AnyAsync(ct))
+        {
             await SeedSettingsAsync(db, ct, logger);
+        }
 
         // ── Announcements ─────────────────────────────────────────────────────
         if (!await db.Announcements.AnyAsync(ct))
+        {
             await SeedAnnouncementsAsync(db, ct, logger);
+        }
 
         logger.LogInformation("Dev seed complete");
     }
@@ -565,10 +626,14 @@ public sealed class DevDataSeeder(
             db.Entry(ticket).Property(nameof(Ticket.CreatedAt)).CurrentValue = MonthsAgo(rng.Next(0, 3), rng.Next(1, 28));
 
             if (hasReply)
+            {
                 ticket.AddReply("Thank you for contacting us. We are looking into this and will get back to you shortly.", "Support Team", true);
+            }
 
             if (isClosed)
+            {
                 ticket.Close();
+            }
 
             db.Tickets.Add(ticket);
         }
@@ -582,7 +647,10 @@ public sealed class DevDataSeeder(
     private static async Task SeedDomainsAsync(AppDbContext db, CancellationToken ct, ILogger logger)
     {
         var clients = await db.Clients.Where(c => c.Status == ClientStatus.Active).ToListAsync(ct);
-        if (clients.Count == 0) return;
+        if (clients.Count == 0)
+        {
+            return;
+        }
 
         var now = DateTimeOffset.UtcNow;
 
@@ -624,7 +692,7 @@ public sealed class DevDataSeeder(
     {
         // Server Groups
         var sharedGroup = ServerGroup.Create("Shared Hosting Cluster", ServerFillType.LeastFull);
-        var vpsGroup    = ServerGroup.Create("VPS Cluster", ServerFillType.FillUntilFull);
+        var vpsGroup = ServerGroup.Create("VPS Cluster", ServerFillType.FillUntilFull);
         db.ServerGroups.Add(sharedGroup);
         db.ServerGroups.Add(vpsGroup);
         await db.SaveChangesAsync(ct);
@@ -695,7 +763,9 @@ public sealed class DevDataSeeder(
         ];
 
         foreach (var (key, value, description) in settingDefs)
+        {
             db.Settings.Add(Setting.Create(key, value, description));
+        }
 
         await db.SaveChangesAsync(ct);
         logger.LogInformation("Seeded {Count} system settings", settingDefs.Length);
@@ -719,7 +789,9 @@ public sealed class DevDataSeeder(
         ];
 
         foreach (var (title, content, isPublished) in announcementDefs)
+        {
             db.Announcements.Add(Announcement.Create(title, content, isPublished));
+        }
 
         await db.SaveChangesAsync(ct);
         logger.LogInformation("Seeded {Count} announcements", announcementDefs.Length);

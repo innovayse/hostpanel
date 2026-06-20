@@ -3,6 +3,8 @@ namespace Innovayse.API.Billing;
 using Innovayse.Application.Billing.Commands.CheckOverdueInvoicesCron;
 using Innovayse.Application.Billing.Commands.ProcessBillableItemsCron;
 using Innovayse.Application.Billing.Commands.ProcessRenewalsCron;
+using Innovayse.Application.Provisioning.Commands.AutoTerminateSuspendedCron;
+using Innovayse.Application.Servers.Commands.SyncServerAccountCountsCron;
 using Wolverine;
 
 /// <summary>
@@ -21,6 +23,12 @@ public sealed class BillingScheduledJobsStartup(
 
     /// <summary>Hour (UTC) at which <see cref="ProcessRenewalsCronCommand"/> should execute.</summary>
     private const int RenewalsCronHour = 5;
+
+    /// <summary>Hour (UTC) at which <see cref="AutoTerminateSuspendedCronCommand"/> should execute.</summary>
+    private const int AutoTerminateCronHour = 8;
+
+    /// <summary>Hour (UTC) at which <see cref="SyncServerAccountCountsCronCommand"/> should execute.</summary>
+    private const int ServerSyncCronHour = 6;
 
     /// <summary>
     /// Schedules the billable items cron job for its next daily occurrence.
@@ -49,6 +57,18 @@ public sealed class BillingScheduledJobsStartup(
         logger.LogInformation(
             "ProcessRenewalsCronCommand scheduled for {ScheduledAt:u}.",
             renewalsRun);
+
+        var serverSyncRun = NextDailyOccurrence(ServerSyncCronHour);
+        await bus.ScheduleAsync(new SyncServerAccountCountsCronCommand(), serverSyncRun);
+        logger.LogInformation(
+            "SyncServerAccountCountsCronCommand scheduled for {ScheduledAt:u}.",
+            serverSyncRun);
+
+        var autoTerminateRun = NextDailyOccurrence(AutoTerminateCronHour);
+        await bus.ScheduleAsync(new AutoTerminateSuspendedCronCommand(), autoTerminateRun);
+        logger.LogInformation(
+            "AutoTerminateSuspendedCronCommand scheduled for {ScheduledAt:u}.",
+            autoTerminateRun);
     }
 
     /// <summary>

@@ -31,14 +31,9 @@ public sealed class GetCPanelSsoUrlHandler(
             throw new InvalidOperationException($"ClientService {query.ServiceId} has not been provisioned yet.");
         }
 
-        var server = service.ServerId.HasValue
+        var server = (service.ServerId.HasValue
             ? await serverRepo.FindByIdAsync(service.ServerId.Value, ct)
-            : null;
-
-        if (server is null)
-        {
-            throw new InvalidOperationException($"ClientService {query.ServiceId} has no server assigned.");
-        }
+            : null) ?? throw new InvalidOperationException($"ClientService {query.ServiceId} has no server assigned.");
 
         var provider = providerFactory.CreateFor(server);
         return await provider.GetCPanelSsoUrlAsync(service.ProvisioningRef, ct);

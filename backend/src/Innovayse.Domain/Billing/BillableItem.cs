@@ -101,7 +101,10 @@ public sealed class BillableItem : AggregateRoot
     /// </summary>
     public void AdvanceDueDate()
     {
-        if (NextDueDate is null) return;
+        if (NextDueDate is null)
+        {
+            return;
+        }
 
         NextDueDate = RecurringPeriod?.ToLowerInvariant() switch
         {

@@ -40,6 +40,9 @@ public sealed class Product : AggregateRoot
     /// <summary>Gets the annual price.</summary>
     public decimal AnnualPrice { get; private set; }
 
+    /// <summary>Gets the optional FK to the server group used for provisioning.</summary>
+    public int? ServerGroupId { get; private set; }
+
     /// <summary>Gets the UTC timestamp when the product was created.</summary>
     public DateTimeOffset CreatedAt { get; private set; }
 
@@ -58,6 +61,7 @@ public sealed class Product : AggregateRoot
     /// <param name="type">Product type.</param>
     /// <param name="monthlyPrice">Monthly price (≥ 0).</param>
     /// <param name="annualPrice">Annual price (≥ 0).</param>
+    /// <param name="serverGroupId">Optional FK to the server group for provisioning.</param>
     /// <returns>A new active <see cref="Product"/>.</returns>
     public static Product Create(
         int groupId,
@@ -68,7 +72,8 @@ public sealed class Product : AggregateRoot
         string? packageName,
         ProductType type,
         decimal monthlyPrice,
-        decimal annualPrice)
+        decimal annualPrice,
+        int? serverGroupId = null)
     {
         var product = new Product
         {
@@ -82,6 +87,7 @@ public sealed class Product : AggregateRoot
             Status = ProductStatus.Active,
             MonthlyPrice = monthlyPrice,
             AnnualPrice = annualPrice,
+            ServerGroupId = serverGroupId,
             CreatedAt = DateTimeOffset.UtcNow,
         };
         product.AddDomainEvent(new ProductCreatedEvent(0, name, groupId));
@@ -89,7 +95,7 @@ public sealed class Product : AggregateRoot
     }
 
     /// <summary>
-    /// Updates the product name, description, website, and prices.
+    /// Updates the product name, description, website, prices, and server group.
     /// </summary>
     /// <param name="name">New display name.</param>
     /// <param name="description">New description.</param>
@@ -98,7 +104,8 @@ public sealed class Product : AggregateRoot
     /// <param name="packageName">New hosting package name, or null to clear.</param>
     /// <param name="monthlyPrice">New monthly price.</param>
     /// <param name="annualPrice">New annual price.</param>
-    public void Update(string name, string? description, string? website, string? slug, string? packageName, decimal monthlyPrice, decimal annualPrice)
+    /// <param name="serverGroupId">Optional FK to the server group, or null to clear.</param>
+    public void Update(string name, string? description, string? website, string? slug, string? packageName, decimal monthlyPrice, decimal annualPrice, int? serverGroupId)
     {
         Name = name;
         Description = description;
@@ -107,6 +114,7 @@ public sealed class Product : AggregateRoot
         PackageName = packageName;
         MonthlyPrice = monthlyPrice;
         AnnualPrice = annualPrice;
+        ServerGroupId = serverGroupId;
     }
 
     /// <summary>Marks the product inactive so it cannot be ordered.</summary>

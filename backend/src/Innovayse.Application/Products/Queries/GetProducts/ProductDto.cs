@@ -13,6 +13,7 @@ using Innovayse.Domain.Products;
 /// <param name="Type">Product type.</param>
 /// <param name="Status">Current status.</param>
 /// <param name="Pricing">Monthly and annual pricing.</param>
+/// <param name="ServerGroupId">Optional FK to the server group for provisioning.</param>
 public record ProductDto(
     int Id,
     int GroupId,
@@ -23,4 +24,5 @@ public record ProductDto(
     string? PackageName,
     ProductType Type,
     ProductStatus Status,
-    ProductPricingDto Pricing);
+    ProductPricingDto Pricing,
+    int? ServerGroupId);

@@ -5,11 +5,15 @@
  * Displays product type cards, group selector, pricing fields, and a hidden toggle.
  * Emits `save` with the payload on submit, and `close` on cancel.
  */
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import type { Product, ProductGroup, CreateProductPayload } from '@/types/models'
+import type { ServerGroupDto } from '@/modules/servers/types/server.types'
+import { useApi } from '@/composables/useApi'
 import ToggleSwitch from '@/components/ToggleSwitch.vue'
 import AppSelect from '@/components/AppSelect.vue'
 import AppNumberInput from '@/components/AppNumberInput.vue'
+
+const { request } = useApi()
 
 /** Props for ProductFormModal. */
 const props = defineProps<{
@@ -66,8 +70,25 @@ const monthlyPrice = ref(0)
 /** Annual price input value. */
 const annualPrice = ref(0)
 
+/** Selected server group ID, or null for no group. */
+const serverGroupId = ref<number | null>(null)
+
+/** Available server groups fetched from the API. */
+const serverGroups = ref<ServerGroupDto[]>([])
+
 /** Whether the product is hidden (maps to Inactive status). */
 const isHidden = ref(false)
+
+/**
+ * Fetches available server groups from the API on mount.
+ */
+onMounted(async () => {
+  try {
+    serverGroups.value = await request<ServerGroupDto[]>('/admin/server-groups')
+  } catch {
+    /* silent — dropdown will simply be empty */
+  }
+})
 
 /**
  * Initializes or resets form fields based on the product prop.
@@ -86,6 +107,7 @@ watch(() => props.product, (p) => {
     description.value = p.description ?? ''
     monthlyPrice.value = p.pricing.monthly
     annualPrice.value = p.pricing.annual
+    serverGroupId.value = p.serverGroupId ?? null
     isHidden.value = p.status === 'Inactive'
   } else {
     type.value = 'SharedHosting'
@@ -97,6 +119,7 @@ watch(() => props.product, (p) => {
     description.value = ''
     monthlyPrice.value = 0
     annualPrice.value = 0
+    serverGroupId.value = null
     isHidden.value = false
   }
 }, { immediate: true })
@@ -105,6 +128,21 @@ watch(() => props.product, (p) => {
 const groupOptions = computed(() =>
   props.groups.map(g => ({ value: g.id, label: g.name }))
 )
+
+/** Options formatted for the server group AppSelect component, with a "None" option. */
+const serverGroupOptions = computed(() => [
+  { value: 0, label: 'None (auto-select by module)' },
+  ...serverGroups.value.map(g => ({ value: g.id, label: g.name })),
+])
+
+/**
+ * Writable computed that maps between nullable serverGroupId and the numeric v-model for AppSelect.
+ * Uses 0 to represent "no server group" (null).
+ */
+const serverGroupModel = computed({
+  get: () => serverGroupId.value ?? 0,
+  set: (v: number) => { serverGroupId.value = v === 0 ? null : v },
+})
 
 /**
  * Auto-generates the slug from the product name.
@@ -142,6 +180,7 @@ function handleSubmit(): void {
     type: type.value,
     monthlyPrice: monthlyPrice.value,
     annualPrice: annualPrice.value,
+    serverGroupId: serverGroupId.value || null,
   })
 }
 </script>
@@ -261,6 +300,17 @@ function handleSubmit(): void {
             class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors"
           />
           <p class="mt-1 text-[0.7rem] text-text-muted">Hosting package name used for server provisioning. Optional.</p>
+        </div>
+
+        <!-- Server Group -->
+        <div>
+          <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Server Group</label>
+          <AppSelect
+            v-model="serverGroupModel"
+            :options="serverGroupOptions"
+            placeholder="None (auto-select by module)"
+          />
+          <p class="mt-1 text-[0.7rem] text-text-muted">Assign to a server group for load-balanced provisioning. Optional.</p>
         </div>
 
         <!-- Description -->

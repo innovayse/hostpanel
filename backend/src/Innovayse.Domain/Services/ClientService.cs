@@ -62,6 +62,9 @@ public sealed class ClientService : AggregateRoot
     /// <summary>Gets the external subscription reference.</summary>
     public string? SubscriptionId { get; private set; }
 
+    /// <summary>Gets the UTC timestamp when the service was suspended, or <see langword="null"/> if not suspended.</summary>
+    public DateTimeOffset? SuspendedAt { get; private set; }
+
     /// <summary>Gets when the service was terminated.</summary>
     public DateTimeOffset? TerminatedAt { get; private set; }
 
@@ -142,6 +145,7 @@ public sealed class ClientService : AggregateRoot
         }
 
         Status = ServiceStatus.Suspended;
+        SuspendedAt = DateTimeOffset.UtcNow;
         AddDomainEvent(new ClientServiceSuspendedEvent(Id, ClientId));
         AddDomainEvent(new ServiceSuspendedEvent(Id, ClientId, reason));
     }
@@ -177,6 +181,7 @@ public sealed class ClientService : AggregateRoot
         }
 
         Status = ServiceStatus.Active;
+        SuspendedAt = null;
         AddDomainEvent(new Provisioning.Events.ServiceUnsuspendedEvent(Id, ClientId));
     }
 

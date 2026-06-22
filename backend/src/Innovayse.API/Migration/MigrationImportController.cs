@@ -1,7 +1,7 @@
 namespace Innovayse.API.Migration;
 
-using Microsoft.AspNetCore.Mvc;
 using System.IO.Compression;
+using Microsoft.AspNetCore.Mvc;
 
 /// <summary>
 /// Public migration endpoints (no auth required).
@@ -24,7 +24,9 @@ public sealed class MigrationImportController : ControllerBase
             Path.Combine(solutionRoot, "plugins", "innovayse_migration"));
 
         if (!Directory.Exists(pluginDir))
+        {
             return NotFound(new { error = "Plugin files not found." });
+        }
 
         var ms = new MemoryStream();
         ZipFile.CreateFromDirectory(pluginDir, ms, CompressionLevel.Optimal, includeBaseDirectory: false);

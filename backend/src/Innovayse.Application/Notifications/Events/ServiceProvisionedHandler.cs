@@ -25,13 +25,22 @@ public sealed class ServiceProvisionedHandler(
     public async Task HandleAsync(ServiceProvisionedEvent evt, CancellationToken ct)
     {
         var service = await serviceRepo.FindByIdAsync(evt.ServiceId, ct);
-        if (service is null) return;
+        if (service is null)
+        {
+            return;
+        }
 
         var client = await clientRepo.FindByIdAsync(evt.ClientId, ct);
-        if (client is null) return;
+        if (client is null)
+        {
+            return;
+        }
 
         var user = await userService.FindByIdAsync(client.UserId, ct);
-        if (user is null) return;
+        if (user is null)
+        {
+            return;
+        }
 
         var data = new
         {

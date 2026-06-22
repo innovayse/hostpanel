@@ -49,16 +49,55 @@ internal sealed class Cwp7AccountRequest
             new("action", Action),
         };
 
-        if (Domain is not null) fields.Add(new("domain", Domain));
-        if (User is not null) fields.Add(new("user", User));
-        if (Pass is not null) fields.Add(new("pass", Pass));
-        if (Package is not null) fields.Add(new("package", Package));
-        if (Email is not null) fields.Add(new("email", Email));
-        if (Inode is not null) fields.Add(new("inode", Inode));
-        if (LimitNproc is not null) fields.Add(new("limit_nproc", LimitNproc));
-        if (LimitNofile is not null) fields.Add(new("limit_nofile", LimitNofile));
-        if (ServerIps is not null) fields.Add(new("server_ips", ServerIps));
-        if (Backup is not null) fields.Add(new("banckup", Backup));
+        if (Domain is not null)
+        {
+            fields.Add(new("domain", Domain));
+        }
+
+        if (User is not null)
+        {
+            fields.Add(new("user", User));
+        }
+
+        if (Pass is not null)
+        {
+            fields.Add(new("pass", Pass));
+        }
+
+        if (Package is not null)
+        {
+            fields.Add(new("package", Package));
+        }
+
+        if (Email is not null)
+        {
+            fields.Add(new("email", Email));
+        }
+
+        if (Inode is not null)
+        {
+            fields.Add(new("inode", Inode));
+        }
+
+        if (LimitNproc is not null)
+        {
+            fields.Add(new("limit_nproc", LimitNproc));
+        }
+
+        if (LimitNofile is not null)
+        {
+            fields.Add(new("limit_nofile", LimitNofile));
+        }
+
+        if (ServerIps is not null)
+        {
+            fields.Add(new("server_ips", ServerIps));
+        }
+
+        if (Backup is not null)
+        {
+            fields.Add(new("banckup", Backup));
+        }
 
         return new FormUrlEncodedContent(fields);
     }

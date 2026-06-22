@@ -9,4 +9,5 @@ namespace Innovayse.Application.Products.Commands.UpdateProduct;
 /// <param name="PackageName">Hosting package name, or null to clear.</param>
 /// <param name="MonthlyPrice">New monthly price.</param>
 /// <param name="AnnualPrice">New annual price.</param>
-public record UpdateProductCommand(int Id, string Name, string? Description, string? Website, string? Slug, string? PackageName, decimal MonthlyPrice, decimal AnnualPrice);
+/// <param name="ServerGroupId">Optional FK to the server group, or null to clear.</param>
+public record UpdateProductCommand(int Id, string Name, string? Description, string? Website, string? Slug, string? PackageName, decimal MonthlyPrice, decimal AnnualPrice, int? ServerGroupId);

@@ -13,7 +13,9 @@ public sealed class CreateMigrationJobHandler(IMigrationJobRepository repo)
         const string pluginPath = "/modules/addons/innovayse_migration/api.php";
         var sourceUrl = cmd.SourceUrl.TrimEnd('/');
         if (!sourceUrl.EndsWith(pluginPath, StringComparison.OrdinalIgnoreCase))
+        {
             sourceUrl += pluginPath;
+        }
 
         var job = MigrationJob.Create(
             cmd.Label,

@@ -348,7 +348,10 @@ public sealed class ClientsController(IMessageBus bus, IUserService userService,
         CancellationToken ct)
     {
         var client = await db.Clients.FirstOrDefaultAsync(c => c.Id == id, ct);
-        if (client is null) return NotFound();
+        if (client is null)
+        {
+            return NotFound();
+        }
 
         var userInfo = await userService.FindByIdAsync(client.UserId, ct);
         var email = userInfo?.Email ?? string.Empty;
@@ -357,58 +360,86 @@ public sealed class ClientsController(IMessageBus bus, IUserService userService,
         var result = new Dictionary<string, object?>();
 
         if (f.Contains("profileData"))
+        {
             result["profileData"] = new { client.Id, client.FirstName, client.LastName, Email = email, client.CompanyName, client.Phone, Street = client.Street, client.City, client.State, client.PostCode, client.Country, client.Status, client.CreatedAt };
+        }
 
         if (f.Contains("domains"))
+        {
             result["domains"] = await db.Domains.Where(d => d.ClientId == id)
                 .Select(d => new { d.Id, d.Name, d.Status, d.RegisteredAt, d.ExpiresAt }).ToListAsync(ct);
+        }
 
         if (f.Contains("productsServices"))
+        {
             result["productsServices"] = await db.ClientServices.Where(s => s.ClientId == id)
                 .Select(s => new { s.Id, s.ProductId, s.BillingCycle, s.Status, s.CreatedAt, s.NextRenewalAt }).ToListAsync(ct);
+        }
 
         if (f.Contains("invoices"))
+        {
             result["invoices"] = await db.Invoices.Where(i => i.ClientId == id)
                 .Select(i => new { i.Id, i.Status, i.Total, i.CreatedAt, i.DueDate, i.PaidAt }).ToListAsync(ct);
+        }
 
         if (f.Contains("transactions"))
+        {
             result["transactions"] = await db.Transactions.Where(t => t.ClientId == id)
                 .Select(t => new { t.Id, t.Date, t.Description, t.AmountIn, t.AmountOut, t.Fees, t.PaymentMethod }).ToListAsync(ct);
+        }
 
         if (f.Contains("quotes"))
+        {
             result["quotes"] = await db.Quotes.Where(q => q.ClientId == id)
                 .Select(q => new { q.Id, q.Stage, q.Total, q.CreatedAt, ExpiresAt = q.ExpiryDate }).ToListAsync(ct);
+        }
 
         if (f.Contains("billableItems"))
+        {
             result["billableItems"] = await db.BillableItems.Where(b => b.ClientId == id)
                 .Select(b => new { b.Id, b.Description, b.Amount, b.NextDueDate }).ToListAsync(ct);
+        }
 
         if (f.Contains("contacts"))
+        {
             result["contacts"] = await db.Contacts.Where(c => c.ClientId == id)
                 .Select(c => new { c.Id, c.FirstName, c.LastName, c.Email, c.Phone, c.Type }).ToListAsync(ct);
+        }
 
         if (f.Contains("tickets"))
+        {
             result["tickets"] = await db.Tickets.Where(t => t.ClientId == id)
                 .Select(t => new { t.Id, t.Subject, t.Status, t.Priority, t.CreatedAt }).ToListAsync(ct);
+        }
 
         if (f.Contains("emails"))
+        {
             result["emails"] = await db.EmailLogs.Where(e => e.To == email)
                 .Select(e => new { e.Id, e.Subject, e.SentAt, e.Success }).ToListAsync(ct);
+        }
 
         if (f.Contains("notes"))
+        {
             result["notes"] = new { client.AdminNotes };
+        }
 
         if (f.Contains("activityLog"))
+        {
             result["activityLog"] = await db.ActivityLogs.Where(a => a.ClientId == id)
                 .OrderByDescending(a => a.CreatedAt)
                 .Select(a => new { a.Id, a.Description, a.CreatedAt, a.AdminName })
                 .Take(500).ToListAsync(ct);
+        }
 
         if (f.Contains("consentHistory"))
+        {
             result["consentHistory"] = new { note = "No consent history recorded." };
+        }
 
         if (f.Contains("payMethods"))
+        {
             result["payMethods"] = new { note = "Payment methods are not stored locally." };
+        }
 
         return Ok(result);
     }

@@ -23,10 +23,16 @@ public sealed class PaymentReceivedHandler(
     public async Task HandleAsync(PaymentReceivedEvent evt, CancellationToken ct)
     {
         var client = await clientRepo.FindByIdAsync(evt.ClientId, ct);
-        if (client is null) return;
+        if (client is null)
+        {
+            return;
+        }
 
         var user = await userService.FindByIdAsync(client.UserId, ct);
-        if (user is null) return;
+        if (user is null)
+        {
+            return;
+        }
 
         var data = new
         {

@@ -3,8 +3,8 @@ namespace Innovayse.Application.Provisioning.Commands.ProvisionService;
 using System.Security.Cryptography;
 using Innovayse.Application.Common;
 using Innovayse.Application.Servers;
-using Innovayse.Domain.Provisioning;
 using Innovayse.Domain.Products.Interfaces;
+using Innovayse.Domain.Provisioning;
 using Innovayse.Domain.Provisioning.Interfaces;
 using Innovayse.Domain.Servers;
 using Innovayse.Domain.Services.Interfaces;
@@ -39,14 +39,15 @@ public sealed class ProvisionServiceHandler(
         var service = await serviceRepo.FindByIdAsync(cmd.ServiceId, ct)
             ?? throw new InvalidOperationException($"ClientService {cmd.ServiceId} not found.");
 
-        // Select the best CWP7 server
-        var server = await serverSelector.SelectAsync(ServerModule.Cwp7, ct)
-            ?? throw new InvalidOperationException("No eligible CWP7 server available for provisioning.");
+        // Look up the product to get the hosting package name and server group
+        var product = await productRepo.FindByIdAsync(service.ProductId, ct);
+
+        // Select the best server — prefer the product's server group, fall back to module-level selection
+        var server = (product?.ServerGroupId is { } sgId
+            ? await serverSelector.SelectFromGroupAsync(sgId, ct)
+            : await serverSelector.SelectAsync(ServerModule.Cwp7, ct)) ?? throw new InvalidOperationException("No eligible server available for provisioning.");
 
         var provider = providerFactory.CreateFor(server);
-
-        // Look up the product to get the hosting package name
-        var product = await productRepo.FindByIdAsync(service.ProductId, ct);
 
         var request = new ProvisionRequest(
             service.Id,

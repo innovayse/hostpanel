@@ -21,6 +21,7 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(x => x.Status).IsRequired().HasConversion<string>();
         builder.Property(x => x.MonthlyPrice).IsRequired().HasColumnType("numeric(18,4)");
         builder.Property(x => x.AnnualPrice).IsRequired().HasColumnType("numeric(18,4)");
+        builder.Property(x => x.ServerGroupId).IsRequired(false);
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Ignore(x => x.DomainEvents);
     }

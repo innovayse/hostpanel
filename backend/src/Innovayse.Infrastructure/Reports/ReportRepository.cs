@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 /// <summary>EF Core implementation of <see cref="IReportRepository"/>.</summary>
 public sealed class ReportRepository(AppDbContext db) : IReportRepository
 {
-    private static readonly string[] MonthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    private static readonly string[] MonthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
     /// <inheritdoc/>
     public async Task<IReadOnlyList<DailyPerformanceDto>> GetDailyPerformanceAsync(DateOnly from, DateOnly to, CancellationToken ct)
@@ -123,19 +123,29 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
 
         var periods = new List<AgingPeriodDto>();
         var totals = new Dictionary<string, decimal>();
-        foreach (var c in currencies) totals[c] = 0m;
+        foreach (var c in currencies)
+        {
+            totals[c] = 0m;
+        }
 
         foreach (var periodName in periodNames)
         {
             var amounts = new Dictionary<string, decimal>();
-            foreach (var c in currencies) amounts[c] = 0m;
+            foreach (var c in currencies)
+            {
+                amounts[c] = 0m;
+            }
 
             foreach (var inv in invoices)
             {
                 var due = DateOnly.FromDateTime(inv.DueDate.DateTime);
                 var days = today.DayNumber - due.DayNumber;
                 var bucket = days <= 30 ? "0 - 30" : days <= 60 ? "30 - 60" : days <= 90 ? "60 - 90" : days <= 120 ? "90 - 120" : "120 +";
-                if (bucket != periodName) continue;
+                if (bucket != periodName)
+                {
+                    continue;
+                }
+
                 amounts[inv.Currency] += inv.Total;
                 totals[inv.Currency] += inv.Total;
             }
@@ -300,20 +310,39 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
                 (i, c) => new { i, ClientName = c.FirstName + " " + c.LastName });
 
         if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<InvoiceStatus>(status, true, out var parsed))
+        {
             query = query.Where(x => x.i.Status == parsed);
+        }
 
         if (createdFrom.HasValue)
+        {
             query = query.Where(x => x.i.CreatedAt >= createdFrom.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc));
+        }
+
         if (createdTo.HasValue)
+        {
             query = query.Where(x => x.i.CreatedAt <= createdTo.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc));
+        }
+
         if (dueFrom.HasValue)
+        {
             query = query.Where(x => x.i.DueDate >= dueFrom.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc));
+        }
+
         if (dueTo.HasValue)
+        {
             query = query.Where(x => x.i.DueDate <= dueTo.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc));
+        }
+
         if (paidFrom.HasValue)
+        {
             query = query.Where(x => x.i.PaidAt != null && x.i.PaidAt >= paidFrom.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc));
+        }
+
         if (paidTo.HasValue)
+        {
             query = query.Where(x => x.i.PaidAt != null && x.i.PaidAt <= paidTo.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc));
+        }
 
         var totalCount = await query.CountAsync(ct);
 
@@ -354,11 +383,19 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
                 (t, c) => new { t, ClientName = c.FirstName + " " + c.LastName });
 
         if (dateFrom.HasValue)
+        {
             query = query.Where(x => x.t.Date >= dateFrom.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc));
+        }
+
         if (dateTo.HasValue)
+        {
             query = query.Where(x => x.t.Date <= dateTo.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc));
+        }
+
         if (!string.IsNullOrWhiteSpace(paymentMethod))
+        {
             query = query.Where(x => x.t.PaymentMethod == paymentMethod);
+        }
 
         var totalCount = await query.CountAsync(ct);
 
@@ -461,10 +498,14 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
         var lines = new List<(DateTimeOffset Date, string Type, string Desc, decimal Debit, decimal Credit)>();
 
         foreach (var inv in invoices)
+        {
             lines.Add((inv.CreatedAt, "Invoice", $"Invoice Payment - #{inv.Id}", inv.Total, 0m));
+        }
 
         foreach (var tx in transactions)
+        {
             lines.Add((tx.Date, "Transaction", tx.Description, tx.AmountOut, tx.AmountIn));
+        }
 
         lines.Sort((a, b) => a.Date.CompareTo(b.Date));
 
@@ -584,21 +625,44 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
         var query = db.ClientServices.AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(status))
+        {
             query = query.Where(s => s.Status.ToString() == status);
+        }
+
         if (!string.IsNullOrWhiteSpace(billingCycle))
+        {
             query = query.Where(s => s.BillingCycle.ToLower() == billingCycle.ToLower());
+        }
+
         if (createdFrom.HasValue)
+        {
             query = query.Where(s => s.CreatedAt >= createdFrom.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc));
+        }
+
         if (createdTo.HasValue)
+        {
             query = query.Where(s => s.CreatedAt <= createdTo.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc));
+        }
+
         if (nextDueFrom.HasValue)
+        {
             query = query.Where(s => s.NextRenewalAt >= nextDueFrom.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc));
+        }
+
         if (nextDueTo.HasValue)
+        {
             query = query.Where(s => s.NextRenewalAt <= nextDueTo.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc));
+        }
+
         if (terminatedFrom.HasValue)
+        {
             query = query.Where(s => s.TerminatedAt >= terminatedFrom.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc));
+        }
+
         if (terminatedTo.HasValue)
+        {
             query = query.Where(s => s.TerminatedAt <= terminatedTo.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc));
+        }
 
         var totalCount = await query.CountAsync(ct);
 
@@ -651,21 +715,44 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
         var query = db.Domains.AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(status))
+        {
             query = query.Where(d => d.Status.ToString() == status);
+        }
+
         if (!string.IsNullOrWhiteSpace(registrar))
+        {
             query = query.Where(d => d.Registrar != null && d.Registrar.ToLower().Contains(registrar.ToLower()));
+        }
+
         if (registeredFrom.HasValue)
+        {
             query = query.Where(d => d.RegisteredAt >= registeredFrom.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc));
+        }
+
         if (registeredTo.HasValue)
+        {
             query = query.Where(d => d.RegisteredAt <= registeredTo.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc));
+        }
+
         if (expiresFrom.HasValue)
+        {
             query = query.Where(d => d.ExpiresAt >= expiresFrom.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc));
+        }
+
         if (expiresTo.HasValue)
+        {
             query = query.Where(d => d.ExpiresAt <= expiresTo.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc));
+        }
+
         if (nextDueFrom.HasValue)
+        {
             query = query.Where(d => d.NextDueDate >= nextDueFrom.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc));
+        }
+
         if (nextDueTo.HasValue)
+        {
             query = query.Where(d => d.NextDueDate <= nextDueTo.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc));
+        }
 
         var totalCount = await query.CountAsync(ct);
 
@@ -682,11 +769,22 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
             .Take(pageSize)
             .Select(d => new
             {
-                d.Id, d.ClientId, d.OrderId, d.OrderType,
-                d.Name, d.Tld, d.FirstPaymentAmount, d.RecurringAmount,
-                d.RegistrationPeriod, d.RegisteredAt, d.ExpiresAt,
-                d.NextDueDate, d.Registrar, d.PaymentMethod,
-                d.Status, d.AdminNotes
+                d.Id,
+                d.ClientId,
+                d.OrderId,
+                d.OrderType,
+                d.Name,
+                d.Tld,
+                d.FirstPaymentAmount,
+                d.RecurringAmount,
+                d.RegistrationPeriod,
+                d.RegisteredAt,
+                d.ExpiresAt,
+                d.NextDueDate,
+                d.Registrar,
+                d.PaymentMethod,
+                d.Status,
+                d.AdminNotes
             })
             .ToListAsync(ct);
 
@@ -719,10 +817,14 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
         var query = db.Clients.AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(status))
+        {
             query = query.Where(c => c.Status.ToString() == status);
+        }
 
         if (!string.IsNullOrWhiteSpace(country))
+        {
             query = query.Where(c => c.Country != null && c.Country.ToLower().Contains(country.ToLower()));
+        }
 
         if (createdFrom.HasValue)
         {
@@ -778,7 +880,9 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
             .Where(t => t.AddedToCredit && t.AmountIn > 0);
 
         if (clientId.HasValue)
+        {
             query = query.Where(t => t.ClientId == clientId.Value);
+        }
 
         if (from.HasValue)
         {
@@ -791,21 +895,26 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
             query = query.Where(t => t.Date <= toDt);
         }
         if (minAmount.HasValue)
+        {
             query = query.Where(t => t.AmountIn >= minAmount.Value);
+        }
+
         if (maxAmount.HasValue)
+        {
             query = query.Where(t => t.AmountIn <= maxAmount.Value);
+        }
 
         var raw = await query
             .OrderByDescending(t => t.Date)
             .Join(db.Clients, t => t.ClientId, c => c.Id, (t, c) => new
             {
                 t.Id,
-                ClientId   = c.Id,
+                ClientId = c.Id,
                 ClientName = c.FirstName + " " + c.LastName,
                 t.Date,
                 t.Description,
-                Amount     = t.AmountIn,
-                AdminUser  = (string?)null,
+                Amount = t.AmountIn,
+                AdminUser = (string?)null,
             })
             .ToListAsync(ct);
 
@@ -825,12 +934,12 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
             .Join(db.Clients, s => s.ClientId, c => c.Id, (s, c) => new { s, c })
             .Join(db.Products, x => x.s.ProductId, p => p.Id, (x, p) => new
             {
-                ServiceId    = x.s.Id,
-                ClientName   = x.c.FirstName + " " + x.c.LastName,
-                ProductName  = p.Name,
-                Domain       = x.s.Domain,
+                ServiceId = x.s.Id,
+                ClientName = x.c.FirstName + " " + x.c.LastName,
+                ProductName = p.Name,
+                Domain = x.s.Domain,
                 NextRenewalAt = x.s.NextRenewalAt,
-                AdminNotes   = x.s.AdminNotes,
+                AdminNotes = x.s.AdminNotes,
             })
             .OrderBy(r => r.ClientName)
             .ToListAsync(ct);
@@ -921,14 +1030,14 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
                         (i.PaymentMethod != null && i.PaymentMethod.ToLower().Contains("direct")))
             .Join(db.Clients, i => i.ClientId, c => c.Id, (i, c) => new
             {
-                InvoiceId   = i.Id,
-                ClientName  = c.FirstName + " " + c.LastName,
+                InvoiceId = i.Id,
+                ClientName = c.FirstName + " " + c.LastName,
                 InvoiceDate = i.CreatedAt,
-                DueDate     = i.DueDate,
-                Subtotal    = i.SubTotal,
-                Tax         = i.Tax,
-                Credit      = i.Credit,
-                Total       = i.Total,
+                DueDate = i.DueDate,
+                Subtotal = i.SubTotal,
+                Tax = i.Tax,
+                Credit = i.Credit,
+                Total = i.Total,
             })
             .OrderBy(r => r.DueDate)
             .ToListAsync(ct);
@@ -950,17 +1059,19 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
         // ── Services ─────────────────────────────────────────────────────────
         var servicesQuery = db.ClientServices.AsQueryable();
         if (!includeActive)
+        {
             servicesQuery = servicesQuery.Where(s => s.Status == Domain.Services.ServiceStatus.Terminated);
+        }
 
         var serviceRaw = await servicesQuery
             .Join(db.Products, s => s.ProductId, p => p.Id, (s, p) => new { s, p })
             .Join(db.ProductGroups, x => x.p.GroupId, g => g.Id, (x, g) => new
             {
-                GroupName   = g.Name,
+                GroupName = g.Name,
                 ProductName = x.p.Name,
                 BillingCycle = x.s.BillingCycle,
-                CreatedAt   = x.s.CreatedAt,
-                EndAt       = x.s.Status == Domain.Services.ServiceStatus.Terminated
+                CreatedAt = x.s.CreatedAt,
+                EndAt = x.s.Status == Domain.Services.ServiceStatus.Terminated
                               ? x.s.TerminatedAt
                               : x.s.NextRenewalAt,
             })
@@ -969,17 +1080,19 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
         // ── Domains ───────────────────────────────────────────────────────────
         var domainQuery = db.Domains.AsQueryable();
         if (!includeActive)
+        {
             domainQuery = domainQuery.Where(d => d.Status == Domain.Domains.DomainStatus.Expired ||
                                                  d.Status == Domain.Domains.DomainStatus.Cancelled);
+        }
 
         var domainRaw = await domainQuery
             .Select(d => new
             {
-                GroupName    = "TLD",
-                ProductName  = d.Tld,
+                GroupName = "TLD",
+                ProductName = d.Tld,
                 BillingCycle = "1 Years",
-                CreatedAt    = d.RegisteredAt,
-                EndAt        = (DateTimeOffset?)d.ExpiresAt,
+                CreatedAt = d.RegisteredAt,
+                EndAt = (DateTimeOffset?)d.ExpiresAt,
             })
             .ToListAsync(ct);
 
@@ -987,14 +1100,18 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
         var allRows = serviceRaw
             .Select(r => new
             {
-                r.GroupName, r.ProductName, r.BillingCycle,
+                r.GroupName,
+                r.ProductName,
+                r.BillingCycle,
                 Days = r.EndAt.HasValue
                        ? (int)(r.EndAt.Value - r.CreatedAt).TotalDays
                        : (int)(DateTimeOffset.UtcNow - r.CreatedAt).TotalDays,
             })
             .Concat(domainRaw.Select(r => new
             {
-                r.GroupName, r.ProductName, r.BillingCycle,
+                r.GroupName,
+                r.ProductName,
+                r.BillingCycle,
                 Days = r.EndAt.HasValue
                        ? (int)(r.EndAt.Value - r.CreatedAt).TotalDays
                        : (int)(DateTimeOffset.UtcNow - r.CreatedAt).TotalDays,
@@ -1003,11 +1120,23 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
 
         static string FormatYearsMonths(int days)
         {
-            int years  = days / 365;
+            int years = days / 365;
             int months = (days % 365) / 30;
-            if (years > 0 && months > 0) return $"{years} Years {months} Months";
-            if (years > 0)               return $"{years} Years";
-            if (months > 0)              return $"{months} Months";
+            if (years > 0 && months > 0)
+            {
+                return $"{years} Years {months} Months";
+            }
+
+            if (years > 0)
+            {
+                return $"{years} Years";
+            }
+
+            if (months > 0)
+            {
+                return $"{months} Months";
+            }
+
             return $"{days} Days";
         }
 
@@ -1064,8 +1193,8 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
         {
             var date = new DateTime(year, month, day, 0, 0, 0, DateTimeKind.Utc);
             map.TryGetValue(date, out var r);
-            decimal amtIn  = r?.AmountIn  ?? 0m;
-            decimal fees   = r?.Fees      ?? 0m;
+            decimal amtIn = r?.AmountIn ?? 0m;
+            decimal fees = r?.Fees ?? 0m;
             decimal amtOut = r?.AmountOut ?? 0m;
             // Balance = daily net (same as WHMCS: AmountIn - Fees - AmountOut)
             decimal balance = amtIn - fees - amtOut;
@@ -1094,13 +1223,19 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
             select new { rem, d, c };
 
         if (clientId.HasValue)
+        {
             query = query.Where(x => x.d.ClientId == clientId.Value);
+        }
 
         if (!string.IsNullOrWhiteSpace(registrar))
+        {
             query = query.Where(x => x.d.Registrar != null && x.d.Registrar.ToLower() == registrar.ToLower());
+        }
 
         if (!string.IsNullOrWhiteSpace(domain))
+        {
             query = query.Where(x => x.d.Name.ToLower().Contains(domain.ToLower()));
+        }
 
         if (from.HasValue)
         {
@@ -1209,7 +1344,9 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
         var query = db.Tickets.Where(t => t.Rating != null);
 
         if (minRating.HasValue)
+        {
             query = query.Where(t => t.Rating >= minRating.Value);
+        }
 
         if (from.HasValue)
         {
@@ -1280,13 +1417,13 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
             _ => (10, 12),
         };
         var from = new DateTimeOffset(new DateTime(year, startMonth, 1), TimeSpan.Zero);
-        var to   = new DateTimeOffset(new DateTime(year, endMonth,
+        var to = new DateTimeOffset(new DateTime(year, endMonth,
             DateTime.DaysInMonth(year, endMonth), 23, 59, 59), TimeSpan.Zero);
 
         var quarterNames = new[] { "", "January - March", "April - June", "July - September", "October - December" };
-        var monthNames   = new[] { "", "January", "February", "March", "April", "May", "June",
+        var monthNames = new[] { "", "January", "February", "March", "April", "May", "June",
                                        "July", "August", "September", "October", "November", "December" };
-        var periodLabel  = $"For Period 1st {monthNames[startMonth]} {year} to " +
+        var periodLabel = $"For Period 1st {monthNames[startMonth]} {year} to " +
                            $"{DateTime.DaysInMonth(year, endMonth)}th {monthNames[endMonth]} {year}";
 
         // Paid invoices with VAT in the period
@@ -1319,17 +1456,39 @@ public sealed class ReportRepository(AppDbContext db) : IReportRepository
 
     private static string CountryName(string code) => code switch
     {
-        "AT" => "Austria",       "BE" => "Belgium",      "BG" => "Bulgaria",
-        "CY" => "Cyprus",        "CZ" => "Czech Republic","DE" => "Germany",
-        "DK" => "Denmark",       "EE" => "Estonia",      "ES" => "Spain",
-        "FI" => "Finland",       "FR" => "France",       "GB" => "United Kingdom",
-        "GR" => "Greece",        "HR" => "Croatia",      "HU" => "Hungary",
-        "IE" => "Ireland",       "IT" => "Italy",        "LT" => "Lithuania",
-        "LU" => "Luxembourg",    "LV" => "Latvia",       "MT" => "Malta",
-        "NL" => "Netherlands",   "PL" => "Poland",       "PT" => "Portugal",
-        "RO" => "Romania",       "SE" => "Sweden",       "SI" => "Slovenia",
-        "SK" => "Slovakia",      "AM" => "Armenia",      "RU" => "Russia",
-        "US" => "United States", "UA" => "Ukraine",      "TR" => "Turkey",
+        "AT" => "Austria",
+        "BE" => "Belgium",
+        "BG" => "Bulgaria",
+        "CY" => "Cyprus",
+        "CZ" => "Czech Republic",
+        "DE" => "Germany",
+        "DK" => "Denmark",
+        "EE" => "Estonia",
+        "ES" => "Spain",
+        "FI" => "Finland",
+        "FR" => "France",
+        "GB" => "United Kingdom",
+        "GR" => "Greece",
+        "HR" => "Croatia",
+        "HU" => "Hungary",
+        "IE" => "Ireland",
+        "IT" => "Italy",
+        "LT" => "Lithuania",
+        "LU" => "Luxembourg",
+        "LV" => "Latvia",
+        "MT" => "Malta",
+        "NL" => "Netherlands",
+        "PL" => "Poland",
+        "PT" => "Portugal",
+        "RO" => "Romania",
+        "SE" => "Sweden",
+        "SI" => "Slovenia",
+        "SK" => "Slovakia",
+        "AM" => "Armenia",
+        "RU" => "Russia",
+        "US" => "United States",
+        "UA" => "Ukraine",
+        "TR" => "Turkey",
         _ => code,
     };
 }

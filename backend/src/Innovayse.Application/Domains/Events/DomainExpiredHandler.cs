@@ -71,10 +71,16 @@ public sealed class DomainExpiredHandler(
         try
         {
             var client = await clientRepo.FindByIdAsync(evt.ClientId, ct);
-            if (client is null) return;
+            if (client is null)
+            {
+                return;
+            }
 
             var user = await userService.FindByIdAsync(client.UserId, ct);
-            if (user is null) return;
+            if (user is null)
+            {
+                return;
+            }
 
             var domain = await domainRepo.FindByIdAsync(evt.DomainId, ct);
 

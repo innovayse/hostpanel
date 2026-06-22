@@ -83,6 +83,7 @@ async function handleSave(payload: CreateProductPayload): Promise<void> {
         packageName: payload.packageName,
         monthlyPrice: payload.monthlyPrice,
         annualPrice: payload.annualPrice,
+        serverGroupId: payload.serverGroupId,
       })
     } else {
       await store.createProduct(payload)

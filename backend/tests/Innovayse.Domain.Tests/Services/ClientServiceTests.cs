@@ -66,4 +66,34 @@ public class ClientServiceTests
         Assert.NotNull(annualSvc.NextRenewalAt);
         Assert.True(annualSvc.NextRenewalAt > monthlySvc.NextRenewalAt);
     }
+
+    /// <summary>Verifies that <see cref="ClientService.Suspend"/> sets SuspendedAt timestamp.</summary>
+    [Fact]
+    public void Suspend_SetsSuspendedAt()
+    {
+        var svc = ClientService.Create(1, 2, "monthly");
+        svc.Activate("ref");
+
+        var before = DateTimeOffset.UtcNow;
+        svc.Suspend();
+        var after = DateTimeOffset.UtcNow;
+
+        Assert.NotNull(svc.SuspendedAt);
+        Assert.True(svc.SuspendedAt >= before && svc.SuspendedAt <= after);
+    }
+
+    /// <summary>Verifies that <see cref="ClientService.Unsuspend"/> clears SuspendedAt.</summary>
+    [Fact]
+    public void Unsuspend_ClearsSuspendedAt()
+    {
+        var svc = ClientService.Create(1, 2, "monthly");
+        svc.Activate("ref");
+        svc.Suspend();
+        Assert.NotNull(svc.SuspendedAt);
+
+        svc.Unsuspend();
+
+        Assert.Null(svc.SuspendedAt);
+        Assert.Equal(ServiceStatus.Active, svc.Status);
+    }
 }

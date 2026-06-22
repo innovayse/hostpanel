@@ -92,7 +92,10 @@ public sealed class ListSlidesHandler(ISlideRepository slideRepo, IProductReposi
     /// <returns>Deserialized string array, or null if the input is null or cannot be parsed.</returns>
     private static string[]? DeserializeFeatures(string? featuresJson)
     {
-        if (featuresJson is null) return null;
+        if (featuresJson is null)
+        {
+            return null;
+        }
 
         try
         {

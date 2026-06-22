@@ -12,6 +12,7 @@ using Innovayse.Domain.Products;
 /// <param name="Type">Product type.</param>
 /// <param name="MonthlyPrice">Monthly price (≥ 0).</param>
 /// <param name="AnnualPrice">Annual price (≥ 0).</param>
+/// <param name="ServerGroupId">Optional FK to the server group for provisioning.</param>
 public record CreateProductCommand(
     int GroupId,
     string Name,
@@ -21,4 +22,5 @@ public record CreateProductCommand(
     string? PackageName,
     ProductType Type,
     decimal MonthlyPrice,
-    decimal AnnualPrice);
+    decimal AnnualPrice,
+    int? ServerGroupId);

@@ -163,7 +163,10 @@ public sealed class Slide : AggregateRoot
     public void RemoveTranslation(string locale)
     {
         var existing = _translations.FirstOrDefault(t => t.Locale == locale);
-        if (existing is not null) _translations.Remove(existing);
+        if (existing is not null)
+        {
+            _translations.Remove(existing);
+        }
     }
 
     /// <summary>
@@ -173,9 +176,21 @@ public sealed class Slide : AggregateRoot
     /// <returns><c>true</c> if the slide is active and within its visibility window.</returns>
     public bool IsVisibleAt(DateTimeOffset now)
     {
-        if (!IsActive) return false;
-        if (VisibleFrom.HasValue && now < VisibleFrom.Value) return false;
-        if (VisibleUntil.HasValue && now > VisibleUntil.Value) return false;
+        if (!IsActive)
+        {
+            return false;
+        }
+
+        if (VisibleFrom.HasValue && now < VisibleFrom.Value)
+        {
+            return false;
+        }
+
+        if (VisibleUntil.HasValue && now > VisibleUntil.Value)
+        {
+            return false;
+        }
+
         return true;
     }
 }

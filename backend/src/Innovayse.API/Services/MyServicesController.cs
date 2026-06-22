@@ -1,10 +1,10 @@
 namespace Innovayse.API.Services;
 
 using System.Security.Claims;
+using Innovayse.API.Provisioning;
 using Innovayse.API.Services.Requests;
 using Innovayse.Application.Clients.DTOs;
 using Innovayse.Application.Clients.Queries.GetMyProfile;
-using Innovayse.API.Provisioning;
 using Innovayse.Application.Provisioning.Commands.ChangePassword;
 using Innovayse.Application.Provisioning.Queries.GetCPanelSsoUrl;
 using Innovayse.Application.Services.Commands.CancelService;

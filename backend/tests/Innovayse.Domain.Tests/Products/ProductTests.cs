@@ -36,7 +36,7 @@ public class ProductTests
     public void Update_ChangesNameAndPrices()
     {
         var product = Product.Create(1, "Old", null, null, null, null, ProductType.SharedHosting, 5m, 50m);
-        product.Update("New", "desc", null, null, null, 9m, 90m);
+        product.Update("New", "desc", null, null, null, 9m, 90m, null);
         Assert.Equal("New", product.Name);
         Assert.Equal(9m, product.MonthlyPrice);
         Assert.Equal(90m, product.AnnualPrice);
@@ -49,5 +49,37 @@ public class ProductTests
         var product = Product.Create(1, "P", null, null, null, null, ProductType.SharedHosting, 5m, 50m);
         product.Deactivate();
         Assert.Equal(ProductStatus.Inactive, product.Status);
+    }
+
+    /// <summary>Create with ServerGroupId sets the property.</summary>
+    [Fact]
+    public void Create_WithServerGroupId_SetsProperty()
+    {
+        var product = Product.Create(1, "Linked", null, null, null, null,
+            ProductType.SharedHosting, 5m, 50m, serverGroupId: 42);
+
+        Assert.Equal(42, product.ServerGroupId);
+    }
+
+    /// <summary>Create without ServerGroupId defaults to null.</summary>
+    [Fact]
+    public void Create_WithoutServerGroupId_DefaultsToNull()
+    {
+        var product = Product.Create(1, "Unlinked", null, null, null, null,
+            ProductType.SharedHosting, 5m, 50m);
+
+        Assert.Null(product.ServerGroupId);
+    }
+
+    /// <summary>Update with ServerGroupId changes the value.</summary>
+    [Fact]
+    public void Update_WithServerGroupId_ChangesValue()
+    {
+        var product = Product.Create(1, "P", null, null, null, null, ProductType.SharedHosting, 5m, 50m);
+        Assert.Null(product.ServerGroupId);
+
+        product.Update("P", null, null, null, null, 5m, 50m, serverGroupId: 7);
+
+        Assert.Equal(7, product.ServerGroupId);
     }
 }

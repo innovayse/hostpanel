@@ -17,7 +17,9 @@ public sealed class ImportBatchHandler(IMigrationJobRepository repo)
             ?? throw new InvalidOperationException("Invalid migration key.");
 
         if (job.Status == MigrationJobStatus.Failed || job.Status == MigrationJobStatus.Completed)
+        {
             throw new InvalidOperationException($"Migration job is already {job.Status}.");
+        }
 
         // First batch: set totals and transition to InProgress
         if (job.Status == MigrationJobStatus.Pending && cmd.Totals is not null)
@@ -39,21 +41,21 @@ public sealed class ImportBatchHandler(IMigrationJobRepository repo)
 
         var batchCount = cmd.EntityType switch
         {
-            MigrationEntityType.Clients  => cmd.Clients?.Count  ?? 0,
+            MigrationEntityType.Clients => cmd.Clients?.Count ?? 0,
             MigrationEntityType.Invoices => cmd.Invoices?.Count ?? 0,
             MigrationEntityType.Services => cmd.Services?.Count ?? 0,
-            MigrationEntityType.Domains  => cmd.Domains?.Count  ?? 0,
-            MigrationEntityType.Tickets  => cmd.Tickets?.Count  ?? 0,
+            MigrationEntityType.Domains => cmd.Domains?.Count ?? 0,
+            MigrationEntityType.Tickets => cmd.Tickets?.Count ?? 0,
             _ => 0,
         };
 
         var currentImported = cmd.EntityType switch
         {
-            MigrationEntityType.Clients  => job.ClientsImported,
+            MigrationEntityType.Clients => job.ClientsImported,
             MigrationEntityType.Invoices => job.InvoicesImported,
             MigrationEntityType.Services => job.ServicesImported,
-            MigrationEntityType.Domains  => job.DomainsImported,
-            MigrationEntityType.Tickets  => job.TicketsImported,
+            MigrationEntityType.Domains => job.DomainsImported,
+            MigrationEntityType.Tickets => job.TicketsImported,
             _ => 0,
         };
 
@@ -61,7 +63,9 @@ public sealed class ImportBatchHandler(IMigrationJobRepository repo)
 
         // Complete when last batch of last entity type arrives
         if (cmd.Page >= cmd.TotalPages && cmd.EntityType == MigrationEntityType.Tickets)
+        {
             job.Complete();
+        }
 
         await repo.SaveAsync(ct);
         return job.ToDto();

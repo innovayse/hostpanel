@@ -213,26 +213,26 @@ public sealed class MigrationJob : AggregateRoot
     {
         return new MigrationJob
         {
-            Key                  = Guid.NewGuid().ToString("N"),
-            Status               = MigrationJobStatus.Pending,
-            Label                = label,
-            SourceUrl            = sourceUrl.TrimEnd('/'),
-            ExportClients        = exportClients,
-            ExportInvoices       = exportInvoices,
-            ExportServices       = exportServices,
-            ExportDomains        = exportDomains,
-            ExportTickets        = exportTickets,
-            ExportProducts       = exportProducts,
-            ExportOrders         = exportOrders,
-            ExportTransactions   = exportTransactions,
-            ExportQuotes         = exportQuotes,
-            ExportKnowledgebase  = exportKnowledgebase,
-            ExportContacts       = exportContacts,
-            ExportTicketReplies  = exportTicketReplies,
-            ExportAnnouncements  = exportAnnouncements,
-            ExportDownloads      = exportDownloads,
-            ExportNetworkIssues  = exportNetworkIssues,
-            CreatedAt            = DateTimeOffset.UtcNow,
+            Key = Guid.NewGuid().ToString("N"),
+            Status = MigrationJobStatus.Pending,
+            Label = label,
+            SourceUrl = sourceUrl.TrimEnd('/'),
+            ExportClients = exportClients,
+            ExportInvoices = exportInvoices,
+            ExportServices = exportServices,
+            ExportDomains = exportDomains,
+            ExportTickets = exportTickets,
+            ExportProducts = exportProducts,
+            ExportOrders = exportOrders,
+            ExportTransactions = exportTransactions,
+            ExportQuotes = exportQuotes,
+            ExportKnowledgebase = exportKnowledgebase,
+            ExportContacts = exportContacts,
+            ExportTicketReplies = exportTicketReplies,
+            ExportAnnouncements = exportAnnouncements,
+            ExportDownloads = exportDownloads,
+            ExportNetworkIssues = exportNetworkIssues,
+            CreatedAt = DateTimeOffset.UtcNow,
         };
     }
 
@@ -257,22 +257,22 @@ public sealed class MigrationJob : AggregateRoot
         int downloadsTotal = 0,
         int networkIssuesTotal = 0)
     {
-        Status               = MigrationJobStatus.InProgress;
-        ClientsTotal         = clientsTotal;
-        InvoicesTotal        = invoicesTotal;
-        ServicesTotal        = servicesTotal;
-        DomainsTotal         = domainsTotal;
-        TicketsTotal         = ticketsTotal;
-        ProductsTotal        = productsTotal;
-        OrdersTotal          = ordersTotal;
-        TransactionsTotal    = transactionsTotal;
-        QuotesTotal          = quotesTotal;
-        KnowledgebaseTotal   = knowledgebaseTotal;
-        ContactsTotal        = contactsTotal;
-        TicketRepliesTotal   = ticketRepliesTotal;
-        AnnouncementsTotal   = announcementsTotal;
-        DownloadsTotal       = downloadsTotal;
-        NetworkIssuesTotal   = networkIssuesTotal;
+        Status = MigrationJobStatus.InProgress;
+        ClientsTotal = clientsTotal;
+        InvoicesTotal = invoicesTotal;
+        ServicesTotal = servicesTotal;
+        DomainsTotal = domainsTotal;
+        TicketsTotal = ticketsTotal;
+        ProductsTotal = productsTotal;
+        OrdersTotal = ordersTotal;
+        TransactionsTotal = transactionsTotal;
+        QuotesTotal = quotesTotal;
+        KnowledgebaseTotal = knowledgebaseTotal;
+        ContactsTotal = contactsTotal;
+        TicketRepliesTotal = ticketRepliesTotal;
+        AnnouncementsTotal = announcementsTotal;
+        DownloadsTotal = downloadsTotal;
+        NetworkIssuesTotal = networkIssuesTotal;
     }
 
     /// <summary>Updates the imported and skipped counts for a given entity type.</summary>
@@ -281,61 +281,99 @@ public sealed class MigrationJob : AggregateRoot
         switch (entityType)
         {
             case MigrationEntityType.Clients:
-                ClientsImported = importedCount; ClientsSkipped = skippedCount; break;
+                ClientsImported = importedCount;
+                ClientsSkipped = skippedCount;
+                break;
             case MigrationEntityType.Invoices:
-                InvoicesImported = importedCount; InvoicesSkipped = skippedCount; break;
+                InvoicesImported = importedCount;
+                InvoicesSkipped = skippedCount;
+                break;
             case MigrationEntityType.Services:
-                ServicesImported = importedCount; ServicesSkipped = skippedCount; break;
+                ServicesImported = importedCount;
+                ServicesSkipped = skippedCount;
+                break;
             case MigrationEntityType.Domains:
-                DomainsImported = importedCount; DomainsSkipped = skippedCount; break;
+                DomainsImported = importedCount;
+                DomainsSkipped = skippedCount;
+                break;
             case MigrationEntityType.Tickets:
-                TicketsImported = importedCount; TicketsSkipped = skippedCount; break;
+                TicketsImported = importedCount;
+                TicketsSkipped = skippedCount;
+                break;
             case MigrationEntityType.Products:
-                ProductsImported = importedCount; ProductsSkipped = skippedCount; break;
+                ProductsImported = importedCount;
+                ProductsSkipped = skippedCount;
+                break;
             case MigrationEntityType.Orders:
-                OrdersImported = importedCount; OrdersSkipped = skippedCount; break;
+                OrdersImported = importedCount;
+                OrdersSkipped = skippedCount;
+                break;
             case MigrationEntityType.Transactions:
-                TransactionsImported = importedCount; TransactionsSkipped = skippedCount; break;
+                TransactionsImported = importedCount;
+                TransactionsSkipped = skippedCount;
+                break;
             case MigrationEntityType.Quotes:
-                QuotesImported = importedCount; QuotesSkipped = skippedCount; break;
+                QuotesImported = importedCount;
+                QuotesSkipped = skippedCount;
+                break;
             case MigrationEntityType.Knowledgebase:
-                KnowledgebaseImported = importedCount; KnowledgebaseSkipped = skippedCount; break;
+                KnowledgebaseImported = importedCount;
+                KnowledgebaseSkipped = skippedCount;
+                break;
             case MigrationEntityType.Contacts:
-                ContactsImported = importedCount; ContactsSkipped = skippedCount; break;
+                ContactsImported = importedCount;
+                ContactsSkipped = skippedCount;
+                break;
             case MigrationEntityType.TicketReplies:
-                TicketRepliesImported = importedCount; TicketRepliesSkipped = skippedCount; break;
+                TicketRepliesImported = importedCount;
+                TicketRepliesSkipped = skippedCount;
+                break;
             case MigrationEntityType.Announcements:
-                AnnouncementsImported = importedCount; AnnouncementsSkipped = skippedCount; break;
+                AnnouncementsImported = importedCount;
+                AnnouncementsSkipped = skippedCount;
+                break;
             case MigrationEntityType.Downloads:
-                DownloadsImported = importedCount; DownloadsSkipped = skippedCount; break;
+                DownloadsImported = importedCount;
+                DownloadsSkipped = skippedCount;
+                break;
             case MigrationEntityType.NetworkIssues:
-                NetworkIssuesImported = importedCount; NetworkIssuesSkipped = skippedCount; break;
+                NetworkIssuesImported = importedCount;
+                NetworkIssuesSkipped = skippedCount;
+                break;
         }
     }
 
     /// <summary>Marks the job as successfully completed.</summary>
     public void Complete()
     {
-        Status      = MigrationJobStatus.Completed;
+        Status = MigrationJobStatus.Completed;
         CompletedAt = DateTimeOffset.UtcNow;
     }
 
     /// <summary>Marks the job as failed with an error message.</summary>
     public void Fail(string error)
     {
-        Status       = MigrationJobStatus.Failed;
+        Status = MigrationJobStatus.Failed;
         ErrorMessage = error;
-        CompletedAt  = DateTimeOffset.UtcNow;
+        CompletedAt = DateTimeOffset.UtcNow;
     }
 
     /// <summary>Overall progress as a percentage (0–100). Returns 100 when completed.</summary>
     public int OverallPercent()
     {
-        if (Status == MigrationJobStatus.Completed) return 100;
-        var total    = ClientsTotal + InvoicesTotal + ServicesTotal + DomainsTotal + TicketsTotal
+        if (Status == MigrationJobStatus.Completed)
+        {
+            return 100;
+        }
+
+        var total = ClientsTotal + InvoicesTotal + ServicesTotal + DomainsTotal + TicketsTotal
                      + ProductsTotal + OrdersTotal + TransactionsTotal + QuotesTotal + KnowledgebaseTotal
                      + ContactsTotal + TicketRepliesTotal + AnnouncementsTotal + DownloadsTotal + NetworkIssuesTotal;
-        if (total == 0) return 0;
+        if (total == 0)
+        {
+            return 0;
+        }
+
         var processed = ClientsImported + ClientsSkipped
                       + InvoicesImported + InvoicesSkipped
                       + ServicesImported + ServicesSkipped

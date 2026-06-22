@@ -49,21 +49,28 @@ public sealed class CpanelWhmApi
 
         var results = new List<WhmAccountUsage>();
 
-        if (!doc.RootElement.TryGetProperty("data", out var data)) return results;
-        if (!data.TryGetProperty("acct", out var accts)) return results;
+        if (!doc.RootElement.TryGetProperty("data", out var data))
+        {
+            return results;
+        }
+
+        if (!data.TryGetProperty("acct", out var accts))
+        {
+            return results;
+        }
 
         foreach (var acct in accts.EnumerateArray())
         {
-            var user   = acct.TryGetProperty("user",   out var u) ? u.GetString() ?? "" : "";
+            var user = acct.TryGetProperty("user", out var u) ? u.GetString() ?? "" : "";
             var domain = acct.TryGetProperty("domain", out var d) ? d.GetString() ?? "" : "";
-            var owner  = acct.TryGetProperty("owner",  out var o) ? o.GetString() ?? "" : "";
+            var owner = acct.TryGetProperty("owner", out var o) ? o.GetString() ?? "" : "";
 
             // Disk usage: "diskused" in MB, "disklimit" in MB ("unlimited" = 0)
-            long diskUsed  = ParseMb(acct, "diskused");
+            long diskUsed = ParseMb(acct, "diskused");
             long diskLimit = ParseLimitMb(acct, "disklimit");
 
             // Bandwidth: "bwused" in MB, "bwlimit" in MB
-            long bwUsed  = ParseMb(acct, "bwused");
+            long bwUsed = ParseMb(acct, "bwused");
             long bwLimit = ParseLimitMb(acct, "bwlimit");
 
             results.Add(new WhmAccountUsage(user, domain, owner, diskUsed, diskLimit, bwUsed, bwLimit));
@@ -74,8 +81,16 @@ public sealed class CpanelWhmApi
 
     private static long ParseMb(JsonElement el, string prop)
     {
-        if (!el.TryGetProperty(prop, out var val)) return 0;
-        if (val.ValueKind == JsonValueKind.Number) return (long)val.GetDouble();
+        if (!el.TryGetProperty(prop, out var val))
+        {
+            return 0;
+        }
+
+        if (val.ValueKind == JsonValueKind.Number)
+        {
+            return (long)val.GetDouble();
+        }
+
         if (val.ValueKind == JsonValueKind.String)
         {
             var s = val.GetString() ?? "0";
@@ -86,14 +101,26 @@ public sealed class CpanelWhmApi
 
     private static long ParseLimitMb(JsonElement el, string prop)
     {
-        if (!el.TryGetProperty(prop, out var val)) return 0;
+        if (!el.TryGetProperty(prop, out var val))
+        {
+            return 0;
+        }
+
         if (val.ValueKind == JsonValueKind.String)
         {
             var s = val.GetString() ?? "";
-            if (s.Equals("unlimited", StringComparison.OrdinalIgnoreCase)) return 0;
+            if (s.Equals("unlimited", StringComparison.OrdinalIgnoreCase))
+            {
+                return 0;
+            }
+
             return double.TryParse(s, out var d) ? (long)d : 0;
         }
-        if (val.ValueKind == JsonValueKind.Number) return (long)val.GetDouble();
+        if (val.ValueKind == JsonValueKind.Number)
+        {
+            return (long)val.GetDouble();
+        }
+
         return 0;
     }
 }

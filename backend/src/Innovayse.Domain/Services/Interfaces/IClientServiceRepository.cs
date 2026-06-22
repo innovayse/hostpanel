@@ -54,4 +54,14 @@ public interface IClientServiceRepository
 
     /// <summary>Finds a client service by client ID and domain name.</summary>
     Task<ClientService?> FindByClientAndDomainAsync(int clientId, string domain, CancellationToken ct);
+
+    /// <summary>
+    /// Returns all suspended services whose <see cref="ClientService.SuspendedAt"/>
+    /// is on or before <paramref name="threshold"/>.
+    /// Used by the auto-terminate cron to terminate long-suspended services.
+    /// </summary>
+    /// <param name="threshold">Services suspended on or before this point are returned.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Suspended services that have exceeded the suspension limit.</returns>
+    Task<List<ClientService>> ListSuspendedBeforeAsync(DateTimeOffset threshold, CancellationToken ct);
 }

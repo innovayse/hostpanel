@@ -49,10 +49,14 @@ public sealed class CreateTransactionHandler(
                 ?? throw new InvalidOperationException($"Client {cmd.ClientId} not found.");
 
             if (cmd.AmountIn > 0)
+            {
                 client.AddCredit(cmd.AmountIn);
+            }
 
             if (cmd.AmountOut > 0)
+            {
                 client.DeductCredit(cmd.AmountOut);
+            }
         }
 
         await uow.SaveChangesAsync(ct);

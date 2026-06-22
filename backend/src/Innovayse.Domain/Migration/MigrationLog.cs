@@ -41,12 +41,12 @@ public sealed class MigrationLog : Entity
     {
         return new MigrationLog
         {
-            JobId      = jobId,
+            JobId = jobId,
             EntityType = entityType,
             Identifier = identifier,
-            Action     = action,
-            Reason     = reason,
-            CreatedAt  = DateTimeOffset.UtcNow,
+            Action = action,
+            Reason = reason,
+            CreatedAt = DateTimeOffset.UtcNow,
         };
     }
 }

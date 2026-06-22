@@ -30,10 +30,14 @@ public sealed class DeleteTransactionHandler(
                 ?? throw new InvalidOperationException($"Client {transaction.ClientId} not found.");
 
             if (transaction.AmountIn > 0)
+            {
                 client.DeductCredit(transaction.AmountIn);
+            }
 
             if (transaction.AmountOut > 0)
+            {
                 client.AddCredit(transaction.AmountOut);
+            }
         }
 
         transactionRepo.Remove(transaction);

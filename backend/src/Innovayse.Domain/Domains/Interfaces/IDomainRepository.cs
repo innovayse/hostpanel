@@ -69,6 +69,15 @@ public interface IDomainRepository
     Task<Dictionary<int, string>> FindDomainNamesByServiceIdsAsync(IEnumerable<int> serviceIds, CancellationToken ct);
 
     /// <summary>
+    /// Returns all domains that are currently in <see cref="DomainStatus.PendingRegistration"/>
+    /// or <see cref="DomainStatus.PendingTransfer"/> status.
+    /// Used by the sync job to poll the registrar for status updates.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>All pending domains, ordered by registration date.</returns>
+    Task<IReadOnlyList<Domain>> ListPendingAsync(CancellationToken ct);
+
+    /// <summary>
     /// Adds a new domain to the repository.
     /// Call <c>SaveChangesAsync</c> after adding to persist.
     /// </summary>

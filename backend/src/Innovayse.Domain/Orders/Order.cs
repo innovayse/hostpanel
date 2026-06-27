@@ -77,6 +77,9 @@ public sealed class Order : AggregateRoot
     /// <param name="recurringAmount">Recurring charge amount.</param>
     /// <param name="domain">Optional domain name for hosting products.</param>
     /// <param name="hostname">Optional hostname for VPS/server products.</param>
+    /// <param name="domainAction">Domain action: "register" or "transfer". Null for hosting.</param>
+    /// <param name="eppCode">EPP code for domain transfers.</param>
+    /// <param name="years">Domain registration period in years.</param>
     public void AddItem(
         int productId,
         string productName,
@@ -84,9 +87,15 @@ public sealed class Order : AggregateRoot
         decimal firstPaymentAmount,
         decimal recurringAmount,
         string? domain,
-        string? hostname)
+        string? hostname,
+        string? domainAction = null,
+        string? eppCode = null,
+        int? years = null)
     {
-        _items.Add(OrderItem.Create(productId, productName, billingCycle, firstPaymentAmount, recurringAmount, domain, hostname));
+        _items.Add(OrderItem.Create(
+            productId, productName, billingCycle,
+            firstPaymentAmount, recurringAmount,
+            domain, hostname, domainAction, eppCode, years));
     }
 
     /// <summary>

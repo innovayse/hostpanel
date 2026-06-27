@@ -185,6 +185,8 @@ public static class DependencyInjection
 
         // Notifications
         services.Configure<SmtpSettings>(configuration.GetSection("Smtp"));
+        services.Configure<Innovayse.Application.Notifications.Settings.NotificationSettings>(
+            configuration.GetSection("Notifications"));
         services.AddScoped<IEmailSender, MailKitEmailSender>();
         services.AddScoped<IEmailTemplateRepository, EmailTemplateRepository>();
         services.AddScoped<IEmailLogRepository, EmailLogRepository>();
@@ -226,7 +228,12 @@ public static class DependencyInjection
 
         // Domains
         services.AddScoped<IDomainRepository, DomainRepository>();
+        services.AddScoped<ITldConfigRepository, TldConfigRepository>();
         services.AddScoped<IRegistrarProvider, NameAmRegistrarProvider>();
+        services.AddScoped<IRegistrarProviderFactory, RegistrarProviderFactory>();
+        services.AddScoped<Innovayse.Application.Domains.Services.RegistrarProviderResolver>();
+        services.AddScoped<NameAmRegistrarProvider>();
+        services.AddScoped<NamecheapRegistrarProvider>();
         services.AddHttpClient<NameAmClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(30);

@@ -65,14 +65,14 @@
                         <h4 class="font-bold text-white truncate pr-6">{{ item.name }}</h4>
                         <button 
                           class="absolute top-4 right-4 text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
-                          @click="cart.removeItem(item.pid)"
+                          @click="cart.removeItem(item.pid, item.domain, item.domainAction)"
                         >
                           <Trash2 :size="16" />
                         </button>
                       </div>
                       <div class="text-xs text-gray-500 mb-2">{{ item.cycleLabel }}</div>
                       <div class="flex justify-between items-end">
-                        <div class="text-lg font-black text-white">{{ item.price }}</div>
+                        <div class="text-lg font-black text-white">{{ itemPrice(item) }}</div>
                       </div>
                    </div>
                 </div>
@@ -126,21 +126,51 @@
 
 <script setup lang="ts">
 import { ShoppingCart, Server, Trash2, CreditCard, Lock, X } from 'lucide-vue-next'
-import { useCartStore } from '~/stores/cart'
+import { useCartStore, formatCartItemPrice, convertFromAmd } from '~/stores/cart'
 
 const cart = useCartStore()
 const localePath = useLocalePath()
-const { t: $t } = useI18n()
+const { t: $t, locale } = useI18n()
 const router = useRouter()
+
+/** Maps the current locale to the display currency. */
+const cartCurrency = computed(() => {
+  switch (locale.value) {
+    case 'hy': return 'AMD'
+    case 'ru': return 'RUB'
+    default: return 'USD'
+  }
+})
+
+/** Currency symbols keyed by code. */
+const currencySymbols: Record<string, string> = {
+  AMD: '֏', USD: '$', EUR: '€', RUB: '₽', GBP: '£',
+}
+
+/**
+ * Returns the display price for a cart item in the current locale currency.
+ *
+ * @param item - Cart item.
+ * @returns Formatted price string.
+ */
+function itemPrice(item: typeof cart.items[number]): string {
+  return formatCartItemPrice(item, cartCurrency.value)
+}
 
 const totalLabel = computed(() => {
   const items = cart.items
   if (!items.length) return ''
-  const prefixes = [...new Set(items.map(i => i.prefix))]
-  if (prefixes.length > 1) return $t('cart.multipleCurrencies') || 'Multiple'
-  const prefix = prefixes[0] ?? ''
-  const sum = items.reduce((acc, i) => acc + parseFloat(i.rawPrice || '0'), 0)
-  return `${prefix}${sum.toFixed(2)}`
+  const currency = cartCurrency.value
+  const symbol = currencySymbols[currency] ?? '$'
+  let sum = 0
+  for (const item of items) {
+    if (item.priceAmd !== undefined) {
+      sum += convertFromAmd(item.priceAmd, currency)
+    } else {
+      sum += parseFloat(item.rawPrice || '0')
+    }
+  }
+  return `${symbol}${sum.toFixed(2)}`
 })
 
 function handleBrowse() {

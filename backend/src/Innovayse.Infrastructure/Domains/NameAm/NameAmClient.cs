@@ -257,12 +257,20 @@ public sealed class NameAmClient
 
     /// <summary>
     /// Builds a full URL by combining the configured API base URL with the given path.
+    /// Appends <c>testmode=1</c> query parameter when <see cref="NameAmSettings.TestMode"/> is enabled.
     /// </summary>
     /// <param name="path">Relative API path.</param>
     /// <returns>Absolute URL string.</returns>
     private string BuildUrl(string path)
     {
-        return $"{_settings.ApiUrl.TrimEnd('/')}{path}";
+        var url = $"{_settings.ApiUrl.TrimEnd('/')}{path}";
+
+        if (_settings.TestMode)
+        {
+            url += url.Contains('?') ? "&testmode=1" : "?testmode=1";
+        }
+
+        return url;
     }
 
     /// <summary>

@@ -987,6 +987,84 @@ namespace Innovayse.Infrastructure.Migrations
                     b.ToTable("nameservers", (string)null);
                 });
 
+            modelBuilder.Entity("Innovayse.Domain.Domains.TldConfig", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Categories")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("CostRegister")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("CostRenew")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("CostTransfer")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("LastSyncedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RegistrarModule")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("SellCurrency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<string>("SellRegister")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("SellRenew")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("SellTransfer")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Tld")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsEnabled");
+
+                    b.HasIndex("Tld")
+                        .IsUnique();
+
+                    b.ToTable("tld_configs", (string)null);
+                });
+
             modelBuilder.Entity("Innovayse.Domain.Hosting.DiskUsageStat", b =>
                 {
                     b.Property<int>("Id")
@@ -1562,6 +1640,14 @@ namespace Innovayse.Infrastructure.Migrations
                         .HasMaxLength(253)
                         .HasColumnType("character varying(253)");
 
+                    b.Property<string>("DomainAction")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("EppCode")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
                     b.Property<decimal>("FirstPaymentAmount")
                         .HasColumnType("numeric");
 
@@ -1586,6 +1672,9 @@ namespace Innovayse.Infrastructure.Migrations
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int?>("Years")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 

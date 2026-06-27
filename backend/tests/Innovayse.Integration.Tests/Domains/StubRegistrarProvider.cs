@@ -115,4 +115,12 @@ internal sealed class StubRegistrarProvider : IRegistrarProvider
     /// <inheritdoc/>
     public Task<WhoisInfo?> GetWhoisAsync(string domainName, CancellationToken ct)
         => Task.FromResult<WhoisInfo?>(null);
+
+    /// <inheritdoc/>
+    public Task<RegistrarResult> CheckDomainActiveAsync(string domainName, CancellationToken ct)
+        => Task.FromResult(new RegistrarResult(true, domainName, DateTimeOffset.UtcNow.AddYears(1), null));
+
+    /// <inheritdoc/>
+    public Task<IReadOnlyList<TldPricing>> GetTldPricingAsync(CancellationToken ct)
+        => Task.FromResult<IReadOnlyList<TldPricing>>([]);
 }

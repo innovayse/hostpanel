@@ -2,6 +2,8 @@ namespace Innovayse.Application.Orders.Commands.PlaceOrder;
 
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Common;
+using Innovayse.Application.Domains.DTOs;
+using Innovayse.Application.Domains.Queries.GetTldPricing;
 using Innovayse.Application.Orders.DTOs;
 using Innovayse.Domain.Auth;
 using Innovayse.Domain.Billing;
@@ -12,6 +14,7 @@ using Innovayse.Domain.Orders;
 using Innovayse.Domain.Orders.Interfaces;
 using Innovayse.Domain.Products;
 using Innovayse.Domain.Products.Interfaces;
+using Wolverine;
 
 /// <summary>
 /// Places a new order for an existing or newly registered client.
@@ -24,13 +27,15 @@ using Innovayse.Domain.Products.Interfaces;
 /// <param name="invoiceRepo">Invoice repository for creating the linked invoice.</param>
 /// <param name="uow">Unit of work for persistence.</param>
 /// <param name="userService">Identity user management for guest checkout registration.</param>
+/// <param name="bus">Wolverine message bus for invoking TLD pricing queries.</param>
 public sealed class PlaceOrderHandler(
     IOrderRepository orderRepo,
     IProductRepository productRepo,
     IClientRepository clientRepo,
     IInvoiceRepository invoiceRepo,
     IUnitOfWork uow,
-    IUserService userService)
+    IUserService userService,
+    IMessageBus bus)
 {
     /// <summary>
     /// Handles <see cref="PlaceOrderCommand"/>.
@@ -55,6 +60,12 @@ public sealed class PlaceOrderHandler(
 
         var order = Order.Create(orderNumber, clientId, cmd.PaymentMethod, cmd.IpAddress);
 
+        // Pre-fetch TLD pricing if any domain items exist
+        var hasDomainItems = cmd.Items.Any(i => i.DomainAction is not null);
+        var tldPricing = hasDomainItems
+            ? await bus.InvokeAsync<TldPricingDto>(new GetTldPricingQuery(), ct)
+            : null;
+
         foreach (var item in cmd.Items)
         {
             if (!productMap.TryGetValue(item.ProductId, out var product))
@@ -67,8 +78,18 @@ public sealed class PlaceOrderHandler(
                 throw new InvalidOperationException($"Product {item.ProductId} is not available for ordering.");
             }
 
-            var price = ResolvePrice(product, item.BillingCycle);
-            order.AddItem(item.ProductId, product.Name, item.BillingCycle, price, price, item.Domain, item.Hostname);
+            decimal price;
+            if (item.DomainAction is not null)
+            {
+                price = ResolveDomainPrice(tldPricing!, item.Domain!, item.DomainAction, item.Years ?? 1);
+            }
+            else
+            {
+                price = ResolvePrice(product, item.BillingCycle);
+            }
+
+            order.AddItem(item.ProductId, product.Name, item.BillingCycle, price, price,
+                item.Domain, item.Hostname, item.DomainAction, item.EppCode, item.Years);
         }
 
         orderRepo.Add(order);
@@ -107,6 +128,12 @@ public sealed class PlaceOrderHandler(
             return client.Id;
         }
 
+        if (string.IsNullOrWhiteSpace(cmd.Email) || string.IsNullOrWhiteSpace(cmd.Password))
+        {
+            throw new InvalidOperationException(
+                "Authentication required. Your session may have expired — please log in again to complete your order.");
+        }
+
         var userId = await userService.CreateAsync(cmd.Email!, cmd.Password!, ct);
         await userService.AddToRoleAsync(userId, Roles.Client, ct);
 
@@ -132,5 +159,46 @@ public sealed class PlaceOrderHandler(
             "annual" or "annually" => product.AnnualPrice,
             _ => throw new InvalidOperationException($"Unsupported billing cycle: {billingCycle}.")
         };
+    }
+
+    /// <summary>
+    /// Resolves the price for a domain registration or transfer from the TLD pricing table.
+    /// </summary>
+    /// <param name="tldPricing">Pre-fetched TLD pricing data.</param>
+    /// <param name="domainName">Fully-qualified domain name (e.g. "example.com").</param>
+    /// <param name="action">Domain action: "register" or "transfer".</param>
+    /// <param name="years">Registration period in years.</param>
+    /// <returns>The validated price for the domain operation.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the TLD is not supported or years not available.</exception>
+    private static decimal ResolveDomainPrice(TldPricingDto tldPricing, string domainName, string action, int years)
+    {
+        var dotIndex = domainName.IndexOf('.');
+        if (dotIndex < 0)
+        {
+            throw new InvalidOperationException($"Invalid domain name: {domainName}");
+        }
+
+        var tld = domainName[(dotIndex + 1)..];
+
+        if (!tldPricing.Pricing.TryGetValue(tld, out var entry))
+        {
+            throw new InvalidOperationException($"TLD '.{tld}' is not supported for domain {action}.");
+        }
+
+        var priceMap = action.ToLowerInvariant() switch
+        {
+            "register" => entry.Register,
+            "transfer" => entry.Transfer,
+            _ => throw new InvalidOperationException($"Unsupported domain action: {action}.")
+        };
+
+        var yearKey = years.ToString();
+        if (!priceMap.TryGetValue(yearKey, out var priceStr) || !decimal.TryParse(priceStr, out var price))
+        {
+            throw new InvalidOperationException(
+                $"No pricing available for '.{tld}' {action} for {years} year(s).");
+        }
+
+        return price;
     }
 }

@@ -15,28 +15,86 @@ import { defineStore } from 'pinia'
 
 /** A single product in the cart */
 export interface CartItem {
-  /** WHMCS product ID */
+  /** Product ID (generic domain product PID for domain items) */
   pid: number
-  /** Human-readable plan name */
+  /** Human-readable plan name or domain name */
   name: string
-  /** Billing cycle key, e.g. "monthly" */
+  /** Billing cycle key, e.g. "monthly", "annually" */
   billingcycle: string
-  /** Localised cycle label, e.g. "Monthly" */
+  /** Localised cycle label, e.g. "Monthly", "1 Year" */
   cycleLabel: string
-  /** Formatted price string, e.g. "$9.99" */
+  /** Formatted price string, e.g. "$9.99" (used for hosting items) */
   price: string
-  /** Currency prefix, e.g. "$" */
+  /** Currency prefix, e.g. "$" (used for hosting items) */
   prefix: string
-  /** Raw numeric price string, e.g. "9.99" */
+  /** Raw numeric price string, e.g. "9.99" (used for hosting items) */
   rawPrice: string
-  /** Hosting specific: Domain name */
+  /** Base price in AMD for domain items — converted to display currency at render time */
+  priceAmd?: number
+  /** Domain name for hosting or domain items */
   domain?: string
-  /** Hosting specific: Hostname (for VPS/Servers) */
+  /** Hostname for VPS/server items */
   hostname?: string
-  /** Hosting specific: Account username */
+  /** Account username for hosting items */
   username?: string
-  /** Hosting specific: Account password */
+  /** Account password for hosting items */
   password?: string
+  /** Item type: "hosting" or "domain". Defaults to "hosting" if omitted. */
+  itemType?: 'hosting' | 'domain'
+  /** Domain action: "register" or "transfer" */
+  domainAction?: 'register' | 'transfer'
+  /** EPP/auth code for domain transfers */
+  eppCode?: string
+  /** TLD extension, e.g. "com", "net" */
+  tld?: string
+  /** Registration/transfer period in years */
+  years?: number
+}
+
+/** Exchange rates: 1 AMD = X target currency */
+const AMD_RATES: Record<string, number> = {
+  AMD: 1,
+  USD: 1 / 390,
+  EUR: 1 / 420,
+  RUB: 1 / 4.5,
+  GBP: 1 / 490,
+}
+
+/** Currency symbols keyed by code */
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  AMD: '֏',
+  USD: '$',
+  EUR: '€',
+  RUB: '₽',
+  GBP: '£',
+}
+
+/**
+ * Converts an AMD price to the target currency.
+ *
+ * @param amountAmd - Price in Armenian drams.
+ * @param targetCurrency - ISO 4217 currency code.
+ * @returns Converted numeric amount.
+ */
+export function convertFromAmd(amountAmd: number, targetCurrency: string): number {
+  const rate = AMD_RATES[targetCurrency] ?? AMD_RATES['USD']!
+  return amountAmd * rate
+}
+
+/**
+ * Formats a cart item price for display based on the target currency.
+ *
+ * @param item - The cart item.
+ * @param targetCurrency - ISO 4217 currency code to display in.
+ * @returns Formatted price string, e.g. "$22.82 USD".
+ */
+export function formatCartItemPrice(item: CartItem, targetCurrency: string): string {
+  if (item.priceAmd !== undefined) {
+    const converted = convertFromAmd(item.priceAmd, targetCurrency)
+    const symbol = CURRENCY_SYMBOLS[targetCurrency] ?? '$'
+    return `${symbol}${converted.toFixed(2)} ${targetCurrency}`
+  }
+  return item.price
 }
 
 const STORAGE_KEY = 'innovayse_cart'
@@ -63,7 +121,11 @@ export const useCartStore = defineStore('cart', {
 
     /** Check if a specific pid+cycle combo is already in cart */
     hasItem: (state) => (pid: number, billingcycle: string): boolean =>
-      state.items.some(i => i.pid === pid && i.billingcycle === billingcycle)
+      state.items.some(i => i.pid === pid && i.billingcycle === billingcycle),
+
+    /** Check if a domain + action combo is already in cart */
+    hasDomainItem: (state) => (domain: string, action: string): boolean =>
+      state.items.some(i => i.itemType === 'domain' && i.domain === domain && i.domainAction === action)
   },
 
   actions: {
@@ -93,13 +155,17 @@ export const useCartStore = defineStore('cart', {
 
     /**
      * Add an item to the cart.
-     * If the same pid+billingcycle already exists, it is not duplicated.
-     * Marks the pid as "recently added" for 2 seconds (button feedback).
+     * For hosting: deduplicates by pid+billingcycle.
+     * For domains: deduplicates by domain+domainAction.
      *
      * @param item - Cart item to add
      */
     addItem(item: CartItem) {
-      if (!this.hasItem(item.pid, item.billingcycle)) {
+      const isDuplicate = item.itemType === 'domain'
+        ? this.hasDomainItem(item.domain!, item.domainAction!)
+        : this.hasItem(item.pid, item.billingcycle)
+
+      if (!isDuplicate) {
         this.items.push(item)
         this._save()
       }
@@ -117,12 +183,20 @@ export const useCartStore = defineStore('cart', {
     },
 
     /**
-     * Remove an item from the cart by its pid.
+     * Remove an item from the cart.
+     * For domain items, removes by domain+action. For hosting, removes by pid.
      *
-     * @param pid - WHMCS product ID to remove
+     * @param pid - Product ID to remove
+     * @param domain - Domain name (for domain items)
+     * @param domainAction - Domain action (for domain items)
      */
-    removeItem(pid: number) {
-      this.items = this.items.filter(i => i.pid !== pid)
+    removeItem(pid: number, domain?: string, domainAction?: string) {
+      if (domain && domainAction) {
+        this.items = this.items.filter(
+          i => !(i.domain === domain && i.domainAction === domainAction))
+      } else {
+        this.items = this.items.filter(i => i.pid !== pid)
+      }
       this._save()
     },
 

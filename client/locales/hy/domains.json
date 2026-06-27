@@ -63,6 +63,8 @@
     "promoTransferTitle": "Փոխանցեք ձեր դոմենը մեզ",
     "promoTransferDesc": "Փոխանցեք հիմա և երկարաձգեք դոմենը 1 տարով!*",
     "promoTransferBtn": "Փոխանցել դոմեն",
-    "promoTransferNote": "* Բացառությամբ որոշ TLD-ների և վերջերս երկարաձգված դոմենների"
+    "promoTransferNote": "* Բացառությամբ որոշ TLD-ների և վերջերս երկարաձգված դոմենների",
+    "tldNotSupported": "Այս TLD-ն հասանելի չէ գրանցման համար",
+    "alreadyInCart": "Արդեն զամբյուղում է"
   }
 }

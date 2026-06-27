@@ -201,10 +201,33 @@ public interface IRegistrarProvider
     Task<bool> CheckAvailabilityAsync(string domainName, CancellationToken ct);
 
     /// <summary>
+    /// Polls the registrar to check whether a pending domain registration or transfer has become active.
+    /// Used by the sync job for registrars that require polling (see <see cref="RegistrarResult.RequiresPolling"/>).
+    /// </summary>
+    /// <param name="domainName">The fully-qualified domain name to check.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// A <see cref="RegistrarResult"/> with <see cref="RegistrarResult.Success"/> set to <see langword="true"/>
+    /// and a valid <see cref="RegistrarResult.RegistrarRef"/> and <see cref="RegistrarResult.ExpiresAt"/> when the
+    /// domain is now active at the registrar; otherwise <see cref="RegistrarResult.Success"/> is <see langword="false"/>.
+    /// </returns>
+    Task<RegistrarResult> CheckDomainActiveAsync(string domainName, CancellationToken ct);
+
+    /// <summary>
     /// Performs a WHOIS lookup for the given domain name.
     /// </summary>
     /// <param name="domainName">The fully-qualified domain name to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>WHOIS information, or <see langword="null"/> if the domain is not found.</returns>
     Task<WhoisInfo?> GetWhoisAsync(string domainName, CancellationToken ct);
+
+    /// <summary>
+    /// Retrieves TLD pricing from the registrar's product catalogue.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// A list of <see cref="TldPricing"/> entries, one per TLD, containing register/renew/transfer
+    /// prices keyed by period in years.
+    /// </returns>
+    Task<IReadOnlyList<TldPricing>> GetTldPricingAsync(CancellationToken ct);
 }

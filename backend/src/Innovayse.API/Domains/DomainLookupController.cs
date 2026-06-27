@@ -60,14 +60,17 @@ public sealed class DomainLookupController(IMessageBus bus) : ControllerBase
     }
 
     /// <summary>Returns TLD pricing information for domain registration, transfer, and renewal.</summary>
+    /// <param name="currency">Target currency code (e.g. "USD", "RUB", "AMD"). Defaults to USD.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>TLD pricing data with currency and per-extension price breakdowns.</returns>
     [HttpGet("tld-pricing")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(TldPricingDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<TldPricingDto>> GetTldPricingAsync(CancellationToken ct)
+    public async Task<ActionResult<TldPricingDto>> GetTldPricingAsync(
+        [FromQuery] string? currency,
+        CancellationToken ct)
     {
-        var result = await bus.InvokeAsync<TldPricingDto>(new GetTldPricingQuery(), ct);
+        var result = await bus.InvokeAsync<TldPricingDto>(new GetTldPricingQuery(currency), ct);
         return Ok(result);
     }
 }

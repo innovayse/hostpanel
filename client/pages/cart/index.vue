@@ -66,7 +66,7 @@
                 <button
                   class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
                   :title="$t('cart.remove')"
-                  @click="cart.removeItem(item.pid)"
+                  @click="cart.removeItem(item.pid, item.domain, item.domainAction)"
                 >
                   <Trash2 :size="16" :stroke-width="2" />
                 </button>

@@ -91,6 +91,22 @@ public sealed class DevDataSeeder(
                 await SeedAnnouncementsAsync(db, ct, logger);
             }
 
+            if (!await db.Products.AnyAsync(p => p.Type == ProductType.Domain, ct))
+            {
+                var domainGroup = await db.ProductGroups.FirstOrDefaultAsync(g => g.Name == "Domains", ct);
+                if (domainGroup is null)
+                {
+                    domainGroup = ProductGroup.Create("Domains", null);
+                    db.ProductGroups.Add(domainGroup);
+                    await db.SaveChangesAsync(ct);
+                }
+
+                var domainProduct = Product.Create(domainGroup.Id, "Domain Registration", null, null, null, null, ProductType.Domain, 0m, 0m);
+                db.Products.Add(domainProduct);
+                await db.SaveChangesAsync(ct);
+                logger.LogInformation("Seeded Domain Registration product");
+            }
+
             logger.LogInformation("Dev seed skipped — data already exists");
             return;
         }
@@ -337,6 +353,7 @@ public sealed class DevDataSeeder(
                 ("Dedicated Servers", ProductType.Dedicated,     new[] { ("Dedicated Starter", 89.99m, 899.99m), ("Dedicated Pro", 149.99m, 1499.99m) }),
                 ("SSL Certificates",  ProductType.Ssl,           new[] { ("SSL Basic", 9.99m, 89.99m), ("SSL Wildcard", 29.99m, 279.99m) }),
                 ("Email Hosting",     ProductType.Other,         new[] { ("Email Basic", 2.99m, 29.99m), ("Email Pro", 7.99m, 79.99m) }),
+                ("Domains",           ProductType.Domain,        new[] { ("Domain Registration", 0m, 0m) }),
             };
 
             foreach (var (groupName, productType, products) in groupDefs)

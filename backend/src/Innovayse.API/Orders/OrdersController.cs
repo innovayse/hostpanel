@@ -60,7 +60,9 @@ public sealed class OrdersController(IMessageBus bus, IClientRepository clientRe
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
         var items = request.Items
-            .Select(i => new PlaceOrderItemDto(i.Pid, i.BillingCycle, i.Domain, i.Hostname))
+            .Select(i => new PlaceOrderItemDto(
+                i.Pid, i.BillingCycle, i.Domain, i.Hostname,
+                i.DomainAction, i.EppCode, i.Years))
             .ToList();
 
         var cmd = new PlaceOrderCommand(

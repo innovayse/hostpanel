@@ -78,6 +78,25 @@ public sealed class StripeService(
         return (false, null);
     }
 
+    /// <inheritdoc />
+    public async Task<string> RefundAsync(string transactionId, CancellationToken ct)
+    {
+        var service = new RefundService(_client);
+
+        // Stripe accepts either a charge ID (ch_xxx) or a payment intent ID (pi_xxx).
+        var options = transactionId.StartsWith("ch_", StringComparison.OrdinalIgnoreCase)
+            ? new RefundCreateOptions { Charge = transactionId }
+            : new RefundCreateOptions { PaymentIntent = transactionId };
+
+        var refund = await service.CreateAsync(options, cancellationToken: ct);
+
+        logger.LogInformation(
+            "Issued Stripe refund {RefundId} for transaction {TransactionId}",
+            refund.Id, transactionId);
+
+        return refund.Id;
+    }
+
     /// <summary>
     /// Converts a decimal amount to the smallest currency unit (e.g. cents for USD).
     /// Zero-decimal currencies like JPY are returned as-is.

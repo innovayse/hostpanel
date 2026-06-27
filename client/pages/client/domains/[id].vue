@@ -55,8 +55,11 @@
                 class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors text-left"
                 :class="activeTab === tab.key
                   ? 'bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400 font-medium'
-                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5'"
-                @click="activeTab = tab.key"
+                  : (isPending && tab.key !== 'overview')
+                    ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5'"
+                :disabled="isPending && tab.key !== 'overview'"
+                @click="!isPending || tab.key === 'overview' ? activeTab = tab.key : undefined"
               >
                 <component :is="tab.icon" :size="15" :stroke-width="2" class="flex-shrink-0" />
                 {{ tab.label }}
@@ -94,11 +97,22 @@
         <!-- Main content -->
         <div class="flex-1 min-w-0">
 
+          <!-- ── Pending Registration / Transfer Banner ─ -->
+          <UiAlert
+            v-if="isPending"
+            variant="info"
+            :icon-size="16"
+            :title="domain.status === 'PendingTransfer' ? $t('client.domains.pendingTransferTitle') : $t('client.domains.pendingRegistrationTitle')"
+            class="mb-5"
+          >
+            {{ domain.status === 'PendingTransfer' ? $t('client.domains.pendingTransferDesc') : $t('client.domains.pendingRegistrationDesc') }}
+          </UiAlert>
+
           <!-- ── Overview ──────────────────────────────── -->
           <template v-if="activeTab === 'overview'">
-            <!-- Unlock warning -->
+            <!-- Unlock warning (hidden while domain is still pending) -->
             <UiAlert
-              v-if="!lockEnabled"
+              v-if="!lockEnabled && !isPending"
               variant="error"
               :icon-size="16"
               :title="$t('client.domains.unlockWarningTitle')"
@@ -122,8 +136,8 @@
               </dl>
             </UiCard>
 
-            <!-- What would you like to do today? -->
-            <div class="mt-5 p-5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5">
+            <!-- What would you like to do today? (hidden while domain is still pending) -->
+            <div v-if="!isPending" class="mt-5 p-5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5">
               <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">{{ $t('client.domains.whatToday') }}</h3>
               <ul class="space-y-2">
                 <li>
@@ -607,6 +621,11 @@ const tabs = computed(() => [
 ])
 
 // ── Renew ─────────────────────────────────────────────────────────────────────
+/** Whether the domain is still being processed by the registrar (not yet live). */
+const isPending = computed(() =>
+  domain.value?.status === 'PendingRegistration' || domain.value?.status === 'PendingTransfer'
+)
+
 /** Whether the domain status is Expired. */
 const isExpired = computed(() =>
   domain.value?.status === 'Expired'

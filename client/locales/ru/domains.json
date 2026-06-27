@@ -63,6 +63,8 @@
     "promoTransferTitle": "Перенесите домен к нам",
     "promoTransferDesc": "Перенесите сейчас и продлите домен на 1 год!*",
     "promoTransferBtn": "Перенести домен",
-    "promoTransferNote": "* Исключает некоторые TLD и недавно продлённые домены"
+    "promoTransferNote": "* Исключает некоторые TLD и недавно продлённые домены",
+    "tldNotSupported": "Это расширение недоступно для регистрации",
+    "alreadyInCart": "Уже в корзине"
   }
 }

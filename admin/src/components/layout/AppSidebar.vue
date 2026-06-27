@@ -135,6 +135,7 @@ const navItems: NavItem[] = [
     children: [
       { to: '/settings', label: 'General' },
       { to: '/settings/products', label: 'Products' },
+      { to: '/settings/tld-pricing', label: 'TLD Pricing' },
       { to: '/settings/slides', label: 'Slides' },
       { to: '/settings/email-templates', label: 'Email Templates' },
       { to: '/settings/gateways', label: 'Payment Gateways' },

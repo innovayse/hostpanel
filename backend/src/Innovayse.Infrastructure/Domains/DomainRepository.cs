@@ -89,5 +89,13 @@ public sealed class DomainRepository(AppDbContext db) : IDomainRepository
     }
 
     /// <inheritdoc/>
+    public async Task<IReadOnlyList<Domain>> ListPendingAsync(CancellationToken ct) =>
+        await db.Domains
+            .Where(x => x.Status == DomainStatus.PendingRegistration
+                     || x.Status == DomainStatus.PendingTransfer)
+            .OrderBy(x => x.RegisteredAt)
+            .ToListAsync(ct);
+
+    /// <inheritdoc/>
     public void Add(Domain domain) => db.Domains.Add(domain);
 }

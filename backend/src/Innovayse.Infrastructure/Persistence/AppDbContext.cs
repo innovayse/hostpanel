@@ -146,6 +146,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
     /// <summary>Gets the migration log entries table.</summary>
     public DbSet<MigrationLog> MigrationLogs => Set<MigrationLog>();
 
+    /// <summary>Gets the TLD configuration and pricing table.</summary>
+    public DbSet<TldConfig> TldConfigs => Set<TldConfig>();
+
     /// <summary>Gets the slide per-locale translations table.</summary>
     public DbSet<SlideTranslation> SlideTranslations => Set<SlideTranslation>();
 

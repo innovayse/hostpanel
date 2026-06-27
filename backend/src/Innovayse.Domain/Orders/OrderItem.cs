@@ -27,6 +27,15 @@ public sealed class OrderItem : Entity
     /// <summary>Gets the optional hostname for VPS/server products.</summary>
     public string? Hostname { get; private set; }
 
+    /// <summary>Gets the domain action type: "register" or "transfer". Null for hosting items.</summary>
+    public string? DomainAction { get; private set; }
+
+    /// <summary>Gets the EPP/authorization code for domain transfers. Null for registrations.</summary>
+    public string? EppCode { get; private set; }
+
+    /// <summary>Gets the domain registration or transfer period in years. Null for hosting items.</summary>
+    public int? Years { get; private set; }
+
     /// <summary>Gets the first payment amount snapshot at order time.</summary>
     public decimal FirstPaymentAmount { get; private set; }
 
@@ -40,7 +49,7 @@ public sealed class OrderItem : Entity
     private OrderItem() : base(0) { }
 
     /// <summary>
-    /// Creates a new pending order item with snapshotted product data.
+    /// Creates a new pending order item with snapshotted product data and optional domain registration fields.
     /// </summary>
     /// <param name="productId">FK to the product.</param>
     /// <param name="productName">Product name at order time.</param>
@@ -49,6 +58,9 @@ public sealed class OrderItem : Entity
     /// <param name="recurringAmount">Recurring charge amount.</param>
     /// <param name="domain">Optional domain name.</param>
     /// <param name="hostname">Optional hostname.</param>
+    /// <param name="domainAction">Domain action: "register" or "transfer". Null for hosting.</param>
+    /// <param name="eppCode">EPP authorization code for transfers.</param>
+    /// <param name="years">Registration period in years for domain items.</param>
     /// <returns>A new pending <see cref="OrderItem"/>.</returns>
     internal static OrderItem Create(
         int productId,
@@ -57,7 +69,10 @@ public sealed class OrderItem : Entity
         decimal firstPaymentAmount,
         decimal recurringAmount,
         string? domain,
-        string? hostname)
+        string? hostname,
+        string? domainAction = null,
+        string? eppCode = null,
+        int? years = null)
     {
         return new OrderItem
         {
@@ -68,6 +83,9 @@ public sealed class OrderItem : Entity
             RecurringAmount = recurringAmount,
             Domain = domain,
             Hostname = hostname,
+            DomainAction = domainAction,
+            EppCode = eppCode,
+            Years = years,
             Status = OrderItemStatus.Pending,
         };
     }

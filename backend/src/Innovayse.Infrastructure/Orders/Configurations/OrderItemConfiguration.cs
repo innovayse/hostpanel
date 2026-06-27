@@ -21,5 +21,8 @@ public sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
         builder.Property(x => x.FirstPaymentAmount).IsRequired();
         builder.Property(x => x.RecurringAmount).IsRequired();
         builder.Property(x => x.Status).IsRequired().HasConversion<string>();
+        builder.Property(x => x.DomainAction).HasMaxLength(20);
+        builder.Property(x => x.EppCode).HasMaxLength(255);
+        builder.Property(x => x.Years);
     }
 }

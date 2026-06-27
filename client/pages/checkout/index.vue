@@ -198,7 +198,7 @@
                       <div class="text-[10px] uppercase font-bold tracking-widest text-cyan-400/60 mt-0.5">{{ item.cycleLabel }}</div>
                     </div>
                   </div>
-                  <div class="text-sm font-black text-white whitespace-nowrap">{{ item.price }}</div>
+                  <div class="text-sm font-black text-white whitespace-nowrap">{{ formatCartItemPrice(item, checkoutCurrency) }}</div>
                 </div>
               </div>
 
@@ -261,12 +261,26 @@ import {
   CreditCard, ShoppingCart, Server, CheckCircle, User, 
   AlertCircle, Lock, ShieldCheck, Info, Receipt, HelpCircle, X 
 } from 'lucide-vue-next'
-import { useCartStore } from '~/stores/cart'
+import { useCartStore, formatCartItemPrice, convertFromAmd } from '~/stores/cart'
 
 const localePath = useLocalePath()
-const { t: $t } = useI18n()
+const { t: $t, locale } = useI18n()
 
 const cart = useCartStore()
+
+/** Maps the current locale to the display currency. */
+const checkoutCurrency = computed(() => {
+  switch (locale.value) {
+    case 'hy': return 'AMD'
+    case 'ru': return 'RUB'
+    default: return 'USD'
+  }
+})
+
+/** Currency symbols keyed by code. */
+const currencySymbols: Record<string, string> = {
+  AMD: '֏', USD: '$', EUR: '€', RUB: '₽', GBP: '£',
+}
 const { isLoggedIn, fetchUser, user, logout, login } = useClientAuth()
 
 // Registration from previous version
@@ -321,11 +335,17 @@ const hostingItemsCount = computed(() => hostingItems.value.length)
 const totalLabel = computed(() => {
   const items = cart.items
   if (!items.length) return '0.00'
-  const prefixes = [...new Set(items.map(i => i.prefix))]
-  if (prefixes.length > 1) return $t('cart.multipleCurrencies')
-  const prefix = prefixes[0] ?? ''
-  const sum = items.reduce((acc, i) => acc + parseFloat(i.rawPrice || '0'), 0)
-  return `${prefix}${sum.toFixed(2)}`
+  const currency = checkoutCurrency.value
+  const symbol = currencySymbols[currency] ?? '$'
+  let sum = 0
+  for (const item of items) {
+    if (item.priceAmd !== undefined) {
+      sum += convertFromAmd(item.priceAmd, currency)
+    } else {
+      sum += parseFloat(item.rawPrice || '0')
+    }
+  }
+  return `${symbol}${sum.toFixed(2)}`
 })
 
 // ── Submit ─────────────────────────────────────────────────────────────────
@@ -342,6 +362,11 @@ async function submitOrder() {
     items: cart.items.map(i => ({
       pid: i.pid,
       billingcycle: i.billingcycle,
+      domain: i.domain || undefined,
+      hostname: i.hostname || undefined,
+      domainAction: i.domainAction || undefined,
+      eppCode: i.eppCode || undefined,
+      years: i.years || undefined,
     })),
     paymentmethod: selectedMethod.value,
   }
@@ -384,9 +409,13 @@ async function submitOrder() {
         body: { paymentIntentId: paymentIntent.id },
       })
 
+      const domainItem = cart.items.find(i => i.itemType === 'domain')
+      const domainQuery = domainItem
+        ? `&domain=${domainItem.domain}&action=${domainItem.domainAction}`
+        : ''
       const finalAmount = totalLabel.value
       cart.clear()
-      await navigateTo(localePath(`/client/order-success?order=ORD-${String(result.orderId).padStart(4, '0')}&amount=${finalAmount}`))
+      await navigateTo(localePath(`/client/order-success?order=ORD-${String(result.orderId).padStart(4, '0')}&amount=${finalAmount}${domainQuery}`))
     } else {
       // Bank transfer / other methods: order stays Pending, redirect to invoice
       cart.clear()

@@ -48,12 +48,32 @@
 
           <!-- Availability result -->
           <div v-if="result" class="mt-8 transition-all duration-300">
+            <!-- TLD not supported -->
             <div
+              v-if="!isTldSupported"
+              class="p-6 rounded-[2rem] border-2 border-amber-500/40 bg-amber-500/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 backdrop-blur-md"
+            >
+              <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl flex items-center justify-center border bg-amber-500/10 border-amber-500/30">
+                  <AlertCircle :size="24" class="text-amber-400" />
+                </div>
+                <div class="text-left">
+                  <div class="text-xl font-black text-white uppercase tracking-tight">{{ result.domain }}</div>
+                  <div class="text-xs font-bold uppercase tracking-widest mt-1 text-amber-400">
+                    {{ $t('domains.tldNotSupported') }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- TLD supported — normal result -->
+            <div
+              v-else
               class="p-6 rounded-[2rem] border-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 backdrop-blur-md"
               :class="result.available ? 'border-green-500/40 bg-green-500/5' : 'border-red-500/40 bg-red-500/5'"
             >
               <div class="flex items-center gap-4">
-                <div 
+                <div
                   class="w-12 h-12 rounded-2xl flex items-center justify-center border transition-all"
                   :class="result.available ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'"
                 >
@@ -68,18 +88,19 @@
                 </div>
               </div>
               <div class="flex items-center gap-3 w-full sm:w-auto">
-                <NuxtLink
+                <button
                   v-if="result.available"
-                  :to="localePath(`/checkout?domain=${result.domain}&action=register`)"
-                  class="flex-1 sm:flex-none px-8 py-3.5 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-black text-xs uppercase tracking-widest hover:shadow-xl hover:shadow-green-500/20 transition-all scale-100 active:scale-95 text-center"
+                  class="flex-1 sm:flex-none px-8 py-3.5 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-black text-xs uppercase tracking-widest hover:shadow-xl hover:shadow-green-500/20 transition-all scale-100 active:scale-95 text-center disabled:opacity-50 disabled:cursor-not-allowed"
+                  :disabled="cart.hasDomainItem(result.domain, 'register')"
+                  @click="addDomainToCart(result.domain, getRegisterPrice(result.domain), 1)"
                 >
-                  {{ $t('domains.registerNow') }}
-                </NuxtLink>
-                <UiButton 
-                  v-else 
-                  variant="outline" 
+                  {{ cart.hasDomainItem(result.domain, 'register') ? $t('domains.alreadyInCart') : $t('domains.registerNow') }}
+                </button>
+                <UiButton
+                  v-else
+                  variant="outline"
                   full-width
-                  class="!rounded-2xl !h-12 !border-white/10 hover:!border-primary-500/50" 
+                  class="!rounded-2xl !h-12 !border-white/10 hover:!border-primary-500/50"
                   :to="localePath('/domains/transfer') + (result?.domain ? `?domain=${result.domain}` : '')"
                 >
                   <ArrowLeftRight :size="15" :stroke-width="2" class="mr-2" />
@@ -218,12 +239,12 @@
                 </div>
               </div>
 
-              <NuxtLink
-                :to="localePath(`/checkout?domain=example.${ext}&action=register`)"
+              <button
                 class="w-full h-12 flex items-center justify-center rounded-2xl bg-white/[0.05] border border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:bg-primary-500 hover:text-white hover:border-transparent transition-all"
+                @click="quickSearch(ext as string)"
               >
                 {{ $t('domains.pricing.registerNow') }}
-              </NuxtLink>
+              </button>
             </div>
             
             <div v-if="!Object.keys(displayedTlds).length" class="py-20 text-center text-gray-500 italic">
@@ -282,10 +303,15 @@
 <script setup lang="ts">
 import { Globe, CheckCircle, XCircle, ArrowLeftRight, Server, ArrowRight, AlertCircle } from 'lucide-vue-next'
 import { apiFetch } from '~/composables/useApi'
+import { useCartStore } from '~/stores/cart'
 
 const { t: $t, locale } = useI18n()
 const localePath = useLocalePath()
 const route = useRoute()
+const cart = useCartStore()
+
+/** Domain product ID fetched from the backend products endpoint. */
+const domainProductId = ref<number | null>(null)
 
 // SEO
 const { baseUrl: domainsBaseUrl } = useSeo({
@@ -356,8 +382,17 @@ async function searchDomain() {
 }
 
 // Auto-search if domain query param is present (coming from /products)
-onMounted(() => {
+onMounted(async () => {
   if (searchQuery.value) searchDomain()
+
+  // Fetch domain product PID for cart
+  try {
+    const products = await apiFetch<Array<{ id: number; type: string }>>('/api/portal/public/products')
+    const domainProduct = products.find(p => p.type === 'Domain')
+    if (domainProduct) domainProductId.value = domainProduct.id
+  } catch {
+    // silent — cart add will be disabled if PID not found
+  }
 })
 
 /**
@@ -369,6 +404,88 @@ function quickSearch(ext: string) {
   const base = searchQuery.value.trim().split('.')[0] || 'example'
   searchQuery.value = `${base}.${ext}`
   nextTick(() => searchDomain())
+}
+
+/**
+ * Adds a domain registration to the cart.
+ *
+ * @param domain - Full domain name (e.g. "example.com")
+ * @param price - Registration price for the selected period
+ * @param years - Registration period in years
+ */
+function addDomainToCart(domain: string, price: number, years: number = 1) {
+  if (!domainProductId.value) return
+
+  const tld = domain.substring(domain.indexOf('.') + 1)
+  const amdPrice = getRegisterPriceAmd(domain)
+
+  cart.addItem({
+    pid: domainProductId.value,
+    name: domain,
+    billingcycle: 'annually',
+    cycleLabel: `${years} Year${years > 1 ? 's' : ''}`,
+    price: '',
+    prefix: '$',
+    rawPrice: '0',
+    priceAmd: amdPrice,
+    domain,
+    itemType: 'domain',
+    domainAction: 'register',
+    tld,
+    years,
+  })
+}
+
+/**
+ * Whether the searched domain's TLD is present and enabled in the pricing data.
+ * Returns false when the TLD is not offered by the platform.
+ *
+ * @returns True if the TLD is supported, false otherwise.
+ */
+const isTldSupported = computed<boolean>(() => {
+  if (!result.value) return true
+  const tld = result.value.domain.substring(result.value.domain.indexOf('.') + 1)
+  return !!tldPricing.value?.pricing?.[tld]
+})
+
+/**
+ * Looks up the 1-year registration price for a domain from the TLD pricing data.
+ * Returns the price already converted to the current locale's currency.
+ *
+ * @param domain - Full domain name
+ * @returns Registration price in the current display currency, or 0 if not found.
+ */
+function getRegisterPrice(domain: string): number {
+  const tld = domain.substring(domain.indexOf('.') + 1)
+  const entry = tldPricing.value?.pricing?.[tld]
+  if (!entry?.register?.['1']) return 0
+  return parseFloat(entry.register['1'])
+}
+
+/**
+ * Looks up the 1-year registration price in AMD for a domain.
+ * The AMD price is the base price before currency conversion.
+ *
+ * @param domain - Full domain name
+ * @returns Registration price in AMD, or 0 if not found.
+ */
+function getRegisterPriceAmd(domain: string): number {
+  const tld = domain.substring(domain.indexOf('.') + 1)
+  const entry = tldPricing.value?.pricing?.[tld]
+  if (!entry?.register?.['1']) return 0
+  const displayPrice = parseFloat(entry.register['1'])
+  // Reverse-convert from display currency back to AMD
+  const rate = AMD_RATES[localeCurrency.value] ?? AMD_RATES['USD']!
+  return rate > 0 ? displayPrice / rate : 0
+}
+
+/** Exchange rates: 1 AMD = X target currency (must match backend) */
+const AMD_RATES: Record<string, number> = {
+  AMD: 1,
+  USD: 1 / 390,
+  EUR: 1 / 420,
+  RUB: 1 / 4.5,
+  GBP: 1 / 490,
 }
 
 /** Price entries keyed by period in years. */
@@ -391,10 +508,23 @@ interface TldPricingResponse {
   pricing: Record<string, TldPriceEntry>
 }
 
-// TLD Pricing
-const { data: tldPricing, pending: pricingPending } = await useApi<TldPricingResponse>('/api/portal/public/tld-pricing', {
-  key: `tld-pricing-${locale.value}`
+// TLD Pricing — convert to locale-appropriate currency
+/** Maps the current locale to the display currency. */
+const localeCurrency = computed(() => {
+  switch (locale.value) {
+    case 'hy': return 'AMD'
+    case 'ru': return 'RUB'
+    default: return 'USD'
+  }
 })
+
+const tldPricingUrl = computed(() =>
+  `/api/portal/public/tld-pricing?currency=${localeCurrency.value}`,
+)
+
+const { data: tldPricing, pending: pricingPending } = await useApi<TldPricingResponse>(
+  tldPricingUrl,
+)
 
 const activeCategory = ref<string | null>(null)
 

@@ -40,7 +40,7 @@ public sealed class OrderServiceHandler(
         var service = ClientService.Create(cmd.ClientId, cmd.ProductId, cmd.BillingCycle);
 
         service.Update(
-            domain: null, dedicatedIp: null, username: null,
+            domain: cmd.Domain, dedicatedIp: null, username: null,
             password: null, billingCycle: cmd.BillingCycle,
             recurringAmount: recurring, paymentMethod: cmd.PaymentMethod,
             nextRenewalAt: null, subscriptionId: null,

@@ -129,12 +129,13 @@ public sealed class Domain : AggregateRoot
     /// <param name="priceCurrency">ISO 4217 currency code for the price.</param>
     /// <param name="registrar">Name of the registrar module used.</param>
     /// <param name="registrationPeriod">Registration period in years.</param>
+    /// <param name="paymentMethod">Payment method label (e.g. "Credit/Debit Card"); null if not set.</param>
     /// <returns>A new <see cref="Domain"/> in <see cref="DomainStatus.PendingRegistration"/> state.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is null or whitespace.</exception>
     public static Domain Register(
         int clientId, string name, DateTimeOffset expiresAt, bool autoRenew, bool whoisPrivacy,
         decimal recurringAmount = 0, decimal firstPaymentAmount = 0, string priceCurrency = "USD",
-        string? registrar = null, int registrationPeriod = 1)
+        string? registrar = null, int registrationPeriod = 1, string? paymentMethod = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         return new Domain
@@ -153,6 +154,7 @@ public sealed class Domain : AggregateRoot
             PriceCurrency = priceCurrency,
             Registrar = registrar,
             RegistrationPeriod = registrationPeriod,
+            PaymentMethod = paymentMethod,
             OrderType = "Register",
         };
     }
@@ -163,9 +165,14 @@ public sealed class Domain : AggregateRoot
     /// </summary>
     /// <param name="clientId">FK to the client requesting the transfer.</param>
     /// <param name="name">Fully-qualified domain name being transferred.</param>
+    /// <param name="firstPaymentAmount">One-time transfer cost.</param>
+    /// <param name="recurringAmount">Recurring renewal price after transfer.</param>
+    /// <param name="paymentMethod">Payment method label (e.g. "Credit/Debit Card"); null if not set.</param>
     /// <returns>A new <see cref="Domain"/> in <see cref="DomainStatus.PendingTransfer"/> state.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is null or whitespace.</exception>
-    public static Domain CreateTransfer(int clientId, string name)
+    public static Domain CreateTransfer(
+        int clientId, string name,
+        decimal firstPaymentAmount = 0, decimal recurringAmount = 0, string? paymentMethod = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         return new Domain
@@ -176,6 +183,9 @@ public sealed class Domain : AggregateRoot
             Status = DomainStatus.PendingTransfer,
             RegisteredAt = DateTimeOffset.UtcNow,
             ExpiresAt = DateTimeOffset.MinValue,
+            FirstPaymentAmount = firstPaymentAmount,
+            RecurringAmount = recurringAmount,
+            PaymentMethod = paymentMethod,
             OrderType = "Transfer",
         };
     }

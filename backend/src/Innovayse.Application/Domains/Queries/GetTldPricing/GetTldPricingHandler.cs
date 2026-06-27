@@ -1,135 +1,123 @@
 namespace Innovayse.Application.Domains.Queries.GetTldPricing;
 
 using Innovayse.Application.Domains.DTOs;
+using Innovayse.Domain.Domains;
+using Innovayse.Domain.Domains.Interfaces;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 /// <summary>
-/// Returns hardcoded TLD pricing data. Will be replaced with registrar API integration
-/// once a pricing provider is connected.
+/// Queries enabled TLD configurations from the database, converts sell prices
+/// to the requested currency, and caches the DB results for performance.
 /// </summary>
-public sealed class GetTldPricingHandler
+public sealed class GetTldPricingHandler(
+    ITldConfigRepository tldConfigRepo,
+    IMemoryCache cache,
+    ILogger<GetTldPricingHandler> logger)
 {
+    /// <summary>Cache key for enabled TLD configurations loaded from the database.</summary>
+    private const string CacheKey = "tld-pricing-configs";
+
+    /// <summary>Duration to cache TLD configurations before refreshing from the database.</summary>
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(5);
+
     /// <summary>
-    /// Handles <see cref="GetTldPricingQuery"/> by returning a static set of TLD prices.
+    /// Approximate exchange rates from AMD to other currencies.
+    /// Updated periodically — in production these should come from a rates API.
     /// </summary>
-    /// <param name="query">The TLD pricing query (no parameters).</param>
+    private static readonly Dictionary<string, decimal> AmdRates = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["AMD"] = 1m,
+        ["USD"] = 1m / 390m,
+        ["EUR"] = 1m / 420m,
+        ["RUB"] = 1m / 4.5m,
+        ["GBP"] = 1m / 490m,
+    };
+
+    /// <summary>
+    /// Handles <see cref="GetTldPricingQuery"/> by returning cached or freshly-loaded TLD pricing,
+    /// converted to the requested target currency.
+    /// </summary>
+    /// <param name="query">The TLD pricing query with optional target currency.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>TLD pricing data with currency information and per-TLD price breakdowns.</returns>
-    public Task<TldPricingDto> HandleAsync(GetTldPricingQuery query, CancellationToken ct)
+    public async Task<TldPricingDto> HandleAsync(GetTldPricingQuery query, CancellationToken ct)
     {
-        var currency = new TldCurrencyDto("USD", "$");
-
-        var pricing = new Dictionary<string, TldPriceEntryDto>
+        if (!cache.TryGetValue(CacheKey, out List<TldConfig>? tldConfigs) || tldConfigs is null)
         {
-            ["com"] = new(
-                Register: new Dictionary<string, string> { ["1"] = "12.99", ["2"] = "25.98", ["3"] = "38.97" },
-                Transfer: new Dictionary<string, string> { ["1"] = "12.99" },
-                Renew: new Dictionary<string, string> { ["1"] = "14.99", ["2"] = "29.98", ["3"] = "44.97" },
-                Categories: ["Popular", "Business"]),
+            logger.LogInformation("Loading enabled TLD configs from database (cache miss)");
+            tldConfigs = await tldConfigRepo.ListEnabledAsync(ct);
+            cache.Set(CacheKey, tldConfigs, CacheDuration);
+        }
 
-            ["net"] = new(
-                Register: new Dictionary<string, string> { ["1"] = "14.99", ["2"] = "29.98" },
-                Transfer: new Dictionary<string, string> { ["1"] = "14.99" },
-                Renew: new Dictionary<string, string> { ["1"] = "16.99", ["2"] = "33.98" },
-                Categories: ["Popular", "Business"]),
+        var targetCurrency = string.IsNullOrWhiteSpace(query.TargetCurrency) ? "USD" : query.TargetCurrency;
 
-            ["org"] = new(
-                Register: new Dictionary<string, string> { ["1"] = "13.99", ["2"] = "27.98" },
-                Transfer: new Dictionary<string, string> { ["1"] = "13.99" },
-                Renew: new Dictionary<string, string> { ["1"] = "15.99", ["2"] = "31.98" },
-                Categories: ["Popular", "Non-Profit"]),
+        return MapToDto(tldConfigs, targetCurrency);
+    }
 
-            ["am"] = new(
-                Register: new Dictionary<string, string> { ["1"] = "49.99", ["2"] = "99.98" },
-                Transfer: new Dictionary<string, string> { ["1"] = "49.99" },
-                Renew: new Dictionary<string, string> { ["1"] = "49.99", ["2"] = "99.98" },
-                Categories: ["Country", "Armenia"]),
-
-            ["co.am"] = new(
-                Register: new Dictionary<string, string> { ["1"] = "29.99", ["2"] = "59.98" },
-                Transfer: new Dictionary<string, string> { ["1"] = "29.99" },
-                Renew: new Dictionary<string, string> { ["1"] = "29.99", ["2"] = "59.98" },
-                Categories: ["Country", "Armenia"]),
-
-            ["io"] = new(
-                Register: new Dictionary<string, string> { ["1"] = "39.99", ["2"] = "79.98" },
-                Transfer: new Dictionary<string, string> { ["1"] = "39.99" },
-                Renew: new Dictionary<string, string> { ["1"] = "44.99", ["2"] = "89.98" },
-                Categories: ["Popular", "Technology"]),
-
-            ["dev"] = new(
-                Register: new Dictionary<string, string> { ["1"] = "15.99", ["2"] = "31.98" },
-                Transfer: new Dictionary<string, string> { ["1"] = "15.99" },
-                Renew: new Dictionary<string, string> { ["1"] = "17.99", ["2"] = "35.98" },
-                Categories: ["Technology"]),
-
-            ["co"] = new(
-                Register: new Dictionary<string, string> { ["1"] = "29.99", ["2"] = "59.98" },
-                Transfer: new Dictionary<string, string> { ["1"] = "29.99" },
-                Renew: new Dictionary<string, string> { ["1"] = "34.99", ["2"] = "69.98" },
-                Categories: ["Popular", "Business"]),
-
-            ["info"] = new(
-                Register: new Dictionary<string, string> { ["1"] = "9.99", ["2"] = "19.98" },
-                Transfer: new Dictionary<string, string> { ["1"] = "9.99" },
-                Renew: new Dictionary<string, string> { ["1"] = "12.99", ["2"] = "25.98" },
-                Categories: ["General"]),
-
-            ["biz"] = new(
-                Register: new Dictionary<string, string> { ["1"] = "14.99", ["2"] = "29.98" },
-                Transfer: new Dictionary<string, string> { ["1"] = "14.99" },
-                Renew: new Dictionary<string, string> { ["1"] = "16.99", ["2"] = "33.98" },
-                Categories: ["Business"]),
-
-            ["me"] = new(
-                Register: new Dictionary<string, string> { ["1"] = "19.99", ["2"] = "39.98" },
-                Transfer: new Dictionary<string, string> { ["1"] = "19.99" },
-                Renew: new Dictionary<string, string> { ["1"] = "22.99", ["2"] = "45.98" },
-                Categories: ["Personal"]),
-
-            ["xyz"] = new(
-                Register: new Dictionary<string, string> { ["1"] = "2.99", ["2"] = "5.98" },
-                Transfer: new Dictionary<string, string> { ["1"] = "9.99" },
-                Renew: new Dictionary<string, string> { ["1"] = "12.99", ["2"] = "25.98" },
-                Categories: ["Popular", "General"]),
-
-            ["online"] = new(
-                Register: new Dictionary<string, string> { ["1"] = "4.99", ["2"] = "9.98" },
-                Transfer: new Dictionary<string, string> { ["1"] = "29.99" },
-                Renew: new Dictionary<string, string> { ["1"] = "34.99", ["2"] = "69.98" },
-                Categories: ["Business", "Technology"]),
-
-            ["store"] = new(
-                Register: new Dictionary<string, string> { ["1"] = "5.99", ["2"] = "11.98" },
-                Transfer: new Dictionary<string, string> { ["1"] = "49.99" },
-                Renew: new Dictionary<string, string> { ["1"] = "54.99", ["2"] = "109.98" },
-                Categories: ["Business", "E-Commerce"]),
-
-            ["tech"] = new(
-                Register: new Dictionary<string, string> { ["1"] = "6.99", ["2"] = "13.98" },
-                Transfer: new Dictionary<string, string> { ["1"] = "44.99" },
-                Renew: new Dictionary<string, string> { ["1"] = "49.99", ["2"] = "99.98" },
-                Categories: ["Technology"]),
-
-            ["app"] = new(
-                Register: new Dictionary<string, string> { ["1"] = "17.99", ["2"] = "35.98" },
-                Transfer: new Dictionary<string, string> { ["1"] = "17.99" },
-                Renew: new Dictionary<string, string> { ["1"] = "19.99", ["2"] = "39.98" },
-                Categories: ["Technology"]),
-
-            ["cloud"] = new(
-                Register: new Dictionary<string, string> { ["1"] = "12.99", ["2"] = "25.98" },
-                Transfer: new Dictionary<string, string> { ["1"] = "12.99" },
-                Renew: new Dictionary<string, string> { ["1"] = "24.99", ["2"] = "49.98" },
-                Categories: ["Technology"]),
-
-            ["site"] = new(
-                Register: new Dictionary<string, string> { ["1"] = "3.99", ["2"] = "7.98" },
-                Transfer: new Dictionary<string, string> { ["1"] = "29.99" },
-                Renew: new Dictionary<string, string> { ["1"] = "34.99", ["2"] = "69.98" },
-                Categories: ["General"]),
+    /// <summary>
+    /// Maps <see cref="TldConfig"/> entities to the API response DTO,
+    /// converting sell prices from the TLD's sell currency to the target currency.
+    /// </summary>
+    /// <param name="configs">Enabled TLD configurations from the database.</param>
+    /// <param name="targetCurrency">ISO 4217 currency code to convert to.</param>
+    /// <returns>Formatted DTO ready for API serialization.</returns>
+    private static TldPricingDto MapToDto(List<TldConfig> configs, string targetCurrency)
+    {
+        var prefix = targetCurrency.ToUpperInvariant() switch
+        {
+            "AMD" => "֏",
+            "EUR" => "€",
+            "GBP" => "£",
+            "RUB" => "₽",
+            _ => "$",
         };
 
-        var result = new TldPricingDto(currency, pricing);
-        return Task.FromResult(result);
+        var pricing = new Dictionary<string, TldPriceEntryDto>();
+
+        foreach (var config in configs)
+        {
+            var rate = GetConversionRate(config.SellCurrency, targetCurrency);
+
+            var register = config.SellRegister.ToDictionary(
+                kv => kv.Key.ToString(),
+                kv => (kv.Value * rate).ToString("F2"));
+
+            var transfer = config.SellTransfer.ToDictionary(
+                kv => kv.Key.ToString(),
+                kv => (kv.Value * rate).ToString("F2"));
+
+            var renew = config.SellRenew.ToDictionary(
+                kv => kv.Key.ToString(),
+                kv => (kv.Value * rate).ToString("F2"));
+
+            var categories = config.Categories.ToList();
+
+            pricing[config.Tld] = new TldPriceEntryDto(register, transfer, renew, categories);
+        }
+
+        return new TldPricingDto(new TldCurrencyDto(targetCurrency.ToUpperInvariant(), prefix), pricing);
+    }
+
+    /// <summary>
+    /// Calculates the conversion rate between two currencies via AMD as the pivot.
+    /// </summary>
+    /// <param name="fromCurrency">Source currency code.</param>
+    /// <param name="toCurrency">Target currency code.</param>
+    /// <returns>Multiplier to convert from source to target.</returns>
+    private static decimal GetConversionRate(string fromCurrency, string toCurrency)
+    {
+        if (string.Equals(fromCurrency, toCurrency, StringComparison.OrdinalIgnoreCase))
+        {
+            return 1m;
+        }
+
+        // Convert source -> AMD -> target.
+        // AmdRates stores: 1 AMD = X target. So to go from AMD to target, multiply.
+        // To go from source to AMD: divide by AmdRates[source].
+        var sourceToAmd = AmdRates.TryGetValue(fromCurrency, out var fromRate) ? 1m / fromRate : 1m;
+        var amdToTarget = AmdRates.TryGetValue(toCurrency, out var toRate) ? toRate : 1m;
+
+        return sourceToAmd * amdToTarget;
     }
 }

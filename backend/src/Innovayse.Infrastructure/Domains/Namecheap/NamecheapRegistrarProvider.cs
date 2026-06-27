@@ -527,6 +527,43 @@ public sealed class NamecheapRegistrarProvider(NamecheapClient client) : IRegist
         return new WhoisInfo(registrar, registrant, createdAt, expiresAt);
     }
 
+    /// <inheritdoc/>
+    public async Task<RegistrarResult> CheckDomainActiveAsync(string domainName, CancellationToken ct)
+    {
+        if (!client.IsConfigured)
+        {
+            return new RegistrarResult(false, null, null, "Namecheap is not configured.");
+        }
+
+        var (sld, tld) = SplitDomain(domainName);
+
+        var parameters = new Dictionary<string, string>
+        {
+            ["SLD"] = sld,
+            ["TLD"] = tld,
+        };
+
+        var doc = await client.ExecuteAsync("namecheap.domains.getInfo", parameters, ct);
+        var ns = GetNamespace(doc);
+        var info = doc.Root
+            ?.Element(XName.Get("CommandResponse", ns))
+            ?.Element(XName.Get("DomainGetInfoResult", ns));
+
+        if (info is null)
+        {
+            return new RegistrarResult(false, null, null, "Domain not found at Namecheap.");
+        }
+
+        var expiresRaw = info.Attribute("ExpiredDate")?.Value;
+        var domainId = info.Attribute("ID")?.Value ?? domainName;
+
+        DateTimeOffset expiresAt = expiresRaw is not null
+            ? DateTimeOffset.Parse(expiresRaw)
+            : DateTimeOffset.UtcNow.AddYears(1);
+
+        return new RegistrarResult(true, domainId, expiresAt, null);
+    }
+
     /// <summary>
     /// Pushes the complete list of DNS host records to Namecheap using <c>namecheap.domains.dns.setHosts</c>.
     /// Namecheap requires the full record set on every write — partial updates are not supported.
@@ -601,5 +638,12 @@ public sealed class NamecheapRegistrarProvider(NamecheapClient client) : IRegist
     private static string BuildNameserverString(string ns1, string? ns2)
     {
         return ns2 is not null ? $"{ns1},{ns2}" : ns1;
+    }
+
+    /// <inheritdoc/>
+    public Task<IReadOnlyList<TldPricing>> GetTldPricingAsync(CancellationToken ct)
+    {
+        // Namecheap does not expose a TLD pricing API in a compatible format.
+        return Task.FromResult<IReadOnlyList<TldPricing>>([]);
     }
 }

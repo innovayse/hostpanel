@@ -41,8 +41,20 @@ public sealed class RegisterDomainHandler(
         var expiresAt = result.ExpiresAt
             ?? DateTimeOffset.UtcNow.AddYears(cmd.Years);
 
-        var domain = Domain.Register(cmd.ClientId, cmd.DomainName, expiresAt, cmd.AutoRenew, cmd.WhoisPrivacy);
-        domain.Activate(result.RegistrarRef!);
+        var domain = Domain.Register(
+            cmd.ClientId, cmd.DomainName, expiresAt, cmd.AutoRenew, cmd.WhoisPrivacy,
+            recurringAmount: cmd.RecurringAmount,
+            firstPaymentAmount: cmd.FirstPaymentAmount,
+            registrationPeriod: cmd.Years,
+            paymentMethod: cmd.PaymentMethod);
+
+        // When the registrar requires polling (e.g. Name.am with async order processing),
+        // leave the domain in PendingRegistration — the SyncPendingDomainStatuses job will
+        // activate it once the registrar confirms the domain is live.
+        if (!result.RequiresPolling)
+        {
+            domain.Activate(result.RegistrarRef!);
+        }
 
         repo.Add(domain);
         await uow.SaveChangesAsync(ct);

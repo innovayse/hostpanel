@@ -25,10 +25,28 @@
           <span class="text-sm text-gray-400">{{ $t('checkout.success.amount') }}</span>
           <span class="text-sm font-bold text-white">{{ amount }}</span>
         </div>
+        <div v-if="domainName" class="flex justify-between items-center mt-3 pt-3 border-t border-white/5">
+          <span class="text-sm text-gray-400">Domain</span>
+          <span class="text-sm font-bold text-white">{{ domainName }}</span>
+        </div>
+        <div v-if="domainAction" class="flex justify-between items-center mt-2">
+          <span class="text-sm text-gray-400">Action</span>
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-bold"
+                :class="domainAction === 'register' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'">
+            {{ domainAction === 'register' ? 'Registration' : 'Transfer' }}
+          </span>
+        </div>
       </div>
 
       <!-- CTA buttons -->
       <div class="space-y-3">
+        <NuxtLink
+          v-if="domainName"
+          :to="localePath('/client/domains')"
+          class="block w-full py-3 px-6 rounded-2xl bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold text-center hover:from-green-500 hover:to-emerald-500 transition-all"
+        >
+          Manage Your Domain
+        </NuxtLink>
         <NuxtLink
           :to="localePath('/client/services')"
           class="block w-full py-3 px-6 rounded-2xl bg-gradient-to-r from-cyan-600 to-primary-600 text-white font-bold text-center hover:from-cyan-500 hover:to-primary-500 transition-all"
@@ -70,6 +88,12 @@ const amount = computed(() => {
   if (!raw || raw === '0' || raw === '0.00' || raw === '$0.00') return '—'
   return raw
 })
+
+/** Domain name from query params (set when a domain was purchased). */
+const domainName = computed(() => (route.query.domain as string) || null)
+
+/** Domain action from query params ("register" or "transfer"). */
+const domainAction = computed(() => (route.query.action as string) || null)
 
 /**
  * Forces a fresh fetch of services before navigating.

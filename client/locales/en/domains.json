@@ -10,6 +10,8 @@
     "registerNow": "Register Now",
     "invalidDomain": "Please enter a valid domain with extension (e.g. mysite.com)",
     "checkFailed": "Domain check failed. Please try again.",
+    "tldNotSupported": "This TLD is not available for registration",
+    "alreadyInCart": "Already in Cart",
     "tabRegister": "Register",
     "tabTransfer": "Transfer",
     "transferPlaceholder": "Enter domain to transfer (e.g. mysite.com)",

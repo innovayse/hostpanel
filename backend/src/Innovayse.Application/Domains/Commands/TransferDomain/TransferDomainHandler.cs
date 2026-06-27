@@ -32,10 +32,18 @@ public sealed class TransferDomainHandler(
                 $"Registrar rejected transfer of '{cmd.DomainName}': {result.ErrorMessage}");
         }
 
-        var domain = Domain.CreateTransfer(cmd.ClientId, cmd.DomainName);
+        var domain = Domain.CreateTransfer(
+            cmd.ClientId, cmd.DomainName,
+            firstPaymentAmount: cmd.FirstPaymentAmount,
+            recurringAmount: cmd.RecurringAmount,
+            paymentMethod: cmd.PaymentMethod);
 
-        var expiresAt = result.ExpiresAt ?? DateTimeOffset.UtcNow.AddYears(1);
-        domain.ActivateTransfer(result.RegistrarRef!, expiresAt);
+        // When the registrar requires polling, leave in PendingTransfer.
+        if (!result.RequiresPolling)
+        {
+            var expiresAt = result.ExpiresAt ?? DateTimeOffset.UtcNow.AddYears(1);
+            domain.ActivateTransfer(result.RegistrarRef!, expiresAt);
+        }
 
         repo.Add(domain);
         await uow.SaveChangesAsync(ct);

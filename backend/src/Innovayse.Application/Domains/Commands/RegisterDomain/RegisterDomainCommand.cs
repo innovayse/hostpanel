@@ -8,6 +8,9 @@ namespace Innovayse.Application.Domains.Commands.RegisterDomain;
 /// <param name="AutoRenew">Whether to enable automatic renewal at the registrar.</param>
 /// <param name="Nameserver1">Primary nameserver hostname; null to use registrar defaults.</param>
 /// <param name="Nameserver2">Secondary nameserver hostname; null to use registrar defaults.</param>
+/// <param name="FirstPaymentAmount">One-time registration cost to record on the domain.</param>
+/// <param name="RecurringAmount">Recurring renewal price to record on the domain.</param>
+/// <param name="PaymentMethod">Payment method label to record on the domain; null if not set.</param>
 public record RegisterDomainCommand(
     int ClientId,
     string DomainName,
@@ -15,4 +18,7 @@ public record RegisterDomainCommand(
     bool WhoisPrivacy,
     bool AutoRenew,
     string? Nameserver1,
-    string? Nameserver2);
+    string? Nameserver2,
+    decimal FirstPaymentAmount = 0,
+    decimal RecurringAmount = 0,
+    string? PaymentMethod = null);

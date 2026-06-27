@@ -49,10 +49,21 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
 
         using var doc = await client.PostAsync("/client/carts/purchase", purchasePayload, ct);
 
+        var errorMessage = ExtractErrorMessage(doc);
+        if (errorMessage is not null)
+        {
+            logger.LogWarning(
+                "Name.am rejected registration of '{DomainName}': {Error}",
+                request.DomainName, errorMessage);
+            return new RegistrarResult(false, null, null, errorMessage);
+        }
+
         var domainRef = request.DomainName;
         var expiresAt = DateTimeOffset.UtcNow.AddYears(request.Years);
 
-        return new RegistrarResult(true, domainRef, expiresAt, null);
+        // Name.am requires a pre-funded balance; the cart purchase is async —
+        // the domain becomes active only after Name.am processes the order.
+        return new RegistrarResult(true, domainRef, expiresAt, null, RequiresPolling: true);
     }
 
     /// <inheritdoc/>
@@ -86,7 +97,16 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
 
         using var doc = await client.PostAsync("/client/carts/purchase", purchasePayload, ct);
 
-        return new RegistrarResult(true, request.DomainName, null, null);
+        var errorMessage = ExtractErrorMessage(doc);
+        if (errorMessage is not null)
+        {
+            logger.LogWarning(
+                "Name.am rejected transfer of '{DomainName}': {Error}",
+                request.DomainName, errorMessage);
+            return new RegistrarResult(false, null, null, errorMessage);
+        }
+
+        return new RegistrarResult(true, request.DomainName, null, null, RequiresPolling: true);
     }
 
     /// <inheritdoc/>
@@ -106,7 +126,7 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
                 ["name"] = tld,
                 ["type"] = "domain_renew",
                 ["domain"] = request.DomainName,
-                ["plan"] = new { _id = $"{request.Years}_year_renew" },
+                ["plan"] = new { _id = $"{request.Years}_year_register" },
             },
         };
 
@@ -367,6 +387,57 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
     }
 
     /// <inheritdoc/>
+    public async Task<RegistrarResult> CheckDomainActiveAsync(string domainName, CancellationToken ct)
+    {
+        if (!client.IsConfigured)
+        {
+            return new RegistrarResult(false, null, null, "Name.am is not configured.");
+        }
+
+        logger.LogInformation("Polling Name.am for active status of domain {DomainName}", domainName);
+
+        using var doc = await client.GetAsync("/client/domains", ct);
+
+        var domainEl = FindDomainInDocs(doc, domainName);
+        if (domainEl is null)
+        {
+            logger.LogInformation("Domain {DomainName} not yet found in Name.am account", domainName);
+            return new RegistrarResult(false, null, null, "Domain not found in Name.am account yet.");
+        }
+
+        // Name.am reports status in the "status" field; "active" means the domain is live.
+        var status = string.Empty;
+        if (domainEl.Value.TryGetProperty("status", out var statusEl))
+        {
+            status = statusEl.GetString() ?? string.Empty;
+        }
+
+        if (!string.Equals(status, "active", StringComparison.OrdinalIgnoreCase))
+        {
+            logger.LogInformation(
+                "Domain {DomainName} found in Name.am but status is '{Status}' — not yet active",
+                domainName, status);
+            return new RegistrarResult(false, null, null, $"Domain status is '{status}'.");
+        }
+
+        DateTimeOffset expiresAt = DateTimeOffset.UtcNow.AddYears(1);
+        if (domainEl.Value.TryGetProperty("expiration", out var expEl))
+        {
+            var expStr = expEl.GetString();
+            if (expStr is not null && DateTimeOffset.TryParse(expStr, out var parsed))
+            {
+                expiresAt = parsed;
+            }
+        }
+
+        logger.LogInformation(
+            "Domain {DomainName} is now active in Name.am (expires {ExpiresAt:u})",
+            domainName, expiresAt);
+
+        return new RegistrarResult(true, domainName, expiresAt, null);
+    }
+
+    /// <inheritdoc/>
     public async Task<bool> CheckAvailabilityAsync(string domainName, CancellationToken ct)
     {
         if (!client.IsConfigured)
@@ -538,6 +609,80 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
         return Task.FromResult(new RegistrarResult(true, null, null, null));
     }
 
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<TldPricing>> GetTldPricingAsync(CancellationToken ct)
+    {
+        if (!client.IsConfigured)
+        {
+            return [];
+        }
+
+        logger.LogInformation("Fetching TLD pricing from Name.am");
+
+        using var doc = await client.GetAsync("/client/products", ct);
+
+        List<TldPricing> result = [];
+
+        if (doc.RootElement.ValueKind != JsonValueKind.Array)
+        {
+            logger.LogWarning("Name.am /client/products returned unexpected format");
+            return result;
+        }
+
+        foreach (var product in doc.RootElement.EnumerateArray())
+        {
+            var tld = product.TryGetProperty("name", out var nameEl) ? nameEl.GetString() : null;
+            if (string.IsNullOrWhiteSpace(tld))
+            {
+                continue;
+            }
+
+            Dictionary<int, decimal> registerPrices = [];
+            Dictionary<int, decimal> transferPrices = [];
+            Dictionary<int, decimal> renewPrices = [];
+            // Name.am always returns prices in AMD (drams) — force currency to AMD regardless of API response
+            var currency = "AMD";
+
+            if (!product.TryGetProperty("plans", out var plansEl) ||
+                plansEl.ValueKind != JsonValueKind.Array)
+            {
+                continue;
+            }
+
+            foreach (var plan in plansEl.EnumerateArray())
+            {
+                var behavior = plan.TryGetProperty("behavior", out var behaviorEl)
+                    ? behaviorEl.GetString() ?? string.Empty
+                    : string.Empty;
+                var duration = plan.TryGetProperty("duration", out var durationEl) && durationEl.TryGetInt32(out var d)
+                    ? d
+                    : 1;
+                var price = plan.TryGetProperty("currentPrice", out var priceEl)
+                    ? priceEl.GetDecimal()
+                    : 0m;
+
+                switch (behavior)
+                {
+                    case "register":
+                        registerPrices[duration] = price;
+                        break;
+                    case "transfer":
+                        transferPrices[duration] = price;
+                        break;
+                    case "renew":
+                        renewPrices[duration] = price;
+                        break;
+                }
+            }
+
+            result.Add(new TldPricing(tld, currency, registerPrices, transferPrices, renewPrices));
+        }
+
+        logger.LogInformation("Loaded pricing for {Count} TLDs from Name.am", result.Count);
+
+        return result;
+    }
+
     /// <summary>
     /// Pushes the complete list of DNS records to Name.am via <c>PUT /client/domains/{domainName}</c>.
     /// Name.am requires all records to be sent with <c>action: "CREATE"</c> on each record.
@@ -633,6 +778,7 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
         {
             firstName = contact.FirstName,
             lastName = contact.LastName,
+            fullName = $"{contact.FirstName} {contact.LastName}".Trim(),
             organization = contact.Organization ?? string.Empty,
             email = contact.Email,
             phone = contact.Phone,
@@ -640,7 +786,7 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
             address2 = contact.Address2 ?? string.Empty,
             city = contact.City,
             state = contact.State,
-            postalCode = contact.PostalCode,
+            zip = contact.PostalCode,
             country = contact.Country,
         };
     }
@@ -669,6 +815,55 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
     }
 
     /// <summary>
+    /// Inspects a Name.am API response body for error indicators.
+    /// Name.am may return HTTP 200 with an error object when a business rule is violated
+    /// (e.g. domain already registered, invalid TLD, insufficient balance processed server-side).
+    /// </summary>
+    /// <param name="doc">The parsed JSON response from Name.am.</param>
+    /// <returns>
+    /// A human-readable error message if the response contains an error; otherwise <see langword="null"/>.
+    /// </returns>
+    private static string? ExtractErrorMessage(JsonDocument doc)
+    {
+        var root = doc.RootElement;
+
+        // Name.am error responses are objects (not arrays) with a "message" or "error" field.
+        // Successful cart purchase responses are arrays of purchased items.
+        if (root.ValueKind == JsonValueKind.Array)
+        {
+            return null; // array = success
+        }
+
+        if (root.ValueKind != JsonValueKind.Object)
+        {
+            return null; // unexpected — treat as success and let polling handle it
+        }
+
+        // Check for explicit error fields.
+        if (root.TryGetProperty("message", out var messageEl) &&
+            messageEl.ValueKind == JsonValueKind.String)
+        {
+            return messageEl.GetString();
+        }
+
+        if (root.TryGetProperty("error", out var errorEl) &&
+            errorEl.ValueKind == JsonValueKind.String)
+        {
+            return errorEl.GetString();
+        }
+
+        // Some APIs nest errors: { "data": null, "error": { "message": "..." } }
+        if (root.TryGetProperty("error", out var errorObjEl) &&
+            errorObjEl.ValueKind == JsonValueKind.Object &&
+            errorObjEl.TryGetProperty("message", out var nestedMsg))
+        {
+            return nestedMsg.GetString();
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Creates a default contact object for registration requests where no contact is provided.
     /// Uses empty strings for fields that will be populated by the registrar.
     /// </summary>
@@ -679,6 +874,7 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
         {
             firstName = "",
             lastName = "",
+            fullName = "",
             organization = "",
             email = "",
             phone = "",
@@ -686,7 +882,7 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
             address2 = "",
             city = "",
             state = "",
-            postalCode = "",
+            zip = "",
             country = "",
         };
     }

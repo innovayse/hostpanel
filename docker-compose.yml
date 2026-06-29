@@ -5,9 +5,9 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-innovayse_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-hostpanel_dev}
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -27,8 +27,8 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5673:5672"
+      - "15673:15672"
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 15s
@@ -43,8 +43,8 @@ services:
   mailhog:
     image: mailhog/mailhog
     ports:
-      - "1025:1025"
-      - "8025:8025"
+      - "1026:1025"
+      - "8027:8025"
     deploy:
       resources:
         limits:
@@ -58,14 +58,14 @@ services:
       dockerfile: docker/api.Dockerfile
       target: dev
     ports:
-      - "5148:5148"
+      - "5149:5148"
     volumes:
       - ./backend:/app
       - backend_bin:/app/src/Innovayse.API/bin
       - backend_obj:/app/src/Innovayse.API/obj
       - backend_packages:/root/.nuget/packages
     environment:
-      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-innovayse_dev};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}"
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-hostpanel_dev};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}"
       ASPNETCORE_ENVIRONMENT: Development
       Jwt__Secret: ${JWT_SECRET:-change-this-to-a-32-char-min-secret-key-here}
       Jwt__Issuer: ${JWT_ISSUER:-innovayse-api}
@@ -73,8 +73,9 @@ services:
       RabbitMQ__Host: rabbitmq
       RabbitMQ__User: ${RABBITMQ_USER:-guest}
       RabbitMQ__Password: ${RABBITMQ_PASSWORD:-guest}
-      Cors__AllowedOrigins__0: http://localhost:3000
-      Cors__AllowedOrigins__1: http://localhost:5173
+      Cors__AllowedOrigins__0: http://localhost:3001
+      Cors__AllowedOrigins__1: http://localhost:5174
+      Cors__AllowedOrigins__2: http://panel.local
       Smtp__Host: mailhog
       Smtp__Port: 1025
       Smtp__Username: ""
@@ -82,10 +83,12 @@ services:
       Smtp__FromEmail: noreply@innovayse.com
       Smtp__FromName: Innovayse
       Smtp__UseSsl: "false"
-      AdminBaseUrl: ${ADMIN_BASE_URL:-http://localhost:5173}
+      AdminBaseUrl: ${ADMIN_BASE_URL:-http://localhost:5174}
       DOTNET_USE_POLLING_FILE_WATCHER: 1
       DOTNET_NUGET_SIGNATURE_VERIFICATION: "false"
       NUGET_AUDIT: "false"
+      Sso__Authority: http://innovayse-sso-sso-api-1:8080
+      Sso__ClientId: hostpanel
     depends_on:
       postgres:
         condition: service_healthy
@@ -93,6 +96,9 @@ services:
         condition: service_healthy
       mailhog:
         condition: service_started
+    networks:
+      - default
+      - innovayse_network
     deploy:
       resources:
         limits:
@@ -105,13 +111,13 @@ services:
       dockerfile: docker/client.Dockerfile
       target: dev
     ports:
-      - "3000:3000"
+      - "3001:3000"
     volumes:
       - ./client:/app
       - client_node_modules:/app/node_modules
     environment:
       API_URL: http://api:5148
-      NUXT_PUBLIC_BASE_URL: http://localhost:3000
+      NUXT_PUBLIC_BASE_URL: http://localhost:3001
       STRIPE_PUBLISHABLE_KEY: pk_test_51Tc3tOEHRuUOoZmggqrvyuddpdtx6FtKaUSvqQXkwokJakOBFCLRDlX6troVkkjFw966agSmLKnu1NSlOAki6u9600PatIOktW
       SMTP_HOST: mailhog
       SMTP_PORT: 1025
@@ -131,7 +137,7 @@ services:
       dockerfile: docker/admin.Dockerfile
       target: dev
     ports:
-      - "5173:5173"
+      - "5174:5173"
     volumes:
       - ./admin:/app
       - admin_node_modules:/app/node_modules
@@ -154,3 +160,9 @@ volumes:
   backend_bin:
   backend_obj:
   backend_packages:
+
+networks:
+  default:
+  innovayse_network:
+    external: true
+    name: innovayse-cloud-local_innovayse_network

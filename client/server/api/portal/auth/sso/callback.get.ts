@@ -13,6 +13,14 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing authorization code' })
   }
 
+  // Validate state to prevent CSRF
+  const storedState = getCookie(event, 'oauth_state')
+  const returnedState = query.state as string | undefined
+  if (!storedState || storedState !== returnedState) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid state parameter' })
+  }
+  deleteCookie(event, 'oauth_state', { path: '/' })
+
   const codeVerifier = getCookie(event, 'pkce_verifier')
   if (!codeVerifier) {
     throw createError({ statusCode: 400, statusMessage: 'Missing PKCE verifier — session expired' })

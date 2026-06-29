@@ -69,6 +69,16 @@ try
                     var lastName = context.Principal?.FindFirst("family_name")?.Value ?? string.Empty;
                     var userService = context.HttpContext.RequestServices.GetRequiredService<IUserService>();
                     await userService.ProvisionSsoUserAsync(sub, email, firstName, lastName, context.HttpContext.RequestAborted);
+
+                    // Add local Identity roles to the principal so [Authorize(Roles=...)] works
+                    var localUser = await userService.FindBySsoSubjectAsync(sub, context.HttpContext.RequestAborted);
+                    if (localUser is not null)
+                    {
+                        var roles = await userService.GetRolesAsync(localUser.Value.Id, context.HttpContext.RequestAborted);
+                        var identity = (System.Security.Claims.ClaimsIdentity)context.Principal!.Identity!;
+                        foreach (var role in roles)
+                            identity.AddClaim(new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, role));
+                    }
                 }
             };
         });

@@ -394,4 +394,12 @@ public sealed class UserService(UserManager<AppUser> userManager, IClientReposit
 
         await userManager.AddToRoleAsync(newUser, Innovayse.Domain.Auth.Roles.Client);
     }
+
+    /// <inheritdoc/>
+    public async Task<IList<string>> GetRolesAsync(string userId, CancellationToken ct)
+    {
+        var user = await userManager.FindByIdAsync(userId);
+        if (user is null) return [];
+        return await userManager.GetRolesAsync(user);
+    }
 }

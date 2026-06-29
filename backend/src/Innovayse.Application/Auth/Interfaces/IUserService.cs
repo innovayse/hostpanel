@@ -240,4 +240,12 @@ public interface IUserService
     /// If not, creates a new AppUser with the Client role assigned.
     /// </summary>
     Task ProvisionSsoUserAsync(string sub, string email, string firstName, string lastName, CancellationToken ct);
+
+    /// <summary>
+    /// Retrieves all roles assigned to the specified user.
+    /// </summary>
+    /// <param name="userId">The user's unique identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>List of role names assigned to the user.</returns>
+    Task<IList<string>> GetRolesAsync(string userId, CancellationToken ct);
 }

@@ -24,6 +24,16 @@ export default defineEventHandler(async (event) => {
     path: '/',
   })
 
+  // Generate and store state for CSRF protection
+  const state = randomBytes(16).toString('hex')
+  setCookie(event, 'oauth_state', state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 60 * 5,
+    path: '/',
+  })
+
   const redirectUri = config.ssoCallbackUrl
   const params = new URLSearchParams({
     client_id: config.ssoClientId,
@@ -32,6 +42,7 @@ export default defineEventHandler(async (event) => {
     scope: 'openid profile email offline_access',
     code_challenge: codeChallenge,
     code_challenge_method: 'S256',
+    state,
   })
 
   const authorizeUrl = `${config.public.ssoPublicUrl}/connect/authorize?${params}`

@@ -25,4 +25,7 @@ public sealed class AppUser : IdentityUser
 
     /// <summary>Gets or sets the Base32-encoded TOTP secret. Null when 2FA is not configured.</summary>
     public string? TwoFactorSecret { get; set; }
+
+    /// <summary>Gets or sets the SSO subject identifier (OpenIddict 'sub' claim). Null for users not yet linked to SSO.</summary>
+    public string? SsoSubjectId { get; set; }
 }

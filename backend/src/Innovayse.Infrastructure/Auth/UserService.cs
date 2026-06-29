@@ -14,9 +14,7 @@ using OtpNet;
 /// <param name="userManager">The Identity user manager for <see cref="AppUser"/>.</param>
 /// <param name="clientRepo">Client repository for account lookups.</param>
 /// <param name="uow">Unit of work for persisting changes.</param>
-/// <param name="refreshTokenRepo">Refresh token repository for revoking sessions.</param>
-/// <param name="revocationCache">In-memory cache for immediate token invalidation.</param>
-public sealed class UserService(UserManager<AppUser> userManager, IClientRepository clientRepo, IUnitOfWork uow, IRefreshTokenRepository refreshTokenRepo, TokenRevocationCache revocationCache) : IUserService
+public sealed class UserService(UserManager<AppUser> userManager, IClientRepository clientRepo, IUnitOfWork uow) : IUserService
 {
     /// <inheritdoc/>
     public async Task<string> CreateAsync(string email, string password, CancellationToken ct, string? firstName = null, string? lastName = null)
@@ -270,8 +268,6 @@ public sealed class UserService(UserManager<AppUser> userManager, IClientReposit
             throw new InvalidOperationException($"Failed to change password: {errors}");
         }
 
-        await refreshTokenRepo.RevokeAllForUserAsync(userId, ct);
-        revocationCache.RevokeUser(userId);
     }
 
     /// <inheritdoc/>
@@ -284,12 +280,6 @@ public sealed class UserService(UserManager<AppUser> userManager, IClientReposit
         }
 
         var result = await userManager.ResetPasswordAsync(user, token, newPassword);
-        if (result.Succeeded)
-        {
-            await refreshTokenRepo.RevokeAllForUserAsync(user.Id, ct);
-            revocationCache.RevokeUser(user.Id);
-        }
-
         return result.Succeeded;
     }
 
@@ -358,5 +348,50 @@ public sealed class UserService(UserManager<AppUser> userManager, IClientReposit
         var secretBytes = Base32Encoding.ToBytes(user.TwoFactorSecret);
         var totp = new Totp(secretBytes);
         return totp.VerifyTotp(DateTime.UtcNow, code, out _, VerificationWindow.RfcSpecifiedNetworkDelay);
+    }
+
+    /// <inheritdoc/>
+    public async Task<(string Id, string Email)?> FindBySsoSubjectAsync(string sub, CancellationToken ct)
+    {
+        var user = await userManager.Users
+            .FirstOrDefaultAsync(u => u.SsoSubjectId == sub, ct);
+        return user is null ? null : (user.Id, user.Email!);
+    }
+
+    /// <inheritdoc/>
+    public async Task ProvisionSsoUserAsync(string sub, string email, string firstName, string lastName, CancellationToken ct)
+    {
+        // Already linked?
+        var bySubject = await userManager.Users
+            .FirstOrDefaultAsync(u => u.SsoSubjectId == sub, ct);
+        if (bySubject is not null) return;
+
+        // Existing user with this email (pre-migration) — link them
+        var existing = await userManager.FindByEmailAsync(email);
+        if (existing is not null)
+        {
+            existing.SsoSubjectId = sub;
+            await userManager.UpdateAsync(existing);
+            return;
+        }
+
+        // First-time SSO user — create local AppUser with Client role
+        var newUser = new AppUser
+        {
+            UserName = email,
+            Email = email,
+            NormalizedUserName = email.ToUpperInvariant(),
+            NormalizedEmail = email.ToUpperInvariant(),
+            EmailConfirmed = true,
+            FirstName = firstName.Length > 0 ? firstName : email.Split('@')[0],
+            LastName = lastName.Length > 0 ? lastName : string.Empty,
+            SsoSubjectId = sub,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        var result = await userManager.CreateAsync(newUser);
+        if (!result.Succeeded)
+            throw new InvalidOperationException($"Failed to provision SSO user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+
+        await userManager.AddToRoleAsync(newUser, Innovayse.Domain.Auth.Roles.Client);
     }
 }

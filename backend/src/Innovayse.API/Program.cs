@@ -1,11 +1,9 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Text;
 using Innovayse.API;
 using Innovayse.API.Billing;
 using Innovayse.API.Domains;
+using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Domain.Auth;
 using Innovayse.Infrastructure;
-using Innovayse.Infrastructure.Auth;
 using Innovayse.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -46,51 +44,31 @@ try
                   .AllowAnyMethod()
                   .AllowCredentials()));
 
-    // JWT Authentication
-    var jwtSecret = builder.Configuration["Jwt:Secret"]
-        ?? throw new InvalidOperationException("Jwt:Secret is not configured.");
-
+    // SSO Authentication — validate JWTs issued by the Innovayse SSO (OpenIddict)
     builder.Services
         .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         .AddJwtBearer(opts =>
         {
+            opts.Authority = builder.Configuration["Sso:Authority"];
+            opts.Audience = builder.Configuration["Sso:ClientId"];
+            opts.RequireHttpsMetadata = false;
             opts.TokenValidationParameters = new TokenValidationParameters
             {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                ValidIssuer = builder.Configuration["Jwt:Issuer"],
-                ValidAudience = builder.Configuration["Jwt:Audience"],
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
-                // Map the long-form ClaimTypes.Role URI so [Authorize(Roles = "...")] works correctly.
-                // Without this, the JWT middleware reads "role" (short name) but our tokens use the full URI.
                 RoleClaimType = System.Security.Claims.ClaimTypes.Role,
-                NameClaimType = System.Security.Claims.ClaimTypes.NameIdentifier
+                NameClaimType = "sub",
+                ValidateAudience = false,
             };
-
-            // Reject tokens issued before a password change
             opts.Events = new JwtBearerEvents
             {
-                OnTokenValidated = context =>
+                OnTokenValidated = async context =>
                 {
-                    var cache = context.HttpContext.RequestServices.GetRequiredService<TokenRevocationCache>();
-                    var userId = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
-                    // ASP.NET may map "iat" to its long-form URI or keep it as-is — check both
-                    var iatClaim = context.Principal?.FindFirst(JwtRegisteredClaimNames.Iat)?.Value
-                        ?? context.Principal?.FindFirst("iat")?.Value;
-
-                    if (userId is not null && iatClaim is not null && long.TryParse(iatClaim, out var iatUnix))
-                    {
-                        var issuedAt = DateTimeOffset.FromUnixTimeSeconds(iatUnix);
-                        if (cache.IsRevoked(userId, issuedAt))
-                        {
-                            context.Fail("Token has been revoked due to a password change.");
-                        }
-                    }
-
-                    return Task.CompletedTask;
+                    var sub = context.Principal?.FindFirst("sub")?.Value;
+                    var email = context.Principal?.FindFirst("email")?.Value;
+                    if (sub is null || email is null) return;
+                    var firstName = context.Principal?.FindFirst("given_name")?.Value ?? string.Empty;
+                    var lastName = context.Principal?.FindFirst("family_name")?.Value ?? string.Empty;
+                    var userService = context.HttpContext.RequestServices.GetRequiredService<IUserService>();
+                    await userService.ProvisionSsoUserAsync(sub, email, firstName, lastName, context.HttpContext.RequestAborted);
                 }
             };
         });
@@ -150,7 +128,7 @@ try
     builder.Host.UseWolverine(opts =>
     {
         opts.Discovery.IncludeAssembly(typeof(Program).Assembly);
-        opts.Discovery.IncludeAssembly(typeof(Innovayse.Application.Auth.Commands.Register.RegisterHandler).Assembly);
+        opts.Discovery.IncludeAssembly(typeof(Innovayse.Application.Clients.Commands.AcceptInvitation.AcceptInvitationCommand).Assembly);
     });
 
     // Domain scheduled jobs — daily expiry check (09:00 UTC) and auto-renew (10:00 UTC)

@@ -29,9 +29,6 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
     /// <summary>Gets the activity log entries table.</summary>
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
 
-    /// <summary>Gets the refresh tokens table.</summary>
-    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
-
     /// <summary>Gets the clients table.</summary>
     public DbSet<Client> Clients => Set<Client>();
 

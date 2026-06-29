@@ -24,7 +24,8 @@
       "noAccount": "Нет аккаунта?",
       "createOne": "Создать",
       "forgotPassword": "Забыли пароль?",
-      "errorInvalid": "Неверный email или пароль"
+      "errorInvalid": "Неверный email или пароль",
+      "continueWithInnovayse": "Войти через Innovayse"
     },
     "register": {
       "title": "Создать аккаунт",

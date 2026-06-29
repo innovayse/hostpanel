@@ -24,7 +24,8 @@
       "noAccount": "Don't have an account?",
       "createOne": "Create one",
       "forgotPassword": "Forgot your password?",
-      "errorInvalid": "Invalid email or password"
+      "errorInvalid": "Invalid email or password",
+      "continueWithInnovayse": "Continue with Innovayse"
     },
     "register": {
       "title": "Create your account",

@@ -24,7 +24,8 @@
       "noAccount": "Հաշիվ չունե՞ք",
       "createOne": "Ստեղծել հաշիվ",
       "forgotPassword": "Մոռացե՞լ եք գաղտնաբառը",
-      "errorInvalid": "Սխալ էլ․ փոստ կամ գաղտնաբառ"
+      "errorInvalid": "Սխալ էլ․ փոստ կամ գաղտնաբառ",
+      "continueWithInnovayse": "Մուտք գործել Innovayse-ով"
     },
     "register": {
       "title": "Ստեղծել հաշիվ",

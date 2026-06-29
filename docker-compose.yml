@@ -125,6 +125,9 @@ services:
       CHOKIDAR_USEPOLLING: "true"
     depends_on:
       - api
+    networks:
+      - default
+      - innovayse_network
     deploy:
       resources:
         limits:

@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Innovayse.Domain.Settings.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -19,11 +20,17 @@ public sealed class NameAmClient
     /// <summary>Resolved Name.am configuration settings.</summary>
     private readonly NameAmSettings _settings;
 
+    /// <summary>Setting repository for reading integration overrides from the database.</summary>
+    private readonly ISettingRepository _settingRepo;
+
     /// <summary>Logger for structured diagnostics.</summary>
     private readonly ILogger<NameAmClient> _logger;
 
     /// <summary>Cached JWT access token obtained from <c>/auth/login</c>.</summary>
     private string? _accessToken;
+
+    /// <summary>Cached test-mode override loaded from the database settings table.</summary>
+    private bool? _testModeOverride;
 
     /// <summary>Semaphore guarding concurrent login attempts to prevent token races.</summary>
     private readonly SemaphoreSlim _loginLock = new(1, 1);
@@ -40,11 +47,17 @@ public sealed class NameAmClient
     /// </summary>
     /// <param name="http">The <see cref="HttpClient"/> configured by <c>IHttpClientFactory</c>.</param>
     /// <param name="options">Bound <see cref="NameAmSettings"/> options.</param>
+    /// <param name="settingRepo">Setting repository for reading DB-stored integration config.</param>
     /// <param name="logger">Logger for structured diagnostics.</param>
-    public NameAmClient(HttpClient http, IOptions<NameAmSettings> options, ILogger<NameAmClient> logger)
+    public NameAmClient(
+        HttpClient http,
+        IOptions<NameAmSettings> options,
+        ISettingRepository settingRepo,
+        ILogger<NameAmClient> logger)
     {
         _http = http;
         _settings = options.Value;
+        _settingRepo = settingRepo;
         _logger = logger;
     }
 
@@ -63,6 +76,7 @@ public sealed class NameAmClient
     /// <exception cref="HttpRequestException">Thrown when the API returns a non-success status after retry.</exception>
     public async Task<JsonDocument> GetAsync(string path, CancellationToken ct)
     {
+        await LoadTestModeOverrideAsync(ct);
         await EnsureAuthenticatedAsync(ct);
 
         var url = BuildUrl(path);
@@ -99,6 +113,7 @@ public sealed class NameAmClient
     /// <exception cref="HttpRequestException">Thrown when the API returns a non-success status after retry.</exception>
     public async Task<JsonDocument> PostAsync(string path, object body, CancellationToken ct)
     {
+        await LoadTestModeOverrideAsync(ct);
         await EnsureAuthenticatedAsync(ct);
 
         var url = BuildUrl(path);
@@ -143,6 +158,7 @@ public sealed class NameAmClient
     /// <exception cref="HttpRequestException">Thrown when the API returns a non-success status after retry.</exception>
     public async Task<JsonDocument> PutAsync(string path, object body, CancellationToken ct)
     {
+        await LoadTestModeOverrideAsync(ct);
         await EnsureAuthenticatedAsync(ct);
 
         var url = BuildUrl(path);
@@ -256,8 +272,34 @@ public sealed class NameAmClient
     }
 
     /// <summary>
+    /// Loads the test-mode override from the database settings table.
+    /// The DB value (<c>integration:nameam:test_mode</c>) takes precedence over
+    /// <see cref="NameAmSettings.TestMode"/> from <c>appsettings.json</c>.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    private async Task LoadTestModeOverrideAsync(CancellationToken ct)
+    {
+        if (_testModeOverride is not null)
+        {
+            return;
+        }
+
+        var setting = await _settingRepo.FindByKeyAsync("integration:nameam:test_mode", ct);
+        _testModeOverride = setting is not null
+            && string.Equals(setting.Value, "true", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Gets whether test mode is active, checking the DB override first,
+    /// then falling back to <see cref="NameAmSettings.TestMode"/>.
+    /// Call <see cref="LoadTestModeOverrideAsync"/> before reading to ensure the DB value is loaded.
+    /// </summary>
+    public bool IsTestMode => _testModeOverride ?? _settings.TestMode;
+
+    /// <summary>
     /// Builds a full URL by combining the configured API base URL with the given path.
-    /// Appends <c>testmode=1</c> query parameter when <see cref="NameAmSettings.TestMode"/> is enabled.
+    /// Appends <c>testmode=1</c> query parameter when test mode is enabled
+    /// (either via DB setting or <c>appsettings.json</c>).
     /// </summary>
     /// <param name="path">Relative API path.</param>
     /// <returns>Absolute URL string.</returns>
@@ -265,7 +307,7 @@ public sealed class NameAmClient
     {
         var url = $"{_settings.ApiUrl.TrimEnd('/')}{path}";
 
-        if (_settings.TestMode)
+        if (IsTestMode)
         {
             url += url.Contains('?') ? "&testmode=1" : "?testmode=1";
         }

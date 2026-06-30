@@ -52,9 +52,10 @@ public sealed class GetIntegrationHandler(ISettingRepository settings, IPluginRe
         ]),
         ["nameam"] = ("Name.am", "Domain Registrars",
         [
-            new("email",    "Account Email",    "text",     Required: true),
-            new("password", "Account Password", "password", Required: true),
-            new("api_url",  "API URL",          "text",     Required: false),
+            new("email",     "Account Email",    "text",     Required: true),
+            new("password",  "Account Password", "password", Required: true),
+            new("api_url",   "API URL",          "text",     Required: false),
+            new("test_mode", "Test Mode",        "toggle",   Required: false),
         ]),
         ["resellerclub"] = ("ResellerClub", "Domain Registrars",
         [

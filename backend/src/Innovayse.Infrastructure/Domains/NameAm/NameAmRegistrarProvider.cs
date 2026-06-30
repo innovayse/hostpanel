@@ -61,9 +61,11 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
         var domainRef = request.DomainName;
         var expiresAt = DateTimeOffset.UtcNow.AddYears(request.Years);
 
-        // Name.am requires a pre-funded balance; the cart purchase is async —
-        // the domain becomes active only after Name.am processes the order.
-        return new RegistrarResult(true, domainRef, expiresAt, null, RequiresPolling: true);
+        // In test mode, Name.am never actually activates the domain, so skip polling
+        // and let the handler activate it immediately.
+        var requiresPolling = !client.IsTestMode;
+
+        return new RegistrarResult(true, domainRef, expiresAt, null, RequiresPolling: requiresPolling);
     }
 
     /// <inheritdoc/>

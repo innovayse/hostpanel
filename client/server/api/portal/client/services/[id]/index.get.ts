@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
     billingcycle: s.billingCycle ?? '',
     nextduedate: s.nextRenewalAt ?? '',
     status: s.status ?? 'Active',
-    username: s.username ?? 'provisioned',
+    username: s.username ?? '',
     password: '',
     subscriptionid: '',
     promoid: 0,

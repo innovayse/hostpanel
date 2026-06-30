@@ -22,7 +22,7 @@ public sealed class ListIntegrationsHandler(ISettingRepository settings, IPlugin
         ["paypal"] = ("PayPal", "Payment Gateways", ["client_id", "client_secret"], ["client_id", "client_secret", "mode"]),
         ["bank-transfer"] = ("Bank Transfer", "Payment Gateways", [], ["account_name", "iban", "bank_name", "instructions"]),
         ["namecheap"] = ("Namecheap", "Domain Registrars", ["api_key", "api_username", "client_ip"], ["api_key", "api_username", "client_ip"]),
-        ["nameam"] = ("Name.am", "Domain Registrars", ["email", "password"], ["email", "password", "api_url"]),
+        ["nameam"] = ("Name.am", "Domain Registrars", ["email", "password"], ["email", "password", "api_url", "test_mode"]),
         ["resellerclub"] = ("ResellerClub", "Domain Registrars", ["reseller_id", "api_key"], ["reseller_id", "api_key"]),
         ["enom"] = ("ENOM", "Domain Registrars", ["account_id", "api_key"], ["account_id", "api_key"]),
         ["cpanel"] = ("cPanel WHM", "Hosting / Provisioning", ["host", "username", "api_token"], ["host", "port", "username", "api_token"]),

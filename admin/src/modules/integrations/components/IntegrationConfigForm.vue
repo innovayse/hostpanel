@@ -107,6 +107,20 @@ function handleSave(): void {
             <option v-for="opt in field.options" :key="opt" :value="opt" class="bg-surface-elevated">{{ opt }}</option>
           </select>
 
+          <!-- Toggle for boolean fields — stores "true" / "false" as string -->
+          <div v-else-if="field.type === 'toggle'" class="flex items-center gap-2.5 pt-1">
+            <ToggleSwitch
+              :model-value="localConfig[field.key] === 'true'"
+              @update:model-value="localConfig[field.key] = $event ? 'true' : 'false'"
+            />
+            <span
+              class="text-[0.78rem] font-semibold"
+              :class="localConfig[field.key] === 'true' ? 'text-status-green' : 'text-text-muted'"
+            >
+              {{ localConfig[field.key] === 'true' ? 'Enabled' : 'Disabled' }}
+            </span>
+          </div>
+
           <input
             v-else
             v-model="localConfig[field.key]"

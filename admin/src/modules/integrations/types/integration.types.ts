@@ -46,8 +46,8 @@ export interface FieldDefinitionDto {
   key: string
   /** Human-readable label shown above the input. */
   label: string
-  /** Input type — "text", "password", "select", or "textarea". */
-  type: 'text' | 'password' | 'select' | 'textarea'
+  /** Input type — "text", "password", "select", "textarea", or "toggle". */
+  type: 'text' | 'password' | 'select' | 'textarea' | 'toggle'
   /** Whether the field is required before the integration can be enabled. */
   required: boolean
   /** Allowed values for "select" type fields; absent for all others. */
@@ -111,8 +111,8 @@ export interface IntegrationField {
   key: string
   /** Human-readable label. */
   label: string
-  /** Input type — "text" for most, "password" for secrets, "select" for enums. */
-  type: 'text' | 'password' | 'select' | 'textarea'
+  /** Input type — "text" for most, "password" for secrets, "select" for enums, "toggle" for booleans. */
+  type: 'text' | 'password' | 'select' | 'textarea' | 'toggle'
   /** Options for "select" type fields. */
   options?: string[]
 }

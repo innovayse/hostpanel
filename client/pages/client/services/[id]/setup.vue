@@ -63,9 +63,12 @@
           </div>
 
           <div class="space-y-6">
-            <UiInput v-model="setupData.domain" label="Domain Name" placeholder="example.com" required />
-            <p class="text-xs text-gray-500">
+            <UiInput v-model="setupData.domain" label="Domain Name" placeholder="example.com" required :disabled="hasPurchasedDomain" />
+            <p v-if="!hasPurchasedDomain" class="text-xs text-gray-500">
               If you haven't bought a domain yet, enter the domain you plan to use. You'll need to point its nameservers to us later.
+            </p>
+            <p v-else class="text-xs text-cyan-400/70">
+              This domain was purchased with your hosting plan.
             </p>
             <UiButton full-width size="lg" :disabled="!setupData.domain" @click="nextStep">
               Continue
@@ -191,8 +194,11 @@ const totalSteps = 3
 const setupError = ref('')
 const submitting = ref(false)
 
+/** Whether the domain was purchased alongside this hosting service. */
+const hasPurchasedDomain = computed(() => !!service.value?.domain)
+
 const setupData = reactive({
-  domain: '',
+  domain: service.value?.domain || '',
   username: '',
   password: ''
 })

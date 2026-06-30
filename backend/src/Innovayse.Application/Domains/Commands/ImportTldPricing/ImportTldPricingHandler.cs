@@ -49,16 +49,11 @@ public sealed class ImportTldPricingHandler(
             var tld = pricing.Tld.ToLower().Trim();
             var existing = await repo.FindByTldAsync(tld, ct);
 
-            // Convert AMD prices to USD for sell prices (AMD / 390 = USD)
-            var sellRegister = ConvertAmdToUsd(pricing.Register);
-            var sellTransfer = ConvertAmdToUsd(pricing.Transfer);
-            var sellRenew = ConvertAmdToUsd(pricing.Renew);
-
             if (existing is not null)
             {
-                existing.Update(existing.RegistrarModule, pricing.Currency, existing.SellCurrency, true, existing.SortOrder, existing.Categories.ToList());
+                existing.Update(existing.RegistrarModule, pricing.Currency, pricing.Currency, true, existing.SortOrder, existing.Categories.ToList());
                 existing.UpdateCostPrices(pricing.Register, pricing.Transfer, pricing.Renew);
-                existing.UpdateSellPrices(sellRegister, sellTransfer, sellRenew);
+                existing.UpdateSellPrices(pricing.Register, pricing.Transfer, pricing.Renew);
                 existing.MarkSynced();
                 updated++;
             }
@@ -68,13 +63,13 @@ public sealed class ImportTldPricingHandler(
                     tld,
                     module,
                     pricing.Currency,
-                    "USD",
+                    pricing.Currency,
                     isEnabled: true,
                     sortOrder: 0,
                     categories: []);
 
                 entity.UpdateCostPrices(pricing.Register, pricing.Transfer, pricing.Renew);
-                entity.UpdateSellPrices(sellRegister, sellTransfer, sellRenew);
+                entity.UpdateSellPrices(pricing.Register, pricing.Transfer, pricing.Renew);
 
                 repo.Add(entity);
                 imported++;
@@ -91,21 +86,5 @@ public sealed class ImportTldPricingHandler(
             module, imported, updated);
 
         return new ImportTldPricingResult(imported, updated);
-    }
-
-    /// <summary>
-    /// Converts AMD prices to USD using the fixed exchange rate: 1 USD = 390 AMD.
-    /// </summary>
-    /// <param name="amdPrices">Dictionary of period (years) → price in AMD.</param>
-    /// <returns>Dictionary of period (years) → price in USD.</returns>
-    private static Dictionary<int, decimal> ConvertAmdToUsd(IReadOnlyDictionary<int, decimal> amdPrices)
-    {
-        const decimal AmdPerUsd = 390m;
-        var result = new Dictionary<int, decimal>();
-        foreach (var (period, amdPrice) in amdPrices)
-        {
-            result[period] = Math.Round(amdPrice / AmdPerUsd, 2);
-        }
-        return result;
     }
 }

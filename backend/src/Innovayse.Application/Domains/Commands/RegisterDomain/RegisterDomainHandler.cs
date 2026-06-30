@@ -22,6 +22,14 @@ public sealed class RegisterDomainHandler(
     /// <exception cref="InvalidOperationException">Thrown when the registrar rejects the registration.</exception>
     public async Task<int> HandleAsync(RegisterDomainCommand cmd, CancellationToken ct)
     {
+        // Safety net — the availability check should have caught this, but guard against duplicates
+        var existing = await repo.FindByNameAsync(cmd.DomainName, ct);
+        if (existing is not null)
+        {
+            throw new InvalidOperationException(
+                $"Domain '{cmd.DomainName}' is already registered in the system.");
+        }
+
         var request = new RegisterDomainRequest(
             cmd.DomainName,
             cmd.Years,

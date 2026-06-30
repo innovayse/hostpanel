@@ -110,6 +110,10 @@ public static class DependencyInjection
             .AddDefaultTokenProviders();
 
         // Auth services
+        services.AddSingleton<TokenRevocationCache>();
+        services.AddSingleton<ITwoFactorPendingCache, TwoFactorPendingCache>();
+        services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IUserService, UserService>();
 
         // Client services

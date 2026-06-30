@@ -230,22 +230,4 @@ public interface IUserService
     /// <param name="ct">Cancellation token.</param>
     /// <returns>True if the code is valid within the allowed time window; false otherwise.</returns>
     Task<bool> VerifyTwoFactorCodeAsync(string userId, string code, CancellationToken ct);
-
-    /// <summary>Finds a user by their SSO subject identifier (the 'sub' claim).</summary>
-    Task<(string Id, string Email)?> FindBySsoSubjectAsync(string sub, CancellationToken ct);
-
-    /// <summary>
-    /// Provisions a local AppUser record for an SSO-authenticated user.
-    /// If a user with this email already exists, links the SsoSubjectId.
-    /// If not, creates a new AppUser with the Client role assigned.
-    /// </summary>
-    Task ProvisionSsoUserAsync(string sub, string email, string firstName, string lastName, CancellationToken ct);
-
-    /// <summary>
-    /// Retrieves all roles assigned to the specified user.
-    /// </summary>
-    /// <param name="userId">The user's unique identifier.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>List of role names assigned to the user.</returns>
-    Task<IList<string>> GetRolesAsync(string userId, CancellationToken ct);
 }

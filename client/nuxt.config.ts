@@ -52,10 +52,6 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // Server-side only (not exposed to client)
     apiUrl: process.env.API_URL || 'http://localhost:5000',
-    ssoUrl: process.env.SSO_URL || 'http://sso-api:8080',
-    ssoClientId: process.env.SSO_CLIENT_ID || 'hostpanel',
-    ssoClientSecret: process.env.SSO_CLIENT_SECRET || 'dev-secret-hostpanel',
-    ssoCallbackUrl: process.env.SSO_CALLBACK_URL || 'http://panel.local/api/portal/auth/sso/callback',
     telegramBotToken: process.env.TELEGRAM_BOT_TOKEN,
     telegramChatId: process.env.TELEGRAM_CHAT_ID,
     // Email SMTP configuration
@@ -75,7 +71,6 @@ export default defineNuxtConfig({
     // Public runtime config (exposed to client)
     public: {
       baseUrl: process.env.NUXT_PUBLIC_BASE_URL || 'https://innovayse.com',
-      ssoPublicUrl: process.env.SSO_PUBLIC_URL || 'http://sso.local',
       whmcsUrl: (process.env.WHMCS_URL || '').replace(/\/+$/, ''),
       stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
     }

@@ -51,21 +51,148 @@
         <div class="absolute top-0 left-0 w-12 h-12 border-l-2 border-t-2 border-primary-500/40 rounded-tl-2xl pointer-events-none" />
         <div class="absolute bottom-0 right-0 w-12 h-12 border-r-2 border-b-2 border-cyan-500/40 rounded-br-2xl pointer-events-none" />
 
-        <a
-          href="/api/portal/auth/sso/authorize"
-          class="flex items-center justify-center gap-3 w-full py-3 px-6 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 text-white font-semibold text-base hover:from-primary-500 hover:to-primary-400 transition-all duration-200 shadow-lg shadow-primary-500/25"
-        >
-          <svg width="20" height="20" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M11 2L20 7V15L11 20L2 15V7L11 2Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
-            <path d="M11 7L16 10V14L11 17L6 14V10L11 7Z" fill="currentColor" opacity="0.7"/>
-          </svg>
-          {{ $t('client.login.continueWithInnovayse') }}
-        </a>
+        <!-- ── Email + Password form ──────────────────────────── -->
+        <template v-if="!twoFactorRequired">
+          <UiForm :error="error" spacing="lg" @submit="handleLogin">
+            <UiInput
+              v-model="form.email"
+              type="email"
+              :label="$t('client.login.email')"
+              :placeholder="$t('client.login.emailPlaceholder')"
+              icon="mdi:email"
+              autocomplete="email"
+              required
+            />
+            <UiInput
+              v-model="form.password"
+              type="password"
+              :label="$t('client.login.password')"
+              placeholder="••••••••"
+              autocomplete="current-password"
+              required
+            />
+            <UiButton
+              type="submit"
+              variant="primary"
+              size="lg"
+              :full-width="true"
+              :loading="loading"
+              class="hover:shadow-xl hover:shadow-primary-500/30"
+            >
+              <LogIn v-if="!loading" :size="18" :stroke-width="2" class="mr-2" />
+              {{ loading ? $t('client.login.submitting') : $t('client.login.submit') }}
+            </UiButton>
+          </UiForm>
+
+          <div class="mt-6 text-center">
+            <p class="text-gray-500 text-sm">
+              {{ $t('client.login.noAccount') }}
+              <NuxtLink to="/client/register" class="text-primary-400 hover:text-primary-300 font-medium transition-colors">
+                {{ $t('client.login.createOne') }}
+              </NuxtLink>
+            </p>
+          </div>
+
+          <div class="mt-3 text-center">
+            <NuxtLink to="/client/forgot" class="text-gray-500 hover:text-gray-300 text-xs transition-colors">
+              {{ $t('client.login.forgotPassword') }}
+            </NuxtLink>
+          </div>
+        </template>
+
+        <!-- ── 2FA step ──────────────────────────────────────── -->
+        <template v-else>
+          <div class="text-center mb-6">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500/20 to-cyan-500/20 border border-primary-500/30 flex items-center justify-center mx-auto mb-4">
+              <ShieldCheck :size="28" :stroke-width="1.5" class="text-primary-400" />
+            </div>
+            <h3 class="text-lg font-bold text-white">{{ $t('client.twoFactor.stepTitle') }}</h3>
+            <p class="text-gray-400 text-sm mt-1">{{ $t('client.twoFactor.stepSubtitle') }}</p>
+          </div>
+
+          <UiForm :error="error" spacing="lg" @submit="handleTwoFactor">
+            <UiOtpInput
+              v-model="twoFactorCode"
+              :length="6"
+              :error="error ? ' ' : ''"
+              class="py-2"
+            />
+            <UiButton
+              type="submit"
+              variant="primary"
+              size="lg"
+              :full-width="true"
+              :loading="loading"
+              class="hover:shadow-xl hover:shadow-primary-500/30"
+            >
+              <ShieldCheck v-if="!loading" :size="18" :stroke-width="2" class="mr-2" />
+              {{ loading ? $t('client.login.submitting') : $t('client.twoFactor.verify') }}
+            </UiButton>
+          </UiForm>
+
+          <div class="mt-4 text-center">
+            <button
+              type="button"
+              class="text-gray-500 hover:text-gray-300 text-xs transition-colors"
+              @click="twoFactorRequired = false; error = ''"
+            >
+              {{ $t('client.twoFactor.back') }}
+            </button>
+          </div>
+        </template>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: false })
+import { LogIn, ShieldCheck } from 'lucide-vue-next'
+
+definePageMeta({ layout: false, middleware: 'client-auth' })
+
+const { login, loginWithTwoFactor } = useClientAuth()
+const route = useRoute()
+const { t } = useI18n()
+
+const form = reactive({ email: '', password: '' })
+const loading = ref(false)
+const error = ref('')
+
+// 2FA step
+const twoFactorRequired = ref(false)
+const pendingToken = ref('')
+const twoFactorCode = ref('')
+
+async function handleLogin() {
+  loading.value = true
+  error.value = ''
+  try {
+    const result = await login(form.email, form.password)
+    if ('twoFactorRequired' in result && result.twoFactorRequired) {
+      pendingToken.value = result.pendingToken
+      twoFactorRequired.value = true
+      return
+    }
+    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/client/dashboard'
+    window.location.href = redirect
+  } catch (err: any) {
+    error.value = err?.data?.statusMessage || t('client.login.errorInvalid')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handleTwoFactor() {
+  loading.value = true
+  error.value = ''
+  try {
+    await loginWithTwoFactor(pendingToken.value, twoFactorCode.value)
+    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/client/dashboard'
+    window.location.href = redirect
+  } catch (err: any) {
+    error.value = err?.data?.statusMessage || t('client.twoFactor.errorInvalid')
+  } finally {
+    loading.value = false
+  }
+}
 </script>

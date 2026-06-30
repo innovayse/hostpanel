@@ -78,6 +78,7 @@ export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
       { key: 'email', label: 'Account Email', type: 'text' },
       { key: 'password', label: 'Account Password', type: 'password' },
       { key: 'apiUrl', label: 'API URL', type: 'text' },
+      { key: 'test_mode', label: 'Test Mode', type: 'toggle' },
     ],
   },
   resellerclub: {

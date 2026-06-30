@@ -9,6 +9,6 @@ public sealed class AcceptInvitationValidator : AbstractValidator<AcceptInvitati
     public AcceptInvitationValidator()
     {
         RuleFor(x => x.Token).NotEmpty();
-        RuleFor(x => x.Password).NotEmpty().MinimumLength(8);
+        RuleFor(x => x.UserId).NotEmpty();
     }
 }

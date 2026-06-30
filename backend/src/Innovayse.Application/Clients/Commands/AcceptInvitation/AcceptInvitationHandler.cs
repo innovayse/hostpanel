@@ -47,26 +47,23 @@ public sealed class AcceptInvitationHandler(
             throw new InvalidOperationException("This invitation has already been accepted.");
         }
 
-        // Create the Identity user first — this can fail on password validation
-        var userId = await userService.CreateAsync(invitation.Email, cmd.Password, ct);
-
-        // Update the user's name
-        await userService.UpdateUserAsync(userId, invitation.FirstName, invitation.LastName, invitation.Email, null, ct);
+        // With SSO, user is already provisioned by OnTokenValidated — just update profile fields
+        await userService.UpdateUserAsync(cmd.UserId, invitation.FirstName, invitation.LastName, invitation.Email, null, ct);
 
         // Add to the Client role
-        await userService.AddToRoleAsync(userId, Roles.Client, ct);
+        await userService.AddToRoleAsync(cmd.UserId, Roles.Client, ct);
 
         // Load the client and link the new user with the invitation's permissions
         var client = await clientRepo.FindByIdAsync(invitation.ClientId, ct)
             ?? throw new InvalidOperationException($"Client {invitation.ClientId} not found.");
 
-        client.AddUser(userId, invitation.Permissions);
+        client.AddUser(cmd.UserId, invitation.Permissions);
 
         // Mark accepted only after everything succeeded
         invitation.Accept();
 
         await uow.SaveChangesAsync(ct);
 
-        return userId;
+        return cmd.UserId;
     }
 }

@@ -25,31 +25,11 @@ function getApiUrl(): string {
 }
 
 /**
- * Parse a refresh token value from the backend's Set-Cookie headers.
- *
- * The C# backend sets: `refreshToken=<value>; HttpOnly; Secure; SameSite=Strict; Expires=...`
- * We extract just the token value.
- *
- * @param headers - Response headers from $fetch.raw()
- * @returns The raw refresh token string, or null if not found.
- */
-function extractRefreshTokenFromHeaders(headers: Headers): string | null {
-  const setCookieHeaders = headers.getSetCookie()
-  for (const cookie of setCookieHeaders) {
-    if (cookie.startsWith('refreshToken=')) {
-      const value = cookie.split(';')[0]?.substring('refreshToken='.length)
-      return value || null
-    }
-  }
-  return null
-}
-
-/**
  * Attempt to refresh the access token using the stored refresh token.
  *
- * Calls the C# backend's `POST /api/auth/refresh` endpoint, forwarding the
- * refresh token as a Cookie header. On success, updates all auth cookies and
- * returns the new access token. On failure, clears all cookies and returns null.
+ * Calls the SSO token endpoint with grant_type=refresh_token. On success,
+ * updates all auth cookies and returns the new access token. On failure,
+ * clears all cookies and returns null.
  *
  * Uses a module-level promise lock so concurrent 401s share a single refresh call.
  *
@@ -57,10 +37,7 @@ function extractRefreshTokenFromHeaders(headers: Headers): string | null {
  * @returns The new access token string, or null if refresh failed.
  */
 export async function tryRefreshToken(event: H3Event): Promise<string | null> {
-  // If a refresh is already in progress, wait for it
-  if (refreshPromise) {
-    return refreshPromise
-  }
+  if (refreshPromise) return refreshPromise
 
   const refreshToken = getCookie(event, 'refresh_token')
   if (!refreshToken) {
@@ -70,32 +47,47 @@ export async function tryRefreshToken(event: H3Event): Promise<string | null> {
 
   refreshPromise = (async () => {
     try {
-      const apiUrl = getApiUrl()
-      const response = await $fetch.raw<{ accessToken: string; expiresAt: string; role: string }>(
-        `${apiUrl}/api/auth/refresh`,
-        {
-          method: 'POST',
-          headers: {
-            Cookie: `refreshToken=${refreshToken}`,
-          },
-        }
-      )
+      const config = useRuntimeConfig()
+      const response = await $fetch<{
+        access_token: string
+        refresh_token?: string
+        expires_in?: number
+      }>(`${config.ssoUrl}/connect/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken,
+          client_id: config.ssoClientId,
+          client_secret: config.ssoClientSecret,
+        }).toString(),
+      })
 
-      const newAccessToken = response._data?.accessToken
-      if (!newAccessToken) {
+      const { access_token, refresh_token: newRefreshToken, expires_in } = response
+      if (!access_token) {
         clearAllAuthCookies(event)
         return null
       }
 
-      // Extract the rotated refresh token from Set-Cookie header
-      const newRefreshToken = extractRefreshTokenFromHeaders(response.headers)
+      setCookie(event, 'auth_token', access_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: expires_in ?? 60 * 15,
+        path: '/',
+      })
 
-      setAuthCookie(event, newAccessToken)
       if (newRefreshToken) {
-        setRefreshCookie(event, newRefreshToken)
+        setCookie(event, 'refresh_token', newRefreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 24 * 7,
+          path: '/',
+        })
       }
 
-      return newAccessToken
+      return access_token
     } catch {
       clearAllAuthCookies(event)
       return null

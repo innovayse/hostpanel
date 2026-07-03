@@ -10,6 +10,7 @@ export default defineEventHandler(async (event) => {
   deleteCookie(event, 'refresh_token', { path: '/' })
   deleteCookie(event, 'authed', { path: '/' })
 
-  const endsessionUrl = `${config.public.ssoPublicUrl}/connect/endsession?post_logout_redirect_uri=${encodeURIComponent('http://panel.local')}`
+  const baseUrl = config.public.baseUrl || 'http://localhost:3001'
+  const endsessionUrl = `${config.public.ssoPublicUrl}/connect/endsession?post_logout_redirect_uri=${encodeURIComponent(baseUrl)}`
   return sendRedirect(event, endsessionUrl, 302)
 })

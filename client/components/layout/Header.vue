@@ -157,15 +157,15 @@
             </div>
           </div>
 
-          <!-- Not logged in: simple link -->
-          <NuxtLink
+          <!-- Not logged in: simple link (SSO mode goes directly to SSO, local mode goes to login page) -->
+          <a
             v-else
-            :to="localePath('/client/login')"
+            :href="clientAreaHref"
             class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white border border-white/10 hover:border-white/20 transition-all duration-200"
           >
             <Icon name="lucide:user" size="15" />
             {{ $t('nav.clientArea') }}
-          </NuxtLink>
+          </a>
 
         </div>
 
@@ -306,16 +306,16 @@
             </div>
           </div>
 
-          <!-- Not logged in: simple link -->
-          <NuxtLink
+          <!-- Not logged in: simple link (SSO mode goes directly to SSO) -->
+          <a
             v-else
-            :to="localePath('/client/login')"
+            :href="clientAreaHref"
             class="flex items-center gap-2 py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg text-sm sm:text-base text-gray-300 hover:bg-gray-800 hover:text-primary-400 font-medium transition-colors"
             @click="closeMobileMenu"
           >
             <Icon name="lucide:user" size="16" />
             {{ $t('nav.clientArea') }}
-          </NuxtLink>
+          </a>
 
           <!-- Language Switcher in Mobile -->
           <div class="pt-2 pb-2 px-3 sm:px-4">
@@ -387,6 +387,14 @@ const navLinks = computed(() => [
 /** Authentication state for the Client Area button */
 const { isLoggedIn, user, fetchUser, logout } = useClientAuth()
 const store = useClientStore()
+const runtimeConfig = useRuntimeConfig()
+
+/** In SSO mode, link directly to SSO authorize (skips "Continue with Innovayse" page) */
+const clientAreaHref = computed(() =>
+  runtimeConfig.public.authMode === 'sso'
+    ? '/api/portal/auth/sso/authorize'
+    : localePath('/client/login')
+)
 
 onMounted(async () => {
   if (isLoggedIn.value) {

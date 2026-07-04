@@ -44,44 +44,73 @@ try
                   .AllowAnyMethod()
                   .AllowCredentials()));
 
-    // SSO Authentication — validate JWTs issued by the Innovayse SSO (OpenIddict)
-    builder.Services
-        .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(opts =>
-        {
-            opts.Authority = builder.Configuration["Sso:Authority"];
-            opts.Audience = builder.Configuration["Sso:ClientId"];
-            opts.RequireHttpsMetadata = false;
-            opts.TokenValidationParameters = new TokenValidationParameters
-            {
-                RoleClaimType = System.Security.Claims.ClaimTypes.Role,
-                NameClaimType = "sub",
-                ValidateAudience = false,
-            };
-            opts.Events = new JwtBearerEvents
-            {
-                OnTokenValidated = async context =>
-                {
-                    var sub = context.Principal?.FindFirst("sub")?.Value;
-                    var email = context.Principal?.FindFirst("email")?.Value;
-                    if (sub is null || email is null) return;
-                    var firstName = context.Principal?.FindFirst("given_name")?.Value ?? string.Empty;
-                    var lastName = context.Principal?.FindFirst("family_name")?.Value ?? string.Empty;
-                    var userService = context.HttpContext.RequestServices.GetRequiredService<IUserService>();
-                    await userService.ProvisionSsoUserAsync(sub, email, firstName, lastName, context.HttpContext.RequestAborted);
+    var authMode = builder.Configuration["Auth:Mode"] ?? "sso";
 
-                    // Add local Identity roles to the principal so [Authorize(Roles=...)] works
-                    var localUser = await userService.FindBySsoSubjectAsync(sub, context.HttpContext.RequestAborted);
-                    if (localUser is not null)
+    if (authMode == "local")
+    {
+        // Local JWT authentication — tokens issued by this server
+        var jwtSecret = builder.Configuration["Jwt:Secret"]
+            ?? throw new InvalidOperationException("Jwt:Secret is required when Auth:Mode=local");
+        if (jwtSecret.Length < 32)
+            throw new InvalidOperationException("Jwt:Secret must be at least 32 characters");
+
+        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(opts =>
+            {
+                opts.RequireHttpsMetadata = false;
+                opts.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        System.Text.Encoding.UTF8.GetBytes(jwtSecret)),
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "innovayse-api",
+                    ValidAudience = builder.Configuration["Jwt:Audience"] ?? "innovayse-clients",
+                    RoleClaimType = System.Security.Claims.ClaimTypes.Role,
+                    NameClaimType = "sub",
+                };
+            });
+
+        builder.Services.AddSingleton<Innovayse.API.Auth.JwtTokenService>();
+    }
+    else
+    {
+        // SSO Authentication — validate JWTs issued by Innovayse SSO (OpenIddict)
+        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(opts =>
+            {
+                opts.Authority = builder.Configuration["Sso:Authority"];
+                opts.Audience = builder.Configuration["Sso:ClientId"];
+                opts.RequireHttpsMetadata = false;
+                opts.TokenValidationParameters = new TokenValidationParameters
+                {
+                    RoleClaimType = System.Security.Claims.ClaimTypes.Role,
+                    NameClaimType = "sub",
+                    ValidateAudience = false,
+                };
+                opts.Events = new JwtBearerEvents
+                {
+                    OnTokenValidated = async context =>
                     {
-                        var roles = await userService.GetRolesAsync(localUser.Value.Id, context.HttpContext.RequestAborted);
-                        var identity = (System.Security.Claims.ClaimsIdentity)context.Principal!.Identity!;
-                        foreach (var role in roles)
-                            identity.AddClaim(new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, role));
-                    }
-                }
-            };
-        });
+                        var sub = context.Principal?.FindFirst("sub")?.Value;
+                        var email = context.Principal?.FindFirst("email")?.Value;
+                        if (sub is null || email is null) return;
+                        var firstName = context.Principal?.FindFirst("given_name")?.Value ?? string.Empty;
+                        var lastName = context.Principal?.FindFirst("family_name")?.Value ?? string.Empty;
+                        var userService = context.HttpContext.RequestServices.GetRequiredService<IUserService>();
+                        await userService.ProvisionSsoUserAsync(sub, email, firstName, lastName, context.HttpContext.RequestAborted);
+
+                        var localUser = await userService.FindBySsoSubjectAsync(sub, context.HttpContext.RequestAborted);
+                        if (localUser is not null)
+                        {
+                            var roles = await userService.GetRolesAsync(localUser.Value.Id, context.HttpContext.RequestAborted);
+                            var identity = (System.Security.Claims.ClaimsIdentity)context.Principal!.Identity!;
+                            foreach (var role in roles)
+                                identity.AddClaim(new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, role));
+                        }
+                    },
+                };
+            });
+    }
 
     builder.Services.AddAuthorization(opts =>
     {

@@ -361,7 +361,6 @@ const NAV_ICONS: Record<string, string> = {
  * Items with `children` render as a dropdown (desktop) / expandable group (mobile).
  */
 const navLinks = computed(() => [
-  { label: t('nav.services'), href: localePath('/services') },
   {
     label: t('nav.hosting'),
     children: [
@@ -379,9 +378,7 @@ const navLinks = computed(() => [
       },
     ]
   },
-  { label: t('nav.products'), href: localePath('/products') },
-  { label: t('nav.portfolio'), href: localePath('/portfolio') },
-  { label: t('nav.blog'), href: localePath('/blog') }
+  { label: t('nav.products'), href: localePath('/products') }
 ])
 
 /** Authentication state for the Client Area button */

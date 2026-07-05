@@ -9,17 +9,11 @@
     <!-- Partners/Clients logos -->
     <SectionsPartners />
 
-    <!-- Services Section -->
-    <SectionsServices />
-
     <!-- Why Choose Us Section -->
     <SectionsWhyChooseUs />
 
     <!-- Process Section -->
     <SectionsProcess />
-
-    <!-- Portfolio Section -->
-    <SectionsPortfolio />
 
     <!-- Testimonials Section -->
     <SectionsTestimonials />
@@ -43,7 +37,7 @@
 const { t } = useI18n()
 
 // SEO setup with canonical, hreflang, OG, Twitter tags
-const { baseUrl } = useSeo({
+useSeo({
   title: t('seo.home.title'),
   description: t('seo.home.description'),
   keywords: t('seo.home.keywords'),
@@ -60,48 +54,4 @@ injectSchema([
   localBusinessSchema(),
   websiteSchema()
 ])
-
-// Service schemas for SEO
-const serviceSchemas = [
-  {
-    '@context': 'https://schema.org',
-    '@type': 'Service',
-    name: 'Web Development',
-    description: 'Custom web development services including corporate websites, e-commerce, web applications, and CMS solutions',
-    url: `${baseUrl}/services#development`,
-    serviceType: 'Web Development',
-    provider: {
-      '@id': `${baseUrl}/#organization`
-    }
-  },
-  {
-    '@context': 'https://schema.org',
-    '@type': 'Service',
-    name: 'SEO Services',
-    description: 'Comprehensive SEO services including technical SEO, content optimization, link building, and local SEO',
-    url: `${baseUrl}/services#seo`,
-    serviceType: 'Search Engine Optimization',
-    provider: {
-      '@id': `${baseUrl}/#organization`
-    }
-  },
-  {
-    '@context': 'https://schema.org',
-    '@type': 'Service',
-    name: 'PPC Advertising',
-    description: 'Pay-per-click advertising management for Google Ads and Yandex Direct campaigns',
-    url: `${baseUrl}/services#ppc`,
-    serviceType: 'PPC Management',
-    provider: {
-      '@id': `${baseUrl}/#organization`
-    }
-  }
-]
-
-useHead({
-  script: serviceSchemas.map(schema => ({
-    type: 'application/ld+json',
-    children: JSON.stringify(schema)
-  }))
-})
 </script>

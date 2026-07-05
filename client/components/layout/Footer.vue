@@ -182,9 +182,6 @@ const scrollToTop = () => {
 /** Navigation links */
 const navigationLinks = computed(() => [
   { label: t('footer.nav.home'), href: localePath('/') },
-  { label: t('footer.nav.about'), href: localePath('/about') },
-  { label: t('footer.nav.portfolio'), href: localePath('/portfolio') },
-  { label: t('footer.nav.blog'), href: localePath('/blog') },
   { label: t('footer.nav.announcements'), href: localePath('/announcements') },
   { label: t('footer.nav.knowledgebase'), href: localePath('/knowledgebase') },
   { label: t('footer.nav.faq'), href: localePath('/faq') },
@@ -193,9 +190,6 @@ const navigationLinks = computed(() => [
 
 /** Service links */
 const serviceLinks = computed(() => [
-  { label: t('footer.services.webDevelopment'), href: localePath('/services#development') },
-  { label: t('footer.services.seoServices'), href: localePath('/services#seo') },
-  { label: t('footer.services.ppcAdvertising'), href: localePath('/services#ppc') },
   { label: t('footer.services.saasProducts'), href: localePath('/products') }
 ])
 

@@ -8,18 +8,12 @@
     },
     "nav": {
       "home": "Գլխավոր",
-      "about": "Մեր մասին",
-      "portfolio": "Պորտֆոլիո",
-      "blog": "Բլոգ",
       "announcements": "Հայտարարություններ",
       "knowledgebase": "Գիտելիքների բազա",
       "faq": "Հաճախ տրվող հարցեր",
       "contact": "Կապ"
     },
     "services": {
-      "webDevelopment": "Վեբ մշակում",
-      "seoServices": "SEO ծառայություններ",
-      "ppcAdvertising": "PPC գովազդ",
       "saasProducts": "SaaS արտադրանքներ"
     },
     "bottom": {

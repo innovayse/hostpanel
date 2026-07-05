@@ -116,15 +116,9 @@ export default defineNuxtConfig({
       const routes = [
         // Main pages
         { loc: '/', changefreq: 'daily' as const, priority: 1.0 },
-        { loc: '/about', changefreq: 'monthly' as const, priority: 0.8 },
-        { loc: '/services', changefreq: 'weekly' as const, priority: 0.9 },
         { loc: '/products', changefreq: 'weekly' as const, priority: 0.9 },
-        { loc: '/portfolio', changefreq: 'weekly' as const, priority: 0.8 },
-        { loc: '/blog', changefreq: 'daily' as const, priority: 0.8 },
         { loc: '/contact', changefreq: 'monthly' as const, priority: 0.7 },
         { loc: '/faq', changefreq: 'monthly' as const, priority: 0.6 },
-        { loc: '/resources', changefreq: 'monthly' as const, priority: 0.7 },
-        { loc: '/write-for-us', changefreq: 'monthly' as const, priority: 0.6 },
         { loc: '/terms', changefreq: 'yearly' as const, priority: 0.3 },
         { loc: '/privacy', changefreq: 'yearly' as const, priority: 0.3 },
         { loc: '/cookie-policy', changefreq: 'yearly' as const, priority: 0.3 },
@@ -136,66 +130,6 @@ export default defineNuxtConfig({
       const productSlugs = ['smartlearn-system', 'propsystem-pro', 'shopkit-pro', 'metricskit-pro', 'quickbite', 'elpida-ai', 'taskero']
       productSlugs.forEach(slug => {
         routes.push({ loc: `/products/${slug}`, changefreq: 'weekly' as const, priority: 0.8 })
-      })
-
-      // Service branches - Web Development
-      const webDevBranches = ['corporate-websites', 'e-commerce', 'web-applications', 'landing-pages', 'custom-cms']
-      webDevBranches.forEach(branch => {
-        routes.push({
-          loc: `/services/web-development/${branch}`,
-          changefreq: 'monthly' as const,
-          priority: 0.7
-        })
-      })
-
-      // Service branches - Mobile Development
-      const mobileBranches = ['native-ios', 'native-android', 'cross-platform', 'pwa']
-      mobileBranches.forEach(branch => {
-        routes.push({
-          loc: `/services/mobile-development/${branch}`,
-          changefreq: 'monthly' as const,
-          priority: 0.7
-        })
-      })
-
-      // Service branches - Technical SEO
-      const techSeoBranches = ['technical-audit', 'core-web-vitals', 'schema-markup', 'crawl-optimization']
-      techSeoBranches.forEach(branch => {
-        routes.push({
-          loc: `/services/technical-seo/${branch}`,
-          changefreq: 'monthly' as const,
-          priority: 0.7
-        })
-      })
-
-      // Service branches - Content SEO
-      const contentSeoBranches = ['keyword-research', 'content-strategy', 'on-page-seo', 'link-building', 'local-seo', 'e-commerce-seo', 'international-seo']
-      contentSeoBranches.forEach(branch => {
-        routes.push({
-          loc: `/services/content-seo/${branch}`,
-          changefreq: 'monthly' as const,
-          priority: 0.7
-        })
-      })
-
-      // Service branches - Google Ads
-      const googleAdsBranches = ['search', 'display', 'social', 'shopping', 'video-youtube', 'remarketing', 'app-campaigns']
-      googleAdsBranches.forEach(branch => {
-        routes.push({
-          loc: `/services/google-ads/${branch}`,
-          changefreq: 'monthly' as const,
-          priority: 0.7
-        })
-      })
-
-      // Service branches - Yandex Direct
-      const yandexBranches = ['search-ads', 'yan-display', 'retargeting', 'smart-banners']
-      yandexBranches.forEach(branch => {
-        routes.push({
-          loc: `/services/yandex-direct/${branch}`,
-          changefreq: 'monthly' as const,
-          priority: 0.7
-        })
       })
 
       return routes

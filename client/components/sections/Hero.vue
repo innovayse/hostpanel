@@ -100,7 +100,7 @@
           <UiMagnetic :strength="0.25" :range="100">
             <button
               class="w-full sm:w-auto group relative px-8 py-4 sm:px-12 sm:py-6 rounded-2xl font-bold text-white transition-all duration-500 flex items-center justify-center gap-3 overflow-hidden"
-              @click="navigateTo(localePath('/portfolio'))"
+              @click="navigateTo(localePath('/hosting'))"
             >
               <!-- Border gradient simulation -->
               <div class="absolute inset-0 bg-gradient-to-r from-gray-800 to-gray-700 group-hover:from-gray-700 group-hover:to-gray-600 transition-colors" />

@@ -117,7 +117,10 @@ services:
       - ./client:/app
       - client_node_modules:/app/node_modules
     environment:
-      API_URL: http://api:5148
+      # Container name, not the "api" network alias — that alias collides with innovayse-main's
+      # own "api" service on the shared innovayse_network, and Docker's embedded DNS round-robins
+      # between them, randomly routing requests to the wrong app's backend.
+      API_URL: http://hostpanel-api-1:5148
       NUXT_PUBLIC_BASE_URL: http://localhost:3001
       SSO_URL: http://innovayse-sso-sso-api-1:8080
       SSO_PUBLIC_URL: http://localhost:4001

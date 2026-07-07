@@ -35,6 +35,7 @@ export default defineEventHandler(async (event) => {
   })
 
   const redirectUri = config.ssoCallbackUrl
+  const query = getQuery(event)
   const params = new URLSearchParams({
     client_id: config.ssoClientId,
     response_type: 'code',
@@ -44,6 +45,9 @@ export default defineEventHandler(async (event) => {
     code_challenge_method: 'S256',
     state,
   })
+
+  // Always show the account chooser so the user can pick or switch accounts
+  params.set('prompt', 'select_account')
 
   const authorizeUrl = `${config.public.ssoPublicUrl}/connect/authorize?${params}`
   return sendRedirect(event, authorizeUrl, 302)

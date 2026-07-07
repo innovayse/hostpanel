@@ -89,6 +89,7 @@ services:
       NUGET_AUDIT: "false"
       Sso__Authority: http://innovayse-sso-sso-api-1:8080
       Sso__ClientId: hostpanel
+      Auth__Mode: ${AUTH_MODE:-sso}
     depends_on:
       postgres:
         condition: service_healthy
@@ -118,9 +119,15 @@ services:
     environment:
       API_URL: http://api:5148
       NUXT_PUBLIC_BASE_URL: http://localhost:3001
+      SSO_URL: http://innovayse-sso-sso-api-1:8080
+      SSO_PUBLIC_URL: http://localhost:4001
+      SSO_CLIENT_ID: hostpanel
+      SSO_CLIENT_SECRET: dev-secret-hostpanel
+      SSO_CALLBACK_URL: http://localhost:3001/api/portal/auth/sso/callback
       STRIPE_PUBLISHABLE_KEY: pk_test_51Tc3tOEHRuUOoZmggqrvyuddpdtx6FtKaUSvqQXkwokJakOBFCLRDlX6troVkkjFw966agSmLKnu1NSlOAki6u9600PatIOktW
       SMTP_HOST: mailhog
       SMTP_PORT: 1025
+      AUTH_MODE: ${AUTH_MODE:-sso}
       WATCHPACK_POLLING: "true"
       CHOKIDAR_USEPOLLING: "true"
     depends_on:

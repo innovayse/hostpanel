@@ -70,9 +70,19 @@ export function useClientAuth() {
   /**
    * Log out the current user.
    * Clears both cookies server-side and resets local state.
+   * Mode-aware: SSO logout hits the SSO endsession endpoint; local logout invalidates the refresh token.
    */
   async function logout() {
-    await apiFetch('/api/portal/auth/logout', { method: 'POST' })
+    const config = useRuntimeConfig()
+    const authMode = config.public.authMode as string
+
+    if (authMode === 'sso') {
+      // SSO logout — clears cookies and redirects to SSO endsession
+      await apiFetch('/api/portal/auth/sso/logout', { method: 'POST' })
+    } else {
+      // Local logout — clears cookies and invalidates refresh token
+      await apiFetch('/api/portal/auth/logout', { method: 'POST' })
+    }
     user.value = null
   }
 

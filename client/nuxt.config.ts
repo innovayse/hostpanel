@@ -51,6 +51,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     // Server-side only (not exposed to client)
+    authMode: process.env.AUTH_MODE || 'sso',
     apiUrl: process.env.API_URL || 'http://localhost:5000',
     ssoUrl: process.env.SSO_URL || 'http://sso-api:8080',
     ssoClientId: process.env.SSO_CLIENT_ID || 'hostpanel',
@@ -74,6 +75,7 @@ export default defineNuxtConfig({
 
     // Public runtime config (exposed to client)
     public: {
+      authMode: process.env.AUTH_MODE || 'sso',
       baseUrl: process.env.NUXT_PUBLIC_BASE_URL || 'https://innovayse.com',
       ssoPublicUrl: process.env.SSO_PUBLIC_URL || 'http://sso.local',
       whmcsUrl: (process.env.WHMCS_URL || '').replace(/\/+$/, ''),

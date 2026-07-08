@@ -1065,6 +1065,143 @@ namespace Innovayse.Infrastructure.Migrations
                     b.ToTable("tld_configs", (string)null);
                 });
 
+            modelBuilder.Entity("Innovayse.Domain.Email.EmailDomain", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DkimPublicKey")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<string>("DkimSelector")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTimeOffset?>("DnsVerifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DomainName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int?>("HostpanelDomainId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("LastDnsVerificationJson")
+                        .HasColumnType("text");
+
+                    b.Property<string>("MailcowRef")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("MaxAliases")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MaxMailboxes")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MaxQuotaMb")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("DomainName")
+                        .IsUnique();
+
+                    b.ToTable("email_domains", (string)null);
+                });
+
+            modelBuilder.Entity("Innovayse.Domain.Email.MailAlias", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DestinationAddress")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("EmailDomainId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("SourceAddress")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmailDomainId");
+
+                    b.ToTable("email_aliases", (string)null);
+                });
+
+            modelBuilder.Entity("Innovayse.Domain.Email.Mailbox", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("EmailDomainId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LocalPart")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("QuotaMb")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmailDomainId", "LocalPart")
+                        .IsUnique();
+
+                    b.ToTable("email_mailboxes", (string)null);
+                });
+
             modelBuilder.Entity("Innovayse.Domain.Hosting.DiskUsageStat", b =>
                 {
                     b.Property<int>("Id")
@@ -2963,6 +3100,24 @@ namespace Innovayse.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Innovayse.Domain.Email.MailAlias", b =>
+                {
+                    b.HasOne("Innovayse.Domain.Email.EmailDomain", null)
+                        .WithMany("Aliases")
+                        .HasForeignKey("EmailDomainId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Innovayse.Domain.Email.Mailbox", b =>
+                {
+                    b.HasOne("Innovayse.Domain.Email.EmailDomain", null)
+                        .WithMany("Mailboxes")
+                        .HasForeignKey("EmailDomainId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Innovayse.Domain.Orders.OrderItem", b =>
                 {
                     b.HasOne("Innovayse.Domain.Orders.Order", null)
@@ -3104,6 +3259,13 @@ namespace Innovayse.Infrastructure.Migrations
                     b.Navigation("Nameservers");
 
                     b.Navigation("Reminders");
+                });
+
+            modelBuilder.Entity("Innovayse.Domain.Email.EmailDomain", b =>
+                {
+                    b.Navigation("Aliases");
+
+                    b.Navigation("Mailboxes");
                 });
 
             modelBuilder.Entity("Innovayse.Domain.Orders.Order", b =>

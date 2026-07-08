@@ -11,6 +11,7 @@ using Innovayse.Domain.Audit.Interfaces;
 using Innovayse.Domain.Billing.Interfaces;
 using Innovayse.Domain.Clients.Interfaces;
 using Innovayse.Domain.Domains.Interfaces;
+using Innovayse.Domain.Email.Interfaces;
 using Innovayse.Domain.Migration.Interfaces;
 using Innovayse.Domain.Notifications.Interfaces;
 using Innovayse.Domain.Orders.Interfaces;
@@ -28,6 +29,8 @@ using Innovayse.Infrastructure.Common;
 using Innovayse.Infrastructure.Domains;
 using Innovayse.Infrastructure.Domains.NameAm;
 using Innovayse.Infrastructure.Domains.Namecheap;
+using Innovayse.Infrastructure.Email;
+using Innovayse.Infrastructure.Email.Mailcow;
 using Innovayse.Infrastructure.Notifications;
 using Innovayse.Infrastructure.Orders;
 using Innovayse.Infrastructure.Persistence;
@@ -242,6 +245,27 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromSeconds(30);
         });
         services.Configure<NamecheapSettings>(configuration.GetSection("Namecheap"));
+
+        // Email domain repository
+        services.AddScoped<IEmailDomainRepository, EmailDomainRepository>();
+
+        // Mailcow mail server client
+        services.Configure<MailcowSettings>(configuration.GetSection("Mailcow"));
+        var mailcowHttpBuilder = services.AddHttpClient<MailcowClient>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+        if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+        {
+            mailcowHttpBuilder.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
+            });
+        }
+        services.AddScoped<IMailServerClient, MailcowMailServerClient>();
+
+        // DNS verification
+        services.AddScoped<IDnsVerifier, DnsVerificationService>();
 
         var pluginsRoot = Path.Combine(AppContext.BaseDirectory, "plugins");
         PluginLoader.DiscoverAndRegister(services, pluginsRoot, loggerFactory);

@@ -10,6 +10,7 @@
     <ProjectReference Include="..\Innovayse.Providers.CWP7\Innovayse.Providers.CWP7.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="DnsClient" />
     <PackageReference Include="FluentValidation" />
     <PackageReference Include="MailKit" />
     <PackageReference Include="Mapster" />

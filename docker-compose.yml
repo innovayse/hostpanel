@@ -120,13 +120,16 @@ services:
       - ./client:/app
       - client_node_modules:/app/node_modules
     environment:
-      API_URL: http://api:5148
-      NUXT_PUBLIC_BASE_URL: http://localhost:3001
+      # Container name, not the "api" network alias — that alias collides with innovayse-main's
+      # own "api" service on the shared innovayse_network, and Docker's embedded DNS round-robins
+      # between them, randomly routing requests to the wrong app's backend.
+      API_URL: http://hostpanel-api-1:5148
+      NUXT_PUBLIC_BASE_URL: http://panel.local
       SSO_URL: http://innovayse-sso-sso-api-1:8080
-      SSO_PUBLIC_URL: http://localhost:4001
+      SSO_PUBLIC_URL: http://accounts.local
       SSO_CLIENT_ID: hostpanel
       SSO_CLIENT_SECRET: dev-secret-hostpanel
-      SSO_CALLBACK_URL: http://localhost:3001/api/portal/auth/sso/callback
+      SSO_CALLBACK_URL: http://panel.local/api/portal/auth/sso/callback
       STRIPE_PUBLISHABLE_KEY: pk_test_51Tc3tOEHRuUOoZmggqrvyuddpdtx6FtKaUSvqQXkwokJakOBFCLRDlX6troVkkjFw966agSmLKnu1NSlOAki6u9600PatIOktW
       SMTP_HOST: mailhog
       SMTP_PORT: 1025

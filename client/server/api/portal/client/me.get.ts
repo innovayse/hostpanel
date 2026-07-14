@@ -1,14 +1,35 @@
 /**
  * GET /api/portal/client/me
- * Returns the authenticated client's profile from the C# backend,
- * mapped to the WHMCS-style field names the frontend expects.
+ * Returns the authenticated client's profile.
  *
- * The `permissions` field is a bit-flag integer (8191 = All).
- * Currently every user who can hit `/me` is the account owner,
- * so we return full permissions. When multi-user support is fully
- * active, this will call `ClientAccessService` to resolve per-user flags.
+ * In SSO mode: proxies to the SSO /api/account/profile endpoint.
+ * In local mode: calls the WHMCS-style C# backend /clients/me.
  */
+// @ts-ignore
 export default defineEventHandler(async (event) => {
+  const config = useRuntimeConfig()
+  const authMode = config.authMode as string ?? 'sso'
+
+  if (authMode === 'sso') {
+    const accessToken = getCookie(event, 'auth_token')
+    if (!accessToken) throw createError({ statusCode: 401 })
+
+    const res = await fetch(`${config.ssoUrl}/api/account/profile`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+    if (!res.ok) throw createError({ statusCode: res.status })
+    const data = await res.json() as Record<string, unknown>
+
+    return {
+      id: data.id,
+      firstname: data.firstName,
+      lastname: data.lastName,
+      email: data.email,
+      phonenumber: data.phoneNumber ?? '',
+      permissions: 8191,
+    }
+  }
+
   const data = await internalApiCall<Record<string, unknown>>(event, '/clients/me')
 
   return {

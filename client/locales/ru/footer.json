@@ -8,18 +8,12 @@
     },
     "nav": {
       "home": "Главная",
-      "about": "О нас",
-      "portfolio": "Портфолио",
-      "blog": "Блог",
       "announcements": "Объявления",
       "knowledgebase": "База знаний",
       "faq": "FAQ",
       "contact": "Контакты"
     },
     "services": {
-      "webDevelopment": "Веб-разработка",
-      "seoServices": "SEO услуги",
-      "ppcAdvertising": "PPC реклама",
       "saasProducts": "SaaS продукты"
     },
     "bottom": {

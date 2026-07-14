@@ -1,15 +1,11 @@
 {
   "nav": {
-    "services": "Services",
     "products": "Products",
     "hosting": "Hosting",
     "domains": "Domains",
-    "portfolio": "Portfolio",
-    "blog": "Blog",
-    "about": "About",
     "faq": "FAQ",
-    "contact": "Contact",
     "getStarted": "Get Started",
-    "clientArea": "Client Area"
+    "clientArea": "Client Area",
+    "contact": "Contact"
   }
 }

@@ -15,6 +15,7 @@ export default defineConfig({
     },
   },
   server: {
+    allowedHosts: ['panel-admin.local'],
     proxy: {
       '/api': {
         target: process.env.API_PROXY_TARGET || 'http://localhost:5148',

@@ -10,7 +10,7 @@
 
 <script setup lang="ts">
 interface Props {
-  /** Status string: Active, Pending, Suspended, Terminated, Unpaid, Paid, Overdue, Cancelled, Open, Answered, Closed, PendingRegistration, PendingTransfer, Transferred */
+  /** Status string: Active, Pending, Suspended, Terminated, Unpaid, Paid, Overdue, Cancelled, Open, Answered, Closed, PendingRegistration, PendingTransfer, Transferred, PendingDns */
   status: string
 }
 
@@ -24,6 +24,7 @@ const CONFIG: Record<string, { classes: string; label?: string }> = {
   Pending:             { classes: 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/25' },
   PendingRegistration: { classes: 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/25', label: 'Pending' },
   PendingTransfer:     { classes: 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/25', label: 'Pending Transfer' },
+  PendingDns:          { classes: 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/25', label: 'Pending DNS' },
   Unpaid:              { classes: 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/25' },
   Overdue:             { classes: 'bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/25' },
   Suspended:           { classes: 'bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/25' },

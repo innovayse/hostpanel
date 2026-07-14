@@ -81,6 +81,7 @@ try
                 opts.Authority = builder.Configuration["Sso:Authority"];
                 opts.Audience = builder.Configuration["Sso:ClientId"];
                 opts.RequireHttpsMetadata = false;
+                opts.MapInboundClaims = false;
                 opts.TokenValidationParameters = new TokenValidationParameters
                 {
                     RoleClaimType = System.Security.Claims.ClaimTypes.Role,
@@ -102,8 +103,13 @@ try
                         var localUser = await userService.FindBySsoSubjectAsync(sub, context.HttpContext.RequestAborted);
                         if (localUser is not null)
                         {
-                            var roles = await userService.GetRolesAsync(localUser.Value.Id, context.HttpContext.RequestAborted);
                             var identity = (System.Security.Claims.ClaimsIdentity)context.Principal!.Identity!;
+
+                            // Map local user ID so GetUserId() returns the correct ID
+                            identity.AddClaim(new System.Security.Claims.Claim(
+                                System.Security.Claims.ClaimTypes.NameIdentifier, localUser.Value.Id));
+
+                            var roles = await userService.GetRolesAsync(localUser.Value.Id, context.HttpContext.RequestAborted);
                             foreach (var role in roles)
                                 identity.AddClaim(new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, role));
                         }

@@ -46,8 +46,8 @@ export default defineEventHandler(async (event) => {
     state,
   })
 
-  // Always show the account chooser so the user can pick or switch accounts
-  params.set('prompt', 'select_account')
+  // If the user explicitly wants to switch accounts, pass prompt=select_account
+  if (query.prompt) params.set('prompt', query.prompt as string)
 
   const authorizeUrl = `${config.public.ssoPublicUrl}/connect/authorize?${params}`
   return sendRedirect(event, authorizeUrl, 302)

@@ -8,6 +8,17 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   const query = getQuery(event)
 
+  // Silent SSO (prompt=none) returned an error — not logged in, go back to homepage
+  const error = query.error as string | undefined
+  if (error) {
+    deleteCookie(event, 'pkce_verifier', { path: '/' })
+    deleteCookie(event, 'oauth_state', { path: '/' })
+    deleteCookie(event, 'sso_silent_tried', { path: '/' })
+    const returnTo = getCookie(event, 'sso_silent_return') || '/'
+    deleteCookie(event, 'sso_silent_return', { path: '/' })
+    return sendRedirect(event, returnTo, 302)
+  }
+
   const code = query.code as string | undefined
   if (!code) {
     throw createError({ statusCode: 400, statusMessage: 'Missing authorization code' })
@@ -89,5 +100,10 @@ export default defineEventHandler(async (event) => {
     path: '/',
   })
 
-  return sendRedirect(event, '/client/dashboard', 302)
+  // If came from silent SSO on a public page — return there (now logged in)
+  deleteCookie(event, 'sso_silent_tried', { path: '/' })
+  const silentReturn = getCookie(event, 'sso_silent_return')
+  deleteCookie(event, 'sso_silent_return', { path: '/' })
+
+  return sendRedirect(event, silentReturn || '/client/dashboard', 302)
 })

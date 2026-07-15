@@ -21,7 +21,7 @@
            Mobile: fixed overlay (slides in/out)
            Desktop: normal flex child, fills height, internal scroll -->
       <aside
-        class="fixed inset-y-0 left-0 z-20 w-64 flex flex-col bg-white dark:bg-[#0d0d12] border-r border-gray-200 dark:border-white/10 transition-transform duration-300 lg:relative lg:z-auto lg:translate-x-0 lg:flex-shrink-0"
+        class="fixed inset-y-0 left-0 z-20 w-64 flex flex-col bg-white dark:bg-[#0d0d12] border-r border-gray-200 dark:border-white/10 transition-transform duration-300 lg:relative lg:z-auto lg:inset-y-auto lg:translate-x-0 lg:flex-shrink-0"
         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
       >
         <!-- Logo -->

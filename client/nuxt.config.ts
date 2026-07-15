@@ -192,6 +192,9 @@ export default defineNuxtConfig({
         { name: 'format-detection', content: 'telephone=no' },
         { name: 'theme-color', content: '#0ea5e9' }
       ],
+      script: [
+        { src: 'http://app.local/widget/header.js', defer: true }
+      ],
       link: [
         // Performance: preconnect to third-party origins used on all pages
         { rel: 'preconnect', href: 'https://www.googletagmanager.com' },

@@ -64,6 +64,9 @@
 
         <!-- Language Switcher & CTA (Desktop 1280px+) -->
         <div class="hidden xl:flex items-center gap-3">
+          <!-- Global App Launcher widget mount point -->
+          <div id="inno-launcher-mount"></div>
+
           <LayoutLanguageSwitcher />
 
           <!-- Cart icon with badge -->
@@ -84,88 +87,8 @@
             </ClientOnly>
           </button>
 
-          <!-- Client area button — user dropdown if logged in, login link otherwise -->
-          <!-- Logged in: user dropdown -->
-          <div v-if="isLoggedIn" class="relative group">
-            <button
-              type="button"
-              class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white border border-white/10 hover:border-white/20 transition-all duration-200"
-            >
-              <span class="flex items-center justify-center w-6 h-6 rounded-full bg-primary-500/20 text-primary-400 text-xs font-bold">
-                {{ user?.firstname?.charAt(0)?.toUpperCase() ?? 'U' }}
-              </span>
-              <span>{{ user?.firstname ?? $t('nav.clientArea') }}</span>
-              <Icon name="lucide:chevron-down" size="14" class="transition-transform duration-200 group-hover:rotate-180" />
-            </button>
-
-            <div class="absolute right-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-              <div class="w-52 rounded-xl bg-gray-900/95 border border-white/10 shadow-2xl backdrop-blur-lg overflow-hidden">
-                <div class="px-4 py-3 border-b border-white/10">
-                  <p class="text-xs text-gray-500">{{ $t('client.nav.welcomeBack') }}</p>
-                  <p class="text-sm font-medium text-white truncate">{{ user?.firstname }} {{ user?.lastname }}</p>
-                </div>
-                <NuxtLink :to="localePath('/client/dashboard')" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/8 transition-colors">
-                  <Icon name="lucide:layout-dashboard" size="15" class="text-primary-400 flex-shrink-0" />
-                  {{ $t('client.nav.dashboard') }}
-                </NuxtLink>
-                <NuxtLink :to="localePath('/client/services')" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/8 transition-colors">
-                  <Icon name="lucide:server" size="15" class="text-primary-400 flex-shrink-0" />
-                  {{ $t('client.nav.services') }}
-                </NuxtLink>
-                <NuxtLink :to="localePath('/client/domains')" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/8 transition-colors">
-                  <Icon name="lucide:globe" size="15" class="text-primary-400 flex-shrink-0" />
-                  {{ $t('client.nav.domains') }}
-                </NuxtLink>
-                <NuxtLink :to="localePath('/client/invoices')" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/8 transition-colors">
-                  <Icon name="lucide:file-text" size="15" class="text-primary-400 flex-shrink-0" />
-                  {{ $t('client.nav.invoices') }}
-                </NuxtLink>
-                <NuxtLink :to="localePath('/client/tickets')" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/8 transition-colors">
-                  <Icon name="lucide:message-square" size="15" class="text-primary-400 flex-shrink-0" />
-                  {{ $t('client.nav.support') }}
-                </NuxtLink>
-                <NuxtLink :to="localePath('/client/account')" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/8 transition-colors">
-                  <Icon name="lucide:settings" size="15" class="text-primary-400 flex-shrink-0" />
-                  {{ $t('client.nav.account') }}
-                </NuxtLink>
-                <div v-if="activeHostingServices.length > 0" class="border-t border-white/10">
-                  <div class="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest">{{ $t('client.services.actionLoginCpanel') }}</div>
-                  <button
-                    v-for="service in activeHostingServices.slice(0, 3)"
-                    :key="service.id"
-                    type="button"
-                    class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/8 transition-colors disabled:opacity-50"
-                    :disabled="ssoLoading === service.id"
-                    @click="loginToCpanel(service)"
-                  >
-                    <Icon v-if="ssoLoading === service.id" name="lucide:loader" size="15" class="animate-spin text-primary-400" />
-                    <Icon v-else name="lucide:monitor" size="15" class="text-primary-400 flex-shrink-0" />
-                    <span class="truncate">{{ service.name }}</span>
-                  </button>
-                </div>
-                <div class="border-t border-white/10">
-                  <button
-                    type="button"
-                    class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-white/8 transition-colors"
-                    @click="handleLogout"
-                  >
-                    <Icon name="lucide:log-out" size="15" class="flex-shrink-0" />
-                    {{ $t('client.nav.signOut') }}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Not logged in: simple link (SSO mode goes directly to SSO, local mode goes to login page) -->
-          <a
-            v-else
-            :href="clientAreaHref"
-            class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white border border-white/10 hover:border-white/20 transition-all duration-200"
-          >
-            <Icon name="lucide:user" size="15" />
-            {{ $t('nav.clientArea') }}
-          </a>
+          <!-- Global Account widget mount point (App Launcher widget injects here) -->
+          <div id="inno-account-mount"></div>
 
         </div>
 

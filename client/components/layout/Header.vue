@@ -306,7 +306,6 @@ const navLinks = computed(() => [
 
 /** Authentication state for the Client Area button */
 const { isLoggedIn, user, fetchUser, logout } = useClientAuth()
-const store = useClientStore()
 const runtimeConfig = useRuntimeConfig()
 
 /** In SSO mode, link directly to SSO authorize (skips "Continue with Innovayse" page) */
@@ -319,30 +318,8 @@ const clientAreaHref = computed(() =>
 onMounted(async () => {
   if (isLoggedIn.value) {
     await fetchUser()
-    await store.fetchServices()
   }
 })
-
-/** Quick SSO from Header */
-const ssoLoading = ref<number | null>(null)
-const activeHostingServices = computed(() =>
-  store.services.filter(s => s.status === 'Active' && s.serverhostname)
-)
-
-async function loginToCpanel(service: any) {
-  if (ssoLoading.value) return
-  ssoLoading.value = service.id
-  try {
-    const { url } = await apiFetch<{ url: string }>(`/api/portal/client/services/${service.id}/cpanel-sso`)
-    window.open(url, '_blank', 'noopener')
-  } catch (err: any) {
-    if (service.serverhostname) {
-      window.open(`https://${service.serverhostname}:2083`, '_blank', 'noopener')
-    }
-  } finally {
-    ssoLoading.value = null
-  }
-}
 
 async function handleLogout() {
   await logout()

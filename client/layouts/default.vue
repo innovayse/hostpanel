@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen flex flex-col bg-[#0a0a0f]">
-    <!-- Header -->
+    <!-- Header with embedded App Launcher + Account widget mount points -->
     <LayoutHeader />
 
     <!-- Main content -->

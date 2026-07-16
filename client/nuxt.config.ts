@@ -80,6 +80,7 @@ export default defineNuxtConfig({
       ssoPublicUrl: process.env.SSO_PUBLIC_URL || 'http://sso.local',
       whmcsUrl: (process.env.WHMCS_URL || '').replace(/\/+$/, ''),
       stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
+      widgetUrl: process.env.NUXT_PUBLIC_WIDGET_URL || '',
     }
   },
 
@@ -193,7 +194,9 @@ export default defineNuxtConfig({
         { name: 'theme-color', content: '#0ea5e9' }
       ],
       script: [
-        { src: 'http://app.local/widget/header.js', defer: true }
+        ...(process.env.NUXT_PUBLIC_WIDGET_URL
+          ? [{ src: `${process.env.NUXT_PUBLIC_WIDGET_URL}/widget/header.js`, defer: true }]
+          : []),
       ],
       link: [
         // Performance: preconnect to third-party origins used on all pages

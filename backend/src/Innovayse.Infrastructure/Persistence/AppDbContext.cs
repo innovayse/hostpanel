@@ -13,7 +13,6 @@ using Innovayse.Domain.Servers;
 using Innovayse.Domain.Services;
 using Innovayse.Domain.Settings;
 using Innovayse.Domain.Slides;
-using Innovayse.Domain.Email;
 using Innovayse.Domain.Ssl;
 using Innovayse.Domain.Support;
 using Innovayse.Infrastructure.Auth;
@@ -146,9 +145,6 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
 
     /// <summary>Gets the TLD configuration and pricing table.</summary>
     public DbSet<TldConfig> TldConfigs => Set<TldConfig>();
-
-    /// <summary>Gets the email domains table.</summary>
-    public DbSet<EmailDomain> EmailDomains => Set<EmailDomain>();
 
     /// <summary>Gets the slide per-locale translations table.</summary>
     public DbSet<SlideTranslation> SlideTranslations => Set<SlideTranslation>();

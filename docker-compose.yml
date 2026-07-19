@@ -90,9 +90,6 @@ services:
       Sso__Authority: http://innovayse-sso-sso-api-1:8080
       Sso__ClientId: hostpanel
       Auth__Mode: ${AUTH_MODE:-sso}
-      Mailcow__ApiUrl: ${MAILCOW_API_URL:-}
-      Mailcow__ApiKey: ${MAILCOW_API_KEY:-}
-      Mailcow__MailHostname: ${MAILCOW_MAIL_HOSTNAME:-mail.innovayse.com}
     depends_on:
       postgres:
         condition: service_healthy

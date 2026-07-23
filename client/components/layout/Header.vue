@@ -64,6 +64,7 @@
 
         <!-- Language Switcher & CTA (Desktop 1280px+) -->
         <div class="hidden xl:flex items-center gap-3">
+          <LayoutAppLauncher :is-logged-in="isLoggedIn" />
           <LayoutLanguageSwitcher />
 
           <!-- Cart icon with badge -->
@@ -84,69 +85,100 @@
             </ClientOnly>
           </button>
 
-          <!-- Client area button — user dropdown if logged in, login link otherwise -->
-          <!-- Logged in: user dropdown -->
-          <div v-if="isLoggedIn" class="relative group">
+          <!-- Client area button — Google-style user popup if logged in, login link otherwise -->
+          <div v-if="isLoggedIn" ref="userDropdownRoot" class="relative">
             <button
+              ref="userDropdownTrigger"
               type="button"
-              class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white border border-white/10 hover:border-white/20 transition-all duration-200"
+              class="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-white/8 transition-colors"
+              :title="user?.firstname ?? 'Account'"
+              @click="userDropdownOpen = !userDropdownOpen"
             >
-              <span class="flex items-center justify-center w-6 h-6 rounded-full bg-primary-500/20 text-primary-400 text-xs font-bold">
-                {{ user?.firstname?.charAt(0)?.toUpperCase() ?? 'U' }}
+              <span class="flex items-center justify-center w-6 h-6 rounded-full bg-primary-500/20 text-primary-400 text-xs font-bold overflow-hidden">
+                <img v-if="user?.avatarUrl" :src="user.avatarUrl" alt="avatar" class="w-full h-full object-cover rounded-full" />
+                <span v-else>{{ user?.firstname?.charAt(0)?.toUpperCase() ?? 'U' }}</span>
               </span>
-              <span>{{ user?.firstname ?? $t('nav.clientArea') }}</span>
-              <Icon name="lucide:chevron-down" size="14" class="transition-transform duration-200 group-hover:rotate-180" />
             </button>
 
-            <div class="absolute right-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-              <div class="w-52 rounded-xl bg-gray-900/95 border border-white/10 shadow-2xl backdrop-blur-lg overflow-hidden">
-                <div class="px-4 py-3 border-b border-white/10">
-                  <p class="text-xs text-gray-500">{{ $t('client.nav.welcomeBack') }}</p>
-                  <p class="text-sm font-medium text-white truncate">{{ user?.firstname }} {{ user?.lastname }}</p>
-                </div>
-                <NuxtLink :to="localePath('/client/dashboard')" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/8 transition-colors">
-                  <Icon name="lucide:layout-dashboard" size="15" class="text-primary-400 flex-shrink-0" />
-                  {{ $t('client.nav.dashboard') }}
-                </NuxtLink>
-                <NuxtLink :to="localePath('/client/services')" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/8 transition-colors">
-                  <Icon name="lucide:server" size="15" class="text-primary-400 flex-shrink-0" />
-                  {{ $t('client.nav.services') }}
-                </NuxtLink>
-                <NuxtLink :to="localePath('/client/domains')" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/8 transition-colors">
-                  <Icon name="lucide:globe" size="15" class="text-primary-400 flex-shrink-0" />
-                  {{ $t('client.nav.domains') }}
-                </NuxtLink>
-                <NuxtLink :to="localePath('/client/invoices')" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/8 transition-colors">
-                  <Icon name="lucide:file-text" size="15" class="text-primary-400 flex-shrink-0" />
-                  {{ $t('client.nav.invoices') }}
-                </NuxtLink>
-                <NuxtLink :to="localePath('/client/tickets')" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/8 transition-colors">
-                  <Icon name="lucide:message-square" size="15" class="text-primary-400 flex-shrink-0" />
-                  {{ $t('client.nav.support') }}
-                </NuxtLink>
-                <NuxtLink :to="localePath('/client/account')" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/8 transition-colors">
-                  <Icon name="lucide:settings" size="15" class="text-primary-400 flex-shrink-0" />
-                  {{ $t('client.nav.account') }}
-                </NuxtLink>
-                <div v-if="activeHostingServices.length > 0" class="border-t border-white/10">
-                  <div class="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest">{{ $t('client.services.actionLoginCpanel') }}</div>
+            <!-- Google-style account popup -->
+            <Transition name="user-dropdown">
+              <div v-if="userDropdownOpen" class="absolute right-0 top-full pt-2 z-50">
+                <div class="w-96 rounded-2xl overflow-hidden" style="background:#13131a;border:1px solid rgba(255,255,255,0.1);box-shadow:0 25px 50px -12px rgba(0,0,0,0.6);">
+                  <!-- Email + close -->
+                  <div class="relative flex items-center justify-center px-4 pt-4 pb-2">
+                    <span class="text-sm text-gray-400 truncate max-w-[200px]">{{ user?.email }}</span>
+                    <button
+                      type="button"
+                      class="absolute right-3 p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                      @click="userDropdownOpen = false"
+                    >
+                      <Icon name="lucide:x" size="15" />
+                    </button>
+                  </div>
+                  <!-- Avatar + greeting + manage -->
+                  <div class="flex flex-col items-center px-5 pt-3 pb-5">
+                    <div class="w-28 h-28 rounded-full overflow-hidden mb-3 flex-shrink-0">
+                      <img v-if="user?.avatarUrl" :src="user.avatarUrl" alt="avatar" class="w-full h-full object-cover" />
+                      <div v-else class="w-full h-full flex items-center justify-center text-white font-bold text-4xl" style="background:linear-gradient(135deg,#22d3ee,#0ea5e9)">
+                        {{ user?.firstname?.charAt(0)?.toUpperCase() ?? 'U' }}
+                      </div>
+                    </div>
+                    <p class="text-white font-bold text-lg">Hi, {{ user?.firstname }}!</p>
+                    <a
+                      :href="$config.public.baseUrl + '/account'"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="mt-3 px-5 py-2 rounded-full text-sm text-gray-300 hover:text-white hover:bg-white/8 transition-colors"
+                      style="border:1px solid rgba(255,255,255,0.2);text-decoration:none;"
+                      @click="userDropdownOpen = false"
+                    >
+                      Manage your Innovayse Account
+                    </a>
+                  </div>
+                  <div class="border-t border-white/10" />
+                  <!-- Panel-specific links -->
+                  <NuxtLink :to="localePath('/client/dashboard')" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/6 transition-colors" @click="userDropdownOpen = false">
+                    <Icon name="lucide:layout-dashboard" size="15" class="text-sky-400 flex-shrink-0" />
+                    {{ $t('client.nav.dashboard') }}
+                  </NuxtLink>
+                  <NuxtLink :to="localePath('/client/account')" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/6 transition-colors" @click="userDropdownOpen = false">
+                    <Icon name="lucide:settings" size="15" class="text-sky-400 flex-shrink-0" />
+                    {{ $t('client.nav.account') }}
+                  </NuxtLink>
+                  <!-- cPanel quick-login -->
+                  <template v-if="activeHostingServices.length > 0">
+                    <div class="border-t border-white/10" />
+                    <div class="px-4 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-widest">{{ $t('client.services.actionLoginCpanel') }}</div>
+                    <button
+                      v-for="service in activeHostingServices.slice(0, 3)"
+                      :key="service.id"
+                      type="button"
+                      class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/6 transition-colors disabled:opacity-50"
+                      :disabled="ssoLoading === service.id"
+                      @click="loginToCpanel(service)"
+                    >
+                      <Icon v-if="ssoLoading === service.id" name="lucide:loader" size="15" class="animate-spin text-sky-400" />
+                      <Icon v-else name="lucide:monitor" size="15" class="text-sky-400 flex-shrink-0" />
+                      <span class="truncate">{{ service.name }}</span>
+                    </button>
+                  </template>
+                  <div class="border-t border-white/10" />
+                  <!-- Add another account -->
                   <button
-                    v-for="service in activeHostingServices.slice(0, 3)"
-                    :key="service.id"
                     type="button"
-                    class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/8 transition-colors disabled:opacity-50"
-                    :disabled="ssoLoading === service.id"
-                    @click="loginToCpanel(service)"
+                    class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/6 transition-colors"
+                    @click="addAccount"
                   >
-                    <Icon v-if="ssoLoading === service.id" name="lucide:loader" size="15" class="animate-spin text-primary-400" />
-                    <Icon v-else name="lucide:monitor" size="15" class="text-primary-400 flex-shrink-0" />
-                    <span class="truncate">{{ service.name }}</span>
+                    <span class="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center flex-shrink-0">
+                      <Icon name="lucide:plus" size="13" />
+                    </span>
+                    Add another account
                   </button>
-                </div>
-                <div class="border-t border-white/10">
+                  <div class="border-t border-white/10" />
+                  <!-- Sign out -->
                   <button
                     type="button"
-                    class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-white/8 transition-colors"
+                    class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-red-400 hover:bg-white/6 transition-colors"
                     @click="handleLogout"
                   >
                     <Icon name="lucide:log-out" size="15" class="flex-shrink-0" />
@@ -154,7 +186,7 @@
                   </button>
                 </div>
               </div>
-            </div>
+            </Transition>
           </div>
 
           <!-- Not logged in: simple link (SSO mode goes directly to SSO, local mode goes to login page) -->
@@ -169,8 +201,9 @@
 
         </div>
 
-        <!-- Mobile: cart + burger grouped on the right -->
+        <!-- Mobile: launcher + cart + burger grouped on the right -->
         <div class="xl:hidden flex items-center gap-2">
+          <LayoutAppLauncher :is-logged-in="isLoggedIn" />
           <button
             type="button"
             class="relative flex items-center justify-center w-9 h-9 rounded-lg text-gray-300 hover:text-white border border-white/10 hover:border-white/20 transition-all duration-200"
@@ -422,9 +455,35 @@ async function loginToCpanel(service: any) {
 }
 
 async function handleLogout() {
-  await logout()
+  userDropdownOpen.value = false
   closeMobileMenu()
-  navigateTo(localePath('/client/login'))
+  await logout()
+  const cfg = useRuntimeConfig()
+  const ssoPublicUrl = cfg.public.ssoPublicUrl as string || 'http://accounts.local'
+  window.location.href = `${ssoPublicUrl}/connect/endsession?post_logout_redirect_uri=${encodeURIComponent(window.location.origin)}`
+}
+
+function addAccount() {
+  userDropdownOpen.value = false
+  window.location.href = '/api/portal/auth/sso/authorize?prompt=select_account'
+}
+
+/** User dropdown (click-based) */
+const userDropdownOpen = ref(false)
+const userDropdownRoot = ref<HTMLElement | null>(null)
+const userDropdownTrigger = ref<HTMLButtonElement | null>(null)
+
+function handleUserDropdownClickOutside(event: MouseEvent) {
+  if (userDropdownOpen.value && userDropdownRoot.value && !userDropdownRoot.value.contains(event.target as Node)) {
+    userDropdownOpen.value = false
+  }
+}
+
+function handleUserDropdownEscape(event: KeyboardEvent) {
+  if (event.key === 'Escape' && userDropdownOpen.value) {
+    userDropdownOpen.value = false
+    userDropdownTrigger.value?.focus()
+  }
 }
 
 /** Cart store — provides item count for badge */
@@ -482,10 +541,14 @@ const headerClasses = computed(() => {
 
 onMounted(() => {
   window.addEventListener('scroll', handleScroll)
+  document.addEventListener('click', handleUserDropdownClickOutside)
+  document.addEventListener('keydown', handleUserDropdownEscape)
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+  document.removeEventListener('click', handleUserDropdownClickOutside)
+  document.removeEventListener('keydown', handleUserDropdownEscape)
   if (typeof document !== 'undefined') {
     document.body.style.overflow = ''
   }
@@ -516,5 +579,17 @@ watch(() => route.path, () => {
 .mobile-menu-leave-from {
   max-height: 600px;
   opacity: 1;
+}
+
+/* User dropdown transition */
+.user-dropdown-enter-active,
+.user-dropdown-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.user-dropdown-enter-from,
+.user-dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 </style>

@@ -125,6 +125,11 @@ services:
       NUXT_PUBLIC_WIDGET_URL: http://app.local
       SSO_URL: http://innovayse-sso-sso-api-1:8080
       SSO_PUBLIC_URL: http://accounts.local
+      NUXT_PUBLIC_TASKS_URL: http://tasks.local
+      NUXT_PUBLIC_ERP_URL: http://erp.local
+      NUXT_PUBLIC_SHEETS_URL: http://sheets.local
+      NUXT_PUBLIC_EMAIL_URL: http://email.local
+      NUXT_PUBLIC_NEXTCLOUD_URL: http://cloud.local
       SSO_CLIENT_ID: hostpanel
       SSO_CLIENT_SECRET: dev-secret-hostpanel
       SSO_CALLBACK_URL: http://panel.local/api/portal/auth/sso/callback

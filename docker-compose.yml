@@ -122,6 +122,7 @@ services:
       # between them, randomly routing requests to the wrong app's backend.
       API_URL: http://hostpanel-api-1:5148
       NUXT_PUBLIC_BASE_URL: http://panel.local
+      NUXT_PUBLIC_WIDGET_URL: http://app.local
       SSO_URL: http://innovayse-sso-sso-api-1:8080
       SSO_PUBLIC_URL: http://accounts.local
       NUXT_PUBLIC_TASKS_URL: http://tasks.local

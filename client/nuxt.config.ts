@@ -85,6 +85,7 @@ export default defineNuxtConfig({
       nextcloudUrl: process.env.NUXT_PUBLIC_NEXTCLOUD_URL || 'http://cloud.local',
       whmcsUrl: (process.env.WHMCS_URL || '').replace(/\/+$/, ''),
       stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
+      widgetUrl: process.env.NUXT_PUBLIC_WIDGET_URL || '',
     }
   },
 
@@ -196,6 +197,11 @@ export default defineNuxtConfig({
         // Additional SEO
         { name: 'format-detection', content: 'telephone=no' },
         { name: 'theme-color', content: '#0ea5e9' }
+      ],
+      script: [
+        ...(process.env.NUXT_PUBLIC_WIDGET_URL
+          ? [{ src: `${process.env.NUXT_PUBLIC_WIDGET_URL}/widget/header.js`, defer: true }]
+          : []),
       ],
       link: [
         // Performance: preconnect to third-party origins used on all pages

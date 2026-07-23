@@ -64,7 +64,9 @@
 
         <!-- Language Switcher & CTA (Desktop 1280px+) -->
         <div class="hidden xl:flex items-center gap-3">
-          <LayoutAppLauncher :is-logged-in="isLoggedIn" />
+          <!-- Global App Launcher widget mount point -->
+          <div id="inno-launcher-mount"></div>
+
           <LayoutLanguageSwitcher />
 
           <!-- Cart icon with badge -->
@@ -85,125 +87,13 @@
             </ClientOnly>
           </button>
 
-          <!-- Client area button — Google-style user popup if logged in, login link otherwise -->
-          <div v-if="isLoggedIn" ref="userDropdownRoot" class="relative">
-            <button
-              ref="userDropdownTrigger"
-              type="button"
-              class="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-white/8 transition-colors"
-              :title="user?.firstname ?? 'Account'"
-              @click="userDropdownOpen = !userDropdownOpen"
-            >
-              <span class="flex items-center justify-center w-6 h-6 rounded-full bg-primary-500/20 text-primary-400 text-xs font-bold overflow-hidden">
-                <img v-if="user?.avatarUrl" :src="user.avatarUrl" alt="avatar" class="w-full h-full object-cover rounded-full" />
-                <span v-else>{{ user?.firstname?.charAt(0)?.toUpperCase() ?? 'U' }}</span>
-              </span>
-            </button>
-
-            <!-- Google-style account popup -->
-            <Transition name="user-dropdown">
-              <div v-if="userDropdownOpen" class="absolute right-0 top-full pt-2 z-50">
-                <div class="w-96 rounded-2xl overflow-hidden" style="background:#13131a;border:1px solid rgba(255,255,255,0.1);box-shadow:0 25px 50px -12px rgba(0,0,0,0.6);">
-                  <!-- Email + close -->
-                  <div class="relative flex items-center justify-center px-4 pt-4 pb-2">
-                    <span class="text-sm text-gray-400 truncate max-w-[200px]">{{ user?.email }}</span>
-                    <button
-                      type="button"
-                      class="absolute right-3 p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
-                      @click="userDropdownOpen = false"
-                    >
-                      <Icon name="lucide:x" size="15" />
-                    </button>
-                  </div>
-                  <!-- Avatar + greeting + manage -->
-                  <div class="flex flex-col items-center px-5 pt-3 pb-5">
-                    <div class="w-28 h-28 rounded-full overflow-hidden mb-3 flex-shrink-0">
-                      <img v-if="user?.avatarUrl" :src="user.avatarUrl" alt="avatar" class="w-full h-full object-cover" />
-                      <div v-else class="w-full h-full flex items-center justify-center text-white font-bold text-4xl" style="background:linear-gradient(135deg,#22d3ee,#0ea5e9)">
-                        {{ user?.firstname?.charAt(0)?.toUpperCase() ?? 'U' }}
-                      </div>
-                    </div>
-                    <p class="text-white font-bold text-lg">Hi, {{ user?.firstname }}!</p>
-                    <a
-                      :href="$config.public.baseUrl + '/account'"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="mt-3 px-5 py-2 rounded-full text-sm text-gray-300 hover:text-white hover:bg-white/8 transition-colors"
-                      style="border:1px solid rgba(255,255,255,0.2);text-decoration:none;"
-                      @click="userDropdownOpen = false"
-                    >
-                      Manage your Innovayse Account
-                    </a>
-                  </div>
-                  <div class="border-t border-white/10" />
-                  <!-- Panel-specific links -->
-                  <NuxtLink :to="localePath('/client/dashboard')" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/6 transition-colors" @click="userDropdownOpen = false">
-                    <Icon name="lucide:layout-dashboard" size="15" class="text-sky-400 flex-shrink-0" />
-                    {{ $t('client.nav.dashboard') }}
-                  </NuxtLink>
-                  <NuxtLink :to="localePath('/client/account')" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/6 transition-colors" @click="userDropdownOpen = false">
-                    <Icon name="lucide:settings" size="15" class="text-sky-400 flex-shrink-0" />
-                    {{ $t('client.nav.account') }}
-                  </NuxtLink>
-                  <!-- cPanel quick-login -->
-                  <template v-if="activeHostingServices.length > 0">
-                    <div class="border-t border-white/10" />
-                    <div class="px-4 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-widest">{{ $t('client.services.actionLoginCpanel') }}</div>
-                    <button
-                      v-for="service in activeHostingServices.slice(0, 3)"
-                      :key="service.id"
-                      type="button"
-                      class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/6 transition-colors disabled:opacity-50"
-                      :disabled="ssoLoading === service.id"
-                      @click="loginToCpanel(service)"
-                    >
-                      <Icon v-if="ssoLoading === service.id" name="lucide:loader" size="15" class="animate-spin text-sky-400" />
-                      <Icon v-else name="lucide:monitor" size="15" class="text-sky-400 flex-shrink-0" />
-                      <span class="truncate">{{ service.name }}</span>
-                    </button>
-                  </template>
-                  <div class="border-t border-white/10" />
-                  <!-- Add another account -->
-                  <button
-                    type="button"
-                    class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/6 transition-colors"
-                    @click="addAccount"
-                  >
-                    <span class="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center flex-shrink-0">
-                      <Icon name="lucide:plus" size="13" />
-                    </span>
-                    Add another account
-                  </button>
-                  <div class="border-t border-white/10" />
-                  <!-- Sign out -->
-                  <button
-                    type="button"
-                    class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-red-400 hover:bg-white/6 transition-colors"
-                    @click="handleLogout"
-                  >
-                    <Icon name="lucide:log-out" size="15" class="flex-shrink-0" />
-                    {{ $t('client.nav.signOut') }}
-                  </button>
-                </div>
-              </div>
-            </Transition>
-          </div>
-
-          <!-- Not logged in: simple link (SSO mode goes directly to SSO, local mode goes to login page) -->
-          <a
-            v-else
-            :href="clientAreaHref"
-            class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white border border-white/10 hover:border-white/20 transition-all duration-200"
-          >
-            <Icon name="lucide:user" size="15" />
-            {{ $t('nav.clientArea') }}
-          </a>
+          <!-- Global Account widget mount point (App Launcher widget injects here) -->
+          <div id="inno-account-mount"></div>
 
         </div>
 
-        <!-- Mobile: launcher + cart + burger grouped on the right -->
+        <!-- Mobile: cart + burger grouped on the right -->
         <div class="xl:hidden flex items-center gap-2">
-          <LayoutAppLauncher :is-logged-in="isLoggedIn" />
           <button
             type="button"
             class="relative flex items-center justify-center w-9 h-9 rounded-lg text-gray-300 hover:text-white border border-white/10 hover:border-white/20 transition-all duration-200"
@@ -416,7 +306,6 @@ const navLinks = computed(() => [
 
 /** Authentication state for the Client Area button */
 const { isLoggedIn, user, fetchUser, logout } = useClientAuth()
-const store = useClientStore()
 const runtimeConfig = useRuntimeConfig()
 
 /** In SSO mode, link directly to SSO authorize (skips "Continue with Innovayse" page) */
@@ -429,61 +318,13 @@ const clientAreaHref = computed(() =>
 onMounted(async () => {
   if (isLoggedIn.value) {
     await fetchUser()
-    await store.fetchServices()
   }
 })
 
-/** Quick SSO from Header */
-const ssoLoading = ref<number | null>(null)
-const activeHostingServices = computed(() =>
-  store.services.filter(s => s.status === 'Active' && s.serverhostname)
-)
-
-async function loginToCpanel(service: any) {
-  if (ssoLoading.value) return
-  ssoLoading.value = service.id
-  try {
-    const { url } = await apiFetch<{ url: string }>(`/api/portal/client/services/${service.id}/cpanel-sso`)
-    window.open(url, '_blank', 'noopener')
-  } catch (err: any) {
-    if (service.serverhostname) {
-      window.open(`https://${service.serverhostname}:2083`, '_blank', 'noopener')
-    }
-  } finally {
-    ssoLoading.value = null
-  }
-}
-
 async function handleLogout() {
-  userDropdownOpen.value = false
-  closeMobileMenu()
   await logout()
-  const cfg = useRuntimeConfig()
-  const ssoPublicUrl = cfg.public.ssoPublicUrl as string || 'http://accounts.local'
-  window.location.href = `${ssoPublicUrl}/connect/endsession?post_logout_redirect_uri=${encodeURIComponent(window.location.origin)}`
-}
-
-function addAccount() {
-  userDropdownOpen.value = false
-  window.location.href = '/api/portal/auth/sso/authorize?prompt=select_account'
-}
-
-/** User dropdown (click-based) */
-const userDropdownOpen = ref(false)
-const userDropdownRoot = ref<HTMLElement | null>(null)
-const userDropdownTrigger = ref<HTMLButtonElement | null>(null)
-
-function handleUserDropdownClickOutside(event: MouseEvent) {
-  if (userDropdownOpen.value && userDropdownRoot.value && !userDropdownRoot.value.contains(event.target as Node)) {
-    userDropdownOpen.value = false
-  }
-}
-
-function handleUserDropdownEscape(event: KeyboardEvent) {
-  if (event.key === 'Escape' && userDropdownOpen.value) {
-    userDropdownOpen.value = false
-    userDropdownTrigger.value?.focus()
-  }
+  closeMobileMenu()
+  navigateTo(localePath('/client/login'))
 }
 
 /** Cart store — provides item count for badge */
@@ -541,14 +382,10 @@ const headerClasses = computed(() => {
 
 onMounted(() => {
   window.addEventListener('scroll', handleScroll)
-  document.addEventListener('click', handleUserDropdownClickOutside)
-  document.addEventListener('keydown', handleUserDropdownEscape)
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
-  document.removeEventListener('click', handleUserDropdownClickOutside)
-  document.removeEventListener('keydown', handleUserDropdownEscape)
   if (typeof document !== 'undefined') {
     document.body.style.overflow = ''
   }
@@ -579,17 +416,5 @@ watch(() => route.path, () => {
 .mobile-menu-leave-from {
   max-height: 600px;
   opacity: 1;
-}
-
-/* User dropdown transition */
-.user-dropdown-enter-active,
-.user-dropdown-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
-}
-
-.user-dropdown-enter-from,
-.user-dropdown-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
 }
 </style>

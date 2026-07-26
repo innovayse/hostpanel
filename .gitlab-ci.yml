@@ -12,6 +12,7 @@ stages: [test, build, deploy]
 
 .test-dotnet:
   stage: test
+  tags: [builder]
   image: mcr.microsoft.com/dotnet/sdk:9.0
   variables:
     DOTNET_CLI_TELEMETRY_OPTOUT: "1"
@@ -21,6 +22,7 @@ stages: [test, build, deploy]
 
 .test-node-yarn:
   stage: test
+  tags: [builder]
   image: node:22
   script:
     - cd "$SERVICE"
@@ -30,6 +32,7 @@ stages: [test, build, deploy]
 
 .test-node-npm:
   stage: test
+  tags: [builder]
   image: node:22
   script:
     - cd "$SERVICE"
@@ -38,8 +41,8 @@ stages: [test, build, deploy]
 
 .build-image:
   stage: build
+  tags: [builder]
   image: docker:27
-  services: [docker:27-dind]
   variables:
     IMAGE: $CI_REGISTRY_IMAGE/$SERVICE
   before_script:
@@ -151,7 +154,7 @@ admin:build:dev:
 
 deploy:staging:
   extends: .deploy-staging
-  variables: { DEPLOY_DIR: /opt/innovayse/hostpanel }
+  variables: { DEPLOY_DIR: /home/innovayse/www/innovayse-workspace/hostpanel }
   environment: { name: staging/hostpanel }
   rules:
     - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "main"

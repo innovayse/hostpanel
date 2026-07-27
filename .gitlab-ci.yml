@@ -1,0 +1,167 @@
+workflow:
+  rules:
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "main"
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "ci-test"   # throwaway verification branch
+
+stages: [test, build, deploy]
+
+# ── Reusable templates (inlined — this project runs on a GitLab pull-mirror
+#    of the GitHub repo and has no access to the workspace's shared
+#    ci/templates.yml, so the relevant hidden jobs are copied here) ───────────
+
+.test-dotnet:
+  stage: test
+  tags: [builder]
+  image: mcr.microsoft.com/dotnet/sdk:9.0
+  variables:
+    DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  script:
+    - cd "$SERVICE"
+    - dotnet test --nologo
+
+.test-node-yarn:
+  stage: test
+  tags: [builder]
+  image: node:22
+  script:
+    - cd "$SERVICE"
+    - corepack enable && corepack prepare yarn@1.22.22 --activate
+    - yarn install --frozen-lockfile
+    - yarn build
+
+.test-node-npm:
+  stage: test
+  tags: [builder]
+  image: node:22
+  script:
+    - cd "$SERVICE"
+    - npm ci
+    - npm run build-only
+
+.build-image:
+  stage: build
+  tags: [builder]
+  image: docker:27
+  variables:
+    IMAGE: $CI_REGISTRY_IMAGE/$SERVICE
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+  script:
+    - docker build --target "$IMAGE_TARGET" -f "$DOCKERFILE" -t "$IMAGE:$TAG" -t "$IMAGE:$CI_COMMIT_SHORT_SHA" "$BUILD_CONTEXT"
+    - docker push "$IMAGE:$TAG"
+    - docker push "$IMAGE:$CI_COMMIT_SHORT_SHA"
+  rules:
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "main"
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "ci-test"
+
+.deploy-staging:
+  stage: deploy
+  tags: [staging]
+  variables:
+    GIT_STRATEGY: none
+  before_script:
+    - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin "$CI_REGISTRY"
+  script:
+    - cd "$DEPLOY_DIR"
+    - docker compose -f docker-compose.prod.yml pull
+    - docker compose -f docker-compose.prod.yml up -d
+  rules:
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "main"
+
+# ── backend (Innovayse.API, .NET) ──────────────────────────────────────────────
+
+backend:test:
+  extends: .test-dotnet
+  variables: { SERVICE: backend }
+  rules:
+    - if: $CI_SERVER_HOST == "gitlab.com"
+      changes: [backend/**/*]
+
+backend:build:api:prod:
+  extends: .build-image
+  variables: { SERVICE: api, DOCKERFILE: docker/api.Dockerfile, BUILD_CONTEXT: ., IMAGE_TARGET: prod, TAG: latest }
+  rules:
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "main"
+      changes: [backend/**/*]
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "ci-test"
+      changes: [backend/**/*]
+
+backend:build:api:dev:
+  extends: .build-image
+  variables: { SERVICE: api, DOCKERFILE: docker/api.Dockerfile, BUILD_CONTEXT: ., IMAGE_TARGET: dev, TAG: dev }
+  rules:
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "main"
+      changes: [docker/**/*]
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "ci-test"
+      changes: [docker/**/*]
+
+# ── client (Nuxt frontend, yarn) ────────────────────────────────────────────────
+
+client:test:
+  extends: .test-node-yarn
+  variables: { SERVICE: client }
+  rules:
+    - if: $CI_SERVER_HOST == "gitlab.com"
+      changes: [client/**/*]
+
+client:build:prod:
+  extends: .build-image
+  variables: { SERVICE: client, DOCKERFILE: docker/client.Dockerfile, BUILD_CONTEXT: ., IMAGE_TARGET: prod, TAG: latest }
+  rules:
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "main"
+      changes: [client/**/*]
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "ci-test"
+      changes: [client/**/*]
+
+client:build:dev:
+  extends: .build-image
+  variables: { SERVICE: client, DOCKERFILE: docker/client.Dockerfile, BUILD_CONTEXT: ., IMAGE_TARGET: dev, TAG: dev }
+  rules:
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "main"
+      changes: [docker/**/*]
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "ci-test"
+      changes: [docker/**/*]
+
+# ── admin (Vue/Vite, npm) ────────────────────────────────────────────────────
+
+admin:test:
+  extends: .test-node-npm
+  variables: { SERVICE: admin }
+  rules:
+    - if: $CI_SERVER_HOST == "gitlab.com"
+      changes: [admin/**/*]
+
+admin:build:prod:
+  extends: .build-image
+  variables: { SERVICE: admin, DOCKERFILE: docker/admin.Dockerfile, BUILD_CONTEXT: ., IMAGE_TARGET: prod, TAG: latest }
+  rules:
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "main"
+      changes: [admin/**/*]
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "ci-test"
+      changes: [admin/**/*]
+
+admin:build:dev:
+  extends: .build-image
+  variables: { SERVICE: admin, DOCKERFILE: docker/admin.Dockerfile, BUILD_CONTEXT: ., IMAGE_TARGET: dev, TAG: dev }
+  rules:
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "main"
+      changes: [docker/**/*]
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "ci-test"
+      changes: [docker/**/*]
+
+# ── deploy ───────────────────────────────────────────────────────────────────
+
+deploy:staging:
+  extends: .deploy-staging
+  variables: { DEPLOY_DIR: /home/innovayse/www/innovayse-workspace/hostpanel }
+  environment: { name: staging/hostpanel }
+  rules:
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "main"
+  needs:
+    - job: backend:build:api:prod
+      optional: true
+    - job: client:build:prod
+      optional: true
+    - job: admin:build:prod
+      optional: true

@@ -163,6 +163,8 @@ services:
     environment:
       VITE_API_BASE: /api
       API_PROXY_TARGET: http://api:5148
+      VITE_SSO_URL: http://accounts.local
+      VITE_SSO_CLIENT_ID: hostpanel-admin
       CHOKIDAR_USEPOLLING: "true"
     depends_on:
       - api

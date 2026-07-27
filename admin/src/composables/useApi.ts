@@ -1,31 +1,42 @@
 import router from '../router'
+import { refreshSsoToken } from '../modules/auth/useSso'
 
-/** In-memory JWT token — set after login, cleared on logout. */
+/** In-memory access token — set after SSO login, cleared on logout. */
 let _token: string | null = localStorage.getItem('admin_token')
+
+/** Refresh token from the SSO token response, persisted so a page reload can silently re-auth. */
+let _refreshToken: string | null = localStorage.getItem('admin_refresh_token')
 
 /** Prevents multiple concurrent refresh attempts. */
 let _refreshPromise: Promise<boolean> | null = null
 
 /**
- * Stores the JWT token in memory and localStorage for session persistence.
+ * Stores the access token (and optionally a refresh token) for session persistence.
  *
- * @param token - JWT access token from the login response.
+ * @param token - Access token from the SSO token response.
+ * @param refreshToken - Refresh token from the SSO token response, if issued.
  */
-export function setToken(token: string): void {
+export function setToken(token: string, refreshToken?: string): void {
   _token = token
   localStorage.setItem('admin_token', token)
+  if (refreshToken) {
+    _refreshToken = refreshToken
+    localStorage.setItem('admin_refresh_token', refreshToken)
+  }
 }
 
 /**
- * Clears the stored JWT token from memory and localStorage.
+ * Clears the stored tokens from memory and localStorage.
  */
 export function clearToken(): void {
   _token = null
+  _refreshToken = null
   localStorage.removeItem('admin_token')
+  localStorage.removeItem('admin_refresh_token')
 }
 
 /**
- * Attempts to get a new access token via the httpOnly refresh cookie.
+ * Attempts to get a new access token from SSO using the stored refresh token.
  * Concurrent calls share the same in-flight request.
  *
  * @returns True if a new token was obtained, false otherwise.
@@ -34,15 +45,11 @@ async function tryRefresh(): Promise<boolean> {
   if (_refreshPromise) return _refreshPromise
 
   _refreshPromise = (async () => {
+    if (!_refreshToken) return false
     try {
-      const res = await fetch('/api/auth/refresh', { method: 'POST' })
-      if (!res.ok) return false
-      const data = await res.json()
-      if (data.accessToken) {
-        setToken(data.accessToken)
-        return true
-      }
-      return false
+      const data = await refreshSsoToken(_refreshToken)
+      setToken(data.access_token, data.refresh_token)
+      return true
     } catch {
       return false
     } finally {

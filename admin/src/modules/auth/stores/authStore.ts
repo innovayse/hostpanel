@@ -1,51 +1,25 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useApi, setToken, clearToken } from '../../../composables/useApi'
+import { useApi, clearToken } from '../../../composables/useApi'
+import { startSsoLogin, ssoLogoutRedirect } from '../useSso'
 
-/**
- * Decodes the payload of a JWT token without verifying the signature.
- *
- * @param token - JWT string with three base64url segments.
- * @returns Parsed payload object or null if decoding fails.
- */
-function decodeJwt(token: string): Record<string, unknown> | null {
-  try {
-    const payload = token.split('.')[1] ?? ''
-    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
-    return JSON.parse(json)
-  } catch {
-    return null
-  }
-}
-
-/**
- * Extracts email and role from a JWT payload.
- *
- * @param token - JWT access token string.
- * @returns User object with email and role, or null.
- */
-function userFromToken(token: string): { email: string; role: string } | null {
-  const payload = decodeJwt(token)
-  if (!payload) return null
-  const email = payload['email'] as string | undefined
-  // ASP.NET Identity writes role as the long-form claim URI
-  const role = (
-    payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ??
-    payload['role']
-  ) as string | undefined
-  if (!email || !role) return null
-  return { email, role }
+interface MeResponse {
+  email: string
+  roles: string[]
+  emailVerified: boolean
 }
 
 /**
  * Pinia store managing admin authentication state.
  *
- * Handles login, logout, session restoration, and email verification status.
- * Decodes user info from the token — no extra API call needed.
+ * All authentication happens against Innovayse SSO (see useSso.ts) — this
+ * store only tracks the resulting session (who's logged in, their roles,
+ * email verification status) by calling the Hostpanel API's /auth/me, since
+ * roles are assigned locally in Hostpanel and can't be read off the SSO token.
  */
 export const useAuthStore = defineStore('auth', () => {
   /** Currently authenticated admin user, null when unauthenticated. */
-  const user = ref<{ email: string; role: string } | null>(null)
+  const user = ref<{ email: string; roles: string[] } | null>(null)
 
   /** Whether the current user's email has been verified. Null means not yet checked. */
   const emailVerified = ref<boolean | null>(null)
@@ -56,91 +30,33 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => user.value !== null)
 
   /**
-   * Logs in with email and password credentials.
-   *
-   * Stores the returned JWT, decodes user info, and checks email verification status.
-   *
-   * @param email - Admin email address.
-   * @param password - Admin password.
-   * @returns Promise that resolves after login completes.
+   * Redirects the browser to Innovayse SSO to start the login flow.
+   * On success, SSO redirects back to /auth/callback, which exchanges the
+   * code for tokens and calls fetchMe() to populate this store.
    */
-  async function login(email: string, password: string): Promise<void> {
-    const data = await request<{ accessToken: string; role: string }>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    })
-    setToken(data.accessToken)
-    user.value = userFromToken(data.accessToken)
-    await checkEmailVerified()
+  async function login(): Promise<void> {
+    await startSsoLogin()
   }
 
   /**
-   * Checks whether the current user's email has been verified.
+   * Loads the current user from the API using the stored access token.
+   * Called after the SSO callback exchange, and on page load to restore
+   * an existing session.
    *
-   * @returns Promise that resolves when the check completes.
-   */
-  async function checkEmailVerified(): Promise<void> {
-    try {
-      const data = await request<{ verified: boolean }>('/auth/email-verified')
-      emailVerified.value = data.verified
-    } catch {
-      emailVerified.value = null
-    }
-  }
-
-  /**
-   * Restores session from a stored JWT token (page refresh).
-   *
-   * Sets user to null if no valid token is found.
-   * Also checks email verification status if session is valid.
-   *
-   * @returns Promise that resolves when session is restored.
+   * @returns Promise that resolves when the fetch completes; clears session on failure.
    */
   async function fetchMe(): Promise<void> {
-    const stored = localStorage.getItem('admin_token')
-    if (!stored) {
+    if (!localStorage.getItem('admin_token')) {
       user.value = null
       emailVerified.value = null
       return
     }
 
-    // Check if the token is expired locally before making a network call
-    const payload = decodeJwt(stored)
-    const exp = payload?.['exp'] as number | undefined
-    if (exp && exp * 1000 < Date.now()) {
-      // Token expired — try silent refresh before hitting the API
-      try {
-        const res = await fetch('/api/auth/refresh', { method: 'POST' })
-        if (!res.ok) throw new Error('refresh failed')
-        const data = await res.json()
-        if (data.accessToken) {
-          setToken(data.accessToken)
-        } else {
-          throw new Error('no token')
-        }
-      } catch {
-        clearToken()
-        user.value = null
-        emailVerified.value = null
-        return
-      }
-    }
-
-    const parsed = userFromToken(localStorage.getItem('admin_token') ?? '')
-    if (!parsed) {
-      clearToken()
-      user.value = null
-      emailVerified.value = null
-      return
-    }
-
-    // Token is valid — fetch email verification status
     try {
-      const data = await request<{ verified: boolean }>('/auth/email-verified')
-      user.value = parsed
-      emailVerified.value = data.verified
+      const data = await request<MeResponse>('/auth/me')
+      user.value = { email: data.email, roles: data.roles }
+      emailVerified.value = data.emailVerified
     } catch {
-      // Token was rejected (revoked, expired, etc.) — clear session
       clearToken()
       user.value = null
       emailVerified.value = null
@@ -148,19 +64,15 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
-   * Logs out the current user and clears session state.
-   *
-   * @returns Promise that resolves after logout completes.
+   * Ends the local session and redirects to SSO's end-session endpoint so
+   * the SSO-wide session is cleared too (not just this app's token).
    */
-  async function logout(): Promise<void> {
-    try {
-      await request('/auth/logout', { method: 'POST' })
-    } finally {
-      clearToken()
-      user.value = null
-      emailVerified.value = null
-    }
+  function logout(): void {
+    clearToken()
+    user.value = null
+    emailVerified.value = null
+    ssoLogoutRedirect()
   }
 
-  return { user, emailVerified, isAuthenticated, login, logout, fetchMe, checkEmailVerified }
+  return { user, emailVerified, isAuthenticated, login, logout, fetchMe }
 })

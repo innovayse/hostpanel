@@ -72,6 +72,9 @@ services:
       context: .
       dockerfile: docker/admin.Dockerfile
       target: prod
+      args:
+        VITE_SSO_URL: ${SSO_PUBLIC_URL:-https://accounts.innovayse.com}
+        VITE_SSO_CLIENT_ID: ${ADMIN_SSO_CLIENT_ID:-hostpanel-admin}
     depends_on:
       - api
     restart: unless-stopped

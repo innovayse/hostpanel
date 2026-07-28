@@ -2,8 +2,13 @@ namespace Innovayse.API.Auth;
 
 using Innovayse.API.Auth.Requests;
 using Innovayse.Application.Auth.Interfaces;
+using Innovayse.Application.Common;
+using Innovayse.Application.Notifications.Commands.SendEmail;
+using Innovayse.Application.Notifications.Services;
+using Innovayse.Domain.Notifications.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Wolverine;
 
 /// <summary>
 /// Local authentication endpoints — only active when Auth:Mode=local.
@@ -14,6 +19,7 @@ using Microsoft.AspNetCore.Mvc;
 public sealed class LocalAuthController(
     IUserService userService,
     JwtTokenService tokenService,
+    IMessageBus bus,
     IConfiguration config) : ControllerBase
 {
     private bool IsLocalMode => (config["Auth:Mode"] ?? "sso") == "local";
@@ -118,7 +124,11 @@ public sealed class LocalAuthController(
     /// </summary>
     [HttpPost("forgot-password")]
     [AllowAnonymous]
-    public async Task<IActionResult> ForgotPasswordAsync([FromBody] ForgotPasswordRequest request, CancellationToken ct)
+    public async Task<IActionResult> ForgotPasswordAsync(
+        [FromBody] ForgotPasswordRequest request,
+        [FromServices] IEmailTemplateRepository templateRepo,
+        [FromServices] IUnitOfWork uow,
+        CancellationToken ct)
     {
         if (!IsLocalMode) return NotFound();
 
@@ -126,8 +136,17 @@ public sealed class LocalAuthController(
         if (user is null) return Ok(); // Silent — no enumeration
 
         var token = await userService.GeneratePasswordResetTokenAsync(user.Value.Id, ct);
-        // TODO: send email with reset link — for now just return OK
-        // In a real setup, inject IEmailService and send the reset link
+
+        await PasswordResetTemplateSeeder.EnsureSeededAsync(templateRepo, uow, ct);
+
+        var clientBaseUrl = config["ClientBaseUrl"] ?? "http://localhost:3000";
+        var resetLink = $"{clientBaseUrl}/client/reset-password?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(user.Value.Email)}";
+
+        await bus.InvokeAsync(new SendEmailCommand(
+            user.Value.Email,
+            PasswordResetTemplateSeeder.Slug,
+            new { reset_link = resetLink }), ct);
+
         return Ok();
     }
 

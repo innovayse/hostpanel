@@ -62,6 +62,28 @@ public sealed class AuthController(IMessageBus bus, IUserService userService) : 
     }
 
     /// <summary>
+    /// Returns the current SSO-authenticated user's email and local roles.
+    /// Used by SPA clients (the admin panel) that cannot decode roles from the
+    /// SSO-issued token itself, since roles are assigned locally in Hostpanel,
+    /// not by the SSO service.
+    /// </summary>
+    [HttpGet("me")]
+    [Authorize]
+    public async Task<IActionResult> MeAsync(CancellationToken ct)
+    {
+        var sub = User.FindFirst("sub")?.Value;
+        if (sub is null) return Unauthorized();
+
+        var found = await userService.FindBySsoSubjectAsync(sub, ct);
+        if (found is null) return Unauthorized();
+
+        var roles = await userService.GetRolesAsync(found.Value.Id, ct);
+        var verified = User.FindFirst("email_verified")?.Value is "true" or "True";
+
+        return Ok(new { email = found.Value.Email, roles, emailVerified = verified });
+    }
+
+    /// <summary>
     /// Accepts an invitation. The invitation token is validated and the
     /// current SSO user is assigned the role defined in the invitation.
     /// The caller must be authenticated via SSO.

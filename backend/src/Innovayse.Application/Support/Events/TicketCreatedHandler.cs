@@ -1,24 +1,41 @@
 namespace Innovayse.Application.Support.Events;
 
+using Innovayse.Application.Notifications.Commands.SendEmail;
 using Innovayse.Domain.Support.Events;
+using Innovayse.Domain.Support.Interfaces;
 using Wolverine;
 
 /// <summary>
 /// Handles <see cref="TicketCreatedEvent"/> raised when a new support ticket is opened.
-/// Currently a placeholder — will dispatch email notifications when the Notifications module is ready.
+/// Notifies the department the ticket was routed to, if the department has an email set.
 /// </summary>
-public sealed class TicketCreatedHandler(IMessageBus bus)
+public sealed class TicketCreatedHandler(
+    IMessageBus bus,
+    ITicketRepository ticketRepo,
+    IDepartmentRepository departmentRepo)
 {
     /// <summary>
-    /// Processes the ticket created event.
+    /// Resolves the ticket and its department, then sends a ticket-created notification email
+    /// to the department if one is configured.
     /// </summary>
     /// <param name="evt">The ticket created domain event.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>A completed task (placeholder until notifications are implemented).</returns>
     public async Task HandleAsync(TicketCreatedEvent evt, CancellationToken ct)
     {
-        // TODO: dispatch SendEmailCommand to department when notifications module is ready
-        _ = bus;
-        await Task.CompletedTask;
+        var department = await departmentRepo.FindByIdAsync(evt.DepartmentId, ct);
+        if (department is null || string.IsNullOrWhiteSpace(department.Email))
+        {
+            return;
+        }
+
+        var ticket = await ticketRepo.FindByIdAsync(evt.TicketId, ct);
+        if (ticket is null)
+        {
+            return;
+        }
+
+        var data = new { ticket = new { id = evt.TicketId, subject = ticket.Subject } };
+
+        await bus.InvokeAsync(new SendEmailCommand(department.Email, "ticket-created", data), ct);
     }
 }

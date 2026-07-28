@@ -22,6 +22,11 @@ const router = createRouter({
       meta: { public: true },
     },
     {
+      path: '/auth/callback',
+      component: () => import('../modules/auth/views/CallbackView.vue'),
+      meta: { public: true },
+    },
+    {
       path: '/',
       component: () => import('../components/layout/AppLayout.vue'),
       meta: { requiresAuth: true },

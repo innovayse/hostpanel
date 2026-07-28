@@ -2,41 +2,31 @@
 /**
  * Admin login page — full-screen dark with brand gradient accents.
  *
- * Redirects to /dashboard on successful authentication.
+ * Authentication is delegated entirely to Innovayse SSO: this page just
+ * kicks off the redirect. The actual token exchange happens on
+ * /auth/callback once SSO sends the browser back.
  */
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 
-const router = useRouter()
 const authStore = useAuthStore()
 
-/** Email field value. */
-const email = ref('')
-
-/** Password field value. */
-const password = ref('')
-
-/** True while the login request is in flight. */
+/** True while the SSO redirect is being prepared (PKCE pair generation). */
 const loading = ref(false)
 
-/** Error message shown when login fails. */
+/** Error message shown if starting the SSO flow itself fails. */
 const error = ref<string | null>(null)
 
 /**
- * Submits the login form.
- *
- * @returns Promise that resolves after login attempt.
+ * Starts the SSO login flow — navigates the browser away from this app.
  */
 async function handleLogin(): Promise<void> {
   loading.value = true
   error.value = null
   try {
-    await authStore.login(email.value, password.value)
-    await router.push('/dashboard')
+    await authStore.login()
   } catch {
-    error.value = 'Invalid email or password.'
-  } finally {
+    error.value = 'Could not start sign-in. Please try again.'
     loading.value = false
   }
 }
@@ -93,74 +83,32 @@ async function handleLogin(): Promise<void> {
       <!-- Heading -->
       <div class="mb-7">
         <h1 class="font-display text-[1.6rem] font-bold text-text-primary tracking-tight leading-none mb-1.5">Admin Panel</h1>
-        <p class="text-sm text-text-secondary">Sign in to manage your platform</p>
+        <p class="text-sm text-text-secondary">Sign in with your Innovayse account</p>
       </div>
 
-      <!-- Form -->
-      <form @submit.prevent="handleLogin" class="flex flex-col gap-4">
+      <!-- Error -->
+      <div v-if="error" class="mb-4 flex items-center gap-2 text-[0.8rem] text-status-red bg-status-red/8 border border-status-red/20 rounded-lg px-3 py-2.5">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        {{ error }}
+      </div>
 
-        <!-- Email -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Email address</label>
-          <div class="relative">
-            <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-              <polyline points="22,6 12,13 2,6"/>
-            </svg>
-            <input
-              v-model="email"
-              type="email"
-              required
-              placeholder="admin@innovayse.com"
-              autocomplete="email"
-              class="w-full bg-white/[0.04] border border-white/[0.08] rounded-[10px] pl-9 pr-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted outline-none transition-all duration-200 focus:border-primary-500/50 focus:bg-primary-500/[0.04] focus:ring-2 focus:ring-primary-500/10"
-            />
-          </div>
-        </div>
-
-        <!-- Password -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Password</label>
-          <div class="relative">
-            <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-            </svg>
-            <input
-              v-model="password"
-              type="password"
-              required
-              placeholder="••••••••••"
-              autocomplete="current-password"
-              class="w-full bg-white/[0.04] border border-white/[0.08] rounded-[10px] pl-9 pr-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted outline-none transition-all duration-200 focus:border-primary-500/50 focus:bg-primary-500/[0.04] focus:ring-2 focus:ring-primary-500/10"
-            />
-          </div>
-        </div>
-
-        <!-- Error -->
-        <div v-if="error" class="flex items-center gap-2 text-[0.8rem] text-status-red bg-status-red/8 border border-status-red/20 rounded-lg px-3 py-2.5">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          {{ error }}
-        </div>
-
-        <!-- Submit -->
-        <button
-          type="submit"
-          :disabled="loading"
-          class="mt-1 w-full py-3 rounded-[10px] font-display font-semibold text-[0.95rem] text-white gradient-brand border-none cursor-pointer transition-all duration-200 hover:-translate-y-px disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0"
-          style="box-shadow: 0 4px 20px rgba(14,165,233,0.25);"
-        >
-          <span v-if="!loading">Sign in</span>
-          <span v-else class="flex items-center justify-center gap-1.5">
-            <span class="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style="animation-delay:0s"/>
-            <span class="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style="animation-delay:0.15s"/>
-            <span class="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style="animation-delay:0.3s"/>
-          </span>
-        </button>
-
-      </form>
+      <!-- SSO sign-in -->
+      <button
+        type="button"
+        :disabled="loading"
+        @click="handleLogin"
+        class="w-full py-3 rounded-[10px] font-display font-semibold text-[0.95rem] text-white gradient-brand border-none cursor-pointer transition-all duration-200 hover:-translate-y-px disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0"
+        style="box-shadow: 0 4px 20px rgba(14,165,233,0.25);"
+      >
+        <span v-if="!loading">Sign in with Innovayse SSO</span>
+        <span v-else class="flex items-center justify-center gap-1.5">
+          <span class="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style="animation-delay:0s"/>
+          <span class="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style="animation-delay:0.15s"/>
+          <span class="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style="animation-delay:0.3s"/>
+        </span>
+      </button>
     </div>
   </div>
 </template>

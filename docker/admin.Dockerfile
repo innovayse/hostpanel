@@ -15,6 +15,13 @@ FROM node:22-alpine AS build
 
 WORKDIR /app
 
+# Vite inlines VITE_* vars at build time, so the SSO endpoint must be baked in
+# here rather than read at container start like the other services' env vars.
+ARG VITE_SSO_URL=https://accounts.innovayse.com
+ARG VITE_SSO_CLIENT_ID=hostpanel-admin
+ENV VITE_SSO_URL=$VITE_SSO_URL
+ENV VITE_SSO_CLIENT_ID=$VITE_SSO_CLIENT_ID
+
 COPY admin/package.json admin/package-lock.json ./
 RUN npm install
 

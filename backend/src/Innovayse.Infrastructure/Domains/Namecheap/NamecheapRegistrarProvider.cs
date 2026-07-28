@@ -418,65 +418,140 @@ public sealed class NamecheapRegistrarProvider(NamecheapClient client) : IRegist
     }
 
     /// <inheritdoc/>
-    public Task<RegistrarResult> ModifyContactDetailsAsync(
+    public async Task<RegistrarResult> ModifyContactDetailsAsync(
         string domainName,
         DomainContact contact,
         CancellationToken ct)
     {
-        // TODO: Implement Namecheap contacts.setCustom API call.
-        return Task.FromResult(new RegistrarResult(true, null, null, null));
+        if (!client.IsConfigured)
+        {
+            return _notConfiguredResult;
+        }
+
+        var (sld, tld) = SplitDomain(domainName);
+
+        var parameters = new Dictionary<string, string>
+        {
+            ["SLD"] = sld,
+            ["TLD"] = tld,
+        };
+
+        // Namecheap's setContacts applies to all four contact roles in one call.
+        // We have no per-role data, so the same contact is used for every role —
+        // this matches how NameAm's ModifyContactDetailsAsync treats the same input.
+        foreach (var role in new[] { "Registrant", "Tech", "Admin", "AuxBilling" })
+        {
+            parameters[$"{role}FirstName"] = contact.FirstName;
+            parameters[$"{role}LastName"] = contact.LastName;
+            parameters[$"{role}OrganizationName"] = contact.Organization ?? string.Empty;
+            parameters[$"{role}EmailAddress"] = contact.Email;
+            parameters[$"{role}Phone"] = contact.Phone;
+            parameters[$"{role}Address1"] = contact.Address1;
+            parameters[$"{role}Address2"] = contact.Address2 ?? string.Empty;
+            parameters[$"{role}City"] = contact.City;
+            parameters[$"{role}StateProvince"] = contact.State;
+            parameters[$"{role}PostalCode"] = contact.PostalCode;
+            parameters[$"{role}Country"] = contact.Country;
+        }
+
+        await client.ExecuteAsync("namecheap.domains.setContacts", parameters, ct);
+        return new RegistrarResult(true, null, null, null);
     }
 
     /// <inheritdoc/>
-    public Task<RegistrarResult> SetEmailForwardingAsync(
+    public async Task<RegistrarResult> SetEmailForwardingAsync(
         string domainName,
         bool enabled,
         CancellationToken ct)
     {
-        // TODO: Implement Namecheap email forwarding toggle.
-        return Task.FromResult(new RegistrarResult(true, null, null, null));
+        if (!client.IsConfigured)
+        {
+            return _notConfiguredResult;
+        }
+
+        // Namecheap has no dedicated on/off switch — email forwarding is implicit
+        // in whether any forwarding rules exist. Disabling clears every rule;
+        // enabling with none configured yet is a no-op until rules are added.
+        if (!enabled)
+        {
+            return await SetAllEmailForwardsAsync(domainName, [], ct);
+        }
+
+        return new RegistrarResult(true, null, null, null);
     }
 
     /// <inheritdoc/>
-    public Task<RegistrarResult> AddEmailForwardingRuleAsync(
+    public async Task<RegistrarResult> AddEmailForwardingRuleAsync(
         string domainName,
         string source,
         string destination,
         CancellationToken ct)
     {
-        // TODO: Implement Namecheap email forwarding rule creation.
-        return Task.FromResult(new RegistrarResult(true, null, null, null));
+        var existing = await GetEmailForwardsAsync(domainName, ct);
+        var updated = existing
+            .Where(r => !string.Equals(r.Mailbox, source, StringComparison.OrdinalIgnoreCase))
+            .Append((Mailbox: source, ForwardTo: destination))
+            .ToList();
+
+        return await SetAllEmailForwardsAsync(domainName, updated, ct);
     }
 
     /// <inheritdoc/>
-    public Task<RegistrarResult> UpdateEmailForwardingRuleAsync(
+    public async Task<RegistrarResult> UpdateEmailForwardingRuleAsync(
         string domainName,
         string source,
         string destination,
         CancellationToken ct)
     {
-        // TODO: Implement Namecheap email forwarding rule update.
-        return Task.FromResult(new RegistrarResult(true, null, null, null));
+        var existing = await GetEmailForwardsAsync(domainName, ct);
+        var updated = existing
+            .Select(r => string.Equals(r.Mailbox, source, StringComparison.OrdinalIgnoreCase)
+                ? (Mailbox: source, ForwardTo: destination)
+                : r)
+            .ToList();
+
+        return await SetAllEmailForwardsAsync(domainName, updated, ct);
     }
 
     /// <inheritdoc/>
-    public Task<RegistrarResult> DeleteEmailForwardingRuleAsync(
+    public async Task<RegistrarResult> DeleteEmailForwardingRuleAsync(
         string domainName,
         string source,
         CancellationToken ct)
     {
-        // TODO: Implement Namecheap email forwarding rule deletion.
-        return Task.FromResult(new RegistrarResult(true, null, null, null));
+        var existing = await GetEmailForwardsAsync(domainName, ct);
+        var updated = existing
+            .Where(r => !string.Equals(r.Mailbox, source, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        return await SetAllEmailForwardsAsync(domainName, updated, ct);
     }
 
     /// <inheritdoc/>
-    public Task<RegistrarResult> SetDnsManagementAsync(
+    public async Task<RegistrarResult> SetDnsManagementAsync(
         string domainName,
         bool enabled,
         CancellationToken ct)
     {
-        // TODO: Implement Namecheap DNS management toggle.
-        return Task.FromResult(new RegistrarResult(true, null, null, null));
+        if (!client.IsConfigured)
+        {
+            return _notConfiguredResult;
+        }
+
+        // "DNS management" here means "let Namecheap host the DNS" — enabling it
+        // repoints the domain at Namecheap's own nameservers. Disabling has no
+        // corresponding API call; the caller is expected to point nameservers
+        // elsewhere via SetNameserversAsync instead.
+        if (!enabled)
+        {
+            return new RegistrarResult(true, null, null, null);
+        }
+
+        var (sld, tld) = SplitDomain(domainName);
+        var parameters = new Dictionary<string, string> { ["SLD"] = sld, ["TLD"] = tld };
+
+        await client.ExecuteAsync("namecheap.domains.dns.setDefault", parameters, ct);
+        return new RegistrarResult(true, null, null, null);
     }
 
     /// <inheritdoc/>
@@ -604,6 +679,77 @@ public sealed class NamecheapRegistrarProvider(NamecheapClient client) : IRegist
 
         await client.ExecuteAsync("namecheap.domains.dns.setHosts", parameters, ct);
         return new RegistrarResult(true, registrarRef, null, null);
+    }
+
+    /// <summary>
+    /// Reads the current email forwarding rules via <c>namecheap.domains.dns.getEmailForwarding</c>.
+    /// </summary>
+    /// <param name="domainName">The fully-qualified domain name.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The mailbox → forward-to pairs currently configured.</returns>
+    private async Task<List<(string Mailbox, string ForwardTo)>> GetEmailForwardsAsync(
+        string domainName,
+        CancellationToken ct)
+    {
+        if (!client.IsConfigured)
+        {
+            return [];
+        }
+
+        var parameters = new Dictionary<string, string> { ["DomainName"] = domainName };
+        var doc = await client.ExecuteAsync("namecheap.domains.dns.getEmailForwarding", parameters, ct);
+
+        var ns = GetNamespace(doc);
+        var forwardNodes = doc.Root
+            ?.Element(XName.Get("CommandResponse", ns))
+            ?.Element(XName.Get("DomainDNSGetEmailForwardingResult", ns))
+            ?.Elements(XName.Get("Forward", ns))
+            ?? [];
+
+        var forwards = new List<(string Mailbox, string ForwardTo)>();
+        foreach (var node in forwardNodes)
+        {
+            var mailbox = node.Attribute("mailbox")?.Value;
+            var forwardTo = node.Value;
+            if (!string.IsNullOrEmpty(mailbox) && !string.IsNullOrEmpty(forwardTo))
+            {
+                forwards.Add((mailbox, forwardTo));
+            }
+        }
+
+        return forwards;
+    }
+
+    /// <summary>
+    /// Pushes the complete set of email forwarding rules to Namecheap using
+    /// <c>namecheap.domains.dns.setEmailForwarding</c>. As with DNS hosts, Namecheap
+    /// requires the full rule set on every write — there is no add/remove-single-rule call.
+    /// </summary>
+    /// <param name="domainName">The fully-qualified domain name.</param>
+    /// <param name="forwards">The complete list of mailbox → forward-to pairs to persist.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Result indicating whether the operation succeeded.</returns>
+    private async Task<RegistrarResult> SetAllEmailForwardsAsync(
+        string domainName,
+        IReadOnlyList<(string Mailbox, string ForwardTo)> forwards,
+        CancellationToken ct)
+    {
+        if (!client.IsConfigured)
+        {
+            return _notConfiguredResult;
+        }
+
+        var parameters = new Dictionary<string, string> { ["DomainName"] = domainName };
+
+        for (var i = 0; i < forwards.Count; i++)
+        {
+            var n = i + 1;
+            parameters[$"MailBox{n}"] = forwards[i].Mailbox;
+            parameters[$"ForwardTo{n}"] = forwards[i].ForwardTo;
+        }
+
+        await client.ExecuteAsync("namecheap.domains.dns.setEmailForwarding", parameters, ct);
+        return new RegistrarResult(true, null, null, null);
     }
 
     /// <summary>

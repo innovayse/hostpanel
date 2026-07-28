@@ -67,6 +67,24 @@ public sealed class EmailTemplateConfiguration : IEntityTypeConfiguration<EmailT
                 Body = "<p>We received your support request.</p>",
                 IsActive = true,
                 Description = "Sent when ticket created",
+            },
+            new
+            {
+                Id = 6,
+                Slug = "ticket-replied",
+                Subject = "New Reply on Ticket #{{ticket.id}}: {{ticket.subject}}",
+                Body = "<p>There's a new reply on your support ticket.</p>",
+                IsActive = true,
+                Description = "Sent when a reply is added to a ticket",
+            },
+            new
+            {
+                Id = 7,
+                Slug = "ticket-closed",
+                Subject = "Support Ticket #{{ticket.id}} Closed",
+                Body = "<p>Your support ticket \"{{ticket.subject}}\" has been closed. We'd love your feedback.</p>",
+                IsActive = true,
+                Description = "Sent when a ticket is closed",
             });
     }
 }

@@ -25,6 +25,7 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="9.0.1" />
   </ItemGroup>
   <!-- Wolverine -->
   <ItemGroup>

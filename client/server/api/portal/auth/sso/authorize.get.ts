@@ -49,6 +49,24 @@ export default defineEventHandler(async (event) => {
   // If the user explicitly wants to switch accounts, pass prompt=select_account
   if (query.prompt) params.set('prompt', query.prompt as string)
 
+  // Save current page so callback can return here instead of always going to dashboard
+  let returnTo = (query.returnTo as string | undefined) || ''
+  if (!returnTo) {
+    const referer = getHeader(event, 'referer') || ''
+    if (referer) {
+      try { returnTo = new URL(referer).pathname } catch { /* ignore */ }
+    }
+  }
+  if (returnTo && returnTo.startsWith('/') && !returnTo.startsWith('/api/')) {
+    setCookie(event, 'post_login_redirect', returnTo, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 5,
+      path: '/',
+    })
+  }
+
   const authorizeUrl = `${config.public.ssoPublicUrl}/connect/authorize?${params}`
   return sendRedirect(event, authorizeUrl, 302)
 })

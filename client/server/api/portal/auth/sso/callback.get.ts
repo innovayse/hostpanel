@@ -100,10 +100,39 @@ export default defineEventHandler(async (event) => {
     path: '/',
   })
 
+  // Fetch real user info from SSO userinfo endpoint and expose it via a short-lived
+  // non-httpOnly cookie so the widget can merge it into innovayse_accounts localStorage.
+  // This seeds the "switch account" list on panel.local without requiring the user to
+  // visit app.local first. Using /connect/userinfo because JWT access_token has no email claim.
+  try {
+    const ssoUrl = (config.ssoUrl as string) || 'http://innovayse-sso-sso-api-1:8080'
+    const userinfo = await $fetch<Record<string, unknown>>(`${ssoUrl}/connect/userinfo`, {
+      headers: { Authorization: `Bearer ${access_token}` },
+    })
+    const sub = (userinfo.sub as string) || ''
+    const email = (userinfo.email as string) || sub
+    const firstName = (userinfo.given_name as string) || (userinfo.name as string)?.split(' ')[0] || ''
+    const lastName = (userinfo.family_name as string) || (userinfo.name as string)?.split(' ').slice(1).join(' ') || ''
+    if (email) {
+      setCookie(event, 'inno_pending_account', JSON.stringify({ ssoSub: sub, email, firstName, lastName }), {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60,
+        path: '/',
+      })
+    }
+  } catch { /* non-critical */ }
+
   // If came from silent SSO on a public page — return there (now logged in)
   deleteCookie(event, 'sso_silent_tried', { path: '/' })
   const silentReturn = getCookie(event, 'sso_silent_return')
   deleteCookie(event, 'sso_silent_return', { path: '/' })
 
-  return sendRedirect(event, silentReturn || '/client/dashboard', 302)
+  // post_login_redirect set by authorize.get.ts — return to the page user was on
+  // (e.g. "Add another account" should bring back to current page, not dashboard)
+  const postLoginRedirect = getCookie(event, 'post_login_redirect')
+  deleteCookie(event, 'post_login_redirect', { path: '/' })
+
+  return sendRedirect(event, silentReturn || postLoginRedirect || '/client/dashboard', 302)
 })

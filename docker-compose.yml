@@ -76,6 +76,7 @@ services:
       Cors__AllowedOrigins__0: http://localhost:3001
       Cors__AllowedOrigins__1: http://localhost:5174
       Cors__AllowedOrigins__2: http://panel.local
+      Cors__AllowedOrigins__3: https://stage-panel.innovayse.com
       Smtp__Host: mailhog
       Smtp__Port: 1025
       Smtp__Username: ""
@@ -90,6 +91,7 @@ services:
       Sso__Authority: http://innovayse-sso-sso-api-1:8080
       Sso__ClientId: hostpanel
       Auth__Mode: ${AUTH_MODE:-sso}
+      BackchannelLogout__Key: ${HOSTPANEL_BACKCHANNEL_LOGOUT_KEY:-dev-hostpanel-backchannel-key}
     depends_on:
       postgres:
         condition: service_healthy
@@ -122,7 +124,7 @@ services:
       # between them, randomly routing requests to the wrong app's backend.
       API_URL: http://hostpanel-api-1:5148
       NUXT_PUBLIC_BASE_URL: http://panel.local
-      NUXT_PUBLIC_WIDGET_URL: http://app.local
+      NUXT_PUBLIC_MAIN_URL: http://app.local
       SSO_URL: http://innovayse-sso-sso-api-1:8080
       SSO_PUBLIC_URL: http://accounts.local
       NUXT_PUBLIC_TASKS_URL: http://tasks.local
@@ -137,6 +139,7 @@ services:
       SMTP_HOST: mailhog
       SMTP_PORT: 1025
       AUTH_MODE: ${AUTH_MODE:-sso}
+      NUXT_MAIN_API_URL: http://innovayse-main-client-1:3000
       WATCHPACK_POLLING: "true"
       CHOKIDAR_USEPOLLING: "true"
     depends_on:
@@ -168,6 +171,9 @@ services:
       CHOKIDAR_USEPOLLING: "true"
     depends_on:
       - api
+    networks:
+      - default
+      - innovayse_network
     deploy:
       resources:
         limits:

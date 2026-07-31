@@ -319,6 +319,10 @@ onMounted(async () => {
   if (isLoggedIn.value) {
     await fetchUser()
   }
+
+  // Reinit the widget so it picks up any accounts saved by the callback flow
+  const w = window as unknown as { InnoWidget?: { reinit: () => void } }
+  w.InnoWidget?.reinit?.()
 })
 
 async function handleLogout() {

@@ -236,4 +236,5 @@ export function clearAllAuthCookies(event: H3Event): void {
   deleteCookie(event, 'auth_token', { path: '/' })
   deleteCookie(event, 'refresh_token', { path: '/' })
   deleteCookie(event, 'authed', { path: '/' })
+  deleteCookie(event, 'inno_pending_account', { path: '/' })
 }

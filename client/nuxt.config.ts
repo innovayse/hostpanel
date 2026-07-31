@@ -72,6 +72,8 @@ export default defineNuxtConfig({
     whmcsAccessKey: process.env.WHMCS_ACCESS_KEY,
     // WHM root API token for cPanel SSO (create_user_session)
     whmApiToken: process.env.WHM_API_TOKEN,
+    // Internal URL of innovayse-main (app.local) — used for backchannel logout delegation
+    mainApiUrl: process.env.NUXT_MAIN_API_URL || 'http://innovayse-main-client-1:3000',
 
     // Public runtime config (exposed to client)
     public: {
@@ -85,7 +87,7 @@ export default defineNuxtConfig({
       nextcloudUrl: process.env.NUXT_PUBLIC_NEXTCLOUD_URL || 'http://cloud.local',
       whmcsUrl: (process.env.WHMCS_URL || '').replace(/\/+$/, ''),
       stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
-      widgetUrl: process.env.NUXT_PUBLIC_WIDGET_URL || '',
+      mainUrl: process.env.NUXT_PUBLIC_MAIN_URL || 'http://app.local',
     }
   },
 
@@ -147,6 +149,9 @@ export default defineNuxtConfig({
   },
 
   vite: {
+    server: {
+      allowedHosts: ['panel.local', 'panel-admin.local']
+    },
     ssr: {
       // Force lucide-vue-next to be bundled into the SSR output (not treated as external)
       // This prevents named export resolution issues (e.g. "Server is not defined")
@@ -199,8 +204,8 @@ export default defineNuxtConfig({
         { name: 'theme-color', content: '#0ea5e9' }
       ],
       script: [
-        ...(process.env.NUXT_PUBLIC_WIDGET_URL
-          ? [{ src: `${process.env.NUXT_PUBLIC_WIDGET_URL}/widget/header.js`, defer: true }]
+        ...(process.env.NUXT_PUBLIC_MAIN_URL
+          ? [{ src: `${process.env.NUXT_PUBLIC_MAIN_URL}/widget/header.js`, async: true }]
           : []),
       ],
       link: [

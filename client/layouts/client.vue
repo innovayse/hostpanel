@@ -2,12 +2,33 @@
   <!-- Full viewport, pinned to viewport — prevents any browser-level scroll -->
   <div class="fixed inset-0 overflow-hidden bg-gray-50 dark:bg-[#0a0a0f] flex flex-col">
 
-    <!-- Mobile top bar — fixed at top, shrinks flex column -->
-    <header class="lg:hidden flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-white/10 bg-white dark:bg-[#0d0d12] z-30">
-      <NuxtLink to="/" class="text-gray-900 dark:text-white font-bold text-lg">Innovayse</NuxtLink>
-      <div class="flex items-center gap-3">
-        <span class="text-sm text-gray-500 dark:text-gray-400 truncate max-w-[120px]">{{ store.fullName }}</span>
-        <button class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" @click="sidebarOpen = !sidebarOpen">
+    <!-- Unified top bar (mobile + desktop) — one header, no duplicate mount IDs -->
+    <header class="flex-shrink-0 flex items-center justify-between px-4 lg:px-8 py-3 lg:py-4 border-b border-gray-200 dark:border-white/10 bg-white dark:bg-[#0d0d12] z-30">
+
+      <!-- Left: logo on mobile / welcome text on desktop -->
+      <div class="min-w-0 mr-3">
+        <NuxtLink to="/" class="lg:hidden text-gray-900 dark:text-white font-bold text-lg">Innovayse</NuxtLink>
+        <div class="hidden lg:block text-gray-500 dark:text-gray-400 text-sm truncate">
+          {{ $t('client.nav.welcomeBack') }}
+          <span class="text-gray-900 dark:text-white font-medium">{{ store.fullName }}</span>
+        </div>
+      </div>
+
+      <!-- Right: controls -->
+      <div class="flex items-center gap-2 lg:gap-3 flex-shrink-0">
+        <!-- Desktop-only: theme toggle, language switcher, app launcher -->
+        <div class="hidden lg:flex items-center gap-3">
+          <UiThemeToggle />
+          <UiLanguageSwitcher />
+          <div id="inno-launcher-mount"></div>
+        </div>
+        <!-- Account popup: always visible (mobile needs account switching too) -->
+        <div id="inno-account-mount"></div>
+        <!-- Hamburger: mobile only -->
+        <button
+          class="lg:hidden p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+          @click="sidebarOpen = !sidebarOpen"
+        >
           <Menu v-if="!sidebarOpen" :size="22" :stroke-width="2" />
           <X v-else :size="22" :stroke-width="2" />
         </button>
@@ -32,19 +53,6 @@
           <button class="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" @click="sidebarOpen = false">
             <X :size="18" :stroke-width="2" />
           </button>
-        </div>
-
-        <!-- User info -->
-        <div class="px-6 py-4 border-b border-gray-200 dark:border-white/10 flex-shrink-0">
-          <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500/30 to-primary-500/20 flex items-center justify-center text-cyan-700 dark:text-white font-bold text-sm border border-cyan-500/30">
-              {{ store.userInitial }}
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="text-gray-900 dark:text-white font-medium text-sm truncate">{{ store.fullName || $t('client.nav.dashboard') }}</div>
-              <div class="text-gray-500 text-xs truncate">{{ store.user?.email }}</div>
-            </div>
-          </div>
         </div>
 
         <!-- Navigation — scrollable if nav items overflow -->
@@ -92,26 +100,6 @@
 
       <!-- Main — only this scrolls -->
       <main class="flex-1 min-w-0 overflow-y-auto flex flex-col">
-
-        <!-- Desktop top bar — sticky inside the scrollable main -->
-        <div class="hidden lg:flex flex-shrink-0 items-center justify-between px-8 py-4 border-b border-gray-200 dark:border-white/10 bg-white dark:bg-[#0d0d12] sticky top-0 z-10">
-          <div class="text-gray-500 dark:text-gray-400 text-sm">
-            {{ $t('client.nav.welcomeBack') }} <span class="text-gray-900 dark:text-white font-medium">{{ store.fullName }}</span>
-          </div>
-          <div class="flex items-center gap-3">
-            <UiThemeToggle />
-            <UiLanguageSwitcher />
-            <button
-              class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all duration-200 border border-gray-200 dark:border-white/10 hover:border-red-200 dark:hover:border-red-500/20"
-              @click="handleLogout"
-            >
-              <LogOut :size="16" :stroke-width="2" />
-              {{ $t('client.nav.signOut') }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Page content -->
         <div class="p-6 lg:p-8">
           <Suspense>
             <template #default>
@@ -153,14 +141,41 @@ const { logout } = useClientAuth()
 const { hasPermission } = usePermissions()
 const store = useClientStore()
 const { init } = useAppColorMode()
+const config = useRuntimeConfig()
 
 const sidebarOpen = ref(false)
 
-// Apply saved color preference when entering client area; restore dark on leave
+function widgetReinit() {
+  const w = window as unknown as { InnoWidget?: { reinit: () => void } }
+  if (w.InnoWidget?.reinit) w.InnoWidget.reinit()
+}
+
 onMounted(async () => {
   init()
   if (!store.userLoaded) await store.fetchUser()
+  // Reinit widget after Vue renders the mount points.
+  // Poll until InnoWidget is available (script may still be loading with async).
+  await nextTick()
+  let attempts = 0
+  const tryReinit = () => {
+    const w = window as unknown as { InnoWidget?: { reinit: () => void } }
+    if (w.InnoWidget?.reinit) {
+      w.InnoWidget.reinit()
+    } else if (attempts++ < 50) {
+      setTimeout(tryReinit, 200)
+    }
+  }
+  setTimeout(tryReinit, 50)
 })
+
+// Vue may re-render the layout after reactive state changes, replacing mount point divs.
+// Reinit the widget if the account button was wiped.
+onUpdated(() => {
+  if (!document.getElementById('inno-account-btn')) {
+    widgetReinit()
+  }
+})
+
 onUnmounted(() => {
   document.documentElement.classList.add('dark')
   document.documentElement.classList.remove('light')
@@ -187,11 +202,34 @@ function isActive(path: string) {
 }
 
 async function handleLogout() {
-  await logout()
-  store.reset()
-  navigateTo('/client/login')
+  const authMode = config.public.authMode as string
+
+  if (authMode === 'sso') {
+    // Clear cookies + fire backchannel logout (fire-and-forget is fine)
+    try {
+      await $fetch('/api/portal/auth/logout', { method: 'POST', credentials: 'include' })
+    } catch { /* ignore — clear session regardless */ }
+    store.reset()
+    // Navigate browser to SSO endsession (required to clear SSO session cookie at accounts.local)
+    const ssoPublicUrl = (config.public.ssoPublicUrl as string) || 'http://accounts.local'
+    window.location.href = `${ssoPublicUrl}/connect/endsession?post_logout_redirect_uri=${encodeURIComponent(window.location.origin)}`
+  } else {
+    await logout()
+    store.reset()
+    navigateTo('/client/login')
+  }
 }
 </script>
+
+<style>
+/* Account panel responsive width on small screens */
+@media (max-width: 640px) {
+  #inno-account-panel {
+    width: calc(100vw - 16px);
+    right: -4px;
+  }
+}
+</style>
 
 <style scoped>
 .fade-enter-active,

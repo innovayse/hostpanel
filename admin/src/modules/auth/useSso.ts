@@ -44,8 +44,13 @@ function callbackUrl(): string {
  */
 export async function startSsoLogin(): Promise<void> {
   const verifier = randomToken(32)
-  const challenge = await sha256Base64Url(verifier)
   const state = randomToken(16)
+
+  // crypto.subtle is only available in secure contexts (HTTPS / localhost).
+  // Fall back to PKCE method=plain when running over plain HTTP in dev.
+  const hasSubtle = typeof crypto !== 'undefined' && !!crypto.subtle
+  const challenge = hasSubtle ? await sha256Base64Url(verifier) : verifier
+  const method = hasSubtle ? 'S256' : 'plain'
 
   sessionStorage.setItem(VERIFIER_KEY, verifier)
   sessionStorage.setItem(STATE_KEY, state)
@@ -56,7 +61,7 @@ export async function startSsoLogin(): Promise<void> {
     redirect_uri: callbackUrl(),
     scope: 'openid profile email offline_access',
     code_challenge: challenge,
-    code_challenge_method: 'S256',
+    code_challenge_method: method,
     state,
   })
 
@@ -102,7 +107,10 @@ export async function completeSsoLogin(query: URLSearchParams): Promise<SsoToken
     code_verifier: verifier,
   })
 
-  const res = await fetch(`${SSO_URL}/connect/token`, {
+  // Use a relative URL so the request goes through the Vite dev-server proxy
+  // (/connect → SSO API internally). This avoids cross-origin POST issues that
+  // arise when the browser hits accounts.local directly over plain HTTP.
+  const res = await fetch(`/connect/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body,
@@ -129,7 +137,7 @@ export async function refreshSsoToken(refreshToken: string): Promise<SsoTokenRes
     refresh_token: refreshToken,
   })
 
-  const res = await fetch(`${SSO_URL}/connect/token`, {
+  const res = await fetch(`/connect/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body,

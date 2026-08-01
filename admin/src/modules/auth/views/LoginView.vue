@@ -2,17 +2,19 @@
 /**
  * Admin login page — full-screen dark with brand gradient accents.
  *
- * Authentication is delegated entirely to Innovayse SSO: this page just
- * kicks off the redirect. The actual token exchange happens on
- * /auth/callback once SSO sends the browser back.
+ * Authentication is delegated entirely to Innovayse SSO: this page auto-
+ * redirects to SSO on mount (if there is an active SSO session the user
+ * will be logged in silently; otherwise the SSO login page is shown).
+ * The actual token exchange happens on /auth/callback once SSO sends the
+ * browser back.
  */
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../stores/authStore'
 
 const authStore = useAuthStore()
 
 /** True while the SSO redirect is being prepared (PKCE pair generation). */
-const loading = ref(false)
+const loading = ref(true)
 
 /** Error message shown if starting the SSO flow itself fails. */
 const error = ref<string | null>(null)
@@ -30,6 +32,12 @@ async function handleLogin(): Promise<void> {
     loading.value = false
   }
 }
+
+// Auto-redirect to SSO on mount. If an active SSO session exists the user
+// will be silently authenticated and redirected back without seeing a login form.
+onMounted(() => {
+  handleLogin()
+})
 </script>
 
 <template>

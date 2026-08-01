@@ -15,7 +15,7 @@ export default defineConfig({
     },
   },
   server: {
-    allowedHosts: ['panel-admin.local'],
+    allowedHosts: ['panel-admin.local', 'panel.local'],
     proxy: {
       '/api': {
         target: process.env.API_PROXY_TARGET || 'http://localhost:5148',
@@ -23,6 +23,10 @@ export default defineConfig({
       },
       '/uploads': {
         target: process.env.API_PROXY_TARGET || 'http://localhost:5148',
+        changeOrigin: true,
+      },
+      '/connect': {
+        target: process.env.SSO_PROXY_TARGET || 'http://localhost:4000',
         changeOrigin: true,
       },
     },

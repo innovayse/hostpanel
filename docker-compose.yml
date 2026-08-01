@@ -168,6 +168,7 @@ services:
       API_PROXY_TARGET: http://api:5148
       VITE_SSO_URL: http://accounts.local
       VITE_SSO_CLIENT_ID: hostpanel-admin
+      SSO_PROXY_TARGET: http://innovayse-sso-sso-api-1:8080
       CHOKIDAR_USEPOLLING: "true"
     depends_on:
       - api

@@ -11,8 +11,9 @@ using Microsoft.AspNetCore.Mvc;
 using Wolverine;
 
 /// <summary>
-/// Local authentication endpoints — only active when Auth:Mode=local.
-/// When Auth:Mode=sso, all endpoints return 404.
+/// Local authentication endpoints.
+/// Login/2FA are always active (needed by admin panel).
+/// Registration and password flows are only active when Auth:Mode=local.
 /// </summary>
 [ApiController]
 [Route("api/auth")]
@@ -27,12 +28,12 @@ public sealed class LocalAuthController(
     /// <summary>
     /// Authenticates a user with email and password.
     /// Returns an access token, or a pending token if 2FA is required.
+    /// Always active — the admin panel uses local auth regardless of Auth:Mode.
     /// </summary>
     [HttpPost("login")]
     [AllowAnonymous]
     public async Task<IActionResult> LoginAsync([FromBody] LoginRequest request, CancellationToken ct)
     {
-        if (!IsLocalMode) return NotFound();
 
         var user = await userService.FindByEmailAndPasswordAsync(request.Email, request.Password, ct);
         if (user is null)
@@ -50,10 +51,10 @@ public sealed class LocalAuthController(
 
         await userService.UpdateLastLoginAsync(user.Value.Id, ct);
         var roles = await userService.GetRolesAsync(user.Value.Id, ct);
-        var found = await userService.FindByIdAsync(user.Value.Id, ct);
+        var emailConfirmed = await userService.IsEmailConfirmedAsync(user.Value.Id, ct);
 
         var accessToken = tokenService.GenerateAccessToken(
-            user.Value.Id, user.Value.Email, null, null, roles);
+            user.Value.Id, user.Value.Email, null, null, roles, emailConfirmed);
 
         return Ok(new { accessToken, expiresIn = 900 });
     }
@@ -66,7 +67,6 @@ public sealed class LocalAuthController(
     [AllowAnonymous]
     public async Task<IActionResult> TwoFactorLoginAsync([FromBody] TwoFactorLoginRequest request, CancellationToken ct)
     {
-        if (!IsLocalMode) return NotFound();
 
         // Decode pending token
         string userId;
@@ -184,7 +184,6 @@ public sealed class LocalAuthController(
     [AllowAnonymous]
     public IActionResult RefreshAsync()
     {
-        if (!IsLocalMode) return NotFound();
         // Refresh token handling would need a token store — out of scope for now
         // The BFF sets short-lived access tokens; the user re-logs when expired
         return Unauthorized(new { error = "Token expired. Please log in again." });

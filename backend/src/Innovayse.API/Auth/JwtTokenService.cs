@@ -10,7 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 public sealed class JwtTokenService(IConfiguration config)
 {
     /// <summary>Generates a short-lived (15 min) access token for the given user.</summary>
-    public string GenerateAccessToken(string userId, string email, string? firstName, string? lastName, IList<string> roles)
+    public string GenerateAccessToken(string userId, string email, string? firstName, string? lastName, IList<string> roles, bool emailVerified = true)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Secret"]!));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -19,6 +19,7 @@ public sealed class JwtTokenService(IConfiguration config)
         {
             new("sub", userId),
             new("email", email),
+            new("email_verified", emailVerified ? "true" : "false"),
         };
         if (!string.IsNullOrEmpty(firstName))
             claims.Add(new("given_name", firstName));

@@ -46,11 +46,15 @@ try
 
     var authMode = builder.Configuration["Auth:Mode"] ?? "sso";
 
+    // JwtTokenService is always registered — admin panel uses local auth regardless of mode
+    builder.Services.AddSingleton<Innovayse.API.Auth.JwtTokenService>();
+
+    var jwtSecret = builder.Configuration["Jwt:Secret"]
+        ?? "change-this-to-a-32-char-min-secret-key-here";
+
     if (authMode == "local")
     {
-        // Local JWT authentication — tokens issued by this server
-        var jwtSecret = builder.Configuration["Jwt:Secret"]
-            ?? throw new InvalidOperationException("Jwt:Secret is required when Auth:Mode=local");
+        // Local-only mode
         if (jwtSecret.Length < 32)
             throw new InvalidOperationException("Jwt:Secret must be at least 32 characters");
 
@@ -69,12 +73,12 @@ try
                     NameClaimType = "sub",
                 };
             });
-
-        builder.Services.AddSingleton<Innovayse.API.Auth.JwtTokenService>();
     }
     else
     {
-        // SSO Authentication — validate JWTs issued by Innovayse SSO (OpenIddict)
+        // SSO mode with local JWT fallback — admin panel uses local tokens,
+        // client panel uses SSO tokens. Both are accepted.
+        var localJwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "innovayse-api";
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(opts =>
             {
@@ -87,6 +91,23 @@ try
                     RoleClaimType = System.Security.Claims.ClaimTypes.Role,
                     NameClaimType = "sub",
                     ValidateAudience = false,
+                };
+                // If the JWT was issued by our local server, forward to LocalJwt scheme
+                opts.ForwardDefaultSelector = context =>
+                {
+                    var auth = context.Request.Headers.Authorization.FirstOrDefault();
+                    if (auth?.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) == true)
+                    {
+                        var token = auth["Bearer ".Length..];
+                        try
+                        {
+                            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+                            var jwt = handler.ReadJwtToken(token);
+                            if (jwt.Issuer == localJwtIssuer) return "LocalJwt";
+                        }
+                        catch { /* not a valid JWT — let default scheme handle */ }
+                    }
+                    return null; // use default (SSO) scheme
                 };
                 opts.Events = new JwtBearerEvents
                 {
@@ -115,13 +136,45 @@ try
                         }
                     },
                 };
+            })
+            .AddJwtBearer("LocalJwt", opts =>
+            {
+                opts.RequireHttpsMetadata = false;
+                opts.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        System.Text.Encoding.UTF8.GetBytes(jwtSecret)),
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "innovayse-api",
+                    ValidAudience = builder.Configuration["Jwt:Audience"] ?? "innovayse-clients",
+                    RoleClaimType = System.Security.Claims.ClaimTypes.Role,
+                    NameClaimType = "sub",
+                };
             });
     }
 
     builder.Services.AddAuthorization(opts =>
     {
-        opts.AddPolicy("AdminOnly", p => p.RequireRole(Roles.Admin));
-        opts.AddPolicy("ResellerOrAdmin", p => p.RequireRole(Roles.Admin, Roles.Reseller));
+        if (authMode != "local")
+        {
+            // Accept tokens from either SSO or local JWT scheme
+            opts.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder(
+                JwtBearerDefaults.AuthenticationScheme, "LocalJwt")
+                .RequireAuthenticatedUser()
+                .Build();
+        }
+        opts.AddPolicy("AdminOnly", p =>
+        {
+            if (authMode != "local")
+                p.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme, "LocalJwt");
+            p.RequireRole(Roles.Admin);
+        });
+        opts.AddPolicy("ResellerOrAdmin", p =>
+        {
+            if (authMode != "local")
+                p.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme, "LocalJwt");
+            p.RequireRole(Roles.Admin, Roles.Reseller);
+        });
     });
 
     // MVC + OpenAPI

@@ -10,6 +10,10 @@
  *   - No session      → login_required error → callback clears flag → page renders as guest
  */
 export default defineEventHandler((event) => {
+  // Local-auth mode has its own login flow (client-auth.ts middleware) — never applicable to SSO.
+  const config = useRuntimeConfig(event)
+  if (config.authMode !== 'sso') return
+
   // Only intercept page navigations (not API calls, assets, etc.)
   const url = event.path ?? ''
   if (

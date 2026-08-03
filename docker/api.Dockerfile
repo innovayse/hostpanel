@@ -22,6 +22,7 @@ COPY backend/tests/Innovayse.Domain.Tests/Innovayse.Domain.Tests.csproj ./tests/
 COPY backend/tests/Innovayse.Application.Tests/Innovayse.Application.Tests.csproj ./tests/Innovayse.Application.Tests/
 COPY backend/tests/Innovayse.Integration.Tests/Innovayse.Integration.Tests.csproj ./tests/Innovayse.Integration.Tests/
 COPY backend/tests/Innovayse.CWP.Tests/Innovayse.CWP.Tests.csproj ./tests/Innovayse.CWP.Tests/
+COPY backend/tests/Innovayse.Infrastructure.Tests/Innovayse.Infrastructure.Tests.csproj ./tests/Innovayse.Infrastructure.Tests/
 RUN dotnet restore Innovayse.Backend.sln
 
 ENV ASPNETCORE_ENVIRONMENT=Development
@@ -52,6 +53,7 @@ COPY backend/tests/Innovayse.Domain.Tests/Innovayse.Domain.Tests.csproj ./tests/
 COPY backend/tests/Innovayse.Application.Tests/Innovayse.Application.Tests.csproj ./tests/Innovayse.Application.Tests/
 COPY backend/tests/Innovayse.Integration.Tests/Innovayse.Integration.Tests.csproj ./tests/Innovayse.Integration.Tests/
 COPY backend/tests/Innovayse.CWP.Tests/Innovayse.CWP.Tests.csproj ./tests/Innovayse.CWP.Tests/
+COPY backend/tests/Innovayse.Infrastructure.Tests/Innovayse.Infrastructure.Tests.csproj ./tests/Innovayse.Infrastructure.Tests/
 RUN dotnet restore Innovayse.Backend.sln
 
 COPY backend/ .

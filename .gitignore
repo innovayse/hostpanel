@@ -61,3 +61,4 @@ admin/.env.production
 
 # Junk folders
 undefined/
+whmcs_dump.sql

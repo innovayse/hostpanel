@@ -11,8 +11,8 @@
 
     <Transition name="launcher-panel">
       <div v-if="open" class="absolute right-0 top-full pt-2 z-50">
-        <div class="w-72 rounded-xl overflow-hidden" style="background:rgba(17,24,39,0.97);border:1px solid rgba(255,255,255,0.1);box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);backdrop-filter:blur(12px);">
-          <div class="grid grid-cols-2 gap-2 p-3">
+        <div class="w-80 rounded-xl overflow-hidden" style="background:rgba(17,24,39,0.97);border:1px solid rgba(255,255,255,0.1);box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);backdrop-filter:blur(12px);">
+          <div class="grid grid-cols-3 gap-2 p-3">
             <template v-for="app in apps" :key="app.id">
               <!-- Coming soon -->
               <div
@@ -71,14 +71,23 @@ const config = useRuntimeConfig()
 const open = ref(false)
 const rootEl = ref<HTMLElement | null>(null)
 
-const apps = computed(() => [
-  { id: 'account',   name: 'Account',   desc: 'Your profile & settings',      icon: 'lucide:user-circle', url: config.public.baseUrl + '/account',          comingSoon: false },
-  { id: 'tasks',     name: 'Tasks',     desc: 'Project & task management',     icon: 'lucide:list-checks', url: config.public.tasksUrl + '/auth/gitlab/',    comingSoon: false },
-  { id: 'erp',       name: 'ERP',       desc: 'Business & operations',         icon: 'lucide:building-2',  url: config.public.erpUrl + '/app',               comingSoon: false },
-  { id: 'sheets',    name: 'Sheets',    desc: 'Collaborative spreadsheets',    icon: 'lucide:table',       url: config.public.sheetsUrl,                     comingSoon: false },
-  { id: 'email',     name: 'Email',     desc: 'Read and send emails',          icon: 'lucide:mail',        url: config.public.emailUrl,                      comingSoon: false },
-  { id: 'nextcloud', name: 'Files',     desc: 'Files & collaboration',         icon: 'lucide:folder',      url: config.public.nextcloudUrl,                  comingSoon: true  },
-])
+const isInnovayse = computed(() => config.public.authMode === 'sso')
+
+const apps = computed(() => {
+  const base = [
+    { id: 'account', name: 'Account', desc: 'Your profile & settings', icon: 'lucide:user-circle', url: config.public.baseUrl + '/account', comingSoon: false },
+  ]
+  if (!isInnovayse.value) return base
+  return [
+    ...base,
+    { id: 'tasks',     name: 'Tasks',     desc: 'Project & task management',  icon: 'lucide:list-checks', url: config.public.tasksUrl + '/auth/gitlab/', comingSoon: false },
+    { id: 'erp',       name: 'ERP',       desc: 'Business & operations',       icon: 'lucide:building-2',  url: config.public.erpUrl + '/app',            comingSoon: false },
+    { id: 'sheets',    name: 'Sheets',    desc: 'Collaborative spreadsheets',  icon: 'lucide:table',       url: config.public.sheetsUrl,                  comingSoon: false },
+    { id: 'email',     name: 'Email',     desc: 'Read and send emails',        icon: 'lucide:mail',        url: config.public.emailUrl,                   comingSoon: false },
+    { id: 'calendar',  name: 'Calendar',  desc: 'Team calendar & scheduling',  icon: 'lucide:calendar',    url: config.public.calendarUrl,                comingSoon: false },
+    { id: 'nextcloud', name: 'Files',     desc: 'Files & collaboration',       icon: 'lucide:folder',      url: config.public.nextcloudUrl,               comingSoon: true  },
+  ]
+})
 
 function toggle() { open.value = !open.value }
 

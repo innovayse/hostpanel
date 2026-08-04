@@ -133,9 +133,9 @@ services:
       NUXT_PUBLIC_EMAIL_URL: http://email.local
       NUXT_PUBLIC_NEXTCLOUD_URL: http://cloud.local
       SSO_CLIENT_ID: hostpanel
-      SSO_CLIENT_SECRET: changeme
+      SSO_CLIENT_SECRET: ${SSO_CLIENT_SECRET:-dev-secret-hostpanel}
       SSO_CALLBACK_URL: http://panel.local/api/portal/auth/sso/callback
-      STRIPE_PUBLISHABLE_KEY: pk_test_51Tc3tOEHRuUOoZmggqrvyuddpdtx6FtKaUSvqQXkwokJakOBFCLRDlX6troVkkjFw966agSmLKnu1NSlOAki6u9600PatIOktW
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
       SMTP_HOST: mailhog
       SMTP_PORT: 1025
       AUTH_MODE: ${AUTH_MODE:-sso}
@@ -168,6 +168,7 @@ services:
       API_PROXY_TARGET: http://api:5148
       VITE_SSO_URL: http://accounts.local
       VITE_SSO_CLIENT_ID: hostpanel-admin
+      SSO_PROXY_TARGET: http://innovayse-sso-sso-api-1:8080
       CHOKIDAR_USEPOLLING: "true"
     depends_on:
       - api

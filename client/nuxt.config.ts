@@ -51,7 +51,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     // Server-side only (not exposed to client)
-    authMode: process.env.AUTH_MODE || 'sso',
+    authMode: process.env.AUTH_MODE || 'local',
     apiUrl: process.env.API_URL || 'http://localhost:5000',
     ssoUrl: process.env.SSO_URL || 'http://sso-api:8080',
     ssoClientId: process.env.SSO_CLIENT_ID || 'hostpanel',
@@ -77,13 +77,14 @@ export default defineNuxtConfig({
 
     // Public runtime config (exposed to client)
     public: {
-      authMode: process.env.AUTH_MODE || 'sso',
+      authMode: process.env.AUTH_MODE || 'local',
       baseUrl: process.env.NUXT_PUBLIC_BASE_URL || 'https://innovayse.com',
       ssoPublicUrl: process.env.SSO_PUBLIC_URL || 'http://sso.local',
       tasksUrl: process.env.NUXT_PUBLIC_TASKS_URL || 'http://tasks.local',
       erpUrl: process.env.NUXT_PUBLIC_ERP_URL || 'http://erp.local',
       sheetsUrl: process.env.NUXT_PUBLIC_SHEETS_URL || 'http://sheets.local',
       emailUrl: process.env.NUXT_PUBLIC_EMAIL_URL || 'http://email.local',
+      calendarUrl: process.env.NUXT_PUBLIC_CALENDAR_URL || 'http://calendar.local',
       nextcloudUrl: process.env.NUXT_PUBLIC_NEXTCLOUD_URL || 'http://cloud.local',
       whmcsUrl: (process.env.WHMCS_URL || '').replace(/\/+$/, ''),
       stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',

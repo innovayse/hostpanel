@@ -48,6 +48,12 @@ services:
       RabbitMQ__Password: ${RABBITMQ_PASSWORD}
       Cors__AllowedOrigins__0: https://${DOMAIN}
       Cors__AllowedOrigins__1: https://${ADMIN_DOMAIN}
+      # SSO is optional — only meaningful where a real SSO deployment shares
+      # innovayse_network with this stack (see the `networks:` block below).
+      # Defaults to local (JWT) auth when unset, matching a standalone box.
+      Auth__Mode: ${AUTH_MODE:-local}
+      Sso__Authority: ${SSO_URL:-}
+      Sso__ClientId: ${SSO_CLIENT_ID:-hostpanel}
     depends_on:
       postgres:
         condition: service_healthy
@@ -61,8 +67,26 @@ services:
       dockerfile: docker/client.Dockerfile
       target: prod
     environment:
-      API_URL: http://api:5148
+      # Nitro/Nuxt production builds freeze runtimeConfig defaults at build
+      # time (nuxt.config.ts isn't re-evaluated at container start like it is
+      # in dev mode). Nitro's own fix for this is reading NUXT_<KEY> /
+      # NUXT_PUBLIC_<KEY> at runtime and overriding the frozen default — every
+      # var below MUST use that exact prefix+casing to actually take effect;
+      # plain names (matching the dev compose file) are silently ignored here.
+      NUXT_API_URL: http://api:5148
       NUXT_PUBLIC_BASE_URL: https://${DOMAIN}
+      # The app-launcher widget script is injected over whatever origin this
+      # points at — must be HTTPS on an HTTPS deployment or browsers block it
+      # as mixed content, which hangs the client dashboard's hydration.
+      NUXT_PUBLIC_MAIN_URL: ${NUXT_PUBLIC_MAIN_URL:-}
+      NUXT_SSO_URL: ${SSO_URL:-}
+      NUXT_SSO_PUBLIC_URL: ${SSO_PUBLIC_URL:-}
+      NUXT_PUBLIC_SSO_PUBLIC_URL: ${SSO_PUBLIC_URL:-}
+      NUXT_SSO_CLIENT_ID: ${SSO_CLIENT_ID:-hostpanel}
+      NUXT_SSO_CLIENT_SECRET: ${SSO_CLIENT_SECRET:-}
+      NUXT_SSO_CALLBACK_URL: https://${DOMAIN}/api/portal/auth/sso/callback
+      NUXT_AUTH_MODE: ${AUTH_MODE:-local}
+      NUXT_PUBLIC_AUTH_MODE: ${AUTH_MODE:-local}
     depends_on:
       - api
     restart: unless-stopped
@@ -73,6 +97,7 @@ services:
       dockerfile: docker/admin.Dockerfile
       target: prod
       args:
+        VITE_BASE_URL: ${ADMIN_BASE_URL_PATH:-/}
         VITE_SSO_URL: ${SSO_PUBLIC_URL:-https://accounts.innovayse.com}
         VITE_SSO_CLIENT_ID: ${ADMIN_SSO_CLIENT_ID:-hostpanel-admin}
     depends_on:

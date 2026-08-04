@@ -15,7 +15,7 @@ export default defineConfig({
     },
   },
   server: {
-    allowedHosts: ['panel-admin.local'],
+    allowedHosts: ['panel-admin.local', 'stage-panel-admin.innovayse.com'],
     proxy: {
       '/api': {
         target: process.env.API_PROXY_TARGET || 'http://localhost:5148',

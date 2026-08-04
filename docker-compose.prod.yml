@@ -66,6 +66,12 @@ services:
       context: .
       dockerfile: docker/client.Dockerfile
       target: prod
+      args:
+        # The app-launcher widget's <script> tag is baked in at build time
+        # (see client.Dockerfile) — the runtime env var below only affects
+        # useRuntimeConfig() reads, not that static tag, so it must be
+        # repeated here as a build arg for the widget to actually appear.
+        NUXT_PUBLIC_MAIN_URL: ${NUXT_PUBLIC_MAIN_URL:-}
     environment:
       # Nitro/Nuxt production builds freeze runtimeConfig defaults at build
       # time (nuxt.config.ts isn't re-evaluated at container start like it is

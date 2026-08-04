@@ -19,6 +19,13 @@ RUN corepack enable && corepack prepare yarn@1.22.22 --activate
 
 WORKDIR /app
 
+# The app-launcher widget <script> tag is only added to nuxt.config.ts's static
+# app.head.script array when this var is truthy — that array is evaluated once
+# at build time, so a runtime-only env var (unlike the NUXT_-prefixed
+# runtimeConfig overrides) can't add the tag after the fact.
+ARG NUXT_PUBLIC_MAIN_URL
+ENV NUXT_PUBLIC_MAIN_URL=$NUXT_PUBLIC_MAIN_URL
+
 COPY client/package.json client/yarn.lock ./
 RUN yarn install --frozen-lockfile
 

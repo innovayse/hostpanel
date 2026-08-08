@@ -265,6 +265,12 @@ try
             }
         }
 
+        // Support departments — every environment, for the same reason as the roles
+        // above: the ticket form cannot be submitted without at least one.
+        await Innovayse.Application.Support.Services.DefaultDepartmentsSeeder.EnsureSeededAsync(
+            scope.ServiceProvider.GetRequiredService<Innovayse.Domain.Support.Interfaces.IDepartmentRepository>(),
+            scope.ServiceProvider.GetRequiredService<Innovayse.Application.Common.IUnitOfWork>());
+
         // Dev seed — populate test data in Development
         if (app.Environment.IsDevelopment())
         {

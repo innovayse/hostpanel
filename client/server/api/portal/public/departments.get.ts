@@ -3,9 +3,8 @@
  * Returns active support departments from the C# backend.
  */
 export default defineEventHandler(async (event) => {
-  try {
-    return await internalApiCall<unknown[]>(event, '/support/departments')
-  } catch {
-    return []
-  }
+  // No try/catch swallowing the failure: '/support/departments' was a path the API
+  // never exposed, so every call 404'd into an empty array and the ticket form's
+  // department picker rendered empty with nothing in the logs to say why.
+  return await internalApiCall<unknown[]>(event, '/departments')
 })

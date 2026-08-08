@@ -11,7 +11,9 @@ using Microsoft.AspNetCore.Mvc;
 using Wolverine;
 
 /// <summary>
-/// Admin endpoints for managing support departments.
+/// Endpoints for support departments. Writes are admin-only; the list is public
+/// because the ticket form needs it to populate its department picker before the
+/// visitor has any admin context.
 /// </summary>
 /// <param name="bus">Wolverine message bus.</param>
 [ApiController]
@@ -22,7 +24,11 @@ public sealed class DepartmentsController(IMessageBus bus) : ControllerBase
     /// <summary>Returns all support departments.</summary>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A list of all department DTOs.</returns>
+    // AllowAnonymous overrides the controller-level Authorize for this action only —
+    // same split ProductsController and ProductGroupsController already use for their
+    // public reads. The writes below stay admin-only via the class attribute.
     [HttpGet]
+    [AllowAnonymous]
     public async Task<ActionResult<IReadOnlyList<DepartmentDto>>> GetAllAsync(CancellationToken ct)
     {
         var result = await bus.InvokeAsync<IReadOnlyList<DepartmentDto>>(new GetDepartmentsQuery(), ct);

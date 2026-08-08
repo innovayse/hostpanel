@@ -66,7 +66,10 @@ public sealed class DevDataSeeder(
                 await SeedSlidesAsync(db, logger, ct);
             }
 
-            if (!await db.Departments.AnyAsync(ct))
+            // Keyed on tickets rather than departments: DefaultDepartmentsSeeder fills the
+            // departments table in every environment before this runs, so the old check
+            // would now always be false and the KB and tickets would never be seeded.
+            if (!await db.Tickets.AnyAsync(ct))
             {
                 await SeedSupportAsync(db, ct, logger);
             }
@@ -493,8 +496,10 @@ public sealed class DevDataSeeder(
             await SeedSlidesAsync(db, logger, ct);
         }
 
-        // ── Support: Departments, Tickets, KB ────────────────────────────────
-        if (!await db.Departments.AnyAsync(ct))
+        // ── Support: Tickets, KB ─────────────────────────────────────────────
+        // Keyed on tickets, not departments: departments now exist in every environment
+        // before this runs, so the old check would have skipped the KB and tickets too.
+        if (!await db.Tickets.AnyAsync(ct))
         {
             await SeedSupportAsync(db, ct, logger);
         }
@@ -530,23 +535,10 @@ public sealed class DevDataSeeder(
 
     private static async Task SeedSupportAsync(AppDbContext db, CancellationToken ct, ILogger logger)
     {
-        // Departments
-        var deptDefs = new[]
-        {
-            ("Technical Support", "support@hostpanel.com"),
-            ("Billing",           "billing@hostpanel.com"),
-            ("Sales",             "sales@hostpanel.com"),
-            ("General",           "hello@hostpanel.com"),
-        };
-
-        var departments = new List<Department>();
-        foreach (var (name, email) in deptDefs)
-        {
-            var dept = Department.Create(name, email);
-            db.Departments.Add(dept);
-            departments.Add(dept);
-        }
-        await db.SaveChangesAsync(ct);
+        // Departments are seeded for every environment by DefaultDepartmentsSeeder, which
+        // has already run by the time we get here — so take those rather than adding a
+        // duplicate set. The tickets below index into this list, so it must be ordered.
+        var departments = await db.Departments.OrderBy(d => d.Id).ToListAsync(ct);
 
         // KB Categories
         var kbCatDefs = new[]

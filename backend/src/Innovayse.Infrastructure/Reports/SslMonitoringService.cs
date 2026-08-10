@@ -55,30 +55,41 @@ public sealed class SslMonitoringService(AppDbContext db) : ISslMonitoringServic
             .DistinctBy(d => d.Name)
             .ToList();
 
-        // Check each domain in parallel (max 10 concurrent)
+        // Probe each domain in parallel (max 10 concurrent), then record the results
+        // on one thread.
+        //
+        // The split is the point. Probing is network-bound and belongs in parallel, but
+        // `db` is a single AppDbContext and EF Core's change tracker is not thread-safe:
+        // ten tasks calling Add and mutating tracked entities on it at once can corrupt
+        // its state or throw "A second operation was started on this context instance".
+        // The semaphore bounded the outbound connections, never the writes — it let ten
+        // of them run concurrently by design.
         var semaphore = new SemaphoreSlim(10, 10);
-        var tasks = allDomains.Select(async domain =>
+        var probes = allDomains.Select(async domain =>
         {
             await semaphore.WaitAsync(ct);
             try
             {
                 var sslResult = await CheckSslAsync(domain.Name);
-                var hasSsl = sslResult.hasSsl;
-                var issuer = sslResult.issuer;
-                var expiresAt = sslResult.expiresAt;
-                if (existing.TryGetValue(domain.Name, out var record))
-                {
-                    record.Update(hasSsl, issuer, expiresAt, domain.IsActive);
-                }
-                else
-                {
-                    db.SslChecks.Add(SslCheck.Create(domain.Name, hasSsl, issuer, expiresAt, domain.IsActive));
-                }
+                return (domain.Name, domain.IsActive, sslResult.hasSsl, sslResult.issuer, sslResult.expiresAt);
             }
             finally { semaphore.Release(); }
         });
 
-        await Task.WhenAll(tasks);
+        var results = await Task.WhenAll(probes);
+
+        foreach (var (name, isActive, hasSsl, issuer, expiresAt) in results)
+        {
+            if (existing.TryGetValue(name, out var record))
+            {
+                record.Update(hasSsl, issuer, expiresAt, isActive);
+            }
+            else
+            {
+                db.SslChecks.Add(SslCheck.Create(name, hasSsl, issuer, expiresAt, isActive));
+            }
+        }
+
         await db.SaveChangesAsync(ct);
 
         return await GetReportAsync(includeInactive, ct);

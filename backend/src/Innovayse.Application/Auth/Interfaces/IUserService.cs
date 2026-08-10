@@ -73,6 +73,20 @@ public interface IUserService
     Task<Dictionary<string, string>> GetEmailsByIdsAsync(IEnumerable<string> userIds, CancellationToken ct);
 
     /// <summary>
+    /// Retrieves two-factor status for a batch of user IDs.
+    /// </summary>
+    /// <remarks>
+    /// Exists for the same reason as <see cref="GetEmailsByIdsAsync"/>: callers need a
+    /// page of users at once, and asking per user concurrently is not an option. The
+    /// implementation runs on Identity's UserManager, which shares the request's scoped
+    /// DbContext, and EF Core rejects overlapping operations on one context.
+    /// </remarks>
+    /// <param name="userIds">The user identifiers to look up.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Dictionary mapping user ID to whether two-factor is enabled.</returns>
+    Task<Dictionary<string, bool>> GetTwoFactorEnabledByIdsAsync(IEnumerable<string> userIds, CancellationToken ct);
+
+    /// <summary>
     /// Finds user IDs whose email contains the given search term (case-insensitive).
     /// </summary>
     /// <param name="emailSearch">Partial email to search for.</param>

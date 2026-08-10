@@ -123,18 +123,18 @@ services:
       # own "api" service on the shared innovayse_network, and Docker's embedded DNS round-robins
       # between them, randomly routing requests to the wrong app's backend.
       API_URL: http://hostpanel-api-1:5148
-      NUXT_PUBLIC_BASE_URL: http://panel.local
-      NUXT_PUBLIC_MAIN_URL: http://app.local
+      NUXT_PUBLIC_BASE_URL: ${NUXT_PUBLIC_BASE_URL:-http://panel.local}
+      NUXT_PUBLIC_MAIN_URL: ${NUXT_PUBLIC_MAIN_URL:-http://app.local}
       SSO_URL: http://innovayse-sso-sso-api-1:8080
-      SSO_PUBLIC_URL: http://accounts.local
-      NUXT_PUBLIC_TASKS_URL: http://tasks.local
-      NUXT_PUBLIC_ERP_URL: http://erp.local
-      NUXT_PUBLIC_SHEETS_URL: http://sheets.local
-      NUXT_PUBLIC_EMAIL_URL: http://email.local
-      NUXT_PUBLIC_NEXTCLOUD_URL: http://cloud.local
+      SSO_PUBLIC_URL: ${SSO_PUBLIC_URL:-http://accounts.local}
+      NUXT_PUBLIC_TASKS_URL: ${NUXT_PUBLIC_TASKS_URL:-http://tasks.local}
+      NUXT_PUBLIC_ERP_URL: ${NUXT_PUBLIC_ERP_URL:-http://erp.local}
+      NUXT_PUBLIC_SHEETS_URL: ${NUXT_PUBLIC_SHEETS_URL:-http://sheets.local}
+      NUXT_PUBLIC_EMAIL_URL: ${NUXT_PUBLIC_EMAIL_URL:-http://email.local}
+      NUXT_PUBLIC_NEXTCLOUD_URL: ${NUXT_PUBLIC_NEXTCLOUD_URL:-http://cloud.local}
       SSO_CLIENT_ID: hostpanel
-      SSO_CLIENT_SECRET: ${SSO_CLIENT_SECRET:-dev-secret-hostpanel}
-      SSO_CALLBACK_URL: http://panel.local/api/portal/auth/sso/callback
+      SSO_CLIENT_SECRET: ${SSO_CLIENT_SECRET:-changeme}
+      SSO_CALLBACK_URL: ${SSO_CALLBACK_URL:-http://panel.local/api/portal/auth/sso/callback}
       STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
       SMTP_HOST: mailhog
       SMTP_PORT: 1025

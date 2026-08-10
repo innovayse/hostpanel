@@ -91,6 +91,21 @@ public sealed class UserService(UserManager<AppUser> userManager, IClientReposit
     }
 
     /// <inheritdoc/>
+    public async Task<Dictionary<string, bool>> GetTwoFactorEnabledByIdsAsync(IEnumerable<string> userIds, CancellationToken ct)
+    {
+        // Sequential, like the email lookup above: userManager runs on the request's
+        // scoped DbContext, and EF Core throws "A second operation was started on this
+        // context instance" if two of these overlap.
+        var result = new Dictionary<string, bool>();
+        foreach (var id in userIds)
+        {
+            var user = await userManager.FindByIdAsync(id);
+            result[id] = user?.TwoFactorEnabled ?? false;
+        }
+        return result;
+    }
+
+    /// <inheritdoc/>
     public async Task<List<string>> FindUserIdsByEmailAsync(string emailSearch, CancellationToken ct)
     {
         var term = emailSearch.ToLower();

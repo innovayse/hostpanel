@@ -49,16 +49,16 @@ public sealed class ListClientsHandler(IClientRepository clientRepo, IUserServic
         var userIds = items.Select(c => c.UserId).Distinct().ToList();
         var emails = await userService.GetEmailsByIdsAsync(userIds, ct);
 
-        // Batch-fetch 2FA status
-        var twoFactorStatuses = new Dictionary<string, bool>();
-        await Task.WhenAll(userIds.Select(async uid =>
-        {
-            var enabled = await userService.IsTwoFactorEnabledAsync(uid, ct);
-            lock (twoFactorStatuses)
-            {
-                twoFactorStatuses[uid] = enabled;
-            }
-        }));
+        // Batch-fetch 2FA status.
+        //
+        // One call, not one per user in parallel: IUserService runs on Identity's
+        // UserManager, which shares this request's scoped DbContext, and EF Core
+        // rejects overlapping operations on a single context. Fanning the lookups out
+        // with Task.WhenAll threw "A second operation was started on this context
+        // instance" as soon as a page held two clients, and the API returned that to
+        // the browser as 400 Bad Request. The lock guarded the dictionary but not the
+        // context, which was the part that could not take the concurrency.
+        var twoFactorStatuses = await userService.GetTwoFactorEnabledByIdsAsync(userIds, ct);
 
         var dtos = items.Select(c => MapToListItem(c, emails, twoFactorStatuses)).ToList();
 

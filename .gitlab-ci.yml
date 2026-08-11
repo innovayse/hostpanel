@@ -165,3 +165,35 @@ deploy:staging:
       optional: true
     - job: admin:build:prod
       optional: true
+
+# ── production ───────────────────────────────────────────────────────────────
+# ProdServer (10.0.0.4) serves host.innovayse.com. Unlike staging it does not
+# consume registry images at all: `docker inspect hostpanel-api-1` reports a
+# bare `hostpanel-api`, because this host builds its own from the checkout. So
+# this job needs nothing from the build stage and declares `needs: []` — the
+# build jobs require a `builder` runner, which this project does not have, and
+# waiting on them would leave the deploy permanently pending.
+#
+# The three -f files are the exact set the running containers were created with
+# (`com.docker.compose.project.config_files` on hostpanel-api-1). Composing with
+# fewer would silently redefine the project.
+deploy:prod:
+  stage: deploy
+  tags: [prod]
+  variables:
+    GIT_STRATEGY: none
+    DEPLOY_DIR: /home/innovayse-server/www/innovayse-workspace/hostpanel
+    COMPOSE_FILES: -f docker-compose.prod.yml -f docker-compose.prod.sso-network.yml -f docker-compose.prodserver.yml
+  script:
+    - git -C "$DEPLOY_DIR" fetch "$CI_REPOSITORY_URL" "$CI_COMMIT_SHA"
+    - git -C "$DEPLOY_DIR" checkout -f "$CI_COMMIT_SHA"
+    - cd "$DEPLOY_DIR"
+    - docker compose $COMPOSE_FILES build api client
+    - docker compose $COMPOSE_FILES up -d api client
+  environment: { name: production/hostpanel, url: "https://host.innovayse.com", deployment_tier: production }
+  # Manual on purpose — merging should not by itself change what customers see.
+  when: manual
+  allow_failure: false
+  needs: []
+  rules:
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "main"

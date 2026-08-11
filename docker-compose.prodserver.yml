@@ -1,0 +1,25 @@
+# ProdServer (10.0.0.4) overlay. Use instead of docker-compose.server.yml.
+#
+# server.yml publishes api/client/admin on localhost ports for a host nginx to reach.
+# That is the VPS shape, not this one: here innovayse-edge sits on the shared
+# innovayse_network and proxies to containers by name, so published ports buy nothing
+# and actively collide — 5148 is already held by innovayse-calendar-backend-1, which is
+# what stopped the first deploy.
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml \
+#                  -f docker-compose.prod.sso-network.yml \
+#                  -f docker-compose.prodserver.yml up -d --build
+services:
+  # innovayse-edge already owns :80 on this host and terminates nothing itself (the VPS
+  # does TLS), so the bundled nginx has no role and would fail to bind.
+  nginx:
+    profiles:
+      - disabled
+
+  admin:
+    build:
+      args:
+        # The admin SPA is served under /admin on the same hostname rather than a
+        # second domain, so its asset URLs have to be built for that base path.
+        VITE_BASE_URL: /admin

@@ -8,12 +8,14 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   const query = getQuery(event)
 
-  // Silent SSO (prompt=none) returned an error — not logged in, go back to homepage
+  // Silent SSO (prompt=none) returned an error — not logged in, go back to homepage.
+  // `sso_silent_tried` is deliberately left in place: it is the loop guard, and clearing
+  // it here would send the very next page render straight back through /authorize. It
+  // carries a short TTL of its own, so a later visit still gets a fresh session probe.
   const error = query.error as string | undefined
   if (error) {
     deleteCookie(event, 'pkce_verifier', { path: '/' })
     deleteCookie(event, 'oauth_state', { path: '/' })
-    deleteCookie(event, 'sso_silent_tried', { path: '/' })
     const returnTo = getCookie(event, 'sso_silent_return') || '/'
     deleteCookie(event, 'sso_silent_return', { path: '/' })
     return sendRedirect(event, returnTo, 302)

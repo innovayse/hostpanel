@@ -768,7 +768,7 @@ public sealed class MigrationPullWorker(
                         null,
                         null,
                         null,
-                        ProductType.Other,
+                        MapProductType(rec.Type),
                         rec.MonthlyPrice,
                         rec.AnnualPrice);
 
@@ -788,6 +788,20 @@ public sealed class MigrationPullWorker(
             await repo.SaveAsync(ct);
         }
     }
+
+    /// <summary>
+    /// Maps a WHMCS product `type` column value to the closest <see cref="ProductType"/>.
+    /// WHMCS's type is a provisioning-module category, not a marketing category, so this
+    /// only recognizes the one value with an unambiguous match; everything else — custom
+    /// SaaS products, "other", "server", "reselleraccount" — stays <see cref="ProductType.Other"/>
+    /// rather than guessing at Vps/Dedicated/Ssl/Domain from a string that doesn't carry that
+    /// information.
+    /// </summary>
+    private static ProductType MapProductType(string whmcsType) => whmcsType switch
+    {
+        "hostingaccount" => ProductType.SharedHosting,
+        _ => ProductType.Other,
+    };
 
     // ── Orders ────────────────────────────────────────────────────────────────
 

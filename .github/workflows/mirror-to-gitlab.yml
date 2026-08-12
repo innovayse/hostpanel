@@ -1,0 +1,32 @@
+name: Mirror to GitLab
+
+# hostpanel's CI/CD lives on GitLab (build + test + the manual production deploy
+# job), because that's where its runners are — one on ProdServer itself, tagged
+# `prod`. GitHub stays the public source of record. This workflow is the bridge:
+# every push to main is force-pushed to the GitLab mirror, which reuses that
+# repo's own `.gitlab-ci.yml` workflow rules (`if: $CI_COMMIT_BRANCH == "main"`)
+# to start a pipeline — nothing GitLab-side needs to change for this to work.
+#
+# GITLAB_MIRROR_TOKEN is a GitLab *project* access token (write_repository only,
+# Maintainer role, scoped to innovayse/hostpanel) — not the broad personal token
+# used elsewhere in this infra, so a leaked secret here can only push to this one
+# repo, nothing else on the account.
+on:
+  push:
+    branches: [main]
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history: a shallow mirror push would truncate the GitLab
+          # repo's log on the very first sync.
+          fetch-depth: 0
+
+      - name: Push to GitLab
+        run: |
+          git push "https://project-access-token:${GITLAB_MIRROR_TOKEN}@gitlab.com/innovayse/hostpanel.git" "HEAD:main"
+        env:
+          GITLAB_MIRROR_TOKEN: ${{ secrets.GITLAB_MIRROR_TOKEN }}

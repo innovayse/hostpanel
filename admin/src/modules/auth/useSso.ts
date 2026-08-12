@@ -32,9 +32,24 @@ function randomToken(byteLength: number): string {
   return base64UrlEncode(bytes)
 }
 
+/**
+ * Origin plus the app's base path, always with exactly one trailing slash.
+ *
+ * The base matters because the panel can be served under a path rather than its own
+ * subdomain (VITE_BASE_URL=/admin, as on host.innovayse.com); the bare origin there is
+ * the client portal, not this app. The slash is normalised by hand rather than trusted
+ * from import.meta.env.BASE_URL — vite.config sets `base` straight from an env var, and
+ * a value written without a trailing slash reaches the bundle that way, producing
+ * "/adminauth/callback".
+ */
+function appRoot(): string {
+  const base = import.meta.env.BASE_URL || '/'
+  return `${window.location.origin}${base.endsWith('/') ? base : `${base}/`}`
+}
+
 /** Builds the redirect_uri used for both the authorize request and the token exchange. */
 function callbackUrl(): string {
-  return `${window.location.origin}/auth/callback`
+  return `${appRoot()}auth/callback`
 }
 
 /**
@@ -141,7 +156,9 @@ export async function refreshSsoToken(refreshToken: string): Promise<SsoTokenRes
 
 /** Redirects the browser to SSO's end-session endpoint, ending the SSO session too. */
 export function ssoLogoutRedirect(idTokenHint?: string): void {
-  const params = new URLSearchParams({ post_logout_redirect_uri: window.location.origin })
+  // Same reasoning as callbackUrl(): on a path-mounted deployment the bare origin is
+  // the client portal, so logging out of the admin panel would drop the user there.
+  const params = new URLSearchParams({ post_logout_redirect_uri: appRoot() })
   if (idTokenHint) params.set('id_token_hint', idTokenHint)
   window.location.href = `${SSO_URL}/connect/logout?${params}`
 }

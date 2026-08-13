@@ -50,7 +50,7 @@ try
     builder.Services.AddSingleton<Innovayse.API.Auth.JwtTokenService>();
 
     var jwtSecret = builder.Configuration["Jwt:Secret"]
-        ?? "change-this-to-a-32-char-min-secret-key-here";
+        ?? Innovayse.API.Auth.JwtTokenService.DevSecretFallback;
 
     if (authMode == "local")
     {
@@ -67,8 +67,8 @@ try
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(
                         System.Text.Encoding.UTF8.GetBytes(jwtSecret)),
-                    ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "innovayse-api",
-                    ValidAudience = builder.Configuration["Jwt:Audience"] ?? "innovayse-clients",
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? Innovayse.API.Auth.JwtTokenService.DefaultIssuer,
+                    ValidAudience = builder.Configuration["Jwt:Audience"] ?? Innovayse.API.Auth.JwtTokenService.DefaultAudience,
                     RoleClaimType = System.Security.Claims.ClaimTypes.Role,
                     NameClaimType = "sub",
                 };
@@ -78,7 +78,7 @@ try
     {
         // SSO mode with local JWT fallback — admin panel uses local tokens,
         // client panel uses SSO tokens. Both are accepted.
-        var localJwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "innovayse-api";
+        var localJwtIssuer = builder.Configuration["Jwt:Issuer"] ?? Innovayse.API.Auth.JwtTokenService.DefaultIssuer;
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(opts =>
             {
@@ -145,8 +145,8 @@ try
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(
                         System.Text.Encoding.UTF8.GetBytes(jwtSecret)),
-                    ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "innovayse-api",
-                    ValidAudience = builder.Configuration["Jwt:Audience"] ?? "innovayse-clients",
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? Innovayse.API.Auth.JwtTokenService.DefaultIssuer,
+                    ValidAudience = builder.Configuration["Jwt:Audience"] ?? Innovayse.API.Auth.JwtTokenService.DefaultAudience,
                     RoleClaimType = System.Security.Claims.ClaimTypes.Role,
                     NameClaimType = "sub",
                 };

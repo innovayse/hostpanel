@@ -42,7 +42,13 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
             // Override connection string to point at the test container
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:DefaultConnection"] = _postgres.GetConnectionString()
+                ["ConnectionStrings:DefaultConnection"] = _postgres.GetConnectionString(),
+                // Every test here creates its users through POST /api/auth/register — the only
+                // user-creation path exercised anywhere in this suite — but LocalAuthController
+                // 404s that action unless Auth:Mode=local (it's SSO by default everywhere else,
+                // per docker-compose.yml's AUTH_MODE:-sso). Without this, registration 404s and
+                // every test that depends on it — nearly all of them — fails outright.
+                ["Auth:Mode"] = "local"
             });
         });
 

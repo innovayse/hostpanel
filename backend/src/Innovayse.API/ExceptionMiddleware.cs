@@ -8,7 +8,8 @@ using System.Text.Json;
 /// Prevents unhandled exceptions from propagating to the test host or client.
 /// </summary>
 /// <param name="next">The next middleware in the pipeline.</param>
-public sealed class ExceptionMiddleware(RequestDelegate next)
+/// <param name="logger">Logger for unhandled exceptions.</param>
+public sealed class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
 {
     /// <summary>Invokes the middleware.</summary>
     /// <param name="context">The current HTTP context.</param>
@@ -28,9 +29,15 @@ public sealed class ExceptionMiddleware(RequestDelegate next)
         }
         catch (Exception ex)
         {
+            // The response body deliberately never includes ex.Message — this is the last
+            // handler in the pipeline, so whatever reaches here hasn't been classified as a
+            // client-facing error by anything upstream, and echoing it back risks leaking
+            // internals (connection strings, stack frames) to the caller. This log line is
+            // the only place the real exception surfaces; previously it was discarded
+            // entirely (`_ = ex;`), which is how a JwtTokenService config bug went unnoticed
+            // through every 500 it caused.
+            logger.LogError(ex, "Unhandled exception");
             await WriteErrorAsync(context, HttpStatusCode.InternalServerError, "An unexpected error occurred.");
-            // Log the original message in non-production environments
-            _ = ex;
         }
     }
 

@@ -51,6 +51,32 @@ services:
           cpus: '0.2'
           memory: 256M
 
+  # Sessions and the data protection key ring for the admin SPA's cookie auth.
+  # Unused under Auth__Mode=local, and cheap enough to leave running there rather
+  # than hide behind a profile a standalone sso deployment would have to know to
+  # activate. Inside the workspace the platform overlay parks it and the shared
+  # instance answers to the same name, so no connection string changes.
+  #
+  # Persisted, not cache-only: the key ring lives here, and losing it invalidates
+  # every session cookie in circulation — everyone signed out by a container
+  # recreate, which is exactly what a deploy does.
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
   # ── Application ─────────────────────────────────────────────────────────────
   api:
     build:
@@ -94,7 +120,24 @@ services:
       NUGET_AUDIT: "false"
       Sso__Authority: http://sso-api:8080
       Sso__ClientId: hostpanel
+      # The cookie session for the admin SPA. Read only when the mode is sso —
+      # AddInnovayseAuth is skipped entirely under local, which is what keeps this
+      # product deployable on its own with no SSO anywhere. Under sso all of them
+      # are required and the API refuses to start if one is missing, rather than
+      # come up and hand every visitor an anonymous session.
       Auth__Mode: ${AUTH_MODE:-sso}
+      Auth__AppName: hostpanel
+      Auth__Authority: ${SSO_URL:-http://sso-api:8080}
+      # Where the browser is sent to sign in, when that differs from the address
+      # this container reaches the SSO on. Optional: unset, Authority is used for
+      # both, which is right whenever the SSO is publicly addressable.
+      Auth__PublicAuthority: ${SSO_PUBLIC_URL:-}
+      Auth__ClientId: ${SSO_CLIENT_ID:-hostpanel}
+      # No :?required, unlike the other products: local mode never reads it, and a
+      # required variable here would stop a standalone box from starting at all.
+      # Under sso an empty value fails at startup by name instead.
+      Auth__ClientSecret: ${CLIENT_HOSTPANEL_SECRET:-}
+      Auth__RedisConnection: ${REDIS_CONNECTION:-redis:6379}
       BackchannelLogout__Key: ${HOSTPANEL_BACKCHANNEL_LOGOUT_KEY:-dev-hostpanel-backchannel-key}
     depends_on:
       postgres:
@@ -103,6 +146,8 @@ services:
         condition: service_healthy
       mailhog:
         condition: service_started
+      redis:
+        condition: service_healthy
     deploy:
       resources:
         limits:
@@ -177,6 +222,7 @@ services:
 
 volumes:
   pgdata:
+  redisdata:
   client_node_modules:
   admin_node_modules:
   backend_bin:

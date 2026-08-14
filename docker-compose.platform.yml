@@ -48,6 +48,10 @@ services:
   mailhog:
     profiles: ["standalone-only"]
 
+  # the shared Redis answers to the same name, so Auth__RedisConnection is unchanged
+  redis:
+    profiles: ["standalone-only"]
+
   api:
     # !override replaces the base list instead of merging into it. Without it the
     # parked rabbitmq and mailhog would still be waited on, and compose refuses a

@@ -57,6 +57,20 @@ services:
       Auth__Mode: ${AUTH_MODE:-local}
       Sso__Authority: ${SSO_URL:-}
       Sso__ClientId: ${SSO_CLIENT_ID:-hostpanel}
+      # The cookie session for the admin SPA, read only when AUTH_MODE=sso.
+      # AddInnovayseAuth is skipped entirely under local — the default here, and
+      # what a standalone box runs — so none of these have to be set there. Under
+      # sso all of them are required: the API refuses to start naming the missing
+      # one, rather than come up and hand every visitor an anonymous session.
+      #
+      # No :?required on the secret, unlike the other products: it would stop a
+      # local-mode host from starting over a value it never reads.
+      Auth__AppName: hostpanel
+      Auth__Authority: ${SSO_URL:-}
+      Auth__PublicAuthority: ${SSO_PUBLIC_URL:-}
+      Auth__ClientId: ${SSO_CLIENT_ID:-hostpanel}
+      Auth__ClientSecret: ${CLIENT_HOSTPANEL_SECRET:-}
+      Auth__RedisConnection: ${REDIS_CONNECTION:-redis:6379}
     depends_on:
       postgres:
         condition: service_healthy

@@ -73,7 +73,7 @@ export default defineNuxtConfig({
     // WHM root API token for cPanel SSO (create_user_session)
     whmApiToken: process.env.WHM_API_TOKEN,
     // Internal URL of innovayse-main (app.local) — used for backchannel logout delegation
-    mainApiUrl: process.env.NUXT_MAIN_API_URL || 'http://innovayse-main-client-1:3000',
+    mainApiUrl: process.env.NUXT_MAIN_API_URL || 'http://main-client:3000',
 
     // Public runtime config (exposed to client)
     public: {

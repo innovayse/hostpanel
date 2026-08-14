@@ -3,15 +3,15 @@ services:
   postgres:
     image: postgres:17-alpine
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-hostpanel_dev}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5434:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -24,8 +24,8 @@ services:
   rabbitmq:
     image: rabbitmq:3-management-alpine
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     ports:
       - "5673:5672"
       - "15673:15672"
@@ -51,12 +51,46 @@ services:
           cpus: '0.2'
           memory: 256M
 
+  # Sessions and the data protection key ring for the admin SPA's cookie auth.
+  # Unused under Auth__Mode=local, and cheap enough to leave running there rather
+  # than hide behind a profile a standalone sso deployment would have to know to
+  # activate. Inside the workspace the platform overlay parks it and the shared
+  # instance answers to the same name, so no connection string changes.
+  #
+  # Persisted, not cache-only: the key ring lives here, and losing it invalidates
+  # every session cookie in circulation — everyone signed out by a container
+  # recreate, which is exactly what a deploy does.
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
   # ── Application ─────────────────────────────────────────────────────────────
   api:
     build:
       context: .
       dockerfile: docker/api.Dockerfile
       target: dev
+    # The name other products, the edge proxy and the dev proxy address this one
+    # by. Declared here rather than in docker-compose.platform.yml so it resolves
+    # in a standalone deployment too — the alternative was the container name,
+    # Compose's <project>-<service>-<index>, which breaks on a directory rename, a
+    # second replica, or the stack coming up under another project's name.
+    networks:
+      default:
+        aliases: [hostpanel-api]
     ports:
       - "5149:5148"
     volumes:
@@ -65,14 +99,14 @@ services:
       - backend_obj:/app/src/Innovayse.API/obj
       - backend_packages:/root/.nuget/packages
     environment:
-      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-hostpanel_dev};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}"
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
       ASPNETCORE_ENVIRONMENT: Development
-      Jwt__Secret: ${JWT_SECRET:-change-this-to-a-32-char-min-secret-key-here}
-      Jwt__Issuer: ${JWT_ISSUER:-innovayse-api}
-      Jwt__Audience: ${JWT_AUDIENCE:-innovayse-clients}
+      Jwt__Secret: ${JWT_SECRET}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
       RabbitMQ__Host: rabbitmq
-      RabbitMQ__User: ${RABBITMQ_USER:-guest}
-      RabbitMQ__Password: ${RABBITMQ_PASSWORD:-guest}
+      RabbitMQ__User: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
       Cors__AllowedOrigins__0: http://localhost:3001
       Cors__AllowedOrigins__1: http://localhost:5174
       Cors__AllowedOrigins__2: http://panel.local
@@ -86,16 +120,33 @@ services:
       Smtp__UseSsl: "false"
       # Required outside Development: without it the EF configurations silently drop
       # their encrypted-column converters and server passwords, API tokens and access
-      # hashes are written to the database in plain text. The dev default is a real
+      # hashes are written to the database in plain text. .env.example carries a real
       # 32-byte key so a fresh clone exercises the same code path production does.
-      EncryptionKey: ${ENCRYPTION_KEY:-ZGV2LW9ubHkta2V5LW5vdC1mb3ItcHJvZHVjdGlvbiE=}
+      EncryptionKey: ${ENCRYPTION_KEY}
       DOTNET_USE_POLLING_FILE_WATCHER: 1
       DOTNET_NUGET_SIGNATURE_VERIFICATION: "false"
       NUGET_AUDIT: "false"
       Sso__Authority: http://sso-api:8080
       Sso__ClientId: hostpanel
-      Auth__Mode: ${AUTH_MODE:-sso}
-      BackchannelLogout__Key: ${HOSTPANEL_BACKCHANNEL_LOGOUT_KEY:-dev-hostpanel-backchannel-key}
+      # The cookie session for the admin SPA. Read only when the mode is sso —
+      # AddInnovayseAuth is skipped entirely under local, which is what keeps this
+      # product deployable on its own with no SSO anywhere. Under sso all of them
+      # are required and the API refuses to start if one is missing, rather than
+      # come up and hand every visitor an anonymous session.
+      Auth__Mode: ${AUTH_MODE}
+      Auth__AppName: hostpanel
+      Auth__Authority: ${SSO_URL}
+      # Where the browser is sent to sign in, when that differs from the address
+      # this container reaches the SSO on. Optional: left empty, Authority is used
+      # for both, which is right whenever the SSO is publicly addressable.
+      Auth__PublicAuthority: ${SSO_PUBLIC_URL}
+      Auth__ClientId: ${SSO_CLIENT_ID}
+      # No :?required, unlike the other products: local mode never reads it, and a
+      # required variable here would stop a standalone box from starting at all.
+      # Under sso an empty value fails at startup by name instead.
+      Auth__ClientSecret: ${CLIENT_HOSTPANEL_SECRET}
+      Auth__RedisConnection: ${REDIS_CONNECTION}
+      BackchannelLogout__Key: ${HOSTPANEL_BACKCHANNEL_LOGOUT_KEY}
     depends_on:
       postgres:
         condition: service_healthy
@@ -103,6 +154,8 @@ services:
         condition: service_healthy
       mailhog:
         condition: service_started
+      redis:
+        condition: service_healthy
     deploy:
       resources:
         limits:
@@ -114,32 +167,41 @@ services:
       context: .
       dockerfile: docker/client.Dockerfile
       target: dev
+    # The name other products, the edge proxy and the dev proxy address this one
+    # by. Declared here rather than in docker-compose.platform.yml so it resolves
+    # in a standalone deployment too — the alternative was the container name,
+    # Compose's <project>-<service>-<index>, which breaks on a directory rename, a
+    # second replica, or the stack coming up under another project's name.
+    networks:
+      default:
+        aliases: [hostpanel-client]
     ports:
       - "3001:3000"
     volumes:
       - ./client:/app
       - client_node_modules:/app/node_modules
     environment:
-      # Container name, not the "api" network alias — that alias collides with innovayse-main's
-      # own "api" service on the shared innovayse_network, and Docker's embedded DNS round-robins
-      # between them, randomly routing requests to the wrong app's backend.
-      API_URL: http://hostpanel-api-1:5148
-      NUXT_PUBLIC_BASE_URL: ${NUXT_PUBLIC_BASE_URL:-http://panel.local}
-      NUXT_PUBLIC_MAIN_URL: ${NUXT_PUBLIC_MAIN_URL:-http://app.local}
+      # hostpanel-api, the alias declared on the api service above — not the bare
+      # "api" service name, which collides with innovayse-main's own "api" on the
+      # shared network and has Docker's DNS round-robin between two products'
+      # backends, and not the container name, which changes with the project.
+      API_URL: http://hostpanel-api:5148
+      NUXT_PUBLIC_BASE_URL: ${NUXT_PUBLIC_BASE_URL}
+      NUXT_PUBLIC_MAIN_URL: ${NUXT_PUBLIC_MAIN_URL}
       SSO_URL: http://sso-api:8080
-      SSO_PUBLIC_URL: ${SSO_PUBLIC_URL:-http://accounts.local}
-      NUXT_PUBLIC_TASKS_URL: ${NUXT_PUBLIC_TASKS_URL:-http://tasks.local}
-      NUXT_PUBLIC_ERP_URL: ${NUXT_PUBLIC_ERP_URL:-http://erp.local}
-      NUXT_PUBLIC_SHEETS_URL: ${NUXT_PUBLIC_SHEETS_URL:-http://sheets.local}
-      NUXT_PUBLIC_EMAIL_URL: ${NUXT_PUBLIC_EMAIL_URL:-http://email.local}
-      NUXT_PUBLIC_NEXTCLOUD_URL: ${NUXT_PUBLIC_NEXTCLOUD_URL:-http://cloud.local}
+      SSO_PUBLIC_URL: ${SSO_PUBLIC_URL}
+      NUXT_PUBLIC_TASKS_URL: ${NUXT_PUBLIC_TASKS_URL}
+      NUXT_PUBLIC_ERP_URL: ${NUXT_PUBLIC_ERP_URL}
+      NUXT_PUBLIC_SHEETS_URL: ${NUXT_PUBLIC_SHEETS_URL}
+      NUXT_PUBLIC_EMAIL_URL: ${NUXT_PUBLIC_EMAIL_URL}
+      NUXT_PUBLIC_NEXTCLOUD_URL: ${NUXT_PUBLIC_NEXTCLOUD_URL}
       SSO_CLIENT_ID: hostpanel
-      SSO_CLIENT_SECRET: ${SSO_CLIENT_SECRET:-changeme}
-      SSO_CALLBACK_URL: ${SSO_CALLBACK_URL:-http://panel.local/api/portal/auth/sso/callback}
+      SSO_CLIENT_SECRET: ${SSO_CLIENT_SECRET}
+      SSO_CALLBACK_URL: ${SSO_CALLBACK_URL}
       STRIPE_PUBLISHABLE_KEY: pk_test_51Tc3tOEHRuUOoZmggqrvyuddpdtx6FtKaUSvqQXkwokJakOBFCLRDlX6troVkkjFw966agSmLKnu1NSlOAki6u9600PatIOktW
       SMTP_HOST: mailhog
       SMTP_PORT: 1025
-      AUTH_MODE: ${AUTH_MODE:-sso}
+      AUTH_MODE: ${AUTH_MODE}
       NUXT_MAIN_API_URL: http://main-client:3000
       WATCHPACK_POLLING: "true"
       CHOKIDAR_USEPOLLING: "true"
@@ -156,6 +218,14 @@ services:
       context: .
       dockerfile: docker/admin.Dockerfile
       target: dev
+    # The name other products, the edge proxy and the dev proxy address this one
+    # by. Declared here rather than in docker-compose.platform.yml so it resolves
+    # in a standalone deployment too — the alternative was the container name,
+    # Compose's <project>-<service>-<index>, which breaks on a directory rename, a
+    # second replica, or the stack coming up under another project's name.
+    networks:
+      default:
+        aliases: [hostpanel-admin]
     ports:
       - "5174:5173"
     volumes:
@@ -164,8 +234,10 @@ services:
     environment:
       VITE_API_BASE: /api
       API_PROXY_TARGET: http://api:5148
-      VITE_SSO_URL: http://accounts.local
-      VITE_SSO_CLIENT_ID: hostpanel-admin
+      # No VITE_SSO_URL / VITE_SSO_CLIENT_ID: nothing under admin/src reads them
+      # any more. The SPA ran the OIDC flow itself as the public client
+      # "hostpanel-admin" and kept both tokens in localStorage; it now sends the
+      # browser to the API's /api/auth/login and holds only a cookie it cannot read.
       CHOKIDAR_USEPOLLING: "true"
     depends_on:
       - api
@@ -177,6 +249,7 @@ services:
 
 volumes:
   pgdata:
+  redisdata:
   client_node_modules:
   admin_node_modules:
   backend_bin:

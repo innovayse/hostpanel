@@ -25,6 +25,13 @@ using Testcontainers.PostgreSql;
 /// </summary>
 public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    /// <summary>
+    /// AES-256 key for the test host: 32 bytes, Base64. Fixed rather than generated so a
+    /// failing run can be reproduced, and harmless in the open because the database it
+    /// protects is a throwaway container that lives for the length of one test class.
+    /// </summary>
+    private const string TestEncryptionKey = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=";
+
     /// <summary>PostgreSQL container started before each test class.</summary>
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder()
         .WithDatabase("innovayse_test")
@@ -48,7 +55,16 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
                 // 404s that action unless Auth:Mode=local (it's SSO by default everywhere else,
                 // per docker-compose.yml's AUTH_MODE:-sso). Without this, registration 404s and
                 // every test that depends on it — nearly all of them — fails outright.
-                ["Auth:Mode"] = "local"
+                ["Auth:Mode"] = "local",
+                // AddInfrastructure now refuses to start outside Development without a key,
+                // because an absent one silently wrote server credentials and client-service
+                // passwords to the database in plain text. This environment is "Testing", so
+                // the rule applies here too: without this the exception is swallowed by
+                // Program.cs's catch, and every test in the suite fails with "The entry point
+                // exited without ever building an IHost" — naming neither encryption nor
+                // configuration. A real key rather than an exemption, so these tests exercise
+                // the encrypting EF converters that production uses.
+                ["EncryptionKey"] = TestEncryptionKey
             });
         });
 

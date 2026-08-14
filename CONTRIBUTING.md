@@ -16,6 +16,29 @@ Thank you for your interest in contributing! This document explains how to get s
 
 Follow the [Quick Start](README.md#quick-start) guide in the README to get the project running locally.
 
+### Running the backend tests while the dev stack is up
+
+Run them **inside** the API container, or stop the stack first:
+
+```bash
+docker compose exec api dotnet test tests/Innovayse.Application.Tests
+```
+
+Running `dotnet test` or `dotnet restore` on the host against this tree while
+`docker compose up` is running writes into each project's `obj/`, and the
+container's `dotnet watch` is polling that same bind mount. It reports the churn
+as source changes and eventually dies enumerating it:
+
+```
+Unhandled exception. System.ArgumentException: An item with the same key has
+already been added. Key: /app/src/Innovayse.SDK/obj/project.nuget.cache
+   at Microsoft.DotNet.Watch.PollingDirectoryWatcher.CheckForChangedFiles()
+```
+
+The API then 502s for the few minutes it takes to rebuild. Polling is not
+optional here — inotify events do not cross a Windows or macOS bind mount, so
+without it the container never sees an edit at all.
+
 ---
 
 ## How to Contribute

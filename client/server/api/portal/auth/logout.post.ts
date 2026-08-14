@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
       const payload = authToken.split('.')[1] ?? ''
       const decoded = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'))
       const email: string = decoded.email || decoded.sub || ''
-      const mainApiUrl = (config.mainApiUrl as string) || 'http://innovayse-main-client-1:3000'
+      const mainApiUrl = (config.mainApiUrl as string) || 'http://main-client:3000'
       if (email) {
         fetch(`${mainApiUrl}/api/portal/auth/sso/logout-redirect?redirect_uri=${encodeURIComponent('http://panel.local')}`, {
           headers: { Cookie: `auth_token=${authToken}` },

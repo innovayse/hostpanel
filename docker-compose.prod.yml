@@ -53,24 +53,29 @@ services:
       Cors__AllowedOrigins__1: https://${ADMIN_DOMAIN}
       # SSO is optional — only meaningful where a real SSO deployment shares
       # innovayse_network with this stack (see the `networks:` block below).
-      # Defaults to local (JWT) auth when unset, matching a standalone box.
-      Auth__Mode: ${AUTH_MODE:-local}
-      Sso__Authority: ${SSO_URL:-}
-      Sso__ClientId: ${SSO_CLIENT_ID:-hostpanel}
+      #
+      # MUST be set in this host's .env. It used to fall back to `local` here, so a
+      # host that never mentioned it ran local auth; with the fallback gone an
+      # absent AUTH_MODE reaches the API as an empty string, which is not "local",
+      # and the API takes the SSO path and refuses to start without a client secret.
+      # .env.example carries `sso`; set it to `local` on a standalone box.
+      Auth__Mode: ${AUTH_MODE}
+      Sso__Authority: ${SSO_URL}
+      Sso__ClientId: ${SSO_CLIENT_ID}
       # The cookie session for the admin SPA, read only when AUTH_MODE=sso.
-      # AddInnovayseAuth is skipped entirely under local — the default here, and
-      # what a standalone box runs — so none of these have to be set there. Under
-      # sso all of them are required: the API refuses to start naming the missing
-      # one, rather than come up and hand every visitor an anonymous session.
+      # AddInnovayseAuth is skipped entirely under local — what a standalone box
+      # runs — so none of these have to be filled in there. Under sso all of them
+      # are required: the API refuses to start naming the missing one, rather than
+      # come up and hand every visitor an anonymous session.
       #
       # No :?required on the secret, unlike the other products: it would stop a
       # local-mode host from starting over a value it never reads.
       Auth__AppName: hostpanel
-      Auth__Authority: ${SSO_URL:-}
-      Auth__PublicAuthority: ${SSO_PUBLIC_URL:-}
-      Auth__ClientId: ${SSO_CLIENT_ID:-hostpanel}
-      Auth__ClientSecret: ${CLIENT_HOSTPANEL_SECRET:-}
-      Auth__RedisConnection: ${REDIS_CONNECTION:-redis:6379}
+      Auth__Authority: ${SSO_URL}
+      Auth__PublicAuthority: ${SSO_PUBLIC_URL}
+      Auth__ClientId: ${SSO_CLIENT_ID}
+      Auth__ClientSecret: ${CLIENT_HOSTPANEL_SECRET}
+      Auth__RedisConnection: ${REDIS_CONNECTION}
     depends_on:
       postgres:
         condition: service_healthy
@@ -88,7 +93,7 @@ services:
         # (see client.Dockerfile) — the runtime env var below only affects
         # useRuntimeConfig() reads, not that static tag, so it must be
         # repeated here as a build arg for the widget to actually appear.
-        NUXT_PUBLIC_MAIN_URL: ${NUXT_PUBLIC_MAIN_URL:-}
+        NUXT_PUBLIC_MAIN_URL: ${NUXT_PUBLIC_MAIN_URL}
     environment:
       # Nitro/Nuxt production builds freeze runtimeConfig defaults at build
       # time (nuxt.config.ts isn't re-evaluated at container start like it is
@@ -101,15 +106,15 @@ services:
       # The app-launcher widget script is injected over whatever origin this
       # points at — must be HTTPS on an HTTPS deployment or browsers block it
       # as mixed content, which hangs the client dashboard's hydration.
-      NUXT_PUBLIC_MAIN_URL: ${NUXT_PUBLIC_MAIN_URL:-}
-      NUXT_SSO_URL: ${SSO_URL:-}
-      NUXT_SSO_PUBLIC_URL: ${SSO_PUBLIC_URL:-}
-      NUXT_PUBLIC_SSO_PUBLIC_URL: ${SSO_PUBLIC_URL:-}
-      NUXT_SSO_CLIENT_ID: ${SSO_CLIENT_ID:-hostpanel}
-      NUXT_SSO_CLIENT_SECRET: ${SSO_CLIENT_SECRET:-}
+      NUXT_PUBLIC_MAIN_URL: ${NUXT_PUBLIC_MAIN_URL}
+      NUXT_SSO_URL: ${SSO_URL}
+      NUXT_SSO_PUBLIC_URL: ${SSO_PUBLIC_URL}
+      NUXT_PUBLIC_SSO_PUBLIC_URL: ${SSO_PUBLIC_URL}
+      NUXT_SSO_CLIENT_ID: ${SSO_CLIENT_ID}
+      NUXT_SSO_CLIENT_SECRET: ${SSO_CLIENT_SECRET}
       NUXT_SSO_CALLBACK_URL: https://${DOMAIN}/api/portal/auth/sso/callback
-      NUXT_AUTH_MODE: ${AUTH_MODE:-local}
-      NUXT_PUBLIC_AUTH_MODE: ${AUTH_MODE:-local}
+      NUXT_AUTH_MODE: ${AUTH_MODE}
+      NUXT_PUBLIC_AUTH_MODE: ${AUTH_MODE}
     depends_on:
       - api
     restart: unless-stopped
@@ -120,9 +125,11 @@ services:
       dockerfile: docker/admin.Dockerfile
       target: prod
       args:
-        VITE_BASE_URL: ${ADMIN_BASE_URL_PATH:-/}
-        VITE_SSO_URL: ${SSO_PUBLIC_URL:-https://accounts.innovayse.com}
-        VITE_SSO_CLIENT_ID: ${ADMIN_SSO_CLIENT_ID:-hostpanel-admin}
+        VITE_BASE_URL: ${ADMIN_BASE_URL_PATH}
+        # No VITE_SSO_URL / VITE_SSO_CLIENT_ID: nothing under admin/src reads them
+        # any more. The SPA ran the OIDC flow itself as the public client
+        # "hostpanel-admin" and kept both tokens in localStorage; it now sends the
+        # browser to the API's /api/auth/login and holds only a cookie it cannot read.
     depends_on:
       - api
     restart: unless-stopped

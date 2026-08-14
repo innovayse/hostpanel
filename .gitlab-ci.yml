@@ -170,15 +170,18 @@ deploy:staging:
 
 # ── production ───────────────────────────────────────────────────────────────
 # ProdServer (10.0.0.4) serves host.innovayse.com. Unlike staging it does not
-# consume registry images at all: `docker inspect hostpanel-api-1` reports a
-# bare `hostpanel-api`, because this host builds its own from the checkout. So
+# consume registry images at all: inspecting the api container reports a bare
+# `hostpanel-api` image, because this host builds its own from the checkout. So
 # this job needs nothing from the build stage and declares `needs: []` — the
 # build jobs require a `builder` runner, which this project does not have, and
 # waiting on them would leave the deploy permanently pending.
 #
-# The three -f files are the exact set the running containers were created with
-# (`com.docker.compose.project.config_files` on hostpanel-api-1). Composing with
-# fewer would silently redefine the project.
+# The three -f files are the exact set the running containers were created with.
+# Composing with fewer would silently redefine the project. To read either fact
+# off a running host, find the container by its Compose labels rather than by
+# name — the name carries the project, which is just the deploy directory:
+#
+#   docker inspect $(docker ps -q #     -f label=com.docker.compose.project=hostpanel #     -f label=com.docker.compose.service=api) #     --format '{{.Config.Image}} {{index .Config.Labels "com.docker.compose.project.config_files"}}'
 deploy:prod:
   stage: deploy
   tags: [prod]

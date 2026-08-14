@@ -53,6 +53,9 @@ services:
     profiles: ["standalone-only"]
 
   api:
+    # The aliases these services answer to are declared in docker-compose.yml, so
+    # they hold for a standalone deployment as well as this one.
+    #
     # !override replaces the base list instead of merging into it. Without it the
     # parked rabbitmq and mailhog would still be waited on, and compose refuses a
     # project where a service depends on one no active profile includes.

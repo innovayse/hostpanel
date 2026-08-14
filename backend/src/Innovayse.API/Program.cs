@@ -342,6 +342,13 @@ try
 catch (Exception ex)
 {
     Log.Fatal(ex, "Application terminated unexpectedly");
+
+    // Rethrow, don't just log. Swallowing it made Main return normally, so the process
+    // exited 0 — a container whose startup failed reported success and the orchestrator
+    // had no reason to restart or alert. In the integration tests the same swallow turned
+    // every startup error into "The entry point exited without ever building an IHost",
+    // which names nothing about the actual cause.
+    throw;
 }
 finally
 {

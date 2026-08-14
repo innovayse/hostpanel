@@ -44,27 +44,36 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
     {
         builder.UseEnvironment("Testing");
 
+        // UseSetting, not ConfigureAppConfiguration, for these two. Program.cs is
+        // top-level code: it reads Auth:Mode and passes the configuration to
+        // AddInfrastructure — which reads EncryptionKey — while composing the builder,
+        // and ConfigureAppConfiguration's sources are not added until builder.Build().
+        // Set the late way, both keys were simply absent at the moment they were read:
+        // AddInnovayseAuth ran (mode was not "local") and threw "Auth:AppName is
+        // required", the catch in Program.cs logged it, and all 41 tests reported "The
+        // entry point exited without ever building an IHost". UseSetting writes into the
+        // host configuration, which exists before the first line of Program.cs runs.
+        //
+        // Auth:Mode: every test here creates its users through POST /api/auth/register —
+        // the only user-creation path in the suite — and LocalAuthController 404s that
+        // action unless the mode is local (sso by default, per docker-compose.yml's
+        // AUTH_MODE:-sso).
+        //
+        // EncryptionKey: AddInfrastructure refuses to start outside Development without
+        // one, because an absent key silently wrote server credentials and client-service
+        // passwords to the database in plain text. A real key rather than an exemption,
+        // so these tests exercise the encrypting EF converters that production uses.
+        builder.UseSetting("Auth:Mode", "local");
+        builder.UseSetting("EncryptionKey", TestEncryptionKey);
+
         builder.ConfigureAppConfiguration((_, config) =>
         {
-            // Override connection string to point at the test container
+            // Read when the DbContext is first resolved, long after Build(), so this one
+            // is safe to add here — and it has to be, because the container it names is
+            // not started until InitializeAsync runs.
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:DefaultConnection"] = _postgres.GetConnectionString(),
-                // Every test here creates its users through POST /api/auth/register — the only
-                // user-creation path exercised anywhere in this suite — but LocalAuthController
-                // 404s that action unless Auth:Mode=local (it's SSO by default everywhere else,
-                // per docker-compose.yml's AUTH_MODE:-sso). Without this, registration 404s and
-                // every test that depends on it — nearly all of them — fails outright.
-                ["Auth:Mode"] = "local",
-                // AddInfrastructure now refuses to start outside Development without a key,
-                // because an absent one silently wrote server credentials and client-service
-                // passwords to the database in plain text. This environment is "Testing", so
-                // the rule applies here too: without this the exception is swallowed by
-                // Program.cs's catch, and every test in the suite fails with "The entry point
-                // exited without ever building an IHost" — naming neither encryption nor
-                // configuration. A real key rather than an exemption, so these tests exercise
-                // the encrypting EF converters that production uses.
-                ["EncryptionKey"] = TestEncryptionKey
+                ["ConnectionStrings:DefaultConnection"] = _postgres.GetConnectionString()
             });
         });
 

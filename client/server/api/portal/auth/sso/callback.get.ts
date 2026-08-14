@@ -88,7 +88,7 @@ export default defineEventHandler(async (event) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: REFRESH_TOKEN_MAX_AGE,
       path: '/',
     })
   }
@@ -102,29 +102,17 @@ export default defineEventHandler(async (event) => {
     path: '/',
   })
 
-  // Fetch real user info from SSO userinfo endpoint and expose it via a short-lived
-  // non-httpOnly cookie so the widget can merge it into innovayse_accounts localStorage.
-  // This seeds the "switch account" list on panel.local without requiring the user to
-  // visit app.local first. Using /connect/userinfo because JWT access_token has no email claim.
-  try {
-    const ssoUrl = (config.ssoUrl as string) || 'http://innovayse-sso-sso-api-1:8080'
-    const userinfo = await $fetch<Record<string, unknown>>(`${ssoUrl}/connect/userinfo`, {
-      headers: { Authorization: `Bearer ${access_token}` },
-    })
-    const sub = (userinfo.sub as string) || ''
-    const email = (userinfo.email as string) || sub
-    const firstName = (userinfo.given_name as string) || (userinfo.name as string)?.split(' ')[0] || ''
-    const lastName = (userinfo.family_name as string) || (userinfo.name as string)?.split(' ').slice(1).join(' ') || ''
-    if (email) {
-      setCookie(event, 'inno_pending_account', JSON.stringify({ ssoSub: sub, email, firstName, lastName }), {
-        httpOnly: false,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60,
-        path: '/',
-      })
-    }
-  } catch { /* non-critical */ }
+  // This used to fetch /connect/userinfo and write the result — subject id, email, first
+  // and last name — into a non-httpOnly `inno_pending_account` cookie, so the widget
+  // could merge it into its innovayse_accounts localStorage list and show the account in
+  // the switcher without a visit to app.local first.
+  //
+  // Nothing consumes it any more. The widget asks the SSO directly, through the
+  // /accounts-embed iframe, and the SSO's own remembered list already includes this
+  // account by the time it redirects back here — so the cookie only published the user's
+  // identity to every script on this origin, and to anything logging request headers,
+  // for no remaining purpose. The widget still deletes it, which clears the ones
+  // already sitting in browsers.
 
   // If came from silent SSO on a public page — return there (now logged in)
   deleteCookie(event, 'sso_silent_tried', { path: '/' })

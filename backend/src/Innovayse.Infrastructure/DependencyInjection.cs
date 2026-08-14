@@ -70,9 +70,31 @@ public static class DependencyInjection
         IConfiguration configuration,
         ILoggerFactory loggerFactory)
     {
-        // Encryption
+        // Encryption.
+        //
+        // An absent key used to mean "skip encryption", and appsettings.json ships
+        // EncryptionKey as "". Nothing failed: EncryptionServiceHolder.CreateConverter
+        // returned null, the EF configurations took their `else` branch, and server
+        // passwords, API tokens, access hashes and client-service passwords were
+        // written to the database in plain text — on a deployment that looked healthy
+        // and logged nothing.
+        //
+        // So outside Development it is required. Development still allows it to be
+        // absent, because a developer's database holds nothing worth protecting and
+        // requiring a key would only be worked around.
         var encryptionKey = configuration["EncryptionKey"];
-        if (!string.IsNullOrEmpty(encryptionKey))
+        var isDevelopment = string.Equals(
+            configuration["ASPNETCORE_ENVIRONMENT"], "Development", StringComparison.OrdinalIgnoreCase);
+
+        if (string.IsNullOrWhiteSpace(encryptionKey))
+        {
+            if (!isDevelopment)
+                throw new InvalidOperationException(
+                    "EncryptionKey is not set. Server credentials and client-service "
+                    + "passwords would be stored unencrypted. Generate one with: "
+                    + "openssl rand -base64 32");
+        }
+        else
         {
             var encryptionService = new AesEncryptionService(encryptionKey);
             services.AddSingleton<IEncryptionService>(encryptionService);

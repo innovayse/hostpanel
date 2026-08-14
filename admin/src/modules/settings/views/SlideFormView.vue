@@ -203,14 +203,11 @@ async function uploadImage(file: File): Promise<void> {
     const formData = new FormData()
     formData.append('file', file)
 
-    const token = localStorage.getItem('admin_token')
-    const headers: Record<string, string> = {}
-    if (token) headers['Authorization'] = `Bearer ${token}`
-
+    // The session cookie rides on its own; the header is the CSRF requirement.
     const response = await fetch('/api/admin/slides/upload-image', {
       method: 'POST',
       body: formData,
-      headers,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
     })
 
     if (!response.ok) {

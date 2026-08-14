@@ -128,6 +128,19 @@ dotnet restore
 dotnet run --project src/Innovayse.API
 ```
 
+`appsettings.Development.json` is committed and holds only local values, so this runs
+without copying a template first. It used to be an `appsettings.Development.example.json`
+you had to copy — which was a quiet hazard, because the copy is gitignored nowhere and
+went into the next commit along with whatever real credential had been filled into it.
+
+Anything genuinely secret stays out of the repository. Use user-secrets rather than
+editing a settings file:
+
+```bash
+dotnet user-secrets init
+dotnet user-secrets set "Sso:Authority" "https://sso.example.com"
+```
+
 ### Client Portal
 
 ```bash

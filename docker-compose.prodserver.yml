@@ -3,12 +3,12 @@
 # server.yml publishes api/client/admin on localhost ports for a host nginx to reach.
 # That is the VPS shape, not this one: here innovayse-edge sits on the shared
 # innovayse_network and proxies to containers by name, so published ports buy nothing
-# and actively collide — 5148 is already held by innovayse-calendar-backend-1, which is
+# and actively collide — 5148 is already held by calendar-api, which is
 # what stopped the first deploy.
 #
 # Usage:
 #   docker compose -f docker-compose.prod.yml \
-#                  -f docker-compose.prod.sso-network.yml \
+#                  -f docker-compose.platform.yml \
 #                  -f docker-compose.prodserver.yml up -d --build
 services:
   # innovayse-edge already owns :80 on this host and terminates nothing itself (the VPS

@@ -56,10 +56,11 @@ export const usePluginsStore = defineStore('plugins', () => {
       const form = new FormData()
       form.append('file', file)
 
-      const token = localStorage.getItem('admin_token') ?? ''
+      // The session cookie rides on its own; the header is the CSRF requirement on
+      // anything that changes state. No Content-Type — the browser sets the boundary.
       const res = await fetch('/api/admin/plugins/install', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
         body: form,
       })
 

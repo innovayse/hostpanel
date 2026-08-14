@@ -28,4 +28,31 @@
     <ProjectReference Include="..\Innovayse.Infrastructure\Innovayse.Infrastructure.csproj" />
     <ProjectReference Include="..\Innovayse.SDK\Innovayse.SDK.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <!--
+      Cookie sessions for the admin SPA, in sso mode. Bearer auth stays alongside it:
+      the client portal calls this API server-to-server, and standalone deployments
+      keep their local JWTs — this package adds a scheme, it does not replace one.
+    -->
+    <PackageReference Include="Innovayse.Auth" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      The file sink writes into logs/ next to this project, which is inside the tree
+      `dotnet watch` polls. Every log line then looked like a source change: watch
+      announced "File updated", and on this bind mount the enumeration eventually threw
+      (`An item with the same key has already been added`) and took the API down with it.
+      A service that logs cannot be a service that restarts itself.
+    -->
+    <Watch Remove="logs/**/*" />
+
+    <!--
+      And out of the build. The Web SDK includes **/* as Content by default, so without
+      this the log files are copied to the output directory and into a publish — a
+      release carrying yesterday's development logs.
+    -->
+    <Content Remove="logs/**/*" />
+    <None Remove="logs/**/*" />
+  </ItemGroup>
 </Project>

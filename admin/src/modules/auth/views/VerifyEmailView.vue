@@ -7,7 +7,7 @@
  */
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { useApi, clearToken } from '../../../composables/useApi'
+import { useApi } from '../../../composables/useApi'
 import { useAuthStore } from '../stores/authStore'
 
 const route = useRoute()
@@ -37,8 +37,8 @@ onMounted(async () => {
       `/auth/verify-email?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`,
     )
     success.value = true
-    // Clear session so "Go to Admin Panel" takes user to login, not dashboard
-    clearToken()
+    // Reset the local state so "Go to Admin Panel" routes through the guard; the
+    // server-side session (if any) is unaffected, and the guard re-asks it.
     const auth = useAuthStore()
     auth.user = null
     auth.emailVerified = null

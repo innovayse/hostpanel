@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useApi, clearToken } from '../../../composables/useApi'
-import { startSsoLogin, ssoLogoutRedirect } from '../useSso'
+import { useApi, redirectToLogin, logoutSession } from '../../../composables/useApi'
 
 interface MeResponse {
   email: string
@@ -12,10 +11,13 @@ interface MeResponse {
 /**
  * Pinia store managing admin authentication state.
  *
- * All authentication happens against Innovayse SSO (see useSso.ts) — this
- * store only tracks the resulting session (who's logged in, their roles,
- * email verification status) by calling the Hostpanel API's /auth/me, since
- * roles are assigned locally in Hostpanel and can't be read off the SSO token.
+ * Authentication happens against Innovayse SSO, but no longer in this browser: the
+ * Hostpanel API performs the OIDC exchange and holds the tokens, and this store only
+ * tracks the resulting session by calling /auth/me — roles are assigned locally in
+ * Hostpanel and cannot be read off any SSO token anyway.
+ *
+ * The PKCE flow, the callback view and the refresh loop that used to live beside this
+ * store are gone with the tokens they existed to manage.
  */
 export const useAuthStore = defineStore('auth', () => {
   /** Currently authenticated admin user, null when unauthenticated. */
@@ -29,49 +31,33 @@ export const useAuthStore = defineStore('auth', () => {
   /** True when a user session is active. */
   const isAuthenticated = computed(() => user.value !== null)
 
-  /**
-   * Redirects the browser to Innovayse SSO to start the login flow.
-   * On success, SSO redirects back to /auth/callback, which exchanges the
-   * code for tokens and calls fetchMe() to populate this store.
-   */
-  async function login(): Promise<void> {
-    await startSsoLogin()
+  /** Sends the browser to sign in; the SSO returns to the API's own callback. */
+  function login(): void {
+    redirectToLogin()
   }
 
   /**
-   * Loads the current user from the API using the stored access token.
-   * Called after the SSO callback exchange, and on page load to restore
-   * an existing session.
+   * Loads the current user from the API. There is no token to check first — whether a
+   * session exists is a question only the server can answer now.
    *
-   * @returns Promise that resolves when the fetch completes; clears session on failure.
+   * @returns Promise that resolves when the fetch completes; clears state on failure.
    */
   async function fetchMe(): Promise<void> {
-    if (!localStorage.getItem('admin_token')) {
-      user.value = null
-      emailVerified.value = null
-      return
-    }
-
     try {
       const data = await request<MeResponse>('/auth/me')
       user.value = { email: data.email, roles: data.roles }
       emailVerified.value = data.emailVerified
     } catch {
-      clearToken()
       user.value = null
       emailVerified.value = null
     }
   }
 
-  /**
-   * Ends the local session and redirects to SSO's end-session endpoint so
-   * the SSO-wide session is cleared too (not just this app's token).
-   */
-  function logout(): void {
-    clearToken()
+  /** Ends the session server-side and at the SSO, so nothing survives to revive it. */
+  async function logout(): Promise<void> {
     user.value = null
     emailVerified.value = null
-    ssoLogoutRedirect()
+    await logoutSession()
   }
 
   return { user, emailVerified, isAuthenticated, login, logout, fetchMe }

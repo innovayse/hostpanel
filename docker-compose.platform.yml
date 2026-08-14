@@ -1,0 +1,65 @@
+# Platform overlay — joins this product to the Innovayse shared network.
+#
+# The base docker-compose.yml is deliberately standalone: it declares no external
+# network and brings its own dependencies, so `docker compose up` works in a fresh
+# clone with nothing else running. That is what makes this repo usable as an
+# open-source project on its own, and what lets it be moved to a server of its own.
+#
+# This file is the other half. It renames the project's default network to the
+# shared one, which puts every service in this compose file on it without a
+# per-service edit — so containers here are reachable by name from the other
+# Innovayse stacks, and can reach theirs.
+#
+# Used together:
+#
+#     docker compose -f docker-compose.yml -f docker-compose.platform.yml up -d
+#
+# ORDER MATTERS: this file goes LAST in the chain, after any prod overlay.
+#
+#     docker compose -f docker-compose.yml -f docker-compose.prod.yml #                    -f docker-compose.platform.yml up -d
+#
+# It parks services the platform already runs once and rewrites depends_on to drop
+# them. A file applied after this one merges its own service definitions back in,
+# which reintroduces a dependency on something no active profile includes — compose
+# then refuses the whole project with "depends on undefined service".
+#
+# The shared network is created by ../docker-compose.shared.yml, which also runs
+# the Redis, RabbitMQ and mail catcher the platform shares. None of that is
+# required to run this repo on its own.
+
+networks:
+  default:
+    name: innovayse_network
+    external: true
+
+# This repo carries its own copy of infrastructure the platform already runs once.
+# Standalone that copy is the point — it is what lets this product be deployed on a
+# server of its own. Inside the workspace it is a second instance of something
+# shared, so it is parked behind a profile nothing activates.
+#
+# The depends_on entries have to be restated: compose refuses a project where a
+# service waits on one that no active profile includes.
+services:
+  # the shared broker answers to the same name
+  rabbitmq:
+    profiles: ["standalone-only"]
+
+  # replaced by the shared mailpit
+  mailhog:
+    profiles: ["standalone-only"]
+
+  api:
+    # !override replaces the base list instead of merging into it. Without it the
+    # parked rabbitmq and mailhog would still be waited on, and compose refuses a
+    # project where a service depends on one no active profile includes.
+    #
+    # postgres stays: it is this product's own data, never shared.
+    depends_on: !override
+      postgres:
+        condition: service_healthy
+    environment:
+      Smtp__Host: mailpit
+
+  client:
+    environment:
+      SMTP_HOST: mailpit

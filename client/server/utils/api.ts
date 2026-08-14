@@ -82,7 +82,7 @@ export async function tryRefreshToken(event: H3Event): Promise<string | null> {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'lax',
-          maxAge: 60 * 60 * 24 * 7,
+          maxAge: REFRESH_TOKEN_MAX_AGE,
           path: '/',
         })
       }
@@ -203,7 +203,13 @@ export function setAuthCookie(event: H3Event, token: string): void {
     httpOnly: false,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 7, // 7 days -- matches refresh token lifetime
+    // Deliberately NOT REFRESH_TOKEN_MAX_AGE. This is only a hint to client-side
+    // middleware that a session probably exists; it is not a credential. The comment
+    // here used to claim it matched the refresh token's lifetime, which it never did —
+    // the SSO issues those for 30 days. Whether the hint should be stretched to match
+    // is a separate question from the credential bug, and stretching it silently would
+    // make the middleware assert a session for three more weeks than it does today.
+    maxAge: 60 * 60 * 24 * 7,
     path: '/',
   })
 }
@@ -222,7 +228,7 @@ export function setRefreshCookie(event: H3Event, token: string): void {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 7, // 7 days
+    maxAge: REFRESH_TOKEN_MAX_AGE,
     path: '/',
   })
 }

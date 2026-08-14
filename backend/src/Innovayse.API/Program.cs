@@ -5,6 +5,8 @@ using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Domain.Auth;
 using Innovayse.Infrastructure;
 using Innovayse.Infrastructure.Persistence;
+using Innovayse.Auth;
+using Innovayse.Auth.Endpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.OpenApi;
@@ -153,26 +155,47 @@ try
             });
     }
 
+    if (authMode != "local")
+    {
+        // Cookie sessions, the third way in — and the only one a browser uses now.
+        // The admin SPA held an access AND refresh token in localStorage, where any
+        // script on the page could read a 30-day credential; with this the API runs
+        // the OIDC exchange itself and the browser holds an opaque httpOnly cookie.
+        //
+        // Bearer stays for the machines: the client portal's Nuxt server calls this
+        // API with an SSO token, and standalone deployments keep LocalJwt. That is
+        // why this is an additional scheme rather than a replacement.
+        builder.Services.AddInnovayseAuth(builder.Configuration);
+
+        // The cookie principal carries the SSO's claims; the roles live in this
+        // database. The transformation maps one onto the other.
+        builder.Services.AddScoped<Microsoft.AspNetCore.Authentication.IClaimsTransformation,
+            Innovayse.API.Auth.SsoSessionClaimsTransformation>();
+    }
+
     builder.Services.AddAuthorization(opts =>
     {
         if (authMode != "local")
         {
             // Accept tokens from either SSO or local JWT scheme
             opts.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder(
-                JwtBearerDefaults.AuthenticationScheme, "LocalJwt")
+                JwtBearerDefaults.AuthenticationScheme, "LocalJwt",
+                global::Innovayse.Auth.CookieSessionHandler.SchemeName)
                 .RequireAuthenticatedUser()
                 .Build();
         }
         opts.AddPolicy("AdminOnly", p =>
         {
             if (authMode != "local")
-                p.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme, "LocalJwt");
+                p.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme, "LocalJwt",
+                    global::Innovayse.Auth.CookieSessionHandler.SchemeName);
             p.RequireRole(Roles.Admin);
         });
         opts.AddPolicy("ResellerOrAdmin", p =>
         {
             if (authMode != "local")
-                p.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme, "LocalJwt");
+                p.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme, "LocalJwt",
+                    global::Innovayse.Auth.CookieSessionHandler.SchemeName);
             p.RequireRole(Roles.Admin, Roles.Reseller);
         });
     });
@@ -287,8 +310,22 @@ try
     app.UseMiddleware<ExceptionMiddleware>();
     app.UseStaticFiles();
     app.UseCors();
-    app.UseAuthentication();
-    app.UseAuthorization();
+    if (authMode != "local")
+    {
+        // Forwarded headers, the CSRF check, authentication and authorisation, in the
+        // order they have to be in. Bearer callers pass the CSRF check untouched — a
+        // bearer header is already something a cross-site page cannot attach.
+        app.UseInnovayseAuth();
+        // GET /api/auth/login|callback and POST /api/auth/logout, for the admin SPA.
+        // Not /api/auth/me: this product's own AuthController answers it with the
+        // roles the database assigns, which the token cannot carry.
+        app.MapInnovayseAuth(mapMe: false);
+    }
+    else
+    {
+        app.UseAuthentication();
+        app.UseAuthorization();
+    }
 
     app.MapOpenApi();
     app.MapScalarApiReference(options =>

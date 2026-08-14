@@ -40,6 +40,9 @@ services:
       Jwt__Issuer: ${JWT_ISSUER}
       Jwt__Audience: ${JWT_AUDIENCE}
       Smtp__Host: ${SMTP_HOST}
+      # No default. An unset key here means every server credential this product
+      # stores goes to the database unencrypted, so the API refuses to start instead.
+      EncryptionKey: ${ENCRYPTION_KEY:?required}
       Smtp__Port: ${SMTP_PORT}
       Smtp__User: ${SMTP_USER}
       Smtp__Password: ${SMTP_PASSWORD}

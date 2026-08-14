@@ -21,11 +21,8 @@ const router = createRouter({
       component: () => import('../modules/auth/views/LoginView.vue'),
       meta: { public: true },
     },
-    {
-      path: '/auth/callback',
-      component: () => import('../modules/auth/views/CallbackView.vue'),
-      meta: { public: true },
-    },
+    // /auth/callback is gone with the browser-side code exchange: the SSO returns to
+    // /api/auth/callback, which the API answers using the client secret.
     {
       path: '/',
       component: () => import('../components/layout/AppLayout.vue'),

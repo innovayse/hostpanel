@@ -64,8 +64,10 @@ stages: [test, build, deploy]
     - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin "$CI_REGISTRY"
   script:
     - cd "$DEPLOY_DIR"
-    - docker compose -f docker-compose.prod.yml pull
-    - docker compose -f docker-compose.prod.yml up -d
+    # docker-compose.platform.yml joins the shared innovayse_network — without it
+    # the containers are unreachable by name from the reverse proxy.
+    - docker compose -f docker-compose.prod.yml -f docker-compose.platform.yml pull
+    - docker compose -f docker-compose.prod.yml -f docker-compose.platform.yml up -d
   rules:
     - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "main"
 
@@ -183,7 +185,7 @@ deploy:prod:
   variables:
     GIT_STRATEGY: none
     DEPLOY_DIR: /home/innovayse-server/www/innovayse-workspace/hostpanel
-    COMPOSE_FILES: -f docker-compose.prod.yml -f docker-compose.prod.sso-network.yml -f docker-compose.prodserver.yml
+    COMPOSE_FILES: -f docker-compose.prod.yml -f docker-compose.prodserver.yml -f docker-compose.platform.yml
   script:
     - git -C "$DEPLOY_DIR" fetch "$CI_REPOSITORY_URL" "$CI_COMMIT_SHA"
     - git -C "$DEPLOY_DIR" checkout -f "$CI_COMMIT_SHA"

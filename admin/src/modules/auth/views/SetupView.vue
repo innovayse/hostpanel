@@ -7,7 +7,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
-import { useApi, setToken } from '../../../composables/useApi'
+import { useApi, redirectToLogin } from '../../../composables/useApi'
 import { markSetupComplete } from '../../../middleware/auth'
 
 const router = useRouter()
@@ -64,10 +64,13 @@ async function handleSetup(): Promise<void> {
         lastName: lastName.value,
       }),
     })
-    setToken(data.accessToken)
+    // The setup response used to carry an access token this view stored, signing the
+    // new admin straight in. The browser stores no tokens any more, so the freshly
+    // created admin signs in the same way every later visit does. Standalone loses
+    // nothing: the admin panel never had a local login form — SSO was already the
+    // only way through /login.
     markSetupComplete()
-    await authStore.fetchMe()
-    await router.push('/dashboard')
+    redirectToLogin()
   } catch {
     error.value = 'Setup failed. Please check your inputs and try again.'
   } finally {

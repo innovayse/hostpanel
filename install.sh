@@ -142,7 +142,6 @@ SMTP_PASSWORD=
 # Domains
 DOMAIN=${DOMAIN}
 ADMIN_DOMAIN=admin.${DOMAIN}
-ADMIN_BASE_URL=https://${DOMAIN}/admin
 EOF
 
 chmod 600 "$INSTALL_DIR/.env"

@@ -84,11 +84,15 @@ services:
       Smtp__FromEmail: noreply@innovayse.com
       Smtp__FromName: Innovayse
       Smtp__UseSsl: "false"
-      AdminBaseUrl: ${ADMIN_BASE_URL:-http://localhost:5174}
+      # Required outside Development: without it the EF configurations silently drop
+      # their encrypted-column converters and server passwords, API tokens and access
+      # hashes are written to the database in plain text. The dev default is a real
+      # 32-byte key so a fresh clone exercises the same code path production does.
+      EncryptionKey: ${ENCRYPTION_KEY:-ZGV2LW9ubHkta2V5LW5vdC1mb3ItcHJvZHVjdGlvbiE=}
       DOTNET_USE_POLLING_FILE_WATCHER: 1
       DOTNET_NUGET_SIGNATURE_VERIFICATION: "false"
       NUGET_AUDIT: "false"
-      Sso__Authority: http://innovayse-sso-sso-api-1:8080
+      Sso__Authority: http://sso-api:8080
       Sso__ClientId: hostpanel
       Auth__Mode: ${AUTH_MODE:-sso}
       BackchannelLogout__Key: ${HOSTPANEL_BACKCHANNEL_LOGOUT_KEY:-dev-hostpanel-backchannel-key}
@@ -99,9 +103,6 @@ services:
         condition: service_healthy
       mailhog:
         condition: service_started
-    networks:
-      - default
-      - innovayse_network
     deploy:
       resources:
         limits:
@@ -125,7 +126,7 @@ services:
       API_URL: http://hostpanel-api-1:5148
       NUXT_PUBLIC_BASE_URL: ${NUXT_PUBLIC_BASE_URL:-http://panel.local}
       NUXT_PUBLIC_MAIN_URL: ${NUXT_PUBLIC_MAIN_URL:-http://app.local}
-      SSO_URL: http://innovayse-sso-sso-api-1:8080
+      SSO_URL: http://sso-api:8080
       SSO_PUBLIC_URL: ${SSO_PUBLIC_URL:-http://accounts.local}
       NUXT_PUBLIC_TASKS_URL: ${NUXT_PUBLIC_TASKS_URL:-http://tasks.local}
       NUXT_PUBLIC_ERP_URL: ${NUXT_PUBLIC_ERP_URL:-http://erp.local}
@@ -139,14 +140,11 @@ services:
       SMTP_HOST: mailhog
       SMTP_PORT: 1025
       AUTH_MODE: ${AUTH_MODE:-sso}
-      NUXT_MAIN_API_URL: http://innovayse-main-client-1:3000
+      NUXT_MAIN_API_URL: http://main-client:3000
       WATCHPACK_POLLING: "true"
       CHOKIDAR_USEPOLLING: "true"
     depends_on:
       - api
-    networks:
-      - default
-      - innovayse_network
     deploy:
       resources:
         limits:
@@ -171,9 +169,6 @@ services:
       CHOKIDAR_USEPOLLING: "true"
     depends_on:
       - api
-    networks:
-      - default
-      - innovayse_network
     deploy:
       resources:
         limits:
@@ -188,8 +183,3 @@ volumes:
   backend_obj:
   backend_packages:
 
-networks:
-  default:
-  innovayse_network:
-    external: true
-    name: innovayse-cloud-local_innovayse_network

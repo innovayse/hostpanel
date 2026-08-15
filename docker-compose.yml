@@ -135,6 +135,13 @@ services:
       DOTNET_USE_POLLING_FILE_WATCHER: 1
       DOTNET_NUGET_SIGNATURE_VERIFICATION: "false"
       NUGET_AUDIT: "false"
+      # Restoring Innovayse.Auth needs a credential for the private registry, and
+      # this API restores at container start rather than at image build — it runs
+      # `dotnet watch`. CI passes the same value as a build-arg for the products
+      # whose images are built in the pipeline; this is the equivalent for a host
+      # that builds in place. A deploy token scoped to read_package_registry, never
+      # a personal one: it can read packages and do nothing else.
+      NuGetPackageSourceCredentials_innovayse: ${NUGET_INNOVAYSE_CREDENTIALS}
       Sso__Authority: http://sso-api:8080
       Sso__ClientId: hostpanel
       # The cookie session for the admin SPA. Read only when the mode is sso —

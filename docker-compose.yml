@@ -1,6 +1,11 @@
 services:
   # ── Infrastructure ──────────────────────────────────────────────────────────
   postgres:
+    # Named explicitly so `docker ps` shows this rather than Compose's
+    # <project>-<service>-<index>. The product prefix is not decoration:
+    # container names are global to the Docker daemon, so a bare `api` or
+    # `redis` is refused as soon as another product's stack claims it.
+    container_name: hostpanel-db
     image: postgres:17-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -22,6 +27,7 @@ services:
           memory: 1G
 
   rabbitmq:
+    container_name: hostpanel-rabbitmq
     image: rabbitmq:3-management-alpine
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
@@ -41,6 +47,7 @@ services:
           memory: 512M
 
   mailhog:
+    container_name: hostpanel-mailhog
     image: mailhog/mailhog
     ports:
       - "1026:1025"
@@ -61,6 +68,7 @@ services:
   # every session cookie in circulation — everyone signed out by a container
   # recreate, which is exactly what a deploy does.
   redis:
+    container_name: hostpanel-redis
     image: redis:7-alpine
     command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
     volumes:
@@ -79,6 +87,7 @@ services:
 
   # ── Application ─────────────────────────────────────────────────────────────
   api:
+    container_name: hostpanel-api
     build:
       context: .
       dockerfile: docker/api.Dockerfile
@@ -163,6 +172,7 @@ services:
           memory: 2G
 
   client:
+    container_name: hostpanel-client
     build:
       context: .
       dockerfile: docker/client.Dockerfile
@@ -214,6 +224,7 @@ services:
           memory: 2G
 
   admin:
+    container_name: hostpanel-admin
     build:
       context: .
       dockerfile: docker/admin.Dockerfile

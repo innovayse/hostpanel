@@ -14,6 +14,11 @@ services:
   # innovayse-edge already owns :80 on this host and terminates nothing itself (the VPS
   # does TLS), so the bundled nginx has no role and would fail to bind.
   nginx:
+    # Not in docker-compose.yml, so it cannot inherit a name from there like the
+    # other services do. Prefixed for the same reason they are: container names
+    # are global to the Docker daemon, and `nginx` is the first name any other
+    # stack on the host would reach for.
+    container_name: hostpanel-nginx
     profiles:
       - disabled
 

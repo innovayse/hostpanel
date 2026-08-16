@@ -8,6 +8,7 @@ import { useHead } from '#app'
 export const useSchemaOrg = () => {
   const config = useRuntimeConfig()
   const baseUrl = config.public.baseUrl || 'https://yourdomain.com'
+  const contactSettings = usePortalSettings()
 
   /**
    * Organization schema
@@ -36,10 +37,17 @@ export const useSchemaOrg = () => {
         addressCountry: 'AM',
         addressLocality: 'Yerevan'
       },
+      // Built from the operator's contact settings rather than fixed, so a
+      // self-hosted install does not publish Innovayse's own channels as its
+      // own structured data. Unset channels are omitted rather than empty.
       sameAs: [
-        'https://t.me/innovayse',
-        'https://wa.me/37433731673'
-      ],
+        contactSettings.get('portal.contact.telegram', 'portalTelegram')
+          ? `https://t.me/${contactSettings.get('portal.contact.telegram', 'portalTelegram')}`
+          : '',
+        contactSettings.get('portal.contact.whatsapp', 'portalWhatsapp')
+          ? `https://wa.me/${contactSettings.get('portal.contact.whatsapp', 'portalWhatsapp')}`
+          : '',
+      ].filter(Boolean),
       email: 'contact@yourdomain.com'
     }
   }

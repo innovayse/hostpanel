@@ -314,6 +314,13 @@ try
             scope.ServiceProvider.GetRequiredService<Innovayse.Domain.Support.Interfaces.IDepartmentRepository>(),
             scope.ServiceProvider.GetRequiredService<Innovayse.Application.Common.IUnitOfWork>());
 
+        // Storefront settings — also every environment. SettingsController can update
+        // an existing key but cannot create one, so a key that was never seeded is a
+        // key no operator can ever set from the admin panel.
+        await Innovayse.Application.Admin.Services.PortalSettingsSeeder.EnsureSeededAsync(
+            scope.ServiceProvider.GetRequiredService<Innovayse.Domain.Settings.Interfaces.ISettingRepository>(),
+            scope.ServiceProvider.GetRequiredService<Innovayse.Application.Common.IUnitOfWork>());
+
         // Dev seed — populate test data in Development
         if (app.Environment.IsDevelopment())
         {

@@ -10,8 +10,18 @@ export default defineCachedEventHandler(async (event) => {
 
   if (query.lang)  params.set('lang',  String(query.lang))
   if (query.pid)   params.set('pid',   String(query.pid))
-  if (query.gid)   params.set('gid',   String(query.gid))
   if (query.gids)  params.set('gids',  String(query.gids))
+
+  // `gid` is the WHMCS name callers use; ProductsController's parameter is
+  // `groupId`. Forwarding `gid` verbatim meant the backend never saw a filter and
+  // silently returned the whole catalogue, so the hosting page listed SSL
+  // certificates, mailboxes and domain registration beside the hosting plans.
+  // Both names go out: `groupId` is the one that binds, `gid` stays for any
+  // consumer still reading it.
+  if (query.gid) {
+    params.set('gid', String(query.gid))
+    params.set('groupId', String(query.gid))
+  }
 
   const qs = params.toString()
   const products = await internalApiCall<Record<string, unknown>[]>(event, `/products${qs ? `?${qs}` : ''}`)

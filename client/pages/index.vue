@@ -1,40 +1,29 @@
 <template>
-  <div>
-    <!-- H1 for SEO — visually hidden, semantically first heading on the page -->
-    <h1 class="sr-only">{{ $t('seo.home.h1') }}</h1>
-
-    <!-- Products Full-Screen Slider -->
-    <SectionsProductsFullSlider />
-
-    <!-- Partners/Clients logos -->
-    <SectionsPartners />
-
-    <!-- Why Choose Us Section -->
-    <SectionsWhyChooseUs />
-
-    <!-- Process Section -->
-    <SectionsProcess />
-
-    <!-- Testimonials Section -->
-    <SectionsTestimonials />
-
-    <!-- Products Section -->
-    <SectionsProducts />
-
-    <!-- FAQ Section -->
-    <SectionsFAQ :limit="6" :show-categories="false" />
-
-    <!-- CTA Section -->
-    <SectionsCTA />
-  </div>
+  <component
+    :is="home"
+    :domain-results="domainResults"
+    :domain-pending="domainPending"
+    :has-zones="offeredTlds.length > 0"
+    :plans="plans"
+    :yearly="yearly"
+    @search="search"
+    @update:yearly="value => (yearly = value)"
+  />
 </template>
 
 <script setup lang="ts">
 /**
- * Home page with all landing sections
+ * Home page.
+ *
+ * The page owns SEO, structured data and every network call; the active
+ * template owns the markup. Both templates render the same canonical, hreflang
+ * and schema.org output, which is why those calls live here and never inside a
+ * template.
  */
-
 const { t } = useI18n()
+const { slot } = useTemplate()
+
+const home = slot('home')
 
 // SEO setup with canonical, hreflang, OG, Twitter tags
 useSeo({
@@ -54,4 +43,9 @@ injectSchema([
   localBusinessSchema(),
   websiteSchema()
 ])
+
+const { results: domainResults, pending: domainPending, search, offeredTlds } = useDomainLookup()
+const { plans } = usePortalPlans()
+
+const yearly = ref(false)
 </script>

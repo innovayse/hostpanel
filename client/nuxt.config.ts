@@ -88,6 +88,16 @@ export default defineNuxtConfig({
       whmcsUrl: (process.env.WHMCS_URL || '').replace(/\/+$/, ''),
       stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
       mainUrl: process.env.NUXT_PUBLIC_MAIN_URL || 'http://app.local',
+      // Active portal template. Phase 4 lets an admin override this from settings;
+      // until then it is the only switch. Unknown values fall back to 'aurora'.
+      portalTemplate: process.env.NUXT_PUBLIC_PORTAL_TEMPLATE || 'aurora',
+      // Contact and widget configuration. Each is hidden when empty — a fresh
+      // install with none of these set still renders a complete site.
+      portalWhatsapp: process.env.NUXT_PUBLIC_PORTAL_WHATSAPP || '',
+      portalTelegram: process.env.NUXT_PUBLIC_PORTAL_TELEGRAM || '',
+      portalChatProvider: process.env.NUXT_PUBLIC_PORTAL_CHAT_PROVIDER || '',
+      portalNewsletterUrl: process.env.NUXT_PUBLIC_PORTAL_NEWSLETTER_URL || '',
+      portalContactEmail: process.env.NUXT_PUBLIC_PORTAL_CONTACT_EMAIL || '',
     }
   },
 
@@ -125,6 +135,10 @@ export default defineNuxtConfig({
         // Main pages
         { loc: '/', changefreq: 'daily' as const, priority: 1.0 },
         { loc: '/products', changefreq: 'weekly' as const, priority: 0.9 },
+        // The sitemap module discovers both automatically; these entries only
+        // raise them from the default 0.7 to the 0.9 the storefront deserves.
+        { loc: '/hosting', changefreq: 'weekly' as const, priority: 0.9 },
+        { loc: '/domains', changefreq: 'weekly' as const, priority: 0.9 },
         { loc: '/contact', changefreq: 'monthly' as const, priority: 0.7 },
         { loc: '/faq', changefreq: 'monthly' as const, priority: 0.6 },
         { loc: '/terms', changefreq: 'yearly' as const, priority: 0.3 },

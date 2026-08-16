@@ -15,7 +15,7 @@
         leave-to-class="opacity-0 scale-0"
       >
         <button
-          v-if="isOpen"
+          v-if="isOpen && chatProvider === 'chatwoot'"
           class="group absolute bottom-0 right-0 flex items-center justify-center"
           style="transform: translate(-5px, -75px); transition-delay: 0ms;"
           aria-label="Live Chat"
@@ -43,8 +43,8 @@
         leave-to-class="opacity-0 scale-0"
       >
         <a
-          v-if="isOpen"
-          :href="`https://wa.me/37433731673?text=${encodeURIComponent(defaultMessage)}`"
+          v-if="isOpen && whatsappNumber"
+          :href="`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(defaultMessage)}`"
           target="_blank"
           rel="noopener noreferrer"
           class="group absolute bottom-0 right-0 flex items-center justify-center"
@@ -73,8 +73,8 @@
         leave-to-class="opacity-0 scale-0"
       >
         <a
-          v-if="isOpen"
-          href="https://t.me/innovayse"
+          v-if="isOpen && telegramHandle"
+          :href="`https://t.me/${telegramHandle}`"
           target="_blank"
           rel="noopener noreferrer"
           class="group absolute bottom-0 right-0 flex items-center justify-center"
@@ -135,6 +135,17 @@ function handleOutsideClick(e: MouseEvent) {
 onMounted(() => document.addEventListener('click', handleOutsideClick))
 onUnmounted(() => document.removeEventListener('click', handleOutsideClick))
 const defaultMessage = computed(() => t('whatsapp.defaultMessage'))
+
+// Contact channels come from the operator's settings rather than being baked in,
+// so a self-hosted install shows its own contacts. Each action hides when unset.
+const { get: getPortalSetting } = usePortalSettings()
+
+/** WhatsApp number from configuration; empty hides the action. */
+const whatsappNumber = computed(() => getPortalSetting('portal.contact.whatsapp', 'portalWhatsapp'))
+/** Telegram handle from configuration; empty hides the action. */
+const telegramHandle = computed(() => getPortalSetting('portal.contact.telegram', 'portalTelegram'))
+/** Chat provider from configuration; empty hides the chat bubble. */
+const chatProvider = computed(() => getPortalSetting('portal.chat.provider', 'portalChatProvider'))
 
 /** Open Innochat widget */
 function openChat() {

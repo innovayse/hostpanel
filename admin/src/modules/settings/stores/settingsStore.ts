@@ -48,6 +48,30 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   /**
+   * Updates a single setting's value and refreshes the list.
+   *
+   * The backend exposes update-by-id only — there is no create — so a key that
+   * was never seeded cannot be added from here.
+   *
+   * @param id - Setting ID.
+   * @param value - New value to store.
+   * @returns Promise that resolves when the update is persisted.
+   */
+  async function updateSetting(id: number, value: string): Promise<void> {
+    error.value = null
+    try {
+      await request(`/admin/settings/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ value }),
+      })
+      await fetchSettings()
+    } catch {
+      error.value = 'Failed to save the setting.'
+      throw new Error('Failed to save the setting.')
+    }
+  }
+
+  /**
    * Fetches email templates from the backend.
    *
    * @returns Promise that resolves when data is loaded.
@@ -148,7 +172,7 @@ export const useSettingsStore = defineStore('settings', () => {
   return {
     settings, emailTemplates, products, productGroups, gateways,
     loading, error,
-    fetchSettings, fetchEmailTemplates, fetchProducts, fetchProductGroups,
+    fetchSettings, updateSetting, fetchEmailTemplates, fetchProducts, fetchProductGroups,
     createProduct, updateProduct, fetchGateways,
   }
 })

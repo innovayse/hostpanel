@@ -3,7 +3,8 @@
   <div class="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
     <!-- Telegram Button -->
     <a
-      href="https://t.me/innovayse"
+      v-if="telegramHandle"
+      :href="`https://t.me/${telegramHandle}`"
       target="_blank"
       rel="noopener noreferrer"
       class="group relative"
@@ -50,6 +51,7 @@
 
     <!-- WhatsApp Button -->
     <a
+      v-if="phoneNumber"
       :href="`https://wa.me/${phoneNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(defaultMessage)}`"
       target="_blank"
       rel="noopener noreferrer"
@@ -107,8 +109,13 @@ import { Send, MessageCircle } from 'lucide-vue-next'
 
 const { t } = useI18n()
 
-// WhatsApp phone number (international format without +)
-const phoneNumber = '37433731673'
+// WhatsApp phone number (international format without +). Read from the
+// operator's settings, then the environment, so a self-hosted install shows its
+// own number instead of Innovayse's.
+const { get: getContactSetting } = usePortalSettings()
+const phoneNumber = computed(() => getContactSetting('portal.contact.whatsapp', 'portalWhatsapp'))
+/** Telegram handle from the same source; empty hides that button. */
+const telegramHandle = computed(() => getContactSetting('portal.contact.telegram', 'portalTelegram'))
 
 // Default message when opening WhatsApp
 const defaultMessage = computed(() => t('whatsapp.defaultMessage'))

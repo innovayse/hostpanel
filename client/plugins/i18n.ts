@@ -4,7 +4,7 @@
  */
 export default defineNuxtPlugin(async ({ $i18n }) => {
   const locales = ['en', 'ru', 'hy']
-  const modules = ['common', 'nav', 'hero', 'products', 'productsSlider', 'contact', 'faq', 'cta', 'whychooseus', 'team', 'partners', 'process', 'testimonials', 'footer', 'terms', 'privacy', 'whatsapp', 'error', 'cookieBanner', 'cookiePolicy', 'refundPolicy', 'aup', 'seo', 'domains', 'hosting', 'cart', 'checkout', 'client', 'configure', 'order', 'announcements', 'invoicePay', 'knowledgebase', 'trial']
+  const modules = ['common', 'nav', 'hero', 'products', 'productsSlider', 'contact', 'faq', 'cta', 'whychooseus', 'team', 'partners', 'process', 'testimonials', 'footer', 'terms', 'privacy', 'whatsapp', 'error', 'cookieBanner', 'cookiePolicy', 'refundPolicy', 'aup', 'seo', 'domains', 'hosting', 'cart', 'checkout', 'client', 'configure', 'order', 'announcements', 'invoicePay', 'knowledgebase', 'trial', 'aurora']
 
   for (const locale of locales) {
     const messages: Record<string, unknown> = {}

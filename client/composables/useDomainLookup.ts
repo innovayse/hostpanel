@@ -1,3 +1,4 @@
+import { ALL_CATEGORY } from '~/templates/aurora/types'
 import type { DomainResult } from '~/templates/aurora/types'
 
 /** Shape returned by GET /api/portal/public/tld-pricing. */
@@ -30,6 +31,8 @@ export interface TldPriceRow {
   transfer: string
   /** Category tags the backend assigns, used for filtering. */
   categories: string[]
+  /** One-year registration price as a number, for cart arithmetic. */
+  registerAmount: number
 }
 
 /**
@@ -67,7 +70,19 @@ export const useDomainLookup = (tldLimit = 4) => {
       renew: oneYear(entry?.renew ?? entry?.register),
       transfer: oneYear(entry?.transfer ?? entry?.register),
       categories: entry?.categories ?? [],
+      registerAmount: Number(entry?.register?.['1'] ?? 0) || 0,
     })))
+
+  /**
+   * Every category the priced zones carry, prefixed with the "all" sentinel.
+   * Derived from the registrar data rather than a fixed list, so an operator's
+   * own categories drive the filter.
+   */
+  const categories = computed(() => {
+    const found = new Set<string>()
+    for (const row of priceRows.value) for (const category of row.categories) found.add(category)
+    return [ALL_CATEGORY, ...[...found].sort()]
+  })
 
   /** The subset the search card offers. */
   const offeredTlds = computed(() => priceRows.value.slice(0, tldLimit))
@@ -110,5 +125,12 @@ export const useDomainLookup = (tldLimit = 4) => {
     }
   }
 
-  return { priceRows, offeredTlds, results, pending, search }
+  /**
+   * Currency the prices are quoted in, as the API reports it. The cart converts
+   * from AMD when told to, so a caller has to know which it is holding rather
+   * than assuming, the way the original page did.
+   */
+  const currencyCode = computed(() => data.value?.currency?.code ?? '')
+
+  return { priceRows, categories, currencyCode, offeredTlds, results, pending, search }
 }

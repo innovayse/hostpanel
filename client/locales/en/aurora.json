@@ -32,7 +32,10 @@
       "searching": "Searching…",
       "empty": "Type a name and press Search.",
       "noZones": "No domain extensions are priced yet.",
-      "unknown": "check failed"
+      "unknown": "check failed",
+      "add": "Add",
+      "inCart": "In cart",
+      "transfer": "Transfer"
     },
     "trust": {
       "ssl": "SSL secured",
@@ -172,7 +175,8 @@
       "renew": "Renew",
       "transfer": "Transfer",
       "all": "All",
-      "empty": "No zones in this category."
+      "empty": "No zones in this category.",
+      "note": "Note"
     },
     "checkout": {
       "helpTitle": "Need help?",

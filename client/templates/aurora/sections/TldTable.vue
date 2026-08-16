@@ -5,16 +5,6 @@
     </h2>
     <p class="mb-7 text-base text-mut">{{ t('aurora.tldTable.lead') }}</p>
 
-    <div v-if="categories.length > 1" class="mb-6 flex flex-wrap gap-2">
-      <button
-        v-for="category in categories"
-        :key="category"
-        type="button"
-        class="rounded-full px-3.5 py-2 text-[13px] font-semibold"
-        :class="category === active ? 'bg-brand text-[#08090F]' : 'border border-line2 text-mut'"
-        @click="active = category"
-      >{{ category === ALL ? t('aurora.tldTable.all') : category }}</button>
-    </div>
 
     <div class="overflow-x-auto rounded-[18px] border border-line bg-surf">
       <table class="w-full min-w-[640px] border-collapse">
@@ -24,6 +14,7 @@
             <th class="px-[22px] py-4 font-normal">{{ t('aurora.tldTable.register') }}</th>
             <th class="px-[22px] py-4 font-normal">{{ t('aurora.tldTable.renew') }}</th>
             <th class="px-[22px] py-4 font-normal">{{ t('aurora.tldTable.transfer') }}</th>
+            <th class="px-[22px] py-4 font-normal">{{ t('aurora.tldTable.note') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -32,9 +23,11 @@
             <td class="px-[22px] py-[15px] text-[15px] font-semibold text-tx">{{ row.register }}</td>
             <td class="px-[22px] py-[15px] text-[15px] text-tx2">{{ row.renew }}</td>
             <td class="px-[22px] py-[15px] text-[15px] text-tx2">{{ row.transfer }}</td>
+            <!-- The registrar's own category tag; the design's editorial note has no field behind it. -->
+            <td class="px-[22px] py-[15px] text-[13px] text-ac1">{{ row.categories[0] ?? '' }}</td>
           </tr>
           <tr v-if="visibleRows.length === 0">
-            <td colspan="4" class="px-[22px] py-8 text-center text-[15px] text-mut2">
+            <td colspan="5" class="px-[22px] py-8 text-center text-[15px] text-mut2">
               {{ t('aurora.tldTable.empty') }}
             </td>
           </tr>
@@ -48,28 +41,24 @@
 /**
  * aurora TLD price table.
  *
- * Rows and their categories come from the API, so the filter reflects whatever
- * the operator's registrar actually offers rather than a hard-coded list.
+ * Rows and their category tags come from the API, so the table reflects whatever
+ * the operator's registrar actually offers. The category filter itself lives in
+ * the search bar above, because it narrows the results list as well as this
+ * table; the selection arrives here as a prop.
  */
+import { ALL_CATEGORY } from '~/templates/aurora/types'
 import type { TldPriceRow } from '~/composables/useDomainLookup'
 
-const props = withDefaults(defineProps<{ rows?: TldPriceRow[] }>(), { rows: () => [] })
+const props = withDefaults(defineProps<{
+  rows?: TldPriceRow[]
+  /** Selected category, or ALL_CATEGORY for the unfiltered view. */
+  active?: string
+}>(), { rows: () => [], active: ALL_CATEGORY })
 
 const { t } = useI18n()
 
-/** Sentinel for the unfiltered view; never collides with a real category name. */
-const ALL = '__all__'
-
-const active = ref(ALL)
-
-const categories = computed(() => {
-  const found = new Set<string>()
-  for (const row of props.rows) for (const category of row.categories) found.add(category)
-  return [ALL, ...[...found].sort()]
-})
-
 const visibleRows = computed(() =>
-  active.value === ALL
+  props.active === ALL_CATEGORY
     ? props.rows
-    : props.rows.filter(row => row.categories.includes(active.value)))
+    : props.rows.filter(row => row.categories.includes(props.active)))
 </script>

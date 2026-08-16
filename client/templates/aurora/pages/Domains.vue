@@ -13,27 +13,39 @@
         {{ t('aurora.domainsPage.lead') }}
       </p>
 
-      <div class="mx-auto mt-8 max-w-[720px]">
-        <AuroraDomainSearch
-          :results="results"
-          :pending="pending"
+      <div class="mt-[30px]">
+        <AuroraDomainSearchBar
+          :categories="categories"
+          :active="activeCategory"
           :has-zones="priceRows.length > 0"
           @search="term => emit('search', term)"
+          @update:category="value => emit('update:category', value)"
         />
       </div>
     </section>
 
-    <AuroraTldTable :rows="priceRows" />
+    <AuroraDomainResults
+      :results="results"
+      :pending="pending"
+      :has-zones="priceRows.length > 0"
+      :in-cart="inCart"
+      @add="domain => emit('add', domain)"
+    />
+
+    <AuroraTldTable :rows="priceRows" :active="activeCategory" />
   </div>
 </template>
 
 <script setup lang="ts">
 /**
  * aurora domains page.
- * Presentation only — pricing and lookup results arrive from pages/domains/index.vue.
+ * Presentation only — pricing, lookup results and cart state arrive from
+ * pages/domains/index.vue, and adding to the cart is emitted back to it.
  */
-import AuroraDomainSearch from '~/templates/aurora/sections/DomainSearch.vue'
+import AuroraDomainSearchBar from '~/templates/aurora/sections/DomainSearchBar.vue'
+import AuroraDomainResults from '~/templates/aurora/sections/DomainResults.vue'
 import AuroraTldTable from '~/templates/aurora/sections/TldTable.vue'
+import { ALL_CATEGORY } from '~/templates/aurora/types'
 import type { DomainResult } from '~/templates/aurora/types'
 import type { TldPriceRow } from '~/composables/useDomainLookup'
 
@@ -41,9 +53,25 @@ withDefaults(defineProps<{
   priceRows?: TldPriceRow[]
   results?: DomainResult[]
   pending?: boolean
-}>(), { priceRows: () => [], results: () => [], pending: false })
+  /** Category names for the filter, including the "all" sentinel. */
+  categories?: string[]
+  activeCategory?: string
+  /** Domains already in the cart. */
+  inCart?: string[]
+}>(), {
+  priceRows: () => [],
+  results: () => [],
+  pending: false,
+  categories: () => [],
+  activeCategory: ALL_CATEGORY,
+  inCart: () => [],
+})
 
-const emit = defineEmits<{ search: [term: string] }>()
+const emit = defineEmits<{
+  search: [term: string]
+  'update:category': [category: string]
+  add: [domain: string]
+}>()
 
 const { t } = useI18n()
 </script>

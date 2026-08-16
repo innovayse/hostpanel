@@ -11,6 +11,8 @@
     "clearCart": "Մաքրել զամբյուղը",
     "checkout": "Անցնել վճարման",
     "secureCheckout": "Անվտանգ վճարում — ձեր տվյալները կոդավորված են",
-    "multipleCurrencies": "Բազմարժութային"
+    "multipleCurrencies": "Բազմարժութային",
+    "items": "ապրանք",
+    "itemsCount": "ապրանք"
   }
 }

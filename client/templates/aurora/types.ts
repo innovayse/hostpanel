@@ -1,3 +1,10 @@
+/**
+ * Sentinel for the unfiltered view of the zone list. A reserved value rather
+ * than an empty string so it can never collide with a category the registrar
+ * actually returns.
+ */
+export const ALL_CATEGORY = '__all__'
+
 /** One row of the domain availability list rendered by the aurora domain search. */
 export interface DomainResult {
   /** Fully qualified domain, e.g. "innovayse.am". */

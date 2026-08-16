@@ -7,6 +7,12 @@ ENV PATH="$PATH:/root/.dotnet/tools"
 WORKDIR /app
 
 # Restore dependencies (cached layer)
+# The private package source Innovayse.Auth comes from. Without it the restore sees
+# only nuget.org and fails NU1101 "no packages exist with this id" — which reads as a
+# missing package rather than a missing feed. The dev stage got away with it because
+# `dotnet watch` restores at container start, against the bind-mounted source tree.
+COPY backend/nuget.config ./nuget.config
+
 COPY backend/Innovayse.Backend.sln ./Innovayse.Backend.sln
 COPY backend/Directory.Build.props ./Directory.Build.props
 COPY backend/Directory.Packages.props ./Directory.Packages.props
@@ -23,6 +29,12 @@ COPY backend/tests/Innovayse.Application.Tests/Innovayse.Application.Tests.cspro
 COPY backend/tests/Innovayse.Integration.Tests/Innovayse.Integration.Tests.csproj ./tests/Innovayse.Integration.Tests/
 COPY backend/tests/Innovayse.CWP.Tests/Innovayse.CWP.Tests.csproj ./tests/Innovayse.CWP.Tests/
 COPY backend/tests/Innovayse.Infrastructure.Tests/Innovayse.Infrastructure.Tests.csproj ./tests/Innovayse.Infrastructure.Tests/
+# The credential for that source. NuGet reads this exact name from the environment,
+# and an ARG is one for the RUN below — but only if it is declared here: an undeclared
+# build arg is dropped with a warning, which is what turned the restore into a plain
+# 401 against a feed that was otherwise configured correctly.
+ARG NuGetPackageSourceCredentials_innovayse
+
 RUN dotnet restore Innovayse.Backend.sln
 
 ENV ASPNETCORE_ENVIRONMENT=Development
@@ -38,6 +50,12 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 
 WORKDIR /src
 
+# The private package source Innovayse.Auth comes from. Without it the restore sees
+# only nuget.org and fails NU1101 "no packages exist with this id" — which reads as a
+# missing package rather than a missing feed. The dev stage got away with it because
+# `dotnet watch` restores at container start, against the bind-mounted source tree.
+COPY backend/nuget.config ./nuget.config
+
 COPY backend/Innovayse.Backend.sln ./Innovayse.Backend.sln
 COPY backend/Directory.Build.props ./Directory.Build.props
 COPY backend/Directory.Packages.props ./Directory.Packages.props
@@ -54,6 +72,12 @@ COPY backend/tests/Innovayse.Application.Tests/Innovayse.Application.Tests.cspro
 COPY backend/tests/Innovayse.Integration.Tests/Innovayse.Integration.Tests.csproj ./tests/Innovayse.Integration.Tests/
 COPY backend/tests/Innovayse.CWP.Tests/Innovayse.CWP.Tests.csproj ./tests/Innovayse.CWP.Tests/
 COPY backend/tests/Innovayse.Infrastructure.Tests/Innovayse.Infrastructure.Tests.csproj ./tests/Innovayse.Infrastructure.Tests/
+# The credential for that source. NuGet reads this exact name from the environment,
+# and an ARG is one for the RUN below — but only if it is declared here: an undeclared
+# build arg is dropped with a warning, which is what turned the restore into a plain
+# 401 against a feed that was otherwise configured correctly.
+ARG NuGetPackageSourceCredentials_innovayse
+
 RUN dotnet restore Innovayse.Backend.sln
 
 COPY backend/ .

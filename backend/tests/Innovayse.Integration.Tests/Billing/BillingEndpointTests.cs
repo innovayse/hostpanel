@@ -6,7 +6,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
 
-/// <summary>Integration tests for /api/billing and /api/me/billing endpoints.</summary>
+/// <summary>Integration tests for /api/billing and /api/me/invoices endpoints.</summary>
 public sealed class BillingEndpointTests(IntegrationTestFactory factory)
     : IClassFixture<IntegrationTestFactory>
 {
@@ -27,7 +27,7 @@ public sealed class BillingEndpointTests(IntegrationTestFactory factory)
     {
         var client = factory.CreateClient();
 
-        var response = await client.GetAsync("/api/me/billing");
+        var response = await client.GetAsync("/api/me/invoices");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -39,7 +39,7 @@ public sealed class BillingEndpointTests(IntegrationTestFactory factory)
         var adminToken = await factory.GetAdminTokenAsync();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
 
-        var response = await client.GetAsync("/api/me/billing");
+        var response = await client.GetAsync("/api/me/invoices");
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
@@ -80,7 +80,7 @@ public sealed class BillingEndpointTests(IntegrationTestFactory factory)
         for (var i = 0; i < 5; i++)
         {
             await Task.Delay(500);
-            var meResponse = await httpClient.GetAsync("/api/me");
+            var meResponse = await httpClient.GetAsync("/api/clients/me");
             if (meResponse.IsSuccessStatusCode)
             {
                 var json = await meResponse.Content.ReadFromJsonAsync<JsonElement>();
@@ -131,16 +131,19 @@ public sealed class BillingEndpointTests(IntegrationTestFactory factory)
         });
         registerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var authJson = await registerResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var clientToken = authJson.GetProperty("accessToken").GetString()!;
+        // Registration answers with { userId } and nothing else — the token comes from
+        // a login, which is what the client app does too. These lines used to read an
+        // accessToken straight out of the registration response, from back when it
+        // returned one.
+        var clientToken = await factory.GetClientTokenAsync(email, TestPassword);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", clientToken);
 
-        // 2. Retry until Wolverine client-creation handler completes — /api/me/billing returns 200
-        HttpResponseMessage response = await client.GetAsync("/api/me/billing");
+        // 2. Retry until Wolverine client-creation handler completes — /api/me/invoices returns 200
+        HttpResponseMessage response = await client.GetAsync("/api/me/invoices");
         for (var i = 0; i < 10 && response.StatusCode != HttpStatusCode.OK; i++)
         {
             await Task.Delay(500);
-            response = await client.GetAsync("/api/me/billing");
+            response = await client.GetAsync("/api/me/invoices");
         }
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -160,8 +163,11 @@ public sealed class BillingEndpointTests(IntegrationTestFactory factory)
             firstName = "Client",
             lastName = "Alpha"
         });
-        var authJsonA = await registerAResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var clientAToken = authJsonA.GetProperty("accessToken").GetString()!;
+        // Registration answers with { userId } and nothing else — the token comes from
+        // a login, which is what the client app does too. These lines used to read an
+        // accessToken straight out of the registration response, from back when it
+        // returned one.
+        var clientAToken = await factory.GetClientTokenAsync(emailA, TestPassword);
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", clientAToken);
 
         // 2. Wait for client A's profile via /api/me
@@ -170,7 +176,7 @@ public sealed class BillingEndpointTests(IntegrationTestFactory factory)
         for (var i = 0; i < 5; i++)
         {
             await Task.Delay(500);
-            var meResponse = await httpClient.GetAsync("/api/me");
+            var meResponse = await httpClient.GetAsync("/api/clients/me");
             if (meResponse.IsSuccessStatusCode)
             {
                 var json = await meResponse.Content.ReadFromJsonAsync<JsonElement>();
@@ -211,19 +217,22 @@ public sealed class BillingEndpointTests(IntegrationTestFactory factory)
             firstName = "Client",
             lastName = "Beta"
         });
-        var authJsonB = await registerBResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var clientBToken = authJsonB.GetProperty("accessToken").GetString()!;
+        // Registration answers with { userId } and nothing else — the token comes from
+        // a login, which is what the client app does too. These lines used to read an
+        // accessToken straight out of the registration response, from back when it
+        // returned one.
+        var clientBToken = await factory.GetClientTokenAsync(emailB, TestPassword);
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", clientBToken);
 
         // Wait until client B's profile is created by Wolverine before hitting the billing endpoint
-        var warmup = await httpClient.GetAsync("/api/me/billing");
+        var warmup = await httpClient.GetAsync("/api/me/invoices");
         for (var i = 0; i < 10 && warmup.StatusCode != HttpStatusCode.OK; i++)
         {
             await Task.Delay(500);
-            warmup = await httpClient.GetAsync("/api/me/billing");
+            warmup = await httpClient.GetAsync("/api/me/invoices");
         }
 
-        var response = await httpClient.GetAsync($"/api/me/billing/{invoiceId}");
+        var response = await httpClient.GetAsync($"/api/me/invoices/{invoiceId}");
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }

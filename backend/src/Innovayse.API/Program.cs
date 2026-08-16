@@ -265,8 +265,15 @@ try
 
     var app = builder.Build();
 
-    // Auto-apply EF Core migrations in Development only
-    if (app.Environment.IsDevelopment())
+    // Apply EF Core migrations on startup, in every environment except Testing —
+    // the test factory runs them itself once the host is up.
+    //
+    // This used to be Development-only, which quietly made Development the only
+    // environment a deployed host could run: name it anything else and the schema
+    // simply stopped following the code, with nothing in the log to say so. Nobody
+    // was going to notice until a migration was missing. The SSO has always migrated
+    // this way; hostpanel is the one that did not.
+    if (!app.Environment.IsEnvironment("Testing"))
     {
         using var migrScope = app.Services.CreateScope();
         var dbCtx = migrScope.ServiceProvider.GetRequiredService<AppDbContext>();

@@ -34,8 +34,15 @@ services:
       dockerfile: docker/api.Dockerfile
       target: prod
     environment:
-      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
-      ASPNETCORE_ENVIRONMENT: Production
+      # The alias, not the bare service name: several products call their database
+      # service "postgres", so on the shared network that name resolved to three
+      # addresses and connections landed in another product's database.
+      ConnectionStrings__DefaultConnection: "Host=hostpanel-db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      # Development on a laptop, Staging on the stage host, Production on the prod one.
+      # Never hardcoded: a deployed host left on Development serves developer exception
+      # pages, and in the products that seed test data or gate migrations on it, does
+      # rather more than that.
+      ASPNETCORE_ENVIRONMENT: ${HOSTPANEL_ASPNETCORE_ENVIRONMENT:-Production}
       Jwt__Secret: ${JWT_SECRET}
       Jwt__Issuer: ${JWT_ISSUER}
       Jwt__Audience: ${JWT_AUDIENCE}
@@ -101,7 +108,9 @@ services:
       # NUXT_PUBLIC_<KEY> at runtime and overriding the frozen default — every
       # var below MUST use that exact prefix+casing to actually take effect;
       # plain names (matching the dev compose file) are silently ignored here.
-      NUXT_API_URL: http://api:5148
+      # The alias, not the bare service name: "api" is also innovayse-main's backend
+      # on the shared platform network, and Docker's DNS round-robins between the two.
+      NUXT_API_URL: http://hostpanel-api:5148
       NUXT_PUBLIC_BASE_URL: https://${DOMAIN}
       # The app-launcher widget script is injected over whatever origin this
       # points at — must be HTTPS on an HTTPS deployment or browsers block it

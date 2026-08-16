@@ -1,8 +1,10 @@
 namespace Innovayse.API.Auth;
 
 using Innovayse.API.Auth.Requests;
+using Innovayse.Application.Auth.Events;
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Common;
+using Innovayse.Domain.Auth;
 using Innovayse.Application.Notifications.Commands.SendEmail;
 using Innovayse.Application.Notifications.Services;
 using Innovayse.Domain.Notifications.Interfaces;
@@ -110,6 +112,19 @@ public sealed class LocalAuthController(
         {
             var userId = await userService.CreateAsync(
                 request.Email, request.Password, ct, request.FirstName, request.LastName);
+
+            // A user row on its own is not an account anyone can use. Both of these went
+            // missing when registration was rewritten to call IUserService directly: the
+            // RegisterHandler this replaced assigned the role and published the event, and
+            // CreateClientOnRegisterHandler — still there, still idempotent — was left
+            // waiting for a message nobody sent. What a locally-registered user got was an
+            // AppUser with no role and no Client record, which is 403 on every client
+            // endpoint and 401 on their own profile. The SSO provisioning path in
+            // UserService assigns the same role for the same reason.
+            await userService.AddToRoleAsync(userId, Roles.Client, ct);
+            await bus.PublishAsync(new ClientRegisteredIntegrationEvent(
+                userId, request.Email, request.FirstName ?? string.Empty, request.LastName ?? string.Empty));
+
             return Ok(new { userId });
         }
         catch (Exception ex)

@@ -5,6 +5,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using FluentAssertions;
 using Innovayse.Domain.Products;
+using Innovayse.Domain.Servers;
 
 /// <summary>Integration tests for /api/provisioning endpoints.</summary>
 public sealed class ProvisioningEndpointTests(IntegrationTestFactory factory)
@@ -20,6 +21,22 @@ public sealed class ProvisioningEndpointTests(IntegrationTestFactory factory)
     private async Task<int> SeedServiceAsync(HttpClient http, string adminToken)
     {
         http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        // A server to provision onto. Without one, ServerSelector finds nothing eligible
+        // and ProvisionServiceHandler throws "No eligible server available", which the
+        // endpoint returns as 400 — so every test here failed on setup rather than on
+        // what it meant to assert. Nothing is reached over the network: the factory
+        // hands the handler a StubProvisioningProviderFactory.
+        var serverResponse = await http.PostAsJsonAsync("/api/admin/servers", new
+        {
+            name = $"Prov-Server-{Guid.NewGuid():N}",
+            hostname = "stub-server.example.com",
+            module = ServerModule.Cwp7,
+            username = "root",
+            accessHash = "stub-access-hash",
+            isDefault = true,
+        });
+        serverResponse.EnsureSuccessStatusCode();
 
         var groupResponse = await http.PostAsJsonAsync("/api/products/groups",
             new { name = $"Prov-Group-{Guid.NewGuid():N}" });

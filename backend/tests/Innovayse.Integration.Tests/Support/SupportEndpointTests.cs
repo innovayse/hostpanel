@@ -34,8 +34,11 @@ public sealed class SupportEndpointTests(IntegrationTestFactory factory)
         });
         registerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var authJson = await registerResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var clientToken = authJson.GetProperty("accessToken").GetString()!;
+        // Registration answers with { userId } and nothing else — the token comes from
+        // a login, which is what the client app does too. These lines used to read an
+        // accessToken straight out of the registration response, from back when it
+        // returned one.
+        var clientToken = await factory.GetClientTokenAsync(email, TestPassword);
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", clientToken);
 
         // Wait for Wolverine to create the Client record
@@ -43,7 +46,7 @@ public sealed class SupportEndpointTests(IntegrationTestFactory factory)
         for (var i = 0; i < 10 && !clientCreated; i++)
         {
             await Task.Delay(300);
-            var meResponse = await httpClient.GetAsync("/api/me");
+            var meResponse = await httpClient.GetAsync("/api/clients/me");
             clientCreated = meResponse.IsSuccessStatusCode;
         }
 
@@ -105,8 +108,11 @@ public sealed class SupportEndpointTests(IntegrationTestFactory factory)
         });
         registerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var authJson = await registerResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var clientToken = authJson.GetProperty("accessToken").GetString()!;
+        // Registration answers with { userId } and nothing else — the token comes from
+        // a login, which is what the client app does too. These lines used to read an
+        // accessToken straight out of the registration response, from back when it
+        // returned one.
+        var clientToken = await factory.GetClientTokenAsync(email, TestPassword);
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", clientToken);
 
         var response = await httpClient.GetAsync("/api/tickets");
@@ -134,8 +140,11 @@ public sealed class SupportEndpointTests(IntegrationTestFactory factory)
         });
         registerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var authJson = await registerResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var clientToken = authJson.GetProperty("accessToken").GetString()!;
+        // Registration answers with { userId } and nothing else — the token comes from
+        // a login, which is what the client app does too. These lines used to read an
+        // accessToken straight out of the registration response, from back when it
+        // returned one.
+        var clientToken = await factory.GetClientTokenAsync(email, TestPassword);
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", clientToken);
 
         // Wait for Client record
@@ -143,7 +152,7 @@ public sealed class SupportEndpointTests(IntegrationTestFactory factory)
         for (var i = 0; i < 10 && !clientCreated; i++)
         {
             await Task.Delay(300);
-            var meResponse = await httpClient.GetAsync("/api/me");
+            var meResponse = await httpClient.GetAsync("/api/clients/me");
             clientCreated = meResponse.IsSuccessStatusCode;
         }
 

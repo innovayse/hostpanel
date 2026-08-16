@@ -2,14 +2,61 @@
 # services on localhost ports so the host nginx can reverse-proxy them.
 services:
   api:
+    # Same story as the client below: docker-compose.yml builds the dev target, which
+    # is `dotnet watch` over a bind-mounted ./backend. On a server that means the SDK
+    # image, a rebuild on every file event, and the source tree present on the host to
+    # rebuild from. The prod target publishes once and runs the DLL.
+    build:
+      target: prod
+      args:
+        # The published build restores Innovayse.Auth from the private registry inside
+        # `docker build`, where the container environment does not reach — CI passes
+        # this as a build-arg for the images it builds, and this is the equivalent for
+        # a host that builds in place.
+        NuGetPackageSourceCredentials_innovayse: ${NUGET_INNOVAYSE_CREDENTIALS}
+    volumes: !reset []
     ports:
       - "127.0.0.1:5148:5148"
 
   client:
+    # docker-compose.yml builds the dev target, because that is what a laptop
+    # wants: `yarn dev` with ./client bind-mounted for hot reload. A server is
+    # not a laptop. Left inherited, stage and prod served the Vite dev server,
+    # which answers every request from a hostname it was not told about with
+    # "Blocked request. This host is not allowed." — the panel was unreachable
+    # on its own domain. The bind mount goes with it: mounted over /app it
+    # would hide the .output the prod stage builds.
+    build:
+      target: prod
+    volumes: !reset []
     ports:
       - "127.0.0.1:3200:3000"
+    # Everything below is the same value docker-compose.yml already passes, under
+    # the name Nuxt reads at RUNTIME. nuxt.config.ts resolves each process.env it
+    # names while the app is being built, so in the prod target those reads happen
+    # inside `docker build`, where none of them are set, and the fallbacks are
+    # baked into .output — which is how stage came to send visitors to sso.local
+    # with a redirect_uri of panel.local. Once built, the only lever left is
+    # Nuxt's own override: NUXT_<KEY> for a server key, NUXT_PUBLIC_<KEY> for a
+    # public one. The dev target does not need any of this (it evaluates
+    # nuxt.config at startup, with the container's env already in place), which is
+    # exactly why the problem stayed invisible until this overlay built prod.
     environment:
-      NUXT_API_URL: http://api:5148
+      # The network alias, not the bare service name: "api" is also innovayse-main's
+      # backend on the shared platform network, and Docker's DNS round-robins
+      # between the two — the panel would intermittently talk to another product.
+      NUXT_API_URL: http://hostpanel-api:5148
+      NUXT_AUTH_MODE: ${AUTH_MODE}
+      NUXT_SSO_URL: ${SSO_URL}
+      NUXT_SSO_CLIENT_ID: ${SSO_CLIENT_ID}
+      NUXT_SSO_CLIENT_SECRET: ${SSO_CLIENT_SECRET}
+      NUXT_SSO_CALLBACK_URL: ${SSO_CALLBACK_URL}
+      NUXT_SMTP_HOST: ${SMTP_HOST}
+      NUXT_SMTP_PORT: ${SMTP_PORT}
+      NUXT_MAIN_API_URL: http://main-client:3000
+      NUXT_PUBLIC_AUTH_MODE: ${AUTH_MODE}
+      NUXT_PUBLIC_SSO_PUBLIC_URL: ${SSO_PUBLIC_URL}
+      NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
 
   admin:
     ports:

@@ -29,16 +29,20 @@ public sealed class ClientsEndpointTests(IntegrationTestFactory factory)
         });
         registerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var authJson = await registerResponse.Content.ReadFromJsonAsync<AuthResponse>();
+        // Registration answers with { userId } and nothing else, so deserialising it into
+        // AuthResponse produced a null AccessToken and the header below read
+        // "Bearer null" — which is a 401 on every call after it, not the profile bug it
+        // looked like. The token comes from a login, the same way the client app gets one.
+        var clientToken = await factory.GetClientTokenAsync(email, "Password123!");
         client.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authJson!.AccessToken);
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", clientToken);
 
         // Retry loop to allow Wolverine in-process handler to complete
         HttpResponseMessage? profileResponse = null;
         for (var i = 0; i < 5; i++)
         {
             await Task.Delay(200);
-            profileResponse = await client.GetAsync("/api/me");
+            profileResponse = await client.GetAsync("/api/clients/me");
             if (profileResponse.StatusCode == HttpStatusCode.OK)
             {
                 break;
@@ -57,7 +61,7 @@ public sealed class ClientsEndpointTests(IntegrationTestFactory factory)
     public async Task GetMyProfile_WithoutToken_Returns401Async()
     {
         var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/me");
+        var response = await client.GetAsync("/api/clients/me");
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 

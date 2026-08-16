@@ -7,6 +7,12 @@ services:
     # `redis` is refused as soon as another product's stack claims it.
     container_name: hostpanel-db
     image: postgres:17-alpine
+    # Addressed by this name rather than by the service name, because "postgres" is
+    # what several products call their database service and the shared network hands
+    # that name out round-robin between all of them.
+    networks:
+      default:
+        aliases: [hostpanel-db]
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -107,9 +113,29 @@ services:
       - backend_bin:/app/src/Innovayse.API/bin
       - backend_obj:/app/src/Innovayse.API/obj
       - backend_packages:/root/.nuget/packages
+      # The integration suite is run from inside this container — `dotnet test` on the
+      # host writes obj/ and bin/ into the bind mount above and kills the watcher this
+      # container is running. Those tests use Testcontainers, which needs to talk to a
+      # Docker daemon, so the host's socket is passed in: without it all 41 fail in
+      # their fixture constructor with "Docker is either not running or misconfigured",
+      # which reads like a broken test suite rather than a missing mount.
+      #
+      # Dev only. It is not in the prod target, and it should not be: a process that
+      # can reach this socket can do anything the daemon can.
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
-      ASPNETCORE_ENVIRONMENT: Development
+      # Testcontainers starts sibling containers on the host, not children of this one,
+      # so the address it hands the test is a host port. "localhost" from in here is
+      # this container; host.docker.internal is the machine the daemon runs on.
+      TESTCONTAINERS_HOST_OVERRIDE: host.docker.internal
+      # The alias, not the bare service name: on the shared platform network several
+      # products' database services are all called "postgres", so the name resolved to
+      # more than one address and connections landed in another product's database.
+      ConnectionStrings__DefaultConnection: "Host=hostpanel-db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      # Development on a laptop, Staging on the stage host, Production on the prod one.
+      # It was pinned to Development here, which meant a deployed host served developer
+      # exception pages and re-ran the test-data seeder on every restart.
+      ASPNETCORE_ENVIRONMENT: ${HOSTPANEL_ASPNETCORE_ENVIRONMENT:-Development}
       Jwt__Secret: ${JWT_SECRET}
       Jwt__Issuer: ${JWT_ISSUER}
       Jwt__Audience: ${JWT_AUDIENCE}
@@ -251,7 +277,9 @@ services:
       - admin_node_modules:/app/node_modules
     environment:
       VITE_API_BASE: /api
-      API_PROXY_TARGET: http://api:5148
+      # The alias, not the bare service name: "api" is also innovayse-main's backend
+      # on the shared platform network, and Docker's DNS round-robins between the two.
+      API_PROXY_TARGET: http://hostpanel-api:5148
       # No VITE_SSO_URL / VITE_SSO_CLIENT_ID: nothing under admin/src reads them
       # any more. The SPA ran the OIDC flow itself as the public client
       # "hostpanel-admin" and kept both tokens in localStorage; it now sends the

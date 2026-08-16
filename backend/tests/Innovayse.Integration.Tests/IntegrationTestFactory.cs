@@ -101,6 +101,21 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
             }
 
             services.AddScoped<IProvisioningProvider, StubProvisioningProvider>();
+
+            // And the factory that actually gets asked for one. ProvisionServiceHandler
+            // never resolves IProvisioningProvider — it calls
+            // IProvisioningProviderFactory.CreateFor(server), and the real implementation
+            // builds a CWP7 client aimed at the server row's hostname. Stubbing only the
+            // interface above left every provisioning test making a real network call to
+            // a host that does not exist, which came back as 400 from the endpoint.
+            var providerFactoryDescriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(IProvisioningProviderFactory));
+            if (providerFactoryDescriptor is not null)
+            {
+                services.Remove(providerFactoryDescriptor);
+            }
+
+            services.AddScoped<IProvisioningProviderFactory, StubProvisioningProviderFactory>();
         });
     }
 

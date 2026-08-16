@@ -217,7 +217,8 @@ New templates should follow `aurora`, not `classic`.
 
 Related operator settings, all optional and hidden when empty:
 `portal.contact.whatsapp`, `portal.contact.telegram`, `portal.contact.email`,
-`portal.chat.provider`, `portal.newsletter.action_url`.
+`portal.contact.phone`, `portal.chat.provider`, `portal.newsletter.action_url`,
+`portal.legal.tax_id`, and `portal.social.{facebook,instagram,linkedin,youtube}`.
 
 ---
 

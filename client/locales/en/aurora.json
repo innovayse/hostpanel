@@ -141,7 +141,7 @@
     "footer": {
       "tagline": "Hosting, domains and digital services under one roof. Yerevan, Armenia.",
       "newsletterTitle": "Newsletter",
-      "newsletterPlaceholder": "you@email.com",
+      "newsletterPlaceholder": "you{'@'}email.com",
       "newsletterCta": "Subscribe",
       "company": "Company",
       "support": "Support",
@@ -155,7 +155,9 @@
       "terms": "Terms of use",
       "privacy": "Privacy policy",
       "cookies": "Cookie policy",
-      "refund": "Refunds"
+      "refund": "Refunds",
+      "newsletterInvalid": "Please enter a valid email address.",
+      "taxId": "Tax ID"
     },
     "hostingPage": {
       "eyebrow": "Hosting",

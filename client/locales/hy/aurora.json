@@ -141,7 +141,7 @@
     "footer": {
       "tagline": "Հոսթինգ, դոմեններ և digital ծառայություններ մեկ հարկի տակ։ Երևան, Հայաստան։",
       "newsletterTitle": "Նորությունների բաժանորդագրություն",
-      "newsletterPlaceholder": "ձեր@email.am",
+      "newsletterPlaceholder": "ձեր{'@'}email.am",
       "newsletterCta": "Բաժանորդագրվել",
       "company": "Ընկերություն",
       "support": "Աջակցություն",
@@ -155,7 +155,9 @@
       "terms": "Օգտագործման պայմաններ",
       "privacy": "Գաղտնիության քաղաքականություն",
       "cookies": "Cookie քաղաքականություն",
-      "refund": "Գումարի վերադարձ"
+      "refund": "Գումարի վերադարձ",
+      "newsletterInvalid": "Խնդրում ենք նշել վավեր էլ. հասցե։",
+      "taxId": "ՀՎՀՀ"
     },
     "hostingPage": {
       "eyebrow": "Հոսթինգ",

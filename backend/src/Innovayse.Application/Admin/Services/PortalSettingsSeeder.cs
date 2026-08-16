@@ -33,6 +33,12 @@ public static class PortalSettingsSeeder
         ("portal.chat.provider",         "",       "Live chat provider: chatwoot, or empty to disable the widget."),
         ("portal.newsletter.action_url", "",       "External newsletter form action URL. Empty hides the footer block."),
         ("portal.contact.email",         "",       "Public support address shown in the storefront footer. Empty hides it."),
+        ("portal.social.facebook",        "",       "Facebook page URL. Empty hides the icon."),
+        ("portal.social.instagram",       "",       "Instagram profile URL. Empty hides the icon."),
+        ("portal.social.linkedin",        "",       "LinkedIn page URL. Empty hides the icon."),
+        ("portal.social.youtube",         "",       "YouTube channel URL. Empty hides the icon."),
+        ("portal.contact.phone",          "",       "Public phone number shown in the footer. Empty hides it."),
+        ("portal.legal.tax_id",           "",       "Company tax identifier shown in the footer. Empty hides it."),
     ];
 
     /// <summary>

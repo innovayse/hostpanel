@@ -98,6 +98,12 @@ export default defineNuxtConfig({
       portalChatProvider: process.env.NUXT_PUBLIC_PORTAL_CHAT_PROVIDER || '',
       portalNewsletterUrl: process.env.NUXT_PUBLIC_PORTAL_NEWSLETTER_URL || '',
       portalContactEmail: process.env.NUXT_PUBLIC_PORTAL_CONTACT_EMAIL || '',
+      portalSocialFacebook: process.env.NUXT_PUBLIC_PORTAL_SOCIAL_FACEBOOK || '',
+      portalSocialInstagram: process.env.NUXT_PUBLIC_PORTAL_SOCIAL_INSTAGRAM || '',
+      portalSocialLinkedin: process.env.NUXT_PUBLIC_PORTAL_SOCIAL_LINKEDIN || '',
+      portalSocialYoutube: process.env.NUXT_PUBLIC_PORTAL_SOCIAL_YOUTUBE || '',
+      portalContactPhone: process.env.NUXT_PUBLIC_PORTAL_CONTACT_PHONE || '',
+      portalLegalTaxId: process.env.NUXT_PUBLIC_PORTAL_LEGAL_TAX_ID || '',
     }
   },
 

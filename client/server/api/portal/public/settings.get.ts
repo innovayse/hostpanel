@@ -20,6 +20,12 @@ const PUBLIC_KEYS = [
   'portal.chat.provider',
   'portal.newsletter.action_url',
   'portal.contact.email',
+  'portal.social.facebook',
+  'portal.social.instagram',
+  'portal.social.linkedin',
+  'portal.social.youtube',
+  'portal.contact.phone',
+  'portal.legal.tax_id',
 ] as const
 
 export default defineCachedEventHandler(async (event) => {

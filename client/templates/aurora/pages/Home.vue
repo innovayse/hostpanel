@@ -16,6 +16,7 @@
         :results="domainResults"
         :pending="domainPending"
         :has-zones="hasZones"
+        :price-hints="priceHints"
         @search="term => emit('search', term)"
       />
     </section>
@@ -51,11 +52,14 @@ import AuroraTestimonials from '~/templates/aurora/sections/Testimonials.vue'
 import AuroraFaq from '~/templates/aurora/sections/Faq.vue'
 import AuroraCta from '~/templates/aurora/sections/Cta.vue'
 import type { DomainResult, PlanCard } from '~/templates/aurora/types'
+import type { TldPriceRow } from '~/composables/useDomainLookup'
 
 withDefaults(defineProps<{
   domainResults?: DomainResult[]
   domainPending?: boolean
   hasZones?: boolean
+  /** Extensions the search offers, shown as a price hint under the field. */
+  priceHints?: TldPriceRow[]
   plans?: PlanCard[]
   yearly?: boolean
   /** Both default to on: these sections carry indexable content. */
@@ -65,6 +69,7 @@ withDefaults(defineProps<{
   domainResults: () => [],
   domainPending: false,
   hasZones: true,
+  priceHints: () => [],
   plans: () => [],
   yearly: false,
   showProcess: true,

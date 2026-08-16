@@ -18,6 +18,18 @@
     </form>
 
     <!--
+      Starting prices for the extensions the search actually covers, so the card
+      answers "how much?" before the visitor types anything. Rows the operator
+      has not priced never reach here, and the row disappears entirely with them.
+    -->
+    <ul v-if="visibleHints.length > 0" class="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
+      <li v-for="hint in visibleHints" :key="hint.tld" class="flex items-baseline gap-1.5 text-[13px]">
+        <span class="font-mono text-tx2">{{ hint.tld }}</span>
+        <span class="font-semibold text-mut">{{ hint.register }}</span>
+      </li>
+    </ul>
+
+    <!--
       The reserved height only applies once a search is under way, so the results
       area stops jumping between rows — before the first search it would just be
       a block of empty card.
@@ -65,6 +77,7 @@
  * visitor typed. The lookup itself belongs to pages/index.vue.
  */
 import type { DomainResult } from '~/templates/aurora/types'
+import type { TldPriceRow } from '~/composables/useDomainLookup'
 
 const props = withDefaults(defineProps<{
   results?: DomainResult[]
@@ -72,12 +85,17 @@ const props = withDefaults(defineProps<{
   initialQuery?: string
   /** False when the operator has priced no extensions; the form then explains itself. */
   hasZones?: boolean
-}>(), { results: () => [], pending: false, initialQuery: '', hasZones: true })
+  /** Extensions the search covers, for the starting-price row. */
+  priceHints?: TldPriceRow[]
+}>(), { results: () => [], pending: false, initialQuery: '', hasZones: true, priceHints: () => [] })
 
 const emit = defineEmits<{ search: [term: string] }>()
 
 const { t } = useI18n()
 const query = ref(props.initialQuery)
+
+/** Hints worth showing: an extension with no price would read as free. */
+const visibleHints = computed(() => props.priceHints.filter(hint => hint.registerAmount > 0))
 
 /**
  * Status dot colour. `unknown` is muted rather than red — nothing is wrong with

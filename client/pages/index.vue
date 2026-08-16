@@ -4,6 +4,7 @@
     :domain-results="domainResults"
     :domain-pending="domainPending"
     :has-zones="offeredTlds.length > 0"
+    :price-hints="offeredTlds"
     :plans="plans"
     :yearly="yearly"
     @search="search"

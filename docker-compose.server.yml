@@ -1,7 +1,7 @@
 # Server overlay: disables the built-in nginx container and exposes
 # services on localhost ports so the host nginx can reverse-proxy them.
 services:
-  api:
+  hostpanel-api:
     # Same story as the client below: docker-compose.yml builds the dev target, which
     # is `dotnet watch` over a bind-mounted ./backend. On a server that means the SDK
     # image, a rebuild on every file event, and the source tree present on the host to
@@ -18,7 +18,7 @@ services:
     ports:
       - "127.0.0.1:5148:5148"
 
-  client:
+  hostpanel-client:
     # docker-compose.yml builds the dev target, because that is what a laptop
     # wants: `yarn dev` with ./client bind-mounted for hot reload. A server is
     # not a laptop. Left inherited, stage and prod served the Vite dev server,

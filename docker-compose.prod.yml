@@ -1,6 +1,6 @@
 services:
   # ── Infrastructure ──────────────────────────────────────────────────────────
-  postgres:
+  hostpanel-db:
     image: postgres:17-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -28,7 +28,7 @@ services:
     restart: unless-stopped
 
   # ── Application ─────────────────────────────────────────────────────────────
-  api:
+  hostpanel-api:
     build:
       context: .
       dockerfile: docker/api.Dockerfile
@@ -84,13 +84,13 @@ services:
       Auth__ClientSecret: ${CLIENT_HOSTPANEL_SECRET}
       Auth__RedisConnection: ${REDIS_CONNECTION}
     depends_on:
-      postgres:
+      hostpanel-db:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
     restart: unless-stopped
 
-  client:
+  hostpanel-client:
     build:
       context: .
       dockerfile: docker/client.Dockerfile
@@ -125,7 +125,7 @@ services:
       NUXT_AUTH_MODE: ${AUTH_MODE}
       NUXT_PUBLIC_AUTH_MODE: ${AUTH_MODE}
     depends_on:
-      - api
+      - hostpanel-api
     restart: unless-stopped
 
   admin:
@@ -140,7 +140,7 @@ services:
         # "hostpanel-admin" and kept both tokens in localStorage; it now sends the
         # browser to the API's /api/auth/login and holds only a cookie it cannot read.
     depends_on:
-      - api
+      - hostpanel-api
     restart: unless-stopped
 
   nginx:
@@ -159,8 +159,8 @@ services:
       DOMAIN: ${DOMAIN}
       ADMIN_DOMAIN: ${ADMIN_DOMAIN}
     depends_on:
-      - api
-      - client
+      - hostpanel-api
+      - hostpanel-client
       - admin
     restart: unless-stopped
 

@@ -52,7 +52,7 @@ services:
   redis:
     profiles: ["standalone-only"]
 
-  api:
+  hostpanel-api:
     # The aliases these services answer to are declared in docker-compose.yml, so
     # they hold for a standalone deployment as well as this one.
     #
@@ -62,11 +62,11 @@ services:
     #
     # postgres stays: it is this product's own data, never shared.
     depends_on: !override
-      postgres:
+      hostpanel-db:
         condition: service_healthy
     environment:
       Smtp__Host: mailpit
 
-  client:
+  hostpanel-client:
     environment:
       SMTP_HOST: mailpit

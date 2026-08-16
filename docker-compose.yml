@@ -1,6 +1,6 @@
 services:
   # ── Infrastructure ──────────────────────────────────────────────────────────
-  postgres:
+  hostpanel-db:
     # Named explicitly so `docker ps` shows this rather than Compose's
     # <project>-<service>-<index>. The product prefix is not decoration:
     # container names are global to the Docker daemon, so a bare `api` or
@@ -92,7 +92,7 @@ services:
           memory: 256M
 
   # ── Application ─────────────────────────────────────────────────────────────
-  api:
+  hostpanel-api:
     container_name: hostpanel-api
     build:
       context: .
@@ -198,7 +198,7 @@ services:
       retries: 3
       start_period: 20s
     depends_on:
-      postgres:
+      hostpanel-db:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
@@ -212,7 +212,7 @@ services:
           cpus: '2.0'
           memory: 2G
 
-  client:
+  hostpanel-client:
     container_name: hostpanel-client
     build:
       context: .
@@ -266,7 +266,7 @@ services:
       retries: 3
       start_period: 20s
     depends_on:
-      - api
+      - hostpanel-api
     deploy:
       resources:
         limits:
@@ -312,7 +312,7 @@ services:
       retries: 3
       start_period: 10s
     depends_on:
-      - api
+      - hostpanel-api
     deploy:
       resources:
         limits:

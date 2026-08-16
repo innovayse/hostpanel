@@ -342,6 +342,13 @@ try
         options.DefaultHttpClient = new(ScalarTarget.Shell, ScalarClient.Curl);
     });
 
+    // Liveness for the container healthcheck. Deliberately not a database probe: this
+    // answers "is the process still serving HTTP", which is the question a restart
+    // policy can act on. Without it the container had no healthcheck at all and Docker
+    // reported "Up" through a crash loop — main-api spent minutes restarting on an
+    // unresolvable database host while `docker ps` showed nothing wrong.
+    app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+
     app.MapControllers();
 
     app.Run();

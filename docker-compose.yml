@@ -189,6 +189,14 @@ services:
       Auth__ClientSecret: ${CLIENT_HOSTPANEL_SECRET}
       Auth__RedisConnection: ${REDIS_CONNECTION}
       BackchannelLogout__Key: ${HOSTPANEL_BACKCHANNEL_LOGOUT_KEY}
+    healthcheck:
+      # wget, not curl: neither aspnet image ships curl. --spider makes it a HEAD-like
+      # probe that only cares about the status line.
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:5148/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     depends_on:
       postgres:
         condition: service_healthy
@@ -248,6 +256,15 @@ services:
       NUXT_MAIN_API_URL: http://main-client:3000
       WATCHPACK_POLLING: "true"
       CHOKIDAR_USEPOLLING: "true"
+    healthcheck:
+      # A port check, not an HTTP one: this answers 302 on / and wget --spider
+      # treats anything outside 2xx as a failure. What matters here is the same
+      # either way — is the process still listening.
+      test: ["CMD", "nc", "-z", "127.0.0.1", "3000"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     depends_on:
       - api
     deploy:
@@ -285,6 +302,15 @@ services:
       # "hostpanel-admin" and kept both tokens in localStorage; it now sends the
       # browser to the API's /api/auth/login and holds only a cookie it cannot read.
       CHOKIDAR_USEPOLLING: "true"
+    healthcheck:
+      # Liveness for `docker ps`. Without one a container reports "Up" while the
+      # process inside is dead or restarting, which is how a crash loop stays
+      # invisible. wget rather than curl: the alpine images carry busybox wget.
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:5173/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     depends_on:
       - api
     deploy:

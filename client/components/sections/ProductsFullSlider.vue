@@ -84,7 +84,19 @@
             />
             <!-- Overlay with noise/depth -->
             <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-black/90" />
-            <div class="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+            <!--
+              The grain, generated inline rather than fetched.
+
+              This used to load noise.svg from grainy-gradients.vercel.app, which put a
+              request to a third party on every visit to the public site — a 404 in the
+              console today, and on the day that host answers with something else, an
+              asset we do not control rendering inside our own page. It is three lines
+              of SVG; there is no reason for it to leave the origin.
+            -->
+            <div
+              class="absolute inset-0 opacity-[0.03] pointer-events-none"
+              :style="{ backgroundImage: `url(&quot;data:image/svg+xml,${noiseSvg}&quot;)` }"
+            />
           </div>
 
           <!-- Content -->
@@ -243,6 +255,17 @@
  * Fetches slides from the backend API and displays them in a Swiper carousel
  * with Ken Burns background, floating icon animations, and staggered feature badges.
  */
+
+/**
+ * The grain texture over each slide, as a data URI.
+ *
+ * feTurbulence draws it in the browser, so the page asks nothing of anyone else.
+ * URL-encoded rather than base64: it stays readable, and it is shorter.
+ */
+const noiseSvg =
+  "%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E" +
+  "%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E" +
+  "%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E"
 import { ArrowRight, PlayCircle, ChevronLeft, ChevronRight, ChevronDown, CheckCircle } from 'lucide-vue-next'
 import { Swiper, SwiperSlide } from 'swiper/vue'
 import { Autoplay, Navigation, Pagination } from 'swiper/modules'

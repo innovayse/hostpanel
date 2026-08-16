@@ -91,6 +91,10 @@ export default defineNuxtConfig({
       // Active portal template. Phase 4 lets an admin override this from settings;
       // until then it is the only switch. Unknown values fall back to 'aurora'.
       portalTemplate: process.env.NUXT_PUBLIC_PORTAL_TEMPLATE || 'aurora',
+      // Header app launcher. Off unless a deployment actually runs the sibling
+      // apps it links to; every app URL below has a development default, so
+      // presence of a URL cannot decide this on its own.
+      portalAppsEnabled: process.env.NUXT_PUBLIC_PORTAL_APPS_ENABLED || '',
       // Contact and widget configuration. Each is hidden when empty — a fresh
       // install with none of these set still renders a complete site.
       portalWhatsapp: process.env.NUXT_PUBLIC_PORTAL_WHATSAPP || '',

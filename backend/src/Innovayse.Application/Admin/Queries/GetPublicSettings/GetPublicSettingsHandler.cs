@@ -33,6 +33,15 @@ public sealed class GetPublicSettingsHandler(ISettingRepository repo)
         "portal.social.youtube",
         "portal.contact.phone",
         "portal.legal.tax_id",
+        "portal.apps.enabled",
+        "portal.apps.account",
+        "portal.apps.tasks",
+        "portal.apps.erp",
+        "portal.apps.hostpanel",
+        "portal.apps.sheets",
+        "portal.apps.mail",
+        "portal.apps.docs",
+        "portal.apps.calendar",
     ];
 
     /// <summary>

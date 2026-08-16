@@ -39,6 +39,15 @@ public static class PortalSettingsSeeder
         ("portal.social.youtube",         "",       "YouTube channel URL. Empty hides the icon."),
         ("portal.contact.phone",          "",       "Public phone number shown in the footer. Empty hides it."),
         ("portal.legal.tax_id",           "",       "Company tax identifier shown in the footer. Empty hides it."),
+        ("portal.apps.enabled",           "false",  "Show the header app launcher. Off unless this deployment runs the apps it links to."),
+        ("portal.apps.account",           "",       "URL for the Account entry in the header app launcher. Empty hides it."),
+        ("portal.apps.tasks",             "",       "URL for the Tasks entry in the header app launcher. Empty hides it."),
+        ("portal.apps.erp",               "",       "URL for the ERP entry in the header app launcher. Empty hides it."),
+        ("portal.apps.hostpanel",         "",       "URL for the Hostpanel entry in the header app launcher. Empty hides it."),
+        ("portal.apps.sheets",            "",       "URL for the Sheets entry in the header app launcher. Empty hides it."),
+        ("portal.apps.mail",              "",       "URL for the Mail entry in the header app launcher. Empty hides it."),
+        ("portal.apps.docs",              "",       "URL for the Docs entry in the header app launcher. Empty hides it."),
+        ("portal.apps.calendar",          "",       "URL for the Calendar entry in the header app launcher. Empty hides it."),
     ];
 
     /// <summary>

@@ -184,6 +184,43 @@
       "helpTitle": "Need help?",
       "helpBody": "Our support is here 24/7",
       "helpCta": "Contact us"
+    },
+    "apps": {
+      "title": "Apps",
+      "items": {
+        "account": {
+          "label": "Account",
+          "desc": "Profile & settings"
+        },
+        "tasks": {
+          "label": "Tasks",
+          "desc": "Project & task management"
+        },
+        "erp": {
+          "label": "ERP",
+          "desc": "Business & operations"
+        },
+        "hostpanel": {
+          "label": "Hostpanel",
+          "desc": "Manage your hosting"
+        },
+        "sheets": {
+          "label": "Sheets",
+          "desc": "Collaborative spreadsheets"
+        },
+        "mail": {
+          "label": "Mail",
+          "desc": "Webmail client"
+        },
+        "docs": {
+          "label": "Docs",
+          "desc": "Collaborative documents"
+        },
+        "calendar": {
+          "label": "Calendar",
+          "desc": "Schedule & team calendar"
+        }
+      }
     }
   }
 }

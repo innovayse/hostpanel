@@ -20,6 +20,7 @@
     </nav>
 
     <div class="flex flex-shrink-0 items-center gap-2.5">
+      <AuroraAppLauncher />
       <UiLanguageSwitcher />
       <UiThemeToggle />
 
@@ -78,6 +79,7 @@
  * existing components; this restyles their surroundings rather than
  * reimplementing them.
  */
+import AuroraAppLauncher from '~/templates/aurora/layout/AppLauncher.vue'
 import { useCartStore } from '~/stores/cart'
 
 /** Which navigation entry to mark as current. */

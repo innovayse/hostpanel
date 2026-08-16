@@ -220,6 +220,14 @@ Related operator settings, all optional and hidden when empty:
 `portal.contact.phone`, `portal.chat.provider`, `portal.newsletter.action_url`,
 `portal.legal.tax_id`, and `portal.social.{facebook,instagram,linkedin,youtube}`.
 
+The header app launcher is off unless `portal.apps.enabled` is `true`, because
+the apps it links to only exist in a deployment that runs them. Each entry then
+needs a URL of its own — `portal.apps.{account,tasks,erp,hostpanel,sheets,mail,docs,calendar}`,
+or the matching `NUXT_PUBLIC_*` variable — and entries without one are left out.
+
+Every seeded setting is editable in **Admin → Settings**; the table takes one row
+at a time.
+
 ---
 
 ## Integrations

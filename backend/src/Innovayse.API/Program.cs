@@ -202,7 +202,20 @@ try
 
     // MVC + OpenAPI
     builder.Services.AddMemoryCache();
-    builder.Services.AddControllers()
+    builder.Services.AddControllers(opts =>
+        {
+            // Every 201 Created in this API is built with CreatedAtAction(nameof(GetAsync), …),
+            // and MVC trims the "Async" suffix from action names by default — so the name never
+            // matched and the framework threw "No route matches the supplied values". The request
+            // had already succeeded by then: the row was written, then the response failed, and
+            // the caller saw a 400 for a creation that worked. An admin clicking again got a
+            // duplicate.
+            //
+            // Five controllers do this — TldConfigs, Slides, ServerGroups, Clients and
+            // EmailTemplates — so the fix belongs here rather than in each of them. No action
+            // name is referenced as a string anywhere, so nothing depends on the trimmed form.
+            opts.SuppressAsyncSuffixInActionNames = false;
+        })
         .AddJsonOptions(opts =>
             opts.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
     builder.Services.AddOpenApi(options =>

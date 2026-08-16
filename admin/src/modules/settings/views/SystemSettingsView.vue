@@ -6,6 +6,7 @@
 import { onMounted, ref } from 'vue'
 import { useSettingsStore } from '../stores/settingsStore'
 import PortalAppearanceCard from '../components/PortalAppearanceCard.vue'
+import type { Setting } from '../../../types/models'
 
 const store = useSettingsStore()
 const saving = ref(false)
@@ -27,6 +28,45 @@ async function onSave(id: number, value: string) {
   } finally {
     saving.value = false
   }
+}
+
+/**
+ * Unsaved edits, keyed by setting id.
+ *
+ * The table used to be read-only, which left every seeded key — the storefront's
+ * contact details, footer widgets and app launcher among them — changeable only
+ * through the API. Editing here is per row rather than a bulk form so a mistake
+ * in one value cannot be saved along with the others.
+ */
+const drafts = ref<Record<number, string>>({})
+
+/**
+ * Current text for a row: the operator's unsaved edit, or the stored value.
+ *
+ * @param setting - The settings row.
+ */
+function draftOf(setting: Setting): string {
+  return drafts.value[setting.id] ?? setting.value ?? ''
+}
+
+/**
+ * Whether a row has an edit worth saving.
+ *
+ * @param setting - The settings row.
+ */
+function isDirty(setting: Setting): boolean {
+  return setting.id in drafts.value && drafts.value[setting.id] !== (setting.value ?? '')
+}
+
+/**
+ * Saves one row and drops its draft, so the input falls back to the stored value.
+ *
+ * @param setting - The settings row.
+ */
+async function saveRow(setting: Setting) {
+  if (!isDirty(setting)) return
+  await onSave(setting.id, drafts.value[setting.id])
+  delete drafts.value[setting.id]
 }
 </script>
 
@@ -64,7 +104,26 @@ async function onSave(id: number, value: string) {
           <tbody class="divide-y divide-border">
             <tr v-for="setting in store.settings" :key="setting.id" class="hover:bg-surface-elevated">
               <td class="px-4 py-3 font-mono text-text-primary">{{ setting.key }}</td>
-              <td class="px-4 py-3 text-text-primary">{{ setting.value }}</td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <input
+                    :value="draftOf(setting)"
+                    type="text"
+                    class="min-w-[200px] flex-1 rounded-lg border border-border bg-surface-elevated px-3 py-1.5 text-sm text-text-primary focus:border-text-secondary focus:outline-none"
+                    @input="drafts[setting.id] = ($event.target as HTMLInputElement).value"
+                    @keyup.enter="saveRow(setting)"
+                  >
+                  <button
+                    v-if="isDirty(setting)"
+                    type="button"
+                    :disabled="saving"
+                    class="shrink-0 rounded-lg bg-text-primary px-3 py-1.5 text-sm font-medium text-surface-card disabled:opacity-50"
+                    @click="saveRow(setting)"
+                  >
+                    {{ saving ? 'Saving…' : 'Save' }}
+                  </button>
+                </div>
+              </td>
               <td class="px-4 py-3 text-text-secondary">{{ setting.description ?? '—' }}</td>
             </tr>
             <tr v-if="store.settings.length === 0">

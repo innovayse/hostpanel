@@ -175,6 +175,11 @@ The public portal ships two designs and renders whichever one is selected. Both
 produce identical SEO output — canonical, hreflang and schema.org live in
 `client/pages/`, never in a template.
 
+Set the site's own origin, or the sitemap will advertise whatever host each
+request happened to arrive on — behind a proxy that can be the container's
+internal address. `NUXT_PUBLIC_BASE_URL` covers it at build time; a prebuilt
+image reads `NUXT_SITE_URL` at startup, which overrides the built-in value.
+
 | Template | Description |
 |---|---|
 | `aurora` | Default. Dark and light modes, Armenian typography, live domain search |

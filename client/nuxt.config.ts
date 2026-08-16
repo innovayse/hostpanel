@@ -125,9 +125,21 @@ export default defineNuxtConfig({
     detectBrowserLanguage: false
   },
 
+  // Canonical origin for generated URLs. @nuxtjs/sitemap v7 reads this rather
+  // than its own `hostname` option, which earlier versions used and which was
+  // still set here — silently ignored, so the sitemap advertised whatever host
+  // the request arrived on, down to the container's own address.
+  //
+  // Deliberately no default: with nothing set, nuxt-site-config keeps falling
+  // back to the request host, which is at least the operator's own domain. A
+  // literal here would put this deployment's domain in every other operator's
+  // sitemap.
+  site: {
+    url: process.env.NUXT_PUBLIC_BASE_URL,
+  },
+
   // Sitemap configuration
   sitemap: {
-    hostname: 'https://innovayse.com',
     gzip: true,
     exclude: [
       '/admin/**',

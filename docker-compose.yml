@@ -98,6 +98,13 @@ services:
       context: .
       dockerfile: docker/api.Dockerfile
       target: dev
+      args:
+        # api.Dockerfile declares this ARG for its `dotnet restore`, and the restore
+        # runs while the image is built. Passing the credential only through
+        # `environment:` below reaches the running container and not the build, so
+        # `docker compose up` failed at NU1301 / 401 fetching Innovayse.Auth — the
+        # README's Quick Start could not work on any machine, with or without a token.
+        NuGetPackageSourceCredentials_innovayse: ${NUGET_INNOVAYSE_CREDENTIALS}
     # The name other products, the edge proxy and the dev proxy address this one
     # by. Declared here rather than in docker-compose.platform.yml so it resolves
     # in a standalone deployment too — the alternative was the container name,

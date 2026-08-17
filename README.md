@@ -65,20 +65,25 @@ cd innovayse
 
 # 2. Copy and configure environment variables
 cp .env.example .env
-# Edit .env — set JWT_SECRET and any other required values
+# Edit .env — set JWT_SECRET, and NUGET_INNOVAYSE_CREDENTIALS if you are building
+# the API image yourself (see below)
 
 # 3. Start all services
 docker compose up -d
+# The API applies pending migrations on startup, so there is no separate step.
+# Follow it with: docker compose logs -f hostpanel-api
 
-# 4. Apply database migrations
-docker compose exec api dotnet ef database update
-
-# 5. Open in browser
-#   Client portal:  http://localhost:3000
-#   Admin panel:    http://localhost:5173
-#   API docs:       http://localhost:5148/scalar
-#   MailHog (dev):  http://localhost:8025
+# 4. Open in browser
+#   Client portal:  http://localhost:3001
+#   Admin panel:    http://localhost:5174
+#   API docs:       http://localhost:5149/scalar
+#   MailHog (dev):  http://localhost:8027
 ```
+
+The API depends on `Innovayse.Auth`, published to a private package registry, and
+the image restores it while it builds. Set `NUGET_INNOVAYSE_CREDENTIALS` in `.env`
+to a deploy token scoped to `read_package_registry` — the format is in
+`.env.example`. Without it the build stops at `NU1301 … 401 (Unauthorized)`.
 
 ---
 

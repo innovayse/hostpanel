@@ -1,6 +1,12 @@
 services:
   # ── Infrastructure ──────────────────────────────────────────────────────────
   hostpanel-db:
+    # Named here, not only in docker-compose.yml: neither deploy chain loads that
+    # file, so on a deployed host Compose fell back to <project>-<service>-<index>
+    # and every container carried a generated name. Other products address these by
+    # name over the shared network, and the edge proxy's upstream map is written in
+    # terms of them, so a generated name is not an alias anything can use.
+    container_name: hostpanel-db
     image: postgres:17-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -16,6 +22,7 @@ services:
     restart: unless-stopped
 
   rabbitmq:
+    container_name: hostpanel-rabbitmq
     image: rabbitmq:3-management-alpine
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
@@ -29,6 +36,7 @@ services:
 
   # ── Application ─────────────────────────────────────────────────────────────
   hostpanel-api:
+    container_name: hostpanel-api
     build:
       context: .
       dockerfile: docker/api.Dockerfile
@@ -98,6 +106,7 @@ services:
     restart: unless-stopped
 
   hostpanel-client:
+    container_name: hostpanel-client
     build:
       context: .
       dockerfile: docker/client.Dockerfile
@@ -136,6 +145,7 @@ services:
     restart: unless-stopped
 
   admin:
+    container_name: hostpanel-admin
     build:
       context: .
       dockerfile: docker/admin.Dockerfile

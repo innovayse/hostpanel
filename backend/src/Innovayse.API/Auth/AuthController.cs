@@ -13,8 +13,31 @@ using Wolverine;
 /// </summary>
 [ApiController]
 [Route("api/auth")]
-public sealed class AuthController(IMessageBus bus, IUserService userService) : ControllerBase
+public sealed class AuthController(
+    IMessageBus bus,
+    IUserService userService,
+    IConfiguration configuration) : ControllerBase
 {
+    /// <summary>
+    /// Returns how this deployment signs people in, so a browser client can offer the
+    /// right control instead of guessing.
+    /// </summary>
+    /// <remarks>
+    /// The admin SPA has no other way to know. It was rewritten to rely on the cookie
+    /// session the OIDC exchange issues, and that exchange only runs under
+    /// <c>Auth:Mode=sso</c> — so under <c>local</c> it showed an SSO button with nothing
+    /// behind it. Reporting the mode lets it show a password form there instead.
+    ///
+    /// Anonymous on purpose: a caller has to read this before it can authenticate, and
+    /// the answer is a deployment shape rather than a secret. It says which mechanism is
+    /// in use, nothing about who may use it.
+    /// </remarks>
+    /// <returns>200 with <c>{ mode }</c>, either <c>local</c> or <c>sso</c>.</returns>
+    [HttpGet("mode")]
+    [AllowAnonymous]
+    public IActionResult Mode() =>
+        Ok(new { mode = string.Equals(configuration["Auth:Mode"], "local", StringComparison.OrdinalIgnoreCase) ? "local" : "sso" });
+
     /// <summary>Returns whether initial admin setup is required (no users exist).</summary>
     [HttpGet("setup-required")]
     [AllowAnonymous]
@@ -71,10 +94,20 @@ public sealed class AuthController(IMessageBus bus, IUserService userService) : 
     [Authorize]
     public async Task<IActionResult> MeAsync(CancellationToken ct)
     {
-        var sub = User.FindFirst("sub")?.Value;
+        // Both claim names, because the two modes deliver the subject differently. SSO
+        // mode sets MapInboundClaims = false, so "sub" survives as itself; local mode
+        // leaves the default mapping on, which renames it to NameIdentifier. Reading only
+        // "sub" therefore found nothing under local and answered 401 — with a valid
+        // token, from an account with the Admin role.
+        var sub = User.FindFirst("sub")?.Value
+            ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (sub is null) return Unauthorized();
 
-        var found = await userService.FindBySsoSubjectAsync(sub, ct);
+        // And the two mean different things by it. An SSO token carries the SSO's
+        // subject; a token this API issued from /api/auth/login carries this database's
+        // own user id. Only the first was resolved.
+        var found = await userService.FindBySsoSubjectAsync(sub, ct)
+            ?? await userService.FindByIdAsync(sub, ct);
         if (found is null) return Unauthorized();
 
         var roles = await userService.GetRolesAsync(found.Value.Id, ct);

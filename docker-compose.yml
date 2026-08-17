@@ -135,7 +135,7 @@ services:
       # Development on a laptop, Staging on the stage host, Production on the prod one.
       # It was pinned to Development here, which meant a deployed host served developer
       # exception pages and re-ran the test-data seeder on every restart.
-      ASPNETCORE_ENVIRONMENT: ${HOSTPANEL_ASPNETCORE_ENVIRONMENT:-Development}
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       Jwt__Secret: ${JWT_SECRET}
       Jwt__Issuer: ${JWT_ISSUER}
       Jwt__Audience: ${JWT_AUDIENCE}

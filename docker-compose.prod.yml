@@ -38,11 +38,6 @@ services:
       # service "postgres", so on the shared network that name resolved to three
       # addresses and connections landed in another product's database.
       ConnectionStrings__DefaultConnection: "Host=hostpanel-db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
-      # Development on a laptop, Staging on the stage host, Production on the prod one.
-      # Never hardcoded: a deployed host left on Development serves developer exception
-      # pages, and in the products that seed test data or gate migrations on it, does
-      # rather more than that.
-      ASPNETCORE_ENVIRONMENT: ${HOSTPANEL_ASPNETCORE_ENVIRONMENT:-Production}
       Jwt__Secret: ${JWT_SECRET}
       Jwt__Issuer: ${JWT_ISSUER}
       Jwt__Audience: ${JWT_AUDIENCE}

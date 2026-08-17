@@ -26,7 +26,17 @@ public sealed class CreateTldConfigHandler(ITldConfigRepository repo, IUnitOfWor
     /// </exception>
     public async Task<int> HandleAsync(CreateTldConfigCommand cmd, CancellationToken ct)
     {
-        var module = Enum.Parse<RegistrarModule>(cmd.RegistrarModule);
+        // TryParse, not Parse: Parse raises ArgumentException, which no handler in the
+        // pipeline classifies, so a misspelled module came back as
+        // 500 "An unexpected error occurred." — indistinguishable from the server
+        // falling over. InvalidOperationException already maps to 400, and naming the
+        // accepted values saves the caller guessing at their casing.
+        if (!Enum.TryParse<RegistrarModule>(cmd.RegistrarModule, ignoreCase: true, out var module))
+        {
+            throw new InvalidOperationException(
+                $"Unknown registrar module '{cmd.RegistrarModule}'. Accepted values: "
+                + string.Join(", ", Enum.GetNames<RegistrarModule>()) + ".");
+        }
         var normalizedTld = cmd.Tld.ToLower().Trim();
 
         var existing = await repo.FindByTldAsync(normalizedTld, ct);

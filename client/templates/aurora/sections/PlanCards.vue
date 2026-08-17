@@ -35,6 +35,13 @@
         <div class="text-[17px] font-bold text-tx">{{ plan.name }}</div>
         <div v-if="plan.description" class="mt-1.5 text-sm text-mut2">{{ plan.description }}</div>
 
+        <ul v-if="plan.features.length" class="mt-3.5 flex flex-col gap-2">
+          <li v-for="line in plan.features" :key="line" class="flex items-start gap-2 text-[13px] text-tx2">
+            <Icon name="lucide:check" class="mt-0.5 h-3.5 w-3.5 shrink-0 text-ok" />
+            <span class="min-w-0">{{ line }}</span>
+          </li>
+        </ul>
+
         <div class="mt-[22px] flex items-end gap-2">
           <span class="text-[38px] font-bold -tracking-[0.02em] text-tx">
             {{ yearly ? plan.priceAnnual : plan.priceMonthly }}
@@ -52,10 +59,13 @@
     </div>
 
     <!--
-      The product record carries no feature list, so this is one shared list for
-      every plan rather than per-card claims the backend cannot support.
+      A fallback, not a companion to the per-card lists above. An operator whose
+      descriptions are plain summaries gets no feature lines at all, and this keeps
+      the section from looking bare; where the plans do carry their own features,
+      repeating a single "included in every plan" list beside them would contradict
+      the cards the moment two plans differed.
     -->
-    <div v-if="plans.length" class="mt-9 rounded-[18px] border border-line bg-surf p-6">
+    <div v-if="plans.length && !plans.some(p => p.features.length)" class="mt-9 rounded-[18px] border border-line bg-surf p-6">
       <div class="text-[13px] uppercase tracking-[0.1em] text-ac2">{{ t('aurora.plans.includedTitle') }}</div>
       <div class="mt-4 grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))]">
         <div v-for="line in included" :key="line" class="flex items-center gap-2.5 text-[15px] text-tx2">

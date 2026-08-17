@@ -1,3 +1,4 @@
+import { parseDescription } from '~/utils/whmcs'
 import type { PlanCard } from '~/templates/aurora/types'
 
 /**
@@ -58,10 +59,19 @@ export const usePortalPlans = () => {
       return `${prefix}${(value / divisor).toFixed(2)}${suffix}`
     }
 
+    // A description is authored either as plain text or as HTML with <br /> between
+    // items — WHMCS lets the same field be edited both ways, and both are in the
+    // catalogue. Printed straight into the card, the HTML variant showed its own
+    // markup: "✔ 20 GB Disk Space <br /> ✔ 200 GB Bandwidth". parseDescription
+    // already understands both, and separates the summary from the feature lines
+    // the card can then render as a list.
+    const { summary, features } = parseDescription(product.description ?? '')
+
     return {
       id: product.id,
       name: product.name,
-      description: product.description ?? '',
+      description: summary,
+      features,
       priceMonthly: format(money?.monthly),
       priceAnnual: format(money?.annually, 12),
       href: localePath(`/configure/${product.id}`),

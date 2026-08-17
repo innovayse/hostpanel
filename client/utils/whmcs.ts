@@ -89,8 +89,15 @@ function htmlToLines(text: string): string {
     .replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (m, e: string) => ENTITIES[e.toLowerCase()] ?? m)
 }
 
-/** Bullet markers seen across the catalogue: •, -, *, and the ✓ the HTML descriptions use. */
-const BULLET = /^[\u2022\u2713\-*]\s*/
+/**
+ * Bullet markers seen across the catalogue: •, -, * and both check marks.
+ *
+ * U+2713 ✓ and U+2714 ✔ sit one codepoint apart and look identical at body size.
+ * Only the first was listed, and the catalogue is written with the second, so no
+ * feature line was ever recognised as one: every item fell through to the summary,
+ * and a card printed one long paragraph with check marks running through it.
+ */
+const BULLET = /^[\u2022\u2713\u2714\-*]\s*/
 
 /**
  * Parse a WHMCS description text into a summary paragraph and a features list.

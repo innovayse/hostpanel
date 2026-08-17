@@ -33,7 +33,17 @@ public sealed class ImportTldPricingHandler(
     /// <returns>An <see cref="ImportTldPricingResult"/> with counts of imported and updated TLDs.</returns>
     public async Task<ImportTldPricingResult> HandleAsync(ImportTldPricingCommand cmd, CancellationToken ct)
     {
-        var module = Enum.Parse<RegistrarModule>(cmd.Module);
+        // TryParse, not Parse: Parse raises ArgumentException, which no handler in the
+        // pipeline classifies, so a misspelled module came back as
+        // 500 "An unexpected error occurred." — indistinguishable from the server
+        // falling over. InvalidOperationException already maps to 400, and naming the
+        // accepted values saves the caller guessing at their casing.
+        if (!Enum.TryParse<RegistrarModule>(cmd.Module, ignoreCase: true, out var module))
+        {
+            throw new InvalidOperationException(
+                $"Unknown registrar module '{cmd.Module}'. Accepted values: "
+                + string.Join(", ", Enum.GetNames<RegistrarModule>()) + ".");
+        }
         var provider = factory.GetProvider(module);
 
         var pricingList = await provider.GetTldPricingAsync(ct);

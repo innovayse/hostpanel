@@ -26,7 +26,12 @@ export default defineCachedEventHandler(async (event) => {
   }
 }, {
   name: 'backend-product-features',
-  maxAge: 3600,
+  // A minute, not the hour the products endpoint uses. This is edited far more
+  // often than a product is: an operator adds a specification line, reloads the
+  // plans page to check it, and sees nothing. Verified against a live backend —
+  // the line was in the API and absent from this response. An hour of that reads
+  // as a broken feature, and the table is cheap enough to re-fetch.
+  maxAge: 60,
   swr: true,
   getKey: (event) => {
     const query = getQuery(event)

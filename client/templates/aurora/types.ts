@@ -36,8 +36,10 @@ export interface PlanCard {
   id: number
   /** Display name, e.g. "Business". */
   name: string
-  /** Short description from the product record; may be empty. */
+  /** Summary paragraph from the product record; may be empty. */
   description: string
+  /** Feature lines parsed out of the same record; may be empty. */
+  features: string[]
   /** Formatted monthly price, e.g. "$4.99". */
   priceMonthly: string
   /** Formatted annual price expressed per month. */

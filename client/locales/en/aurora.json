@@ -221,6 +221,11 @@
           "desc": "Schedule & team calendar"
         }
       }
+    },
+    "comparison": {
+      "title": "Compare the plans",
+      "lead": "Everything each plan includes, side by side.",
+      "feature": "Feature"
     }
   }
 }

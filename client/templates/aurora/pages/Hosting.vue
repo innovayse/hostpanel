@@ -21,6 +21,8 @@
       @update:yearly="value => emit('update:yearly', value)"
     />
 
+    <AuroraComparisonTable :plans="plans" :rows="comparisonRows" />
+
     <AuroraCta />
   </div>
 </template>
@@ -29,18 +31,21 @@
 /**
  * aurora hosting page.
  *
- * The design's plan comparison matrix is deliberately absent: ProductDto carries
- * no per-plan feature data, and the spec records why inventing it — or copying
- * the classic page's name-matching workaround — was rejected.
+ * The design's plan comparison matrix renders from the specification lines an
+ * operator enters against each product. It disappears when none are entered.
  */
 import AuroraPlanCards from '~/templates/aurora/sections/PlanCards.vue'
+import AuroraComparisonTable from '~/templates/aurora/sections/ComparisonTable.vue'
 import AuroraCta from '~/templates/aurora/sections/Cta.vue'
 import type { PlanCard } from '~/templates/aurora/types'
+import type { ComparisonRow } from '~/composables/useProductFeatures'
 
 withDefaults(defineProps<{
   plans?: PlanCard[]
   yearly?: boolean
-}>(), { plans: () => [], yearly: false })
+  /** Comparison rows, already aligned to the plan columns. */
+  comparisonRows?: ComparisonRow[]
+}>(), { plans: () => [], yearly: false, comparisonRows: () => [] })
 
 const emit = defineEmits<{ 'update:yearly': [value: boolean] }>()
 

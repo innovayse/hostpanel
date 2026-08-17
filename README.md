@@ -233,6 +233,12 @@ or the matching `NUXT_PUBLIC_*` variable — and entries without one are left ou
 Every seeded setting is editable in **Admin → Settings**; the table takes one row
 at a time.
 
+The plans page's comparison table is built from each product's specification
+lines, edited in **Admin → Products → Specification**. Plans line up by feature
+name, so the same line has to be spelled the same way across products; a plan
+that omits a line shows a dash rather than shifting its column. With no product
+specified, the table is not rendered at all.
+
 ---
 
 ## Integrations

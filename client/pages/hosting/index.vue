@@ -3,6 +3,7 @@
     :is="hosting"
     :plans="plans"
     :yearly="yearly"
+    :comparison-rows="comparisonRows"
     @update:yearly="value => (yearly = value)"
   />
 </template>
@@ -34,4 +35,11 @@ useSeo({
 
 const { plans } = usePortalPlans()
 const yearly = ref(false)
+
+// The comparison rows are assembled here rather than in the template: which
+// column a value belongs to is data, and templates only render what they are
+// handed.
+const { features } = useProductFeatures(HOSTING_GROUP_ID)
+const comparisonRows = computed(() =>
+  buildComparisonRows(features.value, plans.value.map(plan => plan.id)))
 </script>

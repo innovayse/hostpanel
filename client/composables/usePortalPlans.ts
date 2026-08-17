@@ -21,7 +21,7 @@ interface ProductResponse {
  * not, and a stub returning only hosting products hid the difference. The real
  * backend showed it immediately.
  */
-const HOSTING_GROUP_ID = 1
+export const HOSTING_GROUP_ID = 1
 
 /**
  * Loads hosting products and maps them to the shape the plan cards render.

@@ -24,7 +24,19 @@ export default defineCachedEventHandler(async (event) => {
   }
 
   const qs = params.toString()
-  const products = await internalApiCall<Record<string, unknown>[]>(event, `/products${qs ? `?${qs}` : ''}`)
+  const all = await internalApiCall<Record<string, unknown>[]>(event, `/products${qs ? `?${qs}` : ''}`)
+
+  // `pid` selects one product, and nothing on the backend honours it:
+  // ProductsController takes `groupId` and `activeOnly`, there is no route for a
+  // single product, and an unknown query parameter is ignored rather than
+  // rejected. So `?pid=1` came back as the whole catalogue and /configure/[id]
+  // rendered its first entry — every plan's "Choose plan" button led to the same
+  // wrong product, at the wrong price. Filtering here keeps the fix in the layer
+  // that invented the parameter.
+  const pid = Number(query.pid)
+  const products = query.pid && Number.isFinite(pid)
+    ? all.filter(p => Number(p.id) === pid)
+    : all
 
   // Map backend fields to frontend WHMCS-compatible format
   return products.map(p => {

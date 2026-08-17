@@ -101,6 +101,50 @@ For the client portal, copy `client/.env.example` to `client/.env`.
 
 ---
 
+## Authentication modes
+
+`AUTH_MODE` decides how people sign in. `.env.example` ships `sso`; a standalone
+box sets `local`.
+
+| | `sso` | `local` |
+|---|---|---|
+| Client portal | Innovayse SSO | email and password, against this database |
+| API | SSO tokens | JWT from `POST /api/auth/login` |
+| **Admin panel** | **works** | **cannot be signed into — see below** |
+
+### The admin panel needs SSO today
+
+Its sign-in page offers one button, "Sign in with Innovayse SSO", and the SPA holds
+no token of its own: it asks `GET /api/auth/me` on every load and reads a session
+cookie it cannot see. That cookie is issued by the API's OIDC exchange, which only
+runs under `AUTH_MODE=sso`.
+
+Under `local` there is no such cookie. `POST /api/auth/login` succeeds and returns a
+JWT — the client portal uses it — but nothing in the admin SPA sends a bearer token,
+so `/api/auth/me` answers 401 and the panel stays on its login screen. `sso-api`,
+the service that would issue the cookie, is addressed by `docker-compose.yml` but
+defined in the platform overlay rather than here, so `docker compose up` on its own
+never starts one.
+
+Nothing in the panel is broken; there is simply no way in. Until that changes, a
+standalone deployment administers itself through the API, with a token from
+`POST /api/auth/login`:
+
+```bash
+TOKEN=$(curl -s -X POST http://localhost:5149/api/auth/login \
+  -H 'Content-Type: application/json' -H 'X-Requested-With: XMLHttpRequest' \
+  -d '{"email":"you@example.com","password":"…"}' | jq -r .accessToken)
+
+curl -s http://localhost:5149/api/products -H "Authorization: Bearer $TOKEN"
+```
+
+Closing this properly means choosing between issuing a session cookie in local mode
+and letting the SPA carry a bearer token again — the second being what the SPA was
+deliberately moved away from. That is a design decision, not an oversight, and it is
+tracked as an issue rather than guessed at here.
+
+---
+
 ## Project Structure
 
 ```

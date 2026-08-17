@@ -33,6 +33,12 @@ services:
       context: .
       dockerfile: docker/api.Dockerfile
       target: prod
+      args:
+        # Same reason as in docker-compose.yml: the restore happens during the build,
+        # so the credential has to arrive as a build arg. It is consumed by the
+        # intermediate `build` stage only — the published `prod` stage starts from a
+        # fresh base and never re-declares the ARG, so nothing carries it.
+        NuGetPackageSourceCredentials_innovayse: ${NUGET_INNOVAYSE_CREDENTIALS}
     environment:
       # The alias, not the bare service name: several products call their database
       # service "postgres", so on the shared network that name resolved to three

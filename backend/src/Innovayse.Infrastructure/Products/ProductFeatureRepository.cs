@@ -30,6 +30,19 @@ public sealed class ProductFeatureRepository(AppDbContext db) : IProductFeatureR
     }
 
     /// <inheritdoc/>
+    public async Task<bool> ExistsWithLabelAsync(
+        int productId, string label, int? excludingId, CancellationToken ct)
+    {
+        var needle = label.Trim().ToLower();
+
+        return await db.ProductFeatures.AnyAsync(
+            f => f.ProductId == productId
+                && f.Label.ToLower() == needle
+                && (excludingId == null || f.Id != excludingId),
+            ct);
+    }
+
+    /// <inheritdoc/>
     public void Add(ProductFeature feature) => db.ProductFeatures.Add(feature);
 
     /// <inheritdoc/>

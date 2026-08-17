@@ -22,6 +22,21 @@ public interface IProductFeatureRepository
     Task<IReadOnlyList<ProductFeature>> ListForProductsAsync(
         IEnumerable<int> productIds, CancellationToken ct);
 
+    /// <summary>
+    /// Whether the product already describes a feature under this label.
+    /// </summary>
+    /// <remarks>
+    /// Compared without regard to case, because the storefront groups its comparison
+    /// rows by the label as written: "Disk" and "disk" would become two rows that look
+    /// like a mistake rather than a distinction.
+    /// </remarks>
+    /// <param name="productId">Product to look in.</param>
+    /// <param name="label">Label to look for.</param>
+    /// <param name="excludingId">Line to ignore, so renaming a line does not clash with itself.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><see langword="true"/> when another line already uses the label.</returns>
+    Task<bool> ExistsWithLabelAsync(int productId, string label, int? excludingId, CancellationToken ct);
+
     /// <summary>Adds a new feature line. Call SaveChangesAsync to persist.</summary>
     /// <param name="feature">The new line.</param>
     void Add(ProductFeature feature);

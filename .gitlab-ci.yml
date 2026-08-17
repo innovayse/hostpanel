@@ -156,7 +156,18 @@ admin:build:dev:
 
 deploy:staging:
   extends: .deploy-staging
-  variables: { DEPLOY_DIR: /home/innovayse/www/innovayse-workspace/hostpanel }
+  variables:
+    DEPLOY_DIR: /home/innovayse/www/innovayse-workspace/hostpanel
+    # Which tier the API believes it is running on. docker-compose.yml passes
+    # ${ASPNETCORE_ENVIRONMENT:-Development} through to it — the default is right for
+    # a laptop, and it was what a deployed host inherited too unless someone had
+    # remembered to write the variable into that host's .env by hand. An API left on
+    # Development serves developer exception pages, and it is also what makes an
+    # absent EncryptionKey allowed rather than fatal, so server credentials and
+    # client-service passwords go to the database in plain text. Setting it per tier
+    # here is what makes it true of the deployment rather than of one file on one
+    # machine.
+    ASPNETCORE_ENVIRONMENT: Staging
   environment: { name: staging/hostpanel }
   rules:
     - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "main"
@@ -189,6 +200,8 @@ deploy:prod:
     GIT_STRATEGY: none
     DEPLOY_DIR: /home/innovayse-server/www/innovayse-workspace/hostpanel
     COMPOSE_FILES: -f docker-compose.prod.yml -f docker-compose.prodserver.yml -f docker-compose.platform.yml
+    # See the note on deploy:staging above.
+    ASPNETCORE_ENVIRONMENT: Production
   script:
     - git -C "$DEPLOY_DIR" fetch "$CI_REPOSITORY_URL" "$CI_COMMIT_SHA"
     - git -C "$DEPLOY_DIR" checkout -f "$CI_COMMIT_SHA"

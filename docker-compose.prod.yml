@@ -38,6 +38,12 @@ services:
       # service "postgres", so on the shared network that name resolved to three
       # addresses and connections landed in another product's database.
       ConnectionStrings__DefaultConnection: "Host=hostpanel-db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      # Named here rather than in docker-compose.yml because neither deploy chain
+      # loads that file: staging composes prod+platform, production composes
+      # prod+prodserver+platform. This overlay is the one file both have in common,
+      # so it is where a deployed container can actually read the setting. The value
+      # comes from the deploy job, one line per tier, not from this file.
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       Jwt__Secret: ${JWT_SECRET}
       Jwt__Issuer: ${JWT_ISSUER}
       Jwt__Audience: ${JWT_AUDIENCE}

@@ -16,6 +16,20 @@ stages: [test, build, deploy]
   image: mcr.microsoft.com/dotnet/sdk:9.0
   variables:
     DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+    # The credential for Innovayse.Auth, which lives in innovayse-workspace's package
+    # registry. backend/nuget.config deliberately carries no credentials and expects
+    # them from the environment, but nothing here ever supplied them: every restore
+    # reached the feed anonymously and came back 401, so `dotnet test` failed before
+    # running a single test and the build jobs behind it were skipped.
+    #
+    # This exact spelling is the one NuGet reads. The NUGET_PACKAGE_SOURCE_CREDENTIALS_
+    # form named in nuget.config's comment is read by nothing — the same mistake the
+    # workspace's compose files already had and fixed.
+    #
+    # It is the job's own token, valid only while the job runs. For it to be accepted
+    # the workspace project must list this project in its CI_JOB_TOKEN allowlist,
+    # since a job token is scoped to its own project by default.
+    NuGetPackageSourceCredentials_innovayse: "Username=gitlab-ci-token;Password=${CI_JOB_TOKEN}"
   script:
     - cd "$SERVICE"
     - dotnet test --nologo
@@ -48,7 +62,10 @@ stages: [test, build, deploy]
   before_script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
   script:
-    - docker build --target "$IMAGE_TARGET" -f "$DOCKERFILE" -t "$IMAGE:$TAG" -t "$IMAGE:$CI_COMMIT_SHORT_SHA" "$BUILD_CONTEXT"
+    # The API image restores Innovayse.Auth during its build, so the credential has to
+    # arrive as a build arg — see the note on .test-dotnet. Harmless for the client and
+    # admin images, whose Dockerfiles never declare the ARG.
+    - docker build --build-arg "NuGetPackageSourceCredentials_innovayse=Username=gitlab-ci-token;Password=$CI_JOB_TOKEN" --target "$IMAGE_TARGET" -f "$DOCKERFILE" -t "$IMAGE:$TAG" -t "$IMAGE:$CI_COMMIT_SHORT_SHA" "$BUILD_CONTEXT"
     - docker push "$IMAGE:$TAG"
     - docker push "$IMAGE:$CI_COMMIT_SHORT_SHA"
   rules:
@@ -202,6 +219,11 @@ deploy:prod:
     COMPOSE_FILES: -f docker-compose.prod.yml -f docker-compose.prodserver.yml -f docker-compose.platform.yml
     # See the note on deploy:staging above.
     ASPNETCORE_ENVIRONMENT: Production
+    # This job builds the API image on the production host, so the Innovayse.Auth
+    # credential has to reach the restore here too — docker-compose.prod.yml passes it
+    # through as a build arg under this name. ProdServer's .env does not carry it, and
+    # without it the restore goes to the feed anonymously and the build fails 401.
+    NUGET_INNOVAYSE_CREDENTIALS: "Username=gitlab-ci-token;Password=${CI_JOB_TOKEN}"
   script:
     - git -C "$DEPLOY_DIR" fetch "$CI_REPOSITORY_URL" "$CI_COMMIT_SHA"
     - git -C "$DEPLOY_DIR" checkout -f "$CI_COMMIT_SHA"

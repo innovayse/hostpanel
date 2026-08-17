@@ -444,7 +444,14 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
     {
         if (!client.IsConfigured)
         {
-            return false;
+            // Not "taken" — unknown. Every other method here answers an unconfigured
+            // registrar with a success no-op, but availability has no such answer: a
+            // storefront that reports every domain as taken sells nothing and looks
+            // like it is working. Surfacing it means an operator who forgot to
+            // configure a registrar finds out, instead of quietly selling nothing.
+            throw new InvalidOperationException(
+                "Domain availability cannot be checked because no registrar is configured. "
+                + "Set the registrar credentials in Admin -> Integrations.");
         }
 
         var (name, tld) = SplitDomain(domainName);

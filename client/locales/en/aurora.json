@@ -1,0 +1,231 @@
+{
+  "aurora": {
+    "nav": {
+      "hosting": "Hosting",
+      "domains": "Domains",
+      "services": "Services",
+      "process": "Process",
+      "faq": "FAQ",
+      "login": "Sign in",
+      "start": "Get started",
+      "cart": "Cart",
+      "menu": "Menu"
+    },
+    "hero": {
+      "badge": "99.98% uptime · Armenian and European servers",
+      "titleLine1": "Your whole",
+      "titleLine2": "digital",
+      "titleAccent": "infrastructure",
+      "lead": "Domains, hosting, web development and marketing from one team. Register a domain in minutes and we take care of the rest.",
+      "ctaPrimary": "Check a domain",
+      "ctaSecondary": "Talk to a specialist",
+      "statDomains": "domains managed",
+      "statProjects": "projects delivered",
+      "statSupport": "support in Armenian"
+    },
+    "domainSearch": {
+      "title": "Find your domain",
+      "placeholder": "innovayse",
+      "cta": "Search",
+      "available": "available",
+      "taken": "taken",
+      "searching": "Searching…",
+      "empty": "Type a name and press Search.",
+      "noZones": "No domain extensions are priced yet.",
+      "unknown": "check failed",
+      "add": "Add",
+      "inCart": "In cart",
+      "transfer": "Transfer"
+    },
+    "trust": {
+      "ssl": "SSL secured",
+      "refund": "30-day money back",
+      "noHidden": "No hidden fees",
+      "paymentLabel": "We accept:"
+    },
+    "plans": {
+      "eyebrow": "Hosting",
+      "title": "Plans that grow with you",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "perMonth": "/ month",
+      "perMonthAnnual": "/ month, billed yearly",
+      "cta": "Choose plan",
+      "includedTitle": "Included in every plan",
+      "included1": "Free SSL certificate",
+      "included2": "Daily backups",
+      "included3": "Free migration",
+      "included4": "24/7 support",
+      "empty": "Plans are temporarily unavailable."
+    },
+    "services": {
+      "eyebrow": "Services",
+      "title": "From the server to your first sale",
+      "webTitle": "Web development",
+      "webBody": "Corporate sites, online stores and web applications.",
+      "appTitle": "Mobile development",
+      "appBody": "iOS and Android apps from one codebase, published to both stores.",
+      "seoTitle": "SEO",
+      "seoBody": "Technical audits, content strategy and local search optimisation.",
+      "ppcTitle": "PPC advertising",
+      "ppcBody": "Google and Meta campaigns with measurable ROAS and weekly optimisation."
+    },
+    "process": {
+      "eyebrow": "Process",
+      "title": "Four steps to launch",
+      "lead": "One accountable manager and clear deadlines at every stage.",
+      "step1Title": "Brief and audit",
+      "step1Body": "We agree the goals and review your existing infrastructure and competitors.",
+      "step2Title": "Plan and estimate",
+      "step2Body": "You get a defined scope, deadlines and a fixed price with no hidden costs.",
+      "step3Title": "Build and test",
+      "step3Body": "We work in two-week cycles and show you the result at the end of each one.",
+      "step4Title": "Launch and support",
+      "step4Body": "We move you to the server, set up monitoring and keep maintaining it."
+    },
+    "testimonials": {
+      "eyebrow": "Clients",
+      "title": "What they say about us",
+      "prev": "Previous",
+      "next": "Next",
+      "items": [
+        {
+          "quote": "The migration happened overnight with no downtime. Our API now responds twice as fast.",
+          "author": "Kelpie AI",
+          "role": "Product team"
+        },
+        {
+          "quote": "Organic traffic grew 2.4× in three months, and the reports show leads rather than charts.",
+          "author": "UK Voshozhdenie",
+          "role": "Marketing"
+        },
+        {
+          "quote": "The mobile app and the backend were built by the same team, which saved us months of coordination.",
+          "author": "Eduzdrav",
+          "role": "Digital direction"
+        },
+        {
+          "quote": "Traffic tripled in peak season and the server held without a single interruption.",
+          "author": "IrtekPro",
+          "role": "Operations"
+        }
+      ]
+    },
+    "faq": {
+      "title": "Frequently asked questions",
+      "items": [
+        {
+          "q": "How long does domain registration take?",
+          "a": ".am and .հայ domains activate within 30 minutes; international zones are almost instant."
+        },
+        {
+          "q": "Can I move my existing site?",
+          "a": "Yes. Migration is free on all annual plans, including databases and mail."
+        },
+        {
+          "q": "What does support include?",
+          "a": "24/7 support in Armenian, Russian and English by chat and phone, plus server monitoring."
+        },
+        {
+          "q": "Do you work on a monthly retainer?",
+          "a": "Yes — for digital services we offer a monthly retainer with fixed hours and priorities."
+        }
+      ]
+    },
+    "cta": {
+      "title": "Let's start with your project",
+      "lead": "A free 20-minute consultation on choosing a domain, hosting and a website.",
+      "primary": "Book a call",
+      "secondary": "See the plans"
+    },
+    "footer": {
+      "tagline": "Hosting, domains and digital services under one roof. Yerevan, Armenia.",
+      "newsletterTitle": "Newsletter",
+      "newsletterPlaceholder": "you{'@'}email.com",
+      "newsletterCta": "Subscribe",
+      "company": "Company",
+      "support": "Support",
+      "legal": "Legal",
+      "about": "About us",
+      "blog": "Blog",
+      "helpCenter": "Help centre",
+      "faq": "FAQ",
+      "domainTransfer": "Domain transfer",
+      "contact": "Contact",
+      "terms": "Terms of use",
+      "privacy": "Privacy policy",
+      "cookies": "Cookie policy",
+      "refund": "Refunds",
+      "newsletterInvalid": "Please enter a valid email address.",
+      "taxId": "Tax ID"
+    },
+    "hostingPage": {
+      "eyebrow": "Hosting",
+      "title": "Choose your plan",
+      "lead": "NVMe servers, free SSL and migration, 30-day money back."
+    },
+    "domainsPage": {
+      "eyebrow": "Domains",
+      "title": "Register your name",
+      "lead": "Free WHOIS privacy, and DNS managed from the same panel."
+    },
+    "tldTable": {
+      "title": "Prices by zone",
+      "lead": "Prices include VAT.",
+      "zone": "Zone",
+      "register": "Register",
+      "renew": "Renew",
+      "transfer": "Transfer",
+      "all": "All",
+      "empty": "No zones in this category.",
+      "note": "Note"
+    },
+    "checkout": {
+      "helpTitle": "Need help?",
+      "helpBody": "Our support is here 24/7",
+      "helpCta": "Contact us"
+    },
+    "apps": {
+      "title": "Apps",
+      "items": {
+        "account": {
+          "label": "Account",
+          "desc": "Profile & settings"
+        },
+        "tasks": {
+          "label": "Tasks",
+          "desc": "Project & task management"
+        },
+        "erp": {
+          "label": "ERP",
+          "desc": "Business & operations"
+        },
+        "hostpanel": {
+          "label": "Hostpanel",
+          "desc": "Manage your hosting"
+        },
+        "sheets": {
+          "label": "Sheets",
+          "desc": "Collaborative spreadsheets"
+        },
+        "mail": {
+          "label": "Mail",
+          "desc": "Webmail client"
+        },
+        "docs": {
+          "label": "Docs",
+          "desc": "Collaborative documents"
+        },
+        "calendar": {
+          "label": "Calendar",
+          "desc": "Schedule & team calendar"
+        }
+      }
+    },
+    "comparison": {
+      "title": "Compare the plans",
+      "lead": "Everything each plan includes, side by side.",
+      "feature": "Feature"
+    }
+  }
+}

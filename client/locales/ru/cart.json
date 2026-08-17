@@ -11,6 +11,8 @@
     "clearCart": "Очистить корзину",
     "checkout": "Перейти к оплате",
     "secureCheckout": "Безопасная оплата — ваши данные зашифрованы",
-    "multipleCurrencies": "Несколько валют"
+    "multipleCurrencies": "Несколько валют",
+    "items": "товаров",
+    "itemsCount": "товаров"
   }
 }

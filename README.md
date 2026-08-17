@@ -48,7 +48,11 @@ A modern, self-hosted web hosting management platform — an open-source alterna
 ## Requirements
 
 - [Docker](https://docs.docker.com/get-docker/) and Docker Compose v2
-- (For local development without Docker) .NET 9 SDK, Node.js 20+, yarn, PostgreSQL 17
+- (For local development without Docker) .NET 9 SDK, **Node.js 22+**, yarn, PostgreSQL 17
+
+> The client portal needs Node 22, not 20: Nuxt's `nitropack` pulls
+> `rollup-plugin-visualizer@7`, which declares `engines.node >= 22`, and `yarn install`
+> refuses on anything older. `docker/client.Dockerfile` already uses `node:22-alpine`.
 
 ---
 
@@ -110,6 +114,12 @@ innovayse/
 │       ├── Innovayse.Providers.CWP/  # CWP provisioning provider
 │       └── Innovayse.SDK/         # Plugin SDK
 ├── client/                   # Nuxt 4 client portal
+│   ├── pages/                    # Routes: data, SEO, business logic
+│   ├── templates/                # Storefront designs — presentation only
+│   │   ├── registry.ts               # name + slot → component
+│   │   ├── aurora/                   # Default design
+│   │   └── classic/                  # Original design
+│   └── components/               # Shared component library
 ├── admin/                    # Vue 3 admin panel
 ├── docker/                   # Dockerfiles and nginx config
 ├── docker-compose.yml
@@ -156,6 +166,78 @@ cd admin
 npm install
 npm run dev     # http://localhost:5173
 ```
+
+---
+
+## Storefront Templates
+
+The public portal ships two designs and renders whichever one is selected. Both
+produce identical SEO output — canonical, hreflang and schema.org live in
+`client/pages/`, never in a template.
+
+Set the site's own origin, or the sitemap will advertise whatever host each
+request happened to arrive on — behind a proxy that can be the container's
+internal address. `NUXT_PUBLIC_BASE_URL` covers it at build time; a prebuilt
+image reads `NUXT_SITE_URL` at startup, which overrides the built-in value.
+
+| Template | Description |
+|---|---|
+| `aurora` | Default. Dark and light modes, Armenian typography, live domain search |
+| `classic` | The original storefront design |
+
+**Choosing one.** In order of precedence:
+
+1. The `portal.template` setting, editable in **Admin → Settings → Portal appearance**
+2. The `NUXT_PUBLIC_PORTAL_TEMPLATE` environment variable
+3. `aurora`
+
+An unrecognised value falls back to `aurora` rather than leaving the site blank, so a
+typo in the admin field cannot take the storefront down.
+
+**Adding a template.** Create `client/templates/<name>/` with `layout/Header.vue`,
+`layout/Footer.vue` and a `pages/` component for each route, then register the
+loaders in `client/templates/registry.ts` and add the name to `TEMPLATE_NAMES` in
+`client/templates/types.ts`. A unit test asserts every template implements every
+slot, so a missing page fails the build rather than rendering nothing.
+
+Two rules make templates safe to swap:
+
+- **Templates render, pages decide.** A template component takes typed props and
+  returns markup; the page above it owns fetching, SEO and business logic. That
+  keeps both designs on one code path and one set of head tags.
+- **Copy lives in i18n** under a top-level key named for the template
+  (`aurora.hero.title`), registered in the `modules` array of
+  `client/plugins/i18n.ts`. Locale files are not auto-discovered.
+
+`aurora` follows the first rule throughout, with one exception: its
+`pages/Checkout.vue` still carries the ordering flow, because splitting a working
+payment path is only worth doing with a backend on hand to place a test order
+against. It is `classic`'s script byte-for-byte with restyled markup, so the two
+cannot drift apart.
+
+`classic`'s pages are lift-and-shifts of the original route components and keep
+their own data loading. That was the point: moving a 500-line page unchanged is
+far safer than rewriting it, and the design it renders is the one being replaced.
+New templates should follow `aurora`, not `classic`.
+
+Related operator settings, all optional and hidden when empty:
+`portal.contact.whatsapp`, `portal.contact.telegram`, `portal.contact.email`,
+`portal.contact.phone`, `portal.chat.provider`, `portal.newsletter.action_url`,
+`portal.legal.tax_id`, and `portal.social.{facebook,instagram,linkedin,youtube}`.
+
+The header app launcher is off unless `portal.apps.enabled` is `true`, because
+the apps it links to only exist in a deployment that runs them. Each entry then
+needs a URL of its own — `portal.apps.{account,tasks,erp,hostpanel,sheets,mail,docs,calendar}`,
+or the matching `NUXT_PUBLIC_*` variable — and entries without one are left out.
+
+Every seeded setting is editable in **Admin → Settings**; the table takes one row
+at a time.
+
+The plans page's comparison table is built from each product's specification
+lines, edited in **Admin → Products → Specification**. Plans line up by feature
+name, so the same line has to be spelled the same way across products; a plan
+that omits a line shows a dash rather than shifting its column. With no product
+specified, the table is not rendered at all.
 
 ---
 

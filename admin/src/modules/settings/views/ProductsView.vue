@@ -8,6 +8,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useSettingsStore } from '../stores/settingsStore'
 import ProductFormModal from '../components/ProductFormModal.vue'
+import ProductFeaturesModal from '../components/ProductFeaturesModal.vue'
 import type { Product, CreateProductPayload } from '@/types/models'
 
 const store = useSettingsStore()
@@ -17,6 +18,9 @@ const showModal = ref(false)
 
 /** Product being edited, or null for create mode. */
 const editingProduct = ref<Product | null>(null)
+
+/** Product whose specification is open, or null when the dialog is closed. */
+const featuresProduct = ref<Product | null>(null)
 
 /** True while saving a product. */
 const saving = ref(false)
@@ -167,6 +171,15 @@ async function handleSave(payload: CreateProductPayload): Promise<void> {
             <td class="px-5 py-3.5 text-right">
               <button
                 class="text-text-muted hover:text-primary-400 transition-colors p-1"
+                title="Edit specification"
+                @click="featuresProduct = product"
+              >
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
+                </svg>
+              </button>
+              <button
+                class="text-text-muted hover:text-primary-400 transition-colors p-1"
                 title="Edit product"
                 @click="openEdit(product)"
               >
@@ -194,6 +207,13 @@ async function handleSave(payload: CreateProductPayload): Promise<void> {
       :saving="saving"
       @save="handleSave"
       @close="showModal = false"
+    />
+
+    <!-- Specification editor -->
+    <ProductFeaturesModal
+      v-if="featuresProduct"
+      :product="featuresProduct"
+      @close="featuresProduct = null"
     />
 
   </div>

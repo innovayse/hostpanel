@@ -11,6 +11,8 @@
     "clearCart": "Clear Cart",
     "checkout": "Proceed to Checkout",
     "secureCheckout": "Secure checkout — your data is encrypted",
-    "multipleCurrencies": "Multiple currencies"
+    "multipleCurrencies": "Multiple currencies",
+    "items": "items",
+    "itemsCount": "items"
   }
 }

@@ -143,6 +143,7 @@ public static class DependencyInjection
         // Product services
         services.AddScoped<IProductGroupRepository, ProductGroupRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<IProductFeatureRepository, ProductFeatureRepository>();
 
         // Slides
         services.AddScoped<ISlideRepository, SlideRepository>();

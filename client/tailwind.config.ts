@@ -3,6 +3,21 @@ import plugin from 'tailwindcss/plugin'
 
 export default <Partial<Config>>{
   darkMode: 'class',
+  // The Nuxt Tailwind module scans components/, layouts/, pages/ and friends by
+  // default. Portal templates deliberately live outside those directories, so
+  // without listing templates/ here every utility used only inside a template
+  // is silently dropped from the bundle — the markup renders, unstyled.
+  content: [
+    './components/**/*.{vue,js,ts}',
+    './layouts/**/*.{vue,js,ts}',
+    './pages/**/*.{vue,js,ts}',
+    './plugins/**/*.{js,ts}',
+    './composables/**/*.{js,ts}',
+    './utils/**/*.{js,ts}',
+    './templates/**/*.{vue,js,ts}',
+    './app.vue',
+    './error.vue',
+  ],
   theme: {
     extend: {
       colors: {
@@ -31,10 +46,49 @@ export default <Partial<Config>>{
           800: '#6b21a8',
           900: '#581c87',
           950: '#3b0764',
-        }
+        },
+        // aurora template design tokens. Each holds a complete colour value,
+        // several of them rgba, so Tailwind's opacity modifier cannot decompose
+        // them: use border-line, never border-line/50.
+        page: 'var(--page)',
+        tx: 'var(--tx)',
+        tx2: 'var(--tx2)',
+        mut: 'var(--mut)',
+        mut2: 'var(--mut2)',
+        line: 'var(--line)',
+        line2: 'var(--line2)',
+        surf: 'var(--surf)',
+        panel: 'var(--panel)',
+        input: 'var(--input)',
+        ac1: 'var(--ac1)',
+        ac2: 'var(--ac2)',
+        ac3: 'var(--ac3)',
+        acbg: 'var(--ac-bg)',
+        ok: 'var(--ok)',
+        danger: 'var(--danger)',
+      },
+      backgroundImage: {
+        card: 'var(--card)',
+        'card-hi': 'var(--card-hi)',
+        'hero-grad': 'var(--hero-grad)',
+        // Constant across both colour modes — the brand mark, not a theme token.
+        brand: 'linear-gradient(135deg, #5D3FFF, #00D1FF)',
+        glow1: 'radial-gradient(closest-side, var(--glow1), transparent)',
+        glow2: 'radial-gradient(closest-side, var(--glow2), transparent)',
+      },
+      boxShadow: {
+        panel: 'var(--sh)',
       },
       fontFamily: {
+        // sans stays Inter so the classic template is untouched.
         sans: ['Inter Variable', 'Inter', 'system-ui', 'sans-serif'],
+        aurora: ['Noto Sans Armenian', 'system-ui', 'sans-serif'],
+        display: ['Noto Serif Armenian', 'serif'],
+        // JetBrains Mono carries no Armenian coverage, so an .հայ domain and the
+        // dram sign both fall through to whatever the system picks and render as
+        // the wrong glyphs. Noto Sans Armenian sits in the fallback chain to
+        // cover them; Latin and digits still come from JetBrains Mono.
+        mono: ['JetBrains Mono', 'Noto Sans Armenian', 'ui-monospace', 'monospace'],
       }
     }
   },

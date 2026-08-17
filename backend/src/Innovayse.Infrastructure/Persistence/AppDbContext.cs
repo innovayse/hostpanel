@@ -41,6 +41,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
     /// <summary>Gets the products table.</summary>
     public DbSet<Product> Products => Set<Product>();
 
+    /// <summary>Gets the product specification lines table.</summary>
+    public DbSet<ProductFeature> ProductFeatures => Set<ProductFeature>();
+
     /// <summary>Gets the client services table.</summary>
     public DbSet<ClientService> ClientServices => Set<ClientService>();
 

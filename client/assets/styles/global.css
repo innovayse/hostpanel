@@ -11,6 +11,22 @@ body {
   color: #ffffff;
 }
 
+/*
+ * Under the aurora template the page surface follows the theme tokens instead.
+ * The fixed colour above pinned the body dark even when the visitor chose
+ * light: the layout repainted, the body behind it did not, and the difference
+ * showed at the edges and on overscroll.
+ *
+ * Scoped to aurora on purpose. classic's sections paint their own dark
+ * backgrounds and its public header has no theme toggle, so letting its body
+ * follow a light token — reachable only by toggling inside the client area —
+ * would give it a light rim around dark content.
+ */
+html[data-template='aurora'] body {
+  background-color: var(--page);
+  color: var(--tx);
+}
+
 /* Custom Scrollbar - Modern & Subtle */
 ::-webkit-scrollbar {
   width: 8px;
@@ -20,10 +36,18 @@ body {
   background: #0a0a0f;
 }
 
+html[data-template='aurora'] ::-webkit-scrollbar-track {
+  background: var(--page);
+}
+
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(to bottom, #0ea5e9, #8b5cf6);
   border-radius: 10px;
   border: 2px solid #0a0a0f;
+}
+
+html[data-template='aurora'] ::-webkit-scrollbar-thumb {
+  border-color: var(--page);
 }
 
 ::-webkit-scrollbar-thumb:hover {

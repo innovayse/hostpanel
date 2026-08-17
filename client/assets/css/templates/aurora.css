@@ -1,0 +1,60 @@
+/*
+ * aurora template design tokens.
+ *
+ * The dark palette is declared on :root, not only under .dark, because
+ * useAppColorMode applies its class on the client — server-rendered HTML has no
+ * class yet, and tokens defined only under .dark would resolve to nothing.
+ *
+ * Every token holds a complete colour value, several of them rgba. Tailwind's
+ * opacity modifier cannot decompose them: use border-line, never border-line/50.
+ */
+:root,
+:root.dark {
+  --page: #08090f;
+  --tx: #e7e9f2;
+  --tx2: #c4c8dc;
+  --mut: #9ba0b8;
+  --mut2: #949ab4;
+  --line: rgba(255, 255, 255, 0.08);
+  --line2: rgba(255, 255, 255, 0.13);
+  --surf: rgba(255, 255, 255, 0.025);
+  --panel: #101220;
+  --input: rgba(8, 9, 15, 0.8);
+  --ac1: #7de3ff;
+  --ac2: #b9a6ff;
+  --ac3: #ff9ce0;
+  --ac-bg: rgba(0, 209, 255, 0.06);
+  --ok: #38e8a0;
+  --danger: #ff7a7a;
+  --card: linear-gradient(180deg, rgba(28, 30, 46, 0.9), rgba(12, 13, 22, 0.9));
+  --card-hi: linear-gradient(180deg, rgba(93, 63, 255, 0.16), rgba(255, 255, 255, 0.02));
+  --hero-grad: linear-gradient(100deg, #7de3ff, #b9a6ff 60%, #ff9ce0);
+  --glow1: rgba(93, 63, 255, 0.35);
+  --glow2: rgba(0, 209, 255, 0.18);
+  --sh: 0 34px 70px -24px rgba(0, 0, 0, 0.85);
+}
+
+:root.light {
+  --page: #f4f5fa;
+  --tx: #14162a;
+  --tx2: #2c3050;
+  --mut: #565b7a;
+  --mut2: #5f6482;
+  --line: rgba(20, 22, 42, 0.1);
+  --line2: rgba(20, 22, 42, 0.16);
+  --surf: #ffffff;
+  --panel: #ffffff;
+  --input: #ffffff;
+  --ac1: #0e6a87;
+  --ac2: #4b35b8;
+  --ac3: #a31e7c;
+  --ac-bg: rgba(0, 120, 160, 0.07);
+  --ok: #0f8a5f;
+  --danger: #c2334d;
+  --card: linear-gradient(180deg, #ffffff, #f7f8fd);
+  --card-hi: linear-gradient(180deg, rgba(93, 63, 255, 0.1), #ffffff);
+  --hero-grad: linear-gradient(100deg, #0e6a87, #4b35b8 55%, #a31e7c);
+  --glow1: rgba(93, 63, 255, 0.1);
+  --glow2: rgba(0, 209, 255, 0.08);
+  --sh: 0 24px 50px -22px rgba(20, 22, 42, 0.28);
+}

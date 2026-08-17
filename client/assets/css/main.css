@@ -1,4 +1,14 @@
 @import '@fontsource-variable/inter';
+@import '@fontsource/noto-sans-armenian/400.css';
+@import '@fontsource/noto-sans-armenian/500.css';
+@import '@fontsource/noto-sans-armenian/600.css';
+@import '@fontsource/noto-sans-armenian/700.css';
+@import '@fontsource/noto-sans-armenian/800.css';
+@import '@fontsource/noto-serif-armenian/600.css';
+@import '@fontsource/noto-serif-armenian/700.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+@import './templates/aurora.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

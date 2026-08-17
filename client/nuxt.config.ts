@@ -88,6 +88,26 @@ export default defineNuxtConfig({
       whmcsUrl: (process.env.WHMCS_URL || '').replace(/\/+$/, ''),
       stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
       mainUrl: process.env.NUXT_PUBLIC_MAIN_URL || 'http://app.local',
+      // Active portal template. Phase 4 lets an admin override this from settings;
+      // until then it is the only switch. Unknown values fall back to 'aurora'.
+      portalTemplate: process.env.NUXT_PUBLIC_PORTAL_TEMPLATE || 'aurora',
+      // Header app launcher. Off unless a deployment actually runs the sibling
+      // apps it links to; every app URL below has a development default, so
+      // presence of a URL cannot decide this on its own.
+      portalAppsEnabled: process.env.NUXT_PUBLIC_PORTAL_APPS_ENABLED || '',
+      // Contact and widget configuration. Each is hidden when empty — a fresh
+      // install with none of these set still renders a complete site.
+      portalWhatsapp: process.env.NUXT_PUBLIC_PORTAL_WHATSAPP || '',
+      portalTelegram: process.env.NUXT_PUBLIC_PORTAL_TELEGRAM || '',
+      portalChatProvider: process.env.NUXT_PUBLIC_PORTAL_CHAT_PROVIDER || '',
+      portalNewsletterUrl: process.env.NUXT_PUBLIC_PORTAL_NEWSLETTER_URL || '',
+      portalContactEmail: process.env.NUXT_PUBLIC_PORTAL_CONTACT_EMAIL || '',
+      portalSocialFacebook: process.env.NUXT_PUBLIC_PORTAL_SOCIAL_FACEBOOK || '',
+      portalSocialInstagram: process.env.NUXT_PUBLIC_PORTAL_SOCIAL_INSTAGRAM || '',
+      portalSocialLinkedin: process.env.NUXT_PUBLIC_PORTAL_SOCIAL_LINKEDIN || '',
+      portalSocialYoutube: process.env.NUXT_PUBLIC_PORTAL_SOCIAL_YOUTUBE || '',
+      portalContactPhone: process.env.NUXT_PUBLIC_PORTAL_CONTACT_PHONE || '',
+      portalLegalTaxId: process.env.NUXT_PUBLIC_PORTAL_LEGAL_TAX_ID || '',
     }
   },
 
@@ -105,9 +125,21 @@ export default defineNuxtConfig({
     detectBrowserLanguage: false
   },
 
+  // Canonical origin for generated URLs. @nuxtjs/sitemap v7 reads this rather
+  // than its own `hostname` option, which earlier versions used and which was
+  // still set here — silently ignored, so the sitemap advertised whatever host
+  // the request arrived on, down to the container's own address.
+  //
+  // Deliberately no default: with nothing set, nuxt-site-config keeps falling
+  // back to the request host, which is at least the operator's own domain. A
+  // literal here would put this deployment's domain in every other operator's
+  // sitemap.
+  site: {
+    url: process.env.NUXT_PUBLIC_BASE_URL,
+  },
+
   // Sitemap configuration
   sitemap: {
-    hostname: 'https://innovayse.com',
     gzip: true,
     exclude: [
       '/admin/**',
@@ -125,6 +157,10 @@ export default defineNuxtConfig({
         // Main pages
         { loc: '/', changefreq: 'daily' as const, priority: 1.0 },
         { loc: '/products', changefreq: 'weekly' as const, priority: 0.9 },
+        // The sitemap module discovers both automatically; these entries only
+        // raise them from the default 0.7 to the 0.9 the storefront deserves.
+        { loc: '/hosting', changefreq: 'weekly' as const, priority: 0.9 },
+        { loc: '/domains', changefreq: 'weekly' as const, priority: 0.9 },
         { loc: '/contact', changefreq: 'monthly' as const, priority: 0.7 },
         { loc: '/faq', changefreq: 'monthly' as const, priority: 0.6 },
         { loc: '/terms', changefreq: 'yearly' as const, priority: 0.3 },

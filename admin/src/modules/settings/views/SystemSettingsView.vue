@@ -19,12 +19,16 @@ onMounted(store.fetchSettings)
  * @param id - Setting ID.
  * @param value - New value.
  */
-async function onSave(id: number, value: string) {
+async function onSave(id: number, value: string): Promise<boolean> {
   saving.value = true
   try {
     await store.updateSetting(id, value)
+    return true
   } catch {
-    // store.error carries the message for the banner below.
+    // store.error carries the message for the banner below. The outcome is
+    // returned rather than swallowed, because the caller has to know whether it
+    // may drop the operator's unsaved text.
+    return false
   } finally {
     saving.value = false
   }
@@ -65,8 +69,13 @@ function isDirty(setting: Setting): boolean {
  */
 async function saveRow(setting: Setting) {
   if (!isDirty(setting)) return
-  await onSave(setting.id, drafts.value[setting.id])
-  delete drafts.value[setting.id]
+
+  // Only on success. This used to drop the draft either way, so a failed save
+  // replaced whatever the operator had typed with the value already stored —
+  // leaving an error banner and no way back to the text that caused it.
+  if (await onSave(setting.id, drafts.value[setting.id])) {
+    delete drafts.value[setting.id]
+  }
 }
 </script>
 

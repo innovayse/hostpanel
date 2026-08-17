@@ -7,7 +7,7 @@
  * not break the site, but it would silently revert an operator's choice with no
  * indication why. Constraining the input removes the failure entirely.
  */
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { Setting } from '../../../types/models'
 
 const props = defineProps<{
@@ -42,8 +42,17 @@ const dirty = computed(() => draft.value !== null && draft.value !== setting.val
 function save() {
   if (!setting.value || !dirty.value) return
   emit('save', setting.value.id, selected.value)
-  draft.value = null
 }
+
+// The draft is cleared when the stored value catches up, not when the save is
+// requested. Clearing on emit discarded the operator's pick before anyone knew
+// whether it had been written: a failed save silently snapped the dropdown back
+// to the template already in use, with only an error banner to explain it.
+watch(() => setting.value?.value, (stored) => {
+  if (draft.value !== null && stored === draft.value) {
+    draft.value = null
+  }
+})
 </script>
 
 <template>

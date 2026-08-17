@@ -22,6 +22,15 @@ public sealed class CreateProductFeatureHandler(
         _ = await products.FindByIdAsync(cmd.ProductId, ct)
             ?? throw new InvalidOperationException($"Product {cmd.ProductId} not found.");
 
+        // The storefront's comparison table keys its rows on the label and takes the
+        // first value it finds, so a second line under the same label renders nowhere:
+        // an operator would add it, see no change, and have nothing to explain why.
+        if (await repo.ExistsWithLabelAsync(cmd.ProductId, cmd.Label, null, ct))
+        {
+            throw new InvalidOperationException(
+                $"This product already has a \"{cmd.Label.Trim()}\" line. Edit that one instead.");
+        }
+
         var feature = ProductFeature.Create(cmd.ProductId, cmd.Label, cmd.Value, cmd.SortOrder);
 
         repo.Add(feature);

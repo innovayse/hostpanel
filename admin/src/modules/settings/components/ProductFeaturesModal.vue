@@ -225,7 +225,8 @@ async function remove(feature: ProductFeature): Promise<void> {
 
         <p class="mt-3 text-xs text-text-muted">
           Plans line up by feature name, so spell it the same way across products — "Disk" and
-          "Disk space" become two separate rows.
+          "Disk space" become two separate rows. Within one product a name can only be used
+          once; reusing it is refused rather than saved where it would never show.
         </p>
       </template>
     </div>

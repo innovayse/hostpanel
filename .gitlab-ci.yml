@@ -228,8 +228,15 @@ deploy:prod:
     - git -C "$DEPLOY_DIR" fetch "$CI_REPOSITORY_URL" "$CI_COMMIT_SHA"
     - git -C "$DEPLOY_DIR" checkout -f "$CI_COMMIT_SHA"
     - cd "$DEPLOY_DIR"
-    - docker compose $COMPOSE_FILES build api client
-    - docker compose $COMPOSE_FILES up -d api client
+    # The service keys, not the old ones. They were renamed to carry the product
+    # prefix when container_name was introduced — `api` and `client` no longer exist
+    # in any compose file here, so this job could only fail with "no such service".
+    #
+    # admin is included now as well. It was left out, so ProdServer kept serving the
+    # admin panel from whatever image was built the last time someone ran compose by
+    # hand, and a deploy could not replace that container at all.
+    - docker compose $COMPOSE_FILES build hostpanel-api hostpanel-client admin
+    - docker compose $COMPOSE_FILES up -d hostpanel-api hostpanel-client admin
   environment: { name: production/hostpanel, url: "https://host.innovayse.com", deployment_tier: production }
   # Manual on purpose — merging should not by itself change what customers see.
   when: manual

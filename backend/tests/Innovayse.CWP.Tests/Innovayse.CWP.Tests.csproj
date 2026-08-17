@@ -1,6 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <!--
+      net9.0, like every other test project here. A test assembly is launched by the
+      test host, so its target framework has to be one the machine can actually run —
+      unlike the library it covers, which net9.0 consumes happily either way. The CI
+      image is the 9.0 SDK and carries no 8.0 runtime, so this one assembly aborted
+      with "To install missing framework ... framework_version=8.0.0" while the other
+      four ran and passed. Innovayse.Providers.CWP itself stays on net8.0; nothing
+      about running its tests requires changing that.
+    -->
+    <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>12</LangVersion>

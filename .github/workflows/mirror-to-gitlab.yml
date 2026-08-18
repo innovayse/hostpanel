@@ -3,9 +3,18 @@ name: Mirror to GitLab
 # hostpanel's CI/CD lives on GitLab (build + test + the manual production deploy
 # job), because that's where its runners are — one on ProdServer itself, tagged
 # `prod`. GitHub stays the public source of record. This workflow is the bridge:
-# every push to main is force-pushed to the GitLab mirror, which reuses that
-# repo's own `.gitlab-ci.yml` workflow rules (`if: $CI_COMMIT_BRANCH == "main"`)
-# to start a pipeline — nothing GitLab-side needs to change for this to work.
+# every push to main or develop is mirrored to GitLab, which reuses that repo's
+# own `.gitlab-ci.yml` workflow rules to start a pipeline for the branch that
+# arrived.
+#
+# Both branches have to cross, because the two tiers are cut from different ones,
+# the same way the rest of the Innovayse suite does it:
+#
+#   develop -> staging (LocalServer)
+#   main    -> production (ProdServer, manual)
+#
+# Mirroring only main, as this did at first, left the GitLab side with no develop
+# to run a staging pipeline from at all.
 #
 # GITLAB_MIRROR_TOKEN is a GitLab *project* access token (write_repository only,
 # Maintainer role, scoped to innovayse/hostpanel) — not the broad personal token
@@ -13,7 +22,7 @@ name: Mirror to GitLab
 # repo, nothing else on the account.
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
 
 jobs:
   mirror:
@@ -27,6 +36,9 @@ jobs:
 
       - name: Push to GitLab
         run: |
-          git push "https://project-access-token:${GITLAB_MIRROR_TOKEN}@gitlab.com/innovayse/hostpanel.git" "HEAD:main"
+          # Push to the branch the event came from, not a hardcoded main, or a
+          # develop push would land on GitLab's main and deploy staging code to
+          # the production branch.
+          git push "https://project-access-token:${GITLAB_MIRROR_TOKEN}@gitlab.com/innovayse/hostpanel.git" "HEAD:${GITHUB_REF_NAME}"
         env:
           GITLAB_MIRROR_TOKEN: ${{ secrets.GITLAB_MIRROR_TOKEN }}

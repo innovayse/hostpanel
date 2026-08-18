@@ -115,27 +115,20 @@ try
                 {
                     OnTokenValidated = async context =>
                     {
+                        // The subject the SSO issued is the identifier this product uses,
+                        // so there is nothing to map it onto. This used to provision a
+                        // local copy of the user and swap NameIdentifier to that copy's
+                        // id; the copy was written once and never updated, so a name or
+                        // address changed in the SSO never reached here.
                         var sub = context.Principal?.FindFirst("sub")?.Value;
-                        var email = context.Principal?.FindFirst("email")?.Value;
-                        if (sub is null || email is null) return;
-                        var firstName = context.Principal?.FindFirst("given_name")?.Value ?? string.Empty;
-                        var lastName = context.Principal?.FindFirst("family_name")?.Value ?? string.Empty;
-                        var userService = context.HttpContext.RequestServices.GetRequiredService<IUserService>();
-                        await userService.ProvisionSsoUserAsync(sub, email, firstName, lastName, context.HttpContext.RequestAborted);
+                        if (sub is null) return;
 
-                        var localUser = await userService.FindBySsoSubjectAsync(sub, context.HttpContext.RequestAborted);
-                        if (localUser is not null)
-                        {
-                            var identity = (System.Security.Claims.ClaimsIdentity)context.Principal!.Identity!;
+                        var identity = (System.Security.Claims.ClaimsIdentity)context.Principal!.Identity!;
+                        var roleStore = context.HttpContext.RequestServices
+                            .GetRequiredService<Innovayse.Domain.Auth.Interfaces.ISubjectRoleStore>();
 
-                            // Map local user ID so GetUserId() returns the correct ID
-                            identity.AddClaim(new System.Security.Claims.Claim(
-                                System.Security.Claims.ClaimTypes.NameIdentifier, localUser.Value.Id));
-
-                            var roles = await userService.GetRolesAsync(localUser.Value.Id, context.HttpContext.RequestAborted);
-                            foreach (var role in roles)
-                                identity.AddClaim(new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, role));
-                        }
+                        foreach (var role in await roleStore.GetRolesAsync(sub, context.HttpContext.RequestAborted))
+                            identity.AddClaim(new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, role));
                     },
                 };
             })

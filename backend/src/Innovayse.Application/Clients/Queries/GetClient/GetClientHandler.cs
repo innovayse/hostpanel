@@ -10,8 +10,8 @@ using Innovayse.Domain.Clients.Interfaces;
 /// Returns full client details including contacts and email from Identity.
 /// </summary>
 /// <param name="clientRepo">Client repository.</param>
-/// <param name="userService">User service for email lookup.</param>
-public sealed class GetClientHandler(IClientRepository clientRepo, IUserService userService)
+/// <param name="identity">Reads the person this client belongs to.</param>
+public sealed class GetClientHandler(IClientRepository clientRepo, IIdentityProvider identity)
 {
     /// <summary>
     /// Retrieves a client by ID and maps to <see cref="ClientDto"/>.
@@ -25,11 +25,10 @@ public sealed class GetClientHandler(IClientRepository clientRepo, IUserService 
         var client = await clientRepo.FindByIdAsync(query.ClientId, ct)
             ?? throw new InvalidOperationException($"Client {query.ClientId} not found.");
 
-        var user = await userService.FindByIdAsync(client.UserId, ct);
+        var user = await identity.FindBySubjectAsync(client.UserId, ct);
         var email = user?.Email ?? "";
-        var twoFactorEnabled = await userService.IsTwoFactorEnabledAsync(client.UserId, ct);
 
-        return MapToDto(client, email, twoFactorEnabled);
+        return MapToDto(client, email, user?.TwoFactorEnabled ?? false);
     }
 
     /// <summary>Maps a <see cref="Client"/> aggregate to <see cref="ClientDto"/>.</summary>

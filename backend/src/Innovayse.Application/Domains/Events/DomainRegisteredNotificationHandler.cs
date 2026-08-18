@@ -16,7 +16,7 @@ public sealed class DomainRegisteredNotificationHandler(
     IMessageBus bus,
     IDomainRepository domainRepo,
     IClientRepository clientRepo,
-    IUserService userService,
+    IIdentityProvider identity,
     ILogger<DomainRegisteredNotificationHandler> logger)
 {
     /// <summary>
@@ -39,7 +39,7 @@ public sealed class DomainRegisteredNotificationHandler(
                 return;
             }
 
-            var user = await userService.FindByIdAsync(client.UserId, ct);
+            var user = await identity.FindBySubjectAsync(client.UserId, ct);
             if (user is null)
             {
                 logger.LogWarning(
@@ -62,13 +62,13 @@ public sealed class DomainRegisteredNotificationHandler(
                 }
             };
 
-            await bus.InvokeAsync(new SendEmailCommand(user.Value.Email, "domain-registered", data), ct);
+            await bus.InvokeAsync(new SendEmailCommand(user.Email, "domain-registered", data), ct);
 
             logger.LogInformation(
                 "Sent domain-registered notification for domain {DomainName} (ID {DomainId}) to {Email}.",
                 evt.Name,
                 evt.DomainId,
-                user.Value.Email);
+                user.Email);
         }
         catch (Exception ex)
         {

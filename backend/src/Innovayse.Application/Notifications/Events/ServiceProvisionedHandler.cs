@@ -14,7 +14,7 @@ public sealed class ServiceProvisionedHandler(
     IMessageBus bus,
     IClientServiceRepository serviceRepo,
     IClientRepository clientRepo,
-    IUserService userService)
+    IIdentityProvider identity)
 {
     /// <summary>
     /// Resolves the client email and sends a service-provisioned notification email.
@@ -36,7 +36,7 @@ public sealed class ServiceProvisionedHandler(
             return;
         }
 
-        var user = await userService.FindByIdAsync(client.UserId, ct);
+        var user = await identity.FindBySubjectAsync(client.UserId, ct);
         if (user is null)
         {
             return;
@@ -53,6 +53,6 @@ public sealed class ServiceProvisionedHandler(
             }
         };
 
-        await bus.InvokeAsync(new SendEmailCommand(user.Value.Email, "service-provisioned", data), ct);
+        await bus.InvokeAsync(new SendEmailCommand(user.Email, "service-provisioned", data), ct);
     }
 }

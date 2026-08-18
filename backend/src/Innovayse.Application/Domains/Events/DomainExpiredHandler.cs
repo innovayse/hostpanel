@@ -18,7 +18,7 @@ public sealed class DomainExpiredHandler(
     IMessageBus bus,
     IDomainRepository domainRepo,
     IClientRepository clientRepo,
-    IUserService userService,
+    IIdentityProvider identity,
     ILogger<DomainExpiredHandler> logger)
 {
     /// <summary>
@@ -76,7 +76,7 @@ public sealed class DomainExpiredHandler(
                 return;
             }
 
-            var user = await userService.FindByIdAsync(client.UserId, ct);
+            var user = await identity.FindBySubjectAsync(client.UserId, ct);
             if (user is null)
             {
                 return;
@@ -94,12 +94,12 @@ public sealed class DomainExpiredHandler(
                 }
             };
 
-            await bus.InvokeAsync(new SendEmailCommand(user.Value.Email, "domain-expired", data), ct);
+            await bus.InvokeAsync(new SendEmailCommand(user.Email, "domain-expired", data), ct);
 
             logger.LogInformation(
                 "Sent domain-expired notification for domain {DomainId} to {Email}.",
                 evt.DomainId,
-                user.Value.Email);
+                user.Email);
         }
         catch (Exception ex)
         {

@@ -1,0 +1,47 @@
+name: Branch flow
+
+# The GitLab side of this repo has protected branches, but merge requests do not
+# happen there -- GitLab is a mirror, and every merge into main happens here. So
+# the rule that main is only ever fed by develop or a hotfix has to be enforced
+# on this side, and neither GitHub nor GitLab has a setting for it: branch
+# protection answers "who may merge", never "from where".
+#
+#   main    <- develop, hotfix/*
+#   develop <- anything, via pull request
+#
+# Marked as a required status check on main, so a pull request from anywhere else
+# cannot be merged. develop is deliberately unrestricted, which keeps the
+# main -> develop backmerge after a hotfix working.
+#
+# This mirrors ci/guard.yml in innovayse-workspace and the guard:branch-flow job
+# in innovayse-main, which do the same thing for the two repos whose merges do
+# happen on GitLab.
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, edited]
+    branches: [main]
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the source branch
+        env:
+          SRC: ${{ github.head_ref }}
+        run: |
+          echo "Pull request: $SRC -> main"
+          case "$SRC" in
+            develop|hotfix/*)
+              echo "OK: '$SRC' is an allowed source for main."
+              ;;
+            *)
+              echo ""
+              echo "BLOCKED: main only accepts pull requests from 'develop' or 'hotfix/*'."
+              echo "  this PR:  $SRC -> main"
+              echo ""
+              echo "Retarget it at develop instead — Edit -> base: develop."
+              echo "main is then updated by a single develop -> main pull request."
+              exit 1
+              ;;
+          esac

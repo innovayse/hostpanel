@@ -1,7 +1,8 @@
 workflow:
   rules:
     - if: $CI_SERVER_HOST == "gitlab.com" && $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "main"
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "main"      # → production (ProdServer, manual)
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "develop"   # → staging (LocalServer)
     - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "ci-test"   # throwaway verification branch
 
 stages: [test, build, deploy]
@@ -81,12 +82,25 @@ stages: [test, build, deploy]
     - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin "$CI_REGISTRY"
   script:
     - cd "$DEPLOY_DIR"
+    # GIT_STRATEGY is none, so the runner never touches this checkout — but the
+    # deploy builds the api, client and admin images from it (neither compose file
+    # gives those services an `image:`, so there is nothing to pull). Left alone it
+    # deploys whatever was last checked out by hand; this host sat 33 commits back
+    # that way. Sync it to the branch that triggered the pipeline so the tier
+    # really is the branch.
+    - git fetch --prune origin
+    - git checkout -B "$CI_COMMIT_BRANCH" "origin/$CI_COMMIT_BRANCH"
     # docker-compose.platform.yml joins the shared innovayse_network — without it
     # the containers are unreachable by name from the reverse proxy.
     - docker compose -f docker-compose.prod.yml -f docker-compose.platform.yml pull
-    - docker compose -f docker-compose.prod.yml -f docker-compose.platform.yml up -d
+    # Services named one by one to leave nginx out. It publishes 80 and 443, which
+    # on this host belong to the shared Nginx Proxy Manager that fronts every
+    # Innovayse product — so it can never bind, and `up -d` fails the whole deploy
+    # on it. Inside the workspace this product is reached through that proxy; its
+    # own nginx is for a standalone deployment.
+    - docker compose -f docker-compose.prod.yml -f docker-compose.platform.yml up -d hostpanel-db hostpanel-api hostpanel-client admin
   rules:
-    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "main"
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "develop"
 
 # ── backend (Innovayse.API, .NET) ──────────────────────────────────────────────
 
@@ -187,7 +201,7 @@ deploy:staging:
     ASPNETCORE_ENVIRONMENT: Staging
   environment: { name: staging/hostpanel }
   rules:
-    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "main"
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "develop"
   needs:
     - job: backend:build:api:prod
       optional: true

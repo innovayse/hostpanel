@@ -290,14 +290,26 @@ try
     if (!app.Environment.IsEnvironment("Testing"))
     {
         using var scope = app.Services.CreateScope();
-        var roleManager = scope.ServiceProvider
-            .GetRequiredService<RoleManager<IdentityRole>>();
 
-        foreach (var role in new[] { Roles.Admin, Roles.Reseller, Roles.Client })
+        // Identity's own role table, and only where this deployment owns its users. A
+        // deployment whose people live in the SSO does not register Identity at all, so
+        // RoleManager is not there to resolve — asking for it with GetRequiredService
+        // threw before the API had finished starting, and the container never came up.
+        //
+        // Nothing is lost by skipping it. What a person is allowed to do is decided by
+        // subject_roles in both modes; AspNetRoles is scaffolding for the local
+        // UserManager, which an SSO-owned deployment never calls.
+        if (authMode == "local")
         {
-            if (!await roleManager.RoleExistsAsync(role))
+            var roleManager = scope.ServiceProvider
+                .GetRequiredService<RoleManager<IdentityRole>>();
+
+            foreach (var role in new[] { Roles.Admin, Roles.Reseller, Roles.Client })
             {
-                await roleManager.CreateAsync(new IdentityRole(role));
+                if (!await roleManager.RoleExistsAsync(role))
+                {
+                    await roleManager.CreateAsync(new IdentityRole(role));
+                }
             }
         }
 
@@ -314,8 +326,11 @@ try
             scope.ServiceProvider.GetRequiredService<Innovayse.Domain.Settings.Interfaces.ISettingRepository>(),
             scope.ServiceProvider.GetRequiredService<Innovayse.Application.Common.IUnitOfWork>());
 
-        // Dev seed — populate test data in Development
-        if (app.Environment.IsDevelopment())
+        // Dev seed — populate test data in Development. Local mode only: the seeder
+        // creates its people through Identity's UserManager, which an SSO-owned
+        // deployment does not register, and there would be nowhere local to put them
+        // anyway. Running it there threw on construction and took the API down with it.
+        if (app.Environment.IsDevelopment() && authMode == "local")
         {
             var seeder = ActivatorUtilities.CreateInstance<Innovayse.Infrastructure.Persistence.DevDataSeeder>(scope.ServiceProvider);
             await seeder.SeedAsync();

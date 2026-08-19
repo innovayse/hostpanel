@@ -78,6 +78,9 @@ stages: [test, build, deploy]
   tags: [staging]
   variables:
     GIT_STRATEGY: none
+    # The build below restores Innovayse.Auth from the package registry, so the
+    # credential has to reach it here the same way it does on production.
+    NUGET_INNOVAYSE_CREDENTIALS: "Username=gitlab-ci-token;Password=${CI_JOB_TOKEN}"
   before_script:
     - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin "$CI_REGISTRY"
   script:
@@ -93,6 +96,13 @@ stages: [test, build, deploy]
     # docker-compose.platform.yml joins the shared innovayse_network — without it
     # the containers are unreachable by name from the reverse proxy.
     - docker compose -f docker-compose.prod.yml -f docker-compose.platform.yml pull
+    # Build them. The note above says this job builds these three images, and it did
+    # not: the script pulled and brought them up, and since neither compose file gives
+    # them an `image:`, `up -d` reused whatever was already on the host. Staging ran a
+    # three-day-old API off an image nobody had replaced, through deploys that all
+    # reported success — the same failure the checkout sync above was written to stop,
+    # one step further along.
+    - docker compose -f docker-compose.prod.yml -f docker-compose.platform.yml build hostpanel-api hostpanel-client admin
     # Services named one by one to leave nginx out. It publishes 80 and 443, which
     # on this host belong to the shared Nginx Proxy Manager that fronts every
     # Innovayse product — so it can never bind, and `up -d` fails the whole deploy

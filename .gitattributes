@@ -1,0 +1,7 @@
+# Shell scripts keep LF wherever they are checked out.
+#
+# On a Windows clone git rewrites them to CRLF, and the operational ones here are
+# meant to be piped to a Linux host — `ssh prod 'sh -s' < scripts/foo.sh`. The
+# remote shell then reads `set -eu\r` and answers "Illegal option -", which reads
+# like a bug in the script rather than in how it travelled.
+*.sh text eol=lf

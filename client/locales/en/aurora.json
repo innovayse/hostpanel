@@ -56,7 +56,9 @@
       "included2": "Daily backups",
       "included3": "Free migration",
       "included4": "24/7 support",
-      "empty": "Plans are temporarily unavailable."
+      "empty": "Plans are temporarily unavailable.",
+      "freeBadge": "Start for free",
+      "freeForever": "Free forever"
     },
     "services": {
       "eyebrow": "Services",

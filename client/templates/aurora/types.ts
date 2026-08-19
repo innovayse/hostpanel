@@ -40,6 +40,8 @@ export interface PlanCard {
   description: string
   /** Feature lines parsed out of the same record; may be empty. */
   features: string[]
+  /** True when the plan costs nothing, so it can be shown on its own terms. */
+  isFree: boolean
   /** Formatted monthly price, e.g. "$4.99". */
   priceMonthly: string
   /** Formatted annual price expressed per month. */

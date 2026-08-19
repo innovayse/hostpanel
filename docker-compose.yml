@@ -177,6 +177,12 @@ services:
       NuGetPackageSourceCredentials_innovayse: ${NUGET_INNOVAYSE_CREDENTIALS}
       Sso__Authority: http://sso-api:8080
       Sso__ClientId: hostpanel
+      # How this product reads its people out of the SSO, under AUTH_MODE=sso. The
+      # SSO gates /api/service/* on it and answers 401 without it, so an unset value
+      # makes every account lookup fail — loudly, by design, rather than by reporting
+      # live customers as missing. Must equal innovayse-sso's SERVICE_AUTH_API_KEY,
+      # which is what SERVICE_AUTH_API_KEY feeds there.
+      Sso__ServiceKey: ${SSO_SERVICE_KEY}
       # The cookie session for the admin SPA. Read only when the mode is sso —
       # AddInnovayseAuth is skipped entirely under local, which is what keeps this
       # product deployable on its own with no SSO anywhere. Under sso all of them

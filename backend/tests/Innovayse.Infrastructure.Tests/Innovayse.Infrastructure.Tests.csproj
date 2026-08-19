@@ -16,6 +16,14 @@
     <PackageReference Include="Microsoft.Extensions.Options" /><!-- version pinned centrally in Directory.Packages.props -->
   </ItemGroup>
   <ItemGroup>
+    <!--
+      For DefaultHttpContext, which the request-context tests build a principal on.
+      Infrastructure itself only needs IHttpContextAccessor, and that abstraction
+      arrives on its own; the concrete context does not.
+    -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Innovayse.Infrastructure\Innovayse.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Innovayse.Domain\Innovayse.Domain.csproj" />
   </ItemGroup>

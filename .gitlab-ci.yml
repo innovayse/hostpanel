@@ -242,6 +242,21 @@ deploy:prod:
     - git -C "$DEPLOY_DIR" fetch "$CI_REPOSITORY_URL" "$CI_COMMIT_SHA"
     - git -C "$DEPLOY_DIR" checkout -f "$CI_COMMIT_SHA"
     - cd "$DEPLOY_DIR"
+    # Dump the database before anything is rebuilt. The API applies pending EF
+    # migrations on startup, so `up -d` is the moment the schema and sometimes the
+    # data change — and until now the only copy of what they looked like beforehand
+    # was whatever the host happened to have. The database is around 11 MB; the dump
+    # costs a second and a few megabytes, and the last ten are kept.
+    #
+    # Failing the deploy when the dump fails is the point. A deploy that cannot be
+    # undone should not start.
+    - mkdir -p "$DEPLOY_DIR/backups"
+    - >
+      docker exec hostpanel-db sh -lc
+      'pg_dump -U "$POSTGRES_USER" -d "${POSTGRES_DB:-hostpanel}" -Fc'
+      > "$DEPLOY_DIR/backups/hostpanel-$(date -u +%Y%m%dT%H%M%SZ)-${CI_COMMIT_SHORT_SHA}.dump"
+    - ls -1t "$DEPLOY_DIR"/backups/hostpanel-*.dump | tail -n +11 | xargs -r rm --
+    - ls -lh "$DEPLOY_DIR"/backups/ | tail -3
     # The service keys, not the old ones. They were renamed to carry the product
     # prefix when container_name was introduced — `api` and `client` no longer exist
     # in any compose file here, so this job could only fail with "no such service".

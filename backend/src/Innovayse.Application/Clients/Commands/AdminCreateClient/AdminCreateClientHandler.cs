@@ -3,18 +3,26 @@ namespace Innovayse.Application.Clients.Commands.AdminCreateClient;
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Auth;
+using Innovayse.Domain.Auth.Interfaces;
 using Innovayse.Domain.Clients;
 using Innovayse.Domain.Clients.Interfaces;
 
 /// <summary>
 /// Handles <see cref="AdminCreateClientCommand"/>.
 /// Creates a new <see cref="Client"/> aggregate, optionally provisioning
-/// a new Identity user or linking an existing one.
+/// a new account or linking an existing one.
 /// </summary>
-/// <param name="userService">Identity user management service.</param>
+/// <param name="identity">Reads the account when linking to an existing one.</param>
+/// <param name="provisioning">Creates the account when asked to make a new one.</param>
+/// <param name="roles">Role store, for granting the Client role.</param>
 /// <param name="clientRepo">Client persistence repository.</param>
 /// <param name="uow">Unit of work for transactional persistence.</param>
-public sealed class AdminCreateClientHandler(IUserService userService, IClientRepository clientRepo, IUnitOfWork uow)
+public sealed class AdminCreateClientHandler(
+    IIdentityProvider identity,
+    IUserProvisioning provisioning,
+    ISubjectRoleStore roles,
+    IClientRepository clientRepo,
+    IUnitOfWork uow)
 {
     /// <summary>
     /// Processes the admin client creation command.
@@ -34,19 +42,25 @@ public sealed class AdminCreateClientHandler(IUserService userService, IClientRe
 
         if (cmd.CreateNewUser)
         {
-            userId = await userService.CreateAsync(cmd.Email!, cmd.Password!, ct);
-            await userService.AddToRoleAsync(userId, Roles.Client, ct);
+            // The name goes in at creation rather than in a second write afterwards. The
+            // previous version created the account bare and then updated it only when a
+            // language had been supplied, so an admin who left that field alone got a
+            // client whose name was on the client record and nowhere on the account.
+            userId = await provisioning.CreateAsync(
+                cmd.Email!, cmd.Password!, cmd.FirstName, cmd.LastName, ct);
+            await roles.AddAsync(userId, Roles.Client, ct);
 
             if (cmd.Language is not null)
             {
-                await userService.UpdateUserAsync(userId, cmd.FirstName, cmd.LastName, cmd.Email!, cmd.Language, ct);
+                await provisioning.UpdateProfileAsync(
+                    userId, cmd.FirstName, cmd.LastName, cmd.Language, ct);
             }
 
             email = cmd.Email!;
         }
         else
         {
-            var existingUser = await userService.FindByIdAsync(cmd.ExistingUserId!, ct)
+            var existingUser = await identity.FindBySubjectAsync(cmd.ExistingUserId!, ct)
                 ?? throw new InvalidOperationException($"User with ID '{cmd.ExistingUserId}' was not found.");
 
             var existingClient = await clientRepo.FindByUserIdAsync(cmd.ExistingUserId!, ct);
@@ -56,7 +70,7 @@ public sealed class AdminCreateClientHandler(IUserService userService, IClientRe
                     $"User '{cmd.ExistingUserId}' already has a linked client account (Client ID: {existingClient.Id}).");
             }
 
-            userId = existingUser.Id;
+            userId = existingUser.Subject;
             email = cmd.Email ?? existingUser.Email;
         }
 

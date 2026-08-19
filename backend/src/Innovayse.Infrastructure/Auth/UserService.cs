@@ -373,42 +373,6 @@ public sealed class UserService(UserManager<AppUser> userManager, IClientReposit
         return user is null ? null : (user.Id, user.Email!);
     }
 
-    /// <inheritdoc/>
-    public async Task ProvisionSsoUserAsync(string sub, string email, string firstName, string lastName, CancellationToken ct)
-    {
-        // Already linked?
-        var bySubject = await userManager.Users
-            .FirstOrDefaultAsync(u => u.SsoSubjectId == sub, ct);
-        if (bySubject is not null) return;
-
-        // Existing user with this email (pre-migration) — link them
-        var existing = await userManager.FindByEmailAsync(email);
-        if (existing is not null)
-        {
-            existing.SsoSubjectId = sub;
-            await userManager.UpdateAsync(existing);
-            return;
-        }
-
-        // First-time SSO user — create local AppUser with Client role
-        var newUser = new AppUser
-        {
-            UserName = email,
-            Email = email,
-            NormalizedUserName = email.ToUpperInvariant(),
-            NormalizedEmail = email.ToUpperInvariant(),
-            EmailConfirmed = true,
-            FirstName = firstName.Length > 0 ? firstName : email.Split('@')[0],
-            LastName = lastName.Length > 0 ? lastName : string.Empty,
-            SsoSubjectId = sub,
-            CreatedAt = DateTimeOffset.UtcNow,
-        };
-        var result = await userManager.CreateAsync(newUser);
-        if (!result.Succeeded)
-            throw new InvalidOperationException($"Failed to provision SSO user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
-
-        await userManager.AddToRoleAsync(newUser, Innovayse.Domain.Auth.Roles.Client);
-    }
 
     /// <inheritdoc/>
     public async Task<IList<string>> GetRolesAsync(string userId, CancellationToken ct)

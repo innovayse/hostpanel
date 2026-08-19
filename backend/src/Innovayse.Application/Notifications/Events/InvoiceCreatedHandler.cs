@@ -12,7 +12,7 @@ using Wolverine;
 public sealed class InvoiceCreatedHandler(
     IMessageBus bus,
     IClientRepository clientRepo,
-    IUserService userService)
+    IIdentityProvider identity)
 {
     /// <summary>
     /// Resolves the client email and sends an invoice-created notification email.
@@ -28,7 +28,7 @@ public sealed class InvoiceCreatedHandler(
             return;
         }
 
-        var user = await userService.FindByIdAsync(client.UserId, ct);
+        var user = await identity.FindBySubjectAsync(client.UserId, ct);
         if (user is null)
         {
             return;
@@ -39,6 +39,6 @@ public sealed class InvoiceCreatedHandler(
             invoice = new { id = evt.InvoiceId }
         };
 
-        await bus.InvokeAsync(new SendEmailCommand(user.Value.Email, "invoice-created", data), ct);
+        await bus.InvokeAsync(new SendEmailCommand(user.Email, "invoice-created", data), ct);
     }
 }

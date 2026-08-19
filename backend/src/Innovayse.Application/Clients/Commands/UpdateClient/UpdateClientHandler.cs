@@ -8,12 +8,13 @@ using Innovayse.Domain.Clients.Interfaces;
 /// <summary>
 /// Handles <see cref="UpdateClientCommand"/>.
 /// Loads the client aggregate, applies profile, address, preference, notification,
-/// settings, and status changes, then saves. Optionally updates the Identity user's email.
+/// settings, and status changes, then saves. Optionally updates the account's email.
 /// </summary>
 /// <param name="clientRepo">Client repository.</param>
 /// <param name="uow">Unit of work.</param>
-/// <param name="userService">Identity user service for email updates.</param>
-public sealed class UpdateClientHandler(IClientRepository clientRepo, IUnitOfWork uow, IUserService userService)
+/// <param name="provisioning">Writes the sign-in address, where this deployment owns it.</param>
+public sealed class UpdateClientHandler(
+    IClientRepository clientRepo, IUnitOfWork uow, IUserProvisioning provisioning)
 {
     /// <summary>
     /// Updates the client's profile, billing address, preferences, notifications,
@@ -60,11 +61,15 @@ public sealed class UpdateClientHandler(IClientRepository clientRepo, IUnitOfWor
             }
         }
 
-        // Update Identity user email if provided and the client has a linked user
+        // The account's sign-in address, if this deployment is the one that owns it.
+        //
+        // Only the address: the names above belong to the client record, which this
+        // handler has already updated. The previous version passed them on to the user
+        // record as well, so editing a client silently renamed the person behind it —
+        // and where an SSO owns that person, renaming them from here is not ours to do.
         if (cmd.Email is not null && client.UserId is not null)
         {
-            await userService.UpdateUserAsync(
-                client.UserId, cmd.FirstName, cmd.LastName, cmd.Email, null, ct);
+            await provisioning.ChangeEmailAsync(client.UserId, cmd.Email, ct);
         }
 
         await uow.SaveChangesAsync(ct);

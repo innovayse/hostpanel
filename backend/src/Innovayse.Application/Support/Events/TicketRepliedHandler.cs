@@ -16,7 +16,7 @@ public sealed class TicketRepliedHandler(
     ITicketRepository ticketRepo,
     IDepartmentRepository departmentRepo,
     IClientRepository clientRepo,
-    IUserService userService)
+    IIdentityProvider identity)
 {
     /// <summary>
     /// Resolves the recipient (client or department, depending on the reply's author) and
@@ -39,10 +39,10 @@ public sealed class TicketRepliedHandler(
             var client = await clientRepo.FindByIdAsync(ticket.ClientId, ct);
             if (client is null) return;
 
-            var user = await userService.FindByIdAsync(client.UserId, ct);
+            var user = await identity.FindBySubjectAsync(client.UserId, ct);
             if (user is null) return;
 
-            await bus.InvokeAsync(new SendEmailCommand(user.Value.Email, "ticket-replied", data), ct);
+            await bus.InvokeAsync(new SendEmailCommand(user.Email, "ticket-replied", data), ct);
         }
         else if (ticket.DepartmentId is int departmentId)
         {

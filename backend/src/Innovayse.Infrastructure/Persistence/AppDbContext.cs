@@ -1,6 +1,7 @@
 namespace Innovayse.Infrastructure.Persistence;
 
 using Innovayse.Domain.Audit;
+using Innovayse.Domain.Auth;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Clients;
 using Innovayse.Domain.Domains;
@@ -28,6 +29,20 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
 {
     /// <summary>Gets the activity log entries table.</summary>
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
+
+    /// <summary>
+    /// Gets the roles held by each subject. Separate from Identity's own role tables
+    /// because it is keyed by whatever the configured identity provider calls a person,
+    /// which in SSO mode is not a row in <c>AspNetUsers</c>.
+    ///
+    /// <para>
+    /// Named for the subject rather than the user because <c>IdentityDbContext</c> already
+    /// has a <c>UserRoles</c> of its own, holding something else entirely. Two properties
+    /// of that name on one context would compile, with <c>new</c>, and mislead every
+    /// reader after.
+    /// </para>
+    /// </summary>
+    public DbSet<SubjectRole> SubjectRoles => Set<SubjectRole>();
 
     /// <summary>Gets the clients table.</summary>
     public DbSet<Client> Clients => Set<Client>();

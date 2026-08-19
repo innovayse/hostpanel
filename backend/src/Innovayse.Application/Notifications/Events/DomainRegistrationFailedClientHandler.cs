@@ -13,7 +13,7 @@ using Wolverine;
 public sealed class DomainRegistrationFailedClientHandler(
     IMessageBus bus,
     IClientRepository clientRepo,
-    IUserService userService)
+    IIdentityProvider identity)
 {
     /// <summary>
     /// Resolves the client email and dispatches a domain-registration-failed notification email.
@@ -29,7 +29,7 @@ public sealed class DomainRegistrationFailedClientHandler(
             return;
         }
 
-        var user = await userService.FindByIdAsync(client.UserId, ct);
+        var user = await identity.FindBySubjectAsync(client.UserId, ct);
         if (user is null)
         {
             return;
@@ -42,6 +42,6 @@ public sealed class DomainRegistrationFailedClientHandler(
         };
 
         await bus.InvokeAsync(
-            new SendEmailCommand(user.Value.Email, "domain-registration-failed", data), ct);
+            new SendEmailCommand(user.Email, "domain-registration-failed", data), ct);
     }
 }

@@ -10,8 +10,8 @@ using Innovayse.Domain.Clients.Interfaces;
 /// Finds the client record linked to the authenticated user and returns their profile.
 /// </summary>
 /// <param name="clientRepo">Client repository.</param>
-/// <param name="userService">User service for email lookup.</param>
-public sealed class GetMyProfileHandler(IClientRepository clientRepo, IUserService userService)
+/// <param name="identity">Reads the person this client belongs to.</param>
+public sealed class GetMyProfileHandler(IClientRepository clientRepo, IIdentityProvider identity)
 {
     /// <summary>
     /// Retrieves the client profile for the authenticated user.
@@ -25,11 +25,10 @@ public sealed class GetMyProfileHandler(IClientRepository clientRepo, IUserServi
         var client = await clientRepo.FindByUserIdAsync(query.UserId, ct)
             ?? throw new InvalidOperationException($"No client profile found for user {query.UserId}.");
 
-        var user = await userService.FindByIdAsync(client.UserId, ct);
+        var user = await identity.FindBySubjectAsync(client.UserId, ct);
         var email = user?.Email ?? "";
-        var twoFactorEnabled = await userService.IsTwoFactorEnabledAsync(client.UserId, ct);
 
-        return MapToDto(client, email, twoFactorEnabled);
+        return MapToDto(client, email, user?.TwoFactorEnabled ?? false);
     }
 
     /// <summary>Maps a <see cref="Client"/> aggregate to <see cref="ClientDto"/>.</summary>

@@ -28,4 +28,25 @@ public sealed class AppUser : IdentityUser
 
     /// <summary>Gets or sets the SSO subject identifier (OpenIddict 'sub' claim). Null for users not yet linked to SSO.</summary>
     public string? SsoSubjectId { get; set; }
+
+    /// <summary>
+    /// Gets or sets when the account was deleted. Null for a live account.
+    /// </summary>
+    /// <remarks>
+    /// Deleting the row outright was the previous behaviour, and it took the person's name
+    /// and address with it while leaving every client, invoice and ticket still pointing at
+    /// their id — rows that then showed as blanks nobody could identify. Keeping the record
+    /// and marking it lets those screens still say who they belonged to, and makes the
+    /// deletion reversible.
+    ///
+    /// <para>
+    /// The SSO settles it the same way, with a <c>DeletedAt</c> of its own. Both stores
+    /// answering the same question the same way is what lets one provider interface sit
+    /// over them.
+    /// </para>
+    /// </remarks>
+    public DateTimeOffset? DeletedAt { get; set; }
+
+    /// <summary>Gets whether this account has been deleted.</summary>
+    public bool IsDeleted => DeletedAt is not null;
 }

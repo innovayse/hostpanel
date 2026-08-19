@@ -13,14 +13,27 @@ using Microsoft.AspNetCore.Mvc;
 using Wolverine;
 
 /// <summary>
-/// Local authentication endpoints.
-/// Login/2FA are always active (needed by admin panel).
-/// Registration and password flows are only active when Auth:Mode=local.
+/// Local authentication endpoints. Password sign-in, registration and the password flows
+/// that go with it — every one of them meaningless where an SSO owns the accounts.
 /// </summary>
+/// <remarks>
+/// The service that backs these is resolved per action rather than injected, because it is
+/// not registered at all in SSO mode. Taking it as a constructor parameter would make every
+/// route on this controller fail to resolve there — including the ones that answer 404 on
+/// purpose, which would then answer 500 instead.
+///
+/// <para>
+/// An earlier comment here claimed login and 2FA were "always active (needed by admin
+/// panel)". They are not: the admin SPA signs in through the shared cookie session under
+/// SSO mode and only falls back to this form under local mode, which is what
+/// <c>GET /api/auth/mode</c> tells it. Left ungated, these two routes were the reason this
+/// controller had to keep a dependency the mode it serves does not have.
+/// </para>
+/// </remarks>
 [ApiController]
 [Route("api/auth")]
 public sealed class LocalAuthController(
-    IUserService userService,
+    IServiceProvider services,
     JwtTokenService tokenService,
     IMessageBus bus,
     IConfiguration config) : ControllerBase
@@ -28,15 +41,21 @@ public sealed class LocalAuthController(
     private bool IsLocalMode => (config["Auth:Mode"] ?? "sso") == "local";
 
     /// <summary>
+    /// The local user service, resolved only once a route has confirmed the mode.
+    /// </summary>
+    private IUserService Users => services.GetRequiredService<IUserService>();
+
+    /// <summary>
     /// Authenticates a user with email and password.
     /// Returns an access token, or a pending token if 2FA is required.
-    /// Always active — the admin panel uses local auth regardless of Auth:Mode.
     /// </summary>
     [HttpPost("login")]
     [AllowAnonymous]
     public async Task<IActionResult> LoginAsync([FromBody] LoginRequest request, CancellationToken ct)
     {
+        if (!IsLocalMode) return NotFound();
 
+        var userService = Users;
         var user = await userService.FindByEmailAndPasswordAsync(request.Email, request.Password, ct);
         if (user is null)
             return Unauthorized(new { error = "Invalid email or password." });
@@ -69,6 +88,7 @@ public sealed class LocalAuthController(
     [AllowAnonymous]
     public async Task<IActionResult> TwoFactorLoginAsync([FromBody] TwoFactorLoginRequest request, CancellationToken ct)
     {
+        if (!IsLocalMode) return NotFound();
 
         // Decode pending token
         string userId;
@@ -84,6 +104,7 @@ public sealed class LocalAuthController(
             return Unauthorized(new { error = "Invalid pending token." });
         }
 
+        var userService = Users;
         var valid = await userService.VerifyTwoFactorCodeAsync(userId, request.Code, ct);
         if (!valid) return Unauthorized(new { error = "Invalid 2FA code." });
 
@@ -108,6 +129,7 @@ public sealed class LocalAuthController(
     {
         if (!IsLocalMode) return NotFound();
 
+        var userService = Users;
         try
         {
             var userId = await userService.CreateAsync(
@@ -147,6 +169,7 @@ public sealed class LocalAuthController(
     {
         if (!IsLocalMode) return NotFound();
 
+        var userService = Users;
         var user = await userService.FindByEmailAsync(request.Email, ct);
         if (user is null) return Ok(); // Silent — no enumeration
 
@@ -174,7 +197,7 @@ public sealed class LocalAuthController(
     {
         if (!IsLocalMode) return NotFound();
 
-        var success = await userService.ResetPasswordWithTokenAsync(
+        var success = await Users.ResetPasswordWithTokenAsync(
             request.Email, request.Token, request.NewPassword, ct);
         return success ? Ok() : BadRequest(new { error = "Invalid or expired token." });
     }
@@ -188,7 +211,7 @@ public sealed class LocalAuthController(
     {
         if (!IsLocalMode) return NotFound();
 
-        var success = await userService.ConfirmEmailAsync(request.Email, request.Token, ct);
+        var success = await Users.ConfirmEmailAsync(request.Email, request.Token, ct);
         return success ? Ok() : BadRequest(new { error = "Invalid or expired token." });
     }
 

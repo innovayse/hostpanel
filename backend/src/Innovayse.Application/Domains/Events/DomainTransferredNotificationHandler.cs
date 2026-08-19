@@ -16,7 +16,7 @@ public sealed class DomainTransferredNotificationHandler(
     IMessageBus bus,
     IDomainRepository domainRepo,
     IClientRepository clientRepo,
-    IUserService userService,
+    IIdentityProvider identity,
     ILogger<DomainTransferredNotificationHandler> logger)
 {
     /// <summary>
@@ -39,7 +39,7 @@ public sealed class DomainTransferredNotificationHandler(
                 return;
             }
 
-            var user = await userService.FindByIdAsync(client.UserId, ct);
+            var user = await identity.FindBySubjectAsync(client.UserId, ct);
             if (user is null)
             {
                 logger.LogWarning(
@@ -62,13 +62,13 @@ public sealed class DomainTransferredNotificationHandler(
                 }
             };
 
-            await bus.InvokeAsync(new SendEmailCommand(user.Value.Email, "domain-transferred", data), ct);
+            await bus.InvokeAsync(new SendEmailCommand(user.Email, "domain-transferred", data), ct);
 
             logger.LogInformation(
                 "Sent domain-transferred notification for domain {DomainName} (ID {DomainId}) to {Email}.",
                 evt.Name,
                 evt.DomainId,
-                user.Value.Email);
+                user.Email);
         }
         catch (Exception ex)
         {

@@ -3,6 +3,8 @@ namespace Innovayse.API.Auth;
 using Innovayse.API.Auth.Requests;
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Clients.Commands.AcceptInvitation;
+using Innovayse.Domain.Auth;
+using Innovayse.Domain.Auth.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;
@@ -15,7 +17,8 @@ using Wolverine;
 [Route("api/auth")]
 public sealed class AuthController(
     IMessageBus bus,
-    IUserService userService,
+    IIdentityProvider identity,
+    ISubjectRoleStore roles,
     IConfiguration configuration) : ControllerBase
 {
     /// <summary>
@@ -38,35 +41,36 @@ public sealed class AuthController(
     public IActionResult Mode() =>
         Ok(new { mode = string.Equals(configuration["Auth:Mode"], "local", StringComparison.OrdinalIgnoreCase) ? "local" : "sso" });
 
-    /// <summary>Returns whether initial admin setup is required (no users exist).</summary>
+    /// <summary>Returns whether initial admin setup is required (nobody holds Admin yet).</summary>
+    /// <remarks>
+    /// Asks whether anyone holds <see cref="Roles.Admin"/>, where it used to ask whether any
+    /// local user row existed. The old question stopped meaning anything once a deployment
+    /// could have people without having user rows: against an SSO it answered "no users" for
+    /// a populated product and offered setup to whoever asked.
+    /// </remarks>
     [HttpGet("setup-required")]
     [AllowAnonymous]
     public async Task<IActionResult> SetupRequiredAsync(CancellationToken ct)
     {
-        var anyUsers = await userService.AnyUsersExistAsync(ct);
-        return Ok(new { required = !anyUsers });
+        var claimed = await roles.AnyHasRoleAsync(Roles.Admin, ct);
+        return Ok(new { required = !claimed });
     }
 
     /// <summary>
-    /// Initial setup: assigns Admin role to the first user who calls this endpoint.
-    /// The caller must be authenticated via SSO (sends a valid Bearer token).
-    /// Only works when no users exist yet.
+    /// Initial setup: grants the Admin role to the first authenticated caller.
+    /// The caller must already be signed in. Only works while nobody holds Admin.
     /// </summary>
     [HttpPost("setup")]
     [Authorize]
     public async Task<IActionResult> SetupAsync(CancellationToken ct)
     {
-        var anyUsers = await userService.AnyUsersExistAsync(ct);
-        if (anyUsers)
+        if (await roles.AnyHasRoleAsync(Roles.Admin, ct))
             return Conflict(new { error = "Setup already completed." });
 
-        var sub = User.FindFirst("sub")?.Value;
-        if (sub is null) return Unauthorized();
+        var subject = Subject();
+        if (subject is null) return Unauthorized();
 
-        var found = await userService.FindBySsoSubjectAsync(sub, ct);
-        if (found is null) return Unauthorized();
-
-        await userService.AddToRoleAsync(found.Value.Id, Innovayse.Domain.Auth.Roles.Admin, ct);
+        await roles.AddAsync(subject, Roles.Admin, ct);
         return Ok(new { success = true });
     }
 
@@ -94,26 +98,19 @@ public sealed class AuthController(
     [Authorize]
     public async Task<IActionResult> MeAsync(CancellationToken ct)
     {
-        // Both claim names, because the two modes deliver the subject differently. SSO
-        // mode sets MapInboundClaims = false, so "sub" survives as itself; local mode
-        // leaves the default mapping on, which renames it to NameIdentifier. Reading only
-        // "sub" therefore found nothing under local and answered 401 — with a valid
-        // token, from an account with the Admin role.
-        var sub = User.FindFirst("sub")?.Value
-            ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        if (sub is null) return Unauthorized();
+        var subject = Subject();
+        if (subject is null) return Unauthorized();
 
-        // And the two mean different things by it. An SSO token carries the SSO's
-        // subject; a token this API issued from /api/auth/login carries this database's
-        // own user id. Only the first was resolved.
-        var found = await userService.FindBySsoSubjectAsync(sub, ct)
-            ?? await userService.FindByIdAsync(sub, ct);
-        if (found is null) return Unauthorized();
+        // One lookup, where this used to try the SSO subject and then the local id in turn.
+        // Both modes now name a person the same way — whatever the configured provider
+        // calls them — so there is only one thing the claim can mean.
+        var account = await identity.FindBySubjectAsync(subject, ct);
+        if (account is null) return Unauthorized();
 
-        var roles = await userService.GetRolesAsync(found.Value.Id, ct);
+        var held = await roles.GetRolesAsync(subject, ct);
         var verified = User.FindFirst("email_verified")?.Value is "true" or "True";
 
-        return Ok(new { email = found.Value.Email, roles, emailVerified = verified });
+        return Ok(new { email = account.Email, roles = held, emailVerified = verified });
     }
 
     /// <summary>
@@ -125,15 +122,12 @@ public sealed class AuthController(
     [Authorize]
     public async Task<IActionResult> AcceptInviteAsync([FromBody] AcceptInvitationRequest request, CancellationToken ct)
     {
-        var sub = User.FindFirst("sub")?.Value;
-        if (sub is null) return Unauthorized();
-
-        var found = await userService.FindBySsoSubjectAsync(sub, ct);
-        if (found is null) return Unauthorized();
+        var subject = Subject();
+        if (subject is null) return Unauthorized();
 
         try
         {
-            await bus.InvokeAsync(new AcceptInvitationCommand(request.Token, found.Value.Id), ct);
+            await bus.InvokeAsync(new AcceptInvitationCommand(request.Token, subject), ct);
         }
         catch (InvalidOperationException ex)
         {
@@ -142,4 +136,17 @@ public sealed class AuthController(
 
         return Ok(new { success = true });
     }
+
+    /// <summary>
+    /// The signed-in caller's subject, or null if the token carries none.
+    /// </summary>
+    /// <remarks>
+    /// Both claim names, because the two modes deliver it differently. SSO mode sets
+    /// MapInboundClaims = false, so "sub" survives as itself; local mode leaves the default
+    /// mapping on, which renames it to NameIdentifier. Reading only "sub" found nothing
+    /// under local and answered 401 — with a valid token, from an account holding Admin.
+    /// </remarks>
+    private string? Subject() =>
+        User.FindFirst("sub")?.Value
+        ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 }

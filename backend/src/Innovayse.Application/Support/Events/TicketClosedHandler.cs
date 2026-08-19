@@ -15,7 +15,7 @@ public sealed class TicketClosedHandler(
     IMessageBus bus,
     ITicketRepository ticketRepo,
     IClientRepository clientRepo,
-    IUserService userService)
+    IIdentityProvider identity)
 {
     /// <summary>
     /// Resolves the client's email and sends a ticket-closed notification email.
@@ -27,7 +27,7 @@ public sealed class TicketClosedHandler(
         var client = await clientRepo.FindByIdAsync(evt.ClientId, ct);
         if (client is null) return;
 
-        var user = await userService.FindByIdAsync(client.UserId, ct);
+        var user = await identity.FindBySubjectAsync(client.UserId, ct);
         if (user is null) return;
 
         var ticket = await ticketRepo.FindByIdAsync(evt.TicketId, ct);
@@ -35,6 +35,6 @@ public sealed class TicketClosedHandler(
 
         var data = new { ticket = new { id = evt.TicketId, subject } };
 
-        await bus.InvokeAsync(new SendEmailCommand(user.Value.Email, "ticket-closed", data), ct);
+        await bus.InvokeAsync(new SendEmailCommand(user.Email, "ticket-closed", data), ct);
     }
 }

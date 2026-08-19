@@ -116,23 +116,63 @@ public static class DependencyInjection
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-        // ASP.NET Core Identity — use AddIdentityCore to avoid overriding the JWT Bearer
-        // authentication scheme that is configured in Program.cs.
-        // AddIdentity would reset the default auth scheme to cookie-based Identity,
-        // causing API endpoints to redirect to /Account/Login instead of returning 401.
-        services.AddIdentityCore<AppUser>(opts =>
-            {
-                opts.Password.RequiredLength = 8;
-                opts.Password.RequireDigit = false;
-                opts.Password.RequireNonAlphanumeric = false;
-                opts.User.RequireUniqueEmail = true;
-            })
-            .AddRoles<IdentityRole>()
-            .AddEntityFrameworkStores<AppDbContext>()
-            .AddDefaultTokenProviders();
+        // Where people live decides almost everything below. Read from configuration once,
+        // here, so there is one answer rather than a scattering of Auth:Mode checks that
+        // can disagree.
+        var ownsItsUsers = string.Equals(
+            configuration["Auth:Mode"] ?? "sso", "local", StringComparison.OrdinalIgnoreCase);
+
+        if (ownsItsUsers)
+        {
+            // ASP.NET Core Identity — use AddIdentityCore to avoid overriding the JWT Bearer
+            // authentication scheme that is configured in Program.cs.
+            // AddIdentity would reset the default auth scheme to cookie-based Identity,
+            // causing API endpoints to redirect to /Account/Login instead of returning 401.
+            services.AddIdentityCore<AppUser>(opts =>
+                {
+                    opts.Password.RequiredLength = 8;
+                    opts.Password.RequireDigit = false;
+                    opts.Password.RequireNonAlphanumeric = false;
+                    opts.User.RequireUniqueEmail = true;
+                })
+                .AddRoles<IdentityRole>()
+                .AddEntityFrameworkStores<AppDbContext>()
+                .AddDefaultTokenProviders();
+        }
 
         // Auth services
-        services.AddScoped<IUserService, UserService>();
+        // Roles live in this product's own database in both modes, keyed by whatever the
+        // configured identity provider calls a person. Registered outside the Identity
+        // block above because it does not depend on Identity being registered at all —
+        // which is the point, since SSO mode will stop registering it.
+        services.AddScoped<Innovayse.Domain.Auth.Interfaces.ISubjectRoleStore, SubjectRoleStore>();
+
+        // One provider, never both. In SSO mode ASP.NET Identity is not registered at all,
+        // so there is no code path that could write a person row even by accident — which
+        // is what let a second, drifting copy of every user exist before.
+        if (ownsItsUsers)
+        {
+            services.AddScoped<Innovayse.Application.Auth.Interfaces.IIdentityProvider, LocalIdentityProvider>();
+            services.AddScoped<Innovayse.Application.Auth.Interfaces.IUserProvisioning, LocalUserProvisioning>();
+            services.AddScoped<IUserService, UserService>();
+        }
+        else
+        {
+            services.AddScoped<Innovayse.Application.Auth.Interfaces.IIdentityProvider, SsoIdentityProvider>();
+            services.AddScoped<Innovayse.Application.Auth.Interfaces.IUserProvisioning, SsoModeUserProvisioning>();
+
+            // The SSO's service API, addressed by the same authority the token validation
+            // uses. The service key is this product's own credential, not a user's.
+            services.AddHttpClient<SsoServiceClient>(client =>
+            {
+                var authority = configuration["Sso:Authority"]
+                    ?? throw new InvalidOperationException(
+                        "Sso:Authority must be set when Auth:Mode is not 'local' — "
+                        + "it is where this product reads its people from.");
+                client.BaseAddress = new Uri(authority.TrimEnd('/') + "/");
+                client.DefaultRequestHeaders.Add("X-Service-Key", configuration["Sso:ServiceKey"] ?? string.Empty);
+            });
+        }
 
         // Client services
         services.AddScoped<IClientRepository, ClientRepository>();

@@ -136,11 +136,18 @@ public sealed class SsoIdentityProviderTests
         handler.Requests[0].RequestUri!.Query.Should().Contain("a%2Bb%40example.com");
     }
 
+    /// <summary>The batch reply, used by both bulk lookups below.</summary>
+    private const string TwoAccounts =
+        """
+        {"users":[
+          {"id":"sub-1","email":"ada@example.com","firstName":"Ada","lastName":"Lovelace","twoFactorEnabled":true},
+          {"id":"sub-2","email":"grace@example.com","firstName":"Grace","lastName":"Hopper","twoFactorEnabled":false}]}
+        """;
+
     [Fact]
     public async Task GetEmailsBySubjectsAsync_ReturnsWhatTheSsoKnowsAsync()
     {
-        var (provider, _) = Build(_ => Json(HttpStatusCode.OK,
-            """{"emails":{"sub-1":"ada@example.com","sub-2":"grace@example.com"}}"""));
+        var (provider, _) = Build(_ => Json(HttpStatusCode.OK, TwoAccounts));
 
         var emails = await provider.GetEmailsBySubjectsAsync(
             ["sub-1", "sub-2", "sub-3"], CancellationToken.None);
@@ -148,6 +155,37 @@ public sealed class SsoIdentityProviderTests
         emails.Should().HaveCount(2);
         emails["sub-1"].Should().Be("ada@example.com");
         emails.ContainsKey("sub-3").Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task GetAccountsBySubjectsAsync_ReturnsWholeAccountsInOneCallAsync()
+    {
+        var (provider, handler) = Build(_ => Json(HttpStatusCode.OK, TwoAccounts));
+
+        var accounts = await provider.GetAccountsBySubjectsAsync(
+            ["sub-1", "sub-2", "sub-3"], CancellationToken.None);
+
+        accounts.Should().HaveCount(2);
+        accounts["sub-1"].Email.Should().Be("ada@example.com");
+        accounts["sub-1"].FirstName.Should().Be("Ada");
+        accounts["sub-1"].TwoFactorEnabled.Should().BeTrue();
+        accounts["sub-2"].TwoFactorEnabled.Should().BeFalse();
+        accounts.ContainsKey("sub-3").Should().BeFalse();
+
+        // One request for the set, not one per subject — the whole reason this exists.
+        handler.Requests.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task GetAccountsBySubjectsAsync_WhenTheSsoFails_ThrowsAsync()
+    {
+        // Same rule as the single lookup: an empty page would read as "none of these
+        // people exist", and every row on the screen would show as an orphan.
+        var (provider, _) = Build(_ => new HttpResponseMessage(HttpStatusCode.BadGateway));
+
+        var act = () => provider.GetAccountsBySubjectsAsync(["sub-1"], CancellationToken.None);
+
+        await act.Should().ThrowAsync<HttpRequestException>();
     }
 
     [Fact]

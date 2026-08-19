@@ -20,12 +20,19 @@ namespace Innovayse.Application.Auth.Interfaces;
 /// Whether a second factor is set up. Read-only here: it is turned on and off wherever the
 /// account lives, and this product only shows it.
 /// </param>
+/// <param name="LastLoginAt">
+/// When this person last signed in to this product, or null if the provider does not
+/// track it. A local deployment tracks it directly; the SSO tracks sign-ins to itself,
+/// not to any one product it serves, so an SSO-backed provider leaves this null rather
+/// than answering a question about a different thing.
+/// </param>
 public sealed record IdentityAccount(
     string Subject,
     string Email,
     string FirstName,
     string LastName,
-    bool TwoFactorEnabled = false);
+    bool TwoFactorEnabled = false,
+    DateTimeOffset? LastLoginAt = null);
 
 /// <summary>
 /// Reads people from wherever they live — this product's own database, or the SSO.
@@ -56,6 +63,19 @@ public interface IIdentityProvider
     /// </para>
     /// </summary>
     Task<IReadOnlyDictionary<string, string>> GetEmailsBySubjectsAsync(
+        IEnumerable<string> subjects, CancellationToken ct);
+
+    /// <summary>
+    /// Full accounts for many subjects at once, keyed by subject. Subjects the provider
+    /// does not know are absent.
+    ///
+    /// <para>
+    /// For the same reason as <see cref="GetEmailsBySubjectsAsync"/>, and used where a page
+    /// of rows needs more than the address — the client list shows each row's 2FA status,
+    /// which needs the whole account, not just the email.
+    /// </para>
+    /// </summary>
+    Task<IReadOnlyDictionary<string, IdentityAccount>> GetAccountsBySubjectsAsync(
         IEnumerable<string> subjects, CancellationToken ct);
 
     /// <summary>One page of people, optionally filtered, with the unpaged total.</summary>

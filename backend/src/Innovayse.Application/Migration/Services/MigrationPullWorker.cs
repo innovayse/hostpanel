@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Auth;
+using Innovayse.Domain.Auth.Interfaces;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Billing.Interfaces;
 using Innovayse.Domain.Clients;
@@ -33,7 +34,9 @@ public sealed class MigrationPullWorker(
     IMigrationJobRepository repo,
     IMigrationLogRepository logRepo,
     IHttpClientFactory httpClientFactory,
-    IUserService userService,
+    IIdentityProvider identity,
+    IUserProvisioning provisioning,
+    ISubjectRoleStore roles,
     IClientRepository clientRepo,
     IInvoiceRepository invoiceRepo,
     IClientServiceRepository serviceRepo,
@@ -241,7 +244,7 @@ public sealed class MigrationPullWorker(
 
     private async Task<ImportResult> ImportClientAsync(ClientRecord rec, CancellationToken ct)
     {
-        var existing = await userService.FindByEmailAsync(rec.Email, ct);
+        var existing = await identity.FindByEmailAsync(rec.Email, ct);
         if (existing is not null)
         {
             logger.LogDebug("Client {Email} already exists — skipping", rec.Email);
@@ -249,8 +252,9 @@ public sealed class MigrationPullWorker(
         }
 
         var randomPassword = $"Mig@{Guid.NewGuid():N}"[..16] + "1!";
-        var userId = await userService.CreateAsync(rec.Email, randomPassword, ct, rec.FirstName, rec.LastName);
-        await userService.AddToRoleAsync(userId, Roles.Client, ct);
+        var userId = await provisioning.CreateAsync(
+            rec.Email, randomPassword, rec.FirstName, rec.LastName, ct);
+        await roles.AddAsync(userId, Roles.Client, ct);
 
         var clientEntity = Client.Create(userId, rec.FirstName, rec.LastName, rec.Email, rec.Company);
 
@@ -1394,14 +1398,13 @@ public sealed class MigrationPullWorker(
     /// <summary>Looks up the Innovayse Client.Id for a given email address.</summary>
     private async Task<int?> ResolveClientIdAsync(string email, CancellationToken ct)
     {
-        var user = await userService.FindByEmailAsync(email, ct);
+        var user = await identity.FindByEmailAsync(email, ct);
         if (user is null)
         {
             return null;
         }
 
-        var (userId, _) = user.Value;
-        var client = await clientRepo.FindByUserIdAsync(userId, ct);
+        var client = await clientRepo.FindByUserIdAsync(user.Subject, ct);
         return client?.Id;
     }
 

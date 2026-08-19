@@ -111,4 +111,28 @@ public sealed class SubjectRoleStoreTests(IntegrationTestFactory factory)
 
         roles.Should().BeEquivalentTo([Roles.Reseller]);
     }
+
+    /// <summary>
+    /// Backs the first-run bootstrap check. Uses a role name unique to this test rather
+    /// than <see cref="Roles.Admin"/>, which other tests in this class also grant —
+    /// reusing it here would make the "nobody holds it" half of this check depend on
+    /// test ordering.
+    /// </summary>
+    [Fact]
+    public async Task AnyHasRoleAsync_ReflectsWhetherAnyoneHoldsItAsync()
+    {
+        var role = $"role-{Guid.NewGuid()}";
+        var subject = $"sub-{Guid.NewGuid()}";
+
+        var before = await WithStoreAsync(factory, store => store.AnyHasRoleAsync(role, CancellationToken.None));
+
+        var after = await WithStoreAsync(factory, async store =>
+        {
+            await store.AddAsync(subject, role, CancellationToken.None);
+            return await store.AnyHasRoleAsync(role, CancellationToken.None);
+        });
+
+        before.Should().BeFalse();
+        after.Should().BeTrue();
+    }
 }

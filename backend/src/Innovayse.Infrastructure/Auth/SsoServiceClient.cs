@@ -50,18 +50,22 @@ public sealed class SsoServiceClient(HttpClient http)
         return await GetByIdAsync(found.UserId, ct);
     }
 
-    /// <summary>Email addresses for many subjects at once, keyed by subject.</summary>
-    public async Task<IReadOnlyDictionary<string, string>> GetEmailsAsync(
+    /// <summary>Accounts for many subjects at once, keyed by subject.</summary>
+    public async Task<IReadOnlyDictionary<string, SsoAccount>> GetBatchAsync(
         IReadOnlyCollection<string> subjects, CancellationToken ct)
     {
-        if (subjects.Count == 0) return new Dictionary<string, string>();
+        if (subjects.Count == 0) return new Dictionary<string, SsoAccount>();
 
         using var response = await http.PostAsJsonAsync(
-            "api/service/users/emails", new { ids = subjects }, ct);
+            "api/service/users/batch", new { ids = subjects }, ct);
         response.EnsureSuccessStatusCode();
 
-        var body = await response.Content.ReadFromJsonAsync<SsoEmailsResponse>(ct);
-        return body?.Emails ?? new Dictionary<string, string>();
+        var body = await response.Content.ReadFromJsonAsync<SsoBatchResponse>(ct);
+        if (body is null) return new Dictionary<string, SsoAccount>();
+
+        return body.Users.ToDictionary(
+            u => u.Id,
+            u => new SsoAccount(u.Id, u.Email, u.FirstName, u.LastName, u.TwoFactorEnabled));
     }
 
     /// <summary>One page of accounts, with the unpaged total.</summary>
@@ -97,8 +101,8 @@ public sealed class SsoServiceClient(HttpClient http)
     private sealed record SsoLookupResponse(
         [property: JsonPropertyName("userId")] string UserId);
 
-    private sealed record SsoEmailsResponse(
-        [property: JsonPropertyName("emails")] Dictionary<string, string> Emails);
+    private sealed record SsoBatchResponse(
+        [property: JsonPropertyName("users")] List<SsoListItem> Users);
 
     private sealed record SsoListResponse(
         [property: JsonPropertyName("total")] int Total,

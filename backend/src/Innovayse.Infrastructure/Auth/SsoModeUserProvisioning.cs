@@ -15,11 +15,27 @@ public sealed class SsoModeUserProvisioning : IUserProvisioning
 {
     /// <inheritdoc/>
     public Task<string> CreateAsync(
-        string email, string? firstName, string? lastName, CancellationToken ct) =>
+        string email, string password, string? firstName, string? lastName, CancellationToken ct) =>
         throw new UserProvisioningNotAllowedException("create an account");
 
     /// <inheritdoc/>
-    public Task UpdateNameAsync(
-        string subject, string firstName, string lastName, CancellationToken ct) =>
+    public Task UpdateProfileAsync(
+        string subject, string firstName, string lastName, string? language, CancellationToken ct) =>
         throw new UserProvisioningNotAllowedException("change someone's name");
+
+    /// <inheritdoc/>
+    public Task ChangeEmailAsync(string subject, string email, CancellationToken ct) =>
+        throw new UserProvisioningNotAllowedException("change someone's sign-in address");
+
+    /// <inheritdoc/>
+    public Task DeleteAsync(string subject, CancellationToken ct) =>
+        throw new UserProvisioningNotAllowedException("delete an account");
+
+    /// <inheritdoc/>
+    public Task SetPasswordAsync(string subject, string password, CancellationToken ct) =>
+        throw new UserProvisioningNotAllowedException("set someone's password");
+
+    /// <inheritdoc/>
+    public Task<string> IssuePasswordResetTokenAsync(string subject, CancellationToken ct) =>
+        throw new UserProvisioningNotAllowedException("issue a password reset");
 }

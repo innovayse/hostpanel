@@ -22,4 +22,17 @@ public interface ISubjectRoleStore
 
     /// <summary>Revokes a role. Revoking one not held is not an error.</summary>
     Task RemoveAsync(string subject, string role, CancellationToken ct);
+
+    /// <summary>
+    /// Whether any subject currently holds this role.
+    ///
+    /// <para>
+    /// Backs the first-run bootstrap check: a fresh deployment offers the first person to
+    /// sign in a chance to become Admin, and stops offering it the moment anyone holds
+    /// that role. Asking "does <c>Admin</c> have a holder" is the subject-keyed
+    /// replacement for the old "does any local user row exist" check, which stopped
+    /// meaning anything once a deployment could have no local user rows at all.
+    /// </para>
+    /// </summary>
+    Task<bool> AnyHasRoleAsync(string role, CancellationToken ct);
 }

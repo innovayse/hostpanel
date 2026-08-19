@@ -15,9 +15,16 @@ using Microsoft.EntityFrameworkCore;
 /// </summary>
 public sealed class LocalIdentityProvider(UserManager<AppUser> users) : IIdentityProvider
 {
+    /// <summary>
+    /// Live accounts only. A deleted one keeps its row so the records that reference it
+    /// still say who they belonged to, but it is not a person this product will hand back
+    /// — every caller here is asking about somebody who still has an account.
+    /// </summary>
+    private IQueryable<AppUser> Live => users.Users.AsNoTracking().Where(u => u.DeletedAt == null);
+
     /// <inheritdoc/>
     public async Task<IdentityAccount?> FindBySubjectAsync(string subject, CancellationToken ct) =>
-        Map(await users.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == subject, ct));
+        Map(await Live.FirstOrDefaultAsync(u => u.Id == subject, ct));
 
     /// <inheritdoc/>
     public async Task<IdentityAccount?> FindByEmailAsync(string email, CancellationToken ct)
@@ -26,8 +33,7 @@ public sealed class LocalIdentityProvider(UserManager<AppUser> users) : IIdentit
         // case-insensitive and index-friendly — unlike a ToLower() on the stored column,
         // which cannot use the index.
         var normalized = users.NormalizeEmail(email);
-        return Map(await users.Users.AsNoTracking()
-            .FirstOrDefaultAsync(u => u.NormalizedEmail == normalized, ct));
+        return Map(await Live.FirstOrDefaultAsync(u => u.NormalizedEmail == normalized, ct));
     }
 
     /// <inheritdoc/>
@@ -37,7 +43,7 @@ public sealed class LocalIdentityProvider(UserManager<AppUser> users) : IIdentit
         var ids = subjects.Distinct().ToList();
         if (ids.Count == 0) return new Dictionary<string, string>();
 
-        var rows = await users.Users.AsNoTracking()
+        var rows = await Live
             .Where(u => ids.Contains(u.Id) && u.Email != null)
             .Select(u => new { u.Id, u.Email })
             .ToListAsync(ct);
@@ -46,10 +52,22 @@ public sealed class LocalIdentityProvider(UserManager<AppUser> users) : IIdentit
     }
 
     /// <inheritdoc/>
+    public async Task<IReadOnlyDictionary<string, IdentityAccount>> GetAccountsBySubjectsAsync(
+        IEnumerable<string> subjects, CancellationToken ct)
+    {
+        var ids = subjects.Distinct().ToList();
+        if (ids.Count == 0) return new Dictionary<string, IdentityAccount>();
+
+        var rows = await Live.Where(u => ids.Contains(u.Id)).ToListAsync(ct);
+
+        return rows.ToDictionary(u => u.Id, u => Map(u)!);
+    }
+
+    /// <inheritdoc/>
     public async Task<(IReadOnlyList<IdentityAccount> Items, int Total)> ListAsync(
         string? search, int page, int pageSize, CancellationToken ct)
     {
-        var query = users.Users.AsNoTracking();
+        var query = Live;
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -83,5 +101,6 @@ public sealed class LocalIdentityProvider(UserManager<AppUser> users) : IIdentit
             LastName: user.LastName,
             // Identity's own flag is not used here: this product stores the secret itself,
             // so a configured secret is what "enabled" means.
-            TwoFactorEnabled: !string.IsNullOrEmpty(user.TwoFactorSecret));
+            TwoFactorEnabled: !string.IsNullOrEmpty(user.TwoFactorSecret),
+            LastLoginAt: user.LastLoginAt);
 }

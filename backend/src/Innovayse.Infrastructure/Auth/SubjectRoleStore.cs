@@ -39,4 +39,8 @@ public sealed class SubjectRoleStore(AppDbContext db) : ISubjectRoleStore
             .Where(x => x.Subject == subject && x.Role == role)
             .ExecuteDeleteAsync(ct);
     }
+
+    /// <inheritdoc/>
+    public async Task<bool> AnyHasRoleAsync(string role, CancellationToken ct) =>
+        await db.SubjectRoles.AnyAsync(x => x.Role == role, ct);
 }

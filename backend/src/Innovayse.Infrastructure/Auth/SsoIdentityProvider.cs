@@ -23,9 +23,20 @@ public sealed class SsoIdentityProvider(SsoServiceClient sso) : IIdentityProvide
         Map(await sso.GetByEmailAsync(email, ct));
 
     /// <inheritdoc/>
-    public Task<IReadOnlyDictionary<string, string>> GetEmailsBySubjectsAsync(
-        IEnumerable<string> subjects, CancellationToken ct) =>
-        sso.GetEmailsAsync(subjects.Distinct().ToList(), ct);
+    public async Task<IReadOnlyDictionary<string, string>> GetEmailsBySubjectsAsync(
+        IEnumerable<string> subjects, CancellationToken ct)
+    {
+        var accounts = await sso.GetBatchAsync(subjects.Distinct().ToList(), ct);
+        return accounts.ToDictionary(kv => kv.Key, kv => kv.Value.Email);
+    }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyDictionary<string, IdentityAccount>> GetAccountsBySubjectsAsync(
+        IEnumerable<string> subjects, CancellationToken ct)
+    {
+        var accounts = await sso.GetBatchAsync(subjects.Distinct().ToList(), ct);
+        return accounts.ToDictionary(kv => kv.Key, kv => Map(kv.Value)!);
+    }
 
     /// <inheritdoc/>
     public async Task<(IReadOnlyList<IdentityAccount> Items, int Total)> ListAsync(

@@ -84,6 +84,18 @@ services:
       Auth__Mode: ${AUTH_MODE}
       Sso__Authority: ${SSO_URL}
       Sso__ClientId: ${SSO_CLIENT_ID}
+      # How this product reads its people out of the SSO, under AUTH_MODE=sso. It is
+      # a machine credential, not a user's: the SSO gates /api/service/* on it and
+      # answers 401 without it. Must equal innovayse-sso's SERVICE_AUTH_API_KEY.
+      #
+      # Absent, the API still starts and the header goes out empty, so every account
+      # lookup 401s — and the provider throws on 401 rather than reporting the person
+      # as missing, precisely so this shows up as an error instead of as customers
+      # who appear to have been deleted.
+      #
+      # No :?required, for the same reason as the client secret below: a local-mode
+      # host never reads it and should not be stopped over it.
+      Sso__ServiceKey: ${SSO_SERVICE_KEY}
       # The cookie session for the admin SPA, read only when AUTH_MODE=sso.
       # AddInnovayseAuth is skipped entirely under local — what a standalone box
       # runs — so none of these have to be filled in there. Under sso all of them

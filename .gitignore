@@ -62,3 +62,8 @@ admin/.env.production
 # Junk folders
 undefined/
 whmcs_dump.sql
+
+# Pre-deploy database dumps. deploy:prod writes them into the checkout it deploys
+# from, so they sit inside the working tree and would otherwise show as untracked
+# on every production host.
+backups/

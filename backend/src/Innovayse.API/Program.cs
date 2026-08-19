@@ -48,6 +48,10 @@ try
 
     var authMode = builder.Configuration["Auth:Mode"] ?? "sso";
 
+    // The scheme that stands in front of the real ones under SSO mode. See where it is
+    // registered, below AddInnovayseAuth, for what it is for.
+    const string SmartAuthScheme = "InnovayseSmart";
+
     // JwtTokenService is always registered — admin panel uses local auth regardless of mode
     builder.Services.AddSingleton<Innovayse.API.Auth.JwtTokenService>();
 
@@ -159,6 +163,44 @@ try
         // API with an SSO token, and standalone deployments keep LocalJwt. That is
         // why this is an additional scheme rather than a replacement.
         builder.Services.AddInnovayseAuth(builder.Configuration);
+
+        // …except that registering it made it the default scheme, which is not what
+        // "additional" means. Everything below turns on the difference between the
+        // default POLICY and the default SCHEME:
+        //
+        //   [Authorize]                     uses DefaultPolicy, which names all three
+        //                                   schemes below and therefore worked.
+        //   [Authorize(Roles = "Client")]   does not. Naming a role makes MVC build a
+        //                                   policy on the spot, and that policy carries
+        //                                   no schemes, so it falls back to the default
+        //                                   authenticate scheme — the cookie.
+        //
+        // So every one of the 85 role-annotated endpoints stopped reading the
+        // Authorization header. A caller presenting a perfectly good SSO token was
+        // challenged for a cookie it does not have and got a bare 401, with no
+        // WWW-Authenticate to say why. That is the whole client portal: its Nuxt server
+        // calls this API with a bearer token, so /api/me/* answered 401 to every
+        // request and the customer's dashboard rendered empty.
+        //
+        // A policy scheme restores the intent. It authenticates nothing itself; it
+        // picks the real scheme per request, so a bearer token is read as a bearer
+        // token whether or not the attribute happened to name a role.
+        builder.Services.AddAuthentication(opts =>
+            {
+                opts.DefaultAuthenticateScheme = SmartAuthScheme;
+                opts.DefaultChallengeScheme = SmartAuthScheme;
+            })
+            .AddPolicyScheme(SmartAuthScheme, "Bearer when one is offered, cookie otherwise", opts =>
+            {
+                opts.ForwardDefaultSelector = context =>
+                    context.Request.Headers.Authorization.FirstOrDefault()
+                        ?.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) == true
+                            // The bearer handler has its own selector that sends locally
+                            // issued tokens on to LocalJwt, so this only has to choose
+                            // between "a token" and "a cookie".
+                            ? JwtBearerDefaults.AuthenticationScheme
+                            : global::Innovayse.Auth.CookieSessionHandler.SchemeName;
+            });
 
         // The cookie principal carries the SSO's claims; the roles live in this
         // database. The transformation maps one onto the other.

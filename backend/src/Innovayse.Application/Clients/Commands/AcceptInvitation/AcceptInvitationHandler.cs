@@ -1,32 +1,31 @@
 namespace Innovayse.Application.Clients.Commands.AcceptInvitation;
 
-using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Auth;
+using Innovayse.Domain.Auth.Interfaces;
 using Innovayse.Domain.Clients.Interfaces;
 
 /// <summary>
 /// Handles <see cref="AcceptInvitationCommand"/>.
-/// Validates the invitation token, creates an Identity user with the specified password,
-/// links the user to the client account with the invitation's permissions, and returns the
-/// new user ID so the API layer can issue an auth token for immediate login.
+/// Validates the invitation token, links the already-authenticated caller to the client
+/// account with the invitation's permissions, and returns their subject.
 /// </summary>
 /// <param name="invitationRepo">Invitation repository for token lookup.</param>
 /// <param name="clientRepo">Client repository for loading the client account.</param>
-/// <param name="userService">Identity user service for account creation and role assignment.</param>
+/// <param name="roles">Role store, for granting the Client role.</param>
 /// <param name="uow">Unit of work for persisting changes.</param>
 public sealed class AcceptInvitationHandler(
     IInvitationRepository invitationRepo,
     IClientRepository clientRepo,
-    IUserService userService,
+    ISubjectRoleStore roles,
     IUnitOfWork uow)
 {
     /// <summary>
-    /// Accepts the invitation, creates a user account, links it to the client, and returns the user ID.
+    /// Accepts the invitation, links the caller to the client, and returns their subject.
     /// </summary>
-    /// <param name="cmd">The accept invitation command with token and password.</param>
+    /// <param name="cmd">The accept invitation command, carrying the token and the caller's subject.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The newly created Identity user ID for token generation by the API layer.</returns>
+    /// <returns>The caller's subject, unchanged.</returns>
     /// <exception cref="InvalidOperationException">
     /// Thrown when the invitation token is not found, the invitation is expired or already accepted,
     /// or the client account is not found.
@@ -47,11 +46,12 @@ public sealed class AcceptInvitationHandler(
             throw new InvalidOperationException("This invitation has already been accepted.");
         }
 
-        // With SSO, user is already provisioned by OnTokenValidated — just update profile fields
-        await userService.UpdateUserAsync(cmd.UserId, invitation.FirstName, invitation.LastName, invitation.Email, null, ct);
-
-        // Add to the Client role
-        await userService.AddToRoleAsync(cmd.UserId, Roles.Client, ct);
+        // The caller is already signed in — the API layer resolved their subject from the
+        // token before invoking this. Nothing here writes to their account: the invitation
+        // carries a name and address only so the email that delivered it could be
+        // addressed, and copying those over the account's own details would let whoever
+        // sent the invitation rename the person who accepted it.
+        await roles.AddAsync(cmd.UserId, Roles.Client, ct);
 
         // Load the client and link the new user with the invitation's permissions
         var client = await clientRepo.FindByIdAsync(invitation.ClientId, ct)

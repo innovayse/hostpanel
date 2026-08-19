@@ -78,14 +78,14 @@ public sealed class TicketNotificationHandlersTests
             var clientRepo = new Mock<IClientRepository>();
             clientRepo.Setup(r => r.FindByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(client);
 
-            var userService = new Mock<IUserService>();
-            userService.Setup(s => s.FindByIdAsync(client.UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((client.UserId, "jane@example.com"));
+            var identity = new Mock<IIdentityProvider>();
+            identity.Setup(s => s.FindBySubjectAsync(client.UserId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new IdentityAccount(client.UserId, "jane@example.com", "Jane", "Doe"));
 
             var departmentRepo = new Mock<IDepartmentRepository>();
             var bus = new Mock<IMessageBus>();
 
-            var handler = new TicketRepliedHandler(bus.Object, ticketRepo.Object, departmentRepo.Object, clientRepo.Object, userService.Object);
+            var handler = new TicketRepliedHandler(bus.Object, ticketRepo.Object, departmentRepo.Object, clientRepo.Object, identity.Object);
 
             await handler.HandleAsync(new TicketRepliedEvent(ticket.Id, IsStaffReply: true), CancellationToken.None);
 
@@ -109,10 +109,10 @@ public sealed class TicketNotificationHandlersTests
             departmentRepo.Setup(r => r.FindByIdAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(department);
 
             var clientRepo = new Mock<IClientRepository>();
-            var userService = new Mock<IUserService>();
+            var identity = new Mock<IIdentityProvider>();
             var bus = new Mock<IMessageBus>();
 
-            var handler = new TicketRepliedHandler(bus.Object, ticketRepo.Object, departmentRepo.Object, clientRepo.Object, userService.Object);
+            var handler = new TicketRepliedHandler(bus.Object, ticketRepo.Object, departmentRepo.Object, clientRepo.Object, identity.Object);
 
             await handler.HandleAsync(new TicketRepliedEvent(ticket.Id, IsStaffReply: false), CancellationToken.None);
 
@@ -138,12 +138,12 @@ public sealed class TicketNotificationHandlersTests
             var clientRepo = new Mock<IClientRepository>();
             clientRepo.Setup(r => r.FindByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(client);
 
-            var userService = new Mock<IUserService>();
-            userService.Setup(s => s.FindByIdAsync(client.UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((client.UserId, "jane@example.com"));
+            var identity = new Mock<IIdentityProvider>();
+            identity.Setup(s => s.FindBySubjectAsync(client.UserId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new IdentityAccount(client.UserId, "jane@example.com", "Jane", "Doe"));
 
             var bus = new Mock<IMessageBus>();
-            var handler = new TicketClosedHandler(bus.Object, ticketRepo.Object, clientRepo.Object, userService.Object);
+            var handler = new TicketClosedHandler(bus.Object, ticketRepo.Object, clientRepo.Object, identity.Object);
 
             await handler.HandleAsync(new TicketClosedEvent(ticket.Id, 1), CancellationToken.None);
 
@@ -160,9 +160,9 @@ public sealed class TicketNotificationHandlersTests
             var clientRepo = new Mock<IClientRepository>();
             clientRepo.Setup(r => r.FindByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync((Client?)null);
 
-            var userService = new Mock<IUserService>();
+            var identity = new Mock<IIdentityProvider>();
             var bus = new Mock<IMessageBus>();
-            var handler = new TicketClosedHandler(bus.Object, ticketRepo.Object, clientRepo.Object, userService.Object);
+            var handler = new TicketClosedHandler(bus.Object, ticketRepo.Object, clientRepo.Object, identity.Object);
 
             await handler.HandleAsync(new TicketClosedEvent(1, 1), CancellationToken.None);
 

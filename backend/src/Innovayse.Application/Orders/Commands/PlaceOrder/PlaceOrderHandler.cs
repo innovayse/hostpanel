@@ -6,6 +6,7 @@ using Innovayse.Application.Domains.DTOs;
 using Innovayse.Application.Domains.Queries.GetTldPricing;
 using Innovayse.Application.Orders.DTOs;
 using Innovayse.Domain.Auth;
+using Innovayse.Domain.Auth.Interfaces;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Billing.Interfaces;
 using Innovayse.Domain.Clients;
@@ -26,7 +27,8 @@ using Wolverine;
 /// <param name="clientRepo">Client repository for client lookups.</param>
 /// <param name="invoiceRepo">Invoice repository for creating the linked invoice.</param>
 /// <param name="uow">Unit of work for persistence.</param>
-/// <param name="userService">Identity user management for guest checkout registration.</param>
+/// <param name="provisioning">Creates the account for guest checkout registration.</param>
+/// <param name="roles">Role store, for granting the Client role.</param>
 /// <param name="bus">Wolverine message bus for invoking TLD pricing queries.</param>
 public sealed class PlaceOrderHandler(
     IOrderRepository orderRepo,
@@ -34,7 +36,8 @@ public sealed class PlaceOrderHandler(
     IClientRepository clientRepo,
     IInvoiceRepository invoiceRepo,
     IUnitOfWork uow,
-    IUserService userService,
+    IUserProvisioning provisioning,
+    ISubjectRoleStore roles,
     IMessageBus bus)
 {
     /// <summary>
@@ -112,8 +115,14 @@ public sealed class PlaceOrderHandler(
 
     /// <summary>
     /// Resolves the client ID from the command. If <see cref="PlaceOrderCommand.ClientId"/>
-    /// is provided, validates it exists. Otherwise creates a new Identity user and
+    /// is provided, validates it exists. Otherwise creates a new account and
     /// <see cref="Client"/> record for guest checkout.
+    ///
+    /// <para>
+    /// Guest checkout is a local-mode flow. Where an SSO owns the accounts this product
+    /// cannot create one, so the provisioner refuses and says so — the customer has to
+    /// sign in first, which is the only way their order can belong to anyone.
+    /// </para>
     /// </summary>
     /// <param name="cmd">The place order command.</param>
     /// <param name="ct">Cancellation token.</param>
@@ -134,8 +143,9 @@ public sealed class PlaceOrderHandler(
                 "Authentication required. Your session may have expired — please log in again to complete your order.");
         }
 
-        var userId = await userService.CreateAsync(cmd.Email!, cmd.Password!, ct);
-        await userService.AddToRoleAsync(userId, Roles.Client, ct);
+        var userId = await provisioning.CreateAsync(
+            cmd.Email!, cmd.Password!, cmd.FirstName, cmd.LastName, ct);
+        await roles.AddAsync(userId, Roles.Client, ct);
 
         var newClient = Client.Create(userId, cmd.FirstName!, cmd.LastName!, cmd.Email!);
         clientRepo.Add(newClient);

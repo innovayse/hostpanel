@@ -14,7 +14,7 @@ using Wolverine;
 public sealed class DomainExpiringNotificationHandler(
     IMessageBus bus,
     IClientRepository clientRepo,
-    IUserService userService,
+    IIdentityProvider identity,
     ILogger<DomainExpiringNotificationHandler> logger)
 {
     /// <summary>
@@ -37,7 +37,7 @@ public sealed class DomainExpiringNotificationHandler(
                 return;
             }
 
-            var user = await userService.FindByIdAsync(client.UserId, ct);
+            var user = await identity.FindBySubjectAsync(client.UserId, ct);
             if (user is null)
             {
                 logger.LogWarning(
@@ -60,14 +60,14 @@ public sealed class DomainExpiringNotificationHandler(
                 }
             };
 
-            await bus.InvokeAsync(new SendEmailCommand(user.Value.Email, "domain-expiring", data), ct);
+            await bus.InvokeAsync(new SendEmailCommand(user.Email, "domain-expiring", data), ct);
 
             logger.LogInformation(
                 "Sent domain-expiring notification for domain {DomainName} (ID {DomainId}, expires in {Days} days) to {Email}.",
                 evt.Name,
                 evt.DomainId,
                 daysUntilExpiry,
-                user.Value.Email);
+                user.Email);
         }
         catch (Exception ex)
         {

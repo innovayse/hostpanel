@@ -17,7 +17,7 @@ using Wolverine;
 /// </summary>
 /// <param name="clientRepo">Client repository for loading the client account.</param>
 /// <param name="invitationRepo">Invitation repository for persistence and duplicate checks.</param>
-/// <param name="userService">Identity user service for owner and duplicate user checks.</param>
+/// <param name="identity">Reads the owner and any existing account with the invited address.</param>
 /// <param name="templateRepo">Email template repository for seeding the invite template.</param>
 /// <param name="uow">Unit of work for persisting changes.</param>
 /// <param name="bus">Wolverine message bus for sending the invitation email.</param>
@@ -25,7 +25,7 @@ using Wolverine;
 public sealed class InviteUserToClientHandler(
     IClientRepository clientRepo,
     IInvitationRepository invitationRepo,
-    IUserService userService,
+    IIdentityProvider identity,
     IEmailTemplateRepository templateRepo,
     IUnitOfWork uow,
     IMessageBus bus,
@@ -49,7 +49,7 @@ public sealed class InviteUserToClientHandler(
             ?? throw new InvalidOperationException($"Client {cmd.ClientId} not found.");
 
         // Check if the email matches the account owner
-        var owner = await userService.FindByIdAsync(client.UserId, ct)
+        var owner = await identity.FindBySubjectAsync(client.UserId, ct)
             ?? throw new InvalidOperationException($"Owner user {client.UserId} not found.");
 
         if (string.Equals(owner.Email, cmd.Email, StringComparison.OrdinalIgnoreCase))
@@ -57,14 +57,17 @@ public sealed class InviteUserToClientHandler(
             throw new InvalidOperationException("Cannot invite the account owner as an additional user.");
         }
 
-        // Check if a user with this email is already linked as an additional user
-        var matchingUserIds = await userService.FindUserIdsByEmailAsync(cmd.Email, ct);
-        foreach (var userId in matchingUserIds)
+        // Check whether the account at this address is already linked.
+        //
+        // An exact lookup, where this used to search for addresses containing the term.
+        // That was a substring match standing in for an equality check: inviting
+        // "sam@example.com" to a client that already had "samuel@example.com" was refused,
+        // and the message named the address the caller had typed rather than the one that
+        // actually clashed.
+        var existing = await identity.FindByEmailAsync(cmd.Email, ct);
+        if (existing is not null && client.Users.Any(u => u.UserId == existing.Subject))
         {
-            if (client.Users.Any(u => u.UserId == userId))
-            {
-                throw new InvalidOperationException($"A user with email '{cmd.Email}' is already linked to this client.");
-            }
+            throw new InvalidOperationException($"A user with email '{cmd.Email}' is already linked to this client.");
         }
 
         // Check for existing pending invitation

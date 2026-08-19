@@ -1,6 +1,7 @@
 namespace Innovayse.API.Clients;
 
 using Innovayse.API.Clients.Requests;
+using Innovayse.Application.Admin.DTOs;
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Clients.Commands.AddContact;
 using Innovayse.Application.Clients.Commands.AddUserToClient;
@@ -31,12 +32,12 @@ using Wolverine;
 /// All endpoints require the Admin or Reseller role.
 /// </summary>
 /// <param name="bus">Wolverine message bus.</param>
-/// <param name="userService">User service for Identity lookups.</param>
+/// <param name="identity">Reads the people behind client rows.</param>
 /// <param name="db">EF Core database context.</param>
 [ApiController]
 [Route("api/clients")]
 [Authorize(Roles = $"{Roles.Admin},{Roles.Reseller}")]
-public sealed class ClientsController(IMessageBus bus, IUserService userService, AppDbContext db) : ControllerBase
+public sealed class ClientsController(IMessageBus bus, IIdentityProvider identity, AppDbContext db) : ControllerBase
 {
     /// <summary>
     /// Returns a paginated list of clients with optional filters.
@@ -182,7 +183,7 @@ public sealed class ClientsController(IMessageBus bus, IUserService userService,
     }
 
     /// <summary>
-    /// Returns the Identity user linked to a client account.
+    /// Returns the person linked to a client account.
     /// </summary>
     /// <param name="id">The client primary key.</param>
     /// <param name="ct">Cancellation token.</param>
@@ -191,14 +192,21 @@ public sealed class ClientsController(IMessageBus bus, IUserService userService,
     public async Task<IActionResult> GetUserAsync(int id, CancellationToken ct)
     {
         var client = await bus.InvokeAsync<ClientDto>(new GetClientQuery(id), ct);
-        var user = await userService.GetUserWithAccountsAsync(client.UserId, ct);
+        var account = await identity.FindBySubjectAsync(client.UserId, ct);
 
-        if (user is null)
+        if (account is null)
         {
             return NotFound();
         }
 
-        return Ok(user);
+        // Assembled from the account and the client this route already loaded, rather than
+        // from one store that held both. Language is a hostpanel preference and has no
+        // answer where an SSO owns the person; the timestamp is the client's, which is the
+        // one this screen is about.
+        return Ok(new UserDetailDto(
+            account.Subject, account.FirstName, account.LastName, account.Email,
+            Language: null, account.LastLoginAt, client.CreatedAt,
+            [new UserAccountDto(client.Id, client.FirstName, client.LastName, client.CompanyName, IsOwner: true)]));
     }
 
     /// <summary>
@@ -353,8 +361,8 @@ public sealed class ClientsController(IMessageBus bus, IUserService userService,
             return NotFound();
         }
 
-        var userInfo = await userService.FindByIdAsync(client.UserId, ct);
-        var email = userInfo?.Email ?? string.Empty;
+        var account = await identity.FindBySubjectAsync(client.UserId, ct);
+        var email = account?.Email ?? string.Empty;
 
         var f = new HashSet<string>(fields, StringComparer.OrdinalIgnoreCase);
         var result = new Dictionary<string, object?>();

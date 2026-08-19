@@ -21,7 +21,7 @@ public sealed class DomainRenewedHandler(
     IDomainRepository domainRepo,
     IClientServiceRepository serviceRepo,
     IClientRepository clientRepo,
-    IUserService userService,
+    IIdentityProvider identity,
     IMessageBus bus,
     ILogger<DomainRenewedHandler> logger)
 {
@@ -117,7 +117,7 @@ public sealed class DomainRenewedHandler(
                 return;
             }
 
-            var user = await userService.FindByIdAsync(client.UserId, ct);
+            var user = await identity.FindBySubjectAsync(client.UserId, ct);
             if (user is null)
             {
                 return;
@@ -133,12 +133,12 @@ public sealed class DomainRenewedHandler(
                 }
             };
 
-            await bus.InvokeAsync(new SendEmailCommand(user.Value.Email, "domain-renewed", data), ct);
+            await bus.InvokeAsync(new SendEmailCommand(user.Email, "domain-renewed", data), ct);
 
             logger.LogInformation(
                 "Sent domain-renewed notification for domain {DomainId} to {Email}.",
                 evt.DomainId,
-                user.Value.Email);
+                user.Email);
         }
         catch (Exception ex)
         {

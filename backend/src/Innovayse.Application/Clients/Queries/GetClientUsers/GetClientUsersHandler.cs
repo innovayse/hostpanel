@@ -11,11 +11,11 @@ using Innovayse.Domain.Clients.Interfaces;
 /// </summary>
 /// <param name="clientRepo">Client repository.</param>
 /// <param name="clientUserRepo">Client-user link repository.</param>
-/// <param name="userService">Identity user service.</param>
+/// <param name="identity">Reads the people behind the linked subjects.</param>
 public sealed class GetClientUsersHandler(
     IClientRepository clientRepo,
     IClientUserRepository clientUserRepo,
-    IUserService userService)
+    IIdentityProvider identity)
 {
     /// <summary>
     /// Returns all users linked to the client (owner first, then additional users).
@@ -31,29 +31,36 @@ public sealed class GetClientUsersHandler(
 
         var additionalUsers = await clientUserRepo.FindByClientIdAsync(query.ClientId, ct);
 
+        // One lookup for everyone on the screen, rather than one per row. The previous
+        // version asked per user, which is a round trip per row once the people behind
+        // those subjects live in another service.
+        var subjects = new List<string> { client.UserId };
+        subjects.AddRange(additionalUsers.Select(u => u.UserId));
+        var accounts = await identity.GetAccountsBySubjectsAsync(subjects, ct);
+
         var result = new List<ClientUserDto>();
 
-        // Owner — use GetUserWithAccountsAsync which returns full profile data
-        var ownerDetail = await userService.GetUserWithAccountsAsync(client.UserId, ct);
-        if (ownerDetail is not null)
+        if (accounts.TryGetValue(client.UserId, out var owner))
         {
             result.Add(new ClientUserDto(
-                ownerDetail.Id, ownerDetail.FirstName, ownerDetail.LastName,
-                ownerDetail.Email, true, (int)ClientPermission.All,
-                ownerDetail.LastLoginAt, ownerDetail.CreatedAt));
+                owner.Subject, owner.FirstName, owner.LastName, owner.Email,
+                IsOwner: true, (int)ClientPermission.All,
+                owner.LastLoginAt,
+                // When they became this client's owner, not when their account was created.
+                // The account may predate the client, may belong to an SSO that this
+                // product cannot ask, and the column beside it already means the same
+                // thing for every other row on the screen.
+                client.CreatedAt));
         }
 
-        // Additional non-owner users
-        foreach (var cu in additionalUsers)
+        foreach (var link in additionalUsers)
         {
-            var userDetail = await userService.GetUserWithAccountsAsync(cu.UserId, ct);
-            if (userDetail is not null)
-            {
-                result.Add(new ClientUserDto(
-                    userDetail.Id, userDetail.FirstName, userDetail.LastName,
-                    userDetail.Email, false, (int)cu.Permissions,
-                    userDetail.LastLoginAt, cu.CreatedAt));
-            }
+            if (!accounts.TryGetValue(link.UserId, out var account)) continue;
+
+            result.Add(new ClientUserDto(
+                account.Subject, account.FirstName, account.LastName, account.Email,
+                IsOwner: false, (int)link.Permissions,
+                account.LastLoginAt, link.CreatedAt));
         }
 
         return result;

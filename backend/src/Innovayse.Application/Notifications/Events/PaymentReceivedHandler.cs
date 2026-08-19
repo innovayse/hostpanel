@@ -12,7 +12,7 @@ using Wolverine;
 public sealed class PaymentReceivedHandler(
     IMessageBus bus,
     IClientRepository clientRepo,
-    IUserService userService)
+    IIdentityProvider identity)
 {
     /// <summary>
     /// Resolves the client email and sends a payment-received confirmation email.
@@ -28,7 +28,7 @@ public sealed class PaymentReceivedHandler(
             return;
         }
 
-        var user = await userService.FindByIdAsync(client.UserId, ct);
+        var user = await identity.FindBySubjectAsync(client.UserId, ct);
         if (user is null)
         {
             return;
@@ -44,6 +44,6 @@ public sealed class PaymentReceivedHandler(
             }
         };
 
-        await bus.InvokeAsync(new SendEmailCommand(user.Value.Email, "payment-received", data), ct);
+        await bus.InvokeAsync(new SendEmailCommand(user.Email, "payment-received", data), ct);
     }
 }

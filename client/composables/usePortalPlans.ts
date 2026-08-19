@@ -67,11 +67,19 @@ export const usePortalPlans = () => {
     // the card can then render as a list.
     const { summary, features } = parseDescription(product.description ?? '')
 
+    // Free is decided by the price, not by the name. Matching on "free" in a name —
+    // which the classic page does — features a "Freelancer Hosting" that costs money
+    // and misses a free plan called anything else, in any language. The number is the
+    // thing being advertised.
+    const monthly = Number(money?.monthly)
+    const isFree = Number.isFinite(monthly) && monthly === 0
+
     return {
       id: product.id,
       name: product.name,
       description: summary,
       features,
+      isFree,
       priceMonthly: format(money?.monthly),
       priceAnnual: format(money?.annually, 12),
       href: localePath(`/configure/${product.id}`),

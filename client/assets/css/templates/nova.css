@@ -1,0 +1,86 @@
+/*
+ * nova template design tokens.
+ *
+ * Every token is prefixed `--n-` and declared only where nova is the active
+ * template: on the `.tpl-nova` root each nova component paints, and on the
+ * <html> element when `data-template="nova"` — layouts/default.vue stamps that
+ * attribute. The second selector exists because the body surface and the
+ * scrollbar are painted by elements no template component owns; without it
+ * those rules would have nothing to resolve against. Neither selector is
+ * global, so aurora's and classic's tokens are untouched whichever template is
+ * active.
+ *
+ * The unsuffixed block is the dark palette, mirroring aurora and the portal's
+ * default: useAppColorMode applies its class on the client, so server-rendered
+ * HTML carries no class at all, and a palette defined only under .dark would
+ * render the first paint unstyled.
+ *
+ * Several tokens hold rgba values, so Tailwind's opacity modifier cannot
+ * decompose them: write border-nova-border, never border-nova-border/50.
+ */
+html[data-template='nova'],
+html[data-template='nova'].dark,
+.tpl-nova {
+  --n-bg: #08191f;
+  --n-surface: #0e2731;
+  --n-surface-2: #14333f;
+  --n-ink: #edf6f8;
+  --n-muted: #a2bcc5;
+  --n-brand: #7f8dff;
+  --n-brand-hover: #9aa5ff;
+  --n-accent: #ffb54d;
+  --n-border: rgba(226, 244, 250, 0.13);
+  --n-success: #3ddc97;
+  --n-danger: #ff8383;
+}
+
+html[data-template='nova'].light,
+.light .tpl-nova {
+  --n-bg: #f4f8fa;
+  --n-surface: #ffffff;
+  --n-surface-2: #eaf2f5;
+  --n-ink: #0a2029;
+  --n-muted: #4a6470;
+  --n-brand: #2f4fd8;
+  --n-brand-hover: #233cad;
+  --n-accent: #f0a11a;
+  --n-border: rgba(10, 32, 41, 0.13);
+  --n-success: #0f8a5f;
+  --n-danger: #c2334d;
+}
+
+/*
+ * Motion. Declared here rather than as utilities so a single media query can
+ * switch the whole template off for a visitor who asked for reduced motion —
+ * the reveal must never be the thing that hides content from them, so the
+ * end state, not the start state, is what the query restores.
+ */
+.tpl-nova .n-reveal {
+  animation: n-reveal-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes n-reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tpl-nova .n-reveal {
+    animation: none;
+  }
+
+  .tpl-nova *,
+  .tpl-nova *::before,
+  .tpl-nova *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

@@ -9,6 +9,7 @@
 @import '@fontsource/jetbrains-mono/400.css';
 @import '@fontsource/jetbrains-mono/500.css';
 @import './templates/aurora.css';
+@import './templates/nova.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

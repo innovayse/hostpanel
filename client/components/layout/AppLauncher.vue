@@ -77,7 +77,7 @@ const apps = computed(() => [
   { id: 'erp',       name: 'ERP',       desc: 'Business & operations',         icon: 'lucide:building-2',  url: config.public.erpUrl + '/app',               comingSoon: false },
   { id: 'sheets',    name: 'Sheets',    desc: 'Collaborative spreadsheets',    icon: 'lucide:table',       url: config.public.sheetsUrl,                     comingSoon: false },
   { id: 'email',     name: 'Email',     desc: 'Read and send emails',          icon: 'lucide:mail',        url: config.public.emailUrl,                      comingSoon: false },
-  { id: 'nextcloud', name: 'Files',     desc: 'Files & collaboration',         icon: 'lucide:folder',      url: config.public.nextcloudUrl,                  comingSoon: true  },
+  { id: 'drive',     name: 'Files',     desc: 'Files & collaboration',         icon: 'lucide:folder',      url: config.public.driveUrl,                      comingSoon: false },
 ])
 
 function toggle() { open.value = !open.value }

@@ -107,6 +107,8 @@ export interface NovaPlan {
   name: string
   description: string
   features: string[]
+  /** True when the plan costs nothing, so it can be shown on its own terms. */
+  isFree: boolean
   /** Formatted monthly price, or `—` when the backend priced neither. */
   priceMonthly: string
   /** Formatted annual price expressed per month. */

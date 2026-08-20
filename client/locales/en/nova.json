@@ -47,7 +47,9 @@
       "save": "Save {percent}%",
       "cta": "Choose plan",
       "empty": "Plans temporarily unavailable.",
-      "emptyHint": "Nothing is wrong with your account — the catalogue is not answering right now. Please try again shortly."
+      "emptyHint": "Nothing is wrong with your account — the catalogue is not answering right now. Please try again shortly.",
+      "freeBadge": "Start for free",
+      "freeForever": "free forever"
     },
     "comparison": {
       "eyebrow": "Compare",

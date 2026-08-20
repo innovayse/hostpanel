@@ -61,6 +61,10 @@ export const yearlyDiscountPercent = (
  * operator has to maintain it. Plans without a usable monthly price take no
  * part — an unpriced product must not decide the badge for the priced ones.
  *
+ * A free plan takes no part either. It is not competing with the others on
+ * price, and letting a zero sit at the bottom of the ordering drags the middle
+ * down onto the plan below the one a visitor is actually being pointed at.
+ *
  * Ordering is by amount and then by id, so two plans at the same price can
  * never swap places between renders. Where that lower-middle plan shares its
  * price with another, the choice between them is arbitrary and the badge is
@@ -71,6 +75,7 @@ export const yearlyDiscountPercent = (
  */
 export const popularPlanId = (plans: readonly PlanCard[]): number | null => {
   const priced = plans
+    .filter(plan => !plan.isFree)
     .map(plan => ({ id: plan.id, amount: parseAmount(plan.priceMonthly) }))
     .filter((entry): entry is { id: number, amount: number } => entry.amount !== null)
     .sort((a, b) => a.amount - b.amount || a.id - b.id)
@@ -98,6 +103,9 @@ export const toNovaPlans = (plans: readonly PlanCard[]): NovaPlan[] => {
   return plans.map(plan => ({
     ...plan,
     popular: plan.id === popularId,
-    discountPercent: yearlyDiscountPercent(plan.priceMonthly, plan.priceAnnual),
+    // A free plan has no yearly saving to state, whatever the two prices say.
+    discountPercent: plan.isFree
+      ? null
+      : yearlyDiscountPercent(plan.priceMonthly, plan.priceAnnual),
   }))
 }

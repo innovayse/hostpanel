@@ -14,10 +14,14 @@ const plan = (id: number, priceMonthly: string, priceAnnual = '—'): PlanCard =
   name: `Plan ${id}`,
   description: '',
   features: [],
+  isFree: false,
   priceMonthly,
   priceAnnual,
   href: `/configure/${id}`,
 })
+
+/** A plan the catalogue prices at nothing. */
+const freePlan = (id: number): PlanCard => ({ ...plan(id, '$0.00', '$0.00'), isFree: true })
 
 describe('parseAmount', () => {
   it('reads the amount back out of a formatted price', () => {
@@ -97,6 +101,20 @@ describe('popularPlanId', () => {
   it('withholds the badge when the middle price is shared, which makes the choice arbitrary', () => {
     expect(popularPlanId([plan(1, '$3.00'), plan(2, '$6.00'), plan(3, '$6.00')])).toBeNull()
   })
+
+  it('leaves a free plan out of the ordering, so it cannot drag the middle down', () => {
+    const plans = [freePlan(1), plan(2, '$3.00'), plan(3, '$6.00'), plan(4, '$9.00')]
+
+    // Without the exclusion the zero would be the cheapest of four and the badge
+    // would land on plan 2 — the cheapest plan anybody actually pays for.
+    expect(popularPlanId(plans)).toBe(3)
+  })
+
+  it('never badges the free plan itself', () => {
+    const plans = [freePlan(1), plan(2, '$3.00'), plan(3, '$6.00')]
+
+    expect(popularPlanId(plans)).not.toBe(1)
+  })
 })
 
 describe('toNovaPlans', () => {
@@ -112,6 +130,13 @@ describe('toNovaPlans', () => {
 
     expect(result[0]?.discountPercent).toBe(20)
     expect(result[1]?.discountPercent).toBeNull()
+  })
+
+  it('states no yearly saving for a free plan, whatever its two prices say', () => {
+    const result = toNovaPlans([freePlan(1), plan(2, '$10.00', '$8.00')])
+
+    expect(result[0]?.discountPercent).toBeNull()
+    expect(result[1]?.discountPercent).toBe(20)
   })
 
   it('gives an empty list back for an empty catalogue', () => {

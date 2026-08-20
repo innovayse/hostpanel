@@ -8,6 +8,11 @@
       class="absolute -top-3 left-6 rounded-full bg-nova-accent px-3 py-1 text-[12px] font-extrabold uppercase tracking-[0.06em] text-[#12212a]"
     >{{ t('nova.plans.popular') }}</p>
 
+    <p
+      v-else-if="plan.isFree"
+      class="absolute -top-3 left-6 rounded-full border border-nova-brand bg-nova-bg px-3 py-1 text-[12px] font-extrabold uppercase tracking-[0.06em] text-nova-brand"
+    >{{ t('nova.plans.freeBadge') }}</p>
+
     <h3 class="text-lg font-bold text-nova-ink">{{ plan.name }}</h3>
     <p v-if="plan.description" class="mt-1.5 text-sm leading-relaxed text-nova-muted">
       {{ plan.description }}
@@ -15,10 +20,17 @@
 
     <p class="mt-6 flex flex-wrap items-end gap-x-2">
       <span class="text-[2.4rem] font-extrabold leading-none tracking-tight text-nova-ink">
-        {{ yearly ? plan.priceAnnual : plan.priceMonthly }}
+        {{ plan.isFree || !yearly ? plan.priceMonthly : plan.priceAnnual }}
       </span>
+      <!--
+        A free plan costs the same whichever billing period is selected, so
+        saying "per month, billed yearly" over a zero would be describing an
+        invoice that never arrives.
+      -->
       <span class="pb-1 text-sm text-nova-muted">
-        {{ yearly ? t('nova.plans.perMonthAnnual') : t('nova.plans.perMonth') }}
+        {{ plan.isFree
+          ? t('nova.plans.freeForever')
+          : (yearly ? t('nova.plans.perMonthAnnual') : t('nova.plans.perMonth')) }}
       </span>
     </p>
 

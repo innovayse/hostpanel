@@ -12,7 +12,8 @@
       "menu": "Open menu",
       "close": "Close menu",
       "cart": "Cart",
-      "skipToContent": "Skip to content"
+      "skipToContent": "Skip to content",
+      "preferences": "Language and theme"
     },
     "hero": {
       "badge": "Hosting, domains and email in one account",

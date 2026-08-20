@@ -1,6 +1,12 @@
 <template>
   <!-- Floating Action Button — Peafowl fan-out -->
-  <div ref="fabRef" class="fixed bottom-6 right-6 z-50">
+  <!--
+    z-[60] rather than z-50: UiCookieBanner is a full-width bar fixed to the same
+    corner at z-50, and being later in the document it took every click meant for
+    this button until it was dismissed. The button stayed visible the whole time,
+    which is the worst version of the problem — it looked live and was not.
+  -->
+  <div ref="fabRef" class="fixed bottom-6 right-6 z-[60]">
 
     <!-- Fan-out sub-buttons -->
     <div class="absolute bottom-0 right-0">
@@ -15,10 +21,10 @@
         leave-to-class="opacity-0 scale-0"
       >
         <button
-          v-if="isOpen && chatProvider === 'chatwoot'"
+          v-if="isOpen && liveChatEnabled"
           class="group absolute bottom-0 right-0 flex items-center justify-center"
           style="transform: translate(-5px, -75px); transition-delay: 0ms;"
-          aria-label="Live Chat"
+          :aria-label="$t('contact.info.quickConnect.liveChat')"
           @click.stop="openChat"
         >
           <span class="absolute right-full mr-2 px-2.5 py-1 bg-gray-900/90 text-white text-xs font-medium rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
@@ -104,6 +110,7 @@
       class="relative w-12 h-12 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 hover:scale-110 focus:outline-none"
       :class="isOpen ? 'bg-gray-700 rotate-45' : 'bg-gradient-to-br from-cyan-500 to-primary-600'"
       :style="isOpen ? '' : 'box-shadow: 0 4px 24px rgba(6,182,212,0.5);'"
+      :aria-expanded="isOpen"
       aria-label="Contact us"
       @click="isOpen = !isOpen"
     >
@@ -132,8 +139,19 @@ function handleOutsideClick(e: MouseEvent) {
   }
 }
 
-onMounted(() => document.addEventListener('click', handleOutsideClick))
-onUnmounted(() => document.removeEventListener('click', handleOutsideClick))
+/** Escape closes the fan-out, the keyboard equivalent of clicking away from it. */
+function handleEscape(e: KeyboardEvent) {
+  if (e.key === 'Escape') isOpen.value = false
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleOutsideClick)
+  document.addEventListener('keydown', handleEscape)
+})
+onUnmounted(() => {
+  document.removeEventListener('click', handleOutsideClick)
+  document.removeEventListener('keydown', handleEscape)
+})
 const defaultMessage = computed(() => t('whatsapp.defaultMessage'))
 
 // Contact channels come from the operator's settings rather than being baked in,
@@ -147,10 +165,33 @@ const telegramHandle = computed(() => getPortalSetting('portal.contact.telegram'
 /** Chat provider from configuration; empty hides the chat bubble. */
 const chatProvider = computed(() => getPortalSetting('portal.chat.provider', 'portalChatProvider'))
 
-/** Open Innochat widget */
+/**
+ * Whether to offer the live chat action.
+ *
+ * Both spellings are accepted. The provider is Innochat, which is what an
+ * operator configuring this today would reasonably write, but the setting has
+ * shipped seeded with `chatwoot` since the first release and existing installs
+ * have that value stored. Refusing it would have switched the widget off for
+ * every one of them on upgrade.
+ */
+const liveChatEnabled = computed(() =>
+  ['chatwoot', 'innochat'].includes(chatProvider.value.toLowerCase()))
+
+/**
+ * Opens the live chat widget.
+ *
+ * The widget is started by the loader in app.vue and exposes itself on the
+ * window; `openLiveChat` knows which global that is. It reports back rather
+ * than failing silently, and a failure is logged: a visitor clicking a chat
+ * button that does nothing has no way to tell that anything went wrong, and
+ * neither did anyone reading the console.
+ */
 function openChat() {
   isOpen.value = false
-  if (typeof window === 'undefined') return
-  ;(window as any).$chatwoot?.toggle('open')
+  if (!import.meta.client) return
+
+  if (!openLiveChat(window)) {
+    console.warn('[live chat] widget is not running; the SDK has not started it yet')
+  }
 }
 </script>

@@ -210,8 +210,8 @@ async function handleLogout() {
       await $fetch('/api/portal/auth/logout', { method: 'POST', credentials: 'include' })
     } catch { /* ignore — clear session regardless */ }
     store.reset()
-    // Navigate browser to SSO endsession (required to clear SSO session cookie at accounts.local)
-    const ssoPublicUrl = (config.public.ssoPublicUrl as string) || 'http://accounts.local'
+    // Navigate browser to SSO endsession (required to clear SSO session cookie at sso.local)
+    const ssoPublicUrl = (config.public.ssoPublicUrl as string) || 'http://sso.local'
     window.location.href = `${ssoPublicUrl}/connect/endsession?post_logout_redirect_uri=${encodeURIComponent(window.location.origin)}`
   } else {
     await logout()

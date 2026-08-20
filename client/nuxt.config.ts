@@ -84,7 +84,7 @@ export default defineNuxtConfig({
       erpUrl: process.env.NUXT_PUBLIC_ERP_URL || 'http://erp.local',
       sheetsUrl: process.env.NUXT_PUBLIC_SHEETS_URL || 'http://sheets.local',
       emailUrl: process.env.NUXT_PUBLIC_EMAIL_URL || 'http://email.local',
-      nextcloudUrl: process.env.NUXT_PUBLIC_NEXTCLOUD_URL || 'http://cloud.local',
+      driveUrl: process.env.NUXT_PUBLIC_DRIVE_URL || 'http://drive.local',
       whmcsUrl: (process.env.WHMCS_URL || '').replace(/\/+$/, ''),
       stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
       mainUrl: process.env.NUXT_PUBLIC_MAIN_URL || 'http://app.local',

@@ -4,7 +4,7 @@ import { randomBytes, createHash } from 'node:crypto'
  * GET /api/portal/auth/sso/switch?sub=XXX&redirect=/some/path
  *
  * Switches the active SSO session to a remembered account.
- * Generates a PKCE pair and redirects to accounts.local/switch-init
+ * Generates a PKCE pair and redirects to sso.local/switch-init
  * which auto-submits to the SSO switch endpoint, then comes back
  * via the normal OIDC callback with a new auth_token.
  */
@@ -61,8 +61,8 @@ export default defineEventHandler(async (event) => {
   })
   const oidcReturnUrl = `/connect/authorize?${oidcParams}`
 
-  // Redirect to accounts.local/switch-init — runs same-origin so sso_remembered cookie is sent
-  const ssoPublicUrl = (config.public.ssoPublicUrl as string) || 'http://accounts.local'
+  // Redirect to sso.local/switch-init — runs same-origin so sso_remembered cookie is sent
+  const ssoPublicUrl = (config.public.ssoPublicUrl as string) || 'http://sso.local'
   const switchInitUrl = `${ssoPublicUrl}/switch-init?sub=${encodeURIComponent(sub)}&returnUrl=${encodeURIComponent(oidcReturnUrl)}`
   return sendRedirect(event, switchInitUrl, 302)
 })

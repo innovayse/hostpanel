@@ -1,5 +1,13 @@
 <template>
-  <header class="tpl-nova sticky top-0 z-40 border-b border-nova-border bg-nova-bg/95 font-nova backdrop-blur">
+  <!--
+    z-[55] puts the bar, and the menu panel that hangs off it, above
+    UiCookieBanner. The banner is fixed at z-50 and grows tall on a narrow
+    screen — at 320px it covers the lower half of the viewport — so at z-40 the
+    open menu was drawn beneath it and its lower entries could not be tapped.
+    The floating contact button sits above both at z-[60]; it shares no space
+    with the header, so the order between them never shows.
+  -->
+  <header class="tpl-nova sticky top-0 z-[55] border-b border-nova-border bg-nova-bg/95 font-nova backdrop-blur">
     <a
       :href="`#${MAIN_CONTENT_ID}`"
       class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-nova-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-[#12212a]"
@@ -14,7 +22,14 @@
         <span class="text-lg font-bold tracking-tight">Innovayse</span>
       </NuxtLink>
 
-      <nav :aria-label="t('nova.nav.menu')" class="hidden flex-auto items-center justify-center gap-1 lg:flex">
+      <!--
+        The desktop layout starts at xl, not lg, and aurora's header switches at
+        the same point for the same reason: at 1024 the six links, the logo and
+        the full action row come to more than the container can hold, and the
+        row has no shrink path — it ran 33px past the edge and took the page's
+        horizontal scrollbar with it. Below xl the links live in the menu panel.
+      -->
+      <nav :aria-label="t('nova.nav.menu')" class="hidden flex-auto items-center justify-center gap-1 xl:flex">
         <NuxtLink
           v-for="item in NAV_ITEMS"
           :key="item.key"
@@ -25,9 +40,19 @@
         >{{ t(item.labelKey) }}</NuxtLink>
       </nav>
 
-      <div class="ml-auto flex items-center gap-1.5 lg:ml-0">
-        <UiLanguageSwitcher />
-        <UiThemeToggle />
+      <div class="ml-auto flex items-center gap-1.5 xl:ml-0">
+        <!--
+          Locale and theme are bar controls only where the bar has room for them.
+          Below xl they move into the menu panel: together they are about 130px
+          of fixed-width chrome, and with the logo, the cart and the menu button
+          the row could not fit a 390px screen — it did not wrap or shrink, it
+          simply ran past the edge and gave the whole page a horizontal scroll.
+          Neither control is lost; both are the first thing in the panel.
+        -->
+        <div class="hidden items-center gap-1.5 xl:flex">
+          <UiLanguageSwitcher />
+          <UiThemeToggle />
+        </div>
 
         <NuxtLink
           :to="localePath('/cart')"
@@ -54,7 +79,7 @@
         <button
           ref="toggleRef"
           type="button"
-          class="grid h-11 w-11 place-items-center rounded-xl border border-nova-border text-nova-ink lg:hidden"
+          class="grid h-11 w-11 place-items-center rounded-xl border border-nova-border text-nova-ink xl:hidden"
           :aria-expanded="menuOpen"
           :aria-controls="MENU_ID"
           :aria-label="menuOpen ? t('nova.nav.close') : t('nova.nav.menu')"
@@ -69,7 +94,7 @@
       v-if="menuOpen"
       :id="MENU_ID"
       ref="menuRef"
-      class="border-t border-nova-border bg-nova-surface px-4 pb-5 pt-2 sm:px-6 lg:hidden"
+      class="border-t border-nova-border bg-nova-surface px-4 pb-5 pt-2 sm:px-6 xl:hidden"
       @keydown="onMenuKeydown"
     >
       <nav :aria-label="t('nova.nav.menu')" class="flex flex-col">
@@ -82,6 +107,22 @@
           @click="closeMenu"
         >{{ t(item.labelKey) }}</NuxtLink>
       </nav>
+
+      <div class="mt-3 flex items-center justify-between gap-3 border-t border-nova-border pt-3">
+        <span class="text-sm text-nova-muted">{{ t('nova.nav.preferences') }}</span>
+        <!--
+          The locale and theme controls are shared components sized for a
+          pointer — 36px tall, below the 44px a finger needs. The arbitrary
+          variants raise their hit area here rather than in the components
+          themselves, which aurora and classic also render and which this
+          change must not reach. The nested selector deliberately matches only
+          each control's own trigger, not the locale dropdown's list items.
+        -->
+        <div class="flex items-center gap-2 [&>div>button]:min-h-[44px] [&>div>button]:min-w-[44px] [&>button]:min-h-[44px] [&>button]:min-w-[44px]">
+          <UiLanguageSwitcher />
+          <UiThemeToggle />
+        </div>
+      </div>
 
       <div class="mt-3 flex flex-col gap-2 border-t border-nova-border pt-3">
         <NuxtLink

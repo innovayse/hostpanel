@@ -25,42 +25,42 @@ injectSchema([
   websiteSchema()
 ])
 
-// Close Innochat widget when clicking outside it
+// Close the live chat widget when clicking outside it
 onMounted(() => {
   document.addEventListener('click', (e: MouseEvent) => {
     const target = e.target as HTMLElement
-    const widget = document.querySelector('.woot-widget-holder')
+    const widget = document.querySelector(LIVE_CHAT_HOLDER_SELECTOR)
     if (widget && !widget.contains(target)) {
-      const w = window as any
-      try { w.$chatwoot?.toggle('close') } catch {}
+      closeLiveChat(window)
     }
   })
 })
 
 const langMap: Record<string, string> = { en: 'en', ru: 'ru', hy: 'hy' }
+
+/** Website token for the default locale, and the fallback for any other. */
+const DEFAULT_CHAT_TOKEN = '9J2djCS9C979cK8qH55SKQgJ'
+
 const tokenMap: Record<string, string> = {
-  en: '9J2djCS9C979cK8qH55SKQgJ',
+  en: DEFAULT_CHAT_TOKEN,
   ru: 'UkwaS1xyNnNRv8SDj4kpNn2t',
   hy: 'aMzynyMYGE9p3oxwwUuMMEVa'
 }
 
-// Reactively update Innochat when locale changes
-watch(locale, (newLocale) => {
-  if (!process.client) return
-  
-  const apiLocale = langMap[newLocale] || 'en'
-  const w = window as any
+/** Language name recorded on the conversation, so an agent knows how to answer. */
+const languageOf = (code: string) =>
+  code === 'hy' ? 'Armenian' : code === 'ru' ? 'Russian' : 'English'
 
-  if (w.$chatwoot) {
-    w.$chatwoot.setLocale(apiLocale)
-    w.$chatwoot.setCustomAttributes({
-      language: newLocale === 'hy' ? 'Armenian' : newLocale === 'ru' ? 'Russian' : 'English'
-    })
-  }
+// Tell a widget that is already running about a locale change. A widget that is
+// not running is not an error here — the visitor may simply not have opened it.
+watch(locale, (newLocale) => {
+  if (!import.meta.client) return
+
+  setLiveChatLocale(window, langMap[newLocale] || 'en', languageOf(newLocale))
 })
 
 // Correct token for SSR injection
-const currentToken = computed(() => tokenMap[locale.value] ?? tokenMap.en)
+const currentToken = computed(() => tokenMap[locale.value] ?? DEFAULT_CHAT_TOKEN)
 
 useHead({
   htmlAttrs: {
@@ -73,28 +73,16 @@ useHead({
       tagPosition: 'head'
     },
     {
-      // Chatwoot live chat widget loader - SSR Injected token
-      innerHTML: `window.chatwootSettings = {"position":"right","type":"standard","launcherTitle":"","hideMessageBubble":true};
-      (function(d,t){
-        var BASE_URL="https://chat.innovayse.com";
-        var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
-        g.src=BASE_URL+"/packs/js/sdk.js";
-        g.async=true;
-        s.parentNode.insertBefore(g,s);
-        g.onload=function(){
-          if (!window.chatwootSDK) return;
-          window.chatwootSDK.run({
-            websiteToken: '${currentToken.value}',
-            baseUrl: BASE_URL
-          });
-          window.addEventListener('chatwoot:ready', function() {
-            window.$chatwoot.setLocale('${langMap[locale.value] || 'en'}');
-            window.$chatwoot.setCustomAttributes({
-              language: '${locale.value === 'hy' ? 'Armenian' : locale.value === 'ru' ? 'Russian' : 'English'}'
-            });
-          });
-        }
-      })(document,"script");`,
+      // Live chat widget loader. The globals it drives are named in
+      // utils/liveChat.ts rather than inline, because the provider is an
+      // Innochat build whose SDK shares none of Chatwoot's global names, and
+      // reaching for the wrong one fails without an error.
+      innerHTML: buildLiveChatLoader({
+        baseUrl: 'https://chat.innovayse.com',
+        websiteToken: currentToken.value,
+        locale: langMap[locale.value] || 'en',
+        language: languageOf(locale.value)
+      }),
       type: 'text/javascript',
       tagPosition: 'bodyClose'
     },

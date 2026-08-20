@@ -83,3 +83,24 @@ html[data-template='aurora'] ::-webkit-scrollbar-thumb {
   scrollbar-width: none !important;
   -webkit-overflow-scrolling: touch;
 }
+
+/*
+ * Under the nova template the page surface follows nova's own tokens, for the
+ * same reason aurora needs the rule above: the fixed colour at the top of this
+ * file pins the body dark, and a nova visitor in light mode would see that dark
+ * value at the edges and on overscroll. Scoped to data-template='nova', so no
+ * other template can be reached by it.
+ */
+html[data-template='nova'] body {
+  background-color: var(--n-bg);
+  color: var(--n-ink);
+}
+
+html[data-template='nova'] ::-webkit-scrollbar-track {
+  background: var(--n-bg);
+}
+
+html[data-template='nova'] ::-webkit-scrollbar-thumb {
+  background: var(--n-brand);
+  border-color: var(--n-bg);
+}

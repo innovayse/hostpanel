@@ -66,6 +66,24 @@ export default <Partial<Config>>{
         acbg: 'var(--ac-bg)',
         ok: 'var(--ok)',
         danger: 'var(--danger)',
+
+        // nova template design tokens. Prefixed --n-* and scoped to .tpl-nova
+        // (and html[data-template='nova']) so they cannot collide with the
+        // aurora tokens above. --n-border is rgba, so the opacity modifier
+        // cannot decompose it: use border-nova-border, never /50.
+        nova: {
+          bg: 'var(--n-bg)',
+          surface: 'var(--n-surface)',
+          'surface-2': 'var(--n-surface-2)',
+          ink: 'var(--n-ink)',
+          muted: 'var(--n-muted)',
+          brand: 'var(--n-brand)',
+          'brand-hover': 'var(--n-brand-hover)',
+          accent: 'var(--n-accent)',
+          border: 'var(--n-border)',
+          success: 'var(--n-success)',
+          danger: 'var(--n-danger)',
+        },
       },
       backgroundImage: {
         card: 'var(--card)',
@@ -84,6 +102,10 @@ export default <Partial<Config>>{
         sans: ['Inter Variable', 'Inter', 'system-ui', 'sans-serif'],
         aurora: ['Noto Sans Armenian', 'system-ui', 'sans-serif'],
         display: ['Noto Serif Armenian', 'serif'],
+        // nova is Latin-first, but Inter carries no Armenian coverage, so the
+        // hy locale would fall through to whatever the system picked. Noto Sans
+        // Armenian sits behind it to cover those glyphs.
+        nova: ['Inter Variable', 'Inter', 'Noto Sans Armenian', 'system-ui', 'sans-serif'],
         // JetBrains Mono carries no Armenian coverage, so an .հայ domain and the
         // dram sign both fall through to whatever the system picks and render as
         // the wrong glyphs. Noto Sans Armenian sits in the fallback chain to

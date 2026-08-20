@@ -232,7 +232,36 @@ image reads `NUXT_SITE_URL` at startup, which overrides the built-in value.
 | Template | Description |
 |---|---|
 | `aurora` | Default. Dark and light modes, Armenian typography, live domain search |
+| `nova` | Conversion-focused hosting landing page: pricing, plan comparison, security, migration, FAQ |
 | `classic` | The original storefront design |
+
+`nova` supplies its own header, footer, homepage and hosting page, and reuses
+aurora's domain search and checkout — the checkout is the ordering path, and a
+second copy of it would be a second place for a payment bug to live. Its design
+tokens are prefixed `--n-*` and declared only under `.tpl-nova` and
+`html[data-template='nova']`, so activating it cannot disturb the other two.
+
+Several of its cards state things this codebase cannot verify — NVMe storage, a
+CDN, server-side caching, a firewall, a malware scanner, a backup schedule, an
+uptime figure, free migration. Each waits on a setting and is hidden until an
+operator turns it on:
+
+| Setting | Shows |
+|---|---|
+| `portal.features.storage` | the SSD/NVMe storage card |
+| `portal.features.caching` | the server-side caching card |
+| `portal.features.cdn` | the CDN card |
+| `portal.features.firewall` | the firewall card |
+| `portal.features.malware` | the malware-protection card |
+| `portal.features.backups` | the backup cards, in the hero, trust bar and security grid |
+| `portal.trust.uptime` | the uptime figure in the trust bar, printed verbatim |
+| `portal.migration.free` | the "free migration" badge, when set to `true` |
+
+Any non-empty value turns the first six on; the uptime setting holds the figure
+itself. The comparison table and the testimonials section are data-driven the
+same way: the table renders only the specification lines entered under
+**Admin → Products → Specification**, and the testimonials section does not
+render at all, because nothing serves customer quotes yet.
 
 **Choosing one.** In order of precedence:
 

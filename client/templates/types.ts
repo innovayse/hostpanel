@@ -1,5 +1,5 @@
 /** Every template the portal can render. The first entry is the shipped default. */
-export const TEMPLATE_NAMES = ['aurora', 'classic'] as const
+export const TEMPLATE_NAMES = ['aurora', 'nova', 'classic'] as const
 
 /** A template the portal can render. */
 export type TemplateName = (typeof TEMPLATE_NAMES)[number]

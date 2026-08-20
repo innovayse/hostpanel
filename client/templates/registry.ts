@@ -19,6 +19,21 @@ export const templates: Record<TemplateName, Record<TemplateSlot, TemplateLoader
     domains: () => import('~/templates/aurora/pages/Domains.vue'),
     checkout: () => import('~/templates/aurora/pages/Checkout.vue'),
   },
+  /*
+   * nova reuses aurora's domain search and checkout deliberately. Both are
+   * working flows against live endpoints — the checkout in particular is the
+   * ordering path — and a second copy of them would be a second place for a
+   * payment bug to live. nova supplies its own header, footer and page bodies,
+   * which is where its design actually differs.
+   */
+  nova: {
+    header: () => import('~/templates/nova/layout/Header.vue'),
+    footer: () => import('~/templates/nova/layout/Footer.vue'),
+    home: () => import('~/templates/nova/pages/Home.vue'),
+    hosting: () => import('~/templates/nova/pages/Hosting.vue'),
+    domains: () => import('~/templates/aurora/pages/Domains.vue'),
+    checkout: () => import('~/templates/aurora/pages/Checkout.vue'),
+  },
   classic: {
     header: () => import('~/templates/classic/layout/Header.vue'),
     footer: () => import('~/templates/classic/layout/Footer.vue'),

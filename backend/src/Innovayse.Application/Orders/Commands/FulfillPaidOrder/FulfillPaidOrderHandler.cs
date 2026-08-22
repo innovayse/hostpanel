@@ -1,0 +1,186 @@
+namespace Innovayse.Application.Orders.Commands.FulfillPaidOrder;
+
+using Innovayse.Application.Billing.Interfaces;
+using Innovayse.Application.Common;
+using Innovayse.Application.Domains.Commands.RegisterDomain;
+using Innovayse.Application.Domains.Commands.TransferDomain;
+using Innovayse.Application.Services.Commands.OrderService;
+using Innovayse.Domain.Billing;
+using Innovayse.Domain.Billing.Interfaces;
+using Innovayse.Domain.Domains.Events;
+using Innovayse.Domain.Domains.Interfaces;
+using Innovayse.Domain.Orders;
+using Innovayse.Domain.Orders.Interfaces;
+using Microsoft.Extensions.Logging;
+using Wolverine;
+
+/// <summary>
+/// Handles <see cref="FulfillPaidOrderCommand"/>: accepts the paid order, dispatches
+/// domain registration/transfer or service creation per line item, auto-links a domain
+/// to a hosting service bought in the same order, and issues an automatic refund via
+/// the invoice's payment gateway when the registrar immediately rejects a domain.
+/// </summary>
+/// <param name="orderRepo">Order repository.</param>
+/// <param name="invoiceRepo">Invoice repository (for the auto-refund path).</param>
+/// <param name="stripeService">Stripe service used when the invoice was paid via Stripe.</param>
+/// <param name="pluginResolver">Resolver for hosted-gateway payment plugins.</param>
+/// <param name="domainRepo">Domain repository for auto-linking.</param>
+/// <param name="uow">Unit of work.</param>
+/// <param name="bus">Wolverine message bus.</param>
+/// <param name="logger">Structured logger.</param>
+public sealed class FulfillPaidOrderHandler(
+    IOrderRepository orderRepo,
+    IInvoiceRepository invoiceRepo,
+    IStripeService stripeService,
+    IPaymentPluginResolver pluginResolver,
+    IDomainRepository domainRepo,
+    IUnitOfWork uow,
+    IMessageBus bus,
+    ILogger<FulfillPaidOrderHandler> logger)
+{
+    /// <summary>Handles <see cref="FulfillPaidOrderCommand"/>.</summary>
+    /// <param name="cmd">The fulfill command.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when fulfillment is dispatched.</returns>
+    public async Task HandleAsync(FulfillPaidOrderCommand cmd, CancellationToken ct)
+    {
+        var order = await orderRepo.FindByIdAsync(cmd.OrderId, ct)
+            ?? throw new InvalidOperationException($"Order {cmd.OrderId} not found.");
+
+        if (order.Status != OrderStatus.Pending)
+        {
+            logger.LogInformation(
+                "Order {OrderId} is {Status}; fulfillment already ran — skipping.", order.Id, order.Status);
+            return;
+        }
+
+        order.Accept();
+        await uow.SaveChangesAsync(ct);
+
+        int? createdDomainId = null;
+        int? createdServiceId = null;
+        string? orderDomainName = null;
+
+        foreach (var item in order.Items)
+        {
+            if (item.DomainAction is not null)
+            {
+                try
+                {
+                    if (item.DomainAction == "register")
+                    {
+                        createdDomainId = await bus.InvokeAsync<int>(
+                            new RegisterDomainCommand(
+                                order.ClientId,
+                                item.Domain!,
+                                item.Years ?? 1,
+                                WhoisPrivacy: false,
+                                AutoRenew: true,
+                                Nameserver1: null,
+                                Nameserver2: null,
+                                FirstPaymentAmount: item.FirstPaymentAmount,
+                                RecurringAmount: item.RecurringAmount,
+                                PaymentMethod: order.PaymentMethod), ct);
+                    }
+                    else if (item.DomainAction == "transfer")
+                    {
+                        createdDomainId = await bus.InvokeAsync<int>(
+                            new TransferDomainCommand(
+                                order.ClientId,
+                                item.Domain!,
+                                item.EppCode!,
+                                WhoisPrivacy: false,
+                                FirstPaymentAmount: item.FirstPaymentAmount,
+                                RecurringAmount: item.RecurringAmount,
+                                PaymentMethod: order.PaymentMethod), ct);
+                    }
+
+                    orderDomainName = item.Domain;
+                }
+                catch (InvalidOperationException ex)
+                {
+                    // Registrar immediately rejected the order (duplicate domain, invalid TLD,
+                    // API error, etc.). Issue automatic refund and notify.
+                    var invoice = await invoiceRepo.FindByIdAsync(order.InvoiceId!.Value, ct)
+                        ?? throw new InvalidOperationException($"Invoice {order.InvoiceId} not found.");
+                    await HandleDomainRegistrationFailedAsync(invoice, order.ClientId, item.Domain!, ex.Message, ct);
+                }
+            }
+            else
+            {
+                createdServiceId = await bus.InvokeAsync<int>(
+                    new OrderServiceCommand(
+                        order.ClientId, item.ProductId, item.BillingCycle,
+                        item.FirstPaymentAmount, item.RecurringAmount,
+                        order.PaymentMethod, item.Domain ?? orderDomainName), ct);
+            }
+        }
+
+        // Auto-link domain to hosting service when both in same order
+        if (createdDomainId.HasValue && createdServiceId.HasValue)
+        {
+            var domain = await domainRepo.FindByIdAsync(createdDomainId.Value, ct);
+            domain?.LinkService(createdServiceId.Value);
+            await uow.SaveChangesAsync(ct);
+        }
+    }
+
+    /// <summary>
+    /// Issues an automatic refund through whichever gateway the invoice was paid with,
+    /// records it, and publishes <see cref="DomainRegistrationFailedEvent"/>.
+    /// </summary>
+    /// <param name="invoice">The invoice that was paid and must be refunded.</param>
+    /// <param name="clientId">The client who placed the order.</param>
+    /// <param name="domainName">The domain name that failed to register.</param>
+    /// <param name="reason">Human-readable reason from the registrar.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    private async Task HandleDomainRegistrationFailedAsync(
+        Invoice invoice, int clientId, string domainName, string reason, CancellationToken ct)
+    {
+        logger.LogError(
+            "Domain registration failed for '{DomainName}' (client {ClientId}): {Reason}. Issuing refund.",
+            domainName, clientId, reason);
+
+        try
+        {
+            string refundId;
+            string gateway;
+            if (invoice.GatewayModule is not null && invoice.GatewayOrderId is not null)
+            {
+                var plugin = await pluginResolver.ResolveAsync(invoice.GatewayModule, ct)
+                    ?? throw new InvalidOperationException(
+                        $"Payment plugin '{invoice.GatewayModule}' is not available for the refund.");
+                refundId = await plugin.RefundAsync(invoice.GatewayOrderId, (long)(invoice.Total * 100), ct);
+                gateway = invoice.GatewayModule;
+            }
+            else
+            {
+                refundId = await stripeService.RefundAsync(invoice.GatewayTransactionId!, ct);
+                gateway = "stripe";
+            }
+
+            invoice.AddRefund(
+                DateTimeOffset.UtcNow,
+                gateway: gateway,
+                transactionId: refundId,
+                amount: invoice.Total,
+                fees: 0,
+                notes: $"Automatic refund: domain registration failed for '{domainName}'. Reason: {reason}");
+            await uow.SaveChangesAsync(ct);
+
+            await bus.PublishAsync(new DomainRegistrationFailedEvent(clientId, domainName, invoice.Id, reason));
+        }
+        catch (Exception refundEx)
+        {
+            // Refund failed — log at critical level so it gets immediate attention.
+            // The domain was never created so no cleanup needed there,
+            // but the client was charged and could not be refunded automatically.
+            logger.LogCritical(
+                refundEx,
+                "REFUND FAILED for domain '{DomainName}' (client {ClientId}, invoice {InvoiceId}). " +
+                "Manual refund required. Original failure: {Reason}",
+                domainName, clientId, invoice.Id, reason);
+        }
+    }
+}

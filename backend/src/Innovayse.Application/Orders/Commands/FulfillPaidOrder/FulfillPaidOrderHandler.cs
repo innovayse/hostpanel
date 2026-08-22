@@ -57,6 +57,14 @@ public sealed class FulfillPaidOrderHandler(
         order.Accept();
         await uow.SaveChangesAsync(ct);
 
+        if (order.InvoiceId is null)
+        {
+            throw new InvalidOperationException($"Order {order.Id} has no linked invoice.");
+        }
+
+        var invoice = await invoiceRepo.FindByIdAsync(order.InvoiceId.Value, ct)
+            ?? throw new InvalidOperationException($"Invoice {order.InvoiceId} not found.");
+
         int? createdDomainId = null;
         int? createdServiceId = null;
         string? orderDomainName = null;
@@ -101,8 +109,6 @@ public sealed class FulfillPaidOrderHandler(
                 {
                     // Registrar immediately rejected the order (duplicate domain, invalid TLD,
                     // API error, etc.). Issue automatic refund and notify.
-                    var invoice = await invoiceRepo.FindByIdAsync(order.InvoiceId!.Value, ct)
-                        ?? throw new InvalidOperationException($"Invoice {order.InvoiceId} not found.");
                     await HandleDomainRegistrationFailedAsync(invoice, order.ClientId, item.Domain!, ex.Message, ct);
                 }
             }

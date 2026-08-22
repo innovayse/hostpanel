@@ -55,6 +55,15 @@ public sealed class Invoice : AggregateRoot
     /// <summary>Gets the external system ID (e.g. source system invoice ID) used for migration deduplication.</summary>
     public string? ExternalId { get; private set; }
 
+    /// <summary>Gets the payment plugin id that initiated the latest gateway payment session; null when none.</summary>
+    public string? GatewayModule { get; private set; }
+
+    /// <summary>Gets the gateway-side order id of the latest payment attempt; null when none.</summary>
+    public string? GatewayOrderId { get; private set; }
+
+    /// <summary>Gets the UTC timestamp when the latest gateway payment attempt started; null when none.</summary>
+    public DateTimeOffset? GatewayStartedAt { get; private set; }
+
     /// <summary>Gets optional notes for this invoice.</summary>
     public string? Notes { get; private set; }
 
@@ -245,6 +254,25 @@ public sealed class Invoice : AggregateRoot
         PaidAt = DateTimeOffset.UtcNow;
         GatewayTransactionId = gatewayTransactionId;
         AddDomainEvent(new PaymentReceivedEvent(Id, ClientId, Total, gatewayTransactionId));
+    }
+
+    /// <summary>
+    /// Records a new hosted-gateway payment attempt. Each attempt overwrites the previous
+    /// session — the gateway rejects reused order numbers, so retries always re-register.
+    /// </summary>
+    /// <param name="module">The payment plugin id (e.g. "innovayse-inecobank").</param>
+    /// <param name="gatewayOrderId">The gateway-side order id returned at registration.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the invoice is not payable.</exception>
+    public void SetGatewaySession(string module, string gatewayOrderId)
+    {
+        if (Status is not (InvoiceStatus.Unpaid or InvoiceStatus.Overdue))
+        {
+            throw new InvalidOperationException($"Cannot start a gateway payment for an invoice in status {Status}.");
+        }
+
+        GatewayModule = module;
+        GatewayOrderId = gatewayOrderId;
+        GatewayStartedAt = DateTimeOffset.UtcNow;
     }
 
     /// <summary>

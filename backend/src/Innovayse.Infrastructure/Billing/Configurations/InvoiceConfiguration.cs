@@ -24,6 +24,9 @@ public sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.Property(x => x.Notes).HasMaxLength(2000);
         builder.Property(x => x.InvoiceDate).IsRequired();
         builder.Property(x => x.PaymentMethod).HasMaxLength(100);
+        builder.Property(x => x.GatewayModule).HasMaxLength(100);
+        builder.Property(x => x.GatewayOrderId).HasMaxLength(255);
+        builder.Property(x => x.GatewayStartedAt);
         builder.Property(x => x.TaxRate).HasColumnType("numeric(5,2)").IsRequired();
         builder.Property(x => x.Tax).HasColumnType("numeric(18,4)").IsRequired();
         builder.Property(x => x.SubTotal).HasColumnType("numeric(18,4)").IsRequired();

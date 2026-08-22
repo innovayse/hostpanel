@@ -1,0 +1,21 @@
+{
+  "id": "innovayse-inecobank",
+  "name": "Inecobank",
+  "version": "1.0.0",
+  "author": "Innovayse",
+  "description": "Card payments via Inecobank's hosted payment page (Armenian Card gateway).",
+  "type": "Payment",
+  "category": "Payment Gateways",
+  "color": "#f36f21",
+  "entryPoint": "Innovayse.Providers.Inecobank.InecobankPaymentGateway",
+  "sdkVersion": "1.0",
+  "showInIntegrations": true,
+  "integrationsCategory": "Payment Gateways",
+  "fields": [
+    { "key": "gateway_url", "label": "Gateway URL",              "type": "text",   "required": true  },
+    { "key": "username",    "label": "API Username",             "type": "text",   "required": true  },
+    { "key": "password",    "label": "API Password",             "type": "secret", "required": true  },
+    { "key": "currency",    "label": "Currency (ISO 4217 numeric, default 051)", "type": "text", "required": false },
+    { "key": "language",    "label": "Payment page language (default hy)",       "type": "text", "required": false }
+  ]
+}

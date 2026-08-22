@@ -46,4 +46,10 @@ public interface IOrderRepository
 
     /// <summary>Finds an order by its order number string.</summary>
     Task<Order?> FindByOrderNumberAsync(string orderNumber, CancellationToken ct);
+
+    /// <summary>Finds the order linked to the given invoice, or null when the invoice is not order-backed.</summary>
+    /// <param name="invoiceId">The invoice primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The linked <see cref="Order"/>, or <see langword="null"/>.</returns>
+    Task<Order?> FindByInvoiceIdAsync(int invoiceId, CancellationToken ct);
 }

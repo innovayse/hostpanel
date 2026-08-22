@@ -37,14 +37,14 @@ public class PaymentPluginResolverTests
 
     private const string Module = "fake-pay";
 
-    private static PluginManifest Manifest() => new()
+    private static PluginManifest Manifest(PluginType type = PluginType.Payment) => new()
     {
         Id = Module,
         Name = "Fake Pay",
         Version = "1.0.0",
         Author = "Innovayse",
         Description = "Fake payment plugin for tests.",
-        Type = PluginType.Payment,
+        Type = type,
         Category = "Payment",
         EntryPoint = typeof(FakePaymentPlugin).FullName!,
         SdkVersion = "1.0.0",
@@ -54,18 +54,20 @@ public class PaymentPluginResolverTests
         ],
     };
 
-    private static PaymentPluginResolver CreateResolver(Dictionary<string, string> settings)
+    private static PaymentPluginResolver CreateResolver(
+        Dictionary<string, string> settings,
+        PluginType pluginType = PluginType.Payment,
+        IConfiguration? hostConfig = null)
     {
         var registry = new PluginRegistry();
-        registry.Register(new LoadedPlugin(Manifest(), typeof(FakePaymentPlugin)));
+        registry.Register(new LoadedPlugin(Manifest(pluginType), typeof(FakePaymentPlugin)));
 
         var repo = new Mock<ISettingRepository>();
         repo.Setup(r => r.ListAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(settings.Select(kv => Setting.Create(kv.Key, kv.Value, null)).ToList());
 
         var services = new ServiceCollection().BuildServiceProvider();
-        var hostConfig = new ConfigurationBuilder().Build();
-        return new PaymentPluginResolver(repo.Object, registry, services, hostConfig);
+        return new PaymentPluginResolver(repo.Object, registry, services, hostConfig ?? new ConfigurationBuilder().Build());
     }
 
     [Fact]
@@ -112,5 +114,54 @@ public class PaymentPluginResolverTests
         var resolver = CreateResolver([]);
 
         Assert.Null(await resolver.ResolveAsync("nope", CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task ResolveAsync_WrongPluginType_ReturnsNull()
+    {
+        var resolver = CreateResolver(
+            new()
+            {
+                [$"integration:{Module}:is_enabled"] = "true",
+                [$"integration:{Module}:api_key"] = "k-123",
+            },
+            pluginType: PluginType.Provisioning);
+
+        Assert.Null(await resolver.ResolveAsync(Module, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task ResolveAsync_IsEnabledKeyAbsent_ReturnsNull()
+    {
+        var resolver = CreateResolver(new()
+        {
+            [$"integration:{Module}:api_key"] = "k-123",
+        });
+
+        Assert.Null(await resolver.ResolveAsync(Module, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task ResolveAsync_SettingsOverrideHostConfiguration()
+    {
+        var hostConfig = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                [$"integration:{Module}:api_key"] = "old",
+            })
+            .Build();
+
+        var resolver = CreateResolver(
+            new()
+            {
+                [$"integration:{Module}:is_enabled"] = "true",
+                [$"integration:{Module}:api_key"] = "new",
+            },
+            hostConfig: hostConfig);
+
+        var plugin = await resolver.ResolveAsync(Module, CancellationToken.None);
+
+        var fake = Assert.IsType<FakePaymentPlugin>(plugin);
+        Assert.Equal("new", fake.Configuration[$"integration:{Module}:api_key"]);
     }
 }

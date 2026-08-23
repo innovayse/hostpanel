@@ -12,6 +12,9 @@ using Xunit;
 /// <summary>Tests for <see cref="ReconcileGatewayPaymentsCronHandler"/>.</summary>
 public class ReconcileGatewayPaymentsCronHandlerTests
 {
+    /// <summary>Tolerance allowed between the asserted window bound and the expected instant, to absorb test execution time.</summary>
+    private static readonly TimeSpan BoundTolerance = TimeSpan.FromSeconds(5);
+
     [Fact]
     public async Task HandleAsync_CompletesEachPendingInvoice_AndReschedules()
     {
@@ -21,8 +24,16 @@ public class ReconcileGatewayPaymentsCronHandlerTests
         a.SetGatewaySession("innovayse-inecobank", "gw-a");
         var b = Invoice.Create(2, DateTimeOffset.UtcNow.AddDays(7));
         b.SetGatewaySession("innovayse-inecobank", "gw-b");
+
+        DateTimeOffset capturedStartedAfter = default;
+        DateTimeOffset capturedStartedBefore = default;
         invoiceRepo.Setup(r => r.ListPendingGatewayPaymentsAsync(
                 It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+            .Callback<DateTimeOffset, DateTimeOffset, CancellationToken>((startedAfter, startedBefore, _) =>
+            {
+                capturedStartedAfter = startedAfter;
+                capturedStartedBefore = startedBefore;
+            })
             .ReturnsAsync([a, b]);
         bus.Setup(x => x.InvokeAsync<string>(It.IsAny<CompleteGatewayPaymentCommand>(), It.IsAny<CancellationToken>(), null))
             .ReturnsAsync("pending");
@@ -35,6 +46,7 @@ public class ReconcileGatewayPaymentsCronHandlerTests
 
         var handler = new ReconcileGatewayPaymentsCronHandler(
             invoiceRepo.Object, bus.Object, NullLogger<ReconcileGatewayPaymentsCronHandler>.Instance);
+        var beforeCall = DateTimeOffset.UtcNow;
         await handler.HandleAsync(new ReconcileGatewayPaymentsCronCommand(), CancellationToken.None);
 
         bus.Verify(
@@ -43,6 +55,18 @@ public class ReconcileGatewayPaymentsCronHandlerTests
         bus.Verify(
             x => x.PublishAsync(It.IsAny<ReconcileGatewayPaymentsCronCommand>(), It.IsAny<DeliveryOptions>()),
             Times.Once);
+
+        // Pin the window bounds so a swapped AddHours(-24)/AddMinutes(-25) — which would compile,
+        // pass the InvokeAsync/reschedule assertions above, and ship — actually fails here.
+        Assert.True(
+            Math.Abs((capturedStartedAfter - beforeCall.AddHours(-24)).TotalSeconds) < BoundTolerance.TotalSeconds,
+            $"startedAfter {capturedStartedAfter:o} was not ~24h before {beforeCall:o}.");
+        Assert.True(
+            Math.Abs((capturedStartedBefore - beforeCall.AddMinutes(-25)).TotalSeconds) < BoundTolerance.TotalSeconds,
+            $"startedBefore {capturedStartedBefore:o} was not ~25min before {beforeCall:o}.");
+        Assert.True(
+            capturedStartedAfter < capturedStartedBefore,
+            "startedAfter (older bound) must be earlier than startedBefore (newer bound).");
     }
 
     [Fact]
@@ -70,5 +94,12 @@ public class ReconcileGatewayPaymentsCronHandlerTests
         bus.Verify(
             x => x.InvokeAsync<string>(It.IsAny<CompleteGatewayPaymentCommand>(), It.IsAny<CancellationToken>(), null),
             Times.Exactly(2));
+
+        // The safety net must keep running even after a bad invoice — verify the reschedule
+        // (via the same PublishAsync interception the extension method delegates to) still
+        // happened exactly once, unconditionally, after the loop.
+        bus.Verify(
+            x => x.PublishAsync(It.IsAny<ReconcileGatewayPaymentsCronCommand>(), It.IsAny<DeliveryOptions>()),
+            Times.Once);
     }
 }

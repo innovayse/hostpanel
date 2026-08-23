@@ -51,7 +51,7 @@ public class CompleteGatewayPaymentHandlerTests
         var result = await CreateHandler().HandleAsync(
             new CompleteGatewayPaymentCommand(invoice.Id), CancellationToken.None);
 
-        Assert.Equal("paid", result);
+        Assert.Equal(GatewayCompletionState.Paid, result);
         Assert.Equal(InvoiceStatus.Paid, invoice.Status);
         Assert.Equal("ref-9", invoice.GatewayTransactionId);
     }
@@ -65,7 +65,7 @@ public class CompleteGatewayPaymentHandlerTests
         var result = await CreateHandler().HandleAsync(
             new CompleteGatewayPaymentCommand(invoice.Id), CancellationToken.None);
 
-        Assert.Equal("paid", result);
+        Assert.Equal(GatewayCompletionState.Paid, result);
         plugin.Verify(
             p => p.GetStatusAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -80,7 +80,7 @@ public class CompleteGatewayPaymentHandlerTests
         var result = await CreateHandler().HandleAsync(
             new CompleteGatewayPaymentCommand(invoice.Id), CancellationToken.None);
 
-        Assert.Equal("pending", result);
+        Assert.Equal(GatewayCompletionState.Pending, result);
         Assert.Equal(InvoiceStatus.Unpaid, invoice.Status);
     }
 
@@ -94,7 +94,7 @@ public class CompleteGatewayPaymentHandlerTests
         var result = await CreateHandler().HandleAsync(
             new CompleteGatewayPaymentCommand(invoice.Id), CancellationToken.None);
 
-        Assert.Equal("declined", result);
+        Assert.Equal(GatewayCompletionState.Declined, result);
         Assert.Equal(InvoiceStatus.Unpaid, invoice.Status);
     }
 
@@ -137,7 +137,7 @@ public class CompleteGatewayPaymentHandlerTests
         var result = await CreateHandler().HandleAsync(
             new CompleteGatewayPaymentCommand(invoice.Id), CancellationToken.None);
 
-        Assert.Equal("paid", result);
+        Assert.Equal(GatewayCompletionState.Paid, result);
         orderRepo.Verify(
             r => r.FindByInvoiceIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
 

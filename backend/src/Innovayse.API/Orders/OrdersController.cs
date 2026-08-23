@@ -1,6 +1,7 @@
 namespace Innovayse.API.Orders;
 
 using System.Security.Claims;
+using Innovayse.API.Billing;
 using Innovayse.API.Orders.Requests;
 using Innovayse.Application.Billing.Commands.CompleteGatewayPayment;
 using Innovayse.Application.Billing.Commands.StartGatewayPayment;
@@ -260,8 +261,8 @@ public sealed class OrdersController(IMessageBus bus, IClientRepository clientRe
             throw new InvalidOperationException($"Order {id} has no linked invoice.");
         }
 
-        var state = await bus.InvokeAsync<string>(
+        var state = await bus.InvokeAsync<GatewayCompletionState>(
             new CompleteGatewayPaymentCommand(order.InvoiceId.Value), ct);
-        return Ok(new { state });
+        return Ok(new { state = state.ToWireString() });
     }
 }

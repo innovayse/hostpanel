@@ -32,16 +32,16 @@ public sealed class CompleteGatewayPaymentHandler(
     /// <summary>Handles the command.</summary>
     /// <param name="cmd">The complete command.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>"paid", "pending", or "declined".</returns>
+    /// <returns>The outcome of the completion attempt.</returns>
     /// <exception cref="InvalidOperationException">Invoice not found, no session, or plugin unavailable.</exception>
-    public async Task<string> HandleAsync(CompleteGatewayPaymentCommand cmd, CancellationToken ct)
+    public async Task<GatewayCompletionState> HandleAsync(CompleteGatewayPaymentCommand cmd, CancellationToken ct)
     {
         var invoice = await invoiceRepo.FindByIdAsync(cmd.InvoiceId, ct)
             ?? throw new InvalidOperationException($"Invoice {cmd.InvoiceId} not found.");
 
         if (invoice.Status is InvoiceStatus.Paid or InvoiceStatus.Refunded)
         {
-            return "paid";
+            return GatewayCompletionState.Paid;
         }
 
         if (invoice.GatewayModule is null || invoice.GatewayOrderId is null)
@@ -59,7 +59,9 @@ public sealed class CompleteGatewayPaymentHandler(
             logger.LogInformation(
                 "Invoice {InvoiceId} gateway session {GatewayOrderId} is {State} ({Raw}).",
                 invoice.Id, invoice.GatewayOrderId, status.State, status.RawStatus);
-            return status.State == GatewayPaymentState.Pending ? "pending" : "declined";
+            return status.State == GatewayPaymentState.Pending
+                ? GatewayCompletionState.Pending
+                : GatewayCompletionState.Declined;
         }
 
         invoice.MarkPaidViaGateway(status.TransactionId ?? invoice.GatewayOrderId);
@@ -90,7 +92,7 @@ public sealed class CompleteGatewayPaymentHandler(
             {
                 logger.LogInformation(
                     "Invoice {InvoiceId} was already marked paid by a concurrent completion.", cmd.InvoiceId);
-                return "paid";
+                return GatewayCompletionState.Paid;
             }
 
             throw;
@@ -102,6 +104,6 @@ public sealed class CompleteGatewayPaymentHandler(
             await bus.InvokeAsync(new FulfillPaidOrderCommand(order.Id), ct);
         }
 
-        return "paid";
+        return GatewayCompletionState.Paid;
     }
 }

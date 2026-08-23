@@ -58,8 +58,9 @@ public sealed class ReconcileGatewayPaymentsCronHandler(
             {
                 try
                 {
-                    var result = await bus.InvokeAsync<string>(new CompleteGatewayPaymentCommand(invoice.Id), ct);
-                    if (result == "paid")
+                    var result = await bus.InvokeAsync<GatewayCompletionState>(
+                        new CompleteGatewayPaymentCommand(invoice.Id), ct);
+                    if (result == GatewayCompletionState.Paid)
                     {
                         logger.LogWarning(
                             "Reconciler recovered a paid-but-unreturned payment for invoice {InvoiceId}.", invoice.Id);

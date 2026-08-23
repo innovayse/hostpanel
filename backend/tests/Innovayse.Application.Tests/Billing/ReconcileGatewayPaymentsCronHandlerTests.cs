@@ -35,8 +35,8 @@ public class ReconcileGatewayPaymentsCronHandlerTests
                 capturedStartedBefore = startedBefore;
             })
             .ReturnsAsync([a, b]);
-        bus.Setup(x => x.InvokeAsync<string>(It.IsAny<CompleteGatewayPaymentCommand>(), It.IsAny<CancellationToken>(), null))
-            .ReturnsAsync("pending");
+        bus.Setup(x => x.InvokeAsync<GatewayCompletionState>(It.IsAny<CompleteGatewayPaymentCommand>(), It.IsAny<CancellationToken>(), null))
+            .ReturnsAsync(GatewayCompletionState.Pending);
 
         // ScheduleAsync() is a static Wolverine extension that delegates to
         // IMessageBus.PublishAsync(message, DeliveryOptions) under the hood — that is
@@ -50,7 +50,7 @@ public class ReconcileGatewayPaymentsCronHandlerTests
         await handler.HandleAsync(new ReconcileGatewayPaymentsCronCommand(), CancellationToken.None);
 
         bus.Verify(
-            x => x.InvokeAsync<string>(It.IsAny<CompleteGatewayPaymentCommand>(), It.IsAny<CancellationToken>(), null),
+            x => x.InvokeAsync<GatewayCompletionState>(It.IsAny<CompleteGatewayPaymentCommand>(), It.IsAny<CancellationToken>(), null),
             Times.Exactly(2));
         bus.Verify(
             x => x.PublishAsync(It.IsAny<ReconcileGatewayPaymentsCronCommand>(), It.IsAny<DeliveryOptions>()),
@@ -81,9 +81,9 @@ public class ReconcileGatewayPaymentsCronHandlerTests
         invoiceRepo.Setup(r => r.ListPendingGatewayPaymentsAsync(
                 It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([a, b]);
-        bus.SetupSequence(x => x.InvokeAsync<string>(It.IsAny<CompleteGatewayPaymentCommand>(), It.IsAny<CancellationToken>(), null))
+        bus.SetupSequence(x => x.InvokeAsync<GatewayCompletionState>(It.IsAny<CompleteGatewayPaymentCommand>(), It.IsAny<CancellationToken>(), null))
             .ThrowsAsync(new InvalidOperationException("gateway down"))
-            .ReturnsAsync("paid");
+            .ReturnsAsync(GatewayCompletionState.Paid);
         bus.Setup(x => x.PublishAsync(It.IsAny<ReconcileGatewayPaymentsCronCommand>(), It.IsAny<DeliveryOptions>()))
             .Returns(ValueTask.CompletedTask);
 
@@ -92,7 +92,7 @@ public class ReconcileGatewayPaymentsCronHandlerTests
         await handler.HandleAsync(new ReconcileGatewayPaymentsCronCommand(), CancellationToken.None);
 
         bus.Verify(
-            x => x.InvokeAsync<string>(It.IsAny<CompleteGatewayPaymentCommand>(), It.IsAny<CancellationToken>(), null),
+            x => x.InvokeAsync<GatewayCompletionState>(It.IsAny<CompleteGatewayPaymentCommand>(), It.IsAny<CancellationToken>(), null),
             Times.Exactly(2));
 
         // The safety net must keep running even after a bad invoice — verify the reschedule
@@ -125,7 +125,7 @@ public class ReconcileGatewayPaymentsCronHandlerTests
 
         Assert.Null(exception);
         bus.Verify(
-            x => x.InvokeAsync<string>(It.IsAny<CompleteGatewayPaymentCommand>(), It.IsAny<CancellationToken>(), null),
+            x => x.InvokeAsync<GatewayCompletionState>(It.IsAny<CompleteGatewayPaymentCommand>(), It.IsAny<CancellationToken>(), null),
             Times.Never);
         bus.Verify(
             x => x.PublishAsync(It.IsAny<ReconcileGatewayPaymentsCronCommand>(), It.IsAny<DeliveryOptions>()),

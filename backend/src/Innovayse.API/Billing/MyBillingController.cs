@@ -116,8 +116,8 @@ public sealed class MyBillingController(IMessageBus bus) : ControllerBase
             return Forbid();
         }
 
-        var state = await bus.InvokeAsync<string>(new CompleteGatewayPaymentCommand(id), ct);
-        return Ok(new { state });
+        var state = await bus.InvokeAsync<GatewayCompletionState>(new CompleteGatewayPaymentCommand(id), ct);
+        return Ok(new { state = state.ToWireString() });
     }
 
     /// <summary>Fallback JWT claim type when <see cref="ClaimTypes.NameIdentifier"/> is absent.</summary>

@@ -62,8 +62,28 @@ public sealed class CompleteGatewayPaymentHandler(
             return status.State == GatewayPaymentState.Pending ? "pending" : "declined";
         }
 
-        invoice.MarkPaid(status.TransactionId ?? invoice.GatewayOrderId);
-        await uow.SaveChangesAsync(ct);
+        invoice.MarkPaidViaGateway(status.TransactionId ?? invoice.GatewayOrderId);
+
+        try
+        {
+            await uow.SaveChangesAsync(ct);
+        }
+        catch (ConcurrencyConflictException)
+        {
+            // Another writer (the result-page auto-check racing the reconciler, or a retried
+            // click) already completed this same payment between our read and our write. The
+            // invoice's own xmin concurrency token caught the race — re-read the current state
+            // rather than clobbering it, and treat "already paid" as success, not failure.
+            var current = await invoiceRepo.FindByIdAsync(cmd.InvoiceId, ct);
+            if (current?.Status is InvoiceStatus.Paid or InvoiceStatus.Refunded)
+            {
+                logger.LogInformation(
+                    "Invoice {InvoiceId} was already marked paid by a concurrent completion.", cmd.InvoiceId);
+                return "paid";
+            }
+
+            throw;
+        }
 
         var order = await orderRepo.FindByInvoiceIdAsync(invoice.Id, ct);
         if (order is not null)

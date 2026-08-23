@@ -97,4 +97,71 @@ public class CompleteGatewayPaymentHandlerTests
         Assert.Equal("declined", result);
         Assert.Equal(InvoiceStatus.Unpaid, invoice.Status);
     }
+
+    [Fact]
+    public async Task HandleAsync_GatewaySaysPaid_RetainsGatewaySession()
+    {
+        // Critical 2 regression guard: the completion path must use the session-retaining
+        // domain method so refund/reconciliation code can still identify the paying gateway.
+        var invoice = CreateInvoiceWithSession();
+        plugin.Setup(p => p.GetStatusAsync("gw-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GatewayPaymentStatus(GatewayPaymentState.Paid, "ref-9", "orderStatus:2"));
+
+        await CreateHandler().HandleAsync(new CompleteGatewayPaymentCommand(invoice.Id), CancellationToken.None);
+
+        Assert.Equal("innovayse-inecobank", invoice.GatewayModule);
+        Assert.Equal("gw-1", invoice.GatewayOrderId);
+    }
+
+    [Fact]
+    public async Task HandleAsync_ConcurrentCompletionAlreadyWon_ReturnsPaidWithoutThrowing()
+    {
+        // Two simultaneous completes (the result page's auto-check racing the retry button, or
+        // the reconciler firing as the payer returns) can both pass the status guard. The loser's
+        // SaveChangesAsync should hit the xmin concurrency token; the handler must not surface
+        // that as a failure once the winner already recorded the payment.
+        var invoice = CreateInvoiceWithSession();
+        plugin.Setup(p => p.GetStatusAsync("gw-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GatewayPaymentStatus(GatewayPaymentState.Paid, "ref-9", "orderStatus:2"));
+        uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ConcurrencyConflictException("concurrency conflict"));
+
+        var winner = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
+        winner.AddItem("Hosting", 10m, 1);
+        winner.SetGatewaySession("innovayse-inecobank", "gw-1");
+        winner.MarkPaidViaGateway("ref-9");
+        invoiceRepo.SetupSequence(r => r.FindByIdAsync(invoice.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(invoice)
+            .ReturnsAsync(winner);
+
+        var result = await CreateHandler().HandleAsync(
+            new CompleteGatewayPaymentCommand(invoice.Id), CancellationToken.None);
+
+        Assert.Equal("paid", result);
+        orderRepo.Verify(
+            r => r.FindByInvoiceIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task HandleAsync_ConcurrentCompletionOtherWriterDidNotWin_Rethrows()
+    {
+        var invoice = CreateInvoiceWithSession();
+        plugin.Setup(p => p.GetStatusAsync("gw-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GatewayPaymentStatus(GatewayPaymentState.Paid, "ref-9", "orderStatus:2"));
+        uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ConcurrencyConflictException("concurrency conflict"));
+
+        // The reload must be a genuinely distinct, still-Unpaid instance — reusing `invoice`
+        // would reflect its in-memory MarkPaidViaGateway() mutation even though SaveChanges
+        // never persisted it, masking the very race this test exercises.
+        var stillUnpaidOnReload = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
+        stillUnpaidOnReload.AddItem("Hosting", 10m, 1);
+        stillUnpaidOnReload.SetGatewaySession("innovayse-inecobank", "gw-1");
+        invoiceRepo.SetupSequence(r => r.FindByIdAsync(invoice.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(invoice)
+            .ReturnsAsync(stillUnpaidOnReload); // some other, unrelated conflict — not a race we already won
+
+        await Assert.ThrowsAsync<ConcurrencyConflictException>(() => CreateHandler().HandleAsync(
+            new CompleteGatewayPaymentCommand(invoice.Id), CancellationToken.None));
+    }
 }

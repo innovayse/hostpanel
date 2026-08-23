@@ -22,6 +22,19 @@ public sealed class ReconcileGatewayPaymentsCronHandler(
     /// <summary>Minutes between runs.</summary>
     public const int IntervalMinutes = 5;
 
+    /// <summary>
+    /// Minutes a gateway payment session must have been running before it is checked.
+    /// Inecobank sessions last 20 minutes, so anything younger may still be on the
+    /// payment page; 25 minutes leaves a safety margin past that.
+    /// </summary>
+    private const int SessionSettleMinutes = 25;
+
+    /// <summary>
+    /// Hours after which an unpaid gateway session is treated as abandoned and left
+    /// out of reconciliation for audit rather than checked forever.
+    /// </summary>
+    private const int AbandonedAfterHours = 24;
+
     /// <summary>Handles the cron command.</summary>
     /// <param name="cmd">The cron command.</param>
     /// <param name="ct">Cancellation token.</param>
@@ -31,29 +44,45 @@ public sealed class ReconcileGatewayPaymentsCronHandler(
         _ = cmd;
 
         var now = DateTimeOffset.UtcNow;
-        var pending = await invoiceRepo.ListPendingGatewayPaymentsAsync(
-            startedAfter: now.AddHours(-24), startedBefore: now.AddMinutes(-25), ct);
 
-        logger.LogInformation("Gateway payment reconciliation: {Count} pending session(s).", pending.Count);
-
-        foreach (var invoice in pending)
+        try
         {
-            try
+            var pending = await invoiceRepo.ListPendingGatewayPaymentsAsync(
+                startedAfter: now.AddHours(-AbandonedAfterHours),
+                startedBefore: now.AddMinutes(-SessionSettleMinutes),
+                ct);
+
+            logger.LogInformation("Gateway payment reconciliation: {Count} pending session(s).", pending.Count);
+
+            foreach (var invoice in pending)
             {
-                var result = await bus.InvokeAsync<string>(new CompleteGatewayPaymentCommand(invoice.Id), ct);
-                if (result == "paid")
+                try
                 {
-                    logger.LogWarning(
-                        "Reconciler recovered a paid-but-unreturned payment for invoice {InvoiceId}.", invoice.Id);
+                    var result = await bus.InvokeAsync<string>(new CompleteGatewayPaymentCommand(invoice.Id), ct);
+                    if (result == "paid")
+                    {
+                        logger.LogWarning(
+                            "Reconciler recovered a paid-but-unreturned payment for invoice {InvoiceId}.", invoice.Id);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // One bad session must not starve the rest; it will be retried next run.
+                    logger.LogError(ex, "Reconciliation failed for invoice {InvoiceId}.", invoice.Id);
                 }
             }
-            catch (Exception ex)
-            {
-                // One bad session must not starve the rest; it will be retried next run.
-                logger.LogError(ex, "Reconciliation failed for invoice {InvoiceId}.", invoice.Id);
-            }
         }
-
-        await bus.ScheduleAsync(new ReconcileGatewayPaymentsCronCommand(), now.AddMinutes(IntervalMinutes));
+        catch (Exception ex)
+        {
+            // The reconciler is the only safety net for the whole no-webhook payment design —
+            // if the query itself throws (DB blip, etc.), the reschedule below in `finally`
+            // must still run, or every unpaid gateway session past this point silently stops
+            // being checked until the next API restart.
+            logger.LogError(ex, "Gateway payment reconciliation run failed.");
+        }
+        finally
+        {
+            await bus.ScheduleAsync(new ReconcileGatewayPaymentsCronCommand(), now.AddMinutes(IntervalMinutes));
+        }
     }
 }

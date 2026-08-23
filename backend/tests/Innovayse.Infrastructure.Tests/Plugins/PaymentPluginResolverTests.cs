@@ -6,6 +6,7 @@ using Innovayse.Infrastructure.Plugins;
 using Innovayse.SDK.Plugins;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
@@ -21,6 +22,9 @@ public class PaymentPluginResolverTests
 
         /// <summary>Gets the configuration the resolver passed in.</summary>
         public IConfiguration Configuration { get; }
+
+        /// <inheritdoc/>
+        public string CurrencyCode => "840";
 
         /// <inheritdoc/>
         public Task<PaymentSession> CreatePaymentAsync(PaymentRequest request, CancellationToken ct)
@@ -67,7 +71,9 @@ public class PaymentPluginResolverTests
             .ReturnsAsync(settings.Select(kv => Setting.Create(kv.Key, kv.Value, null)).ToList());
 
         var services = new ServiceCollection().BuildServiceProvider();
-        return new PaymentPluginResolver(repo.Object, registry, services, hostConfig ?? new ConfigurationBuilder().Build());
+        return new PaymentPluginResolver(
+            repo.Object, registry, services, hostConfig ?? new ConfigurationBuilder().Build(),
+            NullLogger<PaymentPluginResolver>.Instance);
     }
 
     [Fact]

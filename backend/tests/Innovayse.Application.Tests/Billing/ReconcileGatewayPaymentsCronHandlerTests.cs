@@ -102,4 +102,33 @@ public class ReconcileGatewayPaymentsCronHandlerTests
             x => x.PublishAsync(It.IsAny<ReconcileGatewayPaymentsCronCommand>(), It.IsAny<DeliveryOptions>()),
             Times.Once);
     }
+
+    [Fact]
+    public async Task HandleAsync_QueryThrows_StillReschedulesExactlyOnce()
+    {
+        // This is the only safety net for the whole no-webhook payment design — if the query
+        // itself throws (not a per-invoice failure, but the run as a whole), the reschedule
+        // must still happen in a `finally`, or the reconciler silently stops forever.
+        var invoiceRepo = new Mock<IInvoiceRepository>();
+        var bus = new Mock<IMessageBus>();
+        invoiceRepo.Setup(r => r.ListPendingGatewayPaymentsAsync(
+                It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("database unavailable"));
+        bus.Setup(x => x.PublishAsync(It.IsAny<ReconcileGatewayPaymentsCronCommand>(), It.IsAny<DeliveryOptions>()))
+            .Returns(ValueTask.CompletedTask);
+
+        var handler = new ReconcileGatewayPaymentsCronHandler(
+            invoiceRepo.Object, bus.Object, NullLogger<ReconcileGatewayPaymentsCronHandler>.Instance);
+
+        var exception = await Record.ExceptionAsync(
+            () => handler.HandleAsync(new ReconcileGatewayPaymentsCronCommand(), CancellationToken.None));
+
+        Assert.Null(exception);
+        bus.Verify(
+            x => x.InvokeAsync<string>(It.IsAny<CompleteGatewayPaymentCommand>(), It.IsAny<CancellationToken>(), null),
+            Times.Never);
+        bus.Verify(
+            x => x.PublishAsync(It.IsAny<ReconcileGatewayPaymentsCronCommand>(), It.IsAny<DeliveryOptions>()),
+            Times.Once);
+    }
 }

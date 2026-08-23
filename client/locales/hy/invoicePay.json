@@ -3,6 +3,7 @@
     "makePayment": "Կատարել Վճարում",
     "invoiceNum": "Հաշիվ-ապրանքագիր #{id}",
     "paymentMethod": "Վճարման Եղանակ",
+    "payByCardInecobank": "Վճարել քարտով (Inecobank)",
     "enterCardBelow": "Մուտքագրեք Նոր Քարտի Տվյալներ",
     "newCard": "Մուտքագրել Նոր Քարտ",
     "cardNumber": "Քարտի Համարը",

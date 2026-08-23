@@ -3,6 +3,7 @@
     "makePayment": "Произвести оплату",
     "invoiceNum": "Счёт #{id}",
     "paymentMethod": "Способ оплаты",
+    "payByCardInecobank": "Оплатить картой (Inecobank)",
     "enterCardBelow": "Введите данные новой карты ниже",
     "newCard": "Ввести данные новой карты",
     "cardNumber": "Номер карты",

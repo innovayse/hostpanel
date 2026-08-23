@@ -1,0 +1,16 @@
+{
+  "paymentResult": {
+    "title": "Payment result",
+    "verifying": "Verifying your payment with the bank…",
+    "successTitle": "Payment successful",
+    "successBody": "Your payment has been confirmed. Thank you!",
+    "pendingTitle": "Payment is being confirmed",
+    "pendingBody": "The bank has not confirmed the payment yet. This can take a few minutes — you can retry the check below.",
+    "declinedTitle": "Payment was not completed",
+    "declinedBody": "The payment was declined or cancelled. No money was taken for this attempt.",
+    "retry": "Check again",
+    "goToOrder": "Continue",
+    "goToInvoice": "Back to invoice",
+    "tryAgain": "Try paying again"
+  }
+}

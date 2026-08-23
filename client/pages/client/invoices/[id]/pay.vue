@@ -121,6 +121,17 @@
               </div>
             </div>
 
+            <!-- Inecobank hosted-page payment -->
+            <button
+              v-if="inecobankAvailable"
+              type="button"
+              :disabled="submitting"
+              class="w-full mb-4 px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-primary-600 text-white font-bold text-sm disabled:opacity-50"
+              @click="payWithInecobank"
+            >
+              {{ $t('invoicePay.payByCardInecobank') }}
+            </button>
+
             <!-- New card form -->
             <template v-if="selectedMethodId === 'new' || savedMethods.length === 0">
               <!-- Card Number -->
@@ -284,6 +295,13 @@ const [{ data: invoiceData, pending }, { data: methodsData }] = await Promise.al
 const invoice = computed(() => invoiceData.value as any)
 const savedMethods = computed(() => (methodsData.value as any[]) ?? [])
 
+// Hosted-gateway (Inecobank) availability — the backend only lists it when
+// the integration is enabled and fully configured.
+const { data: gatewayMethods } = await useApi<{ module: string; displayname: string }[]>(
+  '/api/portal/order/payment-methods', { default: () => [] })
+const inecobankAvailable = computed(() =>
+  (gatewayMethods.value ?? []).some(m => m.module === 'innovayse-inecobank'))
+
 // Payments to date = total - balance
 const paymentsToDate = computed(() => {
   if (!invoice.value) return '0.00'
@@ -334,6 +352,26 @@ async function submitPayment() {
   } catch (err: any) {
     payError.value = err?.data?.statusMessage ?? t('invoicePay.paymentFailed')
   } finally {
+    submitting.value = false
+  }
+}
+
+/** Starts an Inecobank hosted-page payment and redirects the browser to the bank. */
+async function payWithInecobank() {
+  payError.value = ''
+  submitting.value = true
+  try {
+    const returnUrl = new URL(
+      localePath(`/payment/result?invoice=${invoiceId}`),
+      window.location.origin,
+    ).toString()
+    const { redirectUrl } = await apiFetch<{ redirectUrl: string }>(
+      `/api/portal/client/invoices/${invoiceId}/gateway-payment/start`,
+      { method: 'POST', body: { module: 'innovayse-inecobank', returnUrl } },
+    )
+    window.location.href = redirectUrl
+  } catch (err: any) {
+    payError.value = err?.data?.statusMessage ?? t('invoicePay.paymentFailed')
     submitting.value = false
   }
 }

@@ -226,7 +226,7 @@
                         @click="submitOrder"
                         class="h-16 rounded-2xl text-lg font-bold shadow-2xl shadow-cyan-500/20 bg-gradient-to-tr from-cyan-600 to-primary-600 hover:from-cyan-500 hover:to-primary-500 transition-all duration-300">
                 <Lock v-if="!submitting" :size="20" class="mr-2" />
-                {{ submitting ? $t('checkout.processing') : $t('checkout.placeOrder') }}
+                {{ submitting ? submittingLabel : $t('checkout.placeOrder') }}
               </UiButton>
 
               <div class="mt-6 flex items-center justify-center gap-2 text-xs text-gray-500 font-medium">
@@ -354,6 +354,10 @@ const submitting = ref(false)
 const orderError = ref('')
 const stripeCardFormRef = ref<{ confirmPayment: (clientSecret: string) => Promise<{ id: string }> } | null>(null)
 
+/** Submit-button label while the order is being placed/processed. */
+const submittingLabel = computed(() =>
+  selectedMethod.value === 'innovayse-inecobank' ? $t('checkout.redirectingToBank') : $t('checkout.processing'))
+
 async function submitOrder() {
   if (!selectedMethod.value || submitting.value) return
   orderError.value = ''
@@ -416,6 +420,20 @@ async function submitOrder() {
       const finalAmount = totalLabel.value
       cart.clear()
       await navigateTo(localePath(`/client/order-success?order=ORD-${String(result.orderId).padStart(4, '0')}&amount=${finalAmount}${domainQuery}`))
+    } else if (selectedMethod.value === 'innovayse-inecobank') {
+      // Hosted gateway: register the payment and hand the browser to the bank.
+      // The cart is cleared first — the order and invoice already exist on the backend,
+      // and the payer returns via /payment/result which verifies with the bank.
+      const returnUrl = new URL(
+        localePath(`/payment/result?order=${result.orderId}`),
+        window.location.origin,
+      ).toString()
+      const { redirectUrl } = await apiFetch<{ redirectUrl: string }>(
+        `/api/portal/order/${result.orderId}/gateway-payment/start`,
+        { method: 'POST', body: { module: 'innovayse-inecobank', returnUrl } },
+      )
+      cart.clear()
+      window.location.href = redirectUrl
     } else {
       // Bank transfer / other methods: order stays Pending, redirect to invoice
       cart.clear()

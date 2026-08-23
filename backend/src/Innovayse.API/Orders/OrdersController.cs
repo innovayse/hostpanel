@@ -2,6 +2,8 @@ namespace Innovayse.API.Orders;
 
 using System.Security.Claims;
 using Innovayse.API.Orders.Requests;
+using Innovayse.Application.Billing.Commands.CompleteGatewayPayment;
+using Innovayse.Application.Billing.Commands.StartGatewayPayment;
 using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Common;
 using Innovayse.Application.Orders.Commands.AcceptOrder;
@@ -203,5 +205,63 @@ public sealed class OrdersController(IMessageBus bus, IClientRepository clientRe
     {
         await bus.InvokeAsync(new ConfirmOrderPaymentCommand(id, request.PaymentIntentId), ct);
         return Ok(new { success = true });
+    }
+
+    /// <summary>
+    /// Starts a hosted-gateway payment (e.g. Inecobank) for an order's linked invoice.
+    /// Returns the gateway URL to redirect the payer's browser to.
+    /// </summary>
+    /// <param name="id">Order primary key.</param>
+    /// <param name="request">The payment module and return URL.</param>
+    /// <param name="orderRepo">Order repository.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with the redirect URL.</returns>
+    [HttpPost("{id:int}/gateway-payment/start")]
+    [AllowAnonymous]
+    public async Task<IActionResult> StartGatewayPaymentAsync(
+        int id,
+        [FromBody] StartGatewayPaymentRequest request,
+        [FromServices] IOrderRepository orderRepo,
+        CancellationToken ct)
+    {
+        var order = await orderRepo.FindByIdAsync(id, ct)
+            ?? throw new InvalidOperationException($"Order {id} not found.");
+
+        if (order.InvoiceId is null)
+        {
+            throw new InvalidOperationException($"Order {id} has no linked invoice.");
+        }
+
+        var redirectUrl = await bus.InvokeAsync<string>(
+            new StartGatewayPaymentCommand(order.InvoiceId.Value, request.Module, request.ReturnUrl), ct);
+        return Ok(new { redirectUrl });
+    }
+
+    /// <summary>
+    /// Verifies a hosted-gateway payment for an order against the gateway and, when paid,
+    /// marks the invoice paid and fulfills the order.
+    /// </summary>
+    /// <param name="id">Order primary key.</param>
+    /// <param name="orderRepo">Order repository.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with the payment state: paid, pending, or declined.</returns>
+    [HttpPost("{id:int}/gateway-payment/complete")]
+    [AllowAnonymous]
+    public async Task<IActionResult> CompleteGatewayPaymentAsync(
+        int id,
+        [FromServices] IOrderRepository orderRepo,
+        CancellationToken ct)
+    {
+        var order = await orderRepo.FindByIdAsync(id, ct)
+            ?? throw new InvalidOperationException($"Order {id} not found.");
+
+        if (order.InvoiceId is null)
+        {
+            throw new InvalidOperationException($"Order {id} has no linked invoice.");
+        }
+
+        var state = await bus.InvokeAsync<string>(
+            new CompleteGatewayPaymentCommand(order.InvoiceId.Value), ct);
+        return Ok(new { state });
     }
 }

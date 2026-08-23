@@ -1,14 +1,19 @@
 namespace Innovayse.Application.Admin.Integrations.Commands.TestIntegrationConnection;
 
 using Innovayse.Application.Admin.Integrations.DTOs;
+using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Domain.Settings.Interfaces;
 
 /// <summary>
 /// Handles <see cref="TestIntegrationConnectionCommand"/> by checking whether all
-/// required fields for the integration contain non-empty stored values.
+/// required fields for the integration contain non-empty stored values, and, for
+/// integrations that support it, running a live probe against the provider.
 /// </summary>
 /// <param name="settings">Setting repository for key-value lookups.</param>
-public sealed class TestIntegrationConnectionHandler(ISettingRepository settings)
+/// <param name="pluginResolver">Payment plugin resolver, used for live gateway probes.</param>
+public sealed class TestIntegrationConnectionHandler(
+    ISettingRepository settings,
+    IPaymentPluginResolver pluginResolver)
 {
     /// <summary>
     /// Static metadata for every integration.
@@ -28,6 +33,9 @@ public sealed class TestIntegrationConnectionHandler(ISettingRepository settings
         ["cwp7"] = ("CWP7", "Hosting / Provisioning", [], []),
         ["smtp"] = ("SMTP Server", "Email / SMTP", ["host", "username", "password", "from_address"], ["host", "port", "username", "password", "from_address", "encryption"]),
         ["maxmind"] = ("MaxMind", "Fraud Protection", ["account_id", "license_key"], ["account_id", "license_key"]),
+        ["innovayse-inecobank"] = ("Inecobank", "Payment Gateways",
+            ["gateway_url", "username", "password"],
+            ["gateway_url", "username", "password", "currency", "language"]),
     };
 
     /// <summary>
@@ -77,6 +85,37 @@ public sealed class TestIntegrationConnectionHandler(ISettingRepository settings
 
         if (missing.Count == 0)
         {
+            // Live probe for hosted-gateway plugins: a status query with a bogus order id
+            // distinguishes valid credentials ("unregistered orderId" → Declined result)
+            // from rejected ones (access-denied error → exception).
+            if (command.Slug == "innovayse-inecobank")
+            {
+                try
+                {
+                    var plugin = await pluginResolver.ResolveAsync(command.Slug, ct);
+                    if (plugin is null)
+                    {
+                        return new IntegrationTestResultDto(
+                            Success: false,
+                            Message: "Integration is disabled or the plugin is not loaded.",
+                            TestedAt: testedAt);
+                    }
+
+                    await plugin.GetStatusAsync("connection-test-probe", ct);
+                    return new IntegrationTestResultDto(
+                        Success: true,
+                        Message: "Gateway reachable and credentials accepted.",
+                        TestedAt: testedAt);
+                }
+                catch (Exception ex)
+                {
+                    return new IntegrationTestResultDto(
+                        Success: false,
+                        Message: $"Gateway test failed: {ex.Message}",
+                        TestedAt: testedAt);
+                }
+            }
+
             return new IntegrationTestResultDto(
                 Success: true,
                 Message: "Connection validated -- all required fields are configured.",

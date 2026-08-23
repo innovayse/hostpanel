@@ -8,6 +8,8 @@
     "pendingBody": "The bank has not confirmed the payment yet. This can take a few minutes — you can retry the check below.",
     "declinedTitle": "Payment was not completed",
     "declinedBody": "The payment was declined or cancelled. No money was taken for this attempt.",
+    "unknownTitle": "We couldn't confirm your payment",
+    "unknownBody": "We weren't able to reach the bank to confirm your payment status right now. If it went through, your order or invoice will update automatically shortly. Please avoid paying again until then — check again below.",
     "retry": "Check again",
     "goToOrder": "Continue",
     "goToInvoice": "Back to invoice",

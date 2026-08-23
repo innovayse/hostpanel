@@ -29,8 +29,8 @@
         </button>
       </template>
 
-      <!-- Declined / error -->
-      <template v-else>
+      <!-- Declined -->
+      <template v-else-if="state === 'declined'">
         <XCircle :size="48" class="mx-auto text-red-400 mb-4" />
         <h1 class="text-xl font-bold text-white mb-2">{{ $t('paymentResult.declinedTitle') }}</h1>
         <p class="text-gray-400 mb-8">{{ $t('paymentResult.declinedBody') }}</p>
@@ -38,6 +38,22 @@
                   class="inline-block px-6 py-3 rounded-xl bg-white/10 border border-white/10 text-white font-bold">
           {{ $t('paymentResult.tryAgain') }}
         </NuxtLink>
+      </template>
+
+      <!-- Unknown: we could not reach/parse the completion check — do not assert a financial outcome -->
+      <template v-else>
+        <AlertTriangle :size="48" class="mx-auto text-yellow-400 mb-4" />
+        <h1 class="text-xl font-bold text-white mb-2">{{ $t('paymentResult.unknownTitle') }}</h1>
+        <p class="text-gray-400 mb-8">{{ $t('paymentResult.unknownBody') }}</p>
+        <button class="px-6 py-3 rounded-xl bg-white/10 border border-white/10 text-white font-bold disabled:opacity-50"
+                :disabled="checking" @click="check">
+          {{ $t('paymentResult.retry') }}
+        </button>
+        <div class="mt-4">
+          <NuxtLink :to="statusTarget" class="text-sm text-cyan-400 hover:underline">
+            {{ orderId ? $t('paymentResult.goToOrder') : $t('paymentResult.goToInvoice') }}
+          </NuxtLink>
+        </div>
       </template>
     </div>
   </div>
@@ -50,7 +66,7 @@
  * authenticated) and verifies the payment against the backend, which pulls the
  * authoritative status from the bank.
  */
-import { CheckCircle2, Clock, Loader2, XCircle } from 'lucide-vue-next'
+import { AlertTriangle, CheckCircle2, Clock, Loader2, XCircle } from 'lucide-vue-next'
 
 const route = useRoute()
 const localePath = useLocalePath()
@@ -58,7 +74,11 @@ const localePath = useLocalePath()
 const orderId = computed(() => route.query.order as string | undefined)
 const invoiceId = computed(() => route.query.invoice as string | undefined)
 
-const state = ref<'verifying' | 'paid' | 'pending' | 'declined'>('verifying')
+// 'unknown' means we could not get an authoritative answer from the backend
+// (network error, timeout, proxy failure, etc.) — distinct from 'declined',
+// which is only ever set when the backend itself reported that state. Copy
+// that asserts a financial outcome must only show for backend-confirmed states.
+const state = ref<'verifying' | 'paid' | 'pending' | 'declined' | 'unknown'>('verifying')
 const checking = ref(false)
 
 /** Where the primary button leads after a successful payment. */
@@ -71,6 +91,14 @@ const continueTarget = computed(() =>
 const retryTarget = computed(() =>
   invoiceId.value ? localePath(`/client/invoices/${invoiceId.value}/pay`) : localePath('/cart'))
 
+/**
+ * Where to send the payer from the 'unknown' state to check on the order/invoice
+ * themselves — a read-only view, not a "pay again" link, since we do not know
+ * whether the payment already succeeded.
+ */
+const statusTarget = computed(() =>
+  invoiceId.value ? localePath(`/client/invoices/${invoiceId.value}`) : localePath('/client/invoices'))
+
 /** Calls the matching complete endpoint and updates the view state. */
 async function check() {
   checking.value = true
@@ -82,7 +110,10 @@ async function check() {
       url, { method: 'POST' })
     state.value = result
   } catch {
-    state.value = 'declined'
+    // We could not confirm the outcome — do not claim the payment was declined
+    // (it may well have succeeded at the bank). The reconciler will settle the
+    // invoice/order status regardless; this only affects what we tell the payer.
+    state.value = 'unknown'
   } finally {
     checking.value = false
   }
@@ -90,7 +121,7 @@ async function check() {
 
 onMounted(() => {
   if (!orderId.value && !invoiceId.value) {
-    state.value = 'declined'
+    state.value = 'unknown'
     return
   }
   check()

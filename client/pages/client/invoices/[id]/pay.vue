@@ -121,13 +121,13 @@
               </div>
             </div>
 
-            <!-- Inecobank hosted-page payment -->
+            <!-- Hosted-gateway payment (e.g. Inecobank) -->
             <button
-              v-if="inecobankAvailable"
+              v-if="hostedGatewayModule"
               type="button"
               :disabled="submitting"
               class="w-full mb-4 px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-primary-600 text-white font-bold text-sm disabled:opacity-50"
-              @click="payWithInecobank"
+              @click="payWithHostedGateway"
             >
               {{ $t('invoicePay.payByCardInecobank') }}
             </button>
@@ -295,12 +295,13 @@ const [{ data: invoiceData, pending }, { data: methodsData }] = await Promise.al
 const invoice = computed(() => invoiceData.value as any)
 const savedMethods = computed(() => (methodsData.value as any[]) ?? [])
 
-// Hosted-gateway (Inecobank) availability — the backend only lists it when
-// the integration is enabled and fully configured.
+// Hosted-gateway availability — the backend lists 'stripe' and 'bank_transfer' plus every
+// enabled/configured payment plugin. Pick the first plugin-backed one (not a fixed module id,
+// so a second gateway plugin doesn't get silently ignored here).
 const { data: gatewayMethods } = await useApi<{ module: string; displayname: string }[]>(
   '/api/portal/order/payment-methods', { default: () => [] })
-const inecobankAvailable = computed(() =>
-  (gatewayMethods.value ?? []).some(m => m.module === 'innovayse-inecobank'))
+const hostedGatewayModule = computed(() =>
+  (gatewayMethods.value ?? []).find(m => m.module !== 'stripe' && m.module !== 'bank_transfer')?.module ?? null)
 
 // Payments to date = total - balance
 const paymentsToDate = computed(() => {
@@ -356,8 +357,9 @@ async function submitPayment() {
   }
 }
 
-/** Starts an Inecobank hosted-page payment and redirects the browser to the bank. */
-async function payWithInecobank() {
+/** Starts a hosted-gateway payment (whichever plugin is enabled) and redirects the browser to the bank. */
+async function payWithHostedGateway() {
+  if (!hostedGatewayModule.value) return
   payError.value = ''
   submitting.value = true
   try {
@@ -367,7 +369,7 @@ async function payWithInecobank() {
     ).toString()
     const { redirectUrl } = await apiFetch<{ redirectUrl: string }>(
       `/api/portal/client/invoices/${invoiceId}/gateway-payment/start`,
-      { method: 'POST', body: { module: 'innovayse-inecobank', returnUrl } },
+      { method: 'POST', body: { module: hostedGatewayModule.value, returnUrl } },
     )
     window.location.href = redirectUrl
   } catch (err: any) {

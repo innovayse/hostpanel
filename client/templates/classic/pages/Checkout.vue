@@ -356,7 +356,9 @@ const stripeCardFormRef = ref<{ confirmPayment: (clientSecret: string) => Promis
 
 /** Submit-button label while the order is being placed/processed. */
 const submittingLabel = computed(() =>
-  selectedMethod.value === 'innovayse-inecobank' ? $t('checkout.redirectingToBank') : $t('checkout.processing'))
+  selectedMethod.value !== 'stripe' && selectedMethod.value !== 'bank_transfer' && selectedMethod.value
+    ? $t('checkout.redirectingToBank')
+    : $t('checkout.processing'))
 
 async function submitOrder() {
   if (!selectedMethod.value || submitting.value) return
@@ -420,17 +422,20 @@ async function submitOrder() {
       const finalAmount = totalLabel.value
       cart.clear()
       await navigateTo(localePath(`/client/order-success?order=ORD-${String(result.orderId).padStart(4, '0')}&amount=${finalAmount}${domainQuery}`))
-    } else if (selectedMethod.value === 'innovayse-inecobank') {
-      // Hosted gateway: register the payment and hand the browser to the bank.
-      // The cart is cleared first — the order and invoice already exist on the backend,
-      // and the payer returns via /payment/result which verifies with the bank.
+    } else if (selectedMethod.value !== 'bank_transfer') {
+      // Any plugin-backed payment method (e.g. Inecobank) is a hosted gateway: register the
+      // payment and hand the browser to the bank. Branching on "not stripe, not bank_transfer"
+      // rather than a specific plugin id, so a second gateway plugin doesn't silently fall
+      // through to the bank-transfer branch below. The cart is cleared first — the order and
+      // invoice already exist on the backend, and the payer returns via /payment/result which
+      // verifies with the bank.
       const returnUrl = new URL(
         localePath(`/payment/result?order=${result.orderId}`),
         window.location.origin,
       ).toString()
       const { redirectUrl } = await apiFetch<{ redirectUrl: string }>(
         `/api/portal/order/${result.orderId}/gateway-payment/start`,
-        { method: 'POST', body: { module: 'innovayse-inecobank', returnUrl } },
+        { method: 'POST', body: { module: selectedMethod.value, returnUrl } },
       )
       cart.clear()
       window.location.href = redirectUrl

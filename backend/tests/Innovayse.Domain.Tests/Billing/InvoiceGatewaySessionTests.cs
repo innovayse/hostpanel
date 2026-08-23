@@ -41,4 +41,48 @@ public class InvoiceGatewaySessionTests
         Assert.Throws<InvalidOperationException>(
             () => invoice.SetGatewaySession("innovayse-inecobank", "attempt-2"));
     }
+
+    [Fact]
+    public void MarkPaid_WithStaleGatewaySession_ClearsIt()
+    {
+        // Payer started an Inecobank session, abandoned it, then paid a different way
+        // (e.g. Stripe, or an admin recorded a manual payment). The stale session must not
+        // survive — otherwise refund/reconciliation code would later mistake it for the
+        // gateway that actually took the money.
+        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
+        invoice.SetGatewaySession("innovayse-inecobank", "abandoned-session");
+
+        invoice.MarkPaid("stripe-txn-1");
+
+        Assert.Null(invoice.GatewayModule);
+        Assert.Null(invoice.GatewayOrderId);
+        Assert.Null(invoice.GatewayStartedAt);
+        Assert.Equal(InvoiceStatus.Paid, invoice.Status);
+    }
+
+    [Fact]
+    public void MarkPaidViaGateway_RetainsTheActiveSession()
+    {
+        // The completion path for the invoice's own live gateway session — the session fields
+        // must be retained so refund/reconciliation code can identify which gateway paid.
+        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
+        invoice.SetGatewaySession("innovayse-inecobank", "gw-order-1");
+
+        invoice.MarkPaidViaGateway("gw-order-1");
+
+        Assert.Equal("innovayse-inecobank", invoice.GatewayModule);
+        Assert.Equal("gw-order-1", invoice.GatewayOrderId);
+        Assert.NotNull(invoice.GatewayStartedAt);
+        Assert.Equal(InvoiceStatus.Paid, invoice.Status);
+    }
+
+    [Fact]
+    public void MarkPaidViaGateway_OnPaidInvoice_Throws()
+    {
+        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
+        invoice.SetGatewaySession("innovayse-inecobank", "gw-order-1");
+        invoice.MarkPaidViaGateway("gw-order-1");
+
+        Assert.Throws<InvalidOperationException>(() => invoice.MarkPaidViaGateway("gw-order-2"));
+    }
 }

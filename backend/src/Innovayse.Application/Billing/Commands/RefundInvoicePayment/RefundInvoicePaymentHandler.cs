@@ -1,5 +1,6 @@
 namespace Innovayse.Application.Billing.Commands.RefundInvoicePayment;
 
+using Innovayse.Application.Billing;
 using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Billing;
@@ -91,6 +92,7 @@ public sealed class RefundInvoicePaymentHandler(
                 $"Payment plugin '{invoice.GatewayModule}' is not configured; cannot refund invoice {invoice.Id}.");
 
         // Gateway call first: if it fails, nothing is recorded and books stay consistent.
-        return await plugin.RefundAsync(invoice.GatewayOrderId, (long)(refundAmount * 100), ct);
+        var amountMinor = CurrencyCodes.ToMinorUnits(refundAmount);
+        return await plugin.RefundAsync(invoice.GatewayOrderId, amountMinor, ct);
     }
 }

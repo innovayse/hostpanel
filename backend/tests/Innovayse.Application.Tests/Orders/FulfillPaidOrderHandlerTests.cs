@@ -11,6 +11,7 @@ using Innovayse.Domain.Domains.Interfaces;
 using Innovayse.Domain.Orders;
 using Innovayse.Domain.Orders.Interfaces;
 using Innovayse.SDK.Plugins;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Wolverine;
@@ -27,9 +28,9 @@ public class FulfillPaidOrderHandlerTests
     private readonly Mock<IUnitOfWork> uow = new();
     private readonly Mock<IMessageBus> bus = new();
 
-    private FulfillPaidOrderHandler CreateHandler() => new(
+    private FulfillPaidOrderHandler CreateHandler(ILogger<FulfillPaidOrderHandler>? logger = null) => new(
         orderRepo.Object, invoiceRepo.Object, stripeService.Object, pluginResolver.Object,
-        domainRepo.Object, uow.Object, bus.Object, NullLogger<FulfillPaidOrderHandler>.Instance);
+        domainRepo.Object, uow.Object, bus.Object, logger ?? NullLogger<FulfillPaidOrderHandler>.Instance);
 
     /// <summary>Builds a Paid invoice with a positive total, linked to the given gateway module/order id.</summary>
     private static Invoice MakePaidInvoiceWithGatewaySession(string module, string gatewayOrderId)
@@ -37,7 +38,9 @@ public class FulfillPaidOrderHandlerTests
         var invoice = Invoice.Create(clientId: 5, dueDate: DateTimeOffset.UtcNow.AddDays(7));
         invoice.AddItem("Domain registration", 25m, 1);
         invoice.SetGatewaySession(module, gatewayOrderId);
-        invoice.MarkPaid("irrelevant-pre-gateway-txn-id");
+        // Paid via its own gateway session — MarkPaidViaGateway (not MarkPaid) retains the
+        // session fields, which is exactly what makes the plugin-refund routing below correct.
+        invoice.MarkPaidViaGateway("irrelevant-pre-gateway-txn-id");
         return invoice;
     }
 
@@ -165,5 +168,44 @@ public class FulfillPaidOrderHandlerTests
         Assert.Equal(InvoiceStatus.Paid, invoice.Status);
         Assert.Empty(invoice.Transactions);
         Assert.DoesNotContain(bus.Invocations, i => i.Method.Name == nameof(IMessageBus.PublishAsync));
+    }
+
+    [Fact]
+    public async Task HandleAsync_OneServiceItemThrows_OtherItemsStillProcessed_AndLogsCritical()
+    {
+        var order = Order.Create(orderNumber: "ORD-4", clientId: 5, paymentMethod: "innovayse-inecobank", ipAddress: null);
+        order.AddItem(
+            productId: 3, productName: "Failing Plan", billingCycle: "monthly",
+            firstPaymentAmount: 10m, recurringAmount: 10m, domain: null, hostname: null);
+        order.AddItem(
+            productId: 4, productName: "Working Plan", billingCycle: "monthly",
+            firstPaymentAmount: 15m, recurringAmount: 15m, domain: null, hostname: null);
+        order.LinkInvoice(10);
+        orderRepo.Setup(r => r.FindByIdAsync(4, It.IsAny<CancellationToken>())).ReturnsAsync(order);
+        invoiceRepo.Setup(r => r.FindByIdAsync(10, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Invoice.Create(clientId: 5, dueDate: DateTimeOffset.UtcNow.AddDays(7)));
+
+        bus.SetupSequence(b => b.InvokeAsync<int>(It.IsAny<OrderServiceCommand>(), It.IsAny<CancellationToken>(), null))
+            .ThrowsAsync(new InvalidOperationException("provisioning API unavailable"))
+            .ReturnsAsync(88);
+
+        var logger = new Mock<ILogger<FulfillPaidOrderHandler>>();
+
+        var exception = await Record.ExceptionAsync(
+            () => CreateHandler(logger.Object).HandleAsync(new FulfillPaidOrderCommand(4), CancellationToken.None));
+
+        Assert.Null(exception);
+        Assert.Equal(OrderStatus.Active, order.Status);
+        bus.Verify(
+            b => b.InvokeAsync<int>(It.IsAny<OrderServiceCommand>(), It.IsAny<CancellationToken>(), null),
+            Times.Exactly(2));
+        logger.Verify(
+            l => l.Log(
+                LogLevel.Critical,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 }

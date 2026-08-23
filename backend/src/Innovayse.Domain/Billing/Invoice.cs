@@ -241,7 +241,14 @@ public sealed class Invoice : AggregateRoot
     public void UpdateNotes(string? notes) => Notes = notes;
 
     /// <summary>
-    /// Records a successful payment and raises <see cref="PaymentReceivedEvent"/>.
+    /// Records a successful payment made through a path other than the currently active
+    /// hosted-gateway session (manual admin recording, Stripe, legacy import, etc.) and raises
+    /// <see cref="PaymentReceivedEvent"/>. Clears any stored gateway session fields — the
+    /// invariant maintained across the aggregate is that once an invoice is paid, its gateway
+    /// session fields describe the gateway that actually took the money, or are null. Since this
+    /// path did not use the stored session, any stored session it might overwrite is stale and
+    /// must not be mistaken later for "the gateway that paid" by refund/reconciliation code. Use
+    /// <see cref="MarkPaidViaGateway"/> instead when completing the invoice's own active session.
     /// </summary>
     public void MarkPaid(string gatewayTransactionId)
     {
@@ -253,7 +260,37 @@ public sealed class Invoice : AggregateRoot
         Status = InvoiceStatus.Paid;
         PaidAt = DateTimeOffset.UtcNow;
         GatewayTransactionId = gatewayTransactionId;
+        ClearGatewaySession();
         AddDomainEvent(new PaymentReceivedEvent(Id, ClientId, Total, gatewayTransactionId));
+    }
+
+    /// <summary>
+    /// Records a successful payment made through the invoice's own currently active
+    /// hosted-gateway session and raises <see cref="PaymentReceivedEvent"/>. Unlike
+    /// <see cref="MarkPaid"/>, this retains <see cref="GatewayModule"/>, <see cref="GatewayOrderId"/>
+    /// and <see cref="GatewayStartedAt"/> so later refund and reconciliation code can identify
+    /// which gateway actually took the money.
+    /// </summary>
+    /// <param name="gatewayTransactionId">The gateway's transaction reference for the completed payment.</param>
+    public void MarkPaidViaGateway(string gatewayTransactionId)
+    {
+        if (Status is not (InvoiceStatus.Unpaid or InvoiceStatus.Overdue))
+        {
+            throw new InvalidOperationException($"Invoice cannot be paid in status {Status}.");
+        }
+
+        Status = InvoiceStatus.Paid;
+        PaidAt = DateTimeOffset.UtcNow;
+        GatewayTransactionId = gatewayTransactionId;
+        AddDomainEvent(new PaymentReceivedEvent(Id, ClientId, Total, gatewayTransactionId));
+    }
+
+    /// <summary>Clears the stored hosted-gateway session fields.</summary>
+    private void ClearGatewaySession()
+    {
+        GatewayModule = null;
+        GatewayOrderId = null;
+        GatewayStartedAt = null;
     }
 
     /// <summary>
@@ -361,6 +398,7 @@ public sealed class Invoice : AggregateRoot
         GatewayTransactionId = null;
     }
 
+    /// <summary>Recomputes <see cref="SubTotal"/>, <see cref="Tax"/>, and <see cref="Total"/> from current line items.</summary>
     private void RecalculateTotals()
     {
         SubTotal = _items.Sum(i => i.Amount);

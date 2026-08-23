@@ -31,7 +31,8 @@ public sealed class ConfirmOrderPaymentHandler(
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A <see cref="Task"/> that completes when the payment is confirmed and fulfillment is dispatched.</returns>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when the order is not found, has no linked invoice, or the payment verification fails.
+    /// Thrown when the order is not found, has no linked invoice, the payment verification
+    /// fails, or the gateway reports success without a transaction id.
     /// </exception>
     public async Task HandleAsync(ConfirmOrderPaymentCommand cmd, CancellationToken ct)
     {
@@ -51,10 +52,16 @@ public sealed class ConfirmOrderPaymentHandler(
                 $"Payment verification failed for PaymentIntent {cmd.PaymentIntentId}.");
         }
 
+        if (string.IsNullOrEmpty(transactionId))
+        {
+            throw new InvalidOperationException(
+                $"Stripe reported success for PaymentIntent {cmd.PaymentIntentId} but returned no transaction id.");
+        }
+
         var invoice = await invoiceRepo.FindByIdAsync(order.InvoiceId.Value, ct)
             ?? throw new InvalidOperationException($"Invoice {order.InvoiceId} not found.");
 
-        invoice.MarkPaid(transactionId!);
+        invoice.MarkPaid(transactionId);
 
         await uow.SaveChangesAsync(ct);
 

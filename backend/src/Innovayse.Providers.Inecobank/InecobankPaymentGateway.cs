@@ -94,11 +94,13 @@ public sealed class InecobankPaymentGateway : PaymentGatewayBase, IPaymentPlugin
         }
 
         // errorCode 0 says only "request processed" — the payment verdict lives in orderStatus.
-        return status.OrderStatus switch
+        return (InecobankOrderStatusCode?)status.OrderStatus switch
         {
-            2 => new GatewayPaymentStatus(
+            InecobankOrderStatusCode.Deposited => new GatewayPaymentStatus(
                 GatewayPaymentState.Paid, status.AuthRefNum ?? gatewayOrderId, "orderStatus:2"),
-            3 or 4 or 6 => new GatewayPaymentStatus(
+            InecobankOrderStatusCode.AuthorizationReversed
+                or InecobankOrderStatusCode.Refunded
+                or InecobankOrderStatusCode.AuthorizationDeclined => new GatewayPaymentStatus(
                 GatewayPaymentState.Declined, null, $"orderStatus:{status.OrderStatus}"),
             _ => new GatewayPaymentStatus(
                 GatewayPaymentState.Pending, null, $"orderStatus:{status.OrderStatus?.ToString() ?? "none"}"),
@@ -120,19 +122,19 @@ public sealed class InecobankPaymentGateway : PaymentGatewayBase, IPaymentPlugin
     /// </exception>
     private InecobankApiClient CreateClient()
     {
-        var baseUrl = Require("gateway_url");
-        var userName = Require("username");
-        var password = Require("password");
+        var baseUrl = Require(InecobankConfigKeys.GatewayUrl);
+        var userName = Require(InecobankConfigKeys.Username);
+        var password = Require(InecobankConfigKeys.Password);
         return new InecobankApiClient(_http, new InecobankClientOptions(baseUrl, userName, password), _logger);
     }
 
     /// <summary>Gets the configured ISO 4217 numeric currency code, defaulting to AMD (051).</summary>
     /// <returns>The numeric currency code.</returns>
-    private string Currency() => GetConfig("currency") is { Length: > 0 } c ? c : "051";
+    private string Currency() => GetConfig(InecobankConfigKeys.Currency) is { Length: > 0 } c ? c : "051";
 
     /// <summary>Gets the configured ISO 639-1 payment page language, defaulting to Armenian (hy).</summary>
     /// <returns>The language code.</returns>
-    private string Language() => GetConfig("language") is { Length: > 0 } l ? l : "hy";
+    private string Language() => GetConfig(InecobankConfigKeys.Language) is { Length: > 0 } l ? l : "hy";
 
     /// <summary>Reads a required integration setting, throwing when it is not configured.</summary>
     /// <param name="key">The setting key.</param>

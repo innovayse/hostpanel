@@ -92,8 +92,8 @@ public sealed class InecobankApiClient
             fields["language"] = request.Language;
         }
 
-        using var doc = await PostAsync("register.do", fields, ct);
-        ThrowOnError(doc, "register.do");
+        using var doc = await PostAsync(InecobankEndpoints.Register, fields, ct);
+        ThrowOnError(doc, InecobankEndpoints.Register);
 
         var orderId = GetString(doc, "orderId");
         var formUrl = GetString(doc, "formUrl");
@@ -127,7 +127,7 @@ public sealed class InecobankApiClient
             fields["language"] = language;
         }
 
-        using var doc = await PostAsync("getOrderStatusExtended.do", fields, ct);
+        using var doc = await PostAsync(InecobankEndpoints.GetOrderStatusExtended, fields, ct);
         var root = doc.RootElement;
         return new InecobankOrderStatus(
             ErrorCode: GetLenientInt(root, "errorCode") ?? 0,
@@ -151,8 +151,8 @@ public sealed class InecobankApiClient
             ["amount"] = amountMinor.ToString(),
         };
 
-        using var doc = await PostAsync("refund.do", fields, ct);
-        ThrowOnError(doc, "refund.do");
+        using var doc = await PostAsync(InecobankEndpoints.Refund, fields, ct);
+        ThrowOnError(doc, InecobankEndpoints.Refund);
         _logger.LogInformation(
             "Inecobank refund accepted for gateway order {GatewayOrderId}, amount {AmountMinor}",
             gatewayOrderId, amountMinor);

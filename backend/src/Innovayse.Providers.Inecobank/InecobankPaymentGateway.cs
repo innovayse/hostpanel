@@ -14,7 +14,17 @@ public sealed class InecobankPaymentGateway : PaymentGatewayBase, IPaymentPlugin
     /// <summary>The plugin id as declared in plugin.json.</summary>
     public const string PluginId = "innovayse-inecobank";
 
+    /// <summary>
+    /// The gateway's getOrderStatusExtended.do errorCode meaning "unregistered orderId" —
+    /// the session is unknown to the gateway (e.g. it never completed registration or has
+    /// expired) and is treated as declined rather than surfaced as an API error.
+    /// </summary>
+    private const int UnregisteredOrderIdErrorCode = 6;
+
+    /// <summary>Structured logger, also passed through to <see cref="InecobankApiClient"/>.</summary>
     private readonly ILogger<InecobankPaymentGateway> _logger;
+
+    /// <summary>HTTP client used for all gateway API calls.</summary>
     private readonly HttpClient _http;
 
     /// <summary>Initializes the gateway; called by the plugin resolver via ActivatorUtilities.</summary>
@@ -48,6 +58,9 @@ public sealed class InecobankPaymentGateway : PaymentGatewayBase, IPaymentPlugin
     }
 
     /// <inheritdoc/>
+    public string CurrencyCode => Currency();
+
+    /// <inheritdoc/>
     public async Task<PaymentSession> CreatePaymentAsync(PaymentRequest request, CancellationToken ct)
     {
         var client = CreateClient();
@@ -68,8 +81,8 @@ public sealed class InecobankPaymentGateway : PaymentGatewayBase, IPaymentPlugin
     {
         var status = await CreateClient().GetOrderStatusAsync(gatewayOrderId, Language(), ct);
 
-        // errorCode 6 = "unregistered orderId": the session is unknown to the gateway — treat as declined.
-        if (status.ErrorCode == 6)
+        // The session is unknown to the gateway — treat as declined.
+        if (status.ErrorCode == UnregisteredOrderIdErrorCode)
         {
             return new GatewayPaymentStatus(GatewayPaymentState.Declined, null, $"errorCode:{status.ErrorCode}");
         }
@@ -100,6 +113,11 @@ public sealed class InecobankPaymentGateway : PaymentGatewayBase, IPaymentPlugin
         return gatewayOrderId;
     }
 
+    /// <summary>Builds a fresh low-level API client from the plugin's current integration settings.</summary>
+    /// <returns>A configured <see cref="InecobankApiClient"/>.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when a required setting (gateway_url, username, password) is missing.
+    /// </exception>
     private InecobankApiClient CreateClient()
     {
         var baseUrl = Require("gateway_url");
@@ -108,10 +126,18 @@ public sealed class InecobankPaymentGateway : PaymentGatewayBase, IPaymentPlugin
         return new InecobankApiClient(_http, new InecobankClientOptions(baseUrl, userName, password), _logger);
     }
 
+    /// <summary>Gets the configured ISO 4217 numeric currency code, defaulting to AMD (051).</summary>
+    /// <returns>The numeric currency code.</returns>
     private string Currency() => GetConfig("currency") is { Length: > 0 } c ? c : "051";
 
+    /// <summary>Gets the configured ISO 639-1 payment page language, defaulting to Armenian (hy).</summary>
+    /// <returns>The language code.</returns>
     private string Language() => GetConfig("language") is { Length: > 0 } l ? l : "hy";
 
+    /// <summary>Reads a required integration setting, throwing when it is not configured.</summary>
+    /// <param name="key">The setting key.</param>
+    /// <returns>The setting's value.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the setting is missing.</exception>
     private string Require(string key) =>
         GetConfig(key) ?? throw new InvalidOperationException($"Inecobank: '{key}' setting is required.");
 }

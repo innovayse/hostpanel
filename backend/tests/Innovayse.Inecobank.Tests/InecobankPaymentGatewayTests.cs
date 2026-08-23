@@ -48,6 +48,22 @@ public class InecobankPaymentGatewayTests
     }
 
     [Fact]
+    public void CurrencyCode_DefaultsTo051Amd()
+    {
+        var (gateway, _) = CreateGateway();
+
+        gateway.CurrencyCode.Should().Be("051");
+    }
+
+    [Fact]
+    public void CurrencyCode_UsesConfiguredValue()
+    {
+        var (gateway, _) = CreateGateway(new() { ["integration:innovayse-inecobank:currency"] = "840" });
+
+        gateway.CurrencyCode.Should().Be("840");
+    }
+
+    [Fact]
     public async Task CreatePaymentAsync_MissingRequiredConfig_Throws()
     {
         var (gateway, _) = CreateGateway(new() { ["integration:innovayse-inecobank:username"] = null });

@@ -34,10 +34,22 @@ public sealed record InecobankOrderStatus(
 /// </summary>
 public sealed class InecobankApiClient
 {
+    /// <summary>
+    /// Maximum length, in characters, the gateway accepts for the order description field.
+    /// Longer descriptions are truncated rather than rejected.
+    /// </summary>
+    private const int MaxDescriptionLength = 99;
+
+    /// <summary>Characters the gateway's request encoding cannot carry and must be stripped from descriptions.</summary>
     private static readonly char[] ForbiddenDescriptionChars = ['%', '+', '\r', '\n'];
 
+    /// <summary>HTTP client used for all requests to the gateway REST API.</summary>
     private readonly HttpClient _http;
+
+    /// <summary>Gateway base URL and merchant credentials.</summary>
     private readonly InecobankClientOptions _options;
+
+    /// <summary>Structured logger; credentials are never logged.</summary>
     private readonly ILogger _logger;
 
     /// <summary>Initializes the client.</summary>
@@ -146,7 +158,7 @@ public sealed class InecobankApiClient
             gatewayOrderId, amountMinor);
     }
 
-    /// <summary>Removes characters the gateway forbids and truncates to 99 chars.</summary>
+    /// <summary>Removes characters the gateway forbids and truncates to <see cref="MaxDescriptionLength"/> chars.</summary>
     /// <param name="description">The raw description, possibly null.</param>
     /// <returns>The sanitized description, or null.</returns>
     internal static string? SanitizeDescription(string? description)
@@ -157,9 +169,14 @@ public sealed class InecobankApiClient
         }
 
         var cleaned = string.Concat(description.Where(c => !ForbiddenDescriptionChars.Contains(c)));
-        return cleaned.Length <= 99 ? cleaned : cleaned[..99];
+        return cleaned.Length <= MaxDescriptionLength ? cleaned : cleaned[..MaxDescriptionLength];
     }
 
+    /// <summary>Posts form-urlencoded fields to a gateway endpoint and parses the JSON response.</summary>
+    /// <param name="endpoint">The gateway endpoint name (e.g. "register.do").</param>
+    /// <param name="fields">The form fields to send.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The parsed JSON response document. Caller owns disposal.</returns>
     private async Task<JsonDocument> PostAsync(
         string endpoint, Dictionary<string, string> fields, CancellationToken ct)
     {
@@ -171,6 +188,10 @@ public sealed class InecobankApiClient
         return JsonDocument.Parse(json);
     }
 
+    /// <summary>Throws <see cref="InecobankApiException"/> when the response's errorCode is non-zero.</summary>
+    /// <param name="doc">The parsed gateway response.</param>
+    /// <param name="endpoint">The endpoint name, included in the exception message for context.</param>
+    /// <exception cref="InecobankApiException">Thrown when the response's errorCode is non-zero.</exception>
     private static void ThrowOnError(JsonDocument doc, string endpoint)
     {
         var code = GetLenientInt(doc.RootElement, "errorCode") ?? 0;
@@ -181,11 +202,22 @@ public sealed class InecobankApiClient
         }
     }
 
+    /// <summary>Reads a string property from the response root, or null when absent or not a string.</summary>
+    /// <param name="doc">The parsed gateway response.</param>
+    /// <param name="property">The property name to read.</param>
+    /// <returns>The property's string value, or null when absent or of a different JSON kind.</returns>
     private static string? GetString(JsonDocument doc, string property) =>
         doc.RootElement.TryGetProperty(property, out var el) && el.ValueKind == JsonValueKind.String
             ? el.GetString()
             : null;
 
+    /// <summary>
+    /// Reads an integer property that the gateway inconsistently returns as either a JSON
+    /// number or a numeric string.
+    /// </summary>
+    /// <param name="root">The JSON element to read the property from.</param>
+    /// <param name="property">The property name to read.</param>
+    /// <returns>The parsed integer, or null when absent or not parseable as an integer.</returns>
     private static int? GetLenientInt(JsonElement root, string property)
     {
         if (!root.TryGetProperty(property, out var el))

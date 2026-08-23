@@ -1,6 +1,5 @@
 namespace Innovayse.Application.Orders.Commands.FulfillPaidOrder;
 
-using Innovayse.Application.Billing;
 using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Common;
 using Innovayse.Application.Domains.Commands.RegisterDomain;
@@ -74,12 +73,6 @@ public sealed class FulfillPaidOrderHandler(
         {
             if (item.DomainAction is not null)
             {
-                // Domain items carry a required Domain name; the property is nullable only
-                // because OrderItem is shared with non-domain (hosting) items.
-                var domainName = item.Domain
-                    ?? throw new InvalidOperationException(
-                        $"Order {order.Id} item {item.Id} has DomainAction '{item.DomainAction}' but no domain name.");
-
                 try
                 {
                     if (item.DomainAction == "register")
@@ -87,7 +80,7 @@ public sealed class FulfillPaidOrderHandler(
                         createdDomainId = await bus.InvokeAsync<int>(
                             new RegisterDomainCommand(
                                 order.ClientId,
-                                domainName,
+                                item.Domain!,
                                 item.Years ?? 1,
                                 WhoisPrivacy: false,
                                 AutoRenew: true,
@@ -99,15 +92,11 @@ public sealed class FulfillPaidOrderHandler(
                     }
                     else if (item.DomainAction == "transfer")
                     {
-                        var eppCode = item.EppCode
-                            ?? throw new InvalidOperationException(
-                                $"Order {order.Id} item {item.Id} is a transfer but has no EPP code.");
-
                         createdDomainId = await bus.InvokeAsync<int>(
                             new TransferDomainCommand(
                                 order.ClientId,
-                                domainName,
-                                eppCode,
+                                item.Domain!,
+                                item.EppCode!,
                                 WhoisPrivacy: false,
                                 FirstPaymentAmount: item.FirstPaymentAmount,
                                 RecurringAmount: item.RecurringAmount,
@@ -120,7 +109,7 @@ public sealed class FulfillPaidOrderHandler(
                 {
                     // Registrar immediately rejected the order (duplicate domain, invalid TLD,
                     // API error, etc.). Issue automatic refund and notify.
-                    await HandleDomainRegistrationFailedAsync(invoice, order.ClientId, domainName, ex.Message, ct);
+                    await HandleDomainRegistrationFailedAsync(invoice, order.ClientId, item.Domain!, ex.Message, ct);
                 }
             }
             else
@@ -184,16 +173,14 @@ public sealed class FulfillPaidOrderHandler(
                 var plugin = await pluginResolver.ResolveAsync(invoice.GatewayModule, ct)
                     ?? throw new InvalidOperationException(
                         $"Payment plugin '{invoice.GatewayModule}' is not available for the refund.");
-                var amountMinor = CurrencyCodes.ToMinorUnits(invoice.Total);
+                // Math.Round (not a cast) so e.g. 10.0050 rounds to 1001, not truncates to 1000.
+                var amountMinor = (long)Math.Round(invoice.Total * 100, MidpointRounding.AwayFromZero);
                 refundId = await plugin.RefundAsync(invoice.GatewayOrderId, amountMinor, ct);
                 gateway = invoice.GatewayModule;
             }
             else
             {
-                var stripeTransactionId = invoice.GatewayTransactionId
-                    ?? throw new InvalidOperationException(
-                        $"Invoice {invoice.Id} was not paid through a gateway plugin but has no Stripe transaction id to refund.");
-                refundId = await stripeService.RefundAsync(stripeTransactionId, ct);
+                refundId = await stripeService.RefundAsync(invoice.GatewayTransactionId!, ct);
                 gateway = "stripe";
             }
 

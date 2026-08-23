@@ -2,6 +2,7 @@ namespace Innovayse.Application.Admin.Integrations.Commands.TestIntegrationConne
 
 using Innovayse.Application.Admin.Integrations.DTOs;
 using Innovayse.Application.Billing.Interfaces;
+using Innovayse.Domain.Settings;
 using Innovayse.Domain.Settings.Interfaces;
 
 /// <summary>
@@ -15,6 +16,13 @@ public sealed class TestIntegrationConnectionHandler(
     ISettingRepository settings,
     IPaymentPluginResolver pluginResolver)
 {
+    /// <summary>
+    /// Plugin id / slug of the Inecobank gateway. The provider assembly already exposes this
+    /// as <c>InecobankPaymentGateway.PluginId</c>, but Application cannot reference a provider
+    /// assembly, so it is repeated here as a single source shared by both usages below.
+    /// </summary>
+    private const string InecobankSlug = "innovayse-inecobank";
+
     /// <summary>
     /// Static metadata for every integration.
     /// </summary>
@@ -33,7 +41,7 @@ public sealed class TestIntegrationConnectionHandler(
         ["cwp7"] = ("CWP7", "Hosting / Provisioning", [], []),
         ["smtp"] = ("SMTP Server", "Email / SMTP", ["host", "username", "password", "from_address"], ["host", "port", "username", "password", "from_address", "encryption"]),
         ["maxmind"] = ("MaxMind", "Fraud Protection", ["account_id", "license_key"], ["account_id", "license_key"]),
-        ["innovayse-inecobank"] = ("Inecobank", "Payment Gateways",
+        [InecobankSlug] = ("Inecobank", "Payment Gateways",
             ["gateway_url", "username", "password"],
             ["gateway_url", "username", "password", "currency", "language"]),
     };
@@ -72,14 +80,14 @@ public sealed class TestIntegrationConnectionHandler(
         }
 
         var all = await settings.ListAsync(ct);
-        var prefix = $"integration:{command.Slug}:";
+        var prefix = IntegrationSettingKeys.Prefix(command.Slug);
         var lookup = all
             .Where(s => s.Key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
             .ToDictionary(s => s.Key, s => s.Value, StringComparer.OrdinalIgnoreCase);
 
         var missing = meta.RequiredFields
             .Where(field =>
-                !lookup.TryGetValue($"{prefix}{field}", out var val)
+                !lookup.TryGetValue(IntegrationSettingKeys.FieldKey(command.Slug, field), out var val)
                 || string.IsNullOrWhiteSpace(val))
             .ToList();
 
@@ -88,7 +96,7 @@ public sealed class TestIntegrationConnectionHandler(
             // Live probe for hosted-gateway plugins: a status query with a bogus order id
             // distinguishes valid credentials ("unregistered orderId" → Declined result)
             // from rejected ones (access-denied error → exception).
-            if (command.Slug == "innovayse-inecobank")
+            if (command.Slug == InecobankSlug)
             {
                 try
                 {

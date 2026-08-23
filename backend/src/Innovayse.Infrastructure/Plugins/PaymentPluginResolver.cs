@@ -1,6 +1,7 @@
 namespace Innovayse.Infrastructure.Plugins;
 
 using Innovayse.Application.Billing.Interfaces;
+using Innovayse.Domain.Settings;
 using Innovayse.Domain.Settings.Interfaces;
 using Innovayse.SDK.Plugins;
 using Microsoft.Extensions.Configuration;
@@ -36,7 +37,7 @@ public sealed class PaymentPluginResolver(
             return null;
         }
 
-        var prefix = $"integration:{module}:";
+        var prefix = IntegrationSettingKeys.Prefix(module);
         var allSettings = await settings.ListAsync(ct);
         var values = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
         foreach (var setting in allSettings)
@@ -47,7 +48,7 @@ public sealed class PaymentPluginResolver(
             }
         }
 
-        if (!values.TryGetValue($"{prefix}is_enabled", out var isEnabled)
+        if (!values.TryGetValue(IntegrationSettingKeys.EnabledKey(module), out var isEnabled)
             || !string.Equals(isEnabled, "true", StringComparison.OrdinalIgnoreCase))
         {
             logger.LogWarning("Payment plugin '{Module}' is disabled.", module);
@@ -61,7 +62,7 @@ public sealed class PaymentPluginResolver(
                 continue;
             }
 
-            if (!values.TryGetValue($"{prefix}{field.Key}", out var fieldValue)
+            if (!values.TryGetValue(IntegrationSettingKeys.FieldKey(module, field.Key), out var fieldValue)
                 || string.IsNullOrWhiteSpace(fieldValue))
             {
                 logger.LogWarning(

@@ -55,4 +55,42 @@
     <Content Remove="logs/**/*" />
     <None Remove="logs/**/*" />
   </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Build-order-only reference: the API must never link against a plugin assembly
+      (PluginLoader loads it reflectively from plugins/ at runtime), but the plugin
+      still needs to be built before the staging targets below copy its output.
+      Only Innovayse.Providers.Inecobank is staged here — the CWP providers are
+      deliberately left unstaged so they don't silently activate at runtime.
+    -->
+    <ProjectReference Include="..\Innovayse.Providers.Inecobank\Innovayse.Providers.Inecobank.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>false</Private>
+    </ProjectReference>
+  </ItemGroup>
+
+  <!--
+    Stage the Inecobank payment plugin into plugins/innovayse-inecobank/ under the
+    API's own output, which is where PluginLoader.DiscoverAndRegister scans from
+    (AppContext.BaseDirectory/plugins). The provider targets net8.0 while the API
+    targets net9.0, so the copy source path is pinned to the provider's own TFM.
+  -->
+  <Target Name="StagePaymentPlugins" AfterTargets="Build">
+    <ItemGroup>
+      <InecobankPluginFiles Include="..\Innovayse.Providers.Inecobank\bin\$(Configuration)\net8.0\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(InecobankPluginFiles)"
+          DestinationFolder="$(OutDir)plugins\innovayse-inecobank\%(RecursiveDir)"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+  <Target Name="StagePaymentPluginsOnPublish" AfterTargets="Publish">
+    <ItemGroup>
+      <InecobankPluginPublishFiles Include="..\Innovayse.Providers.Inecobank\bin\$(Configuration)\net8.0\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(InecobankPluginPublishFiles)"
+          DestinationFolder="$(PublishDir)plugins\innovayse-inecobank\%(RecursiveDir)"
+          SkipUnchangedFiles="true" />
+  </Target>
 </Project>

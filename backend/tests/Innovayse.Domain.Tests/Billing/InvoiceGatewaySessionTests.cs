@@ -85,4 +85,24 @@ public class InvoiceGatewaySessionTests
 
         Assert.Throws<InvalidOperationException>(() => invoice.MarkPaidViaGateway("gw-order-2"));
     }
+
+    [Fact]
+    public void MarkUnpaid_OnGatewayPaidInvoice_ClearsSessionSoReconcilerCannotFindIt()
+    {
+        // An admin reversing a gateway-completed payment must leave no session behind: the
+        // reconciler looks back 24 hours for pending gateway sessions, and a leftover session
+        // here would let it re-query the gateway and silently re-mark the invoice Paid again,
+        // undoing the admin's reversal.
+        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
+        invoice.SetGatewaySession("innovayse-inecobank", "gw-order-1");
+        invoice.MarkPaidViaGateway("gw-order-1");
+
+        invoice.MarkUnpaid();
+
+        Assert.Equal(InvoiceStatus.Unpaid, invoice.Status);
+        Assert.Null(invoice.GatewayModule);
+        Assert.Null(invoice.GatewayOrderId);
+        Assert.Null(invoice.GatewayStartedAt);
+        Assert.Null(invoice.GatewayTransactionId);
+    }
 }

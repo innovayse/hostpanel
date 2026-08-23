@@ -74,6 +74,17 @@ public sealed class CompleteGatewayPaymentHandler(
             // click) already completed this same payment between our read and our write. The
             // invoice's own xmin concurrency token caught the race — re-read the current state
             // rather than clobbering it, and treat "already paid" as success, not failure.
+            //
+            // The failed SaveChangesAsync left `invoice` tracked by the DbContext in Modified
+            // state, still carrying the in-memory Status = Paid that MarkPaidViaGateway set
+            // above (that write never reached the database). EF's identity resolution means a
+            // plain re-read via invoiceRepo.FindByIdAsync would return that same tracked
+            // instance instead of querying the database, so `current?.Status` would read Paid
+            // unconditionally and this branch would treat every concurrency conflict — not just
+            // the one we intend to absorb — as "already paid by someone else". DetachAll() drops
+            // the stale tracked entities first so the re-read is forced to hit the database and
+            // reflect what was actually persisted by the other writer.
+            uow.DetachAll();
             var current = await invoiceRepo.FindByIdAsync(cmd.InvoiceId, ct);
             if (current?.Status is InvoiceStatus.Paid or InvoiceStatus.Refunded)
             {

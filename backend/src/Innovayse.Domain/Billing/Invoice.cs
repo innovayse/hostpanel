@@ -346,7 +346,14 @@ public sealed class Invoice : AggregateRoot
     }
 
     /// <summary>
-    /// Reverses a paid invoice back to Unpaid status.
+    /// Reverses a paid invoice back to Unpaid status. Also clears any retained gateway
+    /// session: an invoice paid via <see cref="MarkPaidViaGateway"/> keeps its
+    /// <see cref="GatewayModule"/>/<see cref="GatewayOrderId"/>/<see cref="GatewayStartedAt"/>
+    /// so refund/reconciliation code can find the paying gateway, but once an admin reverses
+    /// that payment there is no longer a live payment to reconcile. Leaving the session behind
+    /// would let the reconciler — which looks back 24 hours for pending gateway sessions — see
+    /// what still looks like an in-flight payment, re-query the gateway, and silently re-mark
+    /// the invoice Paid again, undoing the reversal.
     /// </summary>
     public void MarkUnpaid()
     {
@@ -358,6 +365,7 @@ public sealed class Invoice : AggregateRoot
         Status = InvoiceStatus.Unpaid;
         PaidAt = null;
         GatewayTransactionId = null;
+        ClearGatewaySession();
     }
 
     /// <summary>

@@ -140,6 +140,11 @@ public class CompleteGatewayPaymentHandlerTests
         Assert.Equal("paid", result);
         orderRepo.Verify(
             r => r.FindByInvoiceIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+
+        // The re-read after a concurrency conflict is only meaningful if the stale tracked
+        // instance was detached first; otherwise EF identity resolution would return the same
+        // (still-Paid-in-memory) instance regardless of what the database actually holds.
+        uow.Verify(u => u.DetachAll(), Times.Once);
     }
 
     [Fact]
@@ -163,5 +168,10 @@ public class CompleteGatewayPaymentHandlerTests
 
         await Assert.ThrowsAsync<ConcurrencyConflictException>(() => CreateHandler().HandleAsync(
             new CompleteGatewayPaymentCommand(invoice.Id), CancellationToken.None));
+
+        // Same as above: the rethrow is only correct if the re-read actually consulted the
+        // database (via a detach) instead of returning the still-tracked, in-memory-mutated
+        // `invoice` instance.
+        uow.Verify(u => u.DetachAll(), Times.Once);
     }
 }

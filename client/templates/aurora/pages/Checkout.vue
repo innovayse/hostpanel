@@ -127,7 +127,7 @@
               </label>
             </div>
 
-            <div v-if="selectedMethod === 'stripe'" class="mt-6 overflow-hidden">
+            <div v-if="selectedMethod === PAYMENT_MODULE_STRIPE" class="mt-6 overflow-hidden">
               <CheckoutStripeCardForm ref="stripeCardFormRef" />
             </div>
           </section>
@@ -312,7 +312,7 @@ const stripeCardFormRef = ref<{ confirmPayment: (clientSecret: string) => Promis
 
 /** Submit-button label while the order is being placed/processed. */
 const submittingLabel = computed(() =>
-  selectedMethod.value !== 'stripe' && selectedMethod.value !== 'bank_transfer' && selectedMethod.value
+  selectedMethod.value !== PAYMENT_MODULE_STRIPE && selectedMethod.value !== PAYMENT_MODULE_BANK_TRANSFER && selectedMethod.value
     ? $t('checkout.redirectingToBank')
     : $t('checkout.processing'))
 
@@ -354,7 +354,7 @@ async function submitOrder() {
       try { await login(form.email, form.password) } catch { /* middleware handles */ }
     }
 
-    if (selectedMethod.value === 'stripe') {
+    if (selectedMethod.value === PAYMENT_MODULE_STRIPE) {
       // Step 2: Create PaymentIntent
       const { clientSecret } = await apiFetch<{ clientSecret: string }>(
         `/api/portal/order/${result.orderId}/create-payment-intent`,
@@ -378,7 +378,7 @@ async function submitOrder() {
       const finalAmount = totalLabel.value
       cart.clear()
       await navigateTo(localePath(`/client/order-success?order=ORD-${String(result.orderId).padStart(4, '0')}&amount=${finalAmount}${domainQuery}`))
-    } else if (selectedMethod.value !== 'bank_transfer') {
+    } else if (selectedMethod.value !== PAYMENT_MODULE_BANK_TRANSFER) {
       // Any plugin-backed payment method (e.g. Inecobank) is a hosted gateway: register the
       // payment and hand the browser to the bank. Branching on "not stripe, not bank_transfer"
       // rather than a specific plugin id, so a second gateway plugin doesn't silently fall

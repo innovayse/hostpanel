@@ -301,7 +301,8 @@ const savedMethods = computed(() => (methodsData.value as any[]) ?? [])
 const { data: gatewayMethods } = await useApi<{ module: string; displayname: string }[]>(
   '/api/portal/order/payment-methods', { default: () => [] })
 const hostedGatewayModule = computed(() =>
-  (gatewayMethods.value ?? []).find(m => m.module !== 'stripe' && m.module !== 'bank_transfer')?.module ?? null)
+  (gatewayMethods.value ?? [])
+    .find(m => m.module !== PAYMENT_MODULE_STRIPE && m.module !== PAYMENT_MODULE_BANK_TRANSFER)?.module ?? null)
 
 // Payments to date = total - balance
 const paymentsToDate = computed(() => {

@@ -1,6 +1,7 @@
 namespace Innovayse.API.Billing;
 
 using Innovayse.Application.Admin.Plugins.Interfaces;
+using Innovayse.Domain.Settings;
 using Innovayse.Domain.Settings.Interfaces;
 using Innovayse.SDK.Plugins;
 using Microsoft.AspNetCore.Authorization;
@@ -27,8 +28,8 @@ public sealed class PaymentMethodsController(
     {
         var methods = new List<object>
         {
-            new { module = "stripe", displayname = "Credit/Debit Card (Stripe)" },
-            new { module = "bank_transfer", displayname = "Bank Transfer" },
+            new { module = BuiltInPaymentModules.Stripe, displayname = "Credit/Debit Card (Stripe)" },
+            new { module = BuiltInPaymentModules.BankTransfer, displayname = "Bank Transfer" },
         };
 
         var all = await settings.ListAsync(ct);
@@ -36,12 +37,12 @@ public sealed class PaymentMethodsController(
 
         foreach (var manifest in plugins.GetLoadedManifests().Where(m => m.Type == PluginType.Payment))
         {
-            var prefix = $"integration:{manifest.Id}:";
-            var enabled = lookup.TryGetValue($"{prefix}is_enabled", out var flag)
+            var enabled = lookup.TryGetValue(IntegrationSettingKeys.EnabledKey(manifest.Id), out var flag)
                 && string.Equals(flag, "true", StringComparison.OrdinalIgnoreCase);
             var configured = manifest.Fields
                 .Where(f => f.Required)
-                .All(f => lookup.TryGetValue($"{prefix}{f.Key}", out var v) && !string.IsNullOrWhiteSpace(v));
+                .All(f => lookup.TryGetValue(IntegrationSettingKeys.FieldKey(manifest.Id, f.Key), out var v)
+                    && !string.IsNullOrWhiteSpace(v));
 
             if (enabled && configured)
             {

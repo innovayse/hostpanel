@@ -3,6 +3,7 @@ namespace Innovayse.API.Billing;
 using Innovayse.Application.Billing.Commands.CheckOverdueInvoicesCron;
 using Innovayse.Application.Billing.Commands.ProcessBillableItemsCron;
 using Innovayse.Application.Billing.Commands.ProcessRenewalsCron;
+using Innovayse.Application.Billing.Commands.ReconcileGatewayPaymentsCron;
 using Innovayse.Application.Provisioning.Commands.AutoTerminateSuspendedCron;
 using Innovayse.Application.Servers.Commands.SyncServerAccountCountsCron;
 using Wolverine;
@@ -69,6 +70,13 @@ public sealed class BillingScheduledJobsStartup(
         logger.LogInformation(
             "AutoTerminateSuspendedCronCommand scheduled for {ScheduledAt:u}.",
             autoTerminateRun);
+
+        var reconcileRun = DateTimeOffset.UtcNow.AddMinutes(
+            Innovayse.Application.Billing.Commands.ReconcileGatewayPaymentsCron
+                .ReconcileGatewayPaymentsCronHandler.IntervalMinutes);
+        await bus.ScheduleAsync(new ReconcileGatewayPaymentsCronCommand(), reconcileRun);
+        logger.LogInformation(
+            "ReconcileGatewayPaymentsCronCommand scheduled for {ScheduledAt:u}.", reconcileRun);
     }
 
     /// <summary>

@@ -8,6 +8,7 @@ using Innovayse.Domain.Billing.Interfaces;
 using Innovayse.Domain.Clients.Interfaces;
 using Innovayse.SDK.Plugins;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 /// <summary>
 /// Handles <see cref="StartGatewayPaymentCommand"/>: resolves the payment plugin,
@@ -19,12 +20,14 @@ using Microsoft.Extensions.Configuration;
 /// <param name="pluginResolver">Payment plugin resolver.</param>
 /// <param name="uow">Unit of work.</param>
 /// <param name="configuration">Host configuration, used to validate <c>ReturnUrl</c> against the configured CORS origins.</param>
+/// <param name="logger">Structured logger, used to record gateway status-probe failures during the live-session check.</param>
 public sealed class StartGatewayPaymentHandler(
     IInvoiceRepository invoiceRepo,
     IClientRepository clientRepo,
     IPaymentPluginResolver pluginResolver,
     IUnitOfWork uow,
-    IConfiguration configuration)
+    IConfiguration configuration,
+    ILogger<StartGatewayPaymentHandler> logger)
 {
     /// <summary>
     /// How long a started gateway session is considered "live" (matches Inecobank's own
@@ -97,7 +100,10 @@ public sealed class StartGatewayPaymentHandler(
 
     /// <summary>
     /// Refuses to start a new session while the invoice's existing session is still inside the
-    /// gateway's live window, unless that session is already known to be Declined.
+    /// gateway's live window, unless that session is already known to be Declined. When the
+    /// gateway's status API cannot be reached at all (e.g. a bank outage), the session's true
+    /// state is unknowable — this is treated the same as "still live" rather than silently
+    /// allowing a second session that could orphan a real payment at the gateway.
     /// </summary>
     /// <param name="invoice">The invoice being paid.</param>
     /// <param name="ct">Cancellation token.</param>
@@ -121,8 +127,28 @@ public sealed class StartGatewayPaymentHandler(
             var previousPlugin = await pluginResolver.ResolveAsync(invoice.GatewayModule, ct);
             if (previousPlugin is not null)
             {
-                var status = await previousPlugin.GetStatusAsync(invoice.GatewayOrderId, ct);
-                isDeclined = status.State == GatewayPaymentState.Declined;
+                try
+                {
+                    var status = await previousPlugin.GetStatusAsync(invoice.GatewayOrderId, ct);
+                    isDeclined = status.State == GatewayPaymentState.Declined;
+                }
+                catch (OperationCanceledException)
+                {
+                    // The caller cancelled the request itself — not a gateway failure. Let it
+                    // propagate rather than reinterpreting it as "session may still be live".
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    // Cannot determine the previous session's state — refuse below rather than
+                    // risk a second live session at the gateway. An operator needs to see why
+                    // payers are being told to wait, so this is logged rather than swallowed.
+                    logger.LogWarning(
+                        ex,
+                        "Could not determine gateway status for invoice {InvoiceId} session {GatewayOrderId}; " +
+                        "treating the existing session as still live.",
+                        invoice.Id, invoice.GatewayOrderId);
+                }
             }
         }
 

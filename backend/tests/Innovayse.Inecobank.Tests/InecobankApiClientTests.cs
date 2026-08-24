@@ -1,5 +1,6 @@
 namespace Innovayse.Inecobank.Tests;
 
+using System.Net;
 using FluentAssertions;
 using Innovayse.Providers.Inecobank;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -103,5 +104,69 @@ public class InecobankApiClientTests
         http.Enqueue("""{"errorCode":7,"errorMessage":"System error"}""");
         var act = () => client.RefundAsync("order-9", 5000, CancellationToken.None);
         (await act.Should().ThrowAsync<InecobankApiException>()).Which.ErrorCode.Should().Be(7);
+    }
+
+    [Fact]
+    public async Task RegisterOrderAsync_NonSuccessStatusCode_WrapsHttpRequestExceptionRatherThanThrowingItRaw()
+    {
+        var (client, http) = CreateClient();
+        http.EnqueueStatus(HttpStatusCode.BadGateway, "<html>upstream error</html>");
+
+        var act = () => client.RegisterOrderAsync(
+            new InecobankRegisterRequest("INV1-1", 100, "051", "https://x/r", null, null),
+            CancellationToken.None);
+
+        var ex = await act.Should().ThrowAsync<InecobankApiException>();
+        ex.Which.InnerException.Should().BeOfType<HttpRequestException>();
+        ex.Which.Message.Should().Contain(InecobankEndpoints.Register);
+    }
+
+    [Fact]
+    public async Task RegisterOrderAsync_NonJsonResponseBody_WrapsJsonExceptionRatherThanThrowingItRaw()
+    {
+        var (client, http) = CreateClient();
+        http.Enqueue("this is not json");
+
+        var act = () => client.RegisterOrderAsync(
+            new InecobankRegisterRequest("INV1-1", 100, "051", "https://x/r", null, null),
+            CancellationToken.None);
+
+        var ex = await act.Should().ThrowAsync<InecobankApiException>();
+        // JsonDocument.Parse throws JsonReaderException (a JsonException subclass) for
+        // malformed syntax — assert the documented base type, not one specific derived type.
+        ex.Which.InnerException.Should().BeAssignableTo<System.Text.Json.JsonException>();
+        ex.Which.Message.Should().Contain(InecobankEndpoints.Register);
+    }
+
+    [Fact]
+    public async Task Operations_NeverLogTheConfiguredMerchantCredentials()
+    {
+        var options = new InecobankClientOptions(
+            "https://testpg.example.am", "very-secret-merchant-username", "very-secret-merchant-password");
+        var handler = new FakeHttpMessageHandler();
+        var logger = new CapturingLogger();
+        var client = new InecobankApiClient(new HttpClient(handler), options, logger);
+
+        handler.Enqueue("""{"orderId":"o1","formUrl":"https://x/pay"}""");
+        await client.RegisterOrderAsync(
+            new InecobankRegisterRequest("INV1-1", 100, "051", "https://x/r", "Invoice #1", "hy"),
+            CancellationToken.None);
+
+        handler.Enqueue("""{"errorCode":0,"orderStatus":2,"authRefNum":"ref-1"}""");
+        await client.GetOrderStatusAsync("gw-order-1", "hy", CancellationToken.None);
+
+        handler.Enqueue("""{"errorCode":0}""");
+        await client.RefundAsync("gw-order-1", 500, CancellationToken.None);
+
+        // Also exercise a failure path (wrapped in InecobankApiException per the tests above) —
+        // credentials must not leak into an exception message or a log call about it either.
+        handler.EnqueueStatus(HttpStatusCode.InternalServerError, "boom");
+        await Assert.ThrowsAsync<InecobankApiException>(() => client.RefundAsync(
+            "gw-order-1", 500, CancellationToken.None));
+
+        var everythingLogged = logger.Messages.Concat(logger.Scopes).ToList();
+        everythingLogged.Should().NotBeEmpty("the happy-path calls above do log informational messages");
+        everythingLogged.Should().NotContain(m => m.Contains(options.UserName, StringComparison.Ordinal));
+        everythingLogged.Should().NotContain(m => m.Contains(options.Password, StringComparison.Ordinal));
     }
 }

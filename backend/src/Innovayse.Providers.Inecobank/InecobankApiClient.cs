@@ -40,6 +40,15 @@ public sealed class InecobankApiClient
     /// </summary>
     private const int MaxDescriptionLength = 99;
 
+    /// <summary>
+    /// Synthetic <see cref="InecobankApiException.ErrorCode"/> used for failures detected on
+    /// this side of the HTTP call — a non-2xx response, or a response body that is not valid
+    /// JSON — rather than a business error the gateway itself reported. The merchant manual's
+    /// errorCode tables are all non-negative (0 = success), so a negative sentinel can never
+    /// collide with a real gateway code, no matter which one the bank adds next.
+    /// </summary>
+    private const int TransportErrorCode = -1;
+
     /// <summary>Characters the gateway's request encoding cannot carry and must be stripped from descriptions.</summary>
     private static readonly char[] ForbiddenDescriptionChars = ['%', '+', '\r', '\n'];
 
@@ -99,7 +108,7 @@ public sealed class InecobankApiClient
         var formUrl = GetString(doc, "formUrl");
         if (orderId is null || formUrl is null)
         {
-            throw new InecobankApiException(-1, "register.do returned no orderId/formUrl.");
+            throw new InecobankApiException(TransportErrorCode, "register.do returned no orderId/formUrl.");
         }
 
         _logger.LogInformation(
@@ -177,15 +186,43 @@ public sealed class InecobankApiClient
     /// <param name="fields">The form fields to send.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The parsed JSON response document. Caller owns disposal.</returns>
+    /// <exception cref="InecobankApiException">
+    /// Thrown with <see cref="TransportErrorCode"/> when the request fails outright, the
+    /// gateway answers with a non-2xx status, or the response body is not valid JSON — wrapping
+    /// the original <see cref="HttpRequestException"/> or <see cref="JsonException"/> as
+    /// <see cref="Exception.InnerException"/> so callers only ever need to catch this one type.
+    /// </exception>
     private async Task<JsonDocument> PostAsync(
         string endpoint, Dictionary<string, string> fields, CancellationToken ct)
     {
         var url = $"{_options.BaseUrl.TrimEnd('/')}/payment/rest/{endpoint}";
         using var content = new FormUrlEncodedContent(fields);
-        using var response = await _http.PostAsync(url, content, ct);
-        response.EnsureSuccessStatusCode();
-        var json = await response.Content.ReadAsStringAsync(ct);
-        return JsonDocument.Parse(json);
+
+        HttpResponseMessage? response = null;
+        try
+        {
+            response = await _http.PostAsync(url, content, ct);
+            response.EnsureSuccessStatusCode();
+            var json = await response.Content.ReadAsStringAsync(ct);
+            try
+            {
+                return JsonDocument.Parse(json);
+            }
+            catch (JsonException ex)
+            {
+                throw new InecobankApiException(
+                    TransportErrorCode, $"{endpoint}: gateway response was not valid JSON.", ex);
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new InecobankApiException(
+                TransportErrorCode, $"{endpoint}: request to the gateway failed.", ex);
+        }
+        finally
+        {
+            response?.Dispose();
+        }
     }
 
     /// <summary>Throws <see cref="InecobankApiException"/> when the response's errorCode is non-zero.</summary>

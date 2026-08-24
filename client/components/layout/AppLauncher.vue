@@ -71,44 +71,11 @@ const config = useRuntimeConfig()
 const open = ref(false)
 const rootEl = ref<HTMLElement | null>(null)
 
-interface AppEntry {
-  id: string
-  name: string
-  desc: string
-  icon: string
-  url: string
-  comingSoon: boolean
-}
-
-const ICON_MAP: Record<string, string> = {
-  account:  'lucide:user-circle',
-  tasks:    'lucide:list-checks',
-  hostpanel:'lucide:server',
-  erp:      'lucide:building-2',
-  sheets:   'lucide:table',
-  email:    'lucide:mail',
-  docs:     'lucide:file-text',
-  calendar: 'lucide:calendar',
-  drive:    'lucide:hard-drive',
-}
-
-const apps = ref<AppEntry[]>([])
-
-async function fetchApps() {
-  try {
-    const data: AppEntry[] = await fetch(`${config.public.mainUrl}/api/portal/public/apps`).then(r => r.json())
-    apps.value = data.map((app: AppEntry) => ({
-      ...app,
-      icon: ICON_MAP[app.id] ?? 'lucide:box',
-    }))
-  } catch {
-    // API недоступен — оставляем пустой список
-  }
-}
+const { apps, fetchApps } = useAppLauncher()
 
 function toggle() {
   open.value = !open.value
-  if (open.value && apps.value.length === 0) fetchApps()
+  if (open.value) fetchApps()
 }
 
 function onClickOutside(e: MouseEvent) {

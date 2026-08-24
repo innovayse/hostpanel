@@ -81,4 +81,19 @@ public class TestIntegrationConnectionHandlerTests
         Assert.False(result.Success);
         Assert.Contains("Access denied (errorCode 5).", result.Message);
     }
+
+    [Fact]
+    public async Task HandleAsync_Inecobank_ProbeCancelled_PropagatesRatherThanReportingFailure()
+    {
+        // An admin-cancelled probe (e.g. navigating away mid-test) must not be reported as
+        // "Gateway test failed" — that message is reserved for actual gateway failures.
+        SeedConfiguredSettings();
+        resolver.Setup(r => r.ResolveAsync("innovayse-inecobank", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(plugin.Object);
+        plugin.Setup(p => p.GetStatusAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new OperationCanceledException());
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => CreateHandler().HandleAsync(
+            new TestIntegrationConnectionCommand("innovayse-inecobank"), CancellationToken.None));
+    }
 }

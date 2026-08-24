@@ -37,6 +37,20 @@ public sealed class PaymentPluginResolver(
             return null;
         }
 
+        // Manifest.Type == Payment is only a JSON claim the plugin author made; it says nothing
+        // about the CLR type actually loaded. Verify the implementation really implements
+        // IPaymentPlugin before trusting it far enough to construct and cast it below — a
+        // mistyped third-party manifest must return the documented null, not an
+        // InvalidCastException thrown out of the payment path.
+        if (!typeof(IPaymentPlugin).IsAssignableFrom(plugin.ImplementationType))
+        {
+            logger.LogWarning(
+                "Payment plugin '{Module}' declares Type={ManifestType} but its implementation " +
+                "type '{ImplementationType}' does not implement {InterfaceType}.",
+                module, plugin.Manifest.Type, plugin.ImplementationType, nameof(IPaymentPlugin));
+            return null;
+        }
+
         var prefix = IntegrationSettingKeys.Prefix(module);
         var allSettings = await settings.ListAsync(ct);
         var values = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);

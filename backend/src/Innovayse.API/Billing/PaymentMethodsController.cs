@@ -1,8 +1,7 @@
 namespace Innovayse.API.Billing;
 
 using Innovayse.Application.Admin.Plugins.Interfaces;
-using Innovayse.Domain.Settings;
-using Innovayse.Domain.Settings.Interfaces;
+using Innovayse.Application.Billing.Interfaces;
 using Innovayse.SDK.Plugins;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,13 +11,17 @@ using Microsoft.AspNetCore.Mvc;
 /// plus every loaded payment plugin whose integration is enabled and fully configured.
 /// </summary>
 /// <param name="plugins">Plugin registry for loaded plugin manifests.</param>
-/// <param name="settings">Setting repository for integration configuration lookups.</param>
+/// <param name="pluginResolver">
+/// Payment plugin resolver — the same gate <c>StartGatewayPaymentHandler</c> uses to decide
+/// whether a module is usable at <c>start</c>, so a plugin can never be listed here as
+/// available and then refused when the payer actually tries to pay with it.
+/// </param>
 [ApiController]
 [Route("api/payment-methods")]
 [AllowAnonymous]
 public sealed class PaymentMethodsController(
     IPluginRegistry plugins,
-    ISettingRepository settings) : ControllerBase
+    IPaymentPluginResolver pluginResolver) : ControllerBase
 {
     /// <summary>Lists all active payment gateways available at checkout.</summary>
     /// <param name="ct">Cancellation token.</param>
@@ -32,19 +35,13 @@ public sealed class PaymentMethodsController(
             new { module = BuiltInPaymentModules.BankTransfer, displayname = "Bank Transfer" },
         };
 
-        var all = await settings.ListAsync(ct);
-        var lookup = all.ToDictionary(s => s.Key, s => s.Value, StringComparer.OrdinalIgnoreCase);
-
         foreach (var manifest in plugins.GetLoadedManifests().Where(m => m.Type == PluginType.Payment))
         {
-            var enabled = lookup.TryGetValue(IntegrationSettingKeys.EnabledKey(manifest.Id), out var flag)
-                && string.Equals(flag, "true", StringComparison.OrdinalIgnoreCase);
-            var configured = manifest.Fields
-                .Where(f => f.Required)
-                .All(f => lookup.TryGetValue(IntegrationSettingKeys.FieldKey(manifest.Id, f.Key), out var v)
-                    && !string.IsNullOrWhiteSpace(v));
-
-            if (enabled && configured)
+            // Ask the resolver rather than re-deriving "enabled and configured" from settings
+            // by hand — it is the same check StartGatewayPaymentHandler relies on to actually
+            // start a payment, so listing and starting can never disagree.
+            var plugin = await pluginResolver.ResolveAsync(manifest.Id, ct);
+            if (plugin is not null)
             {
                 methods.Add(new { module = manifest.Id, displayname = $"Bank Card ({manifest.Name})" });
             }

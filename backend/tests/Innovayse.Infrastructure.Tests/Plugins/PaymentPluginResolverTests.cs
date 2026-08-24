@@ -39,6 +39,15 @@ public class PaymentPluginResolverTests
             => throw new NotSupportedException();
     }
 
+    /// <summary>
+    /// Implementation type that deliberately does not implement <see cref="IPaymentPlugin"/>,
+    /// standing in for a third-party plugin whose manifest mistakenly (or maliciously) claims
+    /// <see cref="PluginType.Payment"/> for an entry point that isn't one.
+    /// </summary>
+    public sealed class MistypedManifestPlugin
+    {
+    }
+
     private const string Module = "fake-pay";
 
     private static PluginManifest Manifest(PluginType type = PluginType.Payment) => new()
@@ -61,10 +70,11 @@ public class PaymentPluginResolverTests
     private static PaymentPluginResolver CreateResolver(
         Dictionary<string, string> settings,
         PluginType pluginType = PluginType.Payment,
-        IConfiguration? hostConfig = null)
+        IConfiguration? hostConfig = null,
+        Type? implementationType = null)
     {
         var registry = new PluginRegistry();
-        registry.Register(new LoadedPlugin(Manifest(pluginType), typeof(FakePaymentPlugin)));
+        registry.Register(new LoadedPlugin(Manifest(pluginType), implementationType ?? typeof(FakePaymentPlugin)));
 
         var repo = new Mock<ISettingRepository>();
         repo.Setup(r => r.ListAsync(It.IsAny<CancellationToken>()))
@@ -145,6 +155,25 @@ public class PaymentPluginResolverTests
         });
 
         Assert.Null(await resolver.ResolveAsync(Module, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task ResolveAsync_ManifestClaimsPaymentButImplementationDoesNotImplementIPaymentPlugin_ReturnsNullWithoutThrowing()
+    {
+        // A manifest's Type == Payment is only a JSON claim; the resolver must verify the CLR
+        // type actually implements IPaymentPlugin before casting, and fail closed (null) rather
+        // than let an InvalidCastException escape the payment path when it doesn't.
+        var resolver = CreateResolver(
+            new()
+            {
+                [$"integration:{Module}:is_enabled"] = "true",
+                [$"integration:{Module}:api_key"] = "k-123",
+            },
+            implementationType: typeof(MistypedManifestPlugin));
+
+        var result = await resolver.ResolveAsync(Module, CancellationToken.None);
+
+        Assert.Null(result);
     }
 
     [Fact]

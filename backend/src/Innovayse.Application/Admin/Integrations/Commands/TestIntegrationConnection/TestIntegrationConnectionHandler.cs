@@ -115,6 +115,12 @@ public sealed class TestIntegrationConnectionHandler(
                         Message: "Gateway reachable and credentials accepted.",
                         TestedAt: testedAt);
                 }
+                catch (OperationCanceledException)
+                {
+                    // An admin-cancelled request (e.g. navigating away mid-probe) is not a
+                    // gateway failure — let it propagate rather than reporting "test failed".
+                    throw;
+                }
                 catch (Exception ex)
                 {
                     return new IntegrationTestResultDto(

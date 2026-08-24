@@ -25,8 +25,9 @@ public class StartGatewayPaymentHandlerTests
 
     public StartGatewayPaymentHandlerTests()
     {
-        // Matches the default (null → USD → "840") currency path used by most tests below.
-        plugin.SetupGet(p => p.CurrencyCode).Returns("840");
+        // Matches the default (null client currency → no configured Billing:DefaultCurrency →
+        // the handler's built-in AMD fallback → "051") currency path used by most tests below.
+        plugin.SetupGet(p => p.CurrencyCode).Returns("051");
     }
 
     private StartGatewayPaymentHandler CreateHandler(IConfiguration? configuration = null) =>
@@ -37,6 +38,18 @@ public class StartGatewayPaymentHandlerTests
         var effective = origins.Length > 0 ? origins : ["https://portal"];
         var pairs = effective
             .Select((o, i) => new KeyValuePair<string, string?>($"Cors:AllowedOrigins:{i}", o));
+        return new ConfigurationBuilder().AddInMemoryCollection(pairs).Build();
+    }
+
+    /// <summary>Builds config with an allowed return-url origin plus an explicit <c>Billing:DefaultCurrency</c>,
+    /// to prove that value overrides the handler's built-in AMD fallback.</summary>
+    private static IConfiguration ConfigWithDefaultCurrency(string defaultCurrency)
+    {
+        var pairs = new Dictionary<string, string?>
+        {
+            ["Cors:AllowedOrigins:0"] = "https://portal",
+            ["Billing:DefaultCurrency"] = defaultCurrency,
+        };
         return new ConfigurationBuilder().AddInMemoryCollection(pairs).Build();
     }
 
@@ -124,21 +137,42 @@ public class StartGatewayPaymentHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_NullClientCurrency_TreatedAsUsd()
+    public async Task HandleAsync_NullClientCurrencyWithNoConfiguredDefault_TreatedAsAmd()
     {
         // CreateInvoice with clientCurrency: null → clientRepo.FindByIdAsync returns null (unset mock).
+        // CreateHandler() below supplies only Cors:AllowedOrigins — no Billing:DefaultCurrency — so
+        // the handler must fall back to its built-in AMD constant.
         var invoice = CreateInvoice(total: 25m);
-        plugin.SetupGet(p => p.CurrencyCode).Returns("840"); // USD
+        plugin.SetupGet(p => p.CurrencyCode).Returns("051"); // AMD
         resolver.Setup(r => r.ResolveAsync("innovayse-inecobank", It.IsAny<CancellationToken>()))
             .ReturnsAsync(plugin.Object);
         plugin.Setup(p => p.CreatePaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new PaymentSession("gw-usd", "https://pg/pay?mdOrder=gw-usd"));
+            .ReturnsAsync(new PaymentSession("gw-amd-default", "https://pg/pay?mdOrder=gw-amd-default"));
 
         var redirect = await CreateHandler().HandleAsync(
             new StartGatewayPaymentCommand(invoice.Id, "innovayse-inecobank", ReturnUrl),
             CancellationToken.None);
 
-        Assert.Equal("https://pg/pay?mdOrder=gw-usd", redirect);
+        Assert.Equal("https://pg/pay?mdOrder=gw-amd-default", redirect);
+    }
+
+    [Fact]
+    public async Task HandleAsync_NullClientCurrencyWithConfiguredDefault_UsesConfiguredValue()
+    {
+        // An explicit Billing:DefaultCurrency in configuration must win over the handler's
+        // built-in AMD fallback.
+        var invoice = CreateInvoice(total: 25m);
+        plugin.SetupGet(p => p.CurrencyCode).Returns("978"); // EUR — matches the configured default below
+        resolver.Setup(r => r.ResolveAsync("innovayse-inecobank", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(plugin.Object);
+        plugin.Setup(p => p.CreatePaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PaymentSession("gw-eur-config", "https://pg/pay?mdOrder=gw-eur-config"));
+
+        var redirect = await CreateHandler(ConfigWithDefaultCurrency("EUR")).HandleAsync(
+            new StartGatewayPaymentCommand(invoice.Id, "innovayse-inecobank", ReturnUrl),
+            CancellationToken.None);
+
+        Assert.Equal("https://pg/pay?mdOrder=gw-eur-config", redirect);
     }
 
     [Fact]

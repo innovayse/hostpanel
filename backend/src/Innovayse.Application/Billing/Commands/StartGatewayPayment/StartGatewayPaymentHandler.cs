@@ -33,6 +33,21 @@ public sealed class StartGatewayPaymentHandler(
     /// </summary>
     private const int SessionWindowMinutes = 20;
 
+    /// <summary>
+    /// Configuration key for the panel's default billing currency, read the same way
+    /// <see cref="EnsureReturnUrlIsAllowed"/> reads <c>Cors:AllowedOrigins</c>. Applies whenever
+    /// a client has no explicit <see cref="Innovayse.Domain.Clients.Client.Currency"/> set.
+    /// </summary>
+    private const string DefaultCurrencyConfigKey = "Billing:DefaultCurrency";
+
+    /// <summary>
+    /// The panel's fallback billing currency when neither the client nor configuration
+    /// (<see cref="DefaultCurrencyConfigKey"/>) specifies one. Armenian merchants — this panel's
+    /// only production integration to date — bill in AMD, so that is the built-in default rather
+    /// than an internationally "neutral" currency like USD.
+    /// </summary>
+    private const string FallbackCurrency = "AMD";
+
     /// <summary>Handles the command.</summary>
     /// <param name="cmd">The start command.</param>
     /// <param name="ct">Cancellation token.</param>
@@ -136,7 +151,8 @@ public sealed class StartGatewayPaymentHandler(
     private async Task EnsureCurrencyMatchesAsync(Invoice invoice, IPaymentPlugin plugin, CancellationToken ct)
     {
         var client = await clientRepo.FindByIdAsync(invoice.ClientId, ct);
-        var clientCurrency = client?.Currency ?? "USD";
+        var defaultCurrency = configuration[DefaultCurrencyConfigKey] ?? FallbackCurrency;
+        var clientCurrency = client?.Currency ?? defaultCurrency;
         var clientCurrencyNumeric = CurrencyCodes.ToNumeric(clientCurrency)
             ?? throw new InvalidOperationException(
                 $"Invoice {invoice.Id}: client currency '{clientCurrency}' has no known ISO 4217 numeric mapping.");

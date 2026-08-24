@@ -222,6 +222,10 @@ public static class DependencyInjection
         services.Configure<StripeSettings>(configuration.GetSection("Stripe"));
         services.AddScoped<IStripeService, StripeService>();
 
+        // Payment plugins (hosted-gateway providers, e.g. Inecobank)
+        services.AddHttpClient();
+        services.AddScoped<IPaymentPluginResolver, PaymentPluginResolver>();
+
         // Audit
         services.AddHttpContextAccessor();
         services.AddScoped<IActivityLogRepository, ActivityLogRepository>();

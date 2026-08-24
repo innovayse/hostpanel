@@ -51,4 +51,10 @@ public sealed class OrderRepository(AppDbContext db) : IOrderRepository
     /// <inheritdoc/>
     public async Task<Order?> FindByOrderNumberAsync(string orderNumber, CancellationToken ct) =>
         await db.Orders.FirstOrDefaultAsync(o => o.OrderNumber == orderNumber, ct);
+
+    /// <inheritdoc/>
+    public async Task<Order?> FindByInvoiceIdAsync(int invoiceId, CancellationToken ct) =>
+        await db.Orders
+            .Include(o => o.Items)
+            .FirstOrDefaultAsync(o => o.InvoiceId == invoiceId, ct);
 }

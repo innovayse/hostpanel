@@ -11,6 +11,7 @@
     "signIn": "Sign in",
     "placeOrder": "Place Order",
     "processing": "Processing...",
+    "redirectingToBank": "Redirecting to the bank's secure payment page…",
     "noPaymentMethods": "No payment methods available. Please contact support.",
     "productConfig": "Service Configuration",
     "fields": {

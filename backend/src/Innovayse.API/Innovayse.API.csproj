@@ -55,4 +55,52 @@
     <Content Remove="logs/**/*" />
     <None Remove="logs/**/*" />
   </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Build-order-only reference: the API must never link against a plugin assembly
+      (PluginLoader loads it reflectively from plugins/ at runtime), but the plugin
+      still needs to be built before the staging targets below copy its output.
+      Only Innovayse.Providers.Inecobank is staged here — the CWP providers are
+      deliberately left unstaged so they don't silently activate at runtime.
+    -->
+    <ProjectReference Include="..\Innovayse.Providers.Inecobank\Innovayse.Providers.Inecobank.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>false</Private>
+    </ProjectReference>
+  </ItemGroup>
+
+  <!--
+    Stage the Inecobank payment plugin into plugins/innovayse-inecobank/ under the
+    API's own output, which is where PluginLoader.DiscoverAndRegister scans from
+    (AppContext.BaseDirectory/plugins). The provider targets net8.0 while the API
+    targets net9.0, so the copy source path is pinned to the provider's own TFM.
+
+    Only the provider's own assembly and its plugin.json manifest are staged — never
+    a `**\*.*` glob over the provider's bin folder. That folder also holds a build-time
+    copy of Innovayse.SDK.dll/.pdb/.xml (an intra-solution project reference, not
+    something the plugin ships), and PluginLoader does Assembly.LoadFrom over every
+    DLL it finds in a plugin's folder. A stale staged SDK copy there would load as a
+    second, distinct SDK assembly alongside the one the API host already has loaded,
+    and every `(IPaymentPlugin)` cast in PaymentPluginResolver would then fail, because
+    the plugin's IPaymentPlugin and the host's IPaymentPlugin would be two different
+    CLR types with the same name.
+  -->
+  <Target Name="StagePaymentPlugins" AfterTargets="Build">
+    <ItemGroup>
+      <InecobankPluginFiles Include="..\Innovayse.Providers.Inecobank\bin\$(Configuration)\net8.0\Innovayse.Providers.Inecobank.dll;..\Innovayse.Providers.Inecobank\bin\$(Configuration)\net8.0\plugin.json" />
+    </ItemGroup>
+    <Copy SourceFiles="@(InecobankPluginFiles)"
+          DestinationFolder="$(OutDir)plugins\innovayse-inecobank\"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+  <Target Name="StagePaymentPluginsOnPublish" AfterTargets="Publish">
+    <ItemGroup>
+      <InecobankPluginPublishFiles Include="..\Innovayse.Providers.Inecobank\bin\$(Configuration)\net8.0\Innovayse.Providers.Inecobank.dll;..\Innovayse.Providers.Inecobank\bin\$(Configuration)\net8.0\plugin.json" />
+    </ItemGroup>
+    <Copy SourceFiles="@(InecobankPluginPublishFiles)"
+          DestinationFolder="$(PublishDir)plugins\innovayse-inecobank\"
+          SkipUnchangedFiles="true" />
+  </Target>
 </Project>

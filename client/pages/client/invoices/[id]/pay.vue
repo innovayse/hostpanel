@@ -121,6 +121,17 @@
               </div>
             </div>
 
+            <!-- Hosted-gateway payment (e.g. Inecobank) -->
+            <button
+              v-if="hostedGatewayModule"
+              type="button"
+              :disabled="submitting"
+              class="w-full mb-4 px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-primary-600 text-white font-bold text-sm disabled:opacity-50"
+              @click="payWithHostedGateway"
+            >
+              {{ $t('invoicePay.payByCardInecobank') }}
+            </button>
+
             <!-- New card form -->
             <template v-if="selectedMethodId === 'new' || savedMethods.length === 0">
               <!-- Card Number -->
@@ -284,6 +295,15 @@ const [{ data: invoiceData, pending }, { data: methodsData }] = await Promise.al
 const invoice = computed(() => invoiceData.value as any)
 const savedMethods = computed(() => (methodsData.value as any[]) ?? [])
 
+// Hosted-gateway availability — the backend lists 'stripe' and 'bank_transfer' plus every
+// enabled/configured payment plugin. Pick the first plugin-backed one (not a fixed module id,
+// so a second gateway plugin doesn't get silently ignored here).
+const { data: gatewayMethods } = await useApi<{ module: string; displayname: string }[]>(
+  '/api/portal/order/payment-methods', { default: () => [] })
+const hostedGatewayModule = computed(() =>
+  (gatewayMethods.value ?? [])
+    .find(m => m.module !== PAYMENT_MODULE_STRIPE && m.module !== PAYMENT_MODULE_BANK_TRANSFER)?.module ?? null)
+
 // Payments to date = total - balance
 const paymentsToDate = computed(() => {
   if (!invoice.value) return '0.00'
@@ -334,6 +354,27 @@ async function submitPayment() {
   } catch (err: any) {
     payError.value = err?.data?.statusMessage ?? t('invoicePay.paymentFailed')
   } finally {
+    submitting.value = false
+  }
+}
+
+/** Starts a hosted-gateway payment (whichever plugin is enabled) and redirects the browser to the bank. */
+async function payWithHostedGateway() {
+  if (!hostedGatewayModule.value) return
+  payError.value = ''
+  submitting.value = true
+  try {
+    const returnUrl = new URL(
+      localePath(`/payment/result?invoice=${invoiceId}`),
+      window.location.origin,
+    ).toString()
+    const { redirectUrl } = await apiFetch<{ redirectUrl: string }>(
+      `/api/portal/client/invoices/${invoiceId}/gateway-payment/start`,
+      { method: 'POST', body: { module: hostedGatewayModule.value, returnUrl } },
+    )
+    window.location.href = redirectUrl
+  } catch (err: any) {
+    payError.value = err?.data?.statusMessage ?? t('invoicePay.paymentFailed')
     submitting.value = false
   }
 }

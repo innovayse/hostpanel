@@ -148,4 +148,14 @@ public sealed class InvoiceRepository(AppDbContext db) : IInvoiceRepository
     /// <inheritdoc/>
     public async Task<Invoice?> FindByExternalIdAsync(string externalId, CancellationToken ct) =>
         await db.Invoices.FirstOrDefaultAsync(i => i.ExternalId == externalId, ct);
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<Invoice>> ListPendingGatewayPaymentsAsync(
+        DateTimeOffset startedAfter, DateTimeOffset startedBefore, CancellationToken ct) =>
+        await db.Invoices
+            .Where(i => (i.Status == InvoiceStatus.Unpaid || i.Status == InvoiceStatus.Overdue)
+                && i.GatewayOrderId != null
+                && i.GatewayStartedAt > startedAfter
+                && i.GatewayStartedAt < startedBefore)
+            .ToListAsync(ct);
 }

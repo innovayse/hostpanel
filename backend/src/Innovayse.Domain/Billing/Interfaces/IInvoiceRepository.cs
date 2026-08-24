@@ -87,6 +87,17 @@ public interface IInvoiceRepository
     Task<Invoice?> FindByExternalIdAsync(string externalId, CancellationToken ct);
 
     /// <summary>
+    /// Lists unpaid/overdue invoices with an open hosted-gateway payment session
+    /// whose attempt started inside the given window. Used by the reconciliation job.
+    /// </summary>
+    /// <param name="startedAfter">Only sessions started after this instant (exclusive lower bound).</param>
+    /// <param name="startedBefore">Only sessions started before this instant (exclusive upper bound).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Invoices with a pending gateway session inside the window.</returns>
+    Task<IReadOnlyList<Invoice>> ListPendingGatewayPaymentsAsync(
+        DateTimeOffset startedAfter, DateTimeOffset startedBefore, CancellationToken ct);
+
+    /// <summary>
     /// Returns all paid invoices whose payment date falls within the given range.
     /// Used for revenue reports.
     /// </summary>

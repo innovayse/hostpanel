@@ -55,6 +55,15 @@ public sealed class Invoice : AggregateRoot
     /// <summary>Gets the external system ID (e.g. source system invoice ID) used for migration deduplication.</summary>
     public string? ExternalId { get; private set; }
 
+    /// <summary>Gets the payment plugin id that initiated the latest gateway payment session; null when none.</summary>
+    public string? GatewayModule { get; private set; }
+
+    /// <summary>Gets the gateway-side order id of the latest payment attempt; null when none.</summary>
+    public string? GatewayOrderId { get; private set; }
+
+    /// <summary>Gets the UTC timestamp when the latest gateway payment attempt started; null when none.</summary>
+    public DateTimeOffset? GatewayStartedAt { get; private set; }
+
     /// <summary>Gets optional notes for this invoice.</summary>
     public string? Notes { get; private set; }
 
@@ -232,7 +241,14 @@ public sealed class Invoice : AggregateRoot
     public void UpdateNotes(string? notes) => Notes = notes;
 
     /// <summary>
-    /// Records a successful payment and raises <see cref="PaymentReceivedEvent"/>.
+    /// Records a successful payment made through a path other than the currently active
+    /// hosted-gateway session (manual admin recording, Stripe, legacy import, etc.) and raises
+    /// <see cref="PaymentReceivedEvent"/>. Clears any stored gateway session fields — the
+    /// invariant maintained across the aggregate is that once an invoice is paid, its gateway
+    /// session fields describe the gateway that actually took the money, or are null. Since this
+    /// path did not use the stored session, any stored session it might overwrite is stale and
+    /// must not be mistaken later for "the gateway that paid" by refund/reconciliation code. Use
+    /// <see cref="MarkPaidViaGateway"/> instead when completing the invoice's own active session.
     /// </summary>
     public void MarkPaid(string gatewayTransactionId)
     {
@@ -244,7 +260,56 @@ public sealed class Invoice : AggregateRoot
         Status = InvoiceStatus.Paid;
         PaidAt = DateTimeOffset.UtcNow;
         GatewayTransactionId = gatewayTransactionId;
+        ClearGatewaySession();
         AddDomainEvent(new PaymentReceivedEvent(Id, ClientId, Total, gatewayTransactionId));
+    }
+
+    /// <summary>
+    /// Records a successful payment made through the invoice's own currently active
+    /// hosted-gateway session and raises <see cref="PaymentReceivedEvent"/>. Unlike
+    /// <see cref="MarkPaid"/>, this retains <see cref="GatewayModule"/>, <see cref="GatewayOrderId"/>
+    /// and <see cref="GatewayStartedAt"/> so later refund and reconciliation code can identify
+    /// which gateway actually took the money.
+    /// </summary>
+    /// <param name="gatewayTransactionId">The gateway's transaction reference for the completed payment.</param>
+    public void MarkPaidViaGateway(string gatewayTransactionId)
+    {
+        if (Status is not (InvoiceStatus.Unpaid or InvoiceStatus.Overdue))
+        {
+            throw new InvalidOperationException($"Invoice cannot be paid in status {Status}.");
+        }
+
+        Status = InvoiceStatus.Paid;
+        PaidAt = DateTimeOffset.UtcNow;
+        GatewayTransactionId = gatewayTransactionId;
+        AddDomainEvent(new PaymentReceivedEvent(Id, ClientId, Total, gatewayTransactionId));
+    }
+
+    /// <summary>Clears the stored hosted-gateway session fields.</summary>
+    private void ClearGatewaySession()
+    {
+        GatewayModule = null;
+        GatewayOrderId = null;
+        GatewayStartedAt = null;
+    }
+
+    /// <summary>
+    /// Records a new hosted-gateway payment attempt. Each attempt overwrites the previous
+    /// session — the gateway rejects reused order numbers, so retries always re-register.
+    /// </summary>
+    /// <param name="module">The payment plugin id (e.g. "innovayse-inecobank").</param>
+    /// <param name="gatewayOrderId">The gateway-side order id returned at registration.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the invoice is not payable.</exception>
+    public void SetGatewaySession(string module, string gatewayOrderId)
+    {
+        if (Status is not (InvoiceStatus.Unpaid or InvoiceStatus.Overdue))
+        {
+            throw new InvalidOperationException($"Cannot start a gateway payment for an invoice in status {Status}.");
+        }
+
+        GatewayModule = module;
+        GatewayOrderId = gatewayOrderId;
+        GatewayStartedAt = DateTimeOffset.UtcNow;
     }
 
     /// <summary>
@@ -281,7 +346,14 @@ public sealed class Invoice : AggregateRoot
     }
 
     /// <summary>
-    /// Reverses a paid invoice back to Unpaid status.
+    /// Reverses a paid invoice back to Unpaid status. Also clears any retained gateway
+    /// session: an invoice paid via <see cref="MarkPaidViaGateway"/> keeps its
+    /// <see cref="GatewayModule"/>/<see cref="GatewayOrderId"/>/<see cref="GatewayStartedAt"/>
+    /// so refund/reconciliation code can find the paying gateway, but once an admin reverses
+    /// that payment there is no longer a live payment to reconcile. Leaving the session behind
+    /// would let the reconciler — which looks back 24 hours for pending gateway sessions — see
+    /// what still looks like an in-flight payment, re-query the gateway, and silently re-mark
+    /// the invoice Paid again, undoing the reversal.
     /// </summary>
     public void MarkUnpaid()
     {
@@ -293,6 +365,7 @@ public sealed class Invoice : AggregateRoot
         Status = InvoiceStatus.Unpaid;
         PaidAt = null;
         GatewayTransactionId = null;
+        ClearGatewaySession();
     }
 
     /// <summary>
@@ -333,6 +406,7 @@ public sealed class Invoice : AggregateRoot
         GatewayTransactionId = null;
     }
 
+    /// <summary>Recomputes <see cref="SubTotal"/>, <see cref="Tax"/>, and <see cref="Total"/> from current line items.</summary>
     private void RecalculateTotals()
     {
         SubTotal = _items.Sum(i => i.Amount);

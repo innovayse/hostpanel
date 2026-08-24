@@ -10,9 +10,12 @@
     "declinedBody": "The payment was declined or cancelled. No money was taken for this attempt.",
     "unknownTitle": "We couldn't confirm your payment",
     "unknownBody": "We weren't able to reach the bank to confirm your payment status right now. If it went through, your order or invoice will update automatically shortly. Please avoid paying again until then — check again below.",
+    "missingTitle": "No payment to check",
+    "missingBody": "This page didn't receive a payment reference, so there's nothing to verify here. If you were sent here after paying, check your invoices below.",
     "retry": "Check again",
     "goToOrder": "Continue",
     "goToInvoice": "Back to invoice",
+    "viewInvoices": "View my invoices",
     "tryAgain": "Try paying again"
   }
 }

@@ -40,6 +40,18 @@
         </NuxtLink>
       </template>
 
+      <!-- Missing: the URL carried neither ?order= nor ?invoice=, so there is nothing to check
+           and nothing to retry — copy and layout must not imply a payment attempt exists. -->
+      <template v-else-if="state === 'missing'">
+        <AlertTriangle :size="48" class="mx-auto text-yellow-400 mb-4" />
+        <h1 class="text-xl font-bold text-white mb-2">{{ $t('paymentResult.missingTitle') }}</h1>
+        <p class="text-gray-400 mb-8">{{ $t('paymentResult.missingBody') }}</p>
+        <NuxtLink :to="localePath('/client/invoices')"
+                  class="inline-block px-6 py-3 rounded-xl bg-white/10 border border-white/10 text-white font-bold">
+          {{ $t('paymentResult.viewInvoices') }}
+        </NuxtLink>
+      </template>
+
       <!-- Unknown: we could not reach/parse the completion check — do not assert a financial outcome -->
       <template v-else>
         <AlertTriangle :size="48" class="mx-auto text-yellow-400 mb-4" />
@@ -76,9 +88,12 @@ const invoiceId = computed(() => route.query.invoice as string | undefined)
 
 // 'unknown' means we could not get an authoritative answer from the backend
 // (network error, timeout, proxy failure, etc.) — distinct from 'declined',
-// which is only ever set when the backend itself reported that state. Copy
-// that asserts a financial outcome must only show for backend-confirmed states.
-const state = ref<'verifying' | 'paid' | 'pending' | 'declined' | 'unknown'>('verifying')
+// which is only ever set when the backend itself reported that state. 'missing'
+// means the URL never carried an id to check in the first place (no ?order= or
+// ?invoice=) — distinct from 'unknown' because there is no payment attempt to
+// retry, so its copy and buttons must not imply one exists. Copy that asserts a
+// financial outcome must only show for backend-confirmed states.
+const state = ref<'verifying' | 'paid' | 'pending' | 'declined' | 'unknown' | 'missing'>('verifying')
 const checking = ref(false)
 
 /** Where the primary button leads after a successful payment. */
@@ -121,7 +136,9 @@ async function check() {
 
 onMounted(() => {
   if (!orderId.value && !invoiceId.value) {
-    state.value = 'unknown'
+    // Nothing to verify — do not call check(), which would fall through to the
+    // invoice branch with an undefined id and hit /invoices/undefined/....
+    state.value = 'missing'
     return
   }
   check()

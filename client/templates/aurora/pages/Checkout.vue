@@ -127,7 +127,7 @@
               </label>
             </div>
 
-            <div v-if="selectedMethod === 'stripe'" class="mt-6 overflow-hidden">
+            <div v-if="selectedMethod === PAYMENT_MODULE_STRIPE" class="mt-6 overflow-hidden">
               <CheckoutStripeCardForm ref="stripeCardFormRef" />
             </div>
           </section>
@@ -185,7 +185,7 @@
               @click="submitOrder"
             >
               <Lock v-if="!submitting" :size="20" class="mr-2" />
-              {{ submitting ? $t('checkout.processing') : $t('checkout.placeOrder') }}
+              {{ submitting ? submittingLabel : $t('checkout.placeOrder') }}
             </UiButton>
 
             <div class="mt-5 flex items-center justify-center gap-2 text-xs text-mut2">
@@ -310,6 +310,12 @@ const submitting = ref(false)
 const orderError = ref('')
 const stripeCardFormRef = ref<{ confirmPayment: (clientSecret: string) => Promise<{ id: string }> } | null>(null)
 
+/** Submit-button label while the order is being placed/processed. */
+const submittingLabel = computed(() =>
+  selectedMethod.value !== PAYMENT_MODULE_STRIPE && selectedMethod.value !== PAYMENT_MODULE_BANK_TRANSFER && selectedMethod.value
+    ? $t('checkout.redirectingToBank')
+    : $t('checkout.processing'))
+
 async function submitOrder() {
   if (!selectedMethod.value || submitting.value) return
   orderError.value = ''
@@ -348,7 +354,7 @@ async function submitOrder() {
       try { await login(form.email, form.password) } catch { /* middleware handles */ }
     }
 
-    if (selectedMethod.value === 'stripe') {
+    if (selectedMethod.value === PAYMENT_MODULE_STRIPE) {
       // Step 2: Create PaymentIntent
       const { clientSecret } = await apiFetch<{ clientSecret: string }>(
         `/api/portal/order/${result.orderId}/create-payment-intent`,
@@ -372,6 +378,23 @@ async function submitOrder() {
       const finalAmount = totalLabel.value
       cart.clear()
       await navigateTo(localePath(`/client/order-success?order=ORD-${String(result.orderId).padStart(4, '0')}&amount=${finalAmount}${domainQuery}`))
+    } else if (selectedMethod.value !== PAYMENT_MODULE_BANK_TRANSFER) {
+      // Any plugin-backed payment method (e.g. Inecobank) is a hosted gateway: register the
+      // payment and hand the browser to the bank. Branching on "not stripe, not bank_transfer"
+      // rather than a specific plugin id, so a second gateway plugin doesn't silently fall
+      // through to the bank-transfer branch below. The cart is cleared first — the order and
+      // invoice already exist on the backend, and the payer returns via /payment/result which
+      // verifies with the bank.
+      const returnUrl = new URL(
+        localePath(`/payment/result?order=${result.orderId}`),
+        window.location.origin,
+      ).toString()
+      const { redirectUrl } = await apiFetch<{ redirectUrl: string }>(
+        `/api/portal/order/${result.orderId}/gateway-payment/start`,
+        { method: 'POST', body: { module: selectedMethod.value, returnUrl } },
+      )
+      cart.clear()
+      window.location.href = redirectUrl
     } else {
       // Bank transfer / other methods: order stays Pending, redirect to invoice
       cart.clear()

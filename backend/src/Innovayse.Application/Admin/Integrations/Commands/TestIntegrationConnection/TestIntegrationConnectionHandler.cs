@@ -1,15 +1,28 @@
 namespace Innovayse.Application.Admin.Integrations.Commands.TestIntegrationConnection;
 
 using Innovayse.Application.Admin.Integrations.DTOs;
+using Innovayse.Application.Billing.Interfaces;
+using Innovayse.Domain.Settings;
 using Innovayse.Domain.Settings.Interfaces;
 
 /// <summary>
 /// Handles <see cref="TestIntegrationConnectionCommand"/> by checking whether all
-/// required fields for the integration contain non-empty stored values.
+/// required fields for the integration contain non-empty stored values, and, for
+/// integrations that support it, running a live probe against the provider.
 /// </summary>
 /// <param name="settings">Setting repository for key-value lookups.</param>
-public sealed class TestIntegrationConnectionHandler(ISettingRepository settings)
+/// <param name="pluginResolver">Payment plugin resolver, used for live gateway probes.</param>
+public sealed class TestIntegrationConnectionHandler(
+    ISettingRepository settings,
+    IPaymentPluginResolver pluginResolver)
 {
+    /// <summary>
+    /// Plugin id / slug of the Inecobank gateway. The provider assembly already exposes this
+    /// as <c>InecobankPaymentGateway.PluginId</c>, but Application cannot reference a provider
+    /// assembly, so it is repeated here as a single source shared by both usages below.
+    /// </summary>
+    private const string InecobankSlug = "innovayse-inecobank";
+
     /// <summary>
     /// Static metadata for every integration.
     /// </summary>
@@ -28,6 +41,9 @@ public sealed class TestIntegrationConnectionHandler(ISettingRepository settings
         ["cwp7"] = ("CWP7", "Hosting / Provisioning", [], []),
         ["smtp"] = ("SMTP Server", "Email / SMTP", ["host", "username", "password", "from_address"], ["host", "port", "username", "password", "from_address", "encryption"]),
         ["maxmind"] = ("MaxMind", "Fraud Protection", ["account_id", "license_key"], ["account_id", "license_key"]),
+        [InecobankSlug] = ("Inecobank", "Payment Gateways",
+            ["gateway_url", "username", "password"],
+            ["gateway_url", "username", "password", "currency", "language"]),
     };
 
     /// <summary>
@@ -64,19 +80,56 @@ public sealed class TestIntegrationConnectionHandler(ISettingRepository settings
         }
 
         var all = await settings.ListAsync(ct);
-        var prefix = $"integration:{command.Slug}:";
+        var prefix = IntegrationSettingKeys.Prefix(command.Slug);
         var lookup = all
             .Where(s => s.Key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
             .ToDictionary(s => s.Key, s => s.Value, StringComparer.OrdinalIgnoreCase);
 
         var missing = meta.RequiredFields
             .Where(field =>
-                !lookup.TryGetValue($"{prefix}{field}", out var val)
+                !lookup.TryGetValue(IntegrationSettingKeys.FieldKey(command.Slug, field), out var val)
                 || string.IsNullOrWhiteSpace(val))
             .ToList();
 
         if (missing.Count == 0)
         {
+            // Live probe for hosted-gateway plugins: a status query with a bogus order id
+            // distinguishes valid credentials ("unregistered orderId" → Declined result)
+            // from rejected ones (access-denied error → exception).
+            if (command.Slug == InecobankSlug)
+            {
+                try
+                {
+                    var plugin = await pluginResolver.ResolveAsync(command.Slug, ct);
+                    if (plugin is null)
+                    {
+                        return new IntegrationTestResultDto(
+                            Success: false,
+                            Message: "Integration is disabled or the plugin is not loaded.",
+                            TestedAt: testedAt);
+                    }
+
+                    await plugin.GetStatusAsync("connection-test-probe", ct);
+                    return new IntegrationTestResultDto(
+                        Success: true,
+                        Message: "Gateway reachable and credentials accepted.",
+                        TestedAt: testedAt);
+                }
+                catch (OperationCanceledException)
+                {
+                    // An admin-cancelled request (e.g. navigating away mid-probe) is not a
+                    // gateway failure — let it propagate rather than reporting "test failed".
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    return new IntegrationTestResultDto(
+                        Success: false,
+                        Message: $"Gateway test failed: {ex.Message}",
+                        TestedAt: testedAt);
+                }
+            }
+
             return new IntegrationTestResultDto(
                 Success: true,
                 Message: "Connection validated -- all required fields are configured.",

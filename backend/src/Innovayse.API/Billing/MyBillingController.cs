@@ -2,7 +2,10 @@ namespace Innovayse.API.Billing;
 
 using System.Security.Claims;
 using Innovayse.API.Billing.Requests;
+using Innovayse.API.Orders.Requests;
+using Innovayse.Application.Billing.Commands.CompleteGatewayPayment;
 using Innovayse.Application.Billing.Commands.PayInvoice;
+using Innovayse.Application.Billing.Commands.StartGatewayPayment;
 using Innovayse.Application.Billing.DTOs;
 using Innovayse.Application.Billing.Queries.GetInvoice;
 using Innovayse.Application.Billing.Queries.GetMyInvoices;
@@ -74,6 +77,47 @@ public sealed class MyBillingController(IMessageBus bus) : ControllerBase
 
         await bus.InvokeAsync(new PayInvoiceCommand(id, request.Currency), ct);
         return NoContent();
+    }
+
+    /// <summary>Starts a hosted-gateway payment for the authenticated client's invoice.</summary>
+    /// <param name="id">Invoice primary key.</param>
+    /// <param name="request">The payment module and return URL.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with the redirect URL; 403 when the invoice belongs to another client.</returns>
+    [HttpPost("{id:int}/gateway-payment/start")]
+    public async Task<IActionResult> StartGatewayPaymentAsync(
+        int id, [FromBody] StartGatewayPaymentRequest request, CancellationToken ct)
+    {
+        var userId = GetUserId();
+        var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(userId), ct);
+        var invoice = await bus.InvokeAsync<InvoiceDto>(new GetInvoiceQuery(id), ct);
+        if (invoice.ClientId != profile.Id)
+        {
+            return Forbid();
+        }
+
+        var redirectUrl = await bus.InvokeAsync<string>(
+            new StartGatewayPaymentCommand(id, request.Module, request.ReturnUrl), ct);
+        return Ok(new { redirectUrl });
+    }
+
+    /// <summary>Verifies a hosted-gateway payment for the authenticated client's invoice.</summary>
+    /// <param name="id">Invoice primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with the payment state; 403 when the invoice belongs to another client.</returns>
+    [HttpPost("{id:int}/gateway-payment/complete")]
+    public async Task<IActionResult> CompleteGatewayPaymentAsync(int id, CancellationToken ct)
+    {
+        var userId = GetUserId();
+        var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(userId), ct);
+        var invoice = await bus.InvokeAsync<InvoiceDto>(new GetInvoiceQuery(id), ct);
+        if (invoice.ClientId != profile.Id)
+        {
+            return Forbid();
+        }
+
+        var state = await bus.InvokeAsync<GatewayCompletionState>(new CompleteGatewayPaymentCommand(id), ct);
+        return Ok(new { state = state.ToWireString() });
     }
 
     /// <summary>Fallback JWT claim type when <see cref="ClaimTypes.NameIdentifier"/> is absent.</summary>

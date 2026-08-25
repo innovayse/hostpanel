@@ -1,5 +1,4 @@
 namespace Innovayse.SDK.Base;
-using Innovayse.SDK.Plugins;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -10,7 +9,7 @@ using Microsoft.Extensions.Logging;
 public abstract class PaymentGatewayBase(
     string pluginId,
     IConfiguration configuration,
-    ILogger logger) : IPaymentPlugin
+    ILogger logger)
 {
     /// <summary>Gets the structured logger pre-injected for this provider.</summary>
     protected ILogger Logger { get; } = logger;

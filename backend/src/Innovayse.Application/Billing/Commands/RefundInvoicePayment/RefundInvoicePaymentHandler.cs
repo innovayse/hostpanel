@@ -1,5 +1,7 @@
 namespace Innovayse.Application.Billing.Commands.RefundInvoicePayment;
 
+using Innovayse.Application.Billing;
+using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Billing.Interfaces;
@@ -8,11 +10,14 @@ using Innovayse.Domain.Clients.Interfaces;
 /// <summary>
 /// Records a refund against a paid invoice, creates a client-level transaction ledger entry,
 /// and optionally adds the refund amount to the client's credit balance (for CreditBalance refunds).
+/// For invoices paid through a hosted-gateway payment plugin, the gateway refund is executed
+/// first and the refund is recorded only on success.
 /// </summary>
 public sealed class RefundInvoicePaymentHandler(
     IInvoiceRepository repo,
     ITransactionRepository transactionRepo,
     IClientRepository clientRepo,
+    IPaymentPluginResolver pluginResolver,
     IUnitOfWork uow)
 {
     /// <summary>
@@ -35,7 +40,7 @@ public sealed class RefundInvoicePaymentHandler(
         {
             "Manual" => cmd.RefundTransactionId ?? $"manual-refund-{cmd.InvoiceId}-{DateTimeOffset.UtcNow.Ticks}",
             "CreditBalance" => $"credit-refund-{cmd.InvoiceId}-{DateTimeOffset.UtcNow.Ticks}",
-            _ => $"gateway-refund-{cmd.InvoiceId}-{DateTimeOffset.UtcNow.Ticks}",
+            _ => await ExecuteGatewayRefundAsync(invoice, refundAmount, ct),
         };
 
         var gateway = cmd.RefundType == "CreditBalance" ? "Credit Balance" : cmd.Gateway;
@@ -64,5 +69,30 @@ public sealed class RefundInvoicePaymentHandler(
         }
 
         await uow.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// Executes a real gateway refund when the invoice was paid through a hosted-gateway
+    /// plugin; falls back to a bookkeeping-only reference otherwise (legacy behavior).
+    /// </summary>
+    /// <param name="invoice">The invoice being refunded.</param>
+    /// <param name="refundAmount">The refund amount in major units.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The transaction reference to record.</returns>
+    private async Task<string> ExecuteGatewayRefundAsync(
+        Invoice invoice, decimal refundAmount, CancellationToken ct)
+    {
+        if (invoice.GatewayModule is null || invoice.GatewayOrderId is null)
+        {
+            return $"gateway-refund-{invoice.Id}-{DateTimeOffset.UtcNow.Ticks}";
+        }
+
+        var plugin = await pluginResolver.ResolveAsync(invoice.GatewayModule, ct)
+            ?? throw new InvalidOperationException(
+                $"Payment plugin '{invoice.GatewayModule}' is not configured; cannot refund invoice {invoice.Id}.");
+
+        // Gateway call first: if it fails, nothing is recorded and books stay consistent.
+        var amountMinor = CurrencyCodes.ToMinorUnits(refundAmount);
+        return await plugin.RefundAsync(invoice.GatewayOrderId, amountMinor, ct);
     }
 }

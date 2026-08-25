@@ -156,6 +156,17 @@ namespace Innovayse.Infrastructure.Migrations
                     b.Property<string>("ExternalId")
                         .HasColumnType("text");
 
+                    b.Property<string>("GatewayModule")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("GatewayOrderId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("GatewayStartedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("GatewayTransactionId")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");

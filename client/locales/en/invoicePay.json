@@ -3,6 +3,7 @@
     "makePayment": "Make Payment",
     "invoiceNum": "Invoice #{id}",
     "paymentMethod": "Payment Method",
+    "payByCardInecobank": "Pay by card (Inecobank)",
     "enterCardBelow": "Enter New Card Information Below",
     "newCard": "Enter New Card Information",
     "cardNumber": "Card Number",

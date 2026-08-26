@@ -17,6 +17,7 @@ export interface AppEntry {
 
 /** Maps app IDs to Lucide icon names. */
 const ICON_MAP: Record<string, string> = {
+  home:      'lucide:home',
   account:   'lucide:user-circle',
   tasks:     'lucide:list-checks',
   hostpanel: 'lucide:server',

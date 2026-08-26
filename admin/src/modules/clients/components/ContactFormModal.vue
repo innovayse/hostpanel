@@ -209,7 +209,7 @@ onMounted(() => {
     <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="emit('close')" />
 
     <!-- Modal -->
-    <div class="relative bg-surface-card border border-border rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div class="relative bg-surface-card border border-border rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90dvh] overflow-y-auto">
 
       <!-- Header -->
       <div class="px-6 pt-5 pb-4 border-b border-border flex items-center justify-between">

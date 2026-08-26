@@ -1,7 +1,7 @@
 <template>
   <div v-if="productData">
     <!-- Single Full Page Section -->
-    <section class="py-10 md:py-24 bg-[#0a0a0f] relative overflow-hidden min-h-screen">
+    <section class="py-10 md:py-24 bg-[#0a0a0f] relative overflow-hidden min-h-dvh">
       <!-- Animated Background -->
       <div class="absolute inset-0 pointer-events-none">
         <div class="absolute inset-0 bg-gradient-to-br from-primary-500/10 via-transparent to-secondary-500/10" />
@@ -233,7 +233,7 @@
   </div>
 
   <!-- 404 State -->
-  <div v-else class="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
+  <div v-else class="min-h-dvh flex items-center justify-center bg-[#0a0a0f]">
     <div class="text-center">
       <Icon name="mdi:package-variant" class="text-6xl text-gray-600 mx-auto mb-4" />
       <h1 class="text-2xl font-bold text-white mb-2">{{ $t('products.notFound') }}</h1>

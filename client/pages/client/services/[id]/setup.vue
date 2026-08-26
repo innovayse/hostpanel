@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-[60vh] flex items-center justify-center py-10">
+  <div class="min-h-[60dvh] flex items-center justify-center py-10">
     <div class="max-w-xl w-full">
       <!-- Loading State -->
       <div v-if="pending" class="text-center p-12">

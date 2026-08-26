@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-[#0a0a10] text-white selection:bg-cyan-500/30">
+  <div class="min-h-dvh bg-[#0a0a10] text-white selection:bg-cyan-500/30">
     <!-- Hero Header -->
     <div class="relative py-12 md:py-20 overflow-hidden border-b border-white/5">
       <div class="absolute inset-0 pointer-events-none">

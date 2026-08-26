@@ -51,7 +51,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="relative min-h-screen bg-surface-base flex items-center justify-center overflow-hidden">
+  <div class="relative min-h-dvh bg-surface-base flex items-center justify-center overflow-hidden">
 
     <!-- Orb blue (top-left) -->
     <div

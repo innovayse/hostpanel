@@ -103,7 +103,7 @@ async function handleSave(): Promise<void> {
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
       @click.self="emit('close')"
     >
-      <div class="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl w-full max-w-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl w-full max-w-2xl p-6 space-y-4 max-h-[90dvh] overflow-y-auto">
         <div class="flex items-center justify-between">
           <h2 class="text-white font-semibold text-lg">Add New Transaction</h2>
           <button class="text-zinc-400 hover:text-white transition" @click="emit('close')">&#10005;</button>

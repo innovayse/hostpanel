@@ -1,5 +1,5 @@
 <template>
-  <section ref="sectionRef" class="relative h-[75vh] sm:h-[85vh] md:h-screen w-full overflow-hidden">
+  <section ref="sectionRef" class="relative h-[75dvh] sm:h-[85dvh] md:h-dvh w-full overflow-hidden">
     <ClientOnly>
       <!-- SSR / pre-hydration hero — full first slide rendered immediately -->
       <template #fallback>

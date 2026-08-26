@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex flex-col bg-page">
+  <div class="min-h-dvh flex flex-col bg-page">
     <!-- Header supplied by the active template -->
     <component :is="header" />
 

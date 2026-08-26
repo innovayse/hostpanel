@@ -106,7 +106,7 @@
               <slot />
             </template>
             <template #fallback>
-              <div class="flex items-center justify-center min-h-[40vh]">
+              <div class="flex items-center justify-center min-h-[40dvh]">
                 <div class="w-10 h-10 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin" />
               </div>
             </template>
@@ -223,10 +223,10 @@ async function handleLogout() {
 
 <style>
 /* Account panel responsive width on small screens */
-@media (max-width: 640px) {
+@media (max-width: 639px) {
   #inno-account-panel {
+    @apply right-[-4px];
     width: calc(100vw - 16px);
-    right: -4px;
   }
 }
 </style>

@@ -249,7 +249,7 @@
         >
           <div
             v-if="showAddressModal"
-            class="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-[#13131a] border border-gray-200 dark:border-white/10 shadow-2xl"
+            class="w-full max-w-2xl max-h-[90dvh] overflow-y-auto rounded-2xl bg-white dark:bg-[#13131a] border border-gray-200 dark:border-white/10 shadow-2xl"
           >
             <!-- Modal header -->
             <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-white/10">

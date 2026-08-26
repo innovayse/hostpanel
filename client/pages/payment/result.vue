@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-[60vh] flex items-center justify-center px-4 py-16">
+  <div class="min-h-[60dvh] flex items-center justify-center px-4 py-16">
     <div class="w-full max-w-md p-8 rounded-3xl bg-white/5 border border-white/10 text-center">
       <!-- Verifying -->
       <template v-if="state === 'verifying'">

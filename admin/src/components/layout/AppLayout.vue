@@ -28,7 +28,7 @@ function closeDrawer(): void {
 </script>
 
 <template>
-  <div class="flex min-h-screen bg-surface-base">
+  <div class="flex min-h-dvh bg-surface-base">
 
     <!-- Mobile backdrop -->
     <Transition name="fade">

@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-[#0a0a0f] flex items-center justify-center relative overflow-hidden">
+  <div class="min-h-dvh bg-[#0a0a0f] flex items-center justify-center relative overflow-hidden">
     <!-- Background -->
     <div class="absolute inset-0 pointer-events-none">
       <div class="absolute inset-0 bg-gradient-to-br from-primary-500/10 via-transparent to-secondary-500/10" />

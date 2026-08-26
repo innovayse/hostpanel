@@ -1,5 +1,5 @@
 <template>
-  <section class="relative min-h-screen flex items-center justify-center bg-[#0a0a0f] overflow-hidden">
+  <section class="relative min-h-dvh flex items-center justify-center bg-[#0a0a0f] overflow-hidden">
     <!-- Animated background blobs -->
     <div class="absolute inset-0 overflow-hidden pointer-events-none">
       <!-- Large animated gradient blobs -->
@@ -291,24 +291,19 @@ function scrollToNextSection() {
 }
 
 .container-custom {
+  @apply w-full mx-auto px-4;
   max-width: 1400px;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
 }
 
-@media (min-width: 640px) {
+@screen sm {
   .container-custom {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
+    @apply px-6;
   }
 }
 
-@media (min-width: 1024px) {
+@screen lg {
   .container-custom {
-    padding-left: 3rem;
-    padding-right: 3rem;
+    @apply px-12;
   }
 }
 

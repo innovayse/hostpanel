@@ -1,6 +1,6 @@
 <template>
   <div>
-    <section class="py-12 md:py-20 bg-[#0a0a0f] min-h-screen">
+    <section class="py-12 md:py-20 bg-[#0a0a0f] min-h-dvh">
       <div class="container-custom max-w-3xl">
 
         <!-- Back link -->

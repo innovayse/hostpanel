@@ -1,5 +1,5 @@
 <template>
-  <div class="relative mx-auto min-h-screen max-w-[1440px] overflow-hidden font-aurora text-tx">
+  <div class="relative mx-auto min-h-dvh max-w-[1440px] overflow-hidden font-aurora text-tx">
     <div
       class="pointer-events-none absolute -top-[280px] left-1/2 h-[600px] w-[1000px] -translate-x-1/2 bg-glow1"
     />

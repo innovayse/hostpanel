@@ -213,7 +213,7 @@ export default defineNuxtConfig({
       title: 'Innovayse - Full-Cycle Digital Agency | Web Development, SEO, PPC',
       meta: [
         { charset: 'utf-8' },
-        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
         { name: 'description', content: 'Innovayse is a full-cycle digital agency specializing in web & mobile development, technical SEO, PPC advertising, and SaaS products. Transform your business with our expert solutions.' },
         { name: 'keywords', content: 'web development, mobile development, SEO, PPC, Google Ads, Yandex Direct, SaaS, digital agency, e-commerce development, technical SEO, content optimization' },
         { name: 'author', content: 'Innovayse' },

@@ -13,7 +13,7 @@
         <!-- Modal container -->
         <div
           :class="modalClasses"
-          class="relative bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto"
+          class="relative bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-h-[90dvh] overflow-y-auto"
           @click.stop
         >
           <!-- Header -->

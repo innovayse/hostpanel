@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-[60vh] flex items-center justify-center px-4">
+  <div class="min-h-[60dvh] flex items-center justify-center px-4">
     <div class="text-center max-w-md w-full">
       <!-- Success icon -->
       <div class="mx-auto w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center mb-6">

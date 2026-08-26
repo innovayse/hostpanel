@@ -192,7 +192,7 @@ function isExpanded(item: NavItem): boolean {
 </script>
 
 <template>
-  <aside class="flex flex-col w-[220px] min-h-screen shrink-0 bg-surface-panel border-r border-border">
+  <aside class="flex flex-col w-[220px] min-h-dvh shrink-0 bg-surface-panel border-r border-border">
 
     <!-- Logo -->
     <div class="flex items-center px-5 py-[18px] border-b border-border">

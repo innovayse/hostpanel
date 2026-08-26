@@ -68,7 +68,7 @@ function handleSubmit(): void {
   <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
     <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="emit('close')" />
 
-    <div class="relative bg-surface-card border border-border rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div class="relative bg-surface-card border border-border rounded-2xl w-full max-w-lg max-h-[90dvh] overflow-y-auto shadow-2xl">
 
       <!-- Header -->
       <div class="flex items-center justify-between px-6 py-4 border-b border-border">

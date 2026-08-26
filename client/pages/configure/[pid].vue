@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-[#0a0a0f] py-10 md:py-16">
+  <div class="min-h-dvh bg-[#0a0a0f] py-10 md:py-16">
     <div class="container-custom max-w-6xl mx-auto">
 
       <!-- Back link -->

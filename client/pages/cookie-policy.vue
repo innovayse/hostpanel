@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-[#0a0a0f]">
+  <div class="min-h-dvh bg-[#0a0a0f]">
     <!-- Hero Section -->
     <section class="py-10 md:py-24 bg-[#0a0a0f] relative overflow-hidden">
       <!-- Background -->

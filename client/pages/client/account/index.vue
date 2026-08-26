@@ -556,7 +556,7 @@
         >
           <div
             v-if="editModal.open"
-            class="w-full max-w-2xl rounded-2xl bg-white dark:bg-[#13131a] border border-gray-200 dark:border-white/10 shadow-2xl flex flex-col max-h-[90vh]"
+            class="w-full max-w-2xl rounded-2xl bg-white dark:bg-[#13131a] border border-gray-200 dark:border-white/10 shadow-2xl flex flex-col max-h-[90dvh]"
           >
             <!-- Header -->
             <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-white/10">
@@ -712,7 +712,7 @@
             </div>
 
             <!-- Body -->
-            <div class="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[65vh] overflow-y-auto">
+            <div class="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[65dvh] overflow-y-auto">
               <UiInput v-model="contactModal.firstname" :label="$t('client.profile.firstName')" type="text" size="sm" required />
               <UiInput v-model="contactModal.lastname"  :label="$t('client.profile.lastName')"  type="text" size="sm" required />
               <div class="sm:col-span-2">

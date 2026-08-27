@@ -21,4 +21,18 @@ public interface IEmailLogRepository
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Tuple of items for the requested page and total matching count.</returns>
     Task<(IReadOnlyList<EmailLog> Items, int TotalCount)> ListByClientIdAsync(int clientId, int page, int pageSize, CancellationToken ct);
+
+    /// <summary>Returns one email log entry, but only if it was sent to that client.</summary>
+    /// <param name="clientId">The client's primary key.</param>
+    /// <param name="emailLogId">The log entry's primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The entry, or null when it does not exist or belongs to another client.</returns>
+    /// <remarks>
+    /// The client is part of the lookup rather than checked afterwards on purpose. An entry holds
+    /// the rendered body of a message — invoices, password resets, ticket replies — so a read by
+    /// id alone would let anyone with a number read another account's correspondence. Not found
+    /// and not yours are deliberately the same answer, which is also what stops the id space
+    /// being probed for which entries exist.
+    /// </remarks>
+    Task<EmailLog?> FindByClientIdAsync(int clientId, int emailLogId, CancellationToken ct);
 }

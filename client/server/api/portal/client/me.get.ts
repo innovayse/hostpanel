@@ -59,5 +59,9 @@ export default defineEventHandler(async (event) => {
       domain: data.notifyDomain ? 1 : 0,
       affiliate: data.notifyAffiliate ? 1 : 0,
     },
+    // Passed through rather than fetched separately: the account screen used to ask
+    // /api/portal/auth/2fa-status for this, a route that exists on neither side, so the badge
+    // read "Disabled" for everyone. The profile has carried the flag all along.
+    twoFactorEnabled: data.twoFactorEnabled ?? false,
   }
 })

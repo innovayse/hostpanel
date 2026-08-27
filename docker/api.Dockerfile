@@ -24,11 +24,13 @@ COPY backend/src/Innovayse.API/Innovayse.API.csproj ./src/Innovayse.API/
 COPY backend/src/Innovayse.SDK/Innovayse.SDK.csproj ./src/Innovayse.SDK/
 COPY backend/src/Innovayse.Providers.CWP/Innovayse.Providers.CWP.csproj ./src/Innovayse.Providers.CWP/
 COPY backend/src/Innovayse.Providers.CWP7/Innovayse.Providers.CWP7.csproj ./src/Innovayse.Providers.CWP7/
+COPY backend/src/Innovayse.Providers.Inecobank/Innovayse.Providers.Inecobank.csproj ./src/Innovayse.Providers.Inecobank/
 COPY backend/tests/Innovayse.Domain.Tests/Innovayse.Domain.Tests.csproj ./tests/Innovayse.Domain.Tests/
 COPY backend/tests/Innovayse.Application.Tests/Innovayse.Application.Tests.csproj ./tests/Innovayse.Application.Tests/
 COPY backend/tests/Innovayse.Integration.Tests/Innovayse.Integration.Tests.csproj ./tests/Innovayse.Integration.Tests/
 COPY backend/tests/Innovayse.CWP.Tests/Innovayse.CWP.Tests.csproj ./tests/Innovayse.CWP.Tests/
 COPY backend/tests/Innovayse.Infrastructure.Tests/Innovayse.Infrastructure.Tests.csproj ./tests/Innovayse.Infrastructure.Tests/
+COPY backend/tests/Innovayse.Inecobank.Tests/Innovayse.Inecobank.Tests.csproj ./tests/Innovayse.Inecobank.Tests/
 # The credential for that source. NuGet reads this exact name from the environment,
 # and an ARG is one for the RUN below — but only if it is declared here: an undeclared
 # build arg is dropped with a warning, which is what turned the restore into a plain
@@ -67,11 +69,13 @@ COPY backend/src/Innovayse.API/Innovayse.API.csproj ./src/Innovayse.API/
 COPY backend/src/Innovayse.SDK/Innovayse.SDK.csproj ./src/Innovayse.SDK/
 COPY backend/src/Innovayse.Providers.CWP/Innovayse.Providers.CWP.csproj ./src/Innovayse.Providers.CWP/
 COPY backend/src/Innovayse.Providers.CWP7/Innovayse.Providers.CWP7.csproj ./src/Innovayse.Providers.CWP7/
+COPY backend/src/Innovayse.Providers.Inecobank/Innovayse.Providers.Inecobank.csproj ./src/Innovayse.Providers.Inecobank/
 COPY backend/tests/Innovayse.Domain.Tests/Innovayse.Domain.Tests.csproj ./tests/Innovayse.Domain.Tests/
 COPY backend/tests/Innovayse.Application.Tests/Innovayse.Application.Tests.csproj ./tests/Innovayse.Application.Tests/
 COPY backend/tests/Innovayse.Integration.Tests/Innovayse.Integration.Tests.csproj ./tests/Innovayse.Integration.Tests/
 COPY backend/tests/Innovayse.CWP.Tests/Innovayse.CWP.Tests.csproj ./tests/Innovayse.CWP.Tests/
 COPY backend/tests/Innovayse.Infrastructure.Tests/Innovayse.Infrastructure.Tests.csproj ./tests/Innovayse.Infrastructure.Tests/
+COPY backend/tests/Innovayse.Inecobank.Tests/Innovayse.Inecobank.Tests.csproj ./tests/Innovayse.Inecobank.Tests/
 # The credential for that source. NuGet reads this exact name from the environment,
 # and an ARG is one for the RUN below — but only if it is declared here: an undeclared
 # build arg is dropped with a warning, which is what turned the restore into a plain

@@ -16,8 +16,17 @@ public sealed class StripeService(
     IOptions<StripeSettings> options,
     ILogger<StripeService> logger) : IStripeService
 {
-    /// <summary>Stripe API client configured with the secret key.</summary>
-    private readonly StripeClient _client = new(options.Value.SecretKey);
+    /// <summary>
+    /// Stripe API client configured with the secret key, built only on first use.
+    /// </summary>
+    /// <remarks>
+    /// Built eagerly in the constructor, this threw for every caller that merely depends on
+    /// <see cref="IStripeService"/> the moment a deployment has no Stripe secret key configured
+    /// -- including a payment-methods lookup for an account that has never attached a card and
+    /// was never going to call Stripe at all. Deferred construction means a missing key only
+    /// breaks the calls that actually need Stripe.
+    /// </remarks>
+    private readonly Lazy<StripeClient> _client = new(() => new StripeClient(options.Value.SecretKey));
 
     /// <summary>
     /// Zero-decimal currencies that do not need multiplication by 100.
@@ -36,7 +45,7 @@ public sealed class StripeService(
         Dictionary<string, string> metadata,
         CancellationToken ct)
     {
-        var service = new PaymentIntentService(_client);
+        var service = new PaymentIntentService(_client.Value);
         var createOptions = new PaymentIntentCreateOptions
         {
             Amount = ConvertToSmallestUnit(amount, currency),
@@ -61,7 +70,7 @@ public sealed class StripeService(
         string paymentIntentId,
         CancellationToken ct)
     {
-        var service = new PaymentIntentService(_client);
+        var service = new PaymentIntentService(_client.Value);
         var intent = await service.GetAsync(paymentIntentId, cancellationToken: ct);
 
         if (intent.Status == "succeeded")
@@ -82,7 +91,7 @@ public sealed class StripeService(
     /// <inheritdoc />
     public async Task<string> RefundAsync(string transactionId, CancellationToken ct)
     {
-        var service = new RefundService(_client);
+        var service = new RefundService(_client.Value);
 
         // Stripe accepts either a charge ID (ch_xxx) or a payment intent ID (pi_xxx).
         var options = transactionId.StartsWith("ch_", StringComparison.OrdinalIgnoreCase)
@@ -102,11 +111,11 @@ public sealed class StripeService(
     public async Task<IReadOnlyList<StripePaymentMethodDto>> ListPaymentMethodsAsync(
         string customerId, CancellationToken ct)
     {
-        var customerService = new CustomerService(_client);
+        var customerService = new CustomerService(_client.Value);
         var customer = await customerService.GetAsync(customerId, cancellationToken: ct);
         var defaultId = customer.InvoiceSettings?.DefaultPaymentMethodId;
 
-        var methodService = new PaymentMethodService(_client);
+        var methodService = new PaymentMethodService(_client.Value);
         var result = new List<StripePaymentMethodDto>();
         await foreach (var m in methodService.ListAutoPagingAsync(
             new PaymentMethodListOptions { Customer = customerId }, cancellationToken: ct)
@@ -129,7 +138,7 @@ public sealed class StripeService(
     public async Task SetDefaultPaymentMethodAsync(
         string customerId, string paymentMethodId, CancellationToken ct)
     {
-        var service = new CustomerService(_client);
+        var service = new CustomerService(_client.Value);
         await service.UpdateAsync(customerId, new CustomerUpdateOptions
         {
             InvoiceSettings = new CustomerInvoiceSettingsOptions
@@ -142,7 +151,7 @@ public sealed class StripeService(
     /// <inheritdoc />
     public async Task DetachPaymentMethodAsync(string paymentMethodId, CancellationToken ct)
     {
-        var service = new PaymentMethodService(_client);
+        var service = new PaymentMethodService(_client.Value);
         await service.DetachAsync(paymentMethodId, cancellationToken: ct);
     }
 

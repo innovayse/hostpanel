@@ -2,8 +2,15 @@
  * GET /api/portal/client/me
  * Returns the authenticated client's profile.
  *
- * In SSO mode: proxies to the SSO /api/account/profile endpoint.
- * In local mode: calls the WHMCS-style C# backend /clients/me.
+ * In SSO mode: identity (name, email, 2FA) comes from SSO's own /api/account/profile --
+ * that is where sign-in and 2FA actually live, so it is the one source of truth for both.
+ * Billing fields (company, address, payment method, language, email preferences) still
+ * come from the WHMCS-style C# backend /clients/me, the same record `PUT` (below) writes
+ * to -- without this, a real sso-mode client's edits would save but never read back.
+ * A staff/admin identity with no linked client record (checked via /clients/me 400/404)
+ * gets identity fields only, with billing fields left at their empty defaults.
+ *
+ * In local mode: everything, including identity, comes from /clients/me.
  */
 // @ts-ignore
 export default defineEventHandler(async (event) => {
@@ -18,15 +25,41 @@ export default defineEventHandler(async (event) => {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
     if (!res.ok) throw createError({ statusCode: res.status })
-    const data = await res.json() as Record<string, unknown>
+    const identity = await res.json() as Record<string, unknown>
+
+    const billing = await internalApiCall<Record<string, unknown>>(event, '/clients/me')
+      .catch(() => null)
 
     return {
-      id: data.id,
-      firstname: data.firstName,
-      lastname: data.lastName,
-      email: data.email,
-      phonenumber: data.phoneNumber ?? '',
+      id: identity.id,
+      firstname: (billing?.firstName as string | undefined) ?? identity.firstName,
+      lastname: (billing?.lastName as string | undefined) ?? identity.lastName,
+      companyname: billing?.companyName,
+      email: identity.email,
+      phonenumber: (billing?.phone as string | undefined) ?? identity.phoneNumber ?? '',
+      address1: billing?.street,
+      address2: billing?.address2,
+      city: billing?.city,
+      state: billing?.state,
+      postcode: billing?.postCode,
+      country: billing?.country,
+      defaultgateway: billing?.paymentMethod,
+      language: 'english',
+      currency: undefined,
+      currencyprefix: '',
+      currencysuffix: '',
       permissions: 8191,
+      email_preferences: billing && {
+        general: billing.notifyGeneral ? 1 : 0,
+        invoice: billing.notifyInvoice ? 1 : 0,
+        support: billing.notifySupport ? 1 : 0,
+        product: billing.notifyProduct ? 1 : 0,
+        domain: billing.notifyDomain ? 1 : 0,
+        affiliate: billing.notifyAffiliate ? 1 : 0,
+      },
+      // SSO owns sign-in and 2FA in this mode, so its totpEnabled -- not anything the
+      // client record might carry -- is the one answer for whether it's actually on.
+      twoFactorEnabled: identity.totpEnabled ?? false,
     }
   }
 

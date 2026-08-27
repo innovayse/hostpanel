@@ -4,6 +4,7 @@ using Innovayse.API.Domains;
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Domain.Auth;
 using Innovayse.Infrastructure;
+using Innovayse.Infrastructure.Auth;
 using Innovayse.Infrastructure.Persistence;
 using Innovayse.Auth;
 using Innovayse.Auth.Endpoints;
@@ -46,7 +47,7 @@ try
                   .AllowAnyMethod()
                   .AllowCredentials()));
 
-    var authMode = builder.Configuration["Auth:Mode"] ?? "sso";
+    var isLocalMode = AuthMode.IsLocal(builder.Configuration["Auth:Mode"]);
 
     // The scheme that stands in front of the real ones under SSO mode. See where it is
     // registered, below AddInnovayseAuth, for what it is for.
@@ -58,7 +59,7 @@ try
     var jwtSecret = builder.Configuration["Jwt:Secret"]
         ?? Innovayse.API.Auth.JwtTokenService.DevSecretFallback;
 
-    if (authMode == "local")
+    if (isLocalMode)
     {
         // Local-only mode
         if (jwtSecret.Length < 32)
@@ -152,7 +153,7 @@ try
             });
     }
 
-    if (authMode != "local")
+    if (!isLocalMode)
     {
         // Cookie sessions, the third way in — and the only one a browser uses now.
         // The admin SPA held an access AND refresh token in localStorage, where any
@@ -210,7 +211,7 @@ try
 
     builder.Services.AddAuthorization(opts =>
     {
-        if (authMode != "local")
+        if (!isLocalMode)
         {
             // Accept tokens from either SSO or local JWT scheme
             opts.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder(
@@ -221,14 +222,14 @@ try
         }
         opts.AddPolicy("AdminOnly", p =>
         {
-            if (authMode != "local")
+            if (!isLocalMode)
                 p.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme, "LocalJwt",
                     global::Innovayse.Auth.CookieSessionHandler.SchemeName);
             p.RequireRole(Roles.Admin);
         });
         opts.AddPolicy("ResellerOrAdmin", p =>
         {
-            if (authMode != "local")
+            if (!isLocalMode)
                 p.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme, "LocalJwt",
                     global::Innovayse.Auth.CookieSessionHandler.SchemeName);
             p.RequireRole(Roles.Admin, Roles.Reseller);
@@ -341,7 +342,7 @@ try
         // Nothing is lost by skipping it. What a person is allowed to do is decided by
         // subject_roles in both modes; AspNetRoles is scaffolding for the local
         // UserManager, which an SSO-owned deployment never calls.
-        if (authMode == "local")
+        if (isLocalMode)
         {
             var roleManager = scope.ServiceProvider
                 .GetRequiredService<RoleManager<IdentityRole>>();
@@ -372,7 +373,7 @@ try
         // creates its people through Identity's UserManager, which an SSO-owned
         // deployment does not register, and there would be nowhere local to put them
         // anyway. Running it there threw on construction and took the API down with it.
-        if (app.Environment.IsDevelopment() && authMode == "local")
+        if (app.Environment.IsDevelopment() && isLocalMode)
         {
             var seeder = ActivatorUtilities.CreateInstance<Innovayse.Infrastructure.Persistence.DevDataSeeder>(scope.ServiceProvider);
             await seeder.SeedAsync();
@@ -387,7 +388,7 @@ try
     app.UseMiddleware<ExceptionMiddleware>();
     app.UseStaticFiles();
     app.UseCors();
-    if (authMode != "local")
+    if (!isLocalMode)
     {
         // Forwarded headers, the CSRF check, authentication and authorisation, in the
         // order they have to be in. Bearer callers pass the CSRF check untouched — a

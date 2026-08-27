@@ -26,6 +26,10 @@
       <div v-for="i in 4" :key="i" class="h-20 rounded-xl bg-white/5 border border-white/10 animate-pulse" />
     </div>
 
+    <!-- Failed. Checked before the list, which a failure otherwise renders as the toolbar
+         above an empty state — a search box over "no domains" rather than a reason. -->
+    <UiAlert v-else-if="store.domainsError" variant="error">{{ store.domainsError }}</UiAlert>
+
     <template v-else>
       <!-- Toolbar -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">

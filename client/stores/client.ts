@@ -13,6 +13,25 @@
 import { defineStore } from 'pinia'
 import { apiFetch } from '~/composables/useApi'
 
+/**
+ * Reads the sentence to show from a failed API call.
+ *
+ * The wording comes from the response body and is never written here: the API is the only
+ * side that knows why it refused, and a message invented in the client goes stale the moment
+ * the endpoint's reasons change. The generic line is the last resort for a request that never
+ * reached the API at all — an offline browser has no response body to quote.
+ *
+ * @param err - Whatever `apiFetch` threw.
+ * @returns The message to display.
+ */
+function apiErrorMessage(err: unknown): string {
+  const body = (err as { data?: { message?: string; statusMessage?: string } })?.data
+  return body?.message
+    ?? body?.statusMessage
+    ?? (err as { message?: string })?.message
+    ?? 'Could not reach the server.'
+}
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -52,6 +71,8 @@ export interface ClientUser {
   currencysuffix?: string
   /** User permissions as bit-flags integer (8191 = All). */
   permissions: number
+  /** Whether TOTP two-factor authentication is switched on for this account. */
+  twoFactorEnabled?: boolean
 }
 
 /** A hosting service from GetClientsProducts */
@@ -197,30 +218,40 @@ export interface ClientTicket {
  */
 export const useClientStore = defineStore('client', {
   state: () => ({
+    // Every section carries an error beside its list. Without one, a failed fetch left the
+    // list empty and the screens above read that as "you have nothing yet" — the dashboard
+    // showed 0/0/0/0 and "no products/services with us yet" to an account whose four calls
+    // had all answered 400. A failure and an empty account must not look the same.
+
     // ── User ──────────────────────────────────────────────────────────────
     user: null as ClientUser | null,
     userLoading: false,
     userLoaded: false,
+    userError: null as string | null,
 
     // ── Services ──────────────────────────────────────────────────────────
     services: [] as ClientService[],
     servicesLoading: false,
     servicesLoaded: false,
+    servicesError: null as string | null,
 
     // ── Invoices ──────────────────────────────────────────────────────────
     invoices: [] as ClientInvoice[],
     invoicesLoading: false,
     invoicesLoaded: false,
+    invoicesError: null as string | null,
 
     // ── Domains ───────────────────────────────────────────────────────────
     domains: [] as ClientDomain[],
     domainsLoading: false,
     domainsLoaded: false,
+    domainsError: null as string | null,
 
     // ── Tickets ───────────────────────────────────────────────────────────
     tickets: [] as ClientTicket[],
     ticketsLoading: false,
-    ticketsLoaded: false
+    ticketsLoaded: false,
+    ticketsError: null as string | null
   }),
 
   getters: {
@@ -262,13 +293,14 @@ export const useClientStore = defineStore('client', {
     async fetchUser(force = false) {
       if (this.userLoaded && !force) return
       this.userLoading = true
-      console.log('[store] fetchUser: start')
+      this.userError = null
       try {
         this.user = await apiFetch<ClientUser>('/api/portal/client/me')
         this.userLoaded = true
-        console.log('[store] fetchUser: ok', this.user)
       } catch (err) {
-        console.error('[store] fetchUser: error', err)
+        // Kept, not swallowed: the screens read this to say the section failed
+        // instead of rendering it as empty.
+        this.userError = apiErrorMessage(err)
       } finally {
         this.userLoading = false
       }
@@ -285,13 +317,14 @@ export const useClientStore = defineStore('client', {
     async fetchServices(force = false) {
       if (this.servicesLoaded && !force) return
       this.servicesLoading = true
-      console.log('[store] fetchServices: start')
+      this.servicesError = null
       try {
         this.services = await apiFetch<ClientService[]>('/api/portal/client/services')
         this.servicesLoaded = true
-        console.log('[store] fetchServices: ok', this.services.length)
       } catch (err) {
-        console.error('[store] fetchServices: error', err)
+        // Kept, not swallowed: the screens read this to say the section failed
+        // instead of rendering it as empty.
+        this.servicesError = apiErrorMessage(err)
       } finally {
         this.servicesLoading = false
       }
@@ -308,13 +341,14 @@ export const useClientStore = defineStore('client', {
     async fetchInvoices(force = false) {
       if (this.invoicesLoaded && !force) return
       this.invoicesLoading = true
-      console.log('[store] fetchInvoices: start')
+      this.invoicesError = null
       try {
         this.invoices = await apiFetch<ClientInvoice[]>('/api/portal/client/invoices')
         this.invoicesLoaded = true
-        console.log('[store] fetchInvoices: ok', this.invoices.length)
       } catch (err) {
-        console.error('[store] fetchInvoices: error', err)
+        // Kept, not swallowed: the screens read this to say the section failed
+        // instead of rendering it as empty.
+        this.invoicesError = apiErrorMessage(err)
       } finally {
         this.invoicesLoading = false
       }
@@ -331,13 +365,14 @@ export const useClientStore = defineStore('client', {
     async fetchDomains(force = false) {
       if (this.domainsLoaded && !force) return
       this.domainsLoading = true
-      console.log('[store] fetchDomains: start')
+      this.domainsError = null
       try {
         this.domains = await apiFetch<ClientDomain[]>('/api/portal/client/domains')
         this.domainsLoaded = true
-        console.log('[store] fetchDomains: ok', this.domains.length)
       } catch (err) {
-        console.error('[store] fetchDomains: error', err)
+        // Kept, not swallowed: the screens read this to say the section failed
+        // instead of rendering it as empty.
+        this.domainsError = apiErrorMessage(err)
       } finally {
         this.domainsLoading = false
       }
@@ -354,13 +389,14 @@ export const useClientStore = defineStore('client', {
     async fetchTickets(force = false) {
       if (this.ticketsLoaded && !force) return
       this.ticketsLoading = true
-      console.log('[store] fetchTickets: start')
+      this.ticketsError = null
       try {
         this.tickets = await apiFetch<ClientTicket[]>('/api/portal/client/tickets')
         this.ticketsLoaded = true
-        console.log('[store] fetchTickets: ok', this.tickets.length)
       } catch (err) {
-        console.error('[store] fetchTickets: error', err)
+        // Kept, not swallowed: the screens read this to say the section failed
+        // instead of rendering it as empty.
+        this.ticketsError = apiErrorMessage(err)
       } finally {
         this.ticketsLoading = false
       }
@@ -388,14 +424,19 @@ export const useClientStore = defineStore('client', {
     reset() {
       this.user = null
       this.userLoaded = false
+      this.userError = null
       this.services = []
       this.servicesLoaded = false
+      this.servicesError = null
       this.invoices = []
       this.invoicesLoaded = false
+      this.invoicesError = null
       this.domains = []
       this.domainsLoaded = false
+      this.domainsError = null
       this.tickets = []
       this.ticketsLoaded = false
+      this.ticketsError = null
     }
   }
 })

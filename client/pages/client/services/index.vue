@@ -10,6 +10,10 @@
       <div v-for="i in 4" :key="i" class="h-36 rounded-2xl bg-white/5 border border-white/10 animate-pulse" />
     </div>
 
+    <!-- Failed. Checked before the empty state, which is otherwise what a failure renders as:
+         the list is empty either way, and only this branch knows which of the two it is. -->
+    <UiAlert v-else-if="store.servicesError" variant="error">{{ store.servicesError }}</UiAlert>
+
     <!-- Empty -->
     <div v-else-if="!store.services.length" class="text-center py-20">
       <Server :size="48" :stroke-width="2" class="text-gray-300 dark:text-gray-600 mx-auto mb-4" />

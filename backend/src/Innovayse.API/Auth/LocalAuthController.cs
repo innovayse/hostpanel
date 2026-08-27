@@ -36,9 +36,16 @@ public sealed class LocalAuthController(
     IServiceProvider services,
     JwtTokenService tokenService,
     IMessageBus bus,
-    IConfiguration config) : ControllerBase
+    IConfiguration config,
+    IAuthModeProvider authMode) : ControllerBase
 {
-    private bool IsLocalMode => (config["Auth:Mode"] ?? "sso") == "local";
+    /// <summary>
+    /// Whether this deployment owns its own people. Used to be its own inline, plain
+    /// <c>==</c> comparison here — case-sensitive, unlike the equivalent checks elsewhere,
+    /// so a configured value of <c>Local</c> made this controller disagree with the rest of
+    /// the process about which mode it was in. Now shared through <see cref="IAuthModeProvider"/>.
+    /// </summary>
+    private bool IsLocalMode => authMode.IsLocalMode;
 
     /// <summary>
     /// The local user service, resolved only once a route has confirmed the mode.

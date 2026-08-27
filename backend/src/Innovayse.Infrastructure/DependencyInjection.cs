@@ -119,8 +119,11 @@ public static class DependencyInjection
         // Where people live decides almost everything below. Read from configuration once,
         // here, so there is one answer rather than a scattering of Auth:Mode checks that
         // can disagree.
-        var ownsItsUsers = string.Equals(
-            configuration["Auth:Mode"] ?? "sso", "local", StringComparison.OrdinalIgnoreCase);
+        var ownsItsUsers = AuthMode.IsLocal(configuration["Auth:Mode"]);
+
+        // The one DI-resolvable answer to the same question, for everything downstream
+        // of service registration that used to run its own inline comparison.
+        services.AddSingleton<IAuthModeProvider, ConfigurationAuthModeProvider>();
 
         if (ownsItsUsers)
         {
@@ -155,11 +158,13 @@ public static class DependencyInjection
             services.AddScoped<Innovayse.Application.Auth.Interfaces.IIdentityProvider, LocalIdentityProvider>();
             services.AddScoped<Innovayse.Application.Auth.Interfaces.IUserProvisioning, LocalUserProvisioning>();
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<Innovayse.Application.Auth.Interfaces.ITwoFactorService, LocalTwoFactorService>();
         }
         else
         {
             services.AddScoped<Innovayse.Application.Auth.Interfaces.IIdentityProvider, SsoIdentityProvider>();
             services.AddScoped<Innovayse.Application.Auth.Interfaces.IUserProvisioning, SsoModeUserProvisioning>();
+            services.AddScoped<Innovayse.Application.Auth.Interfaces.ITwoFactorService, SsoTwoFactorService>();
 
             // The SSO's service API, addressed by the same authority the token validation
             // uses. The service key is this product's own credential, not a user's.
@@ -171,6 +176,19 @@ public static class DependencyInjection
                         + "it is where this product reads its people from.");
                 client.BaseAddress = new Uri(authority.TrimEnd('/') + "/");
                 client.DefaultRequestHeaders.Add("X-Service-Key", configuration["Sso:ServiceKey"] ?? string.Empty);
+            });
+
+            // The SSO's TOTP endpoints, addressed the same way — but unlike SsoServiceClient
+            // above, no X-Service-Key: two-factor acts as the calling person, not as the
+            // platform, so each call carries the caller's own bearer token instead (see
+            // SsoTwoFactorService).
+            services.AddHttpClient<SsoTwoFactorClient>(client =>
+            {
+                var authority = configuration["Sso:Authority"]
+                    ?? throw new InvalidOperationException(
+                        "Sso:Authority must be set when Auth:Mode is not 'local' — "
+                        + "it is where this product reads its people from.");
+                client.BaseAddress = new Uri(authority.TrimEnd('/') + "/");
             });
         }
 

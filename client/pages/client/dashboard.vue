@@ -12,6 +12,13 @@
       </UiButton>
     </div>
 
+    <!-- Whatever the API said about the sections that did not load. Shown above the counts,
+         because the counts below are zeros in exactly this case and reading them as "nothing
+         here yet" is the misunderstanding this banner exists to prevent. -->
+    <UiAlert v-if="loadErrors.length" variant="error" class="mb-6">
+      <p v-for="message in loadErrors" :key="message">{{ message }}</p>
+    </UiAlert>
+
     <!-- Stats cards -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
       <NuxtLink v-for="stat in stats" :key="stat.label" :to="stat.to" class="block">
@@ -301,6 +308,20 @@ const { data: announcementsRaw } = await useFetch<Array<{ id: number; date: stri
   '/api/portal/public/announcements'
 )
 const announcements = computed(() => announcementsRaw.value ?? [])
+
+/**
+ * What the API said about each section that failed to load, without repeats.
+ *
+ * Deduplicated because the four calls share one cause more often than not — an account with
+ * no client profile fails all of them with the same sentence, and printing it four times
+ * reads as four separate faults.
+ */
+const loadErrors = computed(() =>
+  [...new Set(
+    [store.servicesError, store.invoicesError, store.domainsError, store.ticketsError]
+      .filter((message): message is string => Boolean(message))
+  )]
+)
 
 /** Refresh all dashboard data */
 const refreshing = ref(false)

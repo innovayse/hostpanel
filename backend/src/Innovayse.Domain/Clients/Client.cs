@@ -59,6 +59,12 @@ public sealed class Client : AggregateRoot
     /// <summary>Gets the preferred payment method label.</summary>
     public string? PaymentMethod { get; private set; }
 
+    /// <summary>
+    /// Gets the Stripe Customer ID this client's saved cards are attached to, or
+    /// <see langword="null"/> until the client has added their first card.
+    /// </summary>
+    public string? StripeCustomerId { get; private set; }
+
     /// <summary>Gets the billing contact reference.</summary>
     public string? BillingContact { get; private set; }
 
@@ -226,6 +232,19 @@ public sealed class Client : AggregateRoot
         PaymentMethod = paymentMethod;
         BillingContact = billingContact;
         AdminNotes = adminNotes;
+    }
+
+    /// <summary>
+    /// Records the Stripe Customer this client's saved cards attach to.
+    /// </summary>
+    /// <param name="stripeCustomerId">The Stripe Customer ID.</param>
+    /// <remarks>
+    /// Set once, the first time the client adds a card — a client is never expected to move
+    /// to a different Stripe Customer afterward, so this does not need to support clearing it.
+    /// </remarks>
+    public void SetStripeCustomerId(string stripeCustomerId)
+    {
+        StripeCustomerId = stripeCustomerId;
     }
 
     /// <summary>

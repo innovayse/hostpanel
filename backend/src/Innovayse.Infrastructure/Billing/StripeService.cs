@@ -1,5 +1,6 @@
 namespace Innovayse.Infrastructure.Billing;
 
+using Innovayse.Application.Billing.DTOs;
 using Innovayse.Application.Billing.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -95,6 +96,54 @@ public sealed class StripeService(
             refund.Id, transactionId);
 
         return refund.Id;
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<StripePaymentMethodDto>> ListPaymentMethodsAsync(
+        string customerId, CancellationToken ct)
+    {
+        var customerService = new CustomerService(_client);
+        var customer = await customerService.GetAsync(customerId, cancellationToken: ct);
+        var defaultId = customer.InvoiceSettings?.DefaultPaymentMethodId;
+
+        var methodService = new PaymentMethodService(_client);
+        var result = new List<StripePaymentMethodDto>();
+        await foreach (var m in methodService.ListAutoPagingAsync(
+            new PaymentMethodListOptions { Customer = customerId }, cancellationToken: ct)
+            .WithCancellation(ct))
+        {
+            result.Add(new StripePaymentMethodDto(
+                m.Id,
+                m.Type,
+                m.Card?.Brand ?? m.UsBankAccount?.BankName,
+                m.Card?.Last4 ?? m.UsBankAccount?.Last4,
+                (int?)m.Card?.ExpMonth,
+                (int?)m.Card?.ExpYear,
+                m.Id == defaultId));
+        }
+
+        return result;
+    }
+
+    /// <inheritdoc />
+    public async Task SetDefaultPaymentMethodAsync(
+        string customerId, string paymentMethodId, CancellationToken ct)
+    {
+        var service = new CustomerService(_client);
+        await service.UpdateAsync(customerId, new CustomerUpdateOptions
+        {
+            InvoiceSettings = new CustomerInvoiceSettingsOptions
+            {
+                DefaultPaymentMethod = paymentMethodId,
+            },
+        }, cancellationToken: ct);
+    }
+
+    /// <inheritdoc />
+    public async Task DetachPaymentMethodAsync(string paymentMethodId, CancellationToken ct)
+    {
+        var service = new PaymentMethodService(_client);
+        await service.DetachAsync(paymentMethodId, cancellationToken: ct);
     }
 
     /// <summary>

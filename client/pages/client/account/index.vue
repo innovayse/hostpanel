@@ -946,6 +946,7 @@
 import { Pencil, Check, AlertCircle, Users, UserMinus, Send, Mail, CreditCard, Plus, Trash2, Star, X, ShieldCheck, ShieldOff } from 'lucide-vue-next'
 import QRCode from 'qrcode'
 import { useClientStore, type ClientUser } from '~/stores/client'
+import type { PaymentMethod } from '~/types/payment'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
@@ -1399,21 +1400,9 @@ const emailTo   = computed(() => Math.min(emailPage.value * emailPerPage.value, 
 watch(emailSearch, () => { emailPage.value = 1 })
 
 // ── Payment Methods ───────────────────────────────────────────────────────────
-interface PayMethod {
-  id: number
-  type: string
-  description: string
-  gateway_name: string
-  contact_id: number
-  card_last_four?: string | null
-  card_expiry?: string | null
-  card_type?: string | null
-  bank_name?: string | null
-}
-
 const { data: paymentRaw, pending: paymentPending, error: paymentFetchError, refresh: refreshPayment } =
-  await useApi<PayMethod[]>('/api/portal/client/payment-methods', { default: () => [] })
-const paymentMethods = computed<PayMethod[]>(() => paymentRaw.value ?? [])
+  await useApi<PaymentMethod[]>('/api/portal/client/payment-methods', { default: () => [] })
+const paymentMethods = computed<PaymentMethod[]>(() => paymentRaw.value ?? [])
 
 /**
  * What the API said when the list could not be read.
@@ -1428,8 +1417,8 @@ const paymentError = computed<string | null>(() => {
   return err.data?.message ?? err.data?.statusMessage ?? err.message ?? null
 })
 
-const removingId      = ref<number | null>(null)
-const settingDefaultId = ref<number | null>(null)
+const removingId      = ref<string | null>(null)
+const settingDefaultId = ref<string | null>(null)
 const paymentActionError = ref('')
 const paymentSuccess  = ref('')
 
@@ -1458,7 +1447,7 @@ interface SavedAddress {
 
 const editModal = reactive({
   open:           false,
-  id:             null as number | null,
+  id:             null as string | null,
   type:           '',
   gateway_name:   '',
   card_last_four: null as string | null,
@@ -1495,7 +1484,7 @@ async function loadAddresses() {
   }
 }
 
-function openEditModal(method: PayMethod) {
+function openEditModal(method: PaymentMethod) {
   editModal.id             = method.id
   editModal.type           = method.type
   editModal.gateway_name   = method.gateway_name ?? ''
@@ -1601,7 +1590,7 @@ async function savePaymentEdit() {
   }
 }
 
-async function setDefaultPaymentMethod(id: number) {
+async function setDefaultPaymentMethod(id: string) {
   settingDefaultId.value = id
   paymentActionError.value = ''
   paymentSuccess.value = ''
@@ -1616,7 +1605,7 @@ async function setDefaultPaymentMethod(id: number) {
   }
 }
 
-function removePaymentMethod(id: number) {
+function removePaymentMethod(id: string) {
   openConfirm({
     title:        t('client.payment.removeConfirm'),
     description:  t('client.payment.removeConfirmDesc'),
@@ -1625,7 +1614,7 @@ function removePaymentMethod(id: number) {
   })
 }
 
-async function doRemovePaymentMethod(id: number) {
+async function doRemovePaymentMethod(id: string) {
   confirmDialog.loading = true
   removingId.value      = id
   paymentActionError.value = ''

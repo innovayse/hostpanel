@@ -19,7 +19,7 @@ public sealed class AuthController(
     IMessageBus bus,
     IIdentityProvider identity,
     ISubjectRoleStore roles,
-    IConfiguration configuration) : ControllerBase
+    IAuthModeProvider authMode) : ControllerBase
 {
     /// <summary>
     /// Returns how this deployment signs people in, so a browser client can offer the
@@ -39,7 +39,7 @@ public sealed class AuthController(
     [HttpGet("mode")]
     [AllowAnonymous]
     public IActionResult Mode() =>
-        Ok(new { mode = string.Equals(configuration["Auth:Mode"], "local", StringComparison.OrdinalIgnoreCase) ? "local" : "sso" });
+        Ok(new { mode = authMode.IsLocalMode ? "local" : "sso" });
 
     /// <summary>Returns whether initial admin setup is required (nobody holds Admin yet).</summary>
     /// <remarks>

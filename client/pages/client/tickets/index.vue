@@ -26,6 +26,10 @@
       <div v-for="i in 4" :key="i" class="h-16 rounded-xl bg-white/5 border border-white/10 animate-pulse" />
     </div>
 
+    <!-- Failed. Checked before the empty state, which a failure is otherwise
+         indistinguishable from: the list is empty either way. -->
+    <UiAlert v-else-if="store.ticketsError" variant="error">{{ store.ticketsError }}</UiAlert>
+
     <!-- Empty -->
     <div v-else-if="!filteredTickets.length" class="text-center py-20">
       <MessageSquare :size="48" :stroke-width="2" class="text-gray-300 dark:text-gray-600 mx-auto mb-4" />

@@ -292,6 +292,13 @@
       <UiCard :title="$t('client.users.inviteTitle')">
         <p class="text-gray-500 dark:text-gray-400 text-sm mb-6">{{ $t('client.users.inviteDesc') }}</p>
         <UiForm :error="inviteError" :success="inviteSuccess" spacing="md" @submit="sendInvite">
+          <!-- Both names are asked for because the invitation carries them: the API rejects an
+               invite without them, and the alternative — inventing a placeholder here — would
+               put a made-up name on the account until the invitee happened to correct it. -->
+          <div class="grid sm:grid-cols-2 gap-4">
+            <UiInput v-model="inviteFirstName" :label="$t('client.users.firstNameLabel')" placeholder="Jane" required />
+            <UiInput v-model="inviteLastName" :label="$t('client.users.lastNameLabel')" placeholder="Doe" required />
+          </div>
           <UiInput v-model="inviteEmail" type="email" :label="$t('client.users.emailLabel')" placeholder="name@example.com" required />
           <div>
             <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">{{ $t('client.users.permissions') }}</p>
@@ -408,7 +415,11 @@
             </UiButton>
           </UiCardHeader>
 
-          <div v-if="!paymentMethods.length" class="py-10 text-center">
+          <!-- Failed. Checked before the empty state, which a failure is otherwise
+               indistinguishable from: the list is empty either way. -->
+          <UiAlert v-if="paymentError" variant="error">{{ paymentError }}</UiAlert>
+
+          <div v-else-if="!paymentMethods.length" class="py-10 text-center">
             <CreditCard :size="40" :stroke-width="1.5" class="text-gray-300 dark:text-gray-600 mx-auto mb-3" />
             <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">{{ $t('client.payment.empty') }}</p>
             <p class="text-gray-400 dark:text-gray-500 text-xs mt-1">{{ $t('client.payment.emptyDesc') }}</p>
@@ -630,6 +641,9 @@
 
                 <!-- Saved address radio list -->
                 <template v-else>
+                  <!-- Why the list is empty, when it is empty because the read failed. -->
+                  <UiAlert v-if="addressesError" variant="error" class="mb-3">{{ addressesError }}</UiAlert>
+
                   <!-- Billing address is read-only — WHMCS UpdatePayMethod does not support billingaddressid -->
                   <ClientAddressCard
                     v-for="addr in savedAddresses"
@@ -858,7 +872,9 @@
           >
             <!-- Header -->
             <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-white/10">
-              <h2 class="text-lg font-bold text-gray-900 dark:text-white">{{ $t('client.twoFactor.setupTitle') }}</h2>
+              <h2 class="text-lg font-bold text-gray-900 dark:text-white">
+                {{ tfaModal.mode === 'enable' ? $t('client.twoFactor.setupTitle') : $t('client.twoFactor.disableTitle') }}
+              </h2>
               <button
                 type="button"
                 class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
@@ -870,24 +886,28 @@
 
             <!-- Body -->
             <div class="px-6 py-5 space-y-5">
-              <p class="text-sm text-gray-500 dark:text-gray-400">{{ $t('client.twoFactor.setupDesc') }}</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                {{ tfaModal.mode === 'enable' ? $t('client.twoFactor.setupDesc') : $t('client.twoFactor.disableDesc') }}
+              </p>
 
-              <!-- QR Code -->
-              <div v-if="tfaModal.qrCodeUri" class="flex flex-col items-center gap-3">
+              <!-- QR Code. Drawn in this browser from a data: URL — the image used to come from
+                   api.qrserver.com, which meant the otpauth URI, and with it the TOTP secret,
+                   was sent to a third party every time somebody enrolled. -->
+              <div v-if="tfaModal.mode === 'enable' && tfaModal.qrDataUrl" class="flex flex-col items-center gap-3">
                 <div class="p-3 bg-white rounded-xl border border-gray-200 dark:border-white/10 inline-flex">
-                  <img :src="`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(tfaModal.qrCodeUri)}`" alt="QR Code" width="180" height="180" class="rounded" />
+                  <img :src="tfaModal.qrDataUrl" alt="QR Code" width="180" height="180" class="rounded" />
                 </div>
                 <p class="text-xs text-gray-400 text-center">{{ $t('client.twoFactor.setupScanHint') }}</p>
               </div>
 
               <!-- Manual secret -->
-              <div v-if="tfaModal.secret" class="bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 p-3">
+              <div v-if="tfaModal.mode === 'enable' && tfaModal.secret" class="bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 p-3">
                 <p class="text-xs text-gray-500 mb-1">{{ $t('client.twoFactor.setupSecretLabel') }}</p>
                 <p class="text-sm font-mono text-gray-900 dark:text-white tracking-widest break-all">{{ tfaModal.secret }}</p>
               </div>
 
               <!-- Verify code -->
-              <UiForm :error="tfaModal.error" spacing="sm" @submit="confirmEnable2FA">
+              <UiForm :error="tfaModal.error" spacing="sm" @submit="submit2FA">
                 <UiOtpInput
                   v-model="tfaModal.code"
                   :length="6"
@@ -898,7 +918,7 @@
                 <template #actions>
                   <UiButton type="submit" :loading="tfaModal.saving">
                     <ShieldCheck v-if="!tfaModal.saving" :size="15" :stroke-width="2" class="mr-1.5" />
-                    {{ tfaModal.saving ? $t('client.login.submitting') : $t('client.twoFactor.confirmEnable') }}
+                    {{ tfaModal.saving ? $t('client.login.submitting') : tfaModal.mode === 'enable' ? $t('client.twoFactor.confirmEnable') : $t('client.twoFactor.confirmDisable') }}
                   </UiButton>
                 </template>
               </UiForm>
@@ -924,6 +944,7 @@
 
 <script setup lang="ts">
 import { Pencil, Check, AlertCircle, Users, UserMinus, Send, Mail, CreditCard, Plus, Trash2, Star, X, ShieldCheck, ShieldOff } from 'lucide-vue-next'
+import QRCode from 'qrcode'
 import { useClientStore, type ClientUser } from '~/stores/client'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
@@ -1055,6 +1076,8 @@ const { data: usersRaw, pending: usersPending, refresh: refreshUsers } = await u
 const users = computed<ClientUserItem[]>(() => usersRaw.value ?? [])
 
 const inviteEmail       = ref('')
+const inviteFirstName   = ref('')
+const inviteLastName    = ref('')
 const invitePermissions = ref<'all' | 'choose'>('all')
 const inviting          = ref(false)
 const inviteError       = ref('')
@@ -1089,10 +1112,17 @@ async function sendInvite() {
       ? 'all'
       : Object.entries(chosenPerms).filter(([, v]) => v).map(([k]) => k).join(',')
     await apiFetch('/api/portal/client/users/invite', {
-      method: 'POST', body: { email: inviteEmail.value, permissions }
+      method: 'POST',
+      body: {
+        email: inviteEmail.value,
+        firstName: inviteFirstName.value,
+        lastName: inviteLastName.value,
+        permissions
+      }
     })
     inviteSuccess.value = t('client.users.inviteSent')
-    inviteEmail.value = ''; invitePermissions.value = 'all'
+    inviteEmail.value = ''; inviteFirstName.value = ''; inviteLastName.value = ''
+    invitePermissions.value = 'all'
     Object.keys(chosenPerms).forEach(k => { chosenPerms[k] = false })
     refreshUsers()
   } catch (err: any) {
@@ -1263,61 +1293,84 @@ async function doDeleteContact(id: string) {
 
 // ── Two-Factor Authentication ─────────────────────────────────────────────────
 const twoFactorEnabled = ref(false)
+const tfaError = ref<string | null>(null)
 const tfaLoading = ref(false)
 
 const tfaModal = reactive({
   open: false,
+  /** 'enable' shows the QR and enrols; 'disable' only collects a code. */
+  mode: 'enable' as 'enable' | 'disable',
   secret: '',
   qrCodeUri: '',
+  /** The QR rendered locally as a data: URL — never a remote image. */
+  qrDataUrl: '',
   code: '',
   saving: false,
   error: ''
 })
 
-// Load 2FA status on mount
-const { data: tfaStatus } = await useApi<{ enabled: boolean }>('/api/portal/auth/2fa-status', { default: () => ({ enabled: false }) })
-twoFactorEnabled.value = tfaStatus.value?.enabled ?? false
+// Read from the profile the store already holds. The dedicated /api/portal/auth/2fa-status
+// call this replaced was answered by nothing — no BFF route, no controller — so it 404'd on
+// every load and the `default` beside it reported two-factor as off for every account,
+// including the ones that have it on.
+watch(() => store.user?.twoFactorEnabled, (enabled) => {
+  twoFactorEnabled.value = enabled ?? false
+}, { immediate: true })
 
 async function startSetup2FA() {
   tfaLoading.value = true
   try {
     const data = await apiFetch<{ secret: string; qrCodeUri: string }>('/api/portal/auth/2fa-setup', { method: 'POST' })
+    tfaModal.mode = 'enable'
     tfaModal.secret = data.secret
     tfaModal.qrCodeUri = data.qrCodeUri
+    tfaModal.qrDataUrl = await QRCode.toDataURL(data.qrCodeUri, { width: 180, margin: 2 })
     tfaModal.code = ''
     tfaModal.error = ''
     tfaModal.saving = false
     tfaModal.open = true
   } catch (err: any) {
-    // show nothing — user stays on page
+    tfaError.value = err?.data?.message ?? err?.data?.statusMessage ?? t('client.twoFactor.errorInvalid')
   } finally {
     tfaLoading.value = false
   }
 }
 
-async function confirmEnable2FA() {
+
+/**
+ * Asks for a code before switching two-factor off.
+ *
+ * A signed-in session alone is not enough: removing the second factor is the first thing
+ * someone who had taken over a session would do, so the API requires a current code and this
+ * reuses the same dialog to collect one.
+ */
+function disable2FA() {
+  tfaModal.mode = 'disable'
+  tfaModal.secret = ''
+  tfaModal.qrCodeUri = ''
+  tfaModal.qrDataUrl = ''
+  tfaModal.code = ''
+  tfaModal.error = ''
+  tfaModal.saving = false
+  tfaModal.open = true
+}
+
+/** Submits the code from the dialog for whichever direction it was opened in. */
+async function submit2FA() {
   tfaModal.saving = true
   tfaModal.error = ''
+  const route = tfaModal.mode === 'enable' ? '2fa-enable' : '2fa-disable'
   try {
-    await apiFetch('/api/portal/auth/2fa-enable', { method: 'POST', body: { code: tfaModal.code } })
-    twoFactorEnabled.value = true
+    await apiFetch(`/api/portal/auth/${route}`, { method: 'POST', body: { code: tfaModal.code } })
+    twoFactorEnabled.value = tfaModal.mode === 'enable'
     tfaModal.open = false
+    // The flag lives on the profile, so refresh it rather than leaving the store disagreeing
+    // with what this page now shows.
+    await store.fetchUser(true)
   } catch (err: any) {
-    tfaModal.error = err?.data?.statusMessage || t('client.twoFactor.errorInvalid')
+    tfaModal.error = err?.data?.message ?? err?.data?.statusMessage ?? t('client.twoFactor.errorInvalid')
   } finally {
     tfaModal.saving = false
-  }
-}
-
-async function disable2FA() {
-  tfaLoading.value = true
-  try {
-    await apiFetch('/api/portal/auth/2fa-disable', { method: 'POST' })
-    twoFactorEnabled.value = false
-  } catch {
-    // ignore
-  } finally {
-    tfaLoading.value = false
   }
 }
 
@@ -1358,10 +1411,22 @@ interface PayMethod {
   bank_name?: string | null
 }
 
-const { data: paymentRaw, pending: paymentPending, refresh: refreshPayment } = await useApi<PayMethod[]>(
-  '/api/portal/client/payment-methods', { default: () => [] }
-)
+const { data: paymentRaw, pending: paymentPending, error: paymentFetchError, refresh: refreshPayment } =
+  await useApi<PayMethod[]>('/api/portal/client/payment-methods', { default: () => [] })
 const paymentMethods = computed<PayMethod[]>(() => paymentRaw.value ?? [])
+
+/**
+ * What the API said when the list could not be read.
+ *
+ * Kept because `default: () => []` makes a failure and an account with no saved cards render
+ * identically, and this endpoint is not merely empty — no controller answers it. Saying so is
+ * the difference between "you have no payment methods" and "we could not ask".
+ */
+const paymentError = computed<string | null>(() => {
+  const err = paymentFetchError.value as { data?: { message?: string; statusMessage?: string }; message?: string } | null
+  if (!err) return null
+  return err.data?.message ?? err.data?.statusMessage ?? err.message ?? null
+})
 
 const removingId      = ref<number | null>(null)
 const settingDefaultId = ref<number | null>(null)
@@ -1408,10 +1473,12 @@ const editModal = reactive({
 
 const savedAddresses   = ref<SavedAddress[]>([])
 const addressesLoading = ref(false)
+const addressesError   = ref<string | null>(null)
 
 
 async function loadAddresses() {
   addressesLoading.value = true
+  addressesError.value = null
   try {
     savedAddresses.value = await apiFetch<SavedAddress[]>('/api/portal/client/addresses')
     // auto-select first address if none is selected yet
@@ -1419,7 +1486,9 @@ async function loadAddresses() {
       editModal.billingAddressId = savedAddresses.value[0].id
     }
   } catch (err: any) {
-    console.error('[addresses] failed to load:', err?.data?.statusMessage ?? err?.message)
+    // Kept rather than logged: the billing-address picker renders this instead of silently
+    // offering nothing to choose from.
+    addressesError.value = err?.data?.message ?? err?.data?.statusMessage ?? err?.message ?? null
     savedAddresses.value = []
   } finally {
     addressesLoading.value = false

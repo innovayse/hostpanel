@@ -38,6 +38,7 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<Client>
         builder.Property(x => x.Address2).HasMaxLength(200);
         builder.Property(x => x.Currency).HasMaxLength(3);
         builder.Property(x => x.PaymentMethod).HasMaxLength(50);
+        builder.Property(x => x.StripeCustomerId).HasMaxLength(50);
         builder.Property(x => x.BillingContact).HasMaxLength(256);
         builder.Property(x => x.AdminNotes).HasMaxLength(2000);
 

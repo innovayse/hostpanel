@@ -1,4 +1,12 @@
-import type { Service, Product, Project, Testimonial, FAQ, TimelineEvent, TeamStats, Partner, ProcessStep } from '~/types'
+import type { Service } from '~/types/service'
+import type { Product } from '~/types/product'
+import type { Project } from '~/types/project'
+import type { Testimonial } from '~/types/testimonial'
+import type { FAQ } from '~/types/faq'
+import type { TimelineEvent } from '~/types/timelineevent'
+import type { TeamStats } from '~/types/teamstats'
+import type { Partner } from '~/types/partner'
+import type { ProcessStep } from '~/types/processstep'
 
 /**
  * Company statistics displayed in Hero section

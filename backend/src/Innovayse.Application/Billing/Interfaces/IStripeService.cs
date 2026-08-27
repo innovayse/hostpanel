@@ -1,5 +1,7 @@
 namespace Innovayse.Application.Billing.Interfaces;
 
+using Innovayse.Application.Billing.DTOs;
+
 /// <summary>Abstraction over Stripe payment operations. Implemented in Infrastructure.</summary>
 public interface IStripeService
 {
@@ -30,4 +32,28 @@ public interface IStripeService
     /// <returns>The Stripe refund ID (<c>re_xxx</c>).</returns>
     /// <exception cref="System.Exception">Thrown when the payment gateway rejects the refund request.</exception>
     Task<string> RefundAsync(string transactionId, CancellationToken ct);
+
+    /// <summary>
+    /// Lists the cards and bank accounts saved against a Stripe Customer.
+    /// </summary>
+    /// <param name="customerId">The Stripe Customer ID.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The customer's saved payment methods, with the default one flagged.</returns>
+    Task<IReadOnlyList<StripePaymentMethodDto>> ListPaymentMethodsAsync(string customerId, CancellationToken ct);
+
+    /// <summary>
+    /// Sets a customer's default payment method for future off-session charges.
+    /// </summary>
+    /// <param name="customerId">The Stripe Customer ID.</param>
+    /// <param name="paymentMethodId">The Stripe PaymentMethod ID to make the default.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task SetDefaultPaymentMethodAsync(string customerId, string paymentMethodId, CancellationToken ct);
+
+    /// <summary>
+    /// Detaches a payment method from whichever customer it belongs to, permanently
+    /// removing it from Stripe.
+    /// </summary>
+    /// <param name="paymentMethodId">The Stripe PaymentMethod ID to remove.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task DetachPaymentMethodAsync(string paymentMethodId, CancellationToken ct);
 }

@@ -27,6 +27,10 @@ export default defineEventHandler(async (event) => {
       email: data.email,
       phonenumber: data.phoneNumber ?? '',
       permissions: 8191,
+      // The account screen reads this straight off the profile rather than a dedicated
+      // status route (see the local-mode branch below for why); SSO's own profile
+      // names the same flag totpEnabled.
+      twoFactorEnabled: data.totpEnabled ?? false,
     }
   }
 

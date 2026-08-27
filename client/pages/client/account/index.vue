@@ -479,7 +479,7 @@
         </UiCard>
 
 
-        <UiAlert v-if="paymentError" variant="error">{{ paymentError }}</UiAlert>
+        <UiAlert v-if="paymentActionError" variant="error">{{ paymentActionError }}</UiAlert>
         <UiAlert v-if="paymentSuccess" variant="success">{{ paymentSuccess }}</UiAlert>
       </template>
     </div>
@@ -1430,7 +1430,7 @@ const paymentError = computed<string | null>(() => {
 
 const removingId      = ref<number | null>(null)
 const settingDefaultId = ref<number | null>(null)
-const paymentError    = ref('')
+const paymentActionError = ref('')
 const paymentSuccess  = ref('')
 
 function openAddForm() {
@@ -1603,14 +1603,14 @@ async function savePaymentEdit() {
 
 async function setDefaultPaymentMethod(id: number) {
   settingDefaultId.value = id
-  paymentError.value = ''
+  paymentActionError.value = ''
   paymentSuccess.value = ''
   try {
     await apiFetch(`/api/portal/client/payment-methods/${id}`, { method: 'PUT', body: { set_as_default: true } })
     paymentSuccess.value = t('client.payment.defaultSet')
     refreshPayment()
   } catch {
-    paymentError.value = t('client.payment.defaultError')
+    paymentActionError.value = t('client.payment.defaultError')
   } finally {
     settingDefaultId.value = null
   }
@@ -1628,7 +1628,7 @@ function removePaymentMethod(id: number) {
 async function doRemovePaymentMethod(id: number) {
   confirmDialog.loading = true
   removingId.value      = id
-  paymentError.value    = ''
+  paymentActionError.value = ''
   paymentSuccess.value  = ''
   try {
     await apiFetch(`/api/portal/client/payment-methods/${id}`, { method: 'DELETE' })
@@ -1636,7 +1636,7 @@ async function doRemovePaymentMethod(id: number) {
     confirmDialog.open   = false
     refreshPayment()
   } catch {
-    paymentError.value = t('client.payment.removeError')
+    paymentActionError.value = t('client.payment.removeError')
     confirmDialog.open = false
   } finally {
     removingId.value      = null

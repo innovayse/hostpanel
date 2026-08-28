@@ -128,7 +128,7 @@ services:
         # (see client.Dockerfile) — the runtime env var below only affects
         # useRuntimeConfig() reads, not that static tag, so it must be
         # repeated here as a build arg for the widget to actually appear.
-        NUXT_PUBLIC_MAIN_URL: ${NUXT_PUBLIC_MAIN_URL}
+        NUXT_PUBLIC_MAIN_URL: ${MAIN_APP_URL}
     environment:
       # Nitro/Nuxt production builds freeze runtimeConfig defaults at build
       # time (nuxt.config.ts isn't re-evaluated at container start like it is
@@ -143,7 +143,7 @@ services:
       # The app-launcher widget script is injected over whatever origin this
       # points at — must be HTTPS on an HTTPS deployment or browsers block it
       # as mixed content, which hangs the client dashboard's hydration.
-      NUXT_PUBLIC_MAIN_URL: ${NUXT_PUBLIC_MAIN_URL}
+      NUXT_PUBLIC_MAIN_URL: ${MAIN_APP_URL}
       NUXT_SSO_URL: ${SSO_URL}
       NUXT_SSO_PUBLIC_URL: ${SSO_PUBLIC_URL}
       NUXT_PUBLIC_SSO_PUBLIC_URL: ${SSO_PUBLIC_URL}

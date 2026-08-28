@@ -17,7 +17,7 @@
 
 import { defineStore } from 'pinia'
 import { useAuthApi } from '~/composables/apis/useAuthApi'
-import { useClientApi } from '~/composables/apis/useClientApi'
+import { useClientStore } from '~/stores/client'
 import type { ClientUser } from '~/types/clientuser'
 import type { LoginResult } from '~/types/loginresult'
 import type { RegisterPayload } from '~/types/registerpayload'
@@ -46,15 +46,21 @@ export const useAuthStore = defineStore('auth', () => {
    * Fetch and cache current user data from the server.
    * Safe to call multiple times — skips if user is already loaded.
    *
-   * @returns Nothing; a failure leaves {@link user} null rather than throwing.
+   * Delegates to {@link useClientStore} rather than calling `/client/me` itself. Both stores
+   * wanted the same record and each fetched it separately, so a client-area page load asked
+   * for the identity once here and again there — `apiFetch` is `$fetch`-based and dedupes
+   * nothing. A store calling another store is the sanctioned direction; a second store
+   * calling the same API composable was the smell. The dedupe lives one layer down, in the
+   * store that owns the record.
+   *
+   * @returns Nothing; a failure leaves {@link user} null rather than throwing — the client
+   * store keeps the reason (or, for an identity with no client record, its own flag).
    */
   const fetchUser = async (): Promise<void> => {
     if (user.value) return
-    try {
-      user.value = await useClientApi().fetchMe()
-    } catch {
-      user.value = null
-    }
+    const clientStore = useClientStore()
+    await clientStore.fetchUser()
+    user.value = clientStore.user
   }
 
   /**
@@ -110,6 +116,10 @@ export const useAuthStore = defineStore('auth', () => {
       await api.logout()
     }
     user.value = null
+    // Local mode leaves the browser on the same SPA instance, so the client store's cached
+    // profile, services and invoices would otherwise outlive the session and greet whoever
+    // signs in next.
+    useClientStore().reset()
   }
 
   /**
@@ -135,6 +145,7 @@ export const useAuthStore = defineStore('auth', () => {
       await api.logout()
     } catch { /* the session ends on this side either way */ }
     user.value = null
+    useClientStore().reset()
 
     if ((config.public.authMode as string) !== 'sso') {
       await navigateTo('/client/login')
@@ -164,6 +175,7 @@ export const useAuthStore = defineStore('auth', () => {
    */
   const reset = (): void => {
     user.value = null
+    useClientStore().reset()
   }
 
   return {

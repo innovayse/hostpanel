@@ -4,7 +4,7 @@ using Innovayse.Application.Reports.DTOs;
 using Innovayse.Application.Reports.Interfaces;
 using Innovayse.Domain.Servers;
 using Innovayse.Infrastructure.Persistence;
-using Innovayse.Infrastructure.Provisioning.CPanel;
+using Innovayse.Infrastructure.Integrations.CPanel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 

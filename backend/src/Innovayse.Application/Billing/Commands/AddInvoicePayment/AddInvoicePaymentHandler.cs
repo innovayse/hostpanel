@@ -52,7 +52,7 @@ public sealed class AddInvoicePaymentHandler(
         activityLogRepo.Add(ActivityLog.Create(
             invoice.ClientId,
             $"Added Invoice Payment - Invoice ID: {invoice.Id}",
-            ctx.AdminId, ctx.AdminName, ctx.AdminEmail, ctx.IpAddress));
+            ctx.UserId, ctx.UserName, ctx.UserEmail, ctx.IpAddress));
 
         await uow.SaveChangesAsync(ct);
     }

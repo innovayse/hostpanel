@@ -8,7 +8,6 @@ public sealed class RemovePaymentMethodValidator : AbstractValidator<RemovePayme
     /// <summary>Initialises all validation rules.</summary>
     public RemovePaymentMethodValidator()
     {
-        RuleFor(x => x.UserId).NotEmpty();
         RuleFor(x => x.PaymentMethodId).NotEmpty();
     }
 }

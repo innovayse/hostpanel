@@ -1,6 +1,5 @@
 namespace Innovayse.API.Notifications;
 
-using System.Security.Claims;
 using Innovayse.Application.Clients.DTOs;
 using Innovayse.Application.Clients.Queries.GetMyProfile;
 using Innovayse.Application.Common;
@@ -39,7 +38,7 @@ public sealed class MyEmailsController(IMessageBus bus) : ControllerBase
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
-        var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(GetUserId()), ct);
+        var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(), ct);
 
         var result = await bus.InvokeAsync<PagedResult<EmailLogDto>>(
             new ListClientEmailLogsQuery(profile.Id, page, pageSize), ct);
@@ -60,19 +59,11 @@ public sealed class MyEmailsController(IMessageBus bus) : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<EmailLogDetailDto>> GetMyEmailAsync(int id, CancellationToken ct)
     {
-        var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(GetUserId()), ct);
+        var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(), ct);
 
         var email = await bus.InvokeAsync<EmailLogDetailDto?>(
             new GetClientEmailLogQuery(profile.Id, id), ct);
 
         return email is null ? NotFound() : Ok(email);
     }
-
-    /// <summary>Extracts the authenticated user's Identity ID from JWT claims.</summary>
-    /// <returns>The user ID string.</returns>
-    /// <exception cref="UnauthorizedAccessException">Thrown when the user ID claim is missing.</exception>
-    private string GetUserId() =>
-        User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? User.FindFirstValue("sub")
-            ?? throw new UnauthorizedAccessException("User ID not found in token.");
 }

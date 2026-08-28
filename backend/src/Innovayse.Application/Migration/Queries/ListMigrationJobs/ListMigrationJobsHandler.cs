@@ -1,5 +1,6 @@
 namespace Innovayse.Application.Migration.Queries.ListMigrationJobs;
 
+using Innovayse.Application.Migration.Extensions;
 using Innovayse.Application.Migration.DTOs;
 using Innovayse.Domain.Migration.Interfaces;
 

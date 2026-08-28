@@ -2,12 +2,13 @@ namespace Innovayse.Application.Clients.Commands.InviteUserToClient;
 
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Common;
+using Innovayse.Application.Common.Options;
 using Innovayse.Application.Notifications.Commands.SendEmail;
 using Innovayse.Domain.Clients;
 using Innovayse.Domain.Clients.Interfaces;
 using Innovayse.Domain.Notifications;
 using Innovayse.Domain.Notifications.Interfaces;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Wolverine;
 
 /// <summary>
@@ -21,7 +22,7 @@ using Wolverine;
 /// <param name="templateRepo">Email template repository for seeding the invite template.</param>
 /// <param name="uow">Unit of work for persisting changes.</param>
 /// <param name="bus">Wolverine message bus for sending the invitation email.</param>
-/// <param name="configuration">Application configuration for reading the client base URL.</param>
+/// <param name="clientPortal">Where the client portal lives, for the link in the invitation mail.</param>
 public sealed class InviteUserToClientHandler(
     IClientRepository clientRepo,
     IInvitationRepository invitationRepo,
@@ -29,7 +30,7 @@ public sealed class InviteUserToClientHandler(
     IEmailTemplateRepository templateRepo,
     IUnitOfWork uow,
     IMessageBus bus,
-    IConfiguration configuration)
+    IOptions<ClientPortalOptions> clientPortal)
 {
     /// <summary>The email template slug used for user invitations.</summary>
     private const string TemplateSlug = "user-invite";
@@ -48,9 +49,13 @@ public sealed class InviteUserToClientHandler(
         var client = await clientRepo.FindByIdAsync(cmd.ClientId, ct)
             ?? throw new InvalidOperationException($"Client {cmd.ClientId} not found.");
 
-        // Check if the email matches the account owner
+        // Check if the email matches the account owner.
+        // The message deliberately omits client.UserId. This runs on a client-portal endpoint,
+        // and that id is the *owner's* internal identity key -- something the person inviting
+        // never supplied and has no use for. The caller-supplied ids elsewhere in this handler
+        // are echoed back because they are already the caller's own input.
         var owner = await identity.FindBySubjectAsync(client.UserId, ct)
-            ?? throw new InvalidOperationException($"Owner user {client.UserId} not found.");
+            ?? throw new InvalidOperationException("This account's owner could not be found.");
 
         if (string.Equals(owner.Email, cmd.Email, StringComparison.OrdinalIgnoreCase))
         {
@@ -92,7 +97,7 @@ public sealed class InviteUserToClientHandler(
         await SeedInviteTemplateAsync(ct);
 
         // Build invite link and send email
-        var clientBaseUrl = configuration["ClientBaseUrl"] ?? "http://localhost:3000";
+        var clientBaseUrl = clientPortal.Value.BaseUrl;
         var inviteLink = $"{clientBaseUrl}/client/accept-invite?token={Uri.EscapeDataString(invitation.Token)}";
 
         await bus.InvokeAsync(new SendEmailCommand(

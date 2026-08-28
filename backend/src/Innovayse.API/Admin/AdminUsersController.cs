@@ -4,6 +4,7 @@ using Innovayse.API.Admin.Requests;
 using Innovayse.Application.Admin.DTOs;
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Common;
+using Innovayse.Application.Common.Options;
 using Innovayse.Application.Notifications.Commands.SendEmail;
 using Innovayse.Application.Notifications.Services;
 using Innovayse.Domain.Auth;
@@ -11,6 +12,7 @@ using Innovayse.Domain.Clients.Interfaces;
 using Innovayse.Domain.Notifications.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Wolverine;
 
 /// <summary>
@@ -132,7 +134,7 @@ public sealed class AdminUsersController(
     /// <param name="templateRepo">Email template repository.</param>
     /// <param name="uow">Unit of work for persisting the template.</param>
     /// <param name="bus">Message bus, for sending the mail.</param>
-    /// <param name="configuration">Configuration, for the client base URL.</param>
+    /// <param name="clientPortal">Where the client portal lives, for the link in the reset mail.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>204 No Content.</returns>
     [HttpPost("{id}/reset-password")]
@@ -141,7 +143,7 @@ public sealed class AdminUsersController(
         [FromServices] IEmailTemplateRepository templateRepo,
         [FromServices] IUnitOfWork uow,
         [FromServices] IMessageBus bus,
-        [FromServices] IConfiguration configuration,
+        [FromServices] IOptions<ClientPortalOptions> clientPortal,
         CancellationToken ct)
     {
         var account = await identity.FindBySubjectAsync(id, ct)
@@ -154,7 +156,7 @@ public sealed class AdminUsersController(
 
         await PasswordResetTemplateSeeder.EnsureSeededAsync(templateRepo, uow, ct);
 
-        var clientBaseUrl = configuration["ClientBaseUrl"] ?? "http://localhost:3000";
+        var clientBaseUrl = clientPortal.Value.BaseUrl;
         var resetLink = $"{clientBaseUrl}/client/reset-password?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(account.Email)}";
 
         await bus.InvokeAsync(new SendEmailCommand(

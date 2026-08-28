@@ -2,8 +2,8 @@ namespace Innovayse.Infrastructure.Domains;
 
 using Innovayse.Domain.Domains;
 using Innovayse.Domain.Domains.Interfaces;
-using Innovayse.Infrastructure.Domains.NameAm;
-using Innovayse.Infrastructure.Domains.Namecheap;
+using Innovayse.Infrastructure.Integrations.NameAm;
+using Innovayse.Infrastructure.Integrations.Namecheap;
 using Microsoft.Extensions.DependencyInjection;
 
 /// <summary>

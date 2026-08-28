@@ -1,6 +1,5 @@
 namespace Innovayse.API.Auth;
 
-using System.Security.Claims;
 using Innovayse.API.Auth.Requests;
 using Innovayse.Application.Auth.Commands.DisableTwoFactor;
 using Innovayse.Application.Auth.Commands.EnableTwoFactor;
@@ -37,7 +36,7 @@ public sealed class MyTwoFactorController(IMessageBus bus) : ControllerBase
     public async Task<ActionResult<TwoFactorSetupDto>> SetupAsync(CancellationToken ct)
     {
         var result = await bus.InvokeAsync<TwoFactorSetupDto?>(
-            new StartTwoFactorSetupCommand(GetUserId()), ct);
+            new StartTwoFactorSetupCommand(), ct);
 
         return result is null ? Unauthorized() : Ok(result);
     }
@@ -53,7 +52,7 @@ public sealed class MyTwoFactorController(IMessageBus bus) : ControllerBase
         [FromBody] TwoFactorCodeRequest request, CancellationToken ct)
     {
         var enabled = await bus.InvokeAsync<bool>(
-            new EnableTwoFactorCommand(GetUserId(), request.Code), ct);
+            new EnableTwoFactorCommand(request.Code), ct);
 
         return enabled ? NoContent() : BadRequest(new { message = "That code did not match." });
     }
@@ -73,16 +72,8 @@ public sealed class MyTwoFactorController(IMessageBus bus) : ControllerBase
         [FromBody] TwoFactorCodeRequest request, CancellationToken ct)
     {
         var disabled = await bus.InvokeAsync<bool>(
-            new DisableTwoFactorCommand(GetUserId(), request.Code), ct);
+            new DisableTwoFactorCommand(request.Code), ct);
 
         return disabled ? NoContent() : BadRequest(new { message = "That code did not match." });
     }
-
-    /// <summary>Extracts the authenticated user's Identity ID from JWT claims.</summary>
-    /// <returns>The user ID string.</returns>
-    /// <exception cref="UnauthorizedAccessException">Thrown when the user ID claim is missing.</exception>
-    private string GetUserId() =>
-        User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? User.FindFirstValue("sub")
-            ?? throw new UnauthorizedAccessException("User ID not found in token.");
 }

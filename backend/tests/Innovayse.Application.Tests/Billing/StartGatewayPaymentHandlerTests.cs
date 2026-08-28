@@ -2,6 +2,7 @@ namespace Innovayse.Application.Tests.Billing;
 
 using Innovayse.Application.Billing.Commands.StartGatewayPayment;
 using Innovayse.Application.Billing.Interfaces;
+using Innovayse.Application.Billing.Options;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Billing.Interfaces;
@@ -9,9 +10,9 @@ using Innovayse.Domain.Clients;
 using Innovayse.Domain.Clients.Interfaces;
 using Innovayse.Domain.Common;
 using Innovayse.SDK.Plugins;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
@@ -28,35 +29,29 @@ public class StartGatewayPaymentHandlerTests
 
     public StartGatewayPaymentHandlerTests()
     {
-        // Matches the default (null client currency → no configured Billing:DefaultCurrency →
-        // the handler's built-in AMD fallback → "051") currency path used by most tests below.
+        // Matches the default (null client currency → BillingOptions left at its own AMD default
+        // → "051") currency path used by most tests below.
         plugin.SetupGet(p => p.CurrencyCode).Returns("051");
     }
 
     private StartGatewayPaymentHandler CreateHandler(
-        IConfiguration? configuration = null, ILogger<StartGatewayPaymentHandler>? logger = null) =>
+        IOptions<BillingOptions>? billingOptions = null, ILogger<StartGatewayPaymentHandler>? logger = null) =>
         new(invoiceRepo.Object, clientRepo.Object, resolver.Object, uow.Object,
-            configuration ?? AllowedOriginConfig(), logger ?? NullLogger<StartGatewayPaymentHandler>.Instance);
+            billingOptions ?? Options.Create(new BillingOptions()),
+            AllowedOriginOptions(),
+            logger ?? NullLogger<StartGatewayPaymentHandler>.Instance);
 
-    private static IConfiguration AllowedOriginConfig(params string[] origins)
-    {
-        var effective = origins.Length > 0 ? origins : ["https://portal"];
-        var pairs = effective
-            .Select((o, i) => new KeyValuePair<string, string?>($"Cors:AllowedOrigins:{i}", o));
-        return new ConfigurationBuilder().AddInMemoryCollection(pairs).Build();
-    }
-
-    /// <summary>Builds config with an allowed return-url origin plus an explicit <c>Billing:DefaultCurrency</c>,
-    /// to prove that value overrides the handler's built-in AMD fallback.</summary>
-    private static IConfiguration ConfigWithDefaultCurrency(string defaultCurrency)
-    {
-        var pairs = new Dictionary<string, string?>
+    /// <summary>The return-url origins every test runs with, matching <see cref="ReturnUrl"/>.</summary>
+    private static IOptions<GatewayReturnUrlOptions> AllowedOriginOptions(params string[] origins) =>
+        Options.Create(new GatewayReturnUrlOptions
         {
-            ["Cors:AllowedOrigins:0"] = "https://portal",
-            ["Billing:DefaultCurrency"] = defaultCurrency,
-        };
-        return new ConfigurationBuilder().AddInMemoryCollection(pairs).Build();
-    }
+            AllowedOrigins = origins.Length > 0 ? origins : ["https://portal"],
+        });
+
+    /// <summary>Builds billing options with an explicit default currency, to prove that value
+    /// overrides the option class's own AMD default.</summary>
+    private static IOptions<BillingOptions> BillingOptionsWithDefaultCurrency(string defaultCurrency) =>
+        Options.Create(new BillingOptions { DefaultCurrency = defaultCurrency });
 
     private Invoice CreateInvoice(decimal total = 25.50m, string? clientCurrency = null, int? id = null)
     {
@@ -152,8 +147,8 @@ public class StartGatewayPaymentHandlerTests
     public async Task HandleAsync_NullClientCurrencyWithNoConfiguredDefault_TreatedAsAmd()
     {
         // CreateInvoice with clientCurrency: null → clientRepo.FindByIdAsync returns null (unset mock).
-        // CreateHandler() below supplies only Cors:AllowedOrigins — no Billing:DefaultCurrency — so
-        // the handler must fall back to its built-in AMD constant.
+        // CreateHandler() below leaves BillingOptions at its own default, so the handler must
+        // bill in AMD.
         var invoice = CreateInvoice(total: 25m);
         plugin.SetupGet(p => p.CurrencyCode).Returns("051"); // AMD
         resolver.Setup(r => r.ResolveAsync("innovayse-inecobank", It.IsAny<CancellationToken>()))
@@ -171,8 +166,7 @@ public class StartGatewayPaymentHandlerTests
     [Fact]
     public async Task HandleAsync_NullClientCurrencyWithConfiguredDefault_UsesConfiguredValue()
     {
-        // An explicit Billing:DefaultCurrency in configuration must win over the handler's
-        // built-in AMD fallback.
+        // An explicit Billing:DefaultCurrency must win over the option class's AMD default.
         var invoice = CreateInvoice(total: 25m);
         plugin.SetupGet(p => p.CurrencyCode).Returns("978"); // EUR — matches the configured default below
         resolver.Setup(r => r.ResolveAsync("innovayse-inecobank", It.IsAny<CancellationToken>()))
@@ -180,7 +174,7 @@ public class StartGatewayPaymentHandlerTests
         plugin.Setup(p => p.CreatePaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PaymentSession("gw-eur-config", "https://pg/pay?mdOrder=gw-eur-config"));
 
-        var redirect = await CreateHandler(ConfigWithDefaultCurrency("EUR")).HandleAsync(
+        var redirect = await CreateHandler(BillingOptionsWithDefaultCurrency("EUR")).HandleAsync(
             new StartGatewayPaymentCommand(invoice.Id, "innovayse-inecobank", ReturnUrl),
             CancellationToken.None);
 

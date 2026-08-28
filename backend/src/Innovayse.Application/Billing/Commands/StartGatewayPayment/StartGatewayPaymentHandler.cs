@@ -2,13 +2,14 @@ namespace Innovayse.Application.Billing.Commands.StartGatewayPayment;
 
 using Innovayse.Application.Billing;
 using Innovayse.Application.Billing.Interfaces;
+using Innovayse.Application.Billing.Options;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Billing.Interfaces;
 using Innovayse.Domain.Clients.Interfaces;
 using Innovayse.SDK.Plugins;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 /// <summary>
 /// Handles <see cref="StartGatewayPaymentCommand"/>: resolves the payment plugin,
@@ -19,14 +20,16 @@ using Microsoft.Extensions.Logging;
 /// <param name="clientRepo">Client repository, used to resolve the invoice's billing currency.</param>
 /// <param name="pluginResolver">Payment plugin resolver.</param>
 /// <param name="uow">Unit of work.</param>
-/// <param name="configuration">Host configuration, used to validate <c>ReturnUrl</c> against the configured CORS origins.</param>
+/// <param name="billingOptions">Panel billing defaults, for the currency a client with none of their own is billed in.</param>
+/// <param name="returnUrlOptions">The origins a payer may be handed back to, used to validate <c>ReturnUrl</c>.</param>
 /// <param name="logger">Structured logger, used to record gateway status-probe failures during the live-session check.</param>
 public sealed class StartGatewayPaymentHandler(
     IInvoiceRepository invoiceRepo,
     IClientRepository clientRepo,
     IPaymentPluginResolver pluginResolver,
     IUnitOfWork uow,
-    IConfiguration configuration,
+    IOptions<BillingOptions> billingOptions,
+    IOptions<GatewayReturnUrlOptions> returnUrlOptions,
     ILogger<StartGatewayPaymentHandler> logger)
 {
     /// <summary>
@@ -35,21 +38,6 @@ public sealed class StartGatewayPaymentHandler(
     /// window is refused unless the existing session is already known to be Declined.
     /// </summary>
     private const int SessionWindowMinutes = 20;
-
-    /// <summary>
-    /// Configuration key for the panel's default billing currency, read the same way
-    /// <see cref="EnsureReturnUrlIsAllowed"/> reads <c>Cors:AllowedOrigins</c>. Applies whenever
-    /// a client has no explicit <see cref="Innovayse.Domain.Clients.Client.Currency"/> set.
-    /// </summary>
-    private const string DefaultCurrencyConfigKey = "Billing:DefaultCurrency";
-
-    /// <summary>
-    /// The panel's fallback billing currency when neither the client nor configuration
-    /// (<see cref="DefaultCurrencyConfigKey"/>) specifies one. Armenian merchants — this panel's
-    /// only production integration to date — bill in AMD, so that is the built-in default rather
-    /// than an internationally "neutral" currency like USD.
-    /// </summary>
-    private const string FallbackCurrency = "AMD";
 
     /// <summary>Handles the command.</summary>
     /// <param name="cmd">The start command.</param>
@@ -177,7 +165,7 @@ public sealed class StartGatewayPaymentHandler(
     private async Task EnsureCurrencyMatchesAsync(Invoice invoice, IPaymentPlugin plugin, CancellationToken ct)
     {
         var client = await clientRepo.FindByIdAsync(invoice.ClientId, ct);
-        var defaultCurrency = configuration[DefaultCurrencyConfigKey] ?? FallbackCurrency;
+        var defaultCurrency = billingOptions.Value.DefaultCurrency;
         var clientCurrency = client?.Currency ?? defaultCurrency;
         var clientCurrencyNumeric = CurrencyCodes.ToNumeric(clientCurrency)
             ?? throw new InvalidOperationException(
@@ -201,7 +189,7 @@ public sealed class StartGatewayPaymentHandler(
     /// </exception>
     private void EnsureReturnUrlIsAllowed(string returnUrl)
     {
-        var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+        var allowedOrigins = returnUrlOptions.Value.AllowedOrigins;
 
         if (!Uri.TryCreate(returnUrl, UriKind.Absolute, out var uri))
         {

@@ -8,7 +8,6 @@ public sealed class CreateTicketValidator : AbstractValidator<CreateTicketComman
     /// <summary>Initialises all validation rules.</summary>
     public CreateTicketValidator()
     {
-        RuleFor(x => x.ClientId).GreaterThan(0);
         RuleFor(x => x.DepartmentId).GreaterThan(0);
         RuleFor(x => x.Subject).NotEmpty().MaximumLength(255);
         RuleFor(x => x.Message).NotEmpty();

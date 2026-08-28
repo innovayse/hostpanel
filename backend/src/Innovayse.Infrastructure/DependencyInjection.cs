@@ -4,7 +4,6 @@ using Innovayse.Application.Admin.Plugins.Interfaces;
 using Innovayse.Application.Admin.Servers.Interfaces;
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Billing.Interfaces;
-using Innovayse.Application.Clients.Services;
 using Innovayse.Application.Common;
 using Innovayse.Application.Notifications.Services;
 using Innovayse.Domain.Audit.Interfaces;
@@ -26,8 +25,14 @@ using Innovayse.Infrastructure.Billing;
 using Innovayse.Infrastructure.Clients;
 using Innovayse.Infrastructure.Common;
 using Innovayse.Infrastructure.Domains;
-using Innovayse.Infrastructure.Domains.NameAm;
-using Innovayse.Infrastructure.Domains.Namecheap;
+using Innovayse.Infrastructure.Integrations.CPanel;
+using Innovayse.Infrastructure.Integrations.CPanel.Options;
+using Innovayse.Infrastructure.Integrations.NameAm;
+using Innovayse.Infrastructure.Integrations.NameAm.Options;
+using Innovayse.Infrastructure.Integrations.Namecheap;
+using Innovayse.Infrastructure.Integrations.Namecheap.Options;
+using Innovayse.Infrastructure.Integrations.Stripe;
+using Innovayse.Infrastructure.Integrations.Stripe.Options;
 using Innovayse.Infrastructure.Notifications;
 using Innovayse.Infrastructure.Orders;
 using Innovayse.Infrastructure.Persistence;
@@ -35,7 +40,6 @@ using Innovayse.Infrastructure.Persistence.Repositories;
 using Innovayse.Infrastructure.Plugins;
 using Innovayse.Infrastructure.Products;
 using Innovayse.Infrastructure.Provisioning;
-using Innovayse.Infrastructure.Provisioning.CPanel;
 using Innovayse.Infrastructure.Repositories;
 using Innovayse.Infrastructure.Security;
 using Innovayse.Infrastructure.Servers;
@@ -196,7 +200,27 @@ public static class DependencyInjection
         services.AddScoped<IClientRepository, ClientRepository>();
         services.AddScoped<IClientUserRepository, ClientUserRepository>();
         services.AddScoped<IInvitationRepository, InvitationRepository>();
-        services.AddScoped<IClientAccessService, ClientAccessService>();
+
+        // Read model for the client data export. Fully qualified because the Application layer's
+        // Clients namespace is not imported here and importing it would shadow the Domain one.
+        services.AddScoped<Innovayse.Application.Clients.Interfaces.IClientExportRepository, ClientExportRepository>();
+
+        // Domain ownership rule for the client-facing routes. Fully qualified for the same
+        // reason as the export repository above: the Application layer's Domains namespace
+        // would shadow the Domain one.
+        services.AddScoped<
+            Innovayse.Application.Domains.Common.IDomainOwnership,
+            Innovayse.Application.Domains.Common.DomainOwnership>();
+
+        // The same rule for support tickets and for invoices. The client-facing handlers in those
+        // two features call these themselves, rather than the endpoint calling them on the way
+        // past, so the check travels with the message.
+        services.AddScoped<
+            Innovayse.Application.Support.Common.ITicketOwnership,
+            Innovayse.Application.Support.Common.TicketOwnership>();
+        services.AddScoped<
+            Innovayse.Application.Billing.Common.IInvoiceOwnership,
+            Innovayse.Application.Billing.Common.InvoiceOwnership>();
 
         // Product services
         services.AddScoped<IProductGroupRepository, ProductGroupRepository>();
@@ -209,10 +233,30 @@ public static class DependencyInjection
         // Service provisioning
         services.AddScoped<IClientServiceRepository, ClientServiceRepository>();
         services.AddScoped<ICancellationRequestRepository, CancellationRequestRepository>();
-        services.Configure<CPanelSettings>(configuration.GetSection("CPanel"));
+        // Bound and checked at startup: either the whole section is unset -- a deployment that
+        // provisions through per-server credentials held in the database instead -- or it is
+        // complete. A half-filled section used to bind silently and fail on the first call.
+        services.AddOptions<CPanelOptions>()
+            .Bind(configuration.GetSection(CPanelOptions.SectionName))
+            .Validate(
+                o => o.IsUsable,
+                $"{CPanelOptions.SectionName} is partly configured: ApiUrl, Username and ApiToken "
+                    + "must either all be set or the whole section left unset.")
+            .ValidateOnStart();
         services.AddHttpClient<CPanelClient>((sp, httpClient) =>
         {
-            var settings = sp.GetRequiredService<IOptions<CPanelSettings>>().Value;
+            var settings = sp.GetRequiredService<IOptions<CPanelOptions>>().Value;
+
+            // Resolving this client at all means something is about to call WHM, so an unset
+            // section is an error here even though it is allowed at startup -- said plainly and
+            // naming the setting, rather than as the UriFormatException an empty URL produces.
+            if (!settings.IsConfigured)
+            {
+                throw new InvalidOperationException(
+                    $"cPanel provisioning was requested but the \"{CPanelOptions.SectionName}\" "
+                    + "configuration section is not set.");
+            }
+
             httpClient.BaseAddress = new Uri(settings.ApiUrl);
             httpClient.Timeout = TimeSpan.FromSeconds(60);
             httpClient.DefaultRequestHeaders.Add(
@@ -237,7 +281,16 @@ public static class DependencyInjection
         services.AddScoped<IPaymentGateway, NullPaymentGateway>();
 
         // Stripe
-        services.Configure<StripeSettings>(configuration.GetSection("Stripe"));
+        // Optional in the same way cPanel is: no Stripe section at all is a deployment that takes
+        // no card payments, and StripeService fails on the first call that needs a key. A section
+        // with only some of the keys filled in is refused here instead.
+        services.AddOptions<StripeOptions>()
+            .Bind(configuration.GetSection(StripeOptions.SectionName))
+            .Validate(
+                o => o.IsUsable,
+                $"{StripeOptions.SectionName} is partly configured: SecretKey must be set, or the "
+                    + "whole section left unset.")
+            .ValidateOnStart();
         services.AddScoped<IStripeService, StripeService>();
 
         // Payment plugins (hosted-gateway providers, e.g. Inecobank)
@@ -319,14 +372,26 @@ public static class DependencyInjection
         {
             client.Timeout = TimeSpan.FromSeconds(30);
         });
-        services.Configure<NameAmSettings>(configuration.GetSection("NameAm"));
+        services.AddOptions<NameAmOptions>()
+            .Bind(configuration.GetSection(NameAmOptions.SectionName))
+            .Validate(
+                o => o.IsUsable,
+                $"{NameAmOptions.SectionName} is partly configured: Email and Password must either "
+                    + "both be set or the whole section left unset.")
+            .ValidateOnStart();
 
         // Namecheap (kept for reference / future multi-registrar support)
         services.AddHttpClient<NamecheapClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(30);
         });
-        services.Configure<NamecheapSettings>(configuration.GetSection("Namecheap"));
+        services.AddOptions<NamecheapOptions>()
+            .Bind(configuration.GetSection(NamecheapOptions.SectionName))
+            .Validate(
+                o => o.IsUsable,
+                $"{NamecheapOptions.SectionName} is partly configured: ApiUser, ApiKey and ApiUrl "
+                    + "must either all be set or the whole section left unset.")
+            .ValidateOnStart();
 
         var pluginsRoot = Path.Combine(AppContext.BaseDirectory, "plugins");
         PluginLoader.DiscoverAndRegister(services, pluginsRoot, loggerFactory);

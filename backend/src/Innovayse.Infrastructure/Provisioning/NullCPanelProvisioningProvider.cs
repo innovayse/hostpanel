@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 /// <summary>
 /// No-op cPanel provisioning provider used in development and testing.
 /// Returns predictable results without calling any external cPanel/WHM API.
-/// Replace with <see cref="CPanel.CPanelProvisioningProvider"/> when a real server is configured.
+/// Replace with <see cref="Integrations.CPanel.CPanelProvisioningProvider"/> when a real server is configured.
 /// </summary>
 /// <param name="logger">Logger instance.</param>
 public sealed class NullCPanelProvisioningProvider(ILogger<NullCPanelProvisioningProvider> logger) : IProvisioningProvider

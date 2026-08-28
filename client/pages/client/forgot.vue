@@ -103,27 +103,45 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * Password reset request page — takes an email address and asks the backend to send a
+ * reset link.
+ */
 import { ArrowLeft, MailCheck, Send } from 'lucide-vue-next'
-import { $fetch } from 'ofetch'
+import { useAuthApi } from '~/composables/apis/useAuthApi'
 
 definePageMeta({ layout: false })
 
 const { t } = useI18n()
+const { requestPasswordReset } = useAuthApi()
 
+/** Address the visitor typed. */
 const email = ref('')
+/** Address the confirmation panel echoes back, frozen at submit time. */
 const submittedEmail = ref('')
+
+/** True while the request is in flight. */
 const loading = ref(false)
+
+/** Error message to display, empty when there is none. */
 const error = ref('')
+
+/** True once the backend has accepted the request. */
 const sent = ref(false)
 
-async function handleSubmit() {
+/**
+ * Asks for a reset mail and switches the page to its confirmation state.
+ *
+ * @returns Nothing; a failure sets {@link error} rather than throwing.
+ */
+async function handleSubmit(): Promise<void> {
   loading.value = true
   error.value = ''
   try {
-    await $fetch('/api/portal/auth/forgot', {
-      method: 'POST',
-      body: { email: email.value }
-    })
+    // This page used to POST to `/api/portal/auth/forgot`, for which no Nitro route exists —
+    // every request 404'd and the visitor was told the mail had failed. It now shares the one
+    // endpoint function with `/client/forgot-password`.
+    await requestPasswordReset(email.value)
     submittedEmail.value = email.value
     sent.value = true
   } catch {

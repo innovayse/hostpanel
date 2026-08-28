@@ -101,6 +101,46 @@ export async function tryRefreshToken(event: H3Event): Promise<string | null> {
   }
 }
 
+/** The error body every C# backend endpoint answers with, written by `ExceptionMiddleware`. */
+interface BackendErrorBody {
+  /** The human-readable sentence. Rendered as-is when no code-specific wording exists. */
+  error?: string
+  /** Present on some upstream shapes that use `message` rather than `error`. */
+  message?: string
+  /** The machine-readable SCREAMING_SNAKE code, e.g. `CLIENT_PROFILE_NOT_FOUND`. */
+  code?: string
+}
+
+/**
+ * Turns a failed backend call into the H3 error this route rethrows to the browser.
+ *
+ * Both the sentence **and** the backend's `code` are carried across. The code travels in
+ * `data` because that is the only part of an H3Error Nitro serialises into the JSON body the
+ * browser receives -- `statusMessage` alone would force the client to string-match English
+ * prose to tell "this account is not a customer" apart from a real failure.
+ *
+ * @param status - HTTP status the backend answered with.
+ * @param err - The `$fetch` rejection, whose `data` holds the backend's JSON body.
+ * @param endpoint - Backend path, used only for the last-resort sentence.
+ * @returns An H3 error ready to be thrown.
+ */
+function backendError(
+  status: number,
+  err: { data?: unknown; message?: string },
+  endpoint: string
+) {
+  const data = err?.data as BackendErrorBody | undefined
+
+  return createError({
+    statusCode: status,
+    statusMessage: data?.error
+      ?? data?.message
+      ?? err?.message
+      ?? `Backend API error for ${endpoint}`,
+    data: { code: data?.code ?? null },
+  })
+}
+
 /**
  * Make an authenticated request to the internal C# backend API.
  *
@@ -159,24 +199,12 @@ export async function internalApiCall<T>(
         } catch (retryErr: unknown) {
           const retryFetchErr = retryErr as { status?: number; statusCode?: number; data?: unknown; message?: string }
           const retryStatus = retryFetchErr?.status ?? retryFetchErr?.statusCode ?? 502
-          const retryData = retryFetchErr?.data as { error?: string; message?: string } | undefined
-          const retryMessage = retryData?.error
-            ?? retryData?.message
-            ?? retryFetchErr?.message
-            ?? `Backend API error for ${endpoint}`
-
-          throw createError({ statusCode: retryStatus, statusMessage: retryMessage })
+          throw backendError(retryStatus, retryFetchErr, endpoint)
         }
       }
     }
 
-    const data = fetchErr?.data as { error?: string; message?: string } | undefined
-    const message = data?.error
-      ?? data?.message
-      ?? fetchErr?.message
-      ?? `Backend API error for ${endpoint}`
-
-    throw createError({ statusCode: status, statusMessage: message })
+    throw backendError(status, fetchErr, endpoint)
   }
 }
 

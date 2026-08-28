@@ -549,11 +549,13 @@
 <script setup lang="ts">
 import {
   ArrowLeft, AlertCircle, Settings, Zap, LayoutGrid, ChevronRight,
-  ExternalLink, MessageSquare, Link2, Monitor, Mail, Loader,
+  MessageSquare, Link2, Monitor, Mail, Loader,
   KeyRound, XCircle, CheckCircle, SlidersHorizontal, Terminal, Copy,
   FileText, Server as ServerIcon, Globe, ShieldCheck, ShieldX, ShieldAlert,
 } from 'lucide-vue-next'
 import { useClientStore } from '~/stores/client'
+import { useClientApi } from '~/composables/apis/useClientApi'
+import { apiErrorMessage } from '~/utils/portalErrorMessages'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
@@ -564,7 +566,10 @@ const { format: formatAmount } = useCurrency()
 const serviceId = route.params.id as string
 
 // ── Data ──────────────────────────────────────────────────────────────────────
-const { data: service, pending, error } = await useApi<{
+// Straight from the API composable rather than through a store: this page reads one service
+// and owns the result alone, which is the named exception to component -> store -> api.
+const clientApi = useClientApi()
+const { data: service, pending, error } = await clientApi.loadService<{
   id: number
   pid: number
   regdate: string
@@ -593,32 +598,32 @@ const { data: service, pending, error } = await useApi<{
   configoptions?: {
     configoption?: Array<{ id: number; option: string; type: string; value: string }>
   }
-}>(`/api/portal/client/services/${serviceId}`)
+}>(() => serviceId)
 
 await useAsyncData('client-user', () => store.fetchUser())
 
 // ── Hosting Info (nameservers + SSL) ──────────────────────────────────────────
-const { data: hostingInfo } = await useApi<{
+const { data: hostingInfo } = await clientApi.loadServiceResource<{
   nameservers: string[]
   ssl: { valid: boolean; issuer: string; startDate: string; expiryDate: string } | null
-}>(`/api/portal/client/services/${serviceId}/hosting-info`, { default: () => ({ nameservers: [], ssl: null }) })
+}>(() => serviceId, 'hosting-info', () => ({ nameservers: [], ssl: null }))
 
 // ── Cancellation status ──────────────────────────────────────────────────────
-const { data: cancelStatus } = await useApi<{
+const { data: cancelStatus } = await clientApi.loadServiceResource<{
   pending: boolean
   type?: string
   reason?: string
   date?: string
-}>(`/api/portal/client/services/${serviceId}/cancellation-status`, { default: () => ({ pending: false }) })
+}>(() => serviceId, 'cancellation-status', () => ({ pending: false }))
 
 // ── SSH Info ──────────────────────────────────────────────────────────────────
-const { data: sshInfo } = await useApi<{
+const { data: sshInfo } = await clientApi.loadServiceResource<{
   hasAccess: boolean
   host?: string
   username?: string
   port?: number
   shellType?: 'full' | 'jailed'
-}>(`/api/portal/client/services/${serviceId}/ssh-info`, { default: () => ({ hasAccess: false }) })
+}>(() => serviceId, 'ssh-info', () => ({ hasAccess: false }))
 
 const sshCopied = ref(false)
 
@@ -664,13 +669,12 @@ async function changePassword() {
 
   passwordChanging.value = true
   try {
-    await apiFetch(`/api/portal/client/services/${serviceId}/change-password`, {
-      method: 'POST',
-      body: { password: newPassword.value },
-    })
+    await clientApi.changeServicePassword(serviceId, newPassword.value)
     passwordSuccess.value = true
-  } catch (err: any) {
-    passwordError.value = err?.data?.statusMessage || t('client.services.passwordError')
+  } catch (err: unknown) {
+    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`;
+    // the local key is only the no-answer fallback.
+    passwordError.value = apiErrorMessage(err) || t('client.services.passwordError')
   } finally {
     passwordChanging.value = false
   }
@@ -689,13 +693,12 @@ async function submitCancellation() {
   cancelSubmitting.value = true
   cancelError.value = ''
   try {
-    await apiFetch(`/api/portal/client/services/${serviceId}/cancel`, {
-      method: 'POST',
-      body: { type: cancelType.value, reason: cancelReason.value },
-    })
+    await clientApi.cancelService(serviceId, { type: cancelType.value, reason: cancelReason.value })
     cancelDone.value = true
-  } catch (err: any) {
-    cancelError.value = err?.data?.statusMessage || t('client.services.cancelError')
+  } catch (err: unknown) {
+    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`;
+    // the local key is only the no-answer fallback.
+    cancelError.value = apiErrorMessage(err) || t('client.services.cancelError')
   } finally {
     cancelSubmitting.value = false
   }
@@ -713,7 +716,7 @@ async function loadInvoices() {
   if (invoicesLoaded.value) return
   invoicesLoading.value = true
   try {
-    relatedInvoices.value = await apiFetch(`/api/portal/client/services/${serviceId}/invoices`)
+    relatedInvoices.value = await clientApi.fetchServiceInvoices(serviceId)
     invoicesLoaded.value = true
   } catch { /* silently fail */ } finally {
     invoicesLoading.value = false
@@ -727,9 +730,9 @@ async function loginToCpanel() {
   if (ssoLoading.value) return
   ssoLoading.value = true
   try {
-    const { url } = await apiFetch<{ url: string }>(`/api/portal/client/services/${serviceId}/cpanel-sso`)
+    const { url } = await clientApi.fetchCpanelSsoUrl(serviceId)
     window.open(url, '_blank', 'noopener')
-  } catch (err: any) {
+  } catch {
     // Fallback: open plain cPanel login page if SSO fails
     const hostname = service.value?.serverhostname
     if (hostname) window.open(`https://${hostname}:2083`, '_blank', 'noopener')

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildComparisonRows } from './useProductFeatures'
-import type { ProductFeature } from './useProductFeatures'
+import type { ProductFeature } from '~/types/productfeature'
 
 /**
  * Builds a specification line.

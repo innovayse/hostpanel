@@ -98,23 +98,26 @@
  */
 
 import { ArrowLeft, BookOpen, Calendar, Eye, ThumbsUp, ThumbsDown } from 'lucide-vue-next'
+import { useContentApi } from '~/composables/apis/useContentApi'
 
 const route = useRoute()
 const localePath = useLocalePath()
 const { t } = useI18n()
 
-const { data: article, pending, error } = useFetch(
-  () => `/api/portal/knowledgebase/${route.params.id}`
-)
+// Straight from the API composable rather than through a store: this page fetches once and
+// owns the result alone, which is the named exception to component -> store -> api. The raw
+// `useFetch` this replaced skipped the locale header `useApi()` sends, so a localised article
+// came back in English.
+const { data: article, pending, error } = useContentApi().loadKbArticle(() => String(route.params.id))
 
 /** Local helpful vote state (UI only, no API submission) */
 const vote = ref<'yes' | 'no' | null>(null)
 
 watchEffect(() => {
-  if ((article.value as any)?.title) {
+  if (article.value?.title) {
     useSeoMeta({
-      title: `${(article.value as any).title} — ${t('kb.title')}`,
-      description: (article.value as any).excerpt
+      title: `${article.value.title} — ${t('kb.title')}`,
+      description: article.value.excerpt
     })
   }
 })

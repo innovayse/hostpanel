@@ -128,12 +128,13 @@
  * lets the user set a new password.
  */
 import { AlertCircle, ArrowLeft, CheckCircle, KeyRound } from 'lucide-vue-next'
-import { $fetch } from 'ofetch'
+import { useAuthApi } from '~/composables/apis/useAuthApi'
 
 definePageMeta({ layout: false })
 
 const route = useRoute()
 const { t } = useI18n()
+const { resetPassword } = useAuthApi()
 
 const token = computed(() => (typeof route.query.token === 'string' ? route.query.token : ''))
 const email = computed(() => (typeof route.query.email === 'string' ? route.query.email : ''))
@@ -160,14 +161,7 @@ async function handleSubmit() {
   loading.value = true
   error.value = ''
   try {
-    await $fetch('/api/portal/auth/reset-password', {
-      method: 'POST',
-      body: {
-        email: email.value,
-        token: token.value,
-        newPassword: newPassword.value,
-      },
-    })
+    await resetPassword(email.value, token.value, newPassword.value)
     success.value = true
   } catch {
     error.value = t('client.resetPassword.errorDefault')

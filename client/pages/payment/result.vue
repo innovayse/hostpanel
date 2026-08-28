@@ -79,6 +79,7 @@
  * authoritative status from the bank.
  */
 import { AlertTriangle, CheckCircle2, Clock, Loader2, XCircle } from 'lucide-vue-next'
+import { useBillingApi } from '~/composables/apis/useBillingApi'
 
 const route = useRoute()
 const localePath = useLocalePath()
@@ -118,11 +119,9 @@ const statusTarget = computed(() =>
 async function check() {
   checking.value = true
   try {
-    const url = orderId.value
-      ? `/api/portal/order/${orderId.value}/gateway-payment/complete`
-      : `/api/portal/client/invoices/${invoiceId.value}/gateway-payment/complete`
-    const { state: result } = await apiFetch<{ state: 'paid' | 'pending' | 'declined' }>(
-      url, { method: 'POST' })
+    const { state: result } = orderId.value
+      ? await useBillingApi().completeGatewayPayment('order', orderId.value)
+      : await useBillingApi().completeGatewayPayment('invoice', invoiceId.value)
     state.value = result
   } catch {
     // We could not confirm the outcome — do not claim the payment was declined

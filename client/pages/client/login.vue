@@ -100,7 +100,7 @@
 <script setup lang="ts">
 definePageMeta({ layout: false, middleware: 'client-auth' })
 
-const { login } = useClientAuth()
+const { login } = useAuthStore()
 const config = useRuntimeConfig()
 const router = useRouter()
 const route = useRoute()

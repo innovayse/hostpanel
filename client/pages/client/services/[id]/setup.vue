@@ -171,15 +171,23 @@
 <script setup lang="ts">
 import { Globe, Lock, Rocket, ArrowRight, Zap, CheckCircle, AlertCircle } from 'lucide-vue-next'
 import { useClientStore } from '~/stores/client'
+import { useClientApi } from '~/composables/apis/useClientApi'
+import { apiErrorMessage } from '~/utils/portalErrorMessages'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
-const { t } = useI18n()
 const route = useRoute()
 const serviceId = route.params.id as string
 
-/** Simplified interface for the service for template usage */
-interface ClientService {
+/**
+ * The few service fields this wizard renders.
+ *
+ * Deliberately *not* `~/types/clientservice`'s `ClientService`: that one is the full record
+ * the list endpoint returns, and naming a five-field subset the same thing is how a page ends
+ * up type-checking against a shape the API never sends. Local and unexported, which is the
+ * carve-out to the one-type-per-file rule.
+ */
+interface ServiceSummary {
   id: number
   name: string
   status: string
@@ -187,7 +195,10 @@ interface ClientService {
   username: string
 }
 
-const { data: service, pending, error } = await useApi<ClientService>(`/api/portal/client/services/${serviceId}`)
+// Straight from the API composable rather than through a store: this page reads one service
+// and owns the result alone, which is the named exception to component -> store -> api.
+const clientApi = useClientApi()
+const { data: service, pending, error } = await clientApi.loadService<ServiceSummary>(() => serviceId)
 
 const currentStep = ref(1)
 const totalSteps = 3
@@ -241,11 +252,7 @@ async function finishSetup() {
   setupError.value = ''
   
   try {
-    // This API endpoint will need to be created or updated to handle service provisioning
-    await apiFetch(`/api/portal/client/services/${serviceId}/setup`, {
-      method: 'POST',
-      body: setupData
-    })
+    await clientApi.setUpService(serviceId, setupData)
     
     // Invalidate cached services so pages fetch fresh data
     const store = useClientStore()
@@ -256,8 +263,10 @@ async function finishSetup() {
 
     // Success - redirect to the service management page
     await navigateTo(`/client/services/${serviceId}`)
-  } catch (err: any) {
-    setupError.value = err?.data?.statusMessage || 'An error occurred during setup. Please try again or contact support.'
+  } catch (err: unknown) {
+    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`,
+    // rather than a sentence written here.
+    setupError.value = apiErrorMessage(err)
   } finally {
     submitting.value = false
   }

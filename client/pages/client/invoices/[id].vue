@@ -113,6 +113,7 @@
 
 <script setup lang="ts">
 import { ArrowLeft, AlertCircle, CreditCard } from 'lucide-vue-next'
+import { useBillingApi } from '~/composables/apis/useBillingApi'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
@@ -121,7 +122,11 @@ const localePath = useLocalePath()
 const config = useRuntimeConfig()
 const whmcsUrl = config.public.whmcsUrl
 
-const { data: invoice, pending, error } = await useApi(`/api/portal/client/invoices/${route.params.id}`)
+// Straight from the API composables rather than through a store: this page reads these once
+// and owns the results alone, which is the named exception to component -> store -> api.
+const { data: invoice, pending, error } = await useBillingApi().loadInvoice(
+  () => String(route.params.id)
+)
 
 const isOverdue = computed(() => {
   if (!invoice.value) return false

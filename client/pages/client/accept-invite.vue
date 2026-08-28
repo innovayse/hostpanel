@@ -116,11 +116,13 @@
  * a password form. On success, logs the user in and redirects to the dashboard.
  */
 import { AlertCircle, ArrowLeft, UserPlus } from 'lucide-vue-next'
+import { useAuthApi } from '~/composables/apis/useAuthApi'
 
 definePageMeta({ layout: false })
 
 const route = useRoute()
 const { t } = useI18n()
+const { acceptInvite } = useAuthApi()
 
 /** Invitation token extracted from URL query. */
 const token = computed(() => (typeof route.query.token === 'string' ? route.query.token : ''))
@@ -159,13 +161,7 @@ async function handleSubmit(): Promise<void> {
   loading.value = true
   error.value = ''
   try {
-    await $fetch('/api/portal/auth/accept-invite', {
-      method: 'POST',
-      body: {
-        token: token.value,
-        password: password.value,
-      },
-    })
+    await acceptInvite(token.value, password.value)
 
     // Full page reload so the new authed cookie is picked up by middleware
     window.location.href = '/client/dashboard'

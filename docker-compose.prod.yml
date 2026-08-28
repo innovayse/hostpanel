@@ -152,6 +152,22 @@ services:
       NUXT_SSO_CALLBACK_URL: https://${DOMAIN}/api/portal/auth/sso/callback
       NUXT_AUTH_MODE: ${AUTH_MODE}
       NUXT_PUBLIC_AUTH_MODE: ${AUTH_MODE}
+      # Which template renders the public site, and whether its header offers the
+      # apps launcher. Both were missing here, and because a production Nitro
+      # build freezes runtimeConfig defaults (see the note above), the image's
+      # build-time values were the only ones that could ever apply: the launcher
+      # was permanently off on this tier and no .env edit could turn it on.
+      NUXT_PUBLIC_PORTAL_TEMPLATE: ${NUXT_PUBLIC_PORTAL_TEMPLATE:-aurora}
+      NUXT_PUBLIC_PORTAL_APPS_ENABLED: ${NUXT_PUBLIC_PORTAL_APPS_ENABLED:-}
+      # Where each sibling product lives. Left unset these fall back to the
+      # *.local development hostnames baked into nuxt.config.ts, so a launcher
+      # switched on without them would offer links into nothing. An app with no
+      # URL is dropped from the launcher rather than rendered broken.
+      NUXT_PUBLIC_TASKS_URL: ${NUXT_PUBLIC_TASKS_URL:-}
+      NUXT_PUBLIC_ERP_URL: ${NUXT_PUBLIC_ERP_URL:-}
+      NUXT_PUBLIC_SHEETS_URL: ${NUXT_PUBLIC_SHEETS_URL:-}
+      NUXT_PUBLIC_EMAIL_URL: ${NUXT_PUBLIC_EMAIL_URL:-}
+      NUXT_PUBLIC_DRIVE_URL: ${NUXT_PUBLIC_DRIVE_URL:-}
     depends_on:
       - hostpanel-api
     restart: unless-stopped

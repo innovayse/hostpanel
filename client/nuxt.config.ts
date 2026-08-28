@@ -22,7 +22,12 @@ export default defineNuxtConfig({
     // Compress static assets with gzip and brotli at build time
     compressPublicAssets: { gzip: true, brotli: true },
     // Minify server-side HTML output
-    minify: true
+    minify: true,
+    // Nitro's built-in handler drops an H3Error's `data`, which is where the C# backend's
+    // machine-readable error code travels. server/error.ts adds it back for /api/* and
+    // delegates everything else untouched. See the file header for why the code has to
+    // reach the browser at all.
+    errorHandler: '~/server/error'
   },
   modules: ['@nuxt/eslint', '@nuxt/icon', '@nuxt/image', '@nuxtjs/tailwindcss', '@nuxtjs/i18n', '@nuxtjs/sitemap', 'nuxt-swiper', '@pinia/nuxt'],
 

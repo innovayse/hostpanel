@@ -128,6 +128,46 @@ Application/
         InvoiceDto.cs
     Events/
       InvoiceCreatedHandler.cs
+    Extensions/
+      InvoiceExtensions.cs
+```
+
+## Extension Classes
+
+- One `public static class` per file, named `<WhatItExtends>Extensions` — file name matches the class
+- Lives in an `Extensions/` folder **inside the layer or feature that owns it** — never one
+  project-wide `Extensions/` bucket at the root
+- Never appended to the DTO, record or controller it serves. A `ToDto()` helper at the bottom of a
+  file that already holds five records is a grab-bag file, and it hides the mapping from anyone who
+  did not already know which file to open
+- Namespace matches the folder path, as everywhere else
+- It goes in the layer where it is **used**, which is usually the layer that owns the type it
+  extends:
+  - Mapping a Domain aggregate to an Application DTO — **Application**. The DTO is the
+    Application's, and Domain must not learn the shape it is projected into
+  - Converting an enum to an HTTP wire string — **API**. The wire format is the API's business,
+    and the enum never leaves the backend in that form
+- Full XML docs: class summary, method summary, every `<param>`, `<returns>`, and `<exception>` the
+  body can throw — private `const` members included, because a cap like `999` is a decision and
+  the summary is the only place its reason survives
+- Exception: DI registration methods (`AddBillingModule(this IServiceCollection services)`) are
+  composition-root wiring, not extensions of a type. They stay in `DependencyInjection.cs`
+
+```csharp
+// src/Innovayse.Application/Migration/Extensions/MigrationJobExtensions.cs
+namespace Innovayse.Application.Migration.Extensions;
+
+/// <summary>Extension methods for mapping <see cref="MigrationJob"/> to DTOs.</summary>
+public static class MigrationJobExtensions
+{
+    /// <summary>Maximum number of log lines a DTO carries.</summary>
+    private const int MaxLogLines = 999;
+
+    /// <summary>Maps a <see cref="MigrationJob"/> aggregate to its DTO.</summary>
+    /// <param name="job">The job to project.</param>
+    /// <returns>The DTO the API answers with.</returns>
+    public static MigrationJobDto ToDto(this MigrationJob job) { ... }
+}
 ```
 
 ## Naming Conventions
@@ -141,3 +181,4 @@ Application/
 | DTO | `NounDto` | `InvoiceDto` |
 | Repository interface | `INounRepository` | `IInvoiceRepository` |
 | Repository impl | `NounRepository` | `InvoiceRepository` |
+| Extension class | `NounExtensions` | `MigrationJobExtensions` |

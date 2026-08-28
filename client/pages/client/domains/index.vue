@@ -26,6 +26,10 @@
       <div v-for="i in 4" :key="i" class="h-20 rounded-xl bg-white/5 border border-white/10 animate-pulse" />
     </div>
 
+    <!-- Not a customer account. Checked before the failure branch: this is a state the
+         API reported, not a fault, and it carries its own explanation and a way out. -->
+    <ClientNoProfileNotice v-else-if="store.clientProfileMissing" />
+
     <!-- Failed. Checked before the list, which a failure otherwise renders as the toolbar
          above an empty state — a search box over "no domains" rather than a reason. -->
     <UiAlert v-else-if="store.domainsError" variant="error">{{ store.domainsError }}</UiAlert>

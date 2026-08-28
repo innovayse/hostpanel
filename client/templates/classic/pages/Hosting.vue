@@ -360,6 +360,7 @@ import {
   Mail, Database, ShieldCheck, History, Headphones 
 } from 'lucide-vue-next'
 import { useCartStore } from '~/stores/cart'
+import { useCatalogApi } from '~/composables/apis/useCatalogApi'
 
 interface WhmcsCurrency {
   prefix: string; suffix: string; monthly: string; quarterly: string; 
@@ -378,10 +379,11 @@ const cart = useCartStore()
 
 onMounted(() => cart.init())
 
-const { data: _plansRaw, pending, error, refresh } = await useApi<WhmcsPlan[]>('/api/portal/public/products', {
-  query: computed(() => ({ lang: locale.value, gid: 1 })),
-  key: `hosting-plans-res-${locale.value}`
-})
+// Straight from the API composable rather than through a store: this page reads the
+// catalogue once and owns it alone, which is the named exception to component -> store -> api.
+const { data: _plansRaw, pending, error, refresh } = await useCatalogApi().loadProducts(
+  () => ({ lang: locale.value, gid: 1 })
+)
 
 const plans = computed<WhmcsPlan[]>(() => (_plansRaw.value as WhmcsPlan[]) ?? [])
 const freePlan = computed(() => plans.value.find(p => p.name.toLowerCase().includes('free')))

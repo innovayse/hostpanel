@@ -87,15 +87,17 @@
 
 <script setup lang="ts">
 import { ArrowLeft, CheckCircle, Send } from 'lucide-vue-next'
+import { useSupportApi } from '~/composables/apis/useSupportApi'
+import { apiErrorMessage } from '~/utils/portalErrorMessages'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
 const { t } = useI18n()
 
-const { data: departments, pending: deptPending } = useApi<{ id: number; name: string }[]>(
-  '/api/portal/public/departments',
-  { default: () => [] }
-)
+// Straight from the API composable rather than through a store: this page reads it once and
+// owns the result alone, which is the named exception to component -> store -> api.
+const { data: departments, pending: deptPending } =
+  useSupportApi().loadDepartments<{ id: number; name: string }>()
 
 /** Map departments to UiSelect option format */
 const deptOptions = computed(() =>
@@ -123,13 +125,12 @@ async function handleSubmit() {
   loading.value = true
   error.value = ''
   try {
-    await apiFetch('/api/portal/client/tickets', {
-      method: 'POST',
-      body: form
-    })
+    await useSupportApi().createTicket(form)
     submitted.value = true
-  } catch (err: any) {
-    error.value = err?.data?.statusMessage || t('client.tickets.errorDefault')
+  } catch (err: unknown) {
+    // The wording comes from the response body via the one mapping helper in
+    // `utils/portalErrorMessages.ts`; the local key is only the no-answer fallback.
+    error.value = apiErrorMessage(err) || t('client.tickets.errorDefault')
   } finally {
     loading.value = false
   }

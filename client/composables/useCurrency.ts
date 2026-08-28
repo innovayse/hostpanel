@@ -1,3 +1,5 @@
+import { useCatalogApi } from '~/composables/apis/useCatalogApi'
+
 /**
  * Provides currency lookup and formatting helpers sourced from WHMCS GetCurrencies.
  *
@@ -8,18 +10,15 @@
  * Currencies are fetched once and cached by useFetch's key deduplication.
  */
 
-interface WhmcsCurrency {
-  id: number
-  code: string
-  prefix: string
-  suffix: string
-}
-
+/**
+ * Currency lookup and formatting helpers.
+ *
+ * @returns The prefix/suffix lookups and the amount formatter.
+ */
 export function useCurrency() {
-  const { data: currencies } = useApi<WhmcsCurrency[]>(
-    '/api/portal/public/currencies',
-    { server: false, default: () => [] }
-  )
+  // `server: false` — the amounts this decorates are themselves client-side, so the
+  // storefront does not pay for the currency list on every server render.
+  const { data: currencies } = useCatalogApi().loadCurrencies(false)
 
   /** Return the prefix string for a given WHMCS currency ID */
   function prefixFor(id?: number): string {

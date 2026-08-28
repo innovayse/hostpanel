@@ -70,7 +70,7 @@ import { UserPlus } from 'lucide-vue-next'
 definePageMeta({ layout: false, middleware: 'client-auth' })
 
 const { t } = useI18n()
-const { register } = useClientAuth()
+const { register } = useAuthStore()
 
 const form = reactive({
   firstname: '',

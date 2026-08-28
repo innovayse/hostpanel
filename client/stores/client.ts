@@ -5,202 +5,38 @@
  * and do not require SSR / SEO, so a client-side store is appropriate.
  *
  * Public pages (/hosting, /domains, etc.) use `useFetch` / `useApi` directly
- * to preserve SSR and search-engine indexability.
+ * to preserve SSR and search-engine indexability, through their API composable rather than a
+ * store. `nuxt.config.ts` makes the split concrete: `routeRules` sets `ssr: false` and
+ * `X-Robots-Tag: noindex` for `/client/**`, `/cart/**` and `/checkout/**`, and nothing else.
+ * A deliberate, documented exception to component -> store -> api, not an oversight.
+ *
+ * URLs and transport belong to {@link useClientApi}; this store owns only the state, the
+ * loaded/loading flags and how a failure is reported.
  *
  * @module stores/client
  */
 
 import { defineStore } from 'pinia'
-import { apiFetch } from '~/composables/useApi'
+import { useClientApi } from '~/composables/apis/useClientApi'
+import { PortalErrorCode, apiErrorCode, apiErrorMessage } from '~/utils/portalErrorMessages'
+import type { ClientUser } from '~/types/clientuser'
+import type { ClientService } from '~/types/clientservice'
+import type { ClientInvoice } from '~/types/clientinvoice'
+import type { ClientDomain } from '~/types/clientdomain'
+import type { ClientTicket } from '~/types/clientticket'
 
 /**
- * Reads the sentence to show from a failed API call.
+ * True when the API answered that the signed-in identity has no client profile at all.
  *
- * The wording comes from the response body and is never written here: the API is the only
- * side that knows why it refused, and a message invented in the client goes stale the moment
- * the endpoint's reasons change. The generic line is the last resort for a request that never
- * reached the API at all — an offline browser has no response body to quote.
+ * Recognised by the backend's `code`, never by its sentence: the sentence is free to be
+ * reworded or translated, and a branch that matched on English prose would go quiet the day
+ * it was.
  *
- * @param err - Whatever `apiFetch` threw.
- * @returns The message to display.
+ * @param err - Whatever the API composable threw.
+ * @returns True when this is the "not a customer account" answer rather than a failure.
  */
-function apiErrorMessage(err: unknown): string {
-  const body = (err as { data?: { message?: string; statusMessage?: string } })?.data
-  return body?.message
-    ?? body?.statusMessage
-    ?? (err as { message?: string })?.message
-    ?? 'Could not reach the server.'
-}
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-/** Authenticated user info returned by /api/portal/client/me */
-export interface ClientUser {
-  id: number
-  firstname: string
-  lastname: string
-  companyname?: string
-  email: string
-  phonenumber?: string
-  address1?: string
-  address2?: string
-  city?: string
-  state?: string
-  postcode?: string
-  /** ISO 3166-1 alpha-2 country code, e.g. "AM" */
-  country?: string
-  /** Full country name, e.g. "Armenia" */
-  countryname?: string
-  /** Default payment gateway module name (e.g. "paypal", "stripe") */
-  defaultgateway?: string
-  /** WHMCS language preference (e.g. "english", "russian") */
-  language?: string
-  /** Per-category email opt-in flags — 1 = receives emails, 0 = opted out */
-  email_preferences?: {
-    general: 0 | 1
-    invoice: 0 | 1
-    support: 0 | 1
-    product: 0 | 1
-    domain: 0 | 1
-    affiliate: 0 | 1
-  }
-  currency?: number
-  currencyprefix?: string
-  currencysuffix?: string
-  /** User permissions as bit-flags integer (8191 = All). */
-  permissions: number
-  /** Whether TOTP two-factor authentication is switched on for this account. */
-  twoFactorEnabled?: boolean
-}
-
-/** A hosting service from GetClientsProducts */
-export interface ClientService {
-  id: number
-  clientid: number
-  pid: number
-  regdate: string
-  name: string
-  translated_name?: string
-  groupname: string
-  domain: string
-  dedicatedip: string
-  serverid: number
-  servername: string
-  serverip: string
-  serverhostname: string
-  suspensionreason: string
-  firstpaymentamount: string
-  recurringamount: string
-  paymentmethod: string
-  paymentmethodname: string
-  billingcycle: string
-  nextduedate: string
-  status: string
-  username: string
-  diskusage: string
-  disklimit: string
-  bwusage: string
-  bwlimit: string
-  lastupdate: string
-}
-
-/** An invoice from GetInvoices */
-export interface ClientInvoice {
-  id: number
-  userid: number
-  date: string
-  duedate: string
-  datepaid: string
-  subtotal: string
-  credit: string
-  tax: string
-  tax2: string
-  total: string
-  balance: string
-  status: 'Paid' | 'Unpaid' | 'Cancelled' | 'Refunded' | 'Collections' | 'Draft'
-  currencycode: string
-  currencyprefix: string
-  currencysuffix: string
-}
-
-/** A domain returned by the C# backend DomainDto */
-export interface ClientDomain {
-  /** Domain primary key. */
-  id: number
-  /** FK to the owning client. */
-  clientId: number
-  /** Full domain name (e.g. "example.com"). */
-  name: string
-  /** Top-level domain including the dot (e.g. ".com"). */
-  tld: string
-  /** Current lifecycle status (e.g. "Active", "Expired"). */
-  status: string
-  /** Domain registration date (ISO 8601 UTC). */
-  registeredAt: string
-  /** Domain expiration date (ISO 8601 UTC). */
-  expiresAt: string
-  /** Whether the domain is set to auto-renew at expiration. */
-  autoRenew: boolean
-  /** Whether WHOIS privacy is enabled. */
-  whoisPrivacy: boolean
-  /** Whether the domain is locked against unauthorized transfers. */
-  isLocked: boolean
-  /** Reference ID from the registrar's system. */
-  registrarRef: string | null
-  /** Authorization code for transfer. */
-  eppCode: string | null
-  /** FK to linked service (e.g. hosting plan). */
-  linkedServiceId: number | null
-  /** One-time registration cost. */
-  firstPaymentAmount: number
-  /** Recurring registration price. */
-  recurringAmount: number
-  /** Payment method label. */
-  paymentMethod: string | null
-  /** Applied promotion/coupon code. */
-  promotionCode: string | null
-  /** External payment subscription reference. */
-  subscriptionId: string | null
-  /** Free-text admin notes. */
-  adminNotes: string | null
-  /** FK to the order that created this domain. */
-  orderId: number | null
-  /** Order type: "Register" or "Transfer". */
-  orderType: string
-  /** Whether DNS management is enabled. */
-  dnsManagement: boolean
-  /** Whether email forwarding is enabled. */
-  emailForwarding: boolean
-  /** ISO 4217 currency code for the price. */
-  priceCurrency: string
-  /** Next renewal payment due date (ISO 8601 UTC). */
-  nextDueDate: string
-  /** Name of the registrar module. */
-  registrar: string | null
-  /** Registration period in years. */
-  registrationPeriod: number
-}
-
-/** A support ticket from GetTickets */
-export interface ClientTicket {
-  id: number
-  tid: string
-  deptid: number
-  deptname: string
-  userid: number
-  name: string
-  email: string
-  cc: string
-  c: string
-  date: string
-  subject: string
-  status: string
-  urgency: string
-  lastreply: string
-  flag: number
-  service: string
+function isClientProfileMissing(err: unknown): boolean {
+  return apiErrorCode(err) === PortalErrorCode.ClientProfileNotFound
 }
 
 // ---------------------------------------------------------------------------
@@ -222,6 +58,11 @@ export const useClientStore = defineStore('client', {
     // list empty and the screens above read that as "you have nothing yet" — the dashboard
     // showed 0/0/0/0 and "no products/services with us yet" to an account whose four calls
     // had all answered 400. A failure and an empty account must not look the same.
+
+    // Set instead of the per-section errors below when the API says this account has no
+    // client profile. It is one account-wide fact, not five section failures: the screens
+    // render one explanation with a way out, rather than the same red alert four times over.
+    clientProfileMissing: false,
 
     // ── User ──────────────────────────────────────────────────────────────
     user: null as ClientUser | null,
@@ -295,12 +136,17 @@ export const useClientStore = defineStore('client', {
       this.userLoading = true
       this.userError = null
       try {
-        this.user = await apiFetch<ClientUser>('/api/portal/client/me')
+        this.user = await useClientApi().fetchMe()
         this.userLoaded = true
       } catch (err) {
-        // Kept, not swallowed: the screens read this to say the section failed
-        // instead of rendering it as empty.
-        this.userError = apiErrorMessage(err)
+        // "Not a customer account" is a state, not a fault — it gets its own flag and no
+        // error string, so nothing renders it in red. Anything else is kept, not swallowed:
+        // the screens read it to say the section failed instead of rendering it as empty.
+        if (isClientProfileMissing(err)) {
+          this.clientProfileMissing = true
+        } else {
+          this.userError = apiErrorMessage(err)
+        }
       } finally {
         this.userLoading = false
       }
@@ -319,12 +165,17 @@ export const useClientStore = defineStore('client', {
       this.servicesLoading = true
       this.servicesError = null
       try {
-        this.services = await apiFetch<ClientService[]>('/api/portal/client/services')
+        this.services = await useClientApi().fetchServices()
         this.servicesLoaded = true
       } catch (err) {
-        // Kept, not swallowed: the screens read this to say the section failed
-        // instead of rendering it as empty.
-        this.servicesError = apiErrorMessage(err)
+        // "Not a customer account" is a state, not a fault — it gets its own flag and no
+        // error string, so nothing renders it in red. Anything else is kept, not swallowed:
+        // the screens read it to say the section failed instead of rendering it as empty.
+        if (isClientProfileMissing(err)) {
+          this.clientProfileMissing = true
+        } else {
+          this.servicesError = apiErrorMessage(err)
+        }
       } finally {
         this.servicesLoading = false
       }
@@ -343,12 +194,17 @@ export const useClientStore = defineStore('client', {
       this.invoicesLoading = true
       this.invoicesError = null
       try {
-        this.invoices = await apiFetch<ClientInvoice[]>('/api/portal/client/invoices')
+        this.invoices = await useClientApi().fetchInvoices()
         this.invoicesLoaded = true
       } catch (err) {
-        // Kept, not swallowed: the screens read this to say the section failed
-        // instead of rendering it as empty.
-        this.invoicesError = apiErrorMessage(err)
+        // "Not a customer account" is a state, not a fault — it gets its own flag and no
+        // error string, so nothing renders it in red. Anything else is kept, not swallowed:
+        // the screens read it to say the section failed instead of rendering it as empty.
+        if (isClientProfileMissing(err)) {
+          this.clientProfileMissing = true
+        } else {
+          this.invoicesError = apiErrorMessage(err)
+        }
       } finally {
         this.invoicesLoading = false
       }
@@ -367,12 +223,17 @@ export const useClientStore = defineStore('client', {
       this.domainsLoading = true
       this.domainsError = null
       try {
-        this.domains = await apiFetch<ClientDomain[]>('/api/portal/client/domains')
+        this.domains = await useClientApi().fetchDomains()
         this.domainsLoaded = true
       } catch (err) {
-        // Kept, not swallowed: the screens read this to say the section failed
-        // instead of rendering it as empty.
-        this.domainsError = apiErrorMessage(err)
+        // "Not a customer account" is a state, not a fault — it gets its own flag and no
+        // error string, so nothing renders it in red. Anything else is kept, not swallowed:
+        // the screens read it to say the section failed instead of rendering it as empty.
+        if (isClientProfileMissing(err)) {
+          this.clientProfileMissing = true
+        } else {
+          this.domainsError = apiErrorMessage(err)
+        }
       } finally {
         this.domainsLoading = false
       }
@@ -391,12 +252,17 @@ export const useClientStore = defineStore('client', {
       this.ticketsLoading = true
       this.ticketsError = null
       try {
-        this.tickets = await apiFetch<ClientTicket[]>('/api/portal/client/tickets')
+        this.tickets = await useClientApi().fetchTickets()
         this.ticketsLoaded = true
       } catch (err) {
-        // Kept, not swallowed: the screens read this to say the section failed
-        // instead of rendering it as empty.
-        this.ticketsError = apiErrorMessage(err)
+        // "Not a customer account" is a state, not a fault — it gets its own flag and no
+        // error string, so nothing renders it in red. Anything else is kept, not swallowed:
+        // the screens read it to say the section failed instead of rendering it as empty.
+        if (isClientProfileMissing(err)) {
+          this.clientProfileMissing = true
+        } else {
+          this.ticketsError = apiErrorMessage(err)
+        }
       } finally {
         this.ticketsLoading = false
       }
@@ -422,6 +288,7 @@ export const useClientStore = defineStore('client', {
      * Clear all client data on logout.
      */
     reset() {
+      this.clientProfileMissing = false
       this.user = null
       this.userLoaded = false
       this.userError = null

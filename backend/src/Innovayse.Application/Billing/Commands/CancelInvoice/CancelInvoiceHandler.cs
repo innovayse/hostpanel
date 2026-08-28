@@ -33,7 +33,7 @@ public sealed class CancelInvoiceHandler(
         activityLogRepo.Add(ActivityLog.Create(
             invoice.ClientId,
             $"Cancelled Invoice - Invoice ID: {invoice.Id}",
-            ctx.AdminId, ctx.AdminName, ctx.AdminEmail, ctx.IpAddress));
+            ctx.UserId, ctx.UserName, ctx.UserEmail, ctx.IpAddress));
         await uow.SaveChangesAsync(ct);
     }
 }

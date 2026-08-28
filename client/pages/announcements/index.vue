@@ -88,6 +88,8 @@
  */
 
 import { Megaphone, Calendar, ArrowRight } from 'lucide-vue-next'
+import { useContentApi } from '~/composables/apis/useContentApi'
+import type { Announcement } from '~/types/announcement'
 
 const localePath = useLocalePath()
 const { t } = useI18n()
@@ -97,10 +99,14 @@ useSeoMeta({
   description: t('announcements.subtitle')
 })
 
-const { data, pending, error } = useFetch('/api/portal/client/announcements')
+// Straight from the API composable rather than through a store: this page fetches once and
+// owns the result alone, which is the named exception to component -> store -> api. It must
+// not call `useFetch`/`$fetch` — those skip the locale header `useApi()` sends, and this
+// content is localised.
+const { data, pending, error } = useContentApi().loadAnnouncements()
 
 /** All announcement items from API */
-const items = computed(() => (data.value as any)?.items ?? [])
+const items = computed<Announcement[]>(() => data.value?.items ?? [])
 
 /**
  * Unique month labels extracted from announcement dates.
@@ -109,7 +115,7 @@ const items = computed(() => (data.value as any)?.items ?? [])
 const months = computed(() => {
   const seen = new Set<string>()
   for (const item of items.value) {
-    const match = (item.date as string).match(/(\w+ \d{4})$/)
+    const match = item.date.match(/(\w+ \d{4})$/)
     if (match) seen.add(match[1])
   }
   return seen.size > 1 ? ['all', ...Array.from(seen)] : []
@@ -120,6 +126,6 @@ const activeMonth = ref('all')
 /** Announcements filtered by the active month selection */
 const filtered = computed(() => {
   if (activeMonth.value === 'all') return items.value
-  return items.value.filter((item: any) => item.date?.includes(activeMonth.value))
+  return items.value.filter(item => item.date?.includes(activeMonth.value))
 })
 </script>

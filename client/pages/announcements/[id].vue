@@ -67,17 +67,22 @@
  */
 
 import { ArrowLeft, Calendar, Megaphone } from 'lucide-vue-next'
+import { useContentApi } from '~/composables/apis/useContentApi'
+import type { Announcement } from '~/types/announcement'
 
 const route = useRoute()
 const localePath = useLocalePath()
-const { t } = useI18n()
 
+// Straight from the API composable rather than through a store: this page fetches once and
+// owns the result alone, which is the named exception to component -> store -> api.
+// `useApi()` behind the composable is what sends the locale header, which the raw `useFetch`
+// this replaced did not.
 /** Fetch full announcements list and find the one matching the route id */
-const { data, pending, error } = useFetch('/api/portal/client/announcements')
+const { data, pending, error } = useContentApi().loadAnnouncements()
 
-const item = computed(() => {
+const item = computed<Announcement | null>(() => {
   const id = String(route.params.id)
-  return (data.value as any)?.items?.find((a: any) => String(a.id) === id) ?? null
+  return data.value?.items?.find(a => String(a.id) === id) ?? null
 })
 
 watchEffect(() => {

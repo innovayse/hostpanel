@@ -41,39 +41,39 @@ public sealed class HttpCurrentRequestContextTests
     }
 
     [Fact]
-    public void AdminId_UnderTheSso_ReadsTheRawSubClaim()
+    public void UserId_UnderTheSso_ReadsTheRawSubClaim()
     {
         var (context, _) = Build(new Claim("sub", Subject));
 
-        context.AdminId.Should().Be(Subject);
+        context.UserId.Should().Be(Subject);
     }
 
     [Fact]
-    public void AdminId_UnderLocalAuth_ReadsTheMappedClaim()
+    public void UserId_UnderLocalAuth_ReadsTheMappedClaim()
     {
         var (context, _) = Build(new Claim(ClaimTypes.NameIdentifier, Subject));
 
-        context.AdminId.Should().Be(Subject);
+        context.UserId.Should().Be(Subject);
     }
 
     [Fact]
-    public void AdminEmail_UnderTheSso_ReadsTheRawEmailClaim()
+    public void UserEmail_UnderTheSso_ReadsTheRawEmailClaim()
     {
         var (context, _) = Build(new Claim("email", "ada@example.com"));
 
-        context.AdminEmail.Should().Be("ada@example.com");
+        context.UserEmail.Should().Be("ada@example.com");
     }
 
     [Fact]
-    public void AdminEmail_UnderLocalAuth_ReadsTheMappedClaim()
+    public void UserEmail_UnderLocalAuth_ReadsTheMappedClaim()
     {
         var (context, _) = Build(new Claim(ClaimTypes.Email, "ada@example.com"));
 
-        context.AdminEmail.Should().Be("ada@example.com");
+        context.UserEmail.Should().Be("ada@example.com");
     }
 
     [Fact]
-    public void AdminName_ComesFromTheIdentityProvider_NotTheToken()
+    public void UserName_ComesFromTheIdentityProvider_NotTheToken()
     {
         // The token carries no display name in either mode, which is why this is a
         // lookup at all. Going through the provider is what lets it work where the
@@ -81,20 +81,20 @@ public sealed class HttpCurrentRequestContextTests
         // not registered there.
         var (context, _) = Build(new Claim("sub", Subject));
 
-        context.AdminName.Should().Be("Ada Lovelace");
+        context.UserName.Should().Be("Ada Lovelace");
     }
 
     [Fact]
-    public void AdminName_IsLookedUpOncePerRequest()
+    public void UserName_IsLookedUpOncePerRequest()
     {
         // Every admin action records the name more than once. Where the SSO owns the
         // people that is an HTTP call each time, so the answer is held for the life of
         // the scope.
         var (context, identity) = Build(new Claim("sub", Subject));
 
-        _ = context.AdminName;
-        _ = context.AdminName;
-        _ = context.AdminName;
+        _ = context.UserName;
+        _ = context.UserName;
+        _ = context.UserName;
 
         identity.Verify(
             i => i.FindBySubjectAsync(Subject, It.IsAny<CancellationToken>()),
@@ -102,12 +102,12 @@ public sealed class HttpCurrentRequestContextTests
     }
 
     [Fact]
-    public void AdminName_ForAnAnonymousRequest_IsNullAndAsksNobody()
+    public void UserName_ForAnAnonymousRequest_IsNullAndAsksNobody()
     {
         var (context, identity) = Build();
 
-        context.AdminName.Should().BeNull();
-        context.AdminId.Should().BeNull();
+        context.UserName.Should().BeNull();
+        context.UserId.Should().BeNull();
 
         identity.Verify(
             i => i.FindBySubjectAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
@@ -115,7 +115,7 @@ public sealed class HttpCurrentRequestContextTests
     }
 
     [Fact]
-    public void AdminName_WhenTheSubjectResolvesToNobody_IsNull()
+    public void UserName_WhenTheSubjectResolvesToNobody_IsNull()
     {
         var accessor = new Mock<IHttpContextAccessor>();
         accessor.Setup(a => a.HttpContext).Returns(new DefaultHttpContext
@@ -128,6 +128,53 @@ public sealed class HttpCurrentRequestContextTests
             .ReturnsAsync((IdentityAccount?)null);
 
         new HttpCurrentRequestContext(accessor.Object, identity.Object)
-            .AdminName.Should().BeNull();
+            .UserName.Should().BeNull();
+    }
+
+    [Fact]
+    public void RequireUserId_ForAnAuthenticatedCaller_ReturnsTheSubject()
+    {
+        var (context, _) = Build(new Claim("sub", Subject));
+
+        context.RequireUserId().Should().Be(Subject);
+    }
+
+    [Fact]
+    public void RequireUserId_WithNoSubject_Refuses()
+    {
+        // Handlers scope every "my …" read and write to this value. Answering something
+        // falsy instead of throwing would scope them to nobody, which reads as an empty
+        // account rather than as a refusal.
+        var (context, _) = Build();
+
+        context.Invoking(c => c.RequireUserId())
+            .Should().Throw<UnauthorizedAccessException>();
+    }
+
+    [Fact]
+    public void IsEmailVerified_WhenTheClaimSaysTrue_IsTrue()
+    {
+        var (context, _) = Build(new Claim("email_verified", "true"));
+
+        context.IsEmailVerified.Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsEmailVerified_WhenTheClaimIsAbsent_IsFalse()
+    {
+        // An issuer that says nothing about the address has not confirmed it. Treating
+        // silence as confirmation is how an unverified account walks through a gate that
+        // exists to stop it.
+        var (context, _) = Build(new Claim("sub", Subject));
+
+        context.IsEmailVerified.Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsEmailVerified_WhenTheClaimSaysFalse_IsFalse()
+    {
+        var (context, _) = Build(new Claim("email_verified", "false"));
+
+        context.IsEmailVerified.Should().BeFalse();
     }
 }

@@ -8,7 +8,6 @@ public sealed class SetDefaultPaymentMethodValidator : AbstractValidator<SetDefa
     /// <summary>Initialises all validation rules.</summary>
     public SetDefaultPaymentMethodValidator()
     {
-        RuleFor(x => x.UserId).NotEmpty();
         RuleFor(x => x.PaymentMethodId).NotEmpty();
     }
 }

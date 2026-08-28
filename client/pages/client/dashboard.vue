@@ -12,6 +12,11 @@
       </UiButton>
     </div>
 
+    <!-- Not a customer account — a staff identity signed into the client portal. The API
+         said so with a code, so this is one explanation with somewhere to go, not four red
+         alerts about a failure that never happened. -->
+    <ClientNoProfileNotice v-if="store.clientProfileMissing" class="mb-6" />
+
     <!-- Whatever the API said about the sections that did not load. Shown above the counts,
          because the counts below are zeros in exactly this case and reading them as "nothing
          here yet" is the misunderstanding this banner exists to prevent. -->
@@ -293,6 +298,7 @@
 <script setup lang="ts">
 import { Server, Globe, FileText, MessageSquare, RefreshCw, ArrowRight, Plus, Monitor, Loader } from 'lucide-vue-next'
 import { useClientStore } from '~/stores/client'
+import { useClientApi } from '~/composables/apis/useClientApi'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
@@ -312,9 +318,12 @@ const announcements = computed(() => announcementsRaw.value ?? [])
 /**
  * What the API said about each section that failed to load, without repeats.
  *
- * Deduplicated because the four calls share one cause more often than not — an account with
- * no client profile fails all of them with the same sentence, and printing it four times
- * reads as four separate faults.
+ * Deduplicated because the four calls share one cause more often than not, and printing the
+ * same sentence four times reads as four separate faults.
+ *
+ * An account with no client profile is no longer one of those causes: the store recognises
+ * that answer by its code and sets `clientProfileMissing` instead of four error strings, so
+ * this list stays empty and `ClientNoProfileNotice` above explains it once.
  */
 const loadErrors = computed(() =>
   [...new Set(
@@ -422,7 +431,7 @@ async function loginToCpanel(service: any) {
   if (ssoLoading.value) return
   ssoLoading.value = service.id
   try {
-    const { url } = await apiFetch<{ url: string }>(`/api/portal/client/services/${service.id}/cpanel-sso`)
+    const { url } = await useClientApi().fetchCpanelSsoUrl(String(service.id))
     window.open(url, '_blank', 'noopener')
   } catch (err: any) {
     // Fallback: open plain cPanel login page if SSO fails

@@ -6,14 +6,7 @@
  * and the launcher renders nothing rather than crashing.
  */
 
-/** A single app entry returned by the portal API. */
-export interface AppEntry {
-  id: string
-  name: string
-  desc: string
-  url: string
-  comingSoon: boolean
-}
+import type { AppEntry } from '~/types/appentry'
 
 /** Maps app IDs to Lucide icon names. */
 const ICON_MAP: Record<string, string> = {

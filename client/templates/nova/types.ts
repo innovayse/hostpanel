@@ -1,4 +1,4 @@
-import type { ComparisonRow } from '~/composables/useProductFeatures'
+import type { ComparisonRow } from '~/types/comparisonrow'
 
 export type { ComparisonRow }
 

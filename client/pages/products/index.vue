@@ -476,6 +476,7 @@
 import { testimonials } from '../../lib/data'
 import { ArrowDown, Calendar, ShieldCheck, Lock, Trophy, PlayCircle, Star, DollarSign, Sparkle, CheckCircle, Infinity, Search, ArrowLeftRight } from 'lucide-vue-next'
 import { useCartStore } from '~/stores/cart'
+import { useCatalogApi } from '~/composables/apis/useCatalogApi'
 
 const { t, tm, locale } = useI18n()
 const localePath = useLocalePath()
@@ -485,9 +486,13 @@ onMounted(() => cart.init())
 // productConfig, currencyByLocale, nameToKey, parseDescription — auto-imported from utils/whmcs.ts
 
 // Fetch all product groups (hosting gid=1 + SaaS gids 3-9)
-const { data: whmcsRaw } = await useApi('/api/portal/public/products', {
-  query: computed(() => ({ lang: locale.value, gids: productGids.join(',') }))
-})
+// Straight from the API composable rather than through a store: this page fetches once and
+// owns the result alone, which is the named exception to component -> store -> api. A store
+// would also cost the SSR dedup and the locale re-fetch that `useApi()` gives for free, and
+// this page is server-rendered and indexed.
+const { data: whmcsRaw } = await useCatalogApi().loadProducts(
+  () => ({ lang: locale.value, gids: productGids.join(',') })
+)
 
 // SEO setup with canonical, hreflang, OG, Twitter tags
 const { baseUrl: productsBaseUrl } = useSeo({

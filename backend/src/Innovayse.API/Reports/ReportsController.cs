@@ -1,14 +1,38 @@
 namespace Innovayse.API.Reports;
 
 using System.Text;
+using Innovayse.Application.Reports.Commands.RevalidateSslMonitoring;
+using Innovayse.Application.Reports.Commands.UpdateDiskUsage;
 using Innovayse.Application.Reports.DTOs;
-using Innovayse.Application.Reports.Interfaces;
 using Innovayse.Application.Reports.Queries.AgingInvoices;
+using Innovayse.Application.Reports.Queries.AgingInvoicesSummary;
 using Innovayse.Application.Reports.Queries.AnnualIncome;
 using Innovayse.Application.Reports.Queries.ClientsByCity;
 using Innovayse.Application.Reports.Queries.ClientsByCountry;
 using Innovayse.Application.Reports.Queries.ClientStatement;
 using Innovayse.Application.Reports.Queries.DailyPerformance;
+using Innovayse.Application.Reports.Queries.GetClientPicker;
+using Innovayse.Application.Reports.Queries.GetClientsReport;
+using Innovayse.Application.Reports.Queries.GetCreditsReviewer;
+using Innovayse.Application.Reports.Queries.GetCustomerRetention;
+using Innovayse.Application.Reports.Queries.GetDailyTransactions;
+using Innovayse.Application.Reports.Queries.GetDirectDebit;
+using Innovayse.Application.Reports.Queries.GetDiskUsageReport;
+using Innovayse.Application.Reports.Queries.GetDomainRenewalEmails;
+using Innovayse.Application.Reports.Queries.GetDomainsReport;
+using Innovayse.Application.Reports.Queries.GetIncomeByProductGrouped;
+using Innovayse.Application.Reports.Queries.GetIncomeForecast;
+using Innovayse.Application.Reports.Queries.GetMonthlyOrders;
+using Innovayse.Application.Reports.Queries.GetProductSuspensions;
+using Innovayse.Application.Reports.Queries.GetSalesTaxReport;
+using Innovayse.Application.Reports.Queries.GetServicesReport;
+using Innovayse.Application.Reports.Queries.GetSslMonitoring;
+using Innovayse.Application.Reports.Queries.GetSupportTicketReplies;
+using Innovayse.Application.Reports.Queries.GetTicketFeedbackComments;
+using Innovayse.Application.Reports.Queries.GetTicketFeedbackScores;
+using Innovayse.Application.Reports.Queries.GetTicketRatingsReviewer;
+using Innovayse.Application.Reports.Queries.GetTicketTags;
+using Innovayse.Application.Reports.Queries.GetVatMoss;
 using Innovayse.Application.Reports.Queries.InvoicesReport;
 using Innovayse.Application.Reports.Queries.NewCustomers;
 using Innovayse.Application.Reports.Queries.TopClientsByIncome;
@@ -18,11 +42,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;
 
-/// <summary>Admin reporting endpoints.</summary>
+/// <summary>Admin reporting endpoints. Every action binds, dispatches one message, and returns.</summary>
+/// <param name="bus">Wolverine bus every action dispatches through.</param>
 [ApiController]
 [Route("api/reports")]
 [Authorize(Roles = $"{Roles.Admin},{Roles.Reseller}")]
-public sealed class ReportsController(IMessageBus bus, IReportRepository reportRepo, ISslMonitoringService sslService, IDiskUsageService diskService) : ControllerBase
+public sealed class ReportsController(IMessageBus bus) : ControllerBase
 {
     /// <summary>Returns daily performance metrics.</summary>
     /// <param name="from">Start date (yyyy-MM-dd). Defaults to 30 days ago.</param>
@@ -64,6 +89,7 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
     }
 
     /// <summary>Returns aging invoices summary grouped by period and currency.</summary>
+    /// <param name="ct">Cancellation token.</param>
     [HttpGet("aging-invoices-summary")]
     public async Task<ActionResult<AgingInvoiceSummaryDto>> GetAgingInvoicesSummaryAsync(CancellationToken ct)
     {
@@ -73,23 +99,15 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
     }
 
     /// <summary>Returns income forecast based on recurring billing cycles.</summary>
+    /// <param name="year">Year (defaults to current year).</param>
     /// <param name="ct">Cancellation token.</param>
     [HttpGet("income-forecast")]
-    public async Task<IActionResult> GetIncomeForecastAsync(CancellationToken ct)
+    public async Task<ActionResult<IReadOnlyList<IncomeForecastRowDto>>> GetIncomeForecastAsync(
+        [FromQuery] int? year,
+        CancellationToken ct)
     {
-        var monthly = await bus.InvokeAsync<IReadOnlyList<AnnualIncomeDto>>(
-            new AnnualIncomeQuery(DateTime.UtcNow.Year), ct);
-
-        var result = monthly.Select((r, i) => new
-        {
-            month = r.Month,
-            monthly = r.Amount,
-            quarterly = monthly.Skip(Math.Max(0, i - 2)).Take(3).Sum(x => x.Amount),
-            semiAnnual = monthly.Skip(Math.Max(0, i - 5)).Take(6).Sum(x => x.Amount),
-            annual = monthly.Sum(x => x.Amount),
-            total = monthly.Take(i + 1).Sum(x => x.Amount),
-        });
-
+        var result = await bus.InvokeAsync<IReadOnlyList<IncomeForecastRowDto>>(
+            new GetIncomeForecastQuery(year), ct);
         return Ok(result);
     }
 
@@ -206,6 +224,7 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
     }
 
     /// <summary>Returns client counts grouped by city and country.</summary>
+    /// <param name="ct">Cancellation token.</param>
     [HttpGet("clients-by-city")]
     public async Task<ActionResult<IReadOnlyList<ClientsByCityDto>>> GetClientsByCityAsync(CancellationToken ct)
     {
@@ -215,6 +234,7 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
     }
 
     /// <summary>Returns client counts and revenue grouped by country.</summary>
+    /// <param name="ct">Cancellation token.</param>
     [HttpGet("clients-by-country")]
     public async Task<ActionResult<IReadOnlyList<ClientsByCountryDto>>> GetClientsByCountryAsync(CancellationToken ct)
     {
@@ -224,10 +244,12 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
     }
 
     /// <summary>Returns a lightweight list of clients for dropdown pickers.</summary>
+    /// <param name="ct">Cancellation token.</param>
     [HttpGet("client-picker")]
     public async Task<ActionResult<IReadOnlyList<ClientPickerDto>>> GetClientPickerAsync(CancellationToken ct)
     {
-        var result = await reportRepo.GetClientPickerListAsync(ct);
+        var result = await bus.InvokeAsync<IReadOnlyList<ClientPickerDto>>(
+            new GetClientPickerQuery(), ct);
         return Ok(result);
     }
 
@@ -237,9 +259,8 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
         [FromQuery] int? year, [FromQuery] int? month,
         CancellationToken ct = default)
     {
-        var now = DateTime.UtcNow;
-        var result = await reportRepo.GetIncomeByProductGroupedAsync(
-            year ?? now.Year, month ?? now.Month, ct);
+        var result = await bus.InvokeAsync<IncomeByProductGroupedDto>(
+            new GetIncomeByProductGroupedQuery(year, month), ct);
         return Ok(result);
     }
 
@@ -249,9 +270,8 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
         [FromQuery] int? year, [FromQuery] int? month,
         CancellationToken ct = default)
     {
-        var now = DateTime.UtcNow;
-        var result = await reportRepo.GetMonthlyOrdersAsync(
-            year ?? now.Year, month ?? now.Month, ct);
+        var result = await bus.InvokeAsync<MonthlyOrdersDto>(
+            new GetMonthlyOrdersQuery(year, month), ct);
         return Ok(result);
     }
 
@@ -266,7 +286,7 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
         [FromQuery] int page = 1, [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
-        var result = await reportRepo.GetServicesReportAsync(
+        var result = await bus.InvokeAsync<ServiceReportResultDto>(new GetServicesReportQuery(
             status, billingCycle,
             createdFrom is not null ? DateOnly.Parse(createdFrom) : null,
             createdTo is not null ? DateOnly.Parse(createdTo) : null,
@@ -274,7 +294,7 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
             nextDueTo is not null ? DateOnly.Parse(nextDueTo) : null,
             terminatedFrom is not null ? DateOnly.Parse(terminatedFrom) : null,
             terminatedTo is not null ? DateOnly.Parse(terminatedTo) : null,
-            page, pageSize, ct);
+            page, pageSize), ct);
         return Ok(result);
     }
 
@@ -289,7 +309,7 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
         [FromQuery] int page = 1, [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
-        var result = await reportRepo.GetDomainsReportAsync(
+        var result = await bus.InvokeAsync<DomainReportResultDto>(new GetDomainsReportQuery(
             status, registrar,
             registeredFrom is not null ? DateOnly.Parse(registeredFrom) : null,
             registeredTo is not null ? DateOnly.Parse(registeredTo) : null,
@@ -297,7 +317,7 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
             expiresTo is not null ? DateOnly.Parse(expiresTo) : null,
             nextDueFrom is not null ? DateOnly.Parse(nextDueFrom) : null,
             nextDueTo is not null ? DateOnly.Parse(nextDueTo) : null,
-            page, pageSize, ct);
+            page, pageSize), ct);
         return Ok(result);
     }
 
@@ -310,11 +330,11 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
         [FromQuery] int page = 1, [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
-        var result = await reportRepo.GetClientsReportAsync(
+        var result = await bus.InvokeAsync<ClientReportResultDto>(new GetClientsReportQuery(
             status, country,
             createdFrom is not null ? DateOnly.Parse(createdFrom) : null,
             createdTo is not null ? DateOnly.Parse(createdTo) : null,
-            page, pageSize, ct);
+            page, pageSize), ct);
         return Ok(result);
     }
 
@@ -326,19 +346,21 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
         [FromQuery] decimal? minAmount, [FromQuery] decimal? maxAmount,
         CancellationToken ct = default)
     {
-        var result = await reportRepo.GetCreditsReviewerAsync(
+        var result = await bus.InvokeAsync<CreditsReviewerDto>(new GetCreditsReviewerQuery(
             clientId,
             from is not null ? DateOnly.Parse(from) : null,
             to is not null ? DateOnly.Parse(to) : null,
-            minAmount, maxAmount, ct);
+            minAmount, maxAmount), ct);
         return Ok(result);
     }
 
     /// <summary>Returns all suspended services.</summary>
+    /// <param name="ct">Cancellation token.</param>
     [HttpGet("product-suspensions")]
     public async Task<ActionResult<IReadOnlyList<ProductSuspensionRowDto>>> GetProductSuspensionsAsync(CancellationToken ct)
     {
-        var result = await reportRepo.GetProductSuspensionsAsync(ct);
+        var result = await bus.InvokeAsync<IReadOnlyList<ProductSuspensionRowDto>>(
+            new GetProductSuspensionsQuery(), ct);
         return Ok(result);
     }
 
@@ -348,9 +370,8 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
         [FromQuery] int? year, [FromQuery] int? month,
         CancellationToken ct = default)
     {
-        var now = DateTime.UtcNow;
-        var result = await reportRepo.GetSupportTicketRepliesAsync(
-            year ?? now.Year, month ?? now.Month, ct);
+        var result = await bus.InvokeAsync<SupportTicketRepliesDto>(
+            new GetSupportTicketRepliesQuery(year, month), ct);
         return Ok(result);
     }
 
@@ -360,9 +381,9 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
         [FromQuery] string? from, [FromQuery] string? to,
         CancellationToken ct = default)
     {
-        var result = await reportRepo.GetSalesTaxReportAsync(
+        var result = await bus.InvokeAsync<SalesTaxReportDto>(new GetSalesTaxReportQuery(
             from is not null ? DateOnly.Parse(from) : null,
-            to is not null ? DateOnly.Parse(to) : null, ct);
+            to is not null ? DateOnly.Parse(to) : null), ct);
         return Ok(result);
     }
 
@@ -372,9 +393,8 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
         [FromQuery] int? year, [FromQuery] int? month,
         CancellationToken ct = default)
     {
-        var now = DateTime.UtcNow;
-        var result = await reportRepo.GetDailyTransactionsAsync(
-            year ?? now.Year, month ?? now.Month, ct);
+        var result = await bus.InvokeAsync<MonthlyTransactionsReportDto>(
+            new GetDailyTransactionsQuery(year, month), ct);
         return Ok(result);
     }
 
@@ -382,7 +402,7 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
     [HttpGet("disk-usage")]
     public async Task<ActionResult<DiskUsageDto>> GetDiskUsageAsync(CancellationToken ct = default)
     {
-        var result = await diskService.GetReportAsync(ct);
+        var result = await bus.InvokeAsync<DiskUsageDto>(new GetDiskUsageReportQuery(), ct);
         return Ok(result);
     }
 
@@ -390,7 +410,7 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
     [HttpPost("disk-usage/update")]
     public async Task<ActionResult<DiskUsageDto>> UpdateDiskUsageAsync(CancellationToken ct = default)
     {
-        var result = await diskService.UpdateNowAsync(ct);
+        var result = await bus.InvokeAsync<DiskUsageDto>(new UpdateDiskUsageCommand(), ct);
         return Ok(result);
     }
 
@@ -398,7 +418,7 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
     [HttpGet("direct-debit")]
     public async Task<ActionResult<DirectDebitDto>> GetDirectDebitAsync(CancellationToken ct = default)
     {
-        var result = await reportRepo.GetDirectDebitAsync(ct);
+        var result = await bus.InvokeAsync<DirectDebitDto>(new GetDirectDebitQuery(), ct);
         return Ok(result);
     }
 
@@ -408,7 +428,8 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
         [FromQuery] bool includeActive = true,
         CancellationToken ct = default)
     {
-        var result = await reportRepo.GetCustomerRetentionAsync(includeActive, ct);
+        var result = await bus.InvokeAsync<CustomerRetentionDto>(
+            new GetCustomerRetentionQuery(includeActive), ct);
         return Ok(result);
     }
 
@@ -418,7 +439,8 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
         [FromQuery] bool includeInactive = false,
         CancellationToken ct = default)
     {
-        var result = await sslService.GetReportAsync(includeInactive, ct);
+        var result = await bus.InvokeAsync<SslMonitoringDto>(
+            new GetSslMonitoringQuery(includeInactive), ct);
         return Ok(result);
     }
 
@@ -428,7 +450,8 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
         [FromQuery] bool includeInactive = false,
         CancellationToken ct = default)
     {
-        var result = await sslService.RevalidateAsync(includeInactive, ct);
+        var result = await bus.InvokeAsync<SslMonitoringDto>(
+            new RevalidateSslMonitoringCommand(includeInactive), ct);
         return Ok(result);
     }
 
@@ -441,10 +464,10 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
         [FromQuery] string? from, [FromQuery] string? to,
         CancellationToken ct = default)
     {
-        var result = await reportRepo.GetDomainRenewalEmailsAsync(
+        var result = await bus.InvokeAsync<DomainRenewalEmailsDto>(new GetDomainRenewalEmailsQuery(
             clientId, registrar, domain,
             from is not null ? DateOnly.Parse(from) : null,
-            to is not null ? DateOnly.Parse(to) : null, ct);
+            to is not null ? DateOnly.Parse(to) : null), ct);
         return Ok(result);
     }
 
@@ -454,10 +477,7 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
         [FromQuery] int? year, [FromQuery] int? quarter,
         CancellationToken ct = default)
     {
-        var now = DateTime.UtcNow;
-        var y = year ?? now.Year;
-        var q = quarter ?? ((now.Month - 1) / 3 + 1);
-        var result = await reportRepo.GetVatMossAsync(y, q, ct);
+        var result = await bus.InvokeAsync<VatMossDto>(new GetVatMossQuery(year, quarter), ct);
         return Ok(result);
     }
 
@@ -468,10 +488,10 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
         [FromQuery] string? from, [FromQuery] string? to,
         CancellationToken ct = default)
     {
-        var result = await reportRepo.GetTicketFeedbackCommentsAsync(
+        var result = await bus.InvokeAsync<TicketFeedbackCommentsDto>(new GetTicketFeedbackCommentsQuery(
             staffName,
             from is not null ? DateOnly.Parse(from) : null,
-            to is not null ? DateOnly.Parse(to) : null, ct);
+            to is not null ? DateOnly.Parse(to) : null), ct);
         return Ok(result);
     }
 
@@ -481,9 +501,9 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
         [FromQuery] string? from, [FromQuery] string? to,
         CancellationToken ct = default)
     {
-        var result = await reportRepo.GetTicketFeedbackScoresAsync(
+        var result = await bus.InvokeAsync<TicketFeedbackScoresDto>(new GetTicketFeedbackScoresQuery(
             from is not null ? DateOnly.Parse(from) : null,
-            to is not null ? DateOnly.Parse(to) : null, ct);
+            to is not null ? DateOnly.Parse(to) : null), ct);
         return Ok(result);
     }
 
@@ -494,10 +514,10 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
         [FromQuery] string? from, [FromQuery] string? to,
         CancellationToken ct = default)
     {
-        var result = await reportRepo.GetTicketRatingsReviewerAsync(
+        var result = await bus.InvokeAsync<TicketRatingsReviewerDto>(new GetTicketRatingsReviewerQuery(
             minRating,
             from is not null ? DateOnly.Parse(from) : null,
-            to is not null ? DateOnly.Parse(to) : null, ct);
+            to is not null ? DateOnly.Parse(to) : null), ct);
         return Ok(result);
     }
 
@@ -507,9 +527,9 @@ public sealed class ReportsController(IMessageBus bus, IReportRepository reportR
         [FromQuery] string? from, [FromQuery] string? to,
         CancellationToken ct = default)
     {
-        var result = await reportRepo.GetTicketTagsAsync(
+        var result = await bus.InvokeAsync<TicketTagsDto>(new GetTicketTagsQuery(
             from is not null ? DateOnly.Parse(from) : null,
-            to is not null ? DateOnly.Parse(to) : null, ct);
+            to is not null ? DateOnly.Parse(to) : null), ct);
         return Ok(result);
     }
 

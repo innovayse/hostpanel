@@ -38,7 +38,7 @@ import AuroraPlanCards from '~/templates/aurora/sections/PlanCards.vue'
 import AuroraComparisonTable from '~/templates/aurora/sections/ComparisonTable.vue'
 import AuroraCta from '~/templates/aurora/sections/Cta.vue'
 import type { PlanCard } from '~/templates/aurora/types'
-import type { ComparisonRow } from '~/composables/useProductFeatures'
+import type { ComparisonRow } from '~/types/comparisonrow'
 
 withDefaults(defineProps<{
   plans?: PlanCard[]

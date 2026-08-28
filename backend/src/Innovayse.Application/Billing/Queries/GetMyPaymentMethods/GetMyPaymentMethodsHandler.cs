@@ -2,6 +2,8 @@ namespace Innovayse.Application.Billing.Queries.GetMyPaymentMethods;
 
 using Innovayse.Application.Billing.DTOs;
 using Innovayse.Application.Billing.Interfaces;
+using Innovayse.Application.Clients.Common;
+using Innovayse.Application.Common;
 using Innovayse.Domain.Clients.Interfaces;
 
 /// <summary>
@@ -9,23 +11,32 @@ using Innovayse.Domain.Clients.Interfaces;
 /// </summary>
 /// <param name="clientRepo">Client repository.</param>
 /// <param name="stripe">Stripe service for reading saved payment methods.</param>
-public sealed class GetMyPaymentMethodsHandler(IClientRepository clientRepo, IStripeService stripe)
+/// <param name="caller">Who is asking; the query does not say, and must not.</param>
+public sealed class GetMyPaymentMethodsHandler(
+    IClientRepository clientRepo,
+    IStripeService stripe,
+    ICurrentRequestContext caller)
 {
     /// <summary>
     /// Retrieves the saved payment methods for the authenticated client.
     /// </summary>
-    /// <param name="query">The query containing the user's Identity ID.</param>
+    /// <param name="query">The query. It names no account: this reads the caller's own.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The client's saved cards and bank accounts, or an empty list for a client who has
     /// never had one attached -- there is nothing to list, not an error.
     /// </returns>
-    /// <exception cref="InvalidOperationException">Thrown when no client record exists for the user.</exception>
+    /// <exception cref="ClientProfileNotFoundException">
+    /// Thrown when no client record exists for the user. Carries the user id for the log only --
+    /// the API answers 404 with a code and an identifier-free sentence.
+    /// </exception>
     public async Task<IReadOnlyList<StripePaymentMethodDto>> HandleAsync(
         GetMyPaymentMethodsQuery query, CancellationToken ct)
     {
-        var client = await clientRepo.FindByUserIdAsync(query.UserId, ct)
-            ?? throw new InvalidOperationException($"No client profile found for user {query.UserId}.");
+        var userId = caller.RequireUserId();
+
+        var client = await clientRepo.FindByUserIdAsync(userId, ct)
+            ?? throw new ClientProfileNotFoundException(userId);
 
         return client.StripeCustomerId is null
             ? []

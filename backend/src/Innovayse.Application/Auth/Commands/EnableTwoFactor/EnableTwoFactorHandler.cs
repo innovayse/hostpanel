@@ -1,10 +1,14 @@
 namespace Innovayse.Application.Auth.Commands.EnableTwoFactor;
 
 using Innovayse.Application.Auth.Interfaces;
+using Innovayse.Application.Common;
 
 /// <summary>Turns two-factor authentication on after verifying a code.</summary>
 /// <param name="twoFactor">Mode-specific two-factor implementation.</param>
-public sealed class EnableTwoFactorHandler(ITwoFactorService twoFactor)
+/// <param name="caller">Whose account; the command does not say, and must not.</param>
+public sealed class EnableTwoFactorHandler(
+    ITwoFactorService twoFactor,
+    ICurrentRequestContext caller)
 {
     /// <summary>Handles <see cref="EnableTwoFactorCommand"/>.</summary>
     /// <param name="cmd">The command.</param>
@@ -16,5 +20,5 @@ public sealed class EnableTwoFactorHandler(ITwoFactorService twoFactor)
     /// ends up demanding a code nothing can produce.
     /// </remarks>
     public Task<bool> HandleAsync(EnableTwoFactorCommand cmd, CancellationToken ct) =>
-        twoFactor.EnableAsync(cmd.UserId, cmd.Code, ct);
+        twoFactor.EnableAsync(caller.RequireUserId(), cmd.Code, ct);
 }

@@ -218,6 +218,7 @@ import {
   AlertCircle, Lock, ShieldCheck, Info, Receipt, HelpCircle, X 
 } from 'lucide-vue-next'
 import { useCartStore, formatCartItemPrice, convertFromAmd } from '~/stores/cart'
+import { useBillingApi } from '~/composables/apis/useBillingApi'
 
 const localePath = useLocalePath()
 const { t: $t, locale } = useI18n()
@@ -237,7 +238,9 @@ const checkoutCurrency = computed(() => {
 const currencySymbols: Record<string, string> = {
   AMD: '֏', USD: '$', EUR: '€', RUB: '₽', GBP: '£',
 }
-const { isLoggedIn, fetchUser, user, logout, login } = useClientAuth()
+const authStore = useAuthStore()
+const { isLoggedIn, user } = storeToRefs(authStore)
+const { fetchUser, logout, login } = authStore
 
 // Registration from previous version
 onMounted(async () => {
@@ -247,10 +250,10 @@ onMounted(async () => {
 
 // ── Payment methods ────────────────────────────────────────────────────────
 
-const { data: paymentMethods, pending: methodsPending } = await useApi<{ module: string; displayname: string }[]>(
-  '/api/portal/order/payment-methods',
-  { default: () => [] }
-)
+// Straight from the API composable rather than through a store: this page reads the gateway
+// list once and owns it alone, which is the named exception to component -> store -> api.
+const billing = useBillingApi()
+const { data: paymentMethods, pending: methodsPending } = await billing.loadGatewayMethods()
 const selectedMethod = ref('')
 watch(paymentMethods, (methods) => {
   if (methods?.length && !selectedMethod.value) {
@@ -344,10 +347,7 @@ async function submitOrder() {
   submitting.value = true
   try {
     // Step 1: Place the order (Order + Invoice created on backend)
-    const result = await apiFetch<{ orderId: number; invoiceId: number }>(
-      '/api/portal/order/create',
-      { method: 'POST', body }
-    )
+    const result = await billing.createOrder(body)
 
     // Auto-login guest after account creation
     if (!isLoggedIn.value && form.email && form.password) {
@@ -356,20 +356,14 @@ async function submitOrder() {
 
     if (selectedMethod.value === PAYMENT_MODULE_STRIPE) {
       // Step 2: Create PaymentIntent
-      const { clientSecret } = await apiFetch<{ clientSecret: string }>(
-        `/api/portal/order/${result.orderId}/create-payment-intent`,
-        { method: 'POST' }
-      )
+      const { clientSecret } = await billing.createOrderPaymentIntent(result.orderId)
 
       // Step 3: Confirm card payment via Stripe.js
       if (!stripeCardFormRef.value) throw new Error('Card form not ready')
       const paymentIntent = await stripeCardFormRef.value.confirmPayment(clientSecret)
 
       // Step 4: Tell backend payment succeeded — auto-accepts order, creates services
-      await apiFetch(`/api/portal/order/${result.orderId}/confirm-payment`, {
-        method: 'POST',
-        body: { paymentIntentId: paymentIntent.id },
-      })
+      await billing.confirmOrderPayment(result.orderId, { paymentIntentId: paymentIntent.id })
 
       const domainItem = cart.items.find(i => i.itemType === 'domain')
       const domainQuery = domainItem
@@ -389,9 +383,10 @@ async function submitOrder() {
         localePath(`/payment/result?order=${result.orderId}`),
         window.location.origin,
       ).toString()
-      const { redirectUrl } = await apiFetch<{ redirectUrl: string }>(
-        `/api/portal/order/${result.orderId}/gateway-payment/start`,
-        { method: 'POST', body: { module: selectedMethod.value, returnUrl } },
+      const { redirectUrl } = await billing.startOrderGatewayPayment(
+        result.orderId,
+        selectedMethod.value,
+        returnUrl
       )
       cart.clear()
       window.location.href = redirectUrl

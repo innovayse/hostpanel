@@ -1,20 +1,11 @@
 namespace Innovayse.Application.Reports.DTOs;
 
-/// <summary>One product row in the grouped Income by Product report.</summary>
-public record IncomeByProductRowDto(
-    int ProductId,
-    string ProductName,
-    int UnitsSold,
-    decimal TotalIncome);
-
-/// <summary>One product group in the grouped Income by Product report.</summary>
-public record IncomeByProductGroupDto(
-    string GroupName,
-    IReadOnlyList<IncomeByProductRowDto> Products,
-    int GroupUnitsSold,
-    decimal GroupIncome);
-
 /// <summary>Full grouped Income by Product report result.</summary>
+/// <param name="Month">Calendar month the report covers, 1-12.</param>
+/// <param name="Year">Calendar year the report covers.</param>
+/// <param name="Groups">Income grouped by product group.</param>
+/// <param name="TotalUnitsSold">Units sold across every group.</param>
+/// <param name="TotalIncome">Income across every group.</param>
 public record IncomeByProductGroupedDto(
     int Month,
     int Year,

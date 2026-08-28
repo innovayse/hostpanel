@@ -275,6 +275,10 @@
 
 <script setup lang="ts">
 import { AlertCircle, CheckCircle, CreditCard, Plus, Lock, Loader2 } from 'lucide-vue-next'
+import { useBillingApi } from '~/composables/apis/useBillingApi'
+import type { ClientInvoice } from '~/types/clientinvoice'
+import type { PaymentMethod } from '~/types/payment'
+import { apiErrorMessage } from '~/utils/portalErrorMessages'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
@@ -287,19 +291,21 @@ const whmcsUrl = config.public.whmcsUrl
 const invoiceId = route.params.id as string
 
 // Fetch invoice + saved payment methods in parallel
+// Straight from the API composables rather than through a store: this page reads these once
+// and owns the results alone, which is the named exception to component -> store -> api.
+const billing = useBillingApi()
 const [{ data: invoiceData, pending }, { data: methodsData }] = await Promise.all([
-  useApi(`/api/portal/client/invoices/${invoiceId}`),
-  useApi('/api/portal/client/payment-methods', { default: () => [] })
+  billing.loadInvoice(() => invoiceId),
+  billing.loadPaymentMethods()
 ])
 
-const invoice = computed(() => invoiceData.value as any)
-const savedMethods = computed(() => (methodsData.value as any[]) ?? [])
+const invoice = computed<ClientInvoice | null>(() => invoiceData.value ?? null)
+const savedMethods = computed<PaymentMethod[]>(() => methodsData.value ?? [])
 
 // Hosted-gateway availability — the backend lists 'stripe' and 'bank_transfer' plus every
 // enabled/configured payment plugin. Pick the first plugin-backed one (not a fixed module id,
 // so a second gateway plugin doesn't get silently ignored here).
-const { data: gatewayMethods } = await useApi<{ module: string; displayname: string }[]>(
-  '/api/portal/order/payment-methods', { default: () => [] })
+const { data: gatewayMethods } = await billing.loadGatewayMethods()
 const hostedGatewayModule = computed(() =>
   (gatewayMethods.value ?? [])
     .find(m => m.module !== PAYMENT_MODULE_STRIPE && m.module !== PAYMENT_MODULE_BANK_TRANSFER)?.module ?? null)
@@ -324,13 +330,13 @@ const payError = ref('')
 
 function formatCardNumber(e: Event) {
   const input = e.target as HTMLInputElement
-  let v = input.value.replace(/\D/g, '').slice(0, 16)
+  const v = input.value.replace(/\D/g, '').slice(0, 16)
   cardNumber.value = v.replace(/(.{4})/g, '$1 ').trim()
 }
 
 function formatExpiry(e: Event) {
   const input = e.target as HTMLInputElement
-  let v = input.value.replace(/\D/g, '').slice(0, 4)
+  const v = input.value.replace(/\D/g, '').slice(0, 4)
   if (v.length >= 3) expiryDate.value = v.slice(0, 2) + ' / ' + v.slice(2)
   else expiryDate.value = v
 }
@@ -346,13 +352,12 @@ async function submitPayment() {
 
   submitting.value = true
   try {
-    await apiFetch(`/api/portal/client/invoices/${invoiceId}/pay`, {
-      method: 'POST',
-      body: { paymethodid: selectedMethodId.value }
-    })
+    await billing.payInvoice(invoiceId, selectedMethodId.value)
     paySuccess.value = true
-  } catch (err: any) {
-    payError.value = err?.data?.statusMessage ?? t('invoicePay.paymentFailed')
+  } catch (err: unknown) {
+    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`;
+    // the local key is only the no-answer fallback.
+    payError.value = apiErrorMessage(err) || t('invoicePay.paymentFailed')
   } finally {
     submitting.value = false
   }
@@ -368,13 +373,16 @@ async function payWithHostedGateway() {
       localePath(`/payment/result?invoice=${invoiceId}`),
       window.location.origin,
     ).toString()
-    const { redirectUrl } = await apiFetch<{ redirectUrl: string }>(
-      `/api/portal/client/invoices/${invoiceId}/gateway-payment/start`,
-      { method: 'POST', body: { module: hostedGatewayModule.value, returnUrl } },
+    const { redirectUrl } = await billing.startInvoiceGatewayPayment(
+      invoiceId,
+      hostedGatewayModule.value as string,
+      returnUrl
     )
     window.location.href = redirectUrl
-  } catch (err: any) {
-    payError.value = err?.data?.statusMessage ?? t('invoicePay.paymentFailed')
+  } catch (err: unknown) {
+    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`;
+    // the local key is only the no-answer fallback.
+    payError.value = apiErrorMessage(err) || t('invoicePay.paymentFailed')
     submitting.value = false
   }
 }

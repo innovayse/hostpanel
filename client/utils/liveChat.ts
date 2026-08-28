@@ -10,6 +10,9 @@
  * on a page running Innochat is a no-op with no error, which is exactly how this
  * went unnoticed.
  */
+import type { LiveChatApi } from '~/types/livechatapi'
+import type { LiveChatLoaderOptions } from '~/types/livechatloaderoptions'
+
 
 /** Global the SDK reads its configuration from, before it runs. */
 export const LIVE_CHAT_SETTINGS_GLOBAL = 'innochatSettings'
@@ -29,15 +32,17 @@ export const LIVE_CHAT_HOLDER_SELECTOR = '.woot-widget-holder'
 /** Path of the SDK bundle under the chat host. */
 export const LIVE_CHAT_SDK_PATH = '/packs/js/sdk.js'
 
-/** The subset of the widget API this application calls. */
-export interface LiveChatApi {
-  toggle: (state: 'open' | 'close') => void
-  setLocale: (locale: string) => void
-  setCustomAttributes: (attributes: Record<string, string>) => void
-}
-
-/** A window that may or may not have the widget running on it yet. */
-export interface LiveChatWindow {
+/**
+ * A window that may or may not have the widget running on it yet.
+ *
+ * Deliberately not exported and deliberately not moved to `types/`: it is used in exactly one
+ * file and never exported, which is the carve-out to the one-type-per-file rule. Its key is
+ * the {@link LIVE_CHAT_API_GLOBAL} constant declared above, so a copy in `types/` would have
+ * to import this module for a *value* — dragging the whole widget helper behind any file that
+ * wanted the name, which is the exact cost that rule exists to avoid.
+ */
+interface LiveChatWindow {
+  /** The widget API, present only once the SDK has started. */
   [LIVE_CHAT_API_GLOBAL]?: LiveChatApi
 }
 
@@ -109,18 +114,6 @@ export const setLiveChatLocale = (
   widget.setLocale(locale)
   widget.setCustomAttributes({ language })
   return true
-}
-
-/** Everything the loader needs to start the widget. */
-export interface LiveChatLoaderOptions {
-  /** Origin of the chat host, without a trailing slash. */
-  baseUrl: string
-  /** Website token identifying this site to the chat host. */
-  websiteToken: string
-  /** Locale code to hand the widget once it is ready. */
-  locale: string
-  /** Language name recorded on the conversation. */
-  language: string
 }
 
 /**

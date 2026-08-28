@@ -126,14 +126,19 @@
 
 <script setup lang="ts">
 import { ArrowLeft, AlertCircle, Send } from 'lucide-vue-next'
+import { useSupportApi } from '~/composables/apis/useSupportApi'
+import { apiErrorMessage } from '~/utils/portalErrorMessages'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
 const { t } = useI18n()
 const route = useRoute()
-const { user } = useClientAuth()
+const { user } = storeToRefs(useAuthStore())
+const { loadTicket, replyToTicket } = useSupportApi()
 
-const { data: ticket, pending, error, refresh } = await useApi(`/api/portal/client/tickets/${route.params.id}`)
+// Straight from the API composable rather than through a store: this page fetches one ticket
+// and owns it alone, which is the named exception to component -> store -> api.
+const { data: ticket, pending, error, refresh } = await loadTicket(() => String(route.params.id))
 
 // Reply form state
 const replyMessage = ref('')
@@ -147,16 +152,15 @@ async function submitReply() {
   replyError.value = ''
   replySuccess.value = false
   try {
-    await apiFetch(`/api/portal/client/tickets/${route.params.id}/reply`, {
-      method: 'POST',
-      body: { message: replyMessage.value }
-    })
+    await replyToTicket(String(route.params.id), replyMessage.value)
     replyMessage.value = ''
     replySuccess.value = true
     // Refresh the ticket thread to show the new reply
     await refresh()
-  } catch (err: any) {
-    replyError.value = err?.data?.statusMessage || t('client.tickets.replyError')
+  } catch (err: unknown) {
+    // The wording comes from the response body via the one mapping helper in
+    // `utils/portalErrorMessages.ts`; the local key is only the no-answer fallback.
+    replyError.value = apiErrorMessage(err) || t('client.tickets.replyError')
   } finally {
     replying.value = false
   }

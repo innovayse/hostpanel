@@ -1,10 +1,14 @@
 namespace Innovayse.Application.Auth.Commands.DisableTwoFactor;
 
 using Innovayse.Application.Auth.Interfaces;
+using Innovayse.Application.Common;
 
 /// <summary>Turns two-factor authentication off after verifying a code.</summary>
 /// <param name="twoFactor">Mode-specific two-factor implementation.</param>
-public sealed class DisableTwoFactorHandler(ITwoFactorService twoFactor)
+/// <param name="caller">Whose account; the command does not say, and must not.</param>
+public sealed class DisableTwoFactorHandler(
+    ITwoFactorService twoFactor,
+    ICurrentRequestContext caller)
 {
     /// <summary>Handles <see cref="DisableTwoFactorCommand"/>.</summary>
     /// <param name="cmd">The command.</param>
@@ -17,5 +21,5 @@ public sealed class DisableTwoFactorHandler(ITwoFactorService twoFactor)
     /// own disable path for the same reason.
     /// </remarks>
     public Task<bool> HandleAsync(DisableTwoFactorCommand cmd, CancellationToken ct) =>
-        twoFactor.DisableAsync(cmd.UserId, cmd.Code, ct);
+        twoFactor.DisableAsync(caller.RequireUserId(), cmd.Code, ct);
 }

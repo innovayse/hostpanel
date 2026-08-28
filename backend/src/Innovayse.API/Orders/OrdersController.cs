@@ -1,6 +1,6 @@
 namespace Innovayse.API.Orders;
 
-using System.Security.Claims;
+using Innovayse.API.Billing.Extensions;
 using Innovayse.API.Billing;
 using Innovayse.API.Orders.Requests;
 using Innovayse.Application.Billing.Commands.CompleteGatewayPayment;
@@ -17,7 +17,6 @@ using Innovayse.Application.Orders.Queries.GetOrder;
 using Innovayse.Application.Orders.Queries.ListOrders;
 using Innovayse.Domain.Auth;
 using Innovayse.Domain.Billing.Interfaces;
-using Innovayse.Domain.Clients.Interfaces;
 using Innovayse.Domain.Orders.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -28,16 +27,18 @@ using Wolverine;
 /// Place is open to guests and authenticated users; all other endpoints require Admin or Reseller role.
 /// </summary>
 /// <param name="bus">Wolverine message bus.</param>
-/// <param name="clientRepo">Client repository for resolving authenticated user's client ID.</param>
 [ApiController]
 [Route("api/orders")]
-public sealed class OrdersController(IMessageBus bus, IClientRepository clientRepo) : ControllerBase
+public sealed class OrdersController(IMessageBus bus) : ControllerBase
 {
     /// <summary>
     /// Places a new order. Supports both authenticated clients and guest checkout.
-    /// When the caller is authenticated, the client ID is resolved from the JWT;
-    /// otherwise guest registration details from the request body are used.
     /// </summary>
+    /// <remarks>
+    /// Which account the order belongs to is decided in the handler from the credential, and
+    /// the checkout IP is read there too. Neither is on the command, so this action binds the
+    /// items and dispatches — there is nothing left here to get wrong.
+    /// </remarks>
     /// <param name="request">Order placement request body.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>201 Created with the order and invoice IDs.</returns>
@@ -46,22 +47,6 @@ public sealed class OrdersController(IMessageBus bus, IClientRepository clientRe
     public async Task<ActionResult<PlaceOrderResultDto>> PlaceAsync(
         [FromBody] PlaceOrderRequest request, CancellationToken ct)
     {
-        int? clientId = null;
-
-        if (User.Identity?.IsAuthenticated == true)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? User.FindFirstValue("sub");
-
-            if (userId is not null)
-            {
-                var client = await clientRepo.FindByUserIdAsync(userId, ct);
-                clientId = client?.Id;
-            }
-        }
-
-        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-
         var items = request.Items
             .Select(i => new PlaceOrderItemDto(
                 i.Pid, i.BillingCycle, i.Domain, i.Hostname,
@@ -69,15 +54,13 @@ public sealed class OrdersController(IMessageBus bus, IClientRepository clientRe
             .ToList();
 
         var cmd = new PlaceOrderCommand(
-            clientId,
             request.FirstName,
             request.LastName,
             request.Email,
             request.Password,
             request.PhoneNumber,
             request.PaymentMethod,
-            items,
-            ipAddress);
+            items);
 
         var result = await bus.InvokeAsync<PlaceOrderResultDto>(cmd, ct);
         return StatusCode(StatusCodes.Status201Created, result);

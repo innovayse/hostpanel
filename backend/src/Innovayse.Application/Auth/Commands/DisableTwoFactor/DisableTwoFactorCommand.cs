@@ -1,6 +1,9 @@
 namespace Innovayse.Application.Auth.Commands.DisableTwoFactor;
 
 /// <summary>Switches two-factor authentication off.</summary>
-/// <param name="UserId">Whose account. Comes from the credential, never from the request body.</param>
+/// <remarks>
+/// Whose account is not on the command at all. The handler asks the credential, so there is
+/// no field a caller could set to disarm somebody else's second factor.
+/// </remarks>
 /// <param name="Code">A current code from the authenticator app.</param>
-public record DisableTwoFactorCommand(string UserId, string Code);
+public record DisableTwoFactorCommand(string Code);

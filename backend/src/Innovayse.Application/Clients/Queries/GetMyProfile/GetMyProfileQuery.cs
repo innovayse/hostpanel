@@ -2,7 +2,10 @@ namespace Innovayse.Application.Clients.Queries.GetMyProfile;
 
 /// <summary>
 /// Query to retrieve the authenticated client's own profile.
-/// The controller extracts <paramref name="UserId"/> from the JWT sub claim.
 /// </summary>
-/// <param name="UserId">The authenticated user's Identity ID.</param>
-public record GetMyProfileQuery(string UserId);
+/// <remarks>
+/// Carries no user id. Whose profile is resolved inside the handler from the credential:
+/// a query able to name the subject is a query able to read somebody else's account, and
+/// this one is dispatched from six different controllers.
+/// </remarks>
+public record GetMyProfileQuery();

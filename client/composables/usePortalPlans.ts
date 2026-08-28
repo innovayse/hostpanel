@@ -1,17 +1,6 @@
+import { useCatalogApi } from '~/composables/apis/useCatalogApi'
 import { parseDescription } from '~/utils/whmcs'
 import type { PlanCard } from '~/templates/aurora/types'
-
-/**
- * Shape returned by GET /api/portal/public/products. The proxy adds `pid` and a
- * WHMCS-compatible `pricing.USD` block on top of the backend's ProductDto.
- */
-interface ProductResponse {
-  id: number
-  name: string
-  description?: string | null
-  slug?: string | null
-  pricing?: { USD?: { prefix?: string, suffix?: string, monthly?: string, annually?: string } }
-}
 
 /**
  * Product group the storefront's plan cards draw from — shared hosting.
@@ -38,9 +27,11 @@ export const usePortalPlans = () => {
   const localePath = useLocalePath()
   const { locale } = useI18n()
 
-  const { data, pending } = useFetch<ProductResponse[]>('/api/portal/public/products', {
-    query: computed(() => ({ lang: locale.value, gid: HOSTING_GROUP_ID })),
-  })
+  // Through the API composable rather than a raw `useFetch`: that is the layer that owns the
+  // URL, and `useApi()` beneath it sends the locale header the raw call was skipping.
+  const { data, pending } = useCatalogApi().loadProducts(
+    () => ({ lang: locale.value, gid: HOSTING_GROUP_ID })
+  )
 
   const plans = computed<PlanCard[]>(() => (data.value ?? []).map((product) => {
     const money = product.pricing?.USD

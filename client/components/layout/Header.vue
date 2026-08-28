@@ -305,7 +305,11 @@ const navLinks = computed(() => [
 ])
 
 /** Authentication state for the Client Area button */
-const { isLoggedIn, user, fetchUser, logout } = useClientAuth()
+const authStore = useAuthStore()
+// storeToRefs, not a plain destructure: state and getters lose their reactivity when pulled
+// off a store by hand, and the template above binds them.
+const { isLoggedIn, user } = storeToRefs(authStore)
+const { fetchUser, logout } = authStore
 const runtimeConfig = useRuntimeConfig()
 
 /** In SSO mode, link directly to SSO authorize (skips "Continue with Innovayse" page) */

@@ -1,6 +1,5 @@
 namespace Innovayse.API.Clients;
 
-using System.Security.Claims;
 using Innovayse.API.Clients.Requests;
 using Innovayse.Application.Clients.Commands.AddContact;
 using Innovayse.Application.Clients.Commands.RemoveContact;
@@ -16,8 +15,12 @@ using Wolverine;
 /// <summary>
 /// Client self-service portal endpoints.
 /// Authenticated clients can view and update their own profile.
-/// The client's Identity user ID is extracted from the JWT sub claim.
 /// </summary>
+/// <remarks>
+/// Which account is never in the route or the body, and is not read from a claim here either:
+/// <see cref="GetMyProfileQuery"/> resolves the caller inside its own handler, and every write
+/// below is scoped to the id that query answers with.
+/// </remarks>
 /// <param name="bus">Wolverine message bus.</param>
 [ApiController]
 [Route("api/clients/me")]
@@ -32,8 +35,7 @@ public sealed class ClientProfileController(IMessageBus bus) : ControllerBase
     [HttpGet]
     public async Task<ActionResult<ClientDto>> GetMyProfileAsync(CancellationToken ct)
     {
-        var userId = GetUserId();
-        var result = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(userId), ct);
+        var result = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(), ct);
         return Ok(result);
     }
 
@@ -48,9 +50,7 @@ public sealed class ClientProfileController(IMessageBus bus) : ControllerBase
     public async Task<ActionResult<ClientDto>> UpdateMyProfileAsync(
         [FromBody] UpdateClientRequest request, CancellationToken ct)
     {
-        var userId = GetUserId();
-
-        var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(userId), ct);
+        var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(), ct);
 
         await bus.InvokeAsync(
             new UpdateClientCommand(
@@ -87,7 +87,7 @@ public sealed class ClientProfileController(IMessageBus bus) : ControllerBase
                 request.Status),
             ct);
 
-        var updated = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(userId), ct);
+        var updated = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(), ct);
         return Ok(updated);
     }
 
@@ -105,7 +105,7 @@ public sealed class ClientProfileController(IMessageBus bus) : ControllerBase
     [HttpGet("contacts")]
     public async Task<ActionResult<IReadOnlyList<ContactDto>>> GetMyContactsAsync(CancellationToken ct)
     {
-        var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(GetUserId()), ct);
+        var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(), ct);
         return Ok(profile.Contacts);
     }
 
@@ -124,7 +124,7 @@ public sealed class ClientProfileController(IMessageBus bus) : ControllerBase
     public async Task<IActionResult> AddMyContactAsync(
         [FromBody] AddContactRequest request, CancellationToken ct)
     {
-        var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(GetUserId()), ct);
+        var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(), ct);
 
         await bus.InvokeAsync(
             new AddContactCommand(
@@ -150,7 +150,7 @@ public sealed class ClientProfileController(IMessageBus bus) : ControllerBase
     public async Task<IActionResult> UpdateMyContactAsync(
         int contactId, [FromBody] UpdateContactRequest request, CancellationToken ct)
     {
-        var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(GetUserId()), ct);
+        var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(), ct);
 
         await bus.InvokeAsync(
             new UpdateContactCommand(
@@ -175,16 +175,8 @@ public sealed class ClientProfileController(IMessageBus bus) : ControllerBase
     [HttpDelete("contacts/{contactId:int}")]
     public async Task<IActionResult> RemoveMyContactAsync(int contactId, CancellationToken ct)
     {
-        var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(GetUserId()), ct);
+        var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(), ct);
         await bus.InvokeAsync(new RemoveContactCommand(profile.Id, contactId), ct);
         return NoContent();
     }
-
-    /// <summary>Extracts the authenticated user's Identity ID from JWT claims.</summary>
-    /// <returns>The user ID string.</returns>
-    /// <exception cref="UnauthorizedAccessException">Thrown when the user ID claim is missing.</exception>
-    private string GetUserId() =>
-        User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? User.FindFirstValue("sub")
-            ?? throw new UnauthorizedAccessException("User ID not found in token.");
 }

@@ -1,6 +1,5 @@
 namespace Innovayse.API.Billing;
 
-using System.Security.Claims;
 using Innovayse.API.Billing.Requests;
 using Innovayse.Application.Billing.Commands.RemovePaymentMethod;
 using Innovayse.Application.Billing.Commands.SetDefaultPaymentMethod;
@@ -36,7 +35,7 @@ public sealed class MyPaymentMethodsController(IMessageBus bus) : ControllerBase
         CancellationToken ct)
     {
         var methods = await bus.InvokeAsync<IReadOnlyList<StripePaymentMethodDto>>(
-            new GetMyPaymentMethodsQuery(GetUserId()), ct);
+            new GetMyPaymentMethodsQuery(), ct);
 
         return Ok(methods);
     }
@@ -57,7 +56,7 @@ public sealed class MyPaymentMethodsController(IMessageBus bus) : ControllerBase
             return BadRequest(new { message = "Card details cannot be changed. Remove and add a new card instead." });
         }
 
-        await bus.InvokeAsync(new SetDefaultPaymentMethodCommand(GetUserId(), id), ct);
+        await bus.InvokeAsync(new SetDefaultPaymentMethodCommand(id), ct);
         return NoContent();
     }
 
@@ -70,15 +69,7 @@ public sealed class MyPaymentMethodsController(IMessageBus bus) : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> RemoveMyPaymentMethodAsync(string id, CancellationToken ct)
     {
-        await bus.InvokeAsync(new RemovePaymentMethodCommand(GetUserId(), id), ct);
+        await bus.InvokeAsync(new RemovePaymentMethodCommand(id), ct);
         return NoContent();
     }
-
-    /// <summary>Extracts the authenticated user's Identity ID from JWT claims.</summary>
-    /// <returns>The user ID string.</returns>
-    /// <exception cref="UnauthorizedAccessException">Thrown when the user ID claim is missing.</exception>
-    private string GetUserId() =>
-        User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? User.FindFirstValue("sub")
-            ?? throw new UnauthorizedAccessException("User ID not found in token.");
 }

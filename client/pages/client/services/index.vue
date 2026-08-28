@@ -10,6 +10,10 @@
       <div v-for="i in 4" :key="i" class="h-36 rounded-2xl bg-white/5 border border-white/10 animate-pulse" />
     </div>
 
+    <!-- Not a customer account. Checked before the failure branch: this is a state the
+         API reported, not a fault, and it carries its own explanation and a way out. -->
+    <ClientNoProfileNotice v-else-if="store.clientProfileMissing" />
+
     <!-- Failed. Checked before the empty state, which is otherwise what a failure renders as:
          the list is empty either way, and only this branch knows which of the two it is. -->
     <UiAlert v-else-if="store.servicesError" variant="error">{{ store.servicesError }}</UiAlert>

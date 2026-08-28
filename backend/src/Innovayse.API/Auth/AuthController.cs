@@ -3,6 +3,7 @@ namespace Innovayse.API.Auth;
 using Innovayse.API.Auth.Requests;
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Clients.Commands.AcceptInvitation;
+using Innovayse.Application.Common;
 using Innovayse.Domain.Auth;
 using Innovayse.Domain.Auth.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -13,13 +14,24 @@ using Wolverine;
 /// Auth endpoints remaining after SSO migration.
 /// Login/Register/Refresh/Logout are handled by the Nuxt BFF via SSO directly.
 /// </summary>
+/// <param name="bus">Wolverine message bus.</param>
+/// <param name="identity">Where this deployment's people are read from.</param>
+/// <param name="roles">Local role store; roles are granted here, not by the SSO.</param>
+/// <param name="authMode">Which sign-in mechanism this deployment runs.</param>
+/// <param name="caller">
+/// Who is calling. Reading it through the port rather than off <c>User</c> keeps
+/// <c>ClaimsPrincipal</c> to the one adapter that implements it, and keeps the two spellings
+/// of the subject claim — SSO mode's "sub", local mode's mapped NameIdentifier — in one place
+/// instead of in every controller that needs the answer.
+/// </param>
 [ApiController]
 [Route("api/auth")]
 public sealed class AuthController(
     IMessageBus bus,
     IIdentityProvider identity,
     ISubjectRoleStore roles,
-    IAuthModeProvider authMode) : ControllerBase
+    IAuthModeProvider authMode,
+    ICurrentRequestContext caller) : ControllerBase
 {
     /// <summary>
     /// Returns how this deployment signs people in, so a browser client can offer the
@@ -67,7 +79,7 @@ public sealed class AuthController(
         if (await roles.AnyHasRoleAsync(Roles.Admin, ct))
             return Conflict(new { error = "Setup already completed." });
 
-        var subject = Subject();
+        var subject = caller.UserId;
         if (subject is null) return Unauthorized();
 
         await roles.AddAsync(subject, Roles.Admin, ct);
@@ -75,18 +87,20 @@ public sealed class AuthController(
     }
 
     /// <summary>
-    /// Returns whether the current SSO user's email is confirmed.
+    /// Returns whether the current user's email is confirmed.
     /// With SSO, email confirmation is managed by the SSO service.
-    /// This endpoint reads the 'email_verified' claim from the token.
     /// </summary>
+    /// <returns>200 with <c>{ verified }</c>.</returns>
+    /// <remarks>
+    /// The claim is read through <see cref="ICurrentRequestContext"/> rather than here. Two
+    /// actions on this controller answered the same question, and each spelled the comparison
+    /// out for itself — which is how one of them came to accept "true" and "True" and nothing
+    /// else, silently reporting an issuer that writes "TRUE" as unverified.
+    /// </remarks>
     [HttpGet("email-verified")]
     [Authorize]
-    public IActionResult EmailVerifiedAsync()
-    {
-        var verified = User.FindFirst("email_verified")?.Value == "true"
-            || User.FindFirst("email_verified")?.Value == "True";
-        return Ok(new { verified });
-    }
+    public IActionResult EmailVerifiedAsync() =>
+        Ok(new { verified = caller.IsEmailVerified });
 
     /// <summary>
     /// Returns the current SSO-authenticated user's email and local roles.
@@ -98,7 +112,7 @@ public sealed class AuthController(
     [Authorize]
     public async Task<IActionResult> MeAsync(CancellationToken ct)
     {
-        var subject = Subject();
+        var subject = caller.UserId;
         if (subject is null) return Unauthorized();
 
         // One lookup, where this used to try the SSO subject and then the local id in turn.
@@ -108,9 +122,8 @@ public sealed class AuthController(
         if (account is null) return Unauthorized();
 
         var held = await roles.GetRolesAsync(subject, ct);
-        var verified = User.FindFirst("email_verified")?.Value is "true" or "True";
 
-        return Ok(new { email = account.Email, roles = held, emailVerified = verified });
+        return Ok(new { email = account.Email, roles = held, emailVerified = caller.IsEmailVerified });
     }
 
     /// <summary>
@@ -122,12 +135,11 @@ public sealed class AuthController(
     [Authorize]
     public async Task<IActionResult> AcceptInviteAsync([FromBody] AcceptInvitationRequest request, CancellationToken ct)
     {
-        var subject = Subject();
-        if (subject is null) return Unauthorized();
-
         try
         {
-            await bus.InvokeAsync(new AcceptInvitationCommand(request.Token, subject), ct);
+            // No subject travels on the command: the handler asks the credential itself, so a
+            // valid invitation token cannot be redeemed on behalf of a different account.
+            await bus.InvokeAsync(new AcceptInvitationCommand(request.Token), ct);
         }
         catch (InvalidOperationException ex)
         {
@@ -136,17 +148,4 @@ public sealed class AuthController(
 
         return Ok(new { success = true });
     }
-
-    /// <summary>
-    /// The signed-in caller's subject, or null if the token carries none.
-    /// </summary>
-    /// <remarks>
-    /// Both claim names, because the two modes deliver it differently. SSO mode sets
-    /// MapInboundClaims = false, so "sub" survives as itself; local mode leaves the default
-    /// mapping on, which renames it to NameIdentifier. Reading only "sub" found nothing
-    /// under local and answered 401 — with a valid token, from an account holding Admin.
-    /// </remarks>
-    private string? Subject() =>
-        User.FindFirst("sub")?.Value
-        ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 }

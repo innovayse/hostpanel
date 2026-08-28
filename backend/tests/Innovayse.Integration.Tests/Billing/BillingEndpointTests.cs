@@ -149,8 +149,19 @@ public sealed class BillingEndpointTests(IntegrationTestFactory factory)
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
+    /// <summary>
+    /// Another client's invoice is not merely refused — it is indistinguishable from one that
+    /// does not exist.
+    /// </summary>
+    /// <remarks>
+    /// This asserted 403 until the ownership work landed, and 403-against-404 was itself the
+    /// leak: an attacker walking sequential invoice ids learned which ones were real from the
+    /// status alone, without ever seeing an invoice. The refusal now says the same thing in
+    /// both cases, which is why the test also asks for an id that belongs to nobody and
+    /// requires the two answers to match rather than checking a constant.
+    /// </remarks>
     [Fact]
-    public async Task GetMyInvoiceAsync_Returns403_ForOtherClientInvoiceAsync()
+    public async Task GetMyInvoiceAsync_AnswersNotFound_ForOtherClientInvoiceAsync()
     {
         var httpClient = factory.CreateClient();
 
@@ -234,6 +245,13 @@ public sealed class BillingEndpointTests(IntegrationTestFactory factory)
 
         var response = await httpClient.GetAsync($"/api/me/invoices/{invoiceId}");
 
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        // An id far outside anything this run created: it exists for nobody, where the one
+        // above exists for someone else. The endpoint must not let the caller tell them apart.
+        var absent = await httpClient.GetAsync("/api/me/invoices/2147483000");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        absent.StatusCode.Should().Be(response.StatusCode);
+        (await absent.Content.ReadAsStringAsync())
+            .Should().Be(await response.Content.ReadAsStringAsync());
     }
 }

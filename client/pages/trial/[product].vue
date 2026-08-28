@@ -125,6 +125,7 @@
 
 <script setup lang="ts">
 import { Zap, Rocket, ShieldCheck, CheckCircle, Clock, CreditCard, Headphones } from 'lucide-vue-next'
+import { useCatalogApi } from '~/composables/apis/useCatalogApi'
 
 const route = useRoute()
 const { t, locale } = useI18n()
@@ -142,13 +143,16 @@ const cfg = computed(() => productConfig[productSlug] ?? {
 })
 
 // Fetch product data from API to get features and trial product URL
-const { data: products } = await useApi('/api/portal/public/products', {
-  query: computed(() => {
+// Straight from the API composable rather than through a store: this page fetches once and
+// owns the result alone, which is the named exception to component -> store -> api. A store
+// would also cost the SSR dedup and the locale re-fetch that `useApi()` gives for free, and
+// this page is server-rendered and indexed.
+const { data: products } = await useCatalogApi().loadProducts(
+  () => {
     const gid = Object.entries(productGidToKey).find(([, key]) => key === productSlug)?.[0]
     return { lang: locale.value, gid: gid ? Number(gid) : undefined }
-  }),
-  default: () => []
-})
+  }
+)
 
 // Find the free trial plan
 const trialPlan = computed(() =>

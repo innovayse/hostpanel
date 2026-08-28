@@ -1,5 +1,6 @@
 namespace Innovayse.Application.Migration.Queries.TestMigrationConnection;
 
+using Innovayse.Application.Migration.Extensions;
 using System.Net.Http.Json;
 using Innovayse.Application.Migration.DTOs;
 using Innovayse.Domain.Migration.Interfaces;

@@ -41,7 +41,7 @@ public sealed class CreateInvoiceHandler(
         activityLogRepo.Add(ActivityLog.Create(
             cmd.ClientId,
             $"Created Manual Invoice - Invoice ID: {invoice.Id}",
-            ctx.AdminId, ctx.AdminName, ctx.AdminEmail, ctx.IpAddress));
+            ctx.UserId, ctx.UserName, ctx.UserEmail, ctx.IpAddress));
         await uow.SaveChangesAsync(ct);
 
         return invoice.Id;

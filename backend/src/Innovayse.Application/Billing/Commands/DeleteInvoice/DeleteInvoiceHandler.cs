@@ -36,7 +36,7 @@ public sealed class DeleteInvoiceHandler(
         activityLogRepo.Add(ActivityLog.Create(
             clientId,
             $"Deleted Invoice - Invoice ID: {invoiceId}",
-            ctx.AdminId, ctx.AdminName, ctx.AdminEmail, ctx.IpAddress));
+            ctx.UserId, ctx.UserName, ctx.UserEmail, ctx.IpAddress));
         await uow.SaveChangesAsync(ct);
     }
 }

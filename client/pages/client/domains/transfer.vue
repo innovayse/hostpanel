@@ -109,6 +109,9 @@
 
 <script setup lang="ts">
 import { ArrowLeft, ArrowLeftRight, Info, CheckCircle, CreditCard } from 'lucide-vue-next'
+import { useBillingApi } from '~/composables/apis/useBillingApi'
+import { useDomainsApi } from '~/composables/apis/useDomainsApi'
+import { apiErrorMessage } from '~/utils/portalErrorMessages'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
@@ -134,9 +137,9 @@ const periodOptions = computed(() => [
 ])
 
 // Payment methods
-const { data: payMethods, pending: pmLoading } = await useApi<Array<{
-  id: number; description: string; gateway_name: string; card_last_four?: string
-}>>('/api/portal/client/payment-methods')
+// Straight from the API composable rather than through a store: this page reads it once and
+// owns the result alone, which is the named exception to component -> store -> api.
+const { data: payMethods, pending: pmLoading } = await useBillingApi().loadPaymentMethods()
 
 const paymentOptions = computed(() =>
   (payMethods.value ?? []).map(m => ({
@@ -155,13 +158,12 @@ async function submit() {
   submitting.value = true
   formError.value  = ''
   try {
-    const res = await apiFetch<{ orderId: number; invoiceId: number }>(
-      '/api/portal/client/domains/transfer-order',
-      { method: 'POST', body: form }
-    )
+    const res = await useDomainsApi().createTransferOrder(form)
     success.value = res
-  } catch (err: any) {
-    formError.value = err?.data?.statusMessage || t('client.domainTransfer.errorDefault')
+  } catch (err: unknown) {
+    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`;
+    // the local key is only the no-answer fallback.
+    formError.value = apiErrorMessage(err) || t('client.domainTransfer.errorDefault')
   } finally {
     submitting.value = false
   }

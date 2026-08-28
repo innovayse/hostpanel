@@ -133,11 +133,12 @@ import {
   X
 } from 'lucide-vue-next'
 import { useClientStore } from '~/stores/client'
+import { useAuthApi } from '~/composables/apis/useAuthApi'
 import { Permission } from '~/composables/usePermissions'
 
 const route = useRoute()
 const { t } = useI18n()
-const { logout } = useClientAuth()
+const { logout } = useAuthStore()
 const { hasPermission } = usePermissions()
 const store = useClientStore()
 const { init } = useAppColorMode()
@@ -206,8 +207,12 @@ async function handleLogout() {
 
   if (authMode === 'sso') {
     // Clear cookies + fire backchannel logout (fire-and-forget is fine)
+    // Through the auth API composable rather than a bare fetch: it is the layer that owns
+    // the URL, and `apiFetch` beneath it carries the locale header and routes a 401 through
+    // the global auth guard — both of which the raw `$fetch` here silently bypassed.
+    // `credentials` is not passed: the path is same-origin, so cookies go by default.
     try {
-      await $fetch('/api/portal/auth/logout', { method: 'POST', credentials: 'include' })
+      await useAuthApi().logout()
     } catch { /* ignore — clear session regardless */ }
     store.reset()
     // Navigate browser to SSO endsession (required to clear SSO session cookie at sso.local)

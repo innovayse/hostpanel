@@ -22,26 +22,42 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: false })
-const route = useRoute()
+/**
+ * Email confirmation landing page — reads the address and token out of the link and posts
+ * them, then reports what the backend said.
+ */
+import { useAuthApi } from '~/composables/apis/useAuthApi'
+import { apiErrorMessage } from '~/utils/portalErrorMessages'
 
+definePageMeta({ layout: false })
+
+const route = useRoute()
+const { confirmEmail } = useAuthApi()
+
+/** Which of the three panels the page shows. */
 const status = ref<'loading' | 'success' | 'error'>('loading')
+
+/** Failure sentence, empty while loading or on success. */
 const message = ref('')
 
 onMounted(async () => {
   const email = route.query.email as string
   const token = route.query.token as string
+
+  // A link with nothing in it is the one guard that is allowed before a request is possible;
+  // everything else below is worded by the API rather than by this page.
   if (!email || !token) {
     status.value = 'error'
     message.value = 'Invalid confirmation link.'
     return
   }
+
   try {
-    await apiFetch('/api/portal/auth/confirm-email', { method: 'POST', body: { email, token } })
+    await confirmEmail(email, token)
     status.value = 'success'
-  } catch {
+  } catch (err: unknown) {
     status.value = 'error'
-    message.value = 'Confirmation failed. The link may have expired.'
+    message.value = apiErrorMessage(err)
   }
 })
 </script>

@@ -45,7 +45,7 @@
  * specification, so an operator who has entered none sees the page as it was.
  */
 import type { PlanCard } from '~/templates/aurora/types'
-import type { ComparisonRow } from '~/composables/useProductFeatures'
+import type { ComparisonRow } from '~/types/comparisonrow'
 
 withDefaults(defineProps<{
   plans?: PlanCard[]

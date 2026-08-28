@@ -1,6 +1,5 @@
 namespace Innovayse.API.Clients;
 
-using System.Security.Claims;
 using Innovayse.API.Clients.Requests;
 using Innovayse.Application.Clients.Commands.InviteUserToClient;
 using Innovayse.Application.Clients.Commands.RemoveUserFromClient;
@@ -62,7 +61,7 @@ public sealed class MyUsersController(IMessageBus bus) : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<ClientUserDto>>> GetMyUsersAsync(CancellationToken ct)
     {
-        var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(GetUserId()), ct);
+        var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(), ct);
         var users = await bus.InvokeAsync<IReadOnlyList<ClientUserDto>>(
             new GetClientUsersQuery(profile.Id), ct);
 
@@ -79,7 +78,7 @@ public sealed class MyUsersController(IMessageBus bus) : ControllerBase
     public async Task<IActionResult> InviteMyUserAsync(
         [FromBody] InvitePortalUserRequest request, CancellationToken ct)
     {
-        var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(GetUserId()), ct);
+        var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(), ct);
 
         await bus.InvokeAsync(
             new InviteUserToClientCommand(
@@ -99,7 +98,7 @@ public sealed class MyUsersController(IMessageBus bus) : ControllerBase
     [HttpDelete("{userId}")]
     public async Task<IActionResult> RemoveMyUserAsync(string userId, CancellationToken ct)
     {
-        var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(GetUserId()), ct);
+        var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(), ct);
         await bus.InvokeAsync(new RemoveUserFromClientCommand(profile.Id, userId), ct);
         return NoContent();
     }
@@ -134,12 +133,4 @@ public sealed class MyUsersController(IMessageBus bus) : ControllerBase
 
         return (int)granted;
     }
-
-    /// <summary>Extracts the authenticated user's Identity ID from JWT claims.</summary>
-    /// <returns>The user ID string.</returns>
-    /// <exception cref="UnauthorizedAccessException">Thrown when the user ID claim is missing.</exception>
-    private string GetUserId() =>
-        User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? User.FindFirstValue("sub")
-            ?? throw new UnauthorizedAccessException("User ID not found in token.");
 }

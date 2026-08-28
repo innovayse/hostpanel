@@ -36,15 +36,29 @@
         >{{ cartCount }}</span>
       </NuxtLink>
 
-      <NuxtLink
-        :to="localePath('/client/login')"
-        class="hidden px-1.5 text-[15px] text-mut hover:text-ac1 sm:inline-flex"
-      >{{ t('aurora.nav.login') }}</NuxtLink>
+      <!--
+        Signed in and signed out are two different headers, not one header with a
+        different label. The session is known during server rendering (`authed`
+        is a plain, readable cookie), so this needs no ClientOnly wrapper.
+      -->
+      <AuroraAccountMenu v-if="isLoggedIn" />
 
-      <NuxtLink
-        :to="localePath('/hosting')"
-        class="hidden whitespace-nowrap rounded-[10px] bg-brand px-5 py-[11px] text-[15px] font-semibold text-[#08090F] hover:brightness-110 sm:inline-flex"
-      >{{ t('aurora.nav.start') }}</NuxtLink>
+      <template v-else>
+        <!--
+          A plain anchor, not NuxtLink: under AUTH_MODE=sso this resolves to the
+          Nitro route that starts the OIDC flow, and the router would try to
+          match it against the client bundle instead of leaving the page.
+        -->
+        <a
+          :href="signInHref"
+          class="hidden px-1.5 text-[15px] text-mut hover:text-ac1 sm:inline-flex"
+        >{{ t('aurora.nav.login') }}</a>
+
+        <NuxtLink
+          :to="localePath('/hosting')"
+          class="hidden whitespace-nowrap rounded-[10px] bg-brand px-5 py-[11px] text-[15px] font-semibold text-[#08090F] hover:brightness-110 sm:inline-flex"
+        >{{ t('aurora.nav.start') }}</NuxtLink>
+      </template>
 
       <button
         type="button"
@@ -75,11 +89,15 @@
 /**
  * aurora template site header.
  *
- * Presentation only. The locale menu and colour-mode toggle are the portal's
- * existing components; this restyles their surroundings rather than
- * reimplementing them.
+ * Presentation only. The locale menu, colour-mode toggle, apps launcher and
+ * account menu are the portal's existing components; this restyles their
+ * surroundings rather than reimplementing them.
+ *
+ * Two things it does read: whether there is a session, which decides between the
+ * account menu and the sign-in pair, and the configured sign-in destination.
  */
 import AuroraAppLauncher from '~/templates/aurora/layout/AppLauncher.vue'
+import AuroraAccountMenu from '~/templates/aurora/layout/AccountMenu.vue'
 import { useCartStore } from '~/stores/cart'
 
 /** Which navigation entry to mark as current. */
@@ -89,6 +107,14 @@ const { active } = toRefs(props)
 const { t } = useI18n()
 const localePath = useLocalePath()
 const cart = useCartStore()
+
+// Where "Sign in" goes is a deployment decision, not a constant: `sso` starts the
+// OIDC flow against the platform identity provider, `local` opens this product's
+// own form. This header used to hard-code the latter, so an SSO deployment sent
+// every visitor to a login page its users have no credentials for.
+const { signInHref } = useAuthMode()
+const { isLoggedIn } = storeToRefs(useAuthStore())
+
 const menuOpen = ref(false)
 
 const cartCount = computed(() => cart.items.length)

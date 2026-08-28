@@ -205,6 +205,7 @@
 
 import { CheckCircle, ArrowRight } from 'lucide-vue-next'
 import { products as visualData } from '~/lib/data'
+import { useCatalogApi } from '~/composables/apis/useCatalogApi'
 
 const { t, locale } = useI18n()
 const localePath = useLocalePath()
@@ -222,10 +223,11 @@ const hostingVisual = {
 }
 
 // Fetch all products (hosting gid=1 + SaaS gids 3-9) in one request
-const { data: whmcsRaw } = await useApi<unknown[]>('/api/portal/public/products', {
-  query: computed(() => ({ lang: locale.value, gids: productGids.join(',') })),
-  default: () => []
-})
+// Straight from the API composable rather than through a store: this section reads the
+// catalogue once and owns it alone, which is the named exception to component -> store -> api.
+const { data: whmcsRaw } = await useCatalogApi().loadProducts(
+  () => ({ lang: locale.value, gids: productGids.join(',') })
+)
 
 /** Build product cards from WHMCS data + visual config */
 const products = computed(() => {

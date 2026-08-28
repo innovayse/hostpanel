@@ -1,6 +1,5 @@
 namespace Innovayse.API.Services;
 
-using System.Security.Claims;
 using Innovayse.API.Provisioning;
 using Innovayse.API.Services.Requests;
 using Innovayse.Application.Clients.DTOs;
@@ -34,12 +33,8 @@ public sealed class MyServicesController(IMessageBus bus) : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<ClientServiceDto>>> GetMineAsync(CancellationToken ct)
     {
-        var userId = GetUserId();
-
-        var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(userId), ct);
-
         var services = await bus.InvokeAsync<IReadOnlyList<ClientServiceDto>>(
-            new GetMyServicesQuery(profile.Id), ct);
+            new GetMyServicesQuery(), ct);
         return Ok(services);
     }
 
@@ -51,9 +46,11 @@ public sealed class MyServicesController(IMessageBus bus) : ControllerBase
     public async Task<ActionResult<int>> OrderAsync(
         [FromBody] OrderRequest request, CancellationToken ct)
     {
-        var userId = GetUserId();
-
-        var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(userId), ct);
+        // OrderServiceCommand names a client because the order-fulfilment handlers dispatch it
+        // for whichever account an accepted order belongs to. On this route the account is the
+        // caller's own, and it is read back from the credential-scoped profile query rather
+        // than from anything the request could carry.
+        var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(), ct);
 
         var cmd = new OrderServiceCommand(profile.Id, request.ProductId, request.BillingCycle, 0, 0);
         var id = await bus.InvokeAsync<int>(cmd, ct);
@@ -129,12 +126,4 @@ public sealed class MyServicesController(IMessageBus bus) : ControllerBase
         await bus.InvokeAsync(new ChangePasswordCommand(id, request.NewPassword), ct);
         return Ok();
     }
-
-    /// <summary>Extracts the authenticated user's Identity ID from JWT claims.</summary>
-    /// <returns>The user ID string.</returns>
-    /// <exception cref="UnauthorizedAccessException">Thrown when the user ID claim is missing.</exception>
-    private string GetUserId() =>
-        User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? User.FindFirstValue("sub")
-            ?? throw new UnauthorizedAccessException("User ID not found in token.");
 }

@@ -44,17 +44,20 @@
 
 <script setup lang="ts">
 import { ArrowLeft, AlertCircle } from 'lucide-vue-next'
+import { useClientApi } from '~/composables/apis/useClientApi'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
 const route = useRoute()
 
-const { data: email, pending, error } = await useApi<{
+// Straight from the API composable rather than through a store: this page reads it once and
+// owns the result alone, which is the named exception to component -> store -> api.
+const { data: email, pending, error } = await useClientApi().loadEmail<{
   id: string
   date: string
   subject: string
   message: string
-}>(`/api/portal/client/emails/${route.params.id}`)
+}>(() => String(route.params.id))
 
 const iframeRef = ref<HTMLIFrameElement | null>(null)
 

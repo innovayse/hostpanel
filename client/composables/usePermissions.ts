@@ -40,13 +40,13 @@ export const Permission = {
 /**
  * Composable for checking client portal permissions.
  *
- * Reads the current user's permissions from {@link useClientAuth} and provides
+ * Reads the current user's permissions from {@link useAuthStore} and provides
  * helpers to check individual or combined permission flags.
  *
  * @returns Permission checking utilities and the {@link Permission} constants.
  */
 export function usePermissions() {
-  const { user } = useClientAuth()
+  const { user } = storeToRefs(useAuthStore())
 
   /**
    * Checks whether the current user has a specific permission.

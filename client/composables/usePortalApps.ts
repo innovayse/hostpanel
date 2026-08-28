@@ -10,17 +10,7 @@
  * links into nothing.
  */
 
-/** One launcher entry, ready to render. */
-export interface PortalApp {
-  id: string
-  /** Two-letter tile label. */
-  tag: string
-  /** CSS gradient for the tile, as the design specifies it. */
-  tint: string
-  label: string
-  desc: string
-  url: string
-}
+import type { PortalApp } from '~/types/portalapp'
 
 /**
  * Static part of each entry: identity, tile styling and where its URL comes

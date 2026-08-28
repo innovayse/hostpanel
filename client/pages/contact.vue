@@ -270,8 +270,8 @@
  * Contact page with form and contact information
  */
 
-import { $fetch } from 'ofetch'
 import { Send, CheckCircle, Building2, Mail, Phone, Clock, MessageCircle } from 'lucide-vue-next'
+import { useSupportApi } from '~/composables/apis/useSupportApi'
 
 const { t } = useI18n()
 
@@ -342,16 +342,13 @@ const handleSubmit = async () => {
   isSubmitting.value = true
 
   try {
-    await $fetch('/api/contact', {
-      method: 'POST',
-      body: {
-        name: formData.value.name,
-        email: formData.value.email,
-        phone: formData.value.phone,
-        service: formData.value.serviceType,
-        message: formData.value.message,
-        timestamp: new Date().toLocaleString()
-      }
+    await useSupportApi().sendContactMessage({
+      name: formData.value.name,
+      email: formData.value.email,
+      phone: formData.value.phone,
+      service: formData.value.serviceType,
+      message: formData.value.message,
+      timestamp: new Date().toLocaleString()
     })
 
     showSuccess.value = true

@@ -14,10 +14,10 @@
 export default defineNuxtPlugin(async () => {
   if (!import.meta.client) return
 
-  const { fetchUser, isLoggedIn } = useClientAuth()
+  const authStore = useAuthStore()
 
   // Only fetch if a session cookie exists
-  if (isLoggedIn.value) {
-    await fetchUser()
+  if (authStore.isLoggedIn) {
+    await authStore.fetchUser()
   }
 })

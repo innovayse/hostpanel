@@ -66,10 +66,15 @@
           >{{ cartCount }}</span>
         </NuxtLink>
 
-        <NuxtLink
-          :to="localePath('/client/login')"
+        <!--
+          A plain anchor, not NuxtLink: under AUTH_MODE=sso `signInHref` is a
+          Nitro route that starts the OIDC flow, and the router would try to match
+          it against the client bundle instead of leaving the page.
+        -->
+        <a
+          :href="signInHref"
           class="hidden min-h-[44px] items-center rounded-xl px-3 text-[15px] font-medium text-nova-muted transition-colors hover:text-nova-ink sm:inline-flex"
-        >{{ t('nova.nav.login') }}</NuxtLink>
+        >{{ t('nova.nav.login') }}</a>
 
         <NuxtLink
           :to="localePath('/hosting')"
@@ -125,11 +130,11 @@
       </div>
 
       <div class="mt-3 flex flex-col gap-2 border-t border-nova-border pt-3">
-        <NuxtLink
-          :to="localePath('/client/login')"
+        <a
+          :href="signInHref"
           class="flex min-h-[44px] items-center justify-center rounded-xl border border-nova-border text-[15px] font-semibold text-nova-ink"
           @click="closeMenu"
-        >{{ t('nova.nav.login') }}</NuxtLink>
+        >{{ t('nova.nav.login') }}</a>
         <NuxtLink
           :to="localePath('/hosting')"
           class="flex min-h-[44px] items-center justify-center rounded-xl bg-nova-accent text-[15px] font-bold text-[#12212a]"
@@ -168,6 +173,11 @@ const { t } = useI18n()
 const localePath = useLocalePath()
 const cart = useCartStore()
 const route = useRoute()
+
+// Where "Sign in" goes is a deployment decision, not a constant — see
+// `useAuthMode`. Hard-coding /client/login sent an SSO deployment's visitors to a
+// form their accounts have no credentials for.
+const { signInHref } = useAuthMode()
 
 const menuOpen = ref(false)
 const menuRef = ref<HTMLElement | null>(null)

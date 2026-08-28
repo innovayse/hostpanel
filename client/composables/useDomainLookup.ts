@@ -1,39 +1,7 @@
+import { useCatalogApi } from '~/composables/apis/useCatalogApi'
 import { ALL_CATEGORY } from '~/templates/aurora/types'
 import type { DomainResult } from '~/templates/aurora/types'
-
-/** Shape returned by GET /api/portal/public/tld-pricing. */
-interface TldPricingResponse {
-  currency: { code: string, prefix: string }
-  pricing: Record<string, {
-    register: Record<string, string>
-    transfer?: Record<string, string>
-    renew?: Record<string, string>
-    categories?: string[]
-  }>
-}
-
-/** Shape returned by POST /api/portal/public/domain-check — one domain per call. */
-interface DomainCheckResponse {
-  domain: string
-  available: boolean
-  status: string
-}
-
-/** One row of the TLD price table. */
-export interface TldPriceRow {
-  /** Extension with its leading dot, e.g. ".am". */
-  tld: string
-  /** Formatted one-year registration price, or a dash. */
-  register: string
-  /** Formatted one-year renewal price, or a dash. */
-  renew: string
-  /** Formatted one-year transfer price, or a dash. */
-  transfer: string
-  /** Category tags the backend assigns, used for filtering. */
-  categories: string[]
-  /** One-year registration price as a number, for cart arithmetic. */
-  registerAmount: number
-}
+import type { TldPriceRow } from '~/types/tldpricerow'
 
 /**
  * Domain pricing and availability lookups.
@@ -45,7 +13,10 @@ export interface TldPriceRow {
  * @returns Price rows, the search results, pending state and the search action.
  */
 export const useDomainLookup = (tldLimit = 4) => {
-  const { data } = useFetch<TldPricingResponse>('/api/portal/public/tld-pricing')
+  // Through the API composable rather than a raw `useFetch`: that is the layer that owns the
+  // URL, and `useApi()` beneath it sends the locale header the raw call was skipping.
+  const { loadTldPricing, checkDomain } = useCatalogApi()
+  const { data } = loadTldPricing()
 
   const results = ref<DomainResult[]>([])
   const pending = ref(false)
@@ -106,10 +77,7 @@ export const useDomainLookup = (tldLimit = 4) => {
         offeredTlds.value.map(async ({ tld, register }) => {
           const name = `${base}${tld}`
           try {
-            const response = await $fetch<DomainCheckResponse>('/api/portal/public/domain-check', {
-              method: 'POST',
-              body: { domain: name },
-            })
+            const response = await checkDomain(name)
             return {
               name,
               price: response.available ? register : '—',

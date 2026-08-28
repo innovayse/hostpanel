@@ -30,6 +30,7 @@ using Wolverine;
 /// <param name="provisioning">Creates the account for guest checkout registration.</param>
 /// <param name="roles">Role store, for granting the Client role.</param>
 /// <param name="bus">Wolverine message bus for invoking TLD pricing queries.</param>
+/// <param name="caller">Who is ordering, and from where; the command says neither, and must not.</param>
 public sealed class PlaceOrderHandler(
     IOrderRepository orderRepo,
     IProductRepository productRepo,
@@ -38,7 +39,8 @@ public sealed class PlaceOrderHandler(
     IUnitOfWork uow,
     IUserProvisioning provisioning,
     ISubjectRoleStore roles,
-    IMessageBus bus)
+    IMessageBus bus,
+    ICurrentRequestContext caller)
 {
     /// <summary>
     /// Handles <see cref="PlaceOrderCommand"/>.
@@ -61,7 +63,7 @@ public sealed class PlaceOrderHandler(
         var products = await productRepo.FindByIdsAsync(productIds, ct);
         var productMap = products.ToDictionary(p => p.Id);
 
-        var order = Order.Create(orderNumber, clientId, cmd.PaymentMethod, cmd.IpAddress);
+        var order = Order.Create(orderNumber, clientId, cmd.PaymentMethod, caller.IpAddress);
 
         // Pre-fetch TLD pricing if any domain items exist
         var hasDomainItems = cmd.Items.Any(i => i.DomainAction is not null);
@@ -114,9 +116,9 @@ public sealed class PlaceOrderHandler(
     }
 
     /// <summary>
-    /// Resolves the client ID from the command. If <see cref="PlaceOrderCommand.ClientId"/>
-    /// is provided, validates it exists. Otherwise creates a new account and
-    /// <see cref="Client"/> record for guest checkout.
+    /// Resolves the client the order belongs to. A caller the credential names and who already
+    /// has an account orders against it; anyone else creates a new account and
+    /// <see cref="Client"/> record as part of guest checkout.
     ///
     /// <para>
     /// Guest checkout is a local-mode flow. Where an SSO owns the accounts this product
@@ -130,11 +132,18 @@ public sealed class PlaceOrderHandler(
     /// <exception cref="InvalidOperationException">Thrown when the client cannot be found or created.</exception>
     private async Task<int> ResolveClientIdAsync(PlaceOrderCommand cmd, CancellationToken ct)
     {
-        if (cmd.ClientId.HasValue)
+        // A signed-in caller orders for their own account. The subject comes from the
+        // credential, so there is no id anyone could send to order against another account.
+        // A caller the credential names but who has no client record yet falls through to
+        // registration below, which is what used to happen when the controller resolved this.
+        var subject = caller.UserId;
+        if (subject is not null)
         {
-            var client = await clientRepo.FindByIdAsync(cmd.ClientId.Value, ct)
-                ?? throw new InvalidOperationException($"Client {cmd.ClientId.Value} not found.");
-            return client.Id;
+            var existing = await clientRepo.FindByUserIdAsync(subject, ct);
+            if (existing is not null)
+            {
+                return existing.Id;
+            }
         }
 
         if (string.IsNullOrWhiteSpace(cmd.Email) || string.IsNullOrWhiteSpace(cmd.Password))

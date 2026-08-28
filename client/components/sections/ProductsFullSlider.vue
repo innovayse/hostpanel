@@ -256,6 +256,14 @@
  * with Ken Burns background, floating icon animations, and staggered feature badges.
  */
 
+import { ArrowRight, PlayCircle, ChevronLeft, ChevronRight, ChevronDown, CheckCircle } from 'lucide-vue-next'
+import { Swiper, SwiperSlide } from 'swiper/vue'
+import { Autoplay, Navigation, Pagination } from 'swiper/modules'
+import 'swiper/css'
+import 'swiper/css/navigation'
+import 'swiper/css/pagination'
+import { useCatalogApi } from '~/composables/apis/useCatalogApi'
+
 /**
  * The grain texture over each slide, as a data URI.
  *
@@ -266,12 +274,6 @@ const noiseSvg =
   "%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E" +
   "%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E" +
   "%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E"
-import { ArrowRight, PlayCircle, ChevronLeft, ChevronRight, ChevronDown, CheckCircle } from 'lucide-vue-next'
-import { Swiper, SwiperSlide } from 'swiper/vue'
-import { Autoplay, Navigation, Pagination } from 'swiper/modules'
-import 'swiper/css'
-import 'swiper/css/navigation'
-import 'swiper/css/pagination'
 
 /** Shape of the slide DTO returned by the backend. */
 interface SlidePublicDto {
@@ -313,10 +315,9 @@ const modules = [Autoplay, Navigation, Pagination]
 const sectionRef = ref<HTMLElement | null>(null)
 
 /** Fetch slides from the backend API. */
-const { data: slidesRaw } = await useApi<SlidePublicDto[]>('/api/portal/public/slides', {
-  query: computed(() => ({ lang: locale.value })),
-  default: () => []
-})
+// Straight from the API composable rather than through a store: this section reads the
+// slides once and owns them alone, which is the named exception to component -> store -> api.
+const { data: slidesRaw } = await useCatalogApi().loadSlides<SlidePublicDto>(() => locale.value)
 
 /** Maps API slide data to the shape expected by the template. */
 const sliderItems = computed(() => {

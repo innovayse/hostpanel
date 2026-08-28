@@ -1,24 +1,37 @@
 namespace Innovayse.Application.Domains.Queries.GetMyDomains;
 
 using System.Linq;
+using Innovayse.Application.Clients.Common;
+using Innovayse.Application.Common;
 using Innovayse.Application.Domains.DTOs;
 using Innovayse.Domain.Clients.Interfaces;
 using Innovayse.Domain.Domains.Interfaces;
 
-/// <summary>Returns all domains owned by the authenticated client as full <see cref="DomainDto"/> items.</summary>
-public sealed class GetMyDomainsHandler(IDomainRepository repo, IClientRepository clientRepo)
+/// <summary>Returns every domain owned by the calling client as full <see cref="DomainDto"/> items.</summary>
+/// <param name="repo">Domain repository.</param>
+/// <param name="clientRepo">Resolves the caller's client record.</param>
+/// <param name="caller">Who is asking; the query does not say, and must not.</param>
+public sealed class GetMyDomainsHandler(
+    IDomainRepository repo,
+    IClientRepository clientRepo,
+    ICurrentRequestContext caller)
 {
     /// <summary>
     /// Handles <see cref="GetMyDomainsQuery"/>.
     /// </summary>
-    /// <param name="query">The get my domains query containing the authenticated user's Identity ID.</param>
+    /// <param name="query">The query. It names no account: this reads the caller's own.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>All domains for the client, including nameservers and DNS records.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when no client record exists for the user.</exception>
+    /// <exception cref="ClientProfileNotFoundException">
+    /// Thrown when no client record exists for the user. Carries the user id for the log only --
+    /// the API answers 404 with a code and an identifier-free sentence.
+    /// </exception>
     public async Task<IReadOnlyList<DomainDto>> HandleAsync(GetMyDomainsQuery query, CancellationToken ct)
     {
-        var client = await clientRepo.FindByUserIdAsync(query.UserId, ct)
-            ?? throw new InvalidOperationException($"No client profile found for user {query.UserId}.");
+        var userId = caller.RequireUserId();
+
+        var client = await clientRepo.FindByUserIdAsync(userId, ct)
+            ?? throw new ClientProfileNotFoundException(userId);
 
         var domains = await repo.ListByClientAsync(client.Id, ct);
 

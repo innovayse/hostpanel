@@ -1,6 +1,5 @@
 namespace Innovayse.API.Domains;
 
-using System.Security.Claims;
 using Innovayse.API.Domains.Requests;
 using Innovayse.Application.Domains.Commands.AddDnsRecord;
 using Innovayse.Application.Domains.Commands.AddEmailForwardingRule;
@@ -17,6 +16,7 @@ using Innovayse.Application.Domains.Commands.SetWhoisPrivacy;
 using Innovayse.Application.Domains.Commands.UpdateDnsRecord;
 using Innovayse.Application.Domains.Commands.UpdateEmailForwardingRule;
 using Innovayse.Application.Domains.Commands.UpdateNameservers;
+using Innovayse.Application.Domains.Common;
 using Innovayse.Application.Domains.DTOs;
 using Innovayse.Application.Domains.Queries.GetDomain;
 using Innovayse.Application.Domains.Queries.GetMyDomains;
@@ -33,10 +33,16 @@ using ApiRenewDomainRequest = Innovayse.API.Domains.Requests.RenewDomainRequest;
 /// Requires the Client role.
 /// </summary>
 /// <param name="bus">Wolverine message bus for dispatching commands and queries.</param>
+/// <param name="ownership">
+/// The rule that says a client may only touch their own domains. It used to be written out in
+/// this file, reading the claims itself; it now lives in the Application layer, resolves the
+/// caller through the request-context port, and can be called from a handler as readily as
+/// from here.
+/// </param>
 [ApiController]
 [Route("api/me/domains")]
 [Authorize(Roles = Roles.Client)]
-public sealed class MyDomainsController(IMessageBus bus) : ControllerBase
+public sealed class MyDomainsController(IMessageBus bus, IDomainOwnership ownership) : ControllerBase
 {
     /// <summary>Returns all domains belonging to the authenticated client.</summary>
     /// <param name="ct">Cancellation token.</param>
@@ -46,13 +52,7 @@ public sealed class MyDomainsController(IMessageBus bus) : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<IReadOnlyList<DomainDto>>> GetMyDomainsAsync(CancellationToken ct)
     {
-        var userId = GetUserId();
-        if (userId is null)
-        {
-            return Unauthorized();
-        }
-
-        var result = await bus.InvokeAsync<IReadOnlyList<DomainDto>>(new GetMyDomainsQuery(userId), ct);
+        var result = await bus.InvokeAsync<IReadOnlyList<DomainDto>>(new GetMyDomainsQuery(), ct);
         return Ok(result);
     }
 
@@ -67,23 +67,12 @@ public sealed class MyDomainsController(IMessageBus bus) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<DomainDto>> GetByIdAsync(int id, CancellationToken ct)
     {
-        var userId = GetUserId();
-        if (userId is null)
-        {
-            return Unauthorized();
-        }
-
-        var result = await bus.InvokeAsync<DomainDto>(new GetDomainQuery(id), ct);
-
-        // Resolve the numeric client ID from the domain result by matching UserId via the query
-        // The domain's ClientId is compared against the resolved client. Since we query by userId,
-        // any mismatch means the domain belongs to someone else — forbid access.
-        var myDomains = await bus.InvokeAsync<IReadOnlyList<DomainDto>>(new GetMyDomainsQuery(userId), ct);
-        if (myDomains.All(d => d.Id != id))
+        if (!await ownership.IsOwnedByCallerAsync(id, ct))
         {
             return Forbid();
         }
 
+        var result = await bus.InvokeAsync<DomainDto>(new GetDomainQuery(id), ct);
         return Ok(result);
     }
 
@@ -99,10 +88,9 @@ public sealed class MyDomainsController(IMessageBus bus) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SetAutoRenewAsync(int id, SetBoolRequest req, CancellationToken ct)
     {
-        var ownership = await VerifyOwnershipAsync(id, ct);
-        if (ownership is not null)
+        if (!await ownership.IsOwnedByCallerAsync(id, ct))
         {
-            return ownership;
+            return Forbid();
         }
 
         await bus.InvokeAsync(new SetAutoRenewCommand(id, req.Enabled), ct);
@@ -121,10 +109,9 @@ public sealed class MyDomainsController(IMessageBus bus) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SetWhoisPrivacyAsync(int id, SetBoolRequest req, CancellationToken ct)
     {
-        var ownership = await VerifyOwnershipAsync(id, ct);
-        if (ownership is not null)
+        if (!await ownership.IsOwnedByCallerAsync(id, ct))
         {
-            return ownership;
+            return Forbid();
         }
 
         await bus.InvokeAsync(new SetWhoisPrivacyCommand(id, req.Enabled), ct);
@@ -143,10 +130,9 @@ public sealed class MyDomainsController(IMessageBus bus) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SetRegistrarLockAsync(int id, SetBoolRequest req, CancellationToken ct)
     {
-        var ownership = await VerifyOwnershipAsync(id, ct);
-        if (ownership is not null)
+        if (!await ownership.IsOwnedByCallerAsync(id, ct))
         {
-            return ownership;
+            return Forbid();
         }
 
         await bus.InvokeAsync(new SetRegistrarLockCommand(id, req.Enabled), ct);
@@ -164,12 +150,12 @@ public sealed class MyDomainsController(IMessageBus bus) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<IReadOnlyList<NameserverDto>>> GetNameserversAsync(int id, CancellationToken ct)
     {
-        var domain = await GetOwnedDomainAsync(id, ct);
-        if (domain is null)
+        if (!await ownership.IsOwnedByCallerAsync(id, ct))
         {
             return Forbid();
         }
 
+        var domain = await bus.InvokeAsync<DomainDto>(new GetDomainQuery(id), ct);
         return Ok(domain.Nameservers);
     }
 
@@ -189,10 +175,9 @@ public sealed class MyDomainsController(IMessageBus bus) : ControllerBase
         UpdateNameserversRequest req,
         CancellationToken ct)
     {
-        var ownership = await VerifyOwnershipAsync(id, ct);
-        if (ownership is not null)
+        if (!await ownership.IsOwnedByCallerAsync(id, ct))
         {
-            return ownership;
+            return Forbid();
         }
 
         await bus.InvokeAsync(new UpdateNameserversCommand(id, req.Nameservers), ct);
@@ -210,12 +195,12 @@ public sealed class MyDomainsController(IMessageBus bus) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<WhoisDto>> GetWhoisAsync(int id, CancellationToken ct)
     {
-        var domain = await GetOwnedDomainAsync(id, ct);
-        if (domain is null)
+        if (!await ownership.IsOwnedByCallerAsync(id, ct))
         {
             return Forbid();
         }
 
+        var domain = await bus.InvokeAsync<DomainDto>(new GetDomainQuery(id), ct);
         var fullName = domain.Name + domain.Tld;
         var result = await bus.InvokeAsync<WhoisDto>(new GetWhoisQuery(fullName), ct);
         return Ok(result);
@@ -236,10 +221,9 @@ public sealed class MyDomainsController(IMessageBus bus) : ControllerBase
         ModifyContactRequest req,
         CancellationToken ct)
     {
-        var ownership = await VerifyOwnershipAsync(id, ct);
-        if (ownership is not null)
+        if (!await ownership.IsOwnedByCallerAsync(id, ct))
         {
-            return ownership;
+            return Forbid();
         }
 
         await bus.InvokeAsync(new ModifyDomainContactCommand(id, new DomainContact(
@@ -259,10 +243,9 @@ public sealed class MyDomainsController(IMessageBus bus) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetEppCodeAsync(int id, CancellationToken ct)
     {
-        var ownership = await VerifyOwnershipAsync(id, ct);
-        if (ownership is not null)
+        if (!await ownership.IsOwnedByCallerAsync(id, ct))
         {
-            return ownership;
+            return Forbid();
         }
 
         var eppCode = await bus.InvokeAsync<string>(new InitiateOutgoingTransferCommand(id), ct);
@@ -281,10 +264,9 @@ public sealed class MyDomainsController(IMessageBus bus) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RenewAsync(int id, ApiRenewDomainRequest req, CancellationToken ct)
     {
-        var ownership = await VerifyOwnershipAsync(id, ct);
-        if (ownership is not null)
+        if (!await ownership.IsOwnedByCallerAsync(id, ct))
         {
-            return ownership;
+            return Forbid();
         }
 
         await bus.InvokeAsync(new RenewDomainCommand(id, req.Years), ct);
@@ -304,10 +286,9 @@ public sealed class MyDomainsController(IMessageBus bus) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> AddDnsRecordAsync(int id, AddDnsRecordRequest req, CancellationToken ct)
     {
-        var ownership = await VerifyOwnershipAsync(id, ct);
-        if (ownership is not null)
+        if (!await ownership.IsOwnedByCallerAsync(id, ct))
         {
-            return ownership;
+            return Forbid();
         }
 
         await bus.InvokeAsync(
@@ -334,10 +315,9 @@ public sealed class MyDomainsController(IMessageBus bus) : ControllerBase
         UpdateDnsRecordRequest req,
         CancellationToken ct)
     {
-        var ownership = await VerifyOwnershipAsync(id, ct);
-        if (ownership is not null)
+        if (!await ownership.IsOwnedByCallerAsync(id, ct))
         {
-            return ownership;
+            return Forbid();
         }
 
         await bus.InvokeAsync(
@@ -358,10 +338,9 @@ public sealed class MyDomainsController(IMessageBus bus) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteDnsRecordAsync(int id, int recordId, CancellationToken ct)
     {
-        var ownership = await VerifyOwnershipAsync(id, ct);
-        if (ownership is not null)
+        if (!await ownership.IsOwnedByCallerAsync(id, ct))
         {
-            return ownership;
+            return Forbid();
         }
 
         await bus.InvokeAsync(new DeleteDnsRecordCommand(id, recordId), ct);
@@ -380,10 +359,9 @@ public sealed class MyDomainsController(IMessageBus bus) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SetDnsManagementAsync(int id, SetBoolRequest req, CancellationToken ct)
     {
-        var ownership = await VerifyOwnershipAsync(id, ct);
-        if (ownership is not null)
+        if (!await ownership.IsOwnedByCallerAsync(id, ct))
         {
-            return ownership;
+            return Forbid();
         }
 
         await bus.InvokeAsync(new SetDnsManagementCommand(id, req.Enabled), ct);
@@ -402,10 +380,9 @@ public sealed class MyDomainsController(IMessageBus bus) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SetEmailForwardingAsync(int id, SetBoolRequest req, CancellationToken ct)
     {
-        var ownership = await VerifyOwnershipAsync(id, ct);
-        if (ownership is not null)
+        if (!await ownership.IsOwnedByCallerAsync(id, ct))
         {
-            return ownership;
+            return Forbid();
         }
 
         await bus.InvokeAsync(new SetEmailForwardingCommand(id, req.Enabled), ct);
@@ -427,10 +404,9 @@ public sealed class MyDomainsController(IMessageBus bus) : ControllerBase
         EmailForwardingRuleRequest req,
         CancellationToken ct)
     {
-        var ownership = await VerifyOwnershipAsync(id, ct);
-        if (ownership is not null)
+        if (!await ownership.IsOwnedByCallerAsync(id, ct))
         {
-            return ownership;
+            return Forbid();
         }
 
         await bus.InvokeAsync(new AddEmailForwardingRuleCommand(id, req.Source, req.Destination), ct);
@@ -454,10 +430,9 @@ public sealed class MyDomainsController(IMessageBus bus) : ControllerBase
         EmailForwardingRuleRequest req,
         CancellationToken ct)
     {
-        var ownership = await VerifyOwnershipAsync(id, ct);
-        if (ownership is not null)
+        if (!await ownership.IsOwnedByCallerAsync(id, ct))
         {
-            return ownership;
+            return Forbid();
         }
 
         await bus.InvokeAsync(
@@ -478,71 +453,12 @@ public sealed class MyDomainsController(IMessageBus bus) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteEmailForwardingRuleAsync(int id, int ruleId, CancellationToken ct)
     {
-        var ownership = await VerifyOwnershipAsync(id, ct);
-        if (ownership is not null)
-        {
-            return ownership;
-        }
-
-        await bus.InvokeAsync(new DeleteEmailForwardingRuleCommand(id, ruleId), ct);
-        return NoContent();
-    }
-
-    /// <summary>
-    /// Extracts the authenticated user's Identity ID from JWT claims.
-    /// </summary>
-    /// <returns>The user ID string, or <see langword="null"/> if the claim is missing.</returns>
-    private string? GetUserId() =>
-        User.FindFirstValue(ClaimTypes.NameIdentifier)
-        ?? User.FindFirstValue("sub");
-
-    /// <summary>
-    /// Verifies that the specified domain belongs to the authenticated client.
-    /// Returns an <see cref="IActionResult"/> (Unauthorized or Forbid) on failure, or <see langword="null"/> on success.
-    /// </summary>
-    /// <param name="domainId">Domain primary key to verify ownership for.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>An error action result if ownership cannot be verified; <see langword="null"/> if the client owns the domain.</returns>
-    private async Task<IActionResult?> VerifyOwnershipAsync(int domainId, CancellationToken ct)
-    {
-        var userId = GetUserId();
-        if (userId is null)
-        {
-            return Unauthorized();
-        }
-
-        var myDomains = await bus.InvokeAsync<IReadOnlyList<DomainDto>>(new GetMyDomainsQuery(userId), ct);
-        if (myDomains.All(d => d.Id != domainId))
+        if (!await ownership.IsOwnedByCallerAsync(id, ct))
         {
             return Forbid();
         }
 
-        return null;
-    }
-
-    /// <summary>
-    /// Retrieves a domain by its primary key after verifying ownership by the authenticated client.
-    /// Returns <see langword="null"/> if the user is unauthenticated or the domain does not belong to them.
-    /// </summary>
-    /// <param name="domainId">Domain primary key.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>The domain DTO if owned by the authenticated client; otherwise <see langword="null"/>.</returns>
-    private async Task<DomainDto?> GetOwnedDomainAsync(int domainId, CancellationToken ct)
-    {
-        var userId = GetUserId();
-        if (userId is null)
-        {
-            return null;
-        }
-
-        var myDomains = await bus.InvokeAsync<IReadOnlyList<DomainDto>>(new GetMyDomainsQuery(userId), ct);
-        var domain = myDomains.FirstOrDefault(d => d.Id == domainId);
-        if (domain is null)
-        {
-            return null;
-        }
-
-        // GetMyDomains may return a summary — fetch the full domain with nested data.
-        return await bus.InvokeAsync<DomainDto>(new GetDomainQuery(domainId), ct);
+        await bus.InvokeAsync(new DeleteEmailForwardingRuleCommand(id, ruleId), ct);
+        return NoContent();
     }
 }

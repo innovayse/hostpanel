@@ -945,15 +945,19 @@
 <script setup lang="ts">
 import { Pencil, Check, AlertCircle, Users, UserMinus, Send, Mail, CreditCard, Plus, Trash2, Star, X, ShieldCheck, ShieldOff } from 'lucide-vue-next'
 import QRCode from 'qrcode'
-import { useClientStore, type ClientUser } from '~/stores/client'
+import { useClientStore } from '~/stores/client'
+import { useAuthApi } from '~/composables/apis/useAuthApi'
+import { useBillingApi } from '~/composables/apis/useBillingApi'
+import { useCatalogApi } from '~/composables/apis/useCatalogApi'
+import { useClientApi } from '~/composables/apis/useClientApi'
+import type { ClientUser } from '~/types/clientuser'
+import { apiErrorMessage } from '~/utils/portalErrorMessages'
 import type { PaymentMethod } from '~/types/payment'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
 const { t } = useI18n()
 const route = useRoute()
-const config = useRuntimeConfig()
-const whmcsUrl = config.public.whmcsUrl
 
 // Active tab — driven by ?tab= query param for direct linking
 const activeTab = ref((route.query.tab as string) || 'details')
@@ -973,9 +977,13 @@ const tabs = computed(() => [
 const store = useClientStore()
 await useAsyncData('client-user', () => store.fetchUser())
 
+// Straight from the API composables rather than through a store: this page reads these once
+// and owns the results alone, which is the named exception to component -> store -> api.
+const clientApi = useClientApi()
+const billingApi = useBillingApi()
 const [{ data: countryOptions }, { data: rawPaymentMethods }] = await Promise.all([
-  useApi<{ value: string; label: string }[]>('/api/portal/public/countries', { default: () => [] }),
-  useApi<{ module: string; displayname: string }[]>('/api/portal/order/payment-methods', { default: () => [] })
+  useCatalogApi().loadCountries(),
+  billingApi.loadGatewayMethods()
 ])
 
 const paymentOptions = computed(() => [
@@ -1007,7 +1015,6 @@ const emailPrefList = computed(() => [
   { key: 'domain'    as const, label: t('client.profile.prefDomain'),    description: t('client.profile.prefDomainDesc')    },
   { key: 'affiliate' as const, label: t('client.profile.prefAffiliate'), description: t('client.profile.prefAffiliateDesc') }
 ])
-type EmailPrefKey = 'general' | 'invoice' | 'support' | 'product' | 'domain' | 'affiliate'
 function decodeEmailPrefs(prefs: ClientUser['email_preferences']) {
   // WHMCS may return values as strings ("1"/"0") or numbers (1/0); Number() handles both
   const p = (v: unknown) => Number(v ?? 1) !== 0
@@ -1056,11 +1063,13 @@ async function saveEdit() {
   saving.value = true
   saveError.value = ''
   try {
-    await apiFetch('/api/portal/client/me', { method: 'PUT', body: { ...form, emailprefs } })
+    await clientApi.updateMe({ ...form, emailprefs })
     await store.fetchUser(true)
     editing.value = false
-  } catch (err: any) {
-    saveError.value = err?.data?.message || err?.message || 'Failed to save changes.'
+  } catch (err: unknown) {
+    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`,
+    // rather than a sentence written here.
+    saveError.value = apiErrorMessage(err)
   } finally {
     saving.value = false
   }
@@ -1071,9 +1080,8 @@ interface ClientUserItem {
   id: string; name: string; email: string
   isOwner: boolean; lastLogin: string | null; permissions: string
 }
-const { data: usersRaw, pending: usersPending, refresh: refreshUsers } = await useApi<ClientUserItem[]>(
-  '/api/portal/client/users', { default: () => [] }
-)
+const { data: usersRaw, pending: usersPending, refresh: refreshUsers } =
+  await clientApi.loadUsers<ClientUserItem>()
 const users = computed<ClientUserItem[]>(() => usersRaw.value ?? [])
 
 const inviteEmail       = ref('')
@@ -1112,22 +1120,21 @@ async function sendInvite() {
     const permissions = invitePermissions.value === 'all'
       ? 'all'
       : Object.entries(chosenPerms).filter(([, v]) => v).map(([k]) => k).join(',')
-    await apiFetch('/api/portal/client/users/invite', {
-      method: 'POST',
-      body: {
-        email: inviteEmail.value,
-        firstName: inviteFirstName.value,
-        lastName: inviteLastName.value,
-        permissions
-      }
+    await clientApi.inviteUser({
+      email: inviteEmail.value,
+      firstName: inviteFirstName.value,
+      lastName: inviteLastName.value,
+      permissions
     })
     inviteSuccess.value = t('client.users.inviteSent')
     inviteEmail.value = ''; inviteFirstName.value = ''; inviteLastName.value = ''
     invitePermissions.value = 'all'
     Object.keys(chosenPerms).forEach(k => { chosenPerms[k] = false })
     refreshUsers()
-  } catch (err: any) {
-    inviteError.value = err?.data?.statusMessage || t('client.users.inviteError')
+  } catch (err: unknown) {
+    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`;
+    // the local key is only the no-answer fallback.
+    inviteError.value = apiErrorMessage(err) || t('client.users.inviteError')
   } finally {
     inviting.value = false
   }
@@ -1166,11 +1173,13 @@ async function doRemoveUser(user: ClientUserItem) {
   confirmDialog.loading = true
   removingUserId.value  = user.id
   try {
-    await apiFetch(`/api/portal/client/users/${user.id}`, { method: 'DELETE' })
+    await clientApi.removeUser(user.id)
     confirmDialog.open = false
     refreshUsers()
-  } catch (err: any) {
-    inviteError.value = err?.data?.statusMessage || t('client.users.removeError')
+  } catch (err: unknown) {
+    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`;
+    // the local key is only the no-answer fallback.
+    inviteError.value = apiErrorMessage(err) || t('client.users.removeError')
     confirmDialog.open = false
   } finally {
     removingUserId.value  = null
@@ -1193,9 +1202,8 @@ interface ContactItem {
   supportemails: boolean
 }
 
-const { data: contactsRaw, pending: contactsPending, refresh: refreshContacts } = await useApi<ContactItem[]>(
-  '/api/portal/client/contacts', { default: () => [] }
-)
+const { data: contactsRaw, pending: contactsPending, refresh: refreshContacts } =
+  await clientApi.loadContacts<ContactItem>()
 const contacts = computed<ContactItem[]>(() => contactsRaw.value ?? [])
 
 const contactModal = reactive({
@@ -1257,14 +1265,16 @@ async function saveContact() {
   }
   try {
     if (contactModal.mode === 'add') {
-      await apiFetch('/api/portal/client/contacts', { method: 'POST', body })
+      await clientApi.createContact(body)
     } else {
-      await apiFetch(`/api/portal/client/contacts/${contactModal.id}`, { method: 'PUT', body })
+      await clientApi.updateContact(contactModal.id, body)
     }
     contactModal.open = false
     refreshContacts()
-  } catch (err: any) {
-    contactModal.error = err?.data?.statusMessage || t('client.contacts.saveError')
+  } catch (err: unknown) {
+    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`;
+    // the local key is only the no-answer fallback.
+    contactModal.error = apiErrorMessage(err) || t('client.contacts.saveError')
   } finally {
     contactModal.saving = false
   }
@@ -1282,7 +1292,7 @@ function confirmDeleteContact(c: ContactItem) {
 async function doDeleteContact(id: string) {
   confirmDialog.loading = true
   try {
-    await apiFetch(`/api/portal/client/contacts/${id}`, { method: 'DELETE' })
+    await clientApi.removeContact(id)
     confirmDialog.open = false
     refreshContacts()
   } catch {
@@ -1321,7 +1331,7 @@ watch(() => store.user?.twoFactorEnabled, (enabled) => {
 async function startSetup2FA() {
   tfaLoading.value = true
   try {
-    const data = await apiFetch<{ secret: string; qrCodeUri: string }>('/api/portal/auth/2fa-setup', { method: 'POST' })
+    const data = await useAuthApi().setupTwoFactor()
     tfaModal.mode = 'enable'
     tfaModal.secret = data.secret
     tfaModal.qrCodeUri = data.qrCodeUri
@@ -1330,8 +1340,10 @@ async function startSetup2FA() {
     tfaModal.error = ''
     tfaModal.saving = false
     tfaModal.open = true
-  } catch (err: any) {
-    tfaError.value = err?.data?.message ?? err?.data?.statusMessage ?? t('client.twoFactor.errorInvalid')
+  } catch (err: unknown) {
+    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`;
+    // the local key is only the no-answer fallback.
+    tfaError.value = apiErrorMessage(err) || t('client.twoFactor.errorInvalid')
   } finally {
     tfaLoading.value = false
   }
@@ -1360,25 +1372,26 @@ function disable2FA() {
 async function submit2FA() {
   tfaModal.saving = true
   tfaModal.error = ''
-  const route = tfaModal.mode === 'enable' ? '2fa-enable' : '2fa-disable'
+  const { enableTwoFactor, disableTwoFactor } = useAuthApi()
   try {
-    await apiFetch(`/api/portal/auth/${route}`, { method: 'POST', body: { code: tfaModal.code } })
+    await (tfaModal.mode === 'enable' ? enableTwoFactor : disableTwoFactor)(tfaModal.code)
     twoFactorEnabled.value = tfaModal.mode === 'enable'
     tfaModal.open = false
     // The flag lives on the profile, so refresh it rather than leaving the store disagreeing
     // with what this page now shows.
     await store.fetchUser(true)
-  } catch (err: any) {
-    tfaModal.error = err?.data?.message ?? err?.data?.statusMessage ?? t('client.twoFactor.errorInvalid')
+  } catch (err: unknown) {
+    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`;
+    // the local key is only the no-answer fallback.
+    tfaModal.error = apiErrorMessage(err) || t('client.twoFactor.errorInvalid')
   } finally {
     tfaModal.saving = false
   }
 }
 
 // ── Emails ────────────────────────────────────────────────────────────────────
-const { data: emailsRaw, pending: emailsPending } = await useApi<{ id: string; date: string; subject: string }[]>(
-  '/api/portal/client/emails', { default: () => [] }
-)
+const { data: emailsRaw, pending: emailsPending } =
+  await clientApi.loadEmails<{ id: string; date: string; subject: string }>()
 const emails = computed(() => emailsRaw.value ?? [])
 
 const emailSearch  = ref('')
@@ -1401,7 +1414,7 @@ watch(emailSearch, () => { emailPage.value = 1 })
 
 // ── Payment Methods ───────────────────────────────────────────────────────────
 const { data: paymentRaw, pending: paymentPending, error: paymentFetchError, refresh: refreshPayment } =
-  await useApi<PaymentMethod[]>('/api/portal/client/payment-methods', { default: () => [] })
+  await billingApi.loadPaymentMethods()
 const paymentMethods = computed<PaymentMethod[]>(() => paymentRaw.value ?? [])
 
 /**
@@ -1469,15 +1482,15 @@ async function loadAddresses() {
   addressesLoading.value = true
   addressesError.value = null
   try {
-    savedAddresses.value = await apiFetch<SavedAddress[]>('/api/portal/client/addresses')
+    savedAddresses.value = await clientApi.fetchAddresses<SavedAddress>()
     // auto-select first address if none is selected yet
     if (!editModal.billingAddressId && savedAddresses.value.length) {
       editModal.billingAddressId = savedAddresses.value[0].id
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     // Kept rather than logged: the billing-address picker renders this instead of silently
     // offering nothing to choose from.
-    addressesError.value = err?.data?.message ?? err?.data?.statusMessage ?? err?.message ?? null
+    addressesError.value = apiErrorMessage(err)
     savedAddresses.value = []
   } finally {
     addressesLoading.value = false
@@ -1546,15 +1559,15 @@ async function saveAddrModal() {
   addrModal.saving = true
   addrModal.error  = ''
   try {
-    const res = await apiFetch<{ addressid: string }>('/api/portal/client/addresses', {
-      method: 'POST', body: addrModal.form
-    })
+    const res = await clientApi.createAddress(addrModal.form)
     addrModal.open = false
     await loadAddresses()
     // auto-select the newly created address
     editModal.billingAddressId = res.addressid
-  } catch (err: any) {
-    addrModal.error = err?.data?.statusMessage || 'Failed to save address.'
+  } catch (err: unknown) {
+    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`,
+    // rather than a sentence written here.
+    addrModal.error = apiErrorMessage(err)
   } finally {
     addrModal.saving = false
   }
@@ -1574,17 +1587,17 @@ async function savePaymentEdit() {
   editModal.saving = true
   editModal.error  = ''
   try {
-    await apiFetch(`/api/portal/client/payment-methods/${editModal.id}`, {
-      method: 'PUT',
-      body: {
-        card_expiry: editModal.card_expiry,
-      }
+    await billingApi.updatePaymentMethod(editModal.id, {
+      card_expiry: editModal.card_expiry
     })
     paymentSuccess.value = t('client.payment.editSuccess')
     editModal.open = false
     refreshPayment()
-  } catch (err: any) {
-    editModal.error = err?.data?.statusMessage || t('client.payment.editError')
+  } catch (err: unknown) {
+    // The API's own wording, through the one shared reader. Reading `statusMessage`
+    // directly here missed the `message` field the same body can carry, and the local
+    // fallback sentence was a second copy of an explanation the server already gives.
+    editModal.error = apiErrorMessage(err)
   } finally {
     editModal.saving = false
   }
@@ -1595,11 +1608,13 @@ async function setDefaultPaymentMethod(id: string) {
   paymentActionError.value = ''
   paymentSuccess.value = ''
   try {
-    await apiFetch(`/api/portal/client/payment-methods/${id}`, { method: 'PUT', body: { set_as_default: true } })
+    await billingApi.setDefaultPaymentMethod(id)
     paymentSuccess.value = t('client.payment.defaultSet')
     refreshPayment()
-  } catch {
-    paymentActionError.value = t('client.payment.defaultError')
+  } catch (err: unknown) {
+    // Was a page-local sentence. The rule that refused the change is the only thing that
+    // knows why, and a copy of its wording here goes stale the moment that rule changes.
+    paymentActionError.value = apiErrorMessage(err)
   } finally {
     settingDefaultId.value = null
   }
@@ -1620,12 +1635,13 @@ async function doRemovePaymentMethod(id: string) {
   paymentActionError.value = ''
   paymentSuccess.value  = ''
   try {
-    await apiFetch(`/api/portal/client/payment-methods/${id}`, { method: 'DELETE' })
+    await billingApi.removePaymentMethod(id)
     paymentSuccess.value = t('client.payment.removeSuccess')
     confirmDialog.open   = false
     refreshPayment()
-  } catch {
-    paymentActionError.value = t('client.payment.removeError')
+  } catch (err: unknown) {
+    // Same reason as setDefaultPaymentMethod above: the sentence comes from the API.
+    paymentActionError.value = apiErrorMessage(err)
     confirmDialog.open = false
   } finally {
     removingId.value      = null

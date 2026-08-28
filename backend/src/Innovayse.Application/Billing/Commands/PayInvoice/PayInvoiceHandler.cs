@@ -51,7 +51,7 @@ public sealed class PayInvoiceHandler(
         activityLogRepo.Add(ActivityLog.Create(
             invoice.ClientId,
             $"Invoice Marked Paid - Invoice ID: {invoice.Id}",
-            ctx.AdminId, ctx.AdminName, ctx.AdminEmail, ctx.IpAddress));
+            ctx.UserId, ctx.UserName, ctx.UserEmail, ctx.IpAddress));
         await uow.SaveChangesAsync(ct);
     }
 }

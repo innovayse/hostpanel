@@ -183,6 +183,7 @@
 <script setup lang="ts">
 import { ArrowLeft, AlertCircle, CheckCircle, ShoppingCart, Lock } from 'lucide-vue-next'
 import { useCartStore } from '~/stores/cart'
+import { useCatalogApi } from '~/composables/apis/useCatalogApi'
 
 const { t: $t, locale } = useI18n()
 const route = useRoute()
@@ -191,10 +192,13 @@ const cart = useCartStore()
 
 const currencyByLocale: Record<string, string> = { en: 'USD', hy: 'AMD', ru: 'RUB' }
 
-const { data: plans, pending } = await useApi('/api/portal/public/products', {
-  query: computed(() => ({ lang: locale.value, gid: 1 })),
-  default: () => []
-})
+// Straight from the API composable rather than through a store: this page fetches once and
+// owns the result alone, which is the named exception to component -> store -> api. A store
+// would also cost the SSR dedup and the locale re-fetch that `useApi()` gives for free, and
+// this page is server-rendered and indexed.
+const { data: plans, pending } = await useCatalogApi().loadProducts(
+  () => ({ lang: locale.value, gid: 1 })
+)
 
 const selectedCycle = ref('monthly')
 

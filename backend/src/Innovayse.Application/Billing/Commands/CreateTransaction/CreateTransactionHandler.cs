@@ -64,7 +64,7 @@ public sealed class CreateTransactionHandler(
         activityLogRepo.Add(ActivityLog.Create(
             cmd.ClientId,
             $"Added Transaction - Transaction ID: {transaction.Id}",
-            ctx.AdminId, ctx.AdminName, ctx.AdminEmail, ctx.IpAddress));
+            ctx.UserId, ctx.UserName, ctx.UserEmail, ctx.IpAddress));
         await uow.SaveChangesAsync(ct);
 
         return transaction.Id;

@@ -257,6 +257,7 @@
 
 import { Sparkle, CheckCircle, DollarSign, ShieldCheck, PlayCircle, ShoppingCart, Check } from 'lucide-vue-next'
 import { useCartStore } from '~/stores/cart'
+import { useCatalogApi } from '~/composables/apis/useCatalogApi'
 
 const { t, locale } = useI18n()
 const localePath = useLocalePath()
@@ -272,9 +273,13 @@ const productId = route.params.product as string
 // productConfig, currencyByLocale, nameToKey, parseDescription — auto-imported from utils/whmcs.ts
 
 // Fetch all SaaS product groups in one request (gids 3-9, fetched in parallel server-side)
-const { data: whmcsRaw } = await useApi('/api/portal/public/products', {
-  query: computed(() => ({ lang: locale.value, gids: productGids.join(',') }))
-})
+// Straight from the API composable rather than through a store: this page fetches once and
+// owns the result alone, which is the named exception to component -> store -> api. A store
+// would also cost the SSR dedup and the locale re-fetch that `useApi()` gives for free, and
+// this page is server-rendered and indexed.
+const { data: whmcsRaw } = await useCatalogApi().loadProducts(
+  () => ({ lang: locale.value, gids: productGids.join(',') })
+)
 
 /** Find and shape the single product matching the route param */
 const productData = computed(() => {

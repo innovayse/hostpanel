@@ -6,10 +6,16 @@ using Innovayse.Application.Common;
 using Microsoft.AspNetCore.Http;
 
 /// <summary>
-/// Provides current HTTP request context (admin identity and IP) for Application layer handlers.
+/// Provides current HTTP request context (caller identity and IP) for Application layer handlers.
 /// Resolves identity from <see cref="ClaimsPrincipal"/> and remote IP from <see cref="IHttpContextAccessor"/>.
 /// </summary>
 /// <remarks>
+/// <para>
+/// This is the only place in the product that reads a <see cref="ClaimsPrincipal"/>. Controllers
+/// do not, and neither does a base controller: a lookup on a base class can only be reached by
+/// inheriting from it, which handlers cannot do, so the identity would have to be passed down on
+/// the message — which is the thing this type exists to prevent.
+/// </para>
 /// <para>
 /// The display name is looked up rather than read off the token, because the JWT does not
 /// carry one. It goes through <see cref="IIdentityProvider"/>, which answers from this
@@ -45,11 +51,11 @@ public sealed class HttpCurrentRequestContext(
     private ClaimsPrincipal? User => httpContextAccessor.HttpContext?.User;
 
     /// <inheritdoc/>
-    public string? AdminId =>
+    public string? UserId =>
         User?.FindFirstValue(ClaimTypes.NameIdentifier) ?? User?.FindFirstValue("sub");
 
     /// <inheritdoc/>
-    public string? AdminName
+    public string? UserName
     {
         get
         {
@@ -64,7 +70,7 @@ public sealed class HttpCurrentRequestContext(
 
             _nameResolved = true;
 
-            var subject = AdminId;
+            var subject = UserId;
             if (subject is null)
             {
                 return _name = null;
@@ -80,10 +86,21 @@ public sealed class HttpCurrentRequestContext(
     }
 
     /// <inheritdoc/>
-    public string? AdminEmail =>
+    public string? UserEmail =>
         User?.FindFirstValue(ClaimTypes.Email) ?? User?.FindFirstValue("email");
+
+    /// <inheritdoc/>
+    public bool IsEmailVerified =>
+        // Anything other than a literal "true" is not a confirmation, a missing claim
+        // included. The claim arrives as a JSON boolean rendered into a string, so the
+        // comparison is against the text and case-insensitive rather than parsed.
+        string.Equals(User?.FindFirstValue("email_verified"), "true", StringComparison.OrdinalIgnoreCase);
 
     /// <inheritdoc/>
     public string? IpAddress =>
         httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
+
+    /// <inheritdoc/>
+    public string RequireUserId() =>
+        UserId ?? throw new UnauthorizedAccessException("User ID not found in token.");
 }

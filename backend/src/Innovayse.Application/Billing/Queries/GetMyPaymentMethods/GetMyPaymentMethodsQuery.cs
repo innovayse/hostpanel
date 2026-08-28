@@ -2,7 +2,9 @@ namespace Innovayse.Application.Billing.Queries.GetMyPaymentMethods;
 
 /// <summary>
 /// Query to list the authenticated client's saved payment methods.
-/// The controller extracts <paramref name="UserId"/> from the JWT sub claim.
 /// </summary>
-/// <param name="UserId">The authenticated user's Identity ID.</param>
-public record GetMyPaymentMethodsQuery(string UserId);
+/// <remarks>
+/// Carries no user id. Whose payment methods is resolved inside the handler from the
+/// credential, so there is no field a caller could set to read somebody else's cards.
+/// </remarks>
+public record GetMyPaymentMethodsQuery();

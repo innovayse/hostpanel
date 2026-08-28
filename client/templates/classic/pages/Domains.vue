@@ -304,6 +304,8 @@
 import { Globe, CheckCircle, XCircle, ArrowLeftRight, Server, ArrowRight, AlertCircle } from 'lucide-vue-next'
 import { apiFetch } from '~/composables/useApi'
 import { useCartStore } from '~/stores/cart'
+import { useCatalogApi } from '~/composables/apis/useCatalogApi'
+import { apiErrorMessage } from '~/utils/portalErrorMessages'
 
 const { t: $t, locale } = useI18n()
 const localePath = useLocalePath()
@@ -348,12 +350,11 @@ async function searchDomain() {
   result.value = null
   searchError.value = ''
   try {
-    result.value = await apiFetch<DomainCheckResult>('/api/portal/public/domain-check', {
-      method: 'POST',
-      body: { domain }
-    })
+    result.value = await catalog.checkDomain(domain)
   } catch (err: unknown) {
-    searchError.value = (err as { data?: { statusMessage?: string } })?.data?.statusMessage || $t('domains.checkFailed')
+    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`;
+    // the local key is only the no-answer fallback.
+    searchError.value = apiErrorMessage(err) || $t('domains.checkFailed')
   } finally {
     searching.value = false
   }
@@ -365,7 +366,7 @@ onMounted(async () => {
 
   // Fetch domain product PID for cart
   try {
-    const products = await apiFetch<Array<{ id: number; type: string }>>('/api/portal/public/products')
+    const products = await catalog.fetchProducts<{ id: number, type: string }>()
     const domainProduct = products.find(p => p.type === 'Domain')
     if (domainProduct) domainProductId.value = domainProduct.id
   } catch {
@@ -496,13 +497,13 @@ const localeCurrency = computed(() => {
   }
 })
 
-const tldPricingUrl = computed(() =>
-  `/api/portal/public/tld-pricing?currency=${localeCurrency.value}`,
-)
-
-const { data: tldPricing, pending: pricingPending } = await useApi<TldPricingResponse>(
-  tldPricingUrl,
-)
+// Straight from the API composable rather than through a store: this page reads the price
+// table once and owns it alone, which is the named exception to component -> store -> api.
+// The currency goes through the composable's query parameter rather than being spliced into
+// a URL string here — building URLs is not a page's job.
+const catalog = useCatalogApi()
+const { data: tldPricing, pending: pricingPending } =
+  await catalog.loadTldPricing(() => localeCurrency.value)
 
 const activeCategory = ref<string | null>(null)
 

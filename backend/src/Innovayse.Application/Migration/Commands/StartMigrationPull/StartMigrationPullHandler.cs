@@ -1,5 +1,6 @@
 namespace Innovayse.Application.Migration.Commands.StartMigrationPull;
 
+using Innovayse.Application.Migration.Extensions;
 using Innovayse.Application.Migration.DTOs;
 using Innovayse.Application.Migration.Services;
 using Innovayse.Domain.Migration;

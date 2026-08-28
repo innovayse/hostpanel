@@ -1,11 +1,12 @@
 namespace Innovayse.Application.Slides.Queries.ListActiveSlides;
 
 using System.Text.Json;
+using Innovayse.Application.Common.Options;
 using Innovayse.Application.Slides.DTOs;
 using Innovayse.Domain.Products.Interfaces;
 using Innovayse.Domain.Slides;
 using Innovayse.Domain.Slides.Interfaces;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 /// <summary>
 /// Handles <see cref="ListActiveSlidesQuery"/> by loading active slides, filtering by audience,
@@ -14,11 +15,11 @@ using Microsoft.Extensions.Configuration;
 /// </summary>
 /// <param name="slideRepo">Slide repository for listing active slides.</param>
 /// <param name="productRepo">Product repository for resolving pricing data.</param>
-/// <param name="configuration">Application configuration for reading <c>DefaultLocale</c>.</param>
+/// <param name="localeOptions">The panel fallback locale, for content with no translation in the requested one.</param>
 public sealed class ListActiveSlidesHandler(
     ISlideRepository slideRepo,
     IProductRepository productRepo,
-    IConfiguration configuration)
+    IOptions<LocaleOptions> localeOptions)
 {
     /// <summary>
     /// Returns active slides visible now, filtered by audience, with resolved translations and pricing.
@@ -59,7 +60,7 @@ public sealed class ListActiveSlidesHandler(
             }
         }
 
-        var defaultLocale = configuration["DefaultLocale"] ?? "en";
+        var defaultLocale = localeOptions.Value.DefaultLocale;
 
         return slides.Select(s => MapToDto(s, query.Locale, defaultLocale, productMap)).ToList();
     }

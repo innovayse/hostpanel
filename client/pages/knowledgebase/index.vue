@@ -130,6 +130,9 @@
  */
 
 import { BookOpen, Search, FolderOpen, Folder, Star, X } from 'lucide-vue-next'
+import { useContentApi } from '~/composables/apis/useContentApi'
+import type { KbArticle } from '~/types/kbarticle'
+import type { KbCategory } from '~/types/kbcategory'
 
 const localePath = useLocalePath()
 const route = useRoute()
@@ -141,17 +144,21 @@ useSeoMeta({
   description: t('kb.subtitle')
 })
 
+// Straight from the API composable rather than through a store: this page fetches once and
+// owns the results alone, which is the named exception to component -> store -> api. The raw
+// `useFetch` calls this replaced skipped the locale header `useApi()` sends, so localised
+// articles came back in English.
+const content = useContentApi()
+
 /** Fetch all top-level categories */
-const { data: catData, pending: catPending } = useFetch('/api/portal/knowledgebase/categories')
-const categories = computed(() => (catData.value as any[]) ?? [])
+const { data: catData, pending: catPending } = content.loadKbCategories()
+const categories = computed<KbCategory[]>(() => catData.value ?? [])
 
 /** Fetch popular articles (sorted by views, no category filter) */
-const { data: artData, pending: artPending } = useFetch('/api/portal/knowledgebase/articles', {
-  query: { limitnum: 10 }
-})
-const popularArticles = computed(() => {
-  const items = (artData.value as any)?.items ?? []
-  return [...items].sort((a: any, b: any) => b.views - a.views)
+const { data: artData, pending: artPending } = content.loadKbArticles(() => ({ limitnum: 10 }))
+const popularArticles = computed<KbArticle[]>(() => {
+  const items = artData.value?.items ?? []
+  return [...items].sort((a, b) => (b.views ?? 0) - (a.views ?? 0))
 })
 
 // ── Search ──────────────────────────────────────────────────────────────────
@@ -159,15 +166,13 @@ const popularArticles = computed(() => {
 const searchQuery = ref(String(route.query.q ?? ''))
 const searched = ref(!!route.query.q)
 
-const { data: searchData, pending: searchPending, execute: runSearch } = useFetch(
-  '/api/portal/knowledgebase/articles',
-  {
-    query: computed(() => ({ search: searchQuery.value, limitnum: 50 })),
-    immediate: false
-  }
+// `immediate: false` so a page load does not fire a blank search; `doSearch` executes it.
+const { data: searchData, pending: searchPending, execute: runSearch } = content.loadKbArticles(
+  () => ({ search: searchQuery.value, limitnum: 50 }),
+  false
 )
 
-const searchResults = computed(() => (searchData.value as any)?.items ?? [])
+const searchResults = computed<KbArticle[]>(() => searchData.value?.items ?? [])
 
 /** Run search and update URL query string */
 async function doSearch() {

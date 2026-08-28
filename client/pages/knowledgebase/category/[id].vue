@@ -51,6 +51,8 @@
  */
 
 import { ArrowLeft, Folder, FileText } from 'lucide-vue-next'
+import { useContentApi } from '~/composables/apis/useContentApi'
+import type { KbArticle } from '~/types/kbarticle'
 
 const route = useRoute()
 const localePath = useLocalePath()
@@ -58,18 +60,22 @@ const { t } = useI18n()
 
 const categoryId = computed(() => String(route.params.id))
 
-/** Fetch articles for this category */
-const { data, pending } = useFetch('/api/portal/knowledgebase/articles', {
-  query: computed(() => ({ categoryid: categoryId.value, limitnum: 100 }))
-})
+// Straight from the API composable rather than through a store: this page fetches once and
+// owns the results alone, which is the named exception to component -> store -> api. The raw
+// `useFetch` calls this replaced skipped the locale header `useApi()` sends, so localised
+// articles came back in English.
+const content = useContentApi()
 
-const articles = computed(() => (data.value as any)?.items ?? [])
+/** Fetch articles for this category */
+const { data, pending } = content.loadKbArticles(() => ({ categoryid: categoryId.value, limitnum: 100 }))
+
+const articles = computed<KbArticle[]>(() => data.value?.items ?? [])
 
 /** Fetch categories to get the category name */
-const { data: catData } = useFetch('/api/portal/knowledgebase/categories')
+const { data: catData } = content.loadKbCategories()
 const categoryName = computed(() => {
-  const cats = (catData.value as any[]) ?? []
-  return cats.find((c: any) => String(c.id) === categoryId.value)?.name ?? t('kb.categories')
+  const cats = catData.value ?? []
+  return cats.find(c => String(c.id) === categoryId.value)?.name ?? t('kb.categories')
 })
 
 watchEffect(() => {

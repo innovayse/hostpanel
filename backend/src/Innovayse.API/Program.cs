@@ -2,6 +2,8 @@ using Innovayse.API;
 using Innovayse.API.Billing;
 using Innovayse.API.Domains;
 using Innovayse.Application.Auth.Interfaces;
+using Innovayse.Application.Billing.Options;
+using Innovayse.Application.Common.Options;
 using Innovayse.Domain.Auth;
 using Innovayse.Infrastructure;
 using Innovayse.Infrastructure.Auth;
@@ -46,6 +48,53 @@ try
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials()));
+
+    // Application-layer settings, bound here because IConfiguration stops at the composition
+    // root: below it a handler states what it needs as a typed options class and nothing reads
+    // a settings key by string.
+    builder.Services.AddOptions<BillingOptions>()
+        .Bind(builder.Configuration.GetSection(BillingOptions.SectionName))
+        .Validate(
+            o => o.DefaultCurrency.Length == 3,
+            $"{BillingOptions.SectionName}:{nameof(BillingOptions.DefaultCurrency)} must be a "
+                + "three-letter ISO 4217 alpha code.")
+        .ValidateOnStart();
+
+    // Not a section of its own. A payer may only be handed back to an origin the web edge
+    // already trusts, so the list is the CORS one read just above rather than a second copy
+    // that could drift from it -- see GatewayReturnUrlOptions for why it carries no SectionName.
+    builder.Services.Configure<GatewayReturnUrlOptions>(o => o.AllowedOrigins = allowedOrigins);
+
+    // ClientBaseUrl and DefaultLocale are bare top-level keys, never sections, so they are read
+    // by key here and left at the option class's default when the deployment sets neither.
+    var clientBaseUrl = builder.Configuration[ClientPortalOptions.ConfigurationKey];
+    builder.Services.AddOptions<ClientPortalOptions>()
+        .Configure(o =>
+        {
+            if (!string.IsNullOrWhiteSpace(clientBaseUrl))
+            {
+                o.BaseUrl = clientBaseUrl;
+            }
+        })
+        .Validate(
+            o => Uri.TryCreate(o.BaseUrl, UriKind.Absolute, out _),
+            $"{ClientPortalOptions.ConfigurationKey} must be an absolute URL including the scheme, "
+                + "e.g. https://client.example.com.")
+        .ValidateOnStart();
+
+    var defaultLocale = builder.Configuration[LocaleOptions.ConfigurationKey];
+    builder.Services.AddOptions<LocaleOptions>()
+        .Configure(o =>
+        {
+            if (!string.IsNullOrWhiteSpace(defaultLocale))
+            {
+                o.DefaultLocale = defaultLocale;
+            }
+        })
+        .Validate(
+            o => o.DefaultLocale.Length is 2 or 5,
+            $"{LocaleOptions.ConfigurationKey} must be a locale code such as en or en-US.")
+        .ValidateOnStart();
 
     var isLocalMode = AuthMode.IsLocal(builder.Configuration["Auth:Mode"]);
 

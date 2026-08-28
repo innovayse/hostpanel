@@ -40,7 +40,7 @@ public sealed class UpdateTransactionHandler(
         activityLogRepo.Add(ActivityLog.Create(
             transaction.ClientId,
             $"Updated Transaction - Transaction ID: {transaction.Id}",
-            ctx.AdminId, ctx.AdminName, ctx.AdminEmail, ctx.IpAddress));
+            ctx.UserId, ctx.UserName, ctx.UserEmail, ctx.IpAddress));
         await uow.SaveChangesAsync(ct);
     }
 }

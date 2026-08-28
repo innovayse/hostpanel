@@ -547,6 +547,9 @@ import {
   Lock, RefreshCw, PlusCircle, ChevronRight, Zap, UserCog, LayoutGrid, ShieldCheck, Loader2, Info,
   CheckCircle, CreditCard
 } from 'lucide-vue-next'
+import { useBillingApi } from '~/composables/apis/useBillingApi'
+import { useClientApi } from '~/composables/apis/useClientApi'
+import { useDomainsApi } from '~/composables/apis/useDomainsApi'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
@@ -589,7 +592,10 @@ interface DomainDetail {
 }
 
 // ── Domain ────────────────────────────────────────────────────────────────────
-const { data: _domainRaw, pending } = await useApi<DomainDetail>(`/api/portal/client/domains/${domainId}`)
+// Straight from the API composables rather than through a store: this page reads these once
+// and owns the results alone, which is the named exception to component -> store -> api.
+const domains = useDomainsApi()
+const { data: _domainRaw, pending } = await domains.loadDomain(() => String(domainId))
 const domain = computed(() => _domainRaw.value as DomainDetail | null)
 
 /** Full domain name (the backend's Name field is already the FQDN). */
@@ -657,7 +663,7 @@ const renewPayMethods = ref<Array<{ gateway_name: string; description: string; c
 watch(activeTab, async (tab) => {
   if (tab !== 'renew' || renewPayMethods.value.length) return
   try {
-    renewPayMethods.value = await apiFetch('/api/portal/client/payment-methods') as typeof renewPayMethods.value
+    renewPayMethods.value = await useBillingApi().fetchPaymentMethods() as typeof renewPayMethods.value
     if (renewPayMethods.value.length) renewPayMethod.value = renewPayMethods.value[0]!.gateway_name
   } catch { /* ignore */ }
 })
@@ -673,10 +679,7 @@ async function placeRenewal() {
   renewSaving.value = true
   renewError.value  = ''
   try {
-    const res = await apiFetch<{ orderId: number; invoiceId: number }>(
-      `/api/portal/client/domains/${domainId}/renew-order`,
-      { method: 'POST', body: { years: renewYears.value, paymentmethod: renewPayMethod.value } }
-    )
+    const res = await domains.createRenewOrder(String(domainId), renewYears.value, renewPayMethod.value)
     renewSuccess.value = res
   } catch (err: unknown) {
     renewError.value = (err as { data?: { statusMessage?: string } })?.data?.statusMessage || t('client.domains.renewError')
@@ -695,10 +698,7 @@ async function toggleAutoRenew() {
   autoRenewSaving.value = true
   const newVal = !autoRenewEnabled.value
   try {
-    await apiFetch(`/api/portal/client/domains/${domainId}/autorenew`, {
-      method: 'PUT',
-      body: { enabled: newVal },
-    })
+    await domains.setAutoRenew(String(domainId), newVal)
     autoRenewEnabled.value = newVal
   } catch { /* keep current state */ } finally {
     autoRenewSaving.value = false
@@ -716,10 +716,7 @@ async function toggleLock() {
   lockSaving.value = true
   const newLocked = !lockEnabled.value
   try {
-    await apiFetch(`/api/portal/client/domains/${domainId}/lock`, {
-      method: 'PUT',
-      body: { enabled: newLocked }
-    })
+    await domains.setLock(String(domainId), newLocked)
     lockEnabled.value = newLocked
   } catch { /* keep current state */ } finally {
     lockSaving.value = false
@@ -737,10 +734,7 @@ async function toggleIdProtect() {
   idProtectSaving.value = true
   const newVal = !idProtectEnabled.value
   try {
-    await apiFetch(`/api/portal/client/domains/${domainId}/idprotect`, {
-      method: 'PUT',
-      body: { enabled: newVal }
-    })
+    await domains.setIdProtect(String(domainId), newVal)
     idProtectEnabled.value = newVal
   } catch { /* keep current state */ } finally {
     idProtectSaving.value = false
@@ -767,9 +761,7 @@ const nsForm      = reactive({ ns1: '', ns2: '', ns3: '', ns4: '', ns5: '' })
 onMounted(async () => {
   nsLoading.value = true
   try {
-    const data = await apiFetch<NameserverEntry[]>(
-      `/api/portal/client/domains/${domainId}/nameservers`
-    )
+    const data = await domains.fetchNameservers<NameserverEntry>(String(domainId))
     // Map array of { id, host } to ns1..ns5 form fields
     data.forEach((ns, i) => {
       const key = `ns${i + 1}` as keyof typeof nsForm
@@ -790,10 +782,7 @@ async function saveNameservers() {
     // Collect non-empty nameservers into the array format the backend expects
     const nameservers = [nsForm.ns1, nsForm.ns2, nsForm.ns3, nsForm.ns4, nsForm.ns5]
       .filter(ns => ns.trim() !== '')
-    await apiFetch(`/api/portal/client/domains/${domainId}/nameservers`, {
-      method: 'PUT',
-      body: { nameservers }
-    })
+    await domains.setNameservers(String(domainId), nameservers)
     nsSuccess.value = t('client.domains.nsSuccess')
   } catch (err: unknown) {
     const msg = ((err as { data?: { statusMessage?: string } })?.data?.statusMessage || '') as string
@@ -816,9 +805,7 @@ async function requestEpp() {
   eppMessage.value = ''
   eppError.value   = false
   try {
-    const res = await apiFetch<{ eppCode: string }>(
-      `/api/portal/client/domains/${domainId}/epp`, { method: 'POST' }
-    )
+    const res = await domains.requestEppCode(String(domainId))
     eppMessage.value = res.eppCode
   } catch (err: unknown) {
     eppError.value   = true
@@ -911,7 +898,7 @@ async function applySelectedContact(ct: ContactType) {
   const id = selectedContactId[ct]
   if (id === 'primary') {
     if (!clientCache) {
-      clientCache = await apiFetch('/api/portal/client/me') as Record<string, string>
+      clientCache = await useClientApi().fetchMeOnce()
     }
     Object.assign(whoisForm[ct], {
       firstName:    clientCache.firstname    || '',
@@ -938,8 +925,8 @@ watch(activeTab, async (tab) => {
   whoisLoading.value = true
   try {
     const [whoisData, contactsData] = await Promise.all([
-      apiFetch<Record<ContactType, ContactFields>>(`/api/portal/client/domains/${domainId}/whois`),
-      apiFetch<Array<{ id: string; firstname: string; lastname: string; companyname?: string; email?: string; phonenumber?: string }>>('/api/portal/client/contacts'),
+      domains.fetchWhois<Record<ContactType, ContactFields>>(String(domainId)),
+      useClientApi().fetchContacts<{ id: string, firstname: string, lastname: string, companyname?: string, email?: string, phonenumber?: string }>(),
     ])
     for (const ct of contactTypes) {
       if (whoisData[ct]) {
@@ -977,10 +964,7 @@ async function saveWhois() {
   whoisError.value   = ''
   whoisSuccess.value = ''
   try {
-    await apiFetch(`/api/portal/client/domains/${domainId}/whois`, {
-      method: 'PUT',
-      body: whoisForm
-    })
+    await domains.setWhois(String(domainId), whoisForm)
     // Update snapshot so cancel reflects saved state
     for (const ct of contactTypes) Object.assign(whoisInitial[ct], whoisForm[ct])
     whoisSuccess.value = t('client.domains.contactSaved')

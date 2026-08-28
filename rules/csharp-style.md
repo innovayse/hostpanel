@@ -120,6 +120,9 @@ _logger.LogInformation($"Invoice {invoice.Id} created");
 - One type per file
 - File name matches type name exactly
 - Namespace matches folder structure exactly
+- Extension classes: `<WhatItExtends>Extensions.cs`, in an `Extensions/` folder under the layer or
+  feature that owns it — never appended to the DTO or controller it serves. Placement, layer
+  ownership and the DI carve-out: [clean-architecture.md](clean-architecture.md)
 
 ```csharp
 // File: src/Innovayse.Application/Billing/Commands/CreateInvoice/CreateInvoiceHandler.cs

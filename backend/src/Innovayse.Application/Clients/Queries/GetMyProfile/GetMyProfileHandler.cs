@@ -1,7 +1,9 @@
 namespace Innovayse.Application.Clients.Queries.GetMyProfile;
 
 using Innovayse.Application.Auth.Interfaces;
+using Innovayse.Application.Clients.Common;
 using Innovayse.Application.Clients.DTOs;
+using Innovayse.Application.Common;
 using Innovayse.Domain.Clients;
 using Innovayse.Domain.Clients.Interfaces;
 
@@ -11,19 +13,28 @@ using Innovayse.Domain.Clients.Interfaces;
 /// </summary>
 /// <param name="clientRepo">Client repository.</param>
 /// <param name="identity">Reads the person this client belongs to.</param>
-public sealed class GetMyProfileHandler(IClientRepository clientRepo, IIdentityProvider identity)
+/// <param name="caller">Whose profile; the query does not say, and must not.</param>
+public sealed class GetMyProfileHandler(
+    IClientRepository clientRepo,
+    IIdentityProvider identity,
+    ICurrentRequestContext caller)
 {
     /// <summary>
     /// Retrieves the client profile for the authenticated user.
     /// </summary>
-    /// <param name="query">The query containing the user's Identity ID.</param>
+    /// <param name="query">The query. It names no account: this reads the caller's own.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The client's full profile DTO.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when no client record exists for the user.</exception>
+    /// <exception cref="ClientProfileNotFoundException">
+    /// Thrown when no client record exists for the user. Carries the user id for the log only --
+    /// the API answers 404 with a code and an identifier-free sentence.
+    /// </exception>
     public async Task<ClientDto> HandleAsync(GetMyProfileQuery query, CancellationToken ct)
     {
-        var client = await clientRepo.FindByUserIdAsync(query.UserId, ct)
-            ?? throw new InvalidOperationException($"No client profile found for user {query.UserId}.");
+        var userId = caller.RequireUserId();
+
+        var client = await clientRepo.FindByUserIdAsync(userId, ct)
+            ?? throw new ClientProfileNotFoundException(userId);
 
         var user = await identity.FindBySubjectAsync(client.UserId, ct);
         var email = user?.Email ?? "";

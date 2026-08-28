@@ -1,18 +1,6 @@
-/** One specification line as the API returns it. */
-export interface ProductFeature {
-  id: number
-  productId: number
-  label: string
-  value: string
-  sortOrder: number
-}
-
-/** One row of the comparison table: a label and its value per plan, in plan order. */
-export interface ComparisonRow {
-  label: string
-  /** Values aligned to the plan ids passed in; an empty string where a plan has no such line. */
-  values: string[]
-}
+import { useCatalogApi } from '~/composables/apis/useCatalogApi'
+import type { ComparisonRow } from '~/types/comparisonrow'
+import type { ProductFeature } from '~/types/productfeature'
 
 /**
  * Turns per-product specification lines into aligned comparison rows.
@@ -67,9 +55,9 @@ export const buildComparisonRows = (
  * @returns The raw lines and the request's pending state.
  */
 export const useProductFeatures = (groupId: number) => {
-  const { data, pending } = useFetch<ProductFeature[]>('/api/portal/public/product-features', {
-    query: { gid: groupId },
-  })
+  // Through the API composable rather than a raw `useFetch`: that is the layer that owns the
+  // URL, and `useApi()` beneath it sends the locale header the raw call was skipping.
+  const { data, pending } = useCatalogApi().loadProductFeatures(groupId)
 
   const features = computed(() => data.value ?? [])
 

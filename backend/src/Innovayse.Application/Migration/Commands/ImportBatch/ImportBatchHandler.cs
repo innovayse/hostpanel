@@ -1,5 +1,6 @@
 namespace Innovayse.Application.Migration.Commands.ImportBatch;
 
+using Innovayse.Application.Migration.Extensions;
 using Innovayse.Application.Migration.DTOs;
 using Innovayse.Domain.Migration;
 using Innovayse.Domain.Migration.Interfaces;

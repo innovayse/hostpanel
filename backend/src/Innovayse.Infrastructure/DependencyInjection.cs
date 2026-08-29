@@ -353,6 +353,33 @@ public static class DependencyInjection
         // what configures the default client itself.
         services.AddHttpClient(string.Empty)
             .AddNoRetryResilience(o => o.Default);
+
+        // The Inecobank gateway plugin's own named client.
+        //
+        // The plugin asks the factory for its plugin id, and until this existed that name matched
+        // no registration -- and IHttpClientFactory answers an unknown name with a default client
+        // rather than an error. So the one payment gateway in this product was also the last
+        // 100-second path in it: no handler, no retry, no breaker, and a bank having a bad
+        // afternoon holding a checkout thread for a minute and a half.
+        //
+        // Registered here rather than in the provider because the provider has no composition
+        // root of its own: PluginLoader reflects it out of plugins/ and Infrastructure
+        // deliberately does not reference it, so the client name is the whole contract between
+        // the two ends. It is spelled once, on HttpClientResilienceExtensions.
+        //
+        // Retries only getOrderStatusExtended.do. register.do and refund.do are POSTs to the same
+        // host over the same verb, so the method separates nothing and the predicate reads the
+        // endpoint out of the path -- a repeated refund.do is a second refund. The timeout, and
+        // why this money-moving client gets a breaker when the others do not, are argued on
+        // HttpResilienceOptions.Inecobank.
+        services.AddHttpClient(HttpClientResilienceExtensions.InecobankClientName, client =>
+        {
+            // Outer backstop only. The pipeline below decides in 15s and 40s; this catches a
+            // pipeline that was configured wrong, nothing else.
+            client.Timeout = TimeSpan.FromSeconds(60);
+        })
+            .AddInecobankResilience();
+
         services.AddScoped<IPaymentPluginResolver, PaymentPluginResolver>();
 
         // Audit

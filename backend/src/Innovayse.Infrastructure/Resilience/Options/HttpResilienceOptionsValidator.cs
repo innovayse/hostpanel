@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 /// <remarks>
 /// <para>
 /// Written by hand rather than left to <c>ValidateDataAnnotations()</c> because that only reads
-/// attributes on the options object's own properties and never descends into the ten nested
+/// attributes on the options object's own properties and never descends into the eleven nested
 /// profiles — which is where every number actually lives. A misconfigured section would have
 /// passed validation and then thrown out of <c>AddResilienceHandler</c> on the first call to the
 /// affected client, in a different process lifetime and with a message naming Polly rather than

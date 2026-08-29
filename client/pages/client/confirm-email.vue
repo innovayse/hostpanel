@@ -27,7 +27,7 @@
  * them, then reports what the backend said.
  */
 import { useAuthApi } from '~/composables/apis/useAuthApi'
-import { apiErrorMessage } from '~/utils/portalErrorMessages'
+import { apiErrorMessage } from '~/utils/apiError'
 
 definePageMeta({ layout: false })
 

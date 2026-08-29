@@ -6,7 +6,6 @@ using Innovayse.Application.Services.Commands.SuspendService;
 using Innovayse.Application.Services.Commands.TerminateService;
 using Innovayse.Application.Services.Commands.UnsuspendService;
 using Innovayse.Application.Services.Commands.UpdateService;
-using Innovayse.Application.Services.DTOs;
 using Innovayse.Application.Services.Queries.GetService;
 using Innovayse.Application.Services.Queries.GetServices;
 using Innovayse.Domain.Auth;

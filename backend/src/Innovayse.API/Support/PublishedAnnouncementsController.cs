@@ -1,7 +1,6 @@
 namespace Innovayse.API.Support;
 
 using Innovayse.Application.Common;
-using Innovayse.Application.Support.DTOs;
 using Innovayse.Application.Support.Queries.ListPublishedAnnouncements;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

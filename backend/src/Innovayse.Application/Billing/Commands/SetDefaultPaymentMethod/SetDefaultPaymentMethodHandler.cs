@@ -3,7 +3,9 @@ namespace Innovayse.Application.Billing.Commands.SetDefaultPaymentMethod;
 using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Clients.Common;
 using Innovayse.Application.Common;
+using Innovayse.Application.Resources;
 using Innovayse.Domain.Clients.Interfaces;
+using Microsoft.Extensions.Localization;
 
 /// <summary>
 /// Handles <see cref="SetDefaultPaymentMethodCommand"/>.
@@ -11,10 +13,12 @@ using Innovayse.Domain.Clients.Interfaces;
 /// <param name="clientRepo">Client repository.</param>
 /// <param name="stripe">Stripe service for updating the customer's default payment method.</param>
 /// <param name="caller">Who is asking; the command does not say, and must not.</param>
+/// <param name="localizer">The refusal sentences, in the caller's own language.</param>
 public sealed class SetDefaultPaymentMethodHandler(
     IClientRepository clientRepo,
     IStripeService stripe,
-    ICurrentRequestContext caller)
+    ICurrentRequestContext caller,
+    IStringLocalizer<ValidationMessages> localizer)
 {
     /// <summary>
     /// Makes the given payment method the client's default.
@@ -37,7 +41,7 @@ public sealed class SetDefaultPaymentMethodHandler(
 
         if (client.StripeCustomerId is null)
         {
-            throw new InvalidOperationException("This account has no saved payment methods.");
+            throw new InvalidOperationException(localizer["NoSavedPaymentMethods"]);
         }
 
         // Stripe's own API would reject a payment method that isn't attached to this customer,
@@ -47,7 +51,7 @@ public sealed class SetDefaultPaymentMethodHandler(
         var methods = await stripe.ListPaymentMethodsAsync(client.StripeCustomerId, ct);
         if (!methods.Any(m => m.Id == cmd.PaymentMethodId))
         {
-            throw new InvalidOperationException("That payment method does not belong to this account.");
+            throw new InvalidOperationException(localizer["PaymentMethodNotOwned"]);
         }
 
         await stripe.SetDefaultPaymentMethodAsync(client.StripeCustomerId, cmd.PaymentMethodId, ct);

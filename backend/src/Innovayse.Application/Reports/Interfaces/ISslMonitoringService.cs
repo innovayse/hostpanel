@@ -1,6 +1,7 @@
 namespace Innovayse.Application.Reports.Interfaces;
 
-using Innovayse.Application.Reports.DTOs;
+using Innovayse.Application.Reports.Common;
+
 
 /// <summary>Service for checking and caching SSL certificate status for domains.</summary>
 public interface ISslMonitoringService

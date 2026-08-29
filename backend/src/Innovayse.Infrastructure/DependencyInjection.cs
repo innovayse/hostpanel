@@ -5,7 +5,10 @@ using Innovayse.Application.Admin.Servers.Interfaces;
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Common;
+using Innovayse.Application.Migration.Interfaces;
+using Innovayse.Application.Notifications.Options;
 using Innovayse.Application.Notifications.Services;
+using Innovayse.Application.Support.Interfaces;
 using Innovayse.Domain.Audit.Interfaces;
 using Innovayse.Domain.Billing.Interfaces;
 using Innovayse.Domain.Clients.Interfaces;
@@ -27,20 +30,24 @@ using Innovayse.Infrastructure.Common;
 using Innovayse.Infrastructure.Domains;
 using Innovayse.Infrastructure.Integrations.CPanel;
 using Innovayse.Infrastructure.Integrations.CPanel.Options;
+using Innovayse.Infrastructure.Integrations.Migration;
 using Innovayse.Infrastructure.Integrations.NameAm;
 using Innovayse.Infrastructure.Integrations.NameAm.Options;
 using Innovayse.Infrastructure.Integrations.Namecheap;
 using Innovayse.Infrastructure.Integrations.Namecheap.Options;
 using Innovayse.Infrastructure.Integrations.Stripe;
 using Innovayse.Infrastructure.Integrations.Stripe.Options;
+using Innovayse.Infrastructure.Integrations.Telegram;
+using Innovayse.Infrastructure.Integrations.Telegram.Options;
 using Innovayse.Infrastructure.Notifications;
+using Innovayse.Infrastructure.Notifications.Options;
 using Innovayse.Infrastructure.Orders;
 using Innovayse.Infrastructure.Persistence;
-using Innovayse.Infrastructure.Persistence.Repositories;
 using Innovayse.Infrastructure.Plugins;
 using Innovayse.Infrastructure.Products;
 using Innovayse.Infrastructure.Provisioning;
-using Innovayse.Infrastructure.Repositories;
+using Innovayse.Infrastructure.Resilience.Extensions;
+using Innovayse.Infrastructure.Resilience.Options;
 using Innovayse.Infrastructure.Security;
 using Innovayse.Infrastructure.Servers;
 using Innovayse.Infrastructure.Services;
@@ -105,6 +112,24 @@ public static class DependencyInjection
             EncryptionServiceHolder.Instance = encryptionService;
         }
 
+        // Outbound HTTP resilience.
+        //
+        // Registered first because every AddHttpClient below reaches for it. Until this existed
+        // not one of the eleven client registrations in this file had a retry, a breaker or a
+        // timeout of its own, so a registrar or a control panel that stopped answering held a
+        // request thread for HttpClient's 100-second default -- and a third party having a bad
+        // ten minutes became this platform having a bad ten minutes.
+        //
+        // The section is optional: every profile carries the measured default in
+        // HttpResilienceOptions, and an operator only names one to move it. It is validated on
+        // start rather than at first use, because the first use of the cPanel profile is a
+        // customer's provisioning run.
+        services.AddOptions<HttpResilienceOptions>()
+            .Bind(configuration.GetSection(HttpResilienceOptions.SectionName))
+            .ValidateOnStart();
+        services.AddSingleton<
+            IValidateOptions<HttpResilienceOptions>, HttpResilienceOptionsValidator>();
+
         // EF Core
         services.AddDbContext<AppDbContext>(options =>
         {
@@ -128,6 +153,11 @@ public static class DependencyInjection
         // The one DI-resolvable answer to the same question, for everything downstream
         // of service registration that used to run its own inline comparison.
         services.AddSingleton<IAuthModeProvider, ConfigurationAuthModeProvider>();
+
+        // The local token signer, registered in both modes on purpose: the admin SPA signs in
+        // with a local JWT whatever owns the accounts, so the port must resolve even where an
+        // SSO issues the client portal's tokens. Singleton — it holds no per-request state.
+        services.AddSingleton<Innovayse.Application.Auth.Interfaces.IJwtService, JwtTokenService>();
 
         if (ownsItsUsers)
         {
@@ -180,7 +210,11 @@ public static class DependencyInjection
                         + "it is where this product reads its people from.");
                 client.BaseAddress = new Uri(authority.TrimEnd('/') + "/");
                 client.DefaultRequestHeaders.Add("X-Service-Key", configuration["Sso:ServiceKey"] ?? string.Empty);
-            });
+            })
+            // Every operation on this client is a GET that reads a person, so all of them are
+            // safe to repeat. The breaker's shape -- and the fact that an open one means nobody
+            // is looked up -- is argued on HttpResilienceOptions.SsoRead.
+            .AddReadOnlyResilience(o => o.SsoRead);
 
             // The SSO's TOTP endpoints, addressed the same way — but unlike SsoServiceClient
             // above, no X-Service-Key: two-factor acts as the calling person, not as the
@@ -193,7 +227,11 @@ public static class DependencyInjection
                         "Sso:Authority must be set when Auth:Mode is not 'local' — "
                         + "it is where this product reads its people from.");
                 client.BaseAddress = new Uri(authority.TrimEnd('/') + "/");
-            });
+            })
+            // No retry stage. All three TOTP operations are POSTs that change a person's second
+            // factor: enable issues a fresh secret, so a repeat hands back a different QR code
+            // from the one already on screen, and verify and disable each spend a one-time code.
+            .AddNoRetryResilience(o => o.SsoTwoFactor);
         }
 
         // Client services
@@ -208,13 +246,16 @@ public static class DependencyInjection
         // Domain ownership rule for the client-facing routes. Fully qualified for the same
         // reason as the export repository above: the Application layer's Domains namespace
         // would shadow the Domain one.
+        //
+        // MyDomainsController no longer injects this. The eighteen client-facing My* handlers
+        // call it themselves, so the check travels with the message -- which matters here
+        // because every command behind those endpoints is also dispatched by the admin
+        // DomainsController, and RenewDomainCommand by the auto-renew job as well.
         services.AddScoped<
             Innovayse.Application.Domains.Common.IDomainOwnership,
             Innovayse.Application.Domains.Common.DomainOwnership>();
 
-        // The same rule for support tickets and for invoices. The client-facing handlers in those
-        // two features call these themselves, rather than the endpoint calling them on the way
-        // past, so the check travels with the message.
+        // The same rule for support tickets and for invoices, in the same shape.
         services.AddScoped<
             Innovayse.Application.Support.Common.ITicketOwnership,
             Innovayse.Application.Support.Common.TicketOwnership>();
@@ -258,11 +299,19 @@ public static class DependencyInjection
             }
 
             httpClient.BaseAddress = new Uri(settings.ApiUrl);
+
+            // Kept as the outer backstop only. The resilience pipeline below decides in 45s and
+            // 55s; this catches a pipeline that was configured wrong, nothing else.
             httpClient.Timeout = TimeSpan.FromSeconds(60);
             httpClient.DefaultRequestHeaders.Add(
                 "Authorization",
                 $"WHM {settings.Username}:{settings.ApiToken}");
-        });
+        })
+            // No retry stage, and the HTTP method is no guide: WHM's JSON API v1 is addressed
+            // entirely over GET, so every one of the seven functions this client calls --
+            // createacct, removeacct, passwd among them -- is a write dressed as a GET. A
+            // method-based predicate would repeat all of them.
+            .AddNoRetryResilience(o => o.CPanel);
         // Use NullCPanelProvisioningProvider as fallback for unmigrated code
         services.AddScoped<IProvisioningProvider, NullCPanelProvisioningProvider>();
         services.AddScoped<Innovayse.Domain.Services.Interfaces.IProvisioningProvider, NullProvisioningProvider>();
@@ -295,6 +344,15 @@ public static class DependencyInjection
 
         // Payment plugins (hosted-gateway providers, e.g. Inecobank)
         services.AddHttpClient();
+
+        // The factory's unnamed client -- what CreateClient() with no argument hands back. It is
+        // used by CpanelWhmApi for per-server WHM calls and by any plugin that asks for a client
+        // without naming one, so nobody knows what it calls: a plugin's POST may well be a
+        // charge. Unknown means unrepeatable, and no breaker, since every caller addresses a
+        // different host. AddHttpClient() above only registers the factory; the empty name is
+        // what configures the default client itself.
+        services.AddHttpClient(string.Empty)
+            .AddNoRetryResilience(o => o.Default);
         services.AddScoped<IPaymentPluginResolver, PaymentPluginResolver>();
 
         // Audit
@@ -312,15 +370,53 @@ public static class DependencyInjection
         services.AddScoped<IPredefinedReplyRepository, PredefinedReplyRepository>();
         services.AddScoped<IDownloadRepository, DownloadRepository>();
 
+        // Telegram — the operator's chat channel for public contact-form enquiries.
+        // Optional in the same way Stripe and Name.am are: an unset section is a deployment that
+        // runs no bot, and the notifier logs that it did nothing rather than failing an enquiry
+        // the mail already delivered. A half-filled section is refused here instead, because a
+        // token with no chat id posts nowhere while looking configured.
+        //
+        // The token is a path segment of every Bot API call rather than a header, so it cannot be
+        // baked into the base address at registration; the notifier reads it from options per
+        // call. The base address is the API root and ends in a slash — without it, the relative
+        // "bot<token>/sendMessage" would replace the last segment instead of extending the path.
+        services.AddOptions<TelegramOptions>()
+            .Bind(configuration.GetSection(TelegramOptions.SectionName))
+            .Validate(
+                o => o.IsUsable,
+                $"{TelegramOptions.SectionName} is partly configured: BotToken and ChatId must "
+                    + "either both be set or the whole section left unset.")
+            .ValidateOnStart();
+        services.AddHttpClient<IContactNotifier, TelegramContactNotifier>(client =>
+        {
+            client.BaseAddress = new Uri("https://api.telegram.org/");
+
+            // Short on purpose. This call sits between a delivered enquiry and the visitor's
+            // answer, so a Telegram that is merely slow must not hold the response open. Now the
+            // outer backstop for a pipeline that decides in 8s and 9s.
+            client.Timeout = TimeSpan.FromSeconds(10);
+        })
+            // No retry stage. sendMessage is a POST with no idempotency key, so a repeat after a
+            // lost response posts the enquiry to the operator's chat twice -- and the mail has
+            // already delivered it, so the duplicate buys nothing.
+            .AddNoRetryResilience(o => o.Telegram);
+
         // Reports
         services.AddScoped<Innovayse.Application.Reports.Interfaces.IReportRepository, Innovayse.Infrastructure.Reports.ReportRepository>();
         services.AddScoped<Innovayse.Application.Reports.Interfaces.ISslMonitoringService, Innovayse.Infrastructure.Reports.SslMonitoringService>();
         services.AddScoped<Innovayse.Application.Reports.Interfaces.IDiskUsageService, Innovayse.Infrastructure.Reports.DiskUsageService>();
 
         // Notifications
-        services.Configure<SmtpSettings>(configuration.GetSection("Smtp"));
-        services.Configure<Innovayse.Application.Notifications.Settings.NotificationSettings>(
-            configuration.GetSection("Notifications"));
+        // Bound, but deliberately not validated on start, unlike the integration options above.
+        // Every deployed tier fills the Smtp section from a different overlay and none of them
+        // fills all of it -- docker-compose.prod.yml supplies only Host, Port and Password --
+        // and no tier configures the Notifications section at all. Refusing a partly filled
+        // section here would refuse to start the production API, so a missing value surfaces
+        // where the mail is actually sent instead. See each options class's remarks.
+        services.AddOptions<SmtpOptions>()
+            .Bind(configuration.GetSection(SmtpOptions.SectionName));
+        services.AddOptions<NotificationOptions>()
+            .Bind(configuration.GetSection(NotificationOptions.SectionName));
         services.AddScoped<IEmailSender, MailKitEmailSender>();
         services.AddScoped<IEmailTemplateRepository, EmailTemplateRepository>();
         services.AddScoped<IEmailLogRepository, EmailLogRepository>();
@@ -335,30 +431,51 @@ public static class DependencyInjection
         services.AddScoped<IServerConnectionTester, ServerConnectionTester>();
         services.AddScoped<Innovayse.Application.Servers.IServerSelector, Innovayse.Application.Servers.ServerSelector>();
 
-        // CWP API client
+        // CWP API client.
+        //
+        // No retry stage and no breaker. Every CWP call is a form POST and the operation lives in
+        // the body's `action` field, not in the method or the path: create, suspend, unsuspend and
+        // terminate all post to /v1/account, and so does the account listing behind the
+        // server-info screen. A predicate cannot separate the read from the writes without
+        // re-reading a consumed request body, and guessing wrong re-creates a hosting account.
+        // The breaker is off because the server is a per-call argument rather than a base
+        // address, so one dead node would open it for every healthy one.
         services.AddHttpClient<Innovayse.SDK.Plugins.ICwpApiClient, Innovayse.Providers.CWP.CwpApiClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
-        });
+        })
+            .AddNoRetryResilience(o => o.Cwp);
 
-        // CWP7 API client (named + typed so the factory can also resolve it by name)
+        // CWP7 API client (named + typed so the factory can also resolve it by name).
+        // Both registrations carry the same profile for the same two reasons as CWP above; the
+        // named one is what ProvisioningProviderFactory resolves per server, so leaving it out
+        // would have left the provisioning path -- the one that matters most -- uncovered.
         services.AddHttpClient("Cwp7", client =>
         {
             client.Timeout = TimeSpan.FromSeconds(120);
-        });
+        })
+            .AddNoRetryResilience(o => o.Cwp7);
         services.AddHttpClient<Innovayse.SDK.Plugins.ICwp7ApiClient, Innovayse.Providers.CWP7.Cwp7ApiClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(120);
-        });
+        })
+            .AddNoRetryResilience(o => o.Cwp7);
 
         // Migration
         services.AddScoped<IMigrationJobRepository, MigrationJobRepository>();
         services.AddScoped<IMigrationLogRepository, MigrationLogRepository>();
         services.AddScoped<Innovayse.Application.Migration.Services.MigrationPullWorker>();
+        services.AddScoped<IMigrationSource, MigrationSourceClient>();
+        // The one client where the POST is misleading in the safe direction: the pull protocol
+        // posts a signed payload and answers with data, so ping, totals and a page of records all
+        // read and nothing on the far side is created or spent. Retrying everything is therefore
+        // correct here. No breaker -- the source URL is a per-job argument, so one bad install
+        // would fail jobs against every other.
         services.AddHttpClient("migration", client =>
         {
             client.Timeout = TimeSpan.FromMinutes(5);
-        });
+        })
+            .AddReadOnlyResilience(o => o.Migration);
 
         // Domains
         services.AddScoped<IDomainRepository, DomainRepository>();
@@ -368,10 +485,16 @@ public static class DependencyInjection
         services.AddScoped<Innovayse.Application.Domains.Services.RegistrarProviderResolver>();
         services.AddScoped<NameAmRegistrarProvider>();
         services.AddScoped<NamecheapRegistrarProvider>();
+        // Reads and purchases on the same client, so the predicate has to tell them apart rather
+        // than the client being retried wholesale. GET and PUT are repeated -- Name.am's PUT is a
+        // whole-resource update of nameservers, contacts or the lock -- and POST only for the
+        // availability check and the login, never for /client/carts/purchase, which registers,
+        // transfers or renews a domain and bills for it.
         services.AddHttpClient<NameAmClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(30);
-        });
+        })
+            .AddNameAmResilience();
         services.AddOptions<NameAmOptions>()
             .Bind(configuration.GetSection(NameAmOptions.SectionName))
             .Validate(
@@ -381,10 +504,15 @@ public static class DependencyInjection
             .ValidateOnStart();
 
         // Namecheap (kept for reference / future multi-registrar support)
+        // Every Namecheap call is a GET to the same URL, so the method says nothing and the
+        // operation is the Command query parameter -- which ranges from namecheap.domains.check
+        // to namecheap.domains.create on the same verb. The predicate reads that parameter and
+        // repeats only the lookups; anything it does not recognise counts as a write.
         services.AddHttpClient<NamecheapClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(30);
-        });
+        })
+            .AddNamecheapResilience();
         services.AddOptions<NamecheapOptions>()
             .Bind(configuration.GetSection(NamecheapOptions.SectionName))
             .Validate(

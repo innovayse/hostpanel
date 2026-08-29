@@ -1,6 +1,6 @@
 namespace Innovayse.Application.Billing.Queries.GetMyInvoices;
 
-using Innovayse.Application.Billing.DTOs;
+using Innovayse.Application.Billing.Common;
 using Innovayse.Application.Billing.Queries.GetInvoice;
 using Innovayse.Application.Clients.Common;
 using Innovayse.Application.Common;

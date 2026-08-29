@@ -1,5 +1,7 @@
 namespace Innovayse.Application.Auth.Interfaces;
 
+using Innovayse.Application.Admin.Common;
+
 /// <summary>
 /// Abstraction over ASP.NET Core Identity user management operations.
 /// Implemented in Infrastructure; isolates Application from <c>IdentityUser</c> concrete types.
@@ -134,7 +136,7 @@ public interface IUserService
     /// <param name="search">Optional search term (matches name or email).</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Tuple of user list items and total count.</returns>
-    Task<(List<Admin.DTOs.UserListItemDto> Items, int TotalCount)> ListUsersAsync(
+    Task<(List<Admin.Common.UserListItemDto> Items, int TotalCount)> ListUsersAsync(
         int page, int pageSize, string? search, CancellationToken ct);
 
     /// <summary>
@@ -143,7 +145,7 @@ public interface IUserService
     /// <param name="userId">The user's unique identifier.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>User detail DTO or null if not found.</returns>
-    Task<Admin.DTOs.UserDetailDto?> GetUserWithAccountsAsync(string userId, CancellationToken ct);
+    Task<Admin.Common.UserDetailDto?> GetUserWithAccountsAsync(string userId, CancellationToken ct);
 
     /// <summary>
     /// Updates a user's profile fields (name, email, language).

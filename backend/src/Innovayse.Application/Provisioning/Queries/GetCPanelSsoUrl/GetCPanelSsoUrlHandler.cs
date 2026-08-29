@@ -2,15 +2,22 @@ namespace Innovayse.Application.Provisioning.Queries.GetCPanelSsoUrl;
 
 using Innovayse.Domain.Provisioning.Interfaces;
 using Innovayse.Domain.Servers.Interfaces;
+using Innovayse.Application.Resources;
 using Innovayse.Domain.Services.Interfaces;
+using Microsoft.Extensions.Localization;
 
 /// <summary>
 /// Generates a time-limited cPanel SSO URL for direct client access to their hosting account.
 /// </summary>
+/// <param name="serviceRepo">Client service repository, for the account being signed into.</param>
+/// <param name="serverRepo">Server repository, for the server the account lives on.</param>
+/// <param name="providerFactory">Factory creating the provisioning provider for that server.</param>
+/// <param name="localizer">The refusal sentences, in the caller's own language.</param>
 public sealed class GetCPanelSsoUrlHandler(
     IClientServiceRepository serviceRepo,
     IServerRepository serverRepo,
-    IProvisioningProviderFactory providerFactory)
+    IProvisioningProviderFactory providerFactory,
+    IStringLocalizer<ValidationMessages> localizer)
 {
     /// <summary>
     /// Handles <see cref="GetCPanelSsoUrlQuery"/>.
@@ -24,16 +31,16 @@ public sealed class GetCPanelSsoUrlHandler(
     public async Task<string> HandleAsync(GetCPanelSsoUrlQuery query, CancellationToken ct)
     {
         var service = await serviceRepo.FindByIdAsync(query.ServiceId, ct)
-            ?? throw new InvalidOperationException($"ClientService {query.ServiceId} not found.");
+            ?? throw new InvalidOperationException(localizer["ClientServiceNotFound", query.ServiceId]);
 
         if (service.ProvisioningRef is null)
         {
-            throw new InvalidOperationException($"ClientService {query.ServiceId} has not been provisioned yet.");
+            throw new InvalidOperationException(localizer["ServiceNotProvisioned", query.ServiceId]);
         }
 
         var server = (service.ServerId.HasValue
             ? await serverRepo.FindByIdAsync(service.ServerId.Value, ct)
-            : null) ?? throw new InvalidOperationException($"ClientService {query.ServiceId} has no server assigned.");
+            : null) ?? throw new InvalidOperationException(localizer["ServiceNoServerAssigned", query.ServiceId]);
 
         var provider = providerFactory.CreateFor(server);
         return await provider.GetCPanelSsoUrlAsync(service.ProvisioningRef, ct);

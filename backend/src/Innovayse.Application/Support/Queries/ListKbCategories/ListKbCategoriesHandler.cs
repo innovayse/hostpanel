@@ -1,6 +1,5 @@
 namespace Innovayse.Application.Support.Queries.ListKbCategories;
 
-using Innovayse.Application.Support.DTOs;
 using Innovayse.Domain.Support.Interfaces;
 
 /// <summary>

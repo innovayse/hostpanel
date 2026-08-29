@@ -48,13 +48,16 @@ public sealed class AdminCreateClientValidator : AbstractValidator<AdminCreateCl
             .MaximumLength(50).WithMessage("Phone must not exceed 50 characters.")
             .When(x => x.Phone is not null);
 
+        // Guarded on blank, not on null: the add-client screen sends `country: value || undefined`
+        // but other callers send "", and an empty string is "not provided", not a two-character
+        // code that happens to be zero characters long.
         RuleFor(x => x.Country)
             .Length(2).WithMessage("Country must be a 2-character ISO 3166-1 alpha-2 code.")
-            .When(x => x.Country is not null);
+            .When(x => !string.IsNullOrEmpty(x.Country));
 
         RuleFor(x => x.Currency)
             .Length(3).WithMessage("Currency must be a 3-character ISO 4217 code.")
-            .When(x => x.Currency is not null);
+            .When(x => !string.IsNullOrEmpty(x.Currency));
 
         RuleFor(x => x.AdminNotes)
             .MaximumLength(2000).WithMessage("Admin notes must not exceed 2000 characters.")

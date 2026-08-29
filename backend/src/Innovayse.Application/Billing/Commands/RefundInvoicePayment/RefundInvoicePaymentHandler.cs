@@ -1,6 +1,6 @@
 namespace Innovayse.Application.Billing.Commands.RefundInvoicePayment;
 
-using Innovayse.Application.Billing;
+using Innovayse.Application.Billing.Common;
 using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Billing;

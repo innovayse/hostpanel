@@ -3,7 +3,9 @@ namespace Innovayse.Application.Billing.Commands.RemovePaymentMethod;
 using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Clients.Common;
 using Innovayse.Application.Common;
+using Innovayse.Application.Resources;
 using Innovayse.Domain.Clients.Interfaces;
+using Microsoft.Extensions.Localization;
 
 /// <summary>
 /// Handles <see cref="RemovePaymentMethodCommand"/>.
@@ -11,10 +13,12 @@ using Innovayse.Domain.Clients.Interfaces;
 /// <param name="clientRepo">Client repository.</param>
 /// <param name="stripe">Stripe service for detaching the payment method.</param>
 /// <param name="caller">Who is asking; the command does not say, and must not.</param>
+/// <param name="localizer">The refusal sentences, in the caller's own language.</param>
 public sealed class RemovePaymentMethodHandler(
     IClientRepository clientRepo,
     IStripeService stripe,
-    ICurrentRequestContext caller)
+    ICurrentRequestContext caller,
+    IStringLocalizer<ValidationMessages> localizer)
 {
     /// <summary>
     /// Detaches the given payment method from the client's Stripe Customer.
@@ -37,7 +41,7 @@ public sealed class RemovePaymentMethodHandler(
 
         if (client.StripeCustomerId is null)
         {
-            throw new InvalidOperationException("This account has no saved payment methods.");
+            throw new InvalidOperationException(localizer["NoSavedPaymentMethods"]);
         }
 
         // Detach takes a bare payment method ID with no customer scoping, so without this
@@ -46,7 +50,7 @@ public sealed class RemovePaymentMethodHandler(
         var methods = await stripe.ListPaymentMethodsAsync(client.StripeCustomerId, ct);
         if (!methods.Any(m => m.Id == cmd.PaymentMethodId))
         {
-            throw new InvalidOperationException("That payment method does not belong to this account.");
+            throw new InvalidOperationException(localizer["PaymentMethodNotOwned"]);
         }
 
         await stripe.DetachPaymentMethodAsync(cmd.PaymentMethodId, ct);

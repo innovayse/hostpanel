@@ -116,19 +116,20 @@ export function useAuthApi() {
     apiFetch('/api/portal/auth/confirm-email', { method: 'POST', body: { email, token } })
 
   /**
-   * Sets the password on an invited account, activating it.
+   * Accepts a client invitation on behalf of whoever is signed in.
    *
-   * NOTE: no Nitro route answers `/api/portal/auth/accept-invite` today — `server/api/portal/auth`
-   * has no `accept-invite.post.ts`, so this call 404s. The URL is preserved verbatim from the
-   * page it was lifted out of rather than silently repointed; the missing route is the fix.
+   * No password travels with it. The backend command carries a token and nothing else and
+   * resolves the accepting account from the credential — a field naming the subject would
+   * let whoever holds the token link a different account. The page's password fields went
+   * with it: nothing in this product sets a password from an invitation token.
    *
    * @param token - Invitation token from the link.
-   * @param password - The password to set.
-   * @returns Nothing.
-   * @throws Whatever `apiFetch` throws.
+   * @returns Nothing the caller reads; success is the absence of a throw.
+   * @throws Whatever `apiFetch` throws — an expired or already-accepted invitation included,
+   *         and a `403` carrying `INVITE_SIGN_IN_REQUIRED` when nobody is signed in yet.
    */
-  const acceptInvite = (token: string, password: string): Promise<unknown> =>
-    apiFetch('/api/portal/auth/accept-invite', { method: 'POST', body: { token, password } })
+  const acceptInvite = (token: string): Promise<unknown> =>
+    apiFetch('/api/portal/auth/accept-invite', { method: 'POST', body: { token } })
 
   /**
    * Starts TOTP enrolment, returning the secret and its QR payload.

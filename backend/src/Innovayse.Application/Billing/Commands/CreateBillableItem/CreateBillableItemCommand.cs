@@ -1,6 +1,5 @@
 namespace Innovayse.Application.Billing.Commands.CreateBillableItem;
 
-using Innovayse.Application.Billing.DTOs;
 
 /// <summary>Command to create a new billable item.</summary>
 /// <param name="ClientId">FK to the client.</param>

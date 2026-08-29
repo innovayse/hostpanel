@@ -1,23 +1,21 @@
 namespace Innovayse.API.Orders;
 
-using Innovayse.API.Billing.Extensions;
 using Innovayse.API.Billing;
+using Innovayse.API.Billing.Extensions;
 using Innovayse.API.Orders.Requests;
 using Innovayse.Application.Billing.Commands.CompleteGatewayPayment;
-using Innovayse.Application.Billing.Commands.StartGatewayPayment;
-using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Common;
 using Innovayse.Application.Orders.Commands.AcceptOrder;
 using Innovayse.Application.Orders.Commands.CancelOrder;
+using Innovayse.Application.Orders.Commands.CompleteOrderGatewayPayment;
 using Innovayse.Application.Orders.Commands.ConfirmOrderPayment;
+using Innovayse.Application.Orders.Commands.CreateOrderPaymentIntent;
 using Innovayse.Application.Orders.Commands.DeleteOrder;
 using Innovayse.Application.Orders.Commands.PlaceOrder;
-using Innovayse.Application.Orders.DTOs;
+using Innovayse.Application.Orders.Commands.StartOrderGatewayPayment;
 using Innovayse.Application.Orders.Queries.GetOrder;
 using Innovayse.Application.Orders.Queries.ListOrders;
 using Innovayse.Domain.Auth;
-using Innovayse.Domain.Billing.Interfaces;
-using Innovayse.Domain.Orders.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;
@@ -138,39 +136,13 @@ public sealed class OrdersController(IMessageBus bus) : ControllerBase
     /// Returns the client secret needed by the frontend to confirm payment.
     /// </summary>
     /// <param name="id">Order primary key.</param>
-    /// <param name="stripeService">Stripe payment service.</param>
-    /// <param name="orderRepo">Order repository.</param>
-    /// <param name="invoiceRepo">Invoice repository.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>200 OK with the PaymentIntent client secret.</returns>
     [HttpPost("{id:int}/create-payment-intent")]
     [AllowAnonymous]
-    public async Task<IActionResult> CreatePaymentIntentAsync(
-        int id,
-        [FromServices] IStripeService stripeService,
-        [FromServices] IOrderRepository orderRepo,
-        [FromServices] IInvoiceRepository invoiceRepo,
-        CancellationToken ct)
+    public async Task<IActionResult> CreatePaymentIntentAsync(int id, CancellationToken ct)
     {
-        var order = await orderRepo.FindByIdAsync(id, ct)
-            ?? throw new InvalidOperationException($"Order {id} not found.");
-
-        if (order.InvoiceId is null)
-        {
-            throw new InvalidOperationException($"Order {id} has no linked invoice.");
-        }
-
-        var invoice = await invoiceRepo.FindByIdAsync(order.InvoiceId.Value, ct)
-            ?? throw new InvalidOperationException($"Invoice {order.InvoiceId} not found.");
-
-        var metadata = new Dictionary<string, string>
-        {
-            ["orderId"] = order.Id.ToString(),
-            ["invoiceId"] = invoice.Id.ToString(),
-            ["clientId"] = order.ClientId.ToString(),
-        };
-
-        var clientSecret = await stripeService.CreatePaymentIntentAsync(invoice.Total, "usd", metadata, ct);
+        var clientSecret = await bus.InvokeAsync<string>(new CreateOrderPaymentIntentCommand(id), ct);
         return Ok(new { clientSecret });
     }
 
@@ -197,7 +169,6 @@ public sealed class OrdersController(IMessageBus bus) : ControllerBase
     /// </summary>
     /// <param name="id">Order primary key.</param>
     /// <param name="request">The payment module and return URL.</param>
-    /// <param name="orderRepo">Order repository.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>200 OK with the redirect URL.</returns>
     [HttpPost("{id:int}/gateway-payment/start")]
@@ -205,19 +176,10 @@ public sealed class OrdersController(IMessageBus bus) : ControllerBase
     public async Task<IActionResult> StartGatewayPaymentAsync(
         int id,
         [FromBody] StartGatewayPaymentRequest request,
-        [FromServices] IOrderRepository orderRepo,
         CancellationToken ct)
     {
-        var order = await orderRepo.FindByIdAsync(id, ct)
-            ?? throw new InvalidOperationException($"Order {id} not found.");
-
-        if (order.InvoiceId is null)
-        {
-            throw new InvalidOperationException($"Order {id} has no linked invoice.");
-        }
-
         var redirectUrl = await bus.InvokeAsync<string>(
-            new StartGatewayPaymentCommand(order.InvoiceId.Value, request.Module, request.ReturnUrl), ct);
+            new StartOrderGatewayPaymentCommand(id, request.Module, request.ReturnUrl), ct);
         return Ok(new { redirectUrl });
     }
 
@@ -226,26 +188,17 @@ public sealed class OrdersController(IMessageBus bus) : ControllerBase
     /// marks the invoice paid and fulfills the order.
     /// </summary>
     /// <param name="id">Order primary key.</param>
-    /// <param name="orderRepo">Order repository.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>200 OK with the payment state: paid, pending, or declined.</returns>
     [HttpPost("{id:int}/gateway-payment/complete")]
     [AllowAnonymous]
-    public async Task<IActionResult> CompleteGatewayPaymentAsync(
-        int id,
-        [FromServices] IOrderRepository orderRepo,
-        CancellationToken ct)
+    public async Task<IActionResult> CompleteGatewayPaymentAsync(int id, CancellationToken ct)
     {
-        var order = await orderRepo.FindByIdAsync(id, ct)
-            ?? throw new InvalidOperationException($"Order {id} not found.");
-
-        if (order.InvoiceId is null)
-        {
-            throw new InvalidOperationException($"Order {id} has no linked invoice.");
-        }
-
         var state = await bus.InvokeAsync<GatewayCompletionState>(
-            new CompleteGatewayPaymentCommand(order.InvoiceId.Value), ct);
+            new CompleteOrderGatewayPaymentCommand(id), ct);
+
+        // The only shaping left here, and it belongs here: the wire spelling of a domain enum
+        // is the API's business, and the enum never leaves the backend in that form.
         return Ok(new { state = state.ToWireString() });
     }
 }

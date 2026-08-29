@@ -305,7 +305,7 @@ import { Globe, CheckCircle, XCircle, ArrowLeftRight, Server, ArrowRight, AlertC
 import { apiFetch } from '~/composables/useApi'
 import { useCartStore } from '~/stores/cart'
 import { useCatalogApi } from '~/composables/apis/useCatalogApi'
-import { apiErrorMessage } from '~/utils/portalErrorMessages'
+import { apiErrorMessage } from '~/utils/apiError'
 
 const { t: $t, locale } = useI18n()
 const localePath = useLocalePath()
@@ -352,7 +352,7 @@ async function searchDomain() {
   try {
     result.value = await catalog.checkDomain(domain)
   } catch (err: unknown) {
-    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`;
+    // The API's own wording, through the one shared reader in `utils/apiError.ts`;
     // the local key is only the no-answer fallback.
     searchError.value = apiErrorMessage(err) || $t('domains.checkFailed')
   } finally {

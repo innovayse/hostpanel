@@ -129,6 +129,35 @@ _logger.LogInformation($"Invoice {invoice.Id} created");
 namespace Innovayse.Application.Billing.Commands.CreateInvoice;
 ```
 
+### GlobalUsings.cs
+
+**Every project gets a `GlobalUsings.cs` at its root, and the usings a project needs in nearly
+every file belong there rather than repeated at the top of two hundred of them.**
+
+```csharp
+// File: src/Innovayse.<Product>.Application/GlobalUsings.cs
+global using FluentValidation;
+global using Microsoft.EntityFrameworkCore;
+global using Microsoft.Extensions.DependencyInjection;
+global using Microsoft.Extensions.Logging;
+```
+
+One per project, not one per solution — the set is different for each layer, and that is the
+point. Domain needs almost nothing; Application needs the validation and logging namespaces;
+Infrastructure needs EF Core; API needs the MVC ones. A namespace that belongs to one feature
+does not go here: `global using` is for what a project uses *everywhere*, and a global using
+that only three files need makes those three files harder to read, not easier, because the
+reader can no longer see where the type came from.
+
+This is not the same as `<ImplicitUsings>enable</ImplicitUsings>`, which adds a fixed SDK list
+you do not control. Use both: implicit usings for the BCL, `GlobalUsings.cs` for the packages
+and internal namespaces this project actually leans on.
+
+**A `global using` is a dependency you can no longer see at the call site**, so keep the file
+short and keep it sorted. If adding one to the file would let a layer reach something it should
+not — EF Core in Application, an ASP.NET type in Domain — that is the file-layout rule speaking,
+and the answer is not to hide the using.
+
 ## No Magic Numbers / Strings
 
 ```csharp

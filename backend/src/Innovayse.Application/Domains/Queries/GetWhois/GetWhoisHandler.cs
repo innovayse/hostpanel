@@ -1,6 +1,5 @@
 namespace Innovayse.Application.Domains.Queries.GetWhois;
 
-using Innovayse.Application.Domains.DTOs;
 using Innovayse.Domain.Domains.Interfaces;
 
 /// <summary>Performs a WHOIS lookup via the registrar provider and returns a <see cref="WhoisDto"/>.</summary>

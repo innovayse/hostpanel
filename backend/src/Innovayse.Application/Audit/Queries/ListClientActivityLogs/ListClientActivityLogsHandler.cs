@@ -1,6 +1,5 @@
 namespace Innovayse.Application.Audit.Queries.ListClientActivityLogs;
 
-using Innovayse.Application.Audit.DTOs;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Audit.Interfaces;
 

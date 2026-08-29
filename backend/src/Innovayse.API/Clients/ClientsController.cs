@@ -1,7 +1,8 @@
 namespace Innovayse.API.Clients;
 
 using Innovayse.API.Clients.Requests;
-using Innovayse.Application.Admin.DTOs;
+using Innovayse.API.RateLimiting;
+using Innovayse.Application.Admin.Common;
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Clients.Commands.AddContact;
 using Innovayse.Application.Clients.Commands.AddUserToClient;
@@ -14,7 +15,7 @@ using Innovayse.Application.Clients.Commands.TransferOwnership;
 using Innovayse.Application.Clients.Commands.UpdateClient;
 using Innovayse.Application.Clients.Commands.UpdateContact;
 using Innovayse.Application.Clients.Commands.UpdateUserPermissions;
-using Innovayse.Application.Clients.DTOs;
+using Innovayse.Application.Clients.Common;
 using Innovayse.Application.Clients.Queries.ExportClientData;
 using Innovayse.Application.Clients.Queries.GetClient;
 using Innovayse.Application.Clients.Queries.GetClientSummary;
@@ -24,6 +25,7 @@ using Innovayse.Application.Common;
 using Innovayse.Domain.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Wolverine;
 
 /// <summary>
@@ -357,6 +359,7 @@ public sealed class ClientsController(IMessageBus bus, IIdentityProvider identit
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The requested sections of the client's record, or 404 when no such client exists.</returns>
     [HttpGet("{id:int}/export")]
+    [EnableRateLimiting(RateLimitPolicies.Concurrent)]
     public async Task<ActionResult<ClientExportDto>> ExportClientDataAsync(
         int id,
         [FromQuery] string[] fields,

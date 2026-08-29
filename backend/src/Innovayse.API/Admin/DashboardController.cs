@@ -1,6 +1,5 @@
 namespace Innovayse.API.Admin;
 
-using Innovayse.Application.Admin.DTOs;
 using Innovayse.Application.Admin.Queries.GetDashboardStats;
 using Innovayse.Domain.Auth;
 using Microsoft.AspNetCore.Authorization;

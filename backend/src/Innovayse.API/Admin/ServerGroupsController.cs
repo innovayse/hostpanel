@@ -3,7 +3,6 @@ using Innovayse.API.Admin.Requests;
 using Innovayse.Application.Admin.Servers.Commands.CreateServerGroup;
 using Innovayse.Application.Admin.Servers.Commands.DeleteServerGroup;
 using Innovayse.Application.Admin.Servers.Commands.UpdateServerGroup;
-using Innovayse.Application.Admin.Servers.DTOs;
 using Innovayse.Application.Admin.Servers.Queries.ListServerGroups;
 using Innovayse.Domain.Auth;
 using Innovayse.Domain.Servers;

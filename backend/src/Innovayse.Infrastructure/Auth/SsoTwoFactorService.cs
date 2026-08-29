@@ -1,6 +1,6 @@
 namespace Innovayse.Infrastructure.Auth;
 
-using Innovayse.Application.Auth.DTOs;
+using Innovayse.Application.Auth.Common;
 using Innovayse.Application.Auth.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;

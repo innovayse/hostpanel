@@ -6,7 +6,7 @@ using Innovayse.Application.Support.Commands.CreatePredefinedReplyCategory;
 using Innovayse.Application.Support.Commands.DeletePredefinedReply;
 using Innovayse.Application.Support.Commands.DeletePredefinedReplyCategory;
 using Innovayse.Application.Support.Commands.UpdatePredefinedReply;
-using Innovayse.Application.Support.DTOs;
+using Innovayse.Application.Support.Common;
 using Innovayse.Application.Support.Queries.ListPredefinedReplies;
 using Innovayse.Application.Support.Queries.ListPredefinedReplyCategories;
 using Innovayse.Application.Support.Queries.SearchPredefinedReplies;

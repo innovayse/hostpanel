@@ -2,7 +2,7 @@ namespace Innovayse.API.Admin;
 
 using Innovayse.API.Admin.Requests;
 using Innovayse.Application.Admin.Commands.UpdateSetting;
-using Innovayse.Application.Admin.DTOs;
+using Innovayse.Application.Admin.Common;
 using Innovayse.Application.Admin.Queries.GetSetting;
 using Innovayse.Application.Admin.Queries.GetSettings;
 using Innovayse.Domain.Auth;

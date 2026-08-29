@@ -1,6 +1,7 @@
 namespace Innovayse.Application.Reports.Interfaces;
 
-using Innovayse.Application.Reports.DTOs;
+using Innovayse.Application.Reports.Common;
+
 
 /// <summary>Service for retrieving and caching disk/bandwidth usage from hosting servers.</summary>
 public interface IDiskUsageService

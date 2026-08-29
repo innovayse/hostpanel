@@ -1,6 +1,6 @@
 namespace Innovayse.Application.Domains.Queries.GetTldPricing;
 
-using Innovayse.Application.Domains.DTOs;
+using Innovayse.Application.Domains.Common;
 using Innovayse.Domain.Domains;
 using Innovayse.Domain.Domains.Interfaces;
 using Microsoft.Extensions.Caching.Memory;

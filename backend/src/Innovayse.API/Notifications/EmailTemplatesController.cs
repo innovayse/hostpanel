@@ -5,7 +5,7 @@ using Innovayse.Application.Notifications.Commands.CreateEmailTemplate;
 using Innovayse.Application.Notifications.Commands.DeleteEmailTemplate;
 using Innovayse.Application.Notifications.Commands.ToggleEmailTemplate;
 using Innovayse.Application.Notifications.Commands.UpdateEmailTemplate;
-using Innovayse.Application.Notifications.DTOs;
+using Innovayse.Application.Notifications.Common;
 using Innovayse.Application.Notifications.Queries.GetEmailTemplate;
 using Innovayse.Application.Notifications.Queries.ListEmailTemplates;
 using Innovayse.Domain.Auth;

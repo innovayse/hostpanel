@@ -3,7 +3,6 @@ namespace Innovayse.API.Billing;
 using Innovayse.API.Billing.Requests;
 using Innovayse.Application.Billing.Commands.CreateBillableItem;
 using Innovayse.Application.Billing.Commands.DeleteBillableItem;
-using Innovayse.Application.Billing.DTOs;
 using Innovayse.Application.Billing.Queries.ListBillableItems;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Auth;

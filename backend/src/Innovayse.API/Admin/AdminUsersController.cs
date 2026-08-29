@@ -1,18 +1,17 @@
 namespace Innovayse.API.Admin;
 
 using Innovayse.API.Admin.Requests;
-using Innovayse.Application.Admin.DTOs;
-using Innovayse.Application.Auth.Interfaces;
+using Innovayse.Application.Admin.Common;
+using Innovayse.Application.Admin.Users.Commands.DeleteUser;
+using Innovayse.Application.Admin.Users.Commands.SendPasswordReset;
+using Innovayse.Application.Admin.Users.Commands.SetUserPassword;
+using Innovayse.Application.Admin.Users.Commands.UpdateUser;
+using Innovayse.Application.Admin.Users.Queries.GetUser;
+using Innovayse.Application.Admin.Users.Queries.ListUsers;
 using Innovayse.Application.Common;
-using Innovayse.Application.Common.Options;
-using Innovayse.Application.Notifications.Commands.SendEmail;
-using Innovayse.Application.Notifications.Services;
 using Innovayse.Domain.Auth;
-using Innovayse.Domain.Clients.Interfaces;
-using Innovayse.Domain.Notifications.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using Wolverine;
 
 /// <summary>
@@ -25,16 +24,11 @@ using Wolverine;
 /// where it owns the accounts; where an SSO owns them, they are made there. Rather than
 /// answer 404 and leave an operator guessing, each returns a message naming where to go.
 /// </remarks>
-/// <param name="identity">Reads people from wherever they live.</param>
-/// <param name="provisioning">Writes them, where this deployment owns them.</param>
-/// <param name="clientRepo">Client repository, for the accounts each person owns.</param>
+/// <param name="bus">Wolverine message bus.</param>
 [ApiController]
 [Route("api/admin/users")]
 [Authorize(Roles = Roles.Admin)]
-public sealed class AdminUsersController(
-    IIdentityProvider identity,
-    IUserProvisioning provisioning,
-    IClientRepository clientRepo) : ControllerBase
+public sealed class AdminUsersController(IMessageBus bus) : ControllerBase
 {
     /// <summary>Returns a paginated list of all users.</summary>
     /// <param name="page">1-based page number (default 1).</param>
@@ -49,52 +43,20 @@ public sealed class AdminUsersController(
         [FromQuery] string? search = null,
         CancellationToken ct = default)
     {
-        var ps = Math.Clamp(pageSize, 1, 100);
-        var pg = Math.Max(1, page);
-
-        var (accounts, total) = await identity.ListAsync(search, pg, ps, ct);
-
-        // One lookup for the page rather than one per row.
-        var clientIds = await clientRepo.FindClientIdsByUserIdsAsync(
-            accounts.Select(a => a.Subject).ToList(), ct);
-
-        var items = accounts.Select(a => new UserListItemDto(
-            a.Subject,
-            clientIds.TryGetValue(a.Subject, out var clientId) ? clientId : null,
-            a.FirstName, a.LastName, a.Email,
-            // Language and the account's own creation date belong to whichever store holds
-            // the person, and an SSO does not hand either out. Left unanswered rather than
-            // guessed at: a fabricated date on an admin screen is worse than a blank one.
-            Language: null, a.LastLoginAt, CreatedAt: default)).ToList();
-
-        return Ok(new PagedResult<UserListItemDto>(items, total, pg, ps));
+        var result = await bus.InvokeAsync<PagedResult<UserListItemDto>>(
+            new ListUsersQuery(search, page, pageSize), ct);
+        return Ok(result);
     }
 
     /// <summary>Returns a single user with linked client accounts.</summary>
     /// <param name="id">The person's subject.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>User detail DTO.</returns>
+    /// <returns>User detail DTO, or 404 if the subject is unknown.</returns>
     [HttpGet("{id}")]
     public async Task<ActionResult<UserDetailDto>> GetByIdAsync(string id, CancellationToken ct)
     {
-        var account = await identity.FindBySubjectAsync(id, ct);
-        if (account is null)
-        {
-            return NotFound();
-        }
-
-        var client = await clientRepo.FindByUserIdAsync(id, ct);
-        var accounts = client is not null
-            ? new List<UserAccountDto>
-            {
-                new(client.Id, client.FirstName, client.LastName, client.CompanyName, IsOwner: true),
-            }
-            : [];
-
-        return Ok(new UserDetailDto(
-            account.Subject, account.FirstName, account.LastName, account.Email,
-            Language: null, account.LastLoginAt,
-            client?.CreatedAt ?? default, accounts));
+        var result = await bus.InvokeAsync<UserDetailDto?>(new GetUserQuery(id), ct);
+        return result is null ? NotFound() : Ok(result);
     }
 
     /// <summary>Updates a user's profile fields.</summary>
@@ -105,11 +67,8 @@ public sealed class AdminUsersController(
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateAsync(string id, [FromBody] UpdateUserRequest request, CancellationToken ct)
     {
-        // Two writes, because they are two different things: a rename, and a change to the
-        // address someone signs in with. Both refuse together where an SSO owns the person,
-        // so neither can land without the other.
-        await provisioning.UpdateProfileAsync(id, request.FirstName, request.LastName, request.Language, ct);
-        await provisioning.ChangeEmailAsync(id, request.Email, ct);
+        await bus.InvokeAsync(
+            new UpdateUserCommand(id, request.FirstName, request.LastName, request.Email, request.Language), ct);
         return NoContent();
     }
 
@@ -122,7 +81,7 @@ public sealed class AdminUsersController(
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteAsync(string id, CancellationToken ct)
     {
-        await provisioning.DeleteAsync(id, ct);
+        await bus.InvokeAsync(new DeleteUserCommand(id), ct);
         return NoContent();
     }
 
@@ -131,39 +90,12 @@ public sealed class AdminUsersController(
     /// Seeds the email template on first use.
     /// </summary>
     /// <param name="id">The person's subject.</param>
-    /// <param name="templateRepo">Email template repository.</param>
-    /// <param name="uow">Unit of work for persisting the template.</param>
-    /// <param name="bus">Message bus, for sending the mail.</param>
-    /// <param name="clientPortal">Where the client portal lives, for the link in the reset mail.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>204 No Content.</returns>
     [HttpPost("{id}/reset-password")]
-    public async Task<IActionResult> ResetPasswordAsync(
-        string id,
-        [FromServices] IEmailTemplateRepository templateRepo,
-        [FromServices] IUnitOfWork uow,
-        [FromServices] IMessageBus bus,
-        [FromServices] IOptions<ClientPortalOptions> clientPortal,
-        CancellationToken ct)
+    public async Task<IActionResult> ResetPasswordAsync(string id, CancellationToken ct)
     {
-        var account = await identity.FindBySubjectAsync(id, ct)
-            ?? throw new InvalidOperationException($"User {id} not found.");
-
-        // The token first: it is the half that refuses where an SSO owns the account, and
-        // seeding a template and sending mail before finding that out would leave an
-        // operator with a delivered reset link that resets nothing.
-        var token = await provisioning.IssuePasswordResetTokenAsync(id, ct);
-
-        await PasswordResetTemplateSeeder.EnsureSeededAsync(templateRepo, uow, ct);
-
-        var clientBaseUrl = clientPortal.Value.BaseUrl;
-        var resetLink = $"{clientBaseUrl}/client/reset-password?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(account.Email)}";
-
-        await bus.InvokeAsync(new SendEmailCommand(
-            account.Email,
-            PasswordResetTemplateSeeder.Slug,
-            new { reset_link = resetLink }), ct);
-
+        await bus.InvokeAsync(new SendPasswordResetCommand(id), ct);
         return NoContent();
     }
 
@@ -177,7 +109,7 @@ public sealed class AdminUsersController(
     [HttpPost("{id}/change-password")]
     public async Task<IActionResult> ChangePasswordAsync(string id, [FromBody] ChangePasswordRequest request, CancellationToken ct)
     {
-        await provisioning.SetPasswordAsync(id, request.Password, ct);
+        await bus.InvokeAsync(new SetUserPasswordCommand(id, request.Password), ct);
         return NoContent();
     }
 }

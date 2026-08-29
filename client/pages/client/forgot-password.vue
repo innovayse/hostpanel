@@ -40,7 +40,7 @@
  * reset link.
  */
 import { useAuthApi } from '~/composables/apis/useAuthApi'
-import { apiErrorMessage } from '~/utils/portalErrorMessages'
+import { apiErrorMessage } from '~/utils/apiError'
 
 definePageMeta({ layout: false })
 

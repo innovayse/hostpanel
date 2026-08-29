@@ -1,15 +1,16 @@
 namespace Innovayse.API.Reports;
 
+using Innovayse.API.RateLimiting;
 using System.Text;
 using Innovayse.Application.Reports.Commands.RevalidateSslMonitoring;
 using Innovayse.Application.Reports.Commands.UpdateDiskUsage;
-using Innovayse.Application.Reports.DTOs;
+using Innovayse.Application.Reports.Common;
 using Innovayse.Application.Reports.Queries.AgingInvoices;
 using Innovayse.Application.Reports.Queries.AgingInvoicesSummary;
 using Innovayse.Application.Reports.Queries.AnnualIncome;
+using Innovayse.Application.Reports.Queries.ClientStatement;
 using Innovayse.Application.Reports.Queries.ClientsByCity;
 using Innovayse.Application.Reports.Queries.ClientsByCountry;
-using Innovayse.Application.Reports.Queries.ClientStatement;
 using Innovayse.Application.Reports.Queries.DailyPerformance;
 using Innovayse.Application.Reports.Queries.GetClientPicker;
 using Innovayse.Application.Reports.Queries.GetClientsReport;
@@ -40,6 +41,7 @@ using Innovayse.Application.Reports.Queries.TransactionsReport;
 using Innovayse.Domain.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Wolverine;
 
 /// <summary>Admin reporting endpoints. Every action binds, dispatches one message, and returns.</summary>
@@ -148,6 +150,7 @@ public sealed class ReportsController(IMessageBus bus) : ControllerBase
 
     /// <summary>Exports invoices report as CSV.</summary>
     [HttpGet("invoices/export")]
+    [EnableRateLimiting(RateLimitPolicies.Concurrent)]
     public async Task<IActionResult> ExportInvoicesCsvAsync(
         [FromQuery] string? status,
         [FromQuery] string? createdFrom, [FromQuery] string? createdTo,
@@ -192,6 +195,7 @@ public sealed class ReportsController(IMessageBus bus) : ControllerBase
 
     /// <summary>Exports transactions report as CSV.</summary>
     [HttpGet("transactions/export")]
+    [EnableRateLimiting(RateLimitPolicies.Concurrent)]
     public async Task<IActionResult> ExportTransactionsCsvAsync(
         [FromQuery] string? dateFrom, [FromQuery] string? dateTo,
         [FromQuery] string? paymentMethod,

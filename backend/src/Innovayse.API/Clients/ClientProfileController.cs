@@ -5,7 +5,7 @@ using Innovayse.Application.Clients.Commands.AddContact;
 using Innovayse.Application.Clients.Commands.RemoveContact;
 using Innovayse.Application.Clients.Commands.UpdateClient;
 using Innovayse.Application.Clients.Commands.UpdateContact;
-using Innovayse.Application.Clients.DTOs;
+using Innovayse.Application.Clients.Common;
 using Innovayse.Application.Clients.Queries.GetMyProfile;
 using Innovayse.Domain.Auth;
 using Microsoft.AspNetCore.Authorization;

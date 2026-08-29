@@ -5,7 +5,7 @@ using Innovayse.Application.Domains.Commands.DeleteTldConfig;
 using Innovayse.Application.Domains.Commands.ImportTldPricing;
 using Innovayse.Application.Domains.Commands.SyncTldCostPrices;
 using Innovayse.Application.Domains.Commands.UpdateTldConfig;
-using Innovayse.Application.Domains.DTOs;
+using Innovayse.Application.Domains.Common;
 using Innovayse.Application.Domains.Queries.GetTldConfig;
 using Innovayse.Application.Domains.Queries.ListTldConfigs;
 using Innovayse.Domain.Auth;

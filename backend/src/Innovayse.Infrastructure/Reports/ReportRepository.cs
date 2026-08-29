@@ -1,6 +1,6 @@
 namespace Innovayse.Infrastructure.Reports;
 
-using Innovayse.Application.Reports.DTOs;
+using Innovayse.Application.Reports.Common;
 using Innovayse.Application.Reports.Interfaces;
 using Innovayse.Domain.Billing;
 using Innovayse.Infrastructure.Persistence;

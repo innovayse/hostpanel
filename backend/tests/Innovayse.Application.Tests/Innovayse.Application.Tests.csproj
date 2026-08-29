@@ -12,6 +12,7 @@
     <PackageReference Include="coverlet.collector" />
     <PackageReference Include="Moq" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
+    <PackageReference Include="Microsoft.Extensions.Localization" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Innovayse.Application\Innovayse.Application.csproj" />

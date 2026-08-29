@@ -2,7 +2,7 @@ namespace Innovayse.Application.Support.Queries.GetMyTickets;
 
 using Innovayse.Application.Clients.Common;
 using Innovayse.Application.Common;
-using Innovayse.Application.Support.DTOs;
+using Innovayse.Application.Support.Common;
 using Innovayse.Domain.Clients.Interfaces;
 using Innovayse.Domain.Support.Interfaces;
 

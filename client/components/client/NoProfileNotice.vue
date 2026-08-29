@@ -34,21 +34,24 @@
  * for an account that simply is not a customer — most often the platform superadmin, who
  * authenticates fine and has no row in the backend's `clients` table.
  *
- * The wording is resolved through `utils/portalErrorMessages.ts`, the single mapping table
- * for backend error codes; no sentence is written in this template.
+ * The explanation is the API's own sentence, kept by `stores/client.ts` when it recognised
+ * the CLIENT_PROFILE_NOT_FOUND code, and already in the caller's language — the backend
+ * resolves it from `ValidationMessages*.resx` in the culture `Accept-Language` asked for. No
+ * sentence is written in this template, and there is no longer a mapping table to look one up
+ * in.
  */
-import { PortalErrorCode, portalErrorMessageKey } from '~/utils/portalErrorMessages'
+import { useClientStore } from '~/stores/client'
 
 const { t } = useI18n()
+const store = useClientStore()
 
 /**
- * The explanation, looked up by code in the one mapping table.
+ * The explanation the API gave.
  *
- * Falls back to the code itself only if the table and the constant ever drift apart, which
- * would be a bug rather than a state worth wording.
+ * The local string is the offline fallback and nothing else: this component only renders once
+ * `clientProfileMissing` is set, which only happens from a refusal that carried a body, so in
+ * practice the store's message is always there. A request that never reached the API leaves it
+ * null, and then this says the same thing in the page's own language.
  */
-const message = computed(() => {
-  const key = portalErrorMessageKey(PortalErrorCode.ClientProfileNotFound)
-  return key ? t(key) : PortalErrorCode.ClientProfileNotFound
-})
+const message = computed(() => store.clientProfileMessage || t('client.noProfile.body'))
 </script>

@@ -1,6 +1,7 @@
 namespace Innovayse.API.Domains;
 
 using Innovayse.API.Domains.Requests;
+using Innovayse.API.RateLimiting;
 using Innovayse.Application.Common;
 using Innovayse.Application.Domains.Commands.AddDnsRecord;
 using Innovayse.Application.Domains.Commands.AddEmailForwardingRule;
@@ -21,7 +22,7 @@ using Innovayse.Application.Domains.Commands.UpdateDnsRecord;
 using Innovayse.Application.Domains.Commands.UpdateDomain;
 using Innovayse.Application.Domains.Commands.UpdateEmailForwardingRule;
 using Innovayse.Application.Domains.Commands.UpdateNameservers;
-using Innovayse.Application.Domains.DTOs;
+using Innovayse.Application.Domains.Common;
 using Innovayse.Application.Domains.Queries.CheckDomainAvailability;
 using Innovayse.Application.Domains.Queries.GetDomain;
 using Innovayse.Application.Domains.Queries.GetWhois;
@@ -30,6 +31,7 @@ using Innovayse.Domain.Auth;
 using Innovayse.Domain.Domains;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Wolverine;
 using ApiRegisterDomainRequest = Innovayse.API.Domains.Requests.RegisterDomainRequest;
 using ApiRenewDomainRequest = Innovayse.API.Domains.Requests.RenewDomainRequest;
@@ -86,6 +88,7 @@ public sealed class DomainsController(IMessageBus bus) : ControllerBase
     /// <param name="ct">Cancellation token.</param>
     /// <returns>WHOIS information for the specified domain.</returns>
     [HttpGet("whois")]
+    [EnableRateLimiting(RateLimitPolicies.Upstream)]
     [ProducesResponseType(typeof(WhoisDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]

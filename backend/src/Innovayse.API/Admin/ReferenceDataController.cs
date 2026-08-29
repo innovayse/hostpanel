@@ -1,6 +1,6 @@
 namespace Innovayse.API.Admin;
 
-using Innovayse.Application.Common;
+using Innovayse.Application.Admin.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

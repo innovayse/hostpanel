@@ -83,20 +83,17 @@
       "errorDefault": "Չհաջողվեց վերականգնել գաղտնաբառը։ Հղումը կարող էր լրացել լինել՝ խնդրեք նորը։"
     },
     "acceptInvite": {
-      "title": "Set Your Password",
-      "subtitle": "Create your password to access your account",
-      "password": "Password",
-      "passwordPlaceholder": "Min. 8 characters",
-      "confirmPassword": "Confirm Password",
-      "confirmPasswordPlaceholder": "Re-enter your password",
-      "submit": "Create Account",
-      "submitting": "Creating account\u2026",
-      "backToSignIn": "Back to Sign In",
-      "invalidTitle": "Invalid invitation link",
-      "invalidMessage": "This invitation link is invalid or has expired. Please contact your account administrator to request a new invitation.",
-      "errorMismatch": "Passwords do not match.",
-      "errorMinLength": "Password must be at least 8 characters.",
-      "errorDefault": "Failed to accept invitation. The link may have expired."
+      "title": "Ընդունել հրավերը",
+      "subtitle": "Միացեք հաշվին, որը կառավարելու համար ձեզ հրավիրել են",
+      "description": "Ընդունելով՝ ձեր մուտք գործած հաշիվը կկապվի այս հաճախորդին՝ հրավերում նշված իրավունքներով։",
+      "submit": "Ընդունել հրավերը",
+      "submitting": "Ընդունվում է\u2026",
+      "backToSignIn": "Վերադառնալ մուտքի էջ",
+      "invalidTitle": "Անվավեր հրավերի հղում",
+      "invalidMessage": "Այս հղումն անվավեր է կամ ժամկետանց։ Դիմեք հաշվի ադմինիստրատորին նոր հրավեր ստանալու համար։",
+      "signInRequiredTitle": "Մուտք գործեք՝ շարունակելու համար",
+      "signInRequired": "Հրավերն ընդունում է այն հաշիվը, որով մուտք է գործված, ուստի նախ անհրաժեշտ է մուտք գործել։ Մուտքից հետո կվերադառնաք այստեղ։",
+      "signInAction": "Մուտք գործել և շարունակել"
     },
     "dashboard": {
       "title": "Վահանակ",

@@ -40,7 +40,8 @@
       },
       "error": {
         "consentRequired": "Please accept the privacy policy to continue",
-        "failed": "Failed to send message. Please try again later."
+        "failed": "Failed to send message. Please try again later.",
+        "unavailable": "The contact form is unavailable right now. Please email or call us using the details on this page."
       }
     },
     "info": {

@@ -51,12 +51,15 @@ services:
       NUXT_SSO_CLIENT_ID: ${SSO_CLIENT_ID}
       NUXT_SSO_CLIENT_SECRET: ${SSO_CLIENT_SECRET}
       NUXT_SSO_CALLBACK_URL: ${SSO_CALLBACK_URL}
-      NUXT_SMTP_HOST: ${SMTP_HOST}
-      NUXT_SMTP_PORT: ${SMTP_PORT}
       NUXT_MAIN_API_URL: http://main-client:3000
       NUXT_PUBLIC_AUTH_MODE: ${AUTH_MODE}
       NUXT_PUBLIC_SSO_PUBLIC_URL: ${SSO_PUBLIC_URL}
       NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+      # The WHMCS install this panel hands visitors off to. Restated here for the same
+      # reason as everything above it: docker-compose.yml passes WHMCS_URL, which the
+      # prod target cannot read, so only Nitro's override name takes effect. No trailing
+      # slash -- the value is substituted verbatim.
+      NUXT_PUBLIC_WHMCS_URL: ${WHMCS_URL:-}
 
   admin:
     ports:

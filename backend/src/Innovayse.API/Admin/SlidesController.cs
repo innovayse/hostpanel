@@ -4,7 +4,7 @@ using Innovayse.Application.Slides.Commands.CreateSlide;
 using Innovayse.Application.Slides.Commands.DeleteSlide;
 using Innovayse.Application.Slides.Commands.UpdateSlide;
 using Innovayse.Application.Slides.Commands.UpdateSlideOrder;
-using Innovayse.Application.Slides.DTOs;
+using Innovayse.Application.Slides.Common;
 using Innovayse.Application.Slides.Queries.GetSlide;
 using Innovayse.Application.Slides.Queries.ListSlides;
 using Innovayse.Domain.Auth;

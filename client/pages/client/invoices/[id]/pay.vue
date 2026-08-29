@@ -65,8 +65,9 @@
           </div>
 
           <template v-if="!paySuccess">
-            <!-- Payment Method label -->
-            <div class="grid grid-cols-[180px_1fr] gap-4 items-start">
+            <!-- Payment Method label — suppressed entirely when nothing is selectable, so the
+                 row is not rendered as an empty box beside its label. -->
+            <div v-if="hasSelectableMethod" class="grid grid-cols-[180px_1fr] gap-4 items-start">
               <label class="text-sm text-gray-400 pt-1">{{ $t('invoicePay.paymentMethod') }}</label>
               <div>
                 <!-- Saved cards -->
@@ -92,8 +93,9 @@
                     </span>
                     <input v-model="selectedMethodId" type="radio" :value="method.id" class="sr-only" />
                   </label>
-                  <!-- New card option -->
+                  <!-- New card option — hidden when there is no WHMCS page to hand off to. -->
                   <label
+                    v-if="canUseNewCard"
                     class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors"
                     :class="selectedMethodId === 'new'
                       ? 'border-cyan-500/50 bg-cyan-500/5'
@@ -111,8 +113,9 @@
                   </label>
                 </div>
 
-                <!-- No saved methods -->
-                <div v-else class="flex items-center gap-2 p-3 rounded-xl border border-cyan-500/30 bg-cyan-500/5">
+                <!-- No saved methods — only announces the card form when that form leads
+                     somewhere, i.e. when the WHMCS hand-off exists. -->
+                <div v-else-if="canUseNewCard" class="flex items-center gap-2 p-3 rounded-xl border border-cyan-500/30 bg-cyan-500/5">
                   <div class="w-5 h-5 rounded-full border-2 border-cyan-400 flex items-center justify-center">
                     <div class="w-2.5 h-2.5 rounded-full bg-cyan-400" />
                   </div>
@@ -132,8 +135,10 @@
               {{ $t('invoicePay.payByCardInecobank') }}
             </button>
 
-            <!-- New card form -->
-            <template v-if="selectedMethodId === 'new' || savedMethods.length === 0">
+            <!-- New card form. These fields are only a prelude to the WHMCS hand-off, so
+                 without that hand-off the form is not shown — collecting a card number that
+                 goes nowhere would be worse than not asking. -->
+            <template v-if="showNewCardForm">
               <!-- Card Number -->
               <div class="grid grid-cols-[180px_1fr] gap-4 items-center">
                 <label class="text-sm text-gray-400">{{ $t('invoicePay.cardNumber') }}</label>
@@ -192,8 +197,8 @@
               </div>
             </template>
 
-            <!-- Submit -->
-            <div class="grid grid-cols-[180px_1fr] gap-4 items-center">
+            <!-- Submit — only when a method is actually selected. -->
+            <div v-if="selectedMethodId !== null" class="grid grid-cols-[180px_1fr] gap-4 items-center">
               <div />
               <button
                 class="px-8 py-3 rounded-xl font-bold text-white transition-all duration-200 hover:scale-[1.02] flex items-center gap-2 bg-gradient-to-r from-cyan-600 to-primary-600 hover:from-cyan-500 hover:to-primary-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
@@ -278,7 +283,7 @@ import { AlertCircle, CheckCircle, CreditCard, Plus, Lock, Loader2 } from 'lucid
 import { useBillingApi } from '~/composables/apis/useBillingApi'
 import type { ClientInvoice } from '~/types/clientinvoice'
 import type { PaymentMethod } from '~/types/payment'
-import { apiErrorMessage } from '~/utils/portalErrorMessages'
+import { apiErrorMessage } from '~/utils/apiError'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
@@ -286,6 +291,13 @@ const route = useRoute()
 const localePath = useLocalePath()
 const { t } = useI18n()
 const config = useRuntimeConfig()
+
+/**
+ * Base URL of the WHMCS instance this deployment fronts, or an empty string.
+ *
+ * Empty is a legitimate configuration — a deployment that runs no WHMCS, or one where
+ * `WHMCS_URL` has not been set yet — so every link built from it must be guarded.
+ */
 const whmcsUrl = config.public.whmcsUrl
 
 const invoiceId = route.params.id as string
@@ -318,8 +330,23 @@ const paymentsToDate = computed(() => {
   return (total - balance).toFixed(2)
 })
 
+/**
+ * Whether paying with a card that is not already saved is possible at all.
+ *
+ * That path is a hand-off to WHMCS's PCI-compliant hosted card page, so it exists only when
+ * this deployment has a WHMCS instance. With no `whmcsUrl` the redirect would navigate the
+ * person away from this page to a 404 on the portal's own origin, mid-checkout, losing the
+ * payment page entirely — so the option is not offered rather than offered and broken.
+ */
+const canUseNewCard = computed(() => Boolean(whmcsUrl))
+
 // Payment form state
-const selectedMethodId = ref<number | 'new'>(savedMethods.value[0]?.id ?? 'new')
+//
+// `null` means no payment method is selectable: no card is saved and the new-card hand-off is
+// unavailable. Paying via a hosted gateway plugin is a separate button and is unaffected.
+const selectedMethodId = ref<number | 'new' | null>(
+  savedMethods.value[0]?.id ?? (canUseNewCard.value ? 'new' : null)
+)
 const cardNumber = ref('')
 const expiryDate = ref('')
 const cvv = ref('')
@@ -327,6 +354,17 @@ const cardDescription = ref('')
 const submitting = ref(false)
 const paySuccess = ref(false)
 const payError = ref('')
+
+/** Whether the card-entry form should render — it only ever feeds the WHMCS hand-off. */
+const showNewCardForm = computed(() => canUseNewCard.value && selectedMethodId.value === 'new')
+
+/**
+ * Whether this page offers any card-based way to pay.
+ *
+ * False leaves the hosted-gateway button (if a gateway plugin is enabled) as the only route;
+ * with neither, the invoice cannot be paid from this page at all.
+ */
+const hasSelectableMethod = computed(() => savedMethods.value.length > 0 || canUseNewCard.value)
 
 function formatCardNumber(e: Event) {
   const input = e.target as HTMLInputElement
@@ -341,11 +379,23 @@ function formatExpiry(e: Event) {
   else expiryDate.value = v
 }
 
-async function submitPayment() {
+/**
+ * Pays the invoice with the selected method.
+ *
+ * A saved card is charged through the API. "New card" instead hands off to WHMCS's hosted
+ * card page, which navigates the browser away — so it is only ever taken when
+ * {@link canUseNewCard} holds. The guards here are a second line of defence: the option is
+ * already not rendered when it cannot work.
+ */
+const submitPayment = async () => {
   payError.value = ''
 
-  // If new card entry → redirect to WHMCS for PCI-compliant card processing
+  // Nothing selectable — the submit button is not rendered in this state.
+  if (selectedMethodId.value === null) return
+
+  // If new card entry → redirect to WHMCS for PCI-compliant card processing.
   if (selectedMethodId.value === 'new') {
+    if (!canUseNewCard.value) return
     window.location.href = `${whmcsUrl}/index.php?rp=/invoice/${invoiceId}/pay`
     return
   }
@@ -355,7 +405,7 @@ async function submitPayment() {
     await billing.payInvoice(invoiceId, selectedMethodId.value)
     paySuccess.value = true
   } catch (err: unknown) {
-    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`;
+    // The API's own wording, through the one shared reader in `utils/apiError.ts`;
     // the local key is only the no-answer fallback.
     payError.value = apiErrorMessage(err) || t('invoicePay.paymentFailed')
   } finally {
@@ -380,7 +430,7 @@ async function payWithHostedGateway() {
     )
     window.location.href = redirectUrl
   } catch (err: unknown) {
-    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`;
+    // The API's own wording, through the one shared reader in `utils/apiError.ts`;
     // the local key is only the no-answer fallback.
     payError.value = apiErrorMessage(err) || t('invoicePay.paymentFailed')
     submitting.value = false

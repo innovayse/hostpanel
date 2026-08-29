@@ -119,8 +119,6 @@ definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
 const route = useRoute()
 const localePath = useLocalePath()
-const config = useRuntimeConfig()
-const whmcsUrl = config.public.whmcsUrl
 
 // Straight from the API composables rather than through a store: this page reads these once
 // and owns the results alone, which is the named exception to component -> store -> api.

@@ -1,6 +1,5 @@
 namespace Innovayse.Application.Orders.Queries.GetOrder;
 
-using Innovayse.Application.Orders.DTOs;
 using Innovayse.Domain.Billing.Interfaces;
 using Innovayse.Domain.Clients.Interfaces;
 using Innovayse.Domain.Orders.Interfaces;

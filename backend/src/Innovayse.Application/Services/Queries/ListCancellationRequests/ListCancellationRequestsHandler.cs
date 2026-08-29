@@ -1,10 +1,8 @@
 namespace Innovayse.Application.Services.Queries.ListCancellationRequests;
 
 using Innovayse.Application.Common;
-using Innovayse.Application.Services.DTOs;
 using Innovayse.Domain.Clients.Interfaces;
 using Innovayse.Domain.Products.Interfaces;
-using Innovayse.Domain.Services;
 using Innovayse.Domain.Services.Interfaces;
 
 /// <summary>Handles listing cancellation requests with enriched service and client data.</summary>
@@ -54,7 +52,7 @@ public sealed class ListCancellationRequestsHandler(
                 productName,
                 clientId,
                 clientName,
-                FormatCancellationType(req.Type),
+                req.Type.ToString(),
                 req.Reason,
                 req.Status.ToString(),
                 req.CreatedAt));
@@ -62,15 +60,4 @@ public sealed class ListCancellationRequestsHandler(
 
         return new PagedResult<CancellationRequestDto>(dtos, total, qry.Page, qry.PageSize);
     }
-
-    /// <summary>Formats the cancellation type enum into a human-readable display string.</summary>
-    /// <param name="type">The cancellation type.</param>
-    /// <returns>"Immediate" or "End of Billing Period".</returns>
-    private static string FormatCancellationType(CancellationType type) =>
-        type switch
-        {
-            CancellationType.Immediate => "Immediate",
-            CancellationType.EndOfBillingPeriod => "End of Billing Period",
-            _ => type.ToString(),
-        };
 }

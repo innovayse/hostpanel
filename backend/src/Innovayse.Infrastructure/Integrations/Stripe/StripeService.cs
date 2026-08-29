@@ -1,6 +1,6 @@
 namespace Innovayse.Infrastructure.Integrations.Stripe;
 
-using Innovayse.Application.Billing.DTOs;
+using Innovayse.Application.Billing.Common;
 using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Infrastructure.Integrations.Stripe.Options;
 using Microsoft.Extensions.Logging;

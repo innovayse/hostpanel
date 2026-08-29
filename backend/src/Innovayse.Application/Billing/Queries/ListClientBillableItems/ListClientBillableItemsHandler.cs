@@ -1,6 +1,5 @@
 namespace Innovayse.Application.Billing.Queries.ListClientBillableItems;
 
-using Innovayse.Application.Billing.DTOs;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Billing.Interfaces;

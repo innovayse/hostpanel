@@ -1,149 +1,60 @@
 /**
- * Contact Form API - Sends messages to Telegram and Email
+ * `POST /api/contact` — the public contact form.
+ *
+ * Nothing is delivered here. This route hands the submission to the C# backend's
+ * `POST /api/contact`, which sends the mail through the one `IEmailSender` the platform
+ * configures and posts the enquiry to the operator's chat through `IContactNotifier`. Both used
+ * to be done in this file, each with a credential of its own in this container's runtime config —
+ * the mail relay's password, then the Telegram bot token — and neither has any other reason to
+ * be in a browser-facing app. This route now holds no credential at all.
+ *
+ * It also used to wrap the send in `if (smtpHost && smtpUser && emailTo)` and answer
+ * `{ success: true }` either way — so a deployment with incomplete configuration told every
+ * visitor their message had arrived while nothing was sent and nothing was logged. Nothing here
+ * may reintroduce that: a failure from the backend is rethrown with its status and its code
+ * intact, and the browser never sees a success this route did not earn.
+ *
+ * The best-effort rule the Telegram relay had went with it rather than being dropped: the mail is
+ * what decides the visitor's answer, and a chat outage is logged by the handler instead of
+ * turning a delivered enquiry into a failure. It is enforced one layer further in now, where the
+ * code can see whether the mail actually went.
+ *
+ * @module server/api/contact.post
  */
-import nodemailer from 'nodemailer'
 
-interface ContactFormData {
-  name: string
-  email: string
-  phone?: string
-  service?: string
-  message: string
-  timestamp?: string
-}
+import type { H3Event } from 'h3'
+import type { ContactMessage } from '~/types/contactmessage'
 
-export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig()
-  const body = await readBody<ContactFormData>(event)
+/**
+ * Relays one contact-form submission to the backend.
+ *
+ * @param event - The incoming request.
+ * @returns 204 No Content, and only once the backend has accepted the message.
+ * @throws The backend's own error, status and `code` intact, when it refuses or cannot deliver.
+ */
+export default defineEventHandler(async (event: H3Event) => {
+  const body = await readBody<ContactMessage>(event)
 
-  // Validate required fields
-  if (!body.name || !body.email || !body.message) {
-    throw createError({
-      statusCode: 400,
-      message: 'Missing required fields'
-    })
-  }
+  // No field checks here. The backend validates every one of them and is the only side that
+  // writes the wording; a copy in this file would be a second answer to the same question, in a
+  // language this route cannot translate. See `api-driven-frontend.md`.
+  // `unknown`, not `void`: the backend answers 204 with an empty body, and nothing here reads
+  // the result -- what matters is that this line throws when the backend refuses.
+  await internalApiCall<unknown>(event, '/contact', {
+    method: 'POST',
+    body: {
+      name: body?.name,
+      email: body?.email,
+      phone: body?.phone,
+      service: body?.service,
+      message: body?.message,
+      submittedAt: body?.timestamp,
+    },
+  })
 
-  // Format message for Telegram (Armenian)
-  const telegramMessage = `
-🔔 *Նոր հայտ կայքից*
-
-👤 *Անուն:* ${escapeMarkdown(body.name)}
-📧 *Էլ. փոստ:* ${escapeMarkdown(body.email)}
-${body.phone ? `📱 *Հեռախոս:* ${escapeMarkdown(body.phone)}` : ''}
-${body.service ? `🛠 *Ծառայություն:* ${escapeMarkdown(body.service)}` : ''}
-
-💬 *Հաղորդագրություն:*
-${escapeMarkdown(body.message)}
-
-───────────────
-📅 ${body.timestamp || new Date().toISOString()}
-  `.trim()
-
-  try {
-    // Send to Telegram
-    await $fetch(
-      `https://api.telegram.org/bot${config.telegramBotToken}/sendMessage`,
-      {
-        method: 'POST',
-        body: {
-          chat_id: config.telegramChatId,
-          text: telegramMessage,
-          parse_mode: 'Markdown'
-        }
-      }
-    )
-
-    // Send Email
-    if (config.smtpHost && config.smtpUser && config.emailTo) {
-      const transporter = nodemailer.createTransport({
-        host: config.smtpHost,
-        port: Number(config.smtpPort) || 587,
-        secure: config.smtpPort === '465',
-        auth: {
-          user: config.smtpUser,
-          pass: config.smtpPassword
-        }
-      })
-
-      const emailHtml = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #0ea5e9; border-bottom: 2px solid #0ea5e9; padding-bottom: 10px;">
-            🔔 Նոր հայտ կայքից
-          </h2>
-
-          <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-            <tr style="background-color: #f8f9fa;">
-              <td style="padding: 12px; border: 1px solid #dee2e6; font-weight: bold; width: 150px;">
-                👤 Անուն
-              </td>
-              <td style="padding: 12px; border: 1px solid #dee2e6;">
-                ${body.name}
-              </td>
-            </tr>
-            <tr>
-              <td style="padding: 12px; border: 1px solid #dee2e6; font-weight: bold;">
-                📧 Էլ. փոստ
-              </td>
-              <td style="padding: 12px; border: 1px solid #dee2e6;">
-                <a href="mailto:${body.email}">${body.email}</a>
-              </td>
-            </tr>
-            ${body.phone ? `
-            <tr style="background-color: #f8f9fa;">
-              <td style="padding: 12px; border: 1px solid #dee2e6; font-weight: bold;">
-                📱 Հեռախոս
-              </td>
-              <td style="padding: 12px; border: 1px solid #dee2e6;">
-                ${body.phone}
-              </td>
-            </tr>
-            ` : ''}
-            ${body.service ? `
-            <tr${body.phone ? '' : ' style="background-color: #f8f9fa;"'}>
-              <td style="padding: 12px; border: 1px solid #dee2e6; font-weight: bold;">
-                🛠 Ծառայություն
-              </td>
-              <td style="padding: 12px; border: 1px solid #dee2e6;">
-                ${body.service}
-              </td>
-            </tr>
-            ` : ''}
-          </table>
-
-          <div style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-left: 4px solid #0ea5e9;">
-            <p style="margin: 0; font-weight: bold; margin-bottom: 10px;">💬 Հաղորդագրություն:</p>
-            <p style="margin: 0; white-space: pre-wrap;">${body.message}</p>
-          </div>
-
-          <div style="margin-top: 20px; padding: 10px; background-color: #e9ecef; font-size: 12px; color: #6c757d; text-align: center;">
-            📅 ${body.timestamp || new Date().toISOString()}
-          </div>
-        </div>
-      `
-
-      await transporter.sendMail({
-        from: `"Innovayse Contact Form" <${config.smtpUser}>`,
-        to: config.emailTo,
-        subject: `🔔 Նոր հայտ - ${body.name}`,
-        html: emailHtml
-      })
-    }
-
-    return {
-      success: true,
-      message: 'Message sent successfully'
-    }
-  } catch (error) {
-    console.error('Error sending message:', error)
-    throw createError({
-      statusCode: 500,
-      message: 'Failed to send message'
-    })
-  }
+  // 204, matching the backend. The old `{ success: true }` body was never read — the page
+  // treats a resolved promise as sent — and a success flag is exactly the shape that let a
+  // failed send be reported as a delivery.
+  setResponseStatus(event, 204)
+  return null
 })
-
-// Escape special Markdown characters (only the necessary ones)
-function escapeMarkdown(text: string): string {
-  return text.replace(/[_*[\]()~`>#+=|{}!]/g, '\\$&')
-}

@@ -16,6 +16,17 @@
     <PackageReference Include="Mapster" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <!--
+      Polly, reached through the IHttpClientFactory integration. Eleven typed and named clients
+      are registered in DependencyInjection.cs and every one of them calls a third party over the
+      public internet; until this was referenced, none had a retry, a breaker or a timeout, so a
+      stalled registrar held a request thread for HttpClient's 100-second default.
+
+      Referenced here rather than in Innovayse.API because the client registrations are here:
+      Resilience/Extensions/HttpClientResilienceExtensions.cs needs the Polly types directly, and
+      the retry predicates need ResilienceContext.GetRequestMessage() to see what was sent.
+    -->
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

@@ -1,6 +1,6 @@
 namespace Innovayse.Application.Notifications.Queries.GetEmailTemplate;
 
-using Innovayse.Application.Notifications.DTOs;
+using Innovayse.Application.Notifications.Common;
 using Innovayse.Domain.Notifications.Interfaces;
 
 /// <summary>Returns a single email template by its identifier.</summary>

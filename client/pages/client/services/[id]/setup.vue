@@ -172,7 +172,7 @@
 import { Globe, Lock, Rocket, ArrowRight, Zap, CheckCircle, AlertCircle } from 'lucide-vue-next'
 import { useClientStore } from '~/stores/client'
 import { useClientApi } from '~/composables/apis/useClientApi'
-import { apiErrorMessage } from '~/utils/portalErrorMessages'
+import { apiErrorMessage } from '~/utils/apiError'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
@@ -264,7 +264,7 @@ async function finishSetup() {
     // Success - redirect to the service management page
     await navigateTo(`/client/services/${serviceId}`)
   } catch (err: unknown) {
-    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`,
+    // The API's own wording, through the one shared reader in `utils/apiError.ts`,
     // rather than a sentence written here.
     setupError.value = apiErrorMessage(err)
   } finally {

@@ -1,10 +1,10 @@
 namespace Innovayse.Infrastructure.Reports;
 
-using Innovayse.Application.Reports.DTOs;
+using Innovayse.Application.Reports.Common;
 using Innovayse.Application.Reports.Interfaces;
 using Innovayse.Domain.Servers;
-using Innovayse.Infrastructure.Persistence;
 using Innovayse.Infrastructure.Integrations.CPanel;
+using Innovayse.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 

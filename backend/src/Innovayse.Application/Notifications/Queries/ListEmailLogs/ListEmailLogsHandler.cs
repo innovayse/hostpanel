@@ -1,6 +1,6 @@
 namespace Innovayse.Application.Notifications.Queries.ListEmailLogs;
 
-using Innovayse.Application.Notifications.DTOs;
+using Innovayse.Application.Notifications.Common;
 using Innovayse.Domain.Notifications.Interfaces;
 
 /// <summary>Returns a paged list of email log entries ordered by send time descending.</summary>

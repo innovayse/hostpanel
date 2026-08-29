@@ -1,6 +1,5 @@
 namespace Innovayse.Application.Support.Queries.GetClientTicketStats;
 
-using Innovayse.Application.Support.DTOs;
 using Innovayse.Domain.Support.Interfaces;
 
 /// <summary>

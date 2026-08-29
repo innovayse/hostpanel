@@ -1,6 +1,8 @@
+using FluentValidation;
 using Innovayse.API;
 using Innovayse.API.Billing;
 using Innovayse.API.Domains;
+using Innovayse.API.RateLimiting.Extensions;
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Billing.Options;
 using Innovayse.Application.Common.Options;
@@ -14,11 +16,13 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
 using Serilog;
 using Wolverine;
+using Wolverine.FluentValidation;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -96,17 +100,24 @@ try
             $"{LocaleOptions.ConfigurationKey} must be a locale code such as en or en-US.")
         .ValidateOnStart();
 
+    // The refusal sentences in Innovayse.Application/Resources/ValidationMessages*.resx. No
+    // ResourcesPath: the resx files sit in a Resources/ folder whose name is already part of the
+    // ValidationMessages marker type's namespace, and setting it would make the factory look for
+    // Resources.Resources.ValidationMessages instead.
+    builder.Services.AddLocalization();
+
     var isLocalMode = AuthMode.IsLocal(builder.Configuration["Auth:Mode"]);
 
     // The scheme that stands in front of the real ones under SSO mode. See where it is
     // registered, below AddInnovayseAuth, for what it is for.
     const string SmartAuthScheme = "InnovayseSmart";
 
-    // JwtTokenService is always registered — admin panel uses local auth regardless of mode
-    builder.Services.AddSingleton<Innovayse.API.Auth.JwtTokenService>();
-
+    // The token signer itself is registered by AddInnovayseInfrastructure, in both modes — the
+    // admin panel uses local tokens whatever the mode is. What stays here is the composition
+    // root's own reading of the same three keys, for the validators built below: the signer and
+    // the validators have to agree, so both fall back to the constants the implementation names.
     var jwtSecret = builder.Configuration["Jwt:Secret"]
-        ?? Innovayse.API.Auth.JwtTokenService.DevSecretFallback;
+        ?? Innovayse.Infrastructure.Auth.JwtTokenService.DevSecretFallback;
 
     if (isLocalMode)
     {
@@ -123,8 +134,8 @@ try
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(
                         System.Text.Encoding.UTF8.GetBytes(jwtSecret)),
-                    ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? Innovayse.API.Auth.JwtTokenService.DefaultIssuer,
-                    ValidAudience = builder.Configuration["Jwt:Audience"] ?? Innovayse.API.Auth.JwtTokenService.DefaultAudience,
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? Innovayse.Infrastructure.Auth.JwtTokenService.DefaultIssuer,
+                    ValidAudience = builder.Configuration["Jwt:Audience"] ?? Innovayse.Infrastructure.Auth.JwtTokenService.DefaultAudience,
                     RoleClaimType = System.Security.Claims.ClaimTypes.Role,
                     NameClaimType = "sub",
                 };
@@ -134,7 +145,7 @@ try
     {
         // SSO mode with local JWT fallback — admin panel uses local tokens,
         // client panel uses SSO tokens. Both are accepted.
-        var localJwtIssuer = builder.Configuration["Jwt:Issuer"] ?? Innovayse.API.Auth.JwtTokenService.DefaultIssuer;
+        var localJwtIssuer = builder.Configuration["Jwt:Issuer"] ?? Innovayse.Infrastructure.Auth.JwtTokenService.DefaultIssuer;
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(opts =>
             {
@@ -194,8 +205,8 @@ try
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(
                         System.Text.Encoding.UTF8.GetBytes(jwtSecret)),
-                    ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? Innovayse.API.Auth.JwtTokenService.DefaultIssuer,
-                    ValidAudience = builder.Configuration["Jwt:Audience"] ?? Innovayse.API.Auth.JwtTokenService.DefaultAudience,
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? Innovayse.Infrastructure.Auth.JwtTokenService.DefaultIssuer,
+                    ValidAudience = builder.Configuration["Jwt:Audience"] ?? Innovayse.Infrastructure.Auth.JwtTokenService.DefaultAudience,
                     RoleClaimType = System.Security.Claims.ClaimTypes.Role,
                     NameClaimType = "sub",
                 };
@@ -343,11 +354,33 @@ try
         });
     });
 
+    // Every AbstractValidator<T> in the Application assembly, which is where all of them live --
+    // there is not one in the API, the Domain or the Infrastructure project. Registered Scoped,
+    // which is this call's default and is load-bearing rather than incidental: PlaceOrderValidator
+    // takes ICurrentRequestContext, itself Scoped, so a Singleton registration here would be a
+    // captive dependency that answers every checkout with the first caller's identity.
+    //
+    // AddValidatorsFromAssemblyContaining, not a hand-written list: a validator that is added and
+    // not registered is exactly the dead file this whole change exists to stop producing.
+    builder.Services.AddValidatorsFromAssemblyContaining<
+        Innovayse.Application.Clients.Commands.AcceptInvitation.AcceptInvitationCommand>();
+
     // Wolverine
     builder.Host.UseWolverine(opts =>
     {
         opts.Discovery.IncludeAssembly(typeof(Program).Assembly);
         opts.Discovery.IncludeAssembly(typeof(Innovayse.Application.Clients.Commands.AcceptInvitation.AcceptInvitationCommand).Assembly);
+
+        // Validation as middleware in front of every handler whose message has a validator, so
+        // no handler has to remember to ask and no rule can be written in a validator and quietly
+        // never run -- which is what all 57 of them did until this line existed. A message with no
+        // validator passes straight through, so the handlers that already check for themselves are
+        // untouched.
+        //
+        // On failure the middleware throws FluentValidation's ValidationException, which
+        // ExceptionMiddleware catches and turns into the same { error, code } body as every other
+        // refusal on this API. It is not a 500: the request was wrong, not the server.
+        opts.UseFluentValidation();
     });
 
     // Wolverine logs "Invocation of {Message} failed!" at Error, with a stack trace, for every
@@ -364,6 +397,15 @@ try
 
     // Billing scheduled jobs — daily billable items cron processing (06:00 UTC)
     builder.Services.AddHostedService<BillingScheduledJobsStartup>();
+
+    // Rate limiting, and the forwarded-header handling it depends on. Registered as one call
+    // because both are the web edge's reading of the same proxy chain, and a limiter whose idea
+    // of "the caller" disagrees with the rest of the pipeline's is worse than none: it would
+    // partition every browser onto nginx's address and let one visitor's burst refuse everybody.
+    //
+    // Everything is limited by a global budget whether or not its action names a policy — see
+    // RateLimitingExtensions for why an opt-in scheme does not survive fifty-eight controllers.
+    builder.Services.AddPlatformRateLimiting(builder.Configuration, builder.Environment);
 
     // Infrastructure
     using var bootstrapLoggerFactory = LoggerFactory.Create(b => b.AddConsole());
@@ -443,7 +485,32 @@ try
         app.UseSerilogRequestLogging();
     }
 
+    // Above ExceptionMiddleware, deliberately. This middleware sets CurrentUICulture from
+    // Accept-Language and the one below it is what turns a refusal into a response body -- run
+    // the other way round, the sentence would be resolved outside the culture the request asked
+    // for and every caller would read English. Supported cultures come from the Application
+    // layer's LocaleOptions so they cannot drift from the .resx files they select.
+    var localeOptions = app.Services.GetRequiredService<IOptions<LocaleOptions>>().Value;
+    app.UseRequestLocalization(new RequestLocalizationOptions()
+        .SetDefaultCulture(localeOptions.DefaultLocale)
+        .AddSupportedCultures([.. LocaleOptions.SupportedLocales])
+        .AddSupportedUICultures([.. LocaleOptions.SupportedLocales]));
+
     app.UseMiddleware<ExceptionMiddleware>();
+
+    // Forwarded headers first, in BOTH modes, and above everything that reads the request's
+    // origin. Two things depend on it: Request.Scheme, which is otherwise Kestrel's view of the
+    // plain-HTTP hop from nginx, and Connection.RemoteIpAddress, which is otherwise nginx itself
+    // — and that address is what the rate limiter partitions anonymous callers on. Left to
+    // resolve wrongly it would put every visitor in one bucket, so one person's burst refuses
+    // everybody: the failure that looks most like the feature working.
+    //
+    // UseInnovayseAuth runs its own forwarded-header handling in the SSO branch below, with the
+    // framework's default ForwardLimit of 1 — one entry short of this two-hop chain. Running ours
+    // first resolves the address correctly and consumes the header, so its call finds nothing left
+    // to process and cannot undo the result.
+    app.UseForwardedHeaders();
+
     app.UseStaticFiles();
     app.UseCors();
     if (!isLocalMode)
@@ -456,10 +523,31 @@ try
         // Not /api/auth/me: this product's own AuthController answers it with the
         // roles the database assigns, which the token cannot carry.
         app.MapInnovayseAuth(mapMe: false);
+
+        // The limiter has to sit after authentication — it partitions on the signed-in subject
+        // and falls back to an address only for callers with no credential, so above
+        // UseAuthentication it would see an empty User on every request and quietly degrade to
+        // one bucket per address, which for the client portal is one bucket for every customer.
+        //
+        // Ideally it would sit BETWEEN authentication and authorisation, so that a request refused
+        // by authorisation still spends budget. It cannot here: UseInnovayseAuth is one call that
+        // does forwarded headers, the CSRF check, authentication and authorisation together, and
+        // splitting it would mean re-running authentication or forking a published package. The
+        // consequence is bounded and worth stating — a caller spraying an [Authorize] route with
+        // no credential is refused by authorisation before the limiter counts them. That is cheap
+        // to serve (no handler, no database), and every route where an unauthenticated flood is
+        // actually expensive — the credential endpoints, the contact form, the registrar lookups
+        // — is [AllowAnonymous], so authorisation does not short-circuit it and the budget applies.
+        app.UseRateLimiter();
     }
     else
     {
         app.UseAuthentication();
+
+        // Between authentication and authorisation, which is where it belongs: User is populated,
+        // so the per-subject partition works, and a request that authorisation is about to refuse
+        // has already spent budget rather than being free to repeat.
+        app.UseRateLimiter();
         app.UseAuthorization();
     }
 

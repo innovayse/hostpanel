@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Russian error messages.
+    A key omitted here falls back to the neutral file, so the messages that are still
+    English are deliberately absent rather than copied in untranslated.
+  -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ClientProfileNotFound" xml:space="preserve">
+    <value>У этого аккаунта нет клиентского профиля, поэтому в клиентской зоне нечего показать.</value>
+    <comment>CLIENT_PROFILE_NOT_FOUND. Wording reused from client/locales/*/client.json -&gt; client.noProfile.body.</comment>
+  </data>
+  <data name="TicketNotFound" xml:space="preserve">
+    <value>Такого тикета нет.</value>
+    <comment>TICKET_NOT_FOUND. Answered the same whether the ticket is somebody else's or absent.</comment>
+  </data>
+  <data name="InvoiceNotFound" xml:space="preserve">
+    <value>Такого счёта нет.</value>
+    <comment>INVOICE_NOT_FOUND.</comment>
+  </data>
+  <data name="DomainNotFound" xml:space="preserve">
+    <value>Такого домена нет.</value>
+    <comment>DOMAIN_NOT_FOUND.</comment>
+  </data>
+  <data name="ContactNotConfigured" xml:space="preserve">
+    <value>Форма обратной связи сейчас недоступна. Пожалуйста, напишите или позвоните нам по контактам на этой странице.</value>
+    <comment>CONTACT_NOT_CONFIGURED. Wording reused from client/locales/*/contact.json -&gt; contact.form.error.unavailable.</comment>
+  </data>
+  <data name="ContactSendFailed" xml:space="preserve">
+    <value>Не удалось отправить сообщение. Пожалуйста, попробуйте позже.</value>
+    <comment>CONTACT_SEND_FAILED. Wording reused from client/locales/*/contact.json -&gt; contact.form.error.failed.</comment>
+  </data>
+  <data name="RateLimited" xml:space="preserve">
+    <value>Слишком много запросов подряд. Подождите немного и попробуйте снова.</value>
+    <comment>RATE_LIMITED. Wording reused from client/locales/*/error.json -&gt; error.rateLimited.</comment>
+  </data>
+  <data name="InternalError" xml:space="preserve">
+    <value>Произошла непредвиденная ошибка.</value>
+    <comment>INTERNAL_ERROR. The last-resort sentence; deliberately says nothing about what failed.</comment>
+  </data>
+  <data name="InvitationTokenInvalid" xml:space="preserve">
+    <value>Неверный или истёкший токен приглашения.</value>
+    <comment>AcceptInvitationHandler.</comment>
+  </data>
+  <data name="InvitationExpired" xml:space="preserve">
+    <value>Срок действия этого приглашения истёк.</value>
+    <comment>AcceptInvitationHandler.</comment>
+  </data>
+  <data name="InvitationAlreadyAccepted" xml:space="preserve">
+    <value>Это приглашение уже принято.</value>
+    <comment>AcceptInvitationHandler.</comment>
+  </data>
+  <data name="AccountOwnerNotFound" xml:space="preserve">
+    <value>Владелец этого аккаунта не найден.</value>
+    <comment>InviteUserToClientHandler.</comment>
+  </data>
+  <data name="CannotInviteAccountOwner" xml:space="preserve">
+    <value>Владельца аккаунта нельзя пригласить как дополнительного пользователя.</value>
+    <comment>InviteUserToClientHandler.</comment>
+  </data>
+  <data name="UserAlreadyLinked" xml:space="preserve">
+    <value>Пользователь с адресом «{0}» уже привязан к этому аккаунту.</value>
+    <comment>InviteUserToClientHandler. {0} is the email address that was submitted.</comment>
+  </data>
+  <data name="InvitationAlreadyPending" xml:space="preserve">
+    <value>Для «{0}» уже есть непринятое приглашение для этого аккаунта.</value>
+    <comment>InviteUserToClientHandler. {0} is the email address that was submitted.</comment>
+  </data>
+  <data name="InvalidPermissionsValue" xml:space="preserve">
+    <value>Недопустимое значение прав доступа: {0}.</value>
+    <comment>InviteUserToClientHandler. {0} is the value that was submitted.</comment>
+  </data>
+  <data name="NoSavedPaymentMethods" xml:space="preserve">
+    <value>У этого аккаунта нет сохранённых способов оплаты.</value>
+    <comment>RemovePaymentMethodHandler and SetDefaultPaymentMethodHandler.</comment>
+  </data>
+  <data name="PaymentMethodNotOwned" xml:space="preserve">
+    <value>Этот способ оплаты не принадлежит этому аккаунту.</value>
+    <comment>RemovePaymentMethodHandler and SetDefaultPaymentMethodHandler.</comment>
+  </data>
+  <data name="ContactEmailInvalid" xml:space="preserve">
+    <value>Укажите корректный адрес электронной почты.</value>
+    <comment>SendContactMessageHandler.</comment>
+  </data>
+  <data name="ContactFieldRequired" xml:space="preserve">
+    <value>Поле «{0}» обязательно.</value>
+    <comment>SendContactMessageHandler. {0} is the localised field label.</comment>
+  </data>
+  <data name="ContactFieldTooLong" xml:space="preserve">
+    <value>Поле «{0}» должно содержать не более {1} символов.</value>
+    <comment>SendContactMessageHandler. {0} is the localised field label, {1} the limit.</comment>
+  </data>
+  <data name="ContactFieldName" xml:space="preserve">
+    <value>Имя</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="ContactFieldEmail" xml:space="preserve">
+    <value>Электронная почта</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="ContactFieldMessage" xml:space="preserve">
+    <value>Сообщение</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="ContactFieldPhone" xml:space="preserve">
+    <value>Телефон</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="ContactFieldService" xml:space="preserve">
+    <value>Услуга</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="ContactFieldSubmittedAt" xml:space="preserve">
+    <value>Время отправки</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="TokenInvalidOrExpired" xml:space="preserve">
+    <value>Неверный или истёкший токен.</value>
+    <comment>LocalAuthController reset-password and confirm-email.</comment>
+  </data>
+  <data name="SessionExpired" xml:space="preserve">
+    <value>Сессия истекла. Войдите снова.</value>
+    <comment>LocalAuthController refresh.</comment>
+  </data>
+  <data name="ValidationFailed" xml:space="preserve">
+    <value>Одно или несколько полей запроса не приняты.</value>
+    <comment>ExceptionMiddleware, for a message the Wolverine FluentValidation middleware refused. One sentence for every field failure on purpose: the per-field messages are English literals in the validators and are logged, not sent.</comment>
+  </data>
+</root>

@@ -16,20 +16,23 @@ public sealed class DomainOwnership(
     ICurrentRequestContext caller) : IDomainOwnership
 {
     /// <inheritdoc/>
-    public async Task<bool> IsOwnedByCallerAsync(int domainId, CancellationToken ct)
+    public async Task RequireOwnedByCallerAsync(int domainId, CancellationToken ct)
     {
         var userId = caller.RequireUserId();
 
         var client = await clients.FindByUserIdAsync(userId, ct);
-        if (client is null)
+        if (client is not null)
         {
-            return false;
+            var domain = await domains.FindByIdAsync(domainId, ct);
+            if (domain is not null && domain.ClientId == client.Id)
+            {
+                return;
+            }
         }
 
-        var domain = await domains.FindByIdAsync(domainId, ct);
-
-        // A domain that does not exist and a domain belonging to somebody else are the same
-        // answer here. Distinguishing them would turn this into a way of enumerating ids.
-        return domain is not null && domain.ClientId == client.Id;
+        // A domain that does not exist, a domain belonging to somebody else, and a caller with no
+        // client record all land here and answer identically. Distinguishing them would turn this
+        // route into a way of enumerating ids -- and domain ids are sequential integers.
+        throw new DomainNotFoundException(domainId);
     }
 }

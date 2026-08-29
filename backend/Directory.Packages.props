@@ -25,18 +25,68 @@
     <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="9.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.1" />
+    <!--
+      Polly's IHttpClientFactory integration, used by Innovayse.Infrastructure to put a timeout,
+      a circuit breaker and a per-client retry predicate in front of every outbound HTTP client.
+      Versioned 9.x rather than 10.x deliberately: the 10.x wave depends on Microsoft.Extensions.*
+      10.x, which would drag the whole 9.0.1 set above forward as a side effect of adding
+      resilience.
+    -->
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.10.0" />
+    <!--
+      Localization for the error sentences the API sends (Innovayse.Application/Resources/).
+      The abstractions package only: the Application layer declares IStringLocalizer<T> as a
+      dependency, while the implementation and AddLocalization() come from the ASP.NET Core
+      shared framework the API already targets.
+    -->
+    <PackageVersion Include="Microsoft.Extensions.Localization.Abstractions" Version="9.0.0" />
+    <!--
+      The ResourceManager-backed IStringLocalizer implementation. Referenced by
+      Innovayse.Application.Tests only: the API gets it from the ASP.NET Core shared framework,
+      but a plain test project has no framework reference to get it from.
+    -->
+    <PackageVersion Include="Microsoft.Extensions.Localization" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Options" Version="9.0.1" />
+    <!--
+      9.0.10 rather than 9.0.1, which is the version every other Microsoft.Extensions.*
+      package here carries. Microsoft.Extensions.Http.Resilience 9.10.0 raises the
+      transitive graph to the 9.0.10 servicing band (EntityFrameworkCore pulls
+      Microsoft.Extensions.Logging 9.0.10, which requires Options 9.0.10 or later) while
+      Innovayse.Infrastructure.Tests references Options directly. Left at 9.0.1 that is an
+      NU1605 downgrade, which src/Directory.Build.props turns into a build failure.
+      Same servicing band, no API change; do not "restore" it to 9.0.1.
+    -->
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="9.0.10" />
   </ItemGroup>
   <!-- Wolverine -->
   <ItemGroup>
     <PackageVersion Include="WolverineFx" Version="5.31.0" />
     <PackageVersion Include="WolverineFx.Postgresql" Version="5.31.0" />
+    <!--
+      Validation middleware in front of every handler that has a validator. Pinned to the same
+      5.31.0 as WolverineFx itself: the two ship together and a mismatch is a startup failure,
+      not a compile error.
+    -->
+    <PackageVersion Include="WolverineFx.FluentValidation" Version="5.31.0" />
   </ItemGroup>
   <!-- Application Libraries -->
   <ItemGroup>
-    <PackageVersion Include="FluentValidation" Version="11.11.0" />
-    <PackageVersion Include="FluentValidation.AspNetCore" Version="11.3.0" />
+    <!--
+      FluentValidation 12, not 11. WolverineFx.FluentValidation 5.31.0, the middleware that
+      finally runs this repository's validators, depends on FluentValidation 12.0.0 or later, and
+      innovayse-sso, whose wiring this follows, pins 12.* for the same reason.
+
+      FluentValidation.AspNetCore 11.3.0 used to sit on the next line and is gone. It wires MVC
+      auto-validation, which this API never called (no type from it appears anywhere in the
+      solution), and it has no 12.x release, so keeping it would hold FluentValidation below the
+      version the middleware needs.
+    -->
+    <PackageVersion Include="FluentValidation" Version="12.1.1" />
+    <!--
+      Supplies AddValidatorsFromAssemblyContaining, which Program.cs calls to put the validators
+      in the container where the Wolverine middleware looks for them.
+    -->
+    <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageVersion Include="Fluid.Core" Version="2.31.0" />
     <PackageVersion Include="MailKit" Version="4.16.0" />
     <PackageVersion Include="Mapster" Version="7.4.0" />

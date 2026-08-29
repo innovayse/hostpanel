@@ -4,7 +4,6 @@ using Innovayse.Application.Common;
 using Innovayse.Application.Support.Commands.ReplyToMyTicket;
 using Innovayse.Application.Support.Commands.ReplyToTicket;
 using Innovayse.Application.Support.Common;
-using Innovayse.Application.Support.DTOs;
 using Innovayse.Application.Support.Queries.GetMyTicket;
 using Innovayse.Application.Support.Queries.GetTicket;
 using Innovayse.Domain.Clients;

@@ -30,6 +30,18 @@ public sealed class ClientProfileNotFoundException(string userId) : Exception(Pu
     public const string Code = "CLIENT_PROFILE_NOT_FOUND";
 
     /// <summary>
+    /// Key of the sentence in <c>Innovayse.Application/Resources/ValidationMessages.resx</c>.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="PublicMessage"/> is still the English text and is still what
+    /// <see cref="System.Exception.Message"/> carries, so a log line and a test read the same
+    /// sentence they always did. What the caller is shown is looked up under this key instead,
+    /// because the portal ships in en/ru/hy and a customer reading Russian or Armenian was
+    /// previously served this English constant for every failure the frontend had no entry for.
+    /// </remarks>
+    public const string MessageKey = "ClientProfileNotFound";
+
+    /// <summary>
     /// The sentence the caller is shown. Deliberately free of identifiers, and deliberately
     /// worded as a state rather than a failure — nothing went wrong when a staff account has
     /// no customer record.

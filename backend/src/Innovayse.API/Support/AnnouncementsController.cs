@@ -5,7 +5,7 @@ using Innovayse.Application.Common;
 using Innovayse.Application.Support.Commands.CreateAnnouncement;
 using Innovayse.Application.Support.Commands.DeleteAnnouncement;
 using Innovayse.Application.Support.Commands.UpdateAnnouncement;
-using Innovayse.Application.Support.DTOs;
+using Innovayse.Application.Support.Common;
 using Innovayse.Application.Support.Queries.GetAnnouncement;
 using Innovayse.Application.Support.Queries.ListAnnouncements;
 using Innovayse.Domain.Auth;

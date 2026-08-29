@@ -1,7 +1,7 @@
 namespace Innovayse.Application.Migration.Queries.GetMigrationLogs;
 
+using Innovayse.Application.Migration.Common;
 using Innovayse.Application.Migration.Extensions;
-using Innovayse.Application.Migration.DTOs;
 using Innovayse.Domain.Migration;
 using Innovayse.Domain.Migration.Interfaces;
 

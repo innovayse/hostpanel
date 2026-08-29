@@ -3,7 +3,7 @@ namespace Innovayse.API.Billing;
 using Innovayse.API.Billing.Requests;
 using Innovayse.Application.Billing.Commands.RemovePaymentMethod;
 using Innovayse.Application.Billing.Commands.SetDefaultPaymentMethod;
-using Innovayse.Application.Billing.DTOs;
+using Innovayse.Application.Billing.Common;
 using Innovayse.Application.Billing.Queries.GetMyPaymentMethods;
 using Innovayse.Domain.Auth;
 using Microsoft.AspNetCore.Authorization;

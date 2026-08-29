@@ -1,7 +1,7 @@
 namespace Innovayse.Application.Notifications.Queries.ListClientEmailLogs;
 
 using Innovayse.Application.Common;
-using Innovayse.Application.Notifications.DTOs;
+using Innovayse.Application.Notifications.Common;
 using Innovayse.Domain.Notifications.Interfaces;
 
 /// <summary>Returns a paged list of email logs sent to a specific client.</summary>

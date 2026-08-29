@@ -2,7 +2,7 @@ namespace Innovayse.API.Admin;
 using Innovayse.API.Admin.Requests;
 using Innovayse.Application.Admin.Plugins.Commands.InstallPlugin;
 using Innovayse.Application.Admin.Plugins.Commands.RemovePlugin;
-using Innovayse.Application.Admin.Plugins.DTOs;
+using Innovayse.Application.Admin.Plugins.Common;
 using Innovayse.Application.Admin.Plugins.Queries.ListPlugins;
 using Innovayse.Domain.Auth;
 using Microsoft.AspNetCore.Authorization;

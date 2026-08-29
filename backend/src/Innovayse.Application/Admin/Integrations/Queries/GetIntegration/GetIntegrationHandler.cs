@@ -1,6 +1,6 @@
 namespace Innovayse.Application.Admin.Integrations.Queries.GetIntegration;
 
-using Innovayse.Application.Admin.Integrations.DTOs;
+using Innovayse.Application.Admin.Integrations.Common;
 using Innovayse.Application.Admin.Plugins.Interfaces;
 using Innovayse.Domain.Settings.Interfaces;
 

@@ -1,6 +1,5 @@
 namespace Innovayse.Application.Support.Queries.GetSupportOverview;
 
-using Innovayse.Application.Support.DTOs;
 using Innovayse.Domain.Support.Interfaces;
 
 /// <summary>

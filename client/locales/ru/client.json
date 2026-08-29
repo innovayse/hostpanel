@@ -83,20 +83,17 @@
       "errorDefault": "Не удалось сбросить пароль. Ссылка могла истечь — запросите новую."
     },
     "acceptInvite": {
-      "title": "Set Your Password",
-      "subtitle": "Create your password to access your account",
-      "password": "Password",
-      "passwordPlaceholder": "Min. 8 characters",
-      "confirmPassword": "Confirm Password",
-      "confirmPasswordPlaceholder": "Re-enter your password",
-      "submit": "Create Account",
-      "submitting": "Creating account\u2026",
-      "backToSignIn": "Back to Sign In",
-      "invalidTitle": "Invalid invitation link",
-      "invalidMessage": "This invitation link is invalid or has expired. Please contact your account administrator to request a new invitation.",
-      "errorMismatch": "Passwords do not match.",
-      "errorMinLength": "Password must be at least 8 characters.",
-      "errorDefault": "Failed to accept invitation. The link may have expired."
+      "title": "Принять приглашение",
+      "subtitle": "Присоединитесь к аккаунту, в который вас пригласили",
+      "description": "Принятие свяжет учётную запись, под которой вы вошли, с этим клиентом и выдаст ей права, указанные в приглашении.",
+      "submit": "Принять приглашение",
+      "submitting": "Принимаем\u2026",
+      "backToSignIn": "Назад ко входу",
+      "invalidTitle": "Недействительная ссылка приглашения",
+      "invalidMessage": "Эта ссылка недействительна или устарела. Обратитесь к администратору аккаунта за новым приглашением.",
+      "signInRequiredTitle": "Войдите, чтобы продолжить",
+      "signInRequired": "Приглашение принимает та учётная запись, под которой выполнен вход, поэтому сначала нужно войти. После входа вы вернётесь сюда.",
+      "signInAction": "Войти и продолжить"
     },
     "dashboard": {
       "title": "Панель управления",

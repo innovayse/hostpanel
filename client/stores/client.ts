@@ -18,7 +18,7 @@
 
 import { defineStore } from 'pinia'
 import { useClientApi } from '~/composables/apis/useClientApi'
-import { PortalErrorCode, apiErrorCode, apiErrorMessage } from '~/utils/portalErrorMessages'
+import { PortalErrorCode, apiErrorCode, apiErrorMessage } from '~/utils/apiError'
 import type { ClientUser } from '~/types/clientuser'
 import type { ClientService } from '~/types/clientservice'
 import type { ClientInvoice } from '~/types/clientinvoice'
@@ -63,6 +63,13 @@ export const useClientStore = defineStore('client', {
     // client profile. It is one account-wide fact, not five section failures: the screens
     // render one explanation with a way out, rather than the same red alert four times over.
     clientProfileMissing: false,
+
+    // The API's own explanation of the flag above, kept because it is what the notice
+    // renders. The backend resolves it from its resources in the language Accept-Language
+    // asked for, so this is already Russian or Armenian where the caller is — the portal no
+    // longer keeps a translation of its own for it. Null only when the refusal carried no
+    // body at all, which means the request never reached the API.
+    clientProfileMessage: null as string | null,
 
     // ── User ──────────────────────────────────────────────────────────────
     user: null as ClientUser | null,
@@ -172,11 +179,14 @@ export const useClientStore = defineStore('client', {
           this.userLoaded = true
         } catch (err) {
           if (this.userEpoch !== epoch) return
-          // "Not a customer account" is a state, not a fault — it gets its own flag and no
-          // error string, so nothing renders it in red. Anything else is kept, not swallowed:
-          // the screens read it to say the section failed instead of rendering it as empty.
+          // "Not a customer account" is a state, not a fault — it gets its own flag so
+          // nothing renders it in red, and the API's own sentence is kept beside the flag
+          // because that sentence is the explanation the notice shows, already in the
+          // caller's language. Anything else is kept too, not swallowed: the screens read it
+          // to say the section failed instead of rendering it as empty.
           if (isClientProfileMissing(err)) {
             this.clientProfileMissing = true
+            this.clientProfileMessage = apiErrorMessage(err)
           } else {
             this.userError = apiErrorMessage(err)
           }
@@ -216,6 +226,7 @@ export const useClientStore = defineStore('client', {
         // the screens read it to say the section failed instead of rendering it as empty.
         if (isClientProfileMissing(err)) {
           this.clientProfileMissing = true
+          this.clientProfileMessage = apiErrorMessage(err)
         } else {
           this.servicesError = apiErrorMessage(err)
         }
@@ -245,6 +256,7 @@ export const useClientStore = defineStore('client', {
         // the screens read it to say the section failed instead of rendering it as empty.
         if (isClientProfileMissing(err)) {
           this.clientProfileMissing = true
+          this.clientProfileMessage = apiErrorMessage(err)
         } else {
           this.invoicesError = apiErrorMessage(err)
         }
@@ -274,6 +286,7 @@ export const useClientStore = defineStore('client', {
         // the screens read it to say the section failed instead of rendering it as empty.
         if (isClientProfileMissing(err)) {
           this.clientProfileMissing = true
+          this.clientProfileMessage = apiErrorMessage(err)
         } else {
           this.domainsError = apiErrorMessage(err)
         }
@@ -303,6 +316,7 @@ export const useClientStore = defineStore('client', {
         // the screens read it to say the section failed instead of rendering it as empty.
         if (isClientProfileMissing(err)) {
           this.clientProfileMissing = true
+          this.clientProfileMessage = apiErrorMessage(err)
         } else {
           this.ticketsError = apiErrorMessage(err)
         }
@@ -332,6 +346,7 @@ export const useClientStore = defineStore('client', {
      */
     reset() {
       this.clientProfileMissing = false
+      this.clientProfileMessage = null
       this.user = null
       this.userLoaded = false
       this.userError = null

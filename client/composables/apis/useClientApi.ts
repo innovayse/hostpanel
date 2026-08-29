@@ -15,6 +15,7 @@ import type { ClientService } from '~/types/clientservice'
 import type { ClientInvoice } from '~/types/clientinvoice'
 import type { ClientDomain } from '~/types/clientdomain'
 import type { ClientTicket } from '~/types/clientticket'
+import type { CancellationType } from '~/types/cancellationtype'
 
 /**
  * The `/api/portal/client` surface, one function per endpoint.
@@ -253,11 +254,16 @@ export function useClientApi() {
    * Requests cancellation of one hosting service.
    *
    * @param id - Service id.
-   * @param body - Reason and whether to cancel now or at the end of the term.
+   * @param body - Reason, and `type` as a backend `CancellationType` member name. Typed rather
+   * than left open so a display string can never reach the endpoint again: the handler parses
+   * this field with `Enum.Parse`, so prose such as "End of Billing Period" is rejected.
    * @returns Whatever the endpoint answers with.
    * @throws Whatever `apiFetch` throws.
    */
-  const cancelService = (id: string, body: Record<string, unknown>): Promise<unknown> =>
+  const cancelService = (
+    id: string,
+    body: { type: CancellationType; reason: string }
+  ): Promise<unknown> =>
     apiFetch(`/api/portal/client/services/${id}/cancel`, { method: 'POST', body })
 
   /**

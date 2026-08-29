@@ -1,8 +1,8 @@
 namespace Innovayse.API.Services;
 
-using Innovayse.API.Provisioning;
+using Innovayse.API.Provisioning.Requests;
 using Innovayse.API.Services.Requests;
-using Innovayse.Application.Clients.DTOs;
+using Innovayse.Application.Clients.Common;
 using Innovayse.Application.Clients.Queries.GetMyProfile;
 using Innovayse.Application.Provisioning.Commands.ChangePassword;
 using Innovayse.Application.Provisioning.Queries.GetCPanelSsoUrl;

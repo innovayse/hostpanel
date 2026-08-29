@@ -1,6 +1,5 @@
 namespace Innovayse.Application.Notifications.Queries.GetClientEmailLog;
 
-using Innovayse.Application.Notifications.DTOs;
 using Innovayse.Domain.Notifications.Interfaces;
 
 /// <summary>Returns one email a client was sent.</summary>

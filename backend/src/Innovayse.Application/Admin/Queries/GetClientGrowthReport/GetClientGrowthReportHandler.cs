@@ -1,6 +1,5 @@
 namespace Innovayse.Application.Admin.Queries.GetClientGrowthReport;
 
-using Innovayse.Application.Admin.DTOs;
 using Innovayse.Domain.Clients.Interfaces;
 
 /// <summary>

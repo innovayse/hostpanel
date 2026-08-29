@@ -56,7 +56,7 @@
         <XCircle :size="18" :stroke-width="2" class="text-red-500 flex-shrink-0" />
         <div class="flex-1 text-sm text-red-700 dark:text-red-300">
           <span class="font-medium">{{ $t('client.services.cancellationPending') }}</span>
-          <span v-if="cancelStatus.type" class="text-red-500 dark:text-red-400"> &mdash; {{ cancelStatus.type === 'Immediate' ? $t('client.services.cancelImmediate') : $t('client.services.cancelEndOfPeriod') }}</span>
+          <span v-if="cancelTypeKey" class="text-red-500 dark:text-red-400"> &mdash; {{ $t(cancelTypeKey) }}</span>
         </div>
       </div>
 
@@ -492,12 +492,17 @@
                   <!-- Cancellation type -->
                   <div class="space-y-2.5">
                     <label class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ $t('client.services.cancelType') }}</label>
+                    <!--
+                      `value` is the backend `CancellationType` member name, never the wording
+                      above it: the handler parses this string as an enum. The sentence the
+                      person reads comes from the locale files via `:label`.
+                    -->
                     <UiRadio
                       name="cancel-type"
-                      value="End of Billing Period"
+                      value="EndOfBillingPeriod"
                       :model-value="cancelType"
                       :label="$t('client.services.cancelEndOfPeriod')"
-                      @update:model-value="cancelType = 'End of Billing Period'"
+                      @update:model-value="cancelType = 'EndOfBillingPeriod'"
                     />
                     <div class="ml-7 text-xs text-gray-400">{{ $t('client.services.cancelEndOfPeriodDesc') }}</div>
                     <UiRadio
@@ -555,7 +560,8 @@ import {
 } from 'lucide-vue-next'
 import { useClientStore } from '~/stores/client'
 import { useClientApi } from '~/composables/apis/useClientApi'
-import { apiErrorMessage } from '~/utils/portalErrorMessages'
+import { apiErrorMessage } from '~/utils/apiError'
+import type { CancellationType } from '~/types/cancellationtype'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
@@ -611,10 +617,32 @@ const { data: hostingInfo } = await clientApi.loadServiceResource<{
 // ── Cancellation status ──────────────────────────────────────────────────────
 const { data: cancelStatus } = await clientApi.loadServiceResource<{
   pending: boolean
-  type?: string
+  /** Backend `CancellationType` member name, not display text. */
+  type?: CancellationType
   reason?: string
   date?: string
 }>(() => serviceId, 'cancellation-status', () => ({ pending: false }))
+
+/**
+ * i18n key naming the pending cancellation's type, resolved from the enum member name the API
+ * returns. The API sends `Immediate` / `EndOfBillingPeriod` and never a sentence, so the wording
+ * is chosen here, in the reader's own language, rather than arriving in English.
+ *
+ * `null` when nothing is pending or the API sent a member this build does not know: the banner
+ * then shows the pending notice without a type, which is preferable to guessing the wrong one --
+ * the previous ternary defaulted every unrecognised value to "end of billing period", so a
+ * mislabelled immediate cancellation would have read as a harmless one.
+ */
+const cancelTypeKey = computed<string | null>(() => {
+  switch (cancelStatus.value?.type) {
+    case 'Immediate':
+      return 'client.services.cancelImmediate'
+    case 'EndOfBillingPeriod':
+      return 'client.services.cancelEndOfPeriod'
+    default:
+      return null
+  }
+})
 
 // ── SSH Info ──────────────────────────────────────────────────────────────────
 const { data: sshInfo } = await clientApi.loadServiceResource<{
@@ -672,7 +700,7 @@ async function changePassword() {
     await clientApi.changeServicePassword(serviceId, newPassword.value)
     passwordSuccess.value = true
   } catch (err: unknown) {
-    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`;
+    // The API's own wording, through the one shared reader in `utils/apiError.ts`;
     // the local key is only the no-answer fallback.
     passwordError.value = apiErrorMessage(err) || t('client.services.passwordError')
   } finally {
@@ -681,14 +709,23 @@ async function changePassword() {
 }
 
 // ── Cancellation ──────────────────────────────────────────────────────────────
-const cancelType = ref('End of Billing Period')
+/**
+ * Which cancellation the form will request, held as the backend enum member name rather than
+ * the wording shown beside the radio. The default matches the pre-selected radio.
+ */
+const cancelType = ref<CancellationType>('EndOfBillingPeriod')
 const cancelReason = ref('')
 const cancelSubmitting = ref(false)
 const cancelError = ref('')
 const cancelDone = ref(false)
 const showCancelConfirm = ref(false)
 
-async function submitCancellation() {
+/**
+ * Posts the cancellation request the confirm modal just approved.
+ *
+ * @returns Nothing; the outcome is rendered from `cancelDone` / `cancelError`.
+ */
+const submitCancellation = async (): Promise<void> => {
   showCancelConfirm.value = false
   cancelSubmitting.value = true
   cancelError.value = ''
@@ -696,7 +733,7 @@ async function submitCancellation() {
     await clientApi.cancelService(serviceId, { type: cancelType.value, reason: cancelReason.value })
     cancelDone.value = true
   } catch (err: unknown) {
-    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`;
+    // The API's own wording, through the one shared reader in `utils/apiError.ts`;
     // the local key is only the no-answer fallback.
     cancelError.value = apiErrorMessage(err) || t('client.services.cancelError')
   } finally {

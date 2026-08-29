@@ -5,7 +5,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentValidation.AspNetCore" />
+    <!--
+      The two halves of validation. FluentValidation.AspNetCore stood here and was never used;
+      see Directory.Packages.props for why it could not stay. AddValidatorsFromAssemblyContaining
+      comes from the DependencyInjectionExtensions package, the middleware from Wolverine's.
+    -->
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="WolverineFx.FluentValidation" />
     <PackageReference Include="Mapster" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />

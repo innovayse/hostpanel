@@ -6,7 +6,7 @@ using Innovayse.Application.Billing.Commands.CreateQuote;
 using Innovayse.Application.Billing.Commands.DeleteQuote;
 using Innovayse.Application.Billing.Commands.DuplicateQuote;
 using Innovayse.Application.Billing.Commands.UpdateQuote;
-using Innovayse.Application.Billing.DTOs;
+using Innovayse.Application.Billing.Common;
 using Innovayse.Application.Billing.Queries.GetQuote;
 using Innovayse.Application.Billing.Queries.ListClientQuotes;
 using Innovayse.Application.Common;

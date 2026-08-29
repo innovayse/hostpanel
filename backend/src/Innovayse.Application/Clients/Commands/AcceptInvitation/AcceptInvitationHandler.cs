@@ -1,9 +1,11 @@
 namespace Innovayse.Application.Clients.Commands.AcceptInvitation;
 
 using Innovayse.Application.Common;
+using Innovayse.Application.Resources;
 using Innovayse.Domain.Auth;
 using Innovayse.Domain.Auth.Interfaces;
 using Innovayse.Domain.Clients.Interfaces;
+using Microsoft.Extensions.Localization;
 
 /// <summary>
 /// Handles <see cref="AcceptInvitationCommand"/>.
@@ -15,12 +17,14 @@ using Innovayse.Domain.Clients.Interfaces;
 /// <param name="roles">Role store, for granting the Client role.</param>
 /// <param name="uow">Unit of work for persisting changes.</param>
 /// <param name="caller">Who is accepting; the command does not say, and must not.</param>
+/// <param name="localizer">The refusal sentences, in the caller's own language.</param>
 public sealed class AcceptInvitationHandler(
     IInvitationRepository invitationRepo,
     IClientRepository clientRepo,
     ISubjectRoleStore roles,
     IUnitOfWork uow,
-    ICurrentRequestContext caller)
+    ICurrentRequestContext caller,
+    IStringLocalizer<ValidationMessages> localizer)
 {
     /// <summary>
     /// Accepts the invitation, links the caller to the client, and returns their subject.
@@ -38,17 +42,17 @@ public sealed class AcceptInvitationHandler(
         var userId = caller.RequireUserId();
 
         var invitation = await invitationRepo.FindByTokenAsync(cmd.Token, ct)
-            ?? throw new InvalidOperationException("Invalid or expired invitation token.");
+            ?? throw new InvalidOperationException(localizer["InvitationTokenInvalid"]);
 
         // Validate invitation is still valid (don't mark accepted yet — user creation might fail)
         if (invitation.IsExpired)
         {
-            throw new InvalidOperationException("This invitation has expired.");
+            throw new InvalidOperationException(localizer["InvitationExpired"]);
         }
 
         if (invitation.IsAccepted)
         {
-            throw new InvalidOperationException("This invitation has already been accepted.");
+            throw new InvalidOperationException(localizer["InvitationAlreadyAccepted"]);
         }
 
         // The caller is already signed in, and this handler asked the credential who they

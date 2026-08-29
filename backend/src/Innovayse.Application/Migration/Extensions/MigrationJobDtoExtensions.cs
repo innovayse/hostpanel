@@ -1,6 +1,6 @@
 namespace Innovayse.Application.Migration.Extensions;
 
-using Innovayse.Application.Migration.DTOs;
+using Innovayse.Application.Migration.Common;
 using Innovayse.Domain.Migration;
 
 /// <summary>Extension methods for mapping <see cref="MigrationJob"/> to DTOs.</summary>

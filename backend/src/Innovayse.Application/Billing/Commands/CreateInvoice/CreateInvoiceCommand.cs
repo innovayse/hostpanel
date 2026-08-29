@@ -8,5 +8,5 @@ namespace Innovayse.Application.Billing.Commands.CreateInvoice;
 public record CreateInvoiceCommand(
     int ClientId,
     DateTimeOffset DueDate,
-    IReadOnlyList<InvoiceItemRequest> Items,
+    IReadOnlyList<CreateInvoiceItemDto> Items,
     bool IsDraft = false);

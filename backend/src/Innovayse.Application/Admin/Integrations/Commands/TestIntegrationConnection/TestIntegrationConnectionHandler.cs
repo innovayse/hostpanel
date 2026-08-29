@@ -1,6 +1,5 @@
 namespace Innovayse.Application.Admin.Integrations.Commands.TestIntegrationConnection;
 
-using Innovayse.Application.Admin.Integrations.DTOs;
 using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Domain.Settings;
 using Innovayse.Domain.Settings.Interfaces;

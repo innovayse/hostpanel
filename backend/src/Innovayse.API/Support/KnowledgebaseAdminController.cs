@@ -8,7 +8,7 @@ using Innovayse.Application.Support.Commands.DeleteKbCategory;
 using Innovayse.Application.Support.Commands.PublishKbArticle;
 using Innovayse.Application.Support.Commands.UpdateKbArticle;
 using Innovayse.Application.Support.Commands.UpdateKbCategory;
-using Innovayse.Application.Support.DTOs;
+using Innovayse.Application.Support.Common;
 using Innovayse.Application.Support.Queries.ListKbArticles;
 using Innovayse.Application.Support.Queries.ListKbCategories;
 using Innovayse.Domain.Auth;

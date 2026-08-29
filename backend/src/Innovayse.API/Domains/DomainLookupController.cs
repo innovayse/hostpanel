@@ -1,12 +1,15 @@
 namespace Innovayse.API.Domains;
 
-using Innovayse.Application.Domains.DTOs;
+using Innovayse.API.Domains.Requests;
+using Innovayse.API.RateLimiting;
+using Innovayse.Application.Domains.Common;
 using Innovayse.Application.Domains.Queries.CheckDomainAvailability;
 using Innovayse.Application.Domains.Queries.GetTldPricing;
 using Innovayse.Application.Domains.Queries.GetWhois;
 using Innovayse.Domain.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Wolverine;
 
 /// <summary>
@@ -25,6 +28,7 @@ public sealed class DomainLookupController(IMessageBus bus) : ControllerBase
     /// <returns><see langword="true"/> if the domain is available; otherwise <see langword="false"/>.</returns>
     [HttpGet("check")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.Upstream)]
     [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
     public async Task<ActionResult<bool>> CheckAvailabilityAsync(
         [FromQuery] string name,
@@ -40,6 +44,7 @@ public sealed class DomainLookupController(IMessageBus bus) : ControllerBase
     /// <returns>A <see cref="DomainCheckResultDto"/> with the domain name, availability flag, and status.</returns>
     [HttpPost("check")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.Upstream)]
     [ProducesResponseType(typeof(DomainCheckResultDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<DomainCheckResultDto>> CheckAvailabilityPostAsync(
@@ -73,11 +78,4 @@ public sealed class DomainLookupController(IMessageBus bus) : ControllerBase
         var result = await bus.InvokeAsync<TldPricingDto>(new GetTldPricingQuery(currency), ct);
         return Ok(result);
     }
-}
-
-/// <summary>Request body for the POST domain availability check endpoint.</summary>
-public sealed class CheckDomainRequest
-{
-    /// <summary>The fully-qualified domain name to check (e.g. "example.com").</summary>
-    public required string Domain { get; init; }
 }

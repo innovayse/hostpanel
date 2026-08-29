@@ -867,7 +867,10 @@ export interface CancellationRequestItem {
   clientId: number
   /** Full name of the owning client. */
   clientName: string
-  /** Cancellation type (e.g. "Immediate", "End of Billing Period"). */
+  /**
+   * Cancellation type as the backend enum member name -- `"Immediate"` or
+   * `"EndOfBillingPeriod"`. Not display text; the screen owns the wording.
+   */
   type: string
   /** Reason provided by the client. */
   reason: string | null

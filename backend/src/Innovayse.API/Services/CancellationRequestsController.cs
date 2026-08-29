@@ -2,7 +2,6 @@ namespace Innovayse.API.Services;
 
 using Innovayse.Application.Common;
 using Innovayse.Application.Services.Commands.DeleteCancellationRequest;
-using Innovayse.Application.Services.DTOs;
 using Innovayse.Application.Services.Queries.ListCancellationRequests;
 using Innovayse.Domain.Auth;
 using Microsoft.AspNetCore.Authorization;

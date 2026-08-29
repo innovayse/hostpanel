@@ -1,6 +1,5 @@
 namespace Innovayse.API.Audit;
 
-using Innovayse.Application.Audit.DTOs;
 using Innovayse.Application.Audit.Queries.ListClientActivityLogs;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Auth;

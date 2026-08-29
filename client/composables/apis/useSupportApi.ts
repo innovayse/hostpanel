@@ -64,11 +64,16 @@ export function useSupportApi() {
   /**
    * Sends a message from the public contact form.
    *
-   * Not under `/api/portal`: this one is answered by the Nuxt server itself, which relays to
-   * mail and Telegram rather than to the C# backend.
+   * Not under `/api/portal`, and the path is kept as it is: it is the public site's own route
+   * and moving it would be a change to the site's URLs for no gain. The Nuxt route behind it
+   * relays to the C# backend, which sends the mail; the SMTP transport that used to live in the
+   * Nuxt server, credentials and all, is gone.
+   *
+   * Resolving means the backend accepted the message. Every failure rejects, carrying the
+   * backend's status and `code` — read them with `apiErrorMessage` / `apiErrorCode`.
    *
    * @param message - The form's fields.
-   * @returns Whatever the endpoint answers with.
+   * @returns Nothing; the endpoint answers 204 on success.
    * @throws Whatever `apiFetch` throws.
    */
   const sendContactMessage = (message: ContactMessage): Promise<unknown> =>

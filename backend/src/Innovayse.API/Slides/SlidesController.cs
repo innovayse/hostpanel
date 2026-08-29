@@ -1,6 +1,5 @@
 namespace Innovayse.API.Slides;
 
-using Innovayse.Application.Slides.DTOs;
 using Innovayse.Application.Slides.Queries.ListActiveSlides;
 using Innovayse.Domain.Slides;
 using Microsoft.AspNetCore.Authorization;

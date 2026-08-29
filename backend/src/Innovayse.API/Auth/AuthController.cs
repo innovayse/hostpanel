@@ -1,6 +1,7 @@
 namespace Innovayse.API.Auth;
 
 using Innovayse.API.Auth.Requests;
+using Innovayse.API.RateLimiting;
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Clients.Commands.AcceptInvitation;
 using Innovayse.Application.Common;
@@ -8,6 +9,7 @@ using Innovayse.Domain.Auth;
 using Innovayse.Domain.Auth.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Wolverine;
 
 /// <summary>
@@ -133,6 +135,7 @@ public sealed class AuthController(
     /// </summary>
     [HttpPost("accept-invite")]
     [Authorize]
+    [EnableRateLimiting(RateLimitPolicies.Auth)]
     public async Task<IActionResult> AcceptInviteAsync([FromBody] AcceptInvitationRequest request, CancellationToken ct)
     {
         try

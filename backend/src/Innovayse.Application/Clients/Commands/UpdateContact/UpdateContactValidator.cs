@@ -21,6 +21,8 @@ public sealed class UpdateContactValidator : AbstractValidator<UpdateContactComm
         RuleFor(x => x.City).MaximumLength(100).When(x => x.City is not null);
         RuleFor(x => x.State).MaximumLength(100).When(x => x.State is not null);
         RuleFor(x => x.PostCode).MaximumLength(20).When(x => x.PostCode is not null);
-        RuleFor(x => x.Country).Length(2).When(x => x.Country is not null);
+        // Guarded on blank, not on null -- see UpdateClientValidator for why: an unfilled
+        // country field arrives as "" from some screens and Length(2) cannot pass on "".
+        RuleFor(x => x.Country).Length(2).When(x => !string.IsNullOrEmpty(x.Country));
     }
 }

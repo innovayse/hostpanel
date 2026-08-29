@@ -8,6 +8,8 @@ using Innovayse.Domain.Clients;
 using Innovayse.Domain.Clients.Interfaces;
 using Innovayse.Domain.Notifications;
 using Innovayse.Domain.Notifications.Interfaces;
+using Innovayse.Application.Resources;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using Wolverine;
 
@@ -23,6 +25,7 @@ using Wolverine;
 /// <param name="uow">Unit of work for persisting changes.</param>
 /// <param name="bus">Wolverine message bus for sending the invitation email.</param>
 /// <param name="clientPortal">Where the client portal lives, for the link in the invitation mail.</param>
+/// <param name="localizer">The refusal sentences, in the caller's own language.</param>
 public sealed class InviteUserToClientHandler(
     IClientRepository clientRepo,
     IInvitationRepository invitationRepo,
@@ -30,7 +33,8 @@ public sealed class InviteUserToClientHandler(
     IEmailTemplateRepository templateRepo,
     IUnitOfWork uow,
     IMessageBus bus,
-    IOptions<ClientPortalOptions> clientPortal)
+    IOptions<ClientPortalOptions> clientPortal,
+    IStringLocalizer<ValidationMessages> localizer)
 {
     /// <summary>The email template slug used for user invitations.</summary>
     private const string TemplateSlug = "user-invite";
@@ -55,11 +59,11 @@ public sealed class InviteUserToClientHandler(
         // never supplied and has no use for. The caller-supplied ids elsewhere in this handler
         // are echoed back because they are already the caller's own input.
         var owner = await identity.FindBySubjectAsync(client.UserId, ct)
-            ?? throw new InvalidOperationException("This account's owner could not be found.");
+            ?? throw new InvalidOperationException(localizer["AccountOwnerNotFound"]);
 
         if (string.Equals(owner.Email, cmd.Email, StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidOperationException("Cannot invite the account owner as an additional user.");
+            throw new InvalidOperationException(localizer["CannotInviteAccountOwner"]);
         }
 
         // Check whether the account at this address is already linked.
@@ -72,20 +76,20 @@ public sealed class InviteUserToClientHandler(
         var existing = await identity.FindByEmailAsync(cmd.Email, ct);
         if (existing is not null && client.Users.Any(u => u.UserId == existing.Subject))
         {
-            throw new InvalidOperationException($"A user with email '{cmd.Email}' is already linked to this client.");
+            throw new InvalidOperationException(localizer["UserAlreadyLinked", cmd.Email]);
         }
 
         // Check for existing pending invitation
         var pending = await invitationRepo.FindPendingByEmailAndClientAsync(cmd.Email, cmd.ClientId, ct);
         if (pending is not null)
         {
-            throw new InvalidOperationException($"A pending invitation for '{cmd.Email}' already exists for this client.");
+            throw new InvalidOperationException(localizer["InvitationAlreadyPending", cmd.Email]);
         }
 
         // Validate permissions value before casting
         if ((cmd.Permissions & ~(int)ClientPermission.All) != 0)
         {
-            throw new InvalidOperationException($"Invalid permissions value: {cmd.Permissions}.");
+            throw new InvalidOperationException(localizer["InvalidPermissionsValue", cmd.Permissions]);
         }
 
         // Create and persist the invitation

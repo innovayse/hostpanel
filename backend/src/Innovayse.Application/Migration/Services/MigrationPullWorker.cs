@@ -1,10 +1,8 @@
 namespace Innovayse.Application.Migration.Services;
 
-using System.Net.Http.Json;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Common;
+using Innovayse.Application.Migration.Interfaces;
 using Innovayse.Domain.Auth;
 using Innovayse.Domain.Auth.Interfaces;
 using Innovayse.Domain.Billing;
@@ -33,7 +31,7 @@ using Microsoft.Extensions.Logging;
 public sealed class MigrationPullWorker(
     IMigrationJobRepository repo,
     IMigrationLogRepository logRepo,
-    IHttpClientFactory httpClientFactory,
+    IMigrationSource source,
     IIdentityProvider identity,
     IUserProvisioning provisioning,
     ISubjectRoleStore roles,
@@ -56,12 +54,6 @@ public sealed class MigrationPullWorker(
     IUnitOfWork uow,
     ILogger<MigrationPullWorker> logger)
 {
-    private static readonly JsonSerializerOptions JsonOpts = new()
-    {
-        PropertyNameCaseInsensitive = true,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
-
     private const int PerPage = 50;
 
     private int _jobId;
@@ -102,10 +94,8 @@ public sealed class MigrationPullWorker(
         var job = await repo.GetByIdAsync(jobId, ct)
             ?? throw new InvalidOperationException($"Migration job {jobId} not found.");
 
-        var client = httpClientFactory.CreateClient("migration");
-
         // 1. Fetch totals from plugin
-        var totalsResp = await PostActionAsync<TotalsResponse>(client, job.SourceUrl, job.Key, "totals", null, ct);
+        var totalsResp = await source.GetTotalsAsync(job.SourceUrl, job.Key, ct);
         job.Start(
             job.ExportClients ? totalsResp.Clients : 0,
             job.ExportInvoices ? totalsResp.Invoices : 0,
@@ -128,77 +118,77 @@ public sealed class MigrationPullWorker(
         //    Clients first (invoices/services/domains/tickets reference them)
         if (job.ExportClients)
         {
-            await PullClientsAsync(client, job, ct);
+            await PullClientsAsync(job, ct);
         }
 
         if (job.ExportProducts)
         {
-            await PullProductsAsync(client, job, ct);
+            await PullProductsAsync(job, ct);
         }
 
         if (job.ExportInvoices)
         {
-            await PullInvoicesAsync(client, job, ct);
+            await PullInvoicesAsync(job, ct);
         }
 
         if (job.ExportServices)
         {
-            await PullServicesAsync(client, job, ct);
+            await PullServicesAsync(job, ct);
         }
 
         if (job.ExportDomains)
         {
-            await PullDomainsAsync(client, job, ct);
+            await PullDomainsAsync(job, ct);
         }
 
         if (job.ExportTickets)
         {
-            await PullTicketsAsync(client, job, ct);
+            await PullTicketsAsync(job, ct);
         }
 
         if (job.ExportOrders)
         {
-            await PullOrdersAsync(client, job, ct);
+            await PullOrdersAsync(job, ct);
         }
 
         if (job.ExportTransactions)
         {
-            await PullTransactionsAsync(client, job, ct);
+            await PullTransactionsAsync(job, ct);
         }
 
         if (job.ExportQuotes)
         {
-            await PullQuotesAsync(client, job, ct);
+            await PullQuotesAsync(job, ct);
         }
 
         if (job.ExportKnowledgebase)
         {
-            await PullKnowledgebaseAsync(client, job, ct);
+            await PullKnowledgebaseAsync(job, ct);
         }
 
         if (job.ExportContacts)
         {
-            await PullContactsAsync(client, job, ct);
+            await PullContactsAsync(job, ct);
         }
 
         if (job.ExportTicketReplies)
         {
-            await PullTicketRepliesAsync(client, job, ct);
+            await PullTicketRepliesAsync(job, ct);
         }
 
         if (job.ExportAnnouncements)
         {
-            await PullAnnouncementsAsync(client, job, ct);
+            await PullAnnouncementsAsync(job, ct);
         }
 
         if (job.ExportDownloads)
         {
-            await PullDownloadsAsync(client, job, ct);
+            await PullDownloadsAsync(job, ct);
         }
 
         if (job.ExportNetworkIssues)
         {
-            await PullNetworkIssuesAsync(client, job, ct);
+            await PullNetworkIssuesAsync(job, ct);
         }
 
         job.Complete();
@@ -208,11 +198,11 @@ public sealed class MigrationPullWorker(
 
     // ── Clients ───────────────────────────────────────────────────────────────
 
-    private async Task PullClientsAsync(HttpClient http, MigrationJob job, CancellationToken ct)
+    private async Task PullClientsAsync(MigrationJob job, CancellationToken ct)
     {
         int imported = 0, skipped = 0;
 
-        await foreach (var page in PagesAsync<ClientRecord>(http, job, "clients", ct))
+        await foreach (var page in PagesAsync<ClientRecord>(job, "clients", ct))
         {
             foreach (var rec in page)
             {
@@ -296,11 +286,11 @@ public sealed class MigrationPullWorker(
 
     // ── Invoices ──────────────────────────────────────────────────────────────
 
-    private async Task PullInvoicesAsync(HttpClient http, MigrationJob job, CancellationToken ct)
+    private async Task PullInvoicesAsync(MigrationJob job, CancellationToken ct)
     {
         int imported = 0, skipped = 0;
 
-        await foreach (var page in PagesAsync<InvoiceRecord>(http, job, "invoices", ct))
+        await foreach (var page in PagesAsync<InvoiceRecord>(job, "invoices", ct))
         {
             foreach (var rec in page)
             {
@@ -409,13 +399,13 @@ public sealed class MigrationPullWorker(
 
     // ── Services ──────────────────────────────────────────────────────────────
 
-    private async Task PullServicesAsync(HttpClient http, MigrationJob job, CancellationToken ct)
+    private async Task PullServicesAsync(MigrationJob job, CancellationToken ct)
     {
         int imported = 0, skipped = 0;
 
         var allProducts = await productRepo.ListAsync(null, false, ct);
 
-        await foreach (var page in PagesAsync<ServiceRecord>(http, job, "services", ct))
+        await foreach (var page in PagesAsync<ServiceRecord>(job, "services", ct))
         {
             foreach (var rec in page)
             {
@@ -526,11 +516,11 @@ public sealed class MigrationPullWorker(
 
     // ── Domains ───────────────────────────────────────────────────────────────
 
-    private async Task PullDomainsAsync(HttpClient http, MigrationJob job, CancellationToken ct)
+    private async Task PullDomainsAsync(MigrationJob job, CancellationToken ct)
     {
         int imported = 0, skipped = 0;
 
-        await foreach (var page in PagesAsync<DomainRecord>(http, job, "domains", ct))
+        await foreach (var page in PagesAsync<DomainRecord>(job, "domains", ct))
         {
             foreach (var rec in page)
             {
@@ -629,14 +619,14 @@ public sealed class MigrationPullWorker(
 
     // ── Tickets ───────────────────────────────────────────────────────────────
 
-    private async Task PullTicketsAsync(HttpClient http, MigrationJob job, CancellationToken ct)
+    private async Task PullTicketsAsync(MigrationJob job, CancellationToken ct)
     {
         int imported = 0, skipped = 0;
 
         var departments = await departmentRepo.ListAllAsync(ct);
         var defaultDeptId = departments.FirstOrDefault()?.Id ?? 1;
 
-        await foreach (var page in PagesAsync<TicketRecord>(http, job, "tickets", ct))
+        await foreach (var page in PagesAsync<TicketRecord>(job, "tickets", ct))
         {
             foreach (var rec in page)
             {
@@ -711,13 +701,13 @@ public sealed class MigrationPullWorker(
 
     // ── Products ──────────────────────────────────────────────────────────────
 
-    private async Task PullProductsAsync(HttpClient http, MigrationJob job, CancellationToken ct)
+    private async Task PullProductsAsync(MigrationJob job, CancellationToken ct)
     {
         // Step 1: fetch all product groups, create missing ones, build whmcsId→localId map
         var localGroups = await productGroupRepo.ListAsync(ct);
         var groupIdMap = new Dictionary<int, int>(); // whmcsId → localGroupId
 
-        await foreach (var page in PagesAsync<ProductGroupRecord>(http, job, "product_groups", ct))
+        await foreach (var page in PagesAsync<ProductGroupRecord>(job, "product_groups", ct))
         {
             foreach (var grp in page)
             {
@@ -742,7 +732,7 @@ public sealed class MigrationPullWorker(
         int imported = 0, skipped = 0;
         var allProducts = await productRepo.ListAsync(null, false, ct);
 
-        await foreach (var page in PagesAsync<ProductRecord>(http, job, "products", ct))
+        await foreach (var page in PagesAsync<ProductRecord>(job, "products", ct))
         {
             foreach (var rec in page)
             {
@@ -809,11 +799,11 @@ public sealed class MigrationPullWorker(
 
     // ── Orders ────────────────────────────────────────────────────────────────
 
-    private async Task PullOrdersAsync(HttpClient http, MigrationJob job, CancellationToken ct)
+    private async Task PullOrdersAsync(MigrationJob job, CancellationToken ct)
     {
         int imported = 0, skipped = 0;
 
-        await foreach (var page in PagesAsync<OrderRecord>(http, job, "orders", ct))
+        await foreach (var page in PagesAsync<OrderRecord>(job, "orders", ct))
         {
             foreach (var rec in page)
             {
@@ -886,11 +876,11 @@ public sealed class MigrationPullWorker(
 
     // ── Transactions ──────────────────────────────────────────────────────────
 
-    private async Task PullTransactionsAsync(HttpClient http, MigrationJob job, CancellationToken ct)
+    private async Task PullTransactionsAsync(MigrationJob job, CancellationToken ct)
     {
         int imported = 0, skipped = 0;
 
-        await foreach (var page in PagesAsync<TransactionRecord>(http, job, "transactions", ct))
+        await foreach (var page in PagesAsync<TransactionRecord>(job, "transactions", ct))
         {
             foreach (var rec in page)
             {
@@ -945,11 +935,11 @@ public sealed class MigrationPullWorker(
 
     // ── Quotes ────────────────────────────────────────────────────────────────
 
-    private async Task PullQuotesAsync(HttpClient http, MigrationJob job, CancellationToken ct)
+    private async Task PullQuotesAsync(MigrationJob job, CancellationToken ct)
     {
         int imported = 0, skipped = 0;
 
-        await foreach (var page in PagesAsync<QuoteRecord>(http, job, "quotes", ct))
+        await foreach (var page in PagesAsync<QuoteRecord>(job, "quotes", ct))
         {
             foreach (var rec in page)
             {
@@ -1016,13 +1006,13 @@ public sealed class MigrationPullWorker(
 
     // ── Knowledgebase ─────────────────────────────────────────────────────────
 
-    private async Task PullKnowledgebaseAsync(HttpClient http, MigrationJob job, CancellationToken ct)
+    private async Task PullKnowledgebaseAsync(MigrationJob job, CancellationToken ct)
     {
         // Step 1: fetch categories, create missing ones, build whmcsCatId→localCategoryName map
         var localCats = await kbCategoryRepo.ListAllAsync(ct);
         var catNameMap = new Dictionary<int, string>(); // whmcsCatId → local category name
 
-        await foreach (var page in PagesAsync<KbCategoryRecord>(http, job, "knowledgebase_categories", ct))
+        await foreach (var page in PagesAsync<KbCategoryRecord>(job, "knowledgebase_categories", ct))
         {
             foreach (var cat in page)
             {
@@ -1046,7 +1036,7 @@ public sealed class MigrationPullWorker(
         // Step 2: page through articles
         int imported = 0, skipped = 0;
 
-        await foreach (var page in PagesAsync<KbArticleRecord>(http, job, "knowledgebase", ct))
+        await foreach (var page in PagesAsync<KbArticleRecord>(job, "knowledgebase", ct))
         {
             foreach (var rec in page)
             {
@@ -1087,12 +1077,12 @@ public sealed class MigrationPullWorker(
 
     // ── Contacts ──────────────────────────────────────────────────────────────
 
-    private async Task PullContactsAsync(HttpClient http, MigrationJob job, CancellationToken ct)
+    private async Task PullContactsAsync(MigrationJob job, CancellationToken ct)
     {
         int imported = 0, skipped = 0;
         bool hasAny = false;
 
-        await foreach (var page in PagesAsync<ContactRecord>(http, job, "contacts", ct))
+        await foreach (var page in PagesAsync<ContactRecord>(job, "contacts", ct))
         {
             hasAny = true;
             foreach (var rec in page)
@@ -1152,12 +1142,12 @@ public sealed class MigrationPullWorker(
 
     // ── Ticket Replies ────────────────────────────────────────────────────────
 
-    private async Task PullTicketRepliesAsync(HttpClient http, MigrationJob job, CancellationToken ct)
+    private async Task PullTicketRepliesAsync(MigrationJob job, CancellationToken ct)
     {
         int imported = 0, skipped = 0;
         bool hasAny = false;
 
-        await foreach (var page in PagesAsync<TicketReplyRecord>(http, job, "ticket_replies", ct))
+        await foreach (var page in PagesAsync<TicketReplyRecord>(job, "ticket_replies", ct))
         {
             hasAny = true;
             foreach (var rec in page)
@@ -1219,11 +1209,11 @@ public sealed class MigrationPullWorker(
 
     // ── Announcements ─────────────────────────────────────────────────────────
 
-    private async Task PullAnnouncementsAsync(HttpClient http, MigrationJob job, CancellationToken ct)
+    private async Task PullAnnouncementsAsync(MigrationJob job, CancellationToken ct)
     {
         int imported = 0, skipped = 0;
 
-        await foreach (var page in PagesAsync<AnnouncementRecord>(http, job, "announcements", ct))
+        await foreach (var page in PagesAsync<AnnouncementRecord>(job, "announcements", ct))
         {
             foreach (var rec in page)
             {
@@ -1263,12 +1253,12 @@ public sealed class MigrationPullWorker(
 
     // ── Downloads ─────────────────────────────────────────────────────────────
 
-    private async Task PullDownloadsAsync(HttpClient http, MigrationJob job, CancellationToken ct)
+    private async Task PullDownloadsAsync(MigrationJob job, CancellationToken ct)
     {
         // Step 1: categories
         var catIdMap = new Dictionary<int, int>(); // whmcsCatId → localCatId
 
-        await foreach (var page in PagesAsync<DownloadCategoryRecord>(http, job, "download_categories", ct))
+        await foreach (var page in PagesAsync<DownloadCategoryRecord>(job, "download_categories", ct))
         {
             foreach (var cat in page)
             {
@@ -1282,7 +1272,7 @@ public sealed class MigrationPullWorker(
         // Step 2: files
         int imported = 0, skipped = 0;
 
-        await foreach (var page in PagesAsync<DownloadRecord>(http, job, "downloads", ct))
+        await foreach (var page in PagesAsync<DownloadRecord>(job, "downloads", ct))
         {
             foreach (var rec in page)
             {
@@ -1325,11 +1315,11 @@ public sealed class MigrationPullWorker(
 
     // ── Network Issues ────────────────────────────────────────────────────────
 
-    private async Task PullNetworkIssuesAsync(HttpClient http, MigrationJob job, CancellationToken ct)
+    private async Task PullNetworkIssuesAsync(MigrationJob job, CancellationToken ct)
     {
         int imported = 0, skipped = 0;
 
-        await foreach (var page in PagesAsync<NetworkIssueRecord>(http, job, "network_issues", ct))
+        await foreach (var page in PagesAsync<NetworkIssueRecord>(job, "network_issues", ct))
         {
             foreach (var rec in page)
             {
@@ -1431,7 +1421,6 @@ public sealed class MigrationPullWorker(
     /// Async iterator: fetches pages from the plugin and yields each page's item list.
     /// </summary>
     private async IAsyncEnumerable<IReadOnlyList<T>> PagesAsync<T>(
-        HttpClient http,
         MigrationJob job,
         string action,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct)
@@ -1440,8 +1429,7 @@ public sealed class MigrationPullWorker(
 
         while (true)
         {
-            var extra = new Dictionary<string, object> { ["page"] = page, ["perPage"] = PerPage };
-            var resp = await PostActionAsync<PagedResponse<T>>(http, job.SourceUrl, job.Key, action, extra, ct);
+            var resp = await source.GetRecordPageAsync<T>(job.SourceUrl, job.Key, action, page, PerPage, ct);
 
             if (resp.Items is { Count: > 0 })
             {
@@ -1457,68 +1445,9 @@ public sealed class MigrationPullWorker(
         }
     }
 
-    private async Task<T> PostActionAsync<T>(
-        HttpClient client,
-        string sourceUrl,
-        string key,
-        string action,
-        Dictionary<string, object>? extra,
-        CancellationToken ct)
-    {
-        var payload = new Dictionary<string, object> { ["key"] = key, ["action"] = action };
-        if (extra is not null)
-        {
-            foreach (var kv in extra)
-            {
-                payload[kv.Key] = kv.Value;
-            }
-        }
-
-        var response = await client.PostAsJsonAsync(sourceUrl, payload, ct);
-        if (!response.IsSuccessStatusCode)
-        {
-            var errorBody = await response.Content.ReadAsStringAsync(ct);
-            logger.LogError("WHMCS api.php returned {Status} for action '{Action}': {Body}",
-                (int)response.StatusCode, action, errorBody);
-            response.EnsureSuccessStatusCode();
-        }
-
-        var json = await response.Content.ReadAsStringAsync(ct);
-        return JsonSerializer.Deserialize<T>(json, JsonOpts)
-            ?? throw new InvalidOperationException($"Empty response for action '{action}'.");
-    }
-
     // ── Internal enum ─────────────────────────────────────────────────────────
 
     private enum ImportResult { Imported, Skipped, Failed }
-
-    // ── Response DTOs ─────────────────────────────────────────────────────────
-
-    private sealed class TotalsResponse
-    {
-        public int Clients { get; set; }
-        public int Invoices { get; set; }
-        public int Services { get; set; }
-        public int Domains { get; set; }
-        public int Tickets { get; set; }
-        public int Products { get; set; }
-        public int Orders { get; set; }
-        public int Transactions { get; set; }
-        public int Quotes { get; set; }
-        public int Knowledgebase { get; set; }
-        public int Contacts { get; set; }
-        public int TicketReplies { get; set; }
-        public int Announcements { get; set; }
-        public int Downloads { get; set; }
-        public int DownloadCategories { get; set; }
-        public int NetworkIssues { get; set; }
-    }
-
-    private sealed class PagedResponse<T>
-    {
-        public List<T>? Items { get; set; }
-        public int TotalPages { get; set; }
-    }
 
     // ── Plugin record shapes (mapped from JSON) ───────────────────────────────
 

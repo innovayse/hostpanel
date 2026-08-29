@@ -1,7 +1,7 @@
 namespace Innovayse.API.Notifications;
 
 using Innovayse.Application.Common;
-using Innovayse.Application.Notifications.DTOs;
+using Innovayse.Application.Notifications.Common;
 using Innovayse.Application.Notifications.Queries.ListClientEmailLogs;
 using Innovayse.Application.Notifications.Queries.ListEmailLogs;
 using Innovayse.Domain.Auth;

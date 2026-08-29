@@ -1,7 +1,6 @@
 namespace Innovayse.Application.Domains.Queries.ListDomains;
 
 using Innovayse.Application.Common;
-using Innovayse.Application.Domains.DTOs;
 using Innovayse.Domain.Clients.Interfaces;
 using Innovayse.Domain.Domains;
 using Innovayse.Domain.Domains.Interfaces;

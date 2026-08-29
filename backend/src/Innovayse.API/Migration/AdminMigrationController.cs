@@ -1,10 +1,11 @@
 namespace Innovayse.API.Migration;
 
 using Innovayse.API.Migration.Requests;
+using Innovayse.API.RateLimiting;
 using Innovayse.Application.Migration.Commands.CreateMigrationJob;
 using Innovayse.Application.Migration.Commands.DeleteMigrationJob;
 using Innovayse.Application.Migration.Commands.StartMigrationPull;
-using Innovayse.Application.Migration.DTOs;
+using Innovayse.Application.Migration.Common;
 using Innovayse.Application.Migration.Queries.GetMigrationLogs;
 using Innovayse.Application.Migration.Queries.GetMigrationStatus;
 using Innovayse.Application.Migration.Queries.ListMigrationJobs;
@@ -12,6 +13,7 @@ using Innovayse.Application.Migration.Queries.TestMigrationConnection;
 using Innovayse.Domain.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Wolverine;
 
 /// <summary>
@@ -105,6 +107,7 @@ public sealed class AdminMigrationController(IMessageBus bus) : ControllerBase
 
     /// <summary>Starts the migration pull process.</summary>
     [HttpPost("{id:int}/start")]
+    [EnableRateLimiting(RateLimitPolicies.Concurrent)]
     public async Task<ActionResult<MigrationJobDto>> StartAsync(int id, CancellationToken ct)
     {
         try

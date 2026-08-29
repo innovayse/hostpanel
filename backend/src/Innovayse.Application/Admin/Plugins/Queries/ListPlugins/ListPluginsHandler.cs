@@ -1,7 +1,6 @@
 namespace Innovayse.Application.Admin.Plugins.Queries.ListPlugins;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Innovayse.Application.Admin.Plugins.DTOs;
 using Innovayse.Application.Admin.Plugins.Interfaces;
 using Innovayse.SDK.Plugins;
 

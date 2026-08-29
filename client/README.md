@@ -112,13 +112,38 @@ npm run preview
 
 ### Environment Variables
 
-Create a `.env` file in the root directory (copy from `.env.example`):
+Copy `client/.env.example` to `client/.env`. It holds no credential for an external service, and
+none may be added: this app is the one a browser talks to, and every secret it used to carry now
+belongs to the API's environment instead.
+
+### Contact Form Delivery — Email And Telegram
+
+**Neither is configured here.** The contact form posts to the C# backend, which sends the mail
+through the one SMTP relay this platform configures and posts the enquiry to Telegram itself — so
+the relay credentials and the bot token live in the API's environment and nowhere else. This app
+held both until they moved; putting either back would give a secret a second container to leak
+from, and the platform a second client of the same service.
+
+Set them in the repository root's `.env`:
 
 ```env
-# Telegram Bot Configuration (for contact forms)
-TELEGRAM_BOT_TOKEN=your_bot_token_here
-TELEGRAM_CHAT_ID=your_chat_id_here
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your-email@example.com
+SMTP_PASSWORD=your-password
+# Where contact-form enquiries are delivered (Notifications__ContactEmail on the API).
+EMAIL_TO=contact@yourdomain.com
+# Optional. Both or neither — the API refuses to start on half of a bot.
+TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz
+TELEGRAM_CHAT_ID=123456789
 ```
+
+Left unset, `EMAIL_TO` makes the form answer `503 CONTACT_NOT_CONFIGURED` and the page says the
+form is unavailable. It never reports a message as sent that was not.
+
+Left unset, the Telegram pair simply means no chat post: the enquiry is still delivered by email
+and the API logs that it posted nowhere. A Telegram failure is logged too, and never turns a
+delivered enquiry into a failure the visitor is shown.
 
 ### Telegram Bot Setup
 
@@ -132,35 +157,7 @@ TELEGRAM_CHAT_ID=your_chat_id_here
    - Send any message to get your chat ID
    - For groups: add the bot to the group, then use `@getidsbot`
 
-3. **Add to .env:**
-   ```env
-   TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz
-   TELEGRAM_CHAT_ID=123456789
-   ```
-
-### Email Setup (Optional)
-
-Contact forms can also send emails in addition to Telegram notifications.
-
-1. **Gmail:**
-   - Enable 2-factor authentication
-   - Generate an App Password: [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
-   ```env
-   SMTP_HOST=smtp.gmail.com
-   SMTP_PORT=587
-   SMTP_USER=your-email@gmail.com
-   SMTP_PASSWORD=your-16-digit-app-password
-   EMAIL_TO=contact@innovayse.com
-   ```
-
-2. **Yandex:**
-   ```env
-   SMTP_HOST=smtp.yandex.com
-   SMTP_PORT=587
-   SMTP_USER=your-email@yandex.ru
-   SMTP_PASSWORD=your-password
-   EMAIL_TO=contact@innovayse.com
-   ```
+3. **Add both to the repository root's `.env`**, not to `client/.env`.
 
 ### i18n
 

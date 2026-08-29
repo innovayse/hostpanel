@@ -65,8 +65,21 @@ services:
       hostpanel-db:
         condition: service_healthy
     environment:
-      Smtp__Host: mailpit
-
-  hostpanel-client:
-    environment:
-      SMTP_HOST: mailpit
+      # Defaulted, not forced, and all four together.
+      #
+      # This overlay is applied last on every tier including production, so a bare
+      # `Smtp__Host: mailpit` overrode the real relay docker-compose.prod.yml had
+      # already set from SMTP_HOST — production aimed every password reset and address
+      # verification at a development catcher that is not even on this network, so the
+      # connection threw and nothing arrived.
+      #
+      # Overriding the host alone is half a switch: the port and credentials would still
+      # come from prod.yml, so the fallback would reach the catcher on 465 and try to
+      # authenticate against something that accepts no credentials at all. mailpit speaks
+      # plain SMTP on 1025 and refuses AUTH, so the whole group defaults together — a tier
+      # that sets SMTP_HOST keeps its own relay, port and user, and one that does not gets
+      # a catcher that is consistent with itself.
+      Smtp__Host: ${SMTP_HOST:-mailpit}
+      Smtp__Port: ${SMTP_PORT:-1025}
+      Smtp__Username: ${SMTP_USER:-}
+      Smtp__Password: ${SMTP_PASSWORD:-}

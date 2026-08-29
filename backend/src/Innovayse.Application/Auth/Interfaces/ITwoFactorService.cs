@@ -1,6 +1,7 @@
 namespace Innovayse.Application.Auth.Interfaces;
 
-using Innovayse.Application.Auth.DTOs;
+using Innovayse.Application.Auth.Common;
+
 
 /// <summary>
 /// Two-factor authentication for the signed-in account, split from the other 15+ unrelated

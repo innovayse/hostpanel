@@ -8,11 +8,31 @@ import { useCancellationRequestsStore } from '../stores/cancellationRequestsStor
 
 const store = useCancellationRequestsStore()
 
-/** Type badge style map. */
+/**
+ * Type badge style map, keyed by the backend `CancellationType` member name. The API sends the
+ * member name rather than a sentence, so the wording below is this screen's and not the API's --
+ * the admin SPA is English-only, which is why a plain map is enough here where the client portal
+ * needs i18n keys.
+ */
 const typeStyles: Record<string, string> = {
   Immediate: 'text-status-red bg-status-red/10 border-status-red/20',
-  'End of Billing Period': 'text-primary-400 bg-primary-500/10 border-primary-500/20',
+  EndOfBillingPeriod: 'text-primary-400 bg-primary-500/10 border-primary-500/20',
 }
+
+/** Human-readable label per `CancellationType` member name. */
+const typeLabels: Record<string, string> = {
+  Immediate: 'Immediate',
+  EndOfBillingPeriod: 'End of Billing Period',
+}
+
+/**
+ * Resolves the label for a cancellation type, falling back to the raw member name so an enum
+ * member added on the backend still renders something recognisable instead of blank.
+ *
+ * @param type - Backend `CancellationType` member name.
+ * @returns The label to show in the badge.
+ */
+const typeLabel = (type: string): string => typeLabels[type] ?? type
 
 /** Status badge style map. */
 const statusStyles: Record<string, string> = {
@@ -139,9 +159,9 @@ onMounted(() => store.fetchAll())
         <!-- Type -->
         <span
           class="inline-flex px-2 py-0.5 rounded-full text-[0.68rem] font-semibold border w-fit"
-          :class="typeStyles[item.type] ?? typeStyles['End of Billing Period']"
+          :class="typeStyles[item.type] ?? typeStyles.EndOfBillingPeriod"
         >
-          {{ item.type }}
+          {{ typeLabel(item.type) }}
         </span>
 
         <!-- Status -->

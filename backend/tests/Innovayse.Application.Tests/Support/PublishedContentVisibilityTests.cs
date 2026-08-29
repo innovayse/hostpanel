@@ -1,6 +1,6 @@
 namespace Innovayse.Application.Tests.Support;
 
-using Innovayse.Application.Support.DTOs;
+using Innovayse.Application.Support.Common;
 using Innovayse.Application.Support.Queries.GetKbArticle;
 using Innovayse.Application.Support.Queries.GetPublishedKbArticle;
 using Innovayse.Application.Support.Queries.ListPublishedAnnouncements;

@@ -1,12 +1,14 @@
 namespace Innovayse.API.Auth;
 
 using Innovayse.API.Auth.Requests;
+using Innovayse.API.RateLimiting;
 using Innovayse.Application.Auth.Commands.DisableTwoFactor;
 using Innovayse.Application.Auth.Commands.EnableTwoFactor;
 using Innovayse.Application.Auth.Commands.StartTwoFactorSetup;
-using Innovayse.Application.Auth.DTOs;
+using Innovayse.Application.Auth.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Wolverine;
 
 /// <summary>
@@ -24,6 +26,7 @@ using Wolverine;
 [ApiController]
 [Route("api/me/2fa")]
 [Authorize]
+[EnableRateLimiting(RateLimitPolicies.Auth)]
 public sealed class MyTwoFactorController(IMessageBus bus) : ControllerBase
 {
     /// <summary>

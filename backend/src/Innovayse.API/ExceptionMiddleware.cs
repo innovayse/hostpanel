@@ -4,16 +4,56 @@ using System.Net;
 using System.Text.Json;
 using Innovayse.Application.Billing.Common;
 using Innovayse.Application.Clients.Common;
+using Innovayse.Application.Domains.Common;
+using Innovayse.Application.Resources;
 using Innovayse.Application.Support.Common;
+using Microsoft.Extensions.Localization;
 
 /// <summary>
 /// Global exception-handling middleware that maps well-known exceptions to HTTP status codes.
 /// Prevents unhandled exceptions from propagating to the test host or client.
 /// </summary>
+/// <remarks>
+/// <para>
+/// This is also the single place a refusal acquires its <b>wording</b>. The response body keeps
+/// the shape it always had -- <c>{ "error": "<i>sentence</i>", "code": "<i>CODE</i>" }</c> -- but
+/// the sentence for every exception type named below is now resolved from
+/// <c>Innovayse.Application/Resources/ValidationMessages*.resx</c> in the culture
+/// <c>UseRequestLocalization</c> read off <c>Accept-Language</c>. The portal ships en/ru/hy and
+/// the frontend no longer keeps a mapping table of its own, so a Russian or Armenian customer
+/// reads the refusal in their own language rather than the five the portal happened to have
+/// entries for.
+/// </para>
+/// <para>
+/// <b>Only typed exceptions are looked up.</b> A plain <see cref="InvalidOperationException"/> or
+/// <see cref="UnauthorizedAccessException"/> still travels with its own
+/// <see cref="Exception.Message"/>: the handler that threw it is the only thing that knows which
+/// resource key applies, so a handler whose refusal a person reads resolves the sentence itself
+/// through <c>IStringLocalizer&lt;ValidationMessages&gt;</c> before throwing. Localising here by
+/// guessing at the message text would be exactly the string-matching this contract exists to
+/// avoid.
+/// </para>
+/// </remarks>
 /// <param name="next">The next middleware in the pipeline.</param>
 /// <param name="logger">Logger for unhandled exceptions.</param>
-public sealed class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
+/// <param name="localizer">
+/// The refusal sentences, in the culture of the request being answered. Injected into the
+/// middleware's constructor rather than resolved per request on purpose: the localizer reads
+/// <see cref="System.Globalization.CultureInfo.CurrentUICulture"/> at the moment of the lookup,
+/// not at construction, so one instance answers every culture correctly.
+/// </param>
+public sealed class ExceptionMiddleware(
+    RequestDelegate next,
+    ILogger<ExceptionMiddleware> logger,
+    IStringLocalizer<ValidationMessages> localizer)
 {
+    /// <summary>
+    /// Resource key for <see cref="InternalErrorCode"/>'s sentence. The other keys are constants
+    /// on the exception types themselves, beside the codes they travel with; this one has no
+    /// exception type to hang off because it is what the catch-all writes.
+    /// </summary>
+    private const string InternalErrorKey = "InternalError";
+
     /// <summary>Code for a request that carried no usable credentials.</summary>
     private const string UnauthorizedCode = "UNAUTHORIZED";
 
@@ -27,6 +67,19 @@ public sealed class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionM
 
     /// <summary>Code for anything that reached the last handler unclassified.</summary>
     private const string InternalErrorCode = "INTERNAL_ERROR";
+
+    /// <summary>
+    /// Code for a request that failed the FluentValidation middleware Wolverine runs in front of
+    /// every handler that has a validator.
+    /// </summary>
+    private const string ValidationFailedCode = "VALIDATION_FAILED";
+
+    /// <summary>
+    /// Resource key for <see cref="ValidationFailedCode"/>'s sentence. Like
+    /// <see cref="InternalErrorKey"/> it is a constant here rather than on an exception type,
+    /// because the exception is FluentValidation's and carries nothing of this project's.
+    /// </summary>
+    private const string ValidationFailedKey = "ValidationFailed";
 
     /// <summary>Invokes the middleware.</summary>
     /// <param name="context">The current HTTP context.</param>
@@ -50,7 +103,7 @@ public sealed class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionM
                 "No client profile for user {UserId}; answering {Code}.", ex.UserId, ClientProfileNotFoundException.Code);
 
             await WriteErrorAsync(
-                context, HttpStatusCode.NotFound, ClientProfileNotFoundException.PublicMessage,
+                context, HttpStatusCode.NotFound, Localize(ClientProfileNotFoundException.MessageKey),
                 ClientProfileNotFoundException.Code);
         }
         catch (TicketNotFoundException ex)
@@ -66,7 +119,7 @@ public sealed class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionM
                 "Ticket {TicketId} refused to its requester; answering {Code}.", ex.TicketId, TicketNotFoundException.Code);
 
             await WriteErrorAsync(
-                context, HttpStatusCode.NotFound, TicketNotFoundException.PublicMessage,
+                context, HttpStatusCode.NotFound, Localize(TicketNotFoundException.MessageKey),
                 TicketNotFoundException.Code);
         }
         catch (InvoiceNotFoundException ex)
@@ -78,8 +131,73 @@ public sealed class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionM
                 "Invoice {InvoiceId} refused to its requester; answering {Code}.", ex.InvoiceId, InvoiceNotFoundException.Code);
 
             await WriteErrorAsync(
-                context, HttpStatusCode.NotFound, InvoiceNotFoundException.PublicMessage,
+                context, HttpStatusCode.NotFound, Localize(InvoiceNotFoundException.MessageKey),
                 InvoiceNotFoundException.Code);
+        }
+        catch (DomainNotFoundException ex)
+        {
+            // The same answer as the two refusals above, for the same reason. These routes used
+            // to answer 403 for all three cases, which withheld as much but disagreed with the
+            // ticket and invoice routes for no recoverable reason; they now refuse alike, and
+            // 404 is the stricter of the two because a 403 asserts the resource exists.
+            logger.LogInformation(
+                "Domain {DomainId} refused to its requester; answering {Code}.", ex.DomainId, DomainNotFoundException.Code);
+
+            await WriteErrorAsync(
+                context, HttpStatusCode.NotFound, Localize(DomainNotFoundException.MessageKey),
+                DomainNotFoundException.Code);
+        }
+        catch (ContactRecipientNotConfiguredException)
+        {
+            // 503, not 400 and not 500: the submission was well-formed and nothing failed at
+            // runtime -- this deployment has never been able to answer it. The visitor is told to
+            // use another channel rather than to retry, because retrying cannot work until an
+            // operator sets the value.
+            //
+            // The setting is named in this log line and nowhere in the response. The handler logs
+            // its own line at Error too; this one records that the refusal reached the wire.
+            logger.LogWarning(
+                "Contact form refused: {Setting} is unset; answering {Code}.",
+                ContactRecipientNotConfiguredException.SettingName, ContactRecipientNotConfiguredException.Code);
+
+            await WriteErrorAsync(
+                context, HttpStatusCode.ServiceUnavailable, Localize(ContactRecipientNotConfiguredException.MessageKey),
+                ContactRecipientNotConfiguredException.Code);
+        }
+        catch (ContactMessageNotSentException ex)
+        {
+            // 502: this service was fine and the SMTP relay behind it was not. The relay's own
+            // message stays in this log line -- it names hosts, and sometimes credentials -- while
+            // the response says only that the message did not arrive and a retry is worth making.
+            logger.LogError(
+                ex.InnerException ?? ex, "Contact form message was not delivered; answering {Code}.",
+                ContactMessageNotSentException.Code);
+
+            await WriteErrorAsync(
+                context, HttpStatusCode.BadGateway, Localize(ContactMessageNotSentException.MessageKey),
+                ContactMessageNotSentException.Code);
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            // 400: the message never reached its handler because it did not satisfy the validator
+            // Wolverine runs in front of it. Answered here rather than by an IExceptionHandler of
+            // its own so that a validation refusal has the same body as every other refusal --
+            // { error, code } -- and the client BFF's internalApiCall keeps reading one shape.
+            //
+            // The per-field failures are logged and not sent. The response contract on this API is
+            // one localised sentence plus one machine-readable code, and the sentences live in
+            // ValidationMessages*.resx while a validator's WithMessage text is an English literal in the
+            // Application assembly; putting that literal in `error` would answer a Russian or
+            // Armenian caller in English, which is the thing this contract was rewritten to stop.
+            // Information, not Error or Warning: a rejected form is ordinary traffic, and a stack
+            // trace per bad submission is the log noise ControlFlowExceptionLogFilter exists over.
+            logger.LogInformation(
+                "Validation refused a message; answering {Code}. Failures: {Failures}",
+                ValidationFailedCode,
+                string.Join("; ", ex.Errors.Select(failure => $"{failure.PropertyName}: {failure.ErrorMessage}")));
+
+            await WriteErrorAsync(
+                context, HttpStatusCode.BadRequest, Localize(ValidationFailedKey), ValidationFailedCode);
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -100,9 +218,23 @@ public sealed class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionM
             // through every 500 it caused.
             logger.LogError(ex, "Unhandled exception");
             await WriteErrorAsync(
-                context, HttpStatusCode.InternalServerError, "An unexpected error occurred.", InternalErrorCode);
+                context, HttpStatusCode.InternalServerError, Localize(InternalErrorKey), InternalErrorCode);
         }
     }
+
+    /// <summary>
+    /// Resolves one refusal sentence in the culture of the request currently being answered.
+    /// </summary>
+    /// <param name="key">Key in <c>Innovayse.Application/Resources/ValidationMessages.resx</c>.</param>
+    /// <returns>The sentence, or the key itself when no resource carries it.</returns>
+    /// <remarks>
+    /// A missing key returns the key text rather than throwing, which is
+    /// <see cref="IStringLocalizer"/>'s own behaviour and is kept on purpose: a refusal must still
+    /// reach the caller with its status and its code even when somebody forgot the resource entry,
+    /// and <c>ClientProfileNotFound</c> on a screen is a visible defect where an exception inside
+    /// the exception handler is an opaque 500.
+    /// </remarks>
+    private string Localize(string key) => localizer[key];
 
     /// <summary>
     /// Writes a JSON error response with the specified status code, message and code.

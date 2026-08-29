@@ -3,7 +3,7 @@ namespace Innovayse.Infrastructure.Reports;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
-using Innovayse.Application.Reports.DTOs;
+using Innovayse.Application.Reports.Common;
 using Innovayse.Application.Reports.Interfaces;
 using Innovayse.Domain.Domains;
 using Innovayse.Domain.Services;

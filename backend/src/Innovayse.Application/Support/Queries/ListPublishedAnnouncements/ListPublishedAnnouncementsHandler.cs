@@ -1,7 +1,6 @@
 namespace Innovayse.Application.Support.Queries.ListPublishedAnnouncements;
 
 using Innovayse.Application.Common;
-using Innovayse.Application.Support.DTOs;
 using Innovayse.Domain.Support.Interfaces;
 
 /// <summary>

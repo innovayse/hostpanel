@@ -5,7 +5,7 @@ using Innovayse.Application.Common;
 using Innovayse.Application.Support.Commands.CreateNetworkIssue;
 using Innovayse.Application.Support.Commands.DeleteNetworkIssue;
 using Innovayse.Application.Support.Commands.UpdateNetworkIssue;
-using Innovayse.Application.Support.DTOs;
+using Innovayse.Application.Support.Common;
 using Innovayse.Application.Support.Queries.GetNetworkIssue;
 using Innovayse.Application.Support.Queries.ListNetworkIssues;
 using Innovayse.Domain.Auth;

@@ -7,7 +7,9 @@ using Innovayse.Domain.Provisioning;
 using Innovayse.Domain.Provisioning.Interfaces;
 using Innovayse.Domain.Servers;
 using Innovayse.Domain.Services;
+using Innovayse.Application.Resources;
 using Innovayse.Domain.Services.Interfaces;
+using Microsoft.Extensions.Localization;
 
 /// <summary>
 /// Handles <see cref="SetupServiceCommand"/> by selecting the best server,
@@ -19,12 +21,14 @@ using Innovayse.Domain.Services.Interfaces;
 /// <param name="providerFactory">Factory to create per-server provisioning providers.</param>
 /// <param name="serverSelector">Selects the optimal server using proportional fill strategy.</param>
 /// <param name="unitOfWork">Unit of work for persisting changes.</param>
+/// <param name="localizer">The refusal sentences, in the caller's own language.</param>
 public sealed class SetupServiceHandler(
     IClientServiceRepository serviceRepo,
     IProductRepository productRepo,
     IProvisioningProviderFactory providerFactory,
     IServerSelector serverSelector,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    IStringLocalizer<ValidationMessages> localizer)
 {
     /// <summary>
     /// Sets up the service with the provided domain, username, and password,
@@ -38,12 +42,11 @@ public sealed class SetupServiceHandler(
     public async Task HandleAsync(SetupServiceCommand cmd, CancellationToken ct)
     {
         var service = await serviceRepo.FindByIdAsync(cmd.ServiceId, ct)
-            ?? throw new InvalidOperationException($"ClientService {cmd.ServiceId} not found.");
+            ?? throw new InvalidOperationException(localizer["ClientServiceNotFound", cmd.ServiceId]);
 
         if (service.Status is not ServiceStatus.Pending)
         {
-            throw new InvalidOperationException(
-                $"Cannot set up a service with status {service.Status}. Only Pending services can be set up.");
+            throw new InvalidOperationException(localizer["ServiceNotPending", service.Status]);
         }
 
         // Determine the server module type from the product (default to CWP7 for now)
@@ -56,8 +59,7 @@ public sealed class SetupServiceHandler(
 
         // Select the best available server using proportional fill
         var server = await serverSelector.SelectAsync(module, ct)
-            ?? throw new InvalidOperationException(
-                $"No eligible {module} server available for provisioning.");
+            ?? throw new InvalidOperationException(localizer["NoEligibleServer", module]);
 
         // Create a provider for the selected server
         var provider = providerFactory.CreateFor(server);
@@ -75,7 +77,7 @@ public sealed class SetupServiceHandler(
         if (!result.Success)
         {
             throw new InvalidOperationException(
-                $"Provisioning failed for service {cmd.ServiceId}: {result.ErrorMessage}");
+                localizer["ProvisioningFailed", cmd.ServiceId, result.ErrorMessage ?? string.Empty]);
         }
 
         // Save the client-provided hosting details and assign the server

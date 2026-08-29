@@ -127,7 +127,7 @@
 <script setup lang="ts">
 import { ArrowLeft, AlertCircle, Send } from 'lucide-vue-next'
 import { useSupportApi } from '~/composables/apis/useSupportApi'
-import { apiErrorMessage } from '~/utils/portalErrorMessages'
+import { apiErrorMessage } from '~/utils/apiError'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
@@ -159,7 +159,7 @@ async function submitReply() {
     await refresh()
   } catch (err: unknown) {
     // The wording comes from the response body via the one mapping helper in
-    // `utils/portalErrorMessages.ts`; the local key is only the no-answer fallback.
+    // `utils/apiError.ts`; the local key is only the no-answer fallback.
     replyError.value = apiErrorMessage(err) || t('client.tickets.replyError')
   } finally {
     replying.value = false

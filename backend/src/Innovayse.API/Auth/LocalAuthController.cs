@@ -1,15 +1,21 @@
 namespace Innovayse.API.Auth;
 
 using Innovayse.API.Auth.Requests;
+using Innovayse.API.RateLimiting;
 using Innovayse.Application.Auth.Events;
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Common;
+using Innovayse.Application.Common.Options;
 using Innovayse.Domain.Auth;
 using Innovayse.Application.Notifications.Commands.SendEmail;
 using Innovayse.Application.Notifications.Services;
+using Innovayse.Application.Resources;
 using Innovayse.Domain.Notifications.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Options;
 using Wolverine;
 
 /// <summary>
@@ -32,12 +38,14 @@ using Wolverine;
 /// </remarks>
 [ApiController]
 [Route("api/auth")]
+[EnableRateLimiting(RateLimitPolicies.Auth)]
 public sealed class LocalAuthController(
     IServiceProvider services,
-    JwtTokenService tokenService,
+    IJwtService tokenService,
     IMessageBus bus,
-    IConfiguration config,
-    IAuthModeProvider authMode) : ControllerBase
+    IOptions<ClientPortalOptions> clientPortal,
+    IAuthModeProvider authMode,
+    IStringLocalizer<ValidationMessages> localizer) : ControllerBase
 {
     /// <summary>
     /// Whether this deployment owns its own people. Used to be its own inline, plain
@@ -82,7 +90,7 @@ public sealed class LocalAuthController(
         var emailConfirmed = await userService.IsEmailConfirmedAsync(user.Value.Id, ct);
 
         var accessToken = tokenService.GenerateAccessToken(
-            user.Value.Id, user.Value.Email, null, null, roles, emailConfirmed);
+            user.Value.Id, user.Value.Email, null, null, [.. roles], emailConfirmed);
 
         return Ok(new { accessToken, expiresIn = 900 });
     }
@@ -121,7 +129,7 @@ public sealed class LocalAuthController(
 
         var roles = await userService.GetRolesAsync(userId, ct);
         var accessToken = tokenService.GenerateAccessToken(
-            userId, user.Value.Email, null, null, roles);
+            userId, user.Value.Email, null, null, [.. roles]);
 
         return Ok(new { accessToken, expiresIn = 900 });
     }
@@ -184,7 +192,10 @@ public sealed class LocalAuthController(
 
         await PasswordResetTemplateSeeder.EnsureSeededAsync(templateRepo, uow, ct);
 
-        var clientBaseUrl = config["ClientBaseUrl"] ?? "http://localhost:3000";
+        // Where the portal lives is a bound setting with its own validated default, not a
+        // key read by string here — the fallback that used to sit on this line was a second,
+        // silent copy of ClientPortalOptions.BaseUrl's own default and could drift from it.
+        var clientBaseUrl = clientPortal.Value.BaseUrl;
         var resetLink = $"{clientBaseUrl}/client/reset-password?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(user.Value.Email)}";
 
         await bus.InvokeAsync(new SendEmailCommand(
@@ -206,7 +217,7 @@ public sealed class LocalAuthController(
 
         var success = await Users.ResetPasswordWithTokenAsync(
             request.Email, request.Token, request.NewPassword, ct);
-        return success ? Ok() : BadRequest(new { error = "Invalid or expired token." });
+        return success ? Ok() : BadRequest(new { error = localizer["TokenInvalidOrExpired"].Value });
     }
 
     /// <summary>
@@ -219,7 +230,7 @@ public sealed class LocalAuthController(
         if (!IsLocalMode) return NotFound();
 
         var success = await Users.ConfirmEmailAsync(request.Email, request.Token, ct);
-        return success ? Ok() : BadRequest(new { error = "Invalid or expired token." });
+        return success ? Ok() : BadRequest(new { error = localizer["TokenInvalidOrExpired"].Value });
     }
 
     /// <summary>
@@ -231,7 +242,7 @@ public sealed class LocalAuthController(
     {
         // Refresh token handling would need a token store — out of scope for now
         // The BFF sets short-lived access tokens; the user re-logs when expired
-        return Unauthorized(new { error = "Token expired. Please log in again." });
+        return Unauthorized(new { error = localizer["SessionExpired"].Value });
     }
 
     // Request DTOs not already in Requests/

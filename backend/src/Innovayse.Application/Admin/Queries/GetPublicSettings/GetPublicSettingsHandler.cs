@@ -1,6 +1,5 @@
 namespace Innovayse.Application.Admin.Queries.GetPublicSettings;
 
-using Innovayse.Application.Admin.DTOs;
 using Innovayse.Domain.Settings.Interfaces;
 
 /// <summary>

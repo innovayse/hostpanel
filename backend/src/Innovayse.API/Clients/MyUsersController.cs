@@ -3,7 +3,7 @@ namespace Innovayse.API.Clients;
 using Innovayse.API.Clients.Requests;
 using Innovayse.Application.Clients.Commands.InviteUserToClient;
 using Innovayse.Application.Clients.Commands.RemoveUserFromClient;
-using Innovayse.Application.Clients.DTOs;
+using Innovayse.Application.Clients.Common;
 using Innovayse.Application.Clients.Queries.GetClientUsers;
 using Innovayse.Application.Clients.Queries.GetMyProfile;
 using Innovayse.Domain.Auth;

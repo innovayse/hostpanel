@@ -1,6 +1,5 @@
 namespace Innovayse.Application.Admin.Integrations.Queries.ListIntegrations;
 
-using Innovayse.Application.Admin.Integrations.DTOs;
 using Innovayse.Domain.Settings.Interfaces;
 
 /// <summary>

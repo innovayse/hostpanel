@@ -111,7 +111,7 @@
 import { ArrowLeft, ArrowLeftRight, Info, CheckCircle, CreditCard } from 'lucide-vue-next'
 import { useBillingApi } from '~/composables/apis/useBillingApi'
 import { useDomainsApi } from '~/composables/apis/useDomainsApi'
-import { apiErrorMessage } from '~/utils/portalErrorMessages'
+import { apiErrorMessage } from '~/utils/apiError'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
@@ -161,7 +161,7 @@ async function submit() {
     const res = await useDomainsApi().createTransferOrder(form)
     success.value = res
   } catch (err: unknown) {
-    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`;
+    // The API's own wording, through the one shared reader in `utils/apiError.ts`;
     // the local key is only the no-answer fallback.
     formError.value = apiErrorMessage(err) || t('client.domainTransfer.errorDefault')
   } finally {

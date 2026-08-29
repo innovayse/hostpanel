@@ -161,8 +161,11 @@
                         {{ cart.hasItem(plan.pid, selectedCycle) ? $t('hosting.inCart') : $t('hosting.addToCart') }}
                       </button>
 
-                      <!-- Buy / Trial -->
+                      <!-- Buy / Trial — only when this deployment has an external order page
+                           to send the visitor to. "Add to Cart" above is the native path and
+                           works regardless, so nothing is lost by hiding this. -->
                       <button
+                        v-if="planCtaUrl(plan)"
                         class="w-full py-2.5 rounded-xl font-semibold transition-all duration-300 hover:scale-105 text-sm"
                         :class="tIndex === 1 ? 'text-white shadow-lg' : 'border-2 hover:bg-white/5'"
                         :style="{
@@ -392,8 +395,41 @@ const openDemo = (url?: string) => {
   if (url) window.open(url, '_blank')
 }
 
+/**
+ * Base URL of the WHMCS instance this deployment fronts, or an empty string.
+ *
+ * Empty is a legitimate configuration — a deployment that runs no WHMCS, or one where
+ * `WHMCS_URL` has not been set yet — so every link built from it must be guarded.
+ */
+const whmcsUrl = useRuntimeConfig().public.whmcsUrl
+
+/**
+ * Resolves the external "buy / trial" destination for a plan.
+ *
+ * Prefers the plan's own `product_url`; falls back to a WHMCS cart link. With neither
+ * available the plan has no external order page, and an unguarded fallback would open
+ * `/cart.php?a=add&…` on this app's own origin — a 404 in a new tab.
+ *
+ * @param plan - The pricing plan being rendered.
+ * @returns The absolute destination, or `null` when this deployment has none.
+ */
+const planCtaUrl = (plan: { product_url: string; pid: number }): string | null => {
+  if (plan.product_url) return plan.product_url
+  if (!whmcsUrl) return null
+  return `${whmcsUrl}/cart.php?a=add&pid=${plan.pid}&billingcycle=${selectedCycle.value}`
+}
+
+/**
+ * Opens a plan's external order page in a new tab.
+ *
+ * Callers must be gated on {@link planCtaUrl} returning a destination; the guard here is a
+ * second line of defence, not the primary one.
+ *
+ * @param plan - The pricing plan the visitor clicked.
+ */
 const handlePricingCTA = (plan: { product_url: string; pid: number }) => {
-  const url = plan.product_url || `${useRuntimeConfig().public.whmcsUrl}/cart.php?a=add&pid=${plan.pid}&billingcycle=${selectedCycle.value}`
+  const url = planCtaUrl(plan)
+  if (!url) return
   window.open(url, '_blank')
 }
 

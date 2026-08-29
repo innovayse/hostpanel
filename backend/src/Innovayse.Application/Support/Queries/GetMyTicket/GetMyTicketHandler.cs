@@ -1,7 +1,6 @@
 namespace Innovayse.Application.Support.Queries.GetMyTicket;
 
 using Innovayse.Application.Support.Common;
-using Innovayse.Application.Support.DTOs;
 using Innovayse.Application.Support.Queries.GetTicket;
 using Wolverine;
 

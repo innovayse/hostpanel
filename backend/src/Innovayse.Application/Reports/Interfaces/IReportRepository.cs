@@ -1,6 +1,7 @@
 namespace Innovayse.Application.Reports.Interfaces;
 
-using Innovayse.Application.Reports.DTOs;
+using Innovayse.Application.Reports.Common;
+
 
 /// <summary>Aggregated data access for reporting queries.</summary>
 public interface IReportRepository

@@ -1,6 +1,6 @@
 namespace Innovayse.Application.Slides.Commands.UpdateSlide;
 
-using Innovayse.Application.Slides.DTOs;
+using Innovayse.Application.Slides.Common;
 using Innovayse.Domain.Slides;
 
 /// <summary>Command to update an existing homepage slide and replace its translations.</summary>

@@ -66,8 +66,36 @@ services:
       # stores goes to the database unencrypted, so the API refuses to start instead.
       EncryptionKey: ${ENCRYPTION_KEY:?required}
       Smtp__Port: ${SMTP_PORT}
-      Smtp__User: ${SMTP_USER}
+      # Username, not User. The options class declares Username, and configuration
+      # binds by property name — Smtp__User matched nothing and bound silently to
+      # empty, so this deployment has been authenticating with a blank user and a
+      # real password since the key was written.
+      Smtp__Username: ${SMTP_USER}
       Smtp__Password: ${SMTP_PASSWORD}
+      # The sender, and the one TLS override. All three had their only value in
+      # appsettings.json, so a deployment could not change who its mail came from without
+      # rebuilding the image — and the address baked in there is this operator's, which is
+      # the wrong default for anyone else running this product.
+      #
+      # UseSsl is an override, not the switch: MailKitEmailSender picks implicit TLS for 465
+      # and STARTTLS for 587 on its own. It is here for a relay on a non-standard port that
+      # still expects TLS from the first byte. appsettings said false while production ran on
+      # 465, which is why it is worth being able to correct from the deployment.
+      Smtp__FromEmail: ${SMTP_FROM_EMAIL:-noreply@${DOMAIN}}
+      Smtp__FromName: ${SMTP_FROM_NAME:-Innovayse}
+      Smtp__UseSsl: ${SMTP_USE_SSL:-false}
+      # The contact form's recipient. Not defaulted: an unset value here makes the API
+      # refuse the submission naming this setting, rather than answer the visitor "sent"
+      # and deliver nothing -- which is what the frontend did with this value for as long
+      # as it held it.
+      Notifications__ContactEmail: ${EMAIL_TO}
+      # The chat the same enquiry is announced on. Optional, so both carry an empty default --
+      # a deployed tier that runs no bot must still start, and unlike the recipient above an
+      # absent chat post loses nothing: the mail is the delivery. Half of a pair is refused at
+      # startup instead, because a token with no chat id posts nowhere while looking configured.
+      # This is where the client container's TELEGRAM_BOT_TOKEN stopped being a frontend secret.
+      Telegram__BotToken: ${TELEGRAM_BOT_TOKEN:-}
+      Telegram__ChatId: ${TELEGRAM_CHAT_ID:-}
       RabbitMQ__Host: rabbitmq
       RabbitMQ__User: ${RABBITMQ_USER}
       RabbitMQ__Password: ${RABBITMQ_PASSWORD}
@@ -128,7 +156,7 @@ services:
         # (see client.Dockerfile) — the runtime env var below only affects
         # useRuntimeConfig() reads, not that static tag, so it must be
         # repeated here as a build arg for the widget to actually appear.
-        NUXT_PUBLIC_MAIN_URL: ${NUXT_PUBLIC_MAIN_URL}
+        NUXT_PUBLIC_MAIN_URL: ${MAIN_APP_URL}
     environment:
       # Nitro/Nuxt production builds freeze runtimeConfig defaults at build
       # time (nuxt.config.ts isn't re-evaluated at container start like it is
@@ -143,9 +171,10 @@ services:
       # The app-launcher widget script is injected over whatever origin this
       # points at — must be HTTPS on an HTTPS deployment or browsers block it
       # as mixed content, which hangs the client dashboard's hydration.
-      NUXT_PUBLIC_MAIN_URL: ${NUXT_PUBLIC_MAIN_URL}
+      NUXT_PUBLIC_MAIN_URL: ${MAIN_APP_URL}
       NUXT_SSO_URL: ${SSO_URL}
-      NUXT_SSO_PUBLIC_URL: ${SSO_PUBLIC_URL}
+      # Public only. There is no server-side ssoPublicUrl key in runtimeConfig, so the
+      # NUXT_SSO_PUBLIC_URL that used to sit here overrode nothing at all.
       NUXT_PUBLIC_SSO_PUBLIC_URL: ${SSO_PUBLIC_URL}
       NUXT_SSO_CLIENT_ID: ${SSO_CLIENT_ID}
       NUXT_SSO_CLIENT_SECRET: ${SSO_CLIENT_SECRET}
@@ -168,6 +197,21 @@ services:
       NUXT_PUBLIC_SHEETS_URL: ${NUXT_PUBLIC_SHEETS_URL:-}
       NUXT_PUBLIC_EMAIL_URL: ${NUXT_PUBLIC_EMAIL_URL:-}
       NUXT_PUBLIC_DRIVE_URL: ${NUXT_PUBLIC_DRIVE_URL:-}
+      # Address of the WHMCS install the client area hands visitors off to -- the
+      # dashboard's announcements and domain-transfer links, the saved-cards page and
+      # the new-card path on invoice payment. It had no entry here at all, and the
+      # source name docker-compose.yml passes cannot reach a built image, so
+      # config.public.whmcsUrl was empty on every deployed tier and all four links were
+      # silently hidden. Optional, and hidden rather than broken when unset -- but that
+      # has to be the operator's choice, not an accident of the variable's name.
+      # No trailing slash: this value is substituted verbatim, past the strip in
+      # nuxt.config.ts.
+      NUXT_PUBLIC_WHMCS_URL: ${WHMCS_URL:-}
+      # Stripe.js's publishable key. Only docker-compose.server.yml carried it, and that
+      # overlay is for a standalone VPS install -- neither CI deploy chain loads it, so
+      # useStripe() logged "Stripe publishable key is not configured" and returned null
+      # on stage and prod. Public by design; the secret key is the API's.
+      NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
     depends_on:
       - hostpanel-api
     restart: unless-stopped

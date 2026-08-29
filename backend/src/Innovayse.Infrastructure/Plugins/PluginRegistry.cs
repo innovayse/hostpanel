@@ -38,10 +38,3 @@ public sealed class PluginRegistry : IPluginRegistry
     public IReadOnlyCollection<PluginManifest> GetLoadedManifests()
         => _plugins.Values.Select(p => p.Manifest).ToList();
 }
-
-/// <summary>
-/// Represents a plugin that was successfully loaded at startup.
-/// </summary>
-/// <param name="Manifest">The plugin's parsed manifest.</param>
-/// <param name="ImplementationType">The concrete provider type loaded from the DLL.</param>
-public sealed record LoadedPlugin(PluginManifest Manifest, Type ImplementationType);

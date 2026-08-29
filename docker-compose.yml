@@ -160,6 +160,17 @@ services:
       Smtp__FromEmail: noreply@innovayse.com
       Smtp__FromName: Innovayse
       Smtp__UseSsl: "false"
+      # Where the public site's contact form delivers. It used to be EMAIL_TO on the
+      # client container, next to a second copy of the relay credentials; the mail is sent
+      # here now. A literal default is safe on this file only -- neither deploy chain loads
+      # docker-compose.yml, and everything it sends goes to the mailhog catcher above.
+      Notifications__ContactEmail: ${EMAIL_TO:-contact@innovayse.com}
+      # The chat the same enquiry is announced on. Optional, and defaulted to empty rather than
+      # to a value: with both unset the API posts nowhere and says so in its log, which is the
+      # right behaviour on a laptop. These two were the client container's TELEGRAM_BOT_TOKEN and
+      # TELEGRAM_CHAT_ID; the post is made here now, so the token is not in a browser-facing app.
+      Telegram__BotToken: ${TELEGRAM_BOT_TOKEN:-}
+      Telegram__ChatId: ${TELEGRAM_CHAT_ID:-}
       # Required outside Development: without it the EF configurations silently drop
       # their encrypted-column converters and server passwords, API tokens and access
       # hashes are written to the database in plain text. .env.example carries a real
@@ -251,7 +262,7 @@ services:
       # backends, and not the container name, which changes with the project.
       API_URL: http://hostpanel-api:5148
       NUXT_PUBLIC_BASE_URL: ${NUXT_PUBLIC_BASE_URL}
-      NUXT_PUBLIC_MAIN_URL: ${NUXT_PUBLIC_MAIN_URL}
+      NUXT_PUBLIC_MAIN_URL: ${MAIN_APP_URL}
       SSO_URL: http://sso-api:8080
       SSO_PUBLIC_URL: ${SSO_PUBLIC_URL}
       NUXT_PUBLIC_TASKS_URL: ${NUXT_PUBLIC_TASKS_URL}
@@ -263,8 +274,12 @@ services:
       SSO_CLIENT_SECRET: ${SSO_CLIENT_SECRET}
       SSO_CALLBACK_URL: ${SSO_CALLBACK_URL}
       STRIPE_PUBLISHABLE_KEY: pk_test_51Tc3tOEHRuUOoZmggqrvyuddpdtx6FtKaUSvqQXkwokJakOBFCLRDlX6troVkkjFw966agSmLKnu1NSlOAki6u9600PatIOktW
-      SMTP_HOST: mailhog
-      SMTP_PORT: 1025
+      # Address of the WHMCS install the client area hands visitors off to. The dev
+      # target evaluates nuxt.config.ts at container start, so the source name is what
+      # it reads here; the prod overlays pass the same variable under Nitro's
+      # NUXT_PUBLIC_WHMCS_URL override name, because a built image cannot see this one.
+      # Optional: with nothing set every WHMCS handoff link is hidden, not broken.
+      WHMCS_URL: ${WHMCS_URL:-}
       AUTH_MODE: ${AUTH_MODE}
       NUXT_MAIN_API_URL: http://main-client:3000
       WATCHPACK_POLLING: "true"

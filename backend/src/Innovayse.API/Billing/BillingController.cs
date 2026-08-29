@@ -16,7 +16,7 @@ using Innovayse.Application.Billing.Commands.RemoveInvoiceCredit;
 using Innovayse.Application.Billing.Commands.UpdateInvoiceItems;
 using Innovayse.Application.Billing.Commands.UpdateInvoiceNotes;
 using Innovayse.Application.Billing.Commands.UpdateInvoiceOptions;
-using Innovayse.Application.Billing.DTOs;
+using Innovayse.Application.Billing.Common;
 using Innovayse.Application.Billing.Queries.GetInvoice;
 using Innovayse.Application.Billing.Queries.ListClientInvoices;
 using Innovayse.Application.Billing.Queries.ListInvoices;
@@ -104,7 +104,7 @@ public sealed class BillingController(IMessageBus bus) : ControllerBase
         [FromBody] CreateInvoiceRequest request, CancellationToken ct)
     {
         var items = request.Items
-            .Select(i => new InvoiceItemRequest(i.Description, i.UnitPrice, i.Quantity))
+            .Select(i => new CreateInvoiceItemDto(i.Description, i.UnitPrice, i.Quantity))
             .ToList();
 
         var cmd = new CreateInvoiceCommand(request.ClientId, request.DueDate, items, request.IsDraft);

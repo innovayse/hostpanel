@@ -2,9 +2,8 @@ namespace Innovayse.Application.Orders.Commands.PlaceOrder;
 
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Common;
-using Innovayse.Application.Domains.DTOs;
+using Innovayse.Application.Domains.Common;
 using Innovayse.Application.Domains.Queries.GetTldPricing;
-using Innovayse.Application.Orders.DTOs;
 using Innovayse.Domain.Auth;
 using Innovayse.Domain.Auth.Interfaces;
 using Innovayse.Domain.Billing;

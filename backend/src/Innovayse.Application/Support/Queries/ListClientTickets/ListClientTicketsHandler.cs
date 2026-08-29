@@ -1,7 +1,7 @@
 namespace Innovayse.Application.Support.Queries.ListClientTickets;
 
 using Innovayse.Application.Common;
-using Innovayse.Application.Support.DTOs;
+using Innovayse.Application.Support.Common;
 using Innovayse.Domain.Support.Interfaces;
 
 /// <summary>

@@ -17,7 +17,7 @@ public sealed class CreateClientOnRegisterHandler(IClientRepository clientRepo, 
     /// <summary>
     /// Creates a Client record when a new user registers.
     /// </summary>
-    /// <param name="evt">The integration event published by RegisterHandler.</param>
+    /// <param name="evt">The integration event published by <c>LocalAuthController.RegisterAsync</c>.</param>
     /// <param name="ct">Cancellation token.</param>
     public async Task HandleAsync(ClientRegisteredIntegrationEvent evt, CancellationToken ct)
     {

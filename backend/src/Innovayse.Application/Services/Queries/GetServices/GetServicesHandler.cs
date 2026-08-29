@@ -1,7 +1,6 @@
 namespace Innovayse.Application.Services.Queries.GetServices;
 
 using Innovayse.Application.Common;
-using Innovayse.Application.Services.DTOs;
 using Innovayse.Domain.Clients.Interfaces;
 using Innovayse.Domain.Domains.Interfaces;
 using Innovayse.Domain.Products.Interfaces;

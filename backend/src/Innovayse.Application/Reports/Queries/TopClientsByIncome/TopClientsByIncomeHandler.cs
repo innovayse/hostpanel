@@ -1,6 +1,6 @@
 namespace Innovayse.Application.Reports.Queries.TopClientsByIncome;
 
-using Innovayse.Application.Reports.DTOs;
+using Innovayse.Application.Reports.Common;
 using Innovayse.Application.Reports.Interfaces;
 
 /// <summary>Handles <see cref="TopClientsByIncomeQuery"/>.</summary>

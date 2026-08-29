@@ -3,7 +3,6 @@ namespace Innovayse.API.Admin;
 using Innovayse.API.Admin.Requests;
 using Innovayse.Application.Admin.Integrations.Commands.SaveIntegrationConfig;
 using Innovayse.Application.Admin.Integrations.Commands.TestIntegrationConnection;
-using Innovayse.Application.Admin.Integrations.DTOs;
 using Innovayse.Application.Admin.Integrations.Queries.GetCwp7ServerInfo;
 using Innovayse.Application.Admin.Integrations.Queries.GetCwpServerInfo;
 using Innovayse.Application.Admin.Integrations.Queries.GetIntegration;

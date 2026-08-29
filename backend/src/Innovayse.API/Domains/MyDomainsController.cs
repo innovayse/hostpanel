@@ -1,30 +1,33 @@
 namespace Innovayse.API.Domains;
 
 using Innovayse.API.Domains.Requests;
-using Innovayse.Application.Domains.Commands.AddDnsRecord;
-using Innovayse.Application.Domains.Commands.AddEmailForwardingRule;
-using Innovayse.Application.Domains.Commands.DeleteDnsRecord;
-using Innovayse.Application.Domains.Commands.DeleteEmailForwardingRule;
-using Innovayse.Application.Domains.Commands.InitiateOutgoingTransfer;
-using Innovayse.Application.Domains.Commands.ModifyDomainContact;
-using Innovayse.Application.Domains.Commands.RenewDomain;
-using Innovayse.Application.Domains.Commands.SetAutoRenew;
-using Innovayse.Application.Domains.Commands.SetDnsManagement;
-using Innovayse.Application.Domains.Commands.SetEmailForwarding;
-using Innovayse.Application.Domains.Commands.SetRegistrarLock;
-using Innovayse.Application.Domains.Commands.SetWhoisPrivacy;
-using Innovayse.Application.Domains.Commands.UpdateDnsRecord;
-using Innovayse.Application.Domains.Commands.UpdateEmailForwardingRule;
-using Innovayse.Application.Domains.Commands.UpdateNameservers;
+using Innovayse.API.RateLimiting;
+using Innovayse.Application.Domains.Commands.AddMyDomainDnsRecord;
+using Innovayse.Application.Domains.Commands.AddMyDomainEmailForwardingRule;
+using Innovayse.Application.Domains.Commands.DeleteMyDomainDnsRecord;
+using Innovayse.Application.Domains.Commands.DeleteMyDomainEmailForwardingRule;
+using Innovayse.Application.Domains.Commands.InitiateMyOutgoingTransfer;
+using Innovayse.Application.Domains.Commands.ModifyMyDomainContact;
+using Innovayse.Application.Domains.Commands.RenewMyDomain;
+using Innovayse.Application.Domains.Commands.SetMyDomainAutoRenew;
+using Innovayse.Application.Domains.Commands.SetMyDomainDnsManagement;
+using Innovayse.Application.Domains.Commands.SetMyDomainEmailForwarding;
+using Innovayse.Application.Domains.Commands.SetMyDomainRegistrarLock;
+using Innovayse.Application.Domains.Commands.SetMyDomainWhoisPrivacy;
+using Innovayse.Application.Domains.Commands.UpdateMyDomainDnsRecord;
+using Innovayse.Application.Domains.Commands.UpdateMyDomainEmailForwardingRule;
+using Innovayse.Application.Domains.Commands.UpdateMyDomainNameservers;
 using Innovayse.Application.Domains.Common;
-using Innovayse.Application.Domains.DTOs;
-using Innovayse.Application.Domains.Queries.GetDomain;
+using Innovayse.Application.Domains.Queries.GetMyDomain;
+using Innovayse.Application.Domains.Queries.GetMyDomainNameservers;
 using Innovayse.Application.Domains.Queries.GetMyDomains;
+using Innovayse.Application.Domains.Queries.GetMyDomainWhois;
 using Innovayse.Application.Domains.Queries.GetWhois;
 using Innovayse.Domain.Auth;
 using Innovayse.Domain.Domains;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Wolverine;
 using ApiRenewDomainRequest = Innovayse.API.Domains.Requests.RenewDomainRequest;
 
@@ -32,17 +35,29 @@ using ApiRenewDomainRequest = Innovayse.API.Domains.Requests.RenewDomainRequest;
 /// Client-facing endpoints for managing the authenticated client's own domains.
 /// Requires the Client role.
 /// </summary>
+/// <remarks>
+/// <para>
+/// No action here reads a claim and none checks ownership. The rule that a domain must belong to
+/// the caller used to run in this file, eighteen times, ahead of the dispatch; it now lives in
+/// the client-facing <c>My*</c> handlers, which resolve the caller themselves. That move is not
+/// cosmetic: every command these actions used to dispatch -- <c>SetAutoRenewCommand</c>,
+/// <c>RenewDomainCommand</c>, <c>AddDnsRecordCommand</c> and the rest -- is also dispatched by
+/// the admin <c>DomainsController</c>, so a check that lived here guaranteed nothing about the
+/// message itself.
+/// </para>
+/// <para>
+/// A domain belonging to somebody else, a domain that does not exist, and a caller with no
+/// client record all answer 404 with <c>DOMAIN_NOT_FOUND</c>. These ids are sequential, and
+/// telling those three apart is itself a way of enumerating them. This replaces the 403 the
+/// routes used to answer, which withheld as much but disagreed with the ticket and invoice
+/// routes for no reason a reader could recover.
+/// </para>
+/// </remarks>
 /// <param name="bus">Wolverine message bus for dispatching commands and queries.</param>
-/// <param name="ownership">
-/// The rule that says a client may only touch their own domains. It used to be written out in
-/// this file, reading the claims itself; it now lives in the Application layer, resolves the
-/// caller through the request-context port, and can be called from a handler as readily as
-/// from here.
-/// </param>
 [ApiController]
 [Route("api/me/domains")]
 [Authorize(Roles = Roles.Client)]
-public sealed class MyDomainsController(IMessageBus bus, IDomainOwnership ownership) : ControllerBase
+public sealed class MyDomainsController(IMessageBus bus) : ControllerBase
 {
     /// <summary>Returns all domains belonging to the authenticated client.</summary>
     /// <param name="ct">Cancellation token.</param>
@@ -56,23 +71,17 @@ public sealed class MyDomainsController(IMessageBus bus, IDomainOwnership owners
         return Ok(result);
     }
 
-    /// <summary>Returns a single domain by its primary key, only if it belongs to the authenticated client.</summary>
+    /// <summary>Returns a single domain belonging to the authenticated client.</summary>
     /// <param name="id">Domain primary key.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Full domain DTO including nameservers and DNS records.</returns>
+    /// <returns>The domain DTO; 404 with <c>DOMAIN_NOT_FOUND</c> when it is not the caller's.</returns>
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(DomainDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<DomainDto>> GetByIdAsync(int id, CancellationToken ct)
     {
-        if (!await ownership.IsOwnedByCallerAsync(id, ct))
-        {
-            return Forbid();
-        }
-
-        var result = await bus.InvokeAsync<DomainDto>(new GetDomainQuery(id), ct);
+        var result = await bus.InvokeAsync<DomainDto>(new GetMyDomainQuery(id), ct);
         return Ok(result);
     }
 
@@ -80,20 +89,14 @@ public sealed class MyDomainsController(IMessageBus bus, IDomainOwnership owners
     /// <param name="id">Domain primary key.</param>
     /// <param name="req">Boolean flag payload.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>204 No Content on success.</returns>
+    /// <returns>204 No Content; 404 with <c>DOMAIN_NOT_FOUND</c> when the domain is not the caller's.</returns>
     [HttpPut("{id:int}/auto-renew")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SetAutoRenewAsync(int id, SetBoolRequest req, CancellationToken ct)
     {
-        if (!await ownership.IsOwnedByCallerAsync(id, ct))
-        {
-            return Forbid();
-        }
-
-        await bus.InvokeAsync(new SetAutoRenewCommand(id, req.Enabled), ct);
+        await bus.InvokeAsync(new SetMyDomainAutoRenewCommand(id, req.Enabled), ct);
         return NoContent();
     }
 
@@ -101,108 +104,80 @@ public sealed class MyDomainsController(IMessageBus bus, IDomainOwnership owners
     /// <param name="id">Domain primary key.</param>
     /// <param name="req">Boolean flag payload.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>204 No Content on success.</returns>
+    /// <returns>204 No Content; 404 with <c>DOMAIN_NOT_FOUND</c> when the domain is not the caller's.</returns>
     [HttpPut("{id:int}/whois-privacy")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SetWhoisPrivacyAsync(int id, SetBoolRequest req, CancellationToken ct)
     {
-        if (!await ownership.IsOwnedByCallerAsync(id, ct))
-        {
-            return Forbid();
-        }
-
-        await bus.InvokeAsync(new SetWhoisPrivacyCommand(id, req.Enabled), ct);
+        await bus.InvokeAsync(new SetMyDomainWhoisPrivacyCommand(id, req.Enabled), ct);
         return NoContent();
     }
 
-    /// <summary>Enables or disables the registrar transfer-lock for a domain owned by the authenticated client.</summary>
+    /// <summary>
+    /// Enables or disables the registrar transfer-lock for a domain owned by the authenticated
+    /// client.
+    /// </summary>
     /// <param name="id">Domain primary key.</param>
     /// <param name="req">Boolean flag payload.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>204 No Content on success.</returns>
+    /// <returns>204 No Content; 404 with <c>DOMAIN_NOT_FOUND</c> when the domain is not the caller's.</returns>
     [HttpPut("{id:int}/lock")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SetRegistrarLockAsync(int id, SetBoolRequest req, CancellationToken ct)
     {
-        if (!await ownership.IsOwnedByCallerAsync(id, ct))
-        {
-            return Forbid();
-        }
-
-        await bus.InvokeAsync(new SetRegistrarLockCommand(id, req.Enabled), ct);
+        await bus.InvokeAsync(new SetMyDomainRegistrarLockCommand(id, req.Enabled), ct);
         return NoContent();
     }
 
     /// <summary>Returns the nameserver list for a domain owned by the authenticated client.</summary>
     /// <param name="id">Domain primary key.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The ordered list of nameserver DTOs.</returns>
+    /// <returns>The ordered nameserver list; 404 with <c>DOMAIN_NOT_FOUND</c> when it is not the caller's.</returns>
     [HttpGet("{id:int}/nameservers")]
     [ProducesResponseType(typeof(IReadOnlyList<NameserverDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<IReadOnlyList<NameserverDto>>> GetNameserversAsync(int id, CancellationToken ct)
     {
-        if (!await ownership.IsOwnedByCallerAsync(id, ct))
-        {
-            return Forbid();
-        }
-
-        var domain = await bus.InvokeAsync<DomainDto>(new GetDomainQuery(id), ct);
-        return Ok(domain.Nameservers);
+        var nameservers = await bus.InvokeAsync<IReadOnlyList<NameserverDto>>(
+            new GetMyDomainNameserversQuery(id), ct);
+        return Ok(nameservers);
     }
 
     /// <summary>Replaces the nameserver list for a domain owned by the authenticated client.</summary>
     /// <param name="id">Domain primary key.</param>
     /// <param name="req">New nameserver list (minimum 2 entries).</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>204 No Content on success.</returns>
+    /// <returns>204 No Content; 404 with <c>DOMAIN_NOT_FOUND</c> when the domain is not the caller's.</returns>
     [HttpPut("{id:int}/nameservers")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateNameserversAsync(
-        int id,
+    public async Task<IActionResult> UpdateNameserversAsync(int id,
         UpdateNameserversRequest req,
         CancellationToken ct)
     {
-        if (!await ownership.IsOwnedByCallerAsync(id, ct))
-        {
-            return Forbid();
-        }
-
-        await bus.InvokeAsync(new UpdateNameserversCommand(id, req.Nameservers), ct);
+        await bus.InvokeAsync(new UpdateMyDomainNameserversCommand(id, req.Nameservers), ct);
         return NoContent();
     }
 
     /// <summary>Performs a WHOIS lookup for a domain owned by the authenticated client.</summary>
     /// <param name="id">Domain primary key.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>WHOIS information for the domain.</returns>
+    /// <returns>WHOIS information; 404 with <c>DOMAIN_NOT_FOUND</c> when the domain is not the caller's.</returns>
     [HttpGet("{id:int}/whois")]
+    [EnableRateLimiting(RateLimitPolicies.Upstream)]
     [ProducesResponseType(typeof(WhoisDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<WhoisDto>> GetWhoisAsync(int id, CancellationToken ct)
     {
-        if (!await ownership.IsOwnedByCallerAsync(id, ct))
-        {
-            return Forbid();
-        }
-
-        var domain = await bus.InvokeAsync<DomainDto>(new GetDomainQuery(id), ct);
-        var fullName = domain.Name + domain.Tld;
-        var result = await bus.InvokeAsync<WhoisDto>(new GetWhoisQuery(fullName), ct);
+        var result = await bus.InvokeAsync<WhoisDto>(new GetMyDomainWhoisQuery(id), ct);
         return Ok(result);
     }
 
@@ -210,45 +185,35 @@ public sealed class MyDomainsController(IMessageBus bus, IDomainOwnership owners
     /// <param name="id">Domain primary key.</param>
     /// <param name="req">Updated registrant contact details.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>204 No Content on success.</returns>
+    /// <returns>204 No Content; 404 with <c>DOMAIN_NOT_FOUND</c> when the domain is not the caller's.</returns>
     [HttpPut("{id:int}/whois")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ModifyWhoisContactAsync(
-        int id,
+    public async Task<IActionResult> ModifyWhoisContactAsync(int id,
         ModifyContactRequest req,
         CancellationToken ct)
     {
-        if (!await ownership.IsOwnedByCallerAsync(id, ct))
-        {
-            return Forbid();
-        }
-
-        await bus.InvokeAsync(new ModifyDomainContactCommand(id, new DomainContact(
+        await bus.InvokeAsync(new ModifyMyDomainContactCommand(id, new DomainContact(
             req.FirstName, req.LastName, req.Organization, req.Email, req.Phone,
             req.Address1, req.Address2, req.City, req.State, req.PostalCode, req.Country)), ct);
         return NoContent();
     }
 
-    /// <summary>Retrieves the EPP authorization code for an outgoing transfer of a domain owned by the authenticated client.</summary>
+    /// <summary>
+    /// Retrieves the EPP authorization code for an outgoing transfer of a domain owned by the
+    /// authenticated client.
+    /// </summary>
     /// <param name="id">Domain primary key.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The EPP authorization code to hand to the gaining registrar.</returns>
+    /// <returns>The EPP authorization code; 404 with <c>DOMAIN_NOT_FOUND</c> when it is not the caller's.</returns>
     [HttpPost("{id:int}/epp")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetEppCodeAsync(int id, CancellationToken ct)
     {
-        if (!await ownership.IsOwnedByCallerAsync(id, ct))
-        {
-            return Forbid();
-        }
-
-        var eppCode = await bus.InvokeAsync<string>(new InitiateOutgoingTransferCommand(id), ct);
+        var eppCode = await bus.InvokeAsync<string>(new InitiateMyOutgoingTransferCommand(id), ct);
         return Ok(new { eppCode });
     }
 
@@ -256,20 +221,14 @@ public sealed class MyDomainsController(IMessageBus bus, IDomainOwnership owners
     /// <param name="id">Domain primary key.</param>
     /// <param name="req">Renewal details specifying the number of years.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>204 No Content on success.</returns>
+    /// <returns>204 No Content; 404 with <c>DOMAIN_NOT_FOUND</c> when the domain is not the caller's.</returns>
     [HttpPost("{id:int}/renew")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RenewAsync(int id, ApiRenewDomainRequest req, CancellationToken ct)
     {
-        if (!await ownership.IsOwnedByCallerAsync(id, ct))
-        {
-            return Forbid();
-        }
-
-        await bus.InvokeAsync(new RenewDomainCommand(id, req.Years), ct);
+        await bus.InvokeAsync(new RenewMyDomainCommand(id, req.Years), ct);
         return NoContent();
     }
 
@@ -277,22 +236,19 @@ public sealed class MyDomainsController(IMessageBus bus, IDomainOwnership owners
     /// <param name="id">Domain primary key.</param>
     /// <param name="req">DNS record details.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>201 Created with a link to the domain.</returns>
+    /// <returns>
+    /// 201 Created with a link to the domain; 404 with <c>DOMAIN_NOT_FOUND</c> when it is not the
+    /// caller's.
+    /// </returns>
     [HttpPost("{id:int}/dns")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> AddDnsRecordAsync(int id, AddDnsRecordRequest req, CancellationToken ct)
     {
-        if (!await ownership.IsOwnedByCallerAsync(id, ct))
-        {
-            return Forbid();
-        }
-
         await bus.InvokeAsync(
-            new AddDnsRecordCommand(id, req.Type, req.Host, req.Value, req.Ttl, req.Priority),
+            new AddMyDomainDnsRecordCommand(id, req.Type, req.Host, req.Value, req.Ttl, req.Priority),
             ct);
         return Created($"/api/me/domains/{id}", null);
     }
@@ -302,26 +258,19 @@ public sealed class MyDomainsController(IMessageBus bus, IDomainOwnership owners
     /// <param name="recordId">DNS record primary key.</param>
     /// <param name="req">Updated DNS record details.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>204 No Content on success.</returns>
+    /// <returns>204 No Content; 404 with <c>DOMAIN_NOT_FOUND</c> when the domain is not the caller's.</returns>
     [HttpPut("{id:int}/dns/{recordId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateDnsRecordAsync(
-        int id,
+    public async Task<IActionResult> UpdateDnsRecordAsync(int id,
         int recordId,
         UpdateDnsRecordRequest req,
         CancellationToken ct)
     {
-        if (!await ownership.IsOwnedByCallerAsync(id, ct))
-        {
-            return Forbid();
-        }
-
         await bus.InvokeAsync(
-            new UpdateDnsRecordCommand(id, recordId, req.Value, req.Ttl, req.Priority),
+            new UpdateMyDomainDnsRecordCommand(id, recordId, req.Value, req.Ttl, req.Priority),
             ct);
         return NoContent();
     }
@@ -330,20 +279,14 @@ public sealed class MyDomainsController(IMessageBus bus, IDomainOwnership owners
     /// <param name="id">Domain primary key.</param>
     /// <param name="recordId">DNS record primary key.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>204 No Content on success.</returns>
+    /// <returns>204 No Content; 404 with <c>DOMAIN_NOT_FOUND</c> when the domain is not the caller's.</returns>
     [HttpDelete("{id:int}/dns/{recordId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteDnsRecordAsync(int id, int recordId, CancellationToken ct)
     {
-        if (!await ownership.IsOwnedByCallerAsync(id, ct))
-        {
-            return Forbid();
-        }
-
-        await bus.InvokeAsync(new DeleteDnsRecordCommand(id, recordId), ct);
+        await bus.InvokeAsync(new DeleteMyDomainDnsRecordCommand(id, recordId), ct);
         return NoContent();
     }
 
@@ -351,20 +294,14 @@ public sealed class MyDomainsController(IMessageBus bus, IDomainOwnership owners
     /// <param name="id">Domain primary key.</param>
     /// <param name="req">Boolean flag payload.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>204 No Content on success.</returns>
+    /// <returns>204 No Content; 404 with <c>DOMAIN_NOT_FOUND</c> when the domain is not the caller's.</returns>
     [HttpPut("{id:int}/dns-management")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SetDnsManagementAsync(int id, SetBoolRequest req, CancellationToken ct)
     {
-        if (!await ownership.IsOwnedByCallerAsync(id, ct))
-        {
-            return Forbid();
-        }
-
-        await bus.InvokeAsync(new SetDnsManagementCommand(id, req.Enabled), ct);
+        await bus.InvokeAsync(new SetMyDomainDnsManagementCommand(id, req.Enabled), ct);
         return NoContent();
     }
 
@@ -372,20 +309,14 @@ public sealed class MyDomainsController(IMessageBus bus, IDomainOwnership owners
     /// <param name="id">Domain primary key.</param>
     /// <param name="req">Boolean flag payload.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>204 No Content on success.</returns>
+    /// <returns>204 No Content; 404 with <c>DOMAIN_NOT_FOUND</c> when the domain is not the caller's.</returns>
     [HttpPut("{id:int}/email-forwarding-toggle")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SetEmailForwardingAsync(int id, SetBoolRequest req, CancellationToken ct)
     {
-        if (!await ownership.IsOwnedByCallerAsync(id, ct))
-        {
-            return Forbid();
-        }
-
-        await bus.InvokeAsync(new SetEmailForwardingCommand(id, req.Enabled), ct);
+        await bus.InvokeAsync(new SetMyDomainEmailForwardingCommand(id, req.Enabled), ct);
         return NoContent();
     }
 
@@ -393,23 +324,17 @@ public sealed class MyDomainsController(IMessageBus bus, IDomainOwnership owners
     /// <param name="id">Domain primary key.</param>
     /// <param name="req">Email forwarding rule details.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>201 Created on success.</returns>
+    /// <returns>201 Created; 404 with <c>DOMAIN_NOT_FOUND</c> when the domain is not the caller's.</returns>
     [HttpPost("{id:int}/email-forwarding")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> AddEmailForwardingRuleAsync(
-        int id,
+    public async Task<IActionResult> AddEmailForwardingRuleAsync(int id,
         EmailForwardingRuleRequest req,
         CancellationToken ct)
     {
-        if (!await ownership.IsOwnedByCallerAsync(id, ct))
-        {
-            return Forbid();
-        }
-
-        await bus.InvokeAsync(new AddEmailForwardingRuleCommand(id, req.Source, req.Destination), ct);
+        await bus.InvokeAsync(
+            new AddMyDomainEmailForwardingRuleCommand(id, req.Source, req.Destination), ct);
         return Created($"/api/me/domains/{id}", null);
     }
 
@@ -418,25 +343,19 @@ public sealed class MyDomainsController(IMessageBus bus, IDomainOwnership owners
     /// <param name="ruleId">Email forwarding rule primary key.</param>
     /// <param name="req">Updated email forwarding rule details.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>204 No Content on success.</returns>
+    /// <returns>204 No Content; 404 with <c>DOMAIN_NOT_FOUND</c> when the domain is not the caller's.</returns>
     [HttpPut("{id:int}/email-forwarding/{ruleId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateEmailForwardingRuleAsync(
-        int id,
+    public async Task<IActionResult> UpdateEmailForwardingRuleAsync(int id,
         int ruleId,
         EmailForwardingRuleRequest req,
         CancellationToken ct)
     {
-        if (!await ownership.IsOwnedByCallerAsync(id, ct))
-        {
-            return Forbid();
-        }
-
         await bus.InvokeAsync(
-            new UpdateEmailForwardingRuleCommand(id, ruleId, req.Source, req.Destination, req.IsActive),
+            new UpdateMyDomainEmailForwardingRuleCommand(
+                id, ruleId, req.Source, req.Destination, req.IsActive),
             ct);
         return NoContent();
     }
@@ -445,20 +364,14 @@ public sealed class MyDomainsController(IMessageBus bus, IDomainOwnership owners
     /// <param name="id">Domain primary key.</param>
     /// <param name="ruleId">Email forwarding rule primary key.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>204 No Content on success.</returns>
+    /// <returns>204 No Content; 404 with <c>DOMAIN_NOT_FOUND</c> when the domain is not the caller's.</returns>
     [HttpDelete("{id:int}/email-forwarding/{ruleId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteEmailForwardingRuleAsync(int id, int ruleId, CancellationToken ct)
     {
-        if (!await ownership.IsOwnedByCallerAsync(id, ct))
-        {
-            return Forbid();
-        }
-
-        await bus.InvokeAsync(new DeleteEmailForwardingRuleCommand(id, ruleId), ct);
+        await bus.InvokeAsync(new DeleteMyDomainEmailForwardingRuleCommand(id, ruleId), ct);
         return NoContent();
     }
 }

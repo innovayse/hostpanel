@@ -2,7 +2,7 @@ namespace Innovayse.Infrastructure.Plugins;
 
 using System.Reflection;
 using Innovayse.Application.Admin.Integrations;
-using Innovayse.Application.Admin.Integrations.DTOs;
+using Innovayse.Application.Admin.Integrations.Common;
 using Innovayse.SDK.Plugins;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

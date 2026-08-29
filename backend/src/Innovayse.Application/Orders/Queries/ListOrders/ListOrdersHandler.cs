@@ -1,7 +1,6 @@
 namespace Innovayse.Application.Orders.Queries.ListOrders;
 
 using Innovayse.Application.Common;
-using Innovayse.Application.Orders.DTOs;
 using Innovayse.Domain.Clients.Interfaces;
 using Innovayse.Domain.Orders;
 using Innovayse.Domain.Orders.Interfaces;

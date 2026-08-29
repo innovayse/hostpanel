@@ -1,7 +1,7 @@
 namespace Innovayse.Application.Domains.Queries.GetDomain;
 
 using System.Linq;
-using Innovayse.Application.Domains.DTOs;
+using Innovayse.Application.Domains.Common;
 using Innovayse.Domain.Domains.Interfaces;
 
 /// <summary>Returns a full <see cref="DomainDto"/> including nameservers and DNS records.</summary>

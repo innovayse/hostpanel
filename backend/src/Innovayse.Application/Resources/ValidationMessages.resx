@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Neutral (English) error messages, the key list for this product.
+    A key missing from every file resolves to the key name itself, which is how an
+    untranslated message shows up as SCREAMING text rather than silently as English.
+  -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ClientProfileNotFound" xml:space="preserve">
+    <value>This account has no client profile, so there is nothing to show in the client area.</value>
+    <comment>CLIENT_PROFILE_NOT_FOUND. Wording reused from client/locales/*/client.json -&gt; client.noProfile.body.</comment>
+  </data>
+  <data name="TicketNotFound" xml:space="preserve">
+    <value>No such ticket.</value>
+    <comment>TICKET_NOT_FOUND. Answered the same whether the ticket is somebody else's or absent.</comment>
+  </data>
+  <data name="InvoiceNotFound" xml:space="preserve">
+    <value>No such invoice.</value>
+    <comment>INVOICE_NOT_FOUND.</comment>
+  </data>
+  <data name="DomainNotFound" xml:space="preserve">
+    <value>No such domain.</value>
+    <comment>DOMAIN_NOT_FOUND.</comment>
+  </data>
+  <data name="ContactNotConfigured" xml:space="preserve">
+    <value>The contact form is not available on this deployment. Please use the email address or phone number shown on this page.</value>
+    <comment>CONTACT_NOT_CONFIGURED. Wording reused from client/locales/*/contact.json -&gt; contact.form.error.unavailable.</comment>
+  </data>
+  <data name="ContactSendFailed" xml:space="preserve">
+    <value>Your message could not be delivered. Please try again in a few minutes.</value>
+    <comment>CONTACT_SEND_FAILED. Wording reused from client/locales/*/contact.json -&gt; contact.form.error.failed.</comment>
+  </data>
+  <data name="RateLimited" xml:space="preserve">
+    <value>Too many requests. Please wait a moment before trying again.</value>
+    <comment>RATE_LIMITED. Wording reused from client/locales/*/error.json -&gt; error.rateLimited.</comment>
+  </data>
+  <data name="InternalError" xml:space="preserve">
+    <value>An unexpected error occurred.</value>
+    <comment>INTERNAL_ERROR. The last-resort sentence; deliberately says nothing about what failed.</comment>
+  </data>
+  <data name="InvitationTokenInvalid" xml:space="preserve">
+    <value>Invalid or expired invitation token.</value>
+    <comment>AcceptInvitationHandler.</comment>
+  </data>
+  <data name="InvitationExpired" xml:space="preserve">
+    <value>This invitation has expired.</value>
+    <comment>AcceptInvitationHandler.</comment>
+  </data>
+  <data name="InvitationAlreadyAccepted" xml:space="preserve">
+    <value>This invitation has already been accepted.</value>
+    <comment>AcceptInvitationHandler.</comment>
+  </data>
+  <data name="AccountOwnerNotFound" xml:space="preserve">
+    <value>This account's owner could not be found.</value>
+    <comment>InviteUserToClientHandler.</comment>
+  </data>
+  <data name="CannotInviteAccountOwner" xml:space="preserve">
+    <value>Cannot invite the account owner as an additional user.</value>
+    <comment>InviteUserToClientHandler.</comment>
+  </data>
+  <data name="UserAlreadyLinked" xml:space="preserve">
+    <value>A user with email '{0}' is already linked to this account.</value>
+    <comment>InviteUserToClientHandler. {0} is the email address that was submitted.</comment>
+  </data>
+  <data name="InvitationAlreadyPending" xml:space="preserve">
+    <value>A pending invitation for '{0}' already exists for this account.</value>
+    <comment>InviteUserToClientHandler. {0} is the email address that was submitted.</comment>
+  </data>
+  <data name="InvalidPermissionsValue" xml:space="preserve">
+    <value>Invalid permissions value: {0}.</value>
+    <comment>InviteUserToClientHandler. {0} is the value that was submitted.</comment>
+  </data>
+  <data name="NoSavedPaymentMethods" xml:space="preserve">
+    <value>This account has no saved payment methods.</value>
+    <comment>RemovePaymentMethodHandler and SetDefaultPaymentMethodHandler.</comment>
+  </data>
+  <data name="PaymentMethodNotOwned" xml:space="preserve">
+    <value>That payment method does not belong to this account.</value>
+    <comment>RemovePaymentMethodHandler and SetDefaultPaymentMethodHandler.</comment>
+  </data>
+  <data name="ContactEmailInvalid" xml:space="preserve">
+    <value>Email must be a valid email address.</value>
+    <comment>SendContactMessageHandler.</comment>
+  </data>
+  <data name="ContactFieldRequired" xml:space="preserve">
+    <value>{0} is required.</value>
+    <comment>SendContactMessageHandler. {0} is the localised field label.</comment>
+  </data>
+  <data name="ContactFieldTooLong" xml:space="preserve">
+    <value>{0} must be {1} characters or fewer.</value>
+    <comment>SendContactMessageHandler. {0} is the localised field label, {1} the limit.</comment>
+  </data>
+  <data name="ContactFieldName" xml:space="preserve">
+    <value>Name</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="ContactFieldEmail" xml:space="preserve">
+    <value>Email</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="ContactFieldMessage" xml:space="preserve">
+    <value>Message</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="ContactFieldPhone" xml:space="preserve">
+    <value>Phone</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="ContactFieldService" xml:space="preserve">
+    <value>Service</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="ContactFieldSubmittedAt" xml:space="preserve">
+    <value>Submitted at</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="TokenInvalidOrExpired" xml:space="preserve">
+    <value>Invalid or expired token.</value>
+    <comment>LocalAuthController reset-password and confirm-email.</comment>
+  </data>
+  <data name="SessionExpired" xml:space="preserve">
+    <value>Token expired. Please log in again.</value>
+    <comment>LocalAuthController refresh.</comment>
+  </data>
+  <data name="ServiceNotFound" xml:space="preserve">
+    <value>Service {0} not found.</value>
+    <comment>CancelServiceHandler. {0} is the service id.</comment>
+  </data>
+  <data name="CancellationAlreadyPending" xml:space="preserve">
+    <value>A pending cancellation request already exists for service {0}.</value>
+    <comment>CancelServiceHandler. {0} is the service id.</comment>
+  </data>
+  <data name="ProductNotFound" xml:space="preserve">
+    <value>Product {0} not found.</value>
+    <comment>OrderServiceHandler. {0} is the product id.</comment>
+  </data>
+  <data name="ProductNotAvailable" xml:space="preserve">
+    <value>Product {0} is not available for ordering.</value>
+    <comment>OrderServiceHandler. {0} is the product id.</comment>
+  </data>
+  <data name="ClientServiceNotFound" xml:space="preserve">
+    <value>ClientService {0} not found.</value>
+    <comment>SetupServiceHandler, ChangePasswordHandler and GetCPanelSsoUrlHandler. {0} is the service id.</comment>
+  </data>
+  <data name="ServiceNotPending" xml:space="preserve">
+    <value>Cannot set up a service with status {0}. Only Pending services can be set up.</value>
+    <comment>SetupServiceHandler. {0} is the current status.</comment>
+  </data>
+  <data name="NoEligibleServer" xml:space="preserve">
+    <value>No eligible {0} server available for provisioning.</value>
+    <comment>SetupServiceHandler. {0} is the server module.</comment>
+  </data>
+  <data name="ProvisioningFailed" xml:space="preserve">
+    <value>Provisioning failed for service {0}: {1}</value>
+    <comment>SetupServiceHandler. {0} is the service id, {1} the provider's own message.</comment>
+  </data>
+  <data name="ServiceNoProvisioningReference" xml:space="preserve">
+    <value>ClientService {0} has no provisioning reference.</value>
+    <comment>ChangePasswordHandler. {0} is the service id.</comment>
+  </data>
+  <data name="ServiceNoServerAssigned" xml:space="preserve">
+    <value>ClientService {0} has no server assigned.</value>
+    <comment>ChangePasswordHandler and GetCPanelSsoUrlHandler. {0} is the service id.</comment>
+  </data>
+  <data name="ServiceNotProvisioned" xml:space="preserve">
+    <value>ClientService {0} has not been provisioned yet.</value>
+    <comment>GetCPanelSsoUrlHandler. {0} is the service id.</comment>
+  </data>
+  <data name="ValidationFailed" xml:space="preserve">
+    <value>One or more fields in the request were not accepted.</value>
+    <comment>ExceptionMiddleware, for a message the Wolverine FluentValidation middleware refused. One sentence for every field failure on purpose: the per-field messages are English literals in the validators and are logged, not sent.</comment>
+  </data>
+  <data name="InvalidFilterValue" xml:space="preserve">
+    <value>Invalid filter value: {0}.</value>
+    <comment>GetMigrationLogsHandler. {0} is the value that was submitted for the action or entity-type filter. A query carries no validator in this project, so the handler resolves this itself.</comment>
+  </data>
+</root>

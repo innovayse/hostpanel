@@ -1,6 +1,5 @@
 namespace Innovayse.Application.Admin.Queries.GetDashboardStats;
 
-using Innovayse.Application.Admin.DTOs;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Billing.Interfaces;
 using Innovayse.Domain.Clients.Interfaces;

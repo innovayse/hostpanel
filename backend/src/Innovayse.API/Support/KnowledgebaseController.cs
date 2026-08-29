@@ -1,7 +1,7 @@
 namespace Innovayse.API.Support;
 
-using Innovayse.Application.Support.DTOs;
-using Innovayse.Application.Support.Queries.GetKbArticle;
+using Innovayse.Application.Support.Common;
+using Innovayse.Application.Support.Queries.GetPublishedKbArticle;
 using Innovayse.Application.Support.Queries.ListKbArticles;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -31,11 +31,20 @@ public sealed class KnowledgebaseController(IMessageBus bus) : ControllerBase
     /// <summary>Returns a single published knowledge base article.</summary>
     /// <param name="id">Article primary key.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The article DTO.</returns>
+    /// <returns>
+    /// The article DTO. An unpublished draft and a nonexistent id answer identically: this route
+    /// is anonymous and ids are sequential, so telling those apart would be a way to enumerate
+    /// the unpublished backlog.
+    /// </returns>
+    /// <remarks>
+    /// Dispatches <see cref="GetPublishedKbArticleQuery"/>, not <c>GetKbArticleQuery</c>. The
+    /// latter reads any row regardless of published state and is the admin read; sending it from
+    /// here served drafts to the public while the list above showed published rows only.
+    /// </remarks>
     [HttpGet("{id:int}")]
     public async Task<ActionResult<KbArticleDto>> GetByIdAsync(int id, CancellationToken ct)
     {
-        var dto = await bus.InvokeAsync<KbArticleDto>(new GetKbArticleQuery(id), ct);
+        var dto = await bus.InvokeAsync<KbArticleDto>(new GetPublishedKbArticleQuery(id), ct);
         return Ok(dto);
     }
 }

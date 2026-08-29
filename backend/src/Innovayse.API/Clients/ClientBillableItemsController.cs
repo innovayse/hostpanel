@@ -5,7 +5,6 @@ using Innovayse.Application.Billing.Commands.CreateBillableItem;
 using Innovayse.Application.Billing.Commands.CreateTimeBillingEntries;
 using Innovayse.Application.Billing.Commands.DeleteBillableItem;
 using Innovayse.Application.Billing.Commands.InvoiceSelectedItems;
-using Innovayse.Application.Billing.DTOs;
 using Innovayse.Application.Billing.Queries.ListClientBillableItems;
 using Innovayse.Domain.Auth;
 using Innovayse.Domain.Billing;

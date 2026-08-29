@@ -1,7 +1,6 @@
 namespace Innovayse.Application.Clients.Queries.GetClientSummary;
 
-using Innovayse.Application.Clients.DTOs;
-using Innovayse.Application.Notifications.DTOs;
+using Innovayse.Application.Notifications.Common;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Billing.Interfaces;
 using Innovayse.Domain.Clients.Interfaces;

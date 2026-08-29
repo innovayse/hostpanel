@@ -4,17 +4,24 @@ using Innovayse.Application.Common;
 using Innovayse.Domain.Products;
 using Innovayse.Domain.Products.Interfaces;
 using Innovayse.Domain.Services;
+using Innovayse.Application.Resources;
 using Innovayse.Domain.Services.Interfaces;
+using Microsoft.Extensions.Localization;
 
 /// <summary>
 /// Creates a pending <see cref="ClientService"/> record for the ordered product.
 /// Provisioning is handled asynchronously by an event handler that listens
 /// for <c>ClientServiceCreatedEvent</c>.
 /// </summary>
+/// <param name="serviceRepo">Client service repository the new record is added to.</param>
+/// <param name="productRepo">Product repository, for the product being ordered.</param>
+/// <param name="uow">Unit of work for persisting changes.</param>
+/// <param name="localizer">The refusal sentences, in the caller's own language.</param>
 public sealed class OrderServiceHandler(
     IClientServiceRepository serviceRepo,
     IProductRepository productRepo,
-    IUnitOfWork uow)
+    IUnitOfWork uow,
+    IStringLocalizer<ValidationMessages> localizer)
 {
     /// <summary>
     /// Handles <see cref="OrderServiceCommand"/>.
@@ -26,11 +33,11 @@ public sealed class OrderServiceHandler(
     public async Task<int> HandleAsync(OrderServiceCommand cmd, CancellationToken ct)
     {
         var product = await productRepo.FindByIdAsync(cmd.ProductId, ct)
-            ?? throw new InvalidOperationException($"Product {cmd.ProductId} not found.");
+            ?? throw new InvalidOperationException(localizer["ProductNotFound", cmd.ProductId]);
 
         if (product.Status != ProductStatus.Active)
         {
-            throw new InvalidOperationException($"Product {cmd.ProductId} is not available for ordering.");
+            throw new InvalidOperationException(localizer["ProductNotAvailable", cmd.ProductId]);
         }
 
         var cyclePrice = cmd.BillingCycle == "annual" ? product.AnnualPrice : product.MonthlyPrice;

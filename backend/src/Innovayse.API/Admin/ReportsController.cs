@@ -1,6 +1,5 @@
 namespace Innovayse.API.Admin;
 
-using Innovayse.Application.Admin.DTOs;
 using Innovayse.Application.Admin.Queries.GetClientGrowthReport;
 using Innovayse.Application.Admin.Queries.GetRevenueReport;
 using Innovayse.Application.Admin.Queries.GetServiceUsageReport;

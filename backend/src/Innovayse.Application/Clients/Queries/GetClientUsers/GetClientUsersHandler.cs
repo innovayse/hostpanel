@@ -1,7 +1,6 @@
 namespace Innovayse.Application.Clients.Queries.GetClientUsers;
 
 using Innovayse.Application.Auth.Interfaces;
-using Innovayse.Application.Clients.DTOs;
 using Innovayse.Domain.Clients;
 using Innovayse.Domain.Clients.Interfaces;
 

@@ -55,28 +55,14 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css', '@fontsource-variable/inter', '~/assets/styles/animations.css', '~/assets/styles/global.css'],
 
   runtimeConfig: {
-    // Server-side only (not exposed to client)
+    // Server-side only. No credential for an external service belongs here — only this
+    // BFF's own OIDC client credential, internal addresses, and the auth-mode switch.
     authMode: process.env.AUTH_MODE || 'sso',
     apiUrl: process.env.API_URL || 'http://localhost:5000',
     ssoUrl: process.env.SSO_URL || 'http://sso-api:8080',
     ssoClientId: process.env.SSO_CLIENT_ID || 'hostpanel',
     ssoClientSecret: process.env.SSO_CLIENT_SECRET || 'dev-secret-hostpanel',
     ssoCallbackUrl: process.env.SSO_CALLBACK_URL || 'http://panel.local/api/portal/auth/sso/callback',
-    telegramBotToken: process.env.TELEGRAM_BOT_TOKEN,
-    telegramChatId: process.env.TELEGRAM_CHAT_ID,
-    // Email SMTP configuration
-    smtpHost: process.env.SMTP_HOST,
-    smtpPort: process.env.SMTP_PORT,
-    smtpUser: process.env.SMTP_USER,
-    smtpPassword: process.env.SMTP_PASSWORD,
-    emailTo: process.env.EMAIL_TO,
-    // WHMCS API configuration — trailing slash stripped so URL joins work correctly
-    whmcsUrl: (process.env.WHMCS_URL || '').replace(/\/+$/, ''),
-    whmcsIdentifier: process.env.WHMCS_IDENTIFIER,
-    whmcsSecret: process.env.WHMCS_SECRET,
-    whmcsAccessKey: process.env.WHMCS_ACCESS_KEY,
-    // WHM root API token for cPanel SSO (create_user_session)
-    whmApiToken: process.env.WHM_API_TOKEN,
     // Internal URL of innovayse-main (app.local) — used for backchannel logout delegation
     mainApiUrl: process.env.NUXT_MAIN_API_URL || 'http://main-client:3000',
 
@@ -90,7 +76,19 @@ export default defineNuxtConfig({
       sheetsUrl: process.env.NUXT_PUBLIC_SHEETS_URL || 'http://sheets.local',
       emailUrl: process.env.NUXT_PUBLIC_EMAIL_URL || 'http://email.local',
       driveUrl: process.env.NUXT_PUBLIC_DRIVE_URL || 'http://drive.local',
+      // Address of the WHMCS install this panel hands visitors off to (card
+      // management, invoice payment, domain transfer). An address only — the WHMCS
+      // API credentials are the C# backend's and deliberately absent here. Empty
+      // hides every link that needs it rather than rendering a broken one.
+      //
+      // The trailing-slash strip below only runs where nuxt.config is evaluated: a
+      // dev server, or the `docker build` that freezes the production defaults. A
+      // deployed container overrides this through NUXT_PUBLIC_WHMCS_URL, which Nitro
+      // substitutes verbatim, so that value must carry no trailing slash of its own.
       whmcsUrl: (process.env.WHMCS_URL || '').replace(/\/+$/, ''),
+      // Stripe.js's publishable key, read by useStripe(). Public by design; the
+      // secret key is the backend's. Overridden at runtime with
+      // NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY — empty leaves the card form uninitialised.
       stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
       mainUrl: process.env.NUXT_PUBLIC_MAIN_URL || 'http://app.local',
       // Active portal template. Phase 4 lets an admin override this from settings;

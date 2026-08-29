@@ -17,7 +17,11 @@ public sealed class UpdateClientValidator : AbstractValidator<UpdateClientComman
         RuleFor(x => x.City).MaximumLength(100).When(x => x.City is not null);
         RuleFor(x => x.State).MaximumLength(100).When(x => x.State is not null);
         RuleFor(x => x.PostCode).MaximumLength(20).When(x => x.PostCode is not null);
-        RuleFor(x => x.Country).Length(2).When(x => x.Country is not null);
+        // The fixed-length rules below are guarded on blank, not on null. An optional field a
+        // form left empty arrives as "" from some callers and as null from others -- the admin
+        // panel itself sends both, depending on the screen -- and `is not null` would put the
+        // empty string through a Length() rule it cannot satisfy. Blank means "not provided".
+        RuleFor(x => x.Country).Length(2).When(x => !string.IsNullOrEmpty(x.Country));
         RuleFor(x => x.Currency).MaximumLength(3).When(x => x.Currency is not null);
         RuleFor(x => x.PaymentMethod).MaximumLength(50).When(x => x.PaymentMethod is not null);
         RuleFor(x => x.BillingContact).MaximumLength(256).When(x => x.BillingContact is not null);

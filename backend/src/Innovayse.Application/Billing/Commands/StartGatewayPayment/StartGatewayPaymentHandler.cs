@@ -1,6 +1,6 @@
 namespace Innovayse.Application.Billing.Commands.StartGatewayPayment;
 
-using Innovayse.Application.Billing;
+using Innovayse.Application.Billing.Common;
 using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Billing.Options;
 using Innovayse.Application.Common;

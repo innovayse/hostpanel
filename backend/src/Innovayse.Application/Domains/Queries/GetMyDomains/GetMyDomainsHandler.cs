@@ -3,7 +3,7 @@ namespace Innovayse.Application.Domains.Queries.GetMyDomains;
 using System.Linq;
 using Innovayse.Application.Clients.Common;
 using Innovayse.Application.Common;
-using Innovayse.Application.Domains.DTOs;
+using Innovayse.Application.Domains.Common;
 using Innovayse.Domain.Clients.Interfaces;
 using Innovayse.Domain.Domains.Interfaces;
 

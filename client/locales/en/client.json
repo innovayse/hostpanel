@@ -83,20 +83,17 @@
       "errorDefault": "Failed to reset password. The link may have expired — please request a new one."
     },
     "acceptInvite": {
-      "title": "Set Your Password",
-      "subtitle": "Create your password to access your account",
-      "password": "Password",
-      "passwordPlaceholder": "Min. 8 characters",
-      "confirmPassword": "Confirm Password",
-      "confirmPasswordPlaceholder": "Re-enter your password",
-      "submit": "Create Account",
-      "submitting": "Creating account\u2026",
+      "title": "Accept Your Invitation",
+      "subtitle": "Join the account you were invited to manage",
+      "description": "Accepting links the account you are signed in with to this client, together with the permissions the invitation granted.",
+      "submit": "Accept Invitation",
+      "submitting": "Accepting\u2026",
       "backToSignIn": "Back to Sign In",
       "invalidTitle": "Invalid invitation link",
       "invalidMessage": "This invitation link is invalid or has expired. Please contact your account administrator to request a new invitation.",
-      "errorMismatch": "Passwords do not match.",
-      "errorMinLength": "Password must be at least 8 characters.",
-      "errorDefault": "Failed to accept invitation. The link may have expired — please contact your account administrator."
+      "signInRequiredTitle": "Sign in to continue",
+      "signInRequired": "An invitation is accepted by the account that is signed in, so this link needs you signed in first. Sign in and you will come straight back here.",
+      "signInAction": "Sign in and continue"
     },
     "dashboard": {
       "title": "Dashboard",

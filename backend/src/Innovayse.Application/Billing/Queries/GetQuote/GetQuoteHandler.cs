@@ -1,6 +1,5 @@
 namespace Innovayse.Application.Billing.Queries.GetQuote;
 
-using Innovayse.Application.Billing.DTOs;
 using Innovayse.Domain.Billing.Interfaces;
 using Innovayse.Domain.Clients.Interfaces;
 

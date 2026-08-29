@@ -3,7 +3,7 @@ namespace Innovayse.API.Support;
 using Innovayse.API.Support.Requests;
 using Innovayse.Application.Support.Commands.CreateTicket;
 using Innovayse.Application.Support.Commands.ReplyToMyTicket;
-using Innovayse.Application.Support.DTOs;
+using Innovayse.Application.Support.Common;
 using Innovayse.Application.Support.Queries.GetMyTicket;
 using Innovayse.Application.Support.Queries.GetMyTickets;
 using Innovayse.Domain.Auth;

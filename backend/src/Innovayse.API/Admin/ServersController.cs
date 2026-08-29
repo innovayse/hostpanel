@@ -3,7 +3,7 @@ using Innovayse.API.Admin.Requests;
 using Innovayse.Application.Admin.Servers.Commands.CreateServer;
 using Innovayse.Application.Admin.Servers.Commands.DeleteServer;
 using Innovayse.Application.Admin.Servers.Commands.UpdateServer;
-using Innovayse.Application.Admin.Servers.DTOs;
+using Innovayse.Application.Admin.Servers.Common;
 using Innovayse.Application.Admin.Servers.Queries.ListServers;
 using Innovayse.Application.Admin.Servers.Queries.TestServerConnection;
 using Innovayse.Domain.Auth;

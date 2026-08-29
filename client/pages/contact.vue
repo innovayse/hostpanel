@@ -137,6 +137,18 @@
                     {{ $t('contact.form.submit') }}
                   </UiButton>
 
+                  <!-- Failure Message. Rendered from the API's answer, never from a sentence
+                       written here — see handleSubmit. It replaces an alert() that fired for
+                       every failure with the same line. -->
+                  <Transition name="fade">
+                    <div v-if="errorMessage" class="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                      <div class="flex items-center gap-3">
+                        <AlertCircle :size="24" :stroke-width="2" class="text-red-400" />
+                        <p class="text-sm text-red-300">{{ errorMessage }}</p>
+                      </div>
+                    </div>
+                  </Transition>
+
                   <!-- Success Message -->
                   <Transition name="fade">
                     <div v-if="showSuccess" class="p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
@@ -270,8 +282,9 @@
  * Contact page with form and contact information
  */
 
-import { Send, CheckCircle, Building2, Mail, Phone, Clock, MessageCircle } from 'lucide-vue-next'
+import { Send, CheckCircle, AlertCircle, Building2, Mail, Phone, Clock, MessageCircle } from 'lucide-vue-next'
 import { useSupportApi } from '~/composables/apis/useSupportApi'
+import { apiErrorMessage } from '~/utils/apiError'
 
 const { t } = useI18n()
 
@@ -333,9 +346,31 @@ const serviceOptions = computed(() => [
 const isSubmitting = ref(false)
 const showSuccess = ref(false)
 
+/** The failure currently shown under the form, or `''` when the last attempt did not fail. */
+const errorMessage = ref('')
+
+/**
+ * Submits the contact form.
+ *
+ * The success state is set **only** after the POST resolves. The route behind it answers 204
+ * once the backend's SMTP relay has accepted the message and rejects otherwise, so there is no
+ * longer any path on which the visitor is told a message was sent that was not.
+ *
+ * Failure wording comes from the response, whole. The API resolves it from its own resources
+ * in the language `Accept-Language` asked for, so the two codes this page used to word itself —
+ * CONTACT_SEND_FAILED and CONTACT_NOT_CONFIGURED — arrive in ru or hy like every other refusal.
+ * The recovery action still differs between them, and that difference is carried by the wording
+ * the API chose: the unconfigured-inbox sentence sends the visitor to the phone number and email
+ * beside the form rather than inviting a retry. No sentence is written here.
+ */
 const handleSubmit = async () => {
+  errorMessage.value = ''
+
+  // A guard before any request is possible, which `api-driven-frontend.md` allows as one of its
+  // two exceptions. The consent box is not part of the endpoint's contract, so there is no
+  // server-side rule whose wording this could borrow.
   if (!formData.value.consent) {
-    alert(t('contact.form.error.consentRequired'))
+    errorMessage.value = t('contact.form.error.consentRequired')
     return
   }
 
@@ -366,8 +401,7 @@ const handleSubmit = async () => {
       showSuccess.value = false
     }, 5000)
   } catch (error) {
-    console.error('Failed to send message:', error)
-    alert(t('contact.form.error.failed'))
+    errorMessage.value = apiErrorMessage(error)
   } finally {
     isSubmitting.value = false
   }

@@ -1,6 +1,6 @@
 namespace Innovayse.Infrastructure.Auth;
 
-using Innovayse.Application.Admin.DTOs;
+using Innovayse.Application.Admin.Common;
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Clients.Interfaces;

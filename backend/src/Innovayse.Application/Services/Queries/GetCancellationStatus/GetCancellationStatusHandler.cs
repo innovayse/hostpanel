@@ -22,13 +22,10 @@ public sealed class GetCancellationStatusHandler(ICancellationRequestRepository 
             return new CancellationStatusDto(false, null);
         }
 
-        var typeDisplay = request.Type switch
-        {
-            CancellationType.Immediate => "Immediate",
-            CancellationType.EndOfBillingPeriod => "End of Billing Period",
-            _ => request.Type.ToString(),
-        };
-
-        return new CancellationStatusDto(true, typeDisplay);
+        // The enum member name, not a sentence. This field is read by the client portal, which
+        // ships en/ru/hy and resolves the member name to one of its own i18n keys; English prose
+        // baked in here cannot be translated. It is also the same spelling CancelServiceCommand
+        // accepts on the way in, so what a caller reads back is what it may send.
+        return new CancellationStatusDto(true, request.Type.ToString());
     }
 }

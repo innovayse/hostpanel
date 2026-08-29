@@ -1,6 +1,7 @@
 namespace Innovayse.Application.Billing.Interfaces;
 
-using Innovayse.Application.Billing.DTOs;
+using Innovayse.Application.Billing.Common;
+
 
 /// <summary>Abstraction over Stripe payment operations. Implemented in Infrastructure.</summary>
 public interface IStripeService

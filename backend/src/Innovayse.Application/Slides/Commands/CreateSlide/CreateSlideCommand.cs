@@ -1,6 +1,6 @@
 namespace Innovayse.Application.Slides.Commands.CreateSlide;
 
-using Innovayse.Application.Slides.DTOs;
+using Innovayse.Application.Slides.Common;
 using Innovayse.Domain.Slides;
 
 /// <summary>Command to create a new homepage slide with one or more locale translations.</summary>

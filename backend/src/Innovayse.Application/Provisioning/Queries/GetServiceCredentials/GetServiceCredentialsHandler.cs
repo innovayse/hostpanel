@@ -1,6 +1,5 @@
 namespace Innovayse.Application.Provisioning.Queries.GetServiceCredentials;
 
-using Innovayse.Application.Provisioning.DTOs;
 using Innovayse.Domain.Services.Interfaces;
 using IProvisioningProvider = Innovayse.Domain.Provisioning.Interfaces.IProvisioningProvider;
 

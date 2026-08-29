@@ -1,5 +1,5 @@
 namespace Innovayse.Application.Admin.Servers.Queries.ListServers;
-using Innovayse.Application.Admin.Servers.DTOs;
+using Innovayse.Application.Admin.Servers.Common;
 using Innovayse.Domain.Servers;
 using Innovayse.Domain.Servers.Interfaces;
 

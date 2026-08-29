@@ -409,7 +409,8 @@
       <template v-else>
         <UiCard class="mb-4">
           <UiCardHeader :title="$t('client.payment.title')">
-            <UiButton size="sm" variant="subtle" @click="openAddForm">
+            <!-- Only offered when a WHMCS instance exists to add the card on. -->
+            <UiButton v-if="canAddPaymentMethod" size="sm" variant="subtle" @click="openAddForm">
               <Plus :size="12" :stroke-width="2" class="mr-1" />
               {{ $t('client.payment.addNew') }}
             </UiButton>
@@ -423,7 +424,8 @@
             <CreditCard :size="40" :stroke-width="1.5" class="text-gray-300 dark:text-gray-600 mx-auto mb-3" />
             <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">{{ $t('client.payment.empty') }}</p>
             <p class="text-gray-400 dark:text-gray-500 text-xs mt-1">{{ $t('client.payment.emptyDesc') }}</p>
-            <UiButton size="sm" variant="subtle" class="mt-4" @click="openAddForm">
+            <!-- Only offered when a WHMCS instance exists to add the card on. -->
+            <UiButton v-if="canAddPaymentMethod" size="sm" variant="subtle" class="mt-4" @click="openAddForm">
               {{ $t('client.payment.addNew') }}
             </UiButton>
           </div>
@@ -951,7 +953,7 @@ import { useBillingApi } from '~/composables/apis/useBillingApi'
 import { useCatalogApi } from '~/composables/apis/useCatalogApi'
 import { useClientApi } from '~/composables/apis/useClientApi'
 import type { ClientUser } from '~/types/clientuser'
-import { apiErrorMessage } from '~/utils/portalErrorMessages'
+import { apiErrorMessage } from '~/utils/apiError'
 import type { PaymentMethod } from '~/types/payment'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
@@ -1067,7 +1069,7 @@ async function saveEdit() {
     await store.fetchUser(true)
     editing.value = false
   } catch (err: unknown) {
-    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`,
+    // The API's own wording, through the one shared reader in `utils/apiError.ts`,
     // rather than a sentence written here.
     saveError.value = apiErrorMessage(err)
   } finally {
@@ -1132,7 +1134,7 @@ async function sendInvite() {
     Object.keys(chosenPerms).forEach(k => { chosenPerms[k] = false })
     refreshUsers()
   } catch (err: unknown) {
-    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`;
+    // The API's own wording, through the one shared reader in `utils/apiError.ts`;
     // the local key is only the no-answer fallback.
     inviteError.value = apiErrorMessage(err) || t('client.users.inviteError')
   } finally {
@@ -1177,7 +1179,7 @@ async function doRemoveUser(user: ClientUserItem) {
     confirmDialog.open = false
     refreshUsers()
   } catch (err: unknown) {
-    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`;
+    // The API's own wording, through the one shared reader in `utils/apiError.ts`;
     // the local key is only the no-answer fallback.
     inviteError.value = apiErrorMessage(err) || t('client.users.removeError')
     confirmDialog.open = false
@@ -1272,7 +1274,7 @@ async function saveContact() {
     contactModal.open = false
     refreshContacts()
   } catch (err: unknown) {
-    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`;
+    // The API's own wording, through the one shared reader in `utils/apiError.ts`;
     // the local key is only the no-answer fallback.
     contactModal.error = apiErrorMessage(err) || t('client.contacts.saveError')
   } finally {
@@ -1341,7 +1343,7 @@ async function startSetup2FA() {
     tfaModal.saving = false
     tfaModal.open = true
   } catch (err: unknown) {
-    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`;
+    // The API's own wording, through the one shared reader in `utils/apiError.ts`;
     // the local key is only the no-answer fallback.
     tfaError.value = apiErrorMessage(err) || t('client.twoFactor.errorInvalid')
   } finally {
@@ -1381,7 +1383,7 @@ async function submit2FA() {
     // with what this page now shows.
     await store.fetchUser(true)
   } catch (err: unknown) {
-    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`;
+    // The API's own wording, through the one shared reader in `utils/apiError.ts`;
     // the local key is only the no-answer fallback.
     tfaModal.error = apiErrorMessage(err) || t('client.twoFactor.errorInvalid')
   } finally {
@@ -1435,10 +1437,32 @@ const settingDefaultId = ref<string | null>(null)
 const paymentActionError = ref('')
 const paymentSuccess  = ref('')
 
-function openAddForm() {
-  // Adding cards via API is not supported for tokenised gateways (e.g. Stripe).
-  // Redirect to WHMCS native credit card page.
-  const whmcsUrl = useRuntimeConfig().public.whmcsUrl
+/**
+ * Base URL of the WHMCS instance this deployment fronts, or an empty string.
+ *
+ * Empty is a legitimate configuration — a deployment that runs no WHMCS, or one where
+ * `WHMCS_URL` has not been set yet — so every link built from it must be guarded.
+ */
+const whmcsUrl = useRuntimeConfig().public.whmcsUrl
+
+/**
+ * Whether the "add a card" action can actually do anything.
+ *
+ * The only way to add a card is WHMCS's own hosted page; with no `whmcsUrl` the button would
+ * open `/clientarea.php?action=creditcard` on this app's own origin, i.e. a 404 in a new tab.
+ * The action is therefore not offered at all rather than offered and broken.
+ */
+const canAddPaymentMethod = computed(() => Boolean(whmcsUrl))
+
+/**
+ * Opens WHMCS's native credit-card page in a new tab.
+ *
+ * Adding cards via the API is not supported for tokenised gateways (e.g. Stripe), so this
+ * hands off to WHMCS. Callers must be gated on {@link canAddPaymentMethod}; the guard here is
+ * a second line of defence, not the primary one.
+ */
+const openAddForm = () => {
+  if (!canAddPaymentMethod.value) return
   window.open(`${whmcsUrl}/clientarea.php?action=creditcard`, '_blank')
 }
 
@@ -1565,7 +1589,7 @@ async function saveAddrModal() {
     // auto-select the newly created address
     editModal.billingAddressId = res.addressid
   } catch (err: unknown) {
-    // The API's own wording, through the one shared reader in `utils/portalErrorMessages.ts`,
+    // The API's own wording, through the one shared reader in `utils/apiError.ts`,
     // rather than a sentence written here.
     addrModal.error = apiErrorMessage(err)
   } finally {

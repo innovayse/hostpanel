@@ -1,6 +1,6 @@
 namespace Innovayse.Application.Notifications.Queries.ListEmailTemplates;
 
-using Innovayse.Application.Notifications.DTOs;
+using Innovayse.Application.Notifications.Common;
 using Innovayse.Domain.Notifications.Interfaces;
 
 /// <summary>Returns all email templates.</summary>

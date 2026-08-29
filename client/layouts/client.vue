@@ -153,7 +153,10 @@ function widgetReinit() {
 
 onMounted(async () => {
   init()
-  if (!store.userLoaded) await store.fetchUser()
+  // No `userLoaded` check: the store is the one authority on whether this needs a request,
+  // and the flag read here answered "not loaded yet" for a request that was already on the
+  // wire — which is how the same page load asked for the identity more than once.
+  await store.fetchUser()
   // Reinit widget after Vue renders the mount points.
   // Poll until InnoWidget is available (script may still be loading with async).
   await nextTick()

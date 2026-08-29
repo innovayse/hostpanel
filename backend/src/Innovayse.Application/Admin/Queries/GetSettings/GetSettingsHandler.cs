@@ -1,6 +1,6 @@
 namespace Innovayse.Application.Admin.Queries.GetSettings;
 
-using Innovayse.Application.Admin.DTOs;
+using Innovayse.Application.Admin.Common;
 using Innovayse.Domain.Settings.Interfaces;
 
 /// <summary>

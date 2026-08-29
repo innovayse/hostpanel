@@ -13,7 +13,7 @@ using Innovayse.Application.Support.Commands.RemoveTicketTag;
 using Innovayse.Application.Support.Commands.ReplyToTicket;
 using Innovayse.Application.Support.Commands.ToggleTicketFlag;
 using Innovayse.Application.Support.Commands.UpdateTicket;
-using Innovayse.Application.Support.DTOs;
+using Innovayse.Application.Support.Common;
 using Innovayse.Application.Support.Queries.GetClientTicketStats;
 using Innovayse.Application.Support.Queries.GetSupportOverview;
 using Innovayse.Application.Support.Queries.GetTicket;

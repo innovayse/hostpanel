@@ -1,6 +1,6 @@
 namespace Innovayse.Application.Auth.Commands.StartTwoFactorSetup;
 
-using Innovayse.Application.Auth.DTOs;
+using Innovayse.Application.Auth.Common;
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Common;
 

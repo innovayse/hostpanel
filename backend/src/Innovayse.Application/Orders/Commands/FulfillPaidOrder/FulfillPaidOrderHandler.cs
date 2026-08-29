@@ -1,6 +1,6 @@
 namespace Innovayse.Application.Orders.Commands.FulfillPaidOrder;
 
-using Innovayse.Application.Billing;
+using Innovayse.Application.Billing.Common;
 using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Common;
 using Innovayse.Application.Domains.Commands.RegisterDomain;

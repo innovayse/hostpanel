@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Armenian error messages.
+    A key omitted here falls back to the neutral file, so the messages that are still
+    English are deliberately absent rather than copied in untranslated.
+  -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ClientProfileNotFound" xml:space="preserve">
+    <value>Այս հաշիվը հաճախորդի պրոֆիլ չունի, ուստի հաճախորդի բաժնում ցուցադրելու բան չկա։</value>
+    <comment>CLIENT_PROFILE_NOT_FOUND. Wording reused from client/locales/*/client.json -&gt; client.noProfile.body.</comment>
+  </data>
+  <data name="TicketNotFound" xml:space="preserve">
+    <value>Այդպիսի տոմս չկա։</value>
+    <comment>TICKET_NOT_FOUND. Answered the same whether the ticket is somebody else's or absent.</comment>
+  </data>
+  <data name="InvoiceNotFound" xml:space="preserve">
+    <value>Այդպիսի հաշիվ-ապրանքագիր չկա։</value>
+    <comment>INVOICE_NOT_FOUND.</comment>
+  </data>
+  <data name="DomainNotFound" xml:space="preserve">
+    <value>Այդպիսի դոմեն չկա։</value>
+    <comment>DOMAIN_NOT_FOUND.</comment>
+  </data>
+  <data name="ContactNotConfigured" xml:space="preserve">
+    <value>Կապի ձևը այս պահին հասանելի չէ։ Խնդրում ենք գրել կամ զանգահարել այս էջում նշված կոնտակտներով։</value>
+    <comment>CONTACT_NOT_CONFIGURED. Wording reused from client/locales/*/contact.json -&gt; contact.form.error.unavailable.</comment>
+  </data>
+  <data name="ContactSendFailed" xml:space="preserve">
+    <value>Չհաջողվեց ուղարկել հաղորդագրությունը։ Խնդրում ենք փորձել ավելի ուշ։</value>
+    <comment>CONTACT_SEND_FAILED. Wording reused from client/locales/*/contact.json -&gt; contact.form.error.failed.</comment>
+  </data>
+  <data name="RateLimited" xml:space="preserve">
+    <value>Հարցումները ուղարկվում են չափազանց հաճախ։ Խնդրում ենք մի փոքր սպասել և կրկնել փորձը։</value>
+    <comment>RATE_LIMITED. Wording reused from client/locales/*/error.json -&gt; error.rateLimited.</comment>
+  </data>
+  <data name="InternalError" xml:space="preserve">
+    <value>Տեղի ունեցավ անսպասելի սխալ։</value>
+    <comment>INTERNAL_ERROR. The last-resort sentence; deliberately says nothing about what failed.</comment>
+  </data>
+  <data name="InvitationTokenInvalid" xml:space="preserve">
+    <value>Սխալ կամ ժամկետանց հրավերի հղում։</value>
+    <comment>AcceptInvitationHandler.</comment>
+  </data>
+  <data name="InvitationExpired" xml:space="preserve">
+    <value>Այս հրավերի ժամկետը լրացել է։</value>
+    <comment>AcceptInvitationHandler.</comment>
+  </data>
+  <data name="InvitationAlreadyAccepted" xml:space="preserve">
+    <value>Այս հրավերն արդեն ընդունված է։</value>
+    <comment>AcceptInvitationHandler.</comment>
+  </data>
+  <data name="AccountOwnerNotFound" xml:space="preserve">
+    <value>Այս հաշվի սեփականը չգտնվեց։</value>
+    <comment>InviteUserToClientHandler.</comment>
+  </data>
+  <data name="CannotInviteAccountOwner" xml:space="preserve">
+    <value>Հաշվի սեփականին հնարավոր չէ հրավիրել որպես լրացուցիչ օգտատեր։</value>
+    <comment>InviteUserToClientHandler.</comment>
+  </data>
+  <data name="UserAlreadyLinked" xml:space="preserve">
+    <value>«{0}» հասցեով օգտատերն արդեն կապված է այս հաշվին։</value>
+    <comment>InviteUserToClientHandler. {0} is the email address that was submitted.</comment>
+  </data>
+  <data name="InvitationAlreadyPending" xml:space="preserve">
+    <value>«{0}»-ի համար արդեն կա չընդունված հրավեր այս հաշվի համար։</value>
+    <comment>InviteUserToClientHandler. {0} is the email address that was submitted.</comment>
+  </data>
+  <data name="InvalidPermissionsValue" xml:space="preserve">
+    <value>Թույլտրերի անթույլատրելի արժեք՝ {0}։</value>
+    <comment>InviteUserToClientHandler. {0} is the value that was submitted.</comment>
+  </data>
+  <data name="NoSavedPaymentMethods" xml:space="preserve">
+    <value>Այս հաշիվը պահպանված վճարման եղանակներ չունի։</value>
+    <comment>RemovePaymentMethodHandler and SetDefaultPaymentMethodHandler.</comment>
+  </data>
+  <data name="PaymentMethodNotOwned" xml:space="preserve">
+    <value>Այդ վճարման եղանակը այս հաշվինը չէ։</value>
+    <comment>RemovePaymentMethodHandler and SetDefaultPaymentMethodHandler.</comment>
+  </data>
+  <data name="ContactEmailInvalid" xml:space="preserve">
+    <value>Նշեք վավեր էլ․ փոստի հասցե։</value>
+    <comment>SendContactMessageHandler.</comment>
+  </data>
+  <data name="ContactFieldRequired" xml:space="preserve">
+    <value>«{0}» դաշտը պարտադիր է։</value>
+    <comment>SendContactMessageHandler. {0} is the localised field label.</comment>
+  </data>
+  <data name="ContactFieldTooLong" xml:space="preserve">
+    <value>«{0}» դաշտը պետք է պարունակի առավելագույնը {1} նիշ։</value>
+    <comment>SendContactMessageHandler. {0} is the localised field label, {1} the limit.</comment>
+  </data>
+  <data name="ContactFieldName" xml:space="preserve">
+    <value>Անուն</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="ContactFieldEmail" xml:space="preserve">
+    <value>Էլ․ փոստ</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="ContactFieldMessage" xml:space="preserve">
+    <value>Հաղորդագրություն</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="ContactFieldPhone" xml:space="preserve">
+    <value>Հեռախոս</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="ContactFieldService" xml:space="preserve">
+    <value>Ծառայություն</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="ContactFieldSubmittedAt" xml:space="preserve">
+    <value>Ուղարկման ժամանակ</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="TokenInvalidOrExpired" xml:space="preserve">
+    <value>Սխալ կամ ժամկետանց հղում։</value>
+    <comment>LocalAuthController reset-password and confirm-email.</comment>
+  </data>
+  <data name="SessionExpired" xml:space="preserve">
+    <value>Նստաշրջանի ժամկետը լրացել է։ Խնդրում ենք կրկին մուտք գործել։</value>
+    <comment>LocalAuthController refresh.</comment>
+  </data>
+  <data name="ValidationFailed" xml:space="preserve">
+    <value>Հարցման մեկ կամ մի քանի դաշտեր չեն ընդունվել։</value>
+    <comment>ExceptionMiddleware, for a message the Wolverine FluentValidation middleware refused. One sentence for every field failure on purpose: the per-field messages are English literals in the validators and are logged, not sent.</comment>
+  </data>
+  <data name="InvalidFilterValue" xml:space="preserve">
+    <value>Զտիչի անթույլատրելի արժեք՝ {0}։</value>
+    <comment>GetMigrationLogsHandler. {0} is the value that was submitted for the action or entity-type filter. A query carries no validator in this project, so the handler resolves this itself.</comment>
+  </data>
+</root>

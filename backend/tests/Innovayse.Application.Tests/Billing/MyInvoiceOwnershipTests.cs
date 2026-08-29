@@ -5,7 +5,6 @@ using Innovayse.Application.Billing.Commands.PayInvoice;
 using Innovayse.Application.Billing.Commands.PayMyInvoice;
 using Innovayse.Application.Billing.Commands.StartMyGatewayPayment;
 using Innovayse.Application.Billing.Common;
-using Innovayse.Application.Billing.DTOs;
 using Innovayse.Application.Billing.Queries.GetMyInvoice;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Billing;

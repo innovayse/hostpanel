@@ -1,7 +1,7 @@
 namespace Innovayse.Application.Slides.Queries.GetSlide;
 
 using System.Text.Json;
-using Innovayse.Application.Slides.DTOs;
+using Innovayse.Application.Slides.Common;
 using Innovayse.Domain.Products.Interfaces;
 using Innovayse.Domain.Slides;
 using Innovayse.Domain.Slides.Interfaces;

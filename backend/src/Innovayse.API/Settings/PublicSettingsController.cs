@@ -1,6 +1,5 @@
 namespace Innovayse.API.Settings;
 
-using Innovayse.Application.Admin.DTOs;
 using Innovayse.Application.Admin.Queries.GetPublicSettings;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

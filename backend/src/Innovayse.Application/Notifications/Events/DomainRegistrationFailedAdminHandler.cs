@@ -1,7 +1,7 @@
 namespace Innovayse.Application.Notifications.Events;
 
 using Innovayse.Application.Notifications.Commands.SendEmail;
-using Innovayse.Application.Notifications.Settings;
+using Innovayse.Application.Notifications.Options;
 using Innovayse.Domain.Domains.Events;
 using Microsoft.Extensions.Options;
 using Wolverine;
@@ -12,7 +12,7 @@ using Wolverine;
 /// </summary>
 public sealed class DomainRegistrationFailedAdminHandler(
     IMessageBus bus,
-    IOptions<NotificationSettings> settings)
+    IOptions<NotificationOptions> settings)
 {
     /// <summary>
     /// Dispatches a domain-registration-failed-admin notification email to the configured admin address.

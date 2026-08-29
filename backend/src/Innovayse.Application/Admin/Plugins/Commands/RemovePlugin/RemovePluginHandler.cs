@@ -1,5 +1,6 @@
 namespace Innovayse.Application.Admin.Plugins.Commands.RemovePlugin;
-using Innovayse.Application.Admin.Plugins.DTOs;
+
+using Innovayse.Application.Admin.Plugins.Common;
 
 /// <summary>
 /// Handles <see cref="RemovePluginCommand"/> — deletes the plugin directory from disk.

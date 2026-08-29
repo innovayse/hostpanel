@@ -33,4 +33,23 @@ public sealed class AnnouncementRepository(AppDbContext db) : IAnnouncementRepos
 
         return (items, totalCount);
     }
+
+    /// <inheritdoc/>
+    public async Task<(IReadOnlyList<Announcement> Items, int TotalCount)> ListPublishedAsync(
+        int page, int pageSize, CancellationToken ct)
+    {
+        // Filter before Count/Skip/Take so the totals and page boundaries describe published rows
+        // only; filtering a fetched page would leave drafts occupying slots.
+        var query = db.Announcements
+            .Where(a => a.IsPublished)
+            .OrderByDescending(a => a.CreatedAt);
+
+        var totalCount = await query.CountAsync(ct);
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        return (items, totalCount);
+    }
 }

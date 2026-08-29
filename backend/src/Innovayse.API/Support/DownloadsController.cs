@@ -7,7 +7,7 @@ using Innovayse.Application.Support.Commands.DeleteDownload;
 using Innovayse.Application.Support.Commands.DeleteDownloadCategory;
 using Innovayse.Application.Support.Commands.UpdateDownload;
 using Innovayse.Application.Support.Commands.UpdateDownloadCategory;
-using Innovayse.Application.Support.DTOs;
+using Innovayse.Application.Support.Common;
 using Innovayse.Application.Support.Queries.GetDownload;
 using Innovayse.Application.Support.Queries.ListDownloadCategories;
 using Innovayse.Application.Support.Queries.ListDownloads;

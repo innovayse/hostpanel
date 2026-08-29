@@ -3,9 +3,11 @@
  * Admin dashboard — displays high-level system statistics.
  */
 import { onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useDashboardStore } from '../stores/dashboardStore'
 
 const store = useDashboardStore()
+const { t } = useI18n()
 
 onMounted(store.fetchStats)
 
@@ -13,7 +15,7 @@ onMounted(store.fetchStats)
 const statConfig = [
   {
     key: 'totalRevenue' as const,
-    label: 'Total Revenue',
+    labelKey: 'dashboard.stats.totalRevenue',
     format: (v: number) => `$${v.toLocaleString()}`,
     color: 'text-text-primary',
     glow: true,
@@ -21,7 +23,7 @@ const statConfig = [
   },
   {
     key: 'monthlyRevenue' as const,
-    label: 'Monthly Revenue',
+    labelKey: 'dashboard.stats.monthlyRevenue',
     format: (v: number) => `$${v.toLocaleString()}`,
     color: 'text-text-primary',
     glow: false,
@@ -29,7 +31,7 @@ const statConfig = [
   },
   {
     key: 'activeServices' as const,
-    label: 'Active Services',
+    labelKey: 'dashboard.stats.activeServices',
     format: (v: number) => v.toString(),
     color: 'text-status-green',
     glow: false,
@@ -37,7 +39,7 @@ const statConfig = [
   },
   {
     key: 'overdueInvoices' as const,
-    label: 'Overdue Invoices',
+    labelKey: 'dashboard.stats.overdueInvoices',
     format: (v: number) => v.toString(),
     color: 'text-status-red',
     glow: false,
@@ -45,7 +47,7 @@ const statConfig = [
   },
   {
     key: 'openTickets' as const,
-    label: 'Open Tickets',
+    labelKey: 'dashboard.stats.openTickets',
     format: (v: number) => v.toString(),
     color: 'text-status-yellow',
     glow: false,
@@ -53,7 +55,7 @@ const statConfig = [
   },
   {
     key: 'totalClients' as const,
-    label: 'Total Clients',
+    labelKey: 'dashboard.stats.totalClients',
     format: (v: number) => v.toString(),
     color: 'text-text-primary',
     glow: false,
@@ -68,21 +70,21 @@ const statConfig = [
     <!-- Page header -->
     <div class="flex items-start justify-between mb-8">
       <div>
-        <h1 class="font-display text-[1.75rem] font-bold text-text-primary tracking-tight leading-none mb-1.5">Dashboard</h1>
-        <p class="text-sm text-text-secondary">Welcome back — here's what's happening</p>
+        <h1 class="font-display text-[1.75rem] font-bold text-text-primary tracking-tight leading-none mb-1.5">{{ t('dashboard.title') }}</h1>
+        <p class="text-sm text-text-secondary">{{ t('dashboard.subtitle') }}</p>
       </div>
 
       <!-- Live badge -->
       <div class="flex items-center gap-2 text-[0.68rem] font-semibold uppercase tracking-widest text-status-green bg-status-green/8 border border-status-green/20 rounded-full px-3 py-1.5">
         <span class="w-1.5 h-1.5 rounded-full bg-status-green animate-pulse shrink-0"/>
-        Live
+        {{ t('dashboard.live') }}
       </div>
     </div>
 
     <!-- Loading -->
     <div v-if="store.loading" class="flex items-center gap-3 text-text-secondary text-sm">
       <span class="w-4 h-4 rounded-full border-2 border-primary-500/20 border-t-primary-500 animate-spin" />
-      Loading metrics…
+      {{ t('dashboard.loadingMetrics') }}
     </div>
 
     <!-- Error -->
@@ -105,7 +107,7 @@ const statConfig = [
           style="background: radial-gradient(circle at 100% 0%, #0ea5e9, transparent 60%);"
         />
 
-        <p class="text-[0.72rem] font-semibold uppercase tracking-[0.07em] text-text-muted mb-3">{{ stat.label }}</p>
+        <p class="text-[0.72rem] font-semibold uppercase tracking-[0.07em] text-text-muted mb-3">{{ t(stat.labelKey) }}</p>
 
         <p class="font-display text-[2rem] font-bold tracking-tight leading-none" :class="stat.color">
           {{ stat.format(store.stats[stat.key]) }}

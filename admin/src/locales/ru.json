@@ -1,0 +1,109 @@
+{
+  "common": {
+    "loading": "Загрузка...",
+    "save": "Сохранить",
+    "saving": "Сохранение…",
+    "signOut": "Выйти",
+    "admin": "Админ",
+    "search": "Поиск…",
+    "notifications": "Уведомления",
+    "toggleSidebar": "Показать/скрыть меню",
+    "viewAllNotifications": "Смотреть все уведомления",
+    "newCount": "{count} новых"
+  },
+  "nav": {
+    "dashboard": "Панель управления",
+    "clients": "Клиенты",
+    "clientsChildren": {
+      "view": "Просмотр/поиск клиентов",
+      "users": "Управление пользователями",
+      "sharedHostings": "Общий хостинг",
+      "addons": "Дополнения к услугам",
+      "domainRegistrations": "Регистрации доменов",
+      "cancellations": "Заявки на отмену",
+      "affiliates": "Управление партнёрами"
+    },
+    "billing": "Биллинг",
+    "billingChildren": {
+      "transactions": "Список транзакций",
+      "invoices": "Счета",
+      "billableItems": "Оплачиваемые позиции",
+      "quotes": "Коммерческие предложения",
+      "offlineCc": "Оффлайн-обработка карт",
+      "disputes": "Споры",
+      "gatewayLog": "Лог платёжного шлюза"
+    },
+    "reports": "Отчёты",
+    "orders": "Заказы",
+    "domains": "Домены",
+    "support": "Поддержка",
+    "supportChildren": {
+      "overview": "Обзор поддержки",
+      "tickets": "Тикеты поддержки",
+      "newTicket": "Открыть новый тикет",
+      "predefinedReplies": "Готовые ответы",
+      "announcements": "Объявления",
+      "downloads": "Загрузки",
+      "knowledgebase": "База знаний",
+      "networkIssues": "Сетевые проблемы"
+    },
+    "plugins": "Плагины",
+    "pluginManager": "Менеджер плагинов",
+    "servers": "Серверы",
+    "integrations": "Интеграции",
+    "migration": "Миграция",
+    "settings": "Настройки",
+    "settingsChildren": {
+      "general": "Общее",
+      "products": "Продукты",
+      "tldPricing": "Цены на TLD",
+      "slides": "Слайды",
+      "emailTemplates": "Шаблоны писем",
+      "gateways": "Платёжные шлюзы"
+    },
+    "servicesTitle": "Услуги"
+  },
+  "dashboard": {
+    "title": "Панель управления",
+    "subtitle": "С возвращением — вот что сейчас происходит",
+    "live": "В реальном времени",
+    "loadingMetrics": "Загрузка показателей…",
+    "stats": {
+      "totalRevenue": "Общий доход",
+      "monthlyRevenue": "Доход за месяц",
+      "activeServices": "Активные услуги",
+      "overdueInvoices": "Просроченные счета",
+      "openTickets": "Открытые тикеты",
+      "totalClients": "Всего клиентов"
+    }
+  },
+  "settings": {
+    "systemSettings": "Системные настройки",
+    "table": {
+      "key": "Ключ",
+      "value": "Значение",
+      "description": "Описание",
+      "noSettings": "Настройки не найдены."
+    },
+    "portalAppearance": {
+      "title": "Оформление портала",
+      "description": "Какой шаблон использует публичная витрина. Изменения вступают в силу при следующей загрузке страницы.",
+      "template": "Шаблон",
+      "notSeeded": "Настройка <code>{key}</code> ещё не заполнена (seed), поэтому изменить её здесь нельзя. Пока она не создана, портал использует переменную окружения <code>{env}</code>.",
+      "templates": {
+        "aurora": { "label": "Aurora", "hint": "Текущий шаблон по умолчанию — тёмная/светлая тема, армянская типографика" },
+        "classic": { "label": "Classic", "hint": "Оригинальный дизайн витрины" }
+      }
+    },
+    "branding": {
+      "title": "Брендинг",
+      "description": "Логотип витрины и иконка вкладки браузера. Изменения вступают в силу при следующей загрузке страницы.",
+      "uploading": "Загрузка...",
+      "dropOrBrowsePrefix": "Перетащите изображение или",
+      "browse": "выберите файл",
+      "pasteUrl": "Или вставьте URL изображения...",
+      "logo": { "label": "Логотип", "hint": "JPEG, PNG, WebP, SVG — до 5МБ" },
+      "favicon": { "label": "Favicon", "hint": "PNG, SVG, ICO — до 5МБ" }
+    }
+  }
+}

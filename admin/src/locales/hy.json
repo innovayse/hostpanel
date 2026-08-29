@@ -1,0 +1,109 @@
+{
+  "common": {
+    "loading": "Բեռնվում է...",
+    "save": "Պահպանել",
+    "saving": "Պահպանվում է…",
+    "signOut": "Դուրս գալ",
+    "admin": "Ադմին",
+    "search": "Որոնել…",
+    "notifications": "Ծանուցումներ",
+    "toggleSidebar": "Ցույց տալ/թաքցնել մենյուն",
+    "viewAllNotifications": "Դիտել բոլոր ծանուցումները",
+    "newCount": "{count} նոր"
+  },
+  "nav": {
+    "dashboard": "Ամփոփագիր",
+    "clients": "Հաճախորդներ",
+    "clientsChildren": {
+      "view": "Դիտել/Փնտրել հաճախորդներին",
+      "users": "Կառավարել օգտատերերին",
+      "sharedHostings": "Ընդհանուր հոսթինգներ",
+      "addons": "Ծառայության հավելումներ",
+      "domainRegistrations": "Դոմենի գրանցումներ",
+      "cancellations": "Չեղարկման հայտեր",
+      "affiliates": "Կառավարել գործընկերներին"
+    },
+    "billing": "Հաշվարկներ",
+    "billingChildren": {
+      "transactions": "Գործարքների ցանկ",
+      "invoices": "Հաշիվ-ապրանքագրեր",
+      "billableItems": "Վճարովի կետեր",
+      "quotes": "Գնառաջարկներ",
+      "offlineCc": "Offline քարտային վճարումներ",
+      "disputes": "Վեճեր",
+      "gatewayLog": "Վճարային համակարգի լոգ"
+    },
+    "reports": "Հաշվետվություններ",
+    "orders": "Պատվերներ",
+    "domains": "Դոմեններ",
+    "support": "Աջակցություն",
+    "supportChildren": {
+      "overview": "Աջակցության ամփոփում",
+      "tickets": "Աջակցության հայտեր",
+      "newTicket": "Բացել նոր հայտ",
+      "predefinedReplies": "Պատրաստի պատասխաններ",
+      "announcements": "Հայտարարություններ",
+      "downloads": "Ներբեռնումներ",
+      "knowledgebase": "Գիտելիքների բազա",
+      "networkIssues": "Ցանցային խնդիրներ"
+    },
+    "plugins": "Հավելումներ",
+    "pluginManager": "Հավելումների կառավարիչ",
+    "servers": "Սերվերներ",
+    "integrations": "Ինտեգրացիաներ",
+    "migration": "Միգրացիա",
+    "settings": "Կարգավորումներ",
+    "settingsChildren": {
+      "general": "Ընդհանուր",
+      "products": "Ապրանքներ",
+      "tldPricing": "TLD գնացուցակ",
+      "slides": "Սլայդներ",
+      "emailTemplates": "Նամակների ձևանմուշներ",
+      "gateways": "Վճարային համակարգեր"
+    },
+    "servicesTitle": "Ծառայություններ"
+  },
+  "dashboard": {
+    "title": "Ամփոփագիր",
+    "subtitle": "Բարի վերադարձ — ահա թե ինչ է կատարվում",
+    "live": "Ուղիղ եթեր",
+    "loadingMetrics": "Ցուցանիշները բեռնվում են…",
+    "stats": {
+      "totalRevenue": "Ընդհանուր եկամուտ",
+      "monthlyRevenue": "Ամսական եկամուտ",
+      "activeServices": "Ակտիվ ծառայություններ",
+      "overdueInvoices": "Ուշացած հաշիվ-ապրանքագրեր",
+      "openTickets": "Բաց հայտեր",
+      "totalClients": "Հաճախորդների ընդհանուր թիվ"
+    }
+  },
+  "settings": {
+    "systemSettings": "Համակարգային կարգավորումներ",
+    "table": {
+      "key": "Բանալի",
+      "value": "Արժեք",
+      "description": "Նկարագրություն",
+      "noSettings": "Կարգավորումներ չեն գտնվել։"
+    },
+    "portalAppearance": {
+      "title": "Պորտալի տեսք",
+      "description": "Ո՛ր ձևանմուշն է կիրառում հանրային կայքը։ Փոփոխությունները կիրառվում են հաջորդ էջի բեռնումից։",
+      "template": "Ձևանմուշ",
+      "notSeeded": "<code>{key}</code> կարգավորումը դեռ սերմանված (seed) չէ, ուստի այստեղից փոփոխել հնարավոր չէ։ Մինչև այն կստեղծվի, պորտալն օգտագործում է իր <code>{env}</code> environment փոփոխականը։",
+      "templates": {
+        "aurora": { "label": "Aurora", "hint": "Ընթացիկ լռելյայն ձևանմուշ — մուգ/բաց թեմա, հայկական տառատեսակ" },
+        "classic": { "label": "Classic", "hint": "Սկզբնական կայքի ձևավորումը" }
+      }
+    },
+    "branding": {
+      "title": "Բրենդինգ",
+      "description": "Հանրային կայքի logo-ն և browser tab-ի icon-ը։ Փոփոխությունները կիրառվում են հաջորդ էջի բեռնումից։",
+      "uploading": "Վերբեռնվում է...",
+      "dropOrBrowsePrefix": "Թողեք նկարը կամ",
+      "browse": "ընտրեք ֆայլ",
+      "pasteUrl": "Կամ տեղադրեք նկարի URL...",
+      "logo": { "label": "Logo", "hint": "JPEG, PNG, WebP, SVG — մինչև 5ՄԲ" },
+      "favicon": { "label": "Favicon", "hint": "PNG, SVG, ICO — մինչև 5ՄԲ" }
+    }
+  }
+}

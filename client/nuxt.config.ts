@@ -91,6 +91,10 @@ export default defineNuxtConfig({
       // Active portal template. Phase 4 lets an admin override this from settings;
       // until then it is the only switch. Unknown values fall back to 'aurora'.
       portalTemplate: process.env.NUXT_PUBLIC_PORTAL_TEMPLATE || 'aurora',
+      // The header logo and browser tab icon, settable from the admin panel.
+      // Empty renders the template's built-in mark/wordmark and static favicon.
+      portalLogo: process.env.NUXT_PUBLIC_PORTAL_LOGO || '',
+      portalFavicon: process.env.NUXT_PUBLIC_PORTAL_FAVICON || '',
       // Header app launcher. Off unless a deployment actually runs the sibling
       // apps it links to; every app URL below has a development default, so
       // presence of a URL cannot decide this on its own.

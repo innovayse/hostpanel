@@ -3,10 +3,13 @@
     class="relative flex flex-wrap items-center justify-between gap-x-6 gap-y-4 border-b border-line px-[clamp(16px,4vw,48px)] py-[18px] font-aurora"
   >
     <NuxtLink :to="localePath('/')" class="flex items-center gap-3 text-tx">
-      <span
-        class="grid h-[34px] w-[34px] place-items-center rounded-[10px] bg-brand text-[17px] font-extrabold text-[#08090F]"
-      >i</span>
-      <span class="text-[19px] font-bold -tracking-[0.01em]">Innovayse</span>
+      <img v-if="logoUrl" :src="logoUrl" alt="" class="h-[34px] w-auto max-w-[140px] object-contain" />
+      <template v-else>
+        <span
+          class="grid h-[34px] w-[34px] place-items-center rounded-[10px] bg-brand text-[17px] font-extrabold text-[#08090F]"
+        >i</span>
+        <span class="text-[19px] font-bold -tracking-[0.01em]">Innovayse</span>
+      </template>
     </NuxtLink>
 
     <nav class="hidden min-w-0 flex-auto flex-wrap items-center gap-x-[26px] gap-y-3 text-[15px] text-mut xl:flex">
@@ -90,8 +93,12 @@ const { t } = useI18n()
 const localePath = useLocalePath()
 const cart = useCartStore()
 const menuOpen = ref(false)
+const { get: getPortalSetting } = usePortalSettings()
 
 const cartCount = computed(() => cart.items.length)
+
+/** Operator-uploaded logo, admin-managed with an environment fallback. Empty renders the built-in mark and wordmark. */
+const logoUrl = computed(() => getPortalSetting('portal.logo', 'portalLogo'))
 
 const navLinks = computed(() => [
   { key: 'hosting', label: t('aurora.nav.hosting'), to: localePath('/hosting') },

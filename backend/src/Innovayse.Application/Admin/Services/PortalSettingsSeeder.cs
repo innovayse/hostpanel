@@ -28,6 +28,8 @@ public static class PortalSettingsSeeder
     private static readonly (string Key, string Value, string Description)[] _defaults =
     [
         ("portal.template",              "aurora", "Active storefront template: aurora or classic"),
+        ("portal.logo",                   "",       "URL of the storefront header logo. Empty renders the built-in mark and wordmark."),
+        ("portal.favicon",                "",       "URL of the browser tab icon. Empty falls back to the built-in favicon."),
         ("portal.contact.whatsapp",      "",       "WhatsApp number in international format, no leading +. Empty hides the action."),
         ("portal.contact.telegram",      "",       "Telegram handle without the @. Empty hides the action."),
         ("portal.chat.provider",         "",       "Live chat provider: chatwoot, or empty to disable the widget."),

@@ -90,6 +90,18 @@ RUN dotnet publish src/Innovayse.API/Innovayse.API.csproj -c Release -o /out --n
 # ── Prod target ───────────────────────────────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS prod
 
+# The Alpine runtime images ship without ICU and set
+# DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=true, where the only culture that exists is the
+# invariant one. UseRequestLocalization asks for `en` by name at startup, so the API threw
+# CultureNotFoundException before it could serve anything and the container crash-looped --
+# on a deployment whose build, unit suites and integration suite were all green, because
+# none of them run on this image.
+#
+# icu-data-full, not just icu-libs: the trimmed data set does not carry hy, and Armenian is
+# one of the three cultures this API answers in.
+RUN apk add --no-cache icu-libs icu-data-full
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+
 WORKDIR /app
 COPY --from=build /out .
 

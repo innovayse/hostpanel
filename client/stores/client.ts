@@ -70,6 +70,19 @@ export const useClientStore = defineStore('client', {
     userLoaded: false,
     userError: null as string | null,
 
+    // The identity request currently on the wire, or null when none is. Not data — the
+    // request itself — so that the several callers who all ask for the identity at once
+    // share one round trip instead of racing. Vue leaves a Promise in reactive state
+    // untouched (`reactive()` only proxies Object/Array/Map/Set), so this is a plain
+    // reference, not a proxied thenable. See {@link useClientStore.fetchUser}.
+    userInflight: null as Promise<void> | null,
+
+    // Bumped by {@link useClientStore.reset}. An identity request captures it when it starts
+    // and refuses to write its answer if it has moved on since — otherwise a sign-out during
+    // a request in flight would be undone by that request landing a moment later, and the
+    // next sign-in would open on the previous customer's name.
+    userEpoch: 0,
+
     // ── Services ──────────────────────────────────────────────────────────
     services: [] as ClientService[],
     servicesLoading: false,
@@ -127,28 +140,58 @@ export const useClientStore = defineStore('client', {
 
     /**
      * Fetch the authenticated client's profile from WHMCS.
-     * No-ops if already loaded unless `force` is true.
      *
-     * @param force - Set true to bypass the loaded cache
+     * No-ops if already loaded unless `force` is true, and — the part `userLoaded` alone
+     * cannot do — collapses *concurrent* callers onto a single request. Three layers ask for
+     * the identity on one client-area page load: the `client-auth` plugin (through
+     * {@link useAuthStore.fetchUser}, which delegates here), the `client` layout's
+     * `onMounted`, and the page's own fetch. All three start before the first answer comes
+     * back, so `userLoaded` is still false for every one of them and the flag stops nothing.
+     * Holding the in-flight promise is what turns three round trips into one.
+     *
+     * What is held is the request, not a cached result: the promise is dropped as soon as it
+     * settles. So the 404 a staff identity gets for having no client record is neither asked
+     * for three times over nor remembered forever — a later navigation is free to ask again.
+     *
+     * @param force - Set true to bypass the loaded cache. A forced call also refuses to join
+     * a request already in flight: it is asking for data newer than that request can carry.
+     * @returns Promise that resolves once {@link user} reflects the server's answer.
      */
-    async fetchUser(force = false) {
+    async fetchUser(force = false): Promise<void> {
       if (this.userLoaded && !force) return
-      this.userLoading = true
-      this.userError = null
-      try {
-        this.user = await useClientApi().fetchMe()
-        this.userLoaded = true
-      } catch (err) {
-        // "Not a customer account" is a state, not a fault — it gets its own flag and no
-        // error string, so nothing renders it in red. Anything else is kept, not swallowed:
-        // the screens read it to say the section failed instead of rendering it as empty.
-        if (isClientProfileMissing(err)) {
-          this.clientProfileMissing = true
-        } else {
-          this.userError = apiErrorMessage(err)
+      if (this.userInflight && !force) return this.userInflight
+
+      const epoch = this.userEpoch
+      const request = (async (): Promise<void> => {
+        this.userLoading = true
+        this.userError = null
+        try {
+          const me = await useClientApi().fetchMe()
+          if (this.userEpoch !== epoch) return
+          this.user = me
+          this.userLoaded = true
+        } catch (err) {
+          if (this.userEpoch !== epoch) return
+          // "Not a customer account" is a state, not a fault — it gets its own flag and no
+          // error string, so nothing renders it in red. Anything else is kept, not swallowed:
+          // the screens read it to say the section failed instead of rendering it as empty.
+          if (isClientProfileMissing(err)) {
+            this.clientProfileMissing = true
+          } else {
+            this.userError = apiErrorMessage(err)
+          }
+        } finally {
+          if (this.userEpoch === epoch) this.userLoading = false
         }
+      })()
+
+      this.userInflight = request
+      try {
+        await request
       } finally {
-        this.userLoading = false
+        // Only clear the slot if a forced call has not already claimed it for a newer
+        // request — otherwise the older one finishing would hide the newer one from joiners.
+        if (this.userInflight === request) this.userInflight = null
       }
     },
 
@@ -292,6 +335,13 @@ export const useClientStore = defineStore('client', {
       this.user = null
       this.userLoaded = false
       this.userError = null
+      // Dropped, not awaited: a sign-out must not leave the previous session's identity
+      // request as something the next sign-in's callers can join and adopt the answer of.
+      // Bumping the epoch disowns its answer too, for the case where it is already on the
+      // wire and lands after this returns.
+      this.userInflight = null
+      this.userEpoch += 1
+      this.userLoading = false
       this.services = []
       this.servicesLoaded = false
       this.servicesError = null

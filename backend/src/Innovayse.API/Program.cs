@@ -350,6 +350,15 @@ try
         opts.Discovery.IncludeAssembly(typeof(Innovayse.Application.Clients.Commands.AcceptInvitation.AcceptInvitationCommand).Assembly);
     });
 
+    // Wolverine logs "Invocation of {Message} failed!" at Error, with a stack trace, for every
+    // exception a handler throws — unconditionally, before its own error-handling policies get a
+    // say, and there is no knob in WolverineFx 5.31.0 that changes that. A staff identity with no
+    // client row is not a fault, so four of those stack traces per client-dashboard load were
+    // making a healthy platform read as a failing one and would eventually bury a real error.
+    // This drops exactly that line for exactly those refusals; see the filter for why nothing
+    // else can be lost. Serilog's ReadFrom.Services() above collects it from the container.
+    builder.Services.AddSingleton<Serilog.Core.ILogEventFilter, ControlFlowExceptionLogFilter>();
+
     // Domain scheduled jobs — daily expiry check (09:00 UTC) and auto-renew (10:00 UTC)
     builder.Services.AddHostedService<DomainScheduledJobsStartup>();
 

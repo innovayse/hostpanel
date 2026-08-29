@@ -309,7 +309,13 @@ const whmcsUrl = config.public.whmcsUrl
 const store = useClientStore()
 await useAsyncData('client-dashboard', () => store.fetchAll())
 
-/** Announcements from WHMCS (public endpoint) */
+/**
+ * Published announcements for the "Recent News" card.
+ *
+ * The server route behind this returns only published rows and only `{ id, title, date }` —
+ * no draft rows and no editorial `isPublished` flag. It answered 403 for every customer until
+ * it was pointed away from the admin announcements controller.
+ */
 const { data: announcementsRaw } = await useFetch<Array<{ id: number; date: string; title: string }>>(
   '/api/portal/public/announcements'
 )

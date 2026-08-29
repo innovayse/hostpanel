@@ -33,8 +33,10 @@ using Polly.Retry;
 /// <b>The HTTP method is not a usable idempotency signal in this codebase</b>, which is why
 /// there is no shared method-based predicate. WHM and Namecheap perform every operation,
 /// including account creation and domain registration, over GET; CWP and CWP7 perform every
-/// operation, including the read ones, over POST with the verb in a form field. A predicate
-/// copied from a service whose API is RESTful would repeat <c>createacct</c> here.
+/// operation, including the read ones, over POST with the verb in a form field; and the
+/// Inecobank payment gateway posts a status lookup, a payment registration and a refund to the
+/// same host over the same verb. A predicate copied from a service whose API is RESTful would
+/// repeat <c>createacct</c> here — or <c>refund.do</c>.
 /// </para>
 /// </remarks>
 public static class HttpClientResilienceExtensions
@@ -63,6 +65,24 @@ public static class HttpClientResilienceExtensions
     /// </summary>
     private static readonly string[] NameAmRepeatablePostPaths =
         ["/client/domains/check", "/auth/login"];
+
+    /// <summary>
+    /// The name the Inecobank payment plugin asks <see cref="IHttpClientFactory"/> for. It is
+    /// that provider's plugin id, spelled here as a literal rather than referenced as
+    /// <c>InecobankPaymentGateway.PluginId</c>: the provider is loaded reflectively out of
+    /// <c>plugins/</c> and Infrastructure deliberately does not reference it, so the two ends of
+    /// this string are matched by convention and nothing else. Change one and the plugin drops
+    /// back to the factory's unnamed client without a word — and loses this profile with it.
+    /// </summary>
+    public const string InecobankClientName = "innovayse-inecobank";
+
+    /// <summary>
+    /// The one Inecobank endpoint a repeat cannot make worse: a pure read of an order's status.
+    /// An allowlist of one rather than a denylist, so an endpoint added to that provider later
+    /// counts as a write until somebody names it here. The cost of guessing wrong in the other
+    /// direction is a second refund or a second charge.
+    /// </summary>
+    private const string InecobankReadEndpoint = "getOrderStatusExtended.do";
 
     /// <summary>
     /// Applies a resilience pipeline to a registered HTTP client.
@@ -210,6 +230,37 @@ public static class HttpClientResilienceExtensions
     /// <returns>The same <paramref name="builder"/>, for chaining.</returns>
     public static IHttpClientBuilder AddNamecheapResilience(this IHttpClientBuilder builder) =>
         builder.AddResilience(o => o.Namecheap, IsNamecheapRepeatable);
+
+    /// <summary>
+    /// Applies the Inecobank profile, repeating only the order-status lookup — never the call
+    /// that opens a payment session and never the one that refunds.
+    /// </summary>
+    /// <param name="builder">The client registration to wrap.</param>
+    /// <returns>The same <paramref name="builder"/>, for chaining.</returns>
+    public static IHttpClientBuilder AddInecobankResilience(this IHttpClientBuilder builder) =>
+        builder.AddResilience(o => o.Inecobank, IsInecobankRepeatable);
+
+    /// <summary>
+    /// Whether an Inecobank request may be repeated.
+    /// </summary>
+    /// <param name="request">The request that failed.</param>
+    /// <returns>True only for the extended order-status lookup.</returns>
+    /// <remarks>
+    /// Every call this gateway makes is a POST of form-urlencoded credentials to
+    /// <c>{gateway}/payment/rest/{endpoint}</c>, so the verb separates nothing and the operation
+    /// has to be read out of the final path segment. <c>register.do</c> opens a payment session
+    /// against a merchant order number and <c>refund.do</c> returns money to a cardholder with no
+    /// idempotency key of its own; only <c>getOrderStatusExtended.do</c> reads, and reading it
+    /// twice costs nothing.
+    /// </remarks>
+    private static bool IsInecobankRepeatable(HttpRequestMessage request)
+    {
+        var path = PathOf(request);
+        var lastSlash = path.LastIndexOf('/');
+        var endpoint = lastSlash >= 0 ? path[(lastSlash + 1)..] : path;
+
+        return endpoint.Equals(InecobankReadEndpoint, StringComparison.OrdinalIgnoreCase);
+    }
 
     /// <summary>
     /// Whether a Name.am request may be repeated.

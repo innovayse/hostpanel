@@ -227,4 +227,8 @@
     <value>One or more fields in the request were not accepted.</value>
     <comment>ExceptionMiddleware, for a message the Wolverine FluentValidation middleware refused. One sentence for every field failure on purpose: the per-field messages are English literals in the validators and are logged, not sent.</comment>
   </data>
+  <data name="InvalidFilterValue" xml:space="preserve">
+    <value>Invalid filter value: {0}.</value>
+    <comment>GetMigrationLogsHandler. {0} is the value that was submitted for the action or entity-type filter. A query carries no validator in this project, so the handler resolves this itself.</comment>
+  </data>
 </root>

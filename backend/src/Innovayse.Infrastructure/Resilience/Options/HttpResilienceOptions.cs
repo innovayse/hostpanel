@@ -333,6 +333,68 @@ public sealed class HttpResilienceOptions
     };
 
     /// <summary>
+    /// The Inecobank (Armenian Card) hosted-payment gateway — the payment plugin's own named
+    /// client. Retries only the order-status lookup; see the predicate in
+    /// <c>HttpClientResilienceExtensions</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>All three of its operations are POSTs to the same host, so the method says nothing</b>
+    /// — the same lesson WHM, Namecheap and both CWP panels already taught. The operation is the
+    /// final path segment: <c>register.do</c> opens a payment session for a customer standing at
+    /// the pay button, <c>refund.do</c> sends money back to a cardholder, and
+    /// <c>getOrderStatusExtended.do</c> reads. Only the read is repeated. <c>refund.do</c> takes
+    /// an order id and an amount and carries no idempotency key of any kind, so a repeat is
+    /// simply a second refund; <c>register.do</c> is keyed by the merchant order number, so a
+    /// repeat either comes back as a duplicate-order error — turning a dropped response into a
+    /// hard checkout failure — or opens a second payment session against the same invoice.
+    /// </para>
+    /// <para>
+    /// <b>15 seconds an attempt, 40 in total</b>, inside the registration's 60-second
+    /// <see cref="HttpClient.Timeout"/> backstop. <b>The per-attempt number is taken from
+    /// <c>register.do</c></b>, because that is the only one of the three a person is waiting on:
+    /// it runs inside checkout with the customer watching a spinner, and it is not retried, so
+    /// the per-attempt budget <em>is</em> what they wait. Fifteen seconds is well past the
+    /// gateway's normal sub-second answer and still under a sixth of the 100-second default it
+    /// replaces. The total is sized for the one operation that does retry — two attempts of 15
+    /// plus a jittered backoff fit inside 40 with room — and caps everything else besides.
+    /// </para>
+    /// <para>
+    /// <b>The breaker is on, and it is the only money-moving client here that has one.</b> The
+    /// reason it is safe is that this client addresses a single host: a deployment configures one
+    /// <c>gateway_url</c>, so an open breaker sheds calls to exactly the thing that is down,
+    /// rather than to every server the platform owns the way it would on cPanel or the migration
+    /// source. Weighed against a customer mid-payment: the worst an open breaker can do is refuse
+    /// a <c>register.do</c>, which is a checkout that never started and which the customer can
+    /// start again. <b>It cannot lose money already taken</b> — a payment completed on the hosted
+    /// page is recovered by <c>ReconcileGatewayPaymentsCronHandler</c>, which re-reads the order
+    /// status on its own schedule long after any 15-second break has closed, and which is the
+    /// designed safety net for this whole no-webhook flow. Set against that, a gateway outage
+    /// without a breaker burns 15 seconds of a request thread per checkout and fails anyway.
+    /// </para>
+    /// <para>
+    /// <b><see cref="ResilienceProfileOptions.MinimumThroughput"/> is 20, twice everyone else's,
+    /// and <see cref="ResilienceProfileOptions.BreakDuration"/> is 15 seconds, the shortest
+    /// here.</b> Both move the same way — open reluctantly, close quickly — because the call
+    /// being shed is somebody's payment. A payment gateway sees an order of magnitude less
+    /// traffic than a registrar availability lookup, and the usual threshold of 10 would let a
+    /// quiet minute with two bad calls refuse the next customer who arrives.
+    /// </para>
+    /// </remarks>
+    public ResilienceProfileOptions Inecobank { get; set; } = new()
+    {
+        AttemptTimeout = TimeSpan.FromSeconds(15),
+        TotalTimeout = TimeSpan.FromSeconds(40),
+        MaxRetryAttempts = 1,
+        RetryDelay = TimeSpan.FromSeconds(1),
+        CircuitBreakerEnabled = true,
+        FailureRatio = 0.5,
+        MinimumThroughput = 20,
+        SamplingDuration = TimeSpan.FromSeconds(60),
+        BreakDuration = TimeSpan.FromSeconds(15),
+    };
+
+    /// <summary>
     /// The factory's default, unnamed client. Registered with no retry stage and no breaker.
     /// </summary>
     /// <remarks>
@@ -376,6 +438,7 @@ public sealed class HttpResilienceOptions
         yield return (nameof(Migration), Migration);
         yield return (nameof(NameAm), NameAm);
         yield return (nameof(Namecheap), Namecheap);
+        yield return (nameof(Inecobank), Inecobank);
         yield return (nameof(Default), Default);
     }
 }

@@ -132,6 +132,29 @@ public sealed class ClientService : AggregateRoot
     }
 
     /// <summary>
+    /// Records the server the account was provisioned on and activates the service, as one
+    /// transition.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="ServerId"/> and activation change together. Every later operation on a live
+    /// service — suspend, unsuspend, terminate, control-panel single sign-on — resolves its
+    /// provisioning provider from <see cref="ServerId"/> and gives up silently when it is null,
+    /// so a service that reached <see cref="ServiceStatus.Active"/> without a server can never be
+    /// acted on again. Activating and assigning through two separate calls is what let that
+    /// happen, which is why this is one method rather than a public setter.
+    /// </remarks>
+    /// <param name="serverId">Identifier of the server the hosting account now lives on.</param>
+    /// <param name="provisioningRef">External reference from the provisioning provider.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the service is not in Pending status.</exception>
+    public void ActivateOn(int serverId, string provisioningRef)
+    {
+        // Activate first: it is the guarded half, and a refused activation must leave the
+        // server assignment untouched.
+        Activate(provisioningRef);
+        ServerId = serverId;
+    }
+
+    /// <summary>
     /// Suspends the service and raises <see cref="ClientServiceSuspendedEvent"/>
     /// and <see cref="ServiceSuspendedEvent"/>.
     /// </summary>

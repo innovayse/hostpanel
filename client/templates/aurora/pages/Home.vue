@@ -52,7 +52,7 @@ import AuroraTestimonials from '~/templates/aurora/sections/Testimonials.vue'
 import AuroraFaq from '~/templates/aurora/sections/Faq.vue'
 import AuroraCta from '~/templates/aurora/sections/Cta.vue'
 import type { DomainResult, PlanCard } from '~/templates/aurora/types'
-import type { TldPriceRow } from '~/composables/useDomainLookup'
+import type { TldPriceRow } from '~/types/tldpricerow'
 
 withDefaults(defineProps<{
   domainResults?: DomainResult[]

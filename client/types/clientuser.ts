@@ -34,8 +34,12 @@ export interface ClientUser {
   countryname?: string
   /** Default payment gateway module name (e.g. "paypal", "stripe") */
   defaultgateway?: string
-  /** WHMCS language preference (e.g. "english", "russian") */
-  language?: string
+  /**
+   * Chosen UI language, as one of the codes the backend supports (`en`, `ru`, `hy`), or
+   * empty for "no preference". Null under `AUTH_MODE=sso`, where the SSO owns the person and
+   * hostpanel holds no language for them at all -- which is not the same as English.
+   */
+  language?: string | null
   /** Per-category email opt-in flags — 1 = receives emails, 0 = opted out */
   email_preferences?: {
     /** General account mail. */
@@ -51,12 +55,21 @@ export interface ClientUser {
     /** Affiliate programme mail. */
     affiliate: 0 | 1
   }
-  /** Numeric id of the account's billing currency. */
-  currency?: number
-  /** Symbol printed before an amount in that currency. */
-  currencyprefix?: string
-  /** Symbol printed after an amount in that currency. */
-  currencysuffix?: string
+  /**
+   * The account's billing currency as an ISO 4217 code, e.g. `AMD`, or null when this
+   * deployment holds no currency for the account.
+   *
+   * This was typed `number` — "numeric id of the account's billing currency" — describing a
+   * WHMCS currencies table that has no counterpart here. `ClientDto.Currency` is and has
+   * always been a `string?` holding the code, so the number was never a value that arrived.
+   * The code is enough on its own: `utils/formatCurrency.ts` hands it to `Intl.NumberFormat`,
+   * which places the symbol and picks the minor-unit count for the reader's locale.
+   *
+   * There is deliberately no `currencyprefix` / `currencysuffix` beside it. Neither exists
+   * anywhere in the C# API, and while they were declared here the portal read two fields the
+   * backend could never fill.
+   */
+  currency?: string | null
   /** User permissions as bit-flags integer (8191 = All). */
   permissions: number
   /** Whether TOTP two-factor authentication is switched on for this account. */

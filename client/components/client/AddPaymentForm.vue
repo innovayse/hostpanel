@@ -460,7 +460,8 @@ const modalAddr = reactive({ ...newAddr })
 
 // Pre-select first gateway when loaded asynchronously
 watch(() => props.gateways, (gws) => {
-  if (!form.gatewayname && gws.length) form.gatewayname = gws[0].value
+  const first = gws[0]
+  if (!form.gatewayname && first) form.gatewayname = first.value
 })
 
 // Card brand detection

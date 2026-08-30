@@ -38,19 +38,19 @@
                     <Icon :name="`mdi:${productData.icon}`" class="text-4xl" :style="{ color: productData.color }" />
                   </div>
                   <div class="flex-1">
-                    <span
-                      class="inline-block px-3 py-1 rounded-full text-xs font-bold mb-2"
-                      :style="{
-                        backgroundColor: `${productData.color}25`,
-                        color: productData.color
-                      }"
-                    >
-                      {{ productData.tagline }}
-                    </span>
+                    <!--
+                      No tagline badge here. `ProductDto` carries no headline/tagline field, so
+                      the pill this replaced was always empty markup — a coloured artefact with
+                      nothing in it. Restoring it needs a backend field, not a frontend chain.
+                    -->
                     <h1 class="text-2xl font-bold text-white">{{ productData.name }}</h1>
                   </div>
                 </div>
-                <p class="text-base text-gray-400 leading-relaxed">
+                <!--
+                  Interpolated, never `v-html`: `description` is operator-authored HTML that no
+                  layer sanitises, and `parseDescription` has already stripped the tags.
+                -->
+                <p v-if="productData.description" class="text-base text-gray-400 leading-relaxed">
                   {{ productData.description }}
                 </p>
               </div>
@@ -281,12 +281,12 @@ const productId = route.params.product as string
 // would also cost the SSR dedup and the locale re-fetch that `useApi()` gives for free, and
 // this page is server-rendered and indexed.
 const { data: whmcsRaw } = await useCatalogApi().loadProducts(
-  () => ({ lang: locale.value, gids: productGids.join(',') })
+  () => ({ gids: productGids.join(',') })
 )
 
 /** Find and shape the single product matching the route param */
 const productData = computed(() => {
-  const list = (whmcsRaw.value as any[] ?? []).filter((p: any) => productGids.includes(Number(p.gid)))
+  const list = (whmcsRaw.value as any[] ?? []).filter((p: any) => productGids.includes(Number(p.groupId)))
 
   // Primary: find by exact slug or normalized name
   let w = list.find((p: any) => {
@@ -298,7 +298,7 @@ const productData = computed(() => {
   if (!w) {
     const targetGid = Number(Object.entries(productGidToKey).find(([, v]) => v === productId)?.[0] ?? 0)
     if (targetGid) {
-      const group = list.filter((p: any) => Number(p.gid) === targetGid)
+      const group = list.filter((p: any) => Number(p.groupId) === targetGid)
       w = group.find((p: any) => p.is_featured === 'on') ?? group[0] ?? null
     }
   }
@@ -306,24 +306,20 @@ const productData = computed(() => {
   if (!w) return null
 
   // Use productGidToKey as canonical key; fall back to slug or name normalization
-  const key = productGidToKey[Number(w.gid)] ?? (w.slug as string)?.trim() ?? nameToKey(w.name as string)
+  const key = productGidToKey[Number(w.groupId)] ?? (w.slug as string)?.trim() ?? nameToKey(w.name as string)
   const cfg = productConfig[key] ?? { icon: 'cube', color: '#6366f1', demoUrl: '', learnMoreUrl: '' }
 
   const preferred = currencyByLocale[locale.value] ?? 'USD'
 
-  // group_translations may only be on the parent product — find it in the group
-  const wGt = list.filter((p: any) => Number(p.gid) === Number(w.gid))
-    .find((p: any) => p.group_translations?.translated_name) ?? w
-
-  // Features: prefer structured group_features from the gt-bearing product
-  const groupFeatures = getGroupFeatures(wGt)
-  const { summary: tSummary, features: tFeatures } = parseDescription(w.translated_description || '')
-  const { features: enFeatures } = parseDescription(w.description || '')
-  const productFeatures = groupFeatures.length > 0 ? groupFeatures : (tFeatures.length > 0 ? tFeatures : enFeatures)
+  // Features come from the description. A structured `group_features` array and a
+  // `translated_description` used to be preferred ahead of it; the API sends neither, so this
+  // parse was always the one that produced the list. Structured specification lines are their
+  // own resource — `useCatalogApi().loadProductFeatures(gid)`.
+  const { summary: productSummary, features: productFeatures } = parseDescription(w.description || '')
 
   // Child plans = same gid, different slug (e.g. Starter / Professional / Enterprise)
   const childPlans = list.filter((p: any) =>
-    Number(p.gid) === Number(w.gid) && (p.slug as string)?.trim() !== key
+    Number(p.groupId) === Number(w.groupId) && (p.slug as string)?.trim() !== key
   )
 
   const cycleKeys = ['monthly', 'quarterly', 'semiannually', 'annually', 'biennially', 'triennially'] as const
@@ -332,15 +328,14 @@ const productData = computed(() => {
     const planCurrency = plan.pricing
       ? (plan.pricing[preferred] ?? Object.values(plan.pricing)[0] as any)
       : null
-    const { features: pTFeatures } = parseDescription(plan.translated_description || '')
-    const { features: pEnFeatures } = parseDescription(plan.description || '')
+    const { features: planFeatures } = parseDescription(plan.description || '')
     return {
       pid: plan.pid as number,
       product_url: (plan.product_url as string) || '',
-      tier: plan.translated_name || plan.name,
+      tier: plan.name,
       currency: planCurrency as Record<string, string> | null,
       prefix: planCurrency?.prefix ?? '',
-      features: pTFeatures.length > 0 ? pTFeatures : pEnFeatures
+      features: planFeatures
     }
   })
 
@@ -348,9 +343,16 @@ const productData = computed(() => {
     ...cfg,
     id: key,
     pid: w.pid,
-    name: getGt(wGt, 'name') || w.name,
-    tagline: getGt(wGt, 'headline') || getGt(wGt, 'tagline'),
-    description: w.translated_shortdescription || w.shortdescription || tSummary || getGt(wGt, 'headline') || w.translated_description,
+    name: w.name,
+    // No `tagline`. `headline`/`tagline` are not fields the API sends, so the chain that used
+    // to stand here resolved to '' for every product; the badge it fed has been removed rather
+    // than left to render an empty pill.
+    //
+    // `description` is the summary parsed above, not the raw field: the catalogue writes copy
+    // as HTML (`<strong>…</strong><br />`), and the chain that used to stand here read
+    // `shortdescription`/`headline` — neither of which exists — so 26 of the 35 products on
+    // production had their copy in the response and rendered nothing.
+    description: productSummary,
     features: productFeatures,
     plans,
     cycleKeys
@@ -463,24 +465,30 @@ const _productCanonical = computed(() =>
 
 watchEffect(() => {
   if (productData.value) {
-    const fullTitle = `${productData.value.name} — ${productData.value.tagline} | Innovayse`
-    
+    // No tagline segment: with `tagline` always empty the old template produced
+    // "Name —  | Innovayse", a dangling em dash in every tab title and search result.
+    const fullTitle = `${productData.value.name} | Innovayse`
+
+    // A handful of catalogue products genuinely carry no description; fall back to the
+    // catalogue-wide copy from the locale files rather than emit an empty meta description.
+    const metaDescription = productData.value.description || t('seo.products.description')
+
     useSeoMeta({
       title: fullTitle,
-      description: productData.value.description,
+      description: metaDescription,
       ogTitle: fullTitle,
-      ogDescription: productData.value.description,
+      ogDescription: metaDescription,
       ogImage: `${_productsBaseUrl}/og-image.jpg`,
       ogType: 'website',
       ogUrl: _productCanonical.value,
       twitterCard: 'summary_large_image',
       twitterTitle: fullTitle,
-      twitterDescription: productData.value.description,
+      twitterDescription: metaDescription,
       twitterImage: `${_productsBaseUrl}/og-image.jpg`
     })
 
     injectSchema([
-      productSchema({ name: productData.value.name, description: productData.value.description, url: _productCanonical.value }),
+      productSchema({ name: productData.value.name, description: metaDescription, url: _productCanonical.value }),
       breadcrumbSchema([
         { name: 'Home', url: _productsBaseUrl },
         { name: t('common.products'), url: `${_productsBaseUrl}/products` },

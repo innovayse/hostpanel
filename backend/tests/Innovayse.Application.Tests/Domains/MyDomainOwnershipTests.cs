@@ -22,10 +22,16 @@ using Innovayse.Application.Domains.Queries.GetDomain;
 using Innovayse.Application.Domains.Queries.GetMyDomain;
 using Innovayse.Application.Domains.Queries.GetMyDomainNameservers;
 using Innovayse.Application.Domains.Queries.GetMyDomainWhois;
+using Innovayse.Application.Orders.Commands.PlaceOrder;
+using Innovayse.Application.Resources;
 using Innovayse.Domain.Clients;
 using Innovayse.Domain.Clients.Interfaces;
 using Innovayse.Domain.Domains;
 using Innovayse.Domain.Domains.Interfaces;
+using Innovayse.Domain.Products;
+using Innovayse.Domain.Products.Interfaces;
+using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Wolverine;
 using Xunit;
@@ -114,13 +120,61 @@ public sealed class MyDomainOwnershipTests
         OwnershipOver(CallerClient(), DomainOf(clientId: 0));
 
     /// <summary>
+    /// Builds <see cref="RenewMyDomainHandler"/> over the given ownership rule.
+    /// </summary>
+    /// <param name="ownership">The rule that decides whether the domain is the caller's.</param>
+    /// <param name="bus">The bus the handler dispatches its order through.</param>
+    /// <returns>The handler under test.</returns>
+    /// <remarks>
+    /// It takes more collaborators than the other <c>My*</c> handlers because a client renewal is
+    /// a purchase rather than a direct registrar call: it needs a domain to read the name off, a
+    /// product for the order line to hang from, and the caller's subject so the order cannot fall
+    /// through to <c>PlaceOrderHandler</c>'s guest-checkout branch. The domain repository answers
+    /// the caller's own domain, so nothing here can pass by the lookup failing.
+    /// </remarks>
+    private static RenewMyDomainHandler RenewHandler(IDomainOwnership ownership, Mock<IMessageBus> bus)
+    {
+        var domains = new Mock<IDomainRepository>();
+        domains.Setup(r => r.FindByIdAsync(DomainId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(DomainOf(clientId: 0));
+
+        var domainProduct = Product.Create(
+            groupId: 1, name: "Domain Registration", description: null, website: null,
+            slug: null, packageName: null, ProductType.Domain, monthlyPrice: 0m, annualPrice: 0m);
+
+        var products = new Mock<IProductRepository>();
+        products.Setup(r => r.ListAsync(null, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([domainProduct]);
+
+        var caller = new Mock<ICurrentRequestContext>();
+        caller.Setup(c => c.RequireUserId()).Returns(CallerSubject);
+
+        var localizer = new Mock<IStringLocalizer<ValidationMessages>>();
+        localizer.Setup(l => l[It.IsAny<string>()])
+            .Returns(new LocalizedString("NoDomainProductConfigured", "Refused."));
+
+        return new RenewMyDomainHandler(
+            ownership,
+            domains.Object,
+            products.Object,
+            caller.Object,
+            bus.Object,
+            localizer.Object,
+            NullLogger<RenewMyDomainHandler>.Instance);
+    }
+
+    /// <summary>
     /// Asserts that no message of any kind left the bus. The value-returning handlers dispatch
-    /// through the generic overload, so both are checked rather than only the one that use case
-    /// happens to reach on the success path.
+    /// through the generic overload, so all of them are checked rather than only the one that use
+    /// case happens to reach on the success path.
     /// </summary>
     /// <param name="bus">The bus the handler was given.</param>
     private static void AssertNothingDispatched(Mock<IMessageBus> bus)
     {
+        bus.Verify(
+            b => b.InvokeAsync<PlaceOrderResultDto>(
+                It.IsAny<object>(), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()),
+            Times.Never);
         bus.Verify(
             b => b.InvokeAsync(It.IsAny<object>(), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()),
             Times.Never);
@@ -315,18 +369,25 @@ public sealed class MyDomainOwnershipTests
     }
 
     /// <summary>
-    /// Spending another customer's money on a renewal is refused, and refused before the shared use
-    /// case runs -- so the refusal is not a filter applied to work already done on a stranger's
-    /// behalf.
+    /// A renewal cannot be ordered against another customer's domain. Refused before anything is
+    /// dispatched -- so no order number is spent, no invoice is raised against the caller for
+    /// somebody else's registration, and the refusal is not a filter applied to work already done
+    /// on a stranger's behalf.
+    /// <para>
+    /// This is the boundary this repository has shipped broken before, and it now has to hold in
+    /// a second place as well: the ownership check here runs at checkout, while
+    /// <c>FulfillPaidOrderHandler</c> re-checks the owner when the invoice is paid, because
+    /// fulfillment runs later from a webhook and this check does not travel with the order line.
+    /// </para>
     /// </summary>
     /// <returns>A task representing the test.</returns>
     [Fact]
-    public async Task RenewMyDomainHandler_WhenNotTheCallersOwn_RefusesWithoutDispatchingAsync()
+    public async Task RenewMyDomainHandler_WhenNotTheCallersOwn_RefusesWithoutOrderingAsync()
     {
         var bus = new Mock<IMessageBus>();
-        var handler = new RenewMyDomainHandler(RefusingOwnership(), bus.Object);
+        var handler = RenewHandler(RefusingOwnership(), bus);
 
-        var message = new RenewMyDomainCommand(DomainId, Years: 1);
+        var message = new RenewMyDomainCommand(DomainId, Years: 1, PaymentMethod: "innovayse-inecobank");
 
         var refusal = await Assert.ThrowsAsync<DomainNotFoundException>(
             () => handler.HandleAsync(message, CancellationToken.None));
@@ -561,25 +622,51 @@ public sealed class MyDomainOwnershipTests
     }
 
     /// <summary>
-    /// The wrapper is not a no-op: on the caller's own domain the shared command is dispatched
-    /// with the route id intact. Without this, a handler that refused everything would pass every
-    /// refusal test above.
+    /// The wrapper is not a no-op: on the caller's own domain an order is placed, carrying the
+    /// period asked for. Without this, a handler that refused everything would pass every refusal
+    /// test above.
+    /// <para>
+    /// It also pins what is <i>not</i> dispatched. <c>RenewDomainCommand</c> calls the registrar
+    /// at once and raises no invoice; reaching it from a client-facing route would hand out paid
+    /// renewals for nothing, which is the same objection that made transfer-in an order.
+    /// </para>
     /// </summary>
     /// <returns>A task representing the test.</returns>
     [Fact]
-    public async Task RenewMyDomainHandler_WhenDomainIsTheCallersOwn_DispatchesTheSharedCommandAsync()
+    public async Task RenewMyDomainHandler_WhenDomainIsTheCallersOwn_PlacesAnOrderAsync()
     {
         var bus = new Mock<IMessageBus>();
-        var handler = new RenewMyDomainHandler(AcceptingOwnership(), bus.Object);
+        bus.Setup(b => b.InvokeAsync<PlaceOrderResultDto>(
+                It.IsAny<object>(), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()))
+            .ReturnsAsync(new PlaceOrderResultDto(31, 32));
 
-        await handler.HandleAsync(new RenewMyDomainCommand(DomainId, Years: 2), CancellationToken.None);
+        var handler = RenewHandler(AcceptingOwnership(), bus);
+
+        var result = await handler.HandleAsync(
+            new RenewMyDomainCommand(DomainId, Years: 2, PaymentMethod: "innovayse-inecobank"),
+            CancellationToken.None);
+
+        Assert.Equal(31, result.OrderId);
+        Assert.Equal(32, result.InvoiceId);
 
         bus.Verify(
-            b => b.InvokeAsync(
-                It.Is<RenewDomainCommand>(c => c.DomainId == DomainId && c.Years == 2),
+            b => b.InvokeAsync<PlaceOrderResultDto>(
+                It.Is<PlaceOrderCommand>(c =>
+                    c.PaymentMethod == "innovayse-inecobank"
+                    && c.Email == null
+                    && c.Password == null
+                    && c.Items.Count == 1
+                    && c.Items[0].DomainAction == "renew"
+                    && c.Items[0].Domain == "example.com"
+                    && c.Items[0].Years == 2),
                 It.IsAny<CancellationToken>(),
                 It.IsAny<TimeSpan?>()),
             Times.Once);
+
+        bus.Verify(
+            b => b.InvokeAsync(
+                It.IsAny<RenewDomainCommand>(), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()),
+            Times.Never);
     }
 
     /// <summary>

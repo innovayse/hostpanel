@@ -12,7 +12,30 @@ using Microsoft.Extensions.Logging;
 internal sealed class CwpApiClient : ICwpApiClient
 {
     /// <summary>Default CWP API port when not specified in configuration.</summary>
-    private const int DefaultPort = 2304;
+    /// <remarks>
+    /// This is the <em>API</em> port, which is what every consumer of this constant needs: the
+    /// only thing built from it is a <c>https://host:port/v1/…</c> URL. 2031 is the CWP panel's
+    /// own HTTPS UI and answers nothing under <c>/v1/</c>. <see cref="CwpProvisioningProvider"/>
+    /// used to carry its own fallback of 2031, so the same missing setting produced two
+    /// different ports depending on which entry point was used; both now read this one constant.
+    /// <para>
+    /// The number itself now lives on <see cref="ICwpApiClient.DefaultApiPort"/>, the contract
+    /// both this assembly and the Application layer can see. This alias stays so the consumers
+    /// inside this provider keep reading a name local to them, but it can no longer drift from
+    /// the fallback the Application layer applies.
+    /// </para>
+    /// </remarks>
+    internal const int DefaultPort = ICwpApiClient.DefaultApiPort;
+
+    /// <summary>
+    /// Name of the <c>IHttpClientFactory</c> registration that serves this client.
+    /// </summary>
+    /// <remarks>
+    /// Declared here, beside the client it configures, so the composition root in
+    /// <c>Innovayse.Infrastructure.DependencyInjection</c> and
+    /// <see cref="CwpProvisioningProvider"/> cannot drift apart over a string literal.
+    /// </remarks>
+    internal const string HttpClientName = "Cwp";
 
     /// <summary>The underlying HTTP client used for all requests.</summary>
     private readonly HttpClient _http;
@@ -34,7 +57,7 @@ internal sealed class CwpApiClient : ICwpApiClient
     /// <summary>
     /// Creates a new hosting account on the CWP server.
     /// </summary>
-    /// <param name="host">CWP server base URL including port, e.g. "https://cwp.example.com:2031".</param>
+    /// <param name="host">CWP server base URL including port, e.g. "https://cwp.example.com:2304".</param>
     /// <param name="apiKey">CWP API key for authentication.</param>
     /// <param name="domain">Primary domain for the account.</param>
     /// <param name="username">cPanel username.</param>
@@ -69,7 +92,7 @@ internal sealed class CwpApiClient : ICwpApiClient
     /// <summary>
     /// Suspends an existing hosting account.
     /// </summary>
-    /// <param name="host">CWP server base URL including port, e.g. "https://cwp.example.com:2031".</param>
+    /// <param name="host">CWP server base URL including port, e.g. "https://cwp.example.com:2304".</param>
     /// <param name="apiKey">CWP API key for authentication.</param>
     /// <param name="username">cPanel username of the account to suspend.</param>
     /// <param name="ct">Cancellation token.</param>
@@ -92,7 +115,7 @@ internal sealed class CwpApiClient : ICwpApiClient
     /// <summary>
     /// Unsuspends a previously suspended hosting account.
     /// </summary>
-    /// <param name="host">CWP server base URL including port, e.g. "https://cwp.example.com:2031".</param>
+    /// <param name="host">CWP server base URL including port, e.g. "https://cwp.example.com:2304".</param>
     /// <param name="apiKey">CWP API key for authentication.</param>
     /// <param name="username">cPanel username of the account to unsuspend.</param>
     /// <param name="ct">Cancellation token.</param>
@@ -115,7 +138,7 @@ internal sealed class CwpApiClient : ICwpApiClient
     /// <summary>
     /// Terminates (permanently deletes) a hosting account.
     /// </summary>
-    /// <param name="host">CWP server base URL including port, e.g. "https://cwp.example.com:2031".</param>
+    /// <param name="host">CWP server base URL including port, e.g. "https://cwp.example.com:2304".</param>
     /// <param name="apiKey">CWP API key for authentication.</param>
     /// <param name="username">cPanel username of the account to delete.</param>
     /// <param name="ct">Cancellation token.</param>
@@ -140,7 +163,7 @@ internal sealed class CwpApiClient : ICwpApiClient
     /// Calls <c>/v1/account</c> (action=list) for accounts and <c>/v1/version</c> for the version.
     /// </summary>
     /// <param name="host">CWP server hostname or IP.</param>
-    /// <param name="port">CWP API port (e.g. "2031").</param>
+    /// <param name="port">CWP API port (e.g. "2304").</param>
     /// <param name="apiKey">CWP API key for authentication.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A tuple with total account count and CWP version string.</returns>
@@ -199,7 +222,7 @@ internal sealed class CwpApiClient : ICwpApiClient
     /// <summary>
     /// Sends a form-encoded POST to the CWP /v1/account endpoint and parses the JSON response.
     /// </summary>
-    /// <param name="baseUrl">CWP server base URL including port, e.g. "https://cwp.example.com:2031".</param>
+    /// <param name="baseUrl">CWP server base URL including port, e.g. "https://cwp.example.com:2304".</param>
     /// <param name="request">The request parameters to send.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Parsed <see cref="CwpApiResponse"/>.</returns>

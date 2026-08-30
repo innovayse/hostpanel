@@ -102,5 +102,9 @@ public sealed class LocalIdentityProvider(UserManager<AppUser> users) : IIdentit
             // Identity's own flag is not used here: this product stores the secret itself,
             // so a configured secret is what "enabled" means.
             TwoFactorEnabled: !string.IsNullOrEmpty(user.TwoFactorSecret),
-            LastLoginAt: user.LastLoginAt);
+            LastLoginAt: user.LastLoginAt,
+            // This deployment owns the account row, so the language on it is ours to answer
+            // with. Without this the portal read a hard-coded default and every saved
+            // language came back as English on the next load.
+            Language: user.Language);
 }

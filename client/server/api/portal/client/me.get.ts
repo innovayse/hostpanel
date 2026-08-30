@@ -11,8 +11,16 @@
  * gets identity fields only, with billing fields left at their empty defaults.
  *
  * In local mode: everything, including identity, comes from /clients/me.
+ *
+ * ## Currency
+ *
+ * `currency` is forwarded from `ClientDto.Currency`, which is a nullable ISO 4217 **code**
+ * (`AMD`, `USD`). Both branches used to hardcode `currency: undefined, currencyprefix: '',
+ * currencysuffix: ''`, discarding the one authoritative answer the backend had already sent —
+ * which is why every amount in the portal rendered without a symbol in production. There is
+ * no prefix or suffix anywhere in the API, so the two symbol fields are gone rather than
+ * emptied: `utils/formatCurrency.ts` places the symbol from the code itself.
  */
-// @ts-ignore
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   const authMode = config.authMode as string ?? 'sso'
@@ -44,10 +52,15 @@ export default defineEventHandler(async (event) => {
       postcode: billing?.postCode,
       country: billing?.country,
       defaultgateway: billing?.paymentMethod,
-      language: 'english',
-      currency: undefined,
-      currencyprefix: '',
-      currencysuffix: '',
+      // Null, not a language. Where the SSO owns the person it owns their chosen language
+      // too, and neither `/api/account/profile` nor hostpanel's own record carries one, so
+      // there is nothing here to answer with. It used to answer `'english'`, which showed a
+      // stored preference nobody had ever set and no save could ever change.
+      language: null,
+      // The account's billing currency, ISO 4217. Absent when this deployment holds no client
+      // record for the identity -- a staff login, say -- which is not the same as "no currency
+      // configured", and both correctly render an amount with no symbol rather than a guess.
+      currency: (billing?.currency as string | null | undefined) ?? null,
       permissions: 8191,
       email_preferences: billing && {
         general: billing.notifyGeneral ? 1 : 0,
@@ -79,10 +92,12 @@ export default defineEventHandler(async (event) => {
     postcode: data.postCode,
     country: data.country,
     defaultgateway: data.paymentMethod,
-    language: 'english',
-    currency: undefined,
-    currencyprefix: '',
-    currencysuffix: '',
+    // From the record, now that the backend actually sends it: `/clients/me` reads it off
+    // the account row this deployment owns. It used to be hard-coded to `'english'`, which
+    // is why the Language dropdown appeared to save and always read back as English.
+    language: data.language ?? '',
+    // The account's billing currency, ISO 4217, straight off the record. See the module note.
+    currency: (data.currency as string | null | undefined) ?? null,
     permissions: 8191,
     email_preferences: {
       general: data.notifyGeneral ? 1 : 0,

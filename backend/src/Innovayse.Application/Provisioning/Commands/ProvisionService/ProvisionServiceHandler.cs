@@ -64,7 +64,10 @@ public sealed class ProvisionServiceHandler(
                 $"Provisioning failed for service {cmd.ServiceId}: {result.ErrorMessage}");
         }
 
-        service.Activate(result.ProvisioningRef!);
+        // Record the server alongside the activation: the suspend, unsuspend, terminate and
+        // single-sign-on handlers all give up when ServerId is null, so a service activated
+        // without one could never be acted on again.
+        service.ActivateOn(server.Id, result.ProvisioningRef!);
 
         await unitOfWork.SaveChangesAsync(ct);
     }

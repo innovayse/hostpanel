@@ -25,12 +25,11 @@ export const HOSTING_GROUP_ID = 1
  */
 export const usePortalPlans = () => {
   const localePath = useLocalePath()
-  const { locale } = useI18n()
 
   // Through the API composable rather than a raw `useFetch`: that is the layer that owns the
   // URL, and `useApi()` beneath it sends the locale header the raw call was skipping.
   const { data, pending } = useCatalogApi().loadProducts(
-    () => ({ lang: locale.value, gid: HOSTING_GROUP_ID })
+    () => ({ gid: HOSTING_GROUP_ID })
   )
 
   const plans = computed<PlanCard[]>(() => (data.value ?? []).map((product) => {

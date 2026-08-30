@@ -128,7 +128,7 @@ import { Zap, Rocket, ShieldCheck, CheckCircle, Clock, CreditCard, Headphones } 
 import { useCatalogApi } from '~/composables/apis/useCatalogApi'
 
 const route = useRoute()
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const localePath = useLocalePath()
 
 const productSlug = route.params.product as string
@@ -150,7 +150,7 @@ const cfg = computed(() => productConfig[productSlug] ?? {
 const { data: products } = await useCatalogApi().loadProducts(
   () => {
     const gid = Object.entries(productGidToKey).find(([, key]) => key === productSlug)?.[0]
-    return { lang: locale.value, gid: gid ? Number(gid) : undefined }
+    return { gid: gid ? Number(gid) : undefined }
   }
 )
 
@@ -161,14 +161,16 @@ const trialPlan = computed(() =>
 
 const trialUrl = computed(() => trialPlan.value?.product_url || cfg.value.learnMoreUrl)
 
-// Features from group_features or description
+// Features parsed out of the plan's description.
+//
+// A structured `group_features` array and a `translated_description` used to be preferred
+// ahead of it. Neither is a field `GET /api/portal/public/products` sends, so this parse was
+// always the one producing the list. Structured specification lines are their own resource:
+// `useCatalogApi().loadProductFeatures(gid)`.
 const features = computed(() => {
   const p = trialPlan.value
   if (!p) return []
-  const gf: any[] = p.group_features ?? []
-  const groupFeatures = gf.map((f: any) => f.translated_feature || f.feature).filter(Boolean)
-  if (groupFeatures.length > 0) return groupFeatures
-  const { features: f } = parseDescription(p.translated_description || p.description || '')
+  const { features: f } = parseDescription(p.description || '')
   return f
 })
 

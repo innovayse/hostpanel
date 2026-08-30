@@ -2,10 +2,12 @@ namespace Innovayse.API;
 
 using System.Net;
 using System.Text.Json;
+using Innovayse.Application.Auth.Common;
 using Innovayse.Application.Billing.Common;
 using Innovayse.Application.Clients.Common;
 using Innovayse.Application.Domains.Common;
 using Innovayse.Application.Resources;
+using Innovayse.Application.Services.Common;
 using Innovayse.Application.Support.Common;
 using Microsoft.Extensions.Localization;
 
@@ -134,6 +136,38 @@ public sealed class ExceptionMiddleware(
                 context, HttpStatusCode.NotFound, Localize(InvoiceNotFoundException.MessageKey),
                 InvoiceNotFoundException.Code);
         }
+        catch (MyServiceNotFoundException ex)
+        {
+            // The same answer as the ticket and invoice refusals above, for the same reason, and
+            // now the answer for every action on MyServicesController that takes a service id off
+            // the route -- the five that used to check nothing included. Worded and statused like
+            // the refusals that already existed rather than inventing a fourth convention, so a
+            // service belonging to somebody else is indistinguishable from one that never existed
+            // on every one of those routes.
+            logger.LogInformation(
+                "Service {ServiceId} refused to its requester; answering {Code}.",
+                ex.ServiceId, MyServiceNotFoundException.Code);
+
+            await WriteErrorAsync(
+                context, HttpStatusCode.NotFound, Localize(MyServiceNotFoundException.MessageKey),
+                MyServiceNotFoundException.Code);
+        }
+        catch (MyContactNotFoundException ex)
+        {
+            // The same answer as the ticket, invoice and service refusals above, for the same
+            // reason. These routes used to answer 400 / INVALID_OPERATION with a hardcoded English
+            // "Contact {id} not found." thrown by the aggregate -- the only client-facing resource
+            // that did not answer 404, and the only one that echoed the probed id back. The two
+            // cases were already indistinguishable from each other; they now stay that way while
+            // agreeing with the rest of the client-facing surface.
+            logger.LogInformation(
+                "Contact {ContactId} refused to its requester; answering {Code}.",
+                ex.ContactId, MyContactNotFoundException.Code);
+
+            await WriteErrorAsync(
+                context, HttpStatusCode.NotFound, Localize(MyContactNotFoundException.MessageKey),
+                MyContactNotFoundException.Code);
+        }
         catch (DomainNotFoundException ex)
         {
             // The same answer as the two refusals above, for the same reason. These routes used
@@ -176,6 +210,65 @@ public sealed class ExceptionMiddleware(
             await WriteErrorAsync(
                 context, HttpStatusCode.BadGateway, Localize(ContactMessageNotSentException.MessageKey),
                 ContactMessageNotSentException.Code);
+        }
+        catch (UserProvisioningNotAllowedException ex)
+        {
+            // 400, the status this refusal already answered -- but no longer out of the
+            // unclassified INVALID_OPERATION bin, and no longer in English regardless of what the
+            // request asked for. It is a bad request rather than a 503: the deployment is working
+            // exactly as configured, and the caller does have somewhere to go -- the sign-on
+            // service -- which is what the sentence says.
+            //
+            // The key is read off the instance because there are six of them, one per flow. The
+            // code is single: what a caller can do about any of the six is the same thing.
+            //
+            // Information, not Error. A local-mode flow reached in SSO mode is a misconfiguration
+            // or a stale client, not a fault in this service, and it is thrown by design.
+            logger.LogInformation(
+                "Account provisioning refused for {Operation} (SSO owns the accounts); answering {Code}.",
+                ex.Operation, UserProvisioningNotAllowedException.Code);
+
+            await WriteErrorAsync(
+                context, HttpStatusCode.BadRequest, Localize(ex.MessageKey),
+                UserProvisioningNotAllowedException.Code);
+        }
+        catch (SetupAlreadyCompletedException)
+        {
+            // 409, not 403: the caller's credential was fine and the request was well-formed —
+            // the state it wanted to move the installation into is one the installation has
+            // already left. The admin SPA needs that distinction, because it shows the
+            // bootstrap screen only while the role is unclaimed and has to tell "you lost the
+            // race" apart from "your token is wrong".
+            //
+            // Information, not Warning. A second operator clicking the same button, or a stale
+            // tab, produces this; it is expected traffic on a freshly bootstrapped install.
+            logger.LogInformation(
+                "First-run setup refused: the Admin role is already held; answering {Code}.",
+                SetupAlreadyCompletedException.Code);
+
+            await WriteErrorAsync(
+                context, HttpStatusCode.Conflict, Localize(SetupAlreadyCompletedException.MessageKey),
+                SetupAlreadyCompletedException.Code);
+        }
+        catch (SetupTokenInvalidException)
+        {
+            // 403, not 401: the caller IS signed in — it is the claim that is refused, not the
+            // credential. A 401 would send the admin SPA back to the sign-in screen, which
+            // cannot help and would loop.
+            //
+            // Warning, not Information, and this is the one refusal on this API where that is
+            // the right level: on a standalone install this line is somebody attempting to take
+            // ownership of the deployment without the operator's token. Nothing about the token
+            // — neither the presented value nor the issued one — is logged; the event is what
+            // an operator needs, and writing either value would put the secret in the log a
+            // second time, long after the boot line that was meant to be read once.
+            logger.LogWarning(
+                "First-run setup refused: no valid setup token was presented; answering {Code}.",
+                SetupTokenInvalidException.Code);
+
+            await WriteErrorAsync(
+                context, HttpStatusCode.Forbidden, Localize(SetupTokenInvalidException.MessageKey),
+                SetupTokenInvalidException.Code);
         }
         catch (FluentValidation.ValidationException ex)
         {

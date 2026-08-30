@@ -109,8 +109,9 @@
                 {{ product.name }}
               </h3>
 
-              <!-- Tagline badge -->
+              <!-- Tagline badge — only the static domains card has one; families have no such field. -->
               <span
+                v-if="product.tagline"
                 class="inline-block px-3 py-1 rounded-full text-xs font-medium mb-3 w-fit backdrop-blur-sm"
                 :style="{
                   backgroundColor: `${product.color}20`,
@@ -200,14 +201,16 @@
 <script setup lang="ts">
 /**
  * Products section with image-based cards.
- * Data: WHMCS API (name, tagline, description, features) + lib/data.ts (image) + productConfig (icon, color, demoUrl)
+ * Data: catalogue API (name, plus description and features parsed out of one `description`
+ * field) + lib/data.ts (image) + productConfig (icon, color, demoUrl). There is no tagline —
+ * see the note beside the card build below.
  */
 
 import { CheckCircle, ArrowRight } from 'lucide-vue-next'
 import { products as visualData } from '~/lib/data'
 import { useCatalogApi } from '~/composables/apis/useCatalogApi'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const localePath = useLocalePath()
 
 // image map: product id → local image path
@@ -226,7 +229,7 @@ const hostingVisual = {
 // Straight from the API composable rather than through a store: this section reads the
 // catalogue once and owns it alone, which is the named exception to component -> store -> api.
 const { data: whmcsRaw } = await useCatalogApi().loadProducts(
-  () => ({ lang: locale.value, gids: productGids.join(',') })
+  () => ({ gids: productGids.join(',') })
 )
 
 /** Build product cards from WHMCS data + visual config */
@@ -254,29 +257,41 @@ const products = computed(() => {
   // ── All product families (gids 1, 3-9) ──
   for (const gid of productGids) {
     const cfgKey = productGidToKey[gid]
+    // `productGidToKey` does not cover every gid in `productGids`, so the key can be absent —
+    // and indexing `productConfig` with `undefined` is how a missing family used to become a
+    // card with an undefined id.
+    if (!cfgKey) continue
+
     const cfg = productConfig[cfgKey]
     if (!cfg) continue
 
-    const group = raw.filter(p => Number(p.gid) === gid)
+    const group = raw.filter(p => Number(p.groupId) === gid)
     const parent = group.find(p => p.slug?.trim() === cfgKey)
       ?? group.find(p => nameToKey(p.name) === cfgKey)
       ?? group[0]
     if (!parent) continue
 
-    const pGt = group.find(p => p.group_translations?.translated_name) ?? parent
-    const descText = parent.translated_description || parent.description || ''
-    const { summary, features: parsedFeatures } = parseDescription(descText)
-    const groupFeatures = getGroupFeatures(pGt)
+    // A `group_translations`-bearing sibling used to be preferred over `parent` here, and a
+    // `group_features` list over the parsed one. The API sends neither field, so both reduced
+    // to the parent product and to the description parsed below; the indirection is gone.
+    const { summary, features } = parseDescription(parent.description || '')
 
     // Hosting (gid=1) uses hostingVisual overrides for icon/color/image/demoUrl
-    const visual = gid === 1 ? hostingVisual : { icon: cfg.icon, color: cfg.color, image: imageMap[cfgKey] || '', demoUrl: cfg.demoUrl, learnMoreUrl: cfg.learnMoreUrl }
+    const visual = gid === 1 ? hostingVisual : { icon: cfg.icon, color: cfg.color, image: imageMap[cfgKey] || '', demoUrl: cfg.demoUrl ?? '', learnMoreUrl: cfg.learnMoreUrl }
 
     items.push({
       id: cfgKey,
-      name: getGt(pGt, 'name') || cfg.name,
-      tagline: getGt(pGt, 'headline') || getGt(pGt, 'tagline') || cfg.name,
-      description: parent.translated_shortdescription || parent.shortdescription || summary || getGt(pGt, 'headline'),
-      features: (groupFeatures.length > 0 ? groupFeatures : parsedFeatures).slice(0, 3),
+      name: parent.name || cfg.name,
+      // Empty on purpose, and the badge in the template guards on it. `headline`/`tagline` are
+      // not fields the catalogue endpoint sends, so the chain that used to stand here always
+      // fell through to `cfg.name` — a hardcoded copy of the product name printed a second time
+      // directly under the `<h3>`. The static domains card above is the one entry with a real
+      // tagline, and it comes from the locale files.
+      tagline: '',
+      // The parsed summary, and only that. The `shortdescription`/`headline` branches either
+      // side of it are fields the API does not send.
+      description: summary,
+      features: features.slice(0, 3),
       ...visual
     })
   }

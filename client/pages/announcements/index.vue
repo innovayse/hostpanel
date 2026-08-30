@@ -116,7 +116,10 @@ const months = computed(() => {
   const seen = new Set<string>()
   for (const item of items.value) {
     const match = item.date.match(/(\w+ \d{4})$/)
-    if (match) seen.add(match[1])
+    // The group is only present when the whole pattern matched, but the compiler cannot know
+    // that from `match` alone — and reading it unchecked would have added `undefined` to a
+    // `Set<string>` and rendered an empty month tab.
+    if (match?.[1]) seen.add(match[1])
   }
   return seen.size > 1 ? ['all', ...Array.from(seen)] : []
 })

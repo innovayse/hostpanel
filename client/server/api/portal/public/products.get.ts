@@ -2,13 +2,20 @@
  * GET /api/portal/public/products
  * Returns products from the C# backend.
  *
- * Query params: lang, pid, gid, gids
+ * Query params: pid, gid, gids.
+ *
+ * There is deliberately no `lang`. This route used to forward one, and the public site read
+ * `translated_name`, `translated_shortdescription`, `translated_description`,
+ * `group_translations` and `group_features` off the result. `ProductDto` carries none of them
+ * and `ProductsController` has no locale parameter, so the response was identical in all three
+ * languages and every one of those reads fell through to its untranslated fallback. Localised
+ * product copy is a backend change — a `ProductTranslation` entity beside the existing
+ * `SlideTranslation` — and until it exists this parameter can only mislead its caller.
  */
 export default defineCachedEventHandler(async (event) => {
   const query = getQuery(event)
   const params = new URLSearchParams()
 
-  if (query.lang)  params.set('lang',  String(query.lang))
   if (query.pid)   params.set('pid',   String(query.pid))
   if (query.gids)  params.set('gids',  String(query.gids))
 
@@ -62,10 +69,11 @@ export default defineCachedEventHandler(async (event) => {
   name: 'backend-products',
   maxAge: 3600,
   swr: true,
+  // The key carries no locale. It used to, which meant three cached copies of a response the
+  // backend renders identically in every language.
   getKey: (event) => {
     const query = getQuery(event)
-    const locale = (query.lang as string) ?? getHeader(event, 'x-locale') ?? 'en'
     const filters = query.pid ? `p${query.pid}` : (query.gids || query.gid || 'all')
-    return `products:${locale}:${filters}`
+    return `products:${filters}`
   }
 })

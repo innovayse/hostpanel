@@ -33,9 +33,11 @@ public sealed class ListUsersHandler(IIdentityProvider identity, IClientReposito
             clientIds.TryGetValue(a.Subject, out var clientId) ? clientId : null,
             a.FirstName, a.LastName, a.Email,
             // Language and the account's own creation date belong to whichever store holds
-            // the person, and an SSO does not hand either out. Left unanswered rather than
-            // guessed at: a fabricated date on an admin screen is worse than a blank one.
-            Language: null, a.LastLoginAt, CreatedAt: default)).ToList();
+            // the person. A local deployment holds the language on its own account row, so it
+            // is answered here; an SSO hands out neither, so both stay null. Left unanswered
+            // rather than guessed at: a fabricated date on an admin screen is worse than a
+            // blank one.
+            a.Language, a.LastLoginAt, CreatedAt: default)).ToList();
 
         return new PagedResult<UserListItemDto>(items, total, pg, ps);
     }

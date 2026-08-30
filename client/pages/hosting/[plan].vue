@@ -56,19 +56,24 @@
             </span>
           </div>
 
-          <!-- Tagline -->
-          <p v-if="currentPlan.translated_tagline || currentPlan.tagline" class="text-primary-400 text-sm font-semibold uppercase tracking-wider mb-3">
-            {{ currentPlan.translated_tagline || currentPlan.tagline }}
-          </p>
+          <!--
+            No tagline line here: `ProductDto` has no headline/tagline field, so the paragraph
+            this replaced never rendered for any plan. Restoring it needs a backend field.
+          -->
 
           <!-- Name -->
           <h1 class="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight">
-            {{ currentPlan.translated_name || currentPlan.name }}
+            {{ currentPlan.name }}
           </h1>
 
-          <!-- Short description -->
-          <p v-if="currentPlan.translated_shortdescription || currentPlan.shortdescription" class="text-gray-400 text-lg mb-8 max-w-2xl">
-            {{ currentPlan.translated_shortdescription || currentPlan.shortdescription }}
+          <!--
+            Summary parsed out of `description`, not the `shortdescription` this replaced —
+            that field does not exist, so the copy the catalogue does send never appeared here.
+            Interpolated rather than `v-html`: the raw field is operator-authored HTML that no
+            layer sanitises, and `parseDescription` has already stripped its tags.
+          -->
+          <p v-if="planSummary" class="text-gray-400 text-lg mb-8 max-w-2xl">
+            {{ planSummary }}
           </p>
 
           <!-- Price + CTA -->
@@ -197,7 +202,7 @@ const currencyByLocale: Record<string, string> = { en: 'USD', hy: 'AMD', ru: 'RU
 // would also cost the SSR dedup and the locale re-fetch that `useApi()` gives for free, and
 // this page is server-rendered and indexed.
 const { data: plans, pending } = await useCatalogApi().loadProducts(
-  () => ({ lang: locale.value, gid: 1 })
+  () => ({ gid: 1 })
 )
 
 const selectedCycle = ref('monthly')
@@ -217,10 +222,22 @@ const currentPlan = computed(() => {
   ) ?? null
 })
 
-const planFeatures = computed(() => {
-  const desc = currentPlan.value?.translated_description || currentPlan.value?.description || ''
-  return (desc as string).split(/\r?\n/).filter((l: string) => l.trim())
-})
+/**
+ * Summary paragraph and feature lines parsed out of the plan's `description`.
+ *
+ * Split on newlines this used to be, which is wrong for this catalogue: the copy is HTML
+ * (`✔ 600 MB Disk Space <br />`, `<strong>…</strong>`), so a raw split printed the markup
+ * inside the feature list and merged a whole prose paragraph into a single "feature".
+ * `parseDescription` (utils/whmcs.ts, auto-imported) unwraps the tags, splits the leading
+ * prose off as `summary`, and strips the bullet markers.
+ */
+const parsedPlan = computed(() => parseDescription(currentPlan.value?.description || ''))
+
+/** Leading prose of the plan description; empty for plans whose copy is bullets only. */
+const planSummary = computed(() => parsedPlan.value.summary)
+
+/** Bullet lines of the plan description, markers stripped. */
+const planFeatures = computed(() => parsedPlan.value.features)
 
 function getPlanPrice(plan: any): string {
   const preferred = currencyByLocale[locale.value] ?? 'USD'
@@ -255,7 +272,7 @@ function handleAddToCart() {
   
   cart.addItem({
     pid: plan.pid,
-    name: plan.translated_name || plan.name,
+    name: plan.name,
     billingcycle: finalCycle,
     cycleLabel: finalCycle === 'free' ? $t('hosting.cycles.free') : $t(`hosting.cycles.${finalCycle}`),
     price: (finalCycle === 'free' || amount === '0.00') ? $t('hosting.custom') : `${pricing.prefix}${amount}`,
@@ -286,8 +303,9 @@ const hasPricing = computed(() => billingCycles.value.length > 0)
 
 // Auto-select first available cycle
 watch(billingCycles, (cycles) => {
-  if (cycles.length && !cycles.find(c => c.key === selectedCycle.value)) {
-    selectedCycle.value = cycles[0].key
+  const first = cycles[0]
+  if (first && !cycles.find(c => c.key === selectedCycle.value)) {
+    selectedCycle.value = first.key
   }
 }, { immediate: true })
 
@@ -296,26 +314,20 @@ const planSlugParam = computed(() => String(route.params.plan))
 
 useSeoMeta({
   title: () => currentPlan.value
-    ? `${currentPlan.value.translated_name || currentPlan.value.name} - Web Hosting Plan | Innovayse`
+    ? `${currentPlan.value.name} - Web Hosting Plan | Innovayse`
     : $t('seo.hostingPlan.title'),
-  description: () => currentPlan.value
-    ? `${currentPlan.value.translated_shortdescription || currentPlan.value.shortdescription || $t('seo.hostingPlan.description')}`
-    : $t('seo.hostingPlan.description'),
+  description: () => planSummary.value || $t('seo.hostingPlan.description'),
   keywords: $t('seo.hostingPlan.keywords'),
   ogTitle: () => currentPlan.value
-    ? `${currentPlan.value.translated_name || currentPlan.value.name} - Web Hosting Plan | Innovayse`
+    ? `${currentPlan.value.name} - Web Hosting Plan | Innovayse`
     : $t('seo.hostingPlan.title'),
-  ogDescription: () => currentPlan.value
-    ? `${currentPlan.value.translated_shortdescription || currentPlan.value.shortdescription || $t('seo.hostingPlan.description')}`
-    : $t('seo.hostingPlan.description'),
+  ogDescription: () => planSummary.value || $t('seo.hostingPlan.description'),
   ogType: 'website',
   twitterCard: 'summary_large_image',
   twitterTitle: () => currentPlan.value
-    ? `${currentPlan.value.translated_name || currentPlan.value.name} | Innovayse`
+    ? `${currentPlan.value.name} | Innovayse`
     : $t('seo.hostingPlan.title'),
-  twitterDescription: () => currentPlan.value
-    ? `${currentPlan.value.translated_shortdescription || currentPlan.value.shortdescription || $t('seo.hostingPlan.description')}`
-    : $t('seo.hostingPlan.description')
+  twitterDescription: () => planSummary.value || $t('seo.hostingPlan.description')
 })
 
 const config = useRuntimeConfig()

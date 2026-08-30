@@ -50,8 +50,14 @@ export default defineEventHandler(async (event) => {
     token_type: string
   }
 
+  // Bound to a plain `string` and given an explicit response type. Handed a template literal
+  // with no generic, Nitro tries to infer the reply by matching this URL against its own route
+  // table and recurses until TypeScript gives up with TS2321 -- for the SSO's token endpoint,
+  // which matches no Nitro route. The shape is the one declared above.
+  const tokenUrl: string = `${config.ssoUrl}/connect/token`
+
   try {
-    tokenResponse = await $fetch(`${config.ssoUrl}/connect/token`, {
+    tokenResponse = await $fetch<typeof tokenResponse>(tokenUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({

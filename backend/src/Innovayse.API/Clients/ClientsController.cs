@@ -110,6 +110,7 @@ public sealed class ClientsController(IMessageBus bus, IIdentityProvider identit
                 id, request.Email, request.FirstName, request.LastName, request.CompanyName,
                 request.Phone, request.Street, request.Address2, request.City,
                 request.State, request.PostCode, request.Country,
+                request.Language,
                 request.Currency, request.PaymentMethod, request.BillingContact, request.AdminNotes,
                 request.NotifyGeneral, request.NotifyInvoice, request.NotifySupport,
                 request.NotifyProduct, request.NotifyDomain, request.NotifyAffiliate,
@@ -200,12 +201,13 @@ public sealed class ClientsController(IMessageBus bus, IIdentityProvider identit
         }
 
         // Assembled from the account and the client this route already loaded, rather than
-        // from one store that held both. Language is a hostpanel preference and has no
-        // answer where an SSO owns the person; the timestamp is the client's, which is the
-        // one this screen is about.
+        // from one store that held both. The language comes off the account, which is where
+        // it is actually stored; an SSO-backed provider answers null for it, so the screen
+        // shows nothing rather than a value hostpanel invented. The timestamp is the
+        // client's, which is the one this screen is about.
         return Ok(new UserDetailDto(
             account.Subject, account.FirstName, account.LastName, account.Email,
-            Language: null, account.LastLoginAt, client.CreatedAt,
+            account.Language, account.LastLoginAt, client.CreatedAt,
             [new UserAccountDto(client.Id, client.FirstName, client.LastName, client.CompanyName, IsOwner: true)]));
     }
 

@@ -7,9 +7,13 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 }),
   routes: [
     {
+      // Not `public: true`. The guard judges this route on its own terms — setup still
+      // outstanding, and a deployment that owns its own accounts — and the public rule
+      // would bounce the operator to /dashboard the moment registration signed them in,
+      // before they had claimed the Admin role.
       path: '/setup',
       component: () => import('../modules/auth/views/SetupView.vue'),
-      meta: { public: true, setup: true },
+      meta: { setup: true },
     },
     {
       path: '/verify-email',

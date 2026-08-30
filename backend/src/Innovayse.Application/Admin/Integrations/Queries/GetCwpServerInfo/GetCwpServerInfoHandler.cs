@@ -1,5 +1,6 @@
 namespace Innovayse.Application.Admin.Integrations.Queries.GetCwpServerInfo;
 
+using System.Globalization;
 using Innovayse.Domain.Settings.Interfaces;
 using Innovayse.SDK.Plugins;
 using Microsoft.Extensions.Caching.Memory;
@@ -40,7 +41,15 @@ public sealed class GetCwpServerInfoHandler(
         var apiKeySetting = await settings.FindByKeyAsync("integration:innovayse-cwp:api_key", ct);
 
         var host = hostSetting?.Value;
-        var port = portSetting?.Value ?? "2031";
+
+        // 2031 used to be the fallback here, and it is the CWP panel's own HTTPS UI — it
+        // answers nothing under /v1/, which is the only path this client requests. An
+        // operator who had filled in a host and an API key but left the port blank was
+        // therefore told the server was unreachable when it was answering perfectly on
+        // 2304, the port every other CWP caller in this repository already used.
+        var port = portSetting?.Value is { Length: > 0 } configured
+            ? configured
+            : ICwpApiClient.DefaultApiPort.ToString(CultureInfo.InvariantCulture);
         var apiKey = apiKeySetting?.Value;
 
         if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(apiKey))

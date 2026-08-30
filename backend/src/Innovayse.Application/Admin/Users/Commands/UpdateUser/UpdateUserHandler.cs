@@ -1,5 +1,6 @@
 namespace Innovayse.Application.Admin.Users.Commands.UpdateUser;
 
+using Innovayse.Application.Auth.Common;
 using Innovayse.Application.Auth.Interfaces;
 
 /// <summary>

@@ -106,7 +106,10 @@ public sealed class CPanelClient
     {
         var parameters = new Dictionary<string, string>
         {
-            ["username"] = username
+            // WHM's removeacct names the account "user", not "username" — the same spelling
+            // every other account function on this client uses. "username" is silently ignored
+            // and the call reports success without removing anything.
+            ["user"] = username
         };
 
         await CallApiAsync("removeacct", parameters, ct);
@@ -189,12 +192,21 @@ public sealed class CPanelClient
     /// <summary>
     /// Calls a WHM JSON API v1 function and returns the parsed <see cref="JsonDocument"/>.
     /// </summary>
+    /// <remarks>
+    /// The request asks for <c>api.version=1</c>, whose envelope is
+    /// <c>{"metadata":{"result":0|1,"reason":"…"},"data":{…}}</c>. <c>result</c> is <c>1</c> for
+    /// success and <c>0</c> for a refusal, and <c>reason</c> carries WHM's own sentence. The
+    /// <c>result.status</c> / <c>statusmsg</c> pair this used to read is the **API v0** shape and
+    /// never appears in a v1 body, so every refusal — account already exists, unknown package,
+    /// access denied — was returning as a success.
+    /// </remarks>
     /// <param name="function">The WHM API function name (e.g. <c>createacct</c>).</param>
     /// <param name="parameters">Query-string parameters for the function call.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The parsed JSON document of the successful API response.</returns>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when the HTTP call fails or the API returns a non-success status.
+    /// Thrown when the API answers with <c>metadata.result</c> of <c>0</c>, or when the response
+    /// carries no <c>metadata.result</c> at all and therefore cannot be confirmed as a success.
     /// </exception>
     private async Task<JsonDocument> CallApiAsync(
         string function,
@@ -213,24 +225,55 @@ public sealed class CPanelClient
         var json = await response.Content.ReadAsStringAsync(ct);
         var doc = JsonDocument.Parse(json);
 
-        var root = doc.RootElement;
-
-        if (root.TryGetProperty("result", out var result))
-        {
-            if (result.TryGetProperty("status", out var statusEl))
-            {
-                var status = statusEl.GetInt32();
-                if (status != 1)
-                {
-                    var msg = result.TryGetProperty("statusmsg", out var msgEl)
-                        ? msgEl.GetString()
-                        : "Unknown WHM API error";
-                    throw new InvalidOperationException(
-                        $"WHM API '{function}' failed: {msg}");
-                }
-            }
-        }
+        EnsureSucceeded(function, doc);
 
         return doc;
+    }
+
+    /// <summary>
+    /// Reads the WHM API v1 <c>metadata</c> envelope and throws when the call was refused.
+    /// </summary>
+    /// <param name="function">The WHM API function name, used in the failure message.</param>
+    /// <param name="doc">The parsed response body.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when <c>metadata.result</c> is not <c>1</c>, or when the envelope is absent —
+    /// an unrecognised body is a failure to report, never an unverified success.
+    /// </exception>
+    private static void EnsureSucceeded(string function, JsonDocument doc)
+    {
+        var root = doc.RootElement;
+
+        if (root.ValueKind is not JsonValueKind.Object
+            || !root.TryGetProperty("metadata", out var metadata)
+            || metadata.ValueKind is not JsonValueKind.Object
+            || !metadata.TryGetProperty("result", out var resultEl))
+        {
+            throw new InvalidOperationException(
+                $"WHM API '{function}' returned a response with no 'metadata.result' envelope; " +
+                "the outcome of the call cannot be determined.");
+        }
+
+        // WHM writes result as the number 1/0 in most builds and as the string "1"/"0" in some,
+        // so both spellings are accepted rather than one of them reading as a refusal.
+        var succeeded = resultEl.ValueKind switch
+        {
+            JsonValueKind.Number => resultEl.TryGetInt32(out var n) && n == 1,
+            JsonValueKind.String => resultEl.GetString() == "1",
+            JsonValueKind.True => true,
+            _ => false,
+        };
+
+        if (succeeded)
+        {
+            return;
+        }
+
+        var reason = metadata.TryGetProperty("reason", out var reasonEl)
+            && reasonEl.ValueKind is JsonValueKind.String
+                ? reasonEl.GetString()
+                : null;
+
+        throw new InvalidOperationException(
+            $"WHM API '{function}' failed: {reason ?? "no reason given"}");
     }
 }

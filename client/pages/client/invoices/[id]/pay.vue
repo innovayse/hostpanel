@@ -228,12 +228,12 @@
               <span class="text-xs font-semibold text-gray-400 uppercase tracking-widest text-right">{{ $t('client.invoices.colAmount') }}</span>
             </div>
             <div
-              v-for="item in invoice.items?.item ?? []"
+              v-for="item in invoice.items"
               :key="item.id"
               class="grid grid-cols-[1fr_auto] gap-4 py-2 border-b border-white/5"
             >
               <span class="text-sm text-gray-300">{{ item.description }}</span>
-              <span class="text-sm text-white font-medium text-right">${{ item.amount }} USD</span>
+              <span class="text-sm text-white font-medium text-right">{{ money(item.amount) }}</span>
             </div>
           </div>
 
@@ -241,15 +241,15 @@
           <div class="space-y-2 pt-2">
             <div class="grid grid-cols-[1fr_auto] gap-4">
               <span class="text-sm font-semibold text-gray-400">{{ $t('client.invoices.subtotal') }}</span>
-              <span class="text-sm font-semibold text-white">${{ invoice.subtotal }} USD</span>
+              <span class="text-sm font-semibold text-white">{{ money(invoice.subTotal) }}</span>
             </div>
             <div class="grid grid-cols-[1fr_auto] gap-4">
               <span class="text-sm text-gray-500">{{ $t('client.invoices.creditApplied') }}</span>
-              <span class="text-sm text-gray-400">${{ invoice.credit }} USD</span>
+              <span class="text-sm text-gray-400">{{ money(invoice.credit) }}</span>
             </div>
             <div class="grid grid-cols-[1fr_auto] gap-4 pt-2 border-t border-white/10">
               <span class="text-sm font-bold text-white">{{ $t('client.invoices.total') }}</span>
-              <span class="text-sm font-bold text-white">${{ invoice.total }} USD</span>
+              <span class="text-sm font-bold text-white">{{ money(invoice.total) }}</span>
             </div>
           </div>
 
@@ -257,14 +257,14 @@
           <div class="mt-6 space-y-2">
             <div class="flex justify-between text-sm">
               <span class="text-gray-400">{{ $t('invoicePay.paymentsToDate') }}</span>
-              <span class="text-white">${{ paymentsToDate }} USD</span>
+              <span class="text-white">{{ money(received) }}</span>
             </div>
           </div>
 
           <!-- Balance Due -->
           <div class="mt-4 p-4 rounded-xl bg-green-500/10 border border-green-500/20 flex justify-between items-center">
             <span class="font-bold text-white">{{ $t('invoicePay.balanceDue') }}</span>
-            <span class="font-bold text-green-400 text-lg">${{ invoice.balance ?? invoice.total }} USD</span>
+            <span class="font-bold text-green-400 text-lg">{{ money(outstanding) }}</span>
           </div>
         </div>
       </div>
@@ -281,9 +281,12 @@
 <script setup lang="ts">
 import { AlertCircle, CheckCircle, CreditCard, Plus, Lock, Loader2 } from 'lucide-vue-next'
 import { useBillingApi } from '~/composables/apis/useBillingApi'
+import { useClientStore } from '~/stores/client'
 import type { ClientInvoice } from '~/types/clientinvoice'
 import type { PaymentMethod } from '~/types/payment'
 import { apiErrorMessage } from '~/utils/apiError'
+import { formatCurrency } from '~/utils/formatCurrency'
+import { balanceDue, paymentsToDate } from '~/utils/invoice'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
@@ -291,6 +294,7 @@ const route = useRoute()
 const localePath = useLocalePath()
 const { t } = useI18n()
 const config = useRuntimeConfig()
+const store = useClientStore()
 
 /**
  * Base URL of the WHMCS instance this deployment fronts, or an empty string.
@@ -322,13 +326,26 @@ const hostedGatewayModule = computed(() =>
   (gatewayMethods.value ?? [])
     .find(m => m.module !== PAYMENT_MODULE_STRIPE && m.module !== PAYMENT_MODULE_BANK_TRANSFER)?.module ?? null)
 
-// Payments to date = total - balance
-const paymentsToDate = computed(() => {
-  if (!invoice.value) return '0.00'
-  const total = parseFloat(invoice.value.total ?? '0')
-  const balance = parseFloat(invoice.value.balance ?? invoice.value.total ?? '0')
-  return (total - balance).toFixed(2)
-})
+/**
+ * Formats one amount on this invoice in the account's billing currency.
+ *
+ * Every figure on this page was previously interpolated between a literal `$` and a literal
+ * ` USD` — a hardcoded symbol *and* a hardcoded currency name, on the screen where the customer
+ * authorises a payment, in a portal that also bills in drams and roubles. The replacement read
+ * `currencycode` / `currencyprefix` / `currencysuffix` off the invoice, which `InvoiceDto` does
+ * not carry; the currency lives on the account, as `ClientDto.Currency`.
+ *
+ * @param amount - The amount the API sent for this figure.
+ * @returns The formatted amount, or an em dash when there is no figure.
+ */
+const money = (amount: string | number | null | undefined): string =>
+  formatCurrency(amount, { code: store.user?.currency })
+
+/** How much has actually been received against this invoice — see `utils/invoice.ts`. */
+const received = computed(() => paymentsToDate(invoice.value?.transactions))
+
+/** What is still owed: the total less everything received. */
+const outstanding = computed(() => balanceDue(invoice.value))
 
 /**
  * Whether paying with a card that is not already saved is possible at all.
@@ -344,7 +361,10 @@ const canUseNewCard = computed(() => Boolean(whmcsUrl))
 //
 // `null` means no payment method is selectable: no card is saved and the new-card hand-off is
 // unavailable. Paying via a hosted gateway plugin is a separate button and is unaffected.
-const selectedMethodId = ref<number | 'new' | null>(
+// `string`, not `number`: a saved method's id is a Stripe PaymentMethod id (`pm_1AbC...`), as
+// `types/payment.ts` has always said. Typed `number` here, the initialiser below silently
+// widened to `string | null` and the radio inputs bound ids this ref claimed it could not hold.
+const selectedMethodId = ref<string | 'new' | null>(
   savedMethods.value[0]?.id ?? (canUseNewCard.value ? 'new' : null)
 )
 const cardNumber = ref('')

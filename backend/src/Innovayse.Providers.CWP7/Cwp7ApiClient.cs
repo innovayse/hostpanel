@@ -31,13 +31,28 @@ internal sealed class Cwp7ApiClient : ICwp7ApiClient
         _logger = logger;
     }
 
+    /// <summary>Maximum number of characters of a non-JSON body carried into the error message.</summary>
+    /// <remarks>
+    /// A CWP7 error page is a full HTML document. The first few hundred characters hold the
+    /// <c>&lt;title&gt;</c> and the error text an operator needs; the rest is markup that would
+    /// only bloat every log line and every provisioning failure message.
+    /// </remarks>
+    private const int MaxErrorBodyLength = 500;
+
     /// <summary>
     /// Reads the HTTP response body and parses it as <see cref="Cwp7ApiResponse"/>.
-    /// CWP7 sometimes returns HTML instead of JSON, so this handles both gracefully.
     /// </summary>
+    /// <remarks>
+    /// CWP7 answers errors with HTTP 200 and an HTML body, so <c>EnsureSuccessStatusCode</c>
+    /// upstream cannot catch them. A body that is not the JSON envelope is therefore a
+    /// <em>failure</em>: it is returned as a response with status "Error" carrying the start of
+    /// the body, so the caller's <c>IsSuccess</c> check refuses the operation. This used to be
+    /// reported as a success, which turned a CWP7 error page into a provisioned account.
+    /// </remarks>
     /// <param name="response">The HTTP response message.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Parsed CWP7 response.</returns>
+    /// <returns>Parsed CWP7 response, or a failure response when the body is not JSON.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the response body is empty.</exception>
     private async Task<Cwp7ApiResponse> ParseResponseAsync(HttpResponseMessage response, CancellationToken ct)
     {
         var raw = await response.Content.ReadAsStringAsync(ct);
@@ -51,10 +66,22 @@ internal sealed class Cwp7ApiClient : ICwp7ApiClient
             return System.Text.Json.JsonSerializer.Deserialize<Cwp7ApiResponse>(raw)
                 ?? throw new InvalidOperationException("CWP7 API returned null JSON.");
         }
-        catch (System.Text.Json.JsonException)
+        catch (System.Text.Json.JsonException ex)
         {
-            _logger.LogDebug("CWP7 API returned non-JSON response, treating as success: {Raw}", raw);
-            return new Cwp7ApiResponse { Status = "OK", Msj = raw };
+            var excerpt = raw.Length > MaxErrorBodyLength
+                ? raw[..MaxErrorBodyLength]
+                : raw;
+
+            _logger.LogError(
+                ex,
+                "CWP7 API returned a non-JSON response body; treating the call as failed. Body starts: {Body}",
+                excerpt);
+
+            return new Cwp7ApiResponse
+            {
+                Status = "Error",
+                Msj = $"CWP7 returned a non-JSON response: {excerpt}",
+            };
         }
     }
 

@@ -26,13 +26,22 @@ namespace Innovayse.Application.Auth.Interfaces;
 /// not to any one product it serves, so an SSO-backed provider leaves this null rather
 /// than answering a question about a different thing.
 /// </param>
+/// <param name="Language">
+/// The UI language this person chose, or null where the provider holds none.
+///
+/// A local deployment stores it on the account row and answers with it; an SSO-backed one
+/// leaves it null, because the language of a person the SSO owns is the SSO's to hold and
+/// hostpanel can neither read nor write it. Null therefore means "not ours to answer", never
+/// "English" -- a caller that wants a default has to choose one for itself.
+/// </param>
 public sealed record IdentityAccount(
     string Subject,
     string Email,
     string FirstName,
     string LastName,
     bool TwoFactorEnabled = false,
-    DateTimeOffset? LastLoginAt = null);
+    DateTimeOffset? LastLoginAt = null,
+    string? Language = null);
 
 /// <summary>
 /// Reads people from wherever they live — this product's own database, or the SSO.

@@ -34,9 +34,10 @@ public sealed class GetUserHandler(IIdentityProvider identity, IClientRepository
 
         return new UserDetailDto(
             account.Subject, account.FirstName, account.LastName, account.Email,
-            // Language lives with whichever store holds the person, and an SSO does not
-            // hand it out — left null rather than guessed at.
-            Language: null, account.LastLoginAt,
+            // Language lives with whichever store holds the person: a local deployment
+            // answers with the one on its own account row, an SSO-backed one answers null
+            // because the SSO does not hand it out. Null rather than guessed at either way.
+            account.Language, account.LastLoginAt,
             client?.CreatedAt ?? default, accounts);
     }
 }

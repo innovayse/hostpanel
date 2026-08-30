@@ -17,6 +17,10 @@ using Innovayse.Domain.Clients;
 /// <param name="State">Billing state or region.</param>
 /// <param name="PostCode">Billing postcode.</param>
 /// <param name="Country">Billing country code.</param>
+/// <param name="Language">
+/// The account holder's chosen UI language, or null where this deployment does not own the
+/// account and therefore holds no language for it.
+/// </param>
 /// <param name="Currency">ISO 4217 currency code.</param>
 /// <param name="PaymentMethod">Preferred payment method.</param>
 /// <param name="BillingContact">Billing contact reference.</param>
@@ -53,6 +57,7 @@ public record ClientDto(
     string? State,
     string? PostCode,
     string? Country,
+    string? Language,
     string? Currency,
     string? PaymentMethod,
     string? BillingContact,

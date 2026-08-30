@@ -3,6 +3,7 @@ namespace Innovayse.Application.Tests.Orders;
 using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Common;
 using Innovayse.Application.Domains.Commands.RegisterDomain;
+using Innovayse.Application.Domains.Commands.RenewDomain;
 using Innovayse.Application.Orders.Commands.FulfillPaidOrder;
 using Innovayse.Application.Services.Commands.OrderService;
 using Innovayse.Domain.Billing;
@@ -16,6 +17,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Wolverine;
 using Xunit;
+using DomainEntity = Innovayse.Domain.Domains.Domain;
 
 /// <summary>Tests for <see cref="FulfillPaidOrderHandler"/> idempotency, dispatch, and refund routing.</summary>
 public class FulfillPaidOrderHandlerTests
@@ -207,5 +209,93 @@ public class FulfillPaidOrderHandlerTests
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
+    }
+
+    /// <summary>
+    /// Builds a paid order carrying a single domain-renewal line.
+    /// </summary>
+    /// <param name="orderId">Id the order repository will answer for.</param>
+    /// <param name="clientId">Client the order belongs to.</param>
+    /// <returns>The order, already linked to invoice 10.</returns>
+    private Order MakeRenewalOrder(int orderId, int clientId)
+    {
+        var order = Order.Create(
+            orderNumber: $"ORD-{orderId}", clientId: clientId,
+            paymentMethod: "innovayse-inecobank", ipAddress: null);
+
+        order.AddItem(
+            productId: 9, productName: "Domain Registration", billingCycle: "annually",
+            firstPaymentAmount: 25m, recurringAmount: 25m, domain: "example.com", hostname: null,
+            domainAction: "renew", years: 2);
+
+        order.LinkInvoice(10);
+        orderRepo.Setup(r => r.FindByIdAsync(orderId, It.IsAny<CancellationToken>())).ReturnsAsync(order);
+        return order;
+    }
+
+    /// <summary>
+    /// A paid renewal line extends the registration once the invoice is settled. This is the half
+    /// of the client renewal flow that runs after payment: the order raised at checkout is what
+    /// the customer paid for, and the registrar is not called before that.
+    /// </summary>
+    /// <returns>A task representing the test.</returns>
+    [Fact]
+    public async Task HandleAsync_PaidRenewalForOwnDomain_RenewsIt()
+    {
+        MakeRenewalOrder(orderId: 5, clientId: 5);
+        invoiceRepo.Setup(r => r.FindByIdAsync(10, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(MakePaidInvoiceWithGatewaySession("innovayse-inecobank", "gw-order-5"));
+
+        domainRepo.Setup(r => r.FindByNameAsync("example.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(DomainEntity.CreateTransfer(clientId: 5, name: "example.com"));
+
+        await CreateHandler().HandleAsync(new FulfillPaidOrderCommand(5), CancellationToken.None);
+
+        bus.Verify(
+            b => b.InvokeAsync(
+                It.Is<RenewDomainCommand>(c => c.Years == 2), It.IsAny<CancellationToken>(), null),
+            Times.Once);
+    }
+
+    /// <summary>
+    /// A paid renewal line naming a domain that belongs to somebody else renews nothing, and the
+    /// payment goes back.
+    /// <para>
+    /// The ownership check at checkout cannot cover this. Fulfillment runs later, from a payment
+    /// webhook, against whatever the order line says -- so the boundary has to hold here as well
+    /// as in <c>RenewMyDomainHandler</c>. This is the failure mode this repository has shipped
+    /// before, and a renewal is the version of it that spends one customer's money on another
+    /// customer's asset.
+    /// </para>
+    /// </summary>
+    /// <returns>A task representing the test.</returns>
+    [Fact]
+    public async Task HandleAsync_PaidRenewalForAnotherClientsDomain_RefusesAndRefunds()
+    {
+        MakeRenewalOrder(orderId: 6, clientId: 5);
+
+        var invoice = MakePaidInvoiceWithGatewaySession("innovayse-inecobank", "gw-order-6");
+        invoiceRepo.Setup(r => r.FindByIdAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(invoice);
+
+        // Same name, different owner. The lookup is by name and is not scoped by client, which is
+        // exactly why the handler has to compare the owner itself.
+        domainRepo.Setup(r => r.FindByNameAsync("example.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(DomainEntity.CreateTransfer(clientId: 4242, name: "example.com"));
+
+        var plugin = new Mock<IPaymentPlugin>();
+        plugin.Setup(p => p.RefundAsync("gw-order-6", 2500L, It.IsAny<CancellationToken>()))
+            .ReturnsAsync("refund-6");
+        pluginResolver.Setup(r => r.ResolveAsync("innovayse-inecobank", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(plugin.Object);
+
+        await CreateHandler().HandleAsync(new FulfillPaidOrderCommand(6), CancellationToken.None);
+
+        bus.Verify(
+            b => b.InvokeAsync(
+                It.IsAny<RenewDomainCommand>(), It.IsAny<CancellationToken>(), null),
+            Times.Never);
+
+        plugin.Verify(
+            p => p.RefundAsync("gw-order-6", 2500L, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

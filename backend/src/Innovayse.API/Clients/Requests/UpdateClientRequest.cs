@@ -12,6 +12,7 @@ namespace Innovayse.API.Clients.Requests;
 /// <param name="State">Updated billing state.</param>
 /// <param name="PostCode">Updated billing postcode.</param>
 /// <param name="Country">Updated billing country code (2 chars).</param>
+/// <param name="Language">Preferred UI language code, or null to leave it alone.</param>
 /// <param name="Currency">ISO 4217 currency code (null to keep current).</param>
 /// <param name="PaymentMethod">Payment method label (null to keep current).</param>
 /// <param name="BillingContact">Billing contact reference (null to keep current).</param>
@@ -43,6 +44,7 @@ public record UpdateClientRequest(
     string? State,
     string? PostCode,
     string? Country,
+    string? Language,
     string? Currency,
     string? PaymentMethod,
     string? BillingContact,

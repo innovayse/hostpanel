@@ -1,5 +1,6 @@
 namespace Innovayse.Application.Admin.Users.Commands.SetUserPassword;
 
+using Innovayse.Application.Auth.Common;
 using Innovayse.Application.Auth.Interfaces;
 
 /// <summary>Handles <see cref="SetUserPasswordCommand"/>.</summary>

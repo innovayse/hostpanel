@@ -51,7 +51,7 @@ import NovaFaq from '~/templates/nova/sections/Faq.vue'
 import NovaFinalCta from '~/templates/nova/sections/FinalCta.vue'
 import type { DomainResult, PlanCard } from '~/templates/aurora/types'
 import type { ComparisonRow } from '~/templates/nova/types'
-import type { TldPriceRow } from '~/composables/useDomainLookup'
+import type { TldPriceRow } from '~/types/tldpricerow'
 
 withDefaults(defineProps<{
   plans?: PlanCard[]

@@ -47,7 +47,7 @@
  * table; the selection arrives here as a prop.
  */
 import { ALL_CATEGORY } from '~/templates/aurora/types'
-import type { TldPriceRow } from '~/composables/useDomainLookup'
+import type { TldPriceRow } from '~/types/tldpricerow'
 
 const props = withDefaults(defineProps<{
   rows?: TldPriceRow[]

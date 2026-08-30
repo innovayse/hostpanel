@@ -172,7 +172,7 @@
 import { ArrowLeft, ArrowRight, CheckCircle, AlertCircle, HelpCircle } from 'lucide-vue-next'
 import { useCartStore } from '~/stores/cart'
 import { useCatalogApi } from '~/composables/apis/useCatalogApi'
-import type { PortalProduct } from '~/types/portalproduct'
+import type { PortalProduct, PortalProductPricing } from '~/types/portalproduct'
 
 const route = useRoute()
 const { t, locale } = useI18n()
@@ -188,54 +188,56 @@ const pid = Number(route.params.pid)
 // would also cost the SSR dedup and the locale re-fetch that `useApi()` gives for free, and
 // this page is server-rendered and indexed.
 const { data: products, pending } = await useCatalogApi().loadProducts(
-  () => ({ lang: locale.value, pid })
+  () => ({ pid })
 )
 
 const product = computed<PortalProduct | null>(() => products.value?.[0] ?? null)
 
-// Find config by gid
+// Find config by product group.
+//
+// `groupId` is the field `ProductDto` sends; this read `product.value.gid`, which no product
+// has ever carried, so the lookup was `productGidToKey[undefined]` and `cfg` was null on every
+// render — taking the group name and every visual with it.
 const cfg = computed(() => {
-  if (!product.value) return null
-  const key = productGidToKey[product.value.gid]
+  const groupId = product.value?.groupId
+  if (groupId === undefined) return null
+
+  const key = productGidToKey[groupId]
   return key ? productConfig[key] : null
 })
 
-const groupName = computed(() =>
-  product.value?.group_translations?.translated_name ||
-  product.value?.group_translations?.translated_headline ||
-  cfg.value?.name || ''
-)
+// The `translated_*` and `group_translations` reads that used to head each of these are gone:
+// `ProductDto` carries no translated copy and never has, so they resolved to `undefined` on
+// every render and the `||` fallback below is what has actually been rendering all along. They
+// are removed rather than left in place so the next reader does not take them for a working
+// translation path -- see the note on `types/portalproduct.ts`.
+const groupName = computed(() => cfg.value?.name ?? '')
 
-const productName = computed(() =>
-  product.value?.translated_name || product.value?.name || ''
-)
+const productName = computed(() => product.value?.name ?? '')
 
-const productDesc = computed(() =>
-  product.value?.translated_shortdescription ||
-  product.value?.shortdescription ||
-  product.value?.translated_description ||
-  product.value?.description || ''
-)
+const productDesc = computed(() => product.value?.description ?? '')
 
-// Features: group_features first, then parse description
-const features = computed(() => {
-  if (!product.value) return []
-  const gf: any[] = product.value.group_features ?? []
-  const groupF = gf.map((f: any) => f.translated_feature || f.feature).filter(Boolean)
-  if (groupF.length > 0) return groupF
-  const { features: f } = parseDescription(productDesc.value)
-  return f
-})
+/** Feature bullets, parsed out of the product description — the only source the API offers. */
+const features = computed(() => parseDescription(productDesc.value).features)
 
 // Pricing
 const allCycleKeys = ['monthly', 'quarterly', 'semiannually', 'annually', 'biennially', 'triennially'] as const
 type CycleKey = typeof allCycleKeys[number]
 
-function getCurrency() {
+/**
+ * The price block to read amounts from.
+ *
+ * The BFF only ever populates `USD`, so the locale-preferred lookup below almost always falls
+ * through to the first (and only) entry. It is kept because the shape allows more.
+ *
+ * @returns The price block, or null when the product carries no pricing at all.
+ */
+const getCurrency = (): PortalProductPricing | null => {
   const pricing = product.value?.pricing
   if (!pricing) return null
+
   const preferred = currencyByLocale[locale.value] ?? 'USD'
-  return pricing[preferred] ?? Object.values(pricing)[0] as any
+  return pricing[preferred] ?? Object.values(pricing)[0] ?? null
 }
 
 const availableCycles = computed(() => {
@@ -250,8 +252,9 @@ const selectedCycle = ref<CycleKey>('monthly')
 
 // Set default cycle to first available
 watch(availableCycles, (cycles) => {
-  if (cycles.length && !cycles.find(c => c.key === selectedCycle.value)) {
-    selectedCycle.value = cycles[0].key
+  const first = cycles[0]
+  if (first && !cycles.find(c => c.key === selectedCycle.value)) {
+    selectedCycle.value = first.key
   }
 }, { immediate: true })
 
@@ -263,18 +266,19 @@ const selectedPrice = computed(() => {
   return `${c.prefix}${amount}`
 })
 
-const setupFee = computed(() => {
-  const c = getCurrency()
-  const cycleSetupMap: Record<CycleKey, string> = {
-    monthly: 'msetupfee', quarterly: 'qsetupfee', semiannually: 'ssetupfee',
-    annually: 'asetupfee', biennially: 'bsetupfee', triennially: 'tsetupfee'
-  }
-  const key = cycleSetupMap[selectedCycle.value]
-  const fee = c?.[key] ?? '0.00'
-  return `${c?.prefix ?? ''}${fee}`
-})
+/**
+ * The setup fee for the selected cycle.
+ *
+ * Always zero, and now says so directly. This used to index the price block with WHMCS's
+ * per-cycle setup-fee keys — `msetupfee`, `qsetupfee` and four more — none of which the BFF
+ * emits and none of which exist in `ProductPricingDto`. Every lookup missed and every render
+ * fell to the same `'0.00'`, so nothing about the displayed figure changes; what changes is
+ * that the code no longer implies a setup fee could arrive through a path that does not exist.
+ */
+const setupFee = computed(() => `${getCurrency()?.prefix ?? ''}0.00`)
 
-function addToCart() {
+/** Adds the configured plan to the cart and moves the visitor to checkout. */
+const addToCart = () => {
   const c = getCurrency()
   cart.addItem({
     pid,

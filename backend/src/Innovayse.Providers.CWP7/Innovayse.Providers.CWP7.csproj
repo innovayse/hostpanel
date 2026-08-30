@@ -22,5 +22,14 @@
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
       <_Parameter1>Innovayse.Infrastructure</_Parameter1>
     </AssemblyAttribute>
+    <!--
+      Cwp7ApiClient and Cwp7ApiResponse are internal, and their tests live in the Infrastructure
+      suite rather than in a CWP7 suite of their own: Infrastructure already references this
+      provider (ProvisioningProviderFactory constructs the client), so a sixth test project would
+      have added a solution entry and a CI job for two test methods.
+    -->
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>Innovayse.Infrastructure.Tests</_Parameter1>
+    </AssemblyAttribute>
   </ItemGroup>
 </Project>

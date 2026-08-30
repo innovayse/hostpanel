@@ -92,6 +92,13 @@ public sealed class LocalAuthController(
         var accessToken = tokenService.GenerateAccessToken(
             user.Value.Id, user.Value.Email, null, null, [.. roles], emailConfirmed);
 
+        // The browser's copy goes into an httpOnly cookie it cannot read. The token stays in
+        // the body as well, because this endpoint has a second class of caller — anything
+        // scripted or machine-to-machine — and taking it out would break them for a browser
+        // problem they do not have. See LocalSessionCookie for why this is the same answer the
+        // SSO path already reached.
+        LocalSessionCookie.Issue(HttpContext, accessToken);
+
         return Ok(new { accessToken, expiresIn = 900 });
     }
 
@@ -131,7 +138,53 @@ public sealed class LocalAuthController(
         var accessToken = tokenService.GenerateAccessToken(
             userId, user.Value.Email, null, null, [.. roles]);
 
+        // Same as the credential step above: the browser's copy goes into the httpOnly cookie.
+        // A sign-in that finished at the second factor has to end in the same session shape as
+        // one that did not, or an operator with 2FA enabled would be the only one still holding
+        // a token in script-readable storage.
+        LocalSessionCookie.Issue(HttpContext, accessToken);
+
         return Ok(new { accessToken, expiresIn = 900 });
+    }
+
+    /// <summary>
+    /// Ends a local-mode browser session by clearing the httpOnly session cookie.
+    /// </summary>
+    /// <returns>200 once the cookie has been cleared.</returns>
+    /// <remarks>
+    /// <para>
+    /// It exists because the credential is no longer something the browser can drop on its own.
+    /// Signing out used to be <c>sessionStorage.removeItem</c>; a cookie the page cannot read is
+    /// also a cookie the page cannot delete, so the server has to be asked.
+    /// </para>
+    /// <para>
+    /// <b>Why <c>DELETE</c> and not <c>POST</c>.</b> Under SSO mode <c>MapInnovayseAuth</c> maps
+    /// <c>POST /api/auth/logout</c>. A controller action on the same method and path would give
+    /// the router two candidate endpoints for one request — an ambiguous match, which fails at
+    /// request time rather than at startup, and only on the mode this route is not for. Proven,
+    /// not assumed: a throwaway build with <c>[HttpPost("logout")]</c> answered 500
+    /// <c>AmbiguousMatchException</c> under <c>Auth__Mode=sso</c>.
+    /// </para>
+    /// <para>
+    /// The verb is what keeps the path free, exactly as it does for login: the SDK serves
+    /// <c>GET /api/auth/login</c> (a redirect into the SSO) while this controller serves
+    /// <c>POST /api/auth/login</c>, and the router tells them apart by method alone. Ending a
+    /// session is a deletion, so <c>DELETE</c> is both the free verb and the accurate one.
+    /// </para>
+    /// <para>
+    /// Anonymous, and answering 200 either way: clearing a cookie that was not there is not a
+    /// failure, and requiring a valid session to end one would leave an operator whose token had
+    /// already expired unable to sign out.
+    /// </para>
+    /// </remarks>
+    [HttpDelete("logout")]
+    [AllowAnonymous]
+    public IActionResult LocalLogout()
+    {
+        if (!IsLocalMode) return NotFound();
+
+        LocalSessionCookie.Clear(HttpContext);
+        return Ok(new { success = true });
     }
 
     /// <summary>
@@ -244,15 +297,4 @@ public sealed class LocalAuthController(
         // The BFF sets short-lived access tokens; the user re-logs when expired
         return Unauthorized(new { error = localizer["SessionExpired"].Value });
     }
-
-    // Request DTOs not already in Requests/
-
-    /// <summary>Request body for POST /api/auth/forgot-password.</summary>
-    /// <param name="Email">The user's email address.</param>
-    public record ForgotPasswordRequest(string Email);
-
-    /// <summary>Request body for POST /api/auth/confirm-email.</summary>
-    /// <param name="Email">The user's email address.</param>
-    /// <param name="Token">The email confirmation token.</param>
-    public record ConfirmEmailRequest(string Email, string Token);
 }

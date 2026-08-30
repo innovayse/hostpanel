@@ -39,10 +39,19 @@ public sealed class ProvisioningProviderFactory(
     /// </summary>
     /// <param name="server">The CWP7 server.</param>
     /// <returns>A configured <see cref="Cwp7ProvisioningProvider"/>.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the server has no usable access hash — null, empty or whitespace.
+    /// </exception>
     private Cwp7ProvisioningProvider CreateCwp7Provider(Server server)
     {
-        var apiKey = server.AccessHash
-            ?? throw new InvalidOperationException($"Server '{server.Name}' (id={server.Id}) has no access hash configured.");
+        // Whitespace, not just null: a server row saved with the access-hash field cleared holds
+        // an empty string, and that used to build a provider with an empty API key that failed
+        // later, at the provider, instead of here with the message this line already writes.
+        var apiKey = server.AccessHash;
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            throw new InvalidOperationException($"Server '{server.Name}' (id={server.Id}) has no access hash configured.");
+        }
 
         var host = $"https://{server.Hostname}:{DefaultCwp7Port}";
         var serverIp = server.IpAddress ?? server.Hostname;

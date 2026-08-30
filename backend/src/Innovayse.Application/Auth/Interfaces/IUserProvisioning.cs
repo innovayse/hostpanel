@@ -1,5 +1,7 @@
 namespace Innovayse.Application.Auth.Interfaces;
 
+using Innovayse.Application.Auth.Common;
+
 /// <summary>
 /// Creates and edits the records that describe people.
 ///
@@ -92,13 +94,3 @@ public interface IUserProvisioning
     /// </exception>
     Task<string> IssuePasswordResetTokenAsync(string subject, CancellationToken ct);
 }
-
-/// <summary>
-/// Thrown when a flow tries to create or edit a person in a deployment whose people belong
-/// to an SSO.
-/// </summary>
-public sealed class UserProvisioningNotAllowedException(string operation)
-    : InvalidOperationException(
-        $"This deployment's accounts belong to the SSO, so hostpanel cannot {operation}. " +
-        "The person must exist in the SSO first, and changes to their name or address are " +
-        "made there.");

@@ -84,6 +84,9 @@ defineEmits<{
   focus: []
 }>()
 
+/** The slots this input was given — read below to decide whether the field needs left padding. */
+const slots = useSlots()
+
 const showPassword = ref(false)
 const resolvedType = computed(() =>
   props.type === 'password' ? (showPassword.value ? 'text' : 'password') : props.type
@@ -96,8 +99,11 @@ const inputClasses = computed(() => {
     md: 'px-4 py-2.5 text-base',
     lg: 'px-5 py-3 text-lg'
   }
-  const hasPrefix = false // prefix handled via pl override
-  const iconPadding  = (props.icon || props.$slots?.prefix) ? 'pl-10' : ''
+  // `slots.prefix`, not `props.$slots.prefix`: `$slots` is not a prop and never was, so this
+  // read was `undefined` on every render and an input given a `prefix` slot got no left padding
+  // -- the typed text rendered underneath the prefix content. The template's own
+  // `v-if="$slots.prefix"` is correct; only the script half was wrong.
+  const iconPadding  = (props.icon || slots.prefix) ? 'pl-10' : ''
   const rightPadding = (props.type === 'password' || props.error) ? 'pr-10' : ''
   const state = props.error
     ? 'border-red-400 dark:border-red-500/50 focus:border-red-500 focus:ring-red-500/50 bg-red-50 dark:bg-red-500/5'

@@ -4,6 +4,7 @@ using Innovayse.Application.Billing.Common;
 using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Common;
 using Innovayse.Application.Domains.Commands.RegisterDomain;
+using Innovayse.Application.Domains.Commands.RenewDomain;
 using Innovayse.Application.Domains.Commands.TransferDomain;
 using Innovayse.Application.Services.Commands.OrderService;
 using Innovayse.Domain.Billing;
@@ -116,6 +117,10 @@ public sealed class FulfillPaidOrderHandler(
                                 RecurringAmount: item.RecurringAmount,
                                 PaymentMethod: order.PaymentMethod), ct);
                     }
+                    else if (item.DomainAction == "renew")
+                    {
+                        await RenewPaidDomainAsync(order, domain, item.Years ?? 1, ct);
+                    }
 
                     orderDomainName = domain;
                 }
@@ -159,6 +164,58 @@ public sealed class FulfillPaidOrderHandler(
             domain?.LinkService(createdServiceId.Value);
             await uow.SaveChangesAsync(ct);
         }
+    }
+
+    /// <summary>
+    /// Extends a domain the paying client already owns, once the renewal invoice is settled.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The other two domain actions create a domain and are handed the client id to create it
+    /// against. A renewal names one that already exists, so it is looked up by name -- and the
+    /// lookup is not scoped by client, which is why the owner is checked here explicitly.
+    /// Refusing rather than renewing somebody else's registration matters even though the only
+    /// route that raises such an order (<c>RenewMyDomainHandler</c>) checked ownership before
+    /// the invoice existed: fulfillment runs later, from a payment webhook, against whatever the
+    /// order line says, and a check that ran once at checkout guarantees nothing about the
+    /// message that gets replayed here.
+    /// </para>
+    /// <para>
+    /// Both refusals throw <see cref="InvalidOperationException"/> so the caller's money goes
+    /// back the same way a rejected registration's does -- the loop above catches it and issues
+    /// the automatic refund. A paid line that silently did nothing would be worse than a failed
+    /// one.
+    /// </para>
+    /// </remarks>
+    /// <param name="order">The paid order the line belongs to.</param>
+    /// <param name="domainName">Fully-qualified name from the order line.</param>
+    /// <param name="years">Period bought, in years.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the registrar has extended the registration.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when no such domain exists, when it belongs to another client, or when the
+    /// registrar rejects the renewal.
+    /// </exception>
+    private async Task RenewPaidDomainAsync(Order order, string domainName, int years, CancellationToken ct)
+    {
+        var existing = await domainRepo.FindByNameAsync(domainName, ct)
+            ?? throw new InvalidOperationException(
+                $"Order {order.Id} renews '{domainName}', which is not registered here.");
+
+        if (existing.ClientId != order.ClientId)
+        {
+            // Logged without naming the owning client: this is a refusal, and the log line that
+            // records it should not be the place somebody learns whose domain it was.
+            logger.LogError(
+                "Order {OrderId} (client {ClientId}) renews domain {DomainId}, which belongs to "
+                + "another client. Refusing and refunding.",
+                order.Id, order.ClientId, existing.Id);
+
+            throw new InvalidOperationException(
+                $"Order {order.Id} renews '{domainName}', which is not this client's domain.");
+        }
+
+        await bus.InvokeAsync(new RenewDomainCommand(existing.Id, years), ct);
     }
 
     /// <summary>

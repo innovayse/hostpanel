@@ -47,6 +47,46 @@ public interface IInvoiceRepository
     Task<IReadOnlyList<Invoice>> ListByClientAsync(int clientId, CancellationToken ct);
 
     /// <summary>
+    /// Returns every invoice of a client that carries at least one line charged to the given
+    /// service, ordered newest first.
+    /// </summary>
+    /// <remarks>
+    /// Scoped by client as well as by service, so a caller that has settled ownership once
+    /// cannot be handed another account's invoice by a service id that slipped through. The two
+    /// conditions are ANDed in SQL rather than the client check being left to the handler: a
+    /// filter that lives in the query cannot be forgotten by the next caller of it.
+    /// </remarks>
+    /// <param name="clientId">The owning client's primary key.</param>
+    /// <param name="clientServiceId">The service the lines must be charged to.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Matching invoices with items and transactions loaded, newest first.</returns>
+    Task<IReadOnlyList<Invoice>> ListByClientServiceAsync(
+        int clientId, int clientServiceId, CancellationToken ct);
+
+    /// <summary>
+    /// Returns how many of a client's invoices carry no service link on any line, and so cannot
+    /// be attributed to any service at all.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This answers "is there billing history we cannot attribute?" without attributing any of
+    /// it. Every invoice raised before <c>invoice_items.client_service_id</c> existed is in this
+    /// count, as is every line the platform still has no service in hand for at the moment it is
+    /// written — a one-off billable item, a domain charge, an admin adjustment, and the first
+    /// payment on a new order, which is invoiced before the service it buys is created.
+    /// </para>
+    /// <para>
+    /// The portal needs it to tell "this service was never charged" apart from "charges exist
+    /// that were never recorded against a service, and none of them can honestly be shown here".
+    /// Showing an empty table for the second case would state a fact the data does not support.
+    /// </para>
+    /// </remarks>
+    /// <param name="clientId">The owning client's primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>How many of the client's invoices have no service link on any line.</returns>
+    Task<int> CountUnattributedByClientAsync(int clientId, CancellationToken ct);
+
+    /// <summary>
     /// Returns a paginated, filtered list of invoices for a specific client.
     /// </summary>
     /// <param name="clientId">The client's primary key.</param>

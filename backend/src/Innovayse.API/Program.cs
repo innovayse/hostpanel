@@ -139,6 +139,40 @@ try
                     RoleClaimType = System.Security.Claims.ClaimTypes.Role,
                     NameClaimType = "sub",
                 };
+
+                // Local mode had no Events at all, so nothing here ever read subject_roles —
+                // the store every grant in this product writes to. Roles came only from the
+                // claims baked into the token at sign-in, which are Identity's AspNetUserRoles,
+                // leaving the two stores disjoint: setup, admin-created clients and
+                // guest-checkout customers all wrote a grant that authorized nothing.
+                opts.Events = new JwtBearerEvents
+                {
+                    // The admin SPA no longer holds this token in sessionStorage, where any
+                    // script injected into the page could read it. The API writes it into an
+                    // httpOnly cookie instead — the same decision the SSO path already made,
+                    // for the same reason — and this is the half that reads it back.
+                    //
+                    // The Authorization header still wins where one is present, and has to: the
+                    // client portal's Nuxt server calls this API machine-to-machine with a
+                    // bearer token and has no browser to hold a cookie. The cookie is a
+                    // fallback for the one caller that does.
+                    //
+                    // Nothing about the token itself changed. Same issuer, same audience, same
+                    // fifteen-minute lifetime, same validation parameters above.
+                    OnMessageReceived = context =>
+                    {
+                        if (string.IsNullOrEmpty(context.Token)
+                            && context.Request.Cookies.TryGetValue(
+                                Innovayse.API.Auth.LocalSessionCookie.Name, out var cookieToken)
+                            && !string.IsNullOrEmpty(cookieToken))
+                        {
+                            context.Token = cookieToken;
+                        }
+
+                        return Task.CompletedTask;
+                    },
+                    OnTokenValidated = Innovayse.API.Auth.SubjectRoleClaimsEnricher.OnTokenValidated(),
+                };
             });
     }
     else
@@ -176,25 +210,17 @@ try
                     }
                     return null; // use default (SSO) scheme
                 };
+                // The subject the SSO issued is the identifier this product uses, so there is
+                // nothing to map it onto. This used to provision a local copy of the user and
+                // swap NameIdentifier to that copy's id; the copy was written once and never
+                // updated, so a name or address changed in the SSO never reached here.
+                //
+                // The role merge itself is shared with both locally issued schemes rather than
+                // written inline here — it was the only reader of subject_roles in the process,
+                // which is what made that store SSO-only in practice.
                 opts.Events = new JwtBearerEvents
                 {
-                    OnTokenValidated = async context =>
-                    {
-                        // The subject the SSO issued is the identifier this product uses,
-                        // so there is nothing to map it onto. This used to provision a
-                        // local copy of the user and swap NameIdentifier to that copy's
-                        // id; the copy was written once and never updated, so a name or
-                        // address changed in the SSO never reached here.
-                        var sub = context.Principal?.FindFirst("sub")?.Value;
-                        if (sub is null) return;
-
-                        var identity = (System.Security.Claims.ClaimsIdentity)context.Principal!.Identity!;
-                        var roleStore = context.HttpContext.RequestServices
-                            .GetRequiredService<Innovayse.Domain.Auth.Interfaces.ISubjectRoleStore>();
-
-                        foreach (var role in await roleStore.GetRolesAsync(sub, context.HttpContext.RequestAborted))
-                            identity.AddClaim(new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, role));
-                    },
+                    OnTokenValidated = Innovayse.API.Auth.SubjectRoleClaimsEnricher.OnTokenValidated(),
                 };
             })
             .AddJwtBearer("LocalJwt", opts =>
@@ -209,6 +235,15 @@ try
                     ValidAudience = builder.Configuration["Jwt:Audience"] ?? Innovayse.Infrastructure.Auth.JwtTokenService.DefaultAudience,
                     RoleClaimType = System.Security.Claims.ClaimTypes.Role,
                     NameClaimType = "sub",
+                };
+
+                // Same merge as the SSO scheme above. This one had no Events either, and the
+                // ForwardDefaultSelector sends every token this product minted itself here —
+                // so the admin panel's own credential was the one credential in SSO mode that
+                // could not see a role granted through subject_roles.
+                opts.Events = new JwtBearerEvents
+                {
+                    OnTokenValidated = Innovayse.API.Auth.SubjectRoleClaimsEnricher.OnTokenValidated(),
                 };
             });
     }
@@ -439,9 +474,19 @@ try
         // RoleManager is not there to resolve — asking for it with GetRequiredService
         // threw before the API had finished starting, and the container never came up.
         //
-        // Nothing is lost by skipping it. What a person is allowed to do is decided by
-        // subject_roles in both modes; AspNetRoles is scaffolding for the local
-        // UserManager, which an SSO-owned deployment never calls.
+        // Nothing is lost by skipping it. Every grant this product makes is written to
+        // subject_roles, and SubjectRoleClaimsEnricher merges that store onto the principal
+        // on every JWT scheme in both modes — so a role granted there authorizes in both.
+        //
+        // This comment used to say authorization was decided by subject_roles in both modes
+        // full stop, and that was not true: no scheme registered under AUTH_MODE=local read
+        // the store at all, so local authorization was decided solely by the claims baked
+        // into the token at sign-in. It is worth stating precisely, because the two role
+        // tables still are not one. AspNetRoles remains scaffolding for the local
+        // UserManager, and the roles it holds also reach the principal — via the token
+        // LocalAuthController mints from IUserService.GetRolesAsync. A local deployment
+        // therefore authorizes on the union of the two, with subject_roles the only one a
+        // grant made after sign-in can land in.
         if (isLocalMode)
         {
             var roleManager = scope.ServiceProvider
@@ -477,6 +522,48 @@ try
         {
             var seeder = ActivatorUtilities.CreateInstance<Innovayse.Infrastructure.Persistence.DevDataSeeder>(scope.ServiceProvider);
             await seeder.SeedAsync();
+        }
+
+        // The first-run setup token, and only where this deployment owns its own people.
+        //
+        // POST /api/auth/setup grants the Admin role, and until this existed it granted it to
+        // whichever authenticated caller asked first. Registration on a standalone install is
+        // public, so on a box that is reachable before its owner has finished configuring it —
+        // the normal shape of a self-hosted deployment — whoever registered and claimed first
+        // owned the installation. The token moves that decision to "who can read this log",
+        // which the operator can and a passer-by cannot.
+        //
+        // Deliberately last in this block, after DevDataSeeder: a Development box already has
+        // an Admin by the time this runs, so nothing is issued and no token line is printed to
+        // be mistaken for one that matters.
+        //
+        // Nothing happens under Auth:Mode=sso. Accounts there belong to the sign-on service, so
+        // the callers who can reach an authenticated endpoint at all are already the ones the
+        // operator provisioned, and that path is in production use.
+        if (isLocalMode)
+        {
+            var setupToken = await Innovayse.Application.Auth.Services.SetupTokenSeeder.EnsureIssuedAsync(
+                scope.ServiceProvider.GetRequiredService<Innovayse.Domain.Settings.Interfaces.ISettingRepository>(),
+                scope.ServiceProvider.GetRequiredService<Innovayse.Domain.Auth.Interfaces.ISubjectRoleStore>(),
+                scope.ServiceProvider.GetRequiredService<Innovayse.Application.Common.IUnitOfWork>());
+
+            if (setupToken is not null)
+            {
+                // Warning level so it survives a production log filter, and formatted to be
+                // read by a person tailing `docker logs` rather than by a sink. It is repeated
+                // on every boot for as long as setup is outstanding: that is what makes a
+                // restart mid-setup recoverable instead of a lockout, and the token is retired
+                // the moment it is used.
+                //
+                // The token is a template argument rather than a concatenation so that a
+                // structured sink stores it as a field — this line is a secret either way, and
+                // an operator who ships logs off the box should know it is in them until setup
+                // completes.
+                Log.Warning(
+                    "FIRST-RUN SETUP IS OUTSTANDING. Nobody holds the Admin role yet. " +
+                    "Open the admin panel, create your account, and paste this setup token when " +
+                    "it asks for one: {SetupToken}", setupToken);
+            }
         }
     }
 
@@ -542,6 +629,14 @@ try
     }
     else
     {
+        // Above authentication, so a cross-site forgery is refused before anything reads the
+        // cookie it was hoping to ride on. The SSO branch gets the equivalent check from
+        // UseInnovayseAuth; local mode had none because a bearer header in an Authorization
+        // header is CSRF-safe on its own, and that stopped being the whole story the moment the
+        // local session moved into a cookie. It examines only requests that actually present
+        // that cookie, so bearer callers and anonymous webhooks are untouched.
+        app.UseMiddleware<Innovayse.API.Auth.LocalSessionCsrfMiddleware>();
+
         app.UseAuthentication();
 
         // Between authentication and authorisation, which is where it belongs: User is populated,

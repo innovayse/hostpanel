@@ -116,12 +116,22 @@ const statusTarget = computed(() =>
   invoiceId.value ? localePath(`/client/invoices/${invoiceId.value}`) : localePath('/client/invoices'))
 
 /** Calls the matching complete endpoint and updates the view state. */
-async function check() {
+const check = async (): Promise<void> => {
+  // `onMounted` below already refuses to call this when neither id is present, but that
+  // guarantee lives in another function and the compiler cannot carry it here — where the
+  // invoice branch would otherwise post to `/invoices/undefined/gateway-payment/complete`. The
+  // check is restated rather than asserted away so the two cannot drift apart.
+  const target = orderId.value ? 'order' : 'invoice'
+  const id = orderId.value ?? invoiceId.value
+  if (!id) {
+    state.value = 'missing'
+    checking.value = false
+    return
+  }
+
   checking.value = true
   try {
-    const { state: result } = orderId.value
-      ? await useBillingApi().completeGatewayPayment('order', orderId.value)
-      : await useBillingApi().completeGatewayPayment('invoice', invoiceId.value)
+    const { state: result } = await useBillingApi().completeGatewayPayment(target, id)
     state.value = result
   } catch {
     // We could not confirm the outcome — do not claim the payment was declined

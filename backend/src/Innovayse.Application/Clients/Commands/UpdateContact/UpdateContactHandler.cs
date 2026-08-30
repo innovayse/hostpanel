@@ -1,5 +1,6 @@
 namespace Innovayse.Application.Clients.Commands.UpdateContact;
 
+using Innovayse.Application.Clients.Common;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Clients.Interfaces;
 
@@ -16,11 +17,22 @@ public sealed class UpdateContactHandler(IClientRepository clientRepo, IUnitOfWo
     /// </summary>
     /// <param name="cmd">The update contact command.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <exception cref="InvalidOperationException">Thrown when the client or contact is not found.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the client is not found.</exception>
+    /// <exception cref="MyContactNotFoundException">
+    /// Thrown when the client has no contact with that id -- whether it is another account's or
+    /// does not exist at all. One answer for both, deliberately.
+    /// </exception>
     public async Task HandleAsync(UpdateContactCommand cmd, CancellationToken ct)
     {
         var client = await clientRepo.FindByIdAsync(cmd.ClientId, ct)
             ?? throw new InvalidOperationException($"Client {cmd.ClientId} not found.");
+
+        // Checked here rather than left to the aggregate. Client.UpdateContact raises a bare
+        // InvalidOperationException naming the id, which reaches the caller as a 400 carrying
+        // INVALID_OPERATION and a hardcoded English sentence with the probed id in it. A contact
+        // that is somebody else's and one that does not exist must be a single answer.
+        if (client.Contacts.All(contact => contact.Id != cmd.ContactId))
+            throw new MyContactNotFoundException(cmd.ContactId);
 
         client.UpdateContact(
             cmd.ContactId,

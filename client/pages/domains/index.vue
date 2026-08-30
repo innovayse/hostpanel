@@ -8,7 +8,7 @@
     :active-category="activeCategory"
     :in-cart="cartDomains"
     @search="search"
-    @update:category="value => (activeCategory = value)"
+    @update:category="(value: string) => (activeCategory = value)"
     @add="addDomain"
   />
 </template>

@@ -46,9 +46,9 @@
       <UiTableBody>
         <UiTableRow v-for="invoice in filteredInvoices" :key="invoice.id">
           <UiTableTd class="text-gray-900 dark:text-white font-medium">#{{ invoice.id }}</UiTableTd>
-          <UiTableTd class="text-gray-500 dark:text-gray-400">{{ invoice.date }}</UiTableTd>
-          <UiTableTd :class="isOverdue(invoice) ? 'text-red-400 font-medium' : 'text-gray-500 dark:text-gray-400'">{{ invoice.duedate }}</UiTableTd>
-          <UiTableTd align="right" class="text-gray-900 dark:text-white font-semibold">{{ invoice.currencyprefix }}{{ invoice.total }}</UiTableTd>
+          <UiTableTd class="text-gray-500 dark:text-gray-400">{{ formatDate(invoice.invoiceDate) }}</UiTableTd>
+          <UiTableTd :class="isOverdue(invoice) ? 'text-red-400 font-medium' : 'text-gray-500 dark:text-gray-400'">{{ formatDate(invoice.dueDate) }}</UiTableTd>
+          <UiTableTd align="right" class="text-gray-900 dark:text-white font-semibold">{{ formatCurrency(invoice.total, { code: store.user?.currency }) }}</UiTableTd>
           <UiTableTd align="center">
             <ClientStatusBadge :status="invoice.status" />
           </UiTableTd>
@@ -69,6 +69,9 @@
 <script setup lang="ts">
 import { FileText } from 'lucide-vue-next'
 import { useClientStore } from '~/stores/client'
+import { formatCurrency } from '~/utils/formatCurrency'
+import { formatDate } from '~/utils/formatDate'
+import { isInvoiceOverdue as isOverdue } from '~/utils/invoice'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
@@ -90,10 +93,5 @@ const filteredInvoices = computed(() => {
   return store.invoices.filter(i => i.status === activeTab.value)
 })
 
-function isOverdue(invoice: { status: string; duedate: string }): boolean {
-  if (invoice.status === 'Unpaid') {
-    return new Date(invoice.duedate) < new Date()
-  }
-  return false
-}
+
 </script>

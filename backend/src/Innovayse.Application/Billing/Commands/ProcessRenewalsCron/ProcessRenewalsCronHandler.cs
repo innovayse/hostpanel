@@ -59,7 +59,15 @@ public sealed class ProcessRenewalsCronHandler(
                         ? product.Name
                         : $"Service #{service.Id}";
 
-                    invoice.AddItem($"Renewal: {productName}", service.RecurringAmount, 1);
+                    // The service is in hand here, so the line records which one it is for
+                    // rather than leaving the customer to read it off the description. This is
+                    // the only place in the codebase where an invoice line is raised with the
+                    // ClientService it charges for already loaded: the first payment is invoiced
+                    // by PlaceOrderHandler, which runs before FulfillPaidOrderHandler creates
+                    // the service, and billable-item lines hang off a BillableItem that has no
+                    // service of its own.
+                    invoice.AddItem(
+                        $"Renewal: {productName}", service.RecurringAmount, 1, clientServiceId: service.Id);
                     service.AdvanceRenewal();
                 }
 

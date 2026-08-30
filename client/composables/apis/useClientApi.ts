@@ -214,7 +214,7 @@ export function useClientApi() {
     useApi<T>(() => `/api/portal/client/services/${id()}`)
 
   /**
-   * Reads a sub-resource of one hosting service — `hosting-info`, `ssh-info`,
+   * Reads a sub-resource of one hosting service — `hosting-info`,
    * `cancellation-status` and the like.
    *
    * @param id - Service id; a getter so the page re-reads when the route changes.

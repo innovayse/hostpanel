@@ -1,5 +1,6 @@
 namespace Innovayse.Application.Admin.Users.Commands.SendPasswordReset;
 
+using Innovayse.Application.Auth.Common;
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Common;
 using Innovayse.Application.Common.Options;

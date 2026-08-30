@@ -26,8 +26,15 @@ export default defineNuxtPlugin(() => {
       // older ones, and these two apps do not pin the same Nuxt minor.
       if (options.headers instanceof Headers) {
         options.headers.set('X-Requested-With', 'XMLHttpRequest')
-      } else {
-        options.headers = { ...(options.headers as Record<string, string>), 'X-Requested-With': 'XMLHttpRequest' }
+      }
+      else {
+        // The declared type is `Headers`, so this branch only runs on an older ofetch that
+        // hands over a plain object. Normalising into a `Headers` rather than assigning a
+        // fresh object literal keeps the runtime fallback and the declared type agreeing --
+        // the object literal did not satisfy `Headers` and was the error here.
+        const headers = new Headers(options.headers)
+        headers.set('X-Requested-With', 'XMLHttpRequest')
+        options.headers = headers
       }
     },
   })

@@ -125,7 +125,7 @@ function onPaste(event: ClipboardEvent) {
 
   const newDigits = [...digits.value]
   for (let i = 0; i < pasted.length; i++) {
-    newDigits[i] = pasted[i]
+    newDigits[i] = pasted[i] ?? ''
   }
   updateValue(newDigits)
 

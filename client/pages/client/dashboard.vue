@@ -159,10 +159,10 @@
           >
             <div>
               <div class="text-gray-900 dark:text-white text-sm font-medium">#{{ invoice.id }}</div>
-              <div class="text-gray-500 text-xs">{{ $t('client.dashboard.due') }} {{ invoice.duedate }}</div>
+              <div class="text-gray-500 text-xs">{{ $t('client.dashboard.due') }} {{ formatDate(invoice.dueDate) }}</div>
             </div>
             <div class="flex items-center gap-3">
-              <span class="text-gray-900 dark:text-white font-semibold text-sm">{{ invoice.currencyprefix }}{{ invoice.total }}</span>
+              <span class="text-gray-900 dark:text-white font-semibold text-sm">{{ formatCurrency(invoice.total, { code: store.user?.currency }) }}</span>
               <ClientStatusBadge :status="invoice.status" />
             </div>
           </NuxtLink>
@@ -200,15 +200,7 @@
             </div>
             <div class="flex items-center gap-2 flex-shrink-0">
               <span class="text-gray-500 text-xs">
-                {{
-                  domain.expiresAt && !domain.expiresAt.startsWith('0001')
-                    ? $t('client.dashboard.exp') + ' ' + new Date(domain.expiresAt).toLocaleDateString()
-                    : domain.nextDueDate && !domain.nextDueDate.startsWith('0001')
-                      ? $t('client.dashboard.due') + ' ' + new Date(domain.nextDueDate).toLocaleDateString()
-                      : domain.registeredAt && !domain.registeredAt.startsWith('0001')
-                        ? $t('client.dashboard.reg') + ' ' + new Date(domain.registeredAt).toLocaleDateString()
-                        : '—'
-                }}
+                {{ domainDateLabel(domain) }}
               </span>
               <ClientStatusBadge :status="domain.status" />
             </div>
@@ -273,7 +265,7 @@
             class="p-3 rounded-xl bg-gray-50 dark:bg-white/5"
           >
             <div class="text-gray-900 dark:text-white text-sm font-medium">{{ ann.title }}</div>
-            <div class="text-gray-500 text-xs mt-0.5">{{ ann.date }}</div>
+            <div class="text-gray-500 text-xs mt-0.5">{{ formatDate(ann.date) }}</div>
           </div>
         </div>
       </UiCard>
@@ -299,6 +291,9 @@
 import { Server, Globe, FileText, MessageSquare, RefreshCw, ArrowRight, Plus, Monitor, Loader } from 'lucide-vue-next'
 import { useClientStore } from '~/stores/client'
 import { useClientApi } from '~/composables/apis/useClientApi'
+import { EMPTY_DATE, formatDate } from '~/utils/formatDate'
+import { formatCurrency } from '~/utils/formatCurrency'
+import type { ClientDomain } from '~/types/clientdomain'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
@@ -320,6 +315,32 @@ const { data: announcementsRaw } = await useFetch<Array<{ id: number; date: stri
   '/api/portal/public/announcements'
 )
 const announcements = computed(() => announcementsRaw.value ?? [])
+
+/**
+ * The one date worth showing for a domain in the summary list, with its own label.
+ *
+ * Expiry first, then next-due, then registration — the row has space for one, and that is the
+ * order in which a customer needs it. The zero-date guards this used to spell out inline
+ * (`startsWith('0001')`) are gone: `formatDate` treats both sentinels as absent, so a field
+ * that carries one falls through to the next candidate here instead of being tested twice.
+ *
+ * @param domain - The domain row being rendered.
+ * @returns The labelled date, or the em dash when the domain carries none.
+ */
+const domainDateLabel = (domain: ClientDomain): string => {
+  const candidates: Array<[string, string | null | undefined]> = [
+    ['client.dashboard.exp', domain.expiresAt],
+    ['client.dashboard.due', domain.nextDueDate],
+    ['client.dashboard.reg', domain.registeredAt]
+  ]
+
+  for (const [key, value] of candidates) {
+    const formatted = formatDate(value)
+    if (formatted !== EMPTY_DATE) return `${t(key)} ${formatted}`
+  }
+
+  return EMPTY_DATE
+}
 
 /**
  * What the API said about each section that failed to load, without repeats.

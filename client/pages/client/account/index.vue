@@ -74,7 +74,7 @@
                   <dt class="text-xs text-gray-500 mb-1">{{ $t('client.profile.paymentMethod') }}</dt>
                   <dd class="text-gray-900 dark:text-white font-medium">{{ paymentMethodLabel }}</dd>
                 </div>
-                <div>
+                <div v-if="ownsLanguage">
                   <dt class="text-xs text-gray-500 mb-1">{{ $t('client.profile.language') }}</dt>
                   <dd class="text-gray-900 dark:text-white font-medium">{{ languageLabel }}</dd>
                 </div>
@@ -187,7 +187,7 @@
                 <div class="sm:col-span-2">
                   <UiSelect v-model="form.paymentmethod" :label="$t('client.profile.paymentMethod')" size="sm" :options="paymentOptions" />
                 </div>
-                <div class="sm:col-span-2">
+                <div v-if="ownsLanguage" class="sm:col-span-2">
                   <UiSelect v-model="form.language" :label="$t('client.profile.language')" size="sm" :options="languageOptions" />
                 </div>
               </div>
@@ -264,7 +264,7 @@
           >
             <div class="flex items-center gap-3">
               <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary-500/30 to-secondary-500/20 flex items-center justify-center text-white font-bold text-sm border border-primary-500/20 flex-shrink-0">
-                {{ (user.name || user.email)[0].toUpperCase() }}
+                {{ (user.name || user.email).charAt(0).toUpperCase() }}
               </div>
               <div>
                 <div class="flex items-center gap-2 flex-wrap">
@@ -520,7 +520,7 @@
           </UiTableHead>
           <UiTableBody>
             <UiTableRow v-for="email in emailPaged" :key="email.id">
-              <UiTableTd class="text-gray-500 dark:text-gray-400 whitespace-nowrap text-sm">{{ email.date }}</UiTableTd>
+              <UiTableTd class="text-gray-500 dark:text-gray-400 whitespace-nowrap text-sm">{{ formatDateTime(email.date) }}</UiTableTd>
               <UiTableTd class="text-gray-900 dark:text-white font-medium">{{ email.subject }}</UiTableTd>
               <UiTableTd align="right">
                 <NuxtLink
@@ -815,6 +815,15 @@
             <div class="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <UiInput v-model="addrModal.form.firstname" :label="$t('client.profile.firstName')" type="text" size="sm" required />
               <UiInput v-model="addrModal.form.lastname"  :label="$t('client.profile.lastName')"  type="text" size="sm" required />
+              <!--
+                An address is stored as a billing contact on this backend, and a contact is
+                something invoices are emailed to, so the address it carries cannot be saved
+                without one. The field existed on `addrModal.form` all along with nothing to
+                fill it, which is why every save arrived with an empty email.
+              -->
+              <div class="sm:col-span-2">
+                <UiInput v-model="addrModal.form.email" :label="$t('client.profile.emailAddress')" type="email" size="sm" required />
+              </div>
               <div class="sm:col-span-2">
                 <UiInput v-model="addrModal.form.address1" :label="$t('client.profile.address1')" type="text" size="sm" required />
               </div>
@@ -954,6 +963,7 @@ import { useCatalogApi } from '~/composables/apis/useCatalogApi'
 import { useClientApi } from '~/composables/apis/useClientApi'
 import type { ClientUser } from '~/types/clientuser'
 import { apiErrorMessage } from '~/utils/apiError'
+import { formatDateTime } from '~/utils/formatDate'
 import type { PaymentMethod } from '~/types/payment'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
@@ -976,6 +986,7 @@ const tabs = computed(() => [
 ])
 
 // ── Profile ──────────────────────────────────────────────────────────────────
+const { isSso } = useAuthMode()
 const store = useClientStore()
 await useAsyncData('client-user', () => store.fetchUser())
 
@@ -992,21 +1003,43 @@ const paymentOptions = computed(() => [
   { value: '', label: t('client.profile.paymentDefault') },
   ...(rawPaymentMethods.value ?? []).map(g => ({ value: g.module, label: g.displayname }))
 ])
+/**
+ * Whether this deployment owns the account the language is stored on.
+ *
+ * Under `AUTH_MODE=sso` the SSO owns the person, so it owns their chosen language: hostpanel
+ * can neither read one back nor write one, and `/api/portal/client/me` answers null for it.
+ * The field is therefore not offered at all rather than shown as a control whose value never
+ * changes -- a dropdown that silently discards what is picked is the lie this replaces. The
+ * backend skips the write instead of refusing it, so a save carrying a language still
+ * succeeds for anything reaching the API without this page.
+ */
+const ownsLanguage = computed<boolean>(() => !isSso.value)
+
+/**
+ * The languages the backend accepts, keyed by the codes in `LocaleOptions.SupportedLocales`.
+ * One vocabulary end to end: the portal used to post the WHMCS-era words ("english"), which
+ * the account row would have stored verbatim and then served English for, because they match
+ * no supported locale.
+ */
 const languageOptions = computed(() => [
   { value: '', label: t('client.profile.langDefault') },
-  { value: 'english',  label: t('client.profile.langEnglish') },
-  { value: 'russian',  label: t('client.profile.langRussian') },
-  { value: 'armenian', label: t('client.profile.langArmenian') }
+  { value: 'en', label: t('client.profile.langEnglish') },
+  { value: 'ru', label: t('client.profile.langRussian') },
+  { value: 'hy', label: t('client.profile.langArmenian') }
 ])
 const paymentMethodLabel = computed(() => {
   const gw = store.user?.defaultgateway
   if (!gw) return t('client.profile.paymentDefault')
   return (rawPaymentMethods.value ?? []).find(m => m.module === gw)?.displayname ?? gw
 })
-const languageLabel = computed(() => {
+/**
+ * The stored language as a name a person reads, resolved through the same option list the
+ * dropdown renders rather than by capitalising the code -- `en` used to print as "En".
+ */
+const languageLabel = computed<string>(() => {
   const lang = store.user?.language
   if (!lang) return t('client.profile.langDefault')
-  return lang.charAt(0).toUpperCase() + lang.slice(1)
+  return languageOptions.value.find(o => o.value === lang)?.label ?? lang
 })
 
 const emailPrefList = computed(() => [
@@ -1266,9 +1299,13 @@ async function saveContact() {
     supportemails: contactModal.supportemails
   }
   try {
-    if (contactModal.mode === 'add') {
+    if (contactModal.mode === 'add' || contactModal.id === null) {
+      // A null id in edit mode is not reachable through the UI -- the edit button sets it --
+      // but creating is the safe reading of "edit something with no id", and the alternative
+      // was a PUT to `/contacts/null`.
       await clientApi.createContact(body)
-    } else {
+    }
+    else {
       await clientApi.updateContact(contactModal.id, body)
     }
     contactModal.open = false
@@ -1508,8 +1545,9 @@ async function loadAddresses() {
   try {
     savedAddresses.value = await clientApi.fetchAddresses<SavedAddress>()
     // auto-select first address if none is selected yet
-    if (!editModal.billingAddressId && savedAddresses.value.length) {
-      editModal.billingAddressId = savedAddresses.value[0].id
+    const first = savedAddresses.value[0]
+    if (!editModal.billingAddressId && first) {
+      editModal.billingAddressId = first.id
     }
   } catch (err: unknown) {
     // Kept rather than logged: the billing-address picker renders this instead of silently

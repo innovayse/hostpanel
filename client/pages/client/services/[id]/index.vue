@@ -199,10 +199,10 @@
                   <ClientStatusBadge :status="service.status" />
                 </UiDescriptionItem>
                 <UiDescriptionItem :label="$t('client.services.billingCycle')" :value="service.billingcycle || '\u2014'" value-class="capitalize" />
-                <UiDescriptionItem :label="$t('client.services.regDate')" :value="service.regdate" />
-                <UiDescriptionItem :label="$t('client.services.nextDueDate')" :value="service.nextduedate" />
-                <UiDescriptionItem :label="$t('client.services.billingAmount')" :value="formatAmount(service.recurringamount, store.user?.currency)" value-class="font-medium" />
-                <UiDescriptionItem :label="$t('client.services.firstPayment')" :value="formatAmount(service.firstpaymentamount, store.user?.currency)" />
+                <UiDescriptionItem :label="$t('client.services.regDate')" :value="formatDate(service.regdate)" />
+                <UiDescriptionItem :label="$t('client.services.nextDueDate')" :value="formatDate(service.nextduedate)" />
+                <UiDescriptionItem :label="$t('client.services.billingAmount')" :value="formatCurrency(service.recurringamount, clientCurrency)" value-class="font-medium" />
+                <UiDescriptionItem :label="$t('client.services.firstPayment')" :value="formatCurrency(service.firstpaymentamount, clientCurrency)" />
                 <UiDescriptionItem :label="$t('client.services.paymentMethod')" :value="service.paymentmethodname || service.paymentmethod || '\u2014'" value-class="capitalize" />
               </dl>
             </UiCard>
@@ -303,34 +303,7 @@
               </div>
             </UiCard>
 
-            <!-- SSH Access -->
-            <UiCard v-if="sshInfo?.hasAccess" class="mb-4">
-              <h2 class="text-base font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
-                <Terminal :size="18" :stroke-width="2" class="text-cyan-500 dark:text-cyan-400" />
-                {{ $t('client.services.sshAccess') }}
-                <span class="ml-auto text-xs font-medium px-2 py-0.5 rounded-full" :class="sshInfo.shellType === 'full' ? 'bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-400' : 'bg-yellow-100 dark:bg-yellow-500/15 text-yellow-700 dark:text-yellow-400'">
-                  {{ sshInfo.shellType === 'full' ? $t('client.services.sshFull') : $t('client.services.sshJailed') }}
-                </span>
-              </h2>
-              <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-5 mb-5">
-                <UiDescriptionItem :label="$t('client.services.sshHost')" :value="sshInfo.host" value-class="font-mono text-xs" />
-                <UiDescriptionItem :label="$t('client.services.sshPort')" :value="String(sshInfo.port)" value-class="font-mono text-xs" />
-                <UiDescriptionItem :label="$t('client.services.sshUsername')" :value="sshInfo.username" value-class="font-mono text-xs" />
-              </dl>
-              <!-- Connection command with copy button -->
-              <div class="flex items-center gap-2 p-3 rounded-lg bg-gray-900 dark:bg-black/40 border border-gray-200 dark:border-white/10">
-                <code class="flex-1 text-xs text-green-400 font-mono truncate">ssh {{ sshInfo.username }}@{{ sshInfo.host }} -p {{ sshInfo.port }}</code>
-                <button
-                  type="button"
-                  class="flex-shrink-0 flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors"
-                  @click="copySSHCommand"
-                >
-                  <CheckCircle v-if="sshCopied" :size="14" :stroke-width="2" class="text-green-400" />
-                  <Copy v-else :size="14" :stroke-width="2" />
-                  {{ sshCopied ? $t('client.services.sshCopied') : '' }}
-                </button>
-              </div>
-            </UiCard>
+            <!-- SSH Access: removed — see the note in the script block. -->
 
             <!-- Configurable Options -->
             <UiCard v-if="configOptions.length" class="mb-4">
@@ -383,6 +356,22 @@
                 <div v-for="i in 3" :key="i" class="h-10 rounded-xl bg-gray-100 dark:bg-white/5 animate-pulse" />
               </div>
 
+              <!--
+                Why the table is empty, when it is empty because the read failed. "No invoices
+                found for this service" used to be printed for every client on every service,
+                because the request behind it 404'd -- an empty state shown as fact for an answer
+                that never arrived. The endpoint exists now, but the reasoning stands: a failed
+                read is never rendered as an absence of invoices.
+              -->
+              <UiAlert v-else-if="invoicesError" variant="error">{{ invoicesError }}</UiAlert>
+
+              <!--
+                An empty list is "nothing is recorded against this service", never "nothing was
+                charged". Invoices raised before the platform recorded which service a line was
+                for carry no link, no backfill invented one, and the API reports how many such
+                invoices this client holds so the difference can be said out loud rather than
+                implied by a blank table.
+              -->
               <div v-else-if="!relatedInvoices.length" class="text-center py-6 text-gray-400 text-sm">
                 {{ $t('client.services.noInvoices') }}
               </div>
@@ -412,13 +401,37 @@
                           #{{ inv.id }}
                         </NuxtLink>
                       </td>
-                      <td class="py-3 text-gray-500 dark:text-gray-400">{{ inv.date }}</td>
-                      <td class="py-3 text-gray-500 dark:text-gray-400">{{ inv.duedate }}</td>
-                      <td class="py-3 text-right text-gray-900 dark:text-white font-medium">{{ inv.currencyprefix }}{{ inv.total }}{{ inv.currencysuffix }}</td>
+                      <td class="py-3 text-gray-500 dark:text-gray-400">{{ formatDate(inv.invoiceDate) }}</td>
+                      <td class="py-3 text-gray-500 dark:text-gray-400">{{ formatDate(inv.dueDate) }}</td>
+                      <!--
+                        No currency argument: the API sends none on an invoice, and
+                        `formatCurrency` renders grouped digits rather than guessing a symbol.
+                      -->
+                      <td class="py-3 text-right text-gray-900 dark:text-white font-medium">{{ formatCurrency(inv.total) }}</td>
                       <td class="py-3 text-right"><ClientStatusBadge :status="inv.status" /></td>
                     </tr>
                   </tbody>
                 </table>
+              </div>
+
+              <!--
+                Shown whether or not the table above has rows, and only when the read succeeded:
+                it is a statement about this client's billing history, not a substitute for the
+                list. Charges the platform never recorded a service for cannot be shown on any
+                service, and saying so is the difference between "we have nothing" and "we
+                cannot tell you".
+              -->
+              <div
+                v-if="!invoicesLoading && !invoicesError && unattributedInvoices > 0"
+                class="mt-5 flex gap-3 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 p-3.5"
+              >
+                <AlertCircle :size="16" :stroke-width="2" class="text-gray-400 flex-shrink-0 mt-0.5" />
+                <div class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                  {{ $t('client.services.unrecordedNote', { count: unattributedInvoices }) }}
+                  <NuxtLink to="/client/invoices" class="text-primary-600 dark:text-primary-400 hover:underline">
+                    {{ $t('client.services.viewAllInvoices') }}
+                  </NuxtLink>
+                </div>
               </div>
             </UiCard>
           </template>
@@ -555,12 +568,14 @@
 import {
   ArrowLeft, AlertCircle, Settings, Zap, LayoutGrid, ChevronRight,
   MessageSquare, Link2, Monitor, Mail, Loader,
-  KeyRound, XCircle, CheckCircle, SlidersHorizontal, Terminal, Copy,
+  KeyRound, XCircle, CheckCircle, SlidersHorizontal,
   FileText, Server as ServerIcon, Globe, ShieldCheck, ShieldX, ShieldAlert,
 } from 'lucide-vue-next'
 import { useClientStore } from '~/stores/client'
 import { useClientApi } from '~/composables/apis/useClientApi'
 import { apiErrorMessage } from '~/utils/apiError'
+import { formatCurrency } from '~/utils/formatCurrency'
+import { formatDate } from '~/utils/formatDate'
 import type { CancellationType } from '~/types/cancellationtype'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
@@ -568,7 +583,6 @@ definePageMeta({ layout: 'client', middleware: 'client-auth' })
 const { t } = useI18n()
 const route = useRoute()
 const store = useClientStore()
-const { format: formatAmount } = useCurrency()
 const serviceId = route.params.id as string
 
 // ── Data ──────────────────────────────────────────────────────────────────────
@@ -645,27 +659,30 @@ const cancelTypeKey = computed<string | null>(() => {
 })
 
 // ── SSH Info ──────────────────────────────────────────────────────────────────
-const { data: sshInfo } = await clientApi.loadServiceResource<{
-  hasAccess: boolean
-  host?: string
-  username?: string
-  port?: number
-  shellType?: 'full' | 'jailed'
-}>(() => serviceId, 'ssh-info', () => ({ hasAccess: false }))
-
-const sshCopied = ref(false)
-
-function copySSHCommand() {
-  if (!sshInfo.value?.hasAccess) return
-  const cmd = `ssh ${sshInfo.value.username}@${sshInfo.value.host} -p ${sshInfo.value.port}`
-  navigator.clipboard.writeText(cmd).then(() => {
-    sshCopied.value = true
-    setTimeout(() => { sshCopied.value = false }, 2000)
-  })
-}
+// Removed, not disabled. The panel read `/api/portal/client/services/{id}/ssh-info`, which
+// called `/me/services/{id}/ssh-info` -- a path the API never declared. There is no SSH
+// concept anywhere below it either: no use case, no DTO, and nothing on `ClientService` or on
+// the provisioning providers that knows a shell host, a port or whether the shell is jailed.
+// The card was `v-if="sshInfo?.hasAccess"` against a `hasAccess: false` fallback, so it has
+// never rendered for any customer; all the code did was 404 once per service page load.
+// Rebuilding it means a control-panel call for the account's shell state -- see the report.
 
 // ── Computed ──────────────────────────────────────────────────────────────────
 const configOptions = computed(() => service.value?.configoptions?.configoption || [])
+
+/**
+ * What the client profile says the service amounts are denominated in.
+ *
+ * `ClientDto.Currency` as an ISO 4217 code, which `server/api/portal/client/me.get.ts` now
+ * forwards — this is the arrival the previous note here anticipated. It replaces
+ * `currencyprefix` / `currencysuffix`, a prefix-and-suffix pair that exists nowhere in the C#
+ * API and so could only ever have been empty.
+ *
+ * An account with no currency set still passes nothing through: `formatCurrency` groups the
+ * digits and shows no symbol, which is the honest rendering — see the note on
+ * `utils/formatCurrency.ts` for why guessing one from the locale would be worse.
+ */
+const clientCurrency = computed(() => ({ code: store.user?.currency }))
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 const activeTab = ref('overview')
@@ -742,20 +759,71 @@ const submitCancellation = async (): Promise<void> => {
 }
 
 // ── Related Invoices ──────────────────────────────────────────────────────────
-const relatedInvoices = ref<Array<{
-  id: number; date: string; duedate: string; total: string; status: string
-  currencyprefix: string; currencysuffix: string
-}>>([])
+
+/** One invoice charged to this service, as `GET /me/services/:id/invoices` returns it. */
+interface ServiceInvoice {
+  /** Invoice primary key. */
+  id: number
+  /** Issue date (UTC, ISO 8601). */
+  invoiceDate: string
+  /** Payment due date (UTC, ISO 8601). */
+  dueDate: string
+  /** Grand total after tax and credit. */
+  total: number
+  /** Lifecycle status name, e.g. `Unpaid`, `Paid`, `Overdue`. */
+  status: string
+}
+
+/** What the API can and cannot say about the money charged for this service. */
+interface ServiceInvoices {
+  /** Invoices carrying at least one line explicitly charged to this service, newest first. */
+  invoices: ServiceInvoice[]
+  /** How many of this client's invoices are recorded against no service at all. */
+  unattributedInvoiceCount: number
+}
+
+const relatedInvoices = ref<ServiceInvoice[]>([])
+
+/**
+ * How many of this client's invoices carry no service link on any line.
+ *
+ * Reported beside the list rather than folded into it. `InvoiceItem.ClientServiceId` was added
+ * without a backfill — deliberately, because an invoice line is a description, a price and a
+ * quantity, and inferring which service an old line was for would be a guess shown as fact on
+ * the page a customer opens to check a charge. So an empty list here means "nothing is recorded
+ * against this service", which is a weaker claim than "nothing was charged", and this number is
+ * what lets the page say the weaker one.
+ */
+const unattributedInvoices = ref(0)
+
 const invoicesLoading = ref(true)
 const invoicesLoaded = ref(false)
+const invoicesError = ref<string | null>(null)
 
-async function loadInvoices() {
+/**
+ * Reads the invoices raised against this service, once.
+ *
+ * The failure is kept rather than swallowed. This used to catch and discard, which left the
+ * list empty and let the template say "no invoices found for this service" -- a sentence the
+ * page had no evidence for, and which used to be false for everyone because the endpoint behind
+ * it was not declared on the API. It is now, and it answers the count of unattributable
+ * invoices alongside the list.
+ */
+const loadInvoices = async (): Promise<void> => {
   if (invoicesLoaded.value) return
   invoicesLoading.value = true
+  invoicesError.value = null
   try {
-    relatedInvoices.value = await clientApi.fetchServiceInvoices(serviceId)
+    const result = await clientApi.fetchServiceInvoices<ServiceInvoices>(serviceId)
+    relatedInvoices.value = result.invoices
+    unattributedInvoices.value = result.unattributedInvoiceCount
     invoicesLoaded.value = true
-  } catch { /* silently fail */ } finally {
+  } catch (err: unknown) {
+    // The API's own wording, through the one shared reader in `utils/apiError.ts`.
+    invoicesError.value = apiErrorMessage(err)
+    relatedInvoices.value = []
+    unattributedInvoices.value = 0
+  } finally {
     invoicesLoading.value = false
   }
 }

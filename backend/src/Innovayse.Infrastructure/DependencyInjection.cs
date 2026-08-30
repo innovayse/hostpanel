@@ -263,6 +263,13 @@ public static class DependencyInjection
             Innovayse.Application.Billing.Common.IInvoiceOwnership,
             Innovayse.Application.Billing.Common.InvoiceOwnership>();
 
+        // The same rule for client services. New with GetMyServiceInvoicesQuery, which is the
+        // first client-facing service use case to scope itself to the caller at all; the five
+        // older routes on MyServicesController still take a service id off the route unchecked.
+        services.AddScoped<
+            Innovayse.Application.Services.Common.IServiceOwnership,
+            Innovayse.Application.Services.Common.ServiceOwnership>();
+
         // Product services
         services.AddScoped<IProductGroupRepository, ProductGroupRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
@@ -468,6 +475,16 @@ public static class DependencyInjection
         // The breaker is off because the server is a per-call argument rather than a base
         // address, so one dead node would open it for every healthy one.
         services.AddHttpClient<Innovayse.SDK.Plugins.ICwpApiClient, Innovayse.Providers.CWP.CwpApiClient>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(15);
+        })
+            .AddNoRetryResilience(o => o.Cwp);
+        // Named twin of the typed registration above, for the same reason the CWP7 pair exists:
+        // CwpProvisioningProvider builds its own CwpApiClient (the interface exposes only the
+        // server-info call) and resolves this client by name. Before it existed the provider used
+        // a bare `new HttpClient()`, so the provisioning path -- the one that matters most -- ran
+        // with no timeout and outside the no-retry pipeline.
+        services.AddHttpClient(Innovayse.Providers.CWP.CwpApiClient.HttpClientName, client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
         })

@@ -66,8 +66,8 @@
               <div class="flex items-center gap-3 mt-1 text-xs text-gray-500">
                 <span>{{ ticket.deptname }}</span>
                 <span>·</span>
-                <span>{{ ticket.date }}</span>
-                <span v-if="ticket.lastreply">· {{ $t('client.tickets.lastReply') }} {{ ticket.lastreply }}</span>
+                <span>{{ formatDateTime(ticket.date) }}</span>
+                <span v-if="ticket.lastreply">· {{ $t('client.tickets.lastReply') }} {{ formatDateTime(ticket.lastreply) }}</span>
               </div>
             </div>
           </div>
@@ -84,6 +84,7 @@
 <script setup lang="ts">
 import { MessageSquare, Plus } from 'lucide-vue-next'
 import { useClientStore } from '~/stores/client'
+import { formatDateTime } from '~/utils/formatDate'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 

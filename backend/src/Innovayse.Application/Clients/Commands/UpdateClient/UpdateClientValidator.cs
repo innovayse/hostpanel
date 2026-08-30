@@ -1,6 +1,7 @@
 namespace Innovayse.Application.Clients.Commands.UpdateClient;
 
 using FluentValidation;
+using Innovayse.Application.Common.Options;
 
 /// <summary>Validates <see cref="UpdateClientCommand"/> before the handler executes.</summary>
 public sealed class UpdateClientValidator : AbstractValidator<UpdateClientCommand>
@@ -22,6 +23,13 @@ public sealed class UpdateClientValidator : AbstractValidator<UpdateClientComman
         // panel itself sends both, depending on the screen -- and `is not null` would put the
         // empty string through a Length() rule it cannot satisfy. Blank means "not provided".
         RuleFor(x => x.Country).Length(2).When(x => !string.IsNullOrEmpty(x.Country));
+        // Checked against the one list that decides what this product answers in, rather than
+        // against a literal here: an unlisted code would be stored, read back and then quietly
+        // served English, which looks exactly like the save having failed.
+        RuleFor(x => x.Language)
+            .Must(l => LocaleOptions.SupportedLocales.Contains(l!, StringComparer.OrdinalIgnoreCase))
+            .WithMessage("Language must be one of: en, ru, hy.")
+            .When(x => !string.IsNullOrEmpty(x.Language));
         RuleFor(x => x.Currency).MaximumLength(3).When(x => x.Currency is not null);
         RuleFor(x => x.PaymentMethod).MaximumLength(50).When(x => x.PaymentMethod is not null);
         RuleFor(x => x.BillingContact).MaximumLength(256).When(x => x.BillingContact is not null);

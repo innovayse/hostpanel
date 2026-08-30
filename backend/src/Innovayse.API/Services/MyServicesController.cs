@@ -2,14 +2,16 @@ namespace Innovayse.API.Services;
 
 using Innovayse.API.Provisioning.Requests;
 using Innovayse.API.Services.Requests;
+using Innovayse.Application.Billing.Queries.GetMyServiceInvoices;
 using Innovayse.Application.Clients.Common;
 using Innovayse.Application.Clients.Queries.GetMyProfile;
-using Innovayse.Application.Provisioning.Commands.ChangePassword;
-using Innovayse.Application.Provisioning.Queries.GetCPanelSsoUrl;
-using Innovayse.Application.Services.Commands.CancelService;
+using Innovayse.Application.Provisioning.Commands.ChangeMyServicePassword;
+using Innovayse.Application.Provisioning.Queries.GetMyServiceCPanelSsoUrl;
+using Innovayse.Application.Services.Commands.CancelMyService;
 using Innovayse.Application.Services.Commands.OrderService;
-using Innovayse.Application.Services.Commands.SetupService;
+using Innovayse.Application.Services.Commands.SetupMyService;
 using Innovayse.Application.Services.Queries.GetCancellationStatus;
+using Innovayse.Application.Services.Queries.GetMyServiceCancellationStatus;
 using Innovayse.Application.Services.Queries.GetMyServices;
 using Innovayse.Domain.Auth;
 using Microsoft.AspNetCore.Authorization;
@@ -21,6 +23,25 @@ using Wolverine;
 /// Client portal endpoints for viewing and ordering services.
 /// Requires Client role.
 /// </summary>
+/// <remarks>
+/// <para>
+/// No action here checks ownership, and none may: the rule lives in the client-facing
+/// <c>My*</c> handlers, which resolve the caller from the credential themselves. That is not
+/// only the thin-controller rule — two of the use cases behind these routes
+/// (<c>GetCPanelSsoUrlQuery</c>, <c>ChangePasswordCommand</c>) are also dispatched by the admin
+/// <c>ProvisioningController</c>, where acting on any client's service is legitimate, so a check
+/// written here would have guaranteed nothing about the message itself and a check written on
+/// the shared use case would have broken the admin path.
+/// </para>
+/// <para>
+/// Every action below that takes a service id off the route dispatches a message implementing
+/// <see cref="Innovayse.Application.Services.Common.ICallerScopedServiceMessage"/>, and a
+/// reflection test enforces that of any action added later. A service belonging to somebody
+/// else, a service that does not exist, and a caller with no client record all answer 404 with
+/// <c>MY_SERVICE_NOT_FOUND</c> and the same sentence; service ids are sequential, and telling
+/// those three apart is itself a way of enumerating them.
+/// </para>
+/// </remarks>
 /// <param name="bus">Wolverine message bus.</param>
 [ApiController]
 [Route("api/me/services")]
@@ -62,11 +83,16 @@ public sealed class MyServicesController(IMessageBus bus) : ControllerBase
     /// </summary>
     /// <param name="id">Client service primary key.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>200 OK with the cPanel SSO URL string.</returns>
+    /// <returns>
+    /// 200 OK with the cPanel SSO URL string; 404 with <c>MY_SERVICE_NOT_FOUND</c> when the
+    /// service is not the caller's.
+    /// </returns>
     [HttpGet("{id:int}/cpanel-sso")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<string>> GetCPanelSsoUrlAsync(int id, CancellationToken ct)
     {
-        var url = await bus.InvokeAsync<string>(new GetCPanelSsoUrlQuery(id), ct);
+        var url = await bus.InvokeAsync<string>(new GetMyServiceCPanelSsoUrlQuery(id), ct);
         return Ok(url);
     }
 
@@ -74,13 +100,18 @@ public sealed class MyServicesController(IMessageBus bus) : ControllerBase
     /// <param name="id">Client service primary key.</param>
     /// <param name="request">Cancellation request body.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>200 OK on success.</returns>
+    /// <returns>
+    /// 200 OK on success; 404 with <c>MY_SERVICE_NOT_FOUND</c> when the service is not the
+    /// caller's.
+    /// </returns>
     [HttpPost("{id:int}/cancel")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CancelAsync(
         int id, [FromBody] CancelServiceRequest request, CancellationToken ct)
     {
         await bus.InvokeAsync(
-            new CancelServiceCommand(id, request.Type, request.Reason), ct);
+            new CancelMyServiceCommand(id, request.Type, request.Reason), ct);
         return Ok();
     }
 
@@ -91,26 +122,61 @@ public sealed class MyServicesController(IMessageBus bus) : ControllerBase
     /// <param name="id">Client service primary key.</param>
     /// <param name="request">Setup request body with domain, username, and password.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>200 OK on successful setup and provisioning.</returns>
+    /// <returns>
+    /// 200 OK on successful setup and provisioning; 404 with <c>MY_SERVICE_NOT_FOUND</c> when the
+    /// service is not the caller's.
+    /// </returns>
     [HttpPost("{id:int}/setup")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SetupAsync(
         int id, [FromBody] SetupServiceRequest request, CancellationToken ct)
     {
         await bus.InvokeAsync(
-            new SetupServiceCommand(id, request.Domain, request.Username, request.Password), ct);
+            new SetupMyServiceCommand(id, request.Domain, request.Username, request.Password), ct);
         return Ok();
+    }
+
+    /// <summary>
+    /// Returns the invoices charged to a service owned by the authenticated client.
+    /// </summary>
+    /// <remarks>
+    /// The only action on this controller whose use case scopes itself to the caller. The reply
+    /// carries the count of the caller's unattributable invoices alongside the list, because an
+    /// empty list here means "nothing is recorded against this service", which is a weaker claim
+    /// than "nothing was charged" — see <see cref="ServiceInvoicesDto"/>.
+    /// </remarks>
+    /// <param name="id">Client service primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 OK with the service's invoices; 404 with <c>MY_SERVICE_NOT_FOUND</c> when the service
+    /// is not the caller's.
+    /// </returns>
+    [HttpGet("{id:int}/invoices")]
+    [ProducesResponseType(typeof(ServiceInvoicesDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ServiceInvoicesDto>> GetInvoicesAsync(int id, CancellationToken ct)
+    {
+        var result = await bus.InvokeAsync<ServiceInvoicesDto>(new GetMyServiceInvoicesQuery(id), ct);
+        return Ok(result);
     }
 
     /// <summary>Returns the cancellation status for a client service.</summary>
     /// <param name="id">Client service primary key.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>200 OK with cancellation status DTO.</returns>
+    /// <returns>
+    /// 200 OK with cancellation status DTO; 404 with <c>MY_SERVICE_NOT_FOUND</c> when the service
+    /// is not the caller's.
+    /// </returns>
     [HttpGet("{id:int}/cancellation-status")]
+    [ProducesResponseType(typeof(CancellationStatusDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CancellationStatusDto>> GetCancellationStatusAsync(
         int id, CancellationToken ct)
     {
         var result = await bus.InvokeAsync<CancellationStatusDto>(
-            new GetCancellationStatusQuery(id), ct);
+            new GetMyServiceCancellationStatusQuery(id), ct);
         return Ok(result);
     }
 
@@ -118,12 +184,17 @@ public sealed class MyServicesController(IMessageBus bus) : ControllerBase
     /// <param name="id">Client service primary key.</param>
     /// <param name="request">Request body containing the new password.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>200 OK on success.</returns>
+    /// <returns>
+    /// 200 OK on success; 404 with <c>MY_SERVICE_NOT_FOUND</c> when the service is not the
+    /// caller's.
+    /// </returns>
     [HttpPost("{id:int}/change-password")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ChangePasswordAsync(
         int id, [FromBody] ChangePasswordRequest request, CancellationToken ct)
     {
-        await bus.InvokeAsync(new ChangePasswordCommand(id, request.NewPassword), ct);
+        await bus.InvokeAsync(new ChangeMyServicePasswordCommand(id, request.NewPassword), ct);
         return Ok();
     }
 }

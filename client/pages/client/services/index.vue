@@ -73,12 +73,12 @@
         <div class="grid grid-cols-2 gap-3 mt-4">
           <div class="text-xs">
             <span class="text-gray-500">{{ $t('client.services.nextDue') }}</span>
-            <div class="text-gray-700 dark:text-gray-300 font-medium mt-0.5">{{ service.nextduedate || '—' }}</div>
+            <div class="text-gray-700 dark:text-gray-300 font-medium mt-0.5">{{ formatDate(service.nextduedate) }}</div>
           </div>
           <div class="text-xs">
             <span class="text-gray-500">{{ $t('client.services.amount') }}</span>
             <div class="text-gray-700 dark:text-gray-300 font-medium mt-0.5">
-              {{ formatAmount(service.recurringamount, store.user?.currency) }}
+              {{ formatCurrency(service.recurringamount, clientCurrency) }}
             </div>
           </div>
         </div>
@@ -105,11 +105,24 @@
 <script setup lang="ts">
 import { Server } from 'lucide-vue-next'
 import { useClientStore } from '~/stores/client'
+import { formatCurrency } from '~/utils/formatCurrency'
+import { formatDate } from '~/utils/formatDate'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
 const store = useClientStore()
-const { format: formatAmount } = useCurrency()
+
+/**
+ * What the client profile says these amounts are denominated in.
+ *
+ * The ISO 4217 code off the account — `ClientDto.Currency`, now forwarded by
+ * `server/api/portal/client/me.get.ts` rather than hardcoded away. This used to read
+ * `currencyprefix` / `currencysuffix`, two fields the C# API has never had. An account with no
+ * currency set still passes nothing through rather than inventing one from the locale;
+ * `formatCurrency` groups the digits either way, which is the difference between `24000` and
+ * `24,000.00`.
+ */
+const clientCurrency = computed(() => ({ code: store.user?.currency }))
 
 await useAsyncData('client-services', () => store.fetchServices(true))
 

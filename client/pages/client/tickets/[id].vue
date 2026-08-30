@@ -26,7 +26,7 @@
             <div class="flex items-center gap-3 mt-2 text-xs text-gray-500">
               <span>{{ ticket.deptname }}</span>
               <span>·</span>
-              <span>{{ ticket.date }}</span>
+              <span>{{ formatDateTime(ticket.date) }}</span>
               <span>·</span>
               <span class="capitalize">{{ ticket.priority }}</span>
             </div>
@@ -42,11 +42,11 @@
           <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-3">
               <div class="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-xs font-bold text-cyan-400">
-                {{ user?.name?.charAt(0)?.toUpperCase() }}
+                {{ authorName.charAt(0).toUpperCase() }}
               </div>
               <div>
-                <div class="text-gray-900 dark:text-white text-sm font-medium">{{ user?.name }}</div>
-                <div class="text-gray-500 text-xs">{{ ticket.date }}</div>
+                <div class="text-gray-900 dark:text-white text-sm font-medium">{{ authorName }}</div>
+                <div class="text-gray-500 text-xs">{{ formatDateTime(ticket.date) }}</div>
               </div>
             </div>
             <span class="text-xs px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">{{ $t('client.tickets.you') }}</span>
@@ -76,7 +76,7 @@
               </div>
               <div>
                 <div class="text-gray-900 dark:text-white text-sm font-medium">{{ reply.admin ? `${reply.admin} (${$t('client.tickets.support')})` : reply.name }}</div>
-                <div class="text-gray-500 text-xs">{{ reply.date }}</div>
+                <div class="text-gray-500 text-xs">{{ formatDateTime(reply.date) }}</div>
               </div>
             </div>
             <span v-if="reply.admin" class="text-xs px-2 py-0.5 rounded-full bg-primary-500/10 text-primary-400 border border-primary-500/20">
@@ -128,6 +128,7 @@
 import { ArrowLeft, AlertCircle, Send } from 'lucide-vue-next'
 import { useSupportApi } from '~/composables/apis/useSupportApi'
 import { apiErrorMessage } from '~/utils/apiError'
+import { formatDateTime } from '~/utils/formatDate'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
@@ -135,6 +136,21 @@ const { t } = useI18n()
 const route = useRoute()
 const { user } = storeToRefs(useAuthStore())
 const { loadTicket, replyToTicket } = useSupportApi()
+
+/**
+ * The signed-in person's display name, for the author line on their own ticket message.
+ *
+ * `ClientUser` has no `name` — it carries `firstname` and `lastname` — so the template's
+ * `user?.name` was `undefined` on every render, and the author line and its avatar initial were
+ * both blank on every ticket in the portal. Composed the same way `useClientStore.fullName`
+ * composes it, and falling back to the email so the avatar is never an empty circle.
+ */
+const authorName = computed(() => {
+  const person = user.value
+  if (!person) return ''
+
+  return `${person.firstname ?? ''} ${person.lastname ?? ''}`.trim() || person.email
+})
 
 // Straight from the API composable rather than through a store: this page fetches one ticket
 // and owns it alone, which is the named exception to component -> store -> api.

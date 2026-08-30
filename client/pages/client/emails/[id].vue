@@ -25,7 +25,7 @@
       <!-- Header -->
       <div class="mb-6">
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">{{ email.subject }}</h1>
-        <p class="text-sm text-gray-500">{{ email.date }}</p>
+        <p class="text-sm text-gray-500">{{ formatDateTime(email.date) }}</p>
       </div>
 
       <!-- Message body in sandboxed iframe -->
@@ -45,6 +45,7 @@
 <script setup lang="ts">
 import { ArrowLeft, AlertCircle } from 'lucide-vue-next'
 import { useClientApi } from '~/composables/apis/useClientApi'
+import { formatDateTime } from '~/utils/formatDate'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 

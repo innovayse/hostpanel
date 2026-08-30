@@ -300,8 +300,9 @@ const billing = useBillingApi()
 const { data: paymentMethods, pending: methodsPending } = await billing.loadGatewayMethods()
 const selectedMethod = ref('')
 watch(paymentMethods, (methods) => {
-  if (methods?.length && !selectedMethod.value) {
-    selectedMethod.value = methods[0].module
+  const first = methods?.[0]
+  if (first && !selectedMethod.value) {
+    selectedMethod.value = first.module
   }
 }, { immediate: true })
 

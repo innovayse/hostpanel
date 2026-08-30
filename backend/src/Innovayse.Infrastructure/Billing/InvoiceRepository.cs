@@ -80,6 +80,23 @@ public sealed class InvoiceRepository(AppDbContext db) : IInvoiceRepository
             .ToListAsync(ct);
 
     /// <inheritdoc/>
+    public async Task<IReadOnlyList<Invoice>> ListByClientServiceAsync(
+        int clientId, int clientServiceId, CancellationToken ct) =>
+        await db.Invoices
+            .Include(x => x.Items)
+            .Include(x => x.Transactions)
+            .Where(x => x.ClientId == clientId
+                && x.Items.Any(i => i.ClientServiceId == clientServiceId))
+            .OrderByDescending(x => x.InvoiceDate)
+            .ToListAsync(ct);
+
+    /// <inheritdoc/>
+    public async Task<int> CountUnattributedByClientAsync(int clientId, CancellationToken ct) =>
+        await db.Invoices
+            .Where(x => x.ClientId == clientId && !x.Items.Any(i => i.ClientServiceId != null))
+            .CountAsync(ct);
+
+    /// <inheritdoc/>
     public async Task<(IReadOnlyList<Invoice> Items, int TotalCount)> ListByClientAsync(
         int clientId, int page, int pageSize, InvoiceStatus? status,
         DateTimeOffset? from, DateTimeOffset? to, CancellationToken ct)

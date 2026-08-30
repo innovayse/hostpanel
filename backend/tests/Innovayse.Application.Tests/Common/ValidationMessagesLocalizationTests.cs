@@ -1,6 +1,7 @@
 namespace Innovayse.Application.Tests.Common;
 
 using System.Globalization;
+using Innovayse.Application.Auth.Common;
 using Innovayse.Application.Clients.Common;
 using Innovayse.Application.Common.Options;
 using Innovayse.Application.Resources;
@@ -180,6 +181,89 @@ public sealed class ValidationMessagesLocalizationTests
 
             Assert.Contains("jane@example.com", message, StringComparison.Ordinal);
         }
+    }
+
+    /// <summary>
+    /// The contact refusal is translated in all three shipped languages. It is the newest of the
+    /// client-facing "no such thing" refusals and the only one whose resx entries were added
+    /// after the neutral-file-only habit was recorded as debt, so it is pinned here rather than
+    /// left to be discovered as English on a Russian screen.
+    /// </summary>
+    [Fact]
+    public void ContactRefusalIsTranslatedInEveryShippedLanguage()
+    {
+        var english = Resolve("en", MyContactNotFoundException.MessageKey);
+        var russian = Resolve(Russian, MyContactNotFoundException.MessageKey);
+        var armenian = Resolve(Armenian, MyContactNotFoundException.MessageKey);
+
+        Assert.Equal(MyContactNotFoundException.PublicMessage, english);
+        Assert.NotEqual(english, russian);
+        Assert.NotEqual(english, armenian);
+        Assert.NotEqual(russian, armenian);
+    }
+
+    /// <summary>
+    /// Every one of the six account-provisioning refusals is translated in all three shipped
+    /// languages, and the six say different things from one another.
+    /// <para>
+    /// Both halves matter. The refusal used to be English prose assembled in a constructor, and
+    /// the detail worth keeping through the rewrite was that it names <i>which</i> flow was
+    /// refused -- creating an account and setting a password send an operator to different
+    /// places. That detail only survives if the six keys are genuinely six sentences: a
+    /// copy-paste that left two keys with the same text would translate fine and lose exactly
+    /// what this shape was built to keep.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public void EveryProvisioningRefusalIsTranslatedAndDistinct()
+    {
+        var operations = Enum.GetValues<UserProvisioningOperation>();
+
+        foreach (var locale in LocaleOptions.SupportedLocales)
+        {
+            var sentences = operations
+                .Select(operation => Resolve(locale, UserProvisioningNotAllowedException.MessageKeyFor(operation)))
+                .ToList();
+
+            foreach (var (operation, sentence) in operations.Zip(sentences))
+            {
+                // A missing resource entry resolves to the key, which is the silent failure.
+                Assert.NotEqual(UserProvisioningNotAllowedException.MessageKeyFor(operation), sentence);
+                Assert.NotEmpty(sentence);
+            }
+
+            Assert.Equal(operations.Length, sentences.Distinct(StringComparer.Ordinal).Count());
+        }
+
+        // And the translations are translations, not the English copied across.
+        var english = Resolve("en", UserProvisioningNotAllowedException.MessageKeyFor(UserProvisioningOperation.ChangeEmail));
+        var russian = Resolve(Russian, UserProvisioningNotAllowedException.MessageKeyFor(UserProvisioningOperation.ChangeEmail));
+        var armenian = Resolve(Armenian, UserProvisioningNotAllowedException.MessageKeyFor(UserProvisioningOperation.ChangeEmail));
+
+        Assert.Equal(
+            UserProvisioningNotAllowedException.PublicMessageFor(UserProvisioningOperation.ChangeEmail), english);
+        Assert.NotEqual(english, russian);
+        Assert.NotEqual(english, armenian);
+        Assert.NotEqual(russian, armenian);
+    }
+
+    /// <summary>
+    /// The refusal a signed-in caller with no client record reads when they try to order is
+    /// translated in all three languages. It replaced "Authentication required. Your session may
+    /// have expired -- please log in again", which was hardcoded English and described neither
+    /// what happened nor anything the person could do.
+    /// </summary>
+    [Fact]
+    public void OrderWithoutAClientAccountIsTranslatedInEveryShippedLanguage()
+    {
+        var english = Resolve("en", "OrderHasNoClientAccount");
+        var russian = Resolve(Russian, "OrderHasNoClientAccount");
+        var armenian = Resolve(Armenian, "OrderHasNoClientAccount");
+
+        Assert.DoesNotContain("expired", english, StringComparison.OrdinalIgnoreCase);
+        Assert.NotEqual(english, russian);
+        Assert.NotEqual(english, armenian);
+        Assert.NotEqual(russian, armenian);
     }
 
     /// <summary>

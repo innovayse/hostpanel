@@ -45,6 +45,29 @@ using Microsoft.AspNetCore.RateLimiting;
 using Wolverine;
 
 /// <summary>Admin reporting endpoints. Every action binds, dispatches one message, and returns.</summary>
+/// <remarks>
+/// <para>
+/// <b>Every date filter binds as <see cref="DateOnly"/>, never as a <see langword="string"/> the
+/// action parses itself.</b> Forty-eight query parameters on this controller used to arrive as
+/// <c>string?</c> and be turned into a date with <c>DateOnly.Parse</c> inside the action. That is
+/// two defects in one line. It is logic in an HTTP entry point, which
+/// <c>rules/clean-architecture.md</c> forbids; and <c>DateOnly.Parse</c> throws
+/// <see cref="FormatException"/>, which <c>ExceptionMiddleware</c> does not classify, so
+/// <c>?from=notadate</c> answered <b>500</b> on at least six routes here rather than telling the
+/// caller their input was wrong.
+/// </para>
+/// <para>
+/// Binding the parameter as <c>DateOnly?</c> hands the parse to ASP.NET Core model binding, which
+/// answers <b>400</b> with the same <c>ProblemDetails</c> body this controller already returns for
+/// a malformed <c>int</c> parameter such as <c>?take=abc</c> — so a bad date and a bad number now
+/// fail alike. No <c>ValidationMessages</c> entry is involved: this is a binding failure the
+/// framework describes, not a domain refusal a person is meant to read.
+/// </para>
+/// <para>
+/// A date parameter added here must therefore be declared <c>DateOnly?</c>. Reintroducing
+/// <c>string?</c> plus a parse reintroduces the 500.
+/// </para>
+/// </remarks>
 /// <param name="bus">Wolverine bus every action dispatches through.</param>
 [ApiController]
 [Route("api/reports")]
@@ -57,12 +80,12 @@ public sealed class ReportsController(IMessageBus bus) : ControllerBase
     /// <param name="ct">Cancellation token.</param>
     [HttpGet("daily-performance")]
     public async Task<ActionResult<IReadOnlyList<DailyPerformanceDto>>> GetDailyPerformanceAsync(
-        [FromQuery] string? from,
-        [FromQuery] string? to,
+        [FromQuery] DateOnly? from,
+        [FromQuery] DateOnly? to,
         CancellationToken ct)
     {
-        var toDate = to is not null ? DateOnly.Parse(to) : DateOnly.FromDateTime(DateTime.UtcNow);
-        var fromDate = from is not null ? DateOnly.Parse(from) : toDate.AddDays(-29);
+        var toDate = to ?? DateOnly.FromDateTime(DateTime.UtcNow);
+        var fromDate = from ?? toDate.AddDays(-29);
         var result = await bus.InvokeAsync<IReadOnlyList<DailyPerformanceDto>>(
             new DailyPerformanceQuery(fromDate, toDate), ct);
         return Ok(result);
@@ -130,20 +153,20 @@ public sealed class ReportsController(IMessageBus bus) : ControllerBase
     [HttpGet("invoices")]
     public async Task<ActionResult<InvoiceReportResultDto>> GetInvoicesReportAsync(
         [FromQuery] string? status,
-        [FromQuery] string? createdFrom, [FromQuery] string? createdTo,
-        [FromQuery] string? dueFrom, [FromQuery] string? dueTo,
-        [FromQuery] string? paidFrom, [FromQuery] string? paidTo,
+        [FromQuery] DateOnly? createdFrom, [FromQuery] DateOnly? createdTo,
+        [FromQuery] DateOnly? dueFrom, [FromQuery] DateOnly? dueTo,
+        [FromQuery] DateOnly? paidFrom, [FromQuery] DateOnly? paidTo,
         [FromQuery] int page = 1, [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
         var result = await bus.InvokeAsync<InvoiceReportResultDto>(new InvoicesReportQuery(
             status,
-            createdFrom is not null ? DateOnly.Parse(createdFrom) : null,
-            createdTo is not null ? DateOnly.Parse(createdTo) : null,
-            dueFrom is not null ? DateOnly.Parse(dueFrom) : null,
-            dueTo is not null ? DateOnly.Parse(dueTo) : null,
-            paidFrom is not null ? DateOnly.Parse(paidFrom) : null,
-            paidTo is not null ? DateOnly.Parse(paidTo) : null,
+            createdFrom,
+            createdTo,
+            dueFrom,
+            dueTo,
+            paidFrom,
+            paidTo,
             page, pageSize), ct);
         return Ok(result);
     }
@@ -153,19 +176,19 @@ public sealed class ReportsController(IMessageBus bus) : ControllerBase
     [EnableRateLimiting(RateLimitPolicies.Concurrent)]
     public async Task<IActionResult> ExportInvoicesCsvAsync(
         [FromQuery] string? status,
-        [FromQuery] string? createdFrom, [FromQuery] string? createdTo,
-        [FromQuery] string? dueFrom, [FromQuery] string? dueTo,
-        [FromQuery] string? paidFrom, [FromQuery] string? paidTo,
+        [FromQuery] DateOnly? createdFrom, [FromQuery] DateOnly? createdTo,
+        [FromQuery] DateOnly? dueFrom, [FromQuery] DateOnly? dueTo,
+        [FromQuery] DateOnly? paidFrom, [FromQuery] DateOnly? paidTo,
         CancellationToken ct = default)
     {
         var result = await bus.InvokeAsync<InvoiceReportResultDto>(new InvoicesReportQuery(
             status,
-            createdFrom is not null ? DateOnly.Parse(createdFrom) : null,
-            createdTo is not null ? DateOnly.Parse(createdTo) : null,
-            dueFrom is not null ? DateOnly.Parse(dueFrom) : null,
-            dueTo is not null ? DateOnly.Parse(dueTo) : null,
-            paidFrom is not null ? DateOnly.Parse(paidFrom) : null,
-            paidTo is not null ? DateOnly.Parse(paidTo) : null,
+            createdFrom,
+            createdTo,
+            dueFrom,
+            dueTo,
+            paidFrom,
+            paidTo,
             1, 10000), ct);
 
         var sb = new StringBuilder();
@@ -181,14 +204,14 @@ public sealed class ReportsController(IMessageBus bus) : ControllerBase
     /// <summary>Returns a filtered, paginated list of transactions.</summary>
     [HttpGet("transactions")]
     public async Task<ActionResult<TransactionReportResultDto>> GetTransactionsReportAsync(
-        [FromQuery] string? dateFrom, [FromQuery] string? dateTo,
+        [FromQuery] DateOnly? dateFrom, [FromQuery] DateOnly? dateTo,
         [FromQuery] string? paymentMethod,
         [FromQuery] int page = 1, [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
         var result = await bus.InvokeAsync<TransactionReportResultDto>(new TransactionsReportQuery(
-            dateFrom is not null ? DateOnly.Parse(dateFrom) : null,
-            dateTo is not null ? DateOnly.Parse(dateTo) : null,
+            dateFrom,
+            dateTo,
             paymentMethod, page, pageSize), ct);
         return Ok(result);
     }
@@ -197,13 +220,13 @@ public sealed class ReportsController(IMessageBus bus) : ControllerBase
     [HttpGet("transactions/export")]
     [EnableRateLimiting(RateLimitPolicies.Concurrent)]
     public async Task<IActionResult> ExportTransactionsCsvAsync(
-        [FromQuery] string? dateFrom, [FromQuery] string? dateTo,
+        [FromQuery] DateOnly? dateFrom, [FromQuery] DateOnly? dateTo,
         [FromQuery] string? paymentMethod,
         CancellationToken ct = default)
     {
         var result = await bus.InvokeAsync<TransactionReportResultDto>(new TransactionsReportQuery(
-            dateFrom is not null ? DateOnly.Parse(dateFrom) : null,
-            dateTo is not null ? DateOnly.Parse(dateTo) : null,
+            dateFrom,
+            dateTo,
             paymentMethod, 1, 10000), ct);
 
         var sb = new StringBuilder();
@@ -284,20 +307,20 @@ public sealed class ReportsController(IMessageBus bus) : ControllerBase
     public async Task<ActionResult<ServiceReportResultDto>> GetServicesReportAsync(
         [FromQuery] string? status,
         [FromQuery] string? billingCycle,
-        [FromQuery] string? createdFrom, [FromQuery] string? createdTo,
-        [FromQuery] string? nextDueFrom, [FromQuery] string? nextDueTo,
-        [FromQuery] string? terminatedFrom, [FromQuery] string? terminatedTo,
+        [FromQuery] DateOnly? createdFrom, [FromQuery] DateOnly? createdTo,
+        [FromQuery] DateOnly? nextDueFrom, [FromQuery] DateOnly? nextDueTo,
+        [FromQuery] DateOnly? terminatedFrom, [FromQuery] DateOnly? terminatedTo,
         [FromQuery] int page = 1, [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
         var result = await bus.InvokeAsync<ServiceReportResultDto>(new GetServicesReportQuery(
             status, billingCycle,
-            createdFrom is not null ? DateOnly.Parse(createdFrom) : null,
-            createdTo is not null ? DateOnly.Parse(createdTo) : null,
-            nextDueFrom is not null ? DateOnly.Parse(nextDueFrom) : null,
-            nextDueTo is not null ? DateOnly.Parse(nextDueTo) : null,
-            terminatedFrom is not null ? DateOnly.Parse(terminatedFrom) : null,
-            terminatedTo is not null ? DateOnly.Parse(terminatedTo) : null,
+            createdFrom,
+            createdTo,
+            nextDueFrom,
+            nextDueTo,
+            terminatedFrom,
+            terminatedTo,
             page, pageSize), ct);
         return Ok(result);
     }
@@ -307,20 +330,20 @@ public sealed class ReportsController(IMessageBus bus) : ControllerBase
     public async Task<ActionResult<DomainReportResultDto>> GetDomainsReportAsync(
         [FromQuery] string? status,
         [FromQuery] string? registrar,
-        [FromQuery] string? registeredFrom, [FromQuery] string? registeredTo,
-        [FromQuery] string? expiresFrom, [FromQuery] string? expiresTo,
-        [FromQuery] string? nextDueFrom, [FromQuery] string? nextDueTo,
+        [FromQuery] DateOnly? registeredFrom, [FromQuery] DateOnly? registeredTo,
+        [FromQuery] DateOnly? expiresFrom, [FromQuery] DateOnly? expiresTo,
+        [FromQuery] DateOnly? nextDueFrom, [FromQuery] DateOnly? nextDueTo,
         [FromQuery] int page = 1, [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
         var result = await bus.InvokeAsync<DomainReportResultDto>(new GetDomainsReportQuery(
             status, registrar,
-            registeredFrom is not null ? DateOnly.Parse(registeredFrom) : null,
-            registeredTo is not null ? DateOnly.Parse(registeredTo) : null,
-            expiresFrom is not null ? DateOnly.Parse(expiresFrom) : null,
-            expiresTo is not null ? DateOnly.Parse(expiresTo) : null,
-            nextDueFrom is not null ? DateOnly.Parse(nextDueFrom) : null,
-            nextDueTo is not null ? DateOnly.Parse(nextDueTo) : null,
+            registeredFrom,
+            registeredTo,
+            expiresFrom,
+            expiresTo,
+            nextDueFrom,
+            nextDueTo,
             page, pageSize), ct);
         return Ok(result);
     }
@@ -330,14 +353,14 @@ public sealed class ReportsController(IMessageBus bus) : ControllerBase
     public async Task<ActionResult<ClientReportResultDto>> GetClientsReportAsync(
         [FromQuery] string? status,
         [FromQuery] string? country,
-        [FromQuery] string? createdFrom, [FromQuery] string? createdTo,
+        [FromQuery] DateOnly? createdFrom, [FromQuery] DateOnly? createdTo,
         [FromQuery] int page = 1, [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
         var result = await bus.InvokeAsync<ClientReportResultDto>(new GetClientsReportQuery(
             status, country,
-            createdFrom is not null ? DateOnly.Parse(createdFrom) : null,
-            createdTo is not null ? DateOnly.Parse(createdTo) : null,
+            createdFrom,
+            createdTo,
             page, pageSize), ct);
         return Ok(result);
     }
@@ -346,14 +369,14 @@ public sealed class ReportsController(IMessageBus bus) : ControllerBase
     [HttpGet("credits-reviewer")]
     public async Task<ActionResult<CreditsReviewerDto>> GetCreditsReviewerAsync(
         [FromQuery] int? clientId,
-        [FromQuery] string? from, [FromQuery] string? to,
+        [FromQuery] DateOnly? from, [FromQuery] DateOnly? to,
         [FromQuery] decimal? minAmount, [FromQuery] decimal? maxAmount,
         CancellationToken ct = default)
     {
         var result = await bus.InvokeAsync<CreditsReviewerDto>(new GetCreditsReviewerQuery(
             clientId,
-            from is not null ? DateOnly.Parse(from) : null,
-            to is not null ? DateOnly.Parse(to) : null,
+            from,
+            to,
             minAmount, maxAmount), ct);
         return Ok(result);
     }
@@ -382,12 +405,12 @@ public sealed class ReportsController(IMessageBus bus) : ControllerBase
     /// <summary>Returns sales tax liability for the given date range.</summary>
     [HttpGet("sales-tax")]
     public async Task<ActionResult<SalesTaxReportDto>> GetSalesTaxAsync(
-        [FromQuery] string? from, [FromQuery] string? to,
+        [FromQuery] DateOnly? from, [FromQuery] DateOnly? to,
         CancellationToken ct = default)
     {
         var result = await bus.InvokeAsync<SalesTaxReportDto>(new GetSalesTaxReportQuery(
-            from is not null ? DateOnly.Parse(from) : null,
-            to is not null ? DateOnly.Parse(to) : null), ct);
+            from,
+            to), ct);
         return Ok(result);
     }
 
@@ -465,13 +488,13 @@ public sealed class ReportsController(IMessageBus bus) : ControllerBase
         [FromQuery] int? clientId,
         [FromQuery] string? registrar,
         [FromQuery] string? domain,
-        [FromQuery] string? from, [FromQuery] string? to,
+        [FromQuery] DateOnly? from, [FromQuery] DateOnly? to,
         CancellationToken ct = default)
     {
         var result = await bus.InvokeAsync<DomainRenewalEmailsDto>(new GetDomainRenewalEmailsQuery(
             clientId, registrar, domain,
-            from is not null ? DateOnly.Parse(from) : null,
-            to is not null ? DateOnly.Parse(to) : null), ct);
+            from,
+            to), ct);
         return Ok(result);
     }
 
@@ -489,25 +512,25 @@ public sealed class ReportsController(IMessageBus bus) : ControllerBase
     [HttpGet("ticket-feedback-comments")]
     public async Task<ActionResult<TicketFeedbackCommentsDto>> GetTicketFeedbackCommentsAsync(
         [FromQuery] string? staffName,
-        [FromQuery] string? from, [FromQuery] string? to,
+        [FromQuery] DateOnly? from, [FromQuery] DateOnly? to,
         CancellationToken ct = default)
     {
         var result = await bus.InvokeAsync<TicketFeedbackCommentsDto>(new GetTicketFeedbackCommentsQuery(
             staffName,
-            from is not null ? DateOnly.Parse(from) : null,
-            to is not null ? DateOnly.Parse(to) : null), ct);
+            from,
+            to), ct);
         return Ok(result);
     }
 
     /// <summary>Returns per-staff average feedback scores.</summary>
     [HttpGet("ticket-feedback-scores")]
     public async Task<ActionResult<TicketFeedbackScoresDto>> GetTicketFeedbackScoresAsync(
-        [FromQuery] string? from, [FromQuery] string? to,
+        [FromQuery] DateOnly? from, [FromQuery] DateOnly? to,
         CancellationToken ct = default)
     {
         var result = await bus.InvokeAsync<TicketFeedbackScoresDto>(new GetTicketFeedbackScoresQuery(
-            from is not null ? DateOnly.Parse(from) : null,
-            to is not null ? DateOnly.Parse(to) : null), ct);
+            from,
+            to), ct);
         return Ok(result);
     }
 
@@ -515,25 +538,25 @@ public sealed class ReportsController(IMessageBus bus) : ControllerBase
     [HttpGet("ticket-ratings-reviewer")]
     public async Task<ActionResult<TicketRatingsReviewerDto>> GetTicketRatingsReviewerAsync(
         [FromQuery] int? minRating,
-        [FromQuery] string? from, [FromQuery] string? to,
+        [FromQuery] DateOnly? from, [FromQuery] DateOnly? to,
         CancellationToken ct = default)
     {
         var result = await bus.InvokeAsync<TicketRatingsReviewerDto>(new GetTicketRatingsReviewerQuery(
             minRating,
-            from is not null ? DateOnly.Parse(from) : null,
-            to is not null ? DateOnly.Parse(to) : null), ct);
+            from,
+            to), ct);
         return Ok(result);
     }
 
     /// <summary>Returns ticket tags with usage counts.</summary>
     [HttpGet("ticket-tags")]
     public async Task<ActionResult<TicketTagsDto>> GetTicketTagsAsync(
-        [FromQuery] string? from, [FromQuery] string? to,
+        [FromQuery] DateOnly? from, [FromQuery] DateOnly? to,
         CancellationToken ct = default)
     {
         var result = await bus.InvokeAsync<TicketTagsDto>(new GetTicketTagsQuery(
-            from is not null ? DateOnly.Parse(from) : null,
-            to is not null ? DateOnly.Parse(to) : null), ct);
+            from,
+            to), ct);
         return Ok(result);
     }
 
@@ -541,13 +564,13 @@ public sealed class ReportsController(IMessageBus bus) : ControllerBase
     [HttpGet("client-statement")]
     public async Task<ActionResult<ClientStatementDto>> GetClientStatementAsync(
         [FromQuery] int clientId,
-        [FromQuery] string? from, [FromQuery] string? to,
+        [FromQuery] DateOnly? from, [FromQuery] DateOnly? to,
         CancellationToken ct = default)
     {
         var result = await bus.InvokeAsync<ClientStatementDto>(new ClientStatementQuery(
             clientId,
-            from is not null ? DateOnly.Parse(from) : null,
-            to is not null ? DateOnly.Parse(to) : null), ct);
+            from,
+            to), ct);
         return Ok(result);
     }
 }

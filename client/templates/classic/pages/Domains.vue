@@ -524,8 +524,9 @@ const totalTldCount = computed(() => Object.keys(tldPricing.value?.pricing ?? {}
 const filteredEntries = computed<[string, TldPriceEntry][]>(() => {
   if (!tldPricing.value?.pricing) return []
   const entries = Object.entries(tldPricing.value.pricing) as [string, TldPriceEntry][]
-  if (!activeCategory.value) return entries
-  return entries.filter(([, tld]) => (tld.categories ?? []).includes(activeCategory.value))
+  const category = activeCategory.value
+  if (!category) return entries
+  return entries.filter(([, tld]) => (tld.categories ?? []).includes(category))
 })
 
 const displayedTlds = computed(() => Object.fromEntries(filteredEntries.value) as Record<string, TldPriceEntry>)

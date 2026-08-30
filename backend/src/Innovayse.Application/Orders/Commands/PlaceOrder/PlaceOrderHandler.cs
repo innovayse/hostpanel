@@ -4,6 +4,7 @@ using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Common;
 using Innovayse.Application.Domains.Common;
 using Innovayse.Application.Domains.Queries.GetTldPricing;
+using Innovayse.Application.Resources;
 using Innovayse.Domain.Auth;
 using Innovayse.Domain.Auth.Interfaces;
 using Innovayse.Domain.Billing;
@@ -14,6 +15,7 @@ using Innovayse.Domain.Orders;
 using Innovayse.Domain.Orders.Interfaces;
 using Innovayse.Domain.Products;
 using Innovayse.Domain.Products.Interfaces;
+using Microsoft.Extensions.Localization;
 using Wolverine;
 
 /// <summary>
@@ -30,6 +32,7 @@ using Wolverine;
 /// <param name="roles">Role store, for granting the Client role.</param>
 /// <param name="bus">Wolverine message bus for invoking TLD pricing queries.</param>
 /// <param name="caller">Who is ordering, and from where; the command says neither, and must not.</param>
+/// <param name="localizer">The refusal sentences, in the caller's own language.</param>
 public sealed class PlaceOrderHandler(
     IOrderRepository orderRepo,
     IProductRepository productRepo,
@@ -39,8 +42,21 @@ public sealed class PlaceOrderHandler(
     IUserProvisioning provisioning,
     ISubjectRoleStore roles,
     IMessageBus bus,
-    ICurrentRequestContext caller)
+    ICurrentRequestContext caller,
+    IStringLocalizer<ValidationMessages> localizer)
 {
+    /// <summary>
+    /// Resource key for the refusal a signed-in caller with no client record reads.
+    /// </summary>
+    /// <remarks>
+    /// It replaces "Authentication required. Your session may have expired -- please log in
+    /// again to complete your order." That sentence described a state the caller was not in and
+    /// prescribed an action that could not help: they were authenticated, and signing in again
+    /// creates no client record. What actually happened is that the credential names nobody this
+    /// installation has as a customer, which only support can fix.
+    /// </remarks>
+    private const string NoClientAccountKey = "OrderHasNoClientAccount";
+
     /// <summary>
     /// Handles <see cref="PlaceOrderCommand"/>.
     /// </summary>
@@ -145,10 +161,13 @@ public sealed class PlaceOrderHandler(
             }
         }
 
+        // Reached two ways, and the sentence has to be true of both: a signed-in caller whose
+        // subject has no client row, and an anonymous caller who sent no registration. The
+        // validator already refuses the second before the handler runs, so in practice this is
+        // the first — which is why it no longer says the session expired. It had not.
         if (string.IsNullOrWhiteSpace(cmd.Email) || string.IsNullOrWhiteSpace(cmd.Password))
         {
-            throw new InvalidOperationException(
-                "Authentication required. Your session may have expired — please log in again to complete your order.");
+            throw new InvalidOperationException(localizer[NoClientAccountKey]);
         }
 
         var userId = await provisioning.CreateAsync(
@@ -184,10 +203,16 @@ public sealed class PlaceOrderHandler(
     /// </summary>
     /// <param name="tldPricing">Pre-fetched TLD pricing data.</param>
     /// <param name="domainName">Fully-qualified domain name (e.g. "example.com").</param>
-    /// <param name="action">Domain action: "register" or "transfer".</param>
+    /// <param name="action">Domain action: "register", "transfer" or "renew".</param>
     /// <param name="years">Registration period in years.</param>
     /// <returns>The validated price for the domain operation.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the TLD is not supported or years not available.</exception>
+    /// <remarks>
+    /// "renew" prices from the TLD table's renewal column, which has always been loaded and
+    /// published to the public pricing page and had no order path behind it. It is here so a
+    /// client-initiated renewal is a purchase like the other two rather than a free call to the
+    /// registrar; see <c>RenewMyDomainHandler</c>.
+    /// </remarks>
     private static decimal ResolveDomainPrice(TldPricingDto tldPricing, string domainName, string action, int years)
     {
         var dotIndex = domainName.IndexOf('.');
@@ -207,6 +232,7 @@ public sealed class PlaceOrderHandler(
         {
             "register" => entry.Register,
             "transfer" => entry.Transfer,
+            "renew" => entry.Renew,
             _ => throw new InvalidOperationException($"Unsupported domain action: {action}.")
         };
 

@@ -73,11 +73,11 @@
                     {{ $t('hosting.getStartedForFree') }}
                   </div>
                   <h2 class="text-3xl md:text-5xl font-black text-white mb-4 uppercase tracking-tighter">
-                    {{ formatPlanNameHelper(freePlan.translated_name || freePlan.name) }}
+                    {{ formatPlanNameHelper(freePlan.name) }}
                   </h2>
-                  <p class="text-base md:text-lg text-gray-300 mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium">
-                    {{ freePlan.translated_tagline || freePlan.tagline }}
-                    <span class="block mt-2 text-sm text-gray-500 font-normal italic">{{ freePlan.translated_shortdescription || freePlan.shortdescription }}</span>
+                  <!-- Interpolated, never `v-html`: the raw field is unsanitised operator HTML. -->
+                  <p v-if="planSummaryHelper(freePlan)" class="text-base md:text-lg text-gray-300 mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium">
+                    {{ planSummaryHelper(freePlan) }}
                   </p>
                   <div class="flex flex-wrap justify-center lg:justify-start gap-3 mb-4">
                     <div v-for="feature in getPlanFeaturesHelper(freePlan).slice(0, 4)" :key="feature" class="flex items-center gap-2 text-xs md:text-sm text-gray-300 bg-white/[0.03] px-4 py-2.5 rounded-2xl border border-white/5 backdrop-blur-sm">
@@ -135,14 +135,16 @@
                 <div class="mb-8">
                   <NuxtLink :to="localePath(`/hosting/${planSlugHelper(plan)}`)" class="block mb-2">
                     <h2 class="text-2xl md:text-3xl font-black text-white hover:text-cyan-400 transition-colors uppercase tracking-tighter leading-none">
-                      {{ formatPlanNameHelper(plan.translated_name || plan.name) }}
+                      {{ formatPlanNameHelper(plan.name) }}
                     </h2>
                   </NuxtLink>
-                  <p v-if="plan.translated_tagline || plan.tagline" class="text-[10px] text-cyan-400 font-bold uppercase tracking-[0.2em] mb-4">
-                    {{ plan.translated_tagline || plan.tagline }}
-                  </p>
-                  <p v-if="plan.translated_shortdescription || plan.shortdescription" class="text-sm text-gray-500 leading-relaxed line-clamp-2 min-h-[40px] italic">
-                    {{ plan.translated_shortdescription || plan.shortdescription }}
+                  <!--
+                    No tagline line: `ProductDto` has no such field, so it never rendered.
+                    The summary below is parsed out of `description` and interpolated, never
+                    `v-html` — the raw field is unsanitised operator HTML.
+                  -->
+                  <p v-if="planSummaryHelper(plan)" class="text-sm text-gray-500 leading-relaxed line-clamp-2 min-h-[40px] italic">
+                    {{ planSummaryHelper(plan) }}
                   </p>
                 </div>
 
@@ -224,11 +226,11 @@
                     {{ $t('hosting.agencyBadge') }}
                   </div>
                   <h2 class="text-3xl md:text-6xl font-black text-white mb-4 uppercase tracking-tighter leading-none">
-                    {{ formatPlanNameHelper(agencyPlan.translated_name || agencyPlan.name) }}
+                    {{ formatPlanNameHelper(agencyPlan.name) }}
                   </h2>
-                  <p class="text-base md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium">
-                    {{ agencyPlan.translated_tagline || agencyPlan.tagline }}
-                    <span class="block mt-2 text-sm text-gray-500 font-normal italic leading-normal">{{ agencyPlan.translated_shortdescription || agencyPlan.shortdescription }}</span>
+                  <!-- Interpolated, never `v-html`: the raw field is unsanitised operator HTML. -->
+                  <p v-if="planSummaryHelper(agencyPlan)" class="text-base md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium">
+                    {{ planSummaryHelper(agencyPlan) }}
                   </p>
                   <div class="flex flex-wrap justify-center lg:justify-start gap-3">
                     <div v-for="feature in getPlanFeaturesHelper(agencyPlan).slice(0, 6)" :key="feature" class="flex items-center gap-2 text-xs md:text-sm text-gray-300 bg-white/[0.03] px-4 py-2.5 rounded-2xl border border-white/5 backdrop-blur-sm">
@@ -288,7 +290,7 @@
                       <th v-for="plan in orderedComparisonsHelper" :key="plan.pid" class="p-4 md:p-8 border-b border-white/10 text-center relative group/col min-w-[120px]">
                         <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-cyan-500 to-primary-500 scale-x-0 group-hover/col:scale-x-100 transition-transform duration-500" />
                         <div class="text-[10px] md:text-sm font-black text-white mb-2 group-hover/col:text-cyan-400 transition-colors uppercase tracking-widest leading-tight">
-                          {{ formatPlanNameHelper(plan.translated_name || plan.name) }}
+                          {{ formatPlanNameHelper(plan.name) }}
                         </div>
                         <div v-if="getPlanPriceRawHelper(plan, selectedCycle)" class="text-[8px] md:text-[10px] text-gray-500 font-black tracking-widest uppercase opacity-80 tabular-nums">
                           {{ activeCurrencyPrefix }}{{ formatAmountHelper(getPlanPriceRawHelper(plan, selectedCycle)) }}
@@ -361,16 +363,35 @@ import {
 } from 'lucide-vue-next'
 import { useCartStore } from '~/stores/cart'
 import { useCatalogApi } from '~/composables/apis/useCatalogApi'
+import { parseDescription } from '~/utils/whmcs'
 
 interface WhmcsCurrency {
   prefix: string; suffix: string; monthly: string; quarterly: string; 
   semiannually: string; annually: string; biennially: string; triennially: string;
 }
 
+/**
+ * The subset of the catalogue product this page reads.
+ *
+ * `tagline` and `shortdescription` used to be declared here as optional fields. Neither is on
+ * `ProductDto` and neither is ever sent, so every read of them was `undefined` and the markup
+ * they fed rendered blank — they are gone rather than left as optional-looking placeholders.
+ * The prose that used to be expected from `shortdescription` lives at the head of
+ * `description`, and {@link planSummaryHelper} pulls it out.
+ */
 interface WhmcsPlan {
-  id?: number; pid: number; name: string; translated_name?: string; tagline?: string; translated_tagline?: string;
-  shortdescription?: string; translated_shortdescription?: string; description: string; translated_description?: string;
-  is_featured?: string; pricing: Record<string, WhmcsCurrency>;
+  /** Catalogue row id, absent on some payloads. */
+  id?: number
+  /** Product id — the value the cart and order flow key on. */
+  pid: number
+  /** Display name as the operator wrote it. */
+  name: string
+  /** Operator-authored HTML: leading prose, then `<br />`-separated ✔ feature lines. */
+  description: string
+  /** `'on'` when the operator flagged the plan as the featured one. */
+  is_featured?: string
+  /** Prices per currency code, each keyed by billing cycle. */
+  pricing: Record<string, WhmcsCurrency>
 }
 
 const { t: $t, locale } = useI18n()
@@ -382,7 +403,7 @@ onMounted(() => cart.init())
 // Straight from the API composable rather than through a store: this page reads the
 // catalogue once and owns it alone, which is the named exception to component -> store -> api.
 const { data: _plansRaw, pending, error, refresh } = await useCatalogApi().loadProducts(
-  () => ({ lang: locale.value, gid: 1 })
+  () => ({ gid: 1 })
 )
 
 const plans = computed<WhmcsPlan[]>(() => (_plansRaw.value as WhmcsPlan[]) ?? [])
@@ -434,7 +455,7 @@ const activeCurrencyPrefix = computed(() => {
 })
 
 function getComparisonCheckValueHelperFn(plan: WhmcsPlan, key: string): boolean {
-  const desc = (plan.translated_description || plan.description || '').toLowerCase()
+  const desc = (plan.description || '').toLowerCase()
   if (key === 'freeSsl') return desc.includes('ssl') || desc.includes('security') || desc.includes('սերտիֆիկատ')
   if (key === 'support') return true
   return false
@@ -481,11 +502,46 @@ function getPlanCyclesHelperHelper(plan: WhmcsPlan): Array<{ key: CycleKey; pric
     })
 }
 
-function getPlanFeaturesHelper(plan: WhmcsPlan): string[] {
-  let desc = plan.translated_description || plan.description || ''
-  if (locale.value === 'hy') desc = desc.replace(/վեբ-մաստեր/g, 'վեբ-վարպետ')
-  return desc.split(/\r?\n/).filter(line => line.trim())
+/**
+ * Normalises a plan description before it is parsed.
+ *
+ * The Armenian catalogue copy spells "webmaster" with a form the operator asked to be shown
+ * differently; the substitution has to happen on the raw text, before any splitting.
+ *
+ * @param plan - The plan whose description is being read.
+ * @returns The description with locale-specific wording applied.
+ */
+const planDescriptionHelper = (plan: WhmcsPlan): string => {
+  const desc = plan.description || ''
+  return locale.value === 'hy' ? desc.replace(/վեբ-մաստեր/g, 'վեբ-վարպետ') : desc
 }
+
+/**
+ * Leading prose of a plan's description.
+ *
+ * This is what the `shortdescription` reads in the template used to be reaching for. That
+ * field is not sent, so those lines were blank on every plan while the copy sat at the head
+ * of `description`.
+ *
+ * @param plan - The plan being rendered.
+ * @returns The summary sentence, or `''` for a plan whose copy is bullets only.
+ */
+const planSummaryHelper = (plan: WhmcsPlan): string =>
+  parseDescription(planDescriptionHelper(plan)).summary
+
+/**
+ * Feature lines of a plan's description.
+ *
+ * A plain split on newlines this used to be, which is wrong for this catalogue: the copy is
+ * HTML, so `✔ 600 MB Disk Space <br />` was rendered with its markup showing and a prose-only
+ * description became one paragraph-long "feature". `parseDescription` unwraps the tags,
+ * separates the leading prose, and strips the bullet markers.
+ *
+ * @param plan - The plan being rendered.
+ * @returns The feature lines, markers stripped.
+ */
+const getPlanFeaturesHelper = (plan: WhmcsPlan): string[] =>
+  parseDescription(planDescriptionHelper(plan)).features
 
 function formatPlanNameHelper(name: string): string {
   if (!name) return ''
@@ -500,7 +556,7 @@ function addToCartHelper(plan: WhmcsPlan) {
   const c = getCurrencyHelper(plan); const amt = getPlanPriceRawHelper(plan, selectedCycle.value)
   const priceLabel = amt ? (locale.value === 'hy' && c?.prefix === '֏' ? `${formatAmountHelper(amt)} ${c.prefix}` : `${c?.prefix}${formatAmountHelper(amt)}`) : $t('hosting.custom')
   cart.addItem({
-    pid: plan.pid || plan.id || 0, name: plan.translated_name || plan.name, billingcycle: selectedCycle.value,
+    pid: plan.pid || plan.id || 0, name: plan.name, billingcycle: selectedCycle.value,
     cycleLabel: $t(`hosting.cycles.${selectedCycle.value}`), price: priceLabel, prefix: c?.prefix ?? '', rawPrice: amt || '0'
   })
 }

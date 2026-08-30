@@ -84,10 +84,10 @@
                 <span class="text-gray-900 dark:text-white font-medium text-sm">{{ domain.name }}</span>
               </div>
             </UiTableTd>
-            <UiTableTd class="text-gray-500 dark:text-gray-400 hidden lg:table-cell text-sm">{{ formatExpiry(domain.registeredAt) }}</UiTableTd>
+            <UiTableTd class="text-gray-500 dark:text-gray-400 hidden lg:table-cell text-sm">{{ formatDate(domain.registeredAt) }}</UiTableTd>
             <UiTableTd class="hidden md:table-cell">
               <div class="text-sm" :class="isExpiringSoon(domain.expiresAt) ? 'text-orange-400 font-medium' : 'text-gray-500 dark:text-gray-400'">
-                {{ formatExpiry(domain.expiresAt) }}
+                {{ formatDate(domain.expiresAt) }}
                 <span v-if="isExpiringSoon(domain.expiresAt)" class="ml-2 text-xs text-orange-400">({{ $t('client.domains.expiringSoon') }})</span>
               </div>
             </UiTableTd>
@@ -119,6 +119,7 @@
 <script setup lang="ts">
 import { Globe, Plus } from 'lucide-vue-next'
 import { useClientStore } from '~/stores/client'
+import { EMPTY_DATE, formatDate } from '~/utils/formatDate'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
@@ -155,29 +156,30 @@ const paged      = computed(() => filtered.value.slice((page.value - 1) * perPag
 const pageFrom   = computed(() => filtered.value.length === 0 ? 0 : (page.value - 1) * perPage.value + 1)
 const pageTo     = computed(() => Math.min(page.value * perPage.value, filtered.value.length))
 
-/** Checks whether the given date string represents a valid date. */
-function isValidDate(d: string): boolean {
-  return !!d && !d.startsWith('0000') && !isNaN(new Date(d).getTime())
-}
-
 /**
- * Formats a date string for display, returning a dash for invalid dates.
+ * Checks whether the given value denotes a real date rather than a zero sentinel.
  *
- * @param d - ISO 8601 date string.
- * @returns Formatted date or em-dash placeholder.
+ * Kept only for {@link isExpiringSoon}, which does arithmetic rather than display. The local
+ * display wrapper that used to sit beside this is gone: it called `toLocaleDateString()` with
+ * no locale, which formats in the *browser's* language rather than the one the visitor chose
+ * in the portal, so an Armenian customer on an English machine read English dates.
+ *
+ * @param d - Date string as the API sent it.
+ * @returns True when the value parses and is not a zero-date sentinel.
  */
-function formatExpiry(d: string): string {
-  if (!isValidDate(d)) return '—'
-  return new Date(d).toLocaleDateString()
-}
+const isValidDate = (d: string): boolean => formatDate(d) !== EMPTY_DATE
 
 /**
  * Checks whether a domain expires within the next 30 days.
  *
+ * Instant arithmetic, deliberately not routed through `formatDate`: "within 30 days" is a
+ * question about elapsed time, where the calendar-day reading `formatDate` gives is the wrong
+ * tool.
+ *
  * @param expiryDate - ISO 8601 expiration date string.
  * @returns True if the domain expires within 30 days.
  */
-function isExpiringSoon(expiryDate: string): boolean {
+const isExpiringSoon = (expiryDate: string): boolean => {
   if (!isValidDate(expiryDate)) return false
   const daysLeft = (new Date(expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
   return daysLeft >= 0 && daysLeft <= 30

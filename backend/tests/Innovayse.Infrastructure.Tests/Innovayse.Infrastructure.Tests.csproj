@@ -26,5 +26,11 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Innovayse.Infrastructure\Innovayse.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Innovayse.Domain\Innovayse.Domain.csproj" />
+    <!--
+      Named explicitly rather than leant on transitively: Cwp7ApiClientTests constructs the
+      internal Cwp7ApiClient directly, and the InternalsVisibleTo that permits it is declared in
+      this project's own file.
+    -->
+    <ProjectReference Include="..\..\src\Innovayse.Providers.CWP7\Innovayse.Providers.CWP7.csproj" />
   </ItemGroup>
 </Project>

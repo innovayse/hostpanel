@@ -46,6 +46,10 @@ public sealed class SsoIdentityProvider(SsoServiceClient sso) : IIdentityProvide
         return (items.Select(a => Map(a)!).ToList(), total);
     }
 
+    // Language is left at its default null on purpose. Where the SSO owns the person it
+    // owns their language too, and hostpanel's service view of an SSO account does not carry
+    // one -- so there is nothing here to answer with, and answering "English" would be a
+    // guess dressed up as a stored preference.
     private static IdentityAccount? Map(SsoServiceClient.SsoAccount? account) =>
         account is null ? null : new IdentityAccount(
             account.Subject, account.Email, account.FirstName, account.LastName, account.TwoFactorEnabled);

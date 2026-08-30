@@ -187,4 +187,52 @@
     <value>Զտիչի անթույլատրելի արժեք՝ {0}։</value>
     <comment>GetMigrationLogsHandler. {0} is the value that was submitted for the action or entity-type filter. A query carries no validator in this project, so the handler resolves this itself.</comment>
   </data>
+  <data name="MyServiceNotFound" xml:space="preserve">
+    <value>Այդպիսի ծառայություն չկա։</value>
+    <comment>MY_SERVICE_NOT_FOUND.</comment>
+  </data>
+  <data name="NoDomainProductConfigured" xml:space="preserve">
+    <value>Այս պահին այս կայքում հնարավոր չէ պատվիրել դոմեններ։</value>
+    <comment>TransferMyDomainHandler. No active product of type Domain exists, so a domain order has nothing to hang off. A configuration gap, not a caller error.</comment>
+  </data>
+  <data name="MyContactNotFound" xml:space="preserve">
+    <value>Այդպիսի կոնտակտ չկա։</value>
+    <comment>MY_CONTACT_NOT_FOUND.</comment>
+  </data>
+  <data name="UserProvisioningNotAllowedCreateAccount" xml:space="preserve">
+    <value>Այս տեղակայման հաշիվները պատկանում են միասնական մուտքի ծառայությանը, ուստի հաշիվ այստեղ չի կարելի ստեղծել։ Նախ ավելացրեք անձին միասնական մուտքի ծառայությունը։</value>
+    <comment>USER_PROVISIONING_NOT_ALLOWED. SsoModeUserProvisioning.CreateAsync. One key per refused flow rather than one key with a {0}: the flow name is a verb phrase and does not survive being spliced into a Russian or Armenian sentence.</comment>
+  </data>
+  <data name="UserProvisioningNotAllowedChangeName" xml:space="preserve">
+    <value>Այս տեղակայման հաշիվները պատկանում են միասնական մուտքի ծառայությանը, ուստի անձի անունն այստեղ չի կարելի փոխել։ Փոխեք այն միասնական մուտքի ծառայությունը։</value>
+    <comment>USER_PROVISIONING_NOT_ALLOWED. SsoModeUserProvisioning.UpdateProfileAsync.</comment>
+  </data>
+  <data name="UserProvisioningNotAllowedChangeEmail" xml:space="preserve">
+    <value>Այս տեղակայման հաշիվները պատկանում են միասնական մուտքի ծառայությանը, ուստի մուտքի հասցեն այստեղ չի կարելի փոխել։ Փոխեք այն միասնական մուտքի ծառայությունը։</value>
+    <comment>USER_PROVISIONING_NOT_ALLOWED. SsoModeUserProvisioning.ChangeEmailAsync.</comment>
+  </data>
+  <data name="UserProvisioningNotAllowedDeleteAccount" xml:space="preserve">
+    <value>Այս տեղակայման հաշիվները պատկանում են միասնական մուտքի ծառայությանը, ուստի հաշիվն այստեղ չի կարելի ջնջել։ Ջնջեք այն միասնական մուտքի ծառայությունը։</value>
+    <comment>USER_PROVISIONING_NOT_ALLOWED. SsoModeUserProvisioning.DeleteAsync.</comment>
+  </data>
+  <data name="UserProvisioningNotAllowedSetPassword" xml:space="preserve">
+    <value>Այս տեղակայման հաշիվները պատկանում են միասնական մուտքի ծառայությանը, ուստի գաղտնաբառն այստեղ չի կարելի սահմանել։ Գաղտնաբառերը կառավարվում են միասնական մուտքի ծառայությունը։</value>
+    <comment>USER_PROVISIONING_NOT_ALLOWED. SsoModeUserProvisioning.SetPasswordAsync.</comment>
+  </data>
+  <data name="UserProvisioningNotAllowedIssuePasswordReset" xml:space="preserve">
+    <value>Այս տեղակայման հաշիվները պատկանում են միասնական մուտքի ծառայությանը, ուստի գաղտնաբառի վերականգնումն այստեղ չի կարելի տրամադրել։ Հայցեք այն միասնական մուտքի ծառայությունից։</value>
+    <comment>USER_PROVISIONING_NOT_ALLOWED. SsoModeUserProvisioning.IssuePasswordResetTokenAsync.</comment>
+  </data>
+  <data name="OrderHasNoClientAccount" xml:space="preserve">
+    <value>Այս մուտքը կապված չէ հաճախորդի հաշվի հետ, ուստի պատվերը կապելու բան չկա։ Դիմեք աջակցությանը՝ հաշիվ ստեղծելու համար։</value>
+    <comment>PlaceOrderHandler. The caller is authenticated but has no client record and sent no guest registration, so the order has no account to belong to. Replaces a sentence telling them to log in again, which they could act on and which could never help.</comment>
+  </data>
+  <data name="SetupAlreadyCompleted" xml:space="preserve">
+    <value>Այս տեղադրումը արդեն կարգավորված է, և ադմինիստրատորի դերն արդեն անցել է մեկուն. Խնդրեք նրանցից, որ ձեզ մուտք տրամադրի։</value>
+    <comment>SETUP_ALREADY_COMPLETED. CompleteSetupHandler. Answered 409.</comment>
+  </data>
+  <data name="SetupTokenInvalid" xml:space="preserve">
+    <value>Այդ կարգավորման նշանը չի համընկնում տրվածին։ Ընթացիկ նշանը գրանցվում է սերվերի մատյանում API-ի ամեն մեկնարկման կամար, քանի դեռ կարգավորումը ավարտված չէ — վերագործարկեք API-ն և վերցրեք ամենաթարմը։</value>
+    <comment>SETUP_TOKEN_INVALID. CompleteSetupHandler, local mode only. Answered 403.</comment>
+  </data>
 </root>

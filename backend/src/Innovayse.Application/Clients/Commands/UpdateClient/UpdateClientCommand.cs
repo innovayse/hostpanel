@@ -16,6 +16,10 @@ namespace Innovayse.Application.Clients.Commands.UpdateClient;
 /// <param name="State">Updated billing state.</param>
 /// <param name="PostCode">Updated billing postcode.</param>
 /// <param name="Country">Updated billing country code (2 chars, ISO 3166-1 alpha-2).</param>
+/// <param name="Language">
+/// Preferred UI language code, or null to leave it alone. Written only where this deployment
+/// owns the account, and only when it differs from what the account already holds.
+/// </param>
 /// <param name="Currency">ISO 4217 currency code (null to keep current).</param>
 /// <param name="PaymentMethod">Payment method label (null to keep current).</param>
 /// <param name="BillingContact">Billing contact reference (null to keep current).</param>
@@ -48,6 +52,7 @@ public record UpdateClientCommand(
     string? State,
     string? PostCode,
     string? Country,
+    string? Language,
     string? Currency,
     string? PaymentMethod,
     string? BillingContact,

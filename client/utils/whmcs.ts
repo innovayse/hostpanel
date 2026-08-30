@@ -35,30 +35,27 @@ export const productConfig: Record<string, { name: string; icon: string; color: 
   'taskero':           { name: 'Taskero',           icon: 'view-dashboard',        color: '#10b981', demoUrl: '#',   learnMoreUrl: '/products/taskero' }
 }
 
-/**
- * Get a translated field from a WHMCS product object.
- * Checks group_translations first (group-level name/tagline/headline),
- * then the product-level translated_* field, then the base field.
- */
-export function getGt(p: any, field: string): string {
-  return p?.group_translations?.[`translated_${field}`]
-    || p?.[`translated_${field}`]
-    || p?.[field]
-    || ''
-}
-
-/**
- * Extract structured features from a WHMCS product's `group_features` field.
- * Uses `translated_feature` when available, falls back to the base `feature` string.
- * Returns an empty array if the product has no group_features.
+/*
+ * `getGt` and `getGroupFeatures` used to live here.
  *
- * @param p - Raw WHMCS product object
- * @returns Array of feature label strings
+ * `getGt(p, field)` read `p.group_translations.translated_<field>`, then
+ * `p.translated_<field>`, then `p.<field>`; `getGroupFeatures(p)` read
+ * `p.group_features[].translated_feature`. Neither field is on `ProductDto`, and
+ * `GET /api/portal/public/products` — verified against a live backend — sends only
+ * `ProductDto`'s own fields, so the first two branches of `getGt` never resolved and
+ * `getGroupFeatures` always returned `[]`. Callers now read the base field directly.
+ *
+ * Structured, per-product specification lines do exist, but as their own resource:
+ * `GET /api/portal/public/product-features` (`ProductFeature` — label/value/sortOrder),
+ * reached through `useCatalogApi().loadProductFeatures(groupId)`. That is what a caller
+ * wanting `group_features` wants today.
+ *
+ * Localised product copy does not exist anywhere in the backend: there is no product
+ * translations table and no `lang` handling in `ProductsController`. `Slide` is the only
+ * entity with a `*Translation` sibling, and `loadSlides(lang)` is the one place a `lang`
+ * parameter still means something. Making product copy translatable is a backend change —
+ * a `ProductTranslation` entity alongside `SlideTranslation` — not a frontend one.
  */
-export function getGroupFeatures(p: any): string[] {
-  const features: any[] = Array.isArray(p?.group_features) ? p.group_features : []
-  return features.map(f => f.translated_feature || f.feature || '').filter(Boolean)
-}
 
 /** Normalize a product name to a slug key: "SmartLearn System" → "smartlearn-system" */
 export function nameToKey(name: string): string {

@@ -66,6 +66,7 @@ public sealed class ClientProfileController(IMessageBus bus) : ControllerBase
                 request.State,
                 request.PostCode,
                 request.Country,
+                request.Language,
                 request.Currency,
                 request.PaymentMethod,
                 request.BillingContact,

@@ -47,7 +47,7 @@ import AuroraDomainResults from '~/templates/aurora/sections/DomainResults.vue'
 import AuroraTldTable from '~/templates/aurora/sections/TldTable.vue'
 import { ALL_CATEGORY } from '~/templates/aurora/types'
 import type { DomainResult } from '~/templates/aurora/types'
-import type { TldPriceRow } from '~/composables/useDomainLookup'
+import type { TldPriceRow } from '~/types/tldpricerow'
 
 withDefaults(defineProps<{
   priceRows?: TldPriceRow[]

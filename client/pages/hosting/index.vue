@@ -4,7 +4,7 @@
     :plans="plans"
     :yearly="yearly"
     :comparison-rows="comparisonRows"
-    @update:yearly="value => (yearly = value)"
+    @update:yearly="(value: boolean) => (yearly = value)"
   />
 </template>
 

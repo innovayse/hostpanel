@@ -2,36 +2,43 @@ import type { RouteLocationNormalized } from 'vue-router'
 import { useAuthStore } from '../modules/auth/stores/authStore'
 import { pinia } from '../pinia'
 
-/** LocalStorage key used to track whether initial admin setup is complete. */
-const SETUP_COMPLETE_KEY = 'admin_setup_complete'
-
 /**
- * Marks the initial admin setup as complete.
+ * Auth middleware — decides, per navigation, whether a route may be entered.
  *
- * Stores a flag in localStorage so subsequent page loads skip the setup route.
- */
-export function markSetupComplete(): void {
-  localStorage.setItem(SETUP_COMPLETE_KEY, 'true')
-}
-
-/**
- * Auth middleware — protects routes that require authentication.
- *
- * Restores session from localStorage JWT on first load.
- * Redirects unauthenticated users to /login.
- * Redirects authenticated users away from /login to /dashboard.
+ * Everything it decides on comes from the server. There is no longer a
+ * `localStorage` "setup complete" flag: it was written by whichever browser finished
+ * setup and read by nothing, so a second machine, a cleared profile or a private window
+ * all disagreed with it, and the API answers the same question authoritatively at
+ * `/auth/setup-required`.
  *
  * @param to - Target route being navigated to.
- * @returns The redirect path or true to allow navigation.
+ * @returns The redirect path, or true to allow the navigation.
  */
-export async function authMiddleware(
+export const authMiddleware = async (
   to: RouteLocationNormalized,
-): Promise<string | boolean> {
+): Promise<string | boolean> => {
   const auth = useAuthStore(pinia)
 
-  // Restore session from stored token on first load
+  // Which mode this deployment runs, and whether anyone holds Admin yet. Both are
+  // anonymous, both are needed before /setup can be judged, and both are asked once per
+  // page load rather than per navigation.
+  if (auth.mode === null) {
+    await auth.loadMode()
+  }
+
+  // Whether a session exists is a question only the server can answer in either mode —
+  // the credential is an httpOnly cookie the page cannot read.
   if (auth.user === null) {
     await auth.fetchMe()
+  }
+
+  // The first-run screen. It creates the very first local account, so it is meaningful
+  // only while nobody holds Admin and only where this deployment owns its own accounts.
+  // On an SSO deployment there is nothing for it to create — the accounts live in the
+  // sign-on service — and reaching it would call endpoints that answer 404 there.
+  if (to.meta.setup === true) {
+    if (!auth.setupRequired || auth.mode !== 'local') return '/login'
+    return true
   }
 
   // Authenticated user trying to access /login → redirect to dashboard

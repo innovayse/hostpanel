@@ -2,6 +2,7 @@ namespace Innovayse.API.Auth;
 
 using Innovayse.API.Auth.Requests;
 using Innovayse.API.RateLimiting;
+using Innovayse.Application.Auth.Commands.CompleteSetup;
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Clients.Commands.AcceptInvitation;
 using Innovayse.Application.Common;
@@ -62,29 +63,75 @@ public sealed class AuthController(
     /// could have people without having user rows: against an SSO it answered "no users" for
     /// a populated product and offered setup to whoever asked.
     /// </remarks>
+    /// <remarks>
+    /// <para>
+    /// It also reports whether a setup <b>token</b> is needed, which a client cannot work out
+    /// for itself and must not guess: under <c>local</c> the claim is gated on the token this
+    /// installation printed to its log, under <c>sso</c> it is not gated at all. A screen that
+    /// guessed would either hide a field the request will be refused without, or ask an SSO
+    /// operator for a token that does not exist.
+    /// </para>
+    /// </remarks>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with <c>{ required, tokenRequired }</c>.</returns>
     [HttpGet("setup-required")]
     [AllowAnonymous]
     public async Task<IActionResult> SetupRequiredAsync(CancellationToken ct)
     {
         var claimed = await roles.AnyHasRoleAsync(Roles.Admin, ct);
-        return Ok(new { required = !claimed });
+        var required = !claimed;
+
+        // Deliberately says only *whether* a token is wanted, never anything about the token
+        // itself — not its length, not whether one is currently outstanding. This endpoint is
+        // anonymous, and it has to stay a statement about the deployment's shape rather than
+        // about its secrets.
+        return Ok(new { required, tokenRequired = required && authMode.IsLocalMode });
     }
 
     /// <summary>
-    /// Initial setup: grants the Admin role to the first authenticated caller.
-    /// The caller must already be signed in. Only works while nobody holds Admin.
+    /// Initial setup: grants the Admin role to the authenticated caller who presents this
+    /// installation's setup token. Only works while nobody holds Admin.
     /// </summary>
+    /// <param name="command">The claim, carrying the setup token and nothing else.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with <c>{ success = true }</c> once the role has been granted.</returns>
+    /// <remarks>
+    /// <para>
+    /// This used to grant Admin to whichever authenticated caller asked first. On a standalone
+    /// install that is reachable before its owner has finished configuring it — the normal
+    /// shape of a self-hosted deployment — that was an account-takeover window: registration is
+    /// public, so whoever registered and claimed first owned the installation. Under
+    /// <c>Auth:Mode=local</c> the claim now also requires the token
+    /// <c>SetupTokenSeeder</c> writes and the API logs on every boot while setup is
+    /// outstanding.
+    /// </para>
+    /// <para>
+    /// Under <c>sso</c> nothing about this changed: no token is issued, none is asked for, and
+    /// the first authenticated caller still claims. That path is in production use and the
+    /// people who can reach an authenticated endpoint there are already the ones the operator
+    /// provisioned in the sign-on service.
+    /// </para>
+    /// <para>
+    /// The command binds directly — there is no request DTO in front of it — and it carries no
+    /// subject: who is claiming is read from the credential inside the handler, so holding the
+    /// token cannot be used to make somebody else Admin.
+    /// </para>
+    /// </remarks>
     [HttpPost("setup")]
     [Authorize]
-    public async Task<IActionResult> SetupAsync(CancellationToken ct)
+    [EnableRateLimiting(RateLimitPolicies.Auth)]
+    public async Task<IActionResult> SetupAsync(
+        [FromBody] CompleteSetupCommand? command, CancellationToken ct)
     {
-        if (await roles.AnyHasRoleAsync(Roles.Admin, ct))
-            return Conflict(new { error = "Setup already completed." });
-
-        var subject = caller.UserId;
-        if (subject is null) return Unauthorized();
-
-        await roles.AddAsync(subject, Roles.Admin, ct);
+        // The body is optional so that an SSO caller — where no token exists and the SPA sends
+        // none — still reaches the handler instead of being refused by model binding. Under
+        // local mode a missing body arrives as a null token and the handler refuses it, which
+        // is the same answer for the same reason, in the one place that decides it.
+        //
+        // Every refusal this can produce — already claimed, wrong token, no subject — is a
+        // typed exception ExceptionMiddleware turns into the same { error, code } body as the
+        // rest of the API, in the caller's own language. Nothing is worded here.
+        await bus.InvokeAsync(command ?? new CompleteSetupCommand(null), ct);
         return Ok(new { success = true });
     }
 

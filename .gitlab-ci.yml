@@ -33,7 +33,16 @@ stages: [test, build, deploy]
     NuGetPackageSourceCredentials_innovayse: "Username=gitlab-ci-token;Password=${CI_JOB_TOKEN}"
   script:
     - cd "$SERVICE"
-    - dotnet test --nologo
+    # -m:1 keeps MSBuild to a single node, so the solution's test projects build and run one
+    # after another instead of all at once. The default fans them out, and each `dotnet test`
+    # host holds its own copy of the EF model -- roughly a gigabyte for the Infrastructure
+    # suite alone. The staging box has 7 GB in total and also hosts every product's containers
+    # and up to four concurrent CI jobs, so the parallel default exhausted it: the runner was
+    # killed mid-run and GitLab reported `no_updates_running` and `runner_system_failure` --
+    # never a failing assertion, and never a line of test output explaining it.
+    #
+    # It costs wall-clock and buys the job the ability to finish. Revisit if the host grows.
+    - dotnet test --nologo -m:1
 
 .test-node-yarn:
   stage: test

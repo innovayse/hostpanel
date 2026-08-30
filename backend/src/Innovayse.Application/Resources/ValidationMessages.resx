@@ -231,4 +231,52 @@
     <value>Invalid filter value: {0}.</value>
     <comment>GetMigrationLogsHandler. {0} is the value that was submitted for the action or entity-type filter. A query carries no validator in this project, so the handler resolves this itself.</comment>
   </data>
+  <data name="MyServiceNotFound" xml:space="preserve">
+    <value>No such service.</value>
+    <comment>MY_SERVICE_NOT_FOUND.</comment>
+  </data>
+  <data name="NoDomainProductConfigured" xml:space="preserve">
+    <value>Domains cannot be ordered on this site at the moment.</value>
+    <comment>TransferMyDomainHandler. No active product of type Domain exists, so a domain order has nothing to hang off. A configuration gap, not a caller error.</comment>
+  </data>
+  <data name="MyContactNotFound" xml:space="preserve">
+    <value>No such contact.</value>
+    <comment>MY_CONTACT_NOT_FOUND.</comment>
+  </data>
+  <data name="UserProvisioningNotAllowedCreateAccount" xml:space="preserve">
+    <value>This deployment's accounts belong to the sign-on service, so an account cannot be created here. Add the person in the sign-on service first.</value>
+    <comment>USER_PROVISIONING_NOT_ALLOWED. SsoModeUserProvisioning.CreateAsync. One key per refused flow rather than one key with a {0}: the flow name is a verb phrase and does not survive being spliced into a Russian or Armenian sentence.</comment>
+  </data>
+  <data name="UserProvisioningNotAllowedChangeName" xml:space="preserve">
+    <value>This deployment's accounts belong to the sign-on service, so a person's name cannot be changed here. Change it in the sign-on service.</value>
+    <comment>USER_PROVISIONING_NOT_ALLOWED. SsoModeUserProvisioning.UpdateProfileAsync.</comment>
+  </data>
+  <data name="UserProvisioningNotAllowedChangeEmail" xml:space="preserve">
+    <value>This deployment's accounts belong to the sign-on service, so a sign-in address cannot be changed here. Change it in the sign-on service.</value>
+    <comment>USER_PROVISIONING_NOT_ALLOWED. SsoModeUserProvisioning.ChangeEmailAsync.</comment>
+  </data>
+  <data name="UserProvisioningNotAllowedDeleteAccount" xml:space="preserve">
+    <value>This deployment's accounts belong to the sign-on service, so an account cannot be deleted here. Delete it in the sign-on service.</value>
+    <comment>USER_PROVISIONING_NOT_ALLOWED. SsoModeUserProvisioning.DeleteAsync.</comment>
+  </data>
+  <data name="UserProvisioningNotAllowedSetPassword" xml:space="preserve">
+    <value>This deployment's accounts belong to the sign-on service, so a password cannot be set here. Passwords are managed in the sign-on service.</value>
+    <comment>USER_PROVISIONING_NOT_ALLOWED. SsoModeUserProvisioning.SetPasswordAsync.</comment>
+  </data>
+  <data name="UserProvisioningNotAllowedIssuePasswordReset" xml:space="preserve">
+    <value>This deployment's accounts belong to the sign-on service, so a password reset cannot be issued here. Request it from the sign-on service.</value>
+    <comment>USER_PROVISIONING_NOT_ALLOWED. SsoModeUserProvisioning.IssuePasswordResetTokenAsync.</comment>
+  </data>
+  <data name="OrderHasNoClientAccount" xml:space="preserve">
+    <value>This sign-in is not linked to a customer account, so there is nothing for the order to belong to. Ask support to set one up.</value>
+    <comment>PlaceOrderHandler. The caller is authenticated but has no client record and sent no guest registration, so the order has no account to belong to. Replaces a sentence telling them to log in again, which they could act on and which could never help.</comment>
+  </data>
+  <data name="SetupAlreadyCompleted" xml:space="preserve">
+    <value>This installation has already been set up and someone already holds the administrator role. Ask them to grant you access.</value>
+    <comment>SETUP_ALREADY_COMPLETED. CompleteSetupHandler. Answered 409.</comment>
+  </data>
+  <data name="SetupTokenInvalid" xml:space="preserve">
+    <value>That setup token is not the one this installation issued. The current token is printed in the server log every time the API starts while setup is still outstanding — restart the API and read the newest one.</value>
+    <comment>SETUP_TOKEN_INVALID. CompleteSetupHandler, local mode only. Answered 403.</comment>
+  </data>
 </root>

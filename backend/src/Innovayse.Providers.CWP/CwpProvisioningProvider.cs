@@ -19,16 +19,29 @@ public sealed class CwpProvisioningProvider : ProvisioningProviderBase
     /// <summary>CWP API key read from settings at construction time.</summary>
     private readonly string _apiKey;
 
-    /// <summary>CWP server base URL, e.g. "https://cwp.example.com:2031".</summary>
+    /// <summary>CWP server base URL, e.g. "https://cwp.example.com:2304".</summary>
     private readonly string _host;
 
     /// <summary>
     /// Initializes the provider by reading host, port, and api_key from settings.
     /// </summary>
+    /// <remarks>
+    /// The <see cref="HttpClient"/> comes from <paramref name="httpClientFactory"/> under
+    /// <see cref="CwpApiClient.HttpClientName"/>, like every other HTTP client in this codebase.
+    /// This used to be a bare <c>new HttpClient()</c>, which took no configured timeout, opened
+    /// its own socket per provider instance, was never disposed, and — the part that matters
+    /// most — bypassed the no-retry resilience pipeline. Every CWP account call is a write, so a
+    /// retried request re-creates or re-terminates a hosting account.
+    /// </remarks>
     /// <param name="configuration">Application configuration — provides plugin settings.</param>
     /// <param name="logger">Logger for structured output.</param>
     /// <param name="loggerFactory">Logger factory used to create a typed logger for <see cref="CwpApiClient"/>.</param>
-    public CwpProvisioningProvider(IConfiguration configuration, ILogger<CwpProvisioningProvider> logger, ILoggerFactory loggerFactory)
+    /// <param name="httpClientFactory">Factory supplying the pooled, resilience-configured CWP HTTP client.</param>
+    public CwpProvisioningProvider(
+        IConfiguration configuration,
+        ILogger<CwpProvisioningProvider> logger,
+        ILoggerFactory loggerFactory,
+        IHttpClientFactory httpClientFactory)
         : base(PluginId, configuration, logger)
     {
         var host = GetConfig("host") ?? throw new InvalidOperationException("CWP: 'host' setting is required.");
@@ -36,9 +49,11 @@ public sealed class CwpProvisioningProvider : ProvisioningProviderBase
         var apiKey = GetConfig("api_key") ?? throw new InvalidOperationException("CWP: 'api_key' setting is required.");
 
         _apiKey = apiKey;
-        var resolvedPort = int.TryParse(port, out var p) ? p : 2031;
+        var resolvedPort = int.TryParse(port, out var p) ? p : CwpApiClient.DefaultPort;
         _host = $"https://{host}:{resolvedPort}";
-        _client = new CwpApiClient(new HttpClient(), loggerFactory.CreateLogger<CwpApiClient>());
+        _client = new CwpApiClient(
+            httpClientFactory.CreateClient(CwpApiClient.HttpClientName),
+            loggerFactory.CreateLogger<CwpApiClient>());
     }
 
     /// <summary>

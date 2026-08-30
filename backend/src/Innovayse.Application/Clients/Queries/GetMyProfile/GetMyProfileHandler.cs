@@ -38,15 +38,16 @@ public sealed class GetMyProfileHandler(
         var user = await identity.FindBySubjectAsync(client.UserId, ct);
         var email = user?.Email ?? "";
 
-        return MapToDto(client, email, user?.TwoFactorEnabled ?? false);
+        return MapToDto(client, email, user?.TwoFactorEnabled ?? false, user?.Language);
     }
 
     /// <summary>Maps a <see cref="Client"/> aggregate to <see cref="ClientDto"/>.</summary>
     /// <param name="client">The client aggregate to map.</param>
     /// <param name="email">The email from the Identity user.</param>
     /// <param name="twoFactorEnabled">True if the user has TOTP 2FA enabled.</param>
+    /// <param name="language">The account's chosen UI language, null where the provider holds none.</param>
     /// <returns>The mapped DTO.</returns>
-    private static ClientDto MapToDto(Client client, string email, bool twoFactorEnabled) =>
+    private static ClientDto MapToDto(Client client, string email, bool twoFactorEnabled, string? language) =>
         new(
             client.Id,
             client.UserId,
@@ -62,6 +63,9 @@ public sealed class GetMyProfileHandler(
             client.State,
             client.PostCode,
             client.Country,
+            // From the account, not the client row: the language belongs to the person who
+            // signs in, and this product's own table is the only store it ever lived in.
+            language,
             client.Currency,
             client.PaymentMethod,
             client.BillingContact,

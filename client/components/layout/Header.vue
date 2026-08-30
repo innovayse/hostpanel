@@ -65,7 +65,7 @@
                     :to="child.href"
                     class="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:text-white hover:bg-white/8 transition-colors"
                   >
-                    <Icon v-if="child.icon" :name="NAV_ICONS[child.icon]" size="16" class="text-primary-400 flex-shrink-0" />
+                    <Icon v-if="child.icon" :name="navIcon(child.icon)" size="16" class="text-primary-400 flex-shrink-0" />
                     <div>
                       <div class="font-medium">{{ child.label }}</div>
                       <div v-if="child.desc" class="text-xs text-gray-500 mt-0.5">{{ child.desc }}</div>
@@ -180,7 +180,7 @@
                   class="flex items-center gap-2 py-2 px-3 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-primary-400 transition-colors"
                   @click="closeMobileMenu"
                 >
-                  <Icon v-if="child.icon" :name="NAV_ICONS[child.icon]" size="14" class="text-primary-400 flex-shrink-0" />
+                  <Icon v-if="child.icon" :name="navIcon(child.icon)" size="14" class="text-primary-400 flex-shrink-0" />
                   {{ child.label }}
                 </NuxtLink>
               </div>
@@ -293,6 +293,18 @@ const NAV_ICONS: Record<string, string> = {
   server: 'lucide:server',
   globe: 'lucide:globe'
 }
+
+/**
+ * Resolves a nav item's icon key to an icon name.
+ *
+ * The template indexed {@link NAV_ICONS} directly, which yields `undefined` for any key not in
+ * the map — a nav item given a new icon name would have rendered `<Icon name=undefined>`. The
+ * fallback keeps an unknown key rendering a generic glyph rather than a broken one.
+ *
+ * @param key - The `icon` field on a nav item.
+ * @returns The icon name to pass to `<Icon>`.
+ */
+const navIcon = (key: string): string => NAV_ICONS[key] ?? 'lucide:circle'
 
 /**
  * Navigation links.

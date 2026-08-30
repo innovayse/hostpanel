@@ -153,15 +153,17 @@ function backendError(
  * @returns Parsed JSON response typed as `T`
  * @throws H3Error forwarding any upstream HTTP error status
  */
-export async function internalApiCall<T>(
+export const internalApiCall = async <T>(
   event: H3Event,
   endpoint: string,
   options: {
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
-    body?: unknown
+    // `unknown` before, which `$fetch` will not accept as a body -- every caller passes an
+    // object literal, so this states what they already send rather than widening at the call.
+    body?: Record<string, unknown> | BodyInit | null
     headers?: Record<string, string>
   } = {}
-): Promise<T> {
+): Promise<T> => {
   const apiUrl = getApiUrl()
   const token = getCookie(event, 'auth_token')
 
@@ -176,8 +178,13 @@ export async function internalApiCall<T>(
     return h
   }
 
+  // Bound to a plain `string` first. Passed as a template literal, Nitro tries to match the URL
+  // against its own route table and answers with `TypedInternalResponse<...>` rather than `T` --
+  // even though this address is the external C# API and matches no Nitro route at all.
+  const url: string = `${apiUrl}/api${endpoint}`
+
   const makeRequest = (bearerToken: string | undefined): Promise<T> =>
-    $fetch<T>(`${apiUrl}/api${endpoint}`, {
+    $fetch<T>(url, {
       method: options.method ?? 'GET',
       headers: buildHeaders(bearerToken),
       body: options.body,

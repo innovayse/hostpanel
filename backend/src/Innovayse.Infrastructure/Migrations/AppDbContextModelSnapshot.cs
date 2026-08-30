@@ -202,6 +202,12 @@ namespace Innovayse.Infrastructure.Migrations
                     b.Property<decimal>("Total")
                         .HasColumnType("numeric(18,4)");
 
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.ToTable("invoices", (string)null);
@@ -218,6 +224,9 @@ namespace Innovayse.Infrastructure.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("numeric(18,4)");
 
+                    b.Property<int?>("ClientServiceId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -233,6 +242,8 @@ namespace Innovayse.Infrastructure.Migrations
                         .HasColumnType("numeric(18,4)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ClientServiceId");
 
                     b.HasIndex("InvoiceId");
 

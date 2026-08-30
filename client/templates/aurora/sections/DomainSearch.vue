@@ -77,7 +77,7 @@
  * visitor typed. The lookup itself belongs to pages/index.vue.
  */
 import type { DomainResult } from '~/templates/aurora/types'
-import type { TldPriceRow } from '~/composables/useDomainLookup'
+import type { TldPriceRow } from '~/types/tldpricerow'
 
 const props = withDefaults(defineProps<{
   results?: DomainResult[]

@@ -1,5 +1,6 @@
 namespace Innovayse.Application.Tests.Admin.Integrations;
 
+using System.Globalization;
 using Innovayse.Application.Admin.Integrations.Queries.GetCwpServerInfo;
 using Innovayse.Domain.Settings;
 using Innovayse.Domain.Settings.Interfaces;
@@ -177,6 +178,55 @@ public sealed class GetCwpServerInfoHandlerTests
         // Assert — API called exactly once despite two handler invocations
         cwpClient.Verify(
             c => c.GetServerInfoAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    /// <summary>
+    /// With no port configured, the handler asks the CWP <b>API</b> port and not the panel's
+    /// HTTPS user interface.
+    /// </summary>
+    /// <remarks>
+    /// The fallback here was 2031, which is the CWP web UI. It answers nothing under
+    /// <c>/v1/</c>, the only path this client requests, so an operator who had filled in a host
+    /// and an API key but left the port blank was told the server was unreachable while it was
+    /// answering perfectly on 2304 — the port every other CWP caller in this repository already
+    /// used. The expectation is written against
+    /// <see cref="ICwpApiClient.DefaultApiPort"/> rather than a literal so that the fallback and
+    /// its test cannot drift apart, which is how the two got out of step in the first place.
+    /// </remarks>
+    [Fact]
+    public async Task Handle_WhenPortNotConfigured_UsesTheApiPortAsync()
+    {
+        // Arrange
+        var settingsRepo = new Mock<ISettingRepository>();
+        settingsRepo
+            .Setup(r => r.FindByKeyAsync("integration:innovayse-cwp:host", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Setting.Create("integration:innovayse-cwp:host", "cwp.example.com", null));
+        settingsRepo
+            .Setup(r => r.FindByKeyAsync("integration:innovayse-cwp:port", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Setting?)null);
+        settingsRepo
+            .Setup(r => r.FindByKeyAsync("integration:innovayse-cwp:api_key", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Setting.Create("integration:innovayse-cwp:api_key", "secret-api-key", null));
+
+        var expectedPort = ICwpApiClient.DefaultApiPort.ToString(CultureInfo.InvariantCulture);
+
+        var cwpClient = new Mock<ICwpApiClient>();
+        cwpClient
+            .Setup(c => c.GetServerInfoAsync("cwp.example.com", expectedPort, "secret-api-key", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((7, "1.9.2"));
+
+        var handler = new GetCwpServerInfoHandler(settingsRepo.Object, cwpClient.Object, CreateCache());
+
+        // Act
+        var result = await handler.HandleAsync(new GetCwpServerInfoQuery(), CancellationToken.None);
+
+        // Assert
+        Assert.True(result.Connected);
+        Assert.Equal(7, result.AccountsCount);
+        Assert.NotEqual("2031", expectedPort);
+        cwpClient.Verify(
+            c => c.GetServerInfoAsync("cwp.example.com", expectedPort, "secret-api-key", It.IsAny<CancellationToken>()),
             Times.Once);
     }
 }

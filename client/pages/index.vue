@@ -9,7 +9,7 @@
     :comparison-rows="comparisonRows"
     :yearly="yearly"
     @search="search"
-    @update:yearly="value => (yearly = value)"
+    @update:yearly="(value: boolean) => (yearly = value)"
   />
 </template>
 

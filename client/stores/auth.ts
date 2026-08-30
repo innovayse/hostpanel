@@ -74,7 +74,12 @@ export const useAuthStore = defineStore('auth', () => {
    */
   const login = async (email: string, password: string): Promise<LoginResult> => {
     const data = await api.login(email, password)
-    if ('twoFactorRequired' in data && data.twoFactorRequired) {
+    // The `in` check is the whole discriminant -- `twoFactorRequired` is typed as the literal
+    // `true`, so its presence is what tells the two answers apart. Reading the property as well
+    // (`&& data.twoFactorRequired`) made the condition a conjunction, which TypeScript cannot
+    // use to narrow the *else* branch: `user.value = data` below was then assigning a
+    // `LoginResult`, challenge included, into a `ClientUser | null` ref.
+    if ('twoFactorRequired' in data) {
       return data
     }
     user.value = data

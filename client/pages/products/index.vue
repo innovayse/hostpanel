@@ -156,7 +156,8 @@
               </div>
               <div class="flex-1">
                 <h3 class="text-xl font-bold text-white group-hover:text-primary-300 transition-colors">{{ product.name }}</h3>
-                <p class="text-xs uppercase tracking-wider font-bold mb-2" :style="{ color: product.color }">{{ product.tagline }}</p>
+                <!-- Only the static domains card carries a tagline; families have no such field. -->
+                <p v-if="product.tagline" class="text-xs uppercase tracking-wider font-bold mb-2" :style="{ color: product.color }">{{ product.tagline }}</p>
               </div>
             </div>
 
@@ -288,7 +289,7 @@
                     </div>
                     <div>
                       <div class="font-bold text-white group-hover/link:text-primary-300 transition-colors">{{ product.name }}</div>
-                      <div class="text-xs text-gray-500 group-hover/link:text-gray-400 transition-colors">{{ product.tagline }}</div>
+                      <div v-if="product.tagline" class="text-xs text-gray-500 group-hover/link:text-gray-400 transition-colors">{{ product.tagline }}</div>
                     </div>
                   </NuxtLink>
                 </td>
@@ -491,7 +492,7 @@ onMounted(() => cart.init())
 // would also cost the SSR dedup and the locale re-fetch that `useApi()` gives for free, and
 // this page is server-rendered and indexed.
 const { data: whmcsRaw } = await useCatalogApi().loadProducts(
-  () => ({ lang: locale.value, gids: productGids.join(',') })
+  () => ({ gids: productGids.join(',') })
 )
 
 // SEO setup with canonical, hreflang, OG, Twitter tags
@@ -521,8 +522,14 @@ productsInjectSchema([
 
 // productGids, productGidToKey, productConfig, currencyByLocale, parseDescription — auto-imported from utils/whmcs.ts
 
-/** Build plan pricing helper */
-function buildPricing(plans: any[]) {
+/**
+ * Maps catalogue products onto the pricing rows a family card renders.
+ *
+ * @param plans - Products belonging to one family, as the catalogue endpoint returned them.
+ * @returns One row per plan: id, tier name, first offered price and its billing cycle, and
+ * the feature lines parsed out of the description.
+ */
+const buildPricing = (plans: any[]) => {
   const preferred = (currencyByLocale[locale.value] ?? 'USD') as string
   return plans.map((plan: any) => {
     const currency = plan.pricing
@@ -531,19 +538,21 @@ function buildPricing(plans: any[]) {
     const cycleKeys = ['monthly', 'quarterly', 'semiannually', 'annually', 'biennially', 'triennially'] as const
     const firstCycle = cycleKeys.find(k => currency?.[k] && currency[k] !== '-1.00' && currency[k] !== '0.00')
     const price = firstCycle && currency ? `${currency.prefix}${currency[firstCycle]}` : ''
-    const { features: pTFeatures } = parseDescription(plan.translated_description || '')
-    const { features: pEnFeatures } = parseDescription(plan.description || '')
+    // One parse, not two: the `translated_description` that used to be preferred here is not
+    // a field the API sends, so the second parse of `description` was the only one that ever
+    // produced anything.
+    const { features: planFeatures } = parseDescription(plan.description || '')
     return {
       pid: plan.pid as number,
       product_url: (plan.product_url as string) || '',
-      tier: plan.translated_name || plan.name,
+      tier: plan.name,
       slug: (plan.slug as string) || '',
       price,
       prefix: currency?.prefix ?? '',
       rawPrice: firstCycle && currency ? currency[firstCycle] : '0',
       billingcycle: firstCycle ?? 'monthly',
       paytype: (plan.paytype as string) || 'recurring',
-      features: pTFeatures.length > 0 ? pTFeatures : pEnFeatures
+      features: planFeatures
     }
   })
 }
@@ -572,7 +581,7 @@ const products = computed(() => {
   for (const gid of productGids) {
     const cfgKey = productGidToKey[gid] ?? ''
     const cfg = productConfig[cfgKey] ?? { name: cfgKey, icon: 'cube', color: '#6366f1', learnMoreUrl: '' }
-    const allInGroup = raw.filter((p: any) => Number(p.gid) === gid)
+    const allInGroup = raw.filter((p: any) => Number(p.groupId) === gid)
     const parentProduct = allInGroup.find((p: any) => (p.slug as string)?.trim() === cfgKey)
     const subPlans = allInGroup.filter((p: any) => (p.slug as string)?.trim() !== cfgKey)
     // If no sub-plans, use parent product as the single plan
@@ -581,28 +590,31 @@ const products = computed(() => {
 
     const firstPlan = parentProduct || plans[0]
     
-    // Aggregate unique features from all plans in this group for the hub view
+    // Aggregate unique features from all plans in this group for the hub view.
+    // A `group_features` array used to be merged in ahead of the parsed description; the API
+    // sends no such field, so the description was always the only source. Structured
+    // specification lines live behind `loadProductFeatures(gid)` instead.
     const featuresSet = new Set<string>()
     allInGroup.forEach(p => {
-      // 1. From group_features
-      const gf = Array.isArray(p.group_features) ? p.group_features : []
-      gf.forEach((f: any) => featuresSet.add(f.translated_feature || f.feature))
-      
-      // 2. From description parsing
-      const { features: parsed } = parseDescription(p.translated_description || p.description || '')
+      const { features: parsed } = parseDescription(p.description || '')
       parsed.forEach(f => featuresSet.add(f))
     })
     const features = Array.from(featuresSet).filter(Boolean).slice(0, 6)
 
-    const tSummary = parseDescription(firstPlan?.translated_description || '').summary
-    const enSummary = parseDescription(firstPlan?.description || '').summary
+    const summary = parseDescription(firstPlan?.description || '').summary
 
     items.push({
       id: cfgKey,
       gid,
       ...cfg,
-      tagline: getGt(firstPlan, 'tagline'),
-      description: firstPlan?.translated_shortdescription || firstPlan?.shortdescription || tSummary || enSummary || getGt(firstPlan, 'headline'),
+      // Empty on purpose, and the template guards on it. A family has no tagline to show:
+      // `tagline`/`headline` are not fields the catalogue endpoint sends, so the chain that
+      // used to stand here resolved to '' for every family anyway. The static domains card
+      // above is the one entry with a real tagline, and it comes from the locale files.
+      tagline: '',
+      // The parsed summary, and only that. The `shortdescription`/`headline` branches that
+      // used to sit either side of it are fields the API does not send.
+      description: summary,
       features,
       pricing: buildPricing(plans)
     })

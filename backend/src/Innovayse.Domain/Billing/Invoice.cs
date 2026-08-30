@@ -151,14 +151,24 @@ public sealed class Invoice : AggregateRoot
     /// <summary>
     /// Adds a line item and recalculates totals.
     /// </summary>
-    public void AddItem(string description, decimal unitPrice, int quantity)
+    /// <param name="description">Human-readable charge description.</param>
+    /// <param name="unitPrice">Price per unit.</param>
+    /// <param name="quantity">Number of units.</param>
+    /// <param name="clientServiceId">
+    /// FK to the <c>ClientService</c> this line is charged for, or <see langword="null"/> when
+    /// it is not one service's charge or the caller does not know which. Only a caller holding
+    /// the service itself may pass it — see <see cref="InvoiceItem.ClientServiceId"/> for why
+    /// inferring it from the description is not allowed.
+    /// </param>
+    /// <exception cref="InvalidOperationException">Thrown when the invoice is no longer editable.</exception>
+    public void AddItem(string description, decimal unitPrice, int quantity, int? clientServiceId = null)
     {
         if (Status is not (InvoiceStatus.Draft or InvoiceStatus.Unpaid))
         {
             throw new InvalidOperationException($"Cannot add items to an invoice with status {Status}.");
         }
 
-        var item = InvoiceItem.Create(description, unitPrice, quantity);
+        var item = InvoiceItem.Create(description, unitPrice, quantity, clientServiceId);
         _items.Add(item);
         RecalculateTotals();
     }
@@ -381,12 +391,18 @@ public sealed class Invoice : AggregateRoot
     /// <summary>
     /// Creates a new Draft copy of this invoice (with all its line items).
     /// </summary>
+    /// <remarks>
+    /// The copy carries each line's <see cref="InvoiceItem.ClientServiceId"/> across. A duplicate
+    /// is the same charges billed again, so a line that was for a service is still for that
+    /// service; dropping the link here would quietly hide the copy from the service it belongs to.
+    /// </remarks>
+    /// <returns>A new Draft invoice with the same client, due date and lines.</returns>
     public Invoice Duplicate()
     {
         var copy = CreateDraft(ClientId, DueDate);
         foreach (var item in _items)
         {
-            copy.AddItem(item.Description, item.UnitPrice, item.Quantity);
+            copy.AddItem(item.Description, item.UnitPrice, item.Quantity, item.ClientServiceId);
         }
         return copy;
     }

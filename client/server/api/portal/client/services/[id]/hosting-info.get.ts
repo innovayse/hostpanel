@@ -2,6 +2,12 @@
  * GET /api/portal/client/services/:id/hosting-info
  * Returns real-time nameserver and SSL certificate info for the service's domain.
  * Does DNS NS lookup + TLS handshake to get live data.
+ *
+ * The domain is read from the caller's own service list. `MyServicesController` declares no
+ * bare `{id}` GET -- this route called `/me/services/{id}` and 404'd, taking the nameserver and
+ * SSL panels on the service page with it. `services/[id]/index.get.ts` already reads the list
+ * and picks the row out of it for the same reason; the list is client-scoped by the credential,
+ * so an id belonging to somebody else simply is not in it.
  */
 import dns from 'node:dns/promises'
 import tls from 'node:tls'
@@ -10,9 +16,14 @@ export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
   if (!id) throw createError({ statusCode: 400, statusMessage: 'Service ID is required' })
 
-  const service = await internalApiCall<{ domain?: string }>(event, `/me/services/${id}`)
+  const services = await internalApiCall<Array<{ id: number, domain?: string }>>(event, '/me/services')
+  const service = services.find(s => String(s.id) === id)
 
-  const domain = service?.domain
+  if (!service) {
+    throw createError({ statusCode: 404, statusMessage: 'Service not found' })
+  }
+
+  const domain = service.domain
   if (!domain) {
     return { nameservers: [], ssl: null }
   }
@@ -70,9 +81,15 @@ async function checkSsl(domain: string): Promise<{
         const now = new Date()
         const valid = now >= validFrom && now <= validTo && !socket.authorizationError
 
+        // A certificate subject field is multi-valued: Node types `CN` and `O` as
+        // `string | string[]`, and a real issuer with two organisation entries arrives as an
+        // array. Rendered straight into the page it would have read `[object Array]`; the
+        // first entry is the one a person means by "who issued this".
+        const issuerField = cert.issuer?.CN || cert.issuer?.O || ''
+
         resolve({
           valid,
-          issuer: cert.issuer?.CN || cert.issuer?.O || '',
+          issuer: Array.isArray(issuerField) ? issuerField[0] ?? '' : issuerField,
           startDate: formatDate(validFrom),
           expiryDate: formatDate(validTo),
         })

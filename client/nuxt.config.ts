@@ -34,8 +34,11 @@ export default defineNuxtConfig({
   image: {
     quality: 80,
     format: ['webp'],
-    // Default lazy loading for all NuxtImg — components that need eager override individually
-    loading: 'lazy',
+    // No `loading: 'lazy'` here. It sat in this block claiming to set a default for every
+    // NuxtImg, but `@nuxt/image`'s ModuleOptions has no such key -- the module ignored it and
+    // the comment described behaviour nobody had. Lazy loading is per-component: a `<NuxtImg>`
+    // that should defer needs its own `loading="lazy"`, as the eager ones already spell out
+    // `loading="eager"`.
     screens: {
       xs: 320,
       sm: 640,

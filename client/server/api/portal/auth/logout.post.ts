@@ -17,7 +17,11 @@ export default defineEventHandler(async (event) => {
   // 1. Revoke refresh token on hostpanel backend
   try {
     const apiUrl = (config.apiUrl as string) || 'http://localhost:5000'
-    await $fetch(`${apiUrl}/api/auth/logout`, {
+    // See the note in `forgot-password.post.ts`: a template literal with no generic sends Nitro
+    // into its own route table and blows the type-instantiation depth. Revocation returns no
+    // body, and the surrounding `catch` already treats any failure as "clear the cookies anyway".
+    const url: string = `${apiUrl}/api/auth/logout`
+    await $fetch<string>(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

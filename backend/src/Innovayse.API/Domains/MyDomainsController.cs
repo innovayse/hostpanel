@@ -14,6 +14,7 @@ using Innovayse.Application.Domains.Commands.SetMyDomainDnsManagement;
 using Innovayse.Application.Domains.Commands.SetMyDomainEmailForwarding;
 using Innovayse.Application.Domains.Commands.SetMyDomainRegistrarLock;
 using Innovayse.Application.Domains.Commands.SetMyDomainWhoisPrivacy;
+using Innovayse.Application.Domains.Commands.TransferMyDomain;
 using Innovayse.Application.Domains.Commands.UpdateMyDomainDnsRecord;
 using Innovayse.Application.Domains.Commands.UpdateMyDomainEmailForwardingRule;
 using Innovayse.Application.Domains.Commands.UpdateMyDomainNameservers;
@@ -23,13 +24,13 @@ using Innovayse.Application.Domains.Queries.GetMyDomainNameservers;
 using Innovayse.Application.Domains.Queries.GetMyDomains;
 using Innovayse.Application.Domains.Queries.GetMyDomainWhois;
 using Innovayse.Application.Domains.Queries.GetWhois;
+using Innovayse.Application.Orders.Commands.PlaceOrder;
 using Innovayse.Domain.Auth;
 using Innovayse.Domain.Domains;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Wolverine;
-using ApiRenewDomainRequest = Innovayse.API.Domains.Requests.RenewDomainRequest;
 
 /// <summary>
 /// Client-facing endpoints for managing the authenticated client's own domains.
@@ -217,19 +218,63 @@ public sealed class MyDomainsController(IMessageBus bus) : ControllerBase
         return Ok(new { eppCode });
     }
 
-    /// <summary>Renews a domain registration for additional years on behalf of the authenticated client.</summary>
-    /// <param name="id">Domain primary key.</param>
-    /// <param name="req">Renewal details specifying the number of years.</param>
+    /// <summary>
+    /// Places an order to transfer a domain in to the authenticated client's own account.
+    /// </summary>
+    /// <remarks>
+    /// The command binds straight off the body and carries no client id, so there is nothing on
+    /// this route to check: the account the transfer lands on comes from the credential, inside
+    /// the handler. Deliberately not routed at the admin <c>POST /api/domains/transfer</c>, whose
+    /// command takes its client from the request body -- a client-facing endpoint reaching an
+    /// admin use case that trusts a body-supplied id is the exact shape of this repository's
+    /// last IDOR.
+    /// </remarks>
+    /// <param name="cmd">Domain name, EPP code, period and the gateway to bill through.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>204 No Content; 404 with <c>DOMAIN_NOT_FOUND</c> when the domain is not the caller's.</returns>
+    /// <returns>
+    /// 201 Created with the new order and the invoice raised for it. The registrar is not called
+    /// until that invoice is paid.
+    /// </returns>
+    [HttpPost("transfer-order")]
+    [ProducesResponseType(typeof(PlaceOrderResultDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<PlaceOrderResultDto>> TransferInAsync(
+        TransferMyDomainCommand cmd, CancellationToken ct)
+    {
+        var result = await bus.InvokeAsync<PlaceOrderResultDto>(cmd, ct);
+        return StatusCode(StatusCodes.Status201Created, result);
+    }
+
+    /// <summary>
+    /// Places an order to renew a domain registration on behalf of the authenticated client.
+    /// </summary>
+    /// <remarks>
+    /// The domain id comes off the route, never the body, and the account it must belong to
+    /// comes from the credential inside the handler. Deliberately not routed at the admin
+    /// <c>POST /api/domains/{id}/renew</c>, which calls the registrar at once and raises no
+    /// invoice -- correct where a person has already decided the renewal is warranted, and a way
+    /// of giving paid renewals away where the customer drives it.
+    /// </remarks>
+    /// <param name="id">Domain primary key.</param>
+    /// <param name="req">Renewal period and the gateway to bill through.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 201 Created with the new order and the invoice raised for it; the registrar is not called
+    /// until that invoice is paid. 404 with <c>DOMAIN_NOT_FOUND</c> when the domain is not the
+    /// caller's.
+    /// </returns>
     [HttpPost("{id:int}/renew")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(PlaceOrderResultDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> RenewAsync(int id, ApiRenewDomainRequest req, CancellationToken ct)
+    public async Task<ActionResult<PlaceOrderResultDto>> RenewAsync(
+        int id, RenewMyDomainRequest req, CancellationToken ct)
     {
-        await bus.InvokeAsync(new RenewMyDomainCommand(id, req.Years), ct);
-        return NoContent();
+        var result = await bus.InvokeAsync<PlaceOrderResultDto>(
+            new RenewMyDomainCommand(id, req.Years, req.PaymentMethod), ct);
+        return StatusCode(StatusCodes.Status201Created, result);
     }
 
     /// <summary>Adds a new DNS record to a domain's zone on behalf of the authenticated client.</summary>

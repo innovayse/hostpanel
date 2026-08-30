@@ -550,6 +550,7 @@ import {
 import { useBillingApi } from '~/composables/apis/useBillingApi'
 import { useClientApi } from '~/composables/apis/useClientApi'
 import { useDomainsApi } from '~/composables/apis/useDomainsApi'
+import { formatDate } from '~/utils/formatDate'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
@@ -602,18 +603,10 @@ const domain = computed(() => _domainRaw.value as DomainDetail | null)
 const fullDomainName = computed(() => domain.value?.name ?? '')
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-/**
- * Formats an ISO 8601 date string for display, returning a dash for invalid dates.
- *
- * @param d - ISO 8601 date string.
- * @returns Localized date string or em-dash placeholder.
- */
-function formatDate(d: string): string {
-  if (!d || d.startsWith('0000') || d.startsWith('0001')) return '—'
-  const date = new Date(d)
-  return isNaN(date.getTime()) ? '—' : date.toLocaleDateString()
-}
+// The local `formatDate` that used to live here is gone in favour of `utils/formatDate.ts`.
+// It differed in two ways that showed: `toLocaleDateString()` with no argument formats in the
+// browser's language rather than the portal's, and building a `Date` from a bare `YYYY-MM-DD`
+// reads it as UTC midnight, so a registrant west of Greenwich saw every expiry a day early.
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 const activeTab = ref('overview')
@@ -675,14 +668,23 @@ const renewPayOptions = computed(() =>
   }))
 )
 
-async function placeRenewal() {
+/**
+ * Places the renewal order and shows the invoice raised for it.
+ *
+ * `renewSuccess` is only ever set from the API's own answer. The success panel is built out of
+ * an order id and an invoice id, so it must not be shown for a call that returned nothing —
+ * which is what would have happened had this been pointed at the old 204 route.
+ */
+const placeRenewal = async () => {
   renewSaving.value = true
   renewError.value  = ''
   try {
     const res = await domains.createRenewOrder(String(domainId), renewYears.value, renewPayMethod.value)
     renewSuccess.value = res
   } catch (err: unknown) {
-    renewError.value = (err as { data?: { statusMessage?: string } })?.data?.statusMessage || t('client.domains.renewError')
+    // The API's own wording, through the one shared reader in `utils/apiError.ts`;
+    // the local key is only the no-answer fallback.
+    renewError.value = apiErrorMessage(err) || t('client.domains.renewError')
   } finally {
     renewSaving.value = false
   }

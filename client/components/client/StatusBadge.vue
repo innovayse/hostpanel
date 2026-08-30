@@ -27,6 +27,12 @@ const CONFIG: Record<string, { classes: string; label?: string }> = {
   PendingDns:          { classes: 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/25', label: 'Pending DNS' },
   Unpaid:              { classes: 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/25' },
   Overdue:             { classes: 'bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/25' },
+  // The four remaining `InvoiceStatus` members. Without them these fell to the gray default
+  // and rendered the enum name verbatim -- `PaymentPending` unspaced, on an invoice list.
+  PaymentPending:      { classes: 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/25', label: 'Payment Pending' },
+  Draft:               { classes: 'bg-gray-500/20 text-gray-600 dark:text-gray-400 border-gray-500/25' },
+  Refunded:            { classes: 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/25' },
+  Collections:         { classes: 'bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/25' },
   Suspended:           { classes: 'bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/25' },
   Terminated:          { classes: 'bg-gray-500/20 text-gray-600 dark:text-gray-400 border-gray-500/25', label: 'Ended' },
   Transferred:         { classes: 'bg-gray-500/20 text-gray-600 dark:text-gray-400 border-gray-500/25', label: 'Transferred Out' },

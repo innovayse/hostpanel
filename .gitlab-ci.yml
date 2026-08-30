@@ -118,6 +118,16 @@ stages: [test, build, deploy]
     # on it. Inside the workspace this product is reached through that proxy; its
     # own nginx is for a standalone deployment.
     - docker compose -f docker-compose.prod.yml -f docker-compose.platform.yml up -d hostpanel-db hostpanel-api hostpanel-client admin
+  # This job has no `image:`, so it is the shell executor: the login above writes
+  # the runner user's real ~/.docker/config.json on the staging host, and nothing
+  # took it away again. CI_JOB_TOKEN dies with the job, but the entry stayed, and
+  # Docker sends it on every later pull from registry.gitlab.com - including
+  # public ones. That is how three main-branch test jobs failed to pull
+  # gitlab-runner-helper with "HTTP Basic: Access denied" before running a single
+  # test. after_script runs even when the deploy fails, which is exactly when the
+  # stale entry would otherwise be left behind.
+  after_script:
+    - docker logout "$CI_REGISTRY" || true
   rules:
     - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "develop"
 

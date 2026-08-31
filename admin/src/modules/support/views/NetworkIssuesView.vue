@@ -47,8 +47,11 @@ interface StatusFilter {
 const { request } = useApi()
 
 /** Available status filters. */
+/** The filter shown when the active one matches nothing — the first tab. */
+const defaultStatusFilter: StatusFilter = { label: 'Open', value: 'open', heading: 'Open Issues' }
+
 const statusFilters: StatusFilter[] = [
-  { label: 'Open', value: 'open', heading: 'Open Issues' },
+  defaultStatusFilter,
   { label: 'Scheduled', value: 'Scheduled', heading: 'Scheduled Issues' },
   { label: 'Resolved', value: 'Resolved', heading: 'Resolved Issues' },
 ]
@@ -85,7 +88,7 @@ const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / pageS
 
 /** Active filter object for display. */
 const activeFilterObj = computed(() =>
-  statusFilters.find(f => f.value === activeFilter.value) ?? statusFilters[0]
+  statusFilters.find(f => f.value === activeFilter.value) ?? defaultStatusFilter
 )
 
 /**

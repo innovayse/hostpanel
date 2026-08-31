@@ -24,6 +24,26 @@ const settingsStore = useSettingsStore()
 /** Available locales for translations. Adding a new locale only requires extending this array. */
 const LOCALES = ['en', 'ru', 'hy'] as const
 
+/**
+ * A locale this form has a translation tab for.
+ *
+ * Derived from {@link LOCALES} so the two can never drift, and so `translations[locale]` is
+ * a total lookup rather than the possibly-`undefined` read a `Record<string, …>` gives.
+ */
+type SlideLocale = (typeof LOCALES)[number]
+
+/**
+ * Narrows a locale code that came from the API to one this form can display.
+ *
+ * The slide endpoint may return translations for a locale the admin does not render; those
+ * were already skipped by the truthiness check this replaces.
+ *
+ * @param value - Locale code as sent by the API.
+ * @returns True when the form has a tab for it.
+ */
+const isSlideLocale = (value: string): value is SlideLocale =>
+  (LOCALES as readonly string[]).includes(value)
+
 /** Display names for each supported locale. */
 const LOCALE_LABELS: Record<string, string> = {
   en: 'English',
@@ -141,7 +161,7 @@ const uploadDragging = ref(false)
 const uploadError = ref<string | null>(null)
 
 /** Currently active translation tab locale. */
-const activeLocale = ref<string>('en')
+const activeLocale = ref<SlideLocale>('en')
 
 /**
  * Creates a blank translation form object.
@@ -160,9 +180,14 @@ function createEmptyTranslation(): TranslationForm {
 }
 
 /** Reactive translations keyed by locale code. */
-const translations = reactive<Record<string, TranslationForm>>(
-  Object.fromEntries(LOCALES.map(loc => [loc, createEmptyTranslation()])),
-)
+const translations = reactive<Record<SlideLocale, TranslationForm>>({
+  // Written out per locale rather than built from LOCALES: `Object.fromEntries` produces a
+  // string index signature, which cannot prove every locale is present. Spelling them out
+  // means adding a locale to LOCALES fails to compile here until its tab is initialised too.
+  en: createEmptyTranslation(),
+  ru: createEmptyTranslation(),
+  hy: createEmptyTranslation(),
+})
 
 
 /**
@@ -298,7 +323,7 @@ onMounted(async () => {
         translations[locale] = createEmptyTranslation()
       }
       for (const t of slide.translations) {
-        if (translations[t.locale]) {
+        if (isSlideLocale(t.locale)) {
           translations[t.locale] = {
             title: t.title,
             tagline: t.tagline ?? '',
@@ -323,19 +348,19 @@ onMounted(async () => {
 /**
  * Adds a new empty feature input to the specified locale's feature list.
  *
- * @param locale - The locale code to add the feature to.
+ * @param locale - The locale to add the feature to.
  */
-function addFeature(locale: string): void {
+function addFeature(locale: SlideLocale): void {
   translations[locale].features.push('')
 }
 
 /**
  * Removes a feature from the specified locale's feature list by index.
  *
- * @param locale - The locale code to remove the feature from.
+ * @param locale - The locale to remove the feature from.
  * @param index - The index of the feature to remove.
  */
-function removeFeature(locale: string, index: number): void {
+function removeFeature(locale: SlideLocale, index: number): void {
   translations[locale].features.splice(index, 1)
 }
 

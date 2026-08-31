@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Transaction } from '../../../types/models'
+import { toIsoDay } from '../../../utils/format'
 
 interface Props {
   transactions: Transaction[]
@@ -15,7 +16,7 @@ const chartData = computed(() => {
   props.transactions.forEach(tx => {
     const parsed = new Date(tx.date)
     if (isNaN(parsed.getTime())) return
-    const date = parsed.toISOString().split('T')[0]
+    const date = toIsoDay(parsed)
     if (!dailyData[date]) {
       dailyData[date] = 0
     }
@@ -29,7 +30,7 @@ const chartData = computed(() => {
   for (let i = 29; i >= 0; i--) {
     const date = new Date(today)
     date.setDate(date.getDate() - i)
-    dates.push(date.toISOString().split('T')[0])
+    dates.push(toIsoDay(date))
   }
 
   return dates.map(date => ({
@@ -62,11 +63,18 @@ const points = computed(() => {
 const pathD = computed(() => {
   if (points.value.length === 0) return ''
 
-  let path = `M ${points.value[0].x} ${points.value[0].y}`
+  const [firstPoint] = points.value
+  // Unreachable given the length check above; narrows `firstPoint` for the compiler.
+  if (!firstPoint) return ''
+
+  let path = `M ${firstPoint.x} ${firstPoint.y}`
 
   for (let i = 1; i < points.value.length; i++) {
     const curr = points.value[i]
     const prev = points.value[i - 1]
+    // Both indices are inside the array's bounds; the guard only narrows away the
+    // `undefined` that `noUncheckedIndexedAccess` adds to every element read.
+    if (!curr || !prev) continue
     const cp1x = prev.x + (curr.x - prev.x) / 2
     const cp1y = prev.y
     const cp2x = prev.x + (curr.x - prev.x) / 2
@@ -80,6 +88,8 @@ const pathD = computed(() => {
 const areaPathD = computed(() => {
   if (pathD.value === '') return ''
   const lastPoint = points.value[points.value.length - 1]
+  // `pathD` is only non-empty when `points` has at least one entry, so this never fires.
+  if (!lastPoint) return ''
   return `${pathD.value} L ${lastPoint.x} ${padding.top + innerHeight} L ${padding.left} ${padding.top + innerHeight} Z`
 })
 
@@ -112,7 +122,10 @@ const xAxisLabels = computed(() => {
   const labels = []
   const step = Math.max(1, Math.floor(chartData.value.length / 4))
   for (let i = 0; i < chartData.value.length; i += step) {
-    const date = new Date(chartData.value[i].date)
+    const point = chartData.value[i]
+    // `i` is bounded by the loop condition; the guard only satisfies the index-access check.
+    if (!point) continue
+    const date = new Date(point.date)
     const x = padding.left + (i / (chartData.value.length - 1)) * innerWidth
     labels.push({
       date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),

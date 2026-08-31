@@ -91,7 +91,8 @@ function formatDateTime(iso: string): string {
 const lastReplyAt = computed(() => {
   const t = store.currentTicket
   if (!t || t.replies.length === 0) return null
-  return t.replies[t.replies.length - 1].createdAt
+  // The length check above guarantees a last reply; `?.` only narrows the index access.
+  return t.replies[t.replies.length - 1]?.createdAt ?? null
 })
 
 /**

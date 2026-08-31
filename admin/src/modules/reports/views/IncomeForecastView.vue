@@ -5,6 +5,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement
 import ReportPage from '../components/ReportPage.vue'
 import ReportTimestamp from '../components/ReportTimestamp.vue'
 import { useApi } from '../../../composables/useApi'
+import type { ReportLineSeries } from '../chart'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
 
@@ -13,9 +14,13 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const rows = ref<{ month: string; monthly: number; quarterly: number; semiAnnual: number; annual: number; total: number }[]>([])
 
-const chartData = ref({
-  labels: [] as string[],
-  datasets: [{ label: 'Cumulative Forecast', data: [] as number[], borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.15)', fill: true, tension: 0.4 }],
+const chartData = ref<{
+  labels: string[]
+  /** A single fixed series, refilled in place by `load`; the tuple keeps index 0 definite. */
+  datasets: [ReportLineSeries]
+}>({
+  labels: [],
+  datasets: [{ label: 'Cumulative Forecast', data: [], borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.15)', fill: true, tension: 0.4 }],
 })
 
 const chartOptions = {

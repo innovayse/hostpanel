@@ -5,6 +5,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement
 import ReportPage from '../components/ReportPage.vue'
 import AppSelect from '../../../components/AppSelect.vue'
 import { useApi } from '../../../composables/useApi'
+import type { ReportLineSeries } from '../chart'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
 
@@ -19,8 +20,12 @@ const yearOptions = Array.from({ length: 10 }, (_, i) => {
   return { value: y, label: String(y) }
 })
 
-const chartData = ref({
-  labels: [] as string[],
+const chartData = ref<{
+  labels: string[]
+  /** Three fixed series, refilled in place by `load`; the tuple keeps each index definite. */
+  datasets: [ReportLineSeries, ReportLineSeries, ReportLineSeries]
+}>({
+  labels: [],
   datasets: [
     { label: 'New Signups', data: [] as number[], borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.4 },
     { label: 'Orders Placed', data: [] as number[], borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.1)', fill: true, tension: 0.4 },

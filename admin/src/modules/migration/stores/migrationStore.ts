@@ -54,6 +54,12 @@ export const useMigrationStore = defineStore('migration', () => {
     exportKnowledgebase?: boolean
     exportContacts?: boolean
     exportTicketReplies?: boolean
+    // The API's CreateMigrationJobRequest has carried these three since the
+    // AddMigrationJobNewModules migration; the store never forwarded them, so the matching
+    // toggles on the migration screen had no effect and the server applied its default.
+    exportAnnouncements?: boolean
+    exportDownloads?: boolean
+    exportNetworkIssues?: boolean
   }): Promise<MigrationJob> {
     const job = await request<MigrationJob>('/admin/migrations', {
       method: 'POST',
@@ -72,6 +78,9 @@ export const useMigrationStore = defineStore('migration', () => {
         exportKnowledgebase: opts.exportKnowledgebase ?? true,
         exportContacts:      opts.exportContacts      ?? true,
         exportTicketReplies: opts.exportTicketReplies ?? true,
+        exportAnnouncements: opts.exportAnnouncements ?? true,
+        exportDownloads:     opts.exportDownloads     ?? true,
+        exportNetworkIssues: opts.exportNetworkIssues ?? true,
       }),
     })
     jobs.value.unshift(job)

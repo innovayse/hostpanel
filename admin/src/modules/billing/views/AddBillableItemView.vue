@@ -7,6 +7,7 @@ import AppSpinner from '../../../components/AppSpinner.vue'
 import AppDatePicker from '../../../components/AppDatePicker.vue'
 import { useBillableItemsStore } from '../stores/billableItemsStore'
 import { useApi } from '../../../composables/useApi'
+import { toIsoDay } from '../../../utils/format'
 
 const router = useRouter()
 const store = useBillableItemsStore()
@@ -49,7 +50,7 @@ const form = ref({
   amount: 0,
   currency: 'USD',
   invoiceAction: 'dont_invoice',
-  nextDueDate: new Date().toISOString().split('T')[0],
+  nextDueDate: toIsoDay(new Date()),
   invoiceCount: 0,
   recurringPeriod: 1,
   recurringPeriodType: 'month',

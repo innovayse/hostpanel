@@ -6,6 +6,7 @@ import AppSelect from '../../../components/AppSelect.vue'
 import AppSpinner from '../../../components/AppSpinner.vue'
 import AppDatePicker from '../../../components/AppDatePicker.vue'
 import AppCheckbox from '../../../components/AppCheckbox.vue'
+import { toIsoDay } from '../../../utils/format'
 
 const router = useRouter()
 const route = useRoute()
@@ -20,8 +21,8 @@ const invoiceId = computed(() => Number(route.params.id))
 const summaryPaymentMethod = ref('')
 
 // Options form state
-const optionsInvoiceDate = ref<string>(new Date().toISOString().split('T')[0])
-const optionsDueDate = ref<string>(new Date().toISOString().split('T')[0])
+const optionsInvoiceDate = ref<string>(toIsoDay(new Date()))
+const optionsDueDate = ref<string>(toIsoDay(new Date()))
 const optionsPaymentMethod = ref('')
 const optionsTaxRate1 = ref(0)
 const optionsTaxRate1Percent = ref(0)
@@ -31,7 +32,7 @@ const optionsInvoiceNumber = ref('')
 const optionsStatus = ref('Draft')
 
 // Add Payment form state
-const paymentDate = ref<string>(new Date().toISOString().split('T')[0])
+const paymentDate = ref<string>(toIsoDay(new Date()))
 const paymentMethod = ref('')
 const transactionId = ref('')
 const paymentAmount = ref(0)
@@ -205,7 +206,9 @@ function download() {
 onMounted(() => {
   // Загрузить счета если они еще не загружены
   if (store.invoices.length === 0) {
-    store.fetchAll(1, store.pageSize)
+    // The billing store exposes no `pageSize`, so this used to pass `undefined` and fall back
+  // to `fetchAll`'s own default of 25. Calling it with the page alone does exactly that.
+  store.fetchAll(1)
   }
   // Инициализировать Payment Method
   summaryPaymentMethod.value = invoice.value?.gateway || ''

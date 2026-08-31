@@ -4,6 +4,8 @@ import ReportPage from '../components/ReportPage.vue'
 import ReportTimestamp from '../components/ReportTimestamp.vue'
 import AppSelect from '../../../components/AppSelect.vue'
 import { useApi } from '../../../composables/useApi'
+import { REPORT_CURRENCY_RATES, REPORT_CURRENCY_SYMBOLS } from '../currency'
+import type { ReportCurrency } from '../currency'
 
 const { request } = useApi()
 const loading = ref(false)
@@ -26,10 +28,14 @@ const now = new Date()
 const currentQuarter = Math.floor(now.getMonth() / 3) + 1
 const selectedYear = ref(now.getFullYear())
 const selectedQuarter = ref(currentQuarter)
-const selectedCurrency = ref('USD')
+const selectedCurrency = ref<ReportCurrency>('USD')
 
-const rates: Record<string, number> = { USD: 1, EUR: 0.92, RUB: 90.5, AMD: 387 }
-const symbols: Record<string, string> = { USD: '$', EUR: '€', RUB: '₽', AMD: '֏' }
+/**
+ * Currency codes offered by the inline picker, in the alphabetical order this screen shows
+ * them. Typed here rather than inline in the template so assigning one to
+ * {@link selectedCurrency} keeps its `ReportCurrency` type.
+ */
+const currencyCodes: ReportCurrency[] = ['AMD', 'EUR', 'RUB', 'USD']
 
 // Build quarter options for last 4 years
 const quarterOptions = computed(() => {
@@ -46,15 +52,16 @@ const quarterOptions = computed(() => {
 const selectedQuarterValue = computed({
   get: () => `${selectedYear.value}-${selectedQuarter.value}`,
   set: (v: string) => {
-    const [y, q] = v.split('-')
+    // The value always comes from `quarterOptions`, which builds it as `${year}-${quarter}`.
+    const [y = '', q = ''] = v.split('-')
     selectedYear.value = parseInt(y)
     selectedQuarter.value = parseInt(q)
   },
 })
 
 function fmt(n: number) {
-  const v = n * rates[selectedCurrency.value]
-  return `${symbols[selectedCurrency.value]}${v.toFixed(2)}`
+  const v = n * REPORT_CURRENCY_RATES[selectedCurrency.value]
+  return `${REPORT_CURRENCY_SYMBOLS[selectedCurrency.value]}${v.toFixed(2)}`
 }
 
 async function load() {
@@ -96,7 +103,7 @@ onMounted(load)
         </div>
         <div v-if="data" class="mt-3 flex gap-2 text-[0.78rem] text-text-muted">
           <span>Choose Currency:</span>
-          <button v-for="c in ['AMD','EUR','RUB','USD']" :key="c"
+          <button v-for="c in currencyCodes" :key="c"
             @click="selectedCurrency = c"
             :class="selectedCurrency === c ? 'text-accent font-semibold' : 'hover:text-text-primary'"
             class="transition-colors">{{ c }}</button>

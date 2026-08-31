@@ -7,6 +7,7 @@ import AppSpinner from '../../../components/AppSpinner.vue'
 import AppDatePicker from '../../../components/AppDatePicker.vue'
 import { useTransactionsStore } from '../stores/transactionsStore'
 import { useApi } from '../../../composables/useApi'
+import { toIsoDay } from '../../../utils/format'
 
 const router = useRouter()
 const route = useRoute()
@@ -30,7 +31,7 @@ const paymentMethodOptions = [
 ]
 
 const form = ref({
-  date: new Date().toISOString().split('T')[0],
+  date: toIsoDay(new Date()),
   clientId: '',
   transactionId: '',
   paymentMethod: '',
@@ -65,7 +66,7 @@ async function loadTransaction() {
   if (tx) {
     const parsed = new Date(tx.date)
     form.value = {
-      date: isNaN(parsed.getTime()) ? new Date().toISOString().split('T')[0] : parsed.toISOString().split('T')[0],
+      date: isNaN(parsed.getTime()) ? toIsoDay(new Date()) : toIsoDay(parsed),
       clientId: String(tx.clientId),
       transactionId: tx.transactionId || '',
       paymentMethod: tx.paymentMethod || '',

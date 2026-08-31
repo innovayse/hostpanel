@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import AppSelect from './AppSelect.vue'
+import { splitIsoDate } from '../utils/format'
 
 const props = defineProps<{
   modelValue: string | null
@@ -176,10 +177,7 @@ const handleInput = (event: Event) => {
   const parsed = parseDateInput(input)
   if (parsed) {
     emit('update:modelValue', parsed)
-    const [year, month, day] = parsed.split('-')
-    const yearNum = parseInt(year)
-    const monthNum = parseInt(month)
-    const dayNum = parseInt(day)
+    const { year: yearNum, month: monthNum } = splitIsoDate(parsed)
     currentMonth.value = new Date(yearNum, monthNum - 1, 1)
     previewDay.value = null
     previewMonth.value = null

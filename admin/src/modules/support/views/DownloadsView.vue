@@ -467,6 +467,9 @@ function navigateHome(): void {
  */
 function navigateToBreadcrumb(index: number): void {
   const crumb = breadcrumbs.value[index]
+  // Only ever called with an index the template rendered, so this never fires; without it
+  // the compiler cannot rule out an out-of-range read.
+  if (!crumb) return
   breadcrumbs.value = breadcrumbs.value.slice(0, index + 1)
   currentCategoryId.value = crumb.id
   fetchDownloads()

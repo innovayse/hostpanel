@@ -7,8 +7,13 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import AppCheckbox from './AppCheckbox.vue'
 
 const props = defineProps<{
-  /** All available fields. */
-  fields: { key: string; label: string }[]
+  /**
+   * All available fields.
+   *
+   * `readonly` because this component only reads the list: every caller declares its
+   * columns with `as const`, and a mutable annotation rejected those literals outright.
+   */
+  fields: readonly { key: string; label: string }[]
   /** Currently selected field keys. */
   selected: Set<string>
 }>()

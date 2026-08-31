@@ -55,7 +55,9 @@ export function useGeoOptions() {
     if (match) {
       const code = match[1]
       const found = geoCountries.find(g => g.phone && `+${g.phone}` === code)
-      if (found?.iso2) return { countryIso2: String(found.iso2), number: match[2] }
+      // Group 2 is mandatory in the regex above, so it is always present; falling back to
+      // the whole phone string keeps the same shape as the unmatched return below.
+      if (found?.iso2) return { countryIso2: String(found.iso2), number: match[2] ?? phone }
     }
     return { countryIso2: 'US', number: phone }
   }

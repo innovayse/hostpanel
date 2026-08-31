@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import AppSelect from '../../../components/AppSelect.vue'
 import DateRangePicker from '../../../components/DateRangePicker.vue'
+import { toIsoDay } from '../../../utils/format'
 
 const page = ref(1)
 const pageSize = 20
@@ -143,7 +144,7 @@ const filteredLogs = computed(() => {
   return logs.value.filter(log => {
     if (dateRange.value) {
       const [startStr, endStr] = dateRange.value
-      const logDate = new Date(log.dateTime).toISOString().split('T')[0]
+      const logDate = toIsoDay(new Date(log.dateTime))
       if (logDate < startStr || logDate > endStr) return false
     }
 

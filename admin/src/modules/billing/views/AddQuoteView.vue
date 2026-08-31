@@ -11,6 +11,7 @@ import AppCountrySelect from '../../../components/AppCountrySelect.vue'
 import AppCheckbox from '../../../components/AppCheckbox.vue'
 import { useQuoteStore } from '../stores/quoteStore'
 import type { QuoteStage } from '../../../types/models'
+import { toIsoDay } from '../../../utils/format'
 import { useApi } from '../../../composables/useApi'
 
 const route = useRoute()
@@ -61,8 +62,8 @@ const currencyOptions = [
 ]
 
 const form = ref({
-  dateCreated: new Date().toISOString().split('T')[0],
-  validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+  dateCreated: toIsoDay(new Date()),
+  validUntil: toIsoDay(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)),
   subject: '',
   stage: 'Draft',
   quoteType: 'existing',
@@ -110,6 +111,9 @@ function openProductModal() {
 function addPredefinedProduct() {
   if (selectedProductId.value) {
     const product = products[selectedProductId.value]
+    // The id always comes from the select bound to `products`, so this never fires; without
+    // it the compiler cannot rule out a key that is not in the map.
+    if (!product) return
     form.value.lineItems.push({
       description: product.name,
       quantity: 1,
@@ -132,6 +136,8 @@ function removeLineItem(index: number) {
 
 function calculateLineAmount(index: number): number {
   const item = form.value.lineItems[index]
+  // Called only with an index the template is rendering, so the row always exists.
+  if (!item) return 0
   const subtotal = item.unitPrice * item.quantity
   const discountAmount = subtotal * (item.discount / 100)
   return subtotal - discountAmount

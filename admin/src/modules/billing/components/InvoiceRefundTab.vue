@@ -212,10 +212,13 @@ function handleWithSelected(): void {
 async function saveItems(): Promise<void> {
   savingItems.value = true
   const items = editItems.value.map(i => ({
-    id: i.id ?? undefined,
+    id: i.id ?? null,
     description: i.description,
     unitPrice: i.amount,
     quantity: 1,
+    // The API defaults IsDeleted to false when the field is absent, which is what these two
+    // tabs relied on; sending it explicitly keeps that and matches the other invoice tabs.
+    isDeleted: false,
   }))
   await store.updateItems(props.invoice.id, items)
   savingItems.value = false

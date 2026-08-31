@@ -8,6 +8,7 @@ import AppDatePicker from '../../../components/AppDatePicker.vue'
 import AppCheckbox from '../../../components/AppCheckbox.vue'
 import { useTransactionsStore } from '../stores/transactionsStore'
 import { useApi } from '../../../composables/useApi'
+import { toIsoDay } from '../../../utils/format'
 
 const router = useRouter()
 const store = useTransactionsStore()
@@ -30,7 +31,7 @@ const paymentMethodOptions = [
 ]
 
 const form = ref({
-  date: new Date().toISOString().split('T')[0],
+  date: toIsoDay(new Date()),
   clientId: '',
   transactionId: '',
   paymentMethod: '',
@@ -59,15 +60,24 @@ async function loadClients() {
 
 async function submit() {
   try {
+    // The form takes a comma-separated list but the API accepts a single optional invoice,
+    // so the first entry wins — the same mapping EditTransactionView already uses.
+    const firstInvoice = form.value.invoiceIds
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)[0]
+
     await store.create({
       clientId: parseInt(form.value.clientId),
+      date: form.value.date,
       description: form.value.description,
-      amount: form.value.amountIn > 0 ? form.value.amountIn : form.value.amountOut,
-      fees: form.value.fees,
-      currency: form.value.currency,
-      gateway: form.value.paymentMethod,
       transactionId: form.value.transactionId,
-      type: form.value.amountIn > 0 ? 'Credit' : 'Debit'
+      invoiceId: firstInvoice ? parseInt(firstInvoice) : null,
+      paymentMethod: form.value.paymentMethod,
+      amountIn: form.value.amountIn,
+      amountOut: form.value.amountOut,
+      fees: form.value.fees,
+      addToCredit: form.value.addToCredit,
     })
     router.push('/billing/transactions')
   } catch (e) {

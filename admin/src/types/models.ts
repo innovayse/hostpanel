@@ -242,6 +242,16 @@ export interface InvoiceItem {
   quantity: number
   /** Line total (unitPrice x quantity). */
   amount: number
+
+  /**
+   * BUG — read by `InvoiceDetailView`'s "Taxed" column, but `InvoiceItemDto` has no such
+   * field, so the column has always rendered "No" for every line regardless of tax.
+   *
+   * Declared optional so the type states what actually arrives (`undefined`) instead of
+   * promising a boolean. Whether tax is per-line or invoice-wide (`Invoice.taxRate`) is a
+   * product decision; nothing here can infer it.
+   */
+  taxed?: boolean
 }
 
 /** Payment, refund, or credit transaction recorded against an invoice. */
@@ -302,6 +312,24 @@ export interface Invoice {
   items: InvoiceItem[]
   /** Payment/refund/credit transactions. */
   transactions: InvoiceTransaction[]
+
+  /**
+   * BUG — read by `InvoiceDetailView` (the "Payment Method" summary field and the payment
+   * panel), but `InvoiceDto` sends no `gateway`. Both call sites therefore show their
+   * fallback — '' and 'Not set' — on every invoice, paid or not.
+   *
+   * The API's nearest equivalents are {@link Invoice.paymentMethod} and
+   * {@link Invoice.gatewayTransactionId}. Switching to one of those changes what the screen
+   * displays, so it is left as-is and recorded here.
+   */
+  gateway?: string
+
+  /**
+   * BUG — read by `InvoicesListView`'s "Last Updated" column as
+   * `invoice.updatedAt || invoice.createdAt`, but `InvoiceListItemDto` has no `updatedAt`.
+   * The column has always shown the creation date.
+   */
+  updatedAt?: string
 }
 
 /** Represents a single admin activity log entry for a client. */
@@ -1006,40 +1034,64 @@ export interface ClientUserItem {
   createdAt: string
 }
 
-/** Represents a billable item that can be invoiced to a client. */
+/**
+ * A billable item that can be invoiced to a client.
+ *
+ * Mirrors the API's `BillableItemDto` (`GET /billing/billable-items`) and its client-scoped
+ * twin `ClientBillableItemDto` (`GET /clients/{id}/billable-items`), which differ only in
+ * that the client-scoped one omits `clientName`.
+ *
+ * This interface previously described a different record altogether — `serviceId`,
+ * `serviceName`, `hoursQty`, `isHours`, `invoiceAction`, `dueDate`, `invoiceCount` and three
+ * `recurrence*` fields, none of which either endpoint has ever returned — while omitting
+ * `clientName`, `currency`, `type` and `isInvoiced`, which they all return. See the note on
+ * the three retained fields below.
+ */
 export interface BillableItem {
   /** Unique billable item identifier. */
   id: number
   /** Associated client identifier. */
   clientId: number
-  /** FK to client service, if applicable. */
-  serviceId?: number
-  /** Product/service name from the linked service. */
-  serviceName?: string
+  /**
+   * Display name of the owning client.
+   *
+   * Only the admin-wide list (`/billing/billable-items`) carries it; the client-scoped
+   * endpoint does not, which is why it is optional.
+   */
+  clientName?: string
   /** Charge description. */
   description: string
-  /** Total charge amount. */
+  /** Charge amount. */
   amount: number
-  /** Hours or quantity value. */
-  hoursQty: number
-  /** Whether hoursQty represents hours (true) or quantity (false). */
-  isHours: boolean
-  /** How and when this item should be invoiced. */
-  invoiceAction: string
-  /** ISO 8601 due date. */
-  dueDate: string
-  /** FK to invoice if invoiced, null if uninvoiced. */
-  invoiceId?: number
-  /** Number of times this item has been invoiced. */
-  invoiceCount: number
-  /** Recurrence interval (recur every N periods). */
-  recurrenceInterval?: number
-  /** Recurrence period unit. */
-  recurrencePeriod?: string
-  /** Max number of recurrences (null = unlimited). */
-  recurrenceLimit?: number
+  /** ISO 4217 currency code. */
+  currency: string
+  /** Item type — `OneTime` or `Recurring`. */
+  type: string
+  /** Recurrence period; null for one-time items. */
+  recurringPeriod: string | null
+  /** Whether the item has already been invoiced. */
+  isInvoiced: boolean
+  /** FK to the invoice; null while uninvoiced. */
+  invoiceId: number | null
+  /** ISO 8601 next due date for recurring items; null otherwise. */
+  nextDueDate: string | null
   /** ISO 8601 creation timestamp. */
   createdAt: string
+
+  /**
+   * BUG — these three are read by `ClientBillableItemsView` but **no endpoint sends them**,
+   * so that screen's "Hours/Qty" and "Invoice Action" columns render blank at runtime.
+   *
+   * They are kept here, optional, so the type states the truth (`undefined` at runtime)
+   * without silently deleting the columns from the screen. Fixing it properly means either
+   * adding the fields to `ClientBillableItemDto` or dropping the columns — a product
+   * decision, not a typing one.
+   */
+  hoursQty?: number
+  /** See the note on {@link BillableItem.hoursQty} — never sent by the API. */
+  isHours?: boolean
+  /** See the note on {@link BillableItem.hoursQty} — never sent by the API. */
+  invoiceAction?: string
 }
 
 /** Response from the billable items list endpoint. */

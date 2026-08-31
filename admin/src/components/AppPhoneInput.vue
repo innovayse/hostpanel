@@ -2,7 +2,14 @@
 import { computed, ref } from 'vue'
 
 const props = defineProps<{
-  modelValue: string | null
+  /**
+   * Combined phone value.
+   *
+   * Optional: this component is driven by the `phoneNumber`/`countryCode` pair and never
+   * reads `modelValue`. It was declared required, which made every two-field call site —
+   * the only kind there is — a type error.
+   */
+  modelValue?: string | null
   phoneNumber?: string | null
   countryCode?: string
   placeholder?: string

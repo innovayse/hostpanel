@@ -9,7 +9,13 @@ interface Client {
 }
 
 const props = defineProps<{
-  modelValue: string | number
+  /**
+   * Id of the selected client, or `null` when nothing is selected.
+   *
+   * Callers hold this as `number | null`; `String(null)` simply matches no client, which is
+   * how the placeholder is shown.
+   */
+  modelValue: string | number | null
   clients: Client[]
   placeholder?: string
 }>()

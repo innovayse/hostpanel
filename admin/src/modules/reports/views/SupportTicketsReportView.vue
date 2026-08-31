@@ -90,7 +90,7 @@ onMounted(load)
               <td class="px-4 py-2.5 text-[0.75rem] font-bold text-text-primary sticky left-0 bg-surface-card z-10">Total</td>
               <td v-for="(day, i) in dayHeaders" :key="day"
                 class="px-2 py-2.5 text-center text-[0.78rem] font-semibold text-text-primary">
-                {{ data.rows.reduce((s, r) => s + r.dailyCounts[i], 0) || '' }}
+                {{ data.rows.reduce((s, r) => s + (r.dailyCounts[i] ?? 0), 0) || '' }}
               </td>
               <td class="px-4 py-2.5 text-right text-[0.88rem] font-bold text-text-primary">
                 {{ data.rows.reduce((s, r) => s + r.total, 0) }}

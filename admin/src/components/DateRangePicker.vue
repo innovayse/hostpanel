@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import AppSelect from './AppSelect.vue'
+import { splitIsoDate } from '../utils/format'
 
 const props = defineProps<{
   modelValue: [string, string] | null
@@ -307,10 +308,16 @@ const handleInput = (event: Event) => {
 
   // Try to parse as range (e.g., "25052026-31052026" or "25/05/2026 - 31/05/2026")
   const parts = input.split(/[\s\-]+/).filter(p => p.length > 0)
+  // `filter` already guarantees each element is a non-empty string, but under
+  // `noUncheckedIndexedAccess` the compiler still types `parts[n]` as `string | undefined`.
+  // Destructuring once lets a single truthiness check stand in for the length checks below:
+  // `firstPart && secondPart` is exactly `parts.length >= 2`, and `firstPart` alone is
+  // exactly `parts.length === 1 && parts[0].length > 0`.
+  const [firstPart, secondPart] = parts
 
-  if (parts.length >= 2) {
-    const start = parseSingleDate(parts[0])
-    const end = parseSingleDate(parts[1])
+  if (firstPart && secondPart) {
+    const start = parseSingleDate(firstPart)
+    const end = parseSingleDate(secondPart)
 
     if (start && end) {
       const startDate = new Date(start + 'T00:00:00')
@@ -324,13 +331,13 @@ const handleInput = (event: Event) => {
         emit('update:modelValue', [start, end])
         inputText.value = `${formatDisplayDate(start)} - ${formatDisplayDate(end)}`
         // Navigate calendar to show the start date's month
-        const [year, month, day] = start.split('-')
-        currentMonth.value = new Date(parseInt(year), parseInt(month) - 1, 1)
+        const { year: startYear, month: startMonth } = splitIsoDate(start)
+        currentMonth.value = new Date(startYear, startMonth - 1, 1)
         isOpen.value = false
       }
-    } else if (parts.length >= 1) {
+    } else {
       // Partial range - update calendar based on what's typed so far
-      const partial = parsePartialDate(parts[0])
+      const partial = parsePartialDate(firstPart)
       if (partial.year || partial.month || partial.day) {
         const year = partial.year || currentMonth.value.getFullYear()
         const month = partial.month || (currentMonth.value.getMonth() + 1)
@@ -346,17 +353,17 @@ const handleInput = (event: Event) => {
       }
 
       // Check if there's a partial second date
-      if (parts.length >= 2) {
-        const partial2 = parsePartialDate(parts[1])
+      {
+        const partial2 = parsePartialDate(secondPart)
         if (partial2.day && partial2.month && partial2.year) {
           const fullDate = `${partial2.year}-${String(partial2.month).padStart(2, '0')}-${String(partial2.day).padStart(2, '0')}`
           previewEnd.value = new Date(fullDate + 'T00:00:00')
         }
       }
     }
-  } else if (parts.length === 1 && parts[0].length > 0) {
+  } else if (firstPart) {
     // User typing first date only
-    const partial = parsePartialDate(parts[0])
+    const partial = parsePartialDate(firstPart)
     if (partial.year || partial.month || partial.day) {
       const year = partial.year || currentMonth.value.getFullYear()
       const month = partial.month || (currentMonth.value.getMonth() + 1)

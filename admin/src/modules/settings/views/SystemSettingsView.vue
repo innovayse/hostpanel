@@ -73,7 +73,11 @@ async function saveRow(setting: Setting) {
   // Only on success. This used to drop the draft either way, so a failed save
   // replaced whatever the operator had typed with the value already stored —
   // leaving an error banner and no way back to the text that caused it.
-  if (await onSave(setting.id, drafts.value[setting.id])) {
+  const draft = drafts.value[setting.id]
+  // `isDirty` above already established the key is present; this only narrows it.
+  if (draft === undefined) return
+
+  if (await onSave(setting.id, draft)) {
     delete drafts.value[setting.id]
   }
 }

@@ -27,6 +27,15 @@ function fmtCurrency(amount: number, currency: string): string {
 
 const chartColors = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6']
 
+/**
+ * Colour for the nth pie slice, cycling through {@link chartColors}.
+ *
+ * The modulo keeps the index in range, so the fallback is unreachable; it exists because
+ * `noUncheckedIndexedAccess` types every element read as possibly `undefined`, which
+ * chart.js will not accept for `backgroundColor`.
+ */
+const chartColorAt = (i: number): string => chartColors[i % chartColors.length] ?? '#22c55e'
+
 const chartData = computed(() => {
   if (!data.value) return { labels: [], datasets: [] }
   // Aggregate all currencies into one total per period for the chart
@@ -35,12 +44,13 @@ const chartData = computed(() => {
     Object.values(p.amountsByCurrency).reduce((a, b) => a + b, 0)
   )
   // Only show periods with values > 0
-  const filtered = labels.map((l, i) => ({ label: l, value: values[i] })).filter(x => x.value > 0)
+  // `values` is built from the same array as `labels`, so the index always hits.
+  const filtered = labels.map((l, i) => ({ label: l, value: values[i] ?? 0 })).filter(x => x.value > 0)
   return {
     labels: filtered.map(x => x.label),
     datasets: [{
       data: filtered.map(x => x.value),
-      backgroundColor: filtered.map((_, i) => chartColors[i % chartColors.length]),
+      backgroundColor: filtered.map((_, i) => chartColorAt(i)),
       borderWidth: 0,
     }],
   }

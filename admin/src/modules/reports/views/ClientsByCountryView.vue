@@ -37,7 +37,8 @@ const top10 = computed(() => {
     const idx = sorted.findIndex(r => r.country === selectedCountry.value)
     if (idx > 0) {
       const [item] = sorted.splice(idx, 1)
-      sorted.unshift(item)
+      // `idx > 0` means the entry exists, so `splice` always yields exactly one element.
+      if (item) sorted.unshift(item)
     } else if (idx === -1) {
       // Selected country not in top 10 — find it in full list and prepend
       const found = rows.value.find(r => r.country === selectedCountry.value)

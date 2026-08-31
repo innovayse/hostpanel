@@ -1,4 +1,4 @@
-<script setup lang="ts" generic="T extends string | number">
+<script setup lang="ts" generic="T extends string | number | null">
 /**
  * Custom styled dropdown select that matches the dark panel theme.
  * Replaces native <select> whose options cannot be themed cross-browser.

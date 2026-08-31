@@ -6,6 +6,7 @@ import AppSpinner from '../../../components/AppSpinner.vue'
 import DateRangePicker from '../../../components/DateRangePicker.vue'
 import TransactionChart from '../components/TransactionChart.vue'
 import { useTransactionsStore } from '../stores/transactionsStore'
+import { toIsoDay } from '../../../utils/format'
 
 const store = useTransactionsStore()
 const router = useRouter()
@@ -84,7 +85,7 @@ const filteredTransactions = computed(() => {
 
     if (appliedFilters.value.dateRange) {
       const [startStr, endStr] = appliedFilters.value.dateRange
-      const txDate = new Date(tx.date).toISOString().split('T')[0]
+      const txDate = toIsoDay(new Date(tx.date))
       if (txDate < startStr || txDate > endStr) return false
     }
 
@@ -128,12 +129,12 @@ const stats = computed(() => {
 
     const prevEndDate = new Date(startDate.getTime() - 1000 * 60 * 60 * 24) // 1 day before start
     const prevStartDate = new Date(prevEndDate.getTime() - rangeDuration)
-    const prevStartStr = prevStartDate.toISOString().split('T')[0]
-    const prevEndStr = prevEndDate.toISOString().split('T')[0]
+    const prevStartStr = toIsoDay(prevStartDate)
+    const prevEndStr = toIsoDay(prevEndDate)
 
     // Apply same filters but with previous date range
     allTransactions.forEach(tx => {
-      const txDate = new Date(tx.date).toISOString().split('T')[0]
+      const txDate = toIsoDay(new Date(tx.date))
       if (txDate >= prevStartStr && txDate <= prevEndStr) {
         if (appliedFilters.value.show !== 'all') {
           if (appliedFilters.value.show === 'in' && !(tx.amountIn > 0)) return

@@ -5,6 +5,8 @@ import ReportTimestamp from '../components/ReportTimestamp.vue'
 import AppSelect from '../../../components/AppSelect.vue'
 import DateRangePicker from '../../../components/DateRangePicker.vue'
 import { useApi } from '../../../composables/useApi'
+import { REPORT_CURRENCY_RATES, REPORT_CURRENCY_SYMBOLS, REPORT_CURRENCY_OPTIONS } from '../currency'
+import type { ReportCurrency } from '../currency'
 
 const { request } = useApi()
 const loading = ref(false)
@@ -15,16 +17,7 @@ const dateRange = ref<[string, string]>([
   `${now.getFullYear()}-01-01`,
   `${now.getFullYear()}-12-31`,
 ])
-const selectedCurrency = ref('USD')
-
-const currencyOptions = [
-  { value: 'USD', label: 'USD — US Dollar' },
-  { value: 'EUR', label: 'EUR — Euro' },
-  { value: 'RUB', label: 'RUB — Russian Ruble' },
-  { value: 'AMD', label: 'AMD — Armenian Dram' },
-]
-const rates: Record<string, number> = { USD: 1, EUR: 0.92, RUB: 90.5, AMD: 387 }
-const symbols: Record<string, string> = { USD: '$', EUR: '€', RUB: '₽', AMD: '֏' }
+const selectedCurrency = ref<ReportCurrency>('USD')
 
 interface SalesTaxRow { id: number; clientName: string; invoiceDate: string; datePaid: string | null; subTotal: number; tax: number; credit: number; total: number }
 interface ReportData { totalInvoices: number; totalInvoiced: number; taxLevel1Liability: number; taxLevel2Liability: number; rows: SalesTaxRow[] }
@@ -32,8 +25,8 @@ interface ReportData { totalInvoices: number; totalInvoiced: number; taxLevel1Li
 const data = ref<ReportData | null>(null)
 
 function fmt(n: number) {
-  const v = n * rates[selectedCurrency.value]
-  return `${symbols[selectedCurrency.value]}${v.toFixed(2)} ${selectedCurrency.value}`
+  const v = n * REPORT_CURRENCY_RATES[selectedCurrency.value]
+  return `${REPORT_CURRENCY_SYMBOLS[selectedCurrency.value]}${v.toFixed(2)} ${selectedCurrency.value}`
 }
 
 async function load() {
@@ -59,7 +52,7 @@ onMounted(load)
           </div>
           <div class="w-[190px]">
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Choose Currency</label>
-            <AppSelect v-model="selectedCurrency" :options="currencyOptions" />
+            <AppSelect v-model="selectedCurrency" :options="REPORT_CURRENCY_OPTIONS" />
           </div>
           <button class="px-5 py-2 gradient-brand text-white text-[0.82rem] font-semibold rounded-[9px] transition-opacity hover:opacity-90" @click="load">Generate Report</button>
         </div>

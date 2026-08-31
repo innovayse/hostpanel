@@ -158,13 +158,28 @@ export const useBillingStore = defineStore('billing', () => {
   /**
    * Updates line items on an existing invoice.
    *
+   * The entry shape mirrors the API's `UpdateItemEntryRequest`: `id` is null for a new
+   * line, and `isDeleted` removes an existing one. Both were already being sent by every
+   * caller — the parameter type simply did not describe them.
+   *
    * @param invoiceId - The invoice to update.
-   * @param items - Updated line items array.
+   * @param items - The item changes to apply, replacing the invoice's line items.
    * @returns Promise that resolves when the update completes.
    */
   async function updateItems(
     invoiceId: number,
-    items: Array<{ id?: number; description: string; unitPrice: number; quantity: number }>,
+    items: Array<{
+      /** Existing line item id; null for a new line. */
+      id: number | null
+      /** Human-readable charge description. */
+      description: string
+      /** Price per unit. */
+      unitPrice: number
+      /** Number of units. */
+      quantity: number
+      /** When true, the line is removed from the invoice. */
+      isDeleted: boolean
+    }>,
   ): Promise<void> {
     loading.value = true
     error.value = null

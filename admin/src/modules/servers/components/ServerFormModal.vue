@@ -52,6 +52,24 @@ const ns4Ip = ref('')
 const ns5Hostname = ref('')
 const ns5Ip = ref('')
 
+/**
+ * The five nameserver rows, pairing each row's label with the refs that back its two inputs.
+ *
+ * Declared here rather than as an array literal inside the `v-for`. In a template, a
+ * top-level `<script setup>` ref is already unwrapped, so the literal held plain strings and
+ * `ns.h.value` read `undefined` — and assigning to it on keystroke threw
+ * `TypeError: Cannot create property 'value' on string` in the compiled render function's
+ * strict-mode scope. Refs nested inside an array declared in the script are *not* unwrapped,
+ * so `ns.h.value` here is the real ref on both read and write.
+ */
+const nameserverRows = [
+  { label: 'Primary', h: ns1Hostname, hKey: 'ns1Hostname', ip: ns1Ip, ipKey: 'ns1Ip' },
+  { label: 'Secondary', h: ns2Hostname, hKey: 'ns2Hostname', ip: ns2Ip, ipKey: 'ns2Ip' },
+  { label: 'Third', h: ns3Hostname, hKey: 'ns3Hostname', ip: ns3Ip, ipKey: 'ns3Ip' },
+  { label: 'Fourth', h: ns4Hostname, hKey: 'ns4Hostname', ip: ns4Ip, ipKey: 'ns4Ip' },
+  { label: 'Fifth', h: ns5Hostname, hKey: 'ns5Hostname', ip: ns5Ip, ipKey: 'ns5Ip' },
+]
+
 // --- Server Details ---
 const module = ref<ServerModule>('Cwp7')
 const username = ref('')
@@ -308,13 +326,7 @@ function validate(): boolean {
         <div v-show="tab === 'nameservers'" class="flex flex-col gap-3">
           <p class="text-[0.75rem] text-text-muted">Enter nameservers that will be shown when provisioning new accounts on this server.</p>
 
-          <template v-for="(ns, i) in [
-            { label: 'Primary', h: ns1Hostname, hKey: 'ns1Hostname', ip: ns1Ip, ipKey: 'ns1Ip' },
-            { label: 'Secondary', h: ns2Hostname, hKey: 'ns2Hostname', ip: ns2Ip, ipKey: 'ns2Ip' },
-            { label: 'Third', h: ns3Hostname, hKey: 'ns3Hostname', ip: ns3Ip, ipKey: 'ns3Ip' },
-            { label: 'Fourth', h: ns4Hostname, hKey: 'ns4Hostname', ip: ns4Ip, ipKey: 'ns4Ip' },
-            { label: 'Fifth', h: ns5Hostname, hKey: 'ns5Hostname', ip: ns5Ip, ipKey: 'ns5Ip' },
-          ]" :key="i">
+          <template v-for="(ns, i) in nameserverRows" :key="i">
             <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto_140px] gap-2 items-end">
               <div>
                 <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">{{ ns.label }} Nameserver</label>

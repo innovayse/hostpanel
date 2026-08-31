@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { REPORTS } from '../reports'
-import { REPORT_ICONS } from '../reportIcons'
+import { FALLBACK_REPORT_ICON, REPORT_ICONS } from '../reportIcons'
 
 const route = useRoute()
 const expanded = ref(false)
@@ -12,7 +12,7 @@ function isActive(slug: string): boolean {
 }
 
 function iconFor(name: string): string {
-  return REPORT_ICONS[name] ?? REPORT_ICONS['bar-chart']
+  return REPORT_ICONS[name] ?? FALLBACK_REPORT_ICON
 }
 
 </script>

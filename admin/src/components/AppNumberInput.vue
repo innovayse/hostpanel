@@ -7,8 +7,16 @@
 import { computed } from 'vue'
 
 const props = withDefaults(defineProps<{
-  /** Current numeric value. */
-  modelValue: number
+  /**
+   * Current value.
+   *
+   * `null` and `''` both mean "no value yet" and are what the callers actually hold —
+   * `ServerFormModal`'s optional `maxAccounts` is `number | null`, and `DnsRecordsTable`
+   * seeds its priority fields with `''`. The component's arithmetic coerces both to 0, which
+   * is the behaviour those screens have always had; narrowing this to `number` would mean
+   * changing how they represent "unset", which is a separate change.
+   */
+  modelValue: number | string | null
   /** Minimum allowed value. */
   min?: number
   /** Maximum allowed value. */
@@ -32,11 +40,20 @@ const emit = defineEmits<{
   'update:modelValue': [value: number]
 }>()
 
+/**
+ * {@link modelValue} as a number.
+ *
+ * `Number()` reproduces exactly the coercion the arithmetic below already performed on the
+ * `null` and `''` a caller may hold: both become 0, a numeric string becomes its number, and
+ * anything else becomes `NaN` — the same results as `props.modelValue - props.step` gave.
+ */
+const numericValue = computed(() => Number(props.modelValue))
+
 /** Whether decrement is allowed. */
-const canDecrement = computed(() => props.min === undefined || props.modelValue - props.step >= props.min)
+const canDecrement = computed(() => props.min === undefined || numericValue.value - props.step >= props.min)
 
 /** Whether increment is allowed. */
-const canIncrement = computed(() => props.max === undefined || props.modelValue + props.step <= props.max)
+const canIncrement = computed(() => props.max === undefined || numericValue.value + props.step <= props.max)
 
 /**
  * Updates the value from direct input.
@@ -54,13 +71,13 @@ function onInput(e: Event): void {
 /** Decrements the value by step. */
 function decrement(): void {
   if (!canDecrement.value || props.disabled) return
-  emit('update:modelValue', clamp(round(props.modelValue - props.step)))
+  emit('update:modelValue', clamp(round(numericValue.value - props.step)))
 }
 
 /** Increments the value by step. */
 function increment(): void {
   if (!canIncrement.value || props.disabled) return
-  emit('update:modelValue', clamp(round(props.modelValue + props.step)))
+  emit('update:modelValue', clamp(round(numericValue.value + props.step)))
 }
 
 /**
@@ -97,7 +114,7 @@ function round(v: number): number {
       :disabled="disabled"
       class="w-full bg-white/[0.04] border border-border rounded-[10px] pl-3 pr-8 py-2 text-[0.82rem] text-text-primary focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors [appearance:textfield]"
       @input="onInput"
-      @blur="emit('update:modelValue', clamp(modelValue))"
+      @blur="emit('update:modelValue', clamp(numericValue))"
     />
     <!-- Spinner buttons -->
     <div class="absolute right-0 top-0 bottom-0 flex flex-col w-6 border-l border-border">

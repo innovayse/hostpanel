@@ -6,6 +6,7 @@ import DateRangePicker from '../../../components/DateRangePicker.vue'
 import ReportPage from '../components/ReportPage.vue'
 import ReportTimestamp from '../components/ReportTimestamp.vue'
 import { useApi } from '../../../composables/useApi'
+import type { ReportLineSeries } from '../chart'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
 
@@ -16,8 +17,12 @@ const dateRange = ref<[string, string] | null>(null)
 
 const rows = ref<{ date: string; completedOrders: number; newInvoices: number; paidInvoices: number; openedTickets: number; ticketReplies: number; cancellationRequests: number }[]>([])
 
-const chartData = ref({
-  labels: [] as string[],
+const chartData = ref<{
+  labels: string[]
+  /** Six fixed series, refilled in place by `load`; the tuple keeps each index definite. */
+  datasets: [ReportLineSeries, ReportLineSeries, ReportLineSeries, ReportLineSeries, ReportLineSeries, ReportLineSeries]
+}>({
+  labels: [],
   datasets: [
     { label: 'Completed Orders', data: [] as number[], borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.1)', fill: true, tension: 0.4 },
     { label: 'New Invoices', data: [] as number[], borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.4 },

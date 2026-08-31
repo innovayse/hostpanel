@@ -19,9 +19,25 @@ const yearOptions = Array.from({ length: 5 }, (_, i) => {
   return { value: y, label: String(y) }
 })
 
-const chartData = ref({
-  labels: [] as string[],
-  datasets: [{ label: 'Income', data: [] as number[], backgroundColor: '#ef4444', borderRadius: 6 }],
+/** The single bar series on this chart. Local to this view — no other screen draws it. */
+interface AnnualIncomeSeries {
+  /** Legend label for the series. */
+  label: string
+  /** The plotted monthly totals, refilled on each load. */
+  data: number[]
+  /** Bar fill colour. */
+  backgroundColor: string
+  /** Corner radius applied to each bar. */
+  borderRadius: number
+}
+
+const chartData = ref<{
+  labels: string[]
+  /** A single fixed series, refilled in place by `load`; the tuple keeps index 0 definite. */
+  datasets: [AnnualIncomeSeries]
+}>({
+  labels: [],
+  datasets: [{ label: 'Income', data: [], backgroundColor: '#ef4444', borderRadius: 6 }],
 })
 
 const chartOptions = {

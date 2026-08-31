@@ -131,8 +131,8 @@ function populateForm(): void {
   if (!q) return
   subject.value = q.subject
   stage.value = q.stage
-  dateCreated.value = q.dateCreated ? q.dateCreated.split('T')[0] : ''
-  validUntil.value = q.validUntil ? q.validUntil.split('T')[0] : ''
+  dateCreated.value = q.dateCreated ? (q.dateCreated.split('T')[0] ?? '') : ''
+  validUntil.value = q.validUntil ? (q.validUntil.split('T')[0] ?? '') : ''
   proposalText.value = q.proposalText ?? ''
   customerNotes.value = q.customerNotes ?? ''
   adminNotes.value = q.adminNotes ?? ''

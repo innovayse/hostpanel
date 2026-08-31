@@ -4,6 +4,8 @@ import ReportPage from '../components/ReportPage.vue'
 import ReportTimestamp from '../components/ReportTimestamp.vue'
 import AppSelect from '../../../components/AppSelect.vue'
 import { useApi } from '../../../composables/useApi'
+import { REPORT_CURRENCY_RATES, REPORT_CURRENCY_SYMBOLS, REPORT_CURRENCY_OPTIONS } from '../currency'
+import type { ReportCurrency } from '../currency'
 
 const { request } = useApi()
 const loading = ref(false)
@@ -12,19 +14,11 @@ const error = ref<string | null>(null)
 const now = new Date()
 const selectedYear = ref(now.getFullYear())
 const selectedMonth = ref(now.getMonth() + 1)
-const selectedCurrency = ref('USD')
+const selectedCurrency = ref<ReportCurrency>('USD')
 
 const monthOptions = ['January','February','March','April','May','June','July','August','September','October','November'].concat(['December'])
   .map((name, i) => ({ value: i + 1, label: name }))
 const yearOptions = Array.from({ length: 5 }, (_, i) => now.getFullYear() - 2 + i).map(y => ({ value: y, label: String(y) }))
-const currencyOptions = [
-  { value: 'USD', label: 'USD — US Dollar' },
-  { value: 'EUR', label: 'EUR — Euro' },
-  { value: 'RUB', label: 'RUB — Russian Ruble' },
-  { value: 'AMD', label: 'AMD — Armenian Dram' },
-]
-const rates: Record<string, number> = { USD: 1, EUR: 0.92, RUB: 90.5, AMD: 387 }
-const symbols: Record<string, string> = { USD: '$', EUR: '€', RUB: '₽', AMD: '֏' }
 
 interface ProductRow { productId: number; productName: string; unitsSold: number; totalIncome: number }
 interface Group { groupName: string; products: ProductRow[]; groupUnitsSold: number; groupIncome: number }
@@ -38,8 +32,8 @@ const reportTitle = computed(() => data.value
   : 'Income by Product')
 
 function fmt(n: number) {
-  const converted = n * rates[selectedCurrency.value]
-  return `${symbols[selectedCurrency.value]}${converted.toFixed(2)} ${selectedCurrency.value}`
+  const converted = n * REPORT_CURRENCY_RATES[selectedCurrency.value]
+  return `${REPORT_CURRENCY_SYMBOLS[selectedCurrency.value]}${converted.toFixed(2)} ${selectedCurrency.value}`
 }
 
 async function load() {
@@ -67,7 +61,7 @@ onMounted(load)
           </div>
           <div class="w-[180px]">
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Currency</label>
-            <AppSelect v-model="selectedCurrency" :options="currencyOptions" />
+            <AppSelect v-model="selectedCurrency" :options="REPORT_CURRENCY_OPTIONS" />
           </div>
           <button class="px-5 py-2 gradient-brand text-white text-[0.82rem] font-semibold rounded-[9px] transition-opacity hover:opacity-90" @click="load">Generate</button>
         </div>

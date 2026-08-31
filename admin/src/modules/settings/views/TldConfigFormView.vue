@@ -22,6 +22,13 @@ const store = useTldConfigsStore()
 /** Available registration periods in years. */
 const PERIODS = ['1', '2', '3', '5', '10'] as const
 
+// The six price maps below are keyed by period string and are seeded with every entry in
+// PERIODS by `emptyPriceMap()`, so a period always has a value. They stay
+// `Record<string, number>` on purpose: a map loaded from the API may carry a period this
+// build does not list, and `fromApiMap`/`toNonZeroMap` round-trip it untouched rather than
+// dropping it. That is why the template reads `map[period] ?? 0` — `AppSpinner` needs a
+// definite `number`, and the fallback is unreachable while the seeding above holds.
+
 /** Provider options for the registrar module dropdown. */
 const PROVIDER_OPTIONS = [
   { label: 'Name.am', value: 'NameAm' },
@@ -436,7 +443,7 @@ const sellSymbol = computed(() => {
                   <td class="py-2.5 text-text-secondary">{{ period }} {{ Number(period) === 1 ? 'Year' : 'Years' }}</td>
                   <td class="py-2.5 pr-2">
                     <AppSpinner
-                      :model-value="costRegister[period]"
+                      :model-value="costRegister[period] ?? 0"
                       :step="0.01"
                       :min="0"
                       placeholder="0.00"
@@ -445,7 +452,7 @@ const sellSymbol = computed(() => {
                   </td>
                   <td class="py-2.5 pr-2">
                     <AppSpinner
-                      :model-value="sellRegister[period]"
+                      :model-value="sellRegister[period] ?? 0"
                       :step="0.01"
                       :min="0"
                       placeholder="0.00"
@@ -482,7 +489,7 @@ const sellSymbol = computed(() => {
                   <td class="py-2.5 text-text-secondary">{{ period }} {{ Number(period) === 1 ? 'Year' : 'Years' }}</td>
                   <td class="py-2.5 pr-2">
                     <AppSpinner
-                      :model-value="costTransfer[period]"
+                      :model-value="costTransfer[period] ?? 0"
                       :step="0.01"
                       :min="0"
                       placeholder="0.00"
@@ -491,7 +498,7 @@ const sellSymbol = computed(() => {
                   </td>
                   <td class="py-2.5 pr-2">
                     <AppSpinner
-                      :model-value="sellTransfer[period]"
+                      :model-value="sellTransfer[period] ?? 0"
                       :step="0.01"
                       :min="0"
                       placeholder="0.00"
@@ -528,7 +535,7 @@ const sellSymbol = computed(() => {
                   <td class="py-2.5 text-text-secondary">{{ period }} {{ Number(period) === 1 ? 'Year' : 'Years' }}</td>
                   <td class="py-2.5 pr-2">
                     <AppSpinner
-                      :model-value="costRenew[period]"
+                      :model-value="costRenew[period] ?? 0"
                       :step="0.01"
                       :min="0"
                       placeholder="0.00"
@@ -537,7 +544,7 @@ const sellSymbol = computed(() => {
                   </td>
                   <td class="py-2.5 pr-2">
                     <AppSpinner
-                      :model-value="sellRenew[period]"
+                      :model-value="sellRenew[period] ?? 0"
                       :step="0.01"
                       :min="0"
                       placeholder="0.00"

@@ -78,7 +78,7 @@ async function handleTest(): Promise<void> {
   <CwpIntegrationPage v-if="isCwp" />
   <Cwp7IntegrationPage v-else-if="isCwp7" />
 
-  <div v-else class="p-4 sm:p-6 lg:p-8 max-w-5xl w-full">
+  <div v-else class="p-4 sm:p-6 lg:p-8 w-full">
 
     <!-- Breadcrumb -->
     <div class="flex items-center gap-2 text-[0.78rem] mb-6">

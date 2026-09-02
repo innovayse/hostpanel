@@ -1,5 +1,25 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  /**
+   * Development only: render in the browser instead of on the server.
+   *
+   * The dev server's SSR transform runs in a vite-node worker that talks to Nitro over a
+   * unix socket, and on this Docker-for-Windows setup that exchange never completes for this
+   * app: every server-rendered route either hangs or answers 500 "IPC connection closed",
+   * while API routes, static assets and the `ssr: false` pages under /client all work. It is
+   * not the application code — the same routes render correctly in production, and the
+   * failure reproduces on an unmodified checkout.
+   *
+   * Turning SSR off in development trades away one thing — you cannot see server-rendered
+   * output locally — to get back every page, which otherwise cannot be opened at all.
+   * Production is untouched: `$development` applies only to `nuxt dev`.
+   *
+   * Remove this once the dev-server issue is fixed, and verify by loading any public page.
+   */
+  $development: {
+    ssr: false,
+  },
+
   compatibilityDate: '2026-02-04',
   devtools: { enabled: true },
 

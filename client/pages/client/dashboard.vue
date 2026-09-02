@@ -293,6 +293,7 @@ import { useClientStore } from '~/stores/client'
 import { useClientApi } from '~/composables/apis/useClientApi'
 import { EMPTY_DATE, formatDate } from '~/utils/formatDate'
 import { formatCurrency } from '~/utils/formatCurrency'
+import { isInvoiceOutstanding } from '~/utils/invoice'
 import type { ClientDomain } from '~/types/clientdomain'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
@@ -388,10 +389,13 @@ const setupAlertMessage = computed(() => {
     : t('client.dashboard.setupAlertMultiple', { count })
 })
 
-/** Invoices that are unpaid or overdue */
-const unpaidInvoices = computed(() =>
-  store.invoices.filter(i => i.status === 'Unpaid' || (i.status as string) === 'Overdue')
-)
+/**
+ * Invoices still awaiting payment.
+ *
+ * Shares {@link isInvoiceOutstanding} with the stat card above it, which is the whole point:
+ * the two used to define this separately and disagreed on the same screen.
+ */
+const unpaidInvoices = computed(() => store.invoices.filter(isInvoiceOutstanding))
 
 const unpaidAlertMessage = computed(() => {
   const count = unpaidInvoices.value.length

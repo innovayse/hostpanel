@@ -391,9 +391,48 @@ public sealed class DevDataSeeder(
                     var product = products[Rng.Next(products.Count)];
                     var cycle = billingCycles[Rng.Next(2)];
                     var svc = ClientService.Create(client.Id, product.Id, cycle);
+
+                    // ClientService.Create leaves both amounts at zero, and every renewal is
+                    // billed from RecurringAmount by ProcessRenewalsCronHandler. Without this
+                    // the seeded portal shows a wall of 0.00 invoices — the Pay screens have
+                    // nothing to charge and no dev sees what a real balance looks like. The two
+                    // production callers, OrderServiceHandler and MigrationPullWorker, both set
+                    // these the same way immediately after Create; this seeder was the only one
+                    // that did not.
+                    var cyclePrice = cycle == "annual" ? product.AnnualPrice : product.MonthlyPrice;
+
+                    svc.Update(
+                        domain: null, dedicatedIp: null, username: null,
+                        password: null, billingCycle: cycle,
+                        recurringAmount: cyclePrice, paymentMethod: null,
+                        nextRenewalAt: null, subscriptionId: null,
+                        overrideAutoSuspend: false, suspendUntil: null,
+                        autoTerminateEndOfCycle: false, autoTerminateReason: null,
+                        adminNotes: null, provisioningRef: null,
+                        firstPaymentAmount: cyclePrice,
+                        promotionCode: null, terminatedAt: null,
+                        serverId: null, quantity: 1, productId: null);
+
                     var monthsBack = Rng.Next(1, 12);
                     db.Entry(svc).Property(nameof(ClientService.CreatedAt)).CurrentValue = MonthsAgo(monthsBack);
-                    svc.Activate("prov_" + Rng.Next(10000, 99999));
+
+                    // Leave the first of a client's several services Pending, the rest Active. This
+                    // is what gives the portal a service to run the setup wizard against — without
+                    // it every seeded service is already provisioned and "Build My Server" has
+                    // nothing to act on. A client with only one service keeps it Active so no
+                    // account is left unusable; a Pending service is never activated and holds no
+                    // provisioning ref, exactly the state the wizard fills in.
+                    if (i == 0 && numServices > 1)
+                    {
+                        logger.LogInformation(
+                            "Left one service for client {ClientId} Pending to seed the setup flow",
+                            client.Id);
+                    }
+                    else
+                    {
+                        svc.Activate("prov_" + Rng.Next(10000, 99999));
+                    }
+
                     db.ClientServices.Add(svc);
                 }
             }
@@ -732,9 +771,20 @@ public sealed class DevDataSeeder(
                 true, 50, false, false, 800m, "US-West DC", null,
                 "ns1.hostpanel.com", "192.168.1.1", "ns2.hostpanel.com", "192.168.1.2",
                 null, null, null, null, null, null),
+
+            // The only CWP7 server, and the only one the setup flow can actually pick: every
+            // hosting product maps to the Cwp7 module (SetupServiceHandler.MapProductTypeToModule),
+            // so without a Cwp7 server the server selector returns nothing and "Build My Server"
+            // fails before it starts. The access hash is a dev placeholder — the real CWP7 call is
+            // short-circuited by the fake provider (Provisioning:UseFakeProvider), so it is never used.
+            new ServerDetails("CWP7 US-01", "cwp01.hostpanel.com", "203.0.113.20", null,
+                ServerModule.Cwp7, "root", "changeme", null, "dev-access-hash",
+                true, 200, true, false, 300m, "US-East DC", null,
+                "ns1.hostpanel.com", "192.168.1.1", "ns2.hostpanel.com", "192.168.1.2",
+                null, null, null, null, null, null),
         };
 
-        var groupIds = new[] { sharedGroup.Id, sharedGroup.Id, vpsGroup.Id, vpsGroup.Id };
+        var groupIds = new[] { sharedGroup.Id, sharedGroup.Id, vpsGroup.Id, vpsGroup.Id, sharedGroup.Id };
         for (var i = 0; i < serverDefs.Length; i++)
         {
             var server = Server.Create(serverDefs[i]);

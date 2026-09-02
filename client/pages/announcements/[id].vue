@@ -32,7 +32,7 @@
           <!-- Date -->
           <div class="flex items-center gap-2 text-xs text-gray-500 mb-4">
             <Calendar :size="13" :stroke-width="2" />
-            {{ $t('announcements.published') }}: {{ item.date }}
+            {{ $t('announcements.published') }}: {{ formatDate(item.date, locale) }}
           </div>
 
           <!-- Title -->
@@ -69,6 +69,9 @@
 import { ArrowLeft, Calendar, Megaphone } from 'lucide-vue-next'
 import { useContentApi } from '~/composables/apis/useContentApi'
 import type { Announcement } from '~/types/announcement'
+
+/** The reader's language, so the publication date is written the way they read dates. */
+const { locale } = useI18n()
 
 const route = useRoute()
 const localePath = useLocalePath()

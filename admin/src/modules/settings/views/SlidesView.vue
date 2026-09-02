@@ -10,6 +10,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import draggable from 'vuedraggable'
 import { useSlidesStore } from '../stores/slidesStore'
+import ConfirmModal from '@/components/ConfirmModal.vue'
 import type { Slide } from '@/types/models'
 
 const router = useRouter()
@@ -56,16 +57,47 @@ function navigateEdit(slide: Slide): void {
   router.push(`/settings/slides/${slide.id}/edit`)
 }
 
+/** The slide awaiting delete confirmation, null when nothing is staged. */
+const deleteTarget = ref<Slide | null>(null)
+
+/** True while the staged slide is being deleted. */
+const deleting = ref(false)
+
 /**
- * Confirms and deletes a slide.
+ * Resolves the title shown for a slide, falling back to its ID so a slide with no translation
+ * row still names something the operator can recognise in the prompt.
+ *
+ * @param slide - The slide to label.
+ * @returns The slide's first translated title, or a `Slide #id` placeholder.
+ */
+const slideTitle = (slide: Slide): string => slide.translations[0]?.title ?? `Slide #${slide.id}`
+
+/**
+ * Stages a slide for deletion. Only opens the prompt — {@link confirmDelete} does the work, so
+ * the question is asked by the app's own modal rather than the browser's blocking dialog.
  *
  * @param slide - The slide to delete.
  */
-async function handleDelete(slide: Slide): Promise<void> {
-  const title = slide.translations[0]?.title ?? `Slide #${slide.id}`
-  if (!confirm(`Delete "${title}"? This action cannot be undone.`)) return
-  await store.deleteSlide(slide.id)
-  syncLocal()
+const handleDelete = (slide: Slide): void => {
+  deleteTarget.value = slide
+}
+
+/**
+ * Deletes the staged slide, resyncs the draggable list, and clears the prompt.
+ *
+ * @returns Promise that resolves when the delete attempt has finished.
+ */
+const confirmDelete = async (): Promise<void> => {
+  const target = deleteTarget.value
+  if (!target) return
+  deleting.value = true
+  try {
+    await store.deleteSlide(target.id)
+    syncLocal()
+  } finally {
+    deleting.value = false
+    deleteTarget.value = null
+  }
 }
 
 /**
@@ -273,6 +305,19 @@ function formatDateRange(from: string | null, until: string | null): string {
         </tbody>
       </table>
     </div>
+
+    <!-- Delete Confirm Modal -->
+    <ConfirmModal
+      v-if="deleteTarget"
+      title="Delete Slide"
+      :message="`Delete &quot;${slideTitle(deleteTarget)}&quot;? This action cannot be undone.`"
+      confirm-label="Delete"
+      loading-label="Deleting..."
+      :loading="deleting"
+      variant="danger"
+      @confirm="confirmDelete"
+      @close="deleteTarget = null"
+    />
 
   </div>
 </template>

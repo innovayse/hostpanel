@@ -65,7 +65,7 @@ const statConfig = [
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 max-w-5xl w-full">
+  <div class="p-4 sm:p-6 lg:p-8 w-full">
 
     <!-- Page header -->
     <div class="flex items-start justify-between mb-8">

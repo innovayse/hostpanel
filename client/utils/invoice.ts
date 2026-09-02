@@ -47,6 +47,24 @@ export const balanceDue = (invoice: ClientInvoice | null | undefined): number =>
 }
 
 /**
+ * Whether an invoice still has money owing on it.
+ *
+ * `Unpaid` and `Overdue` both mean the customer owes this; `Overdue` is only what `Unpaid`
+ * becomes once `ProcessRenewalsCronHandler` has run over it. Reading one without the other
+ * under-counts, and it under-counts the more urgent half.
+ *
+ * This exists because the dashboard had two answers on one screen: its stat card counted
+ * `Unpaid` alone and its banner counted both, so the same account was shown "6 unpaid" beside
+ * "You have 12 unpaid invoices". The card was the wrong one — it is the element that says
+ * "Action required", and it was the element leaving out the overdue ones.
+ *
+ * @param invoice - The invoice to judge.
+ * @returns True when the invoice is awaiting payment.
+ */
+export const isInvoiceOutstanding = (invoice: Pick<ClientInvoice, 'status'>): boolean =>
+  invoice.status === 'Unpaid' || invoice.status === 'Overdue'
+
+/**
  * Whether an invoice should be shown to the customer as late.
  *
  * Two states count. The backend has its own `Overdue` status, but nothing flips an invoice into

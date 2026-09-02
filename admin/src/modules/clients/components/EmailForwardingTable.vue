@@ -5,6 +5,7 @@
  */
 import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
+import ConfirmModal from '../../../components/ConfirmModal.vue'
 import ToggleSwitch from '../../../components/ToggleSwitch.vue'
 import type { EmailForwardingRuleItem } from '../../../types/models'
 
@@ -158,15 +159,35 @@ async function toggleActive(rule: EmailForwardingRuleItem): Promise<void> {
   }
 }
 
+/** ID of the rule awaiting delete confirmation, null when nothing is staged. */
+const deleteTargetId = ref<number | null>(null)
+
+/** True while the staged rule is being deleted. */
+const deleting = ref(false)
+
 /**
- * Deletes an email forwarding rule after confirmation.
+ * Stages a forwarding rule for deletion. Only opens the prompt — {@link confirmDelete} does the
+ * work, so the question is asked by the app's own modal instead of the browser's blocking dialog.
  *
  * @param ruleId - The ID of the rule to delete.
+ */
+const handleDelete = (ruleId: number): void => {
+  deleteTargetId.value = ruleId
+}
+
+/**
+ * Deletes the staged forwarding rule and clears the prompt.
+ *
+ * The target is cleared in `finally` so a failed request still dismisses the modal, matching the
+ * pre-existing behaviour where a rejected call left the row in place with no message.
+ *
  * @returns Promise that resolves when the rule is deleted.
  */
-async function handleDelete(ruleId: number): Promise<void> {
-  if (!confirm('Delete this email forwarding rule?')) return
+const confirmDelete = async (): Promise<void> => {
+  const ruleId = deleteTargetId.value
+  if (ruleId === null) return
   saving.value = true
+  deleting.value = true
   try {
     await request(`/domains/${props.domainId}/email-forwarding/${ruleId}`, { method: 'DELETE' })
     emit('refresh')
@@ -174,6 +195,8 @@ async function handleDelete(ruleId: number): Promise<void> {
     // Error is handled silently; the user can retry
   } finally {
     saving.value = false
+    deleting.value = false
+    deleteTargetId.value = null
   }
 }
 </script>
@@ -336,5 +359,18 @@ async function handleDelete(ruleId: number): Promise<void> {
         <p class="text-[0.82rem] text-text-muted">No email forwarding rules found</p>
       </div>
     </div>
+
+    <!-- Delete Confirm Modal -->
+    <ConfirmModal
+      v-if="deleteTargetId !== null"
+      title="Delete Forwarding Rule"
+      message="Delete this email forwarding rule?"
+      confirm-label="Delete"
+      loading-label="Deleting..."
+      :loading="deleting"
+      variant="danger"
+      @confirm="confirmDelete"
+      @close="deleteTargetId = null"
+    />
   </div>
 </template>

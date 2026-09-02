@@ -6,6 +6,7 @@
 import { ref, onMounted } from 'vue'
 import AppCheckbox from '../../../components/AppCheckbox.vue'
 import AppSelect from '../../../components/AppSelect.vue'
+import ConfirmModal from '../../../components/ConfirmModal.vue'
 import type { UserDetail } from '../stores/usersStore'
 import { PERMISSION_LABELS, ClientPermission } from '../../../types/models'
 import { LANGUAGE_OPTIONS } from '../../../utils/constants'
@@ -101,13 +102,26 @@ function handleSave(): void {
   }
 }
 
+/** True while the delete confirmation prompt is showing; nothing is staged when false. */
+const showDeleteConfirm = ref(false)
+
 /**
- * Confirms and emits delete.
+ * Stages the delete confirmation. Only opens the prompt — {@link confirmDelete} does the work,
+ * so the question is asked by the app's own modal instead of the browser's blocking dialog.
  */
-function handleDelete(): void {
-  if (confirm(`Permanently delete user "${email.value}"? This cannot be undone.`)) {
-    emit('delete')
-  }
+const handleDelete = (): void => {
+  showDeleteConfirm.value = true
+}
+
+/**
+ * Emits the delete event and dismisses the prompt.
+ *
+ * There is no in-flight flag: the parent owns the request and unmounts this modal as soon as it
+ * accepts the event, so this component never observes the outcome.
+ */
+const confirmDelete = (): void => {
+  showDeleteConfirm.value = false
+  emit('delete')
 }
 </script>
 
@@ -255,5 +269,17 @@ function handleDelete(): void {
         </div>
       </div>
     </div>
+
+    <!-- Delete Confirm Modal -->
+    <ConfirmModal
+      v-if="showDeleteConfirm"
+      title="Delete User"
+      :message="`Permanently delete user &quot;${email}&quot;? This cannot be undone.`"
+      confirm-label="Delete"
+      loading-label="Deleting..."
+      variant="danger"
+      @confirm="confirmDelete"
+      @close="showDeleteConfirm = false"
+    />
   </div>
 </template>

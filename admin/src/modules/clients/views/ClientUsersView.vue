@@ -10,6 +10,7 @@ import { useUsersStore, type UserDetail } from '../stores/usersStore'
 import { PERMISSION_LABELS, ClientPermission, type ClientUserItem } from '../../../types/models'
 import { formatDate as sharedFormatDate } from '../../../utils/format'
 import AppCheckbox from '../../../components/AppCheckbox.vue'
+import ConfirmModal from '../../../components/ConfirmModal.vue'
 import UserFormModal from '../components/UserFormModal.vue'
 
 const route = useRoute()
@@ -334,14 +335,35 @@ async function handleUpdatePermissions(permissions: number): Promise<void> {
   }
 }
 
+/** The user awaiting ownership-transfer confirmation, null when nothing is staged. */
+const makeOwnerTarget = ref<UserDetail | null>(null)
+
+/** True while the staged ownership transfer is in flight. */
+const transferringOwnership = ref(false)
+
 /**
- * Transfers ownership to the editing user.
+ * Stages the ownership transfer to the editing user. Only opens the prompt —
+ * {@link confirmMakeOwner} does the work, so the question is asked by the app's own modal.
+ *
+ * The user is captured here rather than read again on confirm: the manage modal stays open
+ * behind the prompt and could be pointed at somebody else by the time it is answered.
  */
-async function handleMakeOwner(): Promise<void> {
+const handleMakeOwner = (): void => {
   if (!editingUser.value) return
-  if (!confirm(`Transfer ownership to "${editingUser.value.email}"? The current owner will become a regular user.`)) return
+  makeOwnerTarget.value = editingUser.value
+}
+
+/**
+ * Transfers ownership to the staged user and clears the prompt.
+ *
+ * @returns Promise that resolves when the transfer attempt has finished.
+ */
+const confirmMakeOwner = async (): Promise<void> => {
+  const target = makeOwnerTarget.value
+  if (!target) return
+  transferringOwnership.value = true
   try {
-    await request(`/clients/${clientId.value}/users/${editingUser.value.id}/make-owner`, {
+    await request(`/clients/${clientId.value}/users/${target.id}/make-owner`, {
       method: 'POST',
     })
     showManageModal.value = false
@@ -350,6 +372,9 @@ async function handleMakeOwner(): Promise<void> {
     setTimeout(() => { successMessage.value = null }, 3000)
   } catch {
     error.value = 'Failed to transfer ownership.'
+  } finally {
+    transferringOwnership.value = false
+    makeOwnerTarget.value = null
   }
 }
 
@@ -369,15 +394,33 @@ async function handleDeleteUser(): Promise<void> {
   }
 }
 
+/** The user awaiting removal confirmation, null when nothing is staged. */
+const removeUserTarget = ref<ClientUserItem | null>(null)
+
+/** True while the staged user is being removed. */
+const removingUser = ref(false)
+
 /**
- * Removes a non-owner user from this client.
+ * Stages a non-owner user for removal from this client. Only opens the prompt —
+ * {@link confirmRemoveUser} does the work, so the question is asked by the app's own modal.
  *
  * @param clientUser - The user to remove.
  */
-async function handleRemoveUser(clientUser: ClientUserItem): Promise<void> {
-  if (!confirm(`Remove "${clientUser.email}" from this client? They will lose access to this account.`)) return
+const handleRemoveUser = (clientUser: ClientUserItem): void => {
+  removeUserTarget.value = clientUser
+}
+
+/**
+ * Removes the staged user from this client and clears the prompt.
+ *
+ * @returns Promise that resolves when the removal attempt has finished.
+ */
+const confirmRemoveUser = async (): Promise<void> => {
+  const target = removeUserTarget.value
+  if (!target) return
+  removingUser.value = true
   try {
-    await request(`/clients/${clientId.value}/users/${clientUser.userId}`, {
+    await request(`/clients/${clientId.value}/users/${target.userId}`, {
       method: 'DELETE',
     })
     await fetchUsers()
@@ -385,6 +428,9 @@ async function handleRemoveUser(clientUser: ClientUserItem): Promise<void> {
     setTimeout(() => { successMessage.value = null }, 3000)
   } catch {
     error.value = 'Failed to remove user.'
+  } finally {
+    removingUser.value = false
+    removeUserTarget.value = null
   }
 }
 
@@ -682,5 +728,31 @@ onMounted(() => fetchUsers())
         @close="showManageModal = false"
       />
     </Teleport>
+
+    <!-- Transfer Ownership Confirm Modal -->
+    <ConfirmModal
+      v-if="makeOwnerTarget"
+      title="Transfer Ownership"
+      :message="`Transfer ownership to &quot;${makeOwnerTarget.email}&quot;? The current owner will become a regular user.`"
+      confirm-label="Transfer"
+      loading-label="Transferring..."
+      :loading="transferringOwnership"
+      variant="warning"
+      @confirm="confirmMakeOwner"
+      @close="makeOwnerTarget = null"
+    />
+
+    <!-- Remove User Confirm Modal -->
+    <ConfirmModal
+      v-if="removeUserTarget"
+      title="Remove User"
+      :message="`Remove &quot;${removeUserTarget.email}&quot; from this client? They will lose access to this account.`"
+      confirm-label="Remove"
+      loading-label="Removing..."
+      :loading="removingUser"
+      variant="danger"
+      @confirm="confirmRemoveUser"
+      @close="removeUserTarget = null"
+    />
   </div>
 </template>

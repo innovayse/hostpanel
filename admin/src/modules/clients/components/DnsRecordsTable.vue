@@ -8,6 +8,7 @@ import { useApi } from '../../../composables/useApi'
 import { DNS_RECORD_TYPE_OPTIONS } from '../../../utils/constants'
 import AppNumberInput from '../../../components/AppNumberInput.vue'
 import AppSelect from '../../../components/AppSelect.vue'
+import ConfirmModal from '../../../components/ConfirmModal.vue'
 import type { DnsRecordItem } from '../../../types/models'
 
 const props = defineProps<{
@@ -171,15 +172,35 @@ async function saveEdit(): Promise<void> {
   }
 }
 
+/** ID of the record awaiting delete confirmation, null when nothing is staged. */
+const deleteTargetId = ref<number | null>(null)
+
+/** True while the staged record is being deleted. */
+const deleting = ref(false)
+
 /**
- * Deletes a DNS record after confirmation.
+ * Stages a DNS record for deletion. Only opens the prompt — {@link confirmDelete} does the work,
+ * so the question is asked by the app's own modal instead of the browser's blocking dialog.
  *
  * @param recordId - The ID of the record to delete.
+ */
+const handleDelete = (recordId: number): void => {
+  deleteTargetId.value = recordId
+}
+
+/**
+ * Deletes the staged DNS record and clears the prompt.
+ *
+ * The target is cleared in `finally` so a failed request still dismisses the modal, matching the
+ * pre-existing behaviour where a rejected call left the row in place with no message.
+ *
  * @returns Promise that resolves when the record is deleted.
  */
-async function handleDelete(recordId: number): Promise<void> {
-  if (!confirm('Delete this DNS record?')) return
+const confirmDelete = async (): Promise<void> => {
+  const recordId = deleteTargetId.value
+  if (recordId === null) return
   saving.value = true
+  deleting.value = true
   try {
     await request(`/domains/${props.domainId}/dns/${recordId}`, { method: 'DELETE' })
     emit('refresh')
@@ -187,6 +208,8 @@ async function handleDelete(recordId: number): Promise<void> {
     // Error is handled silently; the user can retry
   } finally {
     saving.value = false
+    deleting.value = false
+    deleteTargetId.value = null
   }
 }
 </script>
@@ -381,5 +404,18 @@ async function handleDelete(recordId: number): Promise<void> {
         <p class="text-[0.82rem] text-text-muted">No DNS records found</p>
       </div>
     </div>
+
+    <!-- Delete Confirm Modal -->
+    <ConfirmModal
+      v-if="deleteTargetId !== null"
+      title="Delete DNS Record"
+      message="Delete this DNS record?"
+      confirm-label="Delete"
+      loading-label="Deleting..."
+      :loading="deleting"
+      variant="danger"
+      @confirm="confirmDelete"
+      @close="deleteTargetId = null"
+    />
   </div>
 </template>

@@ -167,6 +167,8 @@
                 {{ $t('client.services.linkWebmail') }}
               </a>
             </nav>
+            <!-- Automatic sign-in failed; the panel's own login form was opened instead -->
+            <p v-if="ssoError" class="px-3 pb-3 text-xs text-red-500 dark:text-red-400">{{ ssoError }}</p>
           </div>
         </div>
 
@@ -831,14 +833,22 @@ const loadInvoices = async (): Promise<void> => {
 // ── cPanel SSO ────────────────────────────────────────────────────────────────
 const ssoLoading = ref(false)
 
+/** Why the last automatic control-panel sign-in failed. Empty means there is nothing to report. */
+const ssoError = ref('')
+
 async function loginToCpanel() {
   if (ssoLoading.value) return
   ssoLoading.value = true
+  ssoError.value = ''
   try {
     const { url } = await clientApi.fetchCpanelSsoUrl(serviceId)
     window.open(url, '_blank', 'noopener')
-  } catch {
-    // Fallback: open plain cPanel login page if SSO fails
+  } catch (err: unknown) {
+    // Say that the automatic sign-in failed, then still open the panel's own login form so the
+    // reader is not stranded. Falling back silently is how a server missing its API key looked
+    // exactly like a working button that happens to ask for a password: nobody could tell the
+    // difference, so nobody reported it. The API's own wording, through the shared reader.
+    ssoError.value = apiErrorMessage(err)
     const hostname = service.value?.serverhostname
     if (hostname) window.open(`https://${hostname}:2083`, '_blank', 'noopener')
   } finally {

@@ -286,14 +286,24 @@ internal sealed class Cwp7ApiClient : ICwp7ApiClient
     /// <param name="apiKey">CWP7 API key for authentication.</param>
     /// <param name="username">Username to generate SSO link for.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The CWP7 API response containing the login URL.</returns>
+    /// <returns>
+    /// A response whose message is the control-panel URL on success, or CWP7's own refusal on
+    /// failure.
+    /// </returns>
+    /// <remarks>
+    /// <c>/v1/user_session</c>, not <c>/v1/autologin</c> — the latter is not a route CWP7 serves
+    /// and answered 404 for every client who ever pressed the button, which the page then showed
+    /// as the plain login form. This endpoint also breaks the shape every other call returns: its
+    /// <c>msj</c> is an object carrying one entry per matched account, so it is parsed with its
+    /// own model and flattened back into the shared response here.
+    /// </remarks>
     public async Task<Cwp7ApiResponse> GetAutoLoginUrlAsync(
         string host,
         string apiKey,
         string username,
         CancellationToken ct)
     {
-        var url = $"{host}/v1/autologin";
+        var url = $"{host}/v1/user_session";
         _logger.LogDebug("CWP7 API request: AutoLogin url={Url} user={User}", url, username);
 
         using var content = new FormUrlEncodedContent(
@@ -306,10 +316,52 @@ internal sealed class Cwp7ApiClient : ICwp7ApiClient
         using var response = await _http.PostAsync(url, content, ct);
         response.EnsureSuccessStatusCode();
 
-        var result = await ParseResponseAsync(response, ct);
+        var raw = await response.Content.ReadAsStringAsync(ct);
+        var session = TryParseUserSession(raw);
 
-        _logger.LogDebug("CWP7 AutoLogin response: status={Status}", result.Status);
-        return result;
+        // The account CWP7 was asked about, not merely the first it returned: a server that
+        // answered about somebody else must not hand this caller a session on their panel.
+        var detail = session?.Payload?.Details?
+            .Find(d => string.Equals(d.User, username, StringComparison.OrdinalIgnoreCase));
+
+        if (session is null
+            || !string.Equals(session.Status, "OK", StringComparison.OrdinalIgnoreCase)
+            || string.IsNullOrWhiteSpace(detail?.Url))
+        {
+            var excerpt = raw.Length > MaxErrorBodyLength ? raw[..MaxErrorBodyLength] : raw;
+            _logger.LogWarning(
+                "CWP7 AutoLogin did not yield a session URL for {User}. Body starts: {Body}",
+                username,
+                excerpt);
+
+            return new Cwp7ApiResponse { Status = "Error", Msj = excerpt };
+        }
+
+        _logger.LogDebug("CWP7 AutoLogin response: session URL issued for {User}", username);
+        return new Cwp7ApiResponse { Status = "OK", Msj = detail.Url };
+    }
+
+    /// <summary>Deserializes a user-session body, returning null when it is not that shape.</summary>
+    /// <param name="raw">The raw response body.</param>
+    /// <returns>The parsed response, or <see langword="null"/> when it could not be read.</returns>
+    private Cwp7UserSessionResponse? TryParseUserSession(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return null;
+        }
+
+        try
+        {
+            return System.Text.Json.JsonSerializer.Deserialize<Cwp7UserSessionResponse>(raw);
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            // An error from this endpoint arrives as `msj: "<sentence>"`, which is this model's
+            // object field holding a string. That is a refusal to report, not a fault to raise.
+            _logger.LogDebug(ex, "CWP7 user_session body was not a session payload.");
+            return null;
+        }
     }
 
     /// <summary>

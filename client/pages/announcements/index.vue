@@ -61,7 +61,7 @@
           >
             <div class="flex items-center gap-2 text-xs text-gray-500 mb-3">
               <Calendar :size="13" :stroke-width="2" />
-              {{ item.date }}
+              {{ formatDate(item.date, locale) }}
             </div>
             <h2 class="text-lg font-semibold text-white group-hover:text-primary-400 transition-colors mb-2">
               {{ item.title }}
@@ -92,7 +92,7 @@ import { useContentApi } from '~/composables/apis/useContentApi'
 import type { Announcement } from '~/types/announcement'
 
 const localePath = useLocalePath()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 useSeoMeta({
   title: t('announcements.title'),
@@ -109,26 +109,44 @@ const { data, pending, error } = useContentApi().loadAnnouncements()
 const items = computed<Announcement[]>(() => data.value?.items ?? [])
 
 /**
- * Unique month labels extracted from announcement dates.
- * Prepends "all" when there is more than one distinct month.
+ * The month each announcement belongs to, as a label a person reads.
+ *
+ * Derived from the timestamp rather than by pattern-matching a formatted string. The previous
+ * version ran `/(\w+ \d{4})$/` over `item.date` and depended on the backend happening to send
+ * "August 2026" — it sends an ISO timestamp, so the match silently found nothing and the month
+ * tabs never appeared. Parsing the date instead also makes the labels follow the chosen
+ * language, which a regex over English month names could not do.
+ *
+ * @param value - The announcement's ISO publication timestamp.
+ * @returns The month and year in the active locale, or an empty string when unparseable.
+ */
+const monthLabel = (value: string | undefined): string => {
+  if (!value) return ''
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return ''
+  return new Intl.DateTimeFormat(locale.value, { month: 'long', year: 'numeric' }).format(parsed)
+}
+
+/**
+ * The distinct months present, newest first, with "all" in front.
+ *
+ * Only offered when there is more than one: a single tab beside "all" is a control that cannot
+ * change anything.
  */
 const months = computed(() => {
-  const seen = new Set<string>()
+  const seen: string[] = []
   for (const item of items.value) {
-    const match = item.date.match(/(\w+ \d{4})$/)
-    // The group is only present when the whole pattern matched, but the compiler cannot know
-    // that from `match` alone — and reading it unchecked would have added `undefined` to a
-    // `Set<string>` and rendered an empty month tab.
-    if (match?.[1]) seen.add(match[1])
+    const label = monthLabel(item.date)
+    if (label && !seen.includes(label)) seen.push(label)
   }
-  return seen.size > 1 ? ['all', ...Array.from(seen)] : []
+  return seen.length > 1 ? ['all', ...seen] : []
 })
 
 const activeMonth = ref('all')
 
-/** Announcements filtered by the active month selection */
+/** Announcements filtered by the active month selection. */
 const filtered = computed(() => {
   if (activeMonth.value === 'all') return items.value
-  return items.value.filter(item => item.date?.includes(activeMonth.value))
+  return items.value.filter(item => monthLabel(item.date) === activeMonth.value)
 })
 </script>

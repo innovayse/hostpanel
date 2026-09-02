@@ -2,8 +2,10 @@ namespace Innovayse.Infrastructure.Provisioning;
 
 using Innovayse.Domain.Provisioning.Interfaces;
 using Innovayse.Domain.Servers;
+using Innovayse.Infrastructure.Provisioning.Options;
 using Innovayse.Providers.CWP7;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 /// <summary>
 /// Creates <see cref="IProvisioningProvider"/> instances configured for a specific server.
@@ -11,9 +13,11 @@ using Microsoft.Extensions.Logging;
 /// </summary>
 /// <param name="httpClientFactory">Factory for creating HTTP clients for provider API calls.</param>
 /// <param name="loggerFactory">Factory for creating typed loggers for each provider.</param>
+/// <param name="options">Provisioning behaviour switches, notably the development fake-provider flag.</param>
 public sealed class ProvisioningProviderFactory(
     IHttpClientFactory httpClientFactory,
-    ILoggerFactory loggerFactory) : IProvisioningProviderFactory
+    ILoggerFactory loggerFactory,
+    IOptions<ProvisioningOptions> options) : IProvisioningProviderFactory
 {
     /// <summary>Default CWP7 API port.</summary>
     private const int DefaultCwp7Port = 2304;
@@ -27,6 +31,17 @@ public sealed class ProvisioningProviderFactory(
     /// <exception cref="InvalidOperationException">Thrown when required credentials are missing.</exception>
     public IProvisioningProvider CreateFor(Server server)
     {
+        // Development short-circuit: with no live control panel to call, return the in-process
+        // no-op provider so the setup flow completes. Guarded by config that defaults off, so a
+        // real environment never reaches this and always builds a provider that provisions for
+        // real. Server selection still ran before this, so the flow is exercised end to end bar
+        // the outbound HTTP call itself.
+        if (options.Value.UseFakeProvider)
+        {
+            return new NullCPanelProvisioningProvider(
+                loggerFactory.CreateLogger<NullCPanelProvisioningProvider>());
+        }
+
         return server.Module switch
         {
             ServerModule.Cwp7 => CreateCwp7Provider(server),

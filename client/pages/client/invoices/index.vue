@@ -71,7 +71,7 @@ import { FileText } from 'lucide-vue-next'
 import { useClientStore } from '~/stores/client'
 import { formatCurrency } from '~/utils/formatCurrency'
 import { formatDate } from '~/utils/formatDate'
-import { isInvoiceOverdue as isOverdue } from '~/utils/invoice'
+import { isInvoiceOutstanding, isInvoiceOverdue as isOverdue } from '~/utils/invoice'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
@@ -82,14 +82,25 @@ await useAsyncData('client-invoices', () => store.fetchInvoices(true))
 
 const activeTab = ref('all')
 
+/**
+ * The filter tabs.
+ *
+ * The unpaid tab means "still owed", not "status is literally Unpaid". There is no Overdue
+ * tab, so counting the status alone left overdue invoices reachable only from All — hiding
+ * them from the customer who came here to see what they owe, and from the dashboard card
+ * that links straight to this tab.
+ */
 const tabs = computed(() => [
   { key: 'all',    label: t('client.invoices.tabAll'),    count: store.invoices.length },
-  { key: 'Unpaid', label: t('client.invoices.tabUnpaid'), count: store.invoices.filter(i => i.status === 'Unpaid').length },
+  { key: 'Unpaid', label: t('client.invoices.tabUnpaid'), count: store.invoices.filter(isInvoiceOutstanding).length },
   { key: 'Paid',   label: t('client.invoices.tabPaid'),   count: null }
 ])
 
+/** The rows the active tab shows. The unpaid tab spans both owing statuses; see {@link tabs}. */
 const filteredInvoices = computed(() => {
   if (activeTab.value === 'all') return store.invoices
+  if (activeTab.value === 'Unpaid') return store.invoices.filter(isInvoiceOutstanding)
+
   return store.invoices.filter(i => i.status === activeTab.value)
 })
 

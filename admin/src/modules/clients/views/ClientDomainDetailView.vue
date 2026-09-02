@@ -11,6 +11,7 @@ import { formatDate, toDateInputValue } from '../../../utils/format'
 import AppDatePicker from '../../../components/AppDatePicker.vue'
 import AppNumberInput from '../../../components/AppNumberInput.vue'
 import AppSelect from '../../../components/AppSelect.vue'
+import ConfirmModal from '../../../components/ConfirmModal.vue'
 import ToggleSwitch from '../../../components/ToggleSwitch.vue'
 import DnsRecordsTable from '../components/DnsRecordsTable.vue'
 import EmailForwardingTable from '../components/EmailForwardingTable.vue'
@@ -57,6 +58,9 @@ const showEppModal = ref(false)
 
 /** Whether the renew modal is visible. */
 const showRenewModal = ref(false)
+
+/** Whether the register confirmation modal is visible. */
+const showRegisterModal = ref(false)
 
 /** Number of years to renew, bound to the renew modal input. */
 const renewYears = ref(1)
@@ -212,12 +216,23 @@ async function handleSave(): Promise<void> {
 }
 
 /**
- * Sends a register command to the registrar API.
+ * Opens the register confirmation modal. Only stages the intent — {@link confirmRegister} sends
+ * the command, so the question is asked by the app's own modal rather than the browser's dialog.
+ */
+const handleRegister = (): void => {
+  showRegisterModal.value = true
+}
+
+/**
+ * Sends a register command to the registrar API and closes the confirmation modal.
+ *
+ * The modal is dismissed before the request so the page's own `commandLoading` state drives the
+ * button row, exactly as the renew command beside it does.
  *
  * @returns Promise that resolves when the action completes.
  */
-async function handleRegister(): Promise<void> {
-  if (!confirm('Register this domain with the registrar?')) return
+const confirmRegister = async (): Promise<void> => {
+  showRegisterModal.value = false
   commandLoading.value = true
   try {
     await request(`/domains/${domainId.value}/register`, { method: 'POST' })
@@ -758,6 +773,19 @@ onMounted(() => fetchDomain())
           </div>
         </div>
       </Teleport>
+
+      <!-- Register Confirmation Modal -->
+      <ConfirmModal
+        v-if="showRegisterModal"
+        title="Register Domain"
+        message="Register this domain with the registrar?"
+        confirm-label="Register"
+        loading-label="Processing..."
+        :loading="commandLoading"
+        variant="primary"
+        @confirm="confirmRegister"
+        @close="showRegisterModal = false"
+      />
 
       <!-- EPP Code Modal -->
       <Teleport to="body">

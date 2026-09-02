@@ -8,7 +8,9 @@
  * reusable components instead of raw HTML inputs.
  */
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
+import ConfirmModal from '@/components/ConfirmModal.vue'
 import { useTldConfigsStore } from '../stores/tldConfigsStore'
 import AppSelect from '@/components/AppSelect.vue'
 import AppSpinner from '@/components/AppSpinner.vue'
@@ -184,14 +186,8 @@ watch(
 
 // -- Unsaved changes guard --
 
-onBeforeRouteLeave((_to, _from, next) => {
-  if (isDirty.value && !saving.value) {
-    const leave = confirm('You have unsaved changes. Are you sure you want to leave?')
-    next(leave)
-  } else {
-    next()
-  }
-})
+/** Parks a route change while the reader is asked about unsaved edits. */
+const leaveGuard = useUnsavedChangesGuard(() => isDirty.value && !saving.value)
 
 // -- Load data on mount --
 
@@ -591,4 +587,15 @@ const sellSymbol = computed(() => {
     </template>
 
   </div>
+
+    <!-- Unsaved-changes question, asked while the route change waits -->
+    <ConfirmModal
+      v-if="leaveGuard.pending.value"
+      title="Unsaved changes"
+      message="You have unsaved changes. Are you sure you want to leave?"
+      confirm-label="Leave"
+      variant="warning"
+      @confirm="leaveGuard.confirmLeave"
+      @close="leaveGuard.cancelLeave"
+    />
 </template>

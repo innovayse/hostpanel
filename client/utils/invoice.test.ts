@@ -15,7 +15,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { balanceDue, isInvoiceOverdue, paymentsToDate } from './invoice'
+import { balanceDue, isInvoiceOutstanding, isInvoiceOverdue, paymentsToDate } from './invoice'
 import type { ClientInvoice, ClientInvoiceTransaction } from '~/types/clientinvoice'
 
 /** A transaction carrying only the fields these functions read. */
@@ -95,6 +95,37 @@ describe('balanceDue', () => {
   it('reports zero rather than NaN while the invoice is still loading', () => {
     expect(balanceDue(null)).toBe(0)
     expect(balanceDue(undefined)).toBe(0)
+  })
+})
+
+describe('isInvoiceOutstanding', () => {
+  it('counts an invoice the cron has already marked Overdue', () => {
+    // The case the dashboard was dropping. Overdue is what Unpaid becomes, not a separate
+    // kind of debt, and it is the more urgent half of what the customer owes.
+    expect(isInvoiceOutstanding(invoice({ status: 'Overdue' }))).toBe(true)
+  })
+
+  it('counts an invoice that is still Unpaid', () => {
+    expect(isInvoiceOutstanding(invoice({ status: 'Unpaid' }))).toBe(true)
+  })
+
+  it('agrees with the banner and the stat card, which is the bug it exists for', () => {
+    // Six Unpaid and six Overdue on one account rendered as "6" on the card and "12" in the
+    // banner beside it. One predicate over the same list is now the only answer available.
+    const invoices = [
+      ...Array.from({ length: 6 }, () => invoice({ status: 'Unpaid' })),
+      ...Array.from({ length: 6 }, () => invoice({ status: 'Overdue' })),
+      ...Array.from({ length: 3 }, () => invoice({ status: 'Paid' })),
+    ]
+
+    expect(invoices.filter(isInvoiceOutstanding)).toHaveLength(12)
+  })
+
+  it('does not count a status with nothing owing on it', () => {
+    // Draft was never issued, Cancelled was voided, Refunded was returned, Paid is settled.
+    for (const status of ['Paid', 'Draft', 'Cancelled', 'Refunded'] as const) {
+      expect(isInvoiceOutstanding(invoice({ status }))).toBe(false)
+    }
   })
 })
 

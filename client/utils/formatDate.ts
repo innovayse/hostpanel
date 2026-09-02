@@ -45,7 +45,14 @@
  */
 
 import { format, isValid, parseISO } from 'date-fns'
-import { enUS, hy, ru } from 'date-fns/locale'
+// Imported from their own paths rather than the `date-fns/locale` barrel. The barrel
+// re-exports 98 locales, and Vite pre-bundles the whole of it in development — three
+// named imports still cost all 98 modules there, which is enough to stall the first
+// page load on a slow machine. Production tree-shakes either way; this makes the two
+// agree, and states outright which three the portal actually ships.
+import { enUS } from 'date-fns/locale/en-US'
+import { hy } from 'date-fns/locale/hy'
+import { ru } from 'date-fns/locale/ru'
 import type { Locale } from 'date-fns'
 
 /**

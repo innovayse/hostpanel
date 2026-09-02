@@ -36,7 +36,7 @@ async function handleUpload(file: File): Promise<void> {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full max-w-3xl">
+  <div class="p-4 sm:p-6 lg:p-8 w-full">
 
     <!-- Header -->
     <div class="mb-6">

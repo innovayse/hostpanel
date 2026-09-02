@@ -63,14 +63,17 @@
           </div>
 
           <div class="space-y-6">
-            <UiInput v-model="setupData.domain" label="Domain Name" placeholder="example.com" required :disabled="hasPurchasedDomain" />
+            <div>
+              <UiInput v-model="setupData.domain" label="Domain Name" placeholder="example.com" required :disabled="hasPurchasedDomain" />
+              <p v-if="domainError && !hasPurchasedDomain" class="text-xs text-red-400 mt-1">{{ domainError }}</p>
+            </div>
             <p v-if="!hasPurchasedDomain" class="text-xs text-gray-500">
               If you haven't bought a domain yet, enter the domain you plan to use. You'll need to point its nameservers to us later.
             </p>
             <p v-else class="text-xs text-cyan-400/70">
               This domain was purchased with your hosting plan.
             </p>
-            <UiButton full-width size="lg" :disabled="!setupData.domain" @click="nextStep">
+            <UiButton full-width size="lg" :disabled="!setupData.domain || !!domainError" @click="nextStep">
               Continue
               <ArrowRight :size="18" class="ml-2" />
             </UiButton>
@@ -105,11 +108,15 @@
               <p class="text-xs text-gray-500 mt-1.5">Lowercase letters and numbers only, no spaces or special characters.</p>
               <p v-if="usernameError" class="text-xs text-red-400 mt-1">{{ usernameError }}</p>
             </div>
-            <UiInput v-model="setupData.password" type="password" label="Control Panel Password" placeholder="••••••••" required />
+            <div>
+              <UiInput v-model="setupData.password" type="password" label="Control Panel Password" placeholder="••••••••" required />
+              <p class="text-xs text-gray-500 mt-1.5">At least 8 characters.</p>
+              <p v-if="passwordError" class="text-xs text-red-400 mt-1">{{ passwordError }}</p>
+            </div>
 
             <div class="flex gap-4 pt-2">
               <UiButton variant="subtle" full-width @click="prevStep">Back</UiButton>
-              <UiButton variant="primary" full-width :disabled="!setupData.username || !setupData.password || !!usernameError" @click="nextStep">
+              <UiButton variant="primary" full-width :disabled="!setupData.username || !setupData.password || !!usernameError || !!passwordError" @click="nextStep">
                 Confirm Details
               </UiButton>
             </div>
@@ -220,6 +227,34 @@ const usernameError = computed(() => {
   if (!/^[a-z][a-z0-9]*$/.test(u)) return 'Must start with a letter and contain only lowercase letters and numbers.'
   if (u.length < 3) return 'Must be at least 3 characters.'
   if (u.length > 8) return 'Must be 8 characters or less (server requirement).'
+  return ''
+})
+
+/**
+ * A domain the client typed but that is not a valid hostname, e.g. `notadomain` with no dot.
+ * Empty while the field is blank so the placeholder — not an error — greets an untouched form;
+ * the Continue button stays disabled on emptiness separately. Mirrors the server's
+ * `SetupServiceValidator` so provisioning is never reached with a malformed domain.
+ */
+const domainError = computed(() => {
+  const d = setupData.domain.trim()
+  if (!d) return ''
+  // Labels of a–z/0–9/hyphen (no leading/trailing hyphen), at least two of them, TLD ≥ 2 letters.
+  if (!/^(?=.{1,253}$)([a-z0-9](-*[a-z0-9])*\.)+[a-z]{2,}$/i.test(d)) {
+    return 'Enter a valid domain, e.g. example.com.'
+  }
+  return ''
+})
+
+/**
+ * A password the client typed that is too short for the hosting control panel. Empty while the
+ * field is blank. Eight characters is the same floor the server enforces, so a value that clears
+ * this check clears the backend one too.
+ */
+const passwordError = computed(() => {
+  const p = setupData.password
+  if (!p) return ''
+  if (p.length < 8) return 'Must be at least 8 characters.'
   return ''
 })
 

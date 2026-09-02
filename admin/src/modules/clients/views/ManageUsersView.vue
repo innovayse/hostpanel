@@ -33,6 +33,44 @@ const openDropdownId = ref<string | null>(null)
 const dropdownRefs = ref<Map<string, HTMLElement>>(new Map())
 
 /**
+ * Message reporting a failed action, null when there is nothing to report.
+ *
+ * Kept separate from `store.error`, which reports a failed *list load* and is rendered in place
+ * of the table; an action failure must not hide the table the user is still working in.
+ */
+const actionError = ref<string | null>(null)
+
+/** Message reporting a completed action, null when there is nothing to report. */
+const actionSuccess = ref<string | null>(null)
+
+/**
+ * Shows a success message and clears it after a few seconds.
+ *
+ * Auto-clearing matches the sibling client screens (ClientUsersView, ClientContactsView) — a
+ * success needs acknowledging, not dismissing, which is why only this half expires.
+ *
+ * @param message - The message to display.
+ */
+const showSuccess = (message: string): void => {
+  actionError.value = null
+  actionSuccess.value = message
+  setTimeout(() => { actionSuccess.value = null }, 3000)
+}
+
+/**
+ * Shows a failure message, replacing any earlier one.
+ *
+ * This does not auto-clear: a failure stays until the next action either succeeds or fails, so a
+ * user who looked away still finds out the request did not go through.
+ *
+ * @param message - The message to display.
+ */
+const showError = (message: string): void => {
+  actionSuccess.value = null
+  actionError.value = message
+}
+
+/**
  * Applies the search filter.
  */
 function applySearch(): void {
@@ -76,7 +114,7 @@ async function handleSaveUser(data: { firstName: string; lastName: string; email
     editingUser.value = null
     await store.fetchAll(search.value || undefined)
   } catch {
-    alert('Failed to save user.')
+    showError('Failed to save user.')
   } finally {
     savingUser.value = false
   }
@@ -92,7 +130,7 @@ async function handleDeleteUser(): Promise<void> {
     editingUser.value = null
     await store.fetchAll(search.value || undefined)
   } catch {
-    alert('Failed to delete user.')
+    showError('Failed to delete user.')
   }
 }
 
@@ -105,9 +143,9 @@ async function handleSendPasswordReset(userId: string): Promise<void> {
   openDropdownId.value = null
   try {
     await store.sendPasswordReset(userId)
-    alert('Password reset email sent.')
+    showSuccess('Password reset email sent.')
   } catch {
-    alert('Failed to send password reset email.')
+    showError('Failed to send password reset email.')
   }
 }
 
@@ -133,7 +171,7 @@ async function handleChangePassword(password: string): Promise<void> {
     await store.changePassword(changingPasswordFor.value, password)
     changingPasswordFor.value = null
   } catch {
-    alert('Failed to change password.')
+    showError('Failed to change password.')
   } finally {
     savingPassword.value = false
   }
@@ -187,6 +225,14 @@ onUnmounted(() => {
 
 <template>
   <div class="p-4 sm:p-6 lg:p-8 w-full">
+
+    <!-- Action feedback — sits above the table so a failed action never replaces it -->
+    <div v-if="actionSuccess" class="mb-4 px-4 py-2.5 text-[0.82rem] text-status-green bg-status-green/10 border border-status-green/20 rounded-xl">
+      {{ actionSuccess }}
+    </div>
+    <div v-if="actionError" class="mb-4 px-4 py-2.5 text-[0.82rem] text-status-red bg-status-red/10 border border-status-red/20 rounded-xl">
+      {{ actionError }}
+    </div>
 
     <!-- Header -->
     <div class="flex items-start justify-between mb-5">

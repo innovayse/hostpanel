@@ -3,10 +3,17 @@
  * Cancellation Requests — paginated table of all service cancellation requests.
  * Shows Date, Product/Service, Client, Reason, Type, Status, and Actions (delete).
  */
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useCancellationRequestsStore } from '../stores/cancellationRequestsStore'
+import ConfirmModal from '../../../components/ConfirmModal.vue'
 
 const store = useCancellationRequestsStore()
+
+/** ID of the request awaiting delete confirmation, null when nothing is staged. */
+const deleteTarget = ref<number | null>(null)
+
+/** True while the staged request is being deleted. */
+const deleting = ref(false)
 
 /**
  * Type badge style map, keyed by the backend `CancellationType` member name. The API sends the
@@ -81,13 +88,32 @@ function goToPage(p: number): void {
 }
 
 /**
- * Prompts for confirmation, then deletes a cancellation request.
+ * Stages a cancellation request for deletion. Only opens the prompt — {@link handleDelete} does
+ * the work, so the question is asked by the app's own modal rather than the browser's dialog.
  *
  * @param id - The cancellation request ID to delete.
  */
-function confirmDelete(id: number): void {
-  if (confirm('Are you sure you want to delete this cancellation request?')) {
-    store.deleteRequest(id)
+const confirmDelete = (id: number): void => {
+  deleteTarget.value = id
+}
+
+/**
+ * Deletes the staged cancellation request and clears the prompt.
+ *
+ * The store swallows the failure into its own `error` ref, which the page already renders, so
+ * there is nothing to catch here — the target is cleared either way, as the native prompt did.
+ *
+ * @returns Promise that resolves when the delete attempt has finished.
+ */
+const handleDelete = async (): Promise<void> => {
+  const id = deleteTarget.value
+  if (id === null) return
+  deleting.value = true
+  try {
+    await store.deleteRequest(id)
+  } finally {
+    deleting.value = false
+    deleteTarget.value = null
   }
 }
 
@@ -223,5 +249,18 @@ onMounted(() => store.fetchAll())
       </div>
       <p class="text-[0.875rem] font-medium text-text-secondary">No cancellation requests found</p>
     </div>
+
+    <!-- Delete Confirm Modal -->
+    <ConfirmModal
+      v-if="deleteTarget !== null"
+      title="Delete Cancellation Request"
+      message="Are you sure you want to delete this cancellation request?"
+      confirm-label="Delete"
+      loading-label="Deleting..."
+      :loading="deleting"
+      variant="danger"
+      @confirm="handleDelete"
+      @close="deleteTarget = null"
+    />
   </div>
 </template>

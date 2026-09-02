@@ -29,7 +29,7 @@
             <ClientStatusBadge :status="invoice.status" />
             <!-- Pay Now button for unpaid invoices -->
             <NuxtLink
-              v-if="invoice.status === 'Unpaid' || invoice.status === 'Overdue'"
+              v-if="isOutstanding"
               :to="localePath(`/client/invoices/${invoice.id}/pay`)"
               class="px-5 py-2 rounded-xl bg-green-500 text-white font-semibold text-sm hover:bg-green-400 transition-colors flex items-center gap-2"
             >
@@ -94,7 +94,7 @@
 
       <!-- Pay Now banner for unpaid -->
       <UiAlert
-        v-if="invoice.status === 'Unpaid' || invoice.status === 'Overdue'"
+        v-if="isOutstanding"
         class="mb-6"
       >
         {{ $t('client.invoices.unpaidBanner') }}
@@ -118,7 +118,7 @@ import { useBillingApi } from '~/composables/apis/useBillingApi'
 import { useClientStore } from '~/stores/client'
 import { formatCurrency } from '~/utils/formatCurrency'
 import { EMPTY_DATE, formatDate, formatDateTime } from '~/utils/formatDate'
-import { isInvoiceOverdue } from '~/utils/invoice'
+import { isInvoiceOutstanding, isInvoiceOverdue } from '~/utils/invoice'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
@@ -149,6 +149,9 @@ const { data: invoice, pending, error } = await useBillingApi().loadInvoice(
  */
 const money = (amount: string | number | null | undefined): string =>
   formatCurrency(amount, { code: store.user?.currency })
+
+/** Whether this invoice still has money owing — one definition, in `utils/invoice.ts`. */
+const isOutstanding = computed(() => Boolean(invoice.value) && isInvoiceOutstanding(invoice.value!))
 
 /** Whether the due date should be shown in red — one definition, in `utils/invoice.ts`. */
 const isOverdue = computed(() => isInvoiceOverdue(invoice.value))

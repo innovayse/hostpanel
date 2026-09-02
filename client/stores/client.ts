@@ -19,6 +19,7 @@
 import { defineStore } from 'pinia'
 import { useClientApi } from '~/composables/apis/useClientApi'
 import { PortalErrorCode, apiErrorCode, apiErrorMessage } from '~/utils/apiError'
+import { isInvoiceOutstanding } from '~/utils/invoice'
 import type { ClientUser } from '~/types/clientuser'
 import type { ClientService } from '~/types/clientservice'
 import type { ClientInvoice } from '~/types/clientinvoice'
@@ -37,6 +38,23 @@ import type { ClientTicket } from '~/types/clientticket'
  */
 function isClientProfileMissing(err: unknown): boolean {
   return apiErrorCode(err) === PortalErrorCode.ClientProfileNotFound
+}
+
+/**
+ * Whether the call failed because the session is over.
+ *
+ * A 401 does not reach here until the BFF has already tried to refresh the token and failed,
+ * so it means the session is genuinely gone. `apiFetch` has by then called the auth guard,
+ * which clears state and starts the trip to the login page — and the reader is on their way
+ * out, so a red "this section failed" beside it describes nothing they can act on. The status
+ * is read rather than a code because a bare 401 carries no body to put one in.
+ *
+ * @param err - Whatever the API composable threw.
+ * @returns True when the session expired rather than the request failing.
+ */
+function isSessionExpired(err: unknown): boolean {
+  const e = err as { statusCode?: number, status?: number, response?: { status?: number } }
+  return (e?.statusCode ?? e?.status ?? e?.response?.status) === 401
 }
 
 // ---------------------------------------------------------------------------
@@ -129,9 +147,14 @@ export const useClientStore = defineStore('client', {
       return (name || state.user.email || '?').charAt(0).toUpperCase()
     },
 
-    /** Count of unpaid invoices */
+    /**
+     * Count of invoices still awaiting payment.
+     *
+     * Overdue counts too — see {@link isInvoiceOutstanding} for why reading `Unpaid` alone
+     * put two different numbers for this on one screen.
+     */
     unpaidCount: (state): number =>
-      state.invoices.filter(i => i.status === 'Unpaid').length,
+      state.invoices.filter(isInvoiceOutstanding).length,
 
     /** Count of active services */
     activeServiceCount: (state): number =>
@@ -187,7 +210,7 @@ export const useClientStore = defineStore('client', {
           if (isClientProfileMissing(err)) {
             this.clientProfileMissing = true
             this.clientProfileMessage = apiErrorMessage(err)
-          } else {
+          } else if (!isSessionExpired(err)) {
             this.userError = apiErrorMessage(err)
           }
         } finally {
@@ -227,7 +250,7 @@ export const useClientStore = defineStore('client', {
         if (isClientProfileMissing(err)) {
           this.clientProfileMissing = true
           this.clientProfileMessage = apiErrorMessage(err)
-        } else {
+        } else if (!isSessionExpired(err)) {
           this.servicesError = apiErrorMessage(err)
         }
       } finally {
@@ -257,7 +280,7 @@ export const useClientStore = defineStore('client', {
         if (isClientProfileMissing(err)) {
           this.clientProfileMissing = true
           this.clientProfileMessage = apiErrorMessage(err)
-        } else {
+        } else if (!isSessionExpired(err)) {
           this.invoicesError = apiErrorMessage(err)
         }
       } finally {
@@ -287,7 +310,7 @@ export const useClientStore = defineStore('client', {
         if (isClientProfileMissing(err)) {
           this.clientProfileMissing = true
           this.clientProfileMessage = apiErrorMessage(err)
-        } else {
+        } else if (!isSessionExpired(err)) {
           this.domainsError = apiErrorMessage(err)
         }
       } finally {
@@ -317,7 +340,7 @@ export const useClientStore = defineStore('client', {
         if (isClientProfileMissing(err)) {
           this.clientProfileMissing = true
           this.clientProfileMessage = apiErrorMessage(err)
-        } else {
+        } else if (!isSessionExpired(err)) {
           this.ticketsError = apiErrorMessage(err)
         }
       } finally {

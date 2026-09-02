@@ -8,6 +8,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useServersStore } from '../stores/serversStore'
 import ServerFormModal from '../components/ServerFormModal.vue'
+import ConfirmModal from '../../../components/ConfirmModal.vue'
 import GroupFormModal from '../components/GroupFormModal.vue'
 import type { ServerDto, ServerGroupDto, ServerPayload, ServerGroupPayload } from '../types/server.types'
 import { MODULE_LABELS, FILL_TYPE_LABELS } from '../types/server.types'
@@ -57,6 +58,18 @@ const showServerModal = ref(false)
 const editingGroup = ref<ServerGroupDto | null>(null)
 /** True when the group form modal is open. */
 const showGroupModal = ref(false)
+
+/** The server awaiting delete confirmation, or null when nothing is staged. */
+const deleteServerTarget = ref<ServerDto | null>(null)
+
+/** True while the staged server is being deleted. */
+const deletingServer = ref(false)
+
+/** The group awaiting delete confirmation, or null when nothing is staged. */
+const deleteGroupTarget = ref<ServerGroupDto | null>(null)
+
+/** True while the staged group is being deleted. */
+const deletingGroup = ref(false)
 
 /** Groups servers by module type for display. */
 const serversByModule = computed(() => {
@@ -120,9 +133,21 @@ async function handleSaveServer(payload: ServerPayload): Promise<void> {
  *
  * @param server - Server to delete.
  */
-async function handleDeleteServer(server: ServerDto): Promise<void> {
-  if (!confirm(`Delete "${server.name}"? This cannot be undone.`)) return
-  await store.deleteServer(server.id)
+function handleDeleteServer(server: ServerDto): void {
+  deleteServerTarget.value = server
+}
+
+/** Deletes the staged server and clears the prompt. */
+async function confirmDeleteServer(): Promise<void> {
+  const target = deleteServerTarget.value
+  if (!target) return
+  deletingServer.value = true
+  try {
+    await store.deleteServer(target.id)
+    deleteServerTarget.value = null
+  } finally {
+    deletingServer.value = false
+  }
 }
 
 /**
@@ -148,9 +173,21 @@ async function handleSaveGroup(payload: ServerGroupPayload): Promise<void> {
  *
  * @param group - Group to delete.
  */
-async function handleDeleteGroup(group: ServerGroupDto): Promise<void> {
-  if (!confirm(`Delete group "${group.name}"? Servers will be unassigned.`)) return
-  await store.deleteGroup(group.id)
+function handleDeleteGroup(group: ServerGroupDto): void {
+  deleteGroupTarget.value = group
+}
+
+/** Deletes the staged group and clears the prompt. */
+async function confirmDeleteGroup(): Promise<void> {
+  const target = deleteGroupTarget.value
+  if (!target) return
+  deletingGroup.value = true
+  try {
+    await store.deleteGroup(target.id)
+    deleteGroupTarget.value = null
+  } finally {
+    deletingGroup.value = false
+  }
 }
 
 onMounted(async () => {
@@ -159,7 +196,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 max-w-6xl w-full flex flex-col gap-6">
+  <div class="p-4 sm:p-6 lg:p-8 w-full flex flex-col gap-6">
 
     <!-- Page header -->
     <div class="flex flex-wrap items-center justify-between gap-3">
@@ -433,4 +470,28 @@ onMounted(async () => {
     </Teleport>
 
   </div>
+
+    <ConfirmModal
+      v-if="deleteServerTarget"
+      title="Delete Server"
+      :message="`Delete &quot;${deleteServerTarget.name}&quot;? This cannot be undone.`"
+      confirm-label="Delete"
+      loading-label="Deleting..."
+      :loading="deletingServer"
+      variant="danger"
+      @confirm="confirmDeleteServer"
+      @close="deleteServerTarget = null"
+    />
+
+    <ConfirmModal
+      v-if="deleteGroupTarget"
+      title="Delete Group"
+      :message="`Delete group &quot;${deleteGroupTarget.name}&quot;? Servers in it will be unassigned.`"
+      confirm-label="Delete"
+      loading-label="Deleting..."
+      :loading="deletingGroup"
+      variant="danger"
+      @confirm="confirmDeleteGroup"
+      @close="deleteGroupTarget = null"
+    />
 </template>

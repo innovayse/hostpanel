@@ -323,6 +323,13 @@ public static class DependencyInjection
         services.AddScoped<IProvisioningProvider, NullCPanelProvisioningProvider>();
         services.AddScoped<Innovayse.Domain.Services.Interfaces.IProvisioningProvider, NullProvisioningProvider>();
 
+        // Provisioning behaviour switches. Left unset everywhere but development, where
+        // appsettings.Development.json turns UseFakeProvider on so the setup flow can complete
+        // without a live CWP7 panel to call.
+        services.AddOptions<Innovayse.Infrastructure.Provisioning.Options.ProvisioningOptions>()
+            .Bind(configuration.GetSection(
+                Innovayse.Infrastructure.Provisioning.Options.ProvisioningOptions.SectionName));
+
         // Provisioning provider factory — creates per-server providers (CWP7, cPanel, etc.)
         services.AddScoped<Innovayse.Domain.Provisioning.Interfaces.IProvisioningProviderFactory, Innovayse.Infrastructure.Provisioning.ProvisioningProviderFactory>();
 

@@ -7,6 +7,7 @@ import { ref, computed, onMounted } from 'vue'
 import type { Contact } from '../../../types/models'
 import { useGeoOptions } from '../../../composables/useGeoOptions'
 import AppSelect from '../../../components/AppSelect.vue'
+import ConfirmModal from '../../../components/ConfirmModal.vue'
 import ToggleSwitch from '../../../components/ToggleSwitch.vue'
 
 const props = defineProps<{
@@ -154,13 +155,26 @@ function handleSave(): void {
   })
 }
 
+/** True while the delete confirmation prompt is showing; nothing is staged when false. */
+const showDeleteConfirm = ref(false)
+
 /**
- * Confirms and emits the delete event.
+ * Stages the delete confirmation. Only opens the prompt — {@link confirmDelete} does the work,
+ * so the question is asked by the app's own modal instead of the browser's blocking dialog.
  */
-function handleDelete(): void {
-  if (confirm('Permanently delete this contact? This cannot be undone.')) {
-    emit('delete')
-  }
+const handleDelete = (): void => {
+  showDeleteConfirm.value = true
+}
+
+/**
+ * Emits the delete event and dismisses the prompt.
+ *
+ * There is no in-flight flag: the parent owns the request and unmounts this modal as soon as it
+ * accepts the event, so this component never observes the outcome.
+ */
+const confirmDelete = (): void => {
+  showDeleteConfirm.value = false
+  emit('delete')
 }
 
 /**
@@ -437,5 +451,17 @@ onMounted(() => {
         </div>
       </form>
     </div>
+
+    <!-- Delete Confirm Modal -->
+    <ConfirmModal
+      v-if="showDeleteConfirm"
+      title="Delete Contact"
+      message="Permanently delete this contact? This cannot be undone."
+      confirm-label="Delete"
+      loading-label="Deleting..."
+      variant="danger"
+      @confirm="confirmDelete"
+      @close="showDeleteConfirm = false"
+    />
   </div>
 </template>

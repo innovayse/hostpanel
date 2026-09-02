@@ -6,6 +6,7 @@ import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useClientsStore } from '../stores/clientsStore'
 import { CONTACT_TYPE_STYLES } from '../../../utils/constants'
+import ConfirmModal from '../../../components/ConfirmModal.vue'
 import ContactFormModal from '../components/ContactFormModal.vue'
 import type { Contact } from '../../../types/models'
 
@@ -87,33 +88,58 @@ async function handleUpdateContact(payload: Record<string, unknown>): Promise<vo
   }
 }
 
+/** ID of the contact awaiting delete confirmation, null when nothing is staged. */
+const deleteContactTarget = ref<number | null>(null)
+
+/** True while the staged contact is being deleted. */
+const deletingContact = ref(false)
+
 /**
- * Handles deleting a contact by ID with confirmation.
+ * Stages a contact for deletion. Only opens the prompt — {@link confirmDeleteContact} does the
+ * work, so the question is asked by the app's own modal rather than the browser's dialog.
  *
  * @param contactId - The ID of the contact to delete.
+ */
+const handleDeleteContact = (contactId: number): void => {
+  deleteContactTarget.value = contactId
+}
+
+/**
+ * Deletes the staged contact and clears the prompt.
+ *
+ * The target is cleared in `finally` so a failure closes the prompt and leaves the reason on the
+ * inline error banner, which is where every other action on this page reports one.
+ *
  * @returns Promise that resolves when the contact is removed.
  */
-async function handleDeleteContact(contactId: number): Promise<void> {
-  if (!confirm('Are you sure you want to delete this contact? This cannot be undone.')) return
+const confirmDeleteContact = async (): Promise<void> => {
+  const contactId = deleteContactTarget.value
+  if (contactId === null) return
   contactError.value = null
+  deletingContact.value = true
   try {
     await store.removeContact(clientId.value, contactId)
     showSuccess('Contact deleted successfully.')
   } catch {
     contactError.value = 'Failed to delete contact.'
+  } finally {
+    deletingContact.value = false
+    deleteContactTarget.value = null
   }
 }
 
 /**
  * Handles the delete event from the edit modal.
  *
- * @returns Promise that resolves when the contact is removed.
+ * Closes the edit modal first, then stages the same confirmation the row action uses — the edit
+ * modal has already asked once, so this is the second half of a prompt chain that predates the
+ * move off `confirm()` and is preserved exactly.
  */
-async function handleDeleteFromModal(): Promise<void> {
+const handleDeleteFromModal = (): void => {
   if (!editingContact.value) return
   const id = editingContact.value.id
   editingContact.value = null
-  await handleDeleteContact(id)
+  handleDeleteContact(id)
 }
 
 /**
@@ -244,6 +270,19 @@ function openEditModal(contact: Contact): void {
       @save="handleUpdateContact"
       @delete="handleDeleteFromModal"
       @close="editingContact = null"
+    />
+
+    <!-- Delete Confirm Modal -->
+    <ConfirmModal
+      v-if="deleteContactTarget !== null"
+      title="Delete Contact"
+      message="Are you sure you want to delete this contact? This cannot be undone."
+      confirm-label="Delete"
+      loading-label="Deleting..."
+      :loading="deletingContact"
+      variant="danger"
+      @confirm="confirmDeleteContact"
+      @close="deleteContactTarget = null"
     />
   </div>
 </template>

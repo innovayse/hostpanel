@@ -159,12 +159,22 @@ public sealed class PlaceOrderHandler(
             {
                 return existing.Id;
             }
+
+            // Their first order. The account already exists — they authenticated to get here —
+            // so what is missing is only this product's client row, and the credential carries
+            // everything it needs. Provisioning is deliberately not called: it creates accounts,
+            // and where an SSO owns them it refuses, which is correct and not what is wanted
+            // here.
+            //
+            // Without this the caller cannot order at all. The validator asks a signed-in caller
+            // for no email and no password, so the guest branch below always refused them, and
+            // the client area they were sent back to says they have no account to order against.
+            return await CreateClientForCallerAsync(subject, cmd, ct);
         }
 
-        // Reached two ways, and the sentence has to be true of both: a signed-in caller whose
-        // subject has no client row, and an anonymous caller who sent no registration. The
-        // validator already refuses the second before the handler runs, so in practice this is
-        // the first — which is why it no longer says the session expired. It had not.
+        // Anonymous, and guest checkout is the only way left. The validator already requires all
+        // four fields of a caller with no subject, so this refusal is reached only when something
+        // dispatched the command without going through it.
         if (string.IsNullOrWhiteSpace(cmd.Email) || string.IsNullOrWhiteSpace(cmd.Password))
         {
             throw new InvalidOperationException(localizer[NoClientAccountKey]);
@@ -179,6 +189,70 @@ public sealed class PlaceOrderHandler(
         await uow.SaveChangesAsync(ct);
 
         return newClient.Id;
+    }
+
+    /// <summary>
+    /// Creates the client row for a signed-in caller who does not have one yet.
+    /// </summary>
+    /// <remarks>
+    /// Names come from the order when it carries them and from the credential otherwise. The
+    /// checkout form asks a signed-in caller for neither, so in practice it is the credential;
+    /// the command is preferred anyway because a caller who did type a billing name meant it.
+    /// <para>
+    /// The email is read from the credential rather than the command on purpose. A caller can
+    /// put any address in a form field, and this row decides which account every later invoice
+    /// and service belongs to.
+    /// </para>
+    /// </remarks>
+    /// <param name="subject">The caller's subject, already known to have no client row.</param>
+    /// <param name="cmd">The order being placed.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The new client's ID.</returns>
+    private async Task<int> CreateClientForCallerAsync(string subject, PlaceOrderCommand cmd, CancellationToken ct)
+    {
+        var (credentialFirst, credentialLast) = SplitDisplayName(caller.UserName);
+
+        var client = Client.Create(
+            subject,
+            FirstNonBlank(cmd.FirstName, credentialFirst) ?? string.Empty,
+            FirstNonBlank(cmd.LastName, credentialLast) ?? string.Empty,
+            caller.UserEmail ?? cmd.Email ?? string.Empty);
+
+        clientRepo.Add(client);
+        await uow.SaveChangesAsync(ct);
+
+        return client.Id;
+    }
+
+    /// <summary>Returns the first of two values that is neither null nor blank.</summary>
+    /// <param name="preferred">The value to use when it says something.</param>
+    /// <param name="fallback">Used when <paramref name="preferred"/> does not.</param>
+    /// <returns>The chosen value, or <see langword="null"/> when neither says anything.</returns>
+    private static string? FirstNonBlank(string? preferred, string? fallback) =>
+        string.IsNullOrWhiteSpace(preferred) ? (string.IsNullOrWhiteSpace(fallback) ? null : fallback) : preferred;
+
+    /// <summary>
+    /// Splits a credential's display name into the first and last name the client row stores.
+    /// </summary>
+    /// <remarks>
+    /// A display name is one string and this schema wants two, so the split is a guess: the
+    /// first word is the given name and whatever follows is the family name. It is wrong for
+    /// some names and there is no parse that is right for all of them. It is used only to fill
+    /// the row at creation — the customer can correct both fields in their profile, and nothing
+    /// but display reads them.
+    /// </remarks>
+    /// <param name="displayName">The credential's name claim, if it carries one.</param>
+    /// <returns>The first and last name, each null when the name does not supply it.</returns>
+    private static (string? First, string? Last) SplitDisplayName(string? displayName)
+    {
+        if (string.IsNullOrWhiteSpace(displayName))
+        {
+            return (null, null);
+        }
+
+        var parts = displayName.Trim().Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+
+        return (parts[0], parts.Length > 1 ? parts[1] : null);
     }
 
     /// <summary>

@@ -133,9 +133,14 @@ function backendError(
 
   return createError({
     statusCode: status,
+    // Only the backend's own wording is forwarded. `err.message` is deliberately not a
+    // fallback: on a response with no JSON body — a bare 401 above all — $fetch composes its
+    // own message and embeds the address it called, so the browser was shown
+    // `[GET] "http://hostpanel-api:5148/api/me/services": 401 Unauthorized`. That publishes
+    // the internal host and port of a service the browser cannot reach, and tells the reader
+    // nothing. The endpoint below is the path this route already owns, not the upstream URL.
     statusMessage: data?.error
       ?? data?.message
-      ?? err?.message
       ?? `Backend API error for ${endpoint}`,
     data: { code: data?.code ?? null },
   })

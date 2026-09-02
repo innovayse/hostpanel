@@ -255,6 +255,15 @@ services:
     volumes:
       - ./client:/app
       - client_node_modules:/app/node_modules
+      # Nuxt's build directories, kept off the Windows bind mount for the same reason
+      # backend_bin and backend_obj are: they hold thousands of small files that the dev
+      # server rewrites on every compile, and each one crosses the host filesystem bridge.
+      # Measured in this container: 2000 small writes take 57.8s under ./client and 0.6s in
+      # a named volume — a hundredfold. That is what made a Nitro build take eight minutes
+      # and what starved the dev worker until it died with "IPC connection closed".
+      # Nothing outside the container reads them, so there is nothing to give up.
+      - client_nuxt:/app/.nuxt
+      - client_output:/app/.output
     environment:
       # hostpanel-api, the alias declared on the api service above — not the bare
       # "api" service name, which collides with innovayse-main's own "api" on the
@@ -351,6 +360,8 @@ volumes:
   pgdata:
   redisdata:
   client_node_modules:
+  client_nuxt:
+  client_output:
   admin_node_modules:
   backend_bin:
   backend_obj:

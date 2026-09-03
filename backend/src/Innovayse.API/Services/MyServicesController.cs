@@ -84,16 +84,21 @@ public sealed class MyServicesController(IMessageBus bus) : ControllerBase
     /// <param name="id">Client service primary key.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 OK with the cPanel SSO URL string; 404 with <c>MY_SERVICE_NOT_FOUND</c> when the
-    /// service is not the caller's.
+    /// 200 OK with <c>{ url }</c> carrying the control-panel SSO address; 404 with
+    /// <c>MY_SERVICE_NOT_FOUND</c> when the service is not the caller's.
     /// </returns>
     [HttpGet("{id:int}/cpanel-sso")]
-    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<string>> GetCPanelSsoUrlAsync(int id, CancellationToken ct)
+    public async Task<IActionResult> GetCPanelSsoUrlAsync(int id, CancellationToken ct)
     {
         var url = await bus.InvokeAsync<string>(new GetMyServiceCPanelSsoUrlQuery(id), ct);
-        return Ok(url);
+
+        // `{ url }`, matching the staff route in ProvisioningController. This answered with a
+        // bare JSON string while its sibling answered with an object, and the portal — written
+        // against the sibling — destructured `url` off a string, got undefined, and opened a
+        // blank tab. Two shapes for one answer is what made that possible.
+        return Ok(new { url });
     }
 
     /// <summary>Submits a cancellation request for a client service.</summary>

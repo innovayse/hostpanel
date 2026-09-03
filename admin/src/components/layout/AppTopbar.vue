@@ -6,7 +6,8 @@
  * On mobile emits toggle-sidebar to open the drawer.
  */
 import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '../../modules/auth/stores/authStore'
 
 /** Emitted when the hamburger button is clicked on mobile. */
 const emit = defineEmits<{
@@ -47,6 +48,41 @@ const notificationCount = ref(3)
 /** Toggles notification dropdown. */
 function toggleNotifications(): void {
   showNotifications.value = !showNotifications.value
+}
+
+const router = useRouter()
+const auth = useAuthStore()
+
+/** Controls the account menu visibility. */
+const showAccountMenu = ref(false)
+
+/**
+ * The signed-in operator's address, or a neutral label before the profile has loaded.
+ *
+ * The header used to read "Admin" for everyone, spelled into the markup — so an operator could
+ * not tell which account they were acting as, which matters on a panel where several people
+ * share one screen.
+ */
+const accountLabel = computed(() => auth.user?.email ?? 'Account')
+
+/** First letter of the address, for the avatar tile. Empty while there is no profile yet. */
+const accountInitial = computed(() => auth.user?.email?.[0]?.toUpperCase() ?? '?')
+
+/** Opens or closes the account menu. */
+function toggleAccountMenu(): void {
+  showAccountMenu.value = !showAccountMenu.value
+}
+
+/**
+ * Ends the session and returns to the sign-in screen.
+ *
+ * Closes the menu first: the sign-out navigates away, and a menu left open is still painted
+ * over the login screen for the moment the router takes to swap the view.
+ */
+async function signOut(): Promise<void> {
+  showAccountMenu.value = false
+  await auth.logout()
+  await router.push('/login')
 }
 </script>
 
@@ -139,14 +175,61 @@ function toggleNotifications(): void {
       <div class="w-px h-5 bg-border mx-1" />
 
       <!-- User avatar -->
-      <div class="flex items-center gap-2 cursor-pointer group">
-        <div class="flex items-center justify-center w-7 h-7 rounded-lg gradient-brand text-white text-[0.7rem] font-bold font-display shrink-0">
-          A
+      <div class="relative">
+        <!--
+          A button, not a div. It carried a chevron and a pointer cursor but no handler at all,
+          so it looked like a menu and did nothing when pressed — and being a div, the keyboard
+          could not reach it either.
+        -->
+        <button
+          type="button"
+          class="flex items-center gap-2 cursor-pointer group"
+          :aria-expanded="showAccountMenu"
+          aria-haspopup="menu"
+          :aria-label="accountLabel"
+          @click="toggleAccountMenu"
+        >
+          <div class="flex items-center justify-center w-7 h-7 rounded-lg gradient-brand text-white text-[0.7rem] font-bold font-display shrink-0">
+            {{ accountInitial }}
+          </div>
+          <span class="hidden sm:block max-w-[12rem] truncate text-[0.8rem] font-medium text-text-secondary group-hover:text-text-primary transition-colors">{{ accountLabel }}</span>
+          <svg class="hidden sm:block w-3.5 h-3.5 text-text-muted transition-transform" :class="{ 'rotate-180': showAccountMenu }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+
+        <!-- Dropdown -->
+        <div
+          v-if="showAccountMenu"
+          role="menu"
+          class="absolute right-0 top-full mt-2 w-60 bg-surface-elevated border border-border rounded-xl shadow-2xl z-50 overflow-hidden"
+        >
+          <div class="px-4 py-3 border-b border-border">
+            <p class="text-[0.8rem] font-semibold font-display text-text-primary truncate">{{ accountLabel }}</p>
+            <p v-if="auth.user?.roles?.length" class="text-[0.72rem] text-text-muted truncate">{{ auth.user.roles.join(', ') }}</p>
+          </div>
+          <div class="py-1">
+            <RouterLink
+              to="/settings"
+              role="menuitem"
+              class="block px-4 py-2 text-[0.8rem] text-text-secondary hover:bg-white/[0.03] hover:text-text-primary transition-colors"
+              @click="showAccountMenu = false"
+            >
+              Settings
+            </RouterLink>
+            <button
+              type="button"
+              role="menuitem"
+              class="w-full text-left px-4 py-2 text-[0.8rem] text-red-400 hover:bg-red-500/10 transition-colors"
+              @click="signOut"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
-        <span class="hidden sm:block text-[0.8rem] font-medium text-text-secondary group-hover:text-text-primary transition-colors">Admin</span>
-        <svg class="hidden sm:block w-3.5 h-3.5 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="6 9 12 15 18 9"/>
-        </svg>
+
+        <!-- Backdrop to close -->
+        <div v-if="showAccountMenu" class="fixed inset-0 z-40" @click="showAccountMenu = false" />
       </div>
 
     </div>

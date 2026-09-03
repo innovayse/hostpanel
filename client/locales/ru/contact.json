@@ -61,7 +61,8 @@
         "title": "Быстрая связь",
         "telegram": "Telegram",
         "whatsapp": "WhatsApp",
-        "liveChat": "Живой чат"
+        "liveChat": "Живой чат",
+        "toggle": "Связаться с нами"
       }
     }
   }

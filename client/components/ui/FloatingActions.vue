@@ -111,7 +111,7 @@
       :class="isOpen ? 'bg-gray-700 rotate-45' : 'bg-gradient-to-br from-cyan-500 to-primary-600'"
       :style="isOpen ? '' : 'box-shadow: 0 4px 24px rgba(6,182,212,0.5);'"
       :aria-expanded="isOpen"
-      aria-label="Contact us"
+      :aria-label="$t('contact.info.quickConnect.toggle')"
       @click="isOpen = !isOpen"
     >
       <div v-if="!isOpen" class="absolute inset-0 rounded-full bg-cyan-500 animate-ping opacity-25" />

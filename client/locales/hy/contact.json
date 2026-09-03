@@ -61,7 +61,8 @@
         "title": "Արագ կապ",
         "telegram": "Telegram",
         "whatsapp": "WhatsApp",
-        "liveChat": "Առցանց զրույց"
+        "liveChat": "Առցանց զրույց",
+        "toggle": "Կապ մեզ հետ"
       }
     }
   }

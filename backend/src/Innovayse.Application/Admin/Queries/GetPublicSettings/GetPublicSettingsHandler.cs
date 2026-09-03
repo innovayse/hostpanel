@@ -21,6 +21,8 @@ public sealed class GetPublicSettingsHandler(ISettingRepository repo)
     private static readonly HashSet<string> _publicKeys =
     [
         "portal.template",
+        "portal.logo",
+        "portal.favicon",
         "portal.contact.whatsapp",
         "portal.contact.telegram",
         "portal.chat.provider",

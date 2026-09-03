@@ -1,0 +1,109 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "saving": "Saving…",
+    "signOut": "Sign out",
+    "admin": "Admin",
+    "search": "Search…",
+    "notifications": "Notifications",
+    "toggleSidebar": "Toggle sidebar",
+    "viewAllNotifications": "View all notifications",
+    "newCount": "{count} new"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "clients": "Clients",
+    "clientsChildren": {
+      "view": "View/Search Clients",
+      "users": "Manage Users",
+      "sharedHostings": "Shared Hostings",
+      "addons": "Service Addons",
+      "domainRegistrations": "Domain Registrations",
+      "cancellations": "Cancellation Requests",
+      "affiliates": "Manage Affiliates"
+    },
+    "billing": "Billing",
+    "billingChildren": {
+      "transactions": "Transactions List",
+      "invoices": "Invoices",
+      "billableItems": "Billable Items",
+      "quotes": "Quotes",
+      "offlineCc": "Offline CC Processing",
+      "disputes": "Disputes",
+      "gatewayLog": "Gateway Log"
+    },
+    "reports": "Reports",
+    "orders": "Orders",
+    "domains": "Domains",
+    "support": "Support",
+    "supportChildren": {
+      "overview": "Support Overview",
+      "tickets": "Support Tickets",
+      "newTicket": "Open New Ticket",
+      "predefinedReplies": "Predefined Replies",
+      "announcements": "Announcements",
+      "downloads": "Downloads",
+      "knowledgebase": "Knowledgebase",
+      "networkIssues": "Network Issues"
+    },
+    "plugins": "Plugins",
+    "pluginManager": "Plugin Manager",
+    "servers": "Servers",
+    "integrations": "Integrations",
+    "migration": "Migration",
+    "settings": "Settings",
+    "settingsChildren": {
+      "general": "General",
+      "products": "Products",
+      "tldPricing": "TLD Pricing",
+      "slides": "Slides",
+      "emailTemplates": "Email Templates",
+      "gateways": "Payment Gateways"
+    },
+    "servicesTitle": "Services"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Welcome back — here's what's happening",
+    "live": "Live",
+    "loadingMetrics": "Loading metrics…",
+    "stats": {
+      "totalRevenue": "Total Revenue",
+      "monthlyRevenue": "Monthly Revenue",
+      "activeServices": "Active Services",
+      "overdueInvoices": "Overdue Invoices",
+      "openTickets": "Open Tickets",
+      "totalClients": "Total Clients"
+    }
+  },
+  "settings": {
+    "systemSettings": "System Settings",
+    "table": {
+      "key": "Key",
+      "value": "Value",
+      "description": "Description",
+      "noSettings": "No settings found."
+    },
+    "portalAppearance": {
+      "title": "Portal appearance",
+      "description": "Which template the public storefront renders. Changes take effect on the next page load.",
+      "template": "Template",
+      "notSeeded": "The <code>{key}</code> setting has not been seeded yet, so it cannot be changed here. Until it exists the portal uses its <code>{env}</code> environment variable.",
+      "templates": {
+        "aurora": { "label": "Aurora", "hint": "Current default — dark/light, Armenian typography" },
+        "classic": { "label": "Classic", "hint": "The original storefront design" }
+      }
+    },
+    "branding": {
+      "title": "Branding",
+      "description": "The storefront's logo and browser tab icon. Changes take effect on the next page load.",
+      "uploading": "Uploading...",
+      "dropOrBrowsePrefix": "Drop image or",
+      "browse": "browse",
+      "pasteUrl": "Or paste image URL...",
+      "logo": { "label": "Logo", "hint": "JPEG, PNG, WebP, SVG — max 5MB" },
+      "favicon": { "label": "Favicon", "hint": "PNG, SVG, ICO — max 5MB" }
+    }
+  }
+}

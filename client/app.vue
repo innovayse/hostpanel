@@ -62,10 +62,17 @@ watch(locale, (newLocale) => {
 // Correct token for SSR injection
 const currentToken = computed(() => tokenMap[locale.value] ?? DEFAULT_CHAT_TOKEN)
 
+/** Operator-uploaded favicon, admin-managed with an environment fallback. Empty keeps nuxt.config's static default. */
+const { get: getPortalSetting } = usePortalSettings()
+const faviconUrl = computed(() => getPortalSetting('portal.favicon', 'portalFavicon'))
+
 useHead({
   htmlAttrs: {
     lang: () => langMap[locale.value] ?? 'en'
   },
+  // Overrides nuxt.config's static <link rel="icon">. Empty leaves it alone —
+  // a fresh install with nothing uploaded still gets the built-in favicon.
+  link: () => faviconUrl.value ? [{ rel: 'icon', href: faviconUrl.value }] : [],
   script: [
     {
       // Blocking script: always force dark on public pages

@@ -8,6 +8,7 @@
  * indication why. Constraining the input removes the failure entirely.
  */
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Setting } from '../../../types/models'
 
 const props = defineProps<{
@@ -19,10 +20,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{ save: [id: number, value: string] }>()
 
+const { t } = useI18n()
+
 /** Templates the portal ships. Mirrors client/templates/types.ts. */
 const TEMPLATES = [
-  { value: 'aurora', label: 'Aurora', hint: 'Current default — dark/light, Armenian typography' },
-  { value: 'classic', label: 'Classic', hint: 'The original storefront design' },
+  { value: 'aurora', labelKey: 'settings.portalAppearance.templates.aurora.label', hintKey: 'settings.portalAppearance.templates.aurora.hint' },
+  { value: 'classic', labelKey: 'settings.portalAppearance.templates.classic.label', hintKey: 'settings.portalAppearance.templates.classic.hint' },
 ]
 
 const KEY = 'portal.template'
@@ -57,9 +60,9 @@ watch(() => setting.value?.value, (stored) => {
 
 <template>
   <section class="bg-surface-card border border-border rounded-2xl p-6 mb-6">
-    <h2 class="font-display text-lg font-bold text-text-primary">Portal appearance</h2>
+    <h2 class="font-display text-lg font-bold text-text-primary">{{ t('settings.portalAppearance.title') }}</h2>
     <p class="text-sm text-text-secondary mt-1">
-      Which template the public storefront renders. Changes take effect on the next page load.
+      {{ t('settings.portalAppearance.description') }}
     </p>
 
     <!--
@@ -70,21 +73,18 @@ watch(() => setting.value?.value, (stored) => {
     <div
       v-if="!setting"
       class="mt-4 rounded-xl border border-status-yellow/30 bg-status-yellow/10 p-4 text-sm text-status-yellow"
-    >
-      The <code class="font-mono">{{ KEY }}</code> setting has not been seeded yet, so it cannot be
-      changed here. Until it exists the portal uses its
-      <code class="font-mono">NUXT_PUBLIC_PORTAL_TEMPLATE</code> environment variable.
-    </div>
+      v-html="t('settings.portalAppearance.notSeeded', { key: KEY, env: 'NUXT_PUBLIC_PORTAL_TEMPLATE' })"
+    />
 
     <div v-else class="mt-5 flex flex-wrap items-end gap-4">
       <label class="flex flex-col gap-1.5">
-        <span class="text-sm font-medium text-text-secondary">Template</span>
+        <span class="text-sm font-medium text-text-secondary">{{ t('settings.portalAppearance.template') }}</span>
         <select
           v-model="selected"
           class="min-w-[220px] rounded-xl border border-border bg-surface-elevated px-3 py-2 text-sm text-text-primary focus:border-text-secondary focus:outline-none"
         >
           <option v-for="template in TEMPLATES" :key="template.value" :value="template.value">
-            {{ template.label }}
+            {{ t(template.labelKey) }}
           </option>
         </select>
       </label>
@@ -95,11 +95,11 @@ watch(() => setting.value?.value, (stored) => {
         :disabled="!dirty || saving"
         @click="save"
       >
-        {{ saving ? 'Saving…' : 'Save' }}
+        {{ saving ? t('common.saving') : t('common.save') }}
       </button>
 
       <p class="text-sm text-text-muted">
-        {{ TEMPLATES.find(t => t.value === selected)?.hint }}
+        {{ t(TEMPLATES.find(tpl => tpl.value === selected)?.hintKey ?? '') }}
       </p>
     </div>
   </section>

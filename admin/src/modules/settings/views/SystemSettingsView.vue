@@ -4,12 +4,15 @@
  * control for the storefront template.
  */
 import { onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '../stores/settingsStore'
 import PortalAppearanceCard from '../components/PortalAppearanceCard.vue'
+import BrandingCard from '../components/BrandingCard.vue'
 import type { Setting } from '../../../types/models'
 
 const store = useSettingsStore()
 const saving = ref(false)
+const { t } = useI18n()
 
 onMounted(store.fetchSettings)
 
@@ -91,10 +94,10 @@ async function saveRow(setting: Setting) {
       the same tokens the rest of the panel uses.
     -->
     <h1 class="font-display text-[1.75rem] font-bold text-text-primary tracking-tight leading-none mb-6">
-      System Settings
+      {{ t('settings.systemSettings') }}
     </h1>
 
-    <div v-if="store.loading" class="text-text-secondary">Loading...</div>
+    <div v-if="store.loading" class="text-text-secondary">{{ t('common.loading') }}</div>
     <template v-else>
       <div
         v-if="store.error"
@@ -104,14 +107,15 @@ async function saveRow(setting: Setting) {
       </div>
 
       <PortalAppearanceCard :settings="store.settings" :saving="saving" @save="onSave" />
+      <BrandingCard :settings="store.settings" :saving="saving" @save="onSave" />
 
       <div class="bg-surface-card border border-border rounded-2xl overflow-hidden overflow-x-auto">
         <table class="w-full text-sm">
           <thead class="bg-surface-elevated text-text-secondary uppercase text-xs">
             <tr>
-              <th class="px-4 py-3 text-left font-semibold">Key</th>
-              <th class="px-4 py-3 text-left font-semibold">Value</th>
-              <th class="px-4 py-3 text-left font-semibold">Description</th>
+              <th class="px-4 py-3 text-left font-semibold">{{ t('settings.table.key') }}</th>
+              <th class="px-4 py-3 text-left font-semibold">{{ t('settings.table.value') }}</th>
+              <th class="px-4 py-3 text-left font-semibold">{{ t('settings.table.description') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-border">
@@ -133,14 +137,14 @@ async function saveRow(setting: Setting) {
                     class="shrink-0 rounded-lg bg-text-primary px-3 py-1.5 text-sm font-medium text-surface-card disabled:opacity-50"
                     @click="saveRow(setting)"
                   >
-                    {{ saving ? 'Saving…' : 'Save' }}
+                    {{ saving ? t('common.saving') : t('common.save') }}
                   </button>
                 </div>
               </td>
               <td class="px-4 py-3 text-text-secondary">{{ setting.description ?? '—' }}</td>
             </tr>
             <tr v-if="store.settings.length === 0">
-              <td colspan="3" class="px-4 py-6 text-center text-text-muted">No settings found.</td>
+              <td colspan="3" class="px-4 py-6 text-center text-text-muted">{{ t('settings.table.noSettings') }}</td>
             </tr>
           </tbody>
         </table>

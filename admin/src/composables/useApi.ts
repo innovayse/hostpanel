@@ -73,7 +73,19 @@ export const logoutSession = async (scope: 'this' | 'all' = 'this'): Promise<voi
     headers: { ...CSRF_HEADER },
   })
   const endSessionUrl = res.ok ? (await res.json().catch(() => null))?.endSessionUrl : null
-  location.href = endSessionUrl ?? '/'
+
+  if (!endSessionUrl) {
+    location.href = '/'
+    return
+  }
+
+  // Tell the SSO where to send the browser afterwards. Without this the end-session endpoint
+  // has nowhere to go and answers 200 with an empty body, which is a blank white page — the
+  // sign-out worked, but it looked like the app had died. The address must be one registered
+  // for this client on the SSO side, which `https://<origin>/admin` is.
+  const url = new URL(endSessionUrl)
+  url.searchParams.set('post_logout_redirect_uri', `${location.origin}/admin`)
+  location.href = url.toString()
 }
 
 /** Composable for making authenticated API calls via the same-origin proxy. */

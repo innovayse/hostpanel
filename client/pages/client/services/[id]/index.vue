@@ -842,6 +842,11 @@ async function loginToCpanel() {
   ssoError.value = ''
   try {
     const { url } = await clientApi.fetchCpanelSsoUrl(serviceId)
+
+    // Never open an empty address: `window.open(undefined)` opens a blank tab, which reads as
+    // a control panel that failed to load rather than as anything having gone wrong here.
+    if (!url) throw new Error('No control-panel address was returned.')
+
     window.open(url, '_blank', 'noopener')
   } catch (err: unknown) {
     // Say that the automatic sign-in failed, then still open the panel's own login form so the

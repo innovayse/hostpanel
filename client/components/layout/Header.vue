@@ -7,7 +7,22 @@
       <div class="flex items-center justify-between h-16 lg:h-20">
         <!-- Logo -->
         <NuxtLink :to="localePath('/')" class="flex items-center">
+          <!--
+            Plain img, not NuxtImg, when an operator has uploaded a logo: IPX
+            optimises by reading the file straight off local disk, and an
+            uploaded logo is proxied from the API's wwwroot/uploads rather than
+            living in this app's public/ — the same reason slide images
+            (ProductsFullSlider.vue) render as plain img too.
+          -->
+          <img
+            v-if="uploadedLogoUrl"
+            :src="uploadedLogoUrl"
+            alt="Innovayse"
+            loading="eager"
+            class="h-10 sm:h-12 lg:h-14 xl:h-16 w-auto max-w-[200px] object-contain transition-transform hover:scale-105"
+          />
           <NuxtImg
+            v-else
             src="/logo.svg"
             alt="Innovayse"
             width="200"
@@ -323,6 +338,10 @@ const authStore = useAuthStore()
 const { isLoggedIn, user } = storeToRefs(authStore)
 const { fetchUser, logout } = authStore
 const runtimeConfig = useRuntimeConfig()
+
+/** Operator-uploaded logo, admin-managed with an environment fallback. Empty renders the built-in /logo.svg. */
+const { get: getPortalSetting } = usePortalSettings()
+const uploadedLogoUrl = computed(() => getPortalSetting('portal.logo', 'portalLogo'))
 
 /** In SSO mode, link directly to SSO authorize (skips "Continue with Innovayse" page) */
 const clientAreaHref = computed(() =>

@@ -7,6 +7,8 @@
  */
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { SUPPORTED_LOCALES, setLocale, type SupportedLocale } from '../../i18n'
 import { useAuthStore } from '../../modules/auth/stores/authStore'
 
 /** Emitted when the hamburger button is clicked on mobile. */
@@ -16,28 +18,45 @@ const emit = defineEmits<{
 }>()
 
 const route = useRoute()
+const { t, locale } = useI18n()
 
-/** Maps route paths to human-readable page titles. */
-const titles: Record<string, string> = {
-  '/dashboard':   'Dashboard',
-  '/clients':     'Clients',
-  '/billing':     'Billing',
-  '/services':    'Services',
-  '/domains':     'Domains',
-  '/support':     'Support',
-  '/plugins':     'Plugin Manager',
-  '/servers':     'Servers',
-  '/integrations':'Integrations',
-  '/settings':    'Settings',
-  '/reports':     'Reports',
-  '/orders':      'Orders',
+/** Maps route paths to i18n keys for the page title. */
+const titleKeys: Record<string, string> = {
+  '/dashboard':   'nav.dashboard',
+  '/clients':     'nav.clients',
+  '/billing':     'nav.billing',
+  '/services':    'nav.servicesTitle',
+  '/domains':     'nav.domains',
+  '/support':     'nav.support',
+  '/plugins':     'nav.pluginManager',
+  '/servers':     'nav.servers',
+  '/integrations':'nav.integrations',
+  '/settings':    'nav.settings',
+  '/reports':     'nav.reports',
+  '/orders':      'nav.orders',
 }
 
 /** Current page title derived from the active route. */
 const pageTitle = computed(() => {
-  const match = Object.keys(titles).find(k => route.path === k || route.path.startsWith(k + '/'))
-  return match ? titles[match] : 'Admin'
+  const match = Object.entries(titleKeys).find(([k]) => route.path === k || route.path.startsWith(k + '/'))
+  return match ? t(match[1]) : t('common.admin')
 })
+
+/** Controls the language menu visibility. */
+const showLanguageMenu = ref(false)
+
+/** Display labels for the language switcher button/menu. */
+const localeLabels: Record<SupportedLocale, string> = { en: 'EN', hy: 'ՀՅ', ru: 'РУ' }
+
+/**
+ * Switches the active locale and closes the menu.
+ *
+ * @param code - The locale to switch to.
+ */
+function chooseLocale(code: SupportedLocale): void {
+  setLocale(code)
+  showLanguageMenu.value = false
+}
 
 /** Controls the notification popover visibility. */
 const showNotifications = ref(false)
@@ -63,7 +82,7 @@ const showAccountMenu = ref(false)
  * not tell which account they were acting as, which matters on a panel where several people
  * share one screen.
  */
-const accountLabel = computed(() => auth.user?.email ?? 'Account')
+const accountLabel = computed(() => auth.user?.email ?? t('common.admin'))
 
 /** First letter of the address, for the avatar tile. Empty while there is no profile yet. */
 const accountInitial = computed(() => auth.user?.email?.[0]?.toUpperCase() ?? '?')
@@ -95,7 +114,7 @@ async function signOut(): Promise<void> {
       <button
         class="flex lg:hidden items-center justify-center w-8 h-8 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/[0.05] transition-all"
         @click="emit('toggle-sidebar')"
-        aria-label="Toggle sidebar"
+        :aria-label="t('common.toggleSidebar')"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
           <line x1="3" y1="6" x2="21" y2="6"/>
@@ -118,8 +137,35 @@ async function signOut(): Promise<void> {
         <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
           <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
         </svg>
-        <span class="flex-1">Search…</span>
+        <span class="flex-1">{{ t('common.search') }}</span>
         <kbd class="text-[0.65rem] px-1 py-0.5 rounded bg-white/[0.06] border border-border font-mono text-text-muted group-hover:border-primary-500/20">⌘K</kbd>
+      </div>
+
+      <!-- Language switcher -->
+      <div class="relative">
+        <button
+          class="flex items-center gap-1 h-8 px-2.5 rounded-lg text-text-secondary text-[0.8rem] font-medium hover:text-text-primary hover:bg-white/[0.05] transition-all"
+          @click="showLanguageMenu = !showLanguageMenu"
+        >
+          {{ localeLabels[locale as SupportedLocale] }}
+        </button>
+
+        <div
+          v-if="showLanguageMenu"
+          class="absolute right-0 top-full mt-2 w-28 bg-surface-elevated border border-border rounded-xl shadow-2xl z-50 overflow-hidden"
+        >
+          <button
+            v-for="code in SUPPORTED_LOCALES"
+            :key="code"
+            class="flex w-full items-center px-3 py-2 text-[0.8rem] text-left transition-colors"
+            :class="locale === code ? 'text-primary-400 bg-primary-500/8' : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.04]'"
+            @click="chooseLocale(code)"
+          >
+            {{ localeLabels[code] }}
+          </button>
+        </div>
+
+        <div v-if="showLanguageMenu" class="fixed inset-0 z-40" @click="showLanguageMenu = false" />
       </div>
 
       <!-- Notifications -->
@@ -127,7 +173,7 @@ async function signOut(): Promise<void> {
         <button
           class="relative flex items-center justify-center w-8 h-8 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/[0.05] transition-all"
           @click="toggleNotifications"
-          aria-label="Notifications"
+          :aria-label="t('common.notifications')"
         >
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
             <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/>
@@ -145,8 +191,8 @@ async function signOut(): Promise<void> {
           class="absolute right-0 top-full mt-2 w-72 bg-surface-elevated border border-border rounded-xl shadow-2xl z-50 overflow-hidden"
         >
           <div class="flex items-center justify-between px-4 py-3 border-b border-border">
-            <span class="text-[0.8rem] font-semibold font-display text-text-primary">Notifications</span>
-            <span class="text-[0.65rem] font-medium text-primary-400 bg-primary-500/10 border border-primary-500/20 rounded-full px-2 py-0.5">{{ notificationCount }} new</span>
+            <span class="text-[0.8rem] font-semibold font-display text-text-primary">{{ t('common.notifications') }}</span>
+            <span class="text-[0.65rem] font-medium text-primary-400 bg-primary-500/10 border border-primary-500/20 rounded-full px-2 py-0.5">{{ t('common.newCount', { count: notificationCount }) }}</span>
           </div>
           <div class="divide-y divide-border">
             <div class="px-4 py-3 hover:bg-white/[0.03] transition-colors cursor-pointer">
@@ -163,7 +209,7 @@ async function signOut(): Promise<void> {
             </div>
           </div>
           <div class="px-4 py-2.5 border-t border-border">
-            <button class="text-[0.75rem] text-primary-400 hover:text-primary-300 transition-colors">View all notifications</button>
+            <button class="text-[0.75rem] text-primary-400 hover:text-primary-300 transition-colors">{{ t('common.viewAllNotifications') }}</button>
           </div>
         </div>
 
@@ -215,7 +261,7 @@ async function signOut(): Promise<void> {
               class="block px-4 py-2 text-[0.8rem] text-text-secondary hover:bg-white/[0.03] hover:text-text-primary transition-colors"
               @click="showAccountMenu = false"
             >
-              Settings
+              {{ t('nav.settings') }}
             </RouterLink>
             <button
               type="button"
@@ -223,7 +269,7 @@ async function signOut(): Promise<void> {
               class="w-full text-left px-4 py-2 text-[0.8rem] text-red-400 hover:bg-red-500/10 transition-colors"
               @click="signOut"
             >
-              Sign out
+              {{ t('common.signOut') }}
             </button>
           </div>
         </div>

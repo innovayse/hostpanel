@@ -9,6 +9,7 @@
  */
 import { ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../../modules/auth/stores/authStore'
 import { useRouter } from 'vue-router'
 
@@ -18,11 +19,12 @@ const emit = defineEmits<{
   navigate: []
 }>()
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 
-/** Set of expanded parent item labels. */
+/** Set of expanded parent item routes (keyed by `to`, stable across locales). */
 const expanded = ref<Set<string>>(new Set())
 
 /**
@@ -39,16 +41,16 @@ async function handleLogout(): Promise<void> {
 interface NavChild {
   /** Route path. */
   to: string
-  /** Display label. */
-  label: string
+  /** i18n key for the display label. */
+  labelKey: string
 }
 
 /** A top-level navigation item, optionally with children. */
 interface NavItem {
   /** Route path (used when no children). */
   to: string
-  /** Display label. */
-  label: string
+  /** i18n key for the display label. */
+  labelKey: string
   /** SVG path data for the icon. */
   icon: string
   /** Optional sub-menu items. */
@@ -58,87 +60,87 @@ interface NavItem {
 /** Top-level navigation items with SVG path icons. */
 const navItems: NavItem[] = [
   {
-    to: '/dashboard', label: 'Dashboard',
+    to: '/dashboard', labelKey: 'nav.dashboard',
     icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
   },
   {
-    to: '/clients', label: 'Clients',
+    to: '/clients', labelKey: 'nav.clients',
     icon: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zm12 2v2m0 0v2m0-2h2m-2 0h-2',
     children: [
-      { to: '/clients', label: 'View/Search Clients' },
-      { to: '/clients/users', label: 'Manage Users' },
-      { to: '/clients/shared-hostings', label: 'Shared Hostings' },
-      { to: '/clients/addons', label: 'Service Addons' },
-      { to: '/clients/domain-registrations', label: 'Domain Registrations' },
-      { to: '/clients/cancellations', label: 'Cancellation Requests' },
-      { to: '/clients/affiliates', label: 'Manage Affiliates' },
+      { to: '/clients', labelKey: 'nav.clientsChildren.view' },
+      { to: '/clients/users', labelKey: 'nav.clientsChildren.users' },
+      { to: '/clients/shared-hostings', labelKey: 'nav.clientsChildren.sharedHostings' },
+      { to: '/clients/addons', labelKey: 'nav.clientsChildren.addons' },
+      { to: '/clients/domain-registrations', labelKey: 'nav.clientsChildren.domainRegistrations' },
+      { to: '/clients/cancellations', labelKey: 'nav.clientsChildren.cancellations' },
+      { to: '/clients/affiliates', labelKey: 'nav.clientsChildren.affiliates' },
     ],
   },
   {
-    to: '/billing', label: 'Billing',
+    to: '/billing', labelKey: 'nav.billing',
     icon: 'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z',
     children: [
-      { to: '/billing/transactions', label: 'Transactions List' },
-      { to: '/billing/invoices', label: 'Invoices' },
-      { to: '/billing/billable-items', label: 'Billable Items' },
-      { to: '/billing/quotes', label: 'Quotes' },
-      { to: '/billing/offline-cc', label: 'Offline CC Processing' },
-      { to: '/billing/disputes', label: 'Disputes' },
-      { to: '/billing/gateway-log', label: 'Gateway Log' },
+      { to: '/billing/transactions', labelKey: 'nav.billingChildren.transactions' },
+      { to: '/billing/invoices', labelKey: 'nav.billingChildren.invoices' },
+      { to: '/billing/billable-items', labelKey: 'nav.billingChildren.billableItems' },
+      { to: '/billing/quotes', labelKey: 'nav.billingChildren.quotes' },
+      { to: '/billing/offline-cc', labelKey: 'nav.billingChildren.offlineCc' },
+      { to: '/billing/disputes', labelKey: 'nav.billingChildren.disputes' },
+      { to: '/billing/gateway-log', labelKey: 'nav.billingChildren.gatewayLog' },
     ],
   },
   {
-    to: '/reports', label: 'Reports',
+    to: '/reports', labelKey: 'nav.reports',
     icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
   },
   {
-    to: '/orders', label: 'Orders',
+    to: '/orders', labelKey: 'nav.orders',
     icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 7h6m-6 4h4',
   },
   {
-    to: '/domains', label: 'Domains',
+    to: '/domains', labelKey: 'nav.domains',
     icon: 'M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9',
   },
   {
-    to: '/support', label: 'Support',
+    to: '/support', labelKey: 'nav.support',
     icon: 'M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z',
     children: [
-      { to: '/support/overview', label: 'Support Overview' },
-      { to: '/support/tickets', label: 'Support Tickets' },
-      { to: '/support/tickets/new', label: 'Open New Ticket' },
-      { to: '/support/predefined-replies', label: 'Predefined Replies' },
-      { to: '/support/announcements', label: 'Announcements' },
-      { to: '/support/downloads', label: 'Downloads' },
-      { to: '/support/knowledgebase', label: 'Knowledgebase' },
-      { to: '/support/network-issues', label: 'Network Issues' },
+      { to: '/support/overview', labelKey: 'nav.supportChildren.overview' },
+      { to: '/support/tickets', labelKey: 'nav.supportChildren.tickets' },
+      { to: '/support/tickets/new', labelKey: 'nav.supportChildren.newTicket' },
+      { to: '/support/predefined-replies', labelKey: 'nav.supportChildren.predefinedReplies' },
+      { to: '/support/announcements', labelKey: 'nav.supportChildren.announcements' },
+      { to: '/support/downloads', labelKey: 'nav.supportChildren.downloads' },
+      { to: '/support/knowledgebase', labelKey: 'nav.supportChildren.knowledgebase' },
+      { to: '/support/network-issues', labelKey: 'nav.supportChildren.networkIssues' },
     ],
   },
   {
-    to: '/plugins', label: 'Plugins',
+    to: '/plugins', labelKey: 'nav.plugins',
     icon: 'M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4',
   },
   {
-    to: '/servers', label: 'Servers',
+    to: '/servers', labelKey: 'nav.servers',
     icon: 'M5 12H3a2 2 0 00-2 2v4a2 2 0 002 2h18a2 2 0 002-2v-4a2 2 0 00-2-2h-2M5 12V8a2 2 0 012-2h10a2 2 0 012 2v4M5 12h14M8 20h.01M12 20h.01M16 20h.01',
   },
   {
-    to: '/integrations', label: 'Integrations',
+    to: '/integrations', labelKey: 'nav.integrations',
     icon: 'M13 10V3L4 14h7v7l9-11h-7z',
   },
   {
-    to: '/migration', label: 'Migration',
+    to: '/migration', labelKey: 'nav.migration',
     icon: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12',
   },
   {
-    to: '/settings', label: 'Settings',
+    to: '/settings', labelKey: 'nav.settings',
     icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z',
     children: [
-      { to: '/settings', label: 'General' },
-      { to: '/settings/products', label: 'Products' },
-      { to: '/settings/tld-pricing', label: 'TLD Pricing' },
-      { to: '/settings/slides', label: 'Slides' },
-      { to: '/settings/email-templates', label: 'Email Templates' },
-      { to: '/settings/gateways', label: 'Payment Gateways' },
+      { to: '/settings', labelKey: 'nav.settingsChildren.general' },
+      { to: '/settings/products', labelKey: 'nav.settingsChildren.products' },
+      { to: '/settings/tld-pricing', labelKey: 'nav.settingsChildren.tldPricing' },
+      { to: '/settings/slides', labelKey: 'nav.settingsChildren.slides' },
+      { to: '/settings/email-templates', labelKey: 'nav.settingsChildren.emailTemplates' },
+      { to: '/settings/gateways', labelKey: 'nav.settingsChildren.gateways' },
     ],
   },
 ]
@@ -168,12 +170,12 @@ function isChildActive(to: string): boolean {
 /**
  * Toggles the expanded state of a parent nav item.
  *
- * @param label - The label of the item to toggle.
+ * @param to - The route path of the item to toggle.
  */
-function toggleExpand(label: string): void {
+function toggleExpand(to: string): void {
   const next = new Set(expanded.value)
-  if (next.has(label)) next.delete(label)
-  else next.add(label)
+  if (next.has(to)) next.delete(to)
+  else next.add(to)
   expanded.value = next
 }
 
@@ -185,7 +187,7 @@ function toggleExpand(label: string): void {
  * @returns True if expanded.
  */
 function isExpanded(item: NavItem): boolean {
-  if (expanded.value.has(item.label)) return true
+  if (expanded.value.has(item.to)) return true
   if (item.children && isActive(item)) return true
   return false
 }
@@ -210,7 +212,7 @@ function isExpanded(item: NavItem): boolean {
             :class="isActive(item)
               ? 'text-text-primary bg-primary-500/8'
               : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.04]'"
-            @click="toggleExpand(item.label)"
+            @click="toggleExpand(item.to)"
           >
             <span
               v-if="isActive(item)"
@@ -226,7 +228,7 @@ function isExpanded(item: NavItem): boolean {
               <path :d="item.icon"/>
             </svg>
 
-            <span class="flex-1">{{ item.label }}</span>
+            <span class="flex-1">{{ t(item.labelKey) }}</span>
 
             <!-- Chevron -->
             <svg
@@ -258,7 +260,7 @@ function isExpanded(item: NavItem): boolean {
                 class="w-1 h-1 rounded-full shrink-0"
                 :class="isChildActive(child.to) ? 'bg-primary-400' : 'bg-text-muted/40'"
               />
-              {{ child.label }}
+              {{ t(child.labelKey) }}
             </RouterLink>
           </div>
         </template>
@@ -287,7 +289,7 @@ function isExpanded(item: NavItem): boolean {
             <path :d="item.icon"/>
           </svg>
 
-          <span>{{ item.label }}</span>
+          <span>{{ t(item.labelKey) }}</span>
         </RouterLink>
 
       </template>
@@ -299,12 +301,12 @@ function isExpanded(item: NavItem): boolean {
         <div class="flex items-center justify-center w-7 h-7 rounded-[7px] gradient-brand text-white text-[0.7rem] font-bold font-display shrink-0">
           A
         </div>
-        <span class="text-[0.8rem] text-text-secondary font-medium">Admin</span>
+        <span class="text-[0.8rem] text-text-secondary font-medium">{{ t('common.admin') }}</span>
       </div>
 
       <button
         @click="handleLogout"
-        title="Sign out"
+        :title="t('common.signOut')"
         class="flex items-center justify-center w-7 h-7 rounded-[7px] border border-border bg-transparent text-text-muted cursor-pointer transition-all duration-150 hover:text-status-red hover:border-status-red/30 hover:bg-status-red/6"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">

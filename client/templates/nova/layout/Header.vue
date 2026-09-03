@@ -15,11 +15,14 @@
 
     <div class="mx-auto flex max-w-[1240px] items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
       <NuxtLink :to="localePath('/')" class="flex shrink-0 items-center gap-2.5 text-nova-ink">
-        <span
-          class="grid h-9 w-9 place-items-center rounded-xl bg-[linear-gradient(135deg,var(--n-brand),var(--n-accent))] text-[17px] font-extrabold text-[#08191f]"
-          aria-hidden="true"
-        >i</span>
-        <span class="text-lg font-bold tracking-tight">Innovayse</span>
+        <img v-if="logoUrl" :src="logoUrl" alt="" class="h-9 w-auto max-w-[120px] object-contain" />
+        <template v-else>
+          <span
+            class="grid h-9 w-9 place-items-center rounded-xl bg-[linear-gradient(135deg,var(--n-brand),var(--n-accent))] text-[17px] font-extrabold text-[#08191f]"
+            aria-hidden="true"
+          >i</span>
+          <span class="text-lg font-bold tracking-tight">Innovayse</span>
+        </template>
       </NuxtLink>
 
       <!--
@@ -173,6 +176,7 @@ const { t } = useI18n()
 const localePath = useLocalePath()
 const cart = useCartStore()
 const route = useRoute()
+const { get: getPortalSetting } = usePortalSettings()
 
 // Where "Sign in" goes is a deployment decision, not a constant — see
 // `useAuthMode`. Hard-coding /client/login sent an SSO deployment's visitors to a
@@ -180,6 +184,9 @@ const route = useRoute()
 const { signInHref } = useAuthMode()
 
 const menuOpen = ref(false)
+
+/** Operator-uploaded logo, admin-managed with an environment fallback. Empty renders the built-in mark and wordmark. */
+const logoUrl = computed(() => getPortalSetting('portal.logo', 'portalLogo'))
 const menuRef = ref<HTMLElement | null>(null)
 const toggleRef = ref<HTMLButtonElement | null>(null)
 

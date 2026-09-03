@@ -61,7 +61,8 @@
         "title": "Quick Connect",
         "telegram": "Telegram",
         "whatsapp": "WhatsApp",
-        "liveChat": "Live Chat"
+        "liveChat": "Live Chat",
+        "toggle": "Contact us"
       }
     }
   }

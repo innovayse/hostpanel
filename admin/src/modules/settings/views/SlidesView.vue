@@ -10,7 +10,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import draggable from 'vuedraggable'
 import { useSlidesStore } from '../stores/slidesStore'
-import ConfirmModal from '@/components/ConfirmModal.vue'
+import UiConfirmModal from '@/components/ui/UiConfirmModal.vue'
 import type { Slide } from '@/types/models'
 
 const router = useRouter()
@@ -134,7 +134,7 @@ function formatDateRange(from: string | null, until: string | null): string {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="flex items-center justify-between mb-7">
@@ -307,7 +307,7 @@ function formatDateRange(from: string | null, until: string | null): string {
     </div>
 
     <!-- Delete Confirm Modal -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="deleteTarget"
       title="Delete Slide"
       :message="`Delete &quot;${slideTitle(deleteTarget)}&quot;? This action cannot be undone.`"

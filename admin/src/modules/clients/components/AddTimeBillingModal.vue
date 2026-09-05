@@ -5,8 +5,8 @@
  */
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import AppNumberInput from '../../../components/AppNumberInput.vue'
-import AppSelect from '../../../components/AppSelect.vue'
+import UiNumberInput from '../../../components/ui/UiNumberInput.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
 import type { ServiceListItem, PagedResult } from '../../../types/models'
 
 const props = defineProps<{
@@ -153,7 +153,7 @@ onMounted(() => fetchServices())
             :key="idx"
             class="grid grid-cols-1 sm:grid-cols-[1.5fr_2fr_0.7fr_0.7fr_0.7fr] gap-2 items-center"
           >
-            <AppSelect
+            <UiSelect
               v-model="row.serviceId"
               :options="[{ value: 0, label: 'None' }, ...serviceOptions]"
               placeholder="Service"
@@ -164,8 +164,8 @@ onMounted(() => fetchServices())
               placeholder="Description"
               class="w-full bg-white/[0.04] border border-zinc-700 rounded-lg px-2.5 py-2 text-[0.82rem] text-white placeholder-zinc-500 focus:outline-none focus:border-primary-500/50 transition-colors"
             />
-            <AppNumberInput v-model="row.hours" :step="0.25" :min="0" placeholder="0" />
-            <AppNumberInput v-model="row.rate" :step="0.01" :min="0" placeholder="0.00" />
+            <UiNumberInput v-model="row.hours" :step="0.25" :min="0" placeholder="0" />
+            <UiNumberInput v-model="row.rate" :step="0.01" :min="0" placeholder="0.00" />
             <span class="text-[0.82rem] text-zinc-400 font-mono px-1">${{ rowAmount(row).toFixed(2) }}</span>
           </div>
         </div>

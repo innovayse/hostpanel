@@ -22,9 +22,9 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
-import AppAlert from '../../../components/AppAlert.vue'
-import AppTextField from '../../../components/AppTextField.vue'
-import AppGradientButton from '../../../components/AppGradientButton.vue'
+import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiTextField from '../../../components/ui/UiTextField.vue'
+import UiGradientButton from '../../../components/ui/UiGradientButton.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -190,14 +190,14 @@ onMounted(async () => {
       </div>
 
       <!-- First-run notice: shown before and after sign-in, because it is true either way. -->
-      <AppAlert v-if="authStore.setupRequired && !offerBootstrap" variant="warning" class="mb-4">
+      <UiAlert v-if="authStore.setupRequired && !offerBootstrap" variant="warning" class="mb-4">
         No account holds the Admin role yet. Sign in and you can claim it.
-      </AppAlert>
+      </UiAlert>
 
       <!-- Whatever went wrong, in the API's own words. -->
-      <AppAlert v-if="authStore.error" variant="error" class="mb-4">
+      <UiAlert v-if="authStore.error" variant="error" class="mb-4">
         {{ authStore.error }}
-      </AppAlert>
+      </UiAlert>
 
       <!-- Mode still unknown: nothing can be drawn honestly yet. -->
       <p v-if="resolvingMode" class="text-sm text-text-secondary">
@@ -205,13 +205,13 @@ onMounted(async () => {
       </p>
 
       <!-- Mode lookup failed. Retry is the recovery action; it re-requests, not reloads. -->
-      <AppGradientButton
+      <UiGradientButton
         v-else-if="authStore.mode === null"
         variant="quiet"
         @click="handleRetryMode"
       >
         Try again
-      </AppGradientButton>
+      </UiGradientButton>
 
       <!-- Signed in, Admin unclaimed: the one call that claims it. -->
       <div v-else-if="offerBootstrap" class="flex flex-col gap-4">
@@ -233,7 +233,7 @@ onMounted(async () => {
             <code class="text-text-primary">docker compose logs hostpanel-api</code> and
             paste it here. Restarting the API prints it again.
           </p>
-          <AppTextField
+          <UiTextField
             v-model="setupToken"
             label="Setup token"
             autocomplete="off"
@@ -243,12 +243,12 @@ onMounted(async () => {
           />
         </template>
 
-        <AppGradientButton type="button" :loading="authStore.loading" @click="handleClaimAdmin">
+        <UiGradientButton type="button" :loading="authStore.loading" @click="handleClaimAdmin">
           Claim the Admin role
-        </AppGradientButton>
-        <AppGradientButton variant="quiet" @click="router.push('/dashboard')">
+        </UiGradientButton>
+        <UiGradientButton variant="quiet" @click="router.push('/dashboard')">
           Skip for now
-        </AppGradientButton>
+        </UiGradientButton>
       </div>
 
       <!-- Local mode, second factor outstanding. -->
@@ -260,7 +260,7 @@ onMounted(async () => {
         <p class="text-sm text-text-secondary">
           Enter the current code from your authenticator app.
         </p>
-        <AppTextField
+        <UiTextField
           v-model="totpCode"
           label="Authentication code"
           inputmode="numeric"
@@ -271,12 +271,12 @@ onMounted(async () => {
           required
           :disabled="authStore.loading"
         />
-        <AppGradientButton type="submit" :loading="authStore.loading">
+        <UiGradientButton type="submit" :loading="authStore.loading">
           Verify code
-        </AppGradientButton>
-        <AppGradientButton variant="quiet" @click="handleCancelTwoFactor">
+        </UiGradientButton>
+        <UiGradientButton variant="quiet" @click="handleCancelTwoFactor">
           Use a different account
-        </AppGradientButton>
+        </UiGradientButton>
       </form>
 
       <!-- Local mode, credentials. -->
@@ -285,7 +285,7 @@ onMounted(async () => {
         class="flex flex-col gap-4"
         @submit.prevent="handleLocalLogin"
       >
-        <AppTextField
+        <UiTextField
           v-model="email"
           label="Email address"
           type="email"
@@ -300,9 +300,9 @@ onMounted(async () => {
               <polyline points="22,6 12,13 2,6" />
             </svg>
           </template>
-        </AppTextField>
+        </UiTextField>
 
-        <AppTextField
+        <UiTextField
           v-model="password"
           label="Password"
           type="password"
@@ -317,35 +317,35 @@ onMounted(async () => {
               <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
           </template>
-        </AppTextField>
+        </UiTextField>
 
-        <AppGradientButton type="submit" :loading="authStore.loading">
+        <UiGradientButton type="submit" :loading="authStore.loading">
           Sign in
-        </AppGradientButton>
+        </UiGradientButton>
 
         <!--
           A fresh standalone install has no accounts at all, so there is nobody to sign
           in as and this form is a dead end. The way out is the first-run screen, and
           this is the only thing that routes to it.
         -->
-        <AppGradientButton
+        <UiGradientButton
           v-if="authStore.setupRequired"
           variant="quiet"
           @click="handleGoToSetup"
         >
           Set up the first account
-        </AppGradientButton>
+        </UiGradientButton>
       </form>
 
       <!-- SSO mode — unchanged: one button that hands the browser to the SSO. -->
-      <AppGradientButton
+      <UiGradientButton
         v-else
         type="button"
         :loading="authStore.loading"
         @click="handleSsoLogin"
       >
         Sign in with Innovayse SSO
-      </AppGradientButton>
+      </UiGradientButton>
     </div>
   </div>
 </template>

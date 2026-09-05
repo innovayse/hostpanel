@@ -2,9 +2,9 @@
 import { ref, onMounted } from 'vue'
 import ReportPage from '../components/ReportPage.vue'
 import ReportTimestamp from '../components/ReportTimestamp.vue'
-import AppClientSelect from '../../../components/AppClientSelect.vue'
-import AppSpinner from '../../../components/AppSpinner.vue'
-import DateRangePicker from '../../../components/DateRangePicker.vue'
+import UiClientSelect from '../../../components/ui/UiClientSelect.vue'
+import UiSpinner from '../../../components/ui/UiSpinner.vue'
+import UiDateRangePicker from '../../../components/ui/UiDateRangePicker.vue'
 import { useApi } from '../../../composables/useApi'
 
 const { request } = useApi()
@@ -60,25 +60,25 @@ onMounted(() => { loadClients(); load() })
           <!-- Client -->
           <div>
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Client</label>
-            <AppClientSelect v-model="selectedClient" :clients="clientOptions" placeholder="All clients" />
+            <UiClientSelect v-model="selectedClient" :clients="clientOptions" placeholder="All clients" />
           </div>
 
           <!-- Date Range -->
           <div>
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Date Range</label>
-            <DateRangePicker v-model="dateRange" />
+            <UiDateRangePicker v-model="dateRange" />
           </div>
 
           <!-- Min Amount -->
           <div>
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Min. Amount</label>
-            <AppSpinner v-model="minAmount" :step="1" :min="0" placeholder="Any" />
+            <UiSpinner v-model="minAmount" :step="1" :min="0" placeholder="Any" />
           </div>
 
           <!-- Max Amount -->
           <div>
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Max. Amount</label>
-            <AppSpinner v-model="maxAmount" :step="1" :min="0" placeholder="Any" />
+            <UiSpinner v-model="maxAmount" :step="1" :min="0" placeholder="Any" />
           </div>
         </div>
         <div class="flex justify-center">

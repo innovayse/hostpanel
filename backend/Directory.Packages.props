@@ -1,7 +1,21 @@
-<Project>
+﻿<Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
+  <!--
+    Image processing for storefront branding uploads.
+
+    Pinned to ImageSharp 2.x deliberately, and the major version is the whole point: 2.1.x is
+    Apache-2.0, while 3.0 onwards is the Six Labors Split License, which restricts commercial
+    use above a revenue threshold. This repository is public and BUSL-licensed, so a dependency
+    that attaches a commercial condition to downstream users is not one this project can take.
+    **Do not let a routine "update packages" pass move this to 3.x.** It is a licensing change
+    wearing a version bump.
+  -->
+  <ItemGroup>
+    <PackageVersion Include="SixLabors.ImageSharp" Version="2.1.13" />
+  </ItemGroup>
+
   <!-- ASP.NET Core & Identity -->
   <ItemGroup>
     <PackageVersion Include="Innovayse.Auth" Version="1.0.0" />

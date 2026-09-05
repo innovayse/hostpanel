@@ -1,0 +1,8 @@
+This directory must exist before the API starts.
+
+app.UseStaticFiles() resolves its WebRootFileProvider once, at startup. With no wwwroot on
+disk at that moment it captures a NullFileProvider and every static URL 404s for the life of
+the process -- including the /uploads/branding/... URLs the branding upload hands back, which
+would make an operator's freshly uploaded logo unreachable until the next restart.
+
+Creating the directory at upload time is too late for exactly that reason, so it is committed.

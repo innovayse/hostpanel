@@ -37,6 +37,8 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Otp.NET" />
     <PackageReference Include="Serilog.AspNetCore" />
+    <!-- Branding uploads are rendered in Branding/ImageSharpBrandingImageProcessor.cs. -->
+    <PackageReference Include="SixLabors.ImageSharp" />
     <PackageReference Include="Stripe.net" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
     <PackageReference Include="WolverineFx" />

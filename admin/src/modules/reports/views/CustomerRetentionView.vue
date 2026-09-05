@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import ReportPage from '../components/ReportPage.vue'
 import ReportTimestamp from '../components/ReportTimestamp.vue'
-import AppCheckbox from '../../../components/AppCheckbox.vue'
+import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import { useApi } from '../../../composables/useApi'
 
 const { request } = useApi()
@@ -33,7 +33,7 @@ onMounted(load)
     :loading :error>
     <template v-if="data">
       <label class="flex items-start gap-2 mb-4 cursor-pointer select-none">
-        <AppCheckbox v-model="includeActive" @update:modelValue="load" class="mt-0.5 shrink-0" />
+        <UiCheckbox v-model="includeActive" @update:modelValue="load" class="mt-0.5 shrink-0" />
         <span class="text-[0.82rem] text-text-secondary">Include Active Products &amp; Services (Assuming active will end Next Due Date) in Calculation of Average Retention Time</span>
       </label>
       <div class="bg-surface-card border border-border rounded-2xl overflow-hidden">

@@ -4,9 +4,9 @@
  * manage permissions, transfer ownership, and delete user.
  */
 import { ref, onMounted } from 'vue'
-import AppCheckbox from '../../../components/AppCheckbox.vue'
-import AppSelect from '../../../components/AppSelect.vue'
-import ConfirmModal from '../../../components/ConfirmModal.vue'
+import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
 import type { UserDetail } from '../stores/usersStore'
 import { PERMISSION_LABELS, ClientPermission } from '../../../types/models'
 import { LANGUAGE_OPTIONS } from '../../../utils/constants'
@@ -55,7 +55,7 @@ const permissionValues = ref<number>(props.permissions ?? ClientPermission.All)
 /** Whether the "transfer ownership" checkbox is ticked. */
 const makeOwnerChecked = ref(false)
 
-/** Language options for AppSelect. */
+/** Language options for UiSelect. */
 const languageOptions = LANGUAGE_OPTIONS
 
 onMounted(() => {
@@ -176,7 +176,7 @@ const confirmDelete = (): void => {
         <!-- Language -->
         <div>
           <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.07em] text-text-muted mb-1.5">Language</label>
-          <AppSelect
+          <UiSelect
             v-model="language"
             :options="languageOptions"
             placeholder="Default"
@@ -195,7 +195,7 @@ const confirmDelete = (): void => {
           <!-- Permission checkboxes (2-column grid) -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <label v-for="perm in PERMISSION_LABELS" :key="perm.flag" class="flex items-center gap-2 cursor-pointer">
-              <AppCheckbox
+              <UiCheckbox
                 :model-value="props.isOwner ? true : hasPermission(perm.flag)"
                 :disabled="props.isOwner"
                 @update:model-value="togglePermission(perm.flag)"
@@ -207,7 +207,7 @@ const confirmDelete = (): void => {
           <!-- Make Owner (only for non-owners) -->
           <div v-if="!props.isOwner" class="mt-4 pt-3 border-t border-border">
             <label class="flex items-center gap-2.5 cursor-pointer">
-              <AppCheckbox v-model="makeOwnerChecked" />
+              <UiCheckbox v-model="makeOwnerChecked" />
               <span class="text-[0.82rem] text-text-secondary">Transfer ownership to this user</span>
             </label>
           </div>
@@ -271,7 +271,7 @@ const confirmDelete = (): void => {
     </div>
 
     <!-- Delete Confirm Modal -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="showDeleteConfirm"
       title="Delete User"
       :message="`Permanently delete user &quot;${email}&quot;? This cannot be undone.`"

@@ -8,7 +8,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useQuoteStore } from '../../billing/stores/quoteStore'
 import { QUOTE_STAGE_STYLES } from '../../../utils/constants'
 import { formatDate } from '../../../utils/format'
-import ConfirmModal from '../../../components/ConfirmModal.vue'
+import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -100,7 +100,7 @@ onMounted(() => fetchQuotes())
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="flex items-center justify-between gap-2.5 mb-5">
@@ -210,7 +210,7 @@ onMounted(() => fetchQuotes())
     </template>
 
     <!-- Delete Confirm Modal -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="showDeleteModal"
       title="Delete Quote"
       :message="`Are you sure you want to delete quote #${deleteTargetId}?`"

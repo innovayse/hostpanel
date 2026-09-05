@@ -40,7 +40,7 @@ function goToCreateProduct(): void {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full flex flex-col gap-6">
+  <div class="w-full flex flex-col gap-6">
 
     <!-- Breadcrumb -->
     <div class="flex items-center gap-2 text-[0.78rem]">

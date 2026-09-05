@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import AppSelect from './AppSelect.vue'
+import UiSelect from './UiSelect.vue'
 
 const props = defineProps<{
   modelValue: string
@@ -67,7 +67,7 @@ const selectedValue = computed({
 </script>
 
 <template>
-  <AppSelect
+  <UiSelect
     v-model="selectedValue"
     :options="countryOptions"
     :placeholder="placeholder || 'Select country...'"

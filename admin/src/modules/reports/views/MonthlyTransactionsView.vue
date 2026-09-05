@@ -4,7 +4,7 @@ import { Line } from 'vue-chartjs'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js'
 import ReportPage from '../components/ReportPage.vue'
 import ReportTimestamp from '../components/ReportTimestamp.vue'
-import AppSelect from '../../../components/AppSelect.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
 import { useApi } from '../../../composables/useApi'
 import { REPORT_CURRENCY_RATES, REPORT_CURRENCY_SYMBOLS, REPORT_CURRENCY_OPTIONS } from '../currency'
 import type { ReportCurrency } from '../currency'
@@ -82,15 +82,15 @@ onMounted(load)
         <div class="flex items-end gap-3 flex-wrap">
           <div class="w-[160px]">
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Month</label>
-            <AppSelect v-model="selectedMonth" :options="monthOptions" />
+            <UiSelect v-model="selectedMonth" :options="monthOptions" />
           </div>
           <div class="w-[110px]">
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Year</label>
-            <AppSelect v-model="selectedYear" :options="yearOptions" />
+            <UiSelect v-model="selectedYear" :options="yearOptions" />
           </div>
           <div class="w-[190px]">
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Choose Currency</label>
-            <AppSelect v-model="selectedCurrency" :options="REPORT_CURRENCY_OPTIONS" />
+            <UiSelect v-model="selectedCurrency" :options="REPORT_CURRENCY_OPTIONS" />
           </div>
           <button class="px-5 py-2 gradient-brand text-white text-[0.82rem] font-semibold rounded-[9px] transition-opacity hover:opacity-90" @click="load">Generate</button>
         </div>

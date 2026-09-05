@@ -8,11 +8,11 @@ import { useRoute, useRouter } from 'vue-router'
 import { useApi } from '../../../composables/useApi'
 import { DOMAIN_STATUS_OPTIONS, PAYMENT_METHOD_OPTIONS } from '../../../utils/constants'
 import { formatDate, toDateInputValue } from '../../../utils/format'
-import AppDatePicker from '../../../components/AppDatePicker.vue'
-import AppNumberInput from '../../../components/AppNumberInput.vue'
-import AppSelect from '../../../components/AppSelect.vue'
-import ConfirmModal from '../../../components/ConfirmModal.vue'
-import ToggleSwitch from '../../../components/ToggleSwitch.vue'
+import UiDatePicker from '../../../components/ui/UiDatePicker.vue'
+import UiNumberInput from '../../../components/ui/UiNumberInput.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
+import UiToggleSwitch from '../../../components/ui/UiToggleSwitch.vue'
 import DnsRecordsTable from '../components/DnsRecordsTable.vue'
 import EmailForwardingTable from '../components/EmailForwardingTable.vue'
 import DomainRemindersTable from '../components/DomainRemindersTable.vue'
@@ -428,7 +428,7 @@ onMounted(() => fetchDomain())
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Loading -->
     <div v-if="loading && !domain" class="flex items-center gap-3 text-text-secondary text-sm mt-4">
@@ -515,11 +515,11 @@ onMounted(() => fetchDomain())
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">First Payment Amount</label>
-                    <AppNumberInput v-model="firstPaymentAmount" :step="0.01" :min="0" />
+                    <UiNumberInput v-model="firstPaymentAmount" :step="0.01" :min="0" />
                   </div>
                   <div>
                     <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Recurring Amount</label>
-                    <AppNumberInput v-model="recurringAmount" :step="0.01" :min="0" />
+                    <UiNumberInput v-model="recurringAmount" :step="0.01" :min="0" />
                   </div>
                 </div>
 
@@ -636,7 +636,7 @@ onMounted(() => fetchDomain())
                   <div>
                     <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Registration Period</label>
                     <div class="flex items-center gap-2">
-                      <AppNumberInput v-model="registrationPeriod" :min="1" :max="10" :step="1" />
+                      <UiNumberInput v-model="registrationPeriod" :min="1" :max="10" :step="1" />
                       <span class="text-[0.82rem] text-text-muted shrink-0">Years</span>
                     </div>
                   </div>
@@ -651,22 +651,22 @@ onMounted(() => fetchDomain())
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Expiry Date</label>
-                    <AppDatePicker v-model="expiresAt" />
+                    <UiDatePicker v-model="expiresAt" />
                   </div>
                   <div>
                     <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Next Due Date</label>
-                    <AppDatePicker v-model="nextDueDate" />
+                    <UiDatePicker v-model="nextDueDate" />
                   </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Payment Method</label>
-                    <AppSelect v-model="paymentMethod" :options="PAYMENT_METHOD_OPTIONS" />
+                    <UiSelect v-model="paymentMethod" :options="PAYMENT_METHOD_OPTIONS" />
                   </div>
                   <div>
                     <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Status</label>
-                    <AppSelect v-model="status" :options="DOMAIN_STATUS_OPTIONS" />
+                    <UiSelect v-model="status" :options="DOMAIN_STATUS_OPTIONS" />
                   </div>
                 </div>
               </div>
@@ -678,27 +678,27 @@ onMounted(() => fetchDomain())
 
               <div class="flex flex-col gap-3">
                 <label class="flex items-center gap-2.5 cursor-pointer">
-                  <ToggleSwitch :model-value="domain.dnsManagement" @update:model-value="handleToggleDnsManagement" />
+                  <UiToggleSwitch :model-value="domain.dnsManagement" @update:model-value="handleToggleDnsManagement" />
                   <span class="text-[0.82rem] text-text-secondary">DNS Management</span>
                 </label>
 
                 <label class="flex items-center gap-2.5 cursor-pointer">
-                  <ToggleSwitch :model-value="domain.emailForwarding" @update:model-value="handleToggleEmailForwarding" />
+                  <UiToggleSwitch :model-value="domain.emailForwarding" @update:model-value="handleToggleEmailForwarding" />
                   <span class="text-[0.82rem] text-text-secondary">Email Forwarding</span>
                 </label>
 
                 <label class="flex items-center gap-2.5 cursor-pointer">
-                  <ToggleSwitch :model-value="domain.whoisPrivacy" @update:model-value="() => handleToggleIdProtection()" />
+                  <UiToggleSwitch :model-value="domain.whoisPrivacy" @update:model-value="() => handleToggleIdProtection()" />
                   <span class="text-[0.82rem] text-text-secondary">ID Protection</span>
                 </label>
 
                 <label class="flex items-center gap-2.5 cursor-pointer">
-                  <ToggleSwitch :model-value="domain.autoRenew" @update:model-value="handleToggleAutoRenew" />
+                  <UiToggleSwitch :model-value="domain.autoRenew" @update:model-value="handleToggleAutoRenew" />
                   <span class="text-[0.82rem] text-text-secondary">Auto Renew</span>
                 </label>
 
                 <label class="flex items-center gap-2.5 cursor-pointer">
-                  <ToggleSwitch :model-value="domain.isLocked" @update:model-value="handleToggleLock" />
+                  <UiToggleSwitch :model-value="domain.isLocked" @update:model-value="handleToggleLock" />
                   <span class="text-[0.82rem] text-text-secondary">Registrar Lock</span>
                 </label>
               </div>
@@ -758,7 +758,7 @@ onMounted(() => fetchDomain())
             </div>
             <div>
               <label class="block text-zinc-400 text-sm mb-1">Number of years</label>
-              <AppNumberInput v-model="renewYears" :min="1" :max="10" />
+              <UiNumberInput v-model="renewYears" :min="1" :max="10" />
             </div>
             <div class="flex justify-end gap-2">
               <button
@@ -775,7 +775,7 @@ onMounted(() => fetchDomain())
       </Teleport>
 
       <!-- Register Confirmation Modal -->
-      <ConfirmModal
+      <UiConfirmModal
         v-if="showRegisterModal"
         title="Register Domain"
         message="Register this domain with the registrar?"

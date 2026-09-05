@@ -2,8 +2,8 @@
 import { ref, onMounted } from 'vue'
 import ReportPage from '../components/ReportPage.vue'
 import ReportTimestamp from '../components/ReportTimestamp.vue'
-import AppClientSelect from '../../../components/AppClientSelect.vue'
-import DateRangePicker from '../../../components/DateRangePicker.vue'
+import UiClientSelect from '../../../components/ui/UiClientSelect.vue'
+import UiDateRangePicker from '../../../components/ui/UiDateRangePicker.vue'
 import { useApi } from '../../../composables/useApi'
 
 const { request } = useApi()
@@ -52,11 +52,11 @@ onMounted(loadClients)
         <div class="flex items-end gap-3">
           <div class="flex-1">
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Select Client</label>
-            <AppClientSelect v-model="selectedClient" :clients="clientOptions" placeholder="Select a client..." />
+            <UiClientSelect v-model="selectedClient" :clients="clientOptions" placeholder="Select a client..." />
           </div>
           <div class="flex-1">
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Date Range</label>
-            <DateRangePicker v-model="dateRange" />
+            <UiDateRangePicker v-model="dateRange" />
           </div>
           <button class="px-5 py-2 gradient-brand text-white text-[0.82rem] font-semibold rounded-[9px] transition-opacity hover:opacity-90 shrink-0" @click="load">Generate</button>
           <button class="px-4 py-2 bg-white/[0.04] border border-border text-text-secondary text-[0.78rem] font-medium rounded-[9px] hover:bg-white/[0.08] transition-colors shrink-0" @click="printReport">Print</button>

@@ -8,11 +8,11 @@ import { useRoute, useRouter } from 'vue-router'
 import { useApi } from '../../../composables/useApi'
 import { SERVICE_STATUS_STYLES, SERVICE_STATUS_OPTIONS, BILLING_CYCLE_OPTIONS } from '../../../utils/constants'
 import { formatDate, toDateInputValue } from '../../../utils/format'
-import AppDatePicker from '../../../components/AppDatePicker.vue'
-import AppNumberInput from '../../../components/AppNumberInput.vue'
-import AppSelect from '../../../components/AppSelect.vue'
-import ConfirmModal from '../../../components/ConfirmModal.vue'
-import ToggleSwitch from '../../../components/ToggleSwitch.vue'
+import UiDatePicker from '../../../components/ui/UiDatePicker.vue'
+import UiNumberInput from '../../../components/ui/UiNumberInput.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
+import UiToggleSwitch from '../../../components/ui/UiToggleSwitch.vue'
 import type { ServiceDetail, ServiceListItem, PagedResult } from '../../../types/models'
 
 const route = useRoute()
@@ -153,10 +153,10 @@ const statusOptions = SERVICE_STATUS_OPTIONS
 /** Status badge style map. */
 const statusStyles = SERVICE_STATUS_STYLES
 
-/** Billing cycle options for the AppSelect dropdown. */
+/** Billing cycle options for the UiSelect dropdown. */
 const billingCycleOptions = BILLING_CYCLE_OPTIONS
 
-/** Server options for AppSelect dropdown. */
+/** Server options for UiSelect dropdown. */
 const serverOptions = computed(() => [
   { value: 0, label: 'None' },
   ...serverList.value.map(s => ({
@@ -165,12 +165,12 @@ const serverOptions = computed(() => [
   })),
 ])
 
-/** Product options for AppSelect dropdown. */
+/** Product options for UiSelect dropdown. */
 const productOptions = computed(() =>
   productList.value.map(p => ({ value: p.id, label: p.name }))
 )
 
-/** Service switcher options for AppSelect dropdown. */
+/** Service switcher options for UiSelect dropdown. */
 const serviceSwitcherOptions = computed(() =>
   clientServices.value.map(s => ({
     value: s.id,
@@ -473,7 +473,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Loading -->
     <div v-if="loading && !service" class="flex items-center gap-3 text-text-secondary text-sm mt-4">
@@ -504,7 +504,7 @@ onMounted(() => {
               </svg>
               Back
             </button>
-            <AppSelect
+            <UiSelect
               v-if="clientServices.length > 1"
               :model-value="Number(serviceId)"
               :options="serviceSwitcherOptions"
@@ -570,7 +570,7 @@ onMounted(() => {
                   </div>
                   <div>
                     <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Product/Service</label>
-                    <AppSelect
+                    <UiSelect
                       v-model="productIdRef"
                       :options="productOptions"
                       searchable
@@ -581,7 +581,7 @@ onMounted(() => {
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Server</label>
-                    <AppSelect
+                    <UiSelect
                       :model-value="serverId ?? 0"
                       :options="serverOptions"
                       searchable
@@ -623,7 +623,7 @@ onMounted(() => {
 
                 <div>
                   <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Status</label>
-                  <AppSelect v-model="status" :options="statusOptions" />
+                  <UiSelect v-model="status" :options="statusOptions" />
                 </div>
               </div>
             </div>
@@ -737,39 +737,39 @@ onMounted(() => {
               <div class="flex flex-col gap-3">
                 <div>
                   <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Quantity</label>
-                  <AppNumberInput v-model="quantity" :min="1" />
+                  <UiNumberInput v-model="quantity" :min="1" />
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Registration Date</label>
-                    <AppDatePicker v-model="createdAt" />
+                    <UiDatePicker v-model="createdAt" />
                   </div>
                   <div>
                     <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">First Payment Amount</label>
-                    <AppNumberInput v-model="firstPaymentAmount" :step="0.01" :min="0" />
+                    <UiNumberInput v-model="firstPaymentAmount" :step="0.01" :min="0" />
                   </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Recurring Amount</label>
-                    <AppNumberInput v-model="recurringAmount" :step="0.01" :min="0" />
+                    <UiNumberInput v-model="recurringAmount" :step="0.01" :min="0" />
                   </div>
                   <div>
                     <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Next Due Date</label>
-                    <AppDatePicker v-model="nextDueDate" />
+                    <UiDatePicker v-model="nextDueDate" />
                   </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Termination Date</label>
-                    <AppDatePicker v-model="terminatedAt" />
+                    <UiDatePicker v-model="terminatedAt" />
                   </div>
                   <div>
                     <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Billing Cycle</label>
-                    <AppSelect v-model="billingCycle" :options="billingCycleOptions" />
+                    <UiSelect v-model="billingCycle" :options="billingCycleOptions" />
                   </div>
                 </div>
 
@@ -801,19 +801,19 @@ onMounted(() => {
               <div class="flex flex-col gap-3">
                 <!-- Override Auto-Suspend -->
                 <label class="flex items-center gap-2.5 cursor-pointer">
-                  <ToggleSwitch v-model="overrideAutoSuspend" />
+                  <UiToggleSwitch v-model="overrideAutoSuspend" />
                   <span class="text-[0.82rem] text-text-secondary">Override Auto-Suspend</span>
                 </label>
 
                 <!-- Suspend Until date (shown when override is on) -->
                 <div v-if="overrideAutoSuspend">
                   <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Suspend Until</label>
-                  <AppDatePicker v-model="suspendUntil" />
+                  <UiDatePicker v-model="suspendUntil" />
                 </div>
 
                 <!-- Auto-Terminate End of Cycle -->
                 <label class="flex items-center gap-2.5 cursor-pointer">
-                  <ToggleSwitch v-model="autoTerminateEndOfCycle" />
+                  <UiToggleSwitch v-model="autoTerminateEndOfCycle" />
                   <span class="text-[0.82rem] text-text-secondary">Auto-Terminate End of Cycle</span>
                 </label>
 
@@ -914,7 +914,7 @@ onMounted(() => {
       </Teleport>
 
       <!-- Suspend Confirmation Modal -->
-      <ConfirmModal
+      <UiConfirmModal
         v-if="showSuspendModal"
         title="Suspend Service"
         message="Are you sure you want to suspend this service? The client will lose access until the service is unsuspended."
@@ -927,7 +927,7 @@ onMounted(() => {
       />
 
       <!-- Terminate Confirmation Modal -->
-      <ConfirmModal
+      <UiConfirmModal
         v-if="showTerminateModal"
         title="Terminate Service"
         message="This action cannot be undone. The service will be permanently terminated."

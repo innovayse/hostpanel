@@ -66,13 +66,30 @@ const currentToken = computed(() => tokenMap[locale.value] ?? DEFAULT_CHAT_TOKEN
 const { get: getPortalSetting } = usePortalSettings()
 const faviconUrl = computed(() => getPortalSetting('portal.favicon', 'portalFavicon'))
 
+/**
+ * Every `<link rel="icon">` the page emits, built-in defaults included.
+ *
+ * An uploaded favicon expands to the whole browser/iOS/Android set the API generated beside
+ * it; a pasted URL stays a single link, because only that one file is known to exist; and
+ * with nothing set at all this is where the built-in mark comes from — `nuxt.config` no
+ * longer carries its own icon links, because two places emitting them meant an uploaded
+ * favicon rendered alongside the built-in one rather than replacing it.
+ *
+ * Kept as a `computed` rather than an inline arrow so the dependency on the settings state
+ * is explicit; both forms work with `useHead`.
+ */
+const faviconLinks = computed(() => brandingIcons(faviconUrl.value).map(icon => ({
+  rel: icon.rel,
+  href: icon.href,
+  ...(icon.type ? { type: icon.type } : {}),
+  ...(icon.sizes ? { sizes: icon.sizes } : {})
+})))
+
 useHead({
   htmlAttrs: {
     lang: () => langMap[locale.value] ?? 'en'
   },
-  // Overrides nuxt.config's static <link rel="icon">. Empty leaves it alone —
-  // a fresh install with nothing uploaded still gets the built-in favicon.
-  link: () => faviconUrl.value ? [{ rel: 'icon', href: faviconUrl.value }] : [],
+  link: faviconLinks,
   script: [
     {
       // Blocking script: always force dark on public pages

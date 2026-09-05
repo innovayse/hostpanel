@@ -9,8 +9,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useClientTicketStore } from '../stores/clientTicketStore'
 import { formatDate } from '../../../utils/format'
 import { TICKET_STATUS_STYLES, TICKET_PRIORITY_OPTIONS, TICKET_PRIORITY_STYLES } from '../../../utils/constants'
-import AppSelect from '../../../components/AppSelect.vue'
-import ConfirmModal from '../../../components/ConfirmModal.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -37,12 +37,12 @@ const replyAuthorName = ref('')
 /** Whether the delete confirmation modal is visible. */
 const showDeleteModal = ref(false)
 
-/** Department options mapped for AppSelect. */
+/** Department options mapped for UiSelect. */
 const departmentOptions = computed(() =>
   store.departments.map(d => ({ value: d.id, label: d.name })),
 )
 
-/** Priority options for AppSelect. */
+/** Priority options for UiSelect. */
 const priorityOptions = TICKET_PRIORITY_OPTIONS
 
 /**
@@ -185,7 +185,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Loading -->
     <div v-if="store.loading && !store.currentTicket" class="flex items-center gap-3 text-text-secondary text-sm mt-4">
@@ -260,11 +260,11 @@ onMounted(() => {
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label class="block text-[0.75rem] text-text-muted mb-1.5">Department</label>
-            <AppSelect v-model="editDepartmentId" :options="departmentOptions" placeholder="Select department" />
+            <UiSelect v-model="editDepartmentId" :options="departmentOptions" placeholder="Select department" />
           </div>
           <div>
             <label class="block text-[0.75rem] text-text-muted mb-1.5">Priority</label>
-            <AppSelect v-model="editPriority" :options="priorityOptions" placeholder="Select priority" />
+            <UiSelect v-model="editPriority" :options="priorityOptions" placeholder="Select priority" />
           </div>
           <div>
             <label class="block text-[0.75rem] text-text-muted mb-1.5">Status</label>
@@ -376,7 +376,7 @@ onMounted(() => {
     </template>
 
     <!-- Delete Confirmation Modal -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="showDeleteModal"
       title="Delete Ticket"
       :message="`Are you sure you want to delete ticket #TKT-${ticketId}? This action cannot be undone.`"

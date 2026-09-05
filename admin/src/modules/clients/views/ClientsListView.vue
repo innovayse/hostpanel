@@ -6,7 +6,7 @@ import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useClientsStore, type ClientFilters } from '../stores/clientsStore'
 import { CLIENT_STATUS_STYLES } from '../../../utils/constants'
-import AppSelect from '../../../components/AppSelect.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
 
 const router = useRouter()
 const store = useClientsStore()
@@ -75,7 +75,7 @@ onMounted(() => store.fetchAll())
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="flex items-start justify-between mb-5">
@@ -137,7 +137,7 @@ onMounted(() => store.fetchAll())
         <!-- Status -->
         <div class="sm:w-40 shrink-0">
           <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Status</label>
-          <AppSelect
+          <UiSelect
             v-model="statusFilter"
             :options="[
               { value: '', label: 'Any' },

@@ -1,5 +1,6 @@
-namespace Innovayse.Application.Orders.Commands.CreateOrderPaymentIntent;
+﻿namespace Innovayse.Application.Orders.Commands.CreateOrderPaymentIntent;
 
+using Innovayse.Application.Orders.Extensions;
 using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Domain.Billing.Interfaces;
 using Innovayse.Domain.Orders.Interfaces;
@@ -36,13 +37,13 @@ public sealed class CreateOrderPaymentIntentHandler(
     /// it is useless to anyone who does not also hold the publishable key.
     /// </returns>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when no such order exists, when the order was never billed, and when its invoice
-    /// has gone missing.
+    /// Thrown when no such order exists or its payment token does not match, when the order was
+    /// never billed, and when its invoice has gone missing.
     /// </exception>
     public async Task<string> HandleAsync(CreateOrderPaymentIntentCommand cmd, CancellationToken ct)
     {
-        var order = await orderRepo.FindByIdAsync(cmd.OrderId, ct)
-            ?? throw new InvalidOperationException($"Order {cmd.OrderId} not found.");
+        var order = (await orderRepo.FindByIdAsync(cmd.OrderId, ct))
+            .EnsurePayableWith(cmd.OrderId, cmd.PaymentToken);
 
         if (order.InvoiceId is null)
         {

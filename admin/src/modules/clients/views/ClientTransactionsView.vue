@@ -7,7 +7,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useTransactionsStore } from '../stores/transactionsStore'
 import { formatDate } from '../../../utils/format'
-import ConfirmModal from '../../../components/ConfirmModal.vue'
+import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
 import AddTransactionModal from '../components/AddTransactionModal.vue'
 
 const route = useRoute()
@@ -87,7 +87,7 @@ onMounted(() => fetchTransactions())
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="flex items-center justify-between gap-2.5 mb-5">
@@ -217,7 +217,7 @@ onMounted(() => fetchTransactions())
     </template>
 
     <!-- Delete Confirmation Modal -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="showDeleteModal"
       title="Delete Transaction"
       :message="`Are you sure you want to delete transaction #${deleteTargetId}?`"

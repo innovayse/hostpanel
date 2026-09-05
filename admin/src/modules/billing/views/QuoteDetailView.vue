@@ -8,11 +8,11 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuoteStore } from '../stores/quoteStore'
 import { QUOTE_STAGE_OPTIONS, QUOTE_STAGE_STYLES } from '../../../utils/constants'
-import AppDatePicker from '../../../components/AppDatePicker.vue'
-import AppNumberInput from '../../../components/AppNumberInput.vue'
-import AppSelect from '../../../components/AppSelect.vue'
-import AppCheckbox from '../../../components/AppCheckbox.vue'
-import ConfirmModal from '../../../components/ConfirmModal.vue'
+import UiDatePicker from '../../../components/ui/UiDatePicker.vue'
+import UiNumberInput from '../../../components/ui/UiNumberInput.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
+import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
 import type { QuoteStage } from '../../../types/models'
 
 const route = useRoute()
@@ -267,7 +267,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Loading -->
     <div v-if="store.loading && !store.currentQuote && !isNew" class="flex items-center gap-3 text-text-secondary text-sm mt-4">
@@ -333,15 +333,15 @@ onMounted(() => {
           </div>
           <div>
             <label class="block text-[0.75rem] text-text-muted mb-1.5">Stage</label>
-            <AppSelect v-model="stage" :options="stageOptions" placeholder="Select stage" />
+            <UiSelect v-model="stage" :options="stageOptions" placeholder="Select stage" />
           </div>
           <div>
             <label class="block text-[0.75rem] text-text-muted mb-1.5">Date Created</label>
-            <AppDatePicker v-model="dateCreated" :disabled="!isNew" />
+            <UiDatePicker v-model="dateCreated" :disabled="!isNew" />
           </div>
           <div>
             <label class="block text-[0.75rem] text-text-muted mb-1.5">Valid Until</label>
-            <AppDatePicker v-model="validUntil" />
+            <UiDatePicker v-model="validUntil" />
           </div>
         </div>
       </div>
@@ -408,7 +408,7 @@ onMounted(() => {
           class="grid grid-cols-1 sm:grid-cols-[60px_1fr_100px_100px_60px_80px_40px] gap-2 sm:gap-3 px-5 py-3 border-b border-border last:border-0"
         >
           <div>
-            <AppNumberInput v-model="item.quantity" :min="1" placeholder="1" />
+            <UiNumberInput v-model="item.quantity" :min="1" placeholder="1" />
           </div>
           <div>
             <textarea
@@ -419,13 +419,13 @@ onMounted(() => {
             />
           </div>
           <div>
-            <AppNumberInput v-model="item.unitPrice" :step="0.01" :min="0" placeholder="0.00" />
+            <UiNumberInput v-model="item.unitPrice" :step="0.01" :min="0" placeholder="0.00" />
           </div>
           <div>
-            <AppNumberInput v-model="item.discountPercent" :step="1" :min="0" :max="100" placeholder="0" />
+            <UiNumberInput v-model="item.discountPercent" :step="1" :min="0" :max="100" placeholder="0" />
           </div>
           <div class="flex items-center justify-center">
-            <AppCheckbox v-model="item.taxed" />
+            <UiCheckbox v-model="item.taxed" />
           </div>
           <div class="flex items-center justify-end">
             <span class="text-[0.82rem] text-text-primary font-medium">${{ lineTotal(item).toFixed(2) }}</span>
@@ -544,7 +544,7 @@ onMounted(() => {
     </template>
 
     <!-- Delete Confirm Modal -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="showDeleteModal"
       title="Delete Quote"
       :message="`Are you sure you want to delete quote #${quoteId}? This action cannot be undone.`"
@@ -557,7 +557,7 @@ onMounted(() => {
     />
 
     <!-- Convert Confirm Modal -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="showConvertModal"
       title="Convert to Invoice"
       :message="`Convert quote #${quoteId} to an invoice? The quote will remain unchanged.`"

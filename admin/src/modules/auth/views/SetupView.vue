@@ -31,9 +31,9 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
-import AppAlert from '../../../components/AppAlert.vue'
-import AppTextField from '../../../components/AppTextField.vue'
-import AppGradientButton from '../../../components/AppGradientButton.vue'
+import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiTextField from '../../../components/ui/UiTextField.vue'
+import UiGradientButton from '../../../components/ui/UiGradientButton.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -161,9 +161,9 @@ onMounted(() => {
       </div>
 
       <!-- Whatever went wrong, in the API's own words. -->
-      <AppAlert v-if="authStore.error" variant="error" class="mb-4">
+      <UiAlert v-if="authStore.error" variant="error" class="mb-4">
         {{ authStore.error }}
-      </AppAlert>
+      </UiAlert>
 
       <!-- Step 1: the first account. -->
       <form
@@ -172,7 +172,7 @@ onMounted(() => {
         @submit.prevent="handleCreateAccount"
       >
         <div class="grid grid-cols-2 gap-3">
-          <AppTextField
+          <UiTextField
             v-model="firstName"
             label="First name"
             placeholder="John"
@@ -181,7 +181,7 @@ onMounted(() => {
             :autofocus="true"
             :disabled="authStore.loading"
           />
-          <AppTextField
+          <UiTextField
             v-model="lastName"
             label="Last name"
             placeholder="Doe"
@@ -191,7 +191,7 @@ onMounted(() => {
           />
         </div>
 
-        <AppTextField
+        <UiTextField
           v-model="email"
           label="Email address"
           type="email"
@@ -206,9 +206,9 @@ onMounted(() => {
               <polyline points="22,6 12,13 2,6" />
             </svg>
           </template>
-        </AppTextField>
+        </UiTextField>
 
-        <AppTextField
+        <UiTextField
           v-model="password"
           label="Password"
           type="password"
@@ -223,11 +223,11 @@ onMounted(() => {
               <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
           </template>
-        </AppTextField>
+        </UiTextField>
 
-        <AppGradientButton type="submit" :loading="authStore.loading">
+        <UiGradientButton type="submit" :loading="authStore.loading">
           Create account
-        </AppGradientButton>
+        </UiGradientButton>
       </form>
 
       <!-- Step 2: the Admin claim. -->
@@ -252,7 +252,7 @@ onMounted(() => {
             <code class="text-text-primary">docker compose logs hostpanel-api</code> and
             paste it here. Restarting the API prints it again.
           </p>
-          <AppTextField
+          <UiTextField
             v-model="setupToken"
             label="Setup token"
             autocomplete="off"
@@ -263,9 +263,9 @@ onMounted(() => {
           />
         </template>
 
-        <AppGradientButton type="submit" :loading="authStore.loading">
+        <UiGradientButton type="submit" :loading="authStore.loading">
           Claim the administrator role
-        </AppGradientButton>
+        </UiGradientButton>
       </form>
     </div>
   </div>

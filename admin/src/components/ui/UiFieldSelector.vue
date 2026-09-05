@@ -4,7 +4,7 @@
  * Compact trigger button showing count of selected fields.
  */
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import AppCheckbox from './AppCheckbox.vue'
+import UiCheckbox from './UiCheckbox.vue'
 
 const props = defineProps<{
   /**
@@ -82,7 +82,7 @@ onUnmounted(() => document.removeEventListener('mousedown', onOutsideClick))
               :key="field.key"
               class="flex items-center gap-1.5 text-[0.78rem] text-text-secondary cursor-pointer select-none hover:text-text-primary transition-colors py-0.5"
             >
-              <AppCheckbox :modelValue="selected.has(field.key)" @update:modelValue="emit('toggle', field.key)" />
+              <UiCheckbox :modelValue="selected.has(field.key)" @update:modelValue="emit('toggle', field.key)" />
               {{ field.label }}
             </label>
           </div>

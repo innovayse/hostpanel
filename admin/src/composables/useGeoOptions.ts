@@ -2,7 +2,7 @@ import { computed } from 'vue'
 import { CountriesAtlas } from '@innovayse/geo-atlas'
 
 /**
- * Provides geo-atlas based country and phone code options for AppSelect dropdowns.
+ * Provides geo-atlas based country and phone code options for UiSelect dropdowns.
  * Eliminates duplication across AddClientView, ClientProfileView, and ContactFormModal.
  *
  * @returns Country options, phone code options, and phone code resolver.
@@ -11,7 +11,7 @@ export function useGeoOptions() {
   /** All countries from geo-atlas. */
   const geoCountries = CountriesAtlas.getCountries()
 
-  /** Country options for the AppSelect dropdown, sourced from geo-atlas. */
+  /** Country options for the UiSelect dropdown, sourced from geo-atlas. */
   const countryOptions = computed<{ value: string; label: string; displayLabel: string }[]>(() =>
     [{ value: '', label: 'Select country', displayLabel: 'Select country' },
      ...geoCountries.filter(c => c.iso2).map(c => ({

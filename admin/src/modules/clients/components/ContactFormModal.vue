@@ -6,9 +6,9 @@
 import { ref, computed, onMounted } from 'vue'
 import type { Contact } from '../../../types/models'
 import { useGeoOptions } from '../../../composables/useGeoOptions'
-import AppSelect from '../../../components/AppSelect.vue'
-import ConfirmModal from '../../../components/ConfirmModal.vue'
-import ToggleSwitch from '../../../components/ToggleSwitch.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
+import UiToggleSwitch from '../../../components/ui/UiToggleSwitch.vue'
 
 const props = defineProps<{
   /** Contact to edit, or null for create mode. */
@@ -304,7 +304,7 @@ onMounted(() => {
               <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Phone</label>
               <div class="flex gap-1.5">
                 <div class="shrink-0 w-[7rem]">
-                  <AppSelect v-model="phoneCountry" :options="phoneCodeOptions" searchable dropdown-width="18rem" />
+                  <UiSelect v-model="phoneCountry" :options="phoneCodeOptions" searchable dropdown-width="18rem" />
                 </div>
                 <input
                   v-model="phone"
@@ -318,7 +318,7 @@ onMounted(() => {
             <!-- Contact Type -->
             <div>
               <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Contact Type</label>
-              <AppSelect v-model="contactType" :options="contactTypeOptions" />
+              <UiSelect v-model="contactType" :options="contactTypeOptions" />
             </div>
           </div>
 
@@ -383,7 +383,7 @@ onMounted(() => {
               </div>
               <div>
                 <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Country</label>
-                <AppSelect v-model="country" :options="countryOptions" searchable dropdown-width="18rem" placeholder="Select country" />
+                <UiSelect v-model="country" :options="countryOptions" searchable dropdown-width="18rem" placeholder="Select country" />
               </div>
             </div>
 
@@ -392,27 +392,27 @@ onMounted(() => {
 
             <div class="flex flex-col gap-2.5">
               <label class="flex items-center gap-2.5 cursor-pointer">
-                <ToggleSwitch v-model="notifyGeneral" />
+                <UiToggleSwitch v-model="notifyGeneral" />
                 <span class="text-[0.82rem] text-text-secondary">General Emails</span>
               </label>
               <label class="flex items-center gap-2.5 cursor-pointer">
-                <ToggleSwitch v-model="notifyInvoice" />
+                <UiToggleSwitch v-model="notifyInvoice" />
                 <span class="text-[0.82rem] text-text-secondary">Invoice Emails</span>
               </label>
               <label class="flex items-center gap-2.5 cursor-pointer">
-                <ToggleSwitch v-model="notifySupport" />
+                <UiToggleSwitch v-model="notifySupport" />
                 <span class="text-[0.82rem] text-text-secondary">Support Emails</span>
               </label>
               <label class="flex items-center gap-2.5 cursor-pointer">
-                <ToggleSwitch v-model="notifyProduct" />
+                <UiToggleSwitch v-model="notifyProduct" />
                 <span class="text-[0.82rem] text-text-secondary">Product Emails</span>
               </label>
               <label class="flex items-center gap-2.5 cursor-pointer">
-                <ToggleSwitch v-model="notifyDomain" />
+                <UiToggleSwitch v-model="notifyDomain" />
                 <span class="text-[0.82rem] text-text-secondary">Domain Emails</span>
               </label>
               <label class="flex items-center gap-2.5 cursor-pointer">
-                <ToggleSwitch v-model="notifyAffiliate" />
+                <UiToggleSwitch v-model="notifyAffiliate" />
                 <span class="text-[0.82rem] text-text-secondary">Affiliate Emails</span>
               </label>
             </div>
@@ -453,7 +453,7 @@ onMounted(() => {
     </div>
 
     <!-- Delete Confirm Modal -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="showDeleteConfirm"
       title="Delete Contact"
       message="Permanently delete this contact? This cannot be undone."

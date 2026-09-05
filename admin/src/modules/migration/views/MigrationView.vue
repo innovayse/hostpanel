@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useMigrationStore } from '../stores/migrationStore'
 import MigrationProgressCard from '../components/MigrationProgressCard.vue'
 import MigrationReportTable from '../components/MigrationReportTable.vue'
-import AppCheckbox from '../../../components/AppCheckbox.vue'
+import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import type { MigrationJob } from '../types/migration.types'
 
 const store = useMigrationStore()
@@ -274,7 +274,7 @@ function statusLabel(status: string) {
 
       <!-- MAIN -->
       <div class="flex-1 min-w-0 overflow-y-auto">
-      <div class="flex flex-col gap-4 p-4 sm:p-6">
+      <div class="flex flex-col gap-4">
 
         <!-- Empty state -->
         <div
@@ -460,21 +460,21 @@ function statusLabel(status: string) {
                   </button>
                 </div>
                 <div class="grid grid-cols-2 gap-x-6 gap-y-2.5">
-                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><AppCheckbox v-model="exportClients" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Clients</span></label>
-                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><AppCheckbox v-model="exportInvoices" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Invoices</span></label>
-                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><AppCheckbox v-model="exportServices" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Hosting services</span></label>
-                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><AppCheckbox v-model="exportDomains" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Domains</span></label>
-                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><AppCheckbox v-model="exportTickets" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Support tickets</span></label>
-                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><AppCheckbox v-model="exportProducts" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Products</span></label>
-                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><AppCheckbox v-model="exportOrders" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Orders</span></label>
-                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><AppCheckbox v-model="exportTransactions" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Transactions</span></label>
-                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><AppCheckbox v-model="exportQuotes" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Quotes</span></label>
-                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><AppCheckbox v-model="exportKnowledgebase" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Knowledgebase</span></label>
-                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><AppCheckbox v-model="exportContacts" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Contacts</span></label>
-                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><AppCheckbox v-model="exportTicketReplies" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Ticket replies</span></label>
-                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><AppCheckbox v-model="exportAnnouncements" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Announcements</span></label>
-                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><AppCheckbox v-model="exportDownloads" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Downloads</span></label>
-                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><AppCheckbox v-model="exportNetworkIssues" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Network Issues</span></label>
+                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><UiCheckbox v-model="exportClients" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Clients</span></label>
+                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><UiCheckbox v-model="exportInvoices" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Invoices</span></label>
+                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><UiCheckbox v-model="exportServices" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Hosting services</span></label>
+                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><UiCheckbox v-model="exportDomains" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Domains</span></label>
+                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><UiCheckbox v-model="exportTickets" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Support tickets</span></label>
+                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><UiCheckbox v-model="exportProducts" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Products</span></label>
+                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><UiCheckbox v-model="exportOrders" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Orders</span></label>
+                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><UiCheckbox v-model="exportTransactions" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Transactions</span></label>
+                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><UiCheckbox v-model="exportQuotes" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Quotes</span></label>
+                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><UiCheckbox v-model="exportKnowledgebase" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Knowledgebase</span></label>
+                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><UiCheckbox v-model="exportContacts" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Contacts</span></label>
+                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><UiCheckbox v-model="exportTicketReplies" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Ticket replies</span></label>
+                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><UiCheckbox v-model="exportAnnouncements" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Announcements</span></label>
+                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><UiCheckbox v-model="exportDownloads" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Downloads</span></label>
+                  <label class="flex items-center gap-2.5 cursor-pointer select-none group"><UiCheckbox v-model="exportNetworkIssues" /><span class="text-[0.78rem] text-text-secondary group-hover:text-text-primary transition-colors">Network Issues</span></label>
                 </div>
               </div>
 

@@ -235,4 +235,12 @@
     <value>Этот токен настройки не совпадает с выданным. Актуальный токен выводится в журнал сервера при каждом запуске API, пока настройка не завершена — перезапустите API и возьмите самый свежий.</value>
     <comment>SETUP_TOKEN_INVALID. CompleteSetupHandler, local mode only. Answered 403.</comment>
   </data>
+  <data name="BrandingImageInvalid" xml:space="preserve">
+    <value>Не удалось прочитать этот файл как изображение. Загрузите PNG, JPEG, WebP, GIF или BMP.</value>
+    <comment>BRANDING_IMAGE_INVALID.</comment>
+  </data>
+  <data name="BrandingImageTooLarge" xml:space="preserve">
+    <value>Изображение слишком большое. Загрузите файл до 5 МБ и не более 8000 пикселей по стороне.</value>
+    <comment>BRANDING_IMAGE_TOO_LARGE.</comment>
+  </data>
 </root>

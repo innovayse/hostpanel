@@ -29,7 +29,7 @@ const router = createRouter({
     // /api/auth/callback, which the API answers using the client secret.
     {
       path: '/',
-      component: () => import('../components/layout/AppLayout.vue'),
+      component: () => import('../components/layout/Layout.vue'),
       meta: { requiresAuth: true },
       children: [
         { path: '', redirect: '/dashboard' },

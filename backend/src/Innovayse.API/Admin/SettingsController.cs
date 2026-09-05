@@ -2,6 +2,7 @@ namespace Innovayse.API.Admin;
 
 using Innovayse.API.Admin.Requests;
 using Innovayse.Application.Admin.Commands.UpdateSetting;
+using Innovayse.Application.Admin.Commands.UploadBrandingImage;
 using Innovayse.Application.Admin.Common;
 using Innovayse.Application.Admin.Queries.GetSetting;
 using Innovayse.Application.Admin.Queries.GetSettings;
@@ -14,11 +15,10 @@ using Wolverine;
 /// Admin endpoints for managing system configuration settings.
 /// </summary>
 /// <param name="bus">Wolverine message bus.</param>
-/// <param name="env">Web host environment for resolving file paths.</param>
 [ApiController]
 [Route("api/admin/settings")]
 [Authorize(Roles = Roles.Admin)]
-public sealed class SettingsController(IMessageBus bus, IWebHostEnvironment env) : ControllerBase
+public sealed class SettingsController(IMessageBus bus) : ControllerBase
 {
     /// <summary>Returns all configuration settings.</summary>
     /// <param name="ct">Cancellation token.</param>
@@ -54,30 +54,41 @@ public sealed class SettingsController(IMessageBus bus, IWebHostEnvironment env)
     }
 
     /// <summary>
-    /// Favicon allows a narrower set than the logo: browsers render an SVG or PNG tab
-    /// icon directly, and .ico stays accepted for operators who already have one, but a
-    /// JPEG/WebP/GIF favicon renders as an opaque square with no transparency —
-    /// technically valid, visually wrong for what this field is for.
+    /// Uploads a storefront branding image and returns the URL to save into the setting.
     /// </summary>
-    private static readonly HashSet<string> _allowedLogoTypes =
-        ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"];
-
-    private static readonly HashSet<string> _allowedFaviconTypes =
-        ["image/png", "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon"];
-
-    /// <summary>
-    /// Uploads a storefront branding image (logo or favicon) and returns its URL.
-    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The controller binds, caps and delegates. Deciding what the bytes are, rendering the icon
+    /// set and writing the files all sit behind <c>UploadBrandingImageCommand</c>: the previous
+    /// version of this action did the file I/O here and trusted the multipart part's own
+    /// <c>Content-Type</c> header as its only check, which is a claim written by the caller.
+    /// </para>
+    /// <para>
+    /// <see cref="RequestSizeLimitAttribute"/> is the ceiling the request never gets past, and it
+    /// is deliberately larger than the configured one. This is the framework refusing to buffer an
+    /// enormous body at all; <c>Branding:MaxBytes</c> is the operator-facing limit, and it answers
+    /// with a readable refusal rather than a connection reset.
+    /// </para>
+    /// </remarks>
     /// <param name="kind">Which branding image this is: <c>logo</c> or <c>favicon</c>.</param>
     /// <param name="file">The image file to upload.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The relative URL path to the uploaded image.</returns>
+    /// <returns>The primary URL, plus every file generated from the upload.</returns>
     [HttpPost("branding/{kind}")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [RequestSizeLimit(6 * 1024 * 1024)]
+    [ProducesResponseType(typeof(BrandingUploadResultDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UploadBrandingImageAsync(string kind, IFormFile file, CancellationToken ct)
+    public async Task<ActionResult<BrandingUploadResultDto>> UploadBrandingImageAsync(
+        string kind,
+        IFormFile file,
+        CancellationToken ct)
     {
-        if (kind is not ("logo" or "favicon"))
+        // IsDefined as well as TryParse: TryParse also accepts a numeric string and returns a
+        // value that is not one of the named members, so "/branding/7" would otherwise reach the
+        // storage layer and become a directory called "7" -- caller-steered input in a path,
+        // which is exactly what that layer documents as impossible.
+        if (!Enum.TryParse<BrandingKind>(kind, ignoreCase: true, out var parsedKind)
+            || !Enum.IsDefined(parsedKind))
         {
             return BadRequest(new { error = "kind must be 'logo' or 'favicon'." });
         }
@@ -87,28 +98,18 @@ public sealed class SettingsController(IMessageBus bus, IWebHostEnvironment env)
             return BadRequest(new { error = "No file provided." });
         }
 
-        var allowedTypes = kind == "favicon" ? _allowedFaviconTypes : _allowedLogoTypes;
-        if (!allowedTypes.Contains(file.ContentType))
-        {
-            return BadRequest(new { error = $"Invalid file type for {kind}." });
-        }
+        // Buffered rather than streamed: the whole image is needed in memory to decode it, the
+        // request is already capped above, and a MemoryStream keeps the temp-file handling that a
+        // large IFormFile would otherwise trigger out of the picture.
+        using var buffer = new MemoryStream();
+        await file.CopyToAsync(buffer, ct);
 
-        if (file.Length > 5 * 1024 * 1024)
-        {
-            return BadRequest(new { error = "File too large. Maximum 5MB." });
-        }
+        var command = new UploadBrandingImageCommand(
+            parsedKind,
+            new BrandingSource(buffer.ToArray(), file.FileName));
 
-        var webRoot = env.WebRootPath ?? Path.Combine(env.ContentRootPath, "wwwroot");
-        var uploadsDir = Path.Combine(webRoot, "uploads", "branding");
-        Directory.CreateDirectory(uploadsDir);
+        var result = await bus.InvokeAsync<BrandingUploadResultDto>(command, ct);
 
-        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-        var fileName = $"{kind}-{Guid.NewGuid()}{ext}";
-        var filePath = Path.Combine(uploadsDir, fileName);
-
-        await using var stream = new FileStream(filePath, FileMode.Create);
-        await file.CopyToAsync(stream, ct);
-
-        return Ok(new { url = $"/uploads/branding/{fileName}" });
+        return Ok(result);
     }
 }

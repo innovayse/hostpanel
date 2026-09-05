@@ -2,10 +2,10 @@
 import { ref, onMounted, computed } from 'vue'
 import ReportPage from '../components/ReportPage.vue'
 import ReportTimestamp from '../components/ReportTimestamp.vue'
-import FilterCard from '../../../components/FilterCard.vue'
-import AdvancedFilters, { type FilterRow, type FieldOption } from '../../../components/AdvancedFilters.vue'
-import FieldSelector from '../../../components/FieldSelector.vue'
-import DateRangePicker from '../../../components/DateRangePicker.vue'
+import UiFilterCard from '../../../components/ui/UiFilterCard.vue'
+import UiAdvancedFilters, { type FilterRow, type FieldOption } from '../../../components/ui/UiAdvancedFilters.vue'
+import UiFieldSelector from '../../../components/ui/UiFieldSelector.vue'
+import UiDateRangePicker from '../../../components/ui/UiDateRangePicker.vue'
 import { useApi } from '../../../composables/useApi'
 
 const { request } = useApi()
@@ -160,39 +160,39 @@ onMounted(load)
 <template>
   <ReportPage title="Invoices" description="This report can be used to generate a custom export of invoices by applying up to 5 filters." :loading :error>
     <template #filters>
-      <FilterCard>
+      <UiFilterCard>
         <!-- Row 1: Field selector + Date ranges responsive grid -->
         <template #fields>
           <div class="flex flex-wrap gap-3 items-end">
             <div class="min-w-[140px]">
               <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Fields to Include</label>
-              <FieldSelector :fields="allColumns" :selected="visibleCols" @toggle="toggleCol" @select-all="selectAllCols" @clear-all="clearAllCols" />
+              <UiFieldSelector :fields="allColumns" :selected="visibleCols" @toggle="toggleCol" @select-all="selectAllCols" @clear-all="clearAllCols" />
             </div>
             <div class="min-w-[150px] flex-1">
               <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Creation Date</label>
-              <DateRangePicker v-model="createdRange" />
+              <UiDateRangePicker v-model="createdRange" />
             </div>
             <div class="min-w-[150px] flex-1">
               <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Due Date</label>
-              <DateRangePicker v-model="dueRange" />
+              <UiDateRangePicker v-model="dueRange" />
             </div>
             <div class="min-w-[150px] flex-1">
               <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Date Paid</label>
-              <DateRangePicker v-model="paidRange" />
+              <UiDateRangePicker v-model="paidRange" />
             </div>
             <div class="min-w-[150px] flex-1">
               <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Date Refunded</label>
-              <DateRangePicker v-model="refundedRange" />
+              <UiDateRangePicker v-model="refundedRange" />
             </div>
             <div class="min-w-[150px] flex-1">
               <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Date Cancelled</label>
-              <DateRangePicker v-model="cancelledRange" />
+              <UiDateRangePicker v-model="cancelledRange" />
             </div>
           </div>
         </template>
 
         <!-- Row 2: Advanced filters -->
-        <AdvancedFilters :fields="filterFields" @update:filters="activeFilters = $event" />
+        <UiAdvancedFilters :fields="filterFields" @update:filters="activeFilters = $event" />
 
         <!-- Row 3: Action buttons centered -->
         <template #actions>
@@ -202,7 +202,7 @@ onMounted(load)
             <button class="px-4 py-2 bg-white/[0.04] border border-border text-text-secondary text-[0.78rem] font-medium rounded-[9px] hover:bg-white/[0.08] transition-colors" @click="printReport">Print</button>
           </div>
         </template>
-      </FilterCard>
+      </UiFilterCard>
     </template>
 
     <!-- Results -->

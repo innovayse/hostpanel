@@ -9,10 +9,10 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
-import ConfirmModal from '@/components/ConfirmModal.vue'
+import UiConfirmModal from '@/components/ui/UiConfirmModal.vue'
 import { useSlidesStore } from '../stores/slidesStore'
 import { useSettingsStore } from '../stores/settingsStore'
-import ToggleSwitch from '@/components/ToggleSwitch.vue'
+import UiToggleSwitch from '@/components/ui/UiToggleSwitch.vue'
 import { Icon } from '@iconify/vue'
 import { VueDatePicker } from '@vuepic/vue-datepicker'
 import '@vuepic/vue-datepicker/dist/main.css'
@@ -431,7 +431,7 @@ function handleCancel(): void {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Breadcrumb -->
     <nav class="flex items-center gap-1.5 text-sm mb-6">
@@ -639,7 +639,7 @@ function handleCancel(): void {
               <p class="text-sm text-text-primary font-medium">Active</p>
               <p class="text-xs text-text-muted">Show this slide to visitors</p>
             </div>
-            <ToggleSwitch v-model="isActive" />
+            <UiToggleSwitch v-model="isActive" />
           </div>
 
           <!-- Target Audience -->
@@ -838,7 +838,7 @@ function handleCancel(): void {
   </div>
 
     <!-- Unsaved-changes question, asked while the route change waits -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="leaveGuard.pending.value"
       title="Unsaved changes"
       message="You have unsaved changes. Are you sure you want to leave?"

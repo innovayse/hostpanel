@@ -7,7 +7,7 @@
 
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 
-/** Props for AppSelect. */
+/** Props for UiSelect. */
 const props = defineProps<{
   /** Currently selected value. */
   modelValue: T

@@ -8,8 +8,8 @@
 import { ref, watch, computed } from 'vue'
 import type { ServerDto, ServerPayload, ServerModule } from '../types/server.types'
 import { MODULE_LABELS } from '../types/server.types'
-import AppSelect from '../../../components/AppSelect.vue'
-import AppNumberInput from '../../../components/AppNumberInput.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiNumberInput from '../../../components/ui/UiNumberInput.vue'
 
 /** Props for ServerFormModal. */
 const props = defineProps<{
@@ -265,7 +265,7 @@ function validate(): boolean {
             </div>
             <div>
               <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Monthly Cost (USD)</label>
-              <AppNumberInput v-model="monthlyCost" :min="0" :step="0.01" placeholder="0.00" />
+              <UiNumberInput v-model="monthlyCost" :min="0" :step="0.01" placeholder="0.00" />
             </div>
           </div>
 
@@ -286,7 +286,7 @@ function validate(): boolean {
             </div>
             <div>
               <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Max Accounts</label>
-              <AppNumberInput v-model="maxAccounts" :min="1" placeholder="Unlimited" />
+              <UiNumberInput v-model="maxAccounts" :min="1" placeholder="Unlimited" />
             </div>
           </div>
 
@@ -358,7 +358,7 @@ function validate(): boolean {
 
           <div>
             <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Module</label>
-            <AppSelect v-model="module" :options="moduleOptions" />
+            <UiSelect v-model="module" :options="moduleOptions" />
           </div>
 
           <div>

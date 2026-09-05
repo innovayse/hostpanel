@@ -6,9 +6,9 @@
 import { ref, computed } from 'vue'
 import { useApi } from '../../../composables/useApi'
 import { DNS_RECORD_TYPE_OPTIONS } from '../../../utils/constants'
-import AppNumberInput from '../../../components/AppNumberInput.vue'
-import AppSelect from '../../../components/AppSelect.vue'
-import ConfirmModal from '../../../components/ConfirmModal.vue'
+import UiNumberInput from '../../../components/ui/UiNumberInput.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
 import type { DnsRecordItem } from '../../../types/models'
 
 const props = defineProps<{
@@ -247,7 +247,7 @@ const confirmDelete = async (): Promise<void> => {
       <!-- Inline add row -->
       <div v-if="showAddRow" class="grid grid-cols-1 sm:grid-cols-[0.6fr_1.2fr_1.5fr_0.6fr_0.6fr_0.5fr] gap-2 sm:gap-3 px-3 py-2.5 border-b border-border bg-primary-500/[0.03]">
         <div>
-          <AppSelect v-model="addType" :options="DNS_RECORD_TYPE_OPTIONS" />
+          <UiSelect v-model="addType" :options="DNS_RECORD_TYPE_OPTIONS" />
         </div>
         <div>
           <input
@@ -274,7 +274,7 @@ const confirmDelete = async (): Promise<void> => {
           />
         </div>
         <div>
-          <AppNumberInput
+          <UiNumberInput
             v-if="addNeedsPriority"
             v-model="addPriority"
             placeholder="10"
@@ -345,7 +345,7 @@ const confirmDelete = async (): Promise<void> => {
           class="grid grid-cols-1 sm:grid-cols-[0.6fr_1.2fr_1.5fr_0.6fr_0.6fr_0.5fr] gap-2 sm:gap-3 px-3 py-2.5 border-b border-border bg-primary-500/[0.03]"
         >
           <div>
-            <AppSelect v-model="editType" :options="DNS_RECORD_TYPE_OPTIONS" />
+            <UiSelect v-model="editType" :options="DNS_RECORD_TYPE_OPTIONS" />
           </div>
           <div>
             <input
@@ -369,7 +369,7 @@ const confirmDelete = async (): Promise<void> => {
             />
           </div>
           <div>
-            <AppNumberInput
+            <UiNumberInput
               v-if="editNeedsPriority"
               v-model="editPriority"
             />
@@ -406,7 +406,7 @@ const confirmDelete = async (): Promise<void> => {
     </div>
 
     <!-- Delete Confirm Modal -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="deleteTargetId !== null"
       title="Delete DNS Record"
       message="Delete this DNS record?"

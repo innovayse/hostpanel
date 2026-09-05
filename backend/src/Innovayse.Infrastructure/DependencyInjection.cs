@@ -145,6 +145,24 @@ public static class DependencyInjection
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+        // Storefront branding uploads. Both ports are stateless, so they are registered as
+        // singletons: the processor holds only the ceilings it was configured with, and the
+        // storage resolves the web root per call.
+        services.AddOptions<Innovayse.Infrastructure.Branding.Options.BrandingOptions>()
+            .Bind(configuration.GetSection(
+                Innovayse.Infrastructure.Branding.Options.BrandingOptions.SectionName))
+            .Validate(
+                o => o.MaxBytes > 0 && o.MaxSourceEdge > 0 && o.MaxLogoEdge > 0,
+                "Branding ceilings must all be positive.")
+            .Validate(
+                o => !Path.IsPathRooted(o.RelativePath) && !o.RelativePath.Contains(".."),
+                "Branding:RelativePath must stay inside the web root.")
+            .ValidateOnStart();
+        services.AddSingleton<Innovayse.Application.Admin.Interfaces.IBrandingImageProcessor,
+            Innovayse.Infrastructure.Branding.ImageSharpBrandingImageProcessor>();
+        services.AddSingleton<Innovayse.Application.Admin.Interfaces.IBrandingStorage,
+            Innovayse.Infrastructure.Branding.FileSystemBrandingStorage>();
+
         // Where people live decides almost everything below. Read from configuration once,
         // here, so there is one answer rather than a scattering of Auth:Mode checks that
         // can disagree.

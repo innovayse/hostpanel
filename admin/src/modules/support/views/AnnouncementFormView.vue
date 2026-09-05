@@ -6,8 +6,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useApi } from '../../../composables/useApi'
-import AppCheckbox from '../../../components/AppCheckbox.vue'
-import AppDatePicker from '../../../components/AppDatePicker.vue'
+import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
+import UiDatePicker from '../../../components/ui/UiDatePicker.vue'
 
 /** Shape of an announcement for the form. */
 interface AnnouncementForm {
@@ -133,7 +133,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Breadcrumb -->
     <div class="flex items-center gap-2 text-[0.78rem] text-text-muted mb-4">
@@ -169,7 +169,7 @@ onMounted(() => {
       <!-- Date -->
       <div>
         <label class="block text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Date</label>
-        <AppDatePicker v-model="form.date" placeholder="Select date" />
+        <UiDatePicker v-model="form.date" placeholder="Select date" />
       </div>
 
       <!-- Title -->
@@ -195,7 +195,7 @@ onMounted(() => {
 
       <!-- Published -->
       <div class="flex items-center gap-3">
-        <AppCheckbox v-model="form.published" />
+        <UiCheckbox v-model="form.published" />
         <span class="text-[0.82rem] text-text-secondary cursor-pointer" @click="form.published = !form.published">Published</span>
       </div>
 

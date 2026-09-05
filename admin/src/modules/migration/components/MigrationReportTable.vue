@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { useMigrationStore } from '../stores/migrationStore'
-import AppSelect from '../../../components/AppSelect.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
 import type { MigrationLogEntry } from '../types/migration.types'
 
 const props = defineProps<{ jobId: number }>()
@@ -93,11 +93,11 @@ function formatTime(iso: string) {
       </span>
 
       <div class="w-36">
-        <AppSelect v-model="filterEntityType" :options="entityTypeOptions" />
+        <UiSelect v-model="filterEntityType" :options="entityTypeOptions" />
       </div>
 
       <div class="w-36">
-        <AppSelect v-model="filterAction" :options="actionOptions" />
+        <UiSelect v-model="filterAction" :options="actionOptions" />
       </div>
     </div>
 

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import AppSelect from '../../../components/AppSelect.vue'
-import AppSpinner from '../../../components/AppSpinner.vue'
-import DateRangePicker from '../../../components/DateRangePicker.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiSpinner from '../../../components/ui/UiSpinner.vue'
+import UiDateRangePicker from '../../../components/ui/UiDateRangePicker.vue'
 import TransactionChart from '../components/TransactionChart.vue'
 import { useTransactionsStore } from '../stores/transactionsStore'
 import { toIsoDay } from '../../../utils/format'
@@ -227,7 +227,7 @@ onMounted(() => store.fetchAll())
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header with Add Button -->
     <div class="flex items-start justify-between mb-5">
@@ -261,7 +261,7 @@ onMounted(() => store.fetchAll())
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         <div>
           <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Show</label>
-          <AppSelect
+          <UiSelect
             v-model="filterShow"
             :options="showOptions"
           />
@@ -269,7 +269,7 @@ onMounted(() => store.fetchAll())
 
         <div>
           <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Payment Method</label>
-          <AppSelect
+          <UiSelect
             v-model="filterPaymentMethod"
             :options="paymentMethodOptions"
           />
@@ -277,7 +277,7 @@ onMounted(() => store.fetchAll())
 
         <div class="lg:col-span-2">
           <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Date Range</label>
-          <DateRangePicker
+          <UiDateRangePicker
             v-model="filterDateRange"
             placeholder="Select date range..."
           />
@@ -295,7 +295,7 @@ onMounted(() => store.fetchAll())
 
         <div>
           <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Amount</label>
-          <AppSpinner
+          <UiSpinner
             v-model="filterAmount"
             :step="0.01"
             :min="0"
@@ -410,7 +410,7 @@ onMounted(() => store.fetchAll())
         <div v-if="store.totalCount > 0" class="flex items-center gap-2">
           <span class="text-[0.82rem] text-text-muted">Jump to Page:</span>
           <div class="w-20">
-            <AppSelect
+            <UiSelect
               v-model="pageString"
               :options="pageOptions"
               @update:modelValue="(val) => goToPage(Number(val))"

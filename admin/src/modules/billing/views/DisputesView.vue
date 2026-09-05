@@ -93,7 +93,7 @@ function goToNext(): void {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="mb-6">

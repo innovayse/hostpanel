@@ -6,7 +6,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useApi } from '../../../composables/useApi'
 import { formatDate } from '../../../utils/format'
-import ConfirmModal from '../../../components/ConfirmModal.vue'
+import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
 
 /** Shape of a network issue returned by the API. */
 interface NetworkIssue {
@@ -214,7 +214,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="mb-5">
@@ -392,7 +392,7 @@ onMounted(() => {
     </div>
 
     <!-- Delete Confirm Modal -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="deleteTarget !== null"
       title="Delete Network Issue"
       message="Are you sure you want to delete this network issue? This action cannot be undone."

@@ -4,14 +4,14 @@
  *
  * Displays TLD name, provider, status, cost/sell pricing, margin, categories,
  * last sync time, and edit/delete actions. Supports import from registrar
- * providers and manual price sync. Uses AppSelect for filters and ConfirmModal
+ * providers and manual price sync. Uses UiSelect for filters and UiConfirmModal
  * for delete confirmation.
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTldConfigsStore } from '../stores/tldConfigsStore'
-import AppSelect from '@/components/AppSelect.vue'
-import ConfirmModal from '@/components/ConfirmModal.vue'
+import UiSelect from '@/components/ui/UiSelect.vue'
+import UiConfirmModal from '@/components/ui/UiConfirmModal.vue'
 import type { TldConfigListItem } from '@/types/models'
 
 const router = useRouter()
@@ -302,7 +302,7 @@ watch(statusFilter, () => { currentPage.value = 1 })
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="flex items-center justify-between mb-7">
@@ -415,7 +415,7 @@ watch(statusFilter, () => { currentPage.value = 1 })
       </div>
 
       <!-- Provider filter -->
-      <AppSelect
+      <UiSelect
         :model-value="providerFilter"
         :options="providerFilterOptions"
         class="w-44"
@@ -423,7 +423,7 @@ watch(statusFilter, () => { currentPage.value = 1 })
       />
 
       <!-- Status filter -->
-      <AppSelect
+      <UiSelect
         :model-value="statusFilter"
         :options="statusFilterOptions"
         class="w-36"
@@ -612,7 +612,7 @@ watch(statusFilter, () => { currentPage.value = 1 })
     </div>
 
     <!-- Delete confirmation modal -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="deleteTarget"
       title="Delete TLD Configuration"
       :message="`Delete &quot;.${deleteTarget.tld}&quot; TLD configuration? This action cannot be undone.`"

@@ -110,7 +110,7 @@ onMounted(() => fetchServices())
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Loading -->
     <div v-if="loading && services.length === 0" class="flex items-center gap-3 text-text-secondary text-sm">

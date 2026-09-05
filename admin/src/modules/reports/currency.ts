@@ -30,7 +30,7 @@ export const REPORT_CURRENCY_SYMBOLS: Record<ReportCurrency, string> = {
   AMD: '֏',
 }
 
-/** Options for the currency `AppSelect` shown above a report. */
+/** Options for the currency `UiSelect` shown above a report. */
 export const REPORT_CURRENCY_OPTIONS: { value: ReportCurrency; label: string }[] = [
   { value: 'USD', label: 'USD — US Dollar' },
   { value: 'EUR', label: 'EUR — Euro' },

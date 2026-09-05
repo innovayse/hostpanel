@@ -6,7 +6,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useApi } from '../../../composables/useApi'
 import { formatDate } from '../../../utils/format'
-import ConfirmModal from '../../../components/ConfirmModal.vue'
+import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
 
 /** Shape of an announcement returned by the API. */
 interface Announcement {
@@ -144,7 +144,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="flex items-center justify-between mb-5">
@@ -273,7 +273,7 @@ onMounted(() => {
     </div>
 
     <!-- Delete Confirm Modal -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="deleteTarget !== null"
       title="Delete Announcement"
       message="Are you sure you want to delete this announcement? This action cannot be undone."

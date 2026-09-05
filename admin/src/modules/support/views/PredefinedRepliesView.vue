@@ -5,8 +5,8 @@
  */
 import { ref, computed, onMounted } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import AppSelect from '../../../components/AppSelect.vue'
-import ConfirmModal from '../../../components/ConfirmModal.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
 
 /** Shape of a predefined reply category. */
 interface ReplyCategory {
@@ -361,7 +361,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="mb-5">
@@ -520,7 +520,7 @@ onMounted(async () => {
         <!-- Category -->
         <div>
           <label class="block text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Category</label>
-          <AppSelect
+          <UiSelect
             v-model="newReplyCategoryId"
             :options="categoryOptions"
             placeholder="Select category"
@@ -576,7 +576,7 @@ onMounted(async () => {
               type="text"
               class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors"
             />
-            <AppSelect
+            <UiSelect
               v-model="editingReply.categoryId"
               :options="categoryOptions"
               placeholder="Select category"
@@ -696,7 +696,7 @@ onMounted(async () => {
     </div>
 
     <!-- Delete Category Modal -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="deleteCategoryTarget !== null"
       title="Delete Category"
       message="Are you sure you want to delete this category? All replies in this category may be affected."
@@ -709,7 +709,7 @@ onMounted(async () => {
     />
 
     <!-- Delete Reply Modal -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="deleteReplyTarget !== null"
       title="Delete Predefined Reply"
       message="Are you sure you want to delete this predefined reply? This action cannot be undone."

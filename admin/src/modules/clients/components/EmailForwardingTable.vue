@@ -5,8 +5,8 @@
  */
 import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import ConfirmModal from '../../../components/ConfirmModal.vue'
-import ToggleSwitch from '../../../components/ToggleSwitch.vue'
+import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
+import UiToggleSwitch from '../../../components/ui/UiToggleSwitch.vue'
 import type { EmailForwardingRuleItem } from '../../../types/models'
 
 const props = defineProps<{
@@ -284,7 +284,7 @@ const confirmDelete = async (): Promise<void> => {
           <span class="text-[0.82rem] text-text-primary truncate">{{ rule.source }}</span>
           <span class="text-[0.82rem] text-text-secondary truncate">{{ rule.destination }}</span>
           <div class="flex items-center">
-            <ToggleSwitch :model-value="rule.isActive" @update:model-value="toggleActive(rule)" />
+            <UiToggleSwitch :model-value="rule.isActive" @update:model-value="toggleActive(rule)" />
           </div>
           <div class="flex items-center gap-1.5">
             <button
@@ -361,7 +361,7 @@ const confirmDelete = async (): Promise<void> => {
     </div>
 
     <!-- Delete Confirm Modal -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="deleteTargetId !== null"
       title="Delete Forwarding Rule"
       message="Delete this email forwarding rule?"

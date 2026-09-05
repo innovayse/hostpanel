@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import ReportPage from '../components/ReportPage.vue'
 import ReportTimestamp from '../components/ReportTimestamp.vue'
-import AppSelect from '../../../components/AppSelect.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
 import { useApi } from '../../../composables/useApi'
 import { REPORT_CURRENCY_RATES, REPORT_CURRENCY_SYMBOLS } from '../currency'
 import type { ReportCurrency } from '../currency'
@@ -95,7 +95,7 @@ onMounted(load)
         <div class="flex items-end gap-3 flex-wrap">
           <div class="w-[280px]">
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Select Quarter</label>
-            <AppSelect v-model="selectedQuarterValue" :options="quarterOptions" />
+            <UiSelect v-model="selectedQuarterValue" :options="quarterOptions" />
           </div>
           <button @click="load" class="px-5 py-2 gradient-brand text-white text-[0.82rem] font-semibold rounded-[9px] transition-opacity hover:opacity-90">
             Generate Report

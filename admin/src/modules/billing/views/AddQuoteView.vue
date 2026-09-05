@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import AppSelect from '../../../components/AppSelect.vue'
-import AppClientSelect from '../../../components/AppClientSelect.vue'
-import AppSpinner from '../../../components/AppSpinner.vue'
-import AppDatePicker from '../../../components/AppDatePicker.vue'
-import AppDatePickerFuture from '../../../components/AppDatePickerFuture.vue'
-import AppPhoneInput from '../../../components/AppPhoneInput.vue'
-import AppCountrySelect from '../../../components/AppCountrySelect.vue'
-import AppCheckbox from '../../../components/AppCheckbox.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiClientSelect from '../../../components/ui/UiClientSelect.vue'
+import UiSpinner from '../../../components/ui/UiSpinner.vue'
+import UiDatePicker from '../../../components/ui/UiDatePicker.vue'
+import UiDatePickerFuture from '../../../components/ui/UiDatePickerFuture.vue'
+import UiPhoneInput from '../../../components/ui/UiPhoneInput.vue'
+import UiCountrySelect from '../../../components/ui/UiCountrySelect.vue'
+import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import { useQuoteStore } from '../stores/quoteStore'
 import type { QuoteStage } from '../../../types/models'
 import { toIsoDay } from '../../../utils/format'
@@ -183,7 +183,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="mb-5">
@@ -213,7 +213,7 @@ onMounted(() => {
             </div>
             <div>
               <label class="block text-[0.82rem] font-medium text-text-primary mb-2">Stage</label>
-              <AppSelect
+              <UiSelect
                 v-model="form.stage"
                 :options="stageOptions"
               />
@@ -224,14 +224,14 @@ onMounted(() => {
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             <div>
               <label class="block text-[0.82rem] font-medium text-text-primary mb-2">Date Created</label>
-              <AppDatePickerFuture
+              <UiDatePickerFuture
                 v-model="form.dateCreated"
                 placeholder=""
               />
             </div>
             <div>
               <label class="block text-[0.82rem] font-medium text-text-primary mb-2">Valid Until</label>
-              <AppDatePickerFuture
+              <UiDatePickerFuture
                 v-model="form.validUntil"
                 placeholder=""
               />
@@ -271,7 +271,7 @@ onMounted(() => {
         <!-- Existing Client Selection -->
         <div v-if="form.quoteType === 'existing'" class="lg:col-span-2">
           <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Client</label>
-          <AppClientSelect
+          <UiClientSelect
             v-model="form.clientId"
             :clients="clients"
             placeholder="Select a client..."
@@ -302,7 +302,7 @@ onMounted(() => {
             </div>
             <div>
               <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Phone Number</label>
-              <AppPhoneInput
+              <UiPhoneInput
                 v-model:phoneNumber="form.phoneNumber"
                 v-model:countryCode="form.phoneCountry"
               />
@@ -349,7 +349,7 @@ onMounted(() => {
             </div>
             <div>
               <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Country</label>
-              <AppCountrySelect
+              <UiCountrySelect
                 v-model="form.country"
               />
             </div>
@@ -387,7 +387,7 @@ onMounted(() => {
           </div>
           <div>
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Currency</label>
-            <AppSelect
+            <UiSelect
               v-model="form.currency"
               :options="currencyOptions"
             />
@@ -463,7 +463,7 @@ onMounted(() => {
 
               <!-- Taxed (checkbox) -->
               <div class="flex justify-center">
-                <AppCheckbox v-model="item.taxed" />
+                <UiCheckbox v-model="item.taxed" />
               </div>
 
               <!-- Delete Button -->
@@ -580,7 +580,7 @@ onMounted(() => {
         <div class="space-y-4">
           <div>
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-2">Product/Service</label>
-            <AppSelect
+            <UiSelect
               v-model="selectedProductId"
               :options="productOptions"
               placeholder="Choose a product..."

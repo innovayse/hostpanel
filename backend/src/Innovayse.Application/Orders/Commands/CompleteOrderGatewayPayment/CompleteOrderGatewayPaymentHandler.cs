@@ -1,5 +1,6 @@
-namespace Innovayse.Application.Orders.Commands.CompleteOrderGatewayPayment;
+﻿namespace Innovayse.Application.Orders.Commands.CompleteOrderGatewayPayment;
 
+using Innovayse.Application.Orders.Extensions;
 using Innovayse.Application.Billing.Commands.CompleteGatewayPayment;
 using Innovayse.Domain.Orders.Interfaces;
 using Wolverine;
@@ -21,13 +22,14 @@ public sealed class CompleteOrderGatewayPaymentHandler(IOrderRepository orderRep
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The state the gateway reported for the session: paid, pending, or declined.</returns>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when no such order exists and when the order was never billed.
+    /// Thrown when no such order exists, when its payment token does not match, and when the
+    /// order was never billed.
     /// </exception>
     public async Task<GatewayCompletionState> HandleAsync(
         CompleteOrderGatewayPaymentCommand cmd, CancellationToken ct)
     {
-        var order = await orderRepo.FindByIdAsync(cmd.OrderId, ct)
-            ?? throw new InvalidOperationException($"Order {cmd.OrderId} not found.");
+        var order = (await orderRepo.FindByIdAsync(cmd.OrderId, ct))
+            .EnsurePayableWith(cmd.OrderId, cmd.PaymentToken);
 
         if (order.InvoiceId is null)
         {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue'
-import AppSelect from './AppSelect.vue'
-import { splitIsoDate } from '../utils/format'
+import UiSelect from './UiSelect.vue'
+import { splitIsoDate } from '../../utils/format'
 
 const props = defineProps<{
   modelValue: [string, string] | null
@@ -475,13 +475,13 @@ const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
             <div class="flex gap-8">
               <div class="flex items-center gap-2">
                 <div class="w-[140px]">
-                  <AppSelect
+                  <UiSelect
                     v-model="currentMonthValue"
                     :options="monthOptions"
                   />
                 </div>
                 <div class="w-[100px]">
-                  <AppSelect
+                  <UiSelect
                     v-model="currentYearValue"
                     :options="yearOptions"
                   />
@@ -489,13 +489,13 @@ const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
               </div>
               <div class="flex items-center gap-2">
                 <div class="w-[140px]">
-                  <AppSelect
+                  <UiSelect
                     v-model="nextMonthValue"
                     :options="monthOptions"
                   />
                 </div>
                 <div class="w-[100px]">
-                  <AppSelect
+                  <UiSelect
                     v-model="nextYearValue"
                     :options="yearOptions"
                   />

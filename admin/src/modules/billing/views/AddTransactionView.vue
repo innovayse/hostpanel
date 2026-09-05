@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import AppSelect from '../../../components/AppSelect.vue'
-import AppClientSelect from '../../../components/AppClientSelect.vue'
-import AppSpinner from '../../../components/AppSpinner.vue'
-import AppDatePicker from '../../../components/AppDatePicker.vue'
-import AppCheckbox from '../../../components/AppCheckbox.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiClientSelect from '../../../components/ui/UiClientSelect.vue'
+import UiSpinner from '../../../components/ui/UiSpinner.vue'
+import UiDatePicker from '../../../components/ui/UiDatePicker.vue'
+import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import { useTransactionsStore } from '../stores/transactionsStore'
 import { useApi } from '../../../composables/useApi'
 import { toIsoDay } from '../../../utils/format'
@@ -91,7 +91,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="mb-5">
@@ -106,14 +106,14 @@ onMounted(() => {
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
         <div>
           <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-2">Date</label>
-          <AppDatePicker
+          <UiDatePicker
             v-model="form.date"
             placeholder="Select date..."
           />
         </div>
         <div>
           <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-2">Currency</label>
-          <AppSelect
+          <UiSelect
             v-model="form.currency"
             :options="currencyOptions"
           />
@@ -123,7 +123,7 @@ onMounted(() => {
       <!-- Client Selection -->
       <div class="mb-5">
         <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-2">Related Client</label>
-        <AppClientSelect
+        <UiClientSelect
           v-model="form.clientId"
           :clients="clients"
           placeholder="Select a client..."
@@ -134,7 +134,7 @@ onMounted(() => {
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
         <div>
           <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-2">Amount In</label>
-          <AppSpinner
+          <UiSpinner
             v-model="form.amountIn"
             :step="0.01"
             :min="0"
@@ -143,7 +143,7 @@ onMounted(() => {
         </div>
         <div>
           <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-2">Amount Out</label>
-          <AppSpinner
+          <UiSpinner
             v-model="form.amountOut"
             :step="0.01"
             :min="0"
@@ -165,7 +165,7 @@ onMounted(() => {
         </div>
         <div>
           <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-2">Fees</label>
-          <AppSpinner
+          <UiSpinner
             v-model="form.fees"
             :step="0.01"
             :min="0"
@@ -187,7 +187,7 @@ onMounted(() => {
         </div>
         <div>
           <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-2">Payment Method</label>
-          <AppSelect
+          <UiSelect
             v-model="form.paymentMethod"
             :options="paymentMethodOptions"
           />
@@ -207,7 +207,7 @@ onMounted(() => {
 
       <!-- Credit Checkbox -->
       <div class="mb-6 flex items-center gap-2">
-        <AppCheckbox v-model="form.addToCredit" />
+        <UiCheckbox v-model="form.addToCredit" />
         <span class="text-[0.82rem] text-text-secondary cursor-pointer">
           Add to Client's Credit Balance
         </span>

@@ -1,4 +1,4 @@
-namespace Innovayse.Application.Tests.Domains;
+﻿namespace Innovayse.Application.Tests.Domains;
 
 using Innovayse.Application.Common;
 using Innovayse.Application.Domains.Commands.AddMyDomainDnsRecord;
@@ -638,7 +638,7 @@ public sealed class MyDomainOwnershipTests
         var bus = new Mock<IMessageBus>();
         bus.Setup(b => b.InvokeAsync<PlaceOrderResultDto>(
                 It.IsAny<object>(), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()))
-            .ReturnsAsync(new PlaceOrderResultDto(31, 32));
+            .ReturnsAsync(new PlaceOrderResultDto(31, 32, "test-payment-token"));
 
         var handler = RenewHandler(AcceptingOwnership(), bus);
 

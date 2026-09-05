@@ -8,7 +8,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useServersStore } from '../stores/serversStore'
 import ServerFormModal from '../components/ServerFormModal.vue'
-import ConfirmModal from '../../../components/ConfirmModal.vue'
+import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
 import GroupFormModal from '../components/GroupFormModal.vue'
 import type { ServerDto, ServerGroupDto, ServerPayload, ServerGroupPayload } from '../types/server.types'
 import { MODULE_LABELS, FILL_TYPE_LABELS } from '../types/server.types'
@@ -196,7 +196,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full flex flex-col gap-6">
+  <div class="w-full flex flex-col gap-6">
 
     <!-- Page header -->
     <div class="flex flex-wrap items-center justify-between gap-3">
@@ -471,7 +471,7 @@ onMounted(async () => {
 
   </div>
 
-    <ConfirmModal
+    <UiConfirmModal
       v-if="deleteServerTarget"
       title="Delete Server"
       :message="`Delete &quot;${deleteServerTarget.name}&quot;? This cannot be undone.`"
@@ -483,7 +483,7 @@ onMounted(async () => {
       @close="deleteServerTarget = null"
     />
 
-    <ConfirmModal
+    <UiConfirmModal
       v-if="deleteGroupTarget"
       title="Delete Group"
       :message="`Delete group &quot;${deleteGroupTarget.name}&quot;? Servers in it will be unassigned.`"

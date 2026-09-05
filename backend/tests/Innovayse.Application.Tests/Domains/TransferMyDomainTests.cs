@@ -1,4 +1,4 @@
-namespace Innovayse.Application.Tests.Domains;
+﻿namespace Innovayse.Application.Tests.Domains;
 
 using Innovayse.Application.Common;
 using Innovayse.Application.Domains.Commands.TransferDomain;
@@ -130,7 +130,7 @@ public sealed class TransferMyDomainTests
         var bus = new Mock<IMessageBus>();
         bus.Setup(b => b.InvokeAsync<PlaceOrderResultDto>(
                 It.IsAny<object>(), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()))
-            .ReturnsAsync(new PlaceOrderResultDto(1, 2));
+            .ReturnsAsync(new PlaceOrderResultDto(1, 2, "test-payment-token"));
 
         var handler = HandlerOver(bus, [DomainProduct()]);
 
@@ -153,7 +153,7 @@ public sealed class TransferMyDomainTests
         var bus = new Mock<IMessageBus>();
         bus.Setup(b => b.InvokeAsync<PlaceOrderResultDto>(
                 It.IsAny<object>(), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()))
-            .ReturnsAsync(new PlaceOrderResultDto(11, 22));
+            .ReturnsAsync(new PlaceOrderResultDto(11, 22, "test-payment-token"));
 
         var handler = HandlerOver(bus, [DomainProduct()]);
 
@@ -234,7 +234,7 @@ public sealed class TransferMyDomainTests
         var bus = new Mock<IMessageBus>();
         bus.Setup(b => b.InvokeAsync<PlaceOrderResultDto>(
                 It.IsAny<object>(), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()))
-            .ReturnsAsync(new PlaceOrderResultDto(1, 2));
+            .ReturnsAsync(new PlaceOrderResultDto(1, 2, "test-payment-token"));
 
         // A hosting plan whose name contains "Domain" comes first in the list. Name-matching
         // would pick it and bill a transfer as hosting.

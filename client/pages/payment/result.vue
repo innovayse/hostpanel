@@ -83,6 +83,8 @@ import { useBillingApi } from '~/composables/apis/useBillingApi'
 
 const route = useRoute()
 const localePath = useLocalePath()
+const { t } = useI18n()
+const { recall: recallPaymentToken, forget: forgetPaymentToken } = useOrderPaymentToken()
 
 const orderId = computed(() => route.query.order as string | undefined)
 const invoiceId = computed(() => route.query.invoice as string | undefined)
@@ -129,10 +131,22 @@ const check = async (): Promise<void> => {
     return
   }
 
+  // An order is paid for without an account, so the backend authorises this call with the token
+  // the order was placed with rather than a credential. An invoice is the caller's own and needs
+  // none. A missing token is not special-cased here: the request is made either way and the
+  // backend answers as it would for an order that does not exist, which is the same answer it
+  // gives anyone guessing at ids.
+  const paymentToken = target === 'order' ? recallPaymentToken(id) : undefined
+
   checking.value = true
   try {
-    const { state: result } = await useBillingApi().completeGatewayPayment(target, id)
+    const { state: result } = await useBillingApi().completeGatewayPayment(target, id, paymentToken)
     state.value = result
+    if (target === 'order' && result !== 'pending') {
+      // Settled one way or the other: the token has done its job and should not sit in the
+      // browser afterwards. 'pending' is left alone so a retry can still verify.
+      forgetPaymentToken(id)
+    }
   } catch {
     // We could not confirm the outcome — do not claim the payment was declined
     // (it may well have succeeded at the bank). The reconciler will settle the
@@ -153,5 +167,9 @@ onMounted(() => {
   check()
 })
 
-useHead({ title: computed(() => useNuxtApp().$i18n.t('paymentResult.title')) })
+// `t` is resolved here, at the top of setup, and not inside the computed below. A
+// `useNuxtApp()` call in the getter runs when the head is resolved rather than during
+// setup, by which point the Nuxt instance context is gone — server-side that threw
+// "[nuxt] instance unavailable" and turned this whole page into a 500.
+useHead({ title: computed(() => t('paymentResult.title')) })
 </script>

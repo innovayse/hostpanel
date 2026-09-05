@@ -1,4 +1,4 @@
-namespace Innovayse.Application.Orders.Commands.StartOrderGatewayPayment;
+﻿namespace Innovayse.Application.Orders.Commands.StartOrderGatewayPayment;
 
 /// <summary>Starts a hosted-gateway payment for the invoice an order was billed on.</summary>
 /// <remarks>
@@ -9,4 +9,11 @@ namespace Innovayse.Application.Orders.Commands.StartOrderGatewayPayment;
 /// <param name="OrderId">The order to pay.</param>
 /// <param name="Module">The payment plugin id (e.g. "innovayse-inecobank").</param>
 /// <param name="ReturnUrl">Absolute URL the gateway redirects the payer back to.</param>
-public sealed record StartOrderGatewayPaymentCommand(int OrderId, string Module, string ReturnUrl);
+/// <param name="PaymentToken">
+/// The order's payment token, proving the caller is the payer this order was handed to.
+/// Checkout is open to guests, so there is no credential to authorise against; see
+/// <see cref="Innovayse.Domain.Orders.Order.PaymentToken"/> for why an order id alone is not
+/// enough.
+/// </param>
+public sealed record StartOrderGatewayPaymentCommand(
+    int OrderId, string Module, string ReturnUrl, string? PaymentToken);

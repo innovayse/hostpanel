@@ -297,6 +297,7 @@ onMounted(async () => {
 // Straight from the API composable rather than through a store: this page reads the gateway
 // list once and owns it alone, which is the named exception to component -> store -> api.
 const billing = useBillingApi()
+const { remember: rememberPaymentToken } = useOrderPaymentToken()
 const { data: paymentMethods, pending: methodsPending } = await billing.loadGatewayMethods()
 const selectedMethod = ref('')
 watch(paymentMethods, (methods) => {
@@ -401,14 +402,18 @@ async function submitOrder() {
 
     if (selectedMethod.value === PAYMENT_MODULE_STRIPE) {
       // Step 2: Create PaymentIntent
-      const { clientSecret } = await billing.createOrderPaymentIntent(result.orderId)
+      const { clientSecret } = await billing.createOrderPaymentIntent(result.orderId, result.paymentToken)
 
       // Step 3: Confirm card payment via Stripe.js
       if (!stripeCardFormRef.value) throw new Error('Card form not ready')
       const paymentIntent = await stripeCardFormRef.value.confirmPayment(clientSecret)
 
       // Step 4: Tell backend payment succeeded — auto-accepts order, creates services
-      await billing.confirmOrderPayment(result.orderId, { paymentIntentId: paymentIntent.id })
+      await billing.confirmOrderPayment(
+        result.orderId,
+        { paymentIntentId: paymentIntent.id },
+        result.paymentToken
+      )
 
       const domainItem = cart.items.find(i => i.itemType === 'domain')
       const domainQuery = domainItem
@@ -428,10 +433,15 @@ async function submitOrder() {
         localePath(`/payment/result?order=${result.orderId}`),
         window.location.origin,
       ).toString()
+      // Stored before we leave for the bank, not after: the payer returns to /payment/result
+      // as a fresh navigation that knows only the order id, and that page has to prove the
+      // order is theirs before the backend will tell it whether the payment went through.
+      rememberPaymentToken(result.orderId, result.paymentToken)
       const { redirectUrl } = await billing.startOrderGatewayPayment(
         result.orderId,
         selectedMethod.value,
-        returnUrl
+        returnUrl,
+        result.paymentToken
       )
       cart.clear()
       window.location.href = redirectUrl

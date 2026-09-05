@@ -9,8 +9,8 @@ import { useRouter } from 'vue-router'
 import { useSupportStore } from '../stores/supportStore'
 import { useApi } from '../../../composables/useApi'
 import { TICKET_PRIORITY_OPTIONS } from '../../../utils/constants'
-import AppSelect from '../../../components/AppSelect.vue'
-import AppCheckbox from '../../../components/AppCheckbox.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 
 const router = useRouter()
 const store = useSupportStore()
@@ -52,7 +52,7 @@ const priority = ref('Medium')
 /** Ticket message body. */
 const message = ref('')
 
-/** Department options mapped for AppSelect. */
+/** Department options mapped for UiSelect. */
 const departmentOptions = computed(() =>
   store.departments.map(d => ({ value: d.id, label: d.name })),
 )
@@ -153,7 +153,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="flex items-center gap-3 mb-5">
@@ -246,7 +246,7 @@ onMounted(() => {
               class="flex-1 bg-white/[0.02] border border-border rounded-[10px] px-3 py-2.5 text-[0.82rem] text-text-secondary placeholder:text-text-muted cursor-not-allowed"
             />
             <label class="flex items-center gap-2 text-[0.78rem] text-text-secondary whitespace-nowrap cursor-pointer" @click="sendEmail = !sendEmail">
-              <AppCheckbox v-model="sendEmail" />
+              <UiCheckbox v-model="sendEmail" />
               Send Email
             </label>
           </div>
@@ -267,11 +267,11 @@ onMounted(() => {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-[0.75rem] text-text-muted mb-1.5">Department</label>
-            <AppSelect v-model="departmentId" :options="departmentOptions" placeholder="Select department" />
+            <UiSelect v-model="departmentId" :options="departmentOptions" placeholder="Select department" />
           </div>
           <div>
             <label class="block text-[0.75rem] text-text-muted mb-1.5">Priority</label>
-            <AppSelect v-model="priority" :options="TICKET_PRIORITY_OPTIONS" placeholder="Select priority" />
+            <UiSelect v-model="priority" :options="TICKET_PRIORITY_OPTIONS" placeholder="Select priority" />
           </div>
         </div>
 

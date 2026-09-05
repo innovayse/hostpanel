@@ -5,9 +5,9 @@
  */
 import { ref, computed, onMounted, watch } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import AppSelect from '../../../components/AppSelect.vue'
-import AppCheckbox from '../../../components/AppCheckbox.vue'
-import ConfirmModal from '../../../components/ConfirmModal.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
+import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
 
 const { request } = useApi()
 
@@ -486,7 +486,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="mb-5">
@@ -536,7 +536,7 @@ onMounted(() => {
             />
           </div>
           <div class="flex items-center gap-3 sm:pb-0.5">
-            <AppCheckbox v-model="newCategoryHidden" />
+            <UiCheckbox v-model="newCategoryHidden" />
             <span
               class="text-[0.82rem] text-text-secondary cursor-pointer whitespace-nowrap"
               @click="newCategoryHidden = !newCategoryHidden"
@@ -586,7 +586,7 @@ onMounted(() => {
           <label class="block text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">
             Type
           </label>
-          <AppSelect v-model="newDownloadType" :options="typeOptions" />
+          <UiSelect v-model="newDownloadType" :options="typeOptions" />
         </div>
 
         <!-- Title -->
@@ -633,13 +633,13 @@ onMounted(() => {
           <label class="block text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">
             Category
           </label>
-          <AppSelect v-model="newDownloadCategoryId" :options="categoryOptions" placeholder="Select category" />
+          <UiSelect v-model="newDownloadCategoryId" :options="categoryOptions" placeholder="Select category" />
         </div>
 
         <!-- Checkboxes -->
         <div class="flex flex-col sm:flex-row sm:flex-wrap gap-4">
           <div class="flex items-center gap-3">
-            <AppCheckbox v-model="newDownloadClientsOnly" />
+            <UiCheckbox v-model="newDownloadClientsOnly" />
             <span
               class="text-[0.82rem] text-text-secondary cursor-pointer"
               @click="newDownloadClientsOnly = !newDownloadClientsOnly"
@@ -648,7 +648,7 @@ onMounted(() => {
             </span>
           </div>
           <div class="flex items-center gap-3">
-            <AppCheckbox v-model="newDownloadProductDownload" />
+            <UiCheckbox v-model="newDownloadProductDownload" />
             <span
               class="text-[0.82rem] text-text-secondary cursor-pointer"
               @click="newDownloadProductDownload = !newDownloadProductDownload"
@@ -657,7 +657,7 @@ onMounted(() => {
             </span>
           </div>
           <div class="flex items-center gap-3">
-            <AppCheckbox v-model="newDownloadHidden" />
+            <UiCheckbox v-model="newDownloadHidden" />
             <span
               class="text-[0.82rem] text-text-secondary cursor-pointer"
               @click="newDownloadHidden = !newDownloadHidden"
@@ -939,7 +939,7 @@ onMounted(() => {
             <label class="block text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">
               Parent Category
             </label>
-            <AppSelect
+            <UiSelect
               :model-value="editCategoryParentId ?? 0"
               :options="parentCategoryOptions"
               @update:model-value="editCategoryParentId = $event === 0 ? null : $event"
@@ -973,7 +973,7 @@ onMounted(() => {
 
           <!-- Hidden -->
           <div class="flex items-center gap-3">
-            <AppCheckbox v-model="editCategoryHidden" />
+            <UiCheckbox v-model="editCategoryHidden" />
             <span
               class="text-[0.82rem] text-text-secondary cursor-pointer"
               @click="editCategoryHidden = !editCategoryHidden"
@@ -1031,7 +1031,7 @@ onMounted(() => {
             <label class="block text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">
               Category
             </label>
-            <AppSelect v-model="editDownloadCategoryId" :options="categoryOptions" placeholder="Select category" />
+            <UiSelect v-model="editDownloadCategoryId" :options="categoryOptions" placeholder="Select category" />
           </div>
 
           <!-- Type -->
@@ -1039,7 +1039,7 @@ onMounted(() => {
             <label class="block text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">
               Type
             </label>
-            <AppSelect v-model="editDownloadType" :options="typeOptions" />
+            <UiSelect v-model="editDownloadType" :options="typeOptions" />
           </div>
 
           <!-- Title -->
@@ -1095,7 +1095,7 @@ onMounted(() => {
           <!-- Checkboxes -->
           <div class="flex flex-col sm:flex-row sm:flex-wrap gap-4">
             <div class="flex items-center gap-3">
-              <AppCheckbox v-model="editDownloadClientsOnly" />
+              <UiCheckbox v-model="editDownloadClientsOnly" />
               <span
                 class="text-[0.82rem] text-text-secondary cursor-pointer"
                 @click="editDownloadClientsOnly = !editDownloadClientsOnly"
@@ -1104,7 +1104,7 @@ onMounted(() => {
               </span>
             </div>
             <div class="flex items-center gap-3">
-              <AppCheckbox v-model="editDownloadProductDownload" />
+              <UiCheckbox v-model="editDownloadProductDownload" />
               <span
                 class="text-[0.82rem] text-text-secondary cursor-pointer"
                 @click="editDownloadProductDownload = !editDownloadProductDownload"
@@ -1113,7 +1113,7 @@ onMounted(() => {
               </span>
             </div>
             <div class="flex items-center gap-3">
-              <AppCheckbox v-model="editDownloadHidden" />
+              <UiCheckbox v-model="editDownloadHidden" />
               <span
                 class="text-[0.82rem] text-text-secondary cursor-pointer"
                 @click="editDownloadHidden = !editDownloadHidden"
@@ -1146,7 +1146,7 @@ onMounted(() => {
     </Teleport>
 
     <!-- ===== Delete Confirmation Modal ===== -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="showDeleteModal && deleteTarget"
       :title="`Delete ${deleteTarget.type === 'category' ? 'Category' : 'Download'}`"
       :message="`Are you sure you want to delete '${deleteTarget.name}'? This action cannot be undone.`"

@@ -100,7 +100,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Back button -->
     <RouterLink to="/orders" class="inline-flex items-center gap-1.5 text-[0.78rem] text-text-muted hover:text-text-secondary transition-colors mb-4">

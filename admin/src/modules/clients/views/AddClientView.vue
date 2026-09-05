@@ -11,8 +11,8 @@ import type { AdminCreateClientPayload } from '../../../types/models'
 import { useClientsStore } from '../stores/clientsStore'
 import { CLIENT_STATUS_OPTIONS, LANGUAGE_OPTIONS } from '../../../utils/constants'
 import { useGeoOptions } from '../../../composables/useGeoOptions'
-import AppSelect from '../../../components/AppSelect.vue'
-import ToggleSwitch from '../../../components/ToggleSwitch.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiToggleSwitch from '../../../components/ui/UiToggleSwitch.vue'
 
 const router = useRouter()
 const store = useClientsStore()
@@ -194,7 +194,7 @@ function clearSelectedUser(): void {
 
 // --- Country/currency options ---
 
-/** Currency options for the AppSelect dropdown. */
+/** Currency options for the UiSelect dropdown. */
 const currencyOptions = computed(() =>
   [{ value: '', label: 'Select currency' }, ...store.currencies.map(c => ({ value: c.code, label: `${c.name} (${c.symbol})` }))]
 )
@@ -298,7 +298,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header with sticky actions -->
     <div class="flex items-center justify-between mb-6">
@@ -457,7 +457,7 @@ onMounted(() => {
                   <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Phone</label>
                   <div class="flex gap-1.5">
                     <div class="shrink-0 w-[7rem]">
-                      <AppSelect v-model="phoneCountry" :options="phoneCodeOptions" searchable dropdown-width="18rem" />
+                      <UiSelect v-model="phoneCountry" :options="phoneCodeOptions" searchable dropdown-width="18rem" />
                     </div>
                     <input v-model="phone" type="text" placeholder="Phone number"
                       class="flex-1 min-w-0 bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors" />
@@ -468,11 +468,11 @@ onMounted(() => {
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Language</label>
-                  <AppSelect v-model="language" :options="languageOptions" placeholder="Default" />
+                  <UiSelect v-model="language" :options="languageOptions" placeholder="Default" />
                 </div>
                 <div>
                   <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Status</label>
-                  <AppSelect v-model="status" :options="statusOptions" />
+                  <UiSelect v-model="status" :options="statusOptions" />
                 </div>
               </div>
             </div>
@@ -517,14 +517,14 @@ onMounted(() => {
                 </div>
                 <div>
                   <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Country</label>
-                  <AppSelect v-model="country" :options="countryOptions" placeholder="Select country" />
+                  <UiSelect v-model="country" :options="countryOptions" placeholder="Select country" />
                 </div>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Currency</label>
-                  <AppSelect v-model="currency" :options="currencyOptions" placeholder="Select currency" />
+                  <UiSelect v-model="currency" :options="currencyOptions" placeholder="Select currency" />
                 </div>
                 <div>
                   <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Payment Method</label>
@@ -552,27 +552,27 @@ onMounted(() => {
 
             <div class="flex flex-col gap-3">
               <label class="flex items-center gap-2.5 cursor-pointer">
-                <ToggleSwitch v-model="notifyGeneral" />
+                <UiToggleSwitch v-model="notifyGeneral" />
                 <span class="text-[0.82rem] text-text-secondary">General Emails</span>
               </label>
               <label class="flex items-center gap-2.5 cursor-pointer">
-                <ToggleSwitch v-model="notifyInvoice" />
+                <UiToggleSwitch v-model="notifyInvoice" />
                 <span class="text-[0.82rem] text-text-secondary">Invoice Emails</span>
               </label>
               <label class="flex items-center gap-2.5 cursor-pointer">
-                <ToggleSwitch v-model="notifySupport" />
+                <UiToggleSwitch v-model="notifySupport" />
                 <span class="text-[0.82rem] text-text-secondary">Support Emails</span>
               </label>
               <label class="flex items-center gap-2.5 cursor-pointer">
-                <ToggleSwitch v-model="notifyProduct" />
+                <UiToggleSwitch v-model="notifyProduct" />
                 <span class="text-[0.82rem] text-text-secondary">Product Emails</span>
               </label>
               <label class="flex items-center gap-2.5 cursor-pointer">
-                <ToggleSwitch v-model="notifyDomain" />
+                <UiToggleSwitch v-model="notifyDomain" />
                 <span class="text-[0.82rem] text-text-secondary">Domain Emails</span>
               </label>
               <label class="flex items-center gap-2.5 cursor-pointer">
-                <ToggleSwitch v-model="notifyAffiliate" />
+                <UiToggleSwitch v-model="notifyAffiliate" />
                 <span class="text-[0.82rem] text-text-secondary">Affiliate Emails</span>
               </label>
             </div>
@@ -584,35 +584,35 @@ onMounted(() => {
 
             <div class="flex flex-col gap-3">
               <label class="flex items-center gap-2.5 cursor-pointer">
-                <ToggleSwitch v-model="lateFees" />
+                <UiToggleSwitch v-model="lateFees" />
                 <span class="text-[0.82rem] text-text-secondary">Late Fees</span>
               </label>
               <label class="flex items-center gap-2.5 cursor-pointer">
-                <ToggleSwitch v-model="overdueNotices" />
+                <UiToggleSwitch v-model="overdueNotices" />
                 <span class="text-[0.82rem] text-text-secondary">Overdue Notices</span>
               </label>
               <label class="flex items-center gap-2.5 cursor-pointer">
-                <ToggleSwitch v-model="taxExempt" />
+                <UiToggleSwitch v-model="taxExempt" />
                 <span class="text-[0.82rem] text-text-secondary">Tax Exempt</span>
               </label>
               <label class="flex items-center gap-2.5 cursor-pointer">
-                <ToggleSwitch v-model="separateInvoices" />
+                <UiToggleSwitch v-model="separateInvoices" />
                 <span class="text-[0.82rem] text-text-secondary">Separate Invoices</span>
               </label>
               <label class="flex items-center gap-2.5 cursor-pointer">
-                <ToggleSwitch v-model="disableCcProcessing" />
+                <UiToggleSwitch v-model="disableCcProcessing" />
                 <span class="text-[0.82rem] text-text-secondary">Disable CC Processing</span>
               </label>
               <label class="flex items-center gap-2.5 cursor-pointer">
-                <ToggleSwitch v-model="marketingOptIn" />
+                <UiToggleSwitch v-model="marketingOptIn" />
                 <span class="text-[0.82rem] text-text-secondary">Marketing Emails Opt-in</span>
               </label>
               <label class="flex items-center gap-2.5 cursor-pointer">
-                <ToggleSwitch v-model="statusUpdate" />
+                <UiToggleSwitch v-model="statusUpdate" />
                 <span class="text-[0.82rem] text-text-secondary">Status Update</span>
               </label>
               <label class="flex items-center gap-2.5 cursor-pointer">
-                <ToggleSwitch v-model="allowSso" />
+                <UiToggleSwitch v-model="allowSso" />
                 <span class="text-[0.82rem] text-text-secondary">Allow Single Sign-On</span>
               </label>
             </div>

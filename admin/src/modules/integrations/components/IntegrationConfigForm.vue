@@ -6,7 +6,7 @@
  * Emits save and test events to the parent.
  */
 import { ref, watch } from 'vue'
-import ToggleSwitch from '@/components/ToggleSwitch.vue'
+import UiToggleSwitch from '@/components/ui/UiToggleSwitch.vue'
 import { INTEGRATION_META } from '../types/integration.meta'
 import type { IntegrationDetailDto, IntegrationConfigPayload, IntegrationSlug } from '../types/integration.types'
 
@@ -69,7 +69,7 @@ function handleSave(): void {
 
       <!-- Enable/disable toggle -->
       <label class="flex items-center gap-2.5 cursor-pointer shrink-0">
-        <ToggleSwitch v-model="isEnabled" />
+        <UiToggleSwitch v-model="isEnabled" />
         <span
           class="text-[0.75rem] font-semibold"
           :class="isEnabled ? 'text-status-green' : 'text-text-muted'"
@@ -109,7 +109,7 @@ function handleSave(): void {
 
           <!-- Toggle for boolean fields — stores "true" / "false" as string -->
           <div v-else-if="field.type === 'toggle'" class="flex items-center gap-2.5 pt-1">
-            <ToggleSwitch
+            <UiToggleSwitch
               :model-value="localConfig[field.key] === 'true'"
               @update:model-value="localConfig[field.key] = $event ? 'true' : 'false'"
             />

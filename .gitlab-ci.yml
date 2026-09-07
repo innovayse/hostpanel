@@ -42,7 +42,17 @@ stages: [test, build, deploy]
     # never a failing assertion, and never a line of test output explaining it.
     #
     # It costs wall-clock and buys the job the ability to finish. Revisit if the host grows.
-    - dotnet test --nologo -m:1
+    #
+    # --blame-crash because this job has failed three times in one day with every assertion
+    # green: all six suites report "Passed! Failed: 0", then the run aborts with "Test host
+    # process crashed" during Integration.Tests teardown -- where Testcontainers stops its
+    # Postgres -- and the job exits 1 with no other output. A retry has cleared it every time,
+    # which is the shape of a loaded runner rather than a defect, but "retry until green" is
+    # not a diagnosis and the log gives nothing to work from.
+    #
+    # The flag makes the host write a sequence file naming the test in flight when it died,
+    # and a dump beside it. Costs nothing on a passing run.
+    - dotnet test --nologo -m:1 --blame-crash
 
 .test-node-yarn:
   stage: test

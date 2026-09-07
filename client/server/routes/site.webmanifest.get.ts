@@ -9,10 +9,9 @@
  * icons 404, and no amount of uploading a favicon in the admin panel changed it, because
  * nothing here read the settings.
  *
- * Now the icons come from the same uploaded set the `<link rel="icon">` tags use. With
- * nothing uploaded the `icons` array is empty rather than full of broken paths: a manifest
- * that promises no icon is honest, and the browser falls back to the `<link>` tags, while one
- * that promises a missing icon makes the install prompt fail.
+ * Now the icons come from the same set the `<link rel="icon">` tags use: the uploaded one
+ * when there is an upload, and the committed `public/` set otherwise. Both exist on disk,
+ * so the install prompt has something real to show either way.
  */
 
 /** Sizes an installable PWA is expected to declare, and the file each maps to. */
@@ -42,15 +41,21 @@ export default defineEventHandler(async (event) => {
 
   const favicon = (settings['portal.favicon'] ?? '').trim()
 
-  // Only an upload has a generated set beside it; a pasted URL is one file on someone else's
-  // server, and guessing sibling names against it would list icons that 404.
+  // An upload has its generated set in its own directory; anything else -- nothing set, or a
+  // URL the operator pasted -- falls back to the committed set in `public/`. Both are real
+  // files, so the manifest never promises an icon that 404s. Sibling names are only guessed
+  // inside an upload directory, where this process wrote them and knows they are there.
   const icons = favicon.startsWith(UPLOADS_PREFIX)
     ? MANIFEST_ICON_SIZES.map(icon => ({
         src: `${favicon.slice(0, favicon.lastIndexOf('/') + 1)}${icon.file}`,
         sizes: icon.sizes,
         type: 'image/png',
       }))
-    : []
+    : MANIFEST_ICON_SIZES.map(icon => ({
+        src: `/${icon.file}`,
+        sizes: icon.sizes,
+        type: 'image/png',
+      }))
 
   setResponseHeaders(event, {
     'Content-Type': 'application/manifest+json',

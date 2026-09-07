@@ -46,7 +46,14 @@ admin/.env.production
 *.jpeg
 
 # Allow client public placeholder assets
-!client/public/logo.png
+#
+# The blanket *.png above is aimed at screenshots dropped in the working tree, but it also
+# swallowed the storefront icons: apple-touch-icon.png and both android-chrome sizes were
+# generated, ignored, and never committed, so nuxt.config and the web manifest advertised
+# three files that answered 404 on every deployment including production. Anything directly
+# in client/public is a served asset, not a screenshot -- whitelist the folder rather than
+# naming files one at a time and losing the next one the same way.
+!client/public/*.png
 !client/public/images/**
 
 # IDEs

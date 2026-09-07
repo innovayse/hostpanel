@@ -4,17 +4,17 @@
  *
  * Detects edit mode from route params, loads TLD config data when editing,
  * and includes pricing tables for registration, transfer, and renewal
- * across multiple year periods. Uses AppSelect, AppSpinner, and ToggleSwitch
+ * across multiple year periods. Uses UiSelect, UiSpinner, and UiToggleSwitch
  * reusable components instead of raw HTML inputs.
  */
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
-import ConfirmModal from '@/components/ConfirmModal.vue'
+import UiConfirmModal from '@/components/ui/UiConfirmModal.vue'
 import { useTldConfigsStore } from '../stores/tldConfigsStore'
-import AppSelect from '@/components/AppSelect.vue'
-import AppSpinner from '@/components/AppSpinner.vue'
-import ToggleSwitch from '@/components/ToggleSwitch.vue'
+import UiSelect from '@/components/ui/UiSelect.vue'
+import UiSpinner from '@/components/ui/UiSpinner.vue'
+import UiToggleSwitch from '@/components/ui/UiToggleSwitch.vue'
 import type { CreateTldConfigPayload, UpdateTldConfigPayload } from '@/types/models'
 
 const route = useRoute()
@@ -28,7 +28,7 @@ const PERIODS = ['1', '2', '3', '5', '10'] as const
 // PERIODS by `emptyPriceMap()`, so a period always has a value. They stay
 // `Record<string, number>` on purpose: a map loaded from the API may carry a period this
 // build does not list, and `fromApiMap`/`toNonZeroMap` round-trip it untouched rather than
-// dropping it. That is why the template reads `map[period] ?? 0` — `AppSpinner` needs a
+// dropping it. That is why the template reads `map[period] ?? 0` — `UiSpinner` needs a
 // definite `number`, and the fallback is unreachable while the seeding above holds.
 
 /** Provider options for the registrar module dropdown. */
@@ -300,7 +300,7 @@ const sellSymbol = computed(() => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Breadcrumb -->
     <nav class="flex items-center gap-1.5 text-sm mb-6">
@@ -355,7 +355,7 @@ const sellSymbol = computed(() => {
             <!-- Provider -->
             <div>
               <label class="block text-sm text-text-secondary mb-1.5">Registrar Provider</label>
-              <AppSelect
+              <UiSelect
                 :model-value="registrarModule"
                 :options="PROVIDER_OPTIONS"
                 @update:model-value="registrarModule = $event"
@@ -365,7 +365,7 @@ const sellSymbol = computed(() => {
             <!-- Cost Currency -->
             <div>
               <label class="block text-sm text-text-secondary mb-1.5">Cost Currency</label>
-              <AppSelect
+              <UiSelect
                 :model-value="currency"
                 :options="CURRENCY_OPTIONS"
                 @update:model-value="currency = $event"
@@ -376,7 +376,7 @@ const sellSymbol = computed(() => {
             <!-- Sell Currency -->
             <div>
               <label class="block text-sm text-text-secondary mb-1.5">Sell Currency</label>
-              <AppSelect
+              <UiSelect
                 :model-value="sellCurrency"
                 :options="CURRENCY_OPTIONS"
                 @update:model-value="sellCurrency = $event"
@@ -390,13 +390,13 @@ const sellSymbol = computed(() => {
                 <p class="text-sm text-text-primary font-medium">Enabled</p>
                 <p class="text-xs text-text-muted">Make this TLD available for purchase</p>
               </div>
-              <ToggleSwitch v-model="isEnabled" />
+              <UiToggleSwitch v-model="isEnabled" />
             </div>
 
             <!-- Sort Order -->
             <div>
               <label class="block text-sm text-text-secondary mb-1.5">Sort Order</label>
-              <AppSpinner
+              <UiSpinner
                 :model-value="sortOrder"
                 :min="0"
                 :step="1"
@@ -438,7 +438,7 @@ const sellSymbol = computed(() => {
                 <tr v-for="period in PERIODS" :key="period">
                   <td class="py-2.5 text-text-secondary">{{ period }} {{ Number(period) === 1 ? 'Year' : 'Years' }}</td>
                   <td class="py-2.5 pr-2">
-                    <AppSpinner
+                    <UiSpinner
                       :model-value="costRegister[period] ?? 0"
                       :step="0.01"
                       :min="0"
@@ -447,7 +447,7 @@ const sellSymbol = computed(() => {
                     />
                   </td>
                   <td class="py-2.5 pr-2">
-                    <AppSpinner
+                    <UiSpinner
                       :model-value="sellRegister[period] ?? 0"
                       :step="0.01"
                       :min="0"
@@ -484,7 +484,7 @@ const sellSymbol = computed(() => {
                 <tr v-for="period in PERIODS" :key="period">
                   <td class="py-2.5 text-text-secondary">{{ period }} {{ Number(period) === 1 ? 'Year' : 'Years' }}</td>
                   <td class="py-2.5 pr-2">
-                    <AppSpinner
+                    <UiSpinner
                       :model-value="costTransfer[period] ?? 0"
                       :step="0.01"
                       :min="0"
@@ -493,7 +493,7 @@ const sellSymbol = computed(() => {
                     />
                   </td>
                   <td class="py-2.5 pr-2">
-                    <AppSpinner
+                    <UiSpinner
                       :model-value="sellTransfer[period] ?? 0"
                       :step="0.01"
                       :min="0"
@@ -530,7 +530,7 @@ const sellSymbol = computed(() => {
                 <tr v-for="period in PERIODS" :key="period">
                   <td class="py-2.5 text-text-secondary">{{ period }} {{ Number(period) === 1 ? 'Year' : 'Years' }}</td>
                   <td class="py-2.5 pr-2">
-                    <AppSpinner
+                    <UiSpinner
                       :model-value="costRenew[period] ?? 0"
                       :step="0.01"
                       :min="0"
@@ -539,7 +539,7 @@ const sellSymbol = computed(() => {
                     />
                   </td>
                   <td class="py-2.5 pr-2">
-                    <AppSpinner
+                    <UiSpinner
                       :model-value="sellRenew[period] ?? 0"
                       :step="0.01"
                       :min="0"
@@ -589,7 +589,7 @@ const sellSymbol = computed(() => {
   </div>
 
     <!-- Unsaved-changes question, asked while the route change waits -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="leaveGuard.pending.value"
       title="Unsaved changes"
       message="You have unsaved changes. Are you sure you want to leave?"

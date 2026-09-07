@@ -7,7 +7,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useSupportStore } from '../stores/supportStore'
 import { formatDate } from '../../../utils/format'
 import { TICKET_FILTER_OPTIONS, TICKET_STATUS_STYLES } from '../../../utils/constants'
-import AppCheckbox from '../../../components/AppCheckbox.vue'
+import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 
 const store = useSupportStore()
 
@@ -174,7 +174,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="mb-5">
@@ -268,7 +268,7 @@ onMounted(() => {
       <!-- Table Header -->
       <div class="hidden sm:grid grid-cols-[40px_36px_1fr_1fr_0.6fr_0.6fr_0.8fr] gap-3 px-5 py-3 border-b border-border bg-white/[0.02]">
         <div class="flex items-center">
-          <AppCheckbox :model-value="selectAll" @update:model-value="(v: boolean) => { selectAll = v; handleSelectAll() }" />
+          <UiCheckbox :model-value="selectAll" @update:model-value="(v: boolean) => { selectAll = v; handleSelectAll() }" />
         </div>
         <div />
         <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Subject</span>
@@ -286,7 +286,7 @@ onMounted(() => {
       >
         <!-- Checkbox -->
         <div class="hidden sm:flex items-center">
-          <AppCheckbox :model-value="selectedIds.includes(ticket.id)" @update:model-value="handleToggleSelect(ticket.id)" />
+          <UiCheckbox :model-value="selectedIds.includes(ticket.id)" @update:model-value="handleToggleSelect(ticket.id)" />
         </div>
 
         <!-- Flag -->

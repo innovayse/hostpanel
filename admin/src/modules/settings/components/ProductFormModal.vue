@@ -9,9 +9,9 @@ import { ref, watch, computed, onMounted } from 'vue'
 import type { Product, ProductGroup, CreateProductPayload } from '@/types/models'
 import type { ServerGroupDto } from '@/modules/servers/types/server.types'
 import { useApi } from '@/composables/useApi'
-import ToggleSwitch from '@/components/ToggleSwitch.vue'
-import AppSelect from '@/components/AppSelect.vue'
-import AppNumberInput from '@/components/AppNumberInput.vue'
+import UiToggleSwitch from '@/components/ui/UiToggleSwitch.vue'
+import UiSelect from '@/components/ui/UiSelect.vue'
+import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 
 const { request } = useApi()
 
@@ -124,19 +124,19 @@ watch(() => props.product, (p) => {
   }
 }, { immediate: true })
 
-/** Options formatted for the AppSelect component. */
+/** Options formatted for the UiSelect component. */
 const groupOptions = computed(() =>
   props.groups.map(g => ({ value: g.id, label: g.name }))
 )
 
-/** Options formatted for the server group AppSelect component, with a "None" option. */
+/** Options formatted for the server group UiSelect component, with a "None" option. */
 const serverGroupOptions = computed(() => [
   { value: 0, label: 'None (auto-select by module)' },
   ...serverGroups.value.map(g => ({ value: g.id, label: g.name })),
 ])
 
 /**
- * Writable computed that maps between nullable serverGroupId and the numeric v-model for AppSelect.
+ * Writable computed that maps between nullable serverGroupId and the numeric v-model for UiSelect.
  * Uses 0 to represent "no server group" (null).
  */
 const serverGroupModel = computed({
@@ -258,7 +258,7 @@ function handleSubmit(): void {
         <!-- Product Group -->
         <div>
           <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Product Group</label>
-          <AppSelect
+          <UiSelect
             v-model="groupId"
             :options="groupOptions"
             placeholder="Select a group"
@@ -305,7 +305,7 @@ function handleSubmit(): void {
         <!-- Server Group -->
         <div>
           <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Server Group</label>
-          <AppSelect
+          <UiSelect
             v-model="serverGroupModel"
             :options="serverGroupOptions"
             placeholder="None (auto-select by module)"
@@ -330,7 +330,7 @@ function handleSubmit(): void {
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-[0.68rem] text-text-muted mb-1">Monthly Price</label>
-              <AppNumberInput
+              <UiNumberInput
                 v-model="monthlyPrice"
                 :min="0"
                 :step="0.01"
@@ -339,7 +339,7 @@ function handleSubmit(): void {
             </div>
             <div>
               <label class="block text-[0.68rem] text-text-muted mb-1">Annual Price</label>
-              <AppNumberInput
+              <UiNumberInput
                 v-model="annualPrice"
                 :min="0"
                 :step="0.01"
@@ -355,7 +355,7 @@ function handleSubmit(): void {
             <p class="text-[0.82rem] text-text-primary font-medium">Hidden</p>
             <p class="text-[0.7rem] text-text-muted">Hide this product from the order form</p>
           </div>
-          <ToggleSwitch v-model="isHidden" />
+          <UiToggleSwitch v-model="isHidden" />
         </div>
 
         <!-- Actions -->

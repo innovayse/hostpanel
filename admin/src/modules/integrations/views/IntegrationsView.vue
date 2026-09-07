@@ -39,7 +39,7 @@ const activeCount = computed(() => filtered.value.filter(i => i.isEnabled).lengt
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">

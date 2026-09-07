@@ -9,8 +9,8 @@ import { useApi } from '../../../composables/useApi'
 import { useUsersStore, type UserDetail } from '../stores/usersStore'
 import { PERMISSION_LABELS, ClientPermission, type ClientUserItem } from '../../../types/models'
 import { formatDate as sharedFormatDate } from '../../../utils/format'
-import AppCheckbox from '../../../components/AppCheckbox.vue'
-import ConfirmModal from '../../../components/ConfirmModal.vue'
+import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
+import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
 import UserFormModal from '../components/UserFormModal.vue'
 
 const route = useRoute()
@@ -438,7 +438,7 @@ onMounted(() => fetchUsers())
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Success feedback -->
     <div v-if="successMessage" class="mb-4 px-4 py-2.5 text-[0.82rem] text-status-green bg-status-green/10 border border-status-green/20 rounded-xl">
@@ -554,7 +554,7 @@ onMounted(() => fetchUsers())
             <h4 class="text-[0.72rem] font-semibold uppercase tracking-[0.07em] text-text-muted mb-3">Permissions</h4>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <label v-for="perm in PERMISSION_LABELS" :key="perm.flag" class="flex items-center gap-2 cursor-pointer">
-                <AppCheckbox :model-value="hasAddPermission(perm.flag)" @update:model-value="toggleAddPermission(perm.flag)" />
+                <UiCheckbox :model-value="hasAddPermission(perm.flag)" @update:model-value="toggleAddPermission(perm.flag)" />
                 <span class="text-[0.78rem] text-text-secondary">{{ perm.label }}</span>
               </label>
             </div>
@@ -614,7 +614,7 @@ onMounted(() => fetchUsers())
             <h4 class="text-[0.72rem] font-semibold uppercase tracking-[0.07em] text-text-muted mb-3">Permissions</h4>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <label v-for="perm in PERMISSION_LABELS" :key="perm.flag" class="flex items-center gap-2 cursor-pointer">
-                <AppCheckbox :model-value="hasInvitePermission(perm.flag)" @update:model-value="toggleInvitePermission(perm.flag)" />
+                <UiCheckbox :model-value="hasInvitePermission(perm.flag)" @update:model-value="toggleInvitePermission(perm.flag)" />
                 <span class="text-[0.78rem] text-text-secondary">{{ perm.label }}</span>
               </label>
             </div>
@@ -730,7 +730,7 @@ onMounted(() => fetchUsers())
     </Teleport>
 
     <!-- Transfer Ownership Confirm Modal -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="makeOwnerTarget"
       title="Transfer Ownership"
       :message="`Transfer ownership to &quot;${makeOwnerTarget.email}&quot;? The current owner will become a regular user.`"
@@ -743,7 +743,7 @@ onMounted(() => fetchUsers())
     />
 
     <!-- Remove User Confirm Modal -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="removeUserTarget"
       title="Remove User"
       :message="`Remove &quot;${removeUserTarget.email}&quot; from this client? They will lose access to this account.`"

@@ -1,5 +1,6 @@
-namespace Innovayse.Application.Orders.Commands.ConfirmOrderPayment;
+﻿namespace Innovayse.Application.Orders.Commands.ConfirmOrderPayment;
 
+using Innovayse.Application.Orders.Extensions;
 using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Common;
 using Innovayse.Application.Orders.Commands.FulfillPaidOrder;
@@ -31,13 +32,14 @@ public sealed class ConfirmOrderPaymentHandler(
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A <see cref="Task"/> that completes when the payment is confirmed and fulfillment is dispatched.</returns>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when the order is not found, has no linked invoice, the payment verification
+    /// Thrown when the order is not found or its payment token does not match, when it has no linked
+    /// invoice, when the payment verification
     /// fails, or the gateway reports success without a transaction id.
     /// </exception>
     public async Task HandleAsync(ConfirmOrderPaymentCommand cmd, CancellationToken ct)
     {
-        var order = await orderRepo.FindByIdAsync(cmd.OrderId, ct)
-            ?? throw new InvalidOperationException($"Order {cmd.OrderId} not found.");
+        var order = (await orderRepo.FindByIdAsync(cmd.OrderId, ct))
+            .EnsurePayableWith(cmd.OrderId, cmd.PaymentToken);
 
         if (order.InvoiceId is null)
         {

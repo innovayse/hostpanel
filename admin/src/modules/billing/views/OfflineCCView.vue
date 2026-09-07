@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import AppSelect from '../../../components/AppSelect.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
 
 const router = useRouter()
 const page = ref(1)
@@ -76,7 +76,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="mb-5">
@@ -92,7 +92,7 @@ onMounted(() => {
       <div class="flex items-center gap-2">
         <span class="text-[0.82rem] text-text-muted">Jump to Page:</span>
         <div class="w-20">
-          <AppSelect
+          <UiSelect
             v-model="pageString"
             :options="pageOptions"
             @update:modelValue="(val) => goToPage(Number(val))"

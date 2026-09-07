@@ -2,9 +2,9 @@
 import { ref, onMounted } from 'vue'
 import ReportPage from '../components/ReportPage.vue'
 import ReportTimestamp from '../components/ReportTimestamp.vue'
-import AppClientSelect from '../../../components/AppClientSelect.vue'
-import AppSelect from '../../../components/AppSelect.vue'
-import DateRangePicker from '../../../components/DateRangePicker.vue'
+import UiClientSelect from '../../../components/ui/UiClientSelect.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiDateRangePicker from '../../../components/ui/UiDateRangePicker.vue'
 import { useApi } from '../../../composables/useApi'
 
 const { request } = useApi()
@@ -72,13 +72,13 @@ onMounted(() => { loadClients(); load() })
           <!-- Client -->
           <div class="flex-1 min-w-[200px]">
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Client</label>
-            <AppClientSelect :clients="clientOptions" v-model="selectedClientId" placeholder="Start Typing to Search Clients" />
+            <UiClientSelect :clients="clientOptions" v-model="selectedClientId" placeholder="Start Typing to Search Clients" />
           </div>
 
           <!-- Registrar -->
           <div class="w-[160px]">
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Registrar</label>
-            <AppSelect v-model="registrar" :options="registrarOptions" />
+            <UiSelect v-model="registrar" :options="registrarOptions" />
           </div>
 
           <!-- Domain -->
@@ -94,7 +94,7 @@ onMounted(() => { loadClients(); load() })
           <!-- Date Range -->
           <div class="flex-1 min-w-[220px]">
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Date Range</label>
-            <DateRangePicker v-model="dateRange" />
+            <UiDateRangePicker v-model="dateRange" />
           </div>
 
           <!-- Apply -->

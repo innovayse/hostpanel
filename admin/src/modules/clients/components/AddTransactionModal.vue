@@ -7,10 +7,10 @@ import { ref } from 'vue'
 import { useTransactionsStore } from '../stores/transactionsStore'
 import { GATEWAY_OPTIONS } from '../../../utils/constants'
 import { toDateInputValue } from '../../../utils/format'
-import AppDatePicker from '../../../components/AppDatePicker.vue'
-import AppNumberInput from '../../../components/AppNumberInput.vue'
-import AppSelect from '../../../components/AppSelect.vue'
-import AppCheckbox from '../../../components/AppCheckbox.vue'
+import UiDatePicker from '../../../components/ui/UiDatePicker.vue'
+import UiNumberInput from '../../../components/ui/UiNumberInput.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 
 const props = defineProps<{
   /** Client ID for the transaction. */
@@ -121,7 +121,7 @@ async function handleSave(): Promise<void> {
               <!-- Date -->
               <div>
                 <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-zinc-400 mb-1.5">Date</label>
-                <AppDatePicker v-model="date" />
+                <UiDatePicker v-model="date" />
               </div>
 
               <!-- Description -->
@@ -149,13 +149,13 @@ async function handleSave(): Promise<void> {
               <!-- Invoice ID -->
               <div>
                 <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-zinc-400 mb-1.5">Invoice ID (optional)</label>
-                <AppNumberInput v-model="invoiceId" :min="0" />
+                <UiNumberInput v-model="invoiceId" :min="0" />
               </div>
 
               <!-- Payment Method -->
               <div>
                 <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-zinc-400 mb-1.5">Payment Method</label>
-                <AppSelect
+                <UiSelect
                   v-model="paymentMethod"
                   :options="GATEWAY_OPTIONS"
                   placeholder="Select gateway"
@@ -168,25 +168,25 @@ async function handleSave(): Promise<void> {
               <!-- Amount In -->
               <div>
                 <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-zinc-400 mb-1.5">Amount In</label>
-                <AppNumberInput v-model="amountIn" :step="0.01" :min="0" />
+                <UiNumberInput v-model="amountIn" :step="0.01" :min="0" />
               </div>
 
               <!-- Fees -->
               <div>
                 <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-zinc-400 mb-1.5">Fees</label>
-                <AppNumberInput v-model="fees" :step="0.01" :min="0" />
+                <UiNumberInput v-model="fees" :step="0.01" :min="0" />
               </div>
 
               <!-- Amount Out -->
               <div>
                 <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-zinc-400 mb-1.5">Amount Out</label>
-                <AppNumberInput v-model="amountOut" :step="0.01" :min="0" />
+                <UiNumberInput v-model="amountOut" :step="0.01" :min="0" />
               </div>
 
               <!-- Credit -->
               <div class="pt-2">
                 <label class="flex items-center gap-2.5 text-[0.82rem] text-zinc-300 cursor-pointer">
-                  <AppCheckbox v-model="addedToCredit" />
+                  <UiCheckbox v-model="addedToCredit" />
                   Add to Client's Credit Balance
                 </label>
               </div>

@@ -4,7 +4,7 @@
  * Replaces the repeated toggle button + inner div pattern used across forms.
  */
 
-/** Props for ToggleSwitch. */
+/** Props for UiToggleSwitch. */
 defineProps<{
   /** Current toggle state. */
   modelValue: boolean

@@ -2,10 +2,10 @@
 import { ref, computed, onMounted } from 'vue'
 import ReportPage from '../components/ReportPage.vue'
 import ReportTimestamp from '../components/ReportTimestamp.vue'
-import FilterCard from '../../../components/FilterCard.vue'
-import AdvancedFilters, { type FilterRow, type FieldOption } from '../../../components/AdvancedFilters.vue'
-import FieldSelector from '../../../components/FieldSelector.vue'
-import DateRangePicker from '../../../components/DateRangePicker.vue'
+import UiFilterCard from '../../../components/ui/UiFilterCard.vue'
+import UiAdvancedFilters, { type FilterRow, type FieldOption } from '../../../components/ui/UiAdvancedFilters.vue'
+import UiFieldSelector from '../../../components/ui/UiFieldSelector.vue'
+import UiDateRangePicker from '../../../components/ui/UiDateRangePicker.vue'
 import { useApi } from '../../../composables/useApi'
 
 const { request } = useApi()
@@ -132,35 +132,35 @@ onMounted(load)
 <template>
   <ReportPage title="Domains" description="This report can be used to generate a custom export of domains by applying up to 5 filters. CSV Export is available via the Tools menu to the right." :loading :error>
     <template #filters>
-      <FilterCard>
+      <UiFilterCard>
         <template #fields>
           <div class="flex flex-col gap-3">
             <!-- Row 1: Fields to Include + Registration Date Range -->
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Fields to Include</label>
-                <FieldSelector :fields="allColumns" :selected="visibleCols" @toggle="toggleCol" @select-all="selectAllCols" @clear-all="clearAllCols" />
+                <UiFieldSelector :fields="allColumns" :selected="visibleCols" @toggle="toggleCol" @select-all="selectAllCols" @clear-all="clearAllCols" />
               </div>
               <div>
                 <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Registration Date Range</label>
-                <DateRangePicker v-model="registeredRange" />
+                <UiDateRangePicker v-model="registeredRange" />
               </div>
             </div>
             <!-- Row 2: Next Due Date Range + Expiry Date Range -->
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Next Due Date Range</label>
-                <DateRangePicker v-model="nextDueRange" />
+                <UiDateRangePicker v-model="nextDueRange" />
               </div>
               <div>
                 <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Expiry Date Range</label>
-                <DateRangePicker v-model="expiryRange" />
+                <UiDateRangePicker v-model="expiryRange" />
               </div>
             </div>
           </div>
         </template>
 
-        <AdvancedFilters :fields="filterFields" @update:filters="activeFilters = $event" />
+        <UiAdvancedFilters :fields="filterFields" @update:filters="activeFilters = $event" />
 
         <template #actions>
           <div class="flex items-center justify-center gap-3 pt-3 border-t border-border/50">
@@ -168,7 +168,7 @@ onMounted(load)
             <button class="px-4 py-2 bg-white/[0.04] border border-border text-text-secondary text-[0.78rem] font-medium rounded-[9px] hover:bg-white/[0.08] transition-colors" @click="printReport">Print</button>
           </div>
         </template>
-      </FilterCard>
+      </UiFilterCard>
     </template>
 
     <div class="text-[0.78rem] text-text-secondary mb-3">{{ totalCount }} domain(s) found</div>

@@ -27,7 +27,7 @@ export interface UnsavedChangesGuard {
  *
  * @example
  * const guard = useUnsavedChangesGuard(() => isDirty.value && !saving.value)
- * // <ConfirmModal v-if="guard.pending.value" @confirm="guard.confirmLeave" @close="guard.cancelLeave" />
+ * // <UiConfirmModal v-if="guard.pending.value" @confirm="guard.confirmLeave" @close="guard.cancelLeave" />
  */
 export const useUnsavedChangesGuard = (isDirty: () => boolean): UnsavedChangesGuard => {
   const pending = ref(false)

@@ -1,4 +1,4 @@
-namespace Innovayse.API.Orders;
+﻿namespace Innovayse.API.Orders;
 
 using Innovayse.API.Billing;
 using Innovayse.API.Billing.Extensions;
@@ -24,6 +24,14 @@ using Wolverine;
 /// Endpoints for placing, viewing, and managing orders.
 /// Place is open to guests and authenticated users; all other endpoints require Admin or Reseller role.
 /// </summary>
+/// <remarks>
+/// The four payment endpoints are the exception: they stay <c>[AllowAnonymous]</c> because a guest
+/// checkout has no credential to present, and they are authorised instead by the order's payment
+/// token, which the caller received when it placed the order. The route id alone never authorises
+/// anything here -- ids are sequential, and before the token existed anyone could start a gateway
+/// session on a stranger's order and, since a live session locks the invoice for the length of the
+/// gateway's session window, keep the real payer from paying at all.
+/// </remarks>
 /// <param name="bus">Wolverine message bus.</param>
 [ApiController]
 [Route("api/orders")]
@@ -136,13 +144,16 @@ public sealed class OrdersController(IMessageBus bus) : ControllerBase
     /// Returns the client secret needed by the frontend to confirm payment.
     /// </summary>
     /// <param name="id">Order primary key.</param>
+    /// <param name="request">Request body carrying the order's payment token.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>200 OK with the PaymentIntent client secret.</returns>
     [HttpPost("{id:int}/create-payment-intent")]
     [AllowAnonymous]
-    public async Task<IActionResult> CreatePaymentIntentAsync(int id, CancellationToken ct)
+    public async Task<IActionResult> CreatePaymentIntentAsync(
+        int id, [FromBody] OrderPaymentTokenRequest request, CancellationToken ct)
     {
-        var clientSecret = await bus.InvokeAsync<string>(new CreateOrderPaymentIntentCommand(id), ct);
+        var clientSecret = await bus.InvokeAsync<string>(
+            new CreateOrderPaymentIntentCommand(id, request.PaymentToken), ct);
         return Ok(new { clientSecret });
     }
 
@@ -159,7 +170,8 @@ public sealed class OrdersController(IMessageBus bus) : ControllerBase
     public async Task<IActionResult> ConfirmPaymentAsync(
         int id, [FromBody] ConfirmPaymentRequest request, CancellationToken ct)
     {
-        await bus.InvokeAsync(new ConfirmOrderPaymentCommand(id, request.PaymentIntentId), ct);
+        await bus.InvokeAsync(
+            new ConfirmOrderPaymentCommand(id, request.PaymentIntentId, request.PaymentToken), ct);
         return Ok(new { success = true });
     }
 
@@ -168,18 +180,18 @@ public sealed class OrdersController(IMessageBus bus) : ControllerBase
     /// Returns the gateway URL to redirect the payer's browser to.
     /// </summary>
     /// <param name="id">Order primary key.</param>
-    /// <param name="request">The payment module and return URL.</param>
+    /// <param name="request">The payment module, return URL and the order's payment token.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>200 OK with the redirect URL.</returns>
     [HttpPost("{id:int}/gateway-payment/start")]
     [AllowAnonymous]
     public async Task<IActionResult> StartGatewayPaymentAsync(
         int id,
-        [FromBody] StartGatewayPaymentRequest request,
+        [FromBody] StartOrderGatewayPaymentRequest request,
         CancellationToken ct)
     {
         var redirectUrl = await bus.InvokeAsync<string>(
-            new StartOrderGatewayPaymentCommand(id, request.Module, request.ReturnUrl), ct);
+            new StartOrderGatewayPaymentCommand(id, request.Module, request.ReturnUrl, request.PaymentToken), ct);
         return Ok(new { redirectUrl });
     }
 
@@ -188,14 +200,16 @@ public sealed class OrdersController(IMessageBus bus) : ControllerBase
     /// marks the invoice paid and fulfills the order.
     /// </summary>
     /// <param name="id">Order primary key.</param>
+    /// <param name="request">Request body carrying the order's payment token.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>200 OK with the payment state: paid, pending, or declined.</returns>
     [HttpPost("{id:int}/gateway-payment/complete")]
     [AllowAnonymous]
-    public async Task<IActionResult> CompleteGatewayPaymentAsync(int id, CancellationToken ct)
+    public async Task<IActionResult> CompleteGatewayPaymentAsync(
+        int id, [FromBody] OrderPaymentTokenRequest request, CancellationToken ct)
     {
         var state = await bus.InvokeAsync<GatewayCompletionState>(
-            new CompleteOrderGatewayPaymentCommand(id), ct);
+            new CompleteOrderGatewayPaymentCommand(id, request.PaymentToken), ct);
 
         // The only shaping left here, and it belongs here: the wire spelling of a domain enum
         // is the API's business, and the enum never leaves the backend in that form.

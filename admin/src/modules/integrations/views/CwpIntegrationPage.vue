@@ -76,7 +76,7 @@ async function handleTest(): Promise<void> {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full flex flex-col gap-5">
+  <div class="w-full flex flex-col gap-5">
 
     <!-- Breadcrumb -->
     <div class="flex items-center gap-2 text-[0.78rem]">

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import AppSelect from '../../../components/AppSelect.vue'
-import AppClientSelect from '../../../components/AppClientSelect.vue'
-import AppSpinner from '../../../components/AppSpinner.vue'
-import AppDatePicker from '../../../components/AppDatePicker.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiClientSelect from '../../../components/ui/UiClientSelect.vue'
+import UiSpinner from '../../../components/ui/UiSpinner.vue'
+import UiDatePicker from '../../../components/ui/UiDatePicker.vue'
 import { useBillableItemsStore } from '../stores/billableItemsStore'
 import { useApi } from '../../../composables/useApi'
 import { toIsoDay } from '../../../utils/format'
@@ -88,7 +88,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="mb-5">
@@ -103,7 +103,7 @@ onMounted(() => {
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <div>
           <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Client</label>
-          <AppClientSelect
+          <UiClientSelect
             v-model="form.clientId"
             :clients="clients"
             placeholder="Select a client..."
@@ -111,7 +111,7 @@ onMounted(() => {
         </div>
         <div>
           <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Product/Service</label>
-          <AppSelect
+          <UiSelect
             v-model="form.productId"
             :options="productOptions"
           />
@@ -135,7 +135,7 @@ onMounted(() => {
         <div>
           <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Hours/Qty</label>
           <div class="mb-2">
-            <AppSpinner
+            <UiSpinner
               v-model="form.quantity"
               :step="0.01"
               :min="0"
@@ -155,7 +155,7 @@ onMounted(() => {
         </div>
         <div>
           <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Amount</label>
-          <AppSpinner
+          <UiSpinner
             v-model="form.amount"
             :step="0.01"
             :min="0"
@@ -181,7 +181,7 @@ onMounted(() => {
       <div v-if="form.invoiceAction === 'recurring'" class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div>
           <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Recur Every</label>
-          <AppSpinner
+          <UiSpinner
             v-model="form.recurringPeriod"
             :step="1"
             :min="1"
@@ -190,14 +190,14 @@ onMounted(() => {
         </div>
         <div>
           <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">&nbsp;</label>
-          <AppSelect
+          <UiSelect
             v-model="form.recurringPeriodType"
             :options="recurringPeriodOptions"
           />
         </div>
         <div>
           <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">For Times</label>
-          <AppSpinner
+          <UiSpinner
             v-model="form.invoiceCount"
             :step="1"
             :min="0"
@@ -209,7 +209,7 @@ onMounted(() => {
       <!-- Row 6: Next Due Date -->
       <div>
         <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-2">(Next) Due Date</label>
-        <AppDatePicker
+        <UiDatePicker
           v-model="form.nextDueDate"
           placeholder="Select date..."
         />

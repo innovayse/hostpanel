@@ -2,10 +2,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useBillingStore } from '../stores/billingStore'
-import AppSelect from '../../../components/AppSelect.vue'
-import AppSpinner from '../../../components/AppSpinner.vue'
-import AppDatePicker from '../../../components/AppDatePicker.vue'
-import AppCheckbox from '../../../components/AppCheckbox.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiSpinner from '../../../components/ui/UiSpinner.vue'
+import UiDatePicker from '../../../components/ui/UiDatePicker.vue'
+import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import { toIsoDay } from '../../../utils/format'
 
 const router = useRouter()
@@ -232,7 +232,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
       <div class="flex items-center gap-4">
@@ -379,7 +379,7 @@ onMounted(() => {
               <p class="text-[0.82rem] font-medium text-text-primary">{{ invoice?.gateway || 'Not set' }}</p>
             </div>
             <div class="pb-3">
-              <AppSelect
+              <UiSelect
                 v-model="selectedEvent"
                 :options="eventSelectOptions"
               />
@@ -394,7 +394,7 @@ onMounted(() => {
 
           <!-- Manage Mode Actions -->
           <div v-if="isManageMode" class="space-y-2 pt-2">
-            <AppSelect
+            <UiSelect
               v-model="selectedEvent"
               :options="eventSelectOptions"
             />
@@ -434,14 +434,14 @@ onMounted(() => {
             <div class="space-y-4">
               <div class="space-y-2">
                 <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Date</label>
-                <AppDatePicker
+                <UiDatePicker
                   v-model="paymentDate"
                   placeholder="Select date..."
                 />
               </div>
               <div class="space-y-2">
                 <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Payment Method</label>
-                <AppSelect
+                <UiSelect
                   v-model="paymentMethod"
                   :options="paymentMethodOptions"
                   placeholder="Select payment method..."
@@ -457,7 +457,7 @@ onMounted(() => {
             <div class="space-y-4">
               <div class="space-y-2">
                 <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Amount</label>
-                <AppSpinner
+                <UiSpinner
                   v-model="paymentAmount"
                   :step="0.01"
                   :min="0"
@@ -466,7 +466,7 @@ onMounted(() => {
               </div>
               <div class="space-y-2">
                 <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Transaction Fees</label>
-                <AppSpinner
+                <UiSpinner
                   v-model="transactionFees"
                   :step="0.01"
                   :min="0"
@@ -474,7 +474,7 @@ onMounted(() => {
                 />
               </div>
               <div class="flex items-center gap-3">
-                <AppCheckbox v-model="sendPaymentEmail" />
+                <UiCheckbox v-model="sendPaymentEmail" />
                 <label class="text-[0.82rem] text-text-secondary">Send Confirmation Email</label>
               </div>
             </div>
@@ -498,7 +498,7 @@ onMounted(() => {
           <!-- Invoice Date -->
           <div class="space-y-2">
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Invoice Date</label>
-            <AppDatePicker
+            <UiDatePicker
               v-model="optionsInvoiceDate"
               placeholder="Select date..."
             />
@@ -506,7 +506,7 @@ onMounted(() => {
           <!-- Due Date -->
           <div class="space-y-2">
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Due Date</label>
-            <AppDatePicker
+            <UiDatePicker
               v-model="optionsDueDate"
               placeholder="Select date..."
             />
@@ -518,7 +518,7 @@ onMounted(() => {
           <!-- Payment Method -->
           <div class="space-y-2">
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Payment Method</label>
-            <AppSelect
+            <UiSelect
               v-model="optionsPaymentMethod"
               :options="paymentMethodOptions"
             />
@@ -542,7 +542,7 @@ onMounted(() => {
             <!-- Tax Rate 1 -->
             <div class="flex items-end gap-2">
               <div class="flex-1">
-                <AppSpinner
+                <UiSpinner
                   v-model="optionsTaxRate1"
                   :step="0.01"
                   :min="0"
@@ -550,7 +550,7 @@ onMounted(() => {
                 />
               </div>
               <div class="w-20">
-                <AppSpinner
+                <UiSpinner
                   v-model="optionsTaxRate1Percent"
                   :step="0.01"
                   :min="0"
@@ -563,7 +563,7 @@ onMounted(() => {
             <div class="flex items-end gap-2">
               <div class="w-12 text-[0.82rem] text-text-muted text-center">2</div>
               <div class="flex-1">
-                <AppSpinner
+                <UiSpinner
                   v-model="optionsTaxRate2"
                   :step="0.01"
                   :min="0"
@@ -571,7 +571,7 @@ onMounted(() => {
                 />
               </div>
               <div class="w-20">
-                <AppSpinner
+                <UiSpinner
                   v-model="optionsTaxRate2Percent"
                   :step="0.01"
                   :min="0"
@@ -586,7 +586,7 @@ onMounted(() => {
         <!-- Status -->
         <div class="space-y-2">
           <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Status</label>
-          <AppSelect
+          <UiSelect
             v-model="optionsStatus"
             :options="[
               { value: 'Draft', label: 'Draft' },
@@ -620,7 +620,7 @@ onMounted(() => {
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Credit Amount</label>
             <div class="flex items-end gap-3">
               <div class="flex-1">
-                <AppSpinner
+                <UiSpinner
                   v-model="addCreditAmount"
                   :step="0.01"
                   :min="0"
@@ -644,7 +644,7 @@ onMounted(() => {
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Credit Amount</label>
             <div class="flex items-end gap-3">
               <div class="flex-1">
-                <AppSpinner
+                <UiSpinner
                   v-model="removeCreditAmount"
                   :step="0.01"
                   :min="0"
@@ -670,7 +670,7 @@ onMounted(() => {
           <div class="space-y-4">
             <div class="space-y-2">
               <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Transaction</label>
-              <AppSelect
+              <UiSelect
                 v-model="refundTransactionId"
                 :options="transactionOptions"
                 placeholder="Select transaction..."
@@ -678,7 +678,7 @@ onMounted(() => {
             </div>
             <div class="space-y-2">
               <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Refund Amount</label>
-              <AppSpinner
+              <UiSpinner
                 v-model="refundAmount"
                 :step="0.01"
                 :min="0"
@@ -688,7 +688,7 @@ onMounted(() => {
             </div>
             <div class="space-y-2">
               <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Refund Type</label>
-              <AppSelect
+              <UiSelect
                 v-model="refundType"
                 :options="refundTypeOptions"
               />
@@ -699,11 +699,11 @@ onMounted(() => {
           <div class="space-y-4">
             <div class="space-y-3">
               <div class="flex items-center gap-3">
-                <AppCheckbox v-model="reversePayment" />
+                <UiCheckbox v-model="reversePayment" />
                 <label class="text-[0.82rem] text-text-secondary">Reverse Payment</label>
               </div>
               <div class="flex items-center gap-3">
-                <AppCheckbox v-model="sendRefundEmail" />
+                <UiCheckbox v-model="sendRefundEmail" />
                 <label class="text-[0.82rem] text-text-secondary">Send Email</label>
               </div>
             </div>
@@ -713,11 +713,11 @@ onMounted(() => {
               <p class="text-[0.82rem] text-text-secondary"><strong>Credit Information:</strong></p>
               <div class="space-y-2">
                 <div class="flex items-center gap-3">
-                  <AppCheckbox v-model="createCredit" />
+                  <UiCheckbox v-model="createCredit" />
                   <label class="text-[0.82rem] text-text-secondary">Create Credit for Invoice</label>
                 </div>
                 <div class="flex items-center gap-3">
-                  <AppCheckbox v-model="noRefundCredit" />
+                  <UiCheckbox v-model="noRefundCredit" />
                   <label class="text-[0.82rem] text-text-secondary">No Refund of Credit</label>
                 </div>
               </div>
@@ -826,7 +826,7 @@ onMounted(() => {
           <div>
             <div v-for="item in editableItems" :key="item._tempId" class="grid grid-cols-[40px_1fr_100px_60px_40px] px-6 py-2 border-b border-border items-center text-[0.82rem]">
               <div class="flex items-center justify-center">
-                <AppCheckbox :model-value="selectedItemIds.has(item._tempId)" @update:model-value="toggleItemSelection(item._tempId)" />
+                <UiCheckbox :model-value="selectedItemIds.has(item._tempId)" @update:model-value="toggleItemSelection(item._tempId)" />
               </div>
               <input
                 v-model="item.description"
@@ -843,7 +843,7 @@ onMounted(() => {
                 class="border-l border-border pl-4 px-3 py-2 text-[0.82rem] text-text-primary bg-white/[0.05] border border-border rounded-[6px] placeholder:text-text-muted focus:outline-none focus:border-primary-500/40 transition-colors text-right"
               />
               <div class="border-l border-border pl-4 flex items-center justify-center">
-                <AppCheckbox v-model="item.taxed" />
+                <UiCheckbox v-model="item.taxed" />
               </div>
               <button
                 @click="showDeleteConfirm(item._tempId)"
@@ -911,7 +911,7 @@ onMounted(() => {
           <!-- With Selected Dropdown and Buttons -->
           <div class="px-6 py-4 space-y-4 border-t border-border">
             <div class="flex items-center gap-3">
-              <AppSelect
+              <UiSelect
                 v-model="itemAction"
                 :options="[
                   { value: 'With Selected', label: 'With Selected' },

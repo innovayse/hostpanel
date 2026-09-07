@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { Line } from 'vue-chartjs'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js'
 import ReportPage from '../components/ReportPage.vue'
-import AppSelect from '../../../components/AppSelect.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
 import { useApi } from '../../../composables/useApi'
 import type { ReportLineSeries } from '../chart'
 
@@ -72,7 +72,7 @@ onMounted(load)
         <div class="flex items-end gap-4">
           <div class="w-32">
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Year</label>
-            <AppSelect v-model="selectedYear" :options="yearOptions" @update:model-value="load" />
+            <UiSelect v-model="selectedYear" :options="yearOptions" @update:model-value="load" />
           </div>
         </div>
       </div>

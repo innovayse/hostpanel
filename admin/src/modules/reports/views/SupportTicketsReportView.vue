@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import ReportPage from '../components/ReportPage.vue'
-import AppSelect from '../../../components/AppSelect.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
 import { useApi } from '../../../composables/useApi'
 
 const { request } = useApi()
@@ -46,11 +46,11 @@ onMounted(load)
         <div class="flex items-end gap-3 flex-wrap">
           <div class="w-[160px]">
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Month</label>
-            <AppSelect v-model="selectedMonth" :options="monthOptions" />
+            <UiSelect v-model="selectedMonth" :options="monthOptions" />
           </div>
           <div class="w-[110px]">
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Year</label>
-            <AppSelect v-model="selectedYear" :options="yearOptions" />
+            <UiSelect v-model="selectedYear" :options="yearOptions" />
           </div>
           <button class="px-5 py-2 gradient-brand text-white text-[0.82rem] font-semibold rounded-[9px] transition-opacity hover:opacity-90" @click="load">Generate</button>
         </div>

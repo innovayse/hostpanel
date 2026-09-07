@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { Line } from 'vue-chartjs'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js'
-import DateRangePicker from '../../../components/DateRangePicker.vue'
+import UiDateRangePicker from '../../../components/ui/UiDateRangePicker.vue'
 import ReportPage from '../components/ReportPage.vue'
 import ReportTimestamp from '../components/ReportTimestamp.vue'
 import { useApi } from '../../../composables/useApi'
@@ -69,7 +69,7 @@ onMounted(load)
         <div class="flex items-end gap-4 flex-wrap">
           <div class="flex-1 min-w-[200px]">
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Date Range</label>
-            <DateRangePicker v-model="dateRange" placeholder="Select date range..." />
+            <UiDateRangePicker v-model="dateRange" placeholder="Select date range..." />
           </div>
           <div class="flex gap-2">
             <button @click="load" class="gradient-brand px-4 py-2 text-[0.82rem] font-semibold text-white rounded-[9px]">Apply</button>

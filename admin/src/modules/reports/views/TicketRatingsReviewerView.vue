@@ -2,8 +2,8 @@
 import { ref, onMounted } from 'vue'
 import ReportPage from '../components/ReportPage.vue'
 import ReportTimestamp from '../components/ReportTimestamp.vue'
-import DateRangePicker from '../../../components/DateRangePicker.vue'
-import AppSelect from '../../../components/AppSelect.vue'
+import UiDateRangePicker from '../../../components/ui/UiDateRangePicker.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
 import { useApi } from '../../../composables/useApi'
 
 const { request } = useApi()
@@ -64,11 +64,11 @@ onMounted(load)
         <div class="flex items-end gap-3 flex-wrap">
           <div class="w-[140px]">
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Rating</label>
-            <AppSelect v-model="minRating" :options="ratingOptions" />
+            <UiSelect v-model="minRating" :options="ratingOptions" />
           </div>
           <div class="flex-1 min-w-[220px]">
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Date Range</label>
-            <DateRangePicker v-model="dateRange" />
+            <UiDateRangePicker v-model="dateRange" />
           </div>
           <button @click="load" class="px-5 py-2 gradient-brand text-white text-[0.82rem] font-semibold rounded-[9px] transition-opacity hover:opacity-90">
             Generate Report

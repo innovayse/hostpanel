@@ -5,7 +5,7 @@
  * Emits the active filters array on any change.
  */
 import { ref, watch } from 'vue'
-import AppSelect from './AppSelect.vue'
+import UiSelect from './UiSelect.vue'
 
 export interface FilterRow {
   field: string
@@ -83,10 +83,10 @@ watch(filters, (val) => {
       <!-- Controls: field + condition + value in even grid -->
       <div class="grid grid-cols-3 gap-3">
         <div>
-          <AppSelect v-model="f.field" :options="fieldOptions" placeholder="Select field..." />
+          <UiSelect v-model="f.field" :options="fieldOptions" placeholder="Select field..." />
         </div>
         <div>
-          <AppSelect v-model="f.condition" :options="conditionOptions" />
+          <UiSelect v-model="f.condition" :options="conditionOptions" />
         </div>
         <div>
           <input

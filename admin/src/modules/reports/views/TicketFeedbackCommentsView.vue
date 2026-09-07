@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import ReportPage from '../components/ReportPage.vue'
 import ReportTimestamp from '../components/ReportTimestamp.vue'
-import DateRangePicker from '../../../components/DateRangePicker.vue'
+import UiDateRangePicker from '../../../components/ui/UiDateRangePicker.vue'
 import { useApi } from '../../../composables/useApi'
 
 const { request } = useApi()
@@ -59,7 +59,7 @@ onMounted(load)
           </div>
           <div class="flex-1 min-w-[220px]">
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Date Range</label>
-            <DateRangePicker v-model="dateRange" />
+            <UiDateRangePicker v-model="dateRange" />
           </div>
           <button @click="load" class="px-5 py-2 gradient-brand text-white text-[0.82rem] font-semibold rounded-[9px] transition-opacity hover:opacity-90">
             Generate Report

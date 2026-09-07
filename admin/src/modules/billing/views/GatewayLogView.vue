@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import AppSelect from '../../../components/AppSelect.vue'
-import DateRangePicker from '../../../components/DateRangePicker.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiDateRangePicker from '../../../components/ui/UiDateRangePicker.vue'
 import { toIsoDay } from '../../../utils/format'
 
 const page = ref(1)
@@ -201,7 +201,7 @@ function applyFilters(): void {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="mb-5">
@@ -228,7 +228,7 @@ function applyFilters(): void {
           <div class="flex items-center gap-4">
             <label class="text-[0.82rem] font-semibold text-text-muted w-32">Date Range</label>
             <div class="flex-1">
-              <DateRangePicker
+              <UiDateRangePicker
                 v-model="dateRange"
                 placeholder="Select date range..."
               />
@@ -249,7 +249,7 @@ function applyFilters(): void {
         <div class="flex-1 space-y-3">
           <div class="flex items-center gap-4">
             <label class="text-[0.82rem] font-semibold text-text-muted w-20">Gateway</label>
-            <AppSelect
+            <UiSelect
               v-model="gateway"
               :options="gatewayOptions"
               class="flex-1"
@@ -257,7 +257,7 @@ function applyFilters(): void {
           </div>
           <div class="flex items-center gap-4">
             <label class="text-[0.82rem] font-semibold text-text-muted w-20">Result</label>
-            <AppSelect
+            <UiSelect
               v-model="result"
               :options="resultOptions"
               class="flex-1"

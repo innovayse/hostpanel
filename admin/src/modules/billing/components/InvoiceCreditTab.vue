@@ -8,9 +8,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useBillingStore } from '../stores/billingStore'
 import { formatDate } from '../../../utils/format'
-import AppNumberInput from '../../../components/AppNumberInput.vue'
-import AppCheckbox from '../../../components/AppCheckbox.vue'
-import AppSelect from '../../../components/AppSelect.vue'
+import UiNumberInput from '../../../components/ui/UiNumberInput.vue'
+import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
 import type { Invoice } from '../../../types/models'
 
 const props = defineProps<{
@@ -174,7 +174,7 @@ onMounted(() => populateItems())
           <h3 class="text-[0.82rem] font-semibold text-text-primary mb-3">Add Credit to Invoice</h3>
           <div class="flex items-center justify-center gap-2 mb-2">
             <div class="w-32">
-              <AppNumberInput v-model="addCreditAmount" :step="0.01" :min="0" placeholder="0.00" />
+              <UiNumberInput v-model="addCreditAmount" :step="0.01" :min="0" placeholder="0.00" />
             </div>
             <button
               type="button"
@@ -193,7 +193,7 @@ onMounted(() => populateItems())
           <h3 class="text-[0.82rem] font-semibold text-text-primary mb-3">Remove Credit from Invoice</h3>
           <div class="flex items-center justify-center gap-2 mb-2">
             <div class="w-32">
-              <AppNumberInput v-model="removeCreditAmount" :step="0.01" :min="0" placeholder="0.00" />
+              <UiNumberInput v-model="removeCreditAmount" :step="0.01" :min="0" placeholder="0.00" />
             </div>
             <button
               type="button"
@@ -252,7 +252,7 @@ onMounted(() => populateItems())
           Invoice Items
         </h2>
         <div class="hidden sm:grid grid-cols-[24px_1fr_auto_auto_32px] gap-3 px-5 py-3 border-b border-border bg-white/[0.02] items-center">
-          <AppCheckbox :model-value="allSelected" @update:model-value="toggleSelectAll()" />
+          <UiCheckbox :model-value="allSelected" @update:model-value="toggleSelectAll()" />
           <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Description</span>
           <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted text-right w-28">Amount</span>
           <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted text-center w-16">Taxed</span>
@@ -263,7 +263,7 @@ onMounted(() => populateItems())
           :key="idx"
           class="grid grid-cols-1 sm:grid-cols-[24px_1fr_auto_auto_32px] gap-2 sm:gap-3 px-5 py-2.5 border-b border-border last:border-0 items-center"
         >
-          <AppCheckbox v-model="item.selected" />
+          <UiCheckbox v-model="item.selected" />
           <textarea
             v-model="item.description"
             rows="1"
@@ -271,10 +271,10 @@ onMounted(() => populateItems())
             class="w-full bg-white/[0.04] border border-border rounded-lg px-2.5 py-2 text-[0.82rem] text-text-primary focus:outline-none focus:border-primary-500/50 transition-colors resize-y min-h-[36px]"
           />
           <div class="w-28">
-            <AppNumberInput v-model="item.amount" :step="0.01" :min="0" />
+            <UiNumberInput v-model="item.amount" :step="0.01" :min="0" />
           </div>
           <div class="flex items-center justify-center w-16">
-            <AppCheckbox v-model="item.taxed" />
+            <UiCheckbox v-model="item.taxed" />
           </div>
           <button
             type="button"
@@ -298,7 +298,7 @@ onMounted(() => populateItems())
         <div class="px-5 py-3 space-y-2">
           <div class="flex items-center gap-2">
             <div class="w-40">
-              <AppSelect v-model="withSelectedAction" :options="withSelectedOptions" />
+              <UiSelect v-model="withSelectedAction" :options="withSelectedOptions" />
             </div>
             <button
               v-if="withSelectedAction"

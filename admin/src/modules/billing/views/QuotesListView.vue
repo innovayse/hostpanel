@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import AppSelect from '../../../components/AppSelect.vue'
-import AppClientSelect from '../../../components/AppClientSelect.vue'
-import AppSpinner from '../../../components/AppSpinner.vue'
-import DateRangePicker from '../../../components/DateRangePicker.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiClientSelect from '../../../components/ui/UiClientSelect.vue'
+import UiSpinner from '../../../components/ui/UiSpinner.vue'
+import UiDateRangePicker from '../../../components/ui/UiDateRangePicker.vue'
 import { useQuoteStore } from '../stores/quoteStore'
 
 const store = useQuoteStore()
@@ -130,7 +130,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header with Add Button -->
     <div class="flex items-start justify-between mb-5">
@@ -176,7 +176,7 @@ onMounted(() => {
           </div>
           <div>
             <label class="block text-[0.82rem] font-medium text-text-primary mb-2">Stage</label>
-            <AppSelect
+            <UiSelect
               v-model="filters.stage"
               :options="stageOptions"
             />
@@ -187,7 +187,7 @@ onMounted(() => {
         <div class="space-y-4">
           <div>
             <label class="block text-[0.82rem] font-medium text-text-primary mb-2">Client</label>
-            <AppClientSelect
+            <UiClientSelect
               v-model="filters.clientId"
               :clients="clients"
               placeholder="Start Typing to Search Clients"
@@ -195,7 +195,7 @@ onMounted(() => {
           </div>
           <div>
             <label class="block text-[0.82rem] font-medium text-text-primary mb-2">Validity Period</label>
-            <AppSelect
+            <UiSelect
               v-model="filters.validityPeriod"
               :options="validityPeriodOptions"
             />
@@ -242,7 +242,7 @@ onMounted(() => {
       <div v-if="store.totalCount > 0" class="flex items-center gap-2">
         <span class="text-[0.82rem] text-text-muted">Jump to Page:</span>
         <div class="w-20">
-          <AppSelect
+          <UiSelect
             v-model="pageString"
             :options="pageOptions"
             @update:modelValue="(val) => goToPage(Number(val))"

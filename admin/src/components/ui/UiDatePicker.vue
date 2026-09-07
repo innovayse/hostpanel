@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
-import AppSelect from './AppSelect.vue'
-import { splitIsoDate } from '../utils/format'
+import UiSelect from './UiSelect.vue'
+import { splitIsoDate } from '../../utils/format'
 
 const props = defineProps<{
   modelValue: string | null
@@ -40,6 +40,7 @@ onMounted(() => {
 
 watch(isOpen, (newValue) => {
   if (newValue) {
+    // Use nextTick to ensure DOM is updated before measuring
     setTimeout(() => checkPopupPosition(), 0)
   }
 })
@@ -89,7 +90,7 @@ const checkPopupPosition = () => {
   if (!inputRef.value) return
 
   const inputRect = inputRef.value.getBoundingClientRect()
-  const popupHeight = 450
+  const popupHeight = 450 // Approximate height of the popup
   const spaceBelow = window.innerHeight - inputRect.bottom
   const spaceAbove = inputRect.top
 
@@ -101,12 +102,15 @@ const formatDisplayDate = (dateStr: string) => {
   return `${day}/${month}/${year}`
 }
 
+const inputValue = ref('')
+
 const displayText = computed(() => {
   if (!props.modelValue) return props.placeholder ?? 'Select date...'
   return formatDisplayDate(props.modelValue)
 })
 
 const parseDateInput = (input: string) => {
+  // Try to parse DD/MM/YYYY or DDMMYYYY
   const cleaned = input.replace(/\D/g, '')
   if (cleaned.length === 8) {
     const day = cleaned.substring(0, 2)
@@ -165,6 +169,7 @@ const handleInput = (event: Event) => {
   const target = event.target as HTMLInputElement
   const input = inputText.value
 
+  // If input is empty, clear the date
   if (!input || input.trim() === '') {
     emit('update:modelValue', null)
     currentMonth.value = new Date()
@@ -174,15 +179,18 @@ const handleInput = (event: Event) => {
     return
   }
 
+  // Try to parse as complete date first
   const parsed = parseDateInput(input)
   if (parsed) {
     emit('update:modelValue', parsed)
     const { year: yearNum, month: monthNum } = splitIsoDate(parsed)
     currentMonth.value = new Date(yearNum, monthNum - 1, 1)
+    // Clear preview when a complete date is confirmed
     previewDay.value = null
     previewMonth.value = null
     previewYear.value = null
   } else {
+    // Try to parse partial date and update calendar in real-time
     const partial = parsePartialDate(input)
 
     if (partial.year || partial.month || partial.day) {
@@ -191,6 +199,7 @@ const handleInput = (event: Event) => {
 
       currentMonth.value = new Date(year, month - 1, 1)
 
+      // Update preview for highlighting
       previewDay.value = partial.day || null
       previewMonth.value = partial.month || null
       previewYear.value = partial.year || null
@@ -223,6 +232,7 @@ const getDaysForMonth = (date: Date) => {
 }
 
 const isSelectedDate = (day: number, month: Date) => {
+  // Check if this day matches the preview (while typing)
   if (previewDay.value !== null && previewMonth.value !== null && previewYear.value !== null) {
     return (
       day === previewDay.value &&
@@ -231,6 +241,7 @@ const isSelectedDate = (day: number, month: Date) => {
     )
   }
 
+  // Check if this day matches the confirmed date
   if (!props.modelValue) return false
   const current = new Date(month.getFullYear(), month.getMonth(), day)
   const year = current.getFullYear()
@@ -256,27 +267,27 @@ const getSelectedQuickDate = () => {
     return 'today'
   }
 
-  const tomorrow = new Date(today)
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  if (selectedDate === formatDateString(tomorrow)) {
-    return 'tomorrow'
+  const yesterday = new Date(today)
+  yesterday.setDate(yesterday.getDate() - 1)
+  if (selectedDate === formatDateString(yesterday)) {
+    return 'yesterday'
   }
 
-  const sevenDaysFromNow = new Date(today)
-  sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7)
-  if (selectedDate === formatDateString(sevenDaysFromNow)) {
+  const sevenDaysAgo = new Date(today)
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+  if (selectedDate === formatDateString(sevenDaysAgo)) {
     return '7days'
   }
 
-  const oneMonthFromNow = new Date(today)
-  oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1)
-  if (selectedDate === formatDateString(oneMonthFromNow)) {
+  const oneMonthAgo = new Date(today)
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
+  if (selectedDate === formatDateString(oneMonthAgo)) {
     return '1month'
   }
 
-  const oneYearFromNow = new Date(today)
-  oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1)
-  if (selectedDate === formatDateString(oneYearFromNow)) {
+  const oneYearAgo = new Date(today)
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
+  if (selectedDate === formatDateString(oneYearAgo)) {
     return '1year'
   }
 
@@ -297,38 +308,41 @@ const selectDate = (day: number, month: Date) => {
   isOpen.value = false
 }
 
-const selectQuickDate = (offset: string) => {
+const selectQuickDate = (offset: number | string) => {
   const today = new Date()
   let date: Date
 
-  if (offset === 'today') {
-    date = new Date(today)
-  } else if (offset === 'tomorrow') {
-    date = new Date(today)
-    date.setDate(date.getDate() + 1)
-  } else if (offset === '7days') {
-    date = new Date(today)
-    date.setDate(date.getDate() + 7)
-  } else if (offset === '1month') {
-    date = new Date(today)
-    date.setMonth(date.getMonth() + 1)
-  } else if (offset === '1year') {
-    date = new Date(today)
-    date.setFullYear(date.getFullYear() + 1)
+  if (typeof offset === 'string') {
+    if (offset === 'today') {
+      date = new Date(today)
+    } else if (offset === 'yesterday') {
+      date = new Date(today)
+      date.setDate(date.getDate() - 1)
+    } else if (offset === '7days') {
+      date = new Date(today)
+      date.setDate(date.getDate() - 7)
+    } else if (offset === '1month') {
+      date = new Date(today)
+      date.setMonth(date.getMonth() - 1)
+    } else if (offset === '1year') {
+      date = new Date(today)
+      date.setFullYear(date.getFullYear() - 1)
+    }
   } else {
-    date = today
+    date = new Date(today)
+    date.setDate(date.getDate() - offset)
   }
 
-  const year = date.getFullYear()
-  const monthStr = String(date.getMonth() + 1).padStart(2, '0')
-  const dayStr = String(date.getDate()).padStart(2, '0')
+  const year = date!.getFullYear()
+  const monthStr = String(date!.getMonth() + 1).padStart(2, '0')
+  const dayStr = String(date!.getDate()).padStart(2, '0')
   const dateString = `${year}-${monthStr}-${dayStr}`
   emit('update:modelValue', dateString)
   inputText.value = formatDisplayDate(dateString)
   previewDay.value = null
   previewMonth.value = null
   previewYear.value = null
-  currentMonth.value = new Date(date.getFullYear(), date.getMonth(), 1)
+  currentMonth.value = new Date(date!.getFullYear(), date!.getMonth(), 1)
   isOpen.value = false
 }
 
@@ -366,7 +380,7 @@ const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
     >
       <div class="flex">
         <!-- Quick Selection Panel -->
-        <div class="w-48 bg-white/[0.02] border-r border-border p-3 flex flex-col gap-1">
+        <div class="w-36 bg-white/[0.02] border-r border-border p-3 flex flex-col gap-1">
           <button
             type="button"
             @click="selectQuickDate('today')"
@@ -377,11 +391,11 @@ const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
           </button>
           <button
             type="button"
-            @click="selectQuickDate('tomorrow')"
-            :class="getSelectedQuickDate() === 'tomorrow' ? 'bg-primary-500 text-white' : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.05]'"
+            @click="selectQuickDate('yesterday')"
+            :class="getSelectedQuickDate() === 'yesterday' ? 'bg-primary-500 text-white' : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.05]'"
             class="px-3 py-2 text-left text-[0.82rem] rounded transition-colors"
           >
-            Tomorrow
+            Yesterday
           </button>
           <button
             type="button"
@@ -389,7 +403,7 @@ const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
             :class="getSelectedQuickDate() === '7days' ? 'bg-primary-500 text-white' : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.05]'"
             class="px-3 py-2 text-left text-[0.82rem] rounded transition-colors"
           >
-            In 7 Days
+            7 Days Ago
           </button>
           <button
             type="button"
@@ -397,7 +411,7 @@ const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
             :class="getSelectedQuickDate() === '1month' ? 'bg-primary-500 text-white' : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.05]'"
             class="px-3 py-2 text-left text-[0.82rem] rounded transition-colors"
           >
-            1 Month From Now
+            1 Month Ago
           </button>
           <button
             type="button"
@@ -405,7 +419,7 @@ const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
             :class="getSelectedQuickDate() === '1year' ? 'bg-primary-500 text-white' : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.05]'"
             class="px-3 py-2 text-left text-[0.82rem] rounded transition-colors"
           >
-            1 Year From Now
+            1 Year Ago
           </button>
           <button
             type="button"
@@ -424,13 +438,13 @@ const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
             <button @click="prevMonth" class="text-text-muted hover:text-text-primary text-lg transition-colors">‹</button>
             <div class="flex items-center gap-2">
               <div class="w-[140px]">
-                <AppSelect
+                <UiSelect
                   v-model="currentMonthValue"
                   :options="monthOptions"
                 />
               </div>
               <div class="w-[100px]">
-                <AppSelect
+                <UiSelect
                   v-model="currentYearValue"
                   :options="yearOptions"
                 />

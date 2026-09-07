@@ -36,6 +36,14 @@ export default defineNuxtConfig({
     '/client/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/cart/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/checkout/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    // The hosted-gateway returnUrl landing page. It belongs to this group for the same two
+    // reasons: it has nothing to server-render (the payment outcome is only known after the
+    // on-mount verification call), and a page whose URL carries an invoice/order id must
+    // never be indexed. Omitting it is not cosmetic — it was the one page left server-
+    // rendered, and SSR of it returned 500 in production, breaking every payer's return
+    // from the bank. Development runs with `ssr: false` globally (see the note at the top
+    // of this file), so this can only ever be caught against a production build.
+    '/payment/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
   },
 
   nitro: {
@@ -279,9 +287,11 @@ export default defineNuxtConfig({
         { rel: 'preconnect', href: 'https://www.googletagmanager.com' },
         { rel: 'dns-prefetch', href: 'https://www.googletagmanager.com' },
         { rel: 'dns-prefetch', href: 'https://www.google-analytics.com' },
-        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
-        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-        { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' },
+        // The favicon links are NOT here. app.vue emits them through brandingIcons(),
+        // built-in defaults included, because unhead only dedupes link tags that share an
+        // explicit key -- so a static link here and an uploaded one there both render, and
+        // Chrome picks the SVG. An operator who uploaded a favicon would keep seeing the
+        // built-in one. One owner instead of two.
         { rel: 'manifest', href: '/site.webmanifest' }
       ]
     }

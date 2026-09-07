@@ -48,7 +48,7 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="flex items-center justify-between gap-2.5 mb-5">

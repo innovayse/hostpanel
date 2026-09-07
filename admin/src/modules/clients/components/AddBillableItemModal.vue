@@ -7,9 +7,9 @@ import { ref, computed, onMounted } from 'vue'
 import { useApi } from '../../../composables/useApi'
 import { INVOICE_ACTION_OPTIONS, RECURRENCE_PERIOD_OPTIONS } from '../../../utils/constants'
 import { toDateInputValue } from '../../../utils/format'
-import AppDatePicker from '../../../components/AppDatePicker.vue'
-import AppNumberInput from '../../../components/AppNumberInput.vue'
-import AppSelect from '../../../components/AppSelect.vue'
+import UiDatePicker from '../../../components/ui/UiDatePicker.vue'
+import UiNumberInput from '../../../components/ui/UiNumberInput.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
 import type { ServiceListItem, PagedResult } from '../../../types/models'
 
 const props = defineProps<{
@@ -148,7 +148,7 @@ onMounted(() => fetchServices())
           <!-- Product/Service -->
           <div>
             <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-zinc-400 mb-1.5">Product/Service</label>
-            <AppSelect
+            <UiSelect
               v-model="serviceId"
               :options="[{ value: 0, label: 'None' }, ...serviceOptions]"
               placeholder="Select a service"
@@ -170,7 +170,7 @@ onMounted(() => fetchServices())
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-zinc-400 mb-1.5">Hours/Qty</label>
-              <AppNumberInput v-model="hoursQty" :step="0.01" :min="0" />
+              <UiNumberInput v-model="hoursQty" :step="0.01" :min="0" />
               <div class="flex items-center gap-3 mt-2">
                 <label class="flex items-center gap-1.5 text-[0.75rem] text-zinc-400 cursor-pointer">
                   <input v-model="isHours" type="radio" :value="true" name="hoursType" class="accent-primary-500" />
@@ -184,7 +184,7 @@ onMounted(() => fetchServices())
             </div>
             <div>
               <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-zinc-400 mb-1.5">Amount</label>
-              <AppNumberInput v-model="amount" :step="0.01" :min="0" />
+              <UiNumberInput v-model="amount" :step="0.01" :min="0" />
             </div>
           </div>
 
@@ -208,16 +208,16 @@ onMounted(() => fetchServices())
                 <template v-else>
                   <span>Recur Every</span>
                   <div class="w-14">
-                    <AppNumberInput v-model="recurrenceInterval" :min="1" :disabled="!isRecurring" />
+                    <UiNumberInput v-model="recurrenceInterval" :min="1" :disabled="!isRecurring" />
                   </div>
-                  <AppSelect
+                  <UiSelect
                     v-model="recurrencePeriod"
                     :options="RECURRENCE_PERIOD_OPTIONS"
                     :disabled="!isRecurring"
                   />
                   <span>for</span>
                   <div class="w-14">
-                    <AppNumberInput v-model="recurrenceLimit" :min="0" :disabled="!isRecurring" placeholder="0" />
+                    <UiNumberInput v-model="recurrenceLimit" :min="0" :disabled="!isRecurring" placeholder="0" />
                   </div>
                   <span>Times</span>
                 </template>
@@ -229,11 +229,11 @@ onMounted(() => fetchServices())
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-zinc-400 mb-1.5">Due Date</label>
-              <AppDatePicker v-model="dueDate" />
+              <UiDatePicker v-model="dueDate" />
             </div>
             <div>
               <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-zinc-400 mb-1.5">Invoice Count</label>
-              <AppNumberInput v-model="invoiceCount" :min="0" :disabled="true" />
+              <UiNumberInput v-model="invoiceCount" :min="0" :disabled="true" />
             </div>
           </div>
 

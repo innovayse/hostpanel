@@ -6,8 +6,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useApi } from '../../../composables/useApi'
-import AppCheckbox from '../../../components/AppCheckbox.vue'
-import ConfirmModal from '../../../components/ConfirmModal.vue'
+import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
+import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
 import AddBillableItemModal from '../components/AddBillableItemModal.vue'
 import AddTimeBillingModal from '../components/AddTimeBillingModal.vue'
 import type { BillableItem, BillableItemsResult } from '../../../types/models'
@@ -221,7 +221,7 @@ onMounted(() => fetchBillableItems())
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Action bar -->
     <div class="flex items-center justify-between gap-2.5 mb-5">
@@ -267,7 +267,7 @@ onMounted(() => fetchBillableItems())
           <!-- Header row -->
           <div class="hidden sm:grid grid-cols-[40px_0.4fr_2fr_0.8fr_0.8fr_1.2fr_60px] gap-3 px-5 py-3 border-b border-border bg-white/[0.02]">
             <span class="flex items-center">
-              <AppCheckbox :model-value="selectAll" @update:model-value="toggleSelectAll" />
+              <UiCheckbox :model-value="selectAll" @update:model-value="toggleSelectAll" />
             </span>
             <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">ID</span>
             <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Description</span>
@@ -284,7 +284,7 @@ onMounted(() => fetchBillableItems())
             class="grid grid-cols-1 sm:grid-cols-[40px_0.4fr_2fr_0.8fr_0.8fr_1.2fr_60px] gap-2 sm:gap-3 px-5 py-3.5 border-b border-border last:border-0 hover:bg-white/[0.02] transition-colors"
           >
             <span class="flex items-center">
-              <AppCheckbox :model-value="selectedIds.has(item.id)" @update:model-value="toggleSelect(item.id)" />
+              <UiCheckbox :model-value="selectedIds.has(item.id)" @update:model-value="toggleSelect(item.id)" />
             </span>
             <span class="text-[0.82rem] text-text-muted font-mono hidden sm:block">{{ item.id }}</span>
             <span class="text-[0.82rem] text-text-secondary truncate">{{ item.description }}</span>
@@ -397,7 +397,7 @@ onMounted(() => fetchBillableItems())
     </template>
 
     <!-- Invoice Confirmation Modal -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="showInvoiceConfirmModal"
       title="Confirm Invoice"
       message="Are you sure you want to invoice the selected items immediately?"
@@ -409,7 +409,7 @@ onMounted(() => fetchBillableItems())
     />
 
     <!-- Delete Confirmation Modal -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="showDeleteConfirmModal"
       title="Confirm Delete"
       :message="pendingDeleteId !== null

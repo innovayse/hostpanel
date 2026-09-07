@@ -235,4 +235,12 @@
     <value>Այդ կարգավորման նշանը չի համընկնում տրվածին։ Ընթացիկ նշանը գրանցվում է սերվերի մատյանում API-ի ամեն մեկնարկման կամար, քանի դեռ կարգավորումը ավարտված չէ — վերագործարկեք API-ն և վերցրեք ամենաթարմը։</value>
     <comment>SETUP_TOKEN_INVALID. CompleteSetupHandler, local mode only. Answered 403.</comment>
   </data>
+  <data name="BrandingImageInvalid" xml:space="preserve">
+    <value>Այդ ֆայլը հնարավոր չեղավ կարդալ որպես պատկեր։ Վերբեռնեք PNG, JPEG, WebP, GIF կամ BMP։</value>
+    <comment>BRANDING_IMAGE_INVALID.</comment>
+  </data>
+  <data name="BrandingImageTooLarge" xml:space="preserve">
+    <value>Պատկերը չափազանց մեծ է։ Վերբեռնեք 5 ՄԲ-ից փոքր ֆայլ, կողմով առավելագույնը 8000 պիքսել։</value>
+    <comment>BRANDING_IMAGE_TOO_LARGE.</comment>
+  </data>
 </root>

@@ -40,7 +40,7 @@ const FIELDS: BrandingField[] = [
     kind: 'logo',
     labelKey: 'settings.branding.logo.label',
     hintKey: 'settings.branding.logo.hint',
-    accept: 'image/jpeg,image/png,image/webp,image/gif,image/svg+xml',
+    accept: 'image/jpeg,image/png,image/webp,image/gif,image/bmp',
     previewClass: 'w-32 h-14',
   },
   {
@@ -48,7 +48,7 @@ const FIELDS: BrandingField[] = [
     kind: 'favicon',
     labelKey: 'settings.branding.favicon.label',
     hintKey: 'settings.branding.favicon.hint',
-    accept: 'image/png,image/svg+xml,image/x-icon',
+    accept: 'image/png,image/jpeg,image/webp',
     previewClass: 'w-10 h-10',
   },
 ]

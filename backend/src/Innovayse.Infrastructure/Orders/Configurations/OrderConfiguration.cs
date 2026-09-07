@@ -21,6 +21,10 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(x => x.IpAddress).HasMaxLength(45);
         builder.Property(x => x.Notes).HasMaxLength(2000);
         builder.Property(x => x.CreatedAt).IsRequired();
+
+        // 43 characters for the base64url of 32 random bytes; the width is rounded up so a
+        // future change to the token length does not need a column migration as well.
+        builder.Property(x => x.PaymentToken).IsRequired().HasMaxLength(64);
         builder.HasMany(x => x.Items)
             .WithOne()
             .HasForeignKey(x => x.OrderId)

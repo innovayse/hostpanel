@@ -138,6 +138,19 @@ services:
       Auth__ClientId: ${SSO_CLIENT_ID}
       Auth__ClientSecret: ${CLIENT_HOSTPANEL_SECRET}
       Auth__RedisConnection: ${REDIS_CONNECTION}
+    volumes:
+      # Operator-uploaded branding: the logo, the favicon and the icon set generated
+      # from them. These are written at runtime into the web root, which otherwise
+      # lives inside the image -- so without this volume every upload is destroyed by
+      # the next deploy and the storefront silently falls back to the built-in mark.
+      #
+      # The path matches Branding:RelativePath (default uploads/branding). Changing one
+      # without the other loses the files that are already there.
+      #
+      # The image runs as a non-root uid on the production host, so a freshly created volume
+      # needs chown-ing to it once or the first upload fails with a permission error that
+      # reads like a bug in the upload code.
+      - hostpanel_branding:/app/wwwroot/uploads/branding
     depends_on:
       hostpanel-db:
         condition: service_healthy
@@ -255,3 +268,4 @@ services:
 
 volumes:
   pgdata:
+  hostpanel_branding:

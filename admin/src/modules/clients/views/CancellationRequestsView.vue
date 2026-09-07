@@ -5,7 +5,7 @@
  */
 import { onMounted, ref } from 'vue'
 import { useCancellationRequestsStore } from '../stores/cancellationRequestsStore'
-import ConfirmModal from '../../../components/ConfirmModal.vue'
+import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
 
 const store = useCancellationRequestsStore()
 
@@ -121,7 +121,7 @@ onMounted(() => store.fetchAll())
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="mb-5">
@@ -251,7 +251,7 @@ onMounted(() => store.fetchAll())
     </div>
 
     <!-- Delete Confirm Modal -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="deleteTarget !== null"
       title="Delete Cancellation Request"
       message="Are you sure you want to delete this cancellation request?"

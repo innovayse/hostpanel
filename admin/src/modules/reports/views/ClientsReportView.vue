@@ -2,10 +2,10 @@
 import { ref, computed, onMounted } from 'vue'
 import ReportPage from '../components/ReportPage.vue'
 import ReportTimestamp from '../components/ReportTimestamp.vue'
-import FilterCard from '../../../components/FilterCard.vue'
-import AdvancedFilters, { type FilterRow, type FieldOption } from '../../../components/AdvancedFilters.vue'
-import FieldSelector from '../../../components/FieldSelector.vue'
-import DateRangePicker from '../../../components/DateRangePicker.vue'
+import UiFilterCard from '../../../components/ui/UiFilterCard.vue'
+import UiAdvancedFilters, { type FilterRow, type FieldOption } from '../../../components/ui/UiAdvancedFilters.vue'
+import UiFieldSelector from '../../../components/ui/UiFieldSelector.vue'
+import UiDateRangePicker from '../../../components/ui/UiDateRangePicker.vue'
 import { useApi } from '../../../composables/useApi'
 
 const { request } = useApi()
@@ -128,21 +128,21 @@ onMounted(load)
 <template>
   <ReportPage title="Clients" description="This report can be used to generate a custom export of clients by applying up to 5 filters. CSV Export is available via the Tools menu to the right." :loading :error>
     <template #filters>
-      <FilterCard>
+      <UiFilterCard>
         <template #fields>
           <div class="grid grid-cols-2 gap-3 items-end">
             <div>
               <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Fields to Include</label>
-              <FieldSelector :fields="allColumns" :selected="visibleCols" @toggle="toggleCol" @select-all="selectAllCols" @clear-all="clearAllCols" />
+              <UiFieldSelector :fields="allColumns" :selected="visibleCols" @toggle="toggleCol" @select-all="selectAllCols" @clear-all="clearAllCols" />
             </div>
             <div>
               <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1">Creation Date Range</label>
-              <DateRangePicker v-model="createdRange" />
+              <UiDateRangePicker v-model="createdRange" />
             </div>
           </div>
         </template>
 
-        <AdvancedFilters :fields="filterFields" @update:filters="activeFilters = $event" />
+        <UiAdvancedFilters :fields="filterFields" @update:filters="activeFilters = $event" />
 
         <template #actions>
           <div class="flex items-center justify-center gap-3 pt-3 border-t border-border/50">
@@ -150,7 +150,7 @@ onMounted(load)
             <button class="px-4 py-2 bg-white/[0.04] border border-border text-text-secondary text-[0.78rem] font-medium rounded-[9px] hover:bg-white/[0.08] transition-colors" @click="printReport">Print</button>
           </div>
         </template>
-      </FilterCard>
+      </UiFilterCard>
     </template>
 
     <div class="text-[0.78rem] text-text-secondary mb-3">{{ totalCount }} client(s) found</div>

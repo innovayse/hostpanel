@@ -5,7 +5,7 @@
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
     <div>
       <h1 class="font-display font-bold text-[1.25rem] text-text-primary leading-none">Service Addons</h1>
       <p class="text-[0.78rem] text-text-secondary mt-1">Manage add-on services for client accounts</p>

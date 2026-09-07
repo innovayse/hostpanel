@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import AppSelect from '../../../components/AppSelect.vue'
-import AppClientSelect from '../../../components/AppClientSelect.vue'
-import AppSpinner from '../../../components/AppSpinner.vue'
-import AppCheckbox from '../../../components/AppCheckbox.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiClientSelect from '../../../components/ui/UiClientSelect.vue'
+import UiSpinner from '../../../components/ui/UiSpinner.vue'
+import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import { useBillableItemsStore } from '../stores/billableItemsStore'
 
 const store = useBillableItemsStore()
@@ -132,7 +132,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="flex items-start justify-between mb-5">
@@ -167,7 +167,7 @@ onMounted(() => {
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div>
           <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Client</label>
-          <AppClientSelect
+          <UiClientSelect
             v-model="filters.clientId"
             :clients="clients"
             placeholder="Start Typing to Search Clients"
@@ -184,7 +184,7 @@ onMounted(() => {
         </div>
         <div>
           <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Amount</label>
-          <AppSpinner
+          <UiSpinner
             v-model="filters.amount"
             :step="0.01"
             :min="0"
@@ -193,7 +193,7 @@ onMounted(() => {
         </div>
         <div>
           <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Status</label>
-          <AppSelect
+          <UiSelect
             v-model="filters.status"
             :options="statusOptions"
           />
@@ -238,7 +238,7 @@ onMounted(() => {
       <div v-if="filteredItems.length > 0" class="flex items-center gap-2">
         <span class="text-[0.82rem] text-text-muted">Jump to Page:</span>
         <div class="w-20">
-          <AppSelect
+          <UiSelect
             v-model="currentPageString"
             :options="pageOptions"
           />
@@ -251,7 +251,7 @@ onMounted(() => {
 
       <!-- Header row -->
       <div class="hidden sm:grid grid-cols-[40px_0.5fr_1.5fr_1.5fr_0.75fr_1fr_1.5fr_1fr] gap-4 px-5 py-3 border-b border-border bg-white/[0.02]">
-        <AppCheckbox
+        <UiCheckbox
           v-if="filteredItems.length > 0"
           :model-value="selectedItems.size === filteredItems.length && filteredItems.length > 0"
           @update:model-value="toggleSelectAll"
@@ -273,7 +273,7 @@ onMounted(() => {
           :key="item.id"
           class="grid grid-cols-1 sm:grid-cols-[40px_0.5fr_1.5fr_1.5fr_0.75fr_1fr_1.5fr_1fr] gap-2 sm:gap-4 px-5 py-3.5 border-b border-border last:border-0 hover:bg-white/[0.02] transition-colors items-center"
         >
-          <AppCheckbox :model-value="selectedItems.has(item.id)" @update:model-value="toggleSelection(item.id)" />
+          <UiCheckbox :model-value="selectedItems.has(item.id)" @update:model-value="toggleSelection(item.id)" />
 
           <span class="text-[0.82rem] text-text-muted font-mono hidden sm:block">{{ item.id }}</span>
 

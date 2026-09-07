@@ -5,9 +5,9 @@
  */
 import { ref, computed, onMounted } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import AppSelect from '../../../components/AppSelect.vue'
-import AppCheckbox from '../../../components/AppCheckbox.vue'
-import ConfirmModal from '../../../components/ConfirmModal.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
+import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
 
 /** Shape of a knowledgebase category. */
 interface KbCategory {
@@ -232,7 +232,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="mb-5">
@@ -282,7 +282,7 @@ onMounted(() => {
 
         <!-- Hidden checkbox -->
         <div class="flex items-center gap-3">
-          <AppCheckbox v-model="newCategory.hidden" />
+          <UiCheckbox v-model="newCategory.hidden" />
           <span class="text-[0.82rem] text-text-secondary cursor-pointer" @click="newCategory.hidden = !newCategory.hidden">
             Check to Hide
           </span>
@@ -346,7 +346,7 @@ onMounted(() => {
                 class="w-full bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors"
               />
               <div class="flex items-center gap-3">
-                <AppCheckbox v-model="editingCategory.hidden" />
+                <UiCheckbox v-model="editingCategory.hidden" />
                 <span class="text-[0.78rem] text-text-secondary cursor-pointer" @click="editingCategory.hidden = !editingCategory.hidden">Hidden</span>
               </div>
               <div class="flex items-center gap-2">
@@ -447,7 +447,7 @@ onMounted(() => {
         <!-- Category -->
         <div>
           <label class="block text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Category</label>
-          <AppSelect
+          <UiSelect
             v-model="newArticle.categoryId"
             :options="categoryOptions"
             placeholder="Select category"
@@ -466,7 +466,7 @@ onMounted(() => {
 
         <!-- Published -->
         <div class="flex items-center gap-3">
-          <AppCheckbox v-model="newArticle.published" />
+          <UiCheckbox v-model="newArticle.published" />
           <span class="text-[0.82rem] text-text-secondary cursor-pointer" @click="newArticle.published = !newArticle.published">Published</span>
         </div>
 
@@ -486,7 +486,7 @@ onMounted(() => {
     </div>
 
     <!-- Delete Category Modal -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="deleteCategoryTarget !== null"
       title="Delete Category"
       message="Are you sure you want to delete this category? All articles in this category may be affected."

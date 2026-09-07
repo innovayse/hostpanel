@@ -10,10 +10,10 @@ import { ref, computed, onMounted } from 'vue'
 import { useBillingStore } from '../stores/billingStore'
 import { GATEWAY_OPTIONS, INVOICE_STATUS_OPTIONS } from '../../../utils/constants'
 import { formatDate, toDateInputValue } from '../../../utils/format'
-import AppDatePicker from '../../../components/AppDatePicker.vue'
-import AppNumberInput from '../../../components/AppNumberInput.vue'
-import AppSelect from '../../../components/AppSelect.vue'
-import AppCheckbox from '../../../components/AppCheckbox.vue'
+import UiDatePicker from '../../../components/ui/UiDatePicker.vue'
+import UiNumberInput from '../../../components/ui/UiNumberInput.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import type { Invoice } from '../../../types/models'
 
 const props = defineProps<{
@@ -194,15 +194,15 @@ onMounted(() => populateForm())
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
         <div>
           <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Invoice Date</label>
-          <AppDatePicker v-model="invoiceDate" />
+          <UiDatePicker v-model="invoiceDate" />
         </div>
         <div>
           <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Due Date</label>
-          <AppDatePicker v-model="dueDate" />
+          <UiDatePicker v-model="dueDate" />
         </div>
         <div>
           <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Payment Method</label>
-          <AppSelect v-model="paymentMethod" :options="GATEWAY_OPTIONS" />
+          <UiSelect v-model="paymentMethod" :options="GATEWAY_OPTIONS" />
         </div>
         <div>
           <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Tax Rate</label>
@@ -210,14 +210,14 @@ onMounted(() => populateForm())
             <div class="flex items-center gap-1">
               <span class="text-[0.78rem] text-text-muted">1</span>
               <div class="w-20">
-                <AppNumberInput v-model="taxRate1" :step="0.01" :min="0" />
+                <UiNumberInput v-model="taxRate1" :step="0.01" :min="0" />
               </div>
               <span class="text-[0.78rem] text-text-muted">%</span>
             </div>
             <div class="flex items-center gap-1">
               <span class="text-[0.78rem] text-text-muted">2</span>
               <div class="w-20">
-                <AppNumberInput v-model="taxRate2" :step="0.01" :min="0" />
+                <UiNumberInput v-model="taxRate2" :step="0.01" :min="0" />
               </div>
               <span class="text-[0.78rem] text-text-muted">%</span>
             </div>
@@ -233,7 +233,7 @@ onMounted(() => populateForm())
         </div>
         <div>
           <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Status</label>
-          <AppSelect v-model="status" :options="INVOICE_STATUS_OPTIONS.filter(o => o.value !== '')" />
+          <UiSelect v-model="status" :options="INVOICE_STATUS_OPTIONS.filter(o => o.value !== '')" />
         </div>
       </div>
 
@@ -257,7 +257,7 @@ onMounted(() => populateForm())
 
       <!-- Header -->
       <div class="hidden sm:grid grid-cols-[24px_1fr_auto_auto_32px] gap-3 px-5 py-3 border-b border-border bg-white/[0.02] items-center">
-        <AppCheckbox :model-value="allSelected" @update:model-value="toggleSelectAll" />
+        <UiCheckbox :model-value="allSelected" @update:model-value="toggleSelectAll" />
         <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Description</span>
         <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted text-right w-28">Amount</span>
         <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted text-center w-16">Taxed</span>
@@ -270,7 +270,7 @@ onMounted(() => populateForm())
         :key="idx"
         class="grid grid-cols-1 sm:grid-cols-[24px_1fr_auto_auto_32px] gap-2 sm:gap-3 px-5 py-2.5 border-b border-border last:border-0 items-center"
       >
-        <AppCheckbox v-model="item.selected" />
+        <UiCheckbox v-model="item.selected" />
         <textarea
           v-model="item.description"
           rows="1"
@@ -278,10 +278,10 @@ onMounted(() => populateForm())
           class="w-full bg-white/[0.04] border border-border rounded-lg px-2.5 py-2 text-[0.82rem] text-text-primary focus:outline-none focus:border-primary-500/50 transition-colors resize-y min-h-[36px]"
         />
         <div class="w-28">
-          <AppNumberInput v-model="item.amount" :step="0.01" :min="0" />
+          <UiNumberInput v-model="item.amount" :step="0.01" :min="0" />
         </div>
         <div class="flex items-center justify-center w-16">
-          <AppCheckbox v-model="item.taxed" />
+          <UiCheckbox v-model="item.taxed" />
         </div>
         <button
           type="button"
@@ -309,7 +309,7 @@ onMounted(() => populateForm())
       <div class="px-5 py-3 space-y-2">
         <div class="flex items-center gap-2">
           <div class="w-40">
-            <AppSelect v-model="withSelectedAction" :options="withSelectedOptions" />
+            <UiSelect v-model="withSelectedAction" :options="withSelectedOptions" />
           </div>
           <button
             v-if="withSelectedAction"

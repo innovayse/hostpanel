@@ -6,8 +6,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useApi } from '../../../composables/useApi'
-import AppSelect from '../../../components/AppSelect.vue'
-import AppDatePicker from '../../../components/AppDatePicker.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiDatePicker from '../../../components/ui/UiDatePicker.vue'
 
 /** Shape of the network issue form data. */
 interface NetworkIssueForm {
@@ -180,7 +180,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Breadcrumb -->
     <div class="flex items-center gap-2 text-[0.78rem] text-text-muted mb-4">
@@ -229,7 +229,7 @@ onMounted(() => {
         <!-- Type -->
         <div>
           <label class="block text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Type</label>
-          <AppSelect
+          <UiSelect
             v-model="form.type"
             :options="typeOptions"
             placeholder="Select type"
@@ -253,7 +253,7 @@ onMounted(() => {
         <!-- Priority -->
         <div>
           <label class="block text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Priority</label>
-          <AppSelect
+          <UiSelect
             v-model="form.priority"
             :options="priorityOptions"
             placeholder="Select priority"
@@ -263,7 +263,7 @@ onMounted(() => {
         <!-- Status (edit mode only) -->
         <div v-if="isEditMode">
           <label class="block text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Status</label>
-          <AppSelect
+          <UiSelect
             v-model="form.status"
             :options="statusOptions"
             placeholder="Select status"
@@ -276,13 +276,13 @@ onMounted(() => {
         <!-- Start Date -->
         <div>
           <label class="block text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Start Date</label>
-          <AppDatePicker v-model="form.startDate" placeholder="Select start date" />
+          <UiDatePicker v-model="form.startDate" placeholder="Select start date" />
         </div>
 
         <!-- End Date -->
         <div>
           <label class="block text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">End Date</label>
-          <AppDatePicker v-model="form.endDate" placeholder="Select end date" />
+          <UiDatePicker v-model="form.endDate" placeholder="Select end date" />
         </div>
       </div>
 

@@ -8,7 +8,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import type { AdminCreateClientPayload } from '../../../types/models'
 import { useClientsStore } from '../stores/clientsStore'
-import AppSelect from '../../../components/AppSelect.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
 
 /** Props for ClientFormModal. */
 const props = defineProps<{
@@ -193,12 +193,12 @@ function clearSelectedUser(): void {
 
 // --- Country/currency options ---
 
-/** Country options for the AppSelect dropdown. */
+/** Country options for the UiSelect dropdown. */
 const countryOptions = computed(() =>
   [{ value: '', label: 'Select country' }, ...store.countries.map(c => ({ value: c.code, label: c.name }))]
 )
 
-/** Currency options for the AppSelect dropdown. */
+/** Currency options for the UiSelect dropdown. */
 const currencyOptions = computed(() =>
   [{ value: '', label: 'Select currency' }, ...store.currencies.map(c => ({ value: c.code, label: `${c.name} (${c.symbol})` }))]
 )
@@ -532,11 +532,11 @@ onMounted(() => {
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Language</label>
-              <AppSelect v-model="language" :options="languageOptions" placeholder="Default" />
+              <UiSelect v-model="language" :options="languageOptions" placeholder="Default" />
             </div>
             <div>
               <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Status</label>
-              <AppSelect v-model="status" :options="statusOptions" />
+              <UiSelect v-model="status" :options="statusOptions" />
             </div>
           </div>
 
@@ -598,13 +598,13 @@ onMounted(() => {
             </div>
             <div>
               <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Country</label>
-              <AppSelect v-model="country" :options="countryOptions" placeholder="Select country" />
+              <UiSelect v-model="country" :options="countryOptions" placeholder="Select country" />
             </div>
           </div>
 
           <div>
             <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Currency</label>
-            <AppSelect v-model="currency" :options="currencyOptions" placeholder="Select currency" />
+            <UiSelect v-model="currency" :options="currencyOptions" placeholder="Select currency" />
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">

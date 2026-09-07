@@ -67,3 +67,9 @@ whmcs_dump.sql
 # from, so they sit inside the working tree and would otherwise show as untracked
 # on every production host.
 backups/
+
+# Operator-uploaded branding: written into the API web root at runtime and backed by a
+# named volume in production. The directory itself is committed (wwwroot must exist before
+# UseStaticFiles resolves its provider at startup); its contents belong to the deployment,
+# never to the repository.
+backend/src/Innovayse.API/wwwroot/uploads/

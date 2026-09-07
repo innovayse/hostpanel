@@ -7,7 +7,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useClientLogStore } from '../stores/clientLogStore'
-import AppDatePicker from '../../../components/AppDatePicker.vue'
+import UiDatePicker from '../../../components/ui/UiDatePicker.vue'
 /**
  * Formats an ISO timestamp as a localized date + time string (e.g. "23/05/2026 09:02").
  *
@@ -114,7 +114,7 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="flex items-center justify-between gap-2.5 mb-5">
@@ -132,7 +132,7 @@ onMounted(load)
     <div v-if="showFilters" class="bg-surface-card border border-border rounded-2xl p-5 mb-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div class="flex flex-col gap-1.5">
         <label class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Date</label>
-        <AppDatePicker v-model="filterDate" placeholder="Select date" />
+        <UiDatePicker v-model="filterDate" placeholder="Select date" />
       </div>
       <div class="flex flex-col gap-1.5">
         <label class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Username</label>

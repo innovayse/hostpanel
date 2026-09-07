@@ -1,8 +1,27 @@
 /**
  * GET /api/portal/public/settings
  *
- * Returns the `portal.*` settings the storefront needs — the active template and
- * the contact/newsletter widget configuration.
+ * Returns the `portal.*` settings the storefront needs — the active template, the
+ * operator-uploaded branding (logo, favicon) and the contact/newsletter widget
+ * configuration.
+ *
+ * The key list below has to stay in step with `GetPublicSettingsHandler`'s own
+ * allow-list on the backend. A key the backend serves but this list omits is
+ * dropped here without a trace, and the storefront renders its build-time default
+ * as though the operator had never set the value.
+ *
+ * **Deliberately uncached.** This was a `defineCachedEventHandler` with `maxAge: 60` and
+ * `swr: true`, and that combination is what made the admin panel appear broken: an operator
+ * uploaded a logo, reloaded the storefront, saw the old one, and had no way to tell whether
+ * the setting had saved. Sixty seconds is bad enough; `swr` makes it worse, because the first
+ * request after expiry is still answered from the stale entry while the refresh happens behind
+ * it -- so the wait is a minute *and then* one more page load.
+ *
+ * What it bought was one indexed read of a table with a few dozen rows, on a request that is
+ * already talking to the same API for the page it is rendering. That is not a trade worth a
+ * minute of stale branding. The response still transfers to the browser with the SSR payload,
+ * so a visitor makes this call once per page render, not once per component that reads a
+ * setting.
  *
  * Two things this deliberately does not do. It never returns the whole settings
  * table: that table holds integration credentials, and this endpoint is
@@ -15,6 +34,8 @@
 /** The only keys this endpoint will ever expose. */
 const PUBLIC_KEYS = [
   'portal.template',
+  'portal.logo',
+  'portal.favicon',
   'portal.contact.whatsapp',
   'portal.contact.telegram',
   'portal.chat.provider',
@@ -37,7 +58,7 @@ const PUBLIC_KEYS = [
   'portal.apps.calendar',
 ] as const
 
-export default defineCachedEventHandler(async (event) => {
+export default defineEventHandler(async (event) => {
   try {
     const rows = await internalApiCall<{ key: string, value: string }[]>(event, '/settings/public')
 
@@ -53,9 +74,4 @@ export default defineCachedEventHandler(async (event) => {
     // the storefront must render either way.
     return {}
   }
-}, {
-  name: 'portal-settings',
-  maxAge: 60,
-  swr: true,
-  getKey: () => 'portal-settings',
 })

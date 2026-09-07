@@ -2,6 +2,7 @@ namespace Innovayse.API;
 
 using System.Net;
 using System.Text.Json;
+using Innovayse.Application.Admin.Common;
 using Innovayse.Application.Auth.Common;
 using Innovayse.Application.Billing.Common;
 using Innovayse.Application.Clients.Common;
@@ -180,6 +181,34 @@ public sealed class ExceptionMiddleware(
             await WriteErrorAsync(
                 context, HttpStatusCode.NotFound, Localize(DomainNotFoundException.MessageKey),
                 DomainNotFoundException.Code);
+        }
+        catch (InvalidBrandingImageException ex)
+        {
+            // 400: the operator sent something this endpoint cannot use. The precise cause --
+            // which signature failed, whether the SVG parsed -- is logged and deliberately kept
+            // out of the body, so probing the endpoint teaches nothing about the checks it runs.
+            logger.LogWarning(
+                "Branding upload refused: {Reason} Answering {Code}.", ex.Reason,
+                InvalidBrandingImageException.Code);
+
+            await WriteErrorAsync(
+                context, HttpStatusCode.BadRequest, Localize(InvalidBrandingImageException.MessageKey),
+                InvalidBrandingImageException.Code);
+        }
+        catch (BrandingImageTooLargeException ex)
+        {
+            // 413 rather than 400: the request was understood and is refused purely on size, and
+            // that is the status a client can act on without reading the body. Which ceiling was
+            // hit -- bytes or pixels -- goes to the log, because the pixel one fires on files that
+            // look small and an operator will otherwise think the limit is broken.
+            logger.LogWarning(
+                "Branding upload exceeded a ceiling: {Reason} Answering {Code}.", ex.Reason,
+                BrandingImageTooLargeException.Code);
+
+            await WriteErrorAsync(
+                context, HttpStatusCode.RequestEntityTooLarge,
+                Localize(BrandingImageTooLargeException.MessageKey),
+                BrandingImageTooLargeException.Code);
         }
         catch (ContactRecipientNotConfiguredException)
         {

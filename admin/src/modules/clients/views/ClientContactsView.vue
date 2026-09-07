@@ -6,7 +6,7 @@ import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useClientsStore } from '../stores/clientsStore'
 import { CONTACT_TYPE_STYLES } from '../../../utils/constants'
-import ConfirmModal from '../../../components/ConfirmModal.vue'
+import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
 import ContactFormModal from '../components/ContactFormModal.vue'
 import type { Contact } from '../../../types/models'
 
@@ -167,7 +167,7 @@ function openEditModal(contact: Contact): void {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Feedback messages -->
     <div v-if="contactSuccess" class="mb-4 px-4 py-2.5 text-[0.82rem] text-status-green bg-status-green/10 border border-status-green/20 rounded-xl">
@@ -273,7 +273,7 @@ function openEditModal(contact: Contact): void {
     />
 
     <!-- Delete Confirm Modal -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="deleteContactTarget !== null"
       title="Delete Contact"
       message="Are you sure you want to delete this contact? This cannot be undone."

@@ -224,7 +224,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Action feedback — sits above the table so a failed action never replaces it -->
     <div v-if="actionSuccess" class="mb-4 px-4 py-2.5 text-[0.82rem] text-status-green bg-status-green/10 border border-status-green/20 rounded-xl">

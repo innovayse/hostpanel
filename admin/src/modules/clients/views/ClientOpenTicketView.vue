@@ -7,7 +7,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useClientTicketStore } from '../stores/clientTicketStore'
 import { TICKET_PRIORITY_OPTIONS } from '../../../utils/constants'
-import AppSelect from '../../../components/AppSelect.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -28,7 +28,7 @@ const priority = ref('Medium')
 /** Ticket message body. */
 const message = ref('')
 
-/** Department options mapped for AppSelect. */
+/** Department options mapped for UiSelect. */
 const departmentOptions = computed(() =>
   store.departments.map(d => ({ value: d.id, label: d.name })),
 )
@@ -60,7 +60,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="flex items-center gap-3 mb-5">
@@ -100,11 +100,11 @@ onMounted(() => {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-[0.75rem] text-text-muted mb-1.5">Department</label>
-            <AppSelect v-model="departmentId" :options="departmentOptions" placeholder="Select department" />
+            <UiSelect v-model="departmentId" :options="departmentOptions" placeholder="Select department" />
           </div>
           <div>
             <label class="block text-[0.75rem] text-text-muted mb-1.5">Priority</label>
-            <AppSelect v-model="priority" :options="TICKET_PRIORITY_OPTIONS" placeholder="Select priority" />
+            <UiSelect v-model="priority" :options="TICKET_PRIORITY_OPTIONS" placeholder="Select priority" />
           </div>
         </div>
 

@@ -1,5 +1,6 @@
-namespace Innovayse.Application.Orders.Commands.StartOrderGatewayPayment;
+﻿namespace Innovayse.Application.Orders.Commands.StartOrderGatewayPayment;
 
+using Innovayse.Application.Orders.Extensions;
 using Innovayse.Application.Billing.Commands.StartGatewayPayment;
 using Innovayse.Domain.Orders.Interfaces;
 using Wolverine;
@@ -23,13 +24,14 @@ public sealed class StartOrderGatewayPaymentHandler(IOrderRepository orderRepo, 
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The absolute gateway URL to redirect the payer's browser to.</returns>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when no such order exists and when the order was never billed; the shared command
+    /// Thrown when no such order exists, when the payment token does not match it, and when the order
+    /// was never billed; the shared command
     /// throws the same type for everything it refuses.
     /// </exception>
     public async Task<string> HandleAsync(StartOrderGatewayPaymentCommand cmd, CancellationToken ct)
     {
-        var order = await orderRepo.FindByIdAsync(cmd.OrderId, ct)
-            ?? throw new InvalidOperationException($"Order {cmd.OrderId} not found.");
+        var order = (await orderRepo.FindByIdAsync(cmd.OrderId, ct))
+            .EnsurePayableWith(cmd.OrderId, cmd.PaymentToken);
 
         if (order.InvoiceId is null)
         {

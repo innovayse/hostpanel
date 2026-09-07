@@ -2,7 +2,7 @@
 /**
  * Custom dark-themed number input with styled increment/decrement buttons.
  * Replaces native <input type="number"> whose spinner arrows cannot be themed.
- * Matches the AppSelect / AppDatePicker visual language.
+ * Matches the UiSelect / UiDatePicker visual language.
  */
 import { computed } from 'vue'
 

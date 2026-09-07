@@ -8,11 +8,11 @@ import { useRoute, useRouter } from 'vue-router'
 import { useBillingStore } from '../../billing/stores/billingStore'
 import { INVOICE_STATUS_OPTIONS, INVOICE_STATUS_STYLES } from '../../../utils/constants'
 import { formatDate } from '../../../utils/format'
-import AppDatePicker from '../../../components/AppDatePicker.vue'
-import AppNumberInput from '../../../components/AppNumberInput.vue'
-import AppSelect from '../../../components/AppSelect.vue'
-import AppCheckbox from '../../../components/AppCheckbox.vue'
-import ConfirmModal from '../../../components/ConfirmModal.vue'
+import UiDatePicker from '../../../components/ui/UiDatePicker.vue'
+import UiNumberInput from '../../../components/ui/UiNumberInput.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
+import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -240,7 +240,7 @@ onMounted(() => fetchInvoices())
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="flex items-center justify-between gap-2.5 mb-5">
@@ -269,11 +269,11 @@ onMounted(() => fetchInvoices())
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div class="flex flex-col gap-1.5">
             <label class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Due Date</label>
-            <AppDatePicker v-model="newDueDate" placeholder="Select due date" />
+            <UiDatePicker v-model="newDueDate" placeholder="Select due date" />
           </div>
           <div class="flex items-end">
             <label class="flex items-center gap-2 text-[0.82rem] text-text-secondary cursor-pointer pb-2">
-              <AppCheckbox v-model="newIsDraft" />
+              <UiCheckbox v-model="newIsDraft" />
               Create as Draft
             </label>
           </div>
@@ -289,10 +289,10 @@ onMounted(() => fetchInvoices())
               class="flex-1 bg-white/[0.04] border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/10 transition-colors"
             />
             <div class="w-28">
-              <AppNumberInput v-model="item.unitPrice" :step="0.01" :min="0" placeholder="Price" />
+              <UiNumberInput v-model="item.unitPrice" :step="0.01" :min="0" placeholder="Price" />
             </div>
             <div class="w-20">
-              <AppNumberInput v-model="item.quantity" :min="1" placeholder="Qty" />
+              <UiNumberInput v-model="item.quantity" :min="1" placeholder="Qty" />
             </div>
             <button
               v-if="newItems.length > 1"
@@ -336,9 +336,9 @@ onMounted(() => fetchInvoices())
 
     <!-- Filter bar -->
     <div class="flex items-center gap-2.5 mb-5 flex-wrap">
-      <AppSelect v-model="filterStatus" :options="INVOICE_STATUS_OPTIONS" placeholder="All Statuses" />
-      <AppDatePicker v-model="filterFrom" placeholder="From" />
-      <AppDatePicker v-model="filterTo" placeholder="To" />
+      <UiSelect v-model="filterStatus" :options="INVOICE_STATUS_OPTIONS" placeholder="All Statuses" />
+      <UiDatePicker v-model="filterFrom" placeholder="From" />
+      <UiDatePicker v-model="filterTo" placeholder="To" />
       <button
         type="button"
         class="px-4 py-2.5 text-[0.82rem] font-medium text-text-secondary hover:text-text-primary bg-white/[0.04] border border-border rounded-[10px] transition-colors"
@@ -364,7 +364,7 @@ onMounted(() => fetchInvoices())
       <!-- Bulk action bar -->
       <div v-if="hasSelection" class="flex items-center gap-2.5 mb-4 px-4 py-3 bg-surface-card border border-border rounded-xl">
         <span class="text-[0.75rem] text-text-muted">{{ selectedIds.size }} selected:</span>
-        <AppSelect v-model="bulkActionValue" :options="bulkActions" placeholder="Bulk Actions..." />
+        <UiSelect v-model="bulkActionValue" :options="bulkActions" placeholder="Bulk Actions..." />
         <button
           type="button"
           :disabled="!bulkActionValue"
@@ -380,7 +380,7 @@ onMounted(() => fetchInvoices())
         <!-- Header row -->
         <div class="hidden sm:grid grid-cols-[40px_0.4fr_0.7fr_0.7fr_0.7fr_0.6fr_0.7fr_0.7fr_auto] gap-3 px-5 py-3 border-b border-border bg-white/[0.02]">
           <span class="flex items-center">
-            <AppCheckbox :model-value="selectAll" @update:model-value="toggleSelectAll" />
+            <UiCheckbox :model-value="selectAll" @update:model-value="toggleSelectAll" />
           </span>
           <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">ID</span>
           <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Invoice Date</span>
@@ -399,7 +399,7 @@ onMounted(() => fetchInvoices())
           class="grid grid-cols-1 sm:grid-cols-[40px_0.4fr_0.7fr_0.7fr_0.7fr_0.6fr_0.7fr_0.7fr_auto] gap-2 sm:gap-3 px-5 py-3.5 border-b border-border last:border-0 hover:bg-white/[0.02] transition-colors"
         >
           <span class="flex items-center">
-            <AppCheckbox :model-value="selectedIds.has(invoice.id)" @update:model-value="toggleSelect(invoice.id)" />
+            <UiCheckbox :model-value="selectedIds.has(invoice.id)" @update:model-value="toggleSelect(invoice.id)" />
           </span>
           <span class="text-[0.82rem] text-text-muted font-mono hidden sm:block">#{{ invoice.id }}</span>
           <span class="text-[0.82rem] text-text-secondary hidden sm:block">{{ formatDate(invoice.invoiceDate) }}</span>
@@ -473,7 +473,7 @@ onMounted(() => fetchInvoices())
     </template>
 
     <!-- Delete Confirm Modal -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="showDeleteModal"
       title="Delete Invoice"
       :message="`Are you sure you want to delete invoice #${deleteTargetId}?`"
@@ -486,7 +486,7 @@ onMounted(() => fetchInvoices())
     />
 
     <!-- Bulk Confirm Modal -->
-    <ConfirmModal
+    <UiConfirmModal
       v-if="showBulkConfirmModal"
       title="Confirm Bulk Action"
       :message="`Apply '${bulkActionValue}' to ${selectedIds.size} selected invoice(s)?`"

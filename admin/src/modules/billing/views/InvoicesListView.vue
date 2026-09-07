@@ -2,11 +2,11 @@
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useBillingStore } from '../stores/billingStore'
-import AppSelect from '../../../components/AppSelect.vue'
-import AppClientSelect from '../../../components/AppClientSelect.vue'
-import AppSpinner from '../../../components/AppSpinner.vue'
-import AppCheckbox from '../../../components/AppCheckbox.vue'
-import DateRangePicker from '../../../components/DateRangePicker.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiClientSelect from '../../../components/ui/UiClientSelect.vue'
+import UiSpinner from '../../../components/ui/UiSpinner.vue'
+import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
+import UiDateRangePicker from '../../../components/ui/UiDateRangePicker.vue'
 
 const store = useBillingStore()
 const router = useRouter()
@@ -145,7 +145,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 lg:p-8 w-full">
+  <div class="w-full">
 
     <!-- Header -->
     <div class="mb-5">
@@ -172,7 +172,7 @@ onMounted(() => {
         <div class="space-y-4">
           <div>
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Client Name</label>
-            <AppClientSelect
+            <UiClientSelect
               v-model="filterClientName"
               :clients="clients"
               placeholder="Start Typing to Search Clients"
@@ -191,21 +191,21 @@ onMounted(() => {
 
           <div>
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Payment Method</label>
-            <AppSelect v-model="filterPaymentMethod" :options="[{ value: '', label: 'Any' }, { value: 'Stripe', label: 'Stripe' }, { value: 'PayPal', label: 'PayPal' }, { value: 'Credit/Debit Card', label: 'Credit/Debit Card' }]" />
+            <UiSelect v-model="filterPaymentMethod" :options="[{ value: '', label: 'Any' }, { value: 'Stripe', label: 'Stripe' }, { value: 'PayPal', label: 'PayPal' }, { value: 'Credit/Debit Card', label: 'Credit/Debit Card' }]" />
           </div>
 
           <div>
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Status</label>
-            <AppSelect v-model="filterStatus" :options="statusOptions" />
+            <UiSelect v-model="filterStatus" :options="statusOptions" />
           </div>
 
           <div>
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Total Due</label>
             <div class="flex gap-2 items-center">
               <span class="text-[0.78rem] text-text-muted">From</span>
-              <AppSpinner v-model="filterTotalDueFrom" :step="0.01" :min="0" placeholder="0.00" class="flex-1" />
+              <UiSpinner v-model="filterTotalDueFrom" :step="0.01" :min="0" placeholder="0.00" class="flex-1" />
               <span class="text-[0.78rem] text-text-muted">To</span>
-              <AppSpinner v-model="filterTotalDueTo" :step="0.01" :min="0" placeholder="0.00" class="flex-1" />
+              <UiSpinner v-model="filterTotalDueTo" :step="0.01" :min="0" placeholder="0.00" class="flex-1" />
             </div>
           </div>
         </div>
@@ -214,32 +214,32 @@ onMounted(() => {
         <div class="space-y-4">
           <div>
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Invoice Date</label>
-            <DateRangePicker v-model="filterInvoiceDateRange" placeholder="Select date range..." />
+            <UiDateRangePicker v-model="filterInvoiceDateRange" placeholder="Select date range..." />
           </div>
 
           <div>
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Due Date</label>
-            <DateRangePicker v-model="filterDueDateRange" placeholder="Select date range..." />
+            <UiDateRangePicker v-model="filterDueDateRange" placeholder="Select date range..." />
           </div>
 
           <div>
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Date Paid</label>
-            <DateRangePicker v-model="filterDatePaidRange" placeholder="Select date range..." />
+            <UiDateRangePicker v-model="filterDatePaidRange" placeholder="Select date range..." />
           </div>
 
           <div>
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Last Capture Attempt</label>
-            <DateRangePicker v-model="filterLastCaptureAttemptRange" placeholder="Select date range..." />
+            <UiDateRangePicker v-model="filterLastCaptureAttemptRange" placeholder="Select date range..." />
           </div>
 
           <div>
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Date Refunded</label>
-            <DateRangePicker v-model="filterDateRefundedRange" placeholder="Select date range..." />
+            <UiDateRangePicker v-model="filterDateRefundedRange" placeholder="Select date range..." />
           </div>
 
           <div>
             <label class="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Date Cancelled</label>
-            <DateRangePicker v-model="filterDateCancelledRange" placeholder="Select date range..." />
+            <UiDateRangePicker v-model="filterDateCancelledRange" placeholder="Select date range..." />
           </div>
         </div>
       </div>
@@ -276,7 +276,7 @@ onMounted(() => {
       <div class="flex items-center gap-2">
         <span>Jump to Page:</span>
         <div class="w-20">
-          <AppSelect
+          <UiSelect
             v-model="pageString"
             :options="pageOptions"
             @update:modelValue="(val) => goToPage(Number(val))"
@@ -291,7 +291,7 @@ onMounted(() => {
       <!-- Header row -->
       <div class="hidden sm:grid grid-cols-[0.3fr_0.8fr_1fr_0.9fr_0.9fr_0.9fr_0.8fr_0.9fr_0.8fr_1fr] gap-3 px-5 py-3 border-b border-border bg-white/[0.02]">
         <div class="flex items-center">
-          <AppCheckbox :model-value="selectedInvoices.size === store.invoices.length && store.invoices.length > 0" @update:model-value="toggleSelectAll" />
+          <UiCheckbox :model-value="selectedInvoices.size === store.invoices.length && store.invoices.length > 0" @update:model-value="toggleSelectAll" />
         </div>
         <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Invoice #</span>
         <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Client Name</span>
@@ -312,7 +312,7 @@ onMounted(() => {
           class="grid grid-cols-1 sm:grid-cols-[0.3fr_0.8fr_1fr_0.9fr_0.9fr_0.9fr_0.8fr_0.9fr_0.8fr_1fr] gap-2 sm:gap-3 px-5 py-3.5 border-b border-border last:border-0 hover:bg-white/[0.02] transition-colors items-center"
         >
           <div class="flex items-center">
-            <AppCheckbox :model-value="selectedInvoices.has(invoice.id)" @update:model-value="toggleInvoiceSelection(invoice.id)" />
+            <UiCheckbox :model-value="selectedInvoices.has(invoice.id)" @update:model-value="toggleInvoiceSelection(invoice.id)" />
           </div>
           <span class="text-[0.82rem] text-text-muted font-mono">#{{ invoice.id }}</span>
 

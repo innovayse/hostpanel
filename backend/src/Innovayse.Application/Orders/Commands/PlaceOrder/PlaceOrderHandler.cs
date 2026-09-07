@@ -1,4 +1,4 @@
-namespace Innovayse.Application.Orders.Commands.PlaceOrder;
+﻿namespace Innovayse.Application.Orders.Commands.PlaceOrder;
 
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Common;
@@ -62,7 +62,7 @@ public sealed class PlaceOrderHandler(
     /// </summary>
     /// <param name="cmd">The place order command.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>A <see cref="PlaceOrderResultDto"/> containing the new order and invoice IDs.</returns>
+    /// <returns>A <see cref="PlaceOrderResultDto"/> with the new order and invoice ids and the order's payment token.</returns>
     /// <exception cref="InvalidOperationException">
     /// Thrown when a guest registration fails, a client is not found,
     /// a product is not found or inactive, or an invalid billing cycle is specified.
@@ -127,7 +127,7 @@ public sealed class PlaceOrderHandler(
         order.LinkInvoice(invoice.Id);
         await uow.SaveChangesAsync(ct);
 
-        return new PlaceOrderResultDto(order.Id, invoice.Id);
+        return new PlaceOrderResultDto(order.Id, invoice.Id, order.PaymentToken);
     }
 
     /// <summary>

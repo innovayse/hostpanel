@@ -113,6 +113,48 @@ export function useInvoices() {
 - Extract repeated class combos to component or `@apply` in scoped style
 - Dark mode: use `dark:` variant — no manual theme toggling
 
+## Page shell, gutters and scrolling
+
+**The layout owns the gutter. A view never pads itself.**
+
+`Layout.vue` renders one wrapper inside `<main>` that carries the content gutter:
+
+```vue
+<main class="relative flex-1 min-h-0 overflow-auto">
+  <div class="flex min-h-full w-full flex-col p-4 sm:p-6 lg:p-8">
+    <RouterView />
+  </div>
+</main>
+```
+
+A routed view therefore starts at its own content — no `p-4 sm:p-6 lg:p-8` on a view
+root, and no re-padding further down. This was previously repeated on 63 view roots,
+which is why a view added without it looked broken and a view with a different value
+looked subtly off; neither is discoverable from the view itself.
+
+**Exactly one element on the page scrolls, and it is that `<main>`.** The shell is
+`h-dvh overflow-hidden`, not `min-h-dvh` — the document itself must never grow past
+the viewport, because the sidebar is a flex sibling of the content column and scrolls
+away with the document when it does. Two consequences worth stating, because both
+fail silently:
+
+- **Every flex ancestor between the shell and `<main>` needs `min-h-0`.** A flex child
+  defaults to `min-height: auto`, refuses to shrink below its content, and the
+  `overflow-auto` never engages — the overflow moves to the document instead.
+- **The sidebar sizes with `h-full`, never `min-h-dvh`.** It is stretched by the
+  shell; asking for viewport height again is what makes it overflow by the height of
+  anything above it.
+
+A view that needs the full height (a nested module layout, a split pane, a board) asks
+for it with `h-full min-h-0 flex-1`, which the gutter wrapper's `min-h-full` flex
+column grants. A module that owns a second sidebar and must sit flush against the
+shell edge cancels the gutter with `-m-4 sm:-m-6 lg:-m-8` and re-applies it inside its
+own scroll pane — see `ReportsLayout.vue` and `IntegrationsLayout.vue`. That is the
+only sanctioned reason to write the gutter values anywhere but `Layout.vue`.
+
+Full-page views rendered **outside** `Layout` — the auth screens — are not bound by
+any of this and keep their own `min-h-dvh`.
+
 ## TypeScript in Vue
 
 - No `as any` — never

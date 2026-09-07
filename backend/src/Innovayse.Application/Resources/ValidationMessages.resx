@@ -279,4 +279,12 @@
     <value>That setup token is not the one this installation issued. The current token is printed in the server log every time the API starts while setup is still outstanding — restart the API and read the newest one.</value>
     <comment>SETUP_TOKEN_INVALID. CompleteSetupHandler, local mode only. Answered 403.</comment>
   </data>
+  <data name="BrandingImageInvalid" xml:space="preserve">
+    <value>That file could not be read as an image. Upload a PNG, JPEG, WebP, GIF or BMP.</value>
+    <comment>BRANDING_IMAGE_INVALID. ImageSharpBrandingImageProcessor. Answered 400. The specific cause is logged, never sent.</comment>
+  </data>
+  <data name="BrandingImageTooLarge" xml:space="preserve">
+    <value>That image is too large. Upload a file under 5 MB and no more than 8000 pixels on a side.</value>
+    <comment>BRANDING_IMAGE_TOO_LARGE. Byte ceiling or pixel ceiling. Answered 413.</comment>
+  </data>
 </root>

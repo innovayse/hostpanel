@@ -9,10 +9,10 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useBillingStore } from '../stores/billingStore'
 import { GATEWAY_OPTIONS } from '../../../utils/constants'
 import { formatDate } from '../../../utils/format'
-import AppSelect from '../../../components/AppSelect.vue'
-import AppNumberInput from '../../../components/AppNumberInput.vue'
-import AppCheckbox from '../../../components/AppCheckbox.vue'
-import AppAlert from '../../../components/AppAlert.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiNumberInput from '../../../components/ui/UiNumberInput.vue'
+import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
+import UiAlert from '../../../components/ui/UiAlert.vue'
 import type { Invoice } from '../../../types/models'
 
 const props = defineProps<{
@@ -236,34 +236,34 @@ onMounted(() => populateItems())
 <template>
   <div>
     <!-- View mode: warning if no eligible transactions -->
-    <AppAlert v-if="readonly && paymentTransactions.length === 0" variant="warning" class="mb-5">
+    <UiAlert v-if="readonly && paymentTransactions.length === 0" variant="warning" class="mb-5">
       There are no transactions that are eligible for a refund.
-    </AppAlert>
+    </UiAlert>
 
     <!-- Blocked warnings -->
-    <AppAlert v-if="!readonly && isDraft" variant="warning" class="mb-5">
+    <UiAlert v-if="!readonly && isDraft" variant="warning" class="mb-5">
       Publish the invoice before requesting a refund.
-    </AppAlert>
-    <AppAlert v-else-if="!readonly && isCancelled" variant="warning" class="mb-5">
+    </UiAlert>
+    <UiAlert v-else-if="!readonly && isCancelled" variant="warning" class="mb-5">
       Cannot refund a cancelled invoice.
-    </AppAlert>
-    <AppAlert v-else-if="!readonly && isRefunded" variant="warning" class="mb-5">
+    </UiAlert>
+    <UiAlert v-else-if="!readonly && isRefunded" variant="warning" class="mb-5">
       This invoice has already been refunded.
-    </AppAlert>
+    </UiAlert>
 
     <!-- Refund form (edit mode only, hidden when blocked) -->
     <div v-if="!readonly && !formBlocked" class="bg-surface-card border border-border rounded-2xl p-5 mb-5">
       <div class="space-y-3">
         <div class="grid grid-cols-[140px_1fr] items-center gap-3">
           <label class="text-[0.82rem] text-text-secondary text-right">Transactions</label>
-          <AppSelect v-model="selectedTransactionId" :options="transactionOptions" />
+          <UiSelect v-model="selectedTransactionId" :options="transactionOptions" />
         </div>
 
         <div class="grid grid-cols-[140px_1fr] items-center gap-3">
           <label class="text-[0.82rem] text-text-secondary text-right">Amount</label>
           <div class="flex items-center gap-2">
             <div class="w-32">
-              <AppNumberInput v-model="refundAmount" :step="0.01" :min="0" placeholder="0.00" />
+              <UiNumberInput v-model="refundAmount" :step="0.01" :min="0" placeholder="0.00" />
             </div>
             <span class="text-[0.78rem] text-text-muted">Leave blank for full refund</span>
           </div>
@@ -271,7 +271,7 @@ onMounted(() => populateItems())
 
         <div class="grid grid-cols-[140px_1fr] items-center gap-3">
           <label class="text-[0.82rem] text-text-secondary text-right">Refund Type</label>
-          <AppSelect v-model="refundType" :options="refundTypeOptions" />
+          <UiSelect v-model="refundType" :options="refundTypeOptions" />
         </div>
 
         <div v-if="isManual" class="grid grid-cols-[140px_1fr] items-center gap-3">
@@ -287,7 +287,7 @@ onMounted(() => populateItems())
         <div class="grid grid-cols-[140px_1fr] items-center gap-3">
           <label class="text-[0.82rem] text-text-secondary text-right">Reverse Payment</label>
           <div class="flex items-center gap-2">
-            <AppCheckbox v-model="reversePayment" />
+            <UiCheckbox v-model="reversePayment" />
             <span class="text-[0.78rem] text-text-muted">Undo automated actions triggered by this transaction - where possible.</span>
           </div>
         </div>
@@ -295,7 +295,7 @@ onMounted(() => populateItems())
         <div class="grid grid-cols-[140px_1fr] items-center gap-3">
           <label class="text-[0.82rem] text-text-secondary text-right">Send Email</label>
           <div class="flex items-center gap-2">
-            <AppCheckbox v-model="sendEmail" />
+            <UiCheckbox v-model="sendEmail" />
             <span class="text-[0.78rem] text-text-muted">Check to Send Confirmation Email</span>
           </div>
         </div>
@@ -390,7 +390,7 @@ onMounted(() => populateItems())
           Invoice Items
         </h2>
         <div class="hidden sm:grid grid-cols-[24px_1fr_auto_auto_32px] gap-3 px-5 py-3 border-b border-border bg-white/[0.02] items-center">
-          <AppCheckbox :model-value="allSelected" @update:model-value="toggleSelectAll()" />
+          <UiCheckbox :model-value="allSelected" @update:model-value="toggleSelectAll()" />
           <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted">Description</span>
           <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted text-right w-28">Amount</span>
           <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted text-center w-16">Taxed</span>
@@ -401,7 +401,7 @@ onMounted(() => populateItems())
           :key="idx"
           class="grid grid-cols-1 sm:grid-cols-[24px_1fr_auto_auto_32px] gap-2 sm:gap-3 px-5 py-2.5 border-b border-border last:border-0 items-center"
         >
-          <AppCheckbox v-model="item.selected" />
+          <UiCheckbox v-model="item.selected" />
           <textarea
             v-model="item.description"
             rows="1"
@@ -409,10 +409,10 @@ onMounted(() => populateItems())
             class="w-full bg-white/[0.04] border border-border rounded-lg px-2.5 py-2 text-[0.82rem] text-text-primary focus:outline-none focus:border-primary-500/50 transition-colors resize-y min-h-[36px]"
           />
           <div class="w-28">
-            <AppNumberInput v-model="item.amount" :step="0.01" :min="0" />
+            <UiNumberInput v-model="item.amount" :step="0.01" :min="0" />
           </div>
           <div class="flex items-center justify-center w-16">
-            <AppCheckbox v-model="item.taxed" />
+            <UiCheckbox v-model="item.taxed" />
           </div>
           <button
             type="button"
@@ -436,7 +436,7 @@ onMounted(() => populateItems())
         <div class="px-5 py-3 space-y-2">
           <div class="flex items-center gap-2">
             <div class="w-40">
-              <AppSelect v-model="withSelectedAction" :options="withSelectedOptions" />
+              <UiSelect v-model="withSelectedAction" :options="withSelectedOptions" />
             </div>
             <button
               v-if="withSelectedAction"

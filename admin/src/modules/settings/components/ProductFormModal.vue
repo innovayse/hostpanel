@@ -6,7 +6,7 @@
  * Emits `save` with the payload on submit, and `close` on cancel.
  */
 import { ref, watch, computed, onMounted } from 'vue'
-import type { Product, ProductGroup, CreateProductPayload } from '@/types/models'
+import type { CreateProductPayload, Product, ProductGroup } from '@/types/product'
 import type { ServerGroupDto } from '@/modules/servers/types/server.types'
 import { useApi } from '@/composables/useApi'
 import UiToggleSwitch from '@/components/ui/UiToggleSwitch.vue'

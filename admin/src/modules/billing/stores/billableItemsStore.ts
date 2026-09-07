@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import type { BillableItem, PagedResult } from '../../../types/models'
+import type { BillableItem } from '../../../types/billableitem'
+import type { PagedResult } from '../../../types/pagedresult'
 
 export const useBillableItemsStore = defineStore('billableItems', () => {
   const { request } = useApi()

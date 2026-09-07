@@ -1,7 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import type { Setting, EmailTemplate, Product, ProductGroup, CreateProductPayload, UpdateProductPayload, Gateway } from '../../../types/models'
+import type { Gateway } from '../../../types/gateway'
+import type { CreateProductPayload, Product, ProductGroup, UpdateProductPayload } from '../../../types/product'
+import type { EmailTemplate } from '../../../types/emailtemplate'
+import type { Setting } from '../../../types/setting'
 
 /**
  * Pinia store for admin settings, email templates, products, and gateways.

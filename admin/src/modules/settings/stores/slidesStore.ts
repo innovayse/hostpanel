@@ -7,7 +7,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import type { Slide, CreateSlidePayload, UpdateSlidePayload } from '../../../types/models'
+import type { CreateSlidePayload, Slide, UpdateSlidePayload } from '../../../types/slide'
 
 /** Manages homepage slides state and CRUD operations. */
 export const useSlidesStore = defineStore('slides', () => {

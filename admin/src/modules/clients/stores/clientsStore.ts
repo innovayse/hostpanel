@@ -1,14 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import type {
-  ClientListItem,
-  ClientDetail,
-  PagedResult,
-  AdminCreateClientPayload,
-  CountryOption,
-  CurrencyOption,
-} from '../../../types/models'
+import type { AdminCreateClientPayload } from '../../../types/admincreateclientpayload'
+import type { ClientDetail, ClientListItem } from '../../../types/client'
+import type { CountryOption } from '../../../types/countryoption'
+import type { CurrencyOption } from '../../../types/currencyoption'
+import type { PagedResult } from '../../../types/pagedresult'
 
 /** Filter parameters for the clients list endpoint. */
 export interface ClientFilters {

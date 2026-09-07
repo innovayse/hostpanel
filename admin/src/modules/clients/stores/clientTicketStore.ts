@@ -1,7 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import type { Ticket, TicketListItem, ClientTicketStats, Department, PagedResult } from '../../../types/models'
+import type { ClientTicketStats } from '../../../types/client'
+import type { PagedResult } from '../../../types/pagedresult'
+import type { Department } from '../../../types/department'
+import type { Ticket, TicketListItem } from '../../../types/ticket'
 
 /**
  * Manages client-scoped ticket state for the admin panel.

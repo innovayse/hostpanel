@@ -14,7 +14,7 @@ import UiDatePicker from '../../../components/ui/UiDatePicker.vue'
 import UiNumberInput from '../../../components/ui/UiNumberInput.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
-import type { Invoice } from '../../../types/models'
+import type { Invoice } from '../../../types/invoice'
 
 const props = defineProps<{
   /** The invoice to update options for. */

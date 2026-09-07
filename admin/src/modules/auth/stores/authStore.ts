@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { redirectToLogin, logoutSession } from '../../../composables/useApi'
-import { useAuthApi, type AuthMode } from '../../../composables/apis/useAuthApi'
+import { useAuthApi } from '../../../composables/apis/useAuthApi'
+import type { AuthMode } from '../../../types/auth'
 import { authErrorMessage } from '../../../utils/authErrorMessages'
 
 /**

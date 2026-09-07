@@ -53,7 +53,12 @@ admin/.env.production
 # three files that answered 404 on every deployment including production. Anything directly
 # in client/public is a served asset, not a screenshot -- whitelist the folder rather than
 # naming files one at a time and losing the next one the same way.
+# The admin panel needs the same exemption for the same reason: it ships the identical
+# eight-file icon set, and the first pass here whitelisted only the storefront, so the
+# panel's six PNGs were staged, silently dropped, and committed as an .ico and a manifest
+# pointing at files that were not there.
 !client/public/*.png
+!admin/public/*.png
 !client/public/images/**
 
 # IDEs

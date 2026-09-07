@@ -4,7 +4,7 @@
  * Shows date, reminder type, recipient, and sent timestamp for each reminder.
  */
 import { formatDate } from '../../../utils/format'
-import type { DomainReminderItem } from '../../../types/models'
+import type { DomainReminderItem } from '../../../types/domain'
 
 defineProps<{
   /** List of domain reminder history entries. */

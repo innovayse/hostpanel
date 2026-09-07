@@ -11,7 +11,7 @@ import { useRouter } from 'vue-router'
 import draggable from 'vuedraggable'
 import { useSlidesStore } from '../stores/slidesStore'
 import UiConfirmModal from '@/components/ui/UiConfirmModal.vue'
-import type { Slide } from '@/types/models'
+import type { Slide } from '@/types/slide'
 
 const router = useRouter()
 const store = useSlidesStore()

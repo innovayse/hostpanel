@@ -16,8 +16,10 @@
 
 /** Sizes an installable PWA is expected to declare, and the file each maps to. */
 const MANIFEST_ICON_SIZES = [
-  { file: 'android-chrome-192x192.png', sizes: '192x192' },
-  { file: 'android-chrome-512x512.png', sizes: '512x512' },
+  { file: 'icon-192.png', sizes: '192x192', purpose: 'any' },
+  { file: 'icon-512.png', sizes: '512x512', purpose: 'any' },
+  { file: 'icon-maskable-192.png', sizes: '192x192', purpose: 'maskable' },
+  { file: 'icon-maskable-512.png', sizes: '512x512', purpose: 'maskable' },
 ] as const
 
 /**
@@ -50,11 +52,13 @@ export default defineEventHandler(async (event) => {
         src: `${favicon.slice(0, favicon.lastIndexOf('/') + 1)}${icon.file}`,
         sizes: icon.sizes,
         type: 'image/png',
+        purpose: icon.purpose,
       }))
     : MANIFEST_ICON_SIZES.map(icon => ({
         src: `/${icon.file}`,
         sizes: icon.sizes,
         type: 'image/png',
+        purpose: icon.purpose,
       }))
 
   setResponseHeaders(event, {

@@ -1,7 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import type { Ticket, TicketListItem, Department, PagedResult, SupportOverviewStats } from '../../../types/models'
+import type { PagedResult } from '../../../types/pagedresult'
+import type { Department } from '../../../types/department'
+import type { SupportOverviewStats } from '../../../types/supportoverviewstats'
+import type { Ticket, TicketListItem } from '../../../types/ticket'
 
 /**
  * Pinia store for the global Support module.

@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import type { DomainRegistration, DomainDetail, PagedResult } from '../../../types/models'
+import type { PagedResult } from '../../../types/pagedresult'
+import type { DomainDetail, DomainRegistration } from '../../../types/domain'
 
 /**
  * Pinia store for admin domains management.

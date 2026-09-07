@@ -16,7 +16,7 @@ import UiToggleSwitch from '@/components/ui/UiToggleSwitch.vue'
 import { Icon } from '@iconify/vue'
 import { VueDatePicker } from '@vuepic/vue-datepicker'
 import '@vuepic/vue-datepicker/dist/main.css'
-import type { CreateSlidePayload, SlideTranslation, UpdateSlidePayload } from '@/types/models'
+import type { CreateSlidePayload, SlideTranslation, UpdateSlidePayload } from '@/types/slide'
 
 const route = useRoute()
 const router = useRouter()

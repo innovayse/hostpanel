@@ -2,8 +2,29 @@
 <html lang="">
   <head>
     <meta charset="UTF-8">
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <!--
+      The built-in mark, shown until the branding settings load and useFavicon swaps these
+      for the operator's own. A tab needs an icon before any JavaScript runs, so these stay
+      even though a configured deployment replaces them a moment later.
+
+      Same eight file names every product in the workspace ships; see brand/README.md.
+      Generated from brand/hostpanel.svg -- never edit them by hand.
+    -->
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <!--
+      Without the manifest Android ignores the 192/512 pair entirely, and the maskable
+      variants have nothing to declare them.
+
+      This href is absolute so Vite rewrites it to the deployment base. A relative one would
+      resolve against whatever route the SPA was deep-linked to — fine at /admin/, a 404 at
+      /admin/settings/system. The icon paths *inside* the manifest stay relative for the
+      mirror-image reason: Vite does not rewrite a static JSON file, and they resolve against
+      the manifest's own URL, which is already base-correct.
+    -->
+    <link rel="manifest" href="/site.webmanifest">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Innovayse Admin</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">

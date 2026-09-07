@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import type { CancellationRequestItem, PagedResult } from '../../../types/models'
+import type { PagedResult } from '../../../types/pagedresult'
+import type { CancellationRequestItem } from '../../../types/service'
 
 /**
  * Pinia store for admin cancellation requests management.

@@ -13,7 +13,7 @@
  */
 import { onMounted, ref } from 'vue'
 import { useApi } from '@/composables/useApi'
-import type { Product } from '@/types/models'
+import type { Product } from '@/types/product'
 
 /** One specification line as the API returns it. */
 interface ProductFeature {

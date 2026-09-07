@@ -41,22 +41,32 @@ public sealed class ImageSharpBrandingImageProcessor(IOptions<BrandingOptions> o
     : IBrandingImageProcessor
 {
     /// <summary>
-    /// The square icon set generated from a favicon upload, with the role each is linked as.
+    /// The square icon set generated from a favicon upload: the file name each rendition is
+    /// stored under, its edge in pixels, and what links it.
     /// </summary>
     /// <remarks>
-    /// 16 and 32 are the browser tab and the bookmark bar; 48 is what Windows uses for a pinned
-    /// site; 180 is the current iOS home-screen size and the only one Safari reads; 192 and 512
-    /// are the two the web app manifest specification requires an installable PWA to declare,
-    /// and Android picks between them.
+    /// <para>
+    /// The names are the workspace's, not this feature's -- every product's static root carries
+    /// the same eight file names, and `innovayse-workspace/brand/README.md` is where that list
+    /// is written down. An upload has to produce exactly those names, because the pages that
+    /// link them are the same pages that link the committed defaults.
+    /// </para>
+    /// <para>
+    /// 16 and 32 are the browser tab and the bookmark bar; 180 is the current iOS home-screen
+    /// size and the only one Safari reads; 192 and 512 are the two the web app manifest
+    /// specification requires an installable PWA to declare, once as <c>any</c> and again as
+    /// <c>maskable</c>.
+    /// </para>
     /// </remarks>
-    private static readonly (int Size, BrandingRole Role)[] _faviconSet =
+    private static readonly (string File, int Size, BrandingRole Role)[] _faviconSet =
     [
-        (16, BrandingRole.Icon),
-        (32, BrandingRole.Icon),
-        (48, BrandingRole.Icon),
-        (180, BrandingRole.AppleTouch),
-        (192, BrandingRole.Android),
-        (512, BrandingRole.Android),
+        ("favicon-16x16.png", 16, BrandingRole.Icon),
+        ("favicon-32x32.png", 32, BrandingRole.Icon),
+        ("apple-touch-icon.png", 180, BrandingRole.AppleTouch),
+        ("icon-192.png", 192, BrandingRole.Android),
+        ("icon-512.png", 512, BrandingRole.Android),
+        ("icon-maskable-192.png", 192, BrandingRole.Maskable),
+        ("icon-maskable-512.png", 512, BrandingRole.Maskable),
     ];
 
     /// <summary>
@@ -169,24 +179,22 @@ public sealed class ImageSharpBrandingImageProcessor(IOptions<BrandingOptions> o
     {
         var renditions = new List<BrandingRendition>(_faviconSet.Length + 1);
 
-        // The primary is the largest icon rather than the upload as it arrived: it is what a
-        // browser with no size preference picks, and it has to be square like the rest of the set.
-        var largest = _faviconSet.Max(f => f.Size);
+        // The primary is the largest ordinary icon rather than the upload as it arrived: it is
+        // what a browser with no size preference picks, and it has to be square like the rest.
+        // Named favicon.png, not favicon.ico -- this process encodes PNG, and every surface that
+        // links the uploaded set links it by this name.
+        var largest = _faviconSet.Where(f => f.Role != BrandingRole.Maskable).Max(f => f.Size);
         renditions.Add(new BrandingRendition(
             "favicon.png", EncodeSquare(source, largest), "image/png", largest, BrandingRole.Primary));
 
-        foreach (var (size, role) in _faviconSet)
+        foreach (var (file, size, role) in _faviconSet)
         {
-            var name = role switch
-            {
-                BrandingRole.AppleTouch => "apple-touch-icon.png",
-                BrandingRole.Android => $"android-chrome-{size}x{size}.png",
-                _ => $"favicon-{size}x{size}.png",
-            };
+            var bytes = role == BrandingRole.Maskable
+                ? EncodeMaskable(source, size)
+                : EncodeSquare(source, size);
 
-            renditions.Add(new BrandingRendition(name, EncodeSquare(source, size), "image/png", size, role));
+            renditions.Add(new BrandingRendition(file, bytes, "image/png", size, role));
         }
-
         return renditions;
     }
 
@@ -244,6 +252,48 @@ public sealed class ImageSharpBrandingImageProcessor(IOptions<BrandingOptions> o
         }));
 
         return Encode(square);
+    }
+
+    /// <summary>
+    /// Renders the maskable variant: the upload held at 70% on a full-bleed square.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Android crops an adaptive icon to whatever silhouette the launcher chooses and
+    /// guarantees only the inner 80%. The ordinary rendition cannot be reused: its transparent
+    /// margin would be cropped into a smaller, lopsided square. So the canvas is filled edge to
+    /// edge and the artwork sits well inside the safe circle -- the same 70% the workspace's
+    /// hand-drawn maskable marks use, in `brand/maskable/`.
+    /// </para>
+    /// <para>
+    /// The field is taken from the upload's own top-left pixel rather than a colour chosen
+    /// here. An operator's mark usually sits on its own tile, and sampling it keeps the padded
+    /// area continuous with the artwork instead of introducing a colour the brand never had. A
+    /// fully transparent corner falls back to white, because a maskable icon may not be
+    /// transparent: the launcher would fill the crop with whatever it liked.
+    /// </para>
+    /// </remarks>
+    /// <param name="source">The decoded upload.</param>
+    /// <param name="edge">Edge length of the output square, in pixels.</param>
+    /// <returns>PNG bytes.</returns>
+    private static byte[] EncodeMaskable(Image<Rgba32> source, int edge)
+    {
+        var corner = source[0, 0];
+        var field = corner.A == 0 ? Color.White : new Color(corner);
+        var inner = (int)Math.Round(edge * 0.7);
+
+        using var canvas = new Image<Rgba32>(edge, edge, field.ToPixel<Rgba32>());
+        using var art = source.Clone(ctx => ctx.Resize(new ResizeOptions
+        {
+            Size = new Size(inner, inner),
+            Mode = ResizeMode.Pad,
+            PadColor = Color.Transparent,
+        }));
+
+        var offset = (edge - inner) / 2;
+        canvas.Mutate(ctx => ctx.DrawImage(art, new Point(offset, offset), 1f));
+
+        return Encode(canvas);
     }
 
     /// <summary>Encodes an image as PNG.</summary>

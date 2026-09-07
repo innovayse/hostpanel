@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import type { OrderListItem, OrderDetail, PagedResult } from '../../../types/models'
+import type { PagedResult } from '../../../types/pagedresult'
+import type { OrderDetail, OrderListItem } from '../../../types/order'
 
 /**
  * Pinia store for admin order management.

@@ -8,7 +8,7 @@ import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
 import type { UserDetail } from '../stores/usersStore'
-import { PERMISSION_LABELS, ClientPermission } from '../../../types/models'
+import { ClientPermission, PERMISSION_LABELS } from '../../../types/clientuser'
 import { LANGUAGE_OPTIONS } from '../../../utils/constants'
 
 const props = defineProps<{

@@ -9,7 +9,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useSettingsStore } from '../stores/settingsStore'
 import ProductFormModal from '../components/ProductFormModal.vue'
 import ProductFeaturesModal from '../components/ProductFeaturesModal.vue'
-import type { Product, CreateProductPayload } from '@/types/models'
+import type { CreateProductPayload, Product } from '@/types/product'
 
 const store = useSettingsStore()
 

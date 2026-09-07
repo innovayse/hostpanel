@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import type { ActivityLog } from '../../../types/models'
+import type { ActivityLog } from '../../../types/activitylog'
 
 /**
  * Manages activity log state for the client Log page.

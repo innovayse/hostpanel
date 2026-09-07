@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import type { ServiceListItem, PagedResult } from '../../../types/models'
+import type { PagedResult } from '../../../types/pagedresult'
+import type { ServiceListItem } from '../../../types/service'
 
 /**
  * Pinia store for admin services management.

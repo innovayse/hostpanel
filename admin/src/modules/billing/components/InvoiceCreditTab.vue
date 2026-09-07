@@ -11,7 +11,7 @@ import { formatDate } from '../../../utils/format'
 import UiNumberInput from '../../../components/ui/UiNumberInput.vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
-import type { Invoice } from '../../../types/models'
+import type { Invoice } from '../../../types/invoice'
 
 const props = defineProps<{
   /** The invoice to manage credit for. */

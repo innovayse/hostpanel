@@ -7,7 +7,8 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useApi } from '../../../composables/useApi'
 import UiNumberInput from '../../../components/ui/UiNumberInput.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
-import type { ServiceListItem, PagedResult } from '../../../types/models'
+import type { PagedResult } from '../../../types/pagedresult'
+import type { ServiceListItem } from '../../../types/service'
 
 const props = defineProps<{
   /** Client ID for fetching services. */

@@ -1,13 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import type {
-  ClientSummaryData,
-  ServiceListItem,
-  DomainRegistration,
-  QuoteListItem,
-  PagedResult,
-} from '../../../types/models'
+import type { QuoteListItem } from '../../../types/quote'
+import type { ClientSummaryData } from '../../../types/client'
+import type { PagedResult } from '../../../types/pagedresult'
+import type { DomainRegistration } from '../../../types/domain'
+import type { ServiceListItem } from '../../../types/service'
 
 /**
  * Manages aggregated summary data for the client profile dashboard.

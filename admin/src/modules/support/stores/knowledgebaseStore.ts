@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import type { KbCategory, KbArticle } from '../../../types/models'
+import type { KbArticle, KbCategory } from '../../../types/kbarticle'
 
 /**
  * Pinia store for managing knowledge base categories and articles.

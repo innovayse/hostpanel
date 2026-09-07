@@ -6,7 +6,7 @@
  * Emits `saved` with the payload on submit, `close` on cancel.
  */
 import { ref, computed, onMounted, watch } from 'vue'
-import type { AdminCreateClientPayload } from '../../../types/models'
+import type { AdminCreateClientPayload } from '../../../types/admincreateclientpayload'
 import { useClientsStore } from '../stores/clientsStore'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 

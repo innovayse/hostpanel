@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import type { Invoice, InvoiceItem, PagedResult } from '../../../types/models'
+import type { Invoice, InvoiceItem } from '../../../types/invoice'
+import type { PagedResult } from '../../../types/pagedresult'
 
 /**
  * Pinia store for admin billing/invoices management.

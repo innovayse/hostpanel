@@ -1,0 +1,14 @@
+{
+  "name": "Hostpanel Admin",
+  "short_name": "Hostpanel",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "theme_color": "#0EA5E9",
+  "background_color": "#0F172A",
+  "display": "standalone",
+  "start_url": "."
+}

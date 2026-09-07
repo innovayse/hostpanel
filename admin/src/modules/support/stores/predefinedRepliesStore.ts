@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import type { PredefinedReplyCategory, PredefinedReply } from '../../../types/models'
+import type { PredefinedReply, PredefinedReplyCategory } from '../../../types/predefinedreply'
 
 /**
  * Pinia store for managing predefined replies and their categories.

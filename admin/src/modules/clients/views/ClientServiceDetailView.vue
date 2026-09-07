@@ -13,7 +13,8 @@ import UiNumberInput from '../../../components/ui/UiNumberInput.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
 import UiToggleSwitch from '../../../components/ui/UiToggleSwitch.vue'
-import type { ServiceDetail, ServiceListItem, PagedResult } from '../../../types/models'
+import type { PagedResult } from '../../../types/pagedresult'
+import type { ServiceDetail, ServiceListItem } from '../../../types/service'
 
 const route = useRoute()
 const router = useRouter()

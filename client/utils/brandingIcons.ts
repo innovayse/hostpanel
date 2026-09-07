@@ -41,10 +41,9 @@ const UPLOADS_PREFIX = '/uploads/branding/'
 const UPLOADED_ICON_SET: readonly { file: string, rel: string, sizes?: string }[] = [
   { file: 'favicon-16x16.png', rel: 'icon', sizes: '16x16' },
   { file: 'favicon-32x32.png', rel: 'icon', sizes: '32x32' },
-  { file: 'favicon-48x48.png', rel: 'icon', sizes: '48x48' },
   { file: 'apple-touch-icon.png', rel: 'apple-touch-icon', sizes: '180x180' },
-  { file: 'android-chrome-192x192.png', rel: 'icon', sizes: '192x192' },
-  { file: 'android-chrome-512x512.png', rel: 'icon', sizes: '512x512' },
+  { file: 'icon-192.png', rel: 'icon', sizes: '192x192' },
+  { file: 'icon-512.png', rel: 'icon', sizes: '512x512' },
 ]
 
 /**
@@ -63,14 +62,12 @@ const UPLOADED_ICON_SET: readonly { file: string, rel: string, sizes?: string }[
  * seeing the built-in mark and had no way to tell why.
  */
 const BUILT_IN_ICONS: BrandingIcon[] = [
-  { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
   { rel: 'icon', href: '/favicon.ico', type: 'image/x-icon' },
   { rel: 'icon', href: '/favicon-16x16.png', type: 'image/png', sizes: '16x16' },
   { rel: 'icon', href: '/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
-  { rel: 'icon', href: '/favicon-48x48.png', type: 'image/png', sizes: '48x48' },
   { rel: 'apple-touch-icon', href: '/apple-touch-icon.png', type: 'image/png', sizes: '180x180' },
-  { rel: 'icon', href: '/android-chrome-192x192.png', type: 'image/png', sizes: '192x192' },
-  { rel: 'icon', href: '/android-chrome-512x512.png', type: 'image/png', sizes: '512x512' },
+  { rel: 'icon', href: '/icon-192.png', type: 'image/png', sizes: '192x192' },
+  { rel: 'icon', href: '/icon-512.png', type: 'image/png', sizes: '512x512' },
 ]
 
 /**

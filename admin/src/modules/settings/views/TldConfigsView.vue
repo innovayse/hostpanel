@@ -12,7 +12,7 @@ import { useRouter } from 'vue-router'
 import { useTldConfigsStore } from '../stores/tldConfigsStore'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiConfirmModal from '@/components/ui/UiConfirmModal.vue'
-import type { TldConfigListItem } from '@/types/models'
+import type { TldConfigListItem } from '@/types/tldconfig'
 
 const router = useRouter()
 const store = useTldConfigsStore()

@@ -4,7 +4,7 @@
  * Shows a two-column form with profile, address, and notification fields.
  */
 import { ref, computed, onMounted } from 'vue'
-import type { Contact } from '../../../types/models'
+import type { Contact } from '../../../types/contact'
 import { useGeoOptions } from '../../../composables/useGeoOptions'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'

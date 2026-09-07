@@ -20,6 +20,18 @@ public enum BrandingRole
     /// <summary>The iOS home-screen icon, linked as <c>rel="apple-touch-icon"</c>.</summary>
     AppleTouch = 2,
 
-    /// <summary>An Android/PWA icon, listed in the web app manifest.</summary>
+    /// <summary>An ordinary web-manifest icon, listed with <c>purpose: "any"</c>.</summary>
     Android = 3,
+
+    /// <summary>
+    /// A maskable web-manifest icon, listed with <c>purpose: "maskable"</c>.
+    /// </summary>
+    /// <remarks>
+    /// A separate drawing rather than the same one reused. Android crops an adaptive icon to
+    /// whatever shape the launcher chooses and guarantees only the inner 80%, so the maskable
+    /// variant fills its whole canvas and holds the artwork well inside that circle. The
+    /// ordinary icon cannot stand in for it -- its transparent margin would be cropped into a
+    /// smaller, lopsided square.
+    /// </remarks>
+    Maskable = 4,
 }

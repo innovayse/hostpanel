@@ -17,7 +17,7 @@ import DnsRecordsTable from '../components/DnsRecordsTable.vue'
 import EmailForwardingTable from '../components/EmailForwardingTable.vue'
 import DomainRemindersTable from '../components/DomainRemindersTable.vue'
 import DomainContactModal from '../components/DomainContactModal.vue'
-import type { DomainDetail } from '../../../types/models'
+import type { DomainDetail } from '../../../types/domain'
 
 const route = useRoute()
 const router = useRouter()

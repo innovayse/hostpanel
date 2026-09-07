@@ -10,7 +10,7 @@ import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
 import AddBillableItemModal from '../components/AddBillableItemModal.vue'
 import AddTimeBillingModal from '../components/AddTimeBillingModal.vue'
-import type { BillableItem, BillableItemsResult } from '../../../types/models'
+import type { BillableItem, BillableItemsResult } from '../../../types/billableitem'
 
 const route = useRoute()
 const { request } = useApi()

@@ -7,13 +7,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import type {
-  TldConfigListItem,
-  TldConfig,
-  CreateTldConfigPayload,
-  UpdateTldConfigPayload,
-  TldImportResult,
-} from '../../../types/models'
+import type { CreateTldConfigPayload, TldConfig, TldConfigListItem, TldImportResult, UpdateTldConfigPayload } from '../../../types/tldconfig'
 
 /** Manages TLD pricing configuration state and admin CRUD operations. */
 export const useTldConfigsStore = defineStore('tldConfigs', () => {

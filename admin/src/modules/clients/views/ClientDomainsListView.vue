@@ -8,7 +8,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useApi } from '../../../composables/useApi'
 import { DOMAIN_STATUS_STYLES } from '../../../utils/constants'
 import { formatDate } from '../../../utils/format'
-import type { DomainRegistration, PagedResult } from '../../../types/models'
+import type { PagedResult } from '../../../types/pagedresult'
+import type { DomainRegistration } from '../../../types/domain'
 
 const route = useRoute()
 const router = useRouter()

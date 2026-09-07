@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import type { DashboardStats } from '../../../types/models'
+import type { DashboardStats } from '../../../types/dashboardstats'
 
 /**
  * Pinia store for admin dashboard statistics.

@@ -139,12 +139,19 @@ public sealed class AuthController(
     /// Returns whether the current user's email is confirmed.
     /// With SSO, email confirmation is managed by the SSO service.
     /// </summary>
-    /// <returns>200 with <c>{ verified }</c>.</returns>
+    /// <returns>
+    /// 200 with <c>{ verified }</c>, where <c>verified</c> is <c>null</c> when the credential
+    /// carries no <c>email_verified</c> claim and so says nothing either way.
+    /// </returns>
     /// <remarks>
     /// The claim is read through <see cref="ICurrentRequestContext"/> rather than here. Two
     /// actions on this controller answered the same question, and each spelled the comparison
     /// out for itself — which is how one of them came to accept "true" and "True" and nothing
     /// else, silently reporting an issuer that writes "TRUE" as unverified.
+    /// <para>
+    /// Three-valued on purpose, and clients must keep it that way: prompting on anything other
+    /// than an explicit <c>false</c> nags every caller whose token simply lacks the claim.
+    /// </para>
     /// </remarks>
     [HttpGet("email-verified")]
     [Authorize]

@@ -8,7 +8,7 @@ import { useClientsStore } from '../stores/clientsStore'
 import { CONTACT_TYPE_STYLES } from '../../../utils/constants'
 import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
 import ContactFormModal from '../components/ContactFormModal.vue'
-import type { Contact } from '../../../types/models'
+import type { Contact } from '../../../types/contact'
 
 const route = useRoute()
 const store = useClientsStore()

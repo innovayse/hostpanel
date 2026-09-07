@@ -7,11 +7,22 @@
  * - lg+: full sidebar (220px), always visible
  * - Emits `navigate` on link click so the mobile drawer can close.
  */
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../../modules/auth/stores/authStore'
+import { useBrandingStore } from '../../stores/useBrandingStore'
 import { useRouter } from 'vue-router'
+
+/**
+ * The operator's logo, falling back to the built-in mark.
+ *
+ * The panel used to hardcode /logo.svg, so a white-labelled deployment showed the
+ * shipped mark through its whole back office while the storefront showed the
+ * operator's. Both surfaces read the same `portal.logo` setting now.
+ */
+const branding = useBrandingStore()
+const logoSrc = computed(() => branding.logoUrl || '/logo.svg')
 
 /** Emitted when a nav link is clicked (used to close mobile drawer). */
 const emit = defineEmits<{
@@ -198,7 +209,7 @@ function isExpanded(item: NavItem): boolean {
 
     <!-- Logo -->
     <div class="flex items-center px-5 py-[18px] border-b border-border">
-      <img src="/logo.svg" alt="Hostpanel" class="h-7 w-auto" />
+      <img :src="logoSrc" alt="" class="h-7 w-auto" />
     </div>
 
     <!-- Nav links -->

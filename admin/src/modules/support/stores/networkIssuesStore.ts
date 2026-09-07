@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import type { NetworkIssue, PagedResult } from '../../../types/models'
+import type { PagedResult } from '../../../types/pagedresult'
+import type { NetworkIssue } from '../../../types/networkissue'
 
 /**
  * Pinia store for managing network issues in the admin support module.

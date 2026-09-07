@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import type { EmailLog } from '../../../types/models'
+import type { EmailLog } from '../../../types/emaillog'
 
 /**
  * Manages email log state for a specific client profile page.

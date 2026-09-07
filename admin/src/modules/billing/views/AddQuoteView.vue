@@ -10,7 +10,7 @@ import UiPhoneInput from '../../../components/ui/UiPhoneInput.vue'
 import UiCountrySelect from '../../../components/ui/UiCountrySelect.vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import { useQuoteStore } from '../stores/quoteStore'
-import type { QuoteStage } from '../../../types/models'
+import type { QuoteStage } from '../../../types/quote'
 import { toIsoDay } from '../../../utils/format'
 import { useApi } from '../../../composables/useApi'
 

@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import type { Quote, QuoteListItem, QuoteStage, PagedResult } from '../../../types/models'
+import type { Quote, QuoteListItem, QuoteStage } from '../../../types/quote'
+import type { PagedResult } from '../../../types/pagedresult'
 
 /**
  * Pinia store for admin quote management.

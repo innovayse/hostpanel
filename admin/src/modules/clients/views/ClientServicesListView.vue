@@ -8,7 +8,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useApi } from '../../../composables/useApi'
 import { SERVICE_STATUS_STYLES } from '../../../utils/constants'
 import { formatDate } from '../../../utils/format'
-import type { ServiceListItem, PagedResult } from '../../../types/models'
+import type { PagedResult } from '../../../types/pagedresult'
+import type { ServiceListItem } from '../../../types/service'
 
 const route = useRoute()
 const router = useRouter()

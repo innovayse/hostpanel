@@ -8,7 +8,7 @@ import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '../stores/settingsStore'
 import PortalAppearanceCard from '../components/PortalAppearanceCard.vue'
 import BrandingCard from '../components/BrandingCard.vue'
-import type { Setting } from '../../../types/models'
+import type { Setting } from '../../../types/setting'
 
 const store = useSettingsStore()
 const saving = ref(false)

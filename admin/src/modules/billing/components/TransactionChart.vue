@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Transaction } from '../../../types/models'
+import type { Transaction } from '../../../types/transaction'
 import { toIsoDay } from '../../../utils/format'
 
 interface Props {

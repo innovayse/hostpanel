@@ -9,7 +9,7 @@ import { DNS_RECORD_TYPE_OPTIONS } from '../../../utils/constants'
 import UiNumberInput from '../../../components/ui/UiNumberInput.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
-import type { DnsRecordItem } from '../../../types/models'
+import type { DnsRecordItem } from '../../../types/domain'
 
 const props = defineProps<{
   /** Domain ID to manage DNS records for. */

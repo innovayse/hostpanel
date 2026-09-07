@@ -7,7 +7,7 @@ import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
 import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
 import UiToggleSwitch from '../../../components/ui/UiToggleSwitch.vue'
-import type { EmailForwardingRuleItem } from '../../../types/models'
+import type { EmailForwardingRuleItem } from '../../../types/domain'
 
 const props = defineProps<{
   /** Domain ID to manage email forwarding for. */

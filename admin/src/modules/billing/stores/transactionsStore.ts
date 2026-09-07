@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, reactive } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import type { Transaction, TransactionsResult } from '../../../types/models'
+import type { Transaction, TransactionsResult } from '../../../types/transaction'
 
 export const useTransactionsStore = defineStore('billing-transactions', () => {
   const { request } = useApi()

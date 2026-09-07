@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
-import type { PagedResult } from '../../../types/models'
+import type { PagedResult } from '../../../types/pagedresult'
 
 /** Summary DTO for user list rows. */
 export interface UserListItem {

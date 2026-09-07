@@ -10,7 +10,7 @@
  */
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { Setting } from '../../../types/models'
+import type { Setting } from '../../../types/setting'
 
 const props = defineProps<{
   /** All system settings, as loaded from the backend. */

@@ -15,7 +15,7 @@ import { useTldConfigsStore } from '../stores/tldConfigsStore'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiSpinner from '@/components/ui/UiSpinner.vue'
 import UiToggleSwitch from '@/components/ui/UiToggleSwitch.vue'
-import type { CreateTldConfigPayload, UpdateTldConfigPayload } from '@/types/models'
+import type { CreateTldConfigPayload, UpdateTldConfigPayload } from '@/types/tldconfig'
 
 const route = useRoute()
 const router = useRouter()

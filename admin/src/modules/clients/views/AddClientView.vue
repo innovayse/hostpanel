@@ -7,7 +7,7 @@
  */
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import type { AdminCreateClientPayload } from '../../../types/models'
+import type { AdminCreateClientPayload } from '../../../types/admincreateclientpayload'
 import { useClientsStore } from '../stores/clientsStore'
 import { CLIENT_STATUS_OPTIONS, LANGUAGE_OPTIONS } from '../../../utils/constants'
 import { useGeoOptions } from '../../../composables/useGeoOptions'

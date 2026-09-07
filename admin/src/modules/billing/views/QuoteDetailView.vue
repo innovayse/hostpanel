@@ -13,7 +13,7 @@ import UiNumberInput from '../../../components/ui/UiNumberInput.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import UiConfirmModal from '../../../components/ui/UiConfirmModal.vue'
-import type { QuoteStage } from '../../../types/models'
+import type { QuoteStage } from '../../../types/quote'
 
 const route = useRoute()
 const router = useRouter()

@@ -160,14 +160,15 @@ public sealed class HttpCurrentRequestContextTests
     }
 
     [Fact]
-    public void IsEmailVerified_WhenTheClaimIsAbsent_IsFalse()
+    public void IsEmailVerified_WhenTheClaimIsAbsent_IsNull()
     {
-        // An issuer that says nothing about the address has not confirmed it. Treating
-        // silence as confirmation is how an unverified account walks through a gate that
-        // exists to stop it.
+        // Silence is not a "no". The claim only travels when the OIDC `email` scope was
+        // granted, so a client that does not ask for that scope gets no claim at all — and
+        // reading that as "unverified" reported confirmed accounts as unconfirmed. Callers
+        // get null and decide what to do about not knowing.
         var (context, _) = Build(new Claim("sub", Subject));
 
-        context.IsEmailVerified.Should().BeFalse();
+        context.IsEmailVerified.Should().BeNull();
     }
 
     [Fact]

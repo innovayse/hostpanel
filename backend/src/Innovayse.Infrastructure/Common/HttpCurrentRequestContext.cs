@@ -90,11 +90,23 @@ public sealed class HttpCurrentRequestContext(
         User?.FindFirstValue(ClaimTypes.Email) ?? User?.FindFirstValue("email");
 
     /// <inheritdoc/>
-    public bool IsEmailVerified =>
-        // Anything other than a literal "true" is not a confirmation, a missing claim
-        // included. The claim arrives as a JSON boolean rendered into a string, so the
-        // comparison is against the text and case-insensitive rather than parsed.
-        string.Equals(User?.FindFirstValue("email_verified"), "true", StringComparison.OrdinalIgnoreCase);
+    public bool? IsEmailVerified
+    {
+        get
+        {
+            // A claim that is not there is not an answer. It used to be read as "unverified",
+            // which made every session whose token lacks the claim look like an unconfirmed
+            // account — and the claim only travels when the OIDC `email` scope was granted, so
+            // that was the normal case for a client on an older auth package, not an edge one.
+            var claim = User?.FindFirstValue("email_verified");
+            if (string.IsNullOrEmpty(claim)) return null;
+
+            // Present, so it is an answer either way. The claim arrives as a JSON boolean
+            // rendered into a string, hence a case-insensitive text comparison rather than a
+            // parse: "true", "True" and "TRUE" are the same issuer saying the same thing.
+            return string.Equals(claim, "true", StringComparison.OrdinalIgnoreCase);
+        }
+    }
 
     /// <inheritdoc/>
     public string? IpAddress =>

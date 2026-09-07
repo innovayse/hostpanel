@@ -50,6 +50,12 @@ const UPLOADED_ICON_SET: readonly { file: string, rel: string, sizes?: string }[
 /**
  * The icons a fresh install serves, straight out of `public/`.
  *
+ * All eight exist on disk. Until recently only the two favicons did, while `nuxt.config`
+ * still advertised `/apple-touch-icon.png` and the web manifest still listed both
+ * `android-chrome-*.png` -- so every install shipped an iOS icon and a PWA install prompt
+ * pointing at 404s. The six PNGs were rasterised from `favicon.svg`, which is why they
+ * match the mark exactly; regenerate them from it if the mark ever changes.
+ *
  * These used to live in `nuxt.config.ts`. They were moved here because two places emitting
  * `<link rel="icon">` is one too many: unhead only dedupes link tags that carry a matching
  * explicit key, so a static tag in the config and an uploaded one from `app.vue` both survive
@@ -59,6 +65,12 @@ const UPLOADED_ICON_SET: readonly { file: string, rel: string, sizes?: string }[
 const BUILT_IN_ICONS: BrandingIcon[] = [
   { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
   { rel: 'icon', href: '/favicon.ico', type: 'image/x-icon' },
+  { rel: 'icon', href: '/favicon-16x16.png', type: 'image/png', sizes: '16x16' },
+  { rel: 'icon', href: '/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
+  { rel: 'icon', href: '/favicon-48x48.png', type: 'image/png', sizes: '48x48' },
+  { rel: 'apple-touch-icon', href: '/apple-touch-icon.png', type: 'image/png', sizes: '180x180' },
+  { rel: 'icon', href: '/android-chrome-192x192.png', type: 'image/png', sizes: '192x192' },
+  { rel: 'icon', href: '/android-chrome-512x512.png', type: 'image/png', sizes: '512x512' },
 ]
 
 /**

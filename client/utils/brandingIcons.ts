@@ -71,13 +71,23 @@ const BUILT_IN_ICONS: BrandingIcon[] = [
 ]
 
 /**
- * Whether a favicon URL points at a file this deployment generated the set for.
+ * Whether a favicon URL points at a file this deployment generated the whole set for.
+ *
+ * The prefix alone is not enough. Uploads made before the icon generator existed sit flat in
+ * the uploads root (`/uploads/branding/favicon-<guid>.png`), and the generated ones sit one
+ * directory down (`/uploads/branding/<kind>/<id>/<file>`). Only the second kind has siblings,
+ * so accepting the first put five invented links into the page head that every browser then
+ * fetched and got a 404 for — observed in production.
  *
  * @param url The stored `portal.favicon` value.
- * @returns True when the URL is one of our own uploads.
+ * @returns True when the URL names a file inside a generated icon directory.
  */
-export const isUploadedBranding = (url: string): boolean =>
-  url.startsWith(UPLOADS_PREFIX)
+export const isUploadedBranding = (url: string): boolean => {
+  if (!url.startsWith(UPLOADS_PREFIX)) return false
+
+  // kind/id/file is three segments; a legacy flat upload is one.
+  return url.slice(UPLOADS_PREFIX.length).split('/').length >= 3
+}
 
 /**
  * Builds the icon links for a stored favicon URL.

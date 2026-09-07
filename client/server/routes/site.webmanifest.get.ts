@@ -43,11 +43,19 @@ export default defineEventHandler(async (event) => {
 
   const favicon = (settings['portal.favicon'] ?? '').trim()
 
-  // An upload has its generated set in its own directory; anything else -- nothing set, or a
-  // URL the operator pasted -- falls back to the committed set in `public/`. Both are real
-  // files, so the manifest never promises an icon that 404s. Sibling names are only guessed
-  // inside an upload directory, where this process wrote them and knows they are there.
-  const icons = favicon.startsWith(UPLOADS_PREFIX)
+  // An upload has its generated set in its own directory; anything else -- nothing set, a URL
+  // the operator pasted, or an upload from before the generator existed -- falls back to the
+  // committed set in `public/`. Both are real files, so the manifest never promises an icon
+  // that 404s. Sibling names are only guessed inside a generated directory, where this process
+  // wrote them and knows they are there.
+  //
+  // The depth check is the whole point: a pre-generator upload sits flat in the uploads root
+  // and matches the prefix while having no siblings at all. Testing the prefix by itself put
+  // four dead icon URLs into the production manifest.
+  const isGeneratedSet = favicon.startsWith(UPLOADS_PREFIX)
+    && favicon.slice(UPLOADS_PREFIX.length).split('/').length >= 3
+
+  const icons = isGeneratedSet
     ? MANIFEST_ICON_SIZES.map(icon => ({
         src: `${favicon.slice(0, favicon.lastIndexOf('/') + 1)}${icon.file}`,
         sizes: icon.sizes,

@@ -118,18 +118,15 @@ belongs to the API's environment instead.
 
 ### Contact Form Delivery — Email And Telegram
 
-**Neither is configured here.** The contact form posts to the C# backend, which sends the mail
-through the one SMTP relay this platform configures and posts the enquiry to Telegram itself — so
-the relay credentials and the bot token live in the API's environment and nowhere else. This app
-held both until they moved; putting either back would give a secret a second container to leak
-from, and the platform a second client of the same service.
+**Neither is configured here.** The contact form posts to the API, which sends the mail and
+posts to Telegram. The credentials belong in the API's environment only.
 
 Set them in the repository root's `.env`:
 
 ```env
 SMTP_HOST=smtp.example.com
 SMTP_PORT=587
-SMTP_USER=your-email@example.com
+SMTP_USERNAME=your-email@example.com
 SMTP_PASSWORD=your-password
 # Where contact-form enquiries are delivered (Notifications__ContactEmail on the API).
 EMAIL_TO=contact@yourdomain.com

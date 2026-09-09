@@ -93,14 +93,23 @@ Copy `.env.example` to `.env` and fill in the values:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
+| `POSTGRES_HOST` | PostgreSQL host the API connects to | `hostpanel-db` |
+| `POSTGRES_PORT` | PostgreSQL port | `5432` |
 | `POSTGRES_USER` | PostgreSQL username | `postgres` |
 | `POSTGRES_PASSWORD` | PostgreSQL password | `postgres` |
 | `POSTGRES_DB` | Database name | `innovayse_dev` |
 | `JWT_SECRET` | JWT signing key (min 32 chars) | **change this** |
+| `RABBITMQ_HOST` | Broker host the API connects to | `rabbitmq` |
+| `RABBITMQ_PORT` | Broker AMQP port | `5672` |
 | `RABBITMQ_USER` | RabbitMQ username | `guest` |
 | `RABBITMQ_PASSWORD` | RabbitMQ password | `guest` |
 | `SMTP_HOST` | SMTP server host | `mailhog` |
 | `SMTP_PORT` | SMTP server port | `1025` |
+| `SMTP_USERNAME` | SMTP username; empty for a local catcher, which refuses `AUTH` | *(empty)* |
+| `SMTP_PASSWORD` | SMTP password | *(empty)* |
+| `SMTP_ENCRYPTION` | `tls` (STARTTLS, 587), `ssl` (implicit TLS, 465) or `none`. **Required** — the API refuses to start without it rather than guess from the port | `none` |
+| `SMTP_FROM` | Sender address on outgoing mail | `noreply@innovayse.com` |
+| `SMTP_FROM_NAME` | Sender display name | `Innovayse` |
 
 For the client portal, copy `client/.env.example` to `client/.env`.
 

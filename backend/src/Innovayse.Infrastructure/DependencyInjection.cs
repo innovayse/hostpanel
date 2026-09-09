@@ -466,14 +466,28 @@ public static class DependencyInjection
         services.AddScoped<Innovayse.Application.Reports.Interfaces.IDiskUsageService, Innovayse.Infrastructure.Reports.DiskUsageService>();
 
         // Notifications
-        // Bound, but deliberately not validated on start, unlike the integration options above.
-        // Every deployed tier fills the Smtp section from a different overlay and none of them
-        // fills all of it -- docker-compose.prod.yml supplies only Host, Port and Password --
-        // and no tier configures the Notifications section at all. Refusing a partly filled
-        // section here would refuse to start the production API, so a missing value surfaces
-        // where the mail is actually sent instead. See each options class's remarks.
+        // The Smtp section as a whole is still deliberately not checked for completeness here,
+        // unlike the integration options above. Every deployed tier fills it from a different
+        // overlay and none of them fills all of it, and no tier configures the Notifications
+        // section at all. Refusing a partly filled section would refuse to start the production
+        // API, so a missing host or port surfaces where the mail is actually sent instead.
+        //
+        // Encryption is the one value that cannot wait for that, which is why this registration
+        // now validates at all. It replaced a UseSsl bool that was allowed to be absent only
+        // because the port silently decided in its place; with the guess gone, an unset enum
+        // would take its zero value -- None -- and hand the relay's password to the network in
+        // the clear on a host that looks healthy. Absent is refused here, by name. A value that
+        // is not tls/ssl/none never reaches this check: the binder fails on it first, and
+        // ValidateOnStart is what drags that failure forward from the first mail send to boot.
         services.AddOptions<SmtpOptions>()
-            .Bind(configuration.GetSection(SmtpOptions.SectionName));
+            .Bind(configuration.GetSection(SmtpOptions.SectionName))
+            .Validate(
+                o => o.HasEncryption,
+                $"{SmtpOptions.SectionName}:{nameof(SmtpOptions.Encryption)} is required and must "
+                    + "be one of tls (STARTTLS, conventionally port 587), ssl (implicit TLS, "
+                    + "conventionally port 465) or none (a local mail catcher). Set "
+                    + "SMTP_ENCRYPTION in this deployment's .env.")
+            .ValidateOnStart();
         services.AddOptions<NotificationOptions>()
             .Bind(configuration.GetSection(NotificationOptions.SectionName));
         services.AddScoped<IEmailSender, MailKitEmailSender>();

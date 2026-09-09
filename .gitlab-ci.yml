@@ -139,7 +139,10 @@ stages: [test, build, deploy]
   after_script:
     - docker logout "$CI_REGISTRY" || true
   rules:
-    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "develop"
+    # Off with the job that extends this. A rule here is overridden by any job that
+    # declares its own, so this is not what stops deploy:staging -- it is what stops a
+    # job added later that forgets to.
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "develop" && $DEPLOY_STAGING == "true"
 
 # ── backend (Innovayse.API, .NET) ──────────────────────────────────────────────
 

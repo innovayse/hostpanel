@@ -125,6 +125,8 @@ POSTGRES_PASSWORD=${PG_PASS}
 POSTGRES_DB=hostpanel_prod
 
 # RabbitMQ
+RABBITMQ_HOST=rabbitmq
+RABBITMQ_PORT=5672
 RABBITMQ_USER=hostpanel
 RABBITMQ_PASSWORD=${RMQ_PASS}
 
@@ -134,10 +136,16 @@ JWT_ISSUER=innovayse-api
 JWT_AUDIENCE=innovayse-clients
 
 # SMTP (configure after install)
+# SMTP_ENCRYPTION names one of tls (STARTTLS, port 587), ssl (implicit TLS, port 465) or
+# none (a local catcher). The API refuses to start without it rather than guess from the
+# port, so it is filled in to match the 587 above and edited alongside the host.
 SMTP_HOST=
 SMTP_PORT=587
-SMTP_USER=
+SMTP_USERNAME=
 SMTP_PASSWORD=
+SMTP_ENCRYPTION=tls
+SMTP_FROM=noreply@${DOMAIN}
+SMTP_FROM_NAME=${DOMAIN}
 
 # Domains
 DOMAIN=${DOMAIN}
@@ -147,35 +155,6 @@ EOF
 chmod 600 "$INSTALL_DIR/.env"
 success ".env created"
 
-# ── Create docker-compose.server.yml ─────────────────────────────────────────
-step "Creating docker-compose.server.yml"
-
-cat > "$INSTALL_DIR/docker-compose.server.yml" <<'EOF'
-# Server overlay: exposes services on localhost ports for host nginx to proxy.
-services:
-  api:
-    ports:
-      - "127.0.0.1:5148:5148"
-
-  client:
-    ports:
-      - "127.0.0.1:3200:3000"
-    environment:
-      NUXT_API_URL: http://api:5148
-
-  admin:
-    ports:
-      - "127.0.0.1:5173:80"
-    build:
-      args:
-        VITE_BASE_URL: /admin
-
-  nginx:
-    profiles:
-      - disabled
-EOF
-
-success "docker-compose.server.yml created"
 
 # ── Fix Dockerfile for duplicate plugin.json ──────────────────────────────────
 step "Patching api.Dockerfile"
@@ -188,13 +167,16 @@ success "api.Dockerfile patched"
 step "Building Docker images (this takes ~5-10 minutes)"
 
 cd "$INSTALL_DIR"
-docker compose -f docker-compose.prod.yml -f docker-compose.server.yml --env-file .env build
+# docker-compose.server.yml ships with the repo: it disables the bundled nginx and
+# publishes the services on loopback for the host nginx to proxy.
+COMPOSE="docker compose -f docker-compose.prod.yml -f docker-compose.server.yml --env-file .env"
+$COMPOSE build
 success "Images built"
 
 # ── Start services ─────────────────────────────────────────────────────────────
 step "Starting services"
 
-docker compose -f docker-compose.prod.yml -f docker-compose.server.yml --env-file .env up -d
+$COMPOSE up -d
 info "Waiting for database to be ready..."
 sleep 10
 success "Services started"
@@ -205,10 +187,18 @@ step "Running database migrations"
 # Fix permissions for SDK container
 chmod -R 777 "$INSTALL_DIR/backend/"
 
-CONTAINER_NAME=$(docker compose -f docker-compose.prod.yml -f docker-compose.server.yml --env-file .env ps -q postgres 2>/dev/null | head -1)
 COMPOSE_PROJECT=$(basename "$INSTALL_DIR")
 NETWORK="${COMPOSE_PROJECT}_default"
-DB_CONTAINER="${COMPOSE_PROJECT}-postgres-1"
+
+# Resolved from compose, not guessed: these services declare container_name, so the
+# <project>-<service>-<index> form does not apply to them.
+DB_CONTAINER=$($COMPOSE ps -q hostpanel-db)
+API_CONTAINER=$($COMPOSE ps -q hostpanel-api)
+API_IMAGE=$($COMPOSE images -q hostpanel-api | head -1)
+
+# The address the API and the migration container dial is the service name, which is a
+# DNS alias on the compose network whatever the container ends up being called.
+DB_HOST=hostpanel-db
 
 docker run --rm \
   --network "$NETWORK" \
@@ -219,14 +209,13 @@ docker run --rm \
          export PATH=\"\$PATH:/root/.dotnet/tools\" && \
          dotnet restore Innovayse.Backend.sln -q && \
          dotnet-ef database update --project src/Innovayse.API/Innovayse.API.csproj \
-         --connection 'Host=${DB_CONTAINER};Port=5432;Database=hostpanel_prod;Username=hostpanel;Password=${PG_PASS}'" 2>&1
+         --connection 'Host=${DB_HOST};Port=5432;Database=hostpanel_prod;Username=hostpanel;Password=${PG_PASS}'" 2>&1
 
 success "Migrations applied"
 
 # ── Restart API ────────────────────────────────────────────────────────────────
 step "Restarting API"
 
-API_CONTAINER="${COMPOSE_PROJECT}-api-1"
 docker restart "$API_CONTAINER"
 sleep 8
 success "API restarted"
@@ -261,15 +250,17 @@ if [[ "$SEED_DEMO" == "y" || "$SEED_DEMO" == "Y" ]]; then
   docker run --rm \
     --name "$SEED_CONTAINER" \
     --network "$NETWORK" \
-    -e "ConnectionStrings__DefaultConnection=Host=${DB_CONTAINER};Port=5432;Database=hostpanel_prod;Username=hostpanel;Password=${PG_PASS}" \
+    -e "ConnectionStrings__DefaultConnection=Host=${DB_HOST};Port=5432;Database=hostpanel_prod;Username=hostpanel;Password=${PG_PASS}" \
     -e "ASPNETCORE_ENVIRONMENT=Development" \
     -e "Jwt__Secret=${JWT_SECRET}" \
     -e "Jwt__Issuer=innovayse-api" \
     -e "Jwt__Audience=innovayse-clients" \
-    -e "RabbitMQ__Host=${COMPOSE_PROJECT}-rabbitmq-1" \
+    -e "RabbitMQ__Host=rabbitmq" \
+    -e "RabbitMQ__Port=5672" \
     -e "RabbitMQ__User=hostpanel" \
     -e "RabbitMQ__Password=${RMQ_PASS}" \
-    "${COMPOSE_PROJECT}-api" \
+    -e "Smtp__Encryption=none" \
+    "$API_IMAGE" \
     sh -c "timeout 30 dotnet Innovayse.API.dll --urls http://0.0.0.0:5148 2>&1 | grep -E 'Seed|seeded|INF|clients' || true" &>/dev/null || true
 
   # Confirm all demo user emails

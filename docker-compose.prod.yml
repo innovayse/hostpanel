@@ -48,42 +48,33 @@ services:
         # fresh base and never re-declares the ARG, so nothing carries it.
         NuGetPackageSourceCredentials_innovayse: ${NUGET_INNOVAYSE_CREDENTIALS}
     environment:
-      # The alias, not the bare service name: several products call their database
-      # service "postgres", so on the shared network that name resolved to three
-      # addresses and connections landed in another product's database.
-      ConnectionStrings__DefaultConnection: "Host=hostpanel-db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
       # Named here rather than in docker-compose.yml because neither deploy chain
       # loads that file: staging composes prod+platform, production composes
       # prod+prodserver+platform. This overlay is the one file both have in common,
       # so it is where a deployed container can actually read the setting. The value
       # comes from the deploy job, one line per tier, not from this file.
-      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
-      Jwt__Secret: ${JWT_SECRET}
-      Jwt__Issuer: ${JWT_ISSUER}
-      Jwt__Audience: ${JWT_AUDIENCE}
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+
+      # The alias, not the bare service name: several products call their database
+      # service "postgres", so on the shared network that name resolved to three
+      # addresses and connections landed in another product's database.
+      ConnectionStrings__DefaultConnection: "Host=${POSTGRES_HOST};Port=${POSTGRES_PORT};Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+
+      Auth__RedisConnection: ${REDIS_CONNECTION}
+
+      RabbitMQ__Host: ${RABBITMQ_HOST}
+      RabbitMQ__Port: ${RABBITMQ_PORT}
+      RabbitMQ__User: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+
+      # Encryption: tls (STARTTLS), ssl (implicit TLS), or none.
       Smtp__Host: ${SMTP_HOST}
-      # No default. An unset key here means every server credential this product
-      # stores goes to the database unencrypted, so the API refuses to start instead.
-      EncryptionKey: ${ENCRYPTION_KEY:?required}
       Smtp__Port: ${SMTP_PORT}
-      # Username, not User. The options class declares Username, and configuration
-      # binds by property name — Smtp__User matched nothing and bound silently to
-      # empty, so this deployment has been authenticating with a blank user and a
-      # real password since the key was written.
-      Smtp__Username: ${SMTP_USER}
+      Smtp__Username: ${SMTP_USERNAME}
       Smtp__Password: ${SMTP_PASSWORD}
-      # The sender, and the one TLS override. All three had their only value in
-      # appsettings.json, so a deployment could not change who its mail came from without
-      # rebuilding the image — and the address baked in there is this operator's, which is
-      # the wrong default for anyone else running this product.
-      #
-      # UseSsl is an override, not the switch: MailKitEmailSender picks implicit TLS for 465
-      # and STARTTLS for 587 on its own. It is here for a relay on a non-standard port that
-      # still expects TLS from the first byte. appsettings said false while production ran on
-      # 465, which is why it is worth being able to correct from the deployment.
-      Smtp__FromEmail: ${SMTP_FROM_EMAIL:-noreply@${DOMAIN}}
-      Smtp__FromName: ${SMTP_FROM_NAME:-Innovayse}
-      Smtp__UseSsl: ${SMTP_USE_SSL:-false}
+      Smtp__Encryption: ${SMTP_ENCRYPTION}
+      Smtp__From__Address: ${SMTP_FROM}
+      Smtp__From__Name: ${SMTP_FROM_NAME}
       # The contact form's recipient. Not defaulted: an unset value here makes the API
       # refuse the submission naming this setting, rather than answer the visitor "sent"
       # and deliver nothing -- which is what the frontend did with this value for as long
@@ -94,13 +85,15 @@ services:
       # absent chat post loses nothing: the mail is the delivery. Half of a pair is refused at
       # startup instead, because a token with no chat id posts nowhere while looking configured.
       # This is where the client container's TELEGRAM_BOT_TOKEN stopped being a frontend secret.
-      Telegram__BotToken: ${TELEGRAM_BOT_TOKEN:-}
-      Telegram__ChatId: ${TELEGRAM_CHAT_ID:-}
-      RabbitMQ__Host: rabbitmq
-      RabbitMQ__User: ${RABBITMQ_USER}
-      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
-      Cors__AllowedOrigins__0: https://${DOMAIN}
-      Cors__AllowedOrigins__1: https://${ADMIN_DOMAIN}
+      Telegram__BotToken: ${TELEGRAM_BOT_TOKEN}
+      Telegram__ChatId: ${TELEGRAM_CHAT_ID}
+
+      Jwt__Secret: ${JWT_SECRET}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+      # No default. An unset key here means every server credential this product
+      # stores goes to the database unencrypted, so the API refuses to start instead.
+      EncryptionKey: ${ENCRYPTION_KEY:?required}
       # SSO is optional — only meaningful where a real SSO deployment shares
       # innovayse_network with this stack (see the `networks:` block below).
       #
@@ -110,6 +103,20 @@ services:
       # and the API takes the SSO path and refuses to start without a client secret.
       # .env.example carries `sso`; set it to `local` on a standalone box.
       Auth__Mode: ${AUTH_MODE}
+      # The cookie session for the admin SPA, read only when AUTH_MODE=sso.
+      # AddInnovayseAuth is skipped entirely under local — what a standalone box
+      # runs — so none of these have to be filled in there. Under sso all of them
+      # are required: the API refuses to start naming the missing one, rather than
+      # come up and hand every visitor an anonymous session.
+      #
+      # No :?required on the secret, unlike the other products: it would stop a
+      # local-mode host from starting over a value it never reads.
+      Auth__AppName: hostpanel
+      Auth__Authority: ${SSO_URL}
+      Auth__PublicAuthority: ${SSO_PUBLIC_URL}
+      Auth__ClientId: ${SSO_CLIENT_ID}
+      Auth__ClientSecret: ${CLIENT_HOSTPANEL_SECRET}
+
       Sso__Authority: ${SSO_URL}
       Sso__ClientId: ${SSO_CLIENT_ID}
       # How this product reads its people out of the SSO, under AUTH_MODE=sso. It is
@@ -124,20 +131,9 @@ services:
       # No :?required, for the same reason as the client secret below: a local-mode
       # host never reads it and should not be stopped over it.
       Sso__ServiceKey: ${SSO_SERVICE_KEY}
-      # The cookie session for the admin SPA, read only when AUTH_MODE=sso.
-      # AddInnovayseAuth is skipped entirely under local — what a standalone box
-      # runs — so none of these have to be filled in there. Under sso all of them
-      # are required: the API refuses to start naming the missing one, rather than
-      # come up and hand every visitor an anonymous session.
-      #
-      # No :?required on the secret, unlike the other products: it would stop a
-      # local-mode host from starting over a value it never reads.
-      Auth__AppName: hostpanel
-      Auth__Authority: ${SSO_URL}
-      Auth__PublicAuthority: ${SSO_PUBLIC_URL}
-      Auth__ClientId: ${SSO_CLIENT_ID}
-      Auth__ClientSecret: ${CLIENT_HOSTPANEL_SECRET}
-      Auth__RedisConnection: ${REDIS_CONNECTION}
+
+      Cors__AllowedOrigins__0: https://${DOMAIN}
+      Cors__AllowedOrigins__1: https://${ADMIN_DOMAIN}
     volumes:
       # Operator-uploaded branding: the logo, the favicon and the icon set generated
       # from them. These are written at runtime into the web root, which otherwise
@@ -189,27 +185,24 @@ services:
       # Public only. There is no server-side ssoPublicUrl key in runtimeConfig, so the
       # NUXT_SSO_PUBLIC_URL that used to sit here overrode nothing at all.
       NUXT_PUBLIC_SSO_PUBLIC_URL: ${SSO_PUBLIC_URL}
-      NUXT_SSO_CLIENT_ID: ${SSO_CLIENT_ID}
-      NUXT_SSO_CLIENT_SECRET: ${SSO_CLIENT_SECRET}
       NUXT_SSO_CALLBACK_URL: https://${DOMAIN}/api/portal/auth/sso/callback
-      NUXT_AUTH_MODE: ${AUTH_MODE}
       NUXT_PUBLIC_AUTH_MODE: ${AUTH_MODE}
       # Which template renders the public site, and whether its header offers the
       # apps launcher. Both were missing here, and because a production Nitro
       # build freezes runtimeConfig defaults (see the note above), the image's
       # build-time values were the only ones that could ever apply: the launcher
       # was permanently off on this tier and no .env edit could turn it on.
-      NUXT_PUBLIC_PORTAL_TEMPLATE: ${NUXT_PUBLIC_PORTAL_TEMPLATE:-aurora}
-      NUXT_PUBLIC_PORTAL_APPS_ENABLED: ${NUXT_PUBLIC_PORTAL_APPS_ENABLED:-}
+      NUXT_PUBLIC_PORTAL_TEMPLATE: ${NUXT_PUBLIC_PORTAL_TEMPLATE}
+      NUXT_PUBLIC_PORTAL_APPS_ENABLED: ${NUXT_PUBLIC_PORTAL_APPS_ENABLED}
       # Where each sibling product lives. Left unset these fall back to the
       # *.local development hostnames baked into nuxt.config.ts, so a launcher
       # switched on without them would offer links into nothing. An app with no
       # URL is dropped from the launcher rather than rendered broken.
-      NUXT_PUBLIC_TASKS_URL: ${NUXT_PUBLIC_TASKS_URL:-}
-      NUXT_PUBLIC_ERP_URL: ${NUXT_PUBLIC_ERP_URL:-}
-      NUXT_PUBLIC_SHEETS_URL: ${NUXT_PUBLIC_SHEETS_URL:-}
-      NUXT_PUBLIC_EMAIL_URL: ${NUXT_PUBLIC_EMAIL_URL:-}
-      NUXT_PUBLIC_DRIVE_URL: ${NUXT_PUBLIC_DRIVE_URL:-}
+      NUXT_PUBLIC_TASKS_URL: ${NUXT_PUBLIC_TASKS_URL}
+      NUXT_PUBLIC_ERP_URL: ${NUXT_PUBLIC_ERP_URL}
+      NUXT_PUBLIC_SHEETS_URL: ${NUXT_PUBLIC_SHEETS_URL}
+      NUXT_PUBLIC_EMAIL_URL: ${NUXT_PUBLIC_EMAIL_URL}
+      NUXT_PUBLIC_DRIVE_URL: ${NUXT_PUBLIC_DRIVE_URL}
       # Address of the WHMCS install the client area hands visitors off to -- the
       # dashboard's announcements and domain-transfer links, the saved-cards page and
       # the new-card path on invoice payment. It had no entry here at all, and the
@@ -219,12 +212,16 @@ services:
       # has to be the operator's choice, not an accident of the variable's name.
       # No trailing slash: this value is substituted verbatim, past the strip in
       # nuxt.config.ts.
-      NUXT_PUBLIC_WHMCS_URL: ${WHMCS_URL:-}
+      NUXT_PUBLIC_WHMCS_URL: ${WHMCS_URL}
       # Stripe.js's publishable key. Only docker-compose.server.yml carried it, and that
       # overlay is for a standalone VPS install -- neither CI deploy chain loads it, so
       # useStripe() logged "Stripe publishable key is not configured" and returned null
       # on stage and prod. Public by design; the secret key is the API's.
-      NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+      NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
+
+      NUXT_SSO_CLIENT_ID: ${SSO_CLIENT_ID}
+      NUXT_SSO_CLIENT_SECRET: ${SSO_CLIENT_SECRET}
+      NUXT_AUTH_MODE: ${AUTH_MODE}
     depends_on:
       - hostpanel-api
     restart: unless-stopped

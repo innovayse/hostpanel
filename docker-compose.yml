@@ -131,69 +131,52 @@ services:
       # can reach this socket can do anything the daemon can.
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      # Testcontainers starts sibling containers on the host, not children of this one,
-      # so the address it hands the test is a host port. "localhost" from in here is
-      # this container; host.docker.internal is the machine the daemon runs on.
-      TESTCONTAINERS_HOST_OVERRIDE: host.docker.internal
-      # The alias, not the bare service name: on the shared platform network several
-      # products' database services are all called "postgres", so the name resolved to
-      # more than one address and connections landed in another product's database.
-      ConnectionStrings__DefaultConnection: "Host=hostpanel-db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
       # Development on a laptop, Staging on the stage host, Production on the prod one.
       # It was pinned to Development here, which meant a deployed host served developer
       # exception pages and re-ran the test-data seeder on every restart.
-      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
-      Jwt__Secret: ${JWT_SECRET}
-      Jwt__Issuer: ${JWT_ISSUER}
-      Jwt__Audience: ${JWT_AUDIENCE}
-      RabbitMQ__Host: rabbitmq
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+      DOTNET_USE_POLLING_FILE_WATCHER: 1
+      DOTNET_NUGET_SIGNATURE_VERIFICATION: "false"
+
+      # The alias, not the bare service name: on the shared platform network several
+      # products' database services are all called "postgres", so the name resolved to
+      # more than one address and connections landed in another product's database.
+      ConnectionStrings__DefaultConnection: "Host=${POSTGRES_HOST};Port=${POSTGRES_PORT};Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+
+      Auth__RedisConnection: ${REDIS_CONNECTION}
+
+      RabbitMQ__Host: ${RABBITMQ_HOST}
+      RabbitMQ__Port: ${RABBITMQ_PORT}
       RabbitMQ__User: ${RABBITMQ_USER}
       RabbitMQ__Password: ${RABBITMQ_PASSWORD}
-      Cors__AllowedOrigins__0: http://localhost:3001
-      Cors__AllowedOrigins__1: http://localhost:5174
-      Cors__AllowedOrigins__2: http://panel.local
-      Cors__AllowedOrigins__3: https://stage-panel.innovayse.com
-      Smtp__Host: mailhog
-      Smtp__Port: 1025
-      Smtp__Username: ""
-      Smtp__Password: ""
-      Smtp__FromEmail: noreply@innovayse.com
-      Smtp__FromName: Innovayse
-      Smtp__UseSsl: "false"
+
+      Smtp__Host: ${SMTP_HOST}
+      Smtp__Port: ${SMTP_PORT}
+      Smtp__Username: ${SMTP_USERNAME}
+      Smtp__Password: ${SMTP_PASSWORD}
+      Smtp__From__Address: ${SMTP_FROM}
+      Smtp__From__Name: ${SMTP_FROM_NAME}
+      Smtp__Encryption: ${SMTP_ENCRYPTION}
       # Where the public site's contact form delivers. It used to be EMAIL_TO on the
       # client container, next to a second copy of the relay credentials; the mail is sent
       # here now. A literal default is safe on this file only -- neither deploy chain loads
       # docker-compose.yml, and everything it sends goes to the mailhog catcher above.
-      Notifications__ContactEmail: ${EMAIL_TO:-contact@innovayse.com}
+      Notifications__ContactEmail: ${EMAIL_TO}
       # The chat the same enquiry is announced on. Optional, and defaulted to empty rather than
       # to a value: with both unset the API posts nowhere and says so in its log, which is the
       # right behaviour on a laptop. These two were the client container's TELEGRAM_BOT_TOKEN and
       # TELEGRAM_CHAT_ID; the post is made here now, so the token is not in a browser-facing app.
-      Telegram__BotToken: ${TELEGRAM_BOT_TOKEN:-}
-      Telegram__ChatId: ${TELEGRAM_CHAT_ID:-}
+      Telegram__BotToken: ${TELEGRAM_BOT_TOKEN}
+      Telegram__ChatId: ${TELEGRAM_CHAT_ID}
+
+      Jwt__Secret: ${JWT_SECRET}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
       # Required outside Development: without it the EF configurations silently drop
       # their encrypted-column converters and server passwords, API tokens and access
       # hashes are written to the database in plain text. .env.example carries a real
       # 32-byte key so a fresh clone exercises the same code path production does.
       EncryptionKey: ${ENCRYPTION_KEY}
-      DOTNET_USE_POLLING_FILE_WATCHER: 1
-      DOTNET_NUGET_SIGNATURE_VERIFICATION: "false"
-      NUGET_AUDIT: "false"
-      # Restoring Innovayse.Auth needs a credential for the private registry, and
-      # this API restores at container start rather than at image build — it runs
-      # `dotnet watch`. CI passes the same value as a build-arg for the products
-      # whose images are built in the pipeline; this is the equivalent for a host
-      # that builds in place. A deploy token scoped to read_package_registry, never
-      # a personal one: it can read packages and do nothing else.
-      NuGetPackageSourceCredentials_innovayse: ${NUGET_INNOVAYSE_CREDENTIALS}
-      Sso__Authority: http://sso-api:8080
-      Sso__ClientId: hostpanel
-      # How this product reads its people out of the SSO, under AUTH_MODE=sso. The
-      # SSO gates /api/service/* on it and answers 401 without it, so an unset value
-      # makes every account lookup fail — loudly, by design, rather than by reporting
-      # live customers as missing. Must equal innovayse-sso's SERVICE_AUTH_API_KEY,
-      # which is what SERVICE_AUTH_API_KEY feeds there.
-      Sso__ServiceKey: ${SSO_SERVICE_KEY}
       # The cookie session for the admin SPA. Read only when the mode is sso —
       # AddInnovayseAuth is skipped entirely under local, which is what keeps this
       # product deployable on its own with no SSO anywhere. Under sso all of them
@@ -211,7 +194,33 @@ services:
       # required variable here would stop a standalone box from starting at all.
       # Under sso an empty value fails at startup by name instead.
       Auth__ClientSecret: ${CLIENT_HOSTPANEL_SECRET}
-      Auth__RedisConnection: ${REDIS_CONNECTION}
+
+      Sso__Authority: http://sso-api:8080
+      Sso__ClientId: hostpanel
+      # How this product reads its people out of the SSO, under AUTH_MODE=sso. The
+      # SSO gates /api/service/* on it and answers 401 without it, so an unset value
+      # makes every account lookup fail — loudly, by design, rather than by reporting
+      # live customers as missing. Must equal innovayse-sso's SERVICE_AUTH_API_KEY,
+      # which is what SERVICE_AUTH_API_KEY feeds there.
+      Sso__ServiceKey: ${SSO_SERVICE_KEY}
+
+      Cors__AllowedOrigins__0: http://localhost:3001
+      Cors__AllowedOrigins__1: http://localhost:5174
+      Cors__AllowedOrigins__2: http://panel.local
+      Cors__AllowedOrigins__3: https://stage-panel.innovayse.com
+
+      # Testcontainers starts sibling containers on the host, not children of this one,
+      # so the address it hands the test is a host port. "localhost" from in here is
+      # this container; host.docker.internal is the machine the daemon runs on.
+      TESTCONTAINERS_HOST_OVERRIDE: host.docker.internal
+      NUGET_AUDIT: "false"
+      # Restoring Innovayse.Auth needs a credential for the private registry, and
+      # this API restores at container start rather than at image build — it runs
+      # `dotnet watch`. CI passes the same value as a build-arg for the products
+      # whose images are built in the pipeline; this is the equivalent for a host
+      # that builds in place. A deploy token scoped to read_package_registry, never
+      # a personal one: it can read packages and do nothing else.
+      NuGetPackageSourceCredentials_innovayse: ${NUGET_INNOVAYSE_CREDENTIALS}
       BackchannelLogout__Key: ${HOSTPANEL_BACKCHANNEL_LOGOUT_KEY}
     healthcheck:
       # wget, not curl: neither aspnet image ships curl. --spider makes it a HEAD-like
@@ -265,6 +274,14 @@ services:
       - client_nuxt:/app/.nuxt
       - client_output:/app/.output
     environment:
+      AUTH_MODE: ${AUTH_MODE}
+
+      SSO_URL: http://sso-api:8080
+      SSO_PUBLIC_URL: ${SSO_PUBLIC_URL}
+      SSO_CLIENT_ID: hostpanel
+      SSO_CLIENT_SECRET: ${SSO_CLIENT_SECRET}
+      SSO_CALLBACK_URL: ${SSO_CALLBACK_URL}
+
       # hostpanel-api, the alias declared on the api service above — not the bare
       # "api" service name, which collides with innovayse-main's own "api" on the
       # shared network and has Docker's DNS round-robin between two products'
@@ -272,25 +289,20 @@ services:
       API_URL: http://hostpanel-api:5148
       NUXT_PUBLIC_BASE_URL: ${NUXT_PUBLIC_BASE_URL}
       NUXT_PUBLIC_MAIN_URL: ${MAIN_APP_URL}
-      SSO_URL: http://sso-api:8080
-      SSO_PUBLIC_URL: ${SSO_PUBLIC_URL}
       NUXT_PUBLIC_TASKS_URL: ${NUXT_PUBLIC_TASKS_URL}
       NUXT_PUBLIC_ERP_URL: ${NUXT_PUBLIC_ERP_URL}
       NUXT_PUBLIC_SHEETS_URL: ${NUXT_PUBLIC_SHEETS_URL}
       NUXT_PUBLIC_EMAIL_URL: ${NUXT_PUBLIC_EMAIL_URL}
       NUXT_PUBLIC_DRIVE_URL: ${NUXT_PUBLIC_DRIVE_URL}
-      SSO_CLIENT_ID: hostpanel
-      SSO_CLIENT_SECRET: ${SSO_CLIENT_SECRET}
-      SSO_CALLBACK_URL: ${SSO_CALLBACK_URL}
-      STRIPE_PUBLISHABLE_KEY: pk_test_51Tc3tOEHRuUOoZmggqrvyuddpdtx6FtKaUSvqQXkwokJakOBFCLRDlX6troVkkjFw966agSmLKnu1NSlOAki6u9600PatIOktW
       # Address of the WHMCS install the client area hands visitors off to. The dev
       # target evaluates nuxt.config.ts at container start, so the source name is what
       # it reads here; the prod overlays pass the same variable under Nitro's
       # NUXT_PUBLIC_WHMCS_URL override name, because a built image cannot see this one.
       # Optional: with nothing set every WHMCS handoff link is hidden, not broken.
-      WHMCS_URL: ${WHMCS_URL:-}
-      AUTH_MODE: ${AUTH_MODE}
+      WHMCS_URL: ${WHMCS_URL}
       NUXT_MAIN_API_URL: http://main-client:3000
+
+      STRIPE_PUBLISHABLE_KEY: pk_test_51Tc3tOEHRuUOoZmggqrvyuddpdtx6FtKaUSvqQXkwokJakOBFCLRDlX6troVkkjFw966agSmLKnu1NSlOAki6u9600PatIOktW
       WATCHPACK_POLLING: "true"
       CHOKIDAR_USEPOLLING: "true"
     healthcheck:
@@ -331,6 +343,7 @@ services:
       - admin_node_modules:/app/node_modules
     environment:
       VITE_API_BASE: /api
+
       # The alias, not the bare service name: "api" is also innovayse-main's backend
       # on the shared platform network, and Docker's DNS round-robins between the two.
       API_PROXY_TARGET: http://hostpanel-api:5148

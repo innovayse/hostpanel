@@ -240,7 +240,11 @@ deploy:staging:
     ASPNETCORE_ENVIRONMENT: Staging
   environment: { name: staging/hostpanel }
   rules:
-    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "develop"
+    # Staging deploys are off: that host filled its disk and this job fails in get_sources,
+    # before the deploy script runs at all. Production is unaffected -- it deploys from main,
+    # on another host, and is manual. Set DEPLOY_STAGING=true in CI/CD variables to turn it
+    # back on; the condition below is the one this job had before, unchanged.
+    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "develop" && $DEPLOY_STAGING == "true"
   needs:
     - job: backend:build:api:prod
       optional: true

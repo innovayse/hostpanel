@@ -85,25 +85,70 @@
       "description": "Description",
       "noSettings": "No settings found."
     },
+    "siteIdentity": {
+      "title": "Site identity",
+      "description": "What the storefront calls itself. The name reaches the browser title, social previews, logo alt text and structured data; the tagline is the default meta description.",
+      "name": {
+        "label": "Site name",
+        "hint": "Leave empty for the built-in name"
+      },
+      "tagline": {
+        "label": "Tagline",
+        "hint": "One line, used as the default page description"
+      }
+    },
     "portalAppearance": {
       "title": "Portal appearance",
-      "description": "Which template the public storefront renders. Changes take effect on the next page load.",
+      "description": "Which template the public storefront renders and which colour mode a visitor starts in. Changes take effect on the next page load.",
       "template": "Template",
       "notSeeded": "The <code>{key}</code> setting has not been seeded yet, so it cannot be changed here. Until it exists the portal uses its <code>{env}</code> environment variable.",
       "templates": {
-        "aurora": { "label": "Aurora", "hint": "Current default — dark/light, Armenian typography" },
-        "classic": { "label": "Classic", "hint": "The original storefront design" }
-      }
+        "aurora": {
+          "label": "Aurora",
+          "hint": "Current default — dark/light, Armenian typography"
+        },
+        "nova": {
+          "label": "Nova",
+          "hint": "Editorial layout with a teal palette — dark/light"
+        },
+        "classic": {
+          "label": "Classic",
+          "hint": "The original storefront design"
+        }
+      },
+      "themeDefault": "Default colour mode",
+      "themeDefaultHint": "For a visitor who has not chosen one. A visitor's own choice is remembered in a cookie.",
+      "themeModes": {
+        "light": "Light",
+        "dark": "Dark",
+        "system": "Match the visitor's device"
+      },
+      "userToggle": "Let visitors switch between light and dark",
+      "userToggleHint": "Off hides the sun/moon button in the header."
     },
     "branding": {
       "title": "Branding",
-      "description": "The storefront's logo and browser tab icon. Changes take effect on the next page load.",
+      "description": "The storefront's logos and browser tab icon. Changes take effect on the next page load.",
       "uploading": "Uploading...",
       "dropOrBrowsePrefix": "Drop image or",
       "browse": "browse",
       "pasteUrl": "Or paste image URL...",
-      "logo": { "label": "Logo", "hint": "JPEG, PNG, WebP, SVG — max 5MB" },
-      "favicon": { "label": "Favicon", "hint": "PNG, SVG, ICO — max 5MB" }
+      "logo": {
+        "label": "Logo (light backgrounds)",
+        "hint": "JPEG, PNG, WebP — max 5MB"
+      },
+      "logoDark": {
+        "label": "Logo (dark backgrounds)",
+        "hint": "Empty falls back to the light logo"
+      },
+      "logoMark": {
+        "label": "Mark (square icon)",
+        "hint": "For compact headers and sign-in pages; empty uses the built-in mark"
+      },
+      "favicon": {
+        "label": "Favicon",
+        "hint": "PNG, SVG, ICO — max 5MB"
+      }
     }
   }
 }

@@ -17,14 +17,14 @@
           <img
             v-if="uploadedLogoUrl"
             :src="uploadedLogoUrl"
-            alt="Innovayse"
+            :alt="logoAlt"
             loading="eager"
             class="h-10 sm:h-12 lg:h-14 xl:h-16 w-auto max-w-[200px] object-contain transition-transform hover:scale-105"
           />
           <NuxtImg
             v-else
             src="/logo.svg"
-            alt="Innovayse"
+            :alt="logoAlt"
             width="200"
             height="60"
             format="webp"
@@ -339,9 +339,9 @@ const { isLoggedIn, user } = storeToRefs(authStore)
 const { fetchUser, logout } = authStore
 const runtimeConfig = useRuntimeConfig()
 
-/** Operator-uploaded logo, admin-managed with an environment fallback. Empty renders the built-in /logo.svg. */
-const { get: getPortalSetting } = usePortalSettings()
-const uploadedLogoUrl = computed(() => getPortalSetting('portal.logo', 'portalLogo'))
+// Operator-uploaded logo for a dark surface — classic has no light palette — with the
+// site name as alt text. Empty renders the built-in /logo.svg.
+const { logoOnDark: uploadedLogoUrl, alt: logoAlt } = useBrandLogo()
 
 /** In SSO mode, link directly to SSO authorize (skips "Continue with Innovayse" page) */
 const clientAreaHref = computed(() =>

@@ -125,10 +125,23 @@ export default defineNuxtConfig({
       // Active portal template. Phase 4 lets an admin override this from settings;
       // until then it is the only switch. Unknown values fall back to 'aurora'.
       portalTemplate: process.env.NUXT_PUBLIC_PORTAL_TEMPLATE || 'aurora',
-      // The header logo and browser tab icon, settable from the admin panel.
-      // Empty renders the template's built-in mark/wordmark and static favicon.
+      // The header logos and browser tab icon, settable from the admin panel.
+      // Empty renders the template's built-in mark/wordmark and static favicon;
+      // useBrandLogo() picks the dark variant in dark mode and falls back to the
+      // light one, and the mark where a wordmark does not fit.
       portalLogo: process.env.NUXT_PUBLIC_PORTAL_LOGO || '',
+      portalLogoDark: process.env.NUXT_PUBLIC_PORTAL_LOGO_DARK || '',
+      portalLogoMark: process.env.NUXT_PUBLIC_PORTAL_LOGO_MARK || '',
       portalFavicon: process.env.NUXT_PUBLIC_PORTAL_FAVICON || '',
+      // Colour mode for a visitor with no saved choice (light | dark | system) and
+      // whether the sun/moon switch is shown. 'dark' is what the site did before the
+      // setting existed. Resolution lives in utils/colorMode.ts.
+      portalThemeDefault: process.env.NUXT_PUBLIC_PORTAL_THEME_DEFAULT || 'dark',
+      portalThemeUserToggle: process.env.NUXT_PUBLIC_PORTAL_THEME_USER_TOGGLE || '',
+      // What the site calls itself: og:site_name, logo alt text, structured data.
+      // Empty falls back to the built-in name in useSiteIdentity().
+      portalSiteName: process.env.NUXT_PUBLIC_PORTAL_SITE_NAME || '',
+      portalSiteTagline: process.env.NUXT_PUBLIC_PORTAL_SITE_TAGLINE || '',
       // Header app launcher. Off unless a deployment actually runs the sibling
       // apps it links to; every app URL below has a development default, so
       // presence of a URL cannot decide this on its own.
@@ -254,7 +267,6 @@ export default defineNuxtConfig({
         { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
         { name: 'description', content: 'Innovayse is a full-cycle digital agency specializing in web & mobile development, technical SEO, PPC advertising, and SaaS products. Transform your business with our expert solutions.' },
         { name: 'keywords', content: 'web development, mobile development, SEO, PPC, Google Ads, Yandex Direct, SaaS, digital agency, e-commerce development, technical SEO, content optimization' },
-        { name: 'author', content: 'Innovayse' },
         { name: 'robots', content: 'index, follow' },
 
         // Open Graph / Facebook
@@ -265,7 +277,7 @@ export default defineNuxtConfig({
         { property: 'og:locale', content: 'en_US' },
         { property: 'og:locale:alternate', content: 'ru_RU' },
         { property: 'og:locale:alternate', content: 'hy_AM' },
-        { property: 'og:site_name', content: 'Innovayse' },
+        // og:site_name and author come from app.vue, where the operator's site name is known.
 
         // Twitter Card
         { name: 'twitter:card', content: 'summary_large_image' },

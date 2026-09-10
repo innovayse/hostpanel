@@ -70,7 +70,10 @@ public sealed class SettingsController(IMessageBus bus) : ControllerBase
     /// with a readable refusal rather than a connection reset.
     /// </para>
     /// </remarks>
-    /// <param name="kind">Which branding image this is: <c>logo</c> or <c>favicon</c>.</param>
+    /// <param name="kind">
+    /// Which branding image this is: <c>logo</c>, <c>logodark</c>, <c>logomark</c> or
+    /// <c>favicon</c> — the <see cref="BrandingKind"/> member name, case-insensitive.
+    /// </param>
     /// <param name="file">The image file to upload.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The primary URL, plus every file generated from the upload.</returns>
@@ -90,7 +93,7 @@ public sealed class SettingsController(IMessageBus bus) : ControllerBase
         if (!Enum.TryParse<BrandingKind>(kind, ignoreCase: true, out var parsedKind)
             || !Enum.IsDefined(parsedKind))
         {
-            return BadRequest(new { error = "kind must be 'logo' or 'favicon'." });
+            return BadRequest(new { error = "kind must be 'logo', 'logodark', 'logomark' or 'favicon'." });
         }
 
         if (file is null || file.Length == 0)

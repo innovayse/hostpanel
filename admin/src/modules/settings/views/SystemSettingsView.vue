@@ -1,11 +1,12 @@
 <script setup lang="ts">
 /**
- * System settings view — key-value list of global settings, with a dedicated
- * control for the storefront template.
+ * System settings view — the storefront's identity, appearance and branding
+ * cards, then the key-value list of every other global setting.
  */
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '../stores/settingsStore'
+import SiteIdentityCard from '../components/SiteIdentityCard.vue'
 import PortalAppearanceCard from '../components/PortalAppearanceCard.vue'
 import BrandingCard from '../components/BrandingCard.vue'
 import type { Setting } from '../../../types/setting'
@@ -97,7 +98,13 @@ async function saveRow(setting: Setting) {
       {{ t('settings.systemSettings') }}
     </h1>
 
-    <div v-if="store.loading" class="text-text-secondary">{{ t('common.loading') }}</div>
+    <!--
+      Only the first load replaces the page. Every save re-fetches the list, and
+      re-fetching used to swap the cards for this line and back — which unmounted
+      them and dropped every unsaved draft in the other cards, so uploading three
+      logos and saving one threw the other two away.
+    -->
+    <div v-if="store.loading && store.settings.length === 0" class="text-text-secondary">{{ t('common.loading') }}</div>
     <template v-else>
       <div
         v-if="store.error"
@@ -106,6 +113,8 @@ async function saveRow(setting: Setting) {
         {{ store.error }}
       </div>
 
+      <!-- Identity first: the name is the first thing an operator sets, and everything below renders it. -->
+      <SiteIdentityCard :settings="store.settings" :saving="saving" @save="onSave" />
       <PortalAppearanceCard :settings="store.settings" :saving="saving" @save="onSave" />
       <BrandingCard :settings="store.settings" :saving="saving" @save="onSave" />
 

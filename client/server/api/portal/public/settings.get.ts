@@ -5,10 +5,12 @@
  * operator-uploaded branding (logo, favicon) and the contact/newsletter widget
  * configuration.
  *
- * The key list below has to stay in step with `GetPublicSettingsHandler`'s own
- * allow-list on the backend. A key the backend serves but this list omits is
- * dropped here without a trace, and the storefront renders its build-time default
- * as though the operator had never set the value.
+ * The key list below has to stay in step with `PortalSettingKeys.Public` in
+ * `backend/src/Innovayse.Domain/Settings/PortalSettingKeys.cs`, which is what
+ * `GetPublicSettingsHandler` serves. This file cannot import that class, so the two
+ * are kept in step by hand. A key the backend serves but this list omits is dropped
+ * here without a trace, and the storefront renders its build-time default as though
+ * the operator had never set the value.
  *
  * **Deliberately uncached.** This was a `defineCachedEventHandler` with `maxAge: 60` and
  * `swr: true`, and that combination is what made the admin panel appear broken: an operator
@@ -34,7 +36,13 @@
 /** The only keys this endpoint will ever expose. */
 const PUBLIC_KEYS = [
   'portal.template',
+  'portal.site.name',
+  'portal.site.tagline',
+  'portal.theme.default',
+  'portal.theme.user_toggle',
   'portal.logo',
+  'portal.logo.dark',
+  'portal.logo.mark',
   'portal.favicon',
   'portal.contact.whatsapp',
   'portal.contact.telegram',

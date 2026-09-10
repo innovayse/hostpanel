@@ -141,7 +141,6 @@ const { t } = useI18n()
 const { logout } = useAuthStore()
 const { hasPermission } = usePermissions()
 const store = useClientStore()
-const { init } = useAppColorMode()
 const config = useRuntimeConfig()
 
 const sidebarOpen = ref(false)
@@ -152,7 +151,6 @@ function widgetReinit() {
 }
 
 onMounted(async () => {
-  init()
   // No `userLoaded` check: the store is the one authority on whether this needs a request,
   // and the flag read here answered "not loaded yet" for a request that was already on the
   // wire — which is how the same page load asked for the identity more than once.
@@ -178,11 +176,6 @@ onUpdated(() => {
   if (!document.getElementById('inno-account-btn')) {
     widgetReinit()
   }
-})
-
-onUnmounted(() => {
-  document.documentElement.classList.add('dark')
-  document.documentElement.classList.remove('light')
 })
 
 const navItems = computed(() => [

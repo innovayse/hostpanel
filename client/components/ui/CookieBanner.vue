@@ -37,7 +37,7 @@
             </button>
             <button
               @click="acceptAll"
-              class="px-6 py-3 rounded-xl font-medium text-white bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all duration-300 whitespace-nowrap"
+              class="px-6 py-3 rounded-xl font-medium text-on-primary bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all duration-300 whitespace-nowrap"
             >
               {{ $t('cookieBanner.acceptAll') }}
             </button>
@@ -59,54 +59,26 @@ import { Cookie } from 'lucide-vue-next'
 const localePath = useLocalePath()
 const showBanner = ref(false)
 
-// Cookie helper functions
-const setCookie = (name: string, value: string, days: number) => {
-  const expires = new Date()
-  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000)
-  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`
-}
+// The choice lives in useCookieConsent, where plugins/tracking.client.ts reads it: this
+// banner records the answer, the tag loader acts on it.
+const { consent, accept } = useCookieConsent()
 
-const getCookie = (name: string): string | null => {
-  const nameEQ = name + '='
-  const ca = document.cookie.split(';')
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i]
-    if (!c) continue
-    while (c.charAt(0) === ' ') c = c.substring(1, c.length)
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length)
-  }
-  return null
-}
-
-// Check if user has already made a choice
+// Shown only until a choice is made. Mounted rather than computed from `consent` on the
+// server, so a page never renders the banner into the HTML for a visitor who already chose.
 onMounted(() => {
-  const cookieConsent = getCookie('cookie-consent')
-  if (!cookieConsent) {
-    showBanner.value = true
-  }
+  if (!consent.value) showBanner.value = true
 })
 
-// Accept essential cookies only
+/** Accept essential cookies only: the tag manager is never loaded. */
 const acceptEssential = () => {
-  setCookie('cookie-consent', 'essential', 365) // Save for 1 year
+  accept('essential')
   showBanner.value = false
-  // Here you would disable non-essential cookies/analytics
-  console.log('Essential cookies only accepted')
 }
 
-// Accept all cookies
+/** Accept all cookies: the tag manager loads if the operator configured one. */
 const acceptAll = () => {
-  setCookie('cookie-consent', 'all', 365) // Save for 1 year
+  accept('all')
   showBanner.value = false
-  // Here you would enable all cookies/analytics
-  console.log('All cookies accepted')
-
-  // Example: Initialize analytics
-  // if (window.gtag) {
-  //   window.gtag('consent', 'update', {
-  //     analytics_storage: 'granted'
-  //   })
-  // }
 }
 </script>
 

@@ -1,4 +1,9 @@
 @import "tailwindcss";
+/* The faces the Typography settings card previews, self-hosted (utils/brandFonts.ts). An
+   @font-face only downloads when a rule uses it, so these cost nothing elsewhere. */
+@import "@fontsource-variable/inter";
+@import "@fontsource/noto-sans-armenian";
+@import "@fontsource/noto-serif-armenian";
 
 @theme {
   /* Brand colors (matching innovayse.com) */

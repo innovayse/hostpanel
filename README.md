@@ -321,10 +321,34 @@ wins once set):
 | `portal.logo.dark` | `NUXT_PUBLIC_PORTAL_LOGO_DARK` | Logo for dark backgrounds; falls back to the light one. |
 | `portal.logo.mark` | `NUXT_PUBLIC_PORTAL_LOGO_MARK` | Square icon-only logo for compact places. |
 | `portal.favicon` | `NUXT_PUBLIC_PORTAL_FAVICON` | Browser tab icon; an upload generates the whole icon set. |
+| `portal.brand.primary` | `NUXT_PUBLIC_PORTAL_BRAND_PRIMARY` | Brand colour as `#rrggbb`. The whole primary scale — buttons, links, highlights, e-mail buttons — is derived from it; the text on it turns dark automatically when the colour is too light for white. |
+| `portal.brand.accent` | `NUXT_PUBLIC_PORTAL_BRAND_ACCENT` | Accent colour as `#rrggbb`; gradients, badges and secondary highlights. |
+| `portal.brand.font_heading` | `NUXT_PUBLIC_PORTAL_BRAND_FONT_HEADING` | `inter`, `noto-sans-armenian`, `noto-serif-armenian` or `system`. Bundled; nothing loads from a font service. |
+| `portal.brand.font_body` | `NUXT_PUBLIC_PORTAL_BRAND_FONT_BODY` | Same list, for body text. |
 
 Logos and the favicon can be uploaded in **Admin → Settings → Branding** or pasted
-as URLs. `portal.template` and `portal.theme.default` accept only their listed
-values; anything else is refused with `INVALID_SETTING_VALUE`.
+as URLs. `portal.template`, `portal.theme.default` and the typefaces accept only their
+listed values, and the colours only `#rrggbb`; anything else is refused with
+`INVALID_SETTING_VALUE` and a sentence saying what was expected. With every brand
+setting empty the storefront renders each template's own colours and typefaces,
+exactly as before the settings existed.
+
+**Analytics and chat** are settings too, empty by default, and nothing loads until
+they are set:
+
+| Setting | Env fallback | What it does |
+|---|---|---|
+| `portal.analytics.gtm_id` | `NUXT_PUBLIC_PORTAL_GTM_ID` | Google Tag Manager container (`GTM-…`). Loads only after a visitor accepts all cookies in the banner. |
+| `portal.chat.provider` | `NUXT_PUBLIC_PORTAL_CHAT_PROVIDER` | `chatwoot`, `innochat`, or empty for no widget. |
+| `portal.chat.base_url` | `NUXT_PUBLIC_PORTAL_CHAT_BASE_URL` | The chat server, `https://` only. |
+| `portal.chat.website_token` | `NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN` | The website token from the chat inbox. `.ru` / `.hy` variants override it per language. |
+
+**E-mails follow the brand.** Every template rendered by the API can use
+`{{ site.name }}`, `{{ brand.primary }}`, `{{ brand.primary_dark }}`,
+`{{ brand.on_primary }}`, `{{ brand.accent }}` and `{{ brand.logo_url }}` (the dark-background
+logo as an absolute URL, empty when none is uploaded). The password-reset template shipped
+with a fresh install uses them; an install that already has that row keeps its stored HTML
+until it is re-saved in **Admin → Settings → Email Templates**.
 
 Related operator settings, all optional and hidden when empty:
 `portal.contact.whatsapp`, `portal.contact.telegram`, `portal.contact.email`,

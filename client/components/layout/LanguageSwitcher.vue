@@ -66,8 +66,8 @@
           :class="[
             'w-full px-4 py-3 text-left text-sm transition-all duration-200 flex items-center gap-3',
             currentLocale.code === locale.code
-              ? 'bg-primary-500 text-white font-semibold'
-              : 'text-gray-300 hover:bg-white/10 hover:text-white'
+              ? 'bg-primary-500 text-on-primary font-semibold'
+              : 'text-gray-300 hover:bg-white/10 hover:text-on-primary'
           ]"
           @click="switchLanguage(locale.code)"
         >

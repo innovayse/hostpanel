@@ -24,7 +24,7 @@
             :key="option.key"
             type="button"
             class="min-h-[44px] rounded-full px-5 text-sm font-semibold transition-colors"
-            :class="option.selected ? 'bg-nova-accent text-[#12212a]' : 'text-nova-muted hover:text-nova-ink'"
+            :class="option.selected ? 'bg-nova-accent text-nova-on-accent' : 'text-nova-muted hover:text-nova-ink'"
             :aria-pressed="option.selected"
             @click="emit('update:yearly', option.value)"
           >{{ t(option.labelKey) }}</button>

@@ -62,6 +62,7 @@ stages: [test, build, deploy]
     - cd "$SERVICE"
     - corepack enable && corepack prepare yarn@1.22.22 --activate
     - yarn install --frozen-lockfile
+    - yarn test
     - yarn build
 
 .test-node-npm:

@@ -9,6 +9,13 @@ using Innovayse.Domain.Notifications.Interfaces;
 /// Used by both the admin-initiated reset (<c>AdminUsersController</c>) and the
 /// client/local self-service "forgot password" flow (<c>LocalAuthController</c>)
 /// so the two entry points send an identical email instead of drifting apart.
+/// <para>
+/// The layout follows the brand through the <c>brand.*</c> and <c>site.*</c> objects
+/// <see cref="TemplateRenderer"/> adds to every render — the logo, the button colour and
+/// the name — rather than through literals, so an operator's colours reach the inbox. The
+/// row is seeded once and never overwritten; an install that already has it keeps its
+/// stored HTML until the operator re-saves the template from the admin panel.
+/// </para>
 /// </summary>
 public static class PasswordResetTemplateSeeder
 {
@@ -42,11 +49,15 @@ public static class PasswordResetTemplateSeeder
                 <tr><td align="center">
                   <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%;">
                     <tr><td align="center" style="padding-bottom:32px;">
+                      {% if brand.logo_url != "" %}
+                      <img src="{{ brand.logo_url }}" alt="{{ site.name }}" height="40" style="display:block;height:40px;width:auto;max-width:200px;border:0;" />
+                      {% else %}
                       <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-                        <td style="background:linear-gradient(135deg,rgba(14,165,233,0.1),rgba(168,85,247,0.1));border:1px solid rgba(14,165,233,0.2);border-radius:10px;padding:8px 16px;">
-                          <span style="font-size:16px;font-weight:700;background:linear-gradient(135deg,#0ea5e9,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Innovayse</span>
+                        <td style="border:1px solid {{ brand.primary }};border-radius:10px;padding:8px 16px;">
+                          <span style="font-size:16px;font-weight:700;color:{{ brand.primary }};">{{ site.name }}</span>
                         </td>
                       </tr></table>
+                      {% endif %}
                     </td></tr>
                     <tr><td style="background-color:#1a1a1f;border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:40px 36px;">
                       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
@@ -57,16 +68,16 @@ public static class PasswordResetTemplateSeeder
                           <p style="margin:0;font-size:14px;color:#8a8a9a;line-height:1.6;">Click the button below to reset your password. This link will expire in 24 hours.</p>
                         </td></tr>
                         <tr><td align="center" style="padding-bottom:28px;">
-                          <a href="{{ reset_link }}" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;border-radius:10px;box-shadow:0 4px 20px rgba(14,165,233,0.25);">Reset Password</a>
+                          <a href="{{ reset_link }}" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,{{ brand.primary }},{{ brand.primary_dark }});color:{{ brand.on_primary }};font-size:15px;font-weight:600;text-decoration:none;border-radius:10px;box-shadow:0 4px 20px rgba(14,165,233,0.25);">Reset Password</a>
                         </td></tr>
                         <tr><td style="border-top:1px solid rgba(255,255,255,0.06);padding-top:20px;">
                           <p style="margin:0;font-size:12px;color:#5a5a6a;line-height:1.6;">If you didn't request this, you can safely ignore this email.</p>
-                          <p style="margin:8px 0 0;font-size:12px;color:#0ea5e9;word-break:break-all;">{{ reset_link }}</p>
+                          <p style="margin:8px 0 0;font-size:12px;color:{{ brand.primary }};word-break:break-all;">{{ reset_link }}</p>
                         </td></tr>
                       </table>
                     </td></tr>
                     <tr><td align="center" style="padding-top:24px;">
-                      <p style="margin:0;font-size:11px;color:#3a3a4a;">© Innovayse. All rights reserved.</p>
+                      <p style="margin:0;font-size:11px;color:#3a3a4a;">© {{ site.name }}. All rights reserved.</p>
                     </td></tr>
                   </table>
                 </td></tr>
@@ -75,7 +86,7 @@ public static class PasswordResetTemplateSeeder
             </html>
             """;
 
-        var template = EmailTemplate.Create(Slug, "Reset your password — Innovayse", body,
+        var template = EmailTemplate.Create(Slug, "Reset your password — {{ site.name }}", body,
             "Sent when a password reset is requested, whether by the user or an admin.");
         templateRepo.Add(template);
         await uow.SaveChangesAsync(ct);

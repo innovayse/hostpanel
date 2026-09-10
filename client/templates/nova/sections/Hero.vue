@@ -24,7 +24,7 @@
         <div class="mt-8 flex flex-wrap gap-3">
           <NuxtLink
             :to="localePath('/hosting')"
-            class="inline-flex min-h-[52px] items-center rounded-xl bg-nova-accent px-7 text-base font-bold text-[#12212a] transition-[filter,transform] hover:brightness-95 motion-safe:hover:-translate-y-0.5"
+            class="inline-flex min-h-[52px] items-center rounded-xl bg-nova-accent px-7 text-base font-bold text-nova-on-accent transition-[filter,transform] hover:brightness-95 motion-safe:hover:-translate-y-0.5"
           >{{ t('nova.hero.ctaPrimary') }}</NuxtLink>
           <NuxtLink
             :to="localePath('/hosting#plans')"

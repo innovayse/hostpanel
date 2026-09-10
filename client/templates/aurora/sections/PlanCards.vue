@@ -12,13 +12,13 @@
         <button
           type="button"
           class="rounded-full px-[18px] py-2.5 text-sm font-semibold"
-          :class="yearly ? 'text-mut' : 'bg-brand text-[#08090F]'"
+          :class="yearly ? 'text-mut' : 'bg-brand text-on-tint'"
           @click="emit('update:yearly', false)"
         >{{ t('aurora.plans.monthly') }}</button>
         <button
           type="button"
           class="rounded-full px-[18px] py-2.5 text-sm font-semibold"
-          :class="yearly ? 'bg-brand text-[#08090F]' : 'text-mut'"
+          :class="yearly ? 'bg-brand text-on-tint' : 'text-mut'"
           @click="emit('update:yearly', true)"
         >{{ t('aurora.plans.yearly') }}</button>
       </div>
@@ -63,7 +63,7 @@
         </div>
         <NuxtLink
           :to="freePlan.href"
-          class="w-full rounded-xl bg-brand px-6 py-3.5 text-center text-[15px] font-bold text-[#08090F] hover:brightness-110"
+          class="w-full rounded-xl bg-brand px-6 py-3.5 text-center text-[15px] font-bold text-on-tint hover:brightness-110"
         >{{ t('aurora.plans.cta') }}</NuxtLink>
       </div>
     </div>

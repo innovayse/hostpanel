@@ -44,7 +44,7 @@
                 :href="social.href"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="w-12 h-12 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-primary-500/20 hover:border-primary-500/50 transition-all duration-300 group/social"
+                class="w-12 h-12 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-gray-400 hover:text-on-primary hover:bg-primary-500/20 hover:border-primary-500/50 transition-all duration-300 group/social"
                 :aria-label="social.name"
                 :title="social.name"
               >

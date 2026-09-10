@@ -149,6 +149,63 @@
         "label": "Favicon",
         "hint": "PNG, SVG, ICO — max 5MB"
       }
+    },
+    "brandColors": {
+      "title": "Brand colours",
+      "description": "Two colours the storefront derives its whole palette from — buttons, links, highlights and the e-mails. Empty keeps each template's own colours.",
+      "primary": {
+        "label": "Primary",
+        "hint": "Buttons, links and highlights. The eleven shades below are derived from it."
+      },
+      "accent": {
+        "label": "Accent",
+        "hint": "Gradients, badges and secondary highlights."
+      },
+      "reset": "Reset to default",
+      "previewButton": "Button",
+      "previewLink": "Link",
+      "contrastOk": "White text on this colour: {ratio}:1 — passes WCAG AA.",
+      "contrastDark": "White text on this colour: {ratio}:1 — too low, so buttons will use dark text.",
+      "contrastLow": "White text on this colour: {ratio}:1 — below WCAG AA for small text; fine for buttons."
+    },
+    "typography": {
+      "title": "Typography",
+      "description": "The typefaces the storefront uses. All are bundled with it; nothing loads from a font service.",
+      "heading": "Headings",
+      "body": "Body text",
+      "templateDefault": "Template default",
+      "sampleBody": "Domains, hosting and e-mail in one account, with a person on the other end of every ticket.",
+      "fonts": {
+        "inter": "Inter",
+        "notoSansArmenian": "Noto Sans Armenian",
+        "notoSerifArmenian": "Noto Serif Armenian",
+        "system": "System (device's own)"
+      }
+    },
+    "trackingChat": {
+      "title": "Tracking & chat",
+      "description": "Third-party services the storefront talks to. Nothing loads until it is configured here.",
+      "gtm": {
+        "label": "Google Tag Manager container",
+        "hint": "Loads only after a visitor accepts all cookies. Empty loads no tag at all."
+      },
+      "chat": {
+        "title": "Live chat",
+        "baseUrl": "Chat server",
+        "baseUrlHint": "https://chat.example.com",
+        "token": "Website token",
+        "tokenHint": "From the chat inbox settings",
+        "tokenRu": "Token for Russian visitors",
+        "tokenHy": "Token for Armenian visitors",
+        "tokenLocaleHint": "Optional; empty uses the default token",
+        "hint": "The widget appears only when a provider, the server and a token are all set."
+      },
+      "provider": {
+        "label": "Provider",
+        "off": "Off",
+        "chatwoot": "Chatwoot",
+        "innochat": "Innochat"
+      }
     }
   }
 }

@@ -11,7 +11,7 @@
     <div class="mt-8 flex flex-wrap justify-center gap-3.5">
       <NuxtLink
         :to="localePath('/contact')"
-        class="rounded-xl bg-brand px-7 py-[15px] text-base font-bold text-[#08090F] hover:brightness-110"
+        class="rounded-xl bg-brand px-7 py-[15px] text-base font-bold text-on-tint hover:brightness-110"
       >{{ t('aurora.cta.primary') }}</NuxtLink>
       <NuxtLink
         :to="localePath('/hosting')"

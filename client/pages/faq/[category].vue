@@ -50,8 +50,8 @@
             :to="localePath(`/faq/${cat.value}`)"
             class="px-5 py-2 rounded-lg font-medium text-sm border transition-all duration-200"
             :class="cat.value === category
-              ? 'bg-primary-500 text-white border-primary-500 shadow-lg shadow-primary-500/30'
-              : 'border-white/10 bg-white/5 text-gray-300 hover:bg-primary-500/20 hover:border-primary-500/40 hover:text-white'"
+              ? 'bg-primary-500 text-on-primary border-primary-500 shadow-lg shadow-primary-500/30'
+              : 'border-white/10 bg-white/5 text-gray-300 hover:bg-primary-500/20 hover:border-primary-500/40 hover:text-on-primary'"
           >
             {{ cat.label }}
           </NuxtLink>

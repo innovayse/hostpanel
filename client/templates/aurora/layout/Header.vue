@@ -10,7 +10,7 @@
       </template>
       <template v-else>
         <span
-          class="grid h-[34px] w-[34px] place-items-center rounded-[10px] bg-brand text-[17px] font-extrabold text-[#08090F]"
+          class="grid h-[34px] w-[34px] place-items-center rounded-[10px] bg-brand text-[17px] font-extrabold text-on-tint"
           aria-hidden="true"
         >{{ siteName.charAt(0).toLowerCase() }}</span>
         <span class="text-[19px] font-bold -tracking-[0.01em]">{{ siteName }}</span>
@@ -40,7 +40,7 @@
         <Icon name="lucide:shopping-cart" class="h-[19px] w-[19px]" />
         <span
           v-if="cartCount > 0"
-          class="absolute -right-1.5 -top-1.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-brand px-1 text-[11px] font-extrabold text-[#08090F]"
+          class="absolute -right-1.5 -top-1.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-brand px-1 text-[11px] font-extrabold text-on-tint"
         >{{ cartCount }}</span>
       </NuxtLink>
 
@@ -64,7 +64,7 @@
 
         <NuxtLink
           :to="localePath('/hosting')"
-          class="hidden whitespace-nowrap rounded-[10px] bg-brand px-5 py-[11px] text-[15px] font-semibold text-[#08090F] hover:brightness-110 sm:inline-flex"
+          class="hidden whitespace-nowrap rounded-[10px] bg-brand px-5 py-[11px] text-[15px] font-semibold text-on-tint hover:brightness-110 sm:inline-flex"
         >{{ t('aurora.nav.start') }}</NuxtLink>
       </template>
 

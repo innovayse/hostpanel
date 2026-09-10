@@ -6,6 +6,7 @@ using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Common;
 using Innovayse.Application.Migration.Interfaces;
+using Innovayse.Application.Notifications.Interfaces;
 using Innovayse.Application.Notifications.Options;
 using Innovayse.Application.Notifications.Services;
 using Innovayse.Application.Support.Interfaces;
@@ -494,6 +495,9 @@ public static class DependencyInjection
         services.AddScoped<IEmailTemplateRepository, EmailTemplateRepository>();
         services.AddScoped<IEmailLogRepository, EmailLogRepository>();
         services.AddScoped<TemplateRenderer>();
+        // The brand every mail is rendered with, read from the portal.* settings on each render
+        // so an operator's change in the admin panel reaches the next mail without a restart.
+        services.AddScoped<IEmailBrandingProvider, SettingsEmailBrandingProvider>();
 
         // Settings
         services.AddScoped<ISettingRepository, SettingRepository>();

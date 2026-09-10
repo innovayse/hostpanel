@@ -13,7 +13,7 @@
           -->
           <span
             v-if="freeMigration"
-            class="rounded-full bg-nova-accent px-3 py-1 text-[12px] font-extrabold uppercase tracking-[0.06em] text-[#12212a]"
+            class="rounded-full bg-nova-accent px-3 py-1 text-[12px] font-extrabold uppercase tracking-[0.06em] text-nova-on-accent"
           >{{ t('nova.migration.free') }}</span>
         </p>
 

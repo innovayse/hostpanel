@@ -11,6 +11,7 @@ import { enUS, ru, hy } from 'date-fns/locale'
 import type { SupportedLocale } from '../../../i18n'
 import { useActivityStore } from '../stores/activityStore'
 import type { ActivityEventType } from '../../../types/activityevent'
+import { activityEventLink } from '../../../utils/activityEventLink'
 
 const { t, locale } = useI18n()
 const activity = useActivityStore()
@@ -67,10 +68,11 @@ const events = computed(() => activity.events)
       {{ t('common.noNotifications') }}
     </div>
     <div v-else class="w-full bg-surface-card border border-border rounded-2xl divide-y divide-border overflow-hidden">
-      <div
+      <RouterLink
         v-for="(event, index) in events"
         :key="`${event.type}-${event.occurredAt}-${index}`"
-        class="flex items-start gap-3 px-4 py-3.5"
+        :to="activityEventLink(event)"
+        class="flex items-start gap-3 px-4 py-3.5 no-underline hover:bg-white/[0.03] transition-colors"
       >
         <svg
           class="w-4 h-4 mt-0.5 shrink-0"
@@ -83,7 +85,7 @@ const events = computed(() => activity.events)
           <p class="text-[0.85rem] text-text-primary">{{ event.message }}</p>
           <p class="text-[0.72rem] text-text-muted">{{ relativeTime(event.occurredAt) }}</p>
         </div>
-      </div>
+      </RouterLink>
     </div>
   </div>
 </template>

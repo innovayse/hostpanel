@@ -9,4 +9,6 @@ export interface ActivityEvent {
   message: string
   /** ISO timestamp of when the event happened. */
   occurredAt: string
+  /** Primary key of the client, invoice or domain this event is about. */
+  entityId: number
 }

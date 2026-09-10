@@ -13,6 +13,8 @@ import { enUS, ru, hy } from 'date-fns/locale'
 import { SUPPORTED_LOCALES, setLocale, type SupportedLocale } from '../../i18n'
 import { useAuthStore } from '../../modules/auth/stores/authStore'
 import { useActivityStore } from '../../modules/dashboard/stores/activityStore'
+import { activityEventLink } from '../../utils/activityEventLink'
+import type { ActivityEvent } from '../../types/activityevent'
 
 /** date-fns locale objects, keyed by this app's locale codes. */
 const dateFnsLocales: Record<SupportedLocale, Locale> = { en: enUS, ru, hy }
@@ -106,6 +108,20 @@ const auth = useAuthStore()
 function viewAllNotifications(): void {
   showNotifications.value = false
   router.push('/notifications')
+}
+
+/**
+ * Closes the dropdown and navigates to the record a notification is about.
+ *
+ * Plain click + router.push, not a RouterLink — a RouterLink's own click handler
+ * races the dropdown's `v-if` toggle: closing it synchronously in the same click
+ * unmounts the link before its navigation completes, so the click does nothing.
+ *
+ * @param event - The activity event that was clicked.
+ */
+function goToActivityEvent(event: ActivityEvent): void {
+  showNotifications.value = false
+  router.push(activityEventLink(event))
 }
 
 /** Controls the account menu visibility. */
@@ -241,6 +257,7 @@ async function signOut(): Promise<void> {
               v-for="(event, index) in activity.events"
               :key="`${event.type}-${event.occurredAt}-${index}`"
               class="px-4 py-3 hover:bg-white/[0.03] transition-colors cursor-pointer"
+              @click="goToActivityEvent(event)"
             >
               <p class="text-[0.8rem] text-text-primary mb-0.5">{{ event.message }}</p>
               <p class="text-[0.72rem] text-text-muted">{{ relativeTime(event.occurredAt) }}</p>

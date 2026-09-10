@@ -1,4 +1,4 @@
-namespace Innovayse.Providers.Inecobank;
+﻿namespace Innovayse.Providers.Inecobank;
 
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
@@ -24,6 +24,16 @@ public sealed class InecobankApiClient
     /// collide with a real gateway code, no matter which one the bank adds next.
     /// </summary>
     private const int TransportErrorCode = -1;
+
+    /// <summary>
+    /// Synthetic <see cref="InecobankApiException.ErrorCode"/> for a gateway that answered
+    /// <c>401 Unauthorized</c>. Kept apart from <see cref="TransportErrorCode"/> because the two
+    /// need different answers from an operator: a rejected merchant credential is a
+    /// configuration mistake to correct, while a transport failure is something to retry.
+    /// Verified against the live gateway, which answers <c>401 {"message":"Unauthorized"}</c>
+    /// to a wrong password and never uses that status for anything else.
+    /// </summary>
+    private const int UnauthorizedErrorCode = -2;
 
     /// <summary>Characters the gateway's request encoding cannot carry and must be stripped from descriptions.</summary>
     private static readonly char[] ForbiddenDescriptionChars = ['%', '+', '\r', '\n'];
@@ -115,9 +125,9 @@ public sealed class InecobankApiClient
         using var doc = await PostAsync(InecobankEndpoints.GetOrderStatusExtended, fields, ct);
         var root = doc.RootElement;
         return new InecobankOrderStatus(
-            ErrorCode: GetLenientInt(root, "errorCode") ?? 0,
+            ErrorCode: ReadErrorCode(doc),
             OrderStatus: GetLenientInt(root, "orderStatus"),
-            ErrorMessage: GetString(doc, "errorMessage"),
+            ErrorMessage: ReadErrorMessage(doc),
             AuthRefNum: GetString(doc, "authRefNum"));
     }
 
@@ -178,16 +188,33 @@ public sealed class InecobankApiClient
         try
         {
             response = await _http.PostAsync(url, content, ct);
-            response.EnsureSuccessStatusCode();
             var json = await response.Content.ReadAsStringAsync(ct);
+
+            // Deliberately no EnsureSuccessStatusCode(). This gateway reports ordinary business
+            // outcomes with a 500 and a JSON body that names the problem -- asking it for an
+            // order id it has never seen answers `500 {"message":"Wrong order id","code":"9500"}`.
+            // Treating the status as the verdict threw that body away and turned a perfectly
+            // well-understood answer into an opaque transport failure, which is what made the
+            // admin panel's connection test report failure for credentials that were correct.
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                throw new InecobankApiException(
+                    UnauthorizedErrorCode,
+                    $"{endpoint}: the gateway rejected the merchant credentials.");
+            }
+
             try
             {
                 return JsonDocument.Parse(json);
             }
             catch (JsonException ex)
             {
+                // Only now is the status worth reporting: the body explained nothing, so the
+                // status code is the only thing left to tell an operator what went wrong.
                 throw new InecobankApiException(
-                    TransportErrorCode, $"{endpoint}: gateway response was not valid JSON.", ex);
+                    TransportErrorCode,
+                    $"{endpoint}: gateway response was not valid JSON (HTTP {(int)response.StatusCode}).",
+                    ex);
             }
         }
         catch (HttpRequestException ex)
@@ -201,16 +228,40 @@ public sealed class InecobankApiClient
         }
     }
 
+    /// <summary>
+    /// Reads the error code out of a gateway response, whichever of the two names it used.
+    /// </summary>
+    /// <remarks>
+    /// The merchant manual documents <c>errorCode</c>, and that is what a 200 response carries.
+    /// The failure bodies observed from the live gateway carry <c>code</c> instead -- e.g.
+    /// <c>{"message":"Wrong order id","code":"9500"}</c>. Reading only the documented name left
+    /// every such response looking like a success with code 0.
+    /// </remarks>
+    /// <param name="doc">The parsed gateway response.</param>
+    /// <returns>The error code, or 0 when neither field is present.</returns>
+    private static int ReadErrorCode(JsonDocument doc)
+        => GetLenientInt(doc.RootElement, "errorCode")
+           ?? GetLenientInt(doc.RootElement, "code")
+           ?? 0;
+
+    /// <summary>
+    /// Reads the human-readable error text, whichever of the two names the gateway used.
+    /// </summary>
+    /// <param name="doc">The parsed gateway response.</param>
+    /// <returns>The message, or <see langword="null"/> when neither field is present.</returns>
+    private static string? ReadErrorMessage(JsonDocument doc)
+        => GetString(doc, "errorMessage") ?? GetString(doc, "message");
+
     /// <summary>Throws <see cref="InecobankApiException"/> when the response's errorCode is non-zero.</summary>
     /// <param name="doc">The parsed gateway response.</param>
     /// <param name="endpoint">The endpoint name, included in the exception message for context.</param>
     /// <exception cref="InecobankApiException">Thrown when the response's errorCode is non-zero.</exception>
     private static void ThrowOnError(JsonDocument doc, string endpoint)
     {
-        var code = GetLenientInt(doc.RootElement, "errorCode") ?? 0;
+        var code = ReadErrorCode(doc);
         if (code != 0)
         {
-            var message = GetString(doc, "errorMessage") ?? $"Gateway error {code}";
+            var message = ReadErrorMessage(doc) ?? $"Gateway error {code}";
             throw new InecobankApiException(code, $"{endpoint}: {message}");
         }
     }

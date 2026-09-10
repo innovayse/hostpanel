@@ -1,4 +1,4 @@
-namespace Innovayse.Application.Tests.Billing;
+﻿namespace Innovayse.Application.Tests.Billing;
 
 using Innovayse.Application.Billing.Commands.StartGatewayPayment;
 using Innovayse.Application.Billing.Interfaces;
@@ -87,7 +87,7 @@ public class StartGatewayPaymentHandlerTests
     public async Task HandleAsync_RegistersPaymentAndStoresSession()
     {
         var invoice = CreateInvoice(total: 25.50m);
-        resolver.Setup(r => r.ResolveAsync("innovayse-inecobank", It.IsAny<CancellationToken>()))
+        resolver.Setup(r => r.ResolveAsync("inecobank", It.IsAny<CancellationToken>()))
             .ReturnsAsync(plugin.Object);
         PaymentRequest? sent = null;
         plugin.Setup(p => p.CreatePaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
@@ -95,12 +95,12 @@ public class StartGatewayPaymentHandlerTests
             .ReturnsAsync(new PaymentSession("gw-55", "https://pg/pay?mdOrder=gw-55"));
 
         var redirect = await CreateHandler().HandleAsync(
-            new StartGatewayPaymentCommand(invoice.Id, "innovayse-inecobank", ReturnUrl),
+            new StartGatewayPaymentCommand(invoice.Id, "inecobank", ReturnUrl),
             CancellationToken.None);
 
         Assert.Equal("https://pg/pay?mdOrder=gw-55", redirect);
         Assert.Equal("gw-55", invoice.GatewayOrderId);
-        Assert.Equal("innovayse-inecobank", invoice.GatewayModule);
+        Assert.Equal("inecobank", invoice.GatewayModule);
         Assert.NotNull(sent);
         Assert.Equal(2550, sent!.AmountMinor); // 25.50 major → 2550 minor units
         Assert.StartsWith($"INV{invoice.Id}-", sent.OrderNumber);
@@ -113,13 +113,13 @@ public class StartGatewayPaymentHandlerTests
     {
         var invoice = CreateInvoice(total: 10m, clientCurrency: "AMD");
         plugin.SetupGet(p => p.CurrencyCode).Returns("051");
-        resolver.Setup(r => r.ResolveAsync("innovayse-inecobank", It.IsAny<CancellationToken>()))
+        resolver.Setup(r => r.ResolveAsync("inecobank", It.IsAny<CancellationToken>()))
             .ReturnsAsync(plugin.Object);
         plugin.Setup(p => p.CreatePaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PaymentSession("gw-amd", "https://pg/pay?mdOrder=gw-amd"));
 
         var redirect = await CreateHandler().HandleAsync(
-            new StartGatewayPaymentCommand(invoice.Id, "innovayse-inecobank", ReturnUrl),
+            new StartGatewayPaymentCommand(invoice.Id, "inecobank", ReturnUrl),
             CancellationToken.None);
 
         Assert.Equal("https://pg/pay?mdOrder=gw-amd", redirect);
@@ -130,11 +130,11 @@ public class StartGatewayPaymentHandlerTests
     {
         var invoice = CreateInvoice(total: 25m, clientCurrency: "USD");
         plugin.SetupGet(p => p.CurrencyCode).Returns("051"); // gateway configured for AMD
-        resolver.Setup(r => r.ResolveAsync("innovayse-inecobank", It.IsAny<CancellationToken>()))
+        resolver.Setup(r => r.ResolveAsync("inecobank", It.IsAny<CancellationToken>()))
             .ReturnsAsync(plugin.Object);
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => CreateHandler().HandleAsync(
-            new StartGatewayPaymentCommand(invoice.Id, "innovayse-inecobank", ReturnUrl),
+            new StartGatewayPaymentCommand(invoice.Id, "inecobank", ReturnUrl),
             CancellationToken.None));
 
         Assert.Contains("USD", ex.Message);
@@ -151,13 +151,13 @@ public class StartGatewayPaymentHandlerTests
         // bill in AMD.
         var invoice = CreateInvoice(total: 25m);
         plugin.SetupGet(p => p.CurrencyCode).Returns("051"); // AMD
-        resolver.Setup(r => r.ResolveAsync("innovayse-inecobank", It.IsAny<CancellationToken>()))
+        resolver.Setup(r => r.ResolveAsync("inecobank", It.IsAny<CancellationToken>()))
             .ReturnsAsync(plugin.Object);
         plugin.Setup(p => p.CreatePaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PaymentSession("gw-amd-default", "https://pg/pay?mdOrder=gw-amd-default"));
 
         var redirect = await CreateHandler().HandleAsync(
-            new StartGatewayPaymentCommand(invoice.Id, "innovayse-inecobank", ReturnUrl),
+            new StartGatewayPaymentCommand(invoice.Id, "inecobank", ReturnUrl),
             CancellationToken.None);
 
         Assert.Equal("https://pg/pay?mdOrder=gw-amd-default", redirect);
@@ -169,13 +169,13 @@ public class StartGatewayPaymentHandlerTests
         // An explicit Billing:DefaultCurrency must win over the option class's AMD default.
         var invoice = CreateInvoice(total: 25m);
         plugin.SetupGet(p => p.CurrencyCode).Returns("978"); // EUR — matches the configured default below
-        resolver.Setup(r => r.ResolveAsync("innovayse-inecobank", It.IsAny<CancellationToken>()))
+        resolver.Setup(r => r.ResolveAsync("inecobank", It.IsAny<CancellationToken>()))
             .ReturnsAsync(plugin.Object);
         plugin.Setup(p => p.CreatePaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PaymentSession("gw-eur-config", "https://pg/pay?mdOrder=gw-eur-config"));
 
         var redirect = await CreateHandler(BillingOptionsWithDefaultCurrency("EUR")).HandleAsync(
-            new StartGatewayPaymentCommand(invoice.Id, "innovayse-inecobank", ReturnUrl),
+            new StartGatewayPaymentCommand(invoice.Id, "inecobank", ReturnUrl),
             CancellationToken.None);
 
         Assert.Equal("https://pg/pay?mdOrder=gw-eur-config", redirect);
@@ -185,11 +185,11 @@ public class StartGatewayPaymentHandlerTests
     public async Task HandleAsync_UnmappableClientCurrency_Refuses()
     {
         var invoice = CreateInvoice(total: 25m, clientCurrency: "XYZ");
-        resolver.Setup(r => r.ResolveAsync("innovayse-inecobank", It.IsAny<CancellationToken>()))
+        resolver.Setup(r => r.ResolveAsync("inecobank", It.IsAny<CancellationToken>()))
             .ReturnsAsync(plugin.Object);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => CreateHandler().HandleAsync(
-            new StartGatewayPaymentCommand(invoice.Id, "innovayse-inecobank", ReturnUrl),
+            new StartGatewayPaymentCommand(invoice.Id, "inecobank", ReturnUrl),
             CancellationToken.None));
 
         plugin.Verify(
@@ -204,7 +204,7 @@ public class StartGatewayPaymentHandlerTests
             .ReturnsAsync((IPaymentPlugin?)null);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => CreateHandler().HandleAsync(
-            new StartGatewayPaymentCommand(invoice.Id, "innovayse-inecobank", ReturnUrl),
+            new StartGatewayPaymentCommand(invoice.Id, "inecobank", ReturnUrl),
             CancellationToken.None));
     }
 
@@ -215,7 +215,7 @@ public class StartGatewayPaymentHandlerTests
         invoice.MarkPaid("earlier-txn");
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => CreateHandler().HandleAsync(
-            new StartGatewayPaymentCommand(invoice.Id, "innovayse-inecobank", ReturnUrl),
+            new StartGatewayPaymentCommand(invoice.Id, "inecobank", ReturnUrl),
             CancellationToken.None));
 
         Assert.Contains("Paid", ex.Message);
@@ -229,7 +229,7 @@ public class StartGatewayPaymentHandlerTests
         invoice.Cancel();
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => CreateHandler().HandleAsync(
-            new StartGatewayPaymentCommand(invoice.Id, "innovayse-inecobank", ReturnUrl),
+            new StartGatewayPaymentCommand(invoice.Id, "inecobank", ReturnUrl),
             CancellationToken.None));
     }
 
@@ -239,7 +239,7 @@ public class StartGatewayPaymentHandlerTests
         var invoice = CreateInvoice();
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => CreateHandler().HandleAsync(
-            new StartGatewayPaymentCommand(invoice.Id, "innovayse-inecobank", "https://evil.example/steal"),
+            new StartGatewayPaymentCommand(invoice.Id, "inecobank", "https://evil.example/steal"),
             CancellationToken.None));
 
         Assert.Contains("evil.example", ex.Message);
@@ -250,14 +250,14 @@ public class StartGatewayPaymentHandlerTests
     public async Task HandleAsync_FreshLiveSession_RefusesUntilItIsKnownDeclined()
     {
         var invoice = CreateInvoice();
-        invoice.SetGatewaySession("innovayse-inecobank", "gw-stale");
-        resolver.Setup(r => r.ResolveAsync("innovayse-inecobank", It.IsAny<CancellationToken>()))
+        invoice.SetGatewaySession("inecobank", "gw-stale");
+        resolver.Setup(r => r.ResolveAsync("inecobank", It.IsAny<CancellationToken>()))
             .ReturnsAsync(plugin.Object);
         plugin.Setup(p => p.GetStatusAsync("gw-stale", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new GatewayPaymentStatus(GatewayPaymentState.Pending, null, "orderStatus:0"));
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => CreateHandler().HandleAsync(
-            new StartGatewayPaymentCommand(invoice.Id, "innovayse-inecobank", ReturnUrl),
+            new StartGatewayPaymentCommand(invoice.Id, "inecobank", ReturnUrl),
             CancellationToken.None));
 
         Assert.Contains("already in progress", ex.Message);
@@ -269,8 +269,8 @@ public class StartGatewayPaymentHandlerTests
     public async Task HandleAsync_FreshLiveSessionAlreadyDeclined_ReplacesIt()
     {
         var invoice = CreateInvoice();
-        invoice.SetGatewaySession("innovayse-inecobank", "gw-stale");
-        resolver.Setup(r => r.ResolveAsync("innovayse-inecobank", It.IsAny<CancellationToken>()))
+        invoice.SetGatewaySession("inecobank", "gw-stale");
+        resolver.Setup(r => r.ResolveAsync("inecobank", It.IsAny<CancellationToken>()))
             .ReturnsAsync(plugin.Object);
         plugin.Setup(p => p.GetStatusAsync("gw-stale", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new GatewayPaymentStatus(GatewayPaymentState.Declined, null, "orderStatus:6"));
@@ -278,7 +278,7 @@ public class StartGatewayPaymentHandlerTests
             .ReturnsAsync(new PaymentSession("gw-fresh", "https://pg/pay?mdOrder=gw-fresh"));
 
         var redirect = await CreateHandler().HandleAsync(
-            new StartGatewayPaymentCommand(invoice.Id, "innovayse-inecobank", ReturnUrl),
+            new StartGatewayPaymentCommand(invoice.Id, "inecobank", ReturnUrl),
             CancellationToken.None);
 
         Assert.Equal("https://pg/pay?mdOrder=gw-fresh", redirect);
@@ -289,15 +289,15 @@ public class StartGatewayPaymentHandlerTests
     public async Task HandleAsync_SessionOlderThanWindow_IsReplacedWithoutCheckingStatus()
     {
         var invoice = CreateInvoice();
-        invoice.SetGatewaySession("innovayse-inecobank", "gw-old");
+        invoice.SetGatewaySession("inecobank", "gw-old");
         SetGatewayStartedAt(invoice, DateTimeOffset.UtcNow.AddMinutes(-21));
-        resolver.Setup(r => r.ResolveAsync("innovayse-inecobank", It.IsAny<CancellationToken>()))
+        resolver.Setup(r => r.ResolveAsync("inecobank", It.IsAny<CancellationToken>()))
             .ReturnsAsync(plugin.Object);
         plugin.Setup(p => p.CreatePaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PaymentSession("gw-new", "https://pg/pay?mdOrder=gw-new"));
 
         var redirect = await CreateHandler().HandleAsync(
-            new StartGatewayPaymentCommand(invoice.Id, "innovayse-inecobank", ReturnUrl),
+            new StartGatewayPaymentCommand(invoice.Id, "inecobank", ReturnUrl),
             CancellationToken.None);
 
         Assert.Equal("https://pg/pay?mdOrder=gw-new", redirect);
@@ -333,7 +333,7 @@ public class StartGatewayPaymentHandlerTests
         // orderNumber limit, so a regression that widened the format would go unnoticed.
         // int.MaxValue (10 digits) is the largest an `int` invoice id can ever be.
         var invoice = CreateInvoice(total: 25.50m, id: invoiceId);
-        resolver.Setup(r => r.ResolveAsync("innovayse-inecobank", It.IsAny<CancellationToken>()))
+        resolver.Setup(r => r.ResolveAsync("inecobank", It.IsAny<CancellationToken>()))
             .ReturnsAsync(plugin.Object);
         PaymentRequest? sent = null;
         plugin.Setup(p => p.CreatePaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
@@ -341,7 +341,7 @@ public class StartGatewayPaymentHandlerTests
             .ReturnsAsync(new PaymentSession("gw-55", "https://pg/pay?mdOrder=gw-55"));
 
         await CreateHandler().HandleAsync(
-            new StartGatewayPaymentCommand(invoice.Id, "innovayse-inecobank", ReturnUrl),
+            new StartGatewayPaymentCommand(invoice.Id, "inecobank", ReturnUrl),
             CancellationToken.None);
 
         Assert.NotNull(sent);
@@ -355,15 +355,15 @@ public class StartGatewayPaymentHandlerTests
     public async Task HandleAsync_LiveSessionStatusCheckThrows_RefusesAsStillLiveAndLogsWarning()
     {
         var invoice = CreateInvoice();
-        invoice.SetGatewaySession("innovayse-inecobank", "gw-stale");
-        resolver.Setup(r => r.ResolveAsync("innovayse-inecobank", It.IsAny<CancellationToken>()))
+        invoice.SetGatewaySession("inecobank", "gw-stale");
+        resolver.Setup(r => r.ResolveAsync("inecobank", It.IsAny<CancellationToken>()))
             .ReturnsAsync(plugin.Object);
         plugin.Setup(p => p.GetStatusAsync("gw-stale", It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("gateway status API unreachable"));
         var logger = new Mock<ILogger<StartGatewayPaymentHandler>>();
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => CreateHandler(logger: logger.Object).HandleAsync(
-            new StartGatewayPaymentCommand(invoice.Id, "innovayse-inecobank", ReturnUrl),
+            new StartGatewayPaymentCommand(invoice.Id, "inecobank", ReturnUrl),
             CancellationToken.None));
 
         Assert.Contains("already in progress", ex.Message);
@@ -383,14 +383,14 @@ public class StartGatewayPaymentHandlerTests
     public async Task HandleAsync_LiveSessionStatusCheckCancelled_PropagatesRatherThanRefusing()
     {
         var invoice = CreateInvoice();
-        invoice.SetGatewaySession("innovayse-inecobank", "gw-stale");
-        resolver.Setup(r => r.ResolveAsync("innovayse-inecobank", It.IsAny<CancellationToken>()))
+        invoice.SetGatewaySession("inecobank", "gw-stale");
+        resolver.Setup(r => r.ResolveAsync("inecobank", It.IsAny<CancellationToken>()))
             .ReturnsAsync(plugin.Object);
         plugin.Setup(p => p.GetStatusAsync("gw-stale", It.IsAny<CancellationToken>()))
             .ThrowsAsync(new OperationCanceledException());
 
         await Assert.ThrowsAsync<OperationCanceledException>(() => CreateHandler().HandleAsync(
-            new StartGatewayPaymentCommand(invoice.Id, "innovayse-inecobank", ReturnUrl),
+            new StartGatewayPaymentCommand(invoice.Id, "inecobank", ReturnUrl),
             CancellationToken.None));
     }
 }

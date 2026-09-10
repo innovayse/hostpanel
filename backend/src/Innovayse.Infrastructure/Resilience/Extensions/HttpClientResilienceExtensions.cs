@@ -1,4 +1,4 @@
-namespace Innovayse.Infrastructure.Resilience.Extensions;
+﻿namespace Innovayse.Infrastructure.Resilience.Extensions;
 
 using System.Net;
 using Innovayse.Infrastructure.Resilience.Options;
@@ -74,7 +74,7 @@ public static class HttpClientResilienceExtensions
     /// this string are matched by convention and nothing else. Change one and the plugin drops
     /// back to the factory's unnamed client without a word — and loses this profile with it.
     /// </summary>
-    public const string InecobankClientName = "innovayse-inecobank";
+    public const string InecobankClientName = "inecobank";
 
     /// <summary>
     /// The one Inecobank endpoint a repeat cannot make worse: a pure read of an order's status.

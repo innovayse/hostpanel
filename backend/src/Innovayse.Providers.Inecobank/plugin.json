@@ -1,5 +1,5 @@
-{
-  "id": "innovayse-inecobank",
+﻿{
+  "id": "inecobank",
   "name": "Inecobank",
   "version": "1.0.0",
   "author": "Innovayse",
@@ -12,7 +12,7 @@
   "showInIntegrations": true,
   "integrationsCategory": "Payment Gateways",
   "fields": [
-    { "key": "gateway_url", "label": "Gateway URL",              "type": "text",   "required": true  },
+    { "key": "gateway_url", "label": "Gateway base URL (e.g. https://pg.inecoecom.am)",              "type": "text",   "required": true  },
     { "key": "username",    "label": "API Username",             "type": "text",   "required": true  },
     { "key": "password",    "label": "API Password",             "type": "secret", "required": true  },
     { "key": "currency",    "label": "Currency (ISO 4217 numeric, default 051)", "type": "text", "required": false },

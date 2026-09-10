@@ -1,4 +1,4 @@
-namespace Innovayse.Domain.Settings;
+﻿namespace Innovayse.Domain.Settings;
 
 /// <summary>
 /// Builds the <c>Settings</c> table keys used to store per-integration configuration
@@ -13,17 +13,17 @@ public static class IntegrationSettingKeys
 
     /// <summary>Builds the key prefix shared by every setting belonging to an integration.</summary>
     /// <param name="slug">The integration's plugin id / slug.</param>
-    /// <returns>The prefix, e.g. <c>integration:innovayse-inecobank:</c>.</returns>
+    /// <returns>The prefix, e.g. <c>integration:inecobank:</c>.</returns>
     public static string Prefix(string slug) => $"integration:{slug}:";
 
     /// <summary>Builds the full key for a single configuration field of an integration.</summary>
     /// <param name="slug">The integration's plugin id / slug.</param>
     /// <param name="field">The field name, as declared in the plugin's manifest.</param>
-    /// <returns>The full setting key, e.g. <c>integration:innovayse-inecobank:username</c>.</returns>
+    /// <returns>The full setting key, e.g. <c>integration:inecobank:username</c>.</returns>
     public static string FieldKey(string slug, string field) => $"{Prefix(slug)}{field}";
 
     /// <summary>Builds the key for the enabled/disabled flag of an integration.</summary>
     /// <param name="slug">The integration's plugin id / slug.</param>
-    /// <returns>The full setting key, e.g. <c>integration:innovayse-inecobank:is_enabled</c>.</returns>
+    /// <returns>The full setting key, e.g. <c>integration:inecobank:is_enabled</c>.</returns>
     public static string EnabledKey(string slug) => FieldKey(slug, IsEnabledField);
 }

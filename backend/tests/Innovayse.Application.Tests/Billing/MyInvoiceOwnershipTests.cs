@@ -1,4 +1,4 @@
-namespace Innovayse.Application.Tests.Billing;
+﻿namespace Innovayse.Application.Tests.Billing;
 
 using Innovayse.Application.Billing.Commands.CompleteMyGatewayPayment;
 using Innovayse.Application.Billing.Commands.PayInvoice;
@@ -176,7 +176,7 @@ public sealed class MyInvoiceOwnershipTests
 
         await Assert.ThrowsAsync<InvoiceNotFoundException>(
             () => handler.HandleAsync(
-                new StartMyGatewayPaymentCommand(InvoiceId, "innovayse-inecobank", "https://example.com/return"),
+                new StartMyGatewayPaymentCommand(InvoiceId, "inecobank", "https://example.com/return"),
                 CancellationToken.None));
 
         bus.Verify(

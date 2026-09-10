@@ -1,4 +1,4 @@
-namespace Innovayse.Application.Tests.Orders;
+﻿namespace Innovayse.Application.Tests.Orders;
 
 using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Common;
@@ -49,7 +49,7 @@ public class FulfillPaidOrderHandlerTests
     [Fact]
     public async Task HandleAsync_PendingOrderWithServiceItem_AcceptsAndDispatchesService()
     {
-        var order = Order.Create(orderNumber: "ORD-1", clientId: 5, paymentMethod: "innovayse-inecobank", ipAddress: null);
+        var order = Order.Create(orderNumber: "ORD-1", clientId: 5, paymentMethod: "inecobank", ipAddress: null);
         order.AddItem(
             productId: 3,
             productName: "Hosting Plan",
@@ -98,7 +98,7 @@ public class FulfillPaidOrderHandlerTests
     [Fact]
     public async Task HandleAsync_RegistrarRejectsDomain_PluginPaidInvoice_RefundsThroughPluginAndRecordsIt()
     {
-        var order = Order.Create(orderNumber: "ORD-2", clientId: 5, paymentMethod: "innovayse-inecobank", ipAddress: null);
+        var order = Order.Create(orderNumber: "ORD-2", clientId: 5, paymentMethod: "inecobank", ipAddress: null);
         order.AddItem(
             productId: 9,
             productName: "example.com",
@@ -111,7 +111,7 @@ public class FulfillPaidOrderHandlerTests
             years: 1);
         order.LinkInvoice(10);
 
-        var invoice = MakePaidInvoiceWithGatewaySession("innovayse-inecobank", "gw-order-1");
+        var invoice = MakePaidInvoiceWithGatewaySession("inecobank", "gw-order-1");
 
         orderRepo.Setup(r => r.FindByIdAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync(order);
         invoiceRepo.Setup(r => r.FindByIdAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(invoice);
@@ -121,7 +121,7 @@ public class FulfillPaidOrderHandlerTests
         var plugin = new Mock<IPaymentPlugin>();
         plugin.Setup(p => p.RefundAsync("gw-order-1", 2500L, It.IsAny<CancellationToken>()))
             .ReturnsAsync("plugin-refund-99");
-        pluginResolver.Setup(r => r.ResolveAsync("innovayse-inecobank", It.IsAny<CancellationToken>()))
+        pluginResolver.Setup(r => r.ResolveAsync("inecobank", It.IsAny<CancellationToken>()))
             .ReturnsAsync(plugin.Object);
 
         await CreateHandler().HandleAsync(new FulfillPaidOrderCommand(2), CancellationToken.None);
@@ -132,14 +132,14 @@ public class FulfillPaidOrderHandlerTests
             invoice.Transactions,
             t => t.Type == InvoiceTransactionType.Refund
                 && t.TransactionId == "plugin-refund-99"
-                && t.Gateway == "innovayse-inecobank");
+                && t.Gateway == "inecobank");
         stripeService.Verify(s => s.RefundAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task HandleAsync_RegistrarRejectsDomain_ResolverReturnsNull_LogsCriticalWithoutThrowing()
     {
-        var order = Order.Create(orderNumber: "ORD-3", clientId: 5, paymentMethod: "innovayse-inecobank", ipAddress: null);
+        var order = Order.Create(orderNumber: "ORD-3", clientId: 5, paymentMethod: "inecobank", ipAddress: null);
         order.AddItem(
             productId: 9,
             productName: "example.com",
@@ -152,13 +152,13 @@ public class FulfillPaidOrderHandlerTests
             years: 1);
         order.LinkInvoice(10);
 
-        var invoice = MakePaidInvoiceWithGatewaySession("innovayse-inecobank", "gw-order-2");
+        var invoice = MakePaidInvoiceWithGatewaySession("inecobank", "gw-order-2");
 
         orderRepo.Setup(r => r.FindByIdAsync(3, It.IsAny<CancellationToken>())).ReturnsAsync(order);
         invoiceRepo.Setup(r => r.FindByIdAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(invoice);
         bus.Setup(b => b.InvokeAsync<int>(It.IsAny<RegisterDomainCommand>(), It.IsAny<CancellationToken>(), null))
             .ThrowsAsync(new InvalidOperationException("Registrar rejected: invalid TLD."));
-        pluginResolver.Setup(r => r.ResolveAsync("innovayse-inecobank", It.IsAny<CancellationToken>()))
+        pluginResolver.Setup(r => r.ResolveAsync("inecobank", It.IsAny<CancellationToken>()))
             .ReturnsAsync((IPaymentPlugin?)null);
 
         // Should not throw: the null-resolver failure is caught, logged critically, and swallowed —
@@ -175,7 +175,7 @@ public class FulfillPaidOrderHandlerTests
     [Fact]
     public async Task HandleAsync_OneServiceItemThrows_OtherItemsStillProcessed_AndLogsCritical()
     {
-        var order = Order.Create(orderNumber: "ORD-4", clientId: 5, paymentMethod: "innovayse-inecobank", ipAddress: null);
+        var order = Order.Create(orderNumber: "ORD-4", clientId: 5, paymentMethod: "inecobank", ipAddress: null);
         order.AddItem(
             productId: 3, productName: "Failing Plan", billingCycle: "monthly",
             firstPaymentAmount: 10m, recurringAmount: 10m, domain: null, hostname: null);
@@ -221,7 +221,7 @@ public class FulfillPaidOrderHandlerTests
     {
         var order = Order.Create(
             orderNumber: $"ORD-{orderId}", clientId: clientId,
-            paymentMethod: "innovayse-inecobank", ipAddress: null);
+            paymentMethod: "inecobank", ipAddress: null);
 
         order.AddItem(
             productId: 9, productName: "Domain Registration", billingCycle: "annually",
@@ -244,7 +244,7 @@ public class FulfillPaidOrderHandlerTests
     {
         MakeRenewalOrder(orderId: 5, clientId: 5);
         invoiceRepo.Setup(r => r.FindByIdAsync(10, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(MakePaidInvoiceWithGatewaySession("innovayse-inecobank", "gw-order-5"));
+            .ReturnsAsync(MakePaidInvoiceWithGatewaySession("inecobank", "gw-order-5"));
 
         domainRepo.Setup(r => r.FindByNameAsync("example.com", It.IsAny<CancellationToken>()))
             .ReturnsAsync(DomainEntity.CreateTransfer(clientId: 5, name: "example.com"));
@@ -274,7 +274,7 @@ public class FulfillPaidOrderHandlerTests
     {
         MakeRenewalOrder(orderId: 6, clientId: 5);
 
-        var invoice = MakePaidInvoiceWithGatewaySession("innovayse-inecobank", "gw-order-6");
+        var invoice = MakePaidInvoiceWithGatewaySession("inecobank", "gw-order-6");
         invoiceRepo.Setup(r => r.FindByIdAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(invoice);
 
         // Same name, different owner. The lookup is by name and is not scoped by client, which is
@@ -285,7 +285,7 @@ public class FulfillPaidOrderHandlerTests
         var plugin = new Mock<IPaymentPlugin>();
         plugin.Setup(p => p.RefundAsync("gw-order-6", 2500L, It.IsAny<CancellationToken>()))
             .ReturnsAsync("refund-6");
-        pluginResolver.Setup(r => r.ResolveAsync("innovayse-inecobank", It.IsAny<CancellationToken>()))
+        pluginResolver.Setup(r => r.ResolveAsync("inecobank", It.IsAny<CancellationToken>()))
             .ReturnsAsync(plugin.Object);
 
         await CreateHandler().HandleAsync(new FulfillPaidOrderCommand(6), CancellationToken.None);

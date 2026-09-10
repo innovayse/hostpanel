@@ -34,7 +34,7 @@ public sealed class TransferMyDomainTests
     /// <summary>A well-formed transfer request, as the portal's form produces one.</summary>
     /// <returns>The command under test.</returns>
     private static TransferMyDomainCommand ValidCommand() =>
-        new("example.com", "EPP-SECRET-123", Years: 1, PaymentMethod: "innovayse-inecobank");
+        new("example.com", "EPP-SECRET-123", Years: 1, PaymentMethod: "inecobank");
 
     /// <summary>An active product of type <see cref="ProductType.Domain"/>.</summary>
     /// <returns>The product a domain order line hangs off.</returns>
@@ -168,7 +168,7 @@ public sealed class TransferMyDomainTests
         bus.Verify(
             b => b.InvokeAsync<PlaceOrderResultDto>(
                 It.Is<PlaceOrderCommand>(c =>
-                    c.PaymentMethod == "innovayse-inecobank"
+                    c.PaymentMethod == "inecobank"
                     && c.Email == null
                     && c.Password == null
                     && c.Items.Count == 1

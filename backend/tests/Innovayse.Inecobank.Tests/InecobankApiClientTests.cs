@@ -1,6 +1,7 @@
-namespace Innovayse.Inecobank.Tests;
+﻿namespace Innovayse.Inecobank.Tests;
 
 using System.Net;
+using System.Text.Json;
 using FluentAssertions;
 using Innovayse.Providers.Inecobank;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -106,8 +107,16 @@ public class InecobankApiClientTests
         (await act.Should().ThrowAsync<InecobankApiException>()).Which.ErrorCode.Should().Be(7);
     }
 
+    // This used to assert that any non-2xx status became an InecobankApiException wrapping an
+    // HttpRequestException -- the client called EnsureSuccessStatusCode() before reading anything.
+    // The live gateway answers ordinary business outcomes with a 500 and a JSON body that names
+    // the problem, so the status alone can no longer be the verdict and the body is now read
+    // first. What this test protects is unchanged: a response this client cannot make sense of
+    // must still surface as its own exception type, naming the endpoint, with the underlying
+    // failure attached rather than thrown raw at the caller. The status code is asserted too,
+    // because when the body explains nothing the status is the only diagnostic left.
     [Fact]
-    public async Task RegisterOrderAsync_NonSuccessStatusCode_WrapsHttpRequestExceptionRatherThanThrowingItRaw()
+    public async Task RegisterOrderAsync_NonSuccessStatusWithAnUnreadableBody_WrapsTheFailureAndReportsTheStatus()
     {
         var (client, http) = CreateClient();
         http.EnqueueStatus(HttpStatusCode.BadGateway, "<html>upstream error</html>");
@@ -117,8 +126,8 @@ public class InecobankApiClientTests
             CancellationToken.None);
 
         var ex = await act.Should().ThrowAsync<InecobankApiException>();
-        ex.Which.InnerException.Should().BeOfType<HttpRequestException>();
-        ex.Which.Message.Should().Contain(InecobankEndpoints.Register);
+        ex.Which.InnerException.Should().BeAssignableTo<JsonException>();
+        ex.Which.Message.Should().Contain(InecobankEndpoints.Register).And.Contain("502");
     }
 
     [Fact]

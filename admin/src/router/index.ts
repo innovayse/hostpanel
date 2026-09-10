@@ -34,6 +34,7 @@ const router = createRouter({
       children: [
         { path: '', redirect: '/dashboard' },
         { path: 'dashboard', component: () => import('../modules/dashboard/views/DashboardView.vue') },
+        { path: 'notifications', component: () => import('../modules/dashboard/views/NotificationsView.vue') },
         { path: 'clients', component: () => import('../modules/clients/views/ClientsListView.vue') },
         { path: 'clients/add', component: () => import('../modules/clients/views/AddClientView.vue') },
         { path: 'clients/users', component: () => import('../modules/clients/views/ManageUsersView.vue') },

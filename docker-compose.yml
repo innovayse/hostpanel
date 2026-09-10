@@ -294,6 +294,19 @@ services:
       NUXT_PUBLIC_SHEETS_URL: ${NUXT_PUBLIC_SHEETS_URL}
       NUXT_PUBLIC_EMAIL_URL: ${NUXT_PUBLIC_EMAIL_URL}
       NUXT_PUBLIC_DRIVE_URL: ${NUXT_PUBLIC_DRIVE_URL}
+      # Storefront branding fallbacks; the admin panel's portal.* settings win over
+      # every one of these. Same names as docker-compose.prod.yml so a laptop and a
+      # host read one contract.
+      NUXT_PUBLIC_PORTAL_TEMPLATE: ${NUXT_PUBLIC_PORTAL_TEMPLATE}
+      NUXT_PUBLIC_PORTAL_APPS_ENABLED: ${NUXT_PUBLIC_PORTAL_APPS_ENABLED}
+      NUXT_PUBLIC_PORTAL_SITE_NAME: ${NUXT_PUBLIC_PORTAL_SITE_NAME}
+      NUXT_PUBLIC_PORTAL_SITE_TAGLINE: ${NUXT_PUBLIC_PORTAL_SITE_TAGLINE}
+      NUXT_PUBLIC_PORTAL_THEME_DEFAULT: ${NUXT_PUBLIC_PORTAL_THEME_DEFAULT}
+      NUXT_PUBLIC_PORTAL_THEME_USER_TOGGLE: ${NUXT_PUBLIC_PORTAL_THEME_USER_TOGGLE}
+      NUXT_PUBLIC_PORTAL_LOGO: ${NUXT_PUBLIC_PORTAL_LOGO}
+      NUXT_PUBLIC_PORTAL_LOGO_DARK: ${NUXT_PUBLIC_PORTAL_LOGO_DARK}
+      NUXT_PUBLIC_PORTAL_LOGO_MARK: ${NUXT_PUBLIC_PORTAL_LOGO_MARK}
+      NUXT_PUBLIC_PORTAL_FAVICON: ${NUXT_PUBLIC_PORTAL_FAVICON}
       # Address of the WHMCS install the client area hands visitors off to. The dev
       # target evaluates nuxt.config.ts at container start, so the source name is what
       # it reads here; the prod overlays pass the same variable under Nitro's

@@ -22,7 +22,7 @@ client/.vite/
 .codegraph/
 .code-review-graph/
 
-# Claude Code / AI tooling
+# Local editor and assistant tooling
 .claude/
 CLAUDE.md
 client/CLAUDE.md

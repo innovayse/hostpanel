@@ -307,6 +307,25 @@ their own data loading. That was the point: moving a 500-line page unchanged is
 far safer than rewriting it, and the design it renders is the one being replaced.
 New templates should follow `aurora`, not `classic`.
 
+**Branding and colour mode**, all from **Admin → Settings** with a
+`NUXT_PUBLIC_PORTAL_*` environment fallback for a first boot (the admin value
+wins once set):
+
+| Setting | Env fallback | What it does |
+|---|---|---|
+| `portal.site.name` | `NUXT_PUBLIC_PORTAL_SITE_NAME` | Site name for `og:site_name`, logo alt text and structured data. Empty shows the built-in name. |
+| `portal.site.tagline` | `NUXT_PUBLIC_PORTAL_SITE_TAGLINE` | Default meta description. |
+| `portal.theme.default` | `NUXT_PUBLIC_PORTAL_THEME_DEFAULT` | `light`, `dark` or `system` for a visitor with no saved choice. A visitor's own choice is kept in a `color-mode` cookie and rendered on the server, so there is no flash of the wrong theme. |
+| `portal.theme.user_toggle` | `NUXT_PUBLIC_PORTAL_THEME_USER_TOGGLE` | `false` hides the light/dark switch. |
+| `portal.logo` | `NUXT_PUBLIC_PORTAL_LOGO` | Logo for light backgrounds. |
+| `portal.logo.dark` | `NUXT_PUBLIC_PORTAL_LOGO_DARK` | Logo for dark backgrounds; falls back to the light one. |
+| `portal.logo.mark` | `NUXT_PUBLIC_PORTAL_LOGO_MARK` | Square icon-only logo for compact places. |
+| `portal.favicon` | `NUXT_PUBLIC_PORTAL_FAVICON` | Browser tab icon; an upload generates the whole icon set. |
+
+Logos and the favicon can be uploaded in **Admin → Settings → Branding** or pasted
+as URLs. `portal.template` and `portal.theme.default` accept only their listed
+values; anything else is refused with `INVALID_SETTING_VALUE`.
+
 Related operator settings, all optional and hidden when empty:
 `portal.contact.whatsapp`, `portal.contact.telegram`, `portal.contact.email`,
 `portal.contact.phone`, `portal.chat.provider`, `portal.newsletter.action_url`,

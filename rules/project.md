@@ -264,7 +264,7 @@ docker run --rm `
 warnings. It prints nothing for minutes at a stretch and **appears to stop after
 `Innovayse.Infrastructure`**; that project is simply the slow one, and `Innovayse.API`, the
 test projects and the rest land minutes later. Only treat it as hung well past ten minutes.
-Three agents in a row abandoned this build as stalled and fell back to a narrower one, losing
+Three attempts in a row abandoned this build as stalled and fell back to a narrower one, losing
 the cross-project signal it exists for.
 
 The host package cache covers the private feed for a local build: `nuget.config`'s
@@ -376,6 +376,44 @@ That widget is served by **innovayse-main**, not by this product. It must be HTT
 deployment or the browser blocks it as mixed content and the client dashboard's hydration
 hangs.
 
+**The `dark` / `light` class on `<html>` has exactly one writer: `client/plugins/color-mode.ts`.**
+It used to have three — a client-only plugin that forced `dark` on every public page, a blocking
+script in `app.vue` that did the same, and `useAppColorMode()` restoring a `localStorage` value
+on mount — which is why the operator could not ship a light storefront and a light-mode visitor
+got a dark flash on every load. The resolution rule is in `client/utils/colorMode.ts` and reads,
+in order: the visitor's `color-mode` **cookie**, then the operator's `portal.theme.default`
+(`light` | `dark` | `system`), then the device. A cookie or a fixed operator mode is rendered
+into the HTML on the server; only `system` with no cookie emits an inline head script, because
+both template stylesheets declare their dark palette on bare `:root` and a class-less page is
+dark until something says otherwise. Do not add `document.documentElement.classList` calls
+anywhere, and do not read the mode from anything but `useAppColorMode()`.
+`portal.theme.user_toggle = false` hides `UiThemeToggle` and makes `toggle()` a no-op.
+
+**The logo a template renders comes from `useBrandLogo()`, and nowhere else — and a header
+renders both wordmarks, swapped by CSS, never one picked in JavaScript.** `light` and `dark` are
+the two wordmarks with their fallbacks (each falls back to the other); a header renders
+`<img :src="light" class="dark:hidden">` beside `<img :src="dark" class="hidden dark:block">`
+when `hasDarkVariant`. The reason is hydration: under the `system` default the server does not
+know the mode and renders as dark, and **production Vue does not patch an attribute that
+disagrees after hydration** — a `:src` chosen from `isDark` left a light-device visitor looking
+at the dark logo, and a `v-if` on the toggle's icon left them looking at the sun. Both were seen
+in a browser before the swap. `logoOnDark` is for surfaces that are always dark whatever the
+page mode (the sign-in pages, classic's header and footer); `mark` is `portal.logo.mark` with the
+same fallback chain; `logo` is the mode-aware pick for browser-only code; and `alt` is
+`portal.site.name`, because the logo *is* the site name and the `alt=""` the headers shipped
+with told a screen reader the brand was decorative. The rule itself is
+`client/utils/brandLogo.ts`, unit-tested. `useSiteIdentity()` is the only source of the site
+name; the literal `Innovayse` survives as its fallback and in the locale copy, and nowhere else
+in a `.vue` or `.ts` file.
+
+**`PortalSettingKeys` (Domain) is the backend's one list of `portal.*` keys** — the seeder's
+`Defaults` and the anonymous endpoint's `Public` set are derived from the same array, and
+`AllowedValues` is the vocabulary `UpdateSettingHandler` enforces (`INVALID_SETTING_VALUE`, 400).
+The Nuxt BFF's `PUBLIC_KEYS` in `client/server/api/portal/public/settings.get.ts` is a **manual
+twin** of that list; it cannot import the class, so a new key is added in both places and in
+`nuxt.config.ts`'s `runtimeConfig.public` **and** both compose files' `NUXT_PUBLIC_*` lines.
+`PortalSettingKeysTests` fails if `Defaults` and `Public` drift; nothing tests the BFF twin.
+
 ## Migration debt — recorded, not endorsed
 
 The workspace standard is [clean-architecture.md](clean-architecture.md). These are the places
@@ -408,7 +446,7 @@ of a feature.
   `Innovayse.Infrastructure.Migrations` derives from a bare `Migration`. Namespace-member lookup
   walks the enclosing namespaces before it ever reads a `using`, so it finds the folder rather
   than EF Core's base class and fails **every** migration file with CS0118. That has already
-  cost one agent a build. `Integrations/Migration/` is where this feature's Infrastructure code
+  cost one build already. `Integrations/Migration/` is where this feature's Infrastructure code
   already was, and it is a fair home rather than a dodge: the whole migration subsystem exists
   to pull from a foreign install, and `MigrationJob` / `MigrationLog` are that integration's own
   bookkeeping. It is also the only option that neither invents a name the feature is not called

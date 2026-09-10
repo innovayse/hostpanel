@@ -77,8 +77,6 @@ export default defineNuxtConfig({
     }
   },
 
-  // GA4 tracking now handled by Google Tag Manager (GTM-5C9TKM58)
-
   swiper: {
     modules: ['autoplay', 'effect-fade', 'navigation', 'pagination']
   } as any,
@@ -308,10 +306,8 @@ export default defineNuxtConfig({
           : []),
       ],
       link: [
-        // Performance: preconnect to third-party origins used on all pages
-        { rel: 'preconnect', href: 'https://www.googletagmanager.com' },
-        { rel: 'dns-prefetch', href: 'https://www.googletagmanager.com' },
-        { rel: 'dns-prefetch', href: 'https://www.google-analytics.com' },
+        // No preconnect to a tag or analytics host here: whether either is contacted at
+        // all is the operator's setting plus the visitor's consent (plugins/tracking.client.ts).
         // The favicon links are NOT here. app.vue emits them through brandingIcons(),
         // built-in defaults included, because unhead only dedupes link tags that share an
         // explicit key -- so a static link here and an uploaded one there both render, and

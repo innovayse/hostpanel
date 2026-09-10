@@ -1,8 +1,18 @@
+# Which pushes get a pipeline at all. Every branch-gated rule below hangs off this:
+# a job's own `if:` is never evaluated unless a pipeline was created here first.
 workflow:
   rules:
     - if: $CI_SERVER_HOST == "gitlab.com" && $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "main"      # → production (ProdServer, manual)
-    - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "develop"   # → staging (LocalServer)
+    # A push to develop no longer builds anything. Stage is out of use, so the images
+    # this produced and the staging deploy behind them were work nobody collected, and
+    # the commits in it were already tested on the merge request that gated them. The
+    # line is commented rather than deleted and every develop-gated job is left defined
+    # and dormant, so bringing staging back is this one line.
+    # - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "develop" # → staging (LocalServer)
+    # ci-test stays. It is not a branch anything is developed on — it exists to try a
+    # change to this file on a real pipeline, which is the only way to verify one, and
+    # it only builds when somebody deliberately pushes that name.
     - if: $CI_SERVER_HOST == "gitlab.com" && $CI_COMMIT_BRANCH == "ci-test"   # throwaway verification branch
 
 stages: [test, build, deploy]

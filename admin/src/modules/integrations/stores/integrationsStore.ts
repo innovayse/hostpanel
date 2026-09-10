@@ -97,10 +97,16 @@ export const useIntegrationsStore = defineStore('integrations', () => {
     loading.value = true
     error.value = null
     try {
-      current.value = await request<IntegrationDetailDto>(`/admin/integrations/${slug}`, {
+      await request(`/admin/integrations/${slug}`, {
         method: 'PUT',
         body: JSON.stringify(payload),
       })
+      // The PUT answers 204 No Content, so there is no detail in its response to show. Assigning
+      // it to `current` blanked the whole page: the form is rendered from `current`, and one
+      // successful save replaced it with undefined. Re-read instead — which is also the only way
+      // to see what the server actually stored, since secrets come back masked and the enabled
+      // state can be refused when required fields are missing.
+      await fetchOne(slug)
     } catch {
       error.value = 'Failed to save integration config.'
     } finally {

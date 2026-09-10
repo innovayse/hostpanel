@@ -1,4 +1,4 @@
-/** Category grouping for an integration. */
+﻿/** Category grouping for an integration. */
 export type IntegrationCategory =
   | 'payments'
   | 'registrars'
@@ -11,6 +11,7 @@ export type IntegrationSlug =
   | 'stripe'
   | 'paypal'
   | 'bank-transfer'
+  | 'inecobank'
   | 'namecheap'
   | 'nameam'
   | 'resellerclub'

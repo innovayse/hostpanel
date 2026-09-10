@@ -1,4 +1,4 @@
-namespace Innovayse.Application.Tests.Billing;
+﻿namespace Innovayse.Application.Tests.Billing;
 
 using Innovayse.Application.Billing.Commands.CompleteGatewayPayment;
 using Innovayse.Application.Billing.Commands.ReconcileGatewayPaymentsCron;
@@ -21,9 +21,9 @@ public class ReconcileGatewayPaymentsCronHandlerTests
         var invoiceRepo = new Mock<IInvoiceRepository>();
         var bus = new Mock<IMessageBus>();
         var a = Invoice.Create(1, DateTimeOffset.UtcNow.AddDays(7));
-        a.SetGatewaySession("innovayse-inecobank", "gw-a");
+        a.SetGatewaySession("inecobank", "gw-a");
         var b = Invoice.Create(2, DateTimeOffset.UtcNow.AddDays(7));
-        b.SetGatewaySession("innovayse-inecobank", "gw-b");
+        b.SetGatewaySession("inecobank", "gw-b");
 
         DateTimeOffset capturedStartedAfter = default;
         DateTimeOffset capturedStartedBefore = default;
@@ -75,9 +75,9 @@ public class ReconcileGatewayPaymentsCronHandlerTests
         var invoiceRepo = new Mock<IInvoiceRepository>();
         var bus = new Mock<IMessageBus>();
         var a = Invoice.Create(1, DateTimeOffset.UtcNow.AddDays(7));
-        a.SetGatewaySession("innovayse-inecobank", "gw-a");
+        a.SetGatewaySession("inecobank", "gw-a");
         var b = Invoice.Create(2, DateTimeOffset.UtcNow.AddDays(7));
-        b.SetGatewaySession("innovayse-inecobank", "gw-b");
+        b.SetGatewaySession("inecobank", "gw-b");
         invoiceRepo.Setup(r => r.ListPendingGatewayPaymentsAsync(
                 It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([a, b]);

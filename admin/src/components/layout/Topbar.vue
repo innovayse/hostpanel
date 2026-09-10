@@ -40,6 +40,7 @@ const titleKeys: Record<string, string> = {
   '/settings':    'nav.settings',
   '/reports':     'nav.reports',
   '/orders':      'nav.orders',
+  '/notifications': 'common.notifications',
 }
 
 /** Current page title derived from the active route. */
@@ -100,6 +101,12 @@ onMounted(() => {
 
 const router = useRouter()
 const auth = useAuthStore()
+
+/** Closes the dropdown and sends the operator to the full notification feed. */
+function viewAllNotifications(): void {
+  showNotifications.value = false
+  router.push('/notifications')
+}
 
 /** Controls the account menu visibility. */
 const showAccountMenu = ref(false)
@@ -240,7 +247,7 @@ async function signOut(): Promise<void> {
             </div>
           </div>
           <div class="px-4 py-2.5 border-t border-border">
-            <button class="text-[0.75rem] text-primary-400 hover:text-primary-300 transition-colors">{{ t('common.viewAllNotifications') }}</button>
+            <button class="text-[0.75rem] text-primary-400 hover:text-primary-300 transition-colors" @click="viewAllNotifications">{{ t('common.viewAllNotifications') }}</button>
           </div>
         </div>
 

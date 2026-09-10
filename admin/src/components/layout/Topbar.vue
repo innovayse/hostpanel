@@ -5,11 +5,17 @@
  * Shows current page title, search, notifications, and user menu.
  * On mobile emits toggle-sidebar to open the drawer.
  */
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { formatDistanceToNowStrict, type Locale } from 'date-fns'
+import { enUS, ru, hy } from 'date-fns/locale'
 import { SUPPORTED_LOCALES, setLocale, type SupportedLocale } from '../../i18n'
 import { useAuthStore } from '../../modules/auth/stores/authStore'
+import { useActivityStore } from '../../modules/dashboard/stores/activityStore'
+
+/** date-fns locale objects, keyed by this app's locale codes. */
+const dateFnsLocales: Record<SupportedLocale, Locale> = { en: enUS, ru, hy }
 
 /** Emitted when the hamburger button is clicked on mobile. */
 const emit = defineEmits<{
@@ -61,13 +67,36 @@ function chooseLocale(code: SupportedLocale): void {
 /** Controls the notification popover visibility. */
 const showNotifications = ref(false)
 
-/** Mock notification count — will come from store later. */
-const notificationCount = ref(3)
+const activity = useActivityStore()
 
-/** Toggles notification dropdown. */
+/** Number of events in the feed, shown as the badge and header count. */
+const notificationCount = computed(() => activity.events.length)
+
+/** Toggles notification dropdown, loading the feed the first time it opens. */
 function toggleNotifications(): void {
   showNotifications.value = !showNotifications.value
+  if (showNotifications.value && activity.events.length === 0 && !activity.loading) {
+    activity.fetchActivity()
+  }
 }
+
+/**
+ * Formats an ISO timestamp as a localized relative string ("2 minutes ago", "3 hours ago").
+ *
+ * @param iso - ISO 8601 timestamp.
+ * @returns Human-readable relative time in the active locale.
+ */
+function relativeTime(iso: string): string {
+  return formatDistanceToNowStrict(new Date(iso), {
+    addSuffix: true,
+    locale: dateFnsLocales[locale.value as SupportedLocale],
+  })
+}
+
+/** Loads the notification feed once on mount so the badge reflects real data immediately. */
+onMounted(() => {
+  activity.fetchActivity()
+})
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -194,18 +223,20 @@ async function signOut(): Promise<void> {
             <span class="text-[0.8rem] font-semibold font-display text-text-primary">{{ t('common.notifications') }}</span>
             <span class="text-[0.65rem] font-medium text-primary-400 bg-primary-500/10 border border-primary-500/20 rounded-full px-2 py-0.5">{{ t('common.newCount', { count: notificationCount }) }}</span>
           </div>
-          <div class="divide-y divide-border">
-            <div class="px-4 py-3 hover:bg-white/[0.03] transition-colors cursor-pointer">
-              <p class="text-[0.8rem] text-text-primary mb-0.5">New client registered</p>
-              <p class="text-[0.72rem] text-text-muted">2 minutes ago</p>
-            </div>
-            <div class="px-4 py-3 hover:bg-white/[0.03] transition-colors cursor-pointer">
-              <p class="text-[0.8rem] text-text-primary mb-0.5">Invoice #1042 overdue</p>
-              <p class="text-[0.72rem] text-text-muted">1 hour ago</p>
-            </div>
-            <div class="px-4 py-3 hover:bg-white/[0.03] transition-colors cursor-pointer">
-              <p class="text-[0.8rem] text-text-primary mb-0.5">Domain expiring soon</p>
-              <p class="text-[0.72rem] text-text-muted">3 hours ago</p>
+          <div v-if="activity.loading && activity.events.length === 0" class="px-4 py-6 text-center text-[0.75rem] text-text-muted">
+            {{ t('common.loading') }}
+          </div>
+          <div v-else-if="activity.events.length === 0" class="px-4 py-6 text-center text-[0.75rem] text-text-muted">
+            {{ t('common.noNotifications') }}
+          </div>
+          <div v-else class="divide-y divide-border max-h-80 overflow-y-auto">
+            <div
+              v-for="(event, index) in activity.events"
+              :key="`${event.type}-${event.occurredAt}-${index}`"
+              class="px-4 py-3 hover:bg-white/[0.03] transition-colors cursor-pointer"
+            >
+              <p class="text-[0.8rem] text-text-primary mb-0.5">{{ event.message }}</p>
+              <p class="text-[0.72rem] text-text-muted">{{ relativeTime(event.occurredAt) }}</p>
             </div>
           </div>
           <div class="px-4 py-2.5 border-t border-border">

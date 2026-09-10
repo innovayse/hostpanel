@@ -9,7 +9,8 @@
     "notifications": "Notifications",
     "toggleSidebar": "Toggle sidebar",
     "viewAllNotifications": "View all notifications",
-    "newCount": "{count} new"
+    "newCount": "{count} new",
+    "noNotifications": "No notifications"
   },
   "nav": {
     "dashboard": "Dashboard",

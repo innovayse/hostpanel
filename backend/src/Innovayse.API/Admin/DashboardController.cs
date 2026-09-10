@@ -1,6 +1,7 @@
 namespace Innovayse.API.Admin;
 
 using Innovayse.Application.Admin.Queries.GetDashboardStats;
+using Innovayse.Application.Admin.Queries.GetRecentActivity;
 using Innovayse.Domain.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,5 +24,17 @@ public sealed class DashboardController(IMessageBus bus) : ControllerBase
     {
         var stats = await bus.InvokeAsync<DashboardStatsDto>(new GetDashboardStatsQuery(), ct);
         return Ok(stats);
+    }
+
+    /// <summary>Returns the most recent noteworthy events for the notification bell.</summary>
+    /// <param name="limit">Maximum number of events to return, newest first. Defaults to 10.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Merged, newest-first activity events.</returns>
+    [HttpGet("activity")]
+    public async Task<ActionResult<IReadOnlyList<ActivityEventDto>>> GetActivityAsync([FromQuery] int limit, CancellationToken ct)
+    {
+        var events = await bus.InvokeAsync<IReadOnlyList<ActivityEventDto>>(
+            new GetRecentActivityQuery(limit is > 0 and <= 50 ? limit : 10), ct);
+        return Ok(events);
     }
 }

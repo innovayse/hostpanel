@@ -1,4 +1,4 @@
-namespace Innovayse.Application.Admin.Integrations.Commands.TestIntegrationConnection;
+﻿namespace Innovayse.Application.Admin.Integrations.Commands.TestIntegrationConnection;
 
 using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Domain.Settings;
@@ -20,7 +20,7 @@ public sealed class TestIntegrationConnectionHandler(
     /// as <c>InecobankPaymentGateway.PluginId</c>, but Application cannot reference a provider
     /// assembly, so it is repeated here as a single source shared by both usages below.
     /// </summary>
-    private const string InecobankSlug = "innovayse-inecobank";
+    private const string InecobankSlug = "inecobank";
 
     /// <summary>
     /// Static metadata for every integration.

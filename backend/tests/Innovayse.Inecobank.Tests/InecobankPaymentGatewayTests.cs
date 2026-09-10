@@ -1,4 +1,4 @@
-namespace Innovayse.Inecobank.Tests;
+﻿namespace Innovayse.Inecobank.Tests;
 
 using FluentAssertions;
 using Innovayse.Providers.Inecobank;
@@ -14,9 +14,9 @@ public class InecobankPaymentGatewayTests
     {
         var values = new Dictionary<string, string?>
         {
-            ["integration:innovayse-inecobank:gateway_url"] = "https://testpg.example.am",
-            ["integration:innovayse-inecobank:username"] = "merchant-api",
-            ["integration:innovayse-inecobank:password"] = "secret-pw",
+            ["integration:inecobank:gateway_url"] = "https://testpg.example.am",
+            ["integration:inecobank:username"] = "merchant-api",
+            ["integration:inecobank:password"] = "secret-pw",
         };
         foreach (var (k, v) in overrides ?? []) values[k] = v;
         return new ConfigurationBuilder().AddInMemoryCollection(values).Build();
@@ -58,7 +58,7 @@ public class InecobankPaymentGatewayTests
     [Fact]
     public void CurrencyCode_UsesConfiguredValue()
     {
-        var (gateway, _) = CreateGateway(new() { ["integration:innovayse-inecobank:currency"] = "840" });
+        var (gateway, _) = CreateGateway(new() { ["integration:inecobank:currency"] = "840" });
 
         gateway.CurrencyCode.Should().Be("840");
     }
@@ -66,7 +66,7 @@ public class InecobankPaymentGatewayTests
     [Fact]
     public async Task CreatePaymentAsync_MissingRequiredConfig_Throws()
     {
-        var (gateway, _) = CreateGateway(new() { ["integration:innovayse-inecobank:username"] = null });
+        var (gateway, _) = CreateGateway(new() { ["integration:inecobank:username"] = null });
 
         var act = () => gateway.CreatePaymentAsync(
             new PaymentRequest("INV1-1", 100, "https://portal/r", null, null), CancellationToken.None);

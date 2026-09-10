@@ -1,4 +1,4 @@
-namespace Innovayse.Application.Billing.Commands.StartMyGatewayPayment;
+﻿namespace Innovayse.Application.Billing.Commands.StartMyGatewayPayment;
 
 /// <summary>Command for a client to start a hosted-gateway payment on one of their own invoices.</summary>
 /// <remarks>
@@ -7,6 +7,6 @@ namespace Innovayse.Application.Billing.Commands.StartMyGatewayPayment;
 /// has just created, dispatches <c>StartGatewayPaymentCommand</c> directly.
 /// </remarks>
 /// <param name="InvoiceId">The invoice to pay.</param>
-/// <param name="Module">The payment plugin id (e.g. "innovayse-inecobank").</param>
+/// <param name="Module">The payment plugin id (e.g. "inecobank").</param>
 /// <param name="ReturnUrl">Absolute URL the gateway redirects the payer back to.</param>
 public sealed record StartMyGatewayPaymentCommand(int InvoiceId, string Module, string ReturnUrl);

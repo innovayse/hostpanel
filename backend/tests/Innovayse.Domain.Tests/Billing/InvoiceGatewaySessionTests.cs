@@ -1,4 +1,4 @@
-namespace Innovayse.Domain.Tests.Billing;
+﻿namespace Innovayse.Domain.Tests.Billing;
 
 using Innovayse.Domain.Billing;
 using Xunit;
@@ -12,9 +12,9 @@ public class InvoiceGatewaySessionTests
         var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
         var before = DateTimeOffset.UtcNow;
 
-        invoice.SetGatewaySession("innovayse-inecobank", "32faa424-858a-4f22");
+        invoice.SetGatewaySession("inecobank", "32faa424-858a-4f22");
 
-        Assert.Equal("innovayse-inecobank", invoice.GatewayModule);
+        Assert.Equal("inecobank", invoice.GatewayModule);
         Assert.Equal("32faa424-858a-4f22", invoice.GatewayOrderId);
         Assert.NotNull(invoice.GatewayStartedAt);
         Assert.True(invoice.GatewayStartedAt >= before);
@@ -24,9 +24,9 @@ public class InvoiceGatewaySessionTests
     public void SetGatewaySession_SecondAttempt_OverwritesPreviousSession()
     {
         var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
-        invoice.SetGatewaySession("innovayse-inecobank", "first-attempt");
+        invoice.SetGatewaySession("inecobank", "first-attempt");
 
-        invoice.SetGatewaySession("innovayse-inecobank", "second-attempt");
+        invoice.SetGatewaySession("inecobank", "second-attempt");
 
         Assert.Equal("second-attempt", invoice.GatewayOrderId);
     }
@@ -35,11 +35,11 @@ public class InvoiceGatewaySessionTests
     public void SetGatewaySession_OnPaidInvoice_Throws()
     {
         var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
-        invoice.SetGatewaySession("innovayse-inecobank", "attempt-1");
+        invoice.SetGatewaySession("inecobank", "attempt-1");
         invoice.MarkPaid("txn-1");
 
         Assert.Throws<InvalidOperationException>(
-            () => invoice.SetGatewaySession("innovayse-inecobank", "attempt-2"));
+            () => invoice.SetGatewaySession("inecobank", "attempt-2"));
     }
 
     [Fact]
@@ -50,7 +50,7 @@ public class InvoiceGatewaySessionTests
         // survive — otherwise refund/reconciliation code would later mistake it for the
         // gateway that actually took the money.
         var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
-        invoice.SetGatewaySession("innovayse-inecobank", "abandoned-session");
+        invoice.SetGatewaySession("inecobank", "abandoned-session");
 
         invoice.MarkPaid("stripe-txn-1");
 
@@ -66,11 +66,11 @@ public class InvoiceGatewaySessionTests
         // The completion path for the invoice's own live gateway session — the session fields
         // must be retained so refund/reconciliation code can identify which gateway paid.
         var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
-        invoice.SetGatewaySession("innovayse-inecobank", "gw-order-1");
+        invoice.SetGatewaySession("inecobank", "gw-order-1");
 
         invoice.MarkPaidViaGateway("gw-order-1");
 
-        Assert.Equal("innovayse-inecobank", invoice.GatewayModule);
+        Assert.Equal("inecobank", invoice.GatewayModule);
         Assert.Equal("gw-order-1", invoice.GatewayOrderId);
         Assert.NotNull(invoice.GatewayStartedAt);
         Assert.Equal(InvoiceStatus.Paid, invoice.Status);
@@ -80,7 +80,7 @@ public class InvoiceGatewaySessionTests
     public void MarkPaidViaGateway_OnPaidInvoice_Throws()
     {
         var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
-        invoice.SetGatewaySession("innovayse-inecobank", "gw-order-1");
+        invoice.SetGatewaySession("inecobank", "gw-order-1");
         invoice.MarkPaidViaGateway("gw-order-1");
 
         Assert.Throws<InvalidOperationException>(() => invoice.MarkPaidViaGateway("gw-order-2"));
@@ -94,7 +94,7 @@ public class InvoiceGatewaySessionTests
         // here would let it re-query the gateway and silently re-mark the invoice Paid again,
         // undoing the admin's reversal.
         var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
-        invoice.SetGatewaySession("innovayse-inecobank", "gw-order-1");
+        invoice.SetGatewaySession("inecobank", "gw-order-1");
         invoice.MarkPaidViaGateway("gw-order-1");
 
         invoice.MarkUnpaid();

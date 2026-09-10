@@ -7,7 +7,7 @@
 /// is a lookup that belongs on this side of the HTTP edge rather than in the endpoint.
 /// </remarks>
 /// <param name="OrderId">The order to pay.</param>
-/// <param name="Module">The payment plugin id (e.g. "innovayse-inecobank").</param>
+/// <param name="Module">The payment plugin id (e.g. "inecobank").</param>
 /// <param name="ReturnUrl">Absolute URL the gateway redirects the payer back to.</param>
 /// <param name="PaymentToken">
 /// The order's payment token, proving the caller is the payer this order was handed to.

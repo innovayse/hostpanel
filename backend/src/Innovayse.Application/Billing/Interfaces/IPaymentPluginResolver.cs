@@ -1,4 +1,4 @@
-namespace Innovayse.Application.Billing.Interfaces;
+﻿namespace Innovayse.Application.Billing.Interfaces;
 
 using Innovayse.SDK.Plugins;
 
@@ -12,7 +12,7 @@ public interface IPaymentPluginResolver
     /// <summary>
     /// Resolves the plugin for the given module.
     /// </summary>
-    /// <param name="module">The plugin id (e.g. "innovayse-inecobank").</param>
+    /// <param name="module">The plugin id (e.g. "inecobank").</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The ready-to-use plugin, or <see langword="null"/> when the plugin is not loaded,

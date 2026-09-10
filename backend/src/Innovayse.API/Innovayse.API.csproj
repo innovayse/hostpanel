@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <!-- Settings inherited from Directory.Build.props -->
     <EnableDefaultResourceItems>false</EnableDefaultResourceItems>
@@ -77,7 +77,7 @@
   </ItemGroup>
 
   <!--
-    Stage the Inecobank payment plugin into plugins/innovayse-inecobank/ under the
+    Stage the Inecobank payment plugin into plugins/inecobank/ under the
     API's own output, which is where PluginLoader.DiscoverAndRegister scans from
     (AppContext.BaseDirectory/plugins). The provider targets net8.0 while the API
     targets net9.0, so the copy source path is pinned to the provider's own TFM.
@@ -97,7 +97,7 @@
       <InecobankPluginFiles Include="..\Innovayse.Providers.Inecobank\bin\$(Configuration)\net8.0\Innovayse.Providers.Inecobank.dll;..\Innovayse.Providers.Inecobank\bin\$(Configuration)\net8.0\plugin.json" />
     </ItemGroup>
     <Copy SourceFiles="@(InecobankPluginFiles)"
-          DestinationFolder="$(OutDir)plugins\innovayse-inecobank\"
+          DestinationFolder="$(OutDir)plugins\inecobank\"
           SkipUnchangedFiles="true" />
   </Target>
 
@@ -106,7 +106,7 @@
       <InecobankPluginPublishFiles Include="..\Innovayse.Providers.Inecobank\bin\$(Configuration)\net8.0\Innovayse.Providers.Inecobank.dll;..\Innovayse.Providers.Inecobank\bin\$(Configuration)\net8.0\plugin.json" />
     </ItemGroup>
     <Copy SourceFiles="@(InecobankPluginPublishFiles)"
-          DestinationFolder="$(PublishDir)plugins\innovayse-inecobank\"
+          DestinationFolder="$(PublishDir)plugins\inecobank\"
           SkipUnchangedFiles="true" />
   </Target>
 </Project>

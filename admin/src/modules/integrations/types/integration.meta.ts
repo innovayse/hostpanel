@@ -1,4 +1,4 @@
-import type { IntegrationMeta, IntegrationSlug, IntegrationCategory } from './integration.types'
+﻿import type { IntegrationMeta, IntegrationSlug, IntegrationCategory } from './integration.types'
 
 /**
  * Metadata for a single integration category section.
@@ -13,6 +13,20 @@ interface IntegrationCategoryMeta {
 }
 
 /**
+ * Builds the public URL of an integration logo.
+ *
+ * The path has to be built from Vite's `BASE_URL` rather than written as a root-absolute
+ * string. This app is served from `/admin/` in production, so a literal `/integrations/x.svg`
+ * resolved against the site root — where the customer portal lives, not this bundle — and every
+ * logo 404'd, leaving a broken-image glyph in each card. `BASE_URL` is `/` in development, which
+ * is why the same markup looked correct locally.
+ *
+ * @param file - File name inside `public/integrations/`.
+ * @returns The URL to use as an `<img>` source.
+ */
+const logoUrl = (file: string): string => `${import.meta.env.BASE_URL}integrations/${file}`
+
+/**
  * Static metadata for all supported integrations.
  * Keyed by slug for O(1) lookup.
  */
@@ -20,7 +34,7 @@ export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
   stripe: {
     slug: 'stripe',
     color: 'bg-[#635bff]',
-    logo: '/integrations/stripe.svg',
+    logo: logoUrl('stripe.svg'),
     shortDescription: 'Accept credit card payments online with Stripe\'s payment processing platform.',
     category: 'payments',
     hint: 'Add this webhook endpoint in your Stripe dashboard: https://yourdomain.com/api/webhooks/stripe',
@@ -34,7 +48,7 @@ export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
   paypal: {
     slug: 'paypal',
     color: 'bg-[#009cde]',
-    logo: '/integrations/paypal.svg',
+    logo: logoUrl('paypal.svg'),
     shortDescription: 'Enable PayPal checkout for clients who prefer PayPal payments.',
     category: 'payments',
     fields: [
@@ -46,7 +60,7 @@ export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
   'bank-transfer': {
     slug: 'bank-transfer',
     color: 'bg-green-600',
-    logo: '/integrations/bank-transfer.svg',
+    logo: logoUrl('bank-transfer.svg'),
     shortDescription: 'Allow clients to pay via direct bank transfer with your banking details.',
     category: 'payments',
     fields: [
@@ -56,10 +70,26 @@ export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
       { key: 'instructions', label: 'Payment Instructions', type: 'textarea' },
     ],
   },
+  // Slug is the plugin id from its plugin.json, not a short name: the backend keys plugin
+  // integrations by that id, and a mismatch here silently falls back to a blank grey tile.
+  'inecobank': {
+    slug: 'inecobank',
+    color: 'bg-[#006038]',
+    logo: logoUrl('inecobank.svg'),
+    shortDescription: "Accept Armenian bank cards through Inecobank's hosted payment page.",
+    category: 'payments',
+    fields: [
+      { key: 'gateway_url', label: 'Gateway base URL (e.g. https://pg.inecoecom.am)', type: 'text' },
+      { key: 'username', label: 'API Username', type: 'text' },
+      { key: 'password', label: 'API Password', type: 'password' },
+      { key: 'currency', label: 'Currency (ISO 4217 numeric, default 051)', type: 'text' },
+      { key: 'language', label: 'Payment page language (default hy)', type: 'text' },
+    ],
+  },
   namecheap: {
     slug: 'namecheap',
     color: 'bg-amber-600',
-    logo: '/integrations/namecheap.svg',
+    logo: logoUrl('namecheap.svg'),
     shortDescription: 'Register and manage domains through Namecheap\'s reseller API.',
     category: 'registrars',
     fields: [
@@ -71,7 +101,7 @@ export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
   nameam: {
     slug: 'nameam',
     color: 'bg-blue-800',
-    logo: '/integrations/nameam.svg',
+    logo: logoUrl('nameam.svg'),
     shortDescription: 'Register and manage .am domains through the Name.am registrar API.',
     category: 'registrars',
     fields: [
@@ -84,7 +114,7 @@ export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
   resellerclub: {
     slug: 'resellerclub',
     color: 'bg-sky-500',
-    logo: '/integrations/resellerclub.svg',
+    logo: logoUrl('resellerclub.svg'),
     shortDescription: 'Manage domain registrations via ResellerClub\'s reseller platform.',
     category: 'registrars',
     fields: [
@@ -95,7 +125,7 @@ export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
   enom: {
     slug: 'enom',
     color: 'bg-violet-700',
-    logo: '/integrations/enom.svg',
+    logo: logoUrl('enom.svg'),
     shortDescription: 'Connect to eNom for domain registration and DNS management.',
     category: 'registrars',
     fields: [
@@ -106,7 +136,7 @@ export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
   cpanel: {
     slug: 'cpanel',
     color: 'bg-orange-600',
-    logo: '/integrations/cpanel.svg',
+    logo: logoUrl('cpanel.svg'),
     shortDescription: 'Provision and manage hosting accounts via cPanel WHM server API.',
     category: 'provisioning',
     fields: [
@@ -119,7 +149,7 @@ export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
   plesk: {
     slug: 'plesk',
     color: 'bg-blue-700',
-    logo: '/integrations/plesk.svg',
+    logo: logoUrl('plesk.svg'),
     shortDescription: 'Automate server and hosting management through Plesk\'s XML API.',
     category: 'provisioning',
     fields: [
@@ -132,7 +162,7 @@ export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
   cwp: {
     slug: 'cwp',
     color: 'bg-sky-700',
-    logo: '/integrations/cwp.svg',
+    logo: logoUrl('cwp.svg'),
     shortDescription: 'Manage hosting accounts on CentOS Web Panel servers.',
     category: 'provisioning',
     fields: [
@@ -144,7 +174,7 @@ export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
   cwp7: {
     slug: 'cwp7',
     color: 'bg-sky-800',
-    logo: '/integrations/cwp7.svg',
+    logo: logoUrl('cwp7.svg'),
     shortDescription: 'Provision and manage hosting accounts via Control Web Panel 7 API.',
     category: 'provisioning',
     fields: [
@@ -170,7 +200,7 @@ export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
   smtp: {
     slug: 'smtp',
     color: 'bg-teal-700',
-    logo: '/integrations/smtp.svg',
+    logo: logoUrl('smtp.svg'),
     shortDescription: 'Configure outgoing email delivery via your SMTP mail server.',
     category: 'email',
     fields: [
@@ -185,7 +215,7 @@ export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
   maxmind: {
     slug: 'maxmind',
     color: 'bg-red-800',
-    logo: '/integrations/maxmind.svg',
+    logo: logoUrl('maxmind.svg'),
     shortDescription: 'Detect fraudulent orders with MaxMind\'s GeoIP risk scoring.',
     category: 'fraud',
     fields: [

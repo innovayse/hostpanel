@@ -4,13 +4,20 @@ using Innovayse.Application.Admin.Plugins.Interfaces;
 using Innovayse.Application.Billing.Interfaces;
 using Innovayse.SDK.Plugins;
 using Microsoft.AspNetCore.Authorization;
+using Innovayse.Infrastructure.Integrations.Stripe.Options;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 /// <summary>
-/// Returns available payment gateways for the checkout flow: the built-in methods
-/// plus every loaded payment plugin whose integration is enabled and fully configured.
+/// Returns the payment gateways a payer can actually use: the built-in methods that are
+/// configured, plus every loaded payment plugin whose integration is enabled and fully
+/// configured. Nothing is listed here that would fail when the payer picks it.
 /// </summary>
 /// <param name="plugins">Plugin registry for loaded plugin manifests.</param>
+/// <param name="stripeOptions">
+/// The built-in Stripe configuration. Read here so the card option appears only on a
+/// deployment that has a secret key -- the same gate the plugins below already pass.
+/// </param>
 /// <param name="pluginResolver">
 /// Payment plugin resolver — the same gate <c>StartGatewayPaymentHandler</c> uses to decide
 /// whether a module is usable at <c>start</c>, so a plugin can never be listed here as
@@ -21,7 +28,8 @@ using Microsoft.AspNetCore.Mvc;
 [AllowAnonymous]
 public sealed class PaymentMethodsController(
     IPluginRegistry plugins,
-    IPaymentPluginResolver pluginResolver) : ControllerBase
+    IPaymentPluginResolver pluginResolver,
+    IOptions<StripeOptions> stripeOptions) : ControllerBase
 {
     /// <summary>Lists all active payment gateways available at checkout.</summary>
     /// <param name="ct">Cancellation token.</param>
@@ -29,11 +37,19 @@ public sealed class PaymentMethodsController(
     [HttpGet]
     public async Task<IActionResult> ListAsync(CancellationToken ct)
     {
-        var methods = new List<object>
+        // Stripe is listed only when it can actually take a payment. It used to be hard-coded
+        // into this list while the plugin gateways below were gated on the resolver, so a
+        // deployment with no Stripe key still offered "Credit/Debit Card" at checkout and failed
+        // on the first call that needed the key. The same rule the plugins already follow now
+        // applies to it: listing and starting cannot disagree.
+        var methods = new List<object>();
+
+        if (stripeOptions.Value.IsConfigured)
         {
-            new { module = BuiltInPaymentModules.Stripe, displayname = "Credit/Debit Card (Stripe)" },
-            new { module = BuiltInPaymentModules.BankTransfer, displayname = "Bank Transfer" },
-        };
+            methods.Add(new { module = BuiltInPaymentModules.Stripe, displayname = "Credit/Debit Card (Stripe)" });
+        }
+
+        methods.Add(new { module = BuiltInPaymentModules.BankTransfer, displayname = "Bank Transfer" });
 
         foreach (var manifest in plugins.GetLoadedManifests().Where(m => m.Type == PluginType.Payment))
         {

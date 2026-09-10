@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useApi } from '../../../composables/useApi'
+import { apiErrorMessage } from '../../../utils/apiErrorMessage'
 import type { Gateway } from '../../../types/gateway'
 import type { CreateProductPayload, Product, ProductGroup, UpdateProductPayload } from '../../../types/product'
 import type { EmailTemplate } from '../../../types/emailtemplate'
@@ -56,6 +57,10 @@ export const useSettingsStore = defineStore('settings', () => {
    * The backend exposes update-by-id only — there is no create — so a key that
    * was never seeded cannot be added from here.
    *
+   * The banner shows the API's own sentence when it wrote one: a refused value
+   * (`INVALID_SETTING_VALUE`) names what the key does accept, which a fixed
+   * "failed to save" would hide from the operator who has to correct it.
+   *
    * @param id - Setting ID.
    * @param value - New value to store.
    * @returns Promise that resolves when the update is persisted.
@@ -68,9 +73,10 @@ export const useSettingsStore = defineStore('settings', () => {
         body: JSON.stringify({ value }),
       })
       await fetchSettings()
-    } catch {
-      error.value = 'Failed to save the setting.'
-      throw new Error('Failed to save the setting.')
+    } catch (cause) {
+      const message = apiErrorMessage(cause, 'Failed to save the setting.')
+      error.value = message
+      throw new Error(message)
     }
   }
 

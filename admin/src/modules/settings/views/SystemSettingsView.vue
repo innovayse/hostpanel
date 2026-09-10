@@ -8,7 +8,10 @@ import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '../stores/settingsStore'
 import SiteIdentityCard from '../components/SiteIdentityCard.vue'
 import PortalAppearanceCard from '../components/PortalAppearanceCard.vue'
+import BrandColorsCard from '../components/BrandColorsCard.vue'
+import TypographyCard from '../components/TypographyCard.vue'
 import BrandingCard from '../components/BrandingCard.vue'
+import TrackingChatCard from '../components/TrackingChatCard.vue'
 import type { Setting } from '../../../types/setting'
 
 const store = useSettingsStore()
@@ -116,7 +119,10 @@ async function saveRow(setting: Setting) {
       <!-- Identity first: the name is the first thing an operator sets, and everything below renders it. -->
       <SiteIdentityCard :settings="store.settings" :saving="saving" @save="onSave" />
       <PortalAppearanceCard :settings="store.settings" :saving="saving" @save="onSave" />
+      <BrandColorsCard :settings="store.settings" :saving="saving" @save="onSave" />
+      <TypographyCard :settings="store.settings" :saving="saving" @save="onSave" />
       <BrandingCard :settings="store.settings" :saving="saving" @save="onSave" />
+      <TrackingChatCard :settings="store.settings" :saving="saving" @save="onSave" />
 
       <div class="bg-surface-card border border-border rounded-2xl overflow-hidden overflow-x-auto">
         <table class="w-full text-sm">

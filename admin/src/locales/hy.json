@@ -149,6 +149,63 @@
         "label": "Favicon",
         "hint": "PNG, SVG, ICO — մինչև 5ՄԲ"
       }
+    },
+    "brandColors": {
+      "title": "Բրենդի գույներ",
+      "description": "Երկու գույն, որոնցից կայքը ստանում է ամբողջ palette-ը՝ կոճակներ, հղումներ, ընդգծումներ և նամակներ։ Դատարկ — ամեն ձևանմուշ իր գույներով։",
+      "primary": {
+        "label": "Հիմնական",
+        "hint": "Կոճակներ, հղումներ, ընդգծումներ։ Ներքևի տասնմեկ երանգները ստացվում են սրանից։"
+      },
+      "accent": {
+        "label": "Շեշտադրող",
+        "hint": "Gradient-ներ, badge-եր և երկրորդական ընդգծումներ։"
+      },
+      "reset": "Վերականգնել",
+      "previewButton": "Կոճակ",
+      "previewLink": "Հղում",
+      "contrastOk": "Սպիտակ տեքստ այս գույնի վրա՝ {ratio}:1 — համապատասխանում է WCAG AA-ին։",
+      "contrastDark": "Սպիտակ տեքստ այս գույնի վրա՝ {ratio}:1 — շատ ցածր է, կոճակները մուգ տեքստ կստանան։",
+      "contrastLow": "Սպիտակ տեքստ այս գույնի վրա՝ {ratio}:1 — մանր տեքստի WCAG AA-ից ցածր; կոճակների համար բավարար է։"
+    },
+    "typography": {
+      "title": "Տառատեսակներ",
+      "description": "Կայքի տառատեսակները։ Բոլորը ներկառուցված են; ոչինչ չի բեռնվում արտաքին ծառայությունից։",
+      "heading": "Վերնագրեր",
+      "body": "Հիմնական տեքստ",
+      "templateDefault": "Ձևանմուշի լռելյայնը",
+      "sampleBody": "Դոմեններ, հոսթինգ և փոստ մեկ հաշվում, և իրական մարդ ամեն տոմսի մյուս ծայրում։",
+      "fonts": {
+        "inter": "Inter",
+        "notoSansArmenian": "Noto Sans Armenian",
+        "notoSerifArmenian": "Noto Serif Armenian",
+        "system": "Համակարգային (սարքի)"
+      }
+    },
+    "trackingChat": {
+      "title": "Վերլուծություն և չաթ",
+      "description": "Երրորդ կողմի ծառայություններ, որոնց կայքը դիմում է։ Ոչինչ չի բեռնվում, մինչև այստեղ չկարգավորվի։",
+      "gtm": {
+        "label": "Google Tag Manager container",
+        "hint": "Բեռնվում է միայն, երբ այցելուն ընդունում է բոլոր cookie-ները։ Դատարկ — tag չի բեռնվում։"
+      },
+      "chat": {
+        "title": "Օնլայն չաթ",
+        "baseUrl": "Չաթի սերվեր",
+        "baseUrlHint": "https://chat.example.com",
+        "token": "Website token",
+        "tokenHint": "Չաթի inbox-ի կարգավորումներից",
+        "tokenRu": "Token ռուսալեզու այցելուների",
+        "tokenHy": "Token հայալեզու այցելուների",
+        "tokenLocaleHint": "Ոչ պարտադիր; դատարկ — հիմնականը",
+        "hint": "Widget-ը երևում է միայն, երբ provider-ը, սերվերը և token-ը երեքն էլ նշված են։"
+      },
+      "provider": {
+        "label": "Provider",
+        "off": "Անջատված",
+        "chatwoot": "Chatwoot",
+        "innochat": "Innochat"
+      }
     }
   }
 }

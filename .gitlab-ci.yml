@@ -312,6 +312,37 @@ deploy:prod:
     # hand, and a deploy could not replace that container at all.
     - docker compose $COMPOSE_FILES build hostpanel-api hostpanel-client admin
     - docker compose $COMPOSE_FILES up -d hostpanel-api hostpanel-client admin
+    # `up -d` above does not necessarily put a rebuilt image into service. Compose
+    # decides whether to recreate by comparing the service's *configuration*, and every
+    # built service here is `build:`-only with no `image:` key -- so the tag compose
+    # derives (hostpanel-<service>:latest) is byte-identical from one deploy to the
+    # next no matter what was built into it. On 2026-09-09 that left the frontends on
+    # their pre-build images through a deploy that reported success; it was harmless
+    # only because that commit happened to change no frontend code. `build` was added
+    # to this job for the same class of bug one step earlier -- this is the other half.
+    #
+    # Not a blanket --force-recreate: that would restart containers on every deploy
+    # even when nothing changed. Compare the image the container was created from
+    # against the one its tag points at now, and recreate only where they differ.
+    - |
+      for svc in hostpanel-api hostpanel-client admin; do
+        cid=$(docker compose $COMPOSE_FILES ps -q "$svc")
+        if [ -z "$cid" ]; then echo "ERROR: $svc is not running after up -d"; exit 1; fi
+        tag=$(docker inspect "$cid" --format '{{.Config.Image}}')
+        want=$(docker image inspect "$tag" --format '{{.Id}}')
+        have=$(docker inspect "$cid" --format '{{.Image}}')
+        if [ "$have" != "$want" ]; then
+          echo "$svc runs ${have#sha256:} but its image is now ${want#sha256:} - recreating."
+          docker compose $COMPOSE_FILES up -d --force-recreate --no-deps "$svc"
+          cid=$(docker compose $COMPOSE_FILES ps -q "$svc")
+          have=$(docker inspect "$cid" --format '{{.Image}}')
+          if [ "$have" != "$want" ]; then
+            echo "ERROR: $svc is still on ${have#sha256:} after --force-recreate"
+            exit 1
+          fi
+        fi
+        echo "$svc is on image ${have#sha256:}"
+      done
   environment: { name: production/hostpanel, url: "https://host.innovayse.com", deployment_tier: production }
   # Manual on purpose — merging should not by itself change what customers see.
   when: manual

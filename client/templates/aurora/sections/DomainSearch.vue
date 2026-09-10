@@ -13,7 +13,7 @@
       <button
         type="submit"
         :disabled="!hasZones"
-        class="rounded-xl bg-brand px-[22px] py-[15px] text-[15px] font-bold text-[#08090F] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+        class="rounded-xl bg-brand px-[22px] py-[15px] text-[15px] font-bold text-on-tint hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
       >{{ t('aurora.domainSearch.cta') }}</button>
     </form>
 

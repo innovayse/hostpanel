@@ -31,7 +31,7 @@
         <p class="mb-10 text-mut">{{ $t('cart.emptyDesc') }}</p>
         <NuxtLink
           :to="localePath('/hosting')"
-          class="rounded-xl bg-brand px-7 py-3.5 text-base font-bold text-[#08090F] hover:brightness-110"
+          class="rounded-xl bg-brand px-7 py-3.5 text-base font-bold text-on-tint hover:brightness-110"
         >{{ $t('cart.browseHosting') }}</NuxtLink>
       </div>
 

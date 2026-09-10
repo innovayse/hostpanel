@@ -28,8 +28,8 @@
         :key="p"
         class="w-8 h-8 rounded-lg border text-sm transition-all"
         :class="p === modelValue
-          ? 'bg-primary-500 border-primary-500 text-white font-semibold'
-          : 'bg-white dark:bg-transparent border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-primary-500/40 hover:text-gray-900 dark:hover:text-white'"
+          ? 'bg-primary-500 border-primary-500 text-on-primary font-semibold'
+          : 'bg-white dark:bg-transparent border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-primary-500/40 hover:text-gray-900 dark:hover:text-on-primary'"
         @click="emit('update:modelValue', p)"
       >{{ p }}</button>
 

@@ -36,7 +36,7 @@
         <a
           v-if="authMode === 'sso'"
           href="/api/portal/auth/sso/authorize"
-          class="flex items-center justify-center gap-3 w-full py-3 px-6 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 text-white font-semibold text-base hover:from-primary-500 hover:to-primary-400 transition-all duration-200 shadow-lg shadow-primary-500/25"
+          class="flex items-center justify-center gap-3 w-full py-3 px-6 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 text-on-primary font-semibold text-base hover:from-primary-500 hover:to-primary-400 transition-all duration-200 shadow-lg shadow-primary-500/25"
         >
           <svg width="20" height="20" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M11 2L20 7V15L11 20L2 15V7L11 2Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
@@ -77,7 +77,7 @@
           <button
             type="submit"
             :disabled="loading"
-            class="w-full py-3 px-6 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 text-white font-semibold text-base hover:from-primary-500 hover:to-primary-400 transition-all duration-200 shadow-lg shadow-primary-500/25 disabled:opacity-50"
+            class="w-full py-3 px-6 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 text-on-primary font-semibold text-base hover:from-primary-500 hover:to-primary-400 transition-all duration-200 shadow-lg shadow-primary-500/25 disabled:opacity-50"
           >
             {{ loading ? $t('client.login.signingIn', 'Signing in...') : $t('client.login.signIn', 'Sign in') }}
           </button>

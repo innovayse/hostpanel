@@ -37,7 +37,7 @@
             </button>
             <button
               @click="acceptAll"
-              class="px-6 py-3 rounded-xl font-medium text-white bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all duration-300 whitespace-nowrap"
+              class="px-6 py-3 rounded-xl font-medium text-on-primary bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all duration-300 whitespace-nowrap"
             >
               {{ $t('cookieBanner.acceptAll') }}
             </button>

@@ -52,8 +52,8 @@
           :class="[
             'px-5 py-2.5 rounded-lg font-medium text-sm transition-all',
             activeCategory === category.value
-              ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
-              : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-white/10'
+              ? 'bg-primary-500 text-on-primary shadow-lg shadow-primary-500/30'
+              : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-on-primary border border-white/10'
           ]"
           @click="activeCategory = category.value"
         >
@@ -122,7 +122,7 @@
           <p class="relative text-gray-400 text-sm mb-6 max-w-md mx-auto">
             {{ $t('faq.cta.description') }}
           </p>
-          <UiButton class="relative bg-primary-500 hover:bg-primary-600 text-white hover:shadow-lg hover:shadow-primary-500/50 transition-all duration-300" @click="navigateTo(localePath('/contact'))">
+          <UiButton class="relative bg-primary-500 hover:bg-primary-600 text-on-primary hover:shadow-lg hover:shadow-primary-500/50 transition-all duration-300" @click="navigateTo(localePath('/contact'))">
             <MessageSquare :size="18" :stroke-width="2" class="mr-2" />
             {{ $t('faq.cta.button') }}
           </UiButton>

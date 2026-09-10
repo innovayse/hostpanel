@@ -142,6 +142,19 @@ export default defineNuxtConfig({
       // Empty falls back to the built-in name in useSiteIdentity().
       portalSiteName: process.env.NUXT_PUBLIC_PORTAL_SITE_NAME || '',
       portalSiteTagline: process.env.NUXT_PUBLIC_PORTAL_SITE_TAGLINE || '',
+      // Brand colours (#rrggbb) and typefaces; empty keeps every template's own. Read by
+      // plugins/brand-tokens.ts, which derives the whole scale from the one colour.
+      portalBrandPrimary: process.env.NUXT_PUBLIC_PORTAL_BRAND_PRIMARY || '',
+      portalBrandAccent: process.env.NUXT_PUBLIC_PORTAL_BRAND_ACCENT || '',
+      portalBrandFontHeading: process.env.NUXT_PUBLIC_PORTAL_BRAND_FONT_HEADING || '',
+      portalBrandFontBody: process.env.NUXT_PUBLIC_PORTAL_BRAND_FONT_BODY || '',
+      // Tracking and live chat. Nothing loads until these are set — and the tag only after
+      // the visitor accepts all cookies (plugins/tracking.client.ts).
+      portalGtmId: process.env.NUXT_PUBLIC_PORTAL_GTM_ID || '',
+      portalChatBaseUrl: process.env.NUXT_PUBLIC_PORTAL_CHAT_BASE_URL || '',
+      portalChatWebsiteToken: process.env.NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN || '',
+      portalChatWebsiteTokenRu: process.env.NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_RU || '',
+      portalChatWebsiteTokenHy: process.env.NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_HY || '',
       // Header app launcher. Off unless a deployment actually runs the sibling
       // apps it links to; every app URL below has a development default, so
       // presence of a URL cannot decide this on its own.

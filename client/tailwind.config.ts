@@ -29,31 +29,40 @@ export default <Partial<Config>>{
     },
     extend: {
       colors: {
+        // The brand scales read the :root variables plugins/brand-tokens.ts emits from
+        // portal.brand.primary / .accent, with today's literal as the fallback — an
+        // install that sets neither renders exactly what it did. The `r g b` form is
+        // what lets the opacity modifier (bg-primary-500/30) keep working.
         primary: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
-          950: '#082f49',
+          50: 'rgb(var(--brand-primary-50, 240 249 255) / <alpha-value>)',
+          100: 'rgb(var(--brand-primary-100, 224 242 254) / <alpha-value>)',
+          200: 'rgb(var(--brand-primary-200, 186 230 253) / <alpha-value>)',
+          300: 'rgb(var(--brand-primary-300, 125 211 252) / <alpha-value>)',
+          400: 'rgb(var(--brand-primary-400, 56 189 248) / <alpha-value>)',
+          500: 'rgb(var(--brand-primary-500, 14 165 233) / <alpha-value>)',
+          600: 'rgb(var(--brand-primary-600, 2 132 199) / <alpha-value>)',
+          700: 'rgb(var(--brand-primary-700, 3 105 161) / <alpha-value>)',
+          800: 'rgb(var(--brand-primary-800, 7 89 133) / <alpha-value>)',
+          900: 'rgb(var(--brand-primary-900, 12 74 110) / <alpha-value>)',
+          950: 'rgb(var(--brand-primary-950, 8 47 73) / <alpha-value>)',
         },
+        // Text on a filled primary (buttons in classic and the shared components) and on
+        // the lighter tint aurora's gradient and nova's dark-mode brand are built from. The
+        // plugin decides white or near-black per colour; unset keeps today's white / near-black.
+        'on-primary': 'rgb(var(--brand-on-primary, 255 255 255) / <alpha-value>)',
+        'on-tint': 'rgb(var(--brand-on-tint, 8 9 15) / <alpha-value>)',
         secondary: {
-          50: '#faf5ff',
-          100: '#f3e8ff',
-          200: '#e9d5ff',
-          300: '#d8b4fe',
-          400: '#c084fc',
-          500: '#a855f7',
-          600: '#9333ea',
-          700: '#7e22ce',
-          800: '#6b21a8',
-          900: '#581c87',
-          950: '#3b0764',
+          50: 'rgb(var(--brand-accent-50, 250 245 255) / <alpha-value>)',
+          100: 'rgb(var(--brand-accent-100, 243 232 255) / <alpha-value>)',
+          200: 'rgb(var(--brand-accent-200, 233 213 255) / <alpha-value>)',
+          300: 'rgb(var(--brand-accent-300, 216 180 254) / <alpha-value>)',
+          400: 'rgb(var(--brand-accent-400, 192 132 252) / <alpha-value>)',
+          500: 'rgb(var(--brand-accent-500, 168 85 247) / <alpha-value>)',
+          600: 'rgb(var(--brand-accent-600, 147 51 234) / <alpha-value>)',
+          700: 'rgb(var(--brand-accent-700, 126 34 206) / <alpha-value>)',
+          800: 'rgb(var(--brand-accent-800, 107 33 168) / <alpha-value>)',
+          900: 'rgb(var(--brand-accent-900, 88 28 135) / <alpha-value>)',
+          950: 'rgb(var(--brand-accent-950, 59 7 100) / <alpha-value>)',
         },
         // aurora template design tokens. Each holds a complete colour value,
         // several of them rgba, so Tailwind's opacity modifier cannot decompose
@@ -87,6 +96,8 @@ export default <Partial<Config>>{
           muted: 'var(--n-muted)',
           brand: 'var(--n-brand)',
           'brand-hover': 'var(--n-brand-hover)',
+          'on-brand': 'var(--n-on-brand)',
+          'on-accent': 'var(--n-on-accent)',
           accent: 'var(--n-accent)',
           border: 'var(--n-border)',
           success: 'var(--n-success)',
@@ -97,8 +108,9 @@ export default <Partial<Config>>{
         card: 'var(--card)',
         'card-hi': 'var(--card-hi)',
         'hero-grad': 'var(--hero-grad)',
-        // Constant across both colour modes — the brand mark, not a theme token.
-        brand: 'linear-gradient(135deg, #5D3FFF, #00D1FF)',
+        // Constant across both colour modes — the brand mark, not a theme token. Reads the
+        // operator's accent and primary, falling back to the original purple → cyan.
+        brand: 'linear-gradient(135deg, rgb(var(--brand-accent-500, 93 63 255)), rgb(var(--brand-primary-400, 0 209 255)))',
         glow1: 'radial-gradient(closest-side, var(--glow1), transparent)',
         glow2: 'radial-gradient(closest-side, var(--glow2), transparent)',
       },
@@ -106,14 +118,17 @@ export default <Partial<Config>>{
         panel: 'var(--sh)',
       },
       fontFamily: {
-        // sans stays Inter so the classic template is untouched.
-        sans: ['Inter Variable', 'Inter', 'system-ui', 'sans-serif'],
-        aurora: ['Noto Sans Armenian', 'system-ui', 'sans-serif'],
-        display: ['Noto Serif Armenian', 'serif'],
+        // Each family reads the operator's typeface from :root first (see
+        // plugins/brand-tokens.ts) and falls back to the template's own — sans stays Inter
+        // so classic is untouched, aurora stays Noto Sans Armenian. --font-body drives the
+        // body families and --font-heading the display ones.
+        sans: ['var(--font-body, "Inter Variable", Inter, system-ui, sans-serif)'],
+        aurora: ['var(--font-body, "Noto Sans Armenian", system-ui, sans-serif)'],
+        display: ['var(--font-heading, "Noto Serif Armenian", serif)'],
         // nova is Latin-first, but Inter carries no Armenian coverage, so the
         // hy locale would fall through to whatever the system picked. Noto Sans
         // Armenian sits behind it to cover those glyphs.
-        nova: ['Inter Variable', 'Inter', 'Noto Sans Armenian', 'system-ui', 'sans-serif'],
+        nova: ['var(--font-body, "Inter Variable", Inter, "Noto Sans Armenian", system-ui, sans-serif)'],
         // JetBrains Mono carries no Armenian coverage, so an .հայ domain and the
         // dram sign both fall through to whatever the system picks and render as
         // the wrong glyphs. Noto Sans Armenian sits in the fallback chain to

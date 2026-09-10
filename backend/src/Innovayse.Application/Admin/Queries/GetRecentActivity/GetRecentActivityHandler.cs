@@ -42,17 +42,20 @@ public sealed class GetRecentActivityHandler(
         events.AddRange(recentClients.Select(c => new ActivityEventDto(
             ActivityEventType.ClientRegistered,
             $"{c.FirstName} {c.LastName} registered",
-            c.CreatedAt)));
+            c.CreatedAt,
+            c.Id)));
 
         events.AddRange(overdueInvoices.Select(i => new ActivityEventDto(
             ActivityEventType.InvoiceOverdue,
             $"Invoice #{i.Id} overdue",
-            i.DueDate)));
+            i.DueDate,
+            i.Id)));
 
         events.AddRange(expiringDomains.Select(d => new ActivityEventDto(
             ActivityEventType.DomainExpiring,
             $"{d.Name} expiring soon",
-            d.ExpiresAt)));
+            d.ExpiresAt,
+            d.Id)));
 
         return events
             .OrderByDescending(e => e.OccurredAt)

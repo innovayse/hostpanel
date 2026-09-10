@@ -27,12 +27,13 @@ public interface IBrandingImageProcessor
     /// Validates the upload and renders every file the given <paramref name="kind"/> needs.
     /// </summary>
     /// <param name="source">The uploaded bytes and their untrusted name.</param>
-    /// <param name="kind">Whether this is the logo or the favicon.</param>
+    /// <param name="kind">Which branding image this is: the favicon or one of the logo kinds.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The renditions to store, always including exactly one <see cref="BrandingRole.Primary"/>.
     /// For <see cref="BrandingKind.Favicon"/> this is the full browser, iOS and Android set; for
-    /// <see cref="BrandingKind.Logo"/> it is the re-encoded image alone.
+    /// every logo kind (<see cref="BrandingKind.Logo"/>, <see cref="BrandingKind.LogoDark"/>,
+    /// <see cref="BrandingKind.LogoMark"/>) it is the re-encoded image alone.
     /// </returns>
     /// <exception cref="InvalidBrandingImageException">
     /// The bytes are not an image, or not one of the accepted formats.

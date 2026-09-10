@@ -13,9 +13,18 @@
         <!-- Column 1: Logo & Vision -->
         <div>
           <div class="flex items-center mb-8 group cursor-pointer">
+            <!-- classic's footer is always dark, so the dark-background logo; see Header.vue for the img/NuxtImg split. -->
+            <img
+              v-if="logoOnDark"
+              :src="logoOnDark"
+              :alt="logoAlt"
+              loading="lazy"
+              class="h-12 md:h-14 w-auto max-w-[240px] object-contain transition-transform duration-500 group-hover:scale-105"
+            />
             <NuxtImg
+              v-else
               src="/logo.svg"
-              alt="Innovayse"
+              :alt="logoAlt"
               width="240"
               height="80"
               format="webp"
@@ -170,6 +179,9 @@ import { Mail, Phone, MapPin, ChevronUp } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const localePath = useLocalePath()
+
+// Operator-uploaded logo for a dark surface, with the site name as alt text.
+const { logoOnDark, alt: logoAlt } = useBrandLogo()
 
 /** Scroll to top function */
 const scrollToTop = () => {

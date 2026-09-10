@@ -47,8 +47,8 @@ public sealed class FileSystemBrandingStorage(
         var webRoot = env.WebRootPath ?? Path.Combine(env.ContentRootPath, "wwwroot");
         var uploadsRoot = Path.GetFullPath(Path.Combine(webRoot, _options.RelativePath));
 
-        // "logo" / "favicon" come from an enum, not from the request, so this segment cannot be
-        // steered by a caller.
+        // "logo" / "logodark" / "logomark" / "favicon" come from an enum, not from the request,
+        // so this segment cannot be steered by a caller.
         var kindSegment = kind.ToString().ToLowerInvariant();
         var uploadId = Guid.NewGuid().ToString("n");
 

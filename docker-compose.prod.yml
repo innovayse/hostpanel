@@ -194,6 +194,18 @@ services:
       # was permanently off on this tier and no .env edit could turn it on.
       NUXT_PUBLIC_PORTAL_TEMPLATE: ${NUXT_PUBLIC_PORTAL_TEMPLATE}
       NUXT_PUBLIC_PORTAL_APPS_ENABLED: ${NUXT_PUBLIC_PORTAL_APPS_ENABLED}
+      # Environment fallbacks for the branding the admin panel manages (site name,
+      # colour mode, logos). The admin setting wins whenever it is set; these exist
+      # for an install that has not opened the admin panel yet, and they are spelt
+      # under Nitro's override names for the same frozen-defaults reason as above.
+      NUXT_PUBLIC_PORTAL_SITE_NAME: ${NUXT_PUBLIC_PORTAL_SITE_NAME}
+      NUXT_PUBLIC_PORTAL_SITE_TAGLINE: ${NUXT_PUBLIC_PORTAL_SITE_TAGLINE}
+      NUXT_PUBLIC_PORTAL_THEME_DEFAULT: ${NUXT_PUBLIC_PORTAL_THEME_DEFAULT}
+      NUXT_PUBLIC_PORTAL_THEME_USER_TOGGLE: ${NUXT_PUBLIC_PORTAL_THEME_USER_TOGGLE}
+      NUXT_PUBLIC_PORTAL_LOGO: ${NUXT_PUBLIC_PORTAL_LOGO}
+      NUXT_PUBLIC_PORTAL_LOGO_DARK: ${NUXT_PUBLIC_PORTAL_LOGO_DARK}
+      NUXT_PUBLIC_PORTAL_LOGO_MARK: ${NUXT_PUBLIC_PORTAL_LOGO_MARK}
+      NUXT_PUBLIC_PORTAL_FAVICON: ${NUXT_PUBLIC_PORTAL_FAVICON}
       # Where each sibling product lives. Left unset these fall back to the
       # *.local development hostnames baked into nuxt.config.ts, so a launcher
       # switched on without them would offer links into nothing. An app with no

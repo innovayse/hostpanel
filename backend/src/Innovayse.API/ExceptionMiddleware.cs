@@ -210,6 +210,20 @@ public sealed class ExceptionMiddleware(
                 Localize(BrandingImageTooLargeException.MessageKey),
                 BrandingImageTooLargeException.Code);
         }
+        catch (InvalidSettingValueException ex)
+        {
+            // 400, and out of the INVALID_OPERATION bin: the admin panel keeps the operator's typed
+            // text on this code and reloads the row on the other, so the two must be told apart.
+            // The sentence is the exception's own English literal -- only the English-only admin
+            // SPA writes settings, and it names the allowed values, which is what the operator
+            // needs to correct the entry. Information, not Warning: a typo in a settings table is
+            // ordinary traffic.
+            logger.LogInformation(
+                "Setting {Key} refused a value; answering {Code}.", ex.Key, InvalidSettingValueException.Code);
+
+            await WriteErrorAsync(
+                context, HttpStatusCode.BadRequest, ex.Message, InvalidSettingValueException.Code);
+        }
         catch (ContactRecipientNotConfiguredException)
         {
             // 503, not 400 and not 500: the submission was well-formed and nothing failed at

@@ -26,13 +26,22 @@ const { t } = useI18n()
 /** One branding image field: which setting key it saves to, and upload constraints. */
 interface BrandingField {
   key: string
-  kind: 'logo' | 'favicon'
+  /** Route segment of the upload endpoint; the backend's BrandingKind name, lower-cased. */
+  kind: 'logo' | 'logodark' | 'logomark' | 'favicon'
   labelKey: string
   hintKey: string
   accept: string
-  /** Preview box size — the favicon is square and small, the logo wide and short. */
+  /** Preview box size — the favicon and mark are square and small, the logos wide and short. */
   previewClass: string
+  /**
+   * Preview tile background. A light-background logo previewed on the panel's dark
+   * tile is unreadable — which is the very mistake the dark variant exists to fix —
+   * so each field previews on the surface it will actually sit on.
+   */
+  previewBg: string
 }
+
+const LOGO_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif,image/bmp'
 
 const FIELDS: BrandingField[] = [
   {
@@ -40,8 +49,27 @@ const FIELDS: BrandingField[] = [
     kind: 'logo',
     labelKey: 'settings.branding.logo.label',
     hintKey: 'settings.branding.logo.hint',
-    accept: 'image/jpeg,image/png,image/webp,image/gif,image/bmp',
+    accept: LOGO_ACCEPT,
     previewClass: 'w-32 h-14',
+    previewBg: 'bg-white',
+  },
+  {
+    key: 'portal.logo.dark',
+    kind: 'logodark',
+    labelKey: 'settings.branding.logoDark.label',
+    hintKey: 'settings.branding.logoDark.hint',
+    accept: LOGO_ACCEPT,
+    previewClass: 'w-32 h-14',
+    previewBg: 'bg-[#1a1a2e]',
+  },
+  {
+    key: 'portal.logo.mark',
+    kind: 'logomark',
+    labelKey: 'settings.branding.logoMark.label',
+    hintKey: 'settings.branding.logoMark.hint',
+    accept: LOGO_ACCEPT,
+    previewClass: 'w-14 h-14',
+    previewBg: 'bg-[#1a1a2e]',
   },
   {
     key: 'portal.favicon',
@@ -50,6 +78,7 @@ const FIELDS: BrandingField[] = [
     hintKey: 'settings.branding.favicon.hint',
     accept: 'image/png,image/jpeg,image/webp',
     previewClass: 'w-10 h-10',
+    previewBg: 'bg-[#1a1a2e]',
   },
 ]
 
@@ -174,8 +203,8 @@ function onFileDrop(field: BrandingField, e: DragEvent): void {
           <!-- Preview -->
           <div
             v-if="valueOf(field)"
-            class="relative rounded-lg border border-border overflow-hidden shrink-0 bg-[#1a1a2e] flex items-center justify-center group"
-            :class="field.previewClass"
+            class="relative rounded-lg border border-border overflow-hidden shrink-0 flex items-center justify-center group"
+            :class="[field.previewClass, field.previewBg]"
           >
             <img :src="valueOf(field)" :alt="t(field.labelKey)" class="max-w-full max-h-full object-contain" />
             <button

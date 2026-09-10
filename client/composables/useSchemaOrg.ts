@@ -9,6 +9,10 @@ export const useSchemaOrg = () => {
   const config = useRuntimeConfig()
   const baseUrl = config.public.baseUrl || 'https://yourdomain.com'
   const contactSettings = usePortalSettings()
+  // The operator's name and tagline. The address, phone, founding date, opening hours
+  // and rating below are still Innovayse's own and belong in settings too.
+  // TODO(phase 3): move the organisation details into portal.* settings.
+  const { name: siteName, tagline: siteTagline } = useSiteIdentity()
 
   /**
    * Organization schema
@@ -18,13 +22,13 @@ export const useSchemaOrg = () => {
       '@context': 'https://schema.org',
       '@type': 'Organization',
       '@id': `${baseUrl}/#organization`,
-      name: 'Innovayse',
+      name: siteName.value,
       url: baseUrl,
       logo: {
         '@type': 'ImageObject',
         url: `${baseUrl}/logo.png`
       },
-      description: 'Full-cycle digital agency specializing in web development, SEO, PPC advertising, and SaaS products',
+      description: siteTagline.value || 'Full-cycle digital agency specializing in web development, SEO, PPC advertising, and SaaS products',
       foundingDate: '2016',
       contactPoint: {
         '@type': 'ContactPoint',
@@ -60,7 +64,7 @@ export const useSchemaOrg = () => {
       '@context': 'https://schema.org',
       '@type': 'LocalBusiness',
       '@id': `${baseUrl}/#organization`,
-      name: 'Innovayse',
+      name: siteName.value,
       image: `${baseUrl}/logo.png`,
       url: baseUrl,
       telephone: '+374-33-731673',
@@ -99,8 +103,8 @@ export const useSchemaOrg = () => {
       '@type': 'WebSite',
       '@id': `${baseUrl}/#website`,
       url: baseUrl,
-      name: 'Innovayse',
-      description: 'Full-cycle digital agency - Web Development, SEO, PPC, SaaS',
+      name: siteName.value,
+      description: siteTagline.value || 'Full-cycle digital agency - Web Development, SEO, PPC, SaaS',
       publisher: {
         '@id': `${baseUrl}/#organization`
       },

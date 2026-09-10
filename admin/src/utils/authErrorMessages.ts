@@ -9,6 +9,7 @@
  */
 
 import { ApiError } from '../composables/useApi'
+import { bodyMessage } from './apiErrorMessage'
 
 /**
  * Fallback wording by HTTP status, used only when the response carried no `error`
@@ -44,22 +45,6 @@ const NO_RESPONSE = 'Could not reach the server. Check your connection and try a
 
 /** Last resort for a status this table does not name. Surfaced, never swallowed. */
 const UNKNOWN = 'That request failed for an unexpected reason.'
-
-/**
- * Reads the message the API itself chose out of a failed response body.
- *
- * Both auth controllers answer failures as `{ "error": "…" }`, and that string sits
- * next to the rule that produced it — so when the rule changes the sentence changes
- * with it, which a copy kept in a page never does.
- *
- * @param body - Parsed JSON body of a failed response, whatever shape it turned out to be.
- * @returns The server's own sentence, or null when the body carried none.
- */
-const bodyMessage = (body: unknown): string | null => {
-  if (typeof body !== 'object' || body === null) return null
-  const error = (body as { error?: unknown }).error
-  return typeof error === 'string' && error.length > 0 ? error : null
-}
 
 /**
  * Turns any thrown value from the API layer into a sentence to show the operator.

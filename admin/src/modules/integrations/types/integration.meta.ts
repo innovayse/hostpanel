@@ -16,15 +16,22 @@ interface IntegrationCategoryMeta {
  * Builds the public URL of an integration logo.
  *
  * The path has to be built from Vite's `BASE_URL` rather than written as a root-absolute
- * string. This app is served from `/admin/` in production, so a literal `/integrations/x.svg`
+ * string. This app is served under `/admin` in production, so a literal `/integrations/x.svg`
  * resolved against the site root — where the customer portal lives, not this bundle — and every
  * logo 404'd, leaving a broken-image glyph in each card. `BASE_URL` is `/` in development, which
  * is why the same markup looked correct locally.
  *
+ * The trailing slash is normalised rather than assumed. `BASE_URL` mirrors whatever
+ * `VITE_BASE_URL` the image was built with, and production sets it to `/admin` with no trailing
+ * slash — so concatenating directly produced `/adminintegrations/x.svg`, which fails exactly as
+ * loudly as the bug this function was written to fix, and just as invisibly in development where
+ * the base is `/`.
+ *
  * @param file - File name inside `public/integrations/`.
  * @returns The URL to use as an `<img>` source.
  */
-const logoUrl = (file: string): string => `${import.meta.env.BASE_URL}integrations/${file}`
+const logoUrl = (file: string): string =>
+  `${import.meta.env.BASE_URL.replace(/\/+$/, '')}/integrations/${file}`
 
 /**
  * Static metadata for all supported integrations.

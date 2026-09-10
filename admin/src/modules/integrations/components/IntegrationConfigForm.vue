@@ -59,9 +59,19 @@ function handleSave(): void {
     <!-- Card header: logo + name + toggle -->
     <div class="flex items-center gap-3.5 px-5 py-4 border-b border-border">
       <div
-        class="w-10 h-10 rounded-xl shrink-0"
+        class="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center p-2"
         :class="meta?.color ?? 'bg-text-muted'"
-      />
+      >
+        <!-- The comment above this header has always said "logo", but only the coloured block
+             was ever drawn, so every integration's configure page showed a blank tile. Same
+             markup and same white treatment as IntegrationCard, so the two cannot drift. -->
+        <img
+          v-if="meta?.logo"
+          :src="meta.logo"
+          :alt="integration.name"
+          class="w-full h-full object-contain integration-logo"
+        />
+      </div>
       <div class="flex-1 min-w-0">
         <div class="font-display font-semibold text-[0.95rem] text-text-primary">{{ integration.name }}</div>
         <div class="text-[0.76rem] text-text-muted truncate">{{ integration.description }}</div>
@@ -154,3 +164,11 @@ function handleSave(): void {
 
   </div>
 </template>
+
+<style scoped>
+/* Logos are drawn white on the integration's own colour, exactly as on the cards. A glyph
+   only survives this if its shape comes from transparent gaps rather than a second colour. */
+.integration-logo {
+  filter: brightness(0) invert(1);
+}
+</style>

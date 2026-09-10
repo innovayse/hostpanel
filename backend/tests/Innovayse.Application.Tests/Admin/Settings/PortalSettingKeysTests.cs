@@ -38,7 +38,10 @@ public class PortalSettingKeysTests
         }
     }
 
-    /// <summary>The value a fresh install starts from must itself pass the vocabulary check.</summary>
+    /// <summary>
+    /// The value a fresh install starts from must itself be writable: in the vocabulary, or
+    /// empty for a key that allows empty.
+    /// </summary>
     [Fact]
     public void Defaults_ForVocabularyKeys_AreAllowed()
     {
@@ -46,9 +49,34 @@ public class PortalSettingKeysTests
         {
             if (PortalSettingKeys.AllowedValues.TryGetValue(key, out var allowed))
             {
-                Assert.Contains(value, allowed);
+                Assert.True(
+                    allowed.Contains(value) || (value.Length == 0 && PortalSettingKeys.AllowsEmpty(key)),
+                    $"{key} seeds '{value}', which it would refuse");
             }
         }
+    }
+
+    /// <summary>Every shaped key is seeded, public, and seeds empty — the shape only applies to a set value.</summary>
+    [Fact]
+    public void Patterns_OnlyNameSeededKeysThatAllowEmpty()
+    {
+        foreach (var key in PortalSettingKeys.Patterns.Keys)
+        {
+            Assert.Contains(key, PortalSettingKeys.Public);
+            Assert.True(PortalSettingKeys.AllowsEmpty(key), $"{key} must seed empty");
+            Assert.False(PortalSettingKeys.AllowedValues.ContainsKey(key), $"{key} cannot have both a vocabulary and a shape");
+        }
+    }
+
+    /// <summary>A key that seeds with a value never accepts an empty one.</summary>
+    [Fact]
+    public void AllowsEmpty_IsFalseForKeysThatSeedWithAValue()
+    {
+        Assert.False(PortalSettingKeys.AllowsEmpty(PortalSettingKeys.Template));
+        Assert.False(PortalSettingKeys.AllowsEmpty(PortalSettingKeys.ThemeDefault));
+        Assert.True(PortalSettingKeys.AllowsEmpty(PortalSettingKeys.BrandPrimary));
+        Assert.True(PortalSettingKeys.AllowsEmpty(PortalSettingKeys.BrandFontBody));
+        Assert.False(PortalSettingKeys.AllowsEmpty("integration:cwp7:hostname"));
     }
 
     /// <summary>The template vocabulary matches what the storefront's registry can render.</summary>

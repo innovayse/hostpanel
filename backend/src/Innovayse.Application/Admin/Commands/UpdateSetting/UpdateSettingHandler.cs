@@ -29,7 +29,8 @@ public sealed class UpdateSettingHandler(ISettingRepository repo, IUnitOfWork uo
     /// <returns>A task representing the asynchronous operation.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the setting is not found.</exception>
     /// <exception cref="InvalidSettingValueException">
-    /// Thrown when the key has a fixed vocabulary and the value is not in it.
+    /// Thrown when the key has a fixed vocabulary and the value is not in it, or a required
+    /// shape and the value does not match it.
     /// </exception>
     public async Task HandleAsync(UpdateSettingCommand command, CancellationToken ct)
     {
@@ -40,13 +41,30 @@ public sealed class UpdateSettingHandler(ISettingRepository repo, IUnitOfWork uo
         // operator meant, and for a URL or a handle it is the difference between working and not.
         var value = (command.Value ?? string.Empty).Trim();
 
-        if (PortalSettingKeys.AllowedValues.TryGetValue(setting.Key, out var allowed))
+        // Empty means "unset" for a key that seeds empty — the storefront then uses its
+        // built-in default — and skips both checks below. A key that seeds with a value never
+        // had an empty state and goes through them, where the empty string is refused.
+        if (value.Length > 0 || !PortalSettingKeys.AllowsEmpty(setting.Key))
         {
-            // The canonical spelling from the set is stored, not the caller's casing: the
-            // storefront matches `portal.template` and the theme mode exactly, so "Aurora"
-            // accepted as typed would still render the default.
-            value = allowed.FirstOrDefault(a => string.Equals(a, value, StringComparison.OrdinalIgnoreCase))
-                ?? throw new InvalidSettingValueException(setting.Key, value, allowed);
+            if (PortalSettingKeys.AllowedValues.TryGetValue(setting.Key, out var allowed))
+            {
+                // The canonical spelling from the set is stored, not the caller's casing: the
+                // storefront matches `portal.template` and the theme mode exactly, so "Aurora"
+                // accepted as typed would still render the default.
+                value = allowed.FirstOrDefault(a => string.Equals(a, value, StringComparison.OrdinalIgnoreCase))
+                    ?? throw new InvalidSettingValueException(setting.Key, value, allowed);
+            }
+            else if (PortalSettingKeys.Patterns.TryGetValue(setting.Key, out var pattern))
+            {
+                // Stored in the canonical spelling so the storefront and the e-mail renderer
+                // can compare and concatenate without normalising again.
+                if (!pattern.Regex.IsMatch(value))
+                {
+                    throw new InvalidSettingValueException(setting.Key, value, pattern.Expected);
+                }
+
+                value = pattern.Canonical(value);
+            }
         }
 
         setting.UpdateValue(value);

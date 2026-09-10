@@ -105,4 +105,87 @@ public class UpdateSettingHandlerTests
 
         Assert.Equal("cwp.example.com", row.Value);
     }
+
+    [Fact]
+    public async Task HandleAsync_HexColour_StoredLowerCase()
+    {
+        var row = SeedRow(PortalSettingKeys.BrandPrimary);
+
+        await CreateHandler().HandleAsync(new UpdateSettingCommand(1, " #1A73E8 "), CancellationToken.None);
+
+        Assert.Equal("#1a73e8", row.Value);
+    }
+
+    [Fact]
+    public async Task HandleAsync_HexColour_WithoutHash_IsRefusedWithExpectedShape()
+    {
+        SeedRow(PortalSettingKeys.BrandPrimary);
+
+        var ex = await Assert.ThrowsAsync<InvalidSettingValueException>(() =>
+            CreateHandler().HandleAsync(new UpdateSettingCommand(1, "1a73e8"), CancellationToken.None));
+
+        Assert.Contains("Expected: a colour like #1a73e8", ex.Message);
+        uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task HandleAsync_ShapedKey_AcceptsEmptyAsUnset()
+    {
+        var row = SeedRow(PortalSettingKeys.BrandAccent, "#a855f7");
+
+        await CreateHandler().HandleAsync(new UpdateSettingCommand(1, ""), CancellationToken.None);
+
+        Assert.Equal("", row.Value);
+        uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task HandleAsync_Template_RefusesEmpty()
+    {
+        SeedRow(PortalSettingKeys.Template, "aurora");
+
+        await Assert.ThrowsAsync<InvalidSettingValueException>(() =>
+            CreateHandler().HandleAsync(new UpdateSettingCommand(1, ""), CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task HandleAsync_Font_AcceptsEmptyAndVocabulary()
+    {
+        var row = SeedRow(PortalSettingKeys.BrandFontHeading);
+
+        await CreateHandler().HandleAsync(new UpdateSettingCommand(1, "Noto-Serif-Armenian"), CancellationToken.None);
+        Assert.Equal("noto-serif-armenian", row.Value);
+
+        await CreateHandler().HandleAsync(new UpdateSettingCommand(1, ""), CancellationToken.None);
+        Assert.Equal("", row.Value);
+
+        await Assert.ThrowsAsync<InvalidSettingValueException>(() =>
+            CreateHandler().HandleAsync(new UpdateSettingCommand(1, "comic-sans"), CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task HandleAsync_GtmId_StoredUpperCase_AndShapeChecked()
+    {
+        var row = SeedRow(PortalSettingKeys.AnalyticsGtmId);
+
+        await CreateHandler().HandleAsync(new UpdateSettingCommand(1, "gtm-abc123"), CancellationToken.None);
+        Assert.Equal("GTM-ABC123", row.Value);
+
+        await Assert.ThrowsAsync<InvalidSettingValueException>(() =>
+            CreateHandler().HandleAsync(new UpdateSettingCommand(1, "UA-12345-1"), CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task HandleAsync_ChatBaseUrl_RequiresHttps_AndDropsTrailingSlash()
+    {
+        var row = SeedRow(PortalSettingKeys.ChatBaseUrl);
+
+        await CreateHandler().HandleAsync(new UpdateSettingCommand(1, "https://chat.example.com/"), CancellationToken.None);
+        Assert.Equal("https://chat.example.com", row.Value);
+
+        await Assert.ThrowsAsync<InvalidSettingValueException>(() =>
+            CreateHandler().HandleAsync(new UpdateSettingCommand(1, "http://chat.example.com"), CancellationToken.None));
+        await Assert.ThrowsAsync<InvalidSettingValueException>(() =>
+            CreateHandler().HandleAsync(new UpdateSettingCommand(1, "chat.example.com"), CancellationToken.None));
+    }
 }

@@ -34,12 +34,7 @@ const footer = slot('footer')
 // fixed dark. See assets/styles/global.css.
 useHead({ htmlAttrs: { 'data-template': name } })
 
-// Restore the visitor's saved colour mode. layouts/client.vue already does this
-// for the authenticated area; the public site never did, because its background
-// was pinned to a hard-coded dark value and the loss was invisible. Now that the
-// background is a theme token, skipping this would show a light-mode visitor a
-// dark page on every reload.
-const { init } = useAppColorMode()
-
-onMounted(() => init())
+// The colour mode is not restored here any more: plugins/color-mode.ts renders the
+// visitor's cookie (or the operator's default) into the <html> class on the server,
+// so there is nothing left for the layout to do on mount.
 </script>

@@ -3,12 +3,17 @@
     class="relative flex flex-wrap items-center justify-between gap-x-6 gap-y-4 border-b border-line px-[clamp(16px,4vw,48px)] py-[18px] font-aurora"
   >
     <NuxtLink :to="localePath('/')" class="flex items-center gap-3 text-tx">
-      <img v-if="logoUrl" :src="logoUrl" alt="" class="h-[34px] w-auto max-w-[140px] object-contain" />
+      <!-- Both wordmarks, swapped by the dark: variant — see useBrandLogo for why not one mode-aware src. -->
+      <template v-if="logoLight">
+        <img :src="logoLight" :alt="logoAlt" class="h-[34px] w-auto max-w-[140px] object-contain" :class="{ 'dark:hidden': hasDarkLogo }" />
+        <img v-if="hasDarkLogo" :src="logoDark" :alt="logoAlt" class="hidden h-[34px] w-auto max-w-[140px] object-contain dark:block" />
+      </template>
       <template v-else>
         <span
           class="grid h-[34px] w-[34px] place-items-center rounded-[10px] bg-brand text-[17px] font-extrabold text-[#08090F]"
-        >i</span>
-        <span class="text-[19px] font-bold -tracking-[0.01em]">Innovayse</span>
+          aria-hidden="true"
+        >{{ siteName.charAt(0).toLowerCase() }}</span>
+        <span class="text-[19px] font-bold -tracking-[0.01em]">{{ siteName }}</span>
       </template>
     </NuxtLink>
 
@@ -119,12 +124,13 @@ const { signInHref } = useAuthMode()
 const { isLoggedIn } = storeToRefs(useAuthStore())
 
 const menuOpen = ref(false)
-const { get: getPortalSetting } = usePortalSettings()
 
 const cartCount = computed(() => cart.items.length)
 
-/** Operator-uploaded logo, admin-managed with an environment fallback. Empty renders the built-in mark and wordmark. */
-const logoUrl = computed(() => getPortalSetting('portal.logo', 'portalLogo'))
+// Operator-uploaded logo for the current colour mode, with the site name as alt text.
+// Empty renders the built-in mark and wordmark below.
+const { light: logoLight, dark: logoDark, hasDarkVariant: hasDarkLogo, alt: logoAlt } = useBrandLogo()
+const { name: siteName } = useSiteIdentity()
 
 const navLinks = computed(() => [
   { key: 'hosting', label: t('aurora.nav.hosting'), to: localePath('/hosting') },

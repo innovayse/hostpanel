@@ -85,17 +85,29 @@ const faviconLinks = computed(() => brandingIcons(faviconUrl.value).map(icon => 
   ...(icon.sizes ? { sizes: icon.sizes } : {})
 })))
 
+/**
+ * The operator's site name and tagline. `og:site_name` and `author` used to be static
+ * strings in nuxt.config's head; they are set here because the settings are only known
+ * at request time. A page's own `useSeo()` still wins for `description`, because it
+ * runs after this and unhead lets the later tag replace the earlier one.
+ */
+const { name: siteName, tagline: siteTagline } = useSiteIdentity()
+
+useSeoMeta({
+  ogSiteName: siteName,
+  author: siteName,
+  ...(siteTagline.value ? { description: siteTagline, ogDescription: siteTagline } : {})
+})
+
 useHead({
   htmlAttrs: {
     lang: () => langMap[locale.value] ?? 'en'
   },
   link: faviconLinks,
+  // The colour-mode class on <html> is owned by plugins/color-mode.ts. A blocking
+  // script here used to force dark on every public page; it is gone, and nothing in
+  // this file should touch documentElement.classList.
   script: [
-    {
-      // Blocking script: always force dark on public pages
-      innerHTML: `document.documentElement.classList.add('dark');document.documentElement.classList.remove('light');`,
-      tagPosition: 'head'
-    },
     {
       // Live chat widget loader. The globals it drives are named in
       // utils/liveChat.ts rather than inline, because the provider is an

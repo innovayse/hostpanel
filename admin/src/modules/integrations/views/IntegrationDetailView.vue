@@ -6,7 +6,7 @@
  * Layout: breadcrumb + 2/3 config form + 1/3 status sidebar.
  * Special case: if slug is "cwp", renders CwpIntegrationPage instead.
  */
-import { onMounted, defineAsyncComponent } from 'vue'
+import { computed, onMounted, defineAsyncComponent } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useIntegrationsStore } from '../stores/integrationsStore'
 import IntegrationConfigForm from '../components/IntegrationConfigForm.vue'
@@ -53,6 +53,18 @@ onMounted(() => {
 
 /** Static metadata hint for this integration. */
 const hint = INTEGRATION_META[slug as IntegrationSlug]?.hint
+
+/**
+ * Host the integration talks to, for the status card. Only hosted-gateway and server-backed
+ * integrations carry a URL field; for the rest this is undefined and the card omits the row.
+ * Parsed to a host so a pasted full URL still reads cleanly.
+ */
+const endpointHost = computed<string | undefined>(() => {
+  const cfg = store.current?.config ?? {}
+  const raw = cfg.gateway_url ?? cfg.host ?? cfg.api_url
+  if (!raw) return undefined
+  try { return new URL(raw.includes('://') ? raw : `https://${raw}`).host } catch { return raw }
+})
 
 /**
  * Handles save event from IntegrationConfigForm.
@@ -121,6 +133,7 @@ async function handleTest(): Promise<void> {
           :last-tested-at="store.current.lastTestedAt"
           :test-result="store.testResult"
           :testing="store.testing"
+          :endpoint-host="endpointHost"
           :hint="hint"
         />
       </div>

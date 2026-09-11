@@ -131,12 +131,24 @@ export const useIntegrationsStore = defineStore('integrations', () => {
     testing.value = true
     error.value = null
     testResult.value = null
+    const startedAt = performance.now()
     try {
-      testResult.value = await request<IntegrationTestResult>(`/admin/integrations/${slug}/test`, {
+      const result = await request<IntegrationTestResult>(`/admin/integrations/${slug}/test`, {
         method: 'POST',
       })
+      testResult.value = { ...result, durationMs: Math.round(performance.now() - startedAt) }
+      // The detail page's "Last tested" reads the persisted value, which the backend updates
+      // on a successful probe. Mirror it here so the card does not keep quoting the previous
+      // run until the next full reload.
+      if (result.success && current.value && result.testedAt) {
+        current.value = { ...current.value, lastTestedAt: result.testedAt }
+      }
     } catch {
-      testResult.value = { success: false, message: 'Connection test failed.' }
+      testResult.value = {
+        success: false,
+        message: 'Connection test failed.',
+        durationMs: Math.round(performance.now() - startedAt),
+      }
     } finally {
       testing.value = false
     }

@@ -42,6 +42,13 @@ export const useIntegrationsStore = defineStore('integrations', () => {
 
   /** True while any request is in flight. */
   const loading = ref(false)
+  /**
+   * True while a connection test is in flight. Kept apart from `loading` on purpose: that flag
+   * also drives the Save button's "Saving…" label and the initial page skeleton, so reusing it
+   * for the test made the Save button claim it was saving and gave the status sidebar nothing
+   * to distinguish "testing now" from "not tested yet".
+   */
+  const testing = ref(false)
 
   /** Error message, null when no error. */
   const error = ref<string | null>(null)
@@ -121,7 +128,7 @@ export const useIntegrationsStore = defineStore('integrations', () => {
    * @returns Promise that resolves with the test result.
    */
   async function testConnection(slug: string): Promise<void> {
-    loading.value = true
+    testing.value = true
     error.value = null
     testResult.value = null
     try {
@@ -131,7 +138,7 @@ export const useIntegrationsStore = defineStore('integrations', () => {
     } catch {
       testResult.value = { success: false, message: 'Connection test failed.' }
     } finally {
-      loading.value = false
+      testing.value = false
     }
   }
 
@@ -139,6 +146,7 @@ export const useIntegrationsStore = defineStore('integrations', () => {
     integrations,
     current,
     loading,
+    testing,
     error,
     testResult,
     fetchAll,

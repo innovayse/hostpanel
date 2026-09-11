@@ -111,6 +111,7 @@ async function handleTest(): Promise<void> {
         <IntegrationConfigForm
           :integration="store.current"
           :loading="store.loading"
+          :testing="store.testing"
           @save="handleSave"
           @test="handleTest"
         />
@@ -119,6 +120,7 @@ async function handleTest(): Promise<void> {
         <IntegrationStatusSidebar
           :last-tested-at="store.current.lastTestedAt"
           :test-result="store.testResult"
+          :testing="store.testing"
           :hint="hint"
         />
       </div>

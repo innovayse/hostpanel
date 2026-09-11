@@ -14,8 +14,10 @@ import type { IntegrationDetailDto, IntegrationConfigPayload, IntegrationSlug } 
 const props = defineProps<{
   /** Full integration detail loaded from the store. */
   integration: IntegrationDetailDto
-  /** True while a save or test request is in flight. */
+  /** True while a save request is in flight. */
   loading: boolean
+  /** True while a connection test is in flight. Separate from `loading` so Save never claims to be saving during a test. */
+  testing: boolean
 }>()
 
 /** Emits for IntegrationConfigForm. */
@@ -146,7 +148,7 @@ function handleSave(): void {
           type="button"
           class="gradient-brand text-white rounded-[10px] px-5 py-2 text-[0.85rem] font-semibold transition-all duration-150 hover:-translate-y-px disabled:opacity-50 disabled:translate-y-0 disabled:cursor-not-allowed"
           style="box-shadow: 0 3px 14px rgba(14,165,233,0.2);"
-          :disabled="loading"
+          :disabled="loading || testing"
           @click="handleSave"
         >
           {{ loading ? 'Saving…' : 'Save Changes' }}
@@ -154,10 +156,19 @@ function handleSave(): void {
         <button
           type="button"
           class="bg-white/[0.05] border border-border text-text-secondary rounded-[10px] px-5 py-2 text-[0.85rem] font-semibold transition-all duration-150 hover:text-text-primary hover:border-primary-500/30 hover:bg-primary-500/[0.05] disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="loading"
+          :disabled="loading || testing"
           @click="emit('test')"
         >
-          Test Connection
+          <!-- The probe is a real round-trip to the provider, and for a hosted gateway it can
+               take a few seconds. Without a visible in-flight state the button looked inert and
+               got clicked again. Same ring as the list views use. -->
+          <span class="inline-flex items-center gap-2">
+            <span
+              v-if="testing"
+              class="w-3.5 h-3.5 rounded-full border-2 border-primary-500/20 border-t-primary-500 animate-spin"
+            />
+            {{ testing ? 'Testing…' : 'Test Connection' }}
+          </span>
         </button>
       </div>
     </div>

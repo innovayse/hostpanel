@@ -37,12 +37,23 @@
 <script setup lang="ts">
 /**
  * Password reset request page — takes an email address and asks the backend to send a
- * reset link.
+ * reset link. Local mode only: under SSO mode the page forwards to the SSO's reset page
+ * before rendering, because the C# API refuses the request there.
  */
 import { useAuthApi } from '~/composables/apis/useAuthApi'
 import { apiErrorMessage } from '~/utils/apiError'
 
 definePageMeta({ layout: false })
+
+const config = useRuntimeConfig()
+
+// Under SSO mode the accounts -- and their passwords -- belong to innovayse-sso, and the C# API
+// answers this page's request with 404 by design (`LocalAuthController.ForgotPasswordAsync`).
+// Sent here anyway, a visitor got a form that could never succeed; they go to the SSO's own
+// reset page instead, the same host `/client/login` hands them to for sign-in.
+if (config.public.authMode === 'sso') {
+  await navigateTo(`${config.public.ssoPublicUrl}/forgot-password`, { external: true })
+}
 
 const { requestPasswordReset } = useAuthApi()
 

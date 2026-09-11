@@ -26,3 +26,7 @@ logs
 # Local tooling & planning
 .claude/
 .planning/
+
+# npm is not this app's package manager. Its lockfile is read by neither CI nor the
+# Docker build, so it only ever drifts and then breaks the first person who trusts it.
+package-lock.json

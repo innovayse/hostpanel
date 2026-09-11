@@ -83,6 +83,14 @@ export interface IntegrationTestResult {
   success: boolean
   /** Human-readable message (error detail or "Connection OK"). */
   message: string
+  /** ISO 8601 UTC timestamp of when the backend ran the test. Sent by the API; it was being dropped. */
+  testedAt?: string
+  /**
+   * Round-trip time of the test as seen from the browser, in milliseconds. Measured here rather
+   * than on the server because it is the number an admin can act on: it includes the hop to our
+   * API and the API's hop to the provider, which is the whole path a real payment will take.
+   */
+  durationMs?: number
 }
 
 /**

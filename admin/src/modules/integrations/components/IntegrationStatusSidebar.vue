@@ -14,6 +14,8 @@ const props = defineProps<{
   testResult: IntegrationTestResult | null
   /** True while a connection test is in flight. */
   testing?: boolean
+  /** Host the integration talks to (e.g. "pg.inecoecom.am"), when it has one. */
+  endpointHost?: string
   /** Optional hint text shown in a callout box. */
   hint?: string
 }>()
@@ -23,6 +25,27 @@ const props = defineProps<{
  *
  * @returns Formatted string like "2 hours ago" or "Never".
  */
+/**
+ * Formats a test timestamp as local wall-clock time, e.g. "14:02:37".
+ *
+ * @param iso - ISO 8601 timestamp.
+ * @returns Local time, or an empty string when the input cannot be parsed.
+ */
+function formatClock(iso: string): string {
+  const d = new Date(iso)
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+}
+
+/**
+ * Formats a round-trip duration for the detail row.
+ *
+ * @param ms - Duration in milliseconds.
+ * @returns "812 ms" below a second, "2.4 s" above it.
+ */
+function formatDuration(ms: number): string {
+  return ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(1)} s`
+}
+
 function formatLastTested(): string {
   if (!props.lastTestedAt) return 'Never'
   const diff = Date.now() - new Date(props.lastTestedAt).getTime()
@@ -79,6 +102,23 @@ function formatLastTested(): string {
             </span>
           </div>
           <p class="text-[0.76rem] text-text-muted pl-4">{{ testResult.message }}</p>
+
+          <!-- What the probe actually did. Each row is shown only when its value exists, so a
+               built-in integration without a URL still gets a tidy card. -->
+          <dl class="mt-3 pl-4 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[0.72rem]">
+            <template v-if="endpointHost">
+              <dt class="text-text-muted">Endpoint</dt>
+              <dd class="text-text-secondary font-mono truncate">{{ endpointHost }}</dd>
+            </template>
+            <template v-if="testResult.testedAt">
+              <dt class="text-text-muted">Tested</dt>
+              <dd class="text-text-secondary">{{ formatClock(testResult.testedAt) }}</dd>
+            </template>
+            <template v-if="testResult.durationMs !== undefined">
+              <dt class="text-text-muted">Round trip</dt>
+              <dd class="text-text-secondary">{{ formatDuration(testResult.durationMs) }}</dd>
+            </template>
+          </dl>
         </div>
 
         <!-- Persisted last-tested -->

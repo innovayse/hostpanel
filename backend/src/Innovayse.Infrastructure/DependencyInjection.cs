@@ -135,7 +135,19 @@ public static class DependencyInjection
         {
             options.UseNpgsql(
                 configuration.GetConnectionString("DefaultConnection"),
-                npgsql => npgsql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName));
+                npgsql =>
+                {
+                    npgsql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName);
+
+                    // One SQL statement per collection navigation rather than one join
+                    // over all of them. DomainRepository includes four collections on
+                    // every read, and the single-query default multiplies their rows
+                    // together — EF warned about it on each domain cron run in
+                    // production. A query that needs the single statement's snapshot
+                    // consistency opts back in with AsSingleQuery(); none does today.
+                    npgsql.UseQuerySplittingBehavior(
+                        Microsoft.EntityFrameworkCore.QuerySplittingBehavior.SplitQuery);
+                });
 
             // Suppress PendingModelChangesWarning so MigrateAsync() works in Development
             // even when the snapshot is slightly out of sync with the model.

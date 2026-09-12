@@ -38,7 +38,7 @@
             v-if="result.status === 'available'"
             type="button"
             :disabled="inCart.includes(result.name)"
-            class="rounded-[10px] border border-line2 bg-brand px-[18px] py-[11px] text-sm font-bold text-[#08090F] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+            class="rounded-[10px] border border-line2 bg-brand px-[18px] py-[11px] text-sm font-bold text-on-tint hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
             @click="emit('add', result.name)"
           >
             {{ inCart.includes(result.name) ? t('aurora.domainSearch.inCart') : t('aurora.domainSearch.add') }}

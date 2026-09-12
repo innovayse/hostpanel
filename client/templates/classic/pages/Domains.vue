@@ -139,8 +139,8 @@
               <button
                 class="px-6 py-2.5 rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all border whitespace-nowrap"
                 :class="activeCategory === null
-                  ? 'bg-gradient-to-r from-primary-500 to-cyan-500 border-transparent text-white shadow-xl shadow-primary-500/20 scale-105 z-10'
-                  : 'border-white/5 bg-white/[0.02] text-gray-500 hover:border-white/20 hover:text-white'"
+                  ? 'bg-gradient-to-r from-primary-500 to-cyan-500 border-transparent text-on-primary shadow-xl shadow-primary-500/20 scale-105 z-10'
+                  : 'border-white/5 bg-white/[0.02] text-gray-500 hover:border-white/20 hover:text-on-primary'"
                 @click="activeCategory = null"
               >
                 {{ $t('domains.pricing.catAll') }}
@@ -151,8 +151,8 @@
                 :key="cat.name"
                 class="px-6 py-2.5 rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all border whitespace-nowrap"
                 :class="activeCategory === cat.name
-                  ? 'bg-gradient-to-r from-primary-500 to-cyan-500 border-transparent text-white shadow-xl shadow-primary-500/20 scale-105 z-10'
-                  : 'border-white/5 bg-white/[0.02] text-gray-500 hover:border-white/20 hover:text-white'"
+                  ? 'bg-gradient-to-r from-primary-500 to-cyan-500 border-transparent text-on-primary shadow-xl shadow-primary-500/20 scale-105 z-10'
+                  : 'border-white/5 bg-white/[0.02] text-gray-500 hover:border-white/20 hover:text-on-primary'"
                 @click="activeCategory = cat.name"
               >
                 {{ translateCategory(cat.name) }}
@@ -194,7 +194,7 @@
                      <UiButton 
                        size="sm" 
                        variant="outline" 
-                       class="!rounded-xl !border-white/10 group-hover:!border-primary-500/50 group-hover:!bg-primary-500 group-hover:!text-white transition-all uppercase text-[10px] font-black tracking-widest"
+                       class="!rounded-xl !border-white/10 group-hover:!border-primary-500/50 group-hover:!bg-primary-500 group-hover:!text-on-primary transition-all uppercase text-[10px] font-black tracking-widest"
                        @click="quickSearch(ext)"
                      >
                        {{ $t('domains.search') }}
@@ -240,7 +240,7 @@
               </div>
 
               <button
-                class="w-full h-12 flex items-center justify-center rounded-2xl bg-white/[0.05] border border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:bg-primary-500 hover:text-white hover:border-transparent transition-all"
+                class="w-full h-12 flex items-center justify-center rounded-2xl bg-white/[0.05] border border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:bg-primary-500 hover:text-on-primary hover:border-transparent transition-all"
                 @click="quickSearch(ext as string)"
               >
                 {{ $t('domains.pricing.registerNow') }}
@@ -266,7 +266,7 @@
               <p class="text-base text-gray-500 mb-8 leading-relaxed italic">{{ $t('domains.promoHostingDesc') }}</p>
               <NuxtLink
                 :to="localePath('/hosting')"
-                class="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-primary-500 hover:bg-primary-600 text-white text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-primary-500/20 hover:scale-105 active:scale-95"
+                class="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-primary-500 hover:bg-primary-600 text-on-primary text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-primary-500/20 hover:scale-105 active:scale-95"
               >
                 {{ $t('domains.promoHostingBtn') }}
                 <ArrowRight :size="16" />

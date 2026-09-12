@@ -255,7 +255,7 @@
                 <th class="p-6 text-center bg-gradient-to-b from-primary-500/10 to-transparent">
                   <div class="inline-flex flex-col">
                     <div class="text-white font-bold text-sm mb-1">{{ $t('products.comparison.headers.professional') }}</div>
-                    <div class="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary-500 text-white inline-block">{{ $t('products.comparison.headers.professionalBadge') }}</div>
+                    <div class="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary-500 text-on-primary inline-block">{{ $t('products.comparison.headers.professionalBadge') }}</div>
                   </div>
                 </th>
                 <th class="p-6 text-center">

@@ -263,7 +263,7 @@
             class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-4 first:pt-0 last:pb-0"
           >
             <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary-500/30 to-secondary-500/20 flex items-center justify-center text-white font-bold text-sm border border-primary-500/20 flex-shrink-0">
+              <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary-500/30 to-secondary-500/20 flex items-center justify-center text-on-primary font-bold text-sm border border-primary-500/20 flex-shrink-0">
                 {{ (user.name || user.email).charAt(0).toUpperCase() }}
               </div>
               <div>
@@ -369,7 +369,7 @@
             class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-4 first:pt-0 last:pb-0"
           >
             <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary-500/30 to-secondary-500/20 flex items-center justify-center text-white font-bold text-sm border border-primary-500/20 flex-shrink-0">
+              <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary-500/30 to-secondary-500/20 flex items-center justify-center text-on-primary font-bold text-sm border border-primary-500/20 flex-shrink-0">
                 {{ (contact.firstname || contact.email)[0]?.toUpperCase() }}
               </div>
               <div>

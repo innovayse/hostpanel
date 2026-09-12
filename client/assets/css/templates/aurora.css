@@ -20,8 +20,10 @@
   --surf: rgba(255, 255, 255, 0.025);
   --panel: #101220;
   --input: rgba(8, 9, 15, 0.8);
-  --ac1: #7de3ff;
-  --ac2: #b9a6ff;
+  /* The accents read the operator's brand (plugins/brand-tokens.ts): a light tint of the
+     primary and of the accent on the dark surface, the template's own literals when unset. */
+  --ac1: rgb(var(--brand-primary-300, 125 227 255));
+  --ac2: rgb(var(--brand-accent-300, 185 166 255));
   --ac3: #ff9ce0;
   --ac-bg: rgba(0, 209, 255, 0.06);
   --ok: #38e8a0;
@@ -45,8 +47,8 @@
   --surf: #ffffff;
   --panel: #ffffff;
   --input: #ffffff;
-  --ac1: #0e6a87;
-  --ac2: #4b35b8;
+  --ac1: rgb(var(--brand-primary-700, 14 106 135));
+  --ac2: rgb(var(--brand-accent-700, 75 53 184));
   --ac3: #a31e7c;
   --ac-bg: rgba(0, 120, 160, 0.07);
   --ok: #0f8a5f;

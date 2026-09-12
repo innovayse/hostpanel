@@ -31,7 +31,7 @@
         «{{ current.quote }}»
       </blockquote>
       <div class="mt-[30px] flex items-center gap-3.5">
-        <div class="grid h-11 w-11 place-items-center rounded-full bg-brand font-bold text-[#08090F]">
+        <div class="grid h-11 w-11 place-items-center rounded-full bg-brand font-bold text-on-tint">
           {{ current.author.charAt(0) }}
         </div>
         <div>

@@ -243,7 +243,7 @@
       <p class="text-gray-400 mb-6">{{ $t('products.notFoundDescription') }}</p>
       <NuxtLink
         :to="localePath('/products')"
-        class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold bg-primary-500 text-white hover:bg-primary-600 transition-colors"
+        class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold bg-primary-500 text-on-primary hover:bg-primary-600 transition-colors"
       >
         <Icon name="mdi:arrow-left" />
         {{ $t('common.backToProducts') }}

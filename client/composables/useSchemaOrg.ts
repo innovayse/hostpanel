@@ -216,7 +216,10 @@ export const useSchemaOrg = () => {
     useHead({
       script: schemas.map(s => ({
         type: 'application/ld+json',
-        children: JSON.stringify(s)
+        // innerHTML, not `children`: the current unhead renders an unknown key as an
+        // attribute, and the structured data was landing in children="…" on an empty
+        // <script> — emitted nowhere a crawler reads.
+        innerHTML: JSON.stringify(s)
       }))
     })
   }

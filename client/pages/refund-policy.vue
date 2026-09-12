@@ -108,7 +108,7 @@
               </p>
               <NuxtLink
                 :to="localePath('/contact')"
-                class="inline-flex items-center gap-3 px-8 py-4 bg-primary-500 text-white rounded-xl font-semibold hover:bg-primary-600 transition-all hover:shadow-lg hover:shadow-primary-500/25 group/btn"
+                class="inline-flex items-center gap-3 px-8 py-4 bg-primary-500 text-on-primary rounded-xl font-semibold hover:bg-primary-600 transition-all hover:shadow-lg hover:shadow-primary-500/25 group/btn"
               >
                 {{ $t('refundPolicy.contact.link') }}
                 <ArrowRight :size="20" class="group-hover/btn:translate-x-1 transition-transform" />

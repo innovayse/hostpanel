@@ -10,7 +10,7 @@
       <div class="min-w-0">
         <div class="flex items-center gap-3">
           <span
-            class="grid h-[30px] w-[30px] place-items-center rounded-[9px] bg-brand text-[15px] font-extrabold text-[#08090F]"
+            class="grid h-[30px] w-[30px] place-items-center rounded-[9px] bg-brand text-[15px] font-extrabold text-on-tint"
           >i</span>
           <span class="text-[17px] font-bold text-tx">Innovayse</span>
         </div>
@@ -42,7 +42,7 @@
             >
             <button
               type="submit"
-              class="whitespace-nowrap rounded-[10px] bg-brand px-[18px] py-3 text-sm font-bold text-[#08090F] hover:brightness-110"
+              class="whitespace-nowrap rounded-[10px] bg-brand px-[18px] py-3 text-sm font-bold text-on-tint hover:brightness-110"
             >{{ t('aurora.footer.newsletterCta') }}</button>
           </div>
           <p v-if="emailInvalid" class="mt-2.5 min-h-[18px] text-[13px] text-danger">

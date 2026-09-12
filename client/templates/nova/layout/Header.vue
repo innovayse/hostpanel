@@ -10,7 +10,7 @@
   <header class="tpl-nova sticky top-0 z-[55] border-b border-nova-border bg-nova-bg/95 font-nova backdrop-blur">
     <a
       :href="`#${MAIN_CONTENT_ID}`"
-      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-nova-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-[#12212a]"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-nova-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-nova-on-accent"
     >{{ t('nova.nav.skipToContent') }}</a>
 
     <div class="mx-auto flex max-w-[1240px] items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
@@ -69,7 +69,7 @@
           <Icon name="lucide:shopping-cart" class="h-5 w-5" aria-hidden="true" />
           <span
             v-if="cartCount > 0"
-            class="absolute -right-1 -top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-nova-accent px-1 text-[11px] font-extrabold text-[#12212a]"
+            class="absolute -right-1 -top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-nova-accent px-1 text-[11px] font-extrabold text-nova-on-accent"
           >{{ cartCount }}</span>
         </NuxtLink>
 
@@ -85,7 +85,7 @@
 
         <NuxtLink
           :to="localePath('/hosting')"
-          class="hidden min-h-[44px] items-center whitespace-nowrap rounded-xl bg-nova-accent px-5 text-[15px] font-bold text-[#12212a] transition-[filter] hover:brightness-95 sm:inline-flex"
+          class="hidden min-h-[44px] items-center whitespace-nowrap rounded-xl bg-nova-accent px-5 text-[15px] font-bold text-nova-on-accent transition-[filter] hover:brightness-95 sm:inline-flex"
         >{{ t('nova.nav.getStarted') }}</NuxtLink>
 
         <button
@@ -144,7 +144,7 @@
         >{{ t('nova.nav.login') }}</a>
         <NuxtLink
           :to="localePath('/hosting')"
-          class="flex min-h-[44px] items-center justify-center rounded-xl bg-nova-accent text-[15px] font-bold text-[#12212a]"
+          class="flex min-h-[44px] items-center justify-center rounded-xl bg-nova-accent text-[15px] font-bold text-nova-on-accent"
           @click="closeMenu"
         >{{ t('nova.nav.getStarted') }}</NuxtLink>
       </div>

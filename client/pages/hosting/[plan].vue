@@ -84,7 +84,7 @@
             </div>
             <button
               type="button"
-              class="px-8 py-4 rounded-xl font-bold text-white text-lg bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-primary-500/30 flex items-center gap-2"
+              class="px-8 py-4 rounded-xl font-bold text-on-primary text-lg bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-primary-500/30 flex items-center gap-2"
               @click="handleAddToCart"
             >
               <ShoppingCart :size="20" :stroke-width="2" />
@@ -126,8 +126,8 @@
               :key="cycle.key"
               class="p-3 rounded-xl border text-center cursor-pointer transition-all duration-200"
               :class="selectedCycle === cycle.key
-                ? 'border-primary-500 bg-primary-500/10 text-white'
-                : 'border-white/10 text-gray-400 hover:border-white/20 hover:text-white'"
+                ? 'border-primary-500 bg-primary-500/10 text-on-primary'
+                : 'border-white/10 text-gray-400 hover:border-white/20 hover:text-on-primary'"
               @click="selectedCycle = cycle.key"
             >
               <div class="text-xs font-semibold">{{ cycle.label }}</div>
@@ -169,7 +169,7 @@
         >
           <button
             type="button"
-            class="inline-flex items-center gap-2 px-10 py-4 rounded-xl font-bold text-white text-lg bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-primary-500/30"
+            class="inline-flex items-center gap-2 px-10 py-4 rounded-xl font-bold text-on-primary text-lg bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-primary-500/30"
             @click="handleAddToCart"
           >
             <ShoppingCart :size="20" :stroke-width="2" />

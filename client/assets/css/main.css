@@ -4,6 +4,10 @@
 @import '@fontsource/noto-sans-armenian/600.css';
 @import '@fontsource/noto-sans-armenian/700.css';
 @import '@fontsource/noto-sans-armenian/800.css';
+/* The regular weight, so the serif can be picked as a body face in Admin → Settings →
+   Typography (utils/brandFonts.ts); the headings only ever needed 600/700. Self-hosted, and
+   an @font-face only downloads when a rule uses it, so this costs nothing until chosen. */
+@import '@fontsource/noto-serif-armenian/400.css';
 @import '@fontsource/noto-serif-armenian/600.css';
 @import '@fontsource/noto-serif-armenian/700.css';
 @import '@fontsource/jetbrains-mono/400.css';
@@ -70,7 +74,7 @@
   }
 
   .btn-primary {
-    @apply bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800;
+    @apply bg-primary-600 text-on-primary hover:bg-primary-700 active:bg-primary-800;
   }
 
   .btn-secondary {

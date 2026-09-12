@@ -26,9 +26,14 @@ html[data-template='nova'].dark,
   --n-surface-2: #14333f;
   --n-ink: #edf6f8;
   --n-muted: #a2bcc5;
-  --n-brand: #7f8dff;
-  --n-brand-hover: #9aa5ff;
-  --n-accent: #ffb54d;
+  /* Brand and accent read the operator's colours (plugins/brand-tokens.ts) — a light tint
+     on the dark surface, a deeper shade on the light one — and keep nova's own periwinkle
+     and amber when nothing is set. --n-on-brand is the text that sits on a filled brand. */
+  --n-brand: rgb(var(--brand-primary-400, 127 141 255));
+  --n-brand-hover: rgb(var(--brand-primary-300, 154 165 255));
+  --n-on-brand: rgb(var(--brand-on-tint, 18 33 42));
+  --n-accent: rgb(var(--brand-accent-400, 255 181 77));
+  --n-on-accent: rgb(var(--brand-on-accent-tint, 18 33 42));
   --n-border: rgba(226, 244, 250, 0.13);
   --n-success: #3ddc97;
   --n-danger: #ff8383;
@@ -41,9 +46,11 @@ html[data-template='nova'].light,
   --n-surface-2: #eaf2f5;
   --n-ink: #0a2029;
   --n-muted: #4a6470;
-  --n-brand: #2f4fd8;
-  --n-brand-hover: #233cad;
-  --n-accent: #f0a11a;
+  --n-brand: rgb(var(--brand-primary-600, 47 79 216));
+  --n-brand-hover: rgb(var(--brand-primary-700, 35 60 173));
+  --n-on-brand: rgb(var(--brand-on-primary, 18 33 42));
+  --n-accent: rgb(var(--brand-accent-500, 240 161 26));
+  --n-on-accent: rgb(var(--brand-on-accent, 18 33 42));
   --n-border: rgba(10, 32, 41, 0.13);
   --n-success: #0f8a5f;
   --n-danger: #c2334d;

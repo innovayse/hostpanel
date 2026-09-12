@@ -30,7 +30,7 @@
           class="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors duration-150"
           :class="locale === loc.code
             ? 'bg-primary-50 dark:bg-primary-500/20 text-primary-600 dark:text-primary-300'
-            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/8 hover:text-gray-900 dark:hover:text-white'"
+            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/8 hover:text-gray-900 dark:hover:text-on-primary'"
           @click="switchLanguage(loc.code)"
         >
           <NuxtImg :src="flagOf(loc.code)" :alt="loc.name" width="20" height="20" class="w-5 h-5 flex-shrink-0" />

@@ -60,8 +60,8 @@
             :class="[
               'w-full px-4 py-3 text-left text-sm transition-all duration-200 flex items-center justify-between group',
               modelValue === option.value
-                ? 'bg-gradient-to-r from-primary-500 to-secondary-500 text-white font-semibold'
-                : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                ? 'bg-gradient-to-r from-primary-500 to-secondary-500 text-on-primary font-semibold'
+                : 'text-gray-300 hover:bg-white/10 hover:text-on-primary'
             ]"
             @click="selectOption(option)"
           >

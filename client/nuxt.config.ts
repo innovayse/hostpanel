@@ -44,6 +44,15 @@ export default defineNuxtConfig({
     // from the bank. Development runs with `ssr: false` globally (see the note at the top
     // of this file), so this can only ever be caught against a production build.
     '/payment/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    // The live-chat SDK (app.vue, chat.innovayse.com) draws its launcher bubble in
+    // *this* page and points the inbox icon at a root-relative `/brand-assets/...`, so
+    // the icon was requested from this origin, 404'd into the Vue Router, and left a
+    // broken bubble plus a router warning on every public page. Proxy the path to the
+    // chat host the widget is configured against — the same rule innovayse-main carries
+    // — so the icon stays whatever is set there instead of a copy here that would drift.
+    // Caching is whatever the chat host sends; a `headers` override here would be dead
+    // config, since a proxied response keeps the upstream's.
+    '/brand-assets/**': { proxy: 'https://chat.innovayse.com/brand-assets/**' },
   },
 
   nitro: {

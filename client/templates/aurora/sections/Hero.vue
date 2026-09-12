@@ -22,7 +22,7 @@
     <div class="mt-[34px] flex flex-wrap gap-3.5">
       <NuxtLink
         :to="localePath('/domains')"
-        class="rounded-xl bg-brand px-[26px] py-[15px] text-base font-semibold text-[#08090F] hover:brightness-110"
+        class="rounded-xl bg-brand px-[26px] py-[15px] text-base font-semibold text-on-tint hover:brightness-110"
       >{{ t('aurora.hero.ctaPrimary') }}</NuxtLink>
       <NuxtLink
         :to="localePath('/contact')"

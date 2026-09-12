@@ -1,5 +1,7 @@
 namespace Innovayse.Domain.Settings;
 
+using System.Text.RegularExpressions;
+
 /// <summary>
 /// The <c>portal.*</c> keys in the <c>settings</c> table: what the storefront reads to decide
 /// its template, colour mode, branding, identity and contact channels.
@@ -113,6 +115,33 @@ public static class PortalSettingKeys
     /// <summary>App launcher URL for the Calendar entry.</summary>
     public const string AppsCalendar = "portal.apps.calendar";
 
+    /// <summary>Brand colour as <c>#rrggbb</c>; the storefront derives its whole primary scale from it.</summary>
+    public const string BrandPrimary = "portal.brand.primary";
+
+    /// <summary>Accent colour as <c>#rrggbb</c>; the source of the secondary scale.</summary>
+    public const string BrandAccent = "portal.brand.accent";
+
+    /// <summary>Heading typeface, one of <see cref="FontNames"/>.</summary>
+    public const string BrandFontHeading = "portal.brand.font_heading";
+
+    /// <summary>Body typeface, one of <see cref="FontNames"/>.</summary>
+    public const string BrandFontBody = "portal.brand.font_body";
+
+    /// <summary>Google Tag Manager container id (<c>GTM-XXXXXXX</c>). Empty loads no tag.</summary>
+    public const string AnalyticsGtmId = "portal.analytics.gtm_id";
+
+    /// <summary>Absolute <c>https://</c> origin of the live-chat server. Empty loads no widget.</summary>
+    public const string ChatBaseUrl = "portal.chat.base_url";
+
+    /// <summary>Website token the chat widget identifies this storefront with.</summary>
+    public const string ChatWebsiteToken = "portal.chat.website_token";
+
+    /// <summary>Russian-locale chat token; empty falls back to <see cref="ChatWebsiteToken"/>.</summary>
+    public const string ChatWebsiteTokenRu = "portal.chat.website_token.ru";
+
+    /// <summary>Armenian-locale chat token; empty falls back to <see cref="ChatWebsiteToken"/>.</summary>
+    public const string ChatWebsiteTokenHy = "portal.chat.website_token.hy";
+
     /// <summary>The template names the storefront can render. Mirrors <c>client/templates/types.ts</c>.</summary>
     public static readonly IReadOnlySet<string> TemplateNames =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "aurora", "nova", "classic" };
@@ -124,6 +153,59 @@ public static class PortalSettingKeys
     /// <summary>The two spellings a boolean setting accepts.</summary>
     public static readonly IReadOnlySet<string> Booleans =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "true", "false" };
+
+    /// <summary>
+    /// The typefaces an operator can pick. Mirrors <c>client/utils/brandFonts.ts</c>, whose
+    /// stacks are the self-hosted <c>@fontsource</c> packages the storefront already ships —
+    /// nothing here causes a request to a font CDN. <c>system</c> is the device's own face.
+    /// </summary>
+    public static readonly IReadOnlySet<string> FontNames =
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "inter", "noto-sans-armenian", "noto-serif-armenian", "system",
+        };
+
+    /// <summary>
+    /// A shape a free-text key must match, with the sentence a refusal shows.
+    /// </summary>
+    /// <param name="Regex">The pattern; the whole trimmed value must match.</param>
+    /// <param name="Expected">What a valid value looks like, for the operator.</param>
+    /// <param name="Canonical">Turns an accepted value into the spelling that is stored.</param>
+    public sealed record ValuePattern(Regex Regex, string Expected, Func<string, string> Canonical);
+
+    // Declared before Patterns: static fields initialise in textual order, and the dictionary
+    // below reads this one.
+    /// <summary>A six-digit hex colour, stored lower-case with its <c>#</c>.</summary>
+    private static readonly ValuePattern HexColour = new(
+        new Regex("^#[0-9a-f]{6}$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant),
+        "a colour like #1a73e8",
+        v => v.ToLowerInvariant());
+
+    /// <summary>
+    /// The keys whose value is free text but must have a shape, and that shape.
+    /// <para>
+    /// Checked by <c>UpdateSettingHandler</c> for keys that have no <see cref="AllowedValues"/>
+    /// entry. Every one of these seeds empty, so an empty write passes through
+    /// <see cref="AllowsEmpty"/> before the shape is ever looked at. The canonical spelling is
+    /// stored so the storefront and the e-mail renderer can compare and concatenate without
+    /// normalising again.
+    /// </para>
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, ValuePattern> Patterns =
+        new Dictionary<string, ValuePattern>
+        {
+            [BrandPrimary] = HexColour,
+            [BrandAccent] = HexColour,
+            [AnalyticsGtmId] = new(
+                new Regex("^GTM-[A-Z0-9]{4,12}$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant),
+                "a container id like GTM-ABC1234",
+                v => v.ToUpperInvariant()),
+            [ChatBaseUrl] = new(
+                new Regex("^https://[^\\s/]+(/[^\\s]*)?$", RegexOptions.CultureInvariant),
+                "an https:// address like https://chat.example.com",
+                v => v.TrimEnd('/')),
+        };
+
 
     /// <summary>
     /// The keys whose value must come from a fixed vocabulary, and that vocabulary.
@@ -140,6 +222,8 @@ public static class PortalSettingKeys
             [ThemeDefault] = ThemeModes,
             [ThemeUserToggle] = Booleans,
             [AppsEnabled] = Booleans,
+            [BrandFontHeading] = FontNames,
+            [BrandFontBody] = FontNames,
         };
 
     /// <summary>
@@ -163,6 +247,15 @@ public static class PortalSettingKeys
         (LogoDark,            "",       "Logo shown on dark backgrounds. Empty falls back to the light logo."),
         (LogoMark,            "",       "Square icon-only logo for compact headers and sign-in pages. Empty falls back to the built-in mark."),
         (Favicon,             "",       "URL of the browser tab icon. Empty falls back to the built-in favicon."),
+        (BrandPrimary,        "",       "Brand colour as #rrggbb; buttons, links and highlights derive from it. Empty keeps the template's own."),
+        (BrandAccent,         "",       "Accent colour as #rrggbb; gradients and secondary highlights. Empty keeps the template's own."),
+        (BrandFontHeading,    "",       "Heading typeface: inter, noto-sans-armenian, noto-serif-armenian or system. Empty keeps the template's own."),
+        (BrandFontBody,       "",       "Body typeface: inter, noto-sans-armenian, noto-serif-armenian or system. Empty keeps the template's own."),
+        (AnalyticsGtmId,      "",       "Google Tag Manager container id (GTM-XXXXXXX). Loads only after a visitor accepts all cookies. Empty loads nothing."),
+        (ChatBaseUrl,         "",       "Live chat server origin, https:// only. Empty hides the widget."),
+        (ChatWebsiteToken,    "",       "Live chat website token. Empty hides the widget."),
+        (ChatWebsiteTokenRu,  "",       "Live chat website token for Russian visitors. Empty uses the default token."),
+        (ChatWebsiteTokenHy,  "",       "Live chat website token for Armenian visitors. Empty uses the default token."),
         (ContactWhatsapp,     "",       "WhatsApp number in international format, no leading +. Empty hides the action."),
         (ContactTelegram,     "",       "Telegram handle without the @. Empty hides the action."),
         (ChatProvider,        "",       "Live chat provider: chatwoot, or empty to disable the widget."),
@@ -184,6 +277,17 @@ public static class PortalSettingKeys
         (AppsDocs,            "",       "URL for the Docs entry in the header app launcher. Empty hides it."),
         (AppsCalendar,        "",       "URL for the Calendar entry in the header app launcher. Empty hides it."),
     ];
+
+    /// <summary>
+    /// Whether an empty value is a valid write for a key: true exactly when the key seeds
+    /// empty, because empty then means "unset, use the built-in default". A key that seeds
+    /// with a value (the template, the theme mode, the booleans) never had an empty state and
+    /// refuses one.
+    /// </summary>
+    /// <param name="key">The setting key.</param>
+    /// <returns>True when an empty value may be stored without any vocabulary or shape check.</returns>
+    public static bool AllowsEmpty(string key) =>
+        Defaults.Any(d => d.Key == key && d.Value.Length == 0);
 
     /// <summary>
     /// The only keys the anonymous storefront endpoint will ever return.

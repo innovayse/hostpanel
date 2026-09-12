@@ -5,7 +5,7 @@
   >
     <p
       v-if="plan.popular"
-      class="absolute -top-3 left-6 rounded-full bg-nova-accent px-3 py-1 text-[12px] font-extrabold uppercase tracking-[0.06em] text-[#12212a]"
+      class="absolute -top-3 left-6 rounded-full bg-nova-accent px-3 py-1 text-[12px] font-extrabold uppercase tracking-[0.06em] text-nova-on-accent"
     >{{ t('nova.plans.popular') }}</p>
 
     <p
@@ -56,7 +56,7 @@
       :to="plan.href"
       class="mt-7 flex min-h-[48px] items-center justify-center rounded-xl px-5 text-[15px] font-bold transition-[filter,border-color]"
       :class="plan.popular
-        ? 'bg-nova-accent text-[#12212a] hover:brightness-95'
+        ? 'bg-nova-accent text-nova-on-accent hover:brightness-95'
         : 'border border-nova-border text-nova-ink hover:border-nova-brand hover:text-nova-brand'"
     >
       {{ t('nova.plans.cta') }}

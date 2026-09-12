@@ -11,7 +11,7 @@
     />
     <button
       type="button"
-      class="px-8 py-4 rounded-xl font-bold text-white bg-gradient-to-r from-primary-600 to-cyan-600 hover:from-primary-500 hover:to-cyan-500 transition-all duration-300 hover:scale-105 shadow-lg shadow-primary-500/30 flex items-center gap-2 justify-center disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+      class="px-8 py-4 rounded-xl font-bold text-on-primary bg-gradient-to-r from-primary-600 to-cyan-600 hover:from-primary-500 hover:to-cyan-500 transition-all duration-300 hover:scale-105 shadow-lg shadow-primary-500/30 flex items-center gap-2 justify-center disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
       :disabled="loading"
       @click="$emit('search')"
     >

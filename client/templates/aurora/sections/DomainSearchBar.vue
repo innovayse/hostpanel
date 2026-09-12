@@ -14,7 +14,7 @@
       <button
         type="submit"
         :disabled="!hasZones"
-        class="rounded-xl bg-brand px-[26px] py-4 text-base font-bold text-[#08090F] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+        class="rounded-xl bg-brand px-[26px] py-4 text-base font-bold text-on-tint hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
       >{{ t('aurora.domainSearch.cta') }}</button>
     </form>
 
@@ -29,7 +29,7 @@
         :key="entry"
         type="button"
         class="rounded-full px-3.5 py-2 text-[13px] font-semibold"
-        :class="entry === active ? 'bg-brand text-[#08090F]' : 'border border-line2 text-mut'"
+        :class="entry === active ? 'bg-brand text-on-tint' : 'border border-line2 text-mut'"
         @click="emit('update:category', entry)"
       >{{ entry === ALL_CATEGORY ? t('aurora.tldTable.all') : entry }}</button>
     </div>

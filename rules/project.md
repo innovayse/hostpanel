@@ -406,6 +406,42 @@ with told a screen reader the brand was decorative. The rule itself is
 name; the literal `Innovayse` survives as its fallback and in the locale copy, and nowhere else
 in a `.vue` or `.ts` file.
 
+**Every colour a template ships is a `var()` with the template's literal as its fallback —
+a literal on its own is a colour the operator cannot change.** `client/plugins/brand-tokens.ts`
+renders one `<style id="brand-tokens">` into `<head>` from `portal.brand.primary` / `.accent`
+and the two typefaces: the eleven-step `--brand-primary-N` / `--brand-accent-N` scales (as
+`r g b`, for Tailwind's `<alpha-value>`), `--brand-on-primary` / `--brand-on-tint` /
+`--brand-on-accent(-tint)` (white or near-black, decided per colour), and
+`--font-heading` / `--font-body`. It emits **nothing** when nothing is set. Tailwind's
+`primary`/`secondary` scales, the `brand` gradient, aurora's `--ac1/--ac2` and nova's
+`--n-brand/--n-accent/--n-on-*` all read those variables with today's literal as the fallback,
+which is what makes "unset renders exactly what it did" true; check it by reading the computed
+tokens with the rows empty before touching any of them. Text on a filled brand surface is
+`text-on-primary` / `text-on-tint` / `text-nova-on-brand` / `text-nova-on-accent`, never
+`text-white` or a literal — a brand yellow needs dark text. The ramp lives in
+`client/utils/brandPalette.ts` (OKLCH, gamut-mapped by reducing chroma, the picked colour pinned
+at 500); `admin/src/utils/brandPalette.ts` is a byte-for-byte copy below its header because the
+admin cannot import across the repository (`brandPalette.shared.test.ts` fails on drift), and
+`Application/Notifications/Services/BrandPalette.cs` is the e-mail renderer's port with the same
+reference numbers in `BrandPaletteTests`. Change the client file first; then the other two.
+
+**Third-party scripts come from settings and never from a literal.** The tag-manager container
+(`portal.analytics.gtm_id`) loads in `plugins/tracking.client.ts` only when set **and** the
+visitor's `cookie-consent` is `all` — `useCookieConsent()` is the one owner of that cookie, the
+banner writes it, the loader watches it. The live-chat widget (`portal.chat.provider`,
+`.base_url`, `.website_token[.ru|.hy]`) loads in `plugins/live-chat.ts` when all three are set,
+without waiting for consent, because it is how a visitor reaches a person. `app.vue` adds no
+script at all; the vendor's own ids that used to live there are gone from the repository and
+belong in the vendor's deployment `.env`.
+
+**Every e-mail renders with `brand.*` and `site.*` in scope.** `TemplateRenderer` adds them
+beside the caller's model (the caller's own member of the same exact name wins), read on each
+render by `SettingsEmailBrandingProvider` from the same `portal.*` rows, with the logo made
+absolute against `ClientBaseUrl`. A stored template that wants the brand uses
+`{{ brand.primary }}`, `{{ brand.primary_dark }}`, `{{ brand.on_primary }}`,
+`{{ brand.accent }}`, `{{ brand.logo_url }}` and `{{ site.name }}`; the seeded password-reset
+layout does, but a row seeded before this existed keeps its literals until an operator re-saves it.
+
 **`PortalSettingKeys` (Domain) is the backend's one list of `portal.*` keys** — the seeder's
 `Defaults` and the anonymous endpoint's `Public` set are derived from the same array, and
 `AllowedValues` is the vocabulary `UpdateSettingHandler` enforces (`INVALID_SETTING_VALUE`, 400).

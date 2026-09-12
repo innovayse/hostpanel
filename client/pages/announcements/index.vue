@@ -28,7 +28,7 @@
             class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border"
             :class="activeMonth === m
               ? 'bg-primary-500/10 text-primary-400 border-primary-500/20'
-              : 'text-gray-400 hover:text-white hover:bg-white/5 border-transparent'"
+              : 'text-gray-400 hover:text-on-primary hover:bg-white/5 border-transparent'"
             @click="activeMonth = m"
           >
             {{ m === 'all' ? $t('announcements.allMonths') : m }}

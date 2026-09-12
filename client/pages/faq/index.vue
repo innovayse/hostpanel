@@ -33,7 +33,7 @@
             v-for="cat in faqCategories"
             :key="cat.value"
             :to="localePath(`/faq/${cat.value}`)"
-            class="px-5 py-2 rounded-lg font-medium text-sm border border-white/10 bg-white/5 text-gray-300 hover:bg-primary-500/20 hover:border-primary-500/40 hover:text-white transition-all duration-200"
+            class="px-5 py-2 rounded-lg font-medium text-sm border border-white/10 bg-white/5 text-gray-300 hover:bg-primary-500/20 hover:border-primary-500/40 hover:text-on-primary transition-all duration-200"
           >
             {{ cat.label }}
           </NuxtLink>

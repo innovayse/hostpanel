@@ -55,7 +55,7 @@
             class="flex items-center gap-2 px-4 py-2.5 text-sm cursor-pointer transition-colors duration-150 select-none"
             :class="modelValue === option.value
               ? 'bg-primary-50 dark:bg-primary-500/20 text-primary-600 dark:text-primary-300'
-              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'"
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-on-primary'"
             @click="select(option)"
           >
             <Check

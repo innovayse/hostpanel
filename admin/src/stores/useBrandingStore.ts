@@ -18,18 +18,37 @@
  */
 
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { usePublicSettingsApi } from '../composables/apis/usePublicSettingsApi'
 
-/** Setting key holding the storefront-and-panel logo. */
+/** Setting key holding the logo drawn on light backgrounds. */
 const LOGO_KEY = 'portal.logo'
+
+/**
+ * Setting key holding the logo drawn on dark backgrounds.
+ *
+ * The panel is dark-only, so this is the one it wants; it used to read the light
+ * variant alone and paint a logo made for white paper onto its dark sidebar.
+ */
+const LOGO_DARK_KEY = 'portal.logo.dark'
 
 /** Setting key holding the browser tab icon. */
 const FAVICON_KEY = 'portal.favicon'
 
 export const useBrandingStore = defineStore('branding', () => {
   /** Operator's logo URL; empty string means "use the built-in mark". */
+  /** The light-background logo, empty when the operator has not set one. */
   const logoUrl = ref('')
+
+  /** The dark-background logo, empty when the operator has not set one. */
+  const logoDarkUrl = ref('')
+
+  /**
+   * The logo to draw on the panel's dark surfaces: the dark variant when set, else
+   * the light one — the same fallback the storefront and the settings screen promise
+   * ("Empty falls back to the light logo"). Empty means "use the built-in mark".
+   */
+  const logoOnDarkUrl = computed(() => logoDarkUrl.value || logoUrl.value)
 
   /** Operator's favicon URL; empty string means "leave index.html's links alone". */
   const faviconUrl = ref('')
@@ -51,6 +70,7 @@ export const useBrandingStore = defineStore('branding', () => {
     try {
       const rows = await usePublicSettingsApi().fetchPublicSettings()
       logoUrl.value = rows.find(r => r.key === LOGO_KEY)?.value?.trim() ?? ''
+      logoDarkUrl.value = rows.find(r => r.key === LOGO_DARK_KEY)?.value?.trim() ?? ''
       faviconUrl.value = rows.find(r => r.key === FAVICON_KEY)?.value?.trim() ?? ''
     } catch {
       // Swallowed on purpose — see the note at the top of this file. Branding is not
@@ -58,5 +78,5 @@ export const useBrandingStore = defineStore('branding', () => {
     }
   }
 
-  return { logoUrl, faviconUrl, loaded, load }
+  return { logoUrl, logoDarkUrl, logoOnDarkUrl, faviconUrl, loaded, load }
 })

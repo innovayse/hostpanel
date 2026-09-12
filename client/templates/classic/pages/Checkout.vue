@@ -217,12 +217,13 @@
                 <p class="text-sm font-medium text-red-400 leading-snug">{{ orderError }}</p>
               </div>
 
-              <!-- Submit Button -->
+              <!-- Submit Button. Disabled with no method selected: the gateway list came back
+                   empty because every gateway is switched off in the admin. -->
               <UiButton variant="primary" 
                         size="lg" 
                         full-width 
                         :loading="submitting"
-                        :disabled="submitting || (cart.isEmpty)"
+                        :disabled="submitting || cart.isEmpty || !selectedMethod"
                         @click="submitOrder"
                         class="h-16 rounded-2xl text-lg font-bold shadow-2xl shadow-cyan-500/20 bg-gradient-to-tr from-cyan-600 to-primary-600 hover:from-cyan-500 hover:to-primary-500 transition-all duration-300">
                 <Lock v-if="!submitting" :size="20" class="mr-2" />

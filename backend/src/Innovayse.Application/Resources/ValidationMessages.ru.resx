@@ -223,6 +223,10 @@
     <value>Учётные записи этой установки принадлежат службе единого входа, поэтому выпустить здесь сброс пароля нельзя. Запросите его в службе единого входа.</value>
     <comment>USER_PROVISIONING_NOT_ALLOWED. SsoModeUserProvisioning.IssuePasswordResetTokenAsync.</comment>
   </data>
+  <data name="OrderPaymentMethodUnavailable" xml:space="preserve">
+    <value>Выбранный способ оплаты недоступен. Вернитесь к оформлению заказа и выберите другой.</value>
+    <comment>PlaceOrderHandler. The order named a payment method the checkout is not offering — switched off in the admin integrations page, or never configured — so it is refused before an order exists.</comment>
+  </data>
   <data name="OrderHasNoClientAccount" xml:space="preserve">
     <value>Этот вход не связан с клиентской учётной записью, поэтому заказу не к чему привязаться. Обратитесь в поддержку, чтобы её создали.</value>
     <comment>PlaceOrderHandler. The caller is authenticated but has no client record and sent no guest registration, so the order has no account to belong to. Replaces a sentence telling them to log in again, which they could act on and which could never help.</comment>

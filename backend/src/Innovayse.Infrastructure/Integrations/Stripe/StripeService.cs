@@ -17,6 +17,9 @@ public sealed class StripeService(
     IOptions<StripeOptions> options,
     ILogger<StripeService> logger) : IStripeService
 {
+    /// <inheritdoc />
+    public bool IsConfigured => options.Value.IsConfigured;
+
     /// <summary>
     /// Stripe API client configured with the secret key, built only on first use.
     /// </summary>

@@ -1,6 +1,7 @@
 ﻿namespace Innovayse.Application.Orders.Commands.PlaceOrder;
 
 using Innovayse.Application.Auth.Interfaces;
+using Innovayse.Application.Billing.Queries.ListAvailablePaymentMethods;
 using Innovayse.Application.Common;
 using Innovayse.Application.Domains.Common;
 using Innovayse.Application.Domains.Queries.GetTldPricing;
@@ -58,6 +59,36 @@ public sealed class PlaceOrderHandler(
     private const string NoClientAccountKey = "OrderHasNoClientAccount";
 
     /// <summary>
+    /// Resource key for the refusal of a payment method the checkout is not offering.
+    /// </summary>
+    private const string PaymentMethodUnavailableKey = "OrderPaymentMethodUnavailable";
+
+    /// <summary>
+    /// Refuses a payment method the checkout is not offering right now.
+    /// </summary>
+    /// <remarks>
+    /// The method is a string the caller sends, and the list the checkout shows is only a
+    /// suggestion to a client that can send anything. Without this check an operator who
+    /// switched a gateway off in the admin integrations page still received orders against it:
+    /// a bank-transfer order would sit pending for a transfer nobody expects, and a card order
+    /// would fail later, on the first call that needed the gateway. The same query the checkout
+    /// lists from decides here, so what is shown and what is accepted cannot drift apart.
+    /// </remarks>
+    /// <param name="paymentMethod">Module id the checkout sent.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the method is not available.</exception>
+    private async Task EnsurePaymentMethodAvailableAsync(string paymentMethod, CancellationToken ct)
+    {
+        var available = await bus.InvokeAsync<IReadOnlyList<AvailablePaymentMethodDto>>(
+            new ListAvailablePaymentMethodsQuery(), ct);
+
+        if (!available.Any(m => string.Equals(m.Module, paymentMethod, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new InvalidOperationException(localizer[PaymentMethodUnavailableKey]);
+        }
+    }
+
+    /// <summary>
     /// Handles <see cref="PlaceOrderCommand"/>.
     /// </summary>
     /// <param name="cmd">The place order command.</param>
@@ -69,6 +100,8 @@ public sealed class PlaceOrderHandler(
     /// </exception>
     public async Task<PlaceOrderResultDto> HandleAsync(PlaceOrderCommand cmd, CancellationToken ct)
     {
+        await EnsurePaymentMethodAvailableAsync(cmd.PaymentMethod, ct);
+
         var clientId = await ResolveClientIdAsync(cmd, ct);
 
         var nextNumber = await orderRepo.GetNextOrderNumberAsync(ct);

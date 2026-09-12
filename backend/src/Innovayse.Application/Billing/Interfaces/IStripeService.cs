@@ -7,6 +7,12 @@ using Innovayse.Application.Billing.Common;
 public interface IStripeService
 {
     /// <summary>
+    /// Whether the deployment carries a Stripe secret key at all. <c>false</c> is a deployment
+    /// that takes no card payments through Stripe; every other member fails on it.
+    /// </summary>
+    bool IsConfigured { get; }
+
+    /// <summary>
     /// Creates a Stripe PaymentIntent for the specified amount and currency.
     /// </summary>
     /// <param name="amount">The payment amount in the major currency unit (e.g. dollars).</param>

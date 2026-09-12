@@ -1,4 +1,4 @@
-namespace Innovayse.API.Orders.Requests;
+﻿namespace Innovayse.API.Orders.Requests;
 
 /// <summary>Request body for starting a hosted-gateway payment against an order.</summary>
 /// <remarks>
@@ -8,7 +8,7 @@ namespace Innovayse.API.Orders.Requests;
 /// token as well. Sharing a single record would have put a token field on an endpoint that must
 /// never read one.
 /// </remarks>
-/// <param name="Module">The payment plugin id (e.g. "innovayse-inecobank").</param>
+/// <param name="Module">The payment plugin id (e.g. "inecobank").</param>
 /// <param name="ReturnUrl">Absolute URL the gateway redirects the payer back to.</param>
 /// <param name="PaymentToken">The order's payment token, returned when the order was placed.</param>
 public sealed record StartOrderGatewayPaymentRequest(string Module, string ReturnUrl, string? PaymentToken);

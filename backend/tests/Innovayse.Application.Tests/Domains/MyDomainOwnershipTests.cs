@@ -387,7 +387,7 @@ public sealed class MyDomainOwnershipTests
         var bus = new Mock<IMessageBus>();
         var handler = RenewHandler(RefusingOwnership(), bus);
 
-        var message = new RenewMyDomainCommand(DomainId, Years: 1, PaymentMethod: "innovayse-inecobank");
+        var message = new RenewMyDomainCommand(DomainId, Years: 1, PaymentMethod: "inecobank");
 
         var refusal = await Assert.ThrowsAsync<DomainNotFoundException>(
             () => handler.HandleAsync(message, CancellationToken.None));
@@ -643,7 +643,7 @@ public sealed class MyDomainOwnershipTests
         var handler = RenewHandler(AcceptingOwnership(), bus);
 
         var result = await handler.HandleAsync(
-            new RenewMyDomainCommand(DomainId, Years: 2, PaymentMethod: "innovayse-inecobank"),
+            new RenewMyDomainCommand(DomainId, Years: 2, PaymentMethod: "inecobank"),
             CancellationToken.None);
 
         Assert.Equal(31, result.OrderId);
@@ -652,7 +652,7 @@ public sealed class MyDomainOwnershipTests
         bus.Verify(
             b => b.InvokeAsync<PlaceOrderResultDto>(
                 It.Is<PlaceOrderCommand>(c =>
-                    c.PaymentMethod == "innovayse-inecobank"
+                    c.PaymentMethod == "inecobank"
                     && c.Email == null
                     && c.Password == null
                     && c.Items.Count == 1

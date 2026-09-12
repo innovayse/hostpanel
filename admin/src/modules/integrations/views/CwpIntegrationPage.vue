@@ -107,6 +107,7 @@ async function handleTest(): Promise<void> {
           v-if="store.current"
           :integration="store.current"
           :loading="saving || store.loading"
+          :testing="store.testing"
           @save="handleSave"
           @test="handleTest"
         />

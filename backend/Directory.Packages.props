@@ -18,9 +18,14 @@
 
   <!-- ASP.NET Core & Identity -->
   <ItemGroup>
-    <PackageVersion Include="Innovayse.Auth" Version="1.0.0" />
+    <PackageVersion Include="Innovayse.Auth" Version="1.6.0" />
     <PackageVersion Include="DnsClient" Version="1.8.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.1" />
+    <!--
+      9.0.20 rather than the 9.0.1 the other ASP.NET packages here carry: Innovayse.Auth 1.6.0
+      declares JwtBearer >= 9.0.20, and central package management turns the resulting
+      downgrade into NU1605, which TreatWarningsAsErrors makes a restore failure.
+    -->
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.20" />
     <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.1" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />

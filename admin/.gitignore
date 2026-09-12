@@ -42,3 +42,7 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+# yarn is not this app's package manager. Its lockfile is read by neither CI nor the
+# Docker build, so it only ever drifts and then breaks the first person who trusts it.
+yarn.lock

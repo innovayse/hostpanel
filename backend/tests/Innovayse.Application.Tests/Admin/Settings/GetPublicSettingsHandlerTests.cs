@@ -1,4 +1,4 @@
-namespace Innovayse.Application.Tests.Admin.Settings;
+﻿namespace Innovayse.Application.Tests.Admin.Settings;
 
 using Innovayse.Application.Admin.Queries.GetPublicSettings;
 using Innovayse.Domain.Settings;
@@ -28,7 +28,7 @@ public class GetPublicSettingsHandlerTests
     public async Task HandleAsync_NeverReturnsAnIntegrationRow()
     {
         SeedRows(
-            ("integration:innovayse-inecobank:password", "secret"),
+            ("integration:inecobank:password", "secret"),
             (PortalSettingKeys.Template, "nova"));
 
         var result = await CreateHandler().HandleAsync(new GetPublicSettingsQuery(), CancellationToken.None);

@@ -1,6 +1,7 @@
 namespace Innovayse.Application.Tests.Orders;
 
 using Innovayse.Application.Auth.Interfaces;
+using Innovayse.Application.Billing.Queries.ListAvailablePaymentMethods;
 using Innovayse.Application.Common;
 using Innovayse.Application.Orders.Commands.PlaceOrder;
 using Innovayse.Application.Resources;
@@ -109,9 +110,23 @@ public sealed class PlaceOrderClientProvisioningTests
             Mock.Of<IUnitOfWork>(),
             provisioning.Object,
             Mock.Of<ISubjectRoleStore>(),
-            Mock.Of<IMessageBus>(),
+            BusOffering("stripe"),
             caller.Object,
             Mock.Of<IStringLocalizer<ValidationMessages>>());
+    }
+
+    /// <summary>
+    /// A bus whose availability query lists exactly the given modules. The handler refuses an
+    /// order for any module the checkout is not offering, so every harness has to offer the one
+    /// its order names.
+    /// </summary>
+    private static IMessageBus BusOffering(params string[] modules)
+    {
+        var bus = new Mock<IMessageBus>();
+        bus.Setup(b => b.InvokeAsync<IReadOnlyList<AvailablePaymentMethodDto>>(
+                It.IsAny<ListAvailablePaymentMethodsQuery>(), It.IsAny<CancellationToken>(), It.IsAny<TimeSpan?>()))
+            .ReturnsAsync(modules.Select(m => new AvailablePaymentMethodDto(m, m)).ToList());
+        return bus.Object;
     }
 
     /// <summary>The order goes through, instead of being refused for a missing account.</summary>
@@ -176,6 +191,24 @@ public sealed class PlaceOrderClientProvisioningTests
 
         Assert.Equal("Ada", added[0].FirstName);
         Assert.Equal(string.Empty, added[0].LastName);
+    }
+
+    /// <summary>An order naming a method the checkout is not offering never becomes an order.</summary>
+    /// <remarks>
+    /// The list at checkout is only a suggestion to a client that can send anything. An operator
+    /// who switched a gateway off must not receive orders against it through a hand-made request.
+    /// </remarks>
+    [Fact]
+    public async Task AnOrderForAPaymentMethodNotOnOfferIsRefused()
+    {
+        var added = new List<Client>();
+        var handler = HandlerWithNoClientFor(added, out _);
+        var order = SignedInOrder() with { PaymentMethod = "bank_transfer" };
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => handler.HandleAsync(order, CancellationToken.None));
+
+        Assert.Empty(added);
     }
 
     /// <summary>A credential carrying no name at all is still enough to order.</summary>

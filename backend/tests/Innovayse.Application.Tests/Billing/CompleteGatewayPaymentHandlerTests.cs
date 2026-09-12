@@ -1,4 +1,4 @@
-namespace Innovayse.Application.Tests.Billing;
+﻿namespace Innovayse.Application.Tests.Billing;
 
 using Innovayse.Application.Billing.Commands.CompleteGatewayPayment;
 using Innovayse.Application.Billing.Interfaces;
@@ -31,10 +31,10 @@ public class CompleteGatewayPaymentHandlerTests
     {
         var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
         invoice.AddItem("Hosting", 10m, 1);
-        invoice.SetGatewaySession("innovayse-inecobank", "gw-1");
+        invoice.SetGatewaySession("inecobank", "gw-1");
         invoiceRepo.Setup(r => r.FindByIdAsync(invoice.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(invoice);
-        resolver.Setup(r => r.ResolveAsync("innovayse-inecobank", It.IsAny<CancellationToken>()))
+        resolver.Setup(r => r.ResolveAsync("inecobank", It.IsAny<CancellationToken>()))
             .ReturnsAsync(plugin.Object);
         orderRepo.Setup(r => r.FindByInvoiceIdAsync(invoice.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Innovayse.Domain.Orders.Order?)null);
@@ -109,7 +109,7 @@ public class CompleteGatewayPaymentHandlerTests
 
         await CreateHandler().HandleAsync(new CompleteGatewayPaymentCommand(invoice.Id), CancellationToken.None);
 
-        Assert.Equal("innovayse-inecobank", invoice.GatewayModule);
+        Assert.Equal("inecobank", invoice.GatewayModule);
         Assert.Equal("gw-1", invoice.GatewayOrderId);
     }
 
@@ -128,7 +128,7 @@ public class CompleteGatewayPaymentHandlerTests
 
         var winner = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
         winner.AddItem("Hosting", 10m, 1);
-        winner.SetGatewaySession("innovayse-inecobank", "gw-1");
+        winner.SetGatewaySession("inecobank", "gw-1");
         winner.MarkPaidViaGateway("ref-9");
         invoiceRepo.SetupSequence(r => r.FindByIdAsync(invoice.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(invoice)
@@ -161,7 +161,7 @@ public class CompleteGatewayPaymentHandlerTests
         // never persisted it, masking the very race this test exercises.
         var stillUnpaidOnReload = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
         stillUnpaidOnReload.AddItem("Hosting", 10m, 1);
-        stillUnpaidOnReload.SetGatewaySession("innovayse-inecobank", "gw-1");
+        stillUnpaidOnReload.SetGatewaySession("inecobank", "gw-1");
         invoiceRepo.SetupSequence(r => r.FindByIdAsync(invoice.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(invoice)
             .ReturnsAsync(stillUnpaidOnReload); // some other, unrelated conflict — not a race we already won

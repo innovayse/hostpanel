@@ -1,52 +1,32 @@
 namespace Innovayse.API.Billing;
 
-using Innovayse.Application.Admin.Plugins.Interfaces;
-using Innovayse.Application.Billing.Interfaces;
-using Innovayse.SDK.Plugins;
+using Innovayse.Application.Billing.Queries.ListAvailablePaymentMethods;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Wolverine;
 
 /// <summary>
-/// Returns available payment gateways for the checkout flow: the built-in methods
-/// plus every loaded payment plugin whose integration is enabled and fully configured.
+/// Public list of the payment gateways a payer can pick at checkout. Which ones qualify is
+/// decided by <see cref="ListAvailablePaymentMethodsHandler"/>, the same answer
+/// <c>PlaceOrderHandler</c> validates an order's payment method against.
 /// </summary>
-/// <param name="plugins">Plugin registry for loaded plugin manifests.</param>
-/// <param name="pluginResolver">
-/// Payment plugin resolver — the same gate <c>StartGatewayPaymentHandler</c> uses to decide
-/// whether a module is usable at <c>start</c>, so a plugin can never be listed here as
-/// available and then refused when the payer actually tries to pay with it.
-/// </param>
+/// <param name="bus">Wolverine message bus.</param>
 [ApiController]
 [Route("api/payment-methods")]
 [AllowAnonymous]
-public sealed class PaymentMethodsController(
-    IPluginRegistry plugins,
-    IPaymentPluginResolver pluginResolver) : ControllerBase
+public sealed class PaymentMethodsController(IMessageBus bus) : ControllerBase
 {
     /// <summary>Lists all active payment gateways available at checkout.</summary>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Array of payment method objects with module name and display name.</returns>
+    /// <returns>Payment methods as <c>{ module, displayname }</c> objects — the shape the checkout reads.</returns>
     [HttpGet]
     public async Task<IActionResult> ListAsync(CancellationToken ct)
     {
-        var methods = new List<object>
-        {
-            new { module = BuiltInPaymentModules.Stripe, displayname = "Credit/Debit Card (Stripe)" },
-            new { module = BuiltInPaymentModules.BankTransfer, displayname = "Bank Transfer" },
-        };
+        var methods = await bus.InvokeAsync<IReadOnlyList<AvailablePaymentMethodDto>>(
+            new ListAvailablePaymentMethodsQuery(), ct);
 
-        foreach (var manifest in plugins.GetLoadedManifests().Where(m => m.Type == PluginType.Payment))
-        {
-            // Ask the resolver rather than re-deriving "enabled and configured" from settings
-            // by hand — it is the same check StartGatewayPaymentHandler relies on to actually
-            // start a payment, so listing and starting can never disagree.
-            var plugin = await pluginResolver.ResolveAsync(manifest.Id, ct);
-            if (plugin is not null)
-            {
-                methods.Add(new { module = manifest.Id, displayname = $"Bank Card ({manifest.Name})" });
-            }
-        }
-
-        return Ok(methods);
+        // The checkout reads lower-case `module` / `displayname`; the DTO is projected here
+        // rather than renamed so its properties keep the C# casing every other DTO has.
+        return Ok(methods.Select(m => new { module = m.Module, displayname = m.DisplayName }));
     }
 }

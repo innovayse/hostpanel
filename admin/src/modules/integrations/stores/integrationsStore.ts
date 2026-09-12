@@ -42,6 +42,13 @@ export const useIntegrationsStore = defineStore('integrations', () => {
 
   /** True while any request is in flight. */
   const loading = ref(false)
+  /**
+   * True while a connection test is in flight. Kept apart from `loading` on purpose: that flag
+   * also drives the Save button's "Saving…" label and the initial page skeleton, so reusing it
+   * for the test made the Save button claim it was saving and gave the status sidebar nothing
+   * to distinguish "testing now" from "not tested yet".
+   */
+  const testing = ref(false)
 
   /** Error message, null when no error. */
   const error = ref<string | null>(null)
@@ -97,10 +104,16 @@ export const useIntegrationsStore = defineStore('integrations', () => {
     loading.value = true
     error.value = null
     try {
-      current.value = await request<IntegrationDetailDto>(`/admin/integrations/${slug}`, {
+      await request(`/admin/integrations/${slug}`, {
         method: 'PUT',
         body: JSON.stringify(payload),
       })
+      // The PUT answers 204 No Content, so there is no detail in its response to show. Assigning
+      // it to `current` blanked the whole page: the form is rendered from `current`, and one
+      // successful save replaced it with undefined. Re-read instead — which is also the only way
+      // to see what the server actually stored, since secrets come back masked and the enabled
+      // state can be refused when required fields are missing.
+      await fetchOne(slug)
     } catch {
       error.value = 'Failed to save integration config.'
     } finally {
@@ -115,17 +128,29 @@ export const useIntegrationsStore = defineStore('integrations', () => {
    * @returns Promise that resolves with the test result.
    */
   async function testConnection(slug: string): Promise<void> {
-    loading.value = true
+    testing.value = true
     error.value = null
     testResult.value = null
+    const startedAt = performance.now()
     try {
-      testResult.value = await request<IntegrationTestResult>(`/admin/integrations/${slug}/test`, {
+      const result = await request<IntegrationTestResult>(`/admin/integrations/${slug}/test`, {
         method: 'POST',
       })
+      testResult.value = { ...result, durationMs: Math.round(performance.now() - startedAt) }
+      // The detail page's "Last tested" reads the persisted value, which the backend updates
+      // on a successful probe. Mirror it here so the card does not keep quoting the previous
+      // run until the next full reload.
+      if (result.success && current.value && result.testedAt) {
+        current.value = { ...current.value, lastTestedAt: result.testedAt }
+      }
     } catch {
-      testResult.value = { success: false, message: 'Connection test failed.' }
+      testResult.value = {
+        success: false,
+        message: 'Connection test failed.',
+        durationMs: Math.round(performance.now() - startedAt),
+      }
     } finally {
-      loading.value = false
+      testing.value = false
     }
   }
 
@@ -133,6 +158,7 @@ export const useIntegrationsStore = defineStore('integrations', () => {
     integrations,
     current,
     loading,
+    testing,
     error,
     testResult,
     fetchAll,

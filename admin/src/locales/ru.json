@@ -9,7 +9,8 @@
     "notifications": "Уведомления",
     "toggleSidebar": "Показать/скрыть меню",
     "viewAllNotifications": "Смотреть все уведомления",
-    "newCount": "{count} новых"
+    "newCount": "{count} новых",
+    "noNotifications": "Нет уведомлений"
   },
   "nav": {
     "dashboard": "Панель управления",

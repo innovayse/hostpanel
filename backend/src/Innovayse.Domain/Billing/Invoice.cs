@@ -1,4 +1,4 @@
-namespace Innovayse.Domain.Billing;
+﻿namespace Innovayse.Domain.Billing;
 
 using Innovayse.Domain.Billing.Events;
 using Innovayse.Domain.Common;
@@ -307,7 +307,7 @@ public sealed class Invoice : AggregateRoot
     /// Records a new hosted-gateway payment attempt. Each attempt overwrites the previous
     /// session — the gateway rejects reused order numbers, so retries always re-register.
     /// </summary>
-    /// <param name="module">The payment plugin id (e.g. "innovayse-inecobank").</param>
+    /// <param name="module">The payment plugin id (e.g. "inecobank").</param>
     /// <param name="gatewayOrderId">The gateway-side order id returned at registration.</param>
     /// <exception cref="InvalidOperationException">Thrown when the invoice is not payable.</exception>
     public void SetGatewaySession(string module, string gatewayOrderId)

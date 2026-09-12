@@ -14,8 +14,10 @@ import type { IntegrationDetailDto, IntegrationConfigPayload, IntegrationSlug } 
 const props = defineProps<{
   /** Full integration detail loaded from the store. */
   integration: IntegrationDetailDto
-  /** True while a save or test request is in flight. */
+  /** True while a save request is in flight. */
   loading: boolean
+  /** True while a connection test is in flight. Separate from `loading` so Save never claims to be saving during a test. */
+  testing: boolean
 }>()
 
 /** Emits for IntegrationConfigForm. */
@@ -59,9 +61,19 @@ function handleSave(): void {
     <!-- Card header: logo + name + toggle -->
     <div class="flex items-center gap-3.5 px-5 py-4 border-b border-border">
       <div
-        class="w-10 h-10 rounded-xl shrink-0"
+        class="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center p-2"
         :class="meta?.color ?? 'bg-text-muted'"
-      />
+      >
+        <!-- The comment above this header has always said "logo", but only the coloured block
+             was ever drawn, so every integration's configure page showed a blank tile. Same
+             markup and same white treatment as IntegrationCard, so the two cannot drift. -->
+        <img
+          v-if="meta?.logo"
+          :src="meta.logo"
+          :alt="integration.name"
+          class="w-full h-full object-contain integration-logo"
+        />
+      </div>
       <div class="flex-1 min-w-0">
         <div class="font-display font-semibold text-[0.95rem] text-text-primary">{{ integration.name }}</div>
         <div class="text-[0.76rem] text-text-muted truncate">{{ integration.description }}</div>
@@ -136,7 +148,7 @@ function handleSave(): void {
           type="button"
           class="gradient-brand text-white rounded-[10px] px-5 py-2 text-[0.85rem] font-semibold transition-all duration-150 hover:-translate-y-px disabled:opacity-50 disabled:translate-y-0 disabled:cursor-not-allowed"
           style="box-shadow: 0 3px 14px rgba(14,165,233,0.2);"
-          :disabled="loading"
+          :disabled="loading || testing"
           @click="handleSave"
         >
           {{ loading ? 'Saving…' : 'Save Changes' }}
@@ -144,13 +156,30 @@ function handleSave(): void {
         <button
           type="button"
           class="bg-white/[0.05] border border-border text-text-secondary rounded-[10px] px-5 py-2 text-[0.85rem] font-semibold transition-all duration-150 hover:text-text-primary hover:border-primary-500/30 hover:bg-primary-500/[0.05] disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="loading"
+          :disabled="loading || testing"
           @click="emit('test')"
         >
-          Test Connection
+          <!-- The probe is a real round-trip to the provider, and for a hosted gateway it can
+               take a few seconds. Without a visible in-flight state the button looked inert and
+               got clicked again. Same ring as the list views use. -->
+          <span class="inline-flex items-center gap-2">
+            <span
+              v-if="testing"
+              class="w-3.5 h-3.5 rounded-full border-2 border-primary-500/20 border-t-primary-500 animate-spin"
+            />
+            {{ testing ? 'Testing…' : 'Test Connection' }}
+          </span>
         </button>
       </div>
     </div>
 
   </div>
 </template>
+
+<style scoped>
+/* Logos are drawn white on the integration's own colour, exactly as on the cards. A glyph
+   only survives this if its shape comes from transparent gaps rather than a second colour. */
+.integration-logo {
+  filter: brightness(0) invert(1);
+}
+</style>

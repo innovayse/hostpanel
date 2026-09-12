@@ -1,4 +1,4 @@
-namespace Innovayse.Providers.Inecobank;
+﻿namespace Innovayse.Providers.Inecobank;
 
 using Innovayse.SDK.Base;
 using Innovayse.SDK.Plugins;
@@ -7,19 +7,39 @@ using Microsoft.Extensions.Logging;
 
 /// <summary>
 /// Inecobank (Armenian Card) hosted-payment-page gateway plugin.
-/// Configured from the admin Integrations page via <c>integration:innovayse-inecobank:*</c> settings.
+/// Configured from the admin Integrations page via <c>integration:inecobank:*</c> settings.
 /// </summary>
 public sealed class InecobankPaymentGateway : PaymentGatewayBase, IPaymentPlugin
 {
     /// <summary>The plugin id as declared in plugin.json.</summary>
-    public const string PluginId = "innovayse-inecobank";
+    public const string PluginId = "inecobank";
 
     /// <summary>
     /// The gateway's getOrderStatusExtended.do errorCode meaning "unregistered orderId" —
     /// the session is unknown to the gateway (e.g. it never completed registration or has
     /// expired) and is treated as declined rather than surfaced as an API error.
     /// </summary>
+    /// <summary>
+    /// Path the API client appends to the configured base URL. Present here only so the
+    /// configuration check below and the client that builds the request cannot disagree.
+    /// </summary>
+    private const string ApiPathSegment = "/payment/rest";
+
     private const int UnregisteredOrderIdErrorCode = 6;
+
+    /// <summary>
+    /// The other code this gateway answers with for an order id it does not know:
+    /// <c>{"message":"Wrong order id","code":"9500"}</c>, alongside HTTP 500.
+    /// </summary>
+    /// <remarks>
+    /// The manual documents only <see cref="UnregisteredOrderIdErrorCode"/>, but the live
+    /// gateway returns this one, and the difference matters in both directions. A reconciler
+    /// asking about a session the bank never registered must read "no such order" and settle,
+    /// not raise; and the admin panel's connection probe is built on exactly this response --
+    /// reaching it proves the credentials were accepted, since a bad password never gets far
+    /// enough to be told the order id is wrong.
+    /// </remarks>
+    private const int WrongOrderIdErrorCode = 9500;
 
     /// <summary>Structured logger, also passed through to <see cref="InecobankApiClient"/>.</summary>
     private readonly ILogger<InecobankPaymentGateway> _logger;
@@ -82,7 +102,7 @@ public sealed class InecobankPaymentGateway : PaymentGatewayBase, IPaymentPlugin
         var status = await CreateClient().GetOrderStatusAsync(gatewayOrderId, Language(), ct);
 
         // The session is unknown to the gateway — treat as declined.
-        if (status.ErrorCode == UnregisteredOrderIdErrorCode)
+        if (status.ErrorCode is UnregisteredOrderIdErrorCode or WrongOrderIdErrorCode)
         {
             return new GatewayPaymentStatus(GatewayPaymentState.Declined, null, $"errorCode:{status.ErrorCode}");
         }
@@ -125,6 +145,17 @@ public sealed class InecobankPaymentGateway : PaymentGatewayBase, IPaymentPlugin
         var baseUrl = Require(InecobankConfigKeys.GatewayUrl);
         var userName = Require(InecobankConfigKeys.Username);
         var password = Require(InecobankConfigKeys.Password);
+
+        // The setting is the origin only; the client appends /payment/rest/<endpoint> itself. An
+        // admin copying an endpoint URL out of the merchant manual is the easy mistake here, and
+        // left alone it produces a doubled path and a bare "request to the gateway failed" that
+        // says nothing about which of the five fields is wrong. Naming it costs one comparison.
+        if (baseUrl.Contains(ApiPathSegment, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"The Inecobank gateway URL must be the base address only (e.g. https://pg.inecoecom.am), " +
+                $"but '{baseUrl}' already contains '{ApiPathSegment}'.");
+        }
         return new InecobankApiClient(_http, new InecobankClientOptions(baseUrl, userName, password), _logger);
     }
 

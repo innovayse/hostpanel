@@ -215,10 +215,22 @@ const groupName = computed(() => cfg.value?.name ?? '')
 
 const productName = computed(() => product.value?.name ?? '')
 
-const productDesc = computed(() => product.value?.description ?? '')
+/**
+ * Summary paragraph and feature lines parsed out of the product description.
+ *
+ * The catalogue copy is HTML (`✔ 600 MB Disk Space <br />`), so rendering the raw
+ * `description` printed the markup and every bullet inline above the feature list.
+ * `parseDescription` (utils/whmcs.ts, auto-imported) unwraps the tags and splits the
+ * leading prose off as `summary`; bullet-only copy yields an empty summary, and the
+ * paragraph is then hidden rather than duplicating the list.
+ */
+const parsedDesc = computed(() => parseDescription(product.value?.description ?? ''))
+
+/** Leading prose of the description, tags stripped; empty for bullet-only copy. */
+const productDesc = computed(() => parsedDesc.value.summary)
 
 /** Feature bullets, parsed out of the product description — the only source the API offers. */
-const features = computed(() => parseDescription(productDesc.value).features)
+const features = computed(() => parsedDesc.value.features)
 
 // Pricing
 const allCycleKeys = ['monthly', 'quarterly', 'semiannually', 'annually', 'biennially', 'triennially'] as const

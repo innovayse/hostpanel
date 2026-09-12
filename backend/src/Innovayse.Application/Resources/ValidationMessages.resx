@@ -267,6 +267,10 @@
     <value>This deployment's accounts belong to the sign-on service, so a password reset cannot be issued here. Request it from the sign-on service.</value>
     <comment>USER_PROVISIONING_NOT_ALLOWED. SsoModeUserProvisioning.IssuePasswordResetTokenAsync.</comment>
   </data>
+  <data name="OrderPaymentMethodUnavailable" xml:space="preserve">
+    <value>The selected payment method is not available. Go back to checkout and choose another one.</value>
+    <comment>PlaceOrderHandler. The order named a payment method the checkout is not offering — switched off in the admin integrations page, or never configured — so it is refused before an order exists.</comment>
+  </data>
   <data name="OrderHasNoClientAccount" xml:space="preserve">
     <value>This sign-in is not linked to a customer account, so there is nothing for the order to belong to. Ask support to set one up.</value>
     <comment>PlaceOrderHandler. The caller is authenticated but has no client record and sent no guest registration, so the order has no account to belong to. Replaces a sentence telling them to log in again, which they could act on and which could never help.</comment>

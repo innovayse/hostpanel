@@ -15,14 +15,16 @@ import { useBrandingStore } from '../../stores/useBrandingStore'
 import { useRouter } from 'vue-router'
 
 /**
- * The operator's logo, falling back to the built-in mark.
+ * The operator's logo for this dark sidebar, falling back to the built-in mark.
  *
  * The panel used to hardcode /logo.svg, so a white-labelled deployment showed the
  * shipped mark through its whole back office while the storefront showed the
- * operator's. Both surfaces read the same `portal.logo` setting now.
+ * operator's. It then read `portal.logo` alone — the *light-background* variant —
+ * and drew a logo made for white paper onto this dark panel. The store now picks the
+ * dark-background variant first, the way the storefront does in its dark theme.
  */
 const branding = useBrandingStore()
-const logoSrc = computed(() => branding.logoUrl || '/logo.svg')
+const logoSrc = computed(() => branding.logoOnDarkUrl || '/logo.svg')
 
 /** Emitted when a nav link is clicked (used to close mobile drawer). */
 const emit = defineEmits<{

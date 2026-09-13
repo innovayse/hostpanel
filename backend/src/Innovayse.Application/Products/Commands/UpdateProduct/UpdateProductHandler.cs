@@ -1,11 +1,20 @@
 namespace Innovayse.Application.Products.Commands.UpdateProduct;
 
 using Innovayse.Application.Common;
+using Innovayse.Application.Products.Extensions;
+using Innovayse.Domain.Products;
 using Innovayse.Domain.Products.Interfaces;
 
 /// <summary>Updates an existing product's details and prices.</summary>
 public sealed class UpdateProductHandler(IProductRepository repo, IUnitOfWork uow)
 {
+    /// <summary>
+    /// Value written to the legacy single-currency price columns. They are kept one release so a
+    /// rollback has data to read and are no longer written meaningfully; the prices live in
+    /// <see cref="Product.Prices"/>.
+    /// </summary>
+    private const decimal LegacyPrice = 0m;
+
     /// <summary>
     /// Handles <see cref="UpdateProductCommand"/>.
     /// </summary>
@@ -17,7 +26,11 @@ public sealed class UpdateProductHandler(IProductRepository repo, IUnitOfWork uo
         var product = await repo.FindByIdAsync(cmd.Id, ct)
             ?? throw new InvalidOperationException($"Product {cmd.Id} not found.");
 
-        product.Update(cmd.Name, cmd.Description, cmd.Website, cmd.Slug, cmd.PackageName, cmd.MonthlyPrice, cmd.AnnualPrice, cmd.ServerGroupId);
+        product.Update(
+            cmd.Name, cmd.Description, cmd.Website, cmd.Slug, cmd.PackageName,
+            LegacyPrice, LegacyPrice, cmd.ServerGroupId);
+        cmd.Prices.ApplyTo(product);
+
         await uow.SaveChangesAsync(ct);
     }
 }

@@ -1,5 +1,6 @@
 namespace Innovayse.Application.Products.Commands.CreateProduct;
 
+using Innovayse.Application.Products.Common;
 using Innovayse.Domain.Products;
 
 /// <summary>Command to create a new product in a product group.</summary>
@@ -10,8 +11,7 @@ using Innovayse.Domain.Products;
 /// <param name="Slug">Optional URL-friendly slug for the product.</param>
 /// <param name="PackageName">Optional hosting package name used for provisioning.</param>
 /// <param name="Type">Product type.</param>
-/// <param name="MonthlyPrice">Monthly price (≥ 0).</param>
-/// <param name="AnnualPrice">Annual price (≥ 0).</param>
+/// <param name="Prices">The product's prices, one entry per currency it sells in; at least one.</param>
 /// <param name="ServerGroupId">Optional FK to the server group for provisioning.</param>
 public record CreateProductCommand(
     int GroupId,
@@ -21,6 +21,5 @@ public record CreateProductCommand(
     string? Slug,
     string? PackageName,
     ProductType Type,
-    decimal MonthlyPrice,
-    decimal AnnualPrice,
+    IReadOnlyList<ProductPriceInput> Prices,
     int? ServerGroupId);

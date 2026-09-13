@@ -260,7 +260,7 @@ async function fetchServers(): Promise<void> {
  */
 async function fetchProducts(): Promise<void> {
   try {
-    const result = await request<Array<{ id: number; name: string }>>('/products?activeOnly=false')
+    const result = await request<Array<{ id: number; name: string }>>('/products?activeOnly=false&includeUnsellable=true')
     productList.value = result
   } catch { /* silent */ }
 }

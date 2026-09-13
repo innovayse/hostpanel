@@ -1,6 +1,7 @@
 namespace Innovayse.Application.Products.Commands.CreateProduct;
 
 using Innovayse.Application.Common;
+using Innovayse.Application.Products.Extensions;
 using Innovayse.Domain.Products;
 using Innovayse.Domain.Products.Interfaces;
 
@@ -10,6 +11,13 @@ public sealed class CreateProductHandler(
     IProductGroupRepository groupRepo,
     IUnitOfWork uow)
 {
+    /// <summary>
+    /// Value written to the legacy single-currency price columns. They are kept one release so a
+    /// rollback has data to read and are no longer written meaningfully; the prices live in
+    /// <see cref="Product.Prices"/>.
+    /// </summary>
+    private const decimal LegacyPrice = 0m;
+
     /// <summary>
     /// Handles <see cref="CreateProductCommand"/>.
     /// </summary>
@@ -23,7 +31,9 @@ public sealed class CreateProductHandler(
             ?? throw new InvalidOperationException($"Product group {cmd.GroupId} not found.");
 
         var product = Product.Create(
-            cmd.GroupId, cmd.Name, cmd.Description, cmd.Website, cmd.Slug, cmd.PackageName, cmd.Type, cmd.MonthlyPrice, cmd.AnnualPrice, cmd.ServerGroupId);
+            cmd.GroupId, cmd.Name, cmd.Description, cmd.Website, cmd.Slug, cmd.PackageName, cmd.Type,
+            LegacyPrice, LegacyPrice, cmd.ServerGroupId);
+        cmd.Prices.ApplyTo(product);
 
         repo.Add(product);
         await uow.SaveChangesAsync(ct);

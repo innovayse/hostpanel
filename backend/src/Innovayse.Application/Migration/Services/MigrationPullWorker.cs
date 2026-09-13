@@ -737,6 +737,7 @@ public sealed class MigrationPullWorker(
         // Step 2: page through products
         int imported = 0, skipped = 0;
         var allProducts = await productRepo.ListAsync(null, false, ct);
+        var baseCurrency = (await payerCurrency.BaseAsync(ct)).Code;
 
         await foreach (var page in PagesAsync<ProductRecord>(job, "products", ct))
         {
@@ -761,6 +762,9 @@ public sealed class MigrationPullWorker(
                         continue;
                     }
 
+                    // The source install is single-currency, so its two figures become the
+                    // product's prices in this install's base currency. The legacy columns get
+                    // the same figures for the rollback release.
                     var product = Product.Create(
                         localGroupId,
                         rec.Name,
@@ -771,6 +775,8 @@ public sealed class MigrationPullWorker(
                         MapProductType(rec.Type),
                         rec.MonthlyPrice,
                         rec.AnnualPrice);
+                    product.SetPrice(baseCurrency, BillingCycle.Monthly, rec.MonthlyPrice);
+                    product.SetPrice(baseCurrency, BillingCycle.Annual, rec.AnnualPrice);
 
                     productRepo.Add(product);
                     await uow.SaveChangesAsync(ct);

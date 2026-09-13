@@ -28,9 +28,9 @@ public sealed class DevDataSeeder(
     private static readonly Random Rng = new(42);
 
     /// <summary>
-    /// Currency every seeded invoice bills in. Seeded clients carry no currency of their own and
-    /// the prices above are dollar figures, so the seed names the currency those figures are in
-    /// rather than resolving one per client.
+    /// Currency every seeded invoice bills in and every seeded product is priced in. Seeded
+    /// clients carry no currency of their own and the prices above are dollar figures, so the
+    /// seed names the currency those figures are in rather than resolving one per client.
     /// </summary>
     private const string SeedInvoiceCurrency = "USD";
 
@@ -112,6 +112,8 @@ public sealed class DevDataSeeder(
                 }
 
                 var domainProduct = Product.Create(domainGroup.Id, "Domain Registration", null, null, null, null, ProductType.Domain, 0m, 0m);
+                domainProduct.SetPrice(SeedInvoiceCurrency, BillingCycle.Monthly, 0m);
+                domainProduct.SetPrice(SeedInvoiceCurrency, BillingCycle.Annual, 0m);
                 db.Products.Add(domainProduct);
                 await db.SaveChangesAsync(ct);
                 logger.LogInformation("Seeded Domain Registration product");
@@ -374,7 +376,11 @@ public sealed class DevDataSeeder(
 
                 foreach (var (name, monthly, annual) in products)
                 {
+                    // The legacy columns receive the same figures for the rollback release; the
+                    // storefront and the order flow read the per-currency rows.
                     var product = Product.Create(group.Id, name, null, null, null, null, productType, monthly, annual);
+                    product.SetPrice(SeedInvoiceCurrency, BillingCycle.Monthly, monthly);
+                    product.SetPrice(SeedInvoiceCurrency, BillingCycle.Annual, annual);
                     db.Products.Add(product);
                 }
             }
@@ -386,7 +392,7 @@ public sealed class DevDataSeeder(
         // ── Client Services ───────────────────────────────────────────────────
         if (!await db.ClientServices.AnyAsync(ct))
         {
-            var products = await db.Products.ToListAsync(ct);
+            var products = await db.Products.Include(p => p.Prices).ToListAsync(ct);
             var activeClients = await db.Clients.Where(c => c.Status == ClientStatus.Active).ToListAsync(ct);
             var billingCycles = new[] { "monthly", "annual" };
 
@@ -406,7 +412,7 @@ public sealed class DevDataSeeder(
                     // production callers, OrderServiceHandler and MigrationPullWorker, both set
                     // these the same way immediately after Create; this seeder was the only one
                     // that did not.
-                    var cyclePrice = cycle == "annual" ? product.AnnualPrice : product.MonthlyPrice;
+                    var cyclePrice = product.PriceFor(SeedInvoiceCurrency, BillingCycleParser.Parse(cycle)) ?? 0m;
 
                     svc.Update(
                         domain: null, dedicatedIp: null, username: null,
@@ -451,7 +457,7 @@ public sealed class DevDataSeeder(
         // ── Product-matched invoices ──────────────────────────────────────────
         if (!hasProductInvoices)
         {
-            var products = await db.Products.ToListAsync(ct);
+            var products = await db.Products.Include(p => p.Prices).ToListAsync(ct);
             var activeClients = await db.Clients.Where(c => c.Status == ClientStatus.Active).ToListAsync(ct);
 
             for (int monthsBack = 2; monthsBack >= 0; monthsBack--)
@@ -464,11 +470,11 @@ public sealed class DevDataSeeder(
                     var invoiceDate = MonthsAgo(monthsBack, Rng.Next(1, 25));
 
                     var invoice = Invoice.Create(client.Id, invoiceDate.AddDays(30), SeedInvoiceCurrency);
-                    invoice.AddItem(product.Name, product.MonthlyPrice, 1);
+                    invoice.AddItem(product.Name, product.PriceFor(SeedInvoiceCurrency, BillingCycle.Monthly) ?? 0m, 1);
                     if (Rng.Next(3) == 0)
                     {
                         var p2 = products[Rng.Next(products.Count)];
-                        invoice.AddItem(p2.Name, p2.MonthlyPrice, 1);
+                        invoice.AddItem(p2.Name, p2.PriceFor(SeedInvoiceCurrency, BillingCycle.Monthly) ?? 0m, 1);
                     }
                     invoice.MarkPaid("stripe_" + Rng.Next(100000, 999999));
 
@@ -484,7 +490,7 @@ public sealed class DevDataSeeder(
         // ── Orders ────────────────────────────────────────────────────────────
         if (!await db.Orders.AnyAsync(ct))
         {
-            var products = await db.Products.ToListAsync(ct);
+            var products = await db.Products.Include(p => p.Prices).ToListAsync(ct);
             var activeClients = await db.Clients.Where(c => c.Status == ClientStatus.Active).ToListAsync(ct);
             var gateways = new[] { "Stripe", "PayPal", "Bank Transfer" };
 
@@ -499,7 +505,8 @@ public sealed class DevDataSeeder(
                     var orderDate = MonthsAgo(month, Rng.Next(1, 28));
 
                     var order = Order.Create($"ORD-{Rng.Next(10000, 99999)}", client.Id, gateway, null);
-                    order.AddItem(product.Id, product.Name, "monthly", product.MonthlyPrice, product.MonthlyPrice, null, null);
+                    var monthlyPrice = product.PriceFor(SeedInvoiceCurrency, BillingCycle.Monthly) ?? 0m;
+                    order.AddItem(product.Id, product.Name, "monthly", monthlyPrice, monthlyPrice, null, null);
                     order.Accept();
 
                     db.Orders.Add(order);

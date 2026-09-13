@@ -1,4 +1,4 @@
-namespace Innovayse.Application.Billing.Commands.StartGatewayPayment;
+﻿namespace Innovayse.Application.Billing.Commands.StartGatewayPayment;
 
 using Innovayse.Application.Billing.Common;
 using Innovayse.Application.Billing.Interfaces;
@@ -165,8 +165,7 @@ public sealed class StartGatewayPaymentHandler(
     private async Task EnsureCurrencyMatchesAsync(Invoice invoice, IPaymentPlugin plugin, CancellationToken ct)
     {
         var client = await clientRepo.FindByIdAsync(invoice.ClientId, ct);
-        var defaultCurrency = billingOptions.Value.DefaultCurrency;
-        var clientCurrency = client?.Currency ?? defaultCurrency;
+        var clientCurrency = CurrencyCodes.ResolvePayerCurrency(client?.Currency, billingOptions.Value.DefaultCurrency);
         var clientCurrencyNumeric = CurrencyCodes.ToNumeric(clientCurrency)
             ?? throw new InvalidOperationException(
                 $"Invoice {invoice.Id}: client currency '{clientCurrency}' has no known ISO 4217 numeric mapping.");

@@ -25,7 +25,7 @@ public sealed class InvoiceItemServiceLinkTests
     [Fact]
     public void AddItem_WithoutAServiceId_LeavesTheLinkUnset()
     {
-        var invoice = Invoice.Create(clientId: 1, DueDate);
+        var invoice = Invoice.Create(clientId: 1, DueDate, "USD");
 
         invoice.AddItem("Manual adjustment", 100m, 1);
 
@@ -36,7 +36,7 @@ public sealed class InvoiceItemServiceLinkTests
     [Fact]
     public void AddItem_WithAServiceId_RecordsIt()
     {
-        var invoice = Invoice.Create(clientId: 1, DueDate);
+        var invoice = Invoice.Create(clientId: 1, DueDate, "USD");
 
         invoice.AddItem("Renewal: Starter Hosting", 5000m, 1, clientServiceId: 42);
 
@@ -51,7 +51,7 @@ public sealed class InvoiceItemServiceLinkTests
     [Fact]
     public void UpdateItem_KeepsTheServiceLink()
     {
-        var invoice = Invoice.Create(clientId: 1, DueDate);
+        var invoice = Invoice.Create(clientId: 1, DueDate, "USD");
         invoice.AddItem("Renewal: Starter Hosting", 5000m, 1, clientServiceId: 42);
         var item = Assert.Single(invoice.Items);
 
@@ -68,7 +68,7 @@ public sealed class InvoiceItemServiceLinkTests
     [Fact]
     public void Duplicate_CarriesEachLinkAcrossUnchanged()
     {
-        var invoice = Invoice.Create(clientId: 1, DueDate);
+        var invoice = Invoice.Create(clientId: 1, DueDate, "USD");
         invoice.AddItem("Renewal: Starter Hosting", 5000m, 1, clientServiceId: 42);
         invoice.AddItem("Manual adjustment", 100m, 1);
 
@@ -81,7 +81,7 @@ public sealed class InvoiceItemServiceLinkTests
     [Fact]
     public void AnInvoiceMayCarryLinkedAndUnlinkedLinesTogether()
     {
-        var invoice = Invoice.Create(clientId: 1, DueDate);
+        var invoice = Invoice.Create(clientId: 1, DueDate, "USD");
 
         invoice.AddItem("Renewal: Starter Hosting", 5000m, 1, clientServiceId: 42);
         invoice.AddItem("Renewal: Backup Add-on", 500m, 1, clientServiceId: 43);

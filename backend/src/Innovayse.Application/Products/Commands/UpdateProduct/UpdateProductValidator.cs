@@ -14,8 +14,10 @@ public sealed class UpdateProductValidator : AbstractValidator<UpdateProductComm
         RuleFor(x => x.Description).MaximumLength(1000).When(x => x.Description is not null);
         RuleFor(x => x.PackageName).MaximumLength(100).When(x => x.PackageName is not null);
         // An update may legitimately clear every price: the product becomes unsellable and the
-        // admin grid shows it as such. Only the entries that are present are checked.
-        RuleFor(x => x.Prices).NotNull();
-        RuleForEach(x => x.Prices).SetValidator(new ProductPriceInputValidator());
+        // admin grid shows it as such. Only the entries that are present are checked; the legacy
+        // pair stands in for the list when the old admin form sends it.
+        RuleForEach(x => x.Prices).SetValidator(new ProductPriceInputValidator()).When(x => x.Prices is not null);
+        RuleFor(x => x.MonthlyPrice).GreaterThanOrEqualTo(0).When(x => x.MonthlyPrice is not null);
+        RuleFor(x => x.AnnualPrice).GreaterThanOrEqualTo(0).When(x => x.AnnualPrice is not null);
     }
 }

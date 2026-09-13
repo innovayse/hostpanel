@@ -105,8 +105,10 @@ watch(() => props.product, (p) => {
     slugManuallyEdited.value = true
     packageName.value = p.packageName ?? ''
     description.value = p.description ?? ''
-    monthlyPrice.value = p.pricing.monthly
-    annualPrice.value = p.pricing.annual
+    // A cycle the product does not sell in the base currency comes back null; the legacy form
+    // has one number per cycle, so it shows 0 until Plan 2 replaces this form.
+    monthlyPrice.value = p.pricing.monthly ?? 0
+    annualPrice.value = p.pricing.annual ?? 0
     serverGroupId.value = p.serverGroupId ?? null
     isHidden.value = p.status === 'Inactive'
   } else {

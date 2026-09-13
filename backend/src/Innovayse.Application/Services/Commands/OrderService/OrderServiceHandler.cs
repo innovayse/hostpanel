@@ -46,14 +46,15 @@ public sealed class OrderServiceHandler(
             throw new InvalidOperationException(localizer["ProductNotAvailable", cmd.ProductId]);
         }
 
-        // The order-fulfilment callers pass the amounts snapshotted on the order line; the client's
-        // own route passes zero and the amounts come from the product's price in that client's
-        // currency. Only in the second case is the stored price consulted, so a product with no
-        // price in that currency is refused rather than sold for nothing.
-        var needsPrice = cmd.FirstPaymentAmount <= 0 || cmd.RecurringAmount <= 0;
+        // The order-fulfilment callers pass the amounts snapshotted on the order line — zero
+        // included, which is a free period and stays free. The client's own route passes null and
+        // the amounts come from the product's price in that client's currency. Only a null amount
+        // consults the stored price, so a product with no price in that currency is refused
+        // rather than sold for nothing, and an accepted order never fails fulfilment over it.
+        var needsPrice = cmd.FirstPaymentAmount is null || cmd.RecurringAmount is null;
         var cyclePrice = needsPrice ? await ResolveCyclePriceAsync(product, cmd, ct) : 0m;
-        var firstPayment = cmd.FirstPaymentAmount > 0 ? cmd.FirstPaymentAmount : cyclePrice;
-        var recurring = cmd.RecurringAmount > 0 ? cmd.RecurringAmount : cyclePrice;
+        var firstPayment = cmd.FirstPaymentAmount ?? cyclePrice;
+        var recurring = cmd.RecurringAmount ?? cyclePrice;
 
         var service = ClientService.Create(cmd.ClientId, cmd.ProductId, cmd.BillingCycle);
 

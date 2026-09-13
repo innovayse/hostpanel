@@ -1,15 +1,22 @@
 namespace Innovayse.Application.Products.Commands.CreateProduct;
 
+using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Common;
+using Innovayse.Application.Products.Common;
 using Innovayse.Application.Products.Extensions;
 using Innovayse.Domain.Products;
 using Innovayse.Domain.Products.Interfaces;
 
 /// <summary>Creates a new product and persists it.</summary>
+/// <param name="repo">Product repository the new product is added to.</param>
+/// <param name="groupRepo">Product group repository, to check the parent group exists.</param>
+/// <param name="uow">Unit of work for persistence.</param>
+/// <param name="payerCurrency">Resolves the base currency the legacy price fields are in.</param>
 public sealed class CreateProductHandler(
     IProductRepository repo,
     IProductGroupRepository groupRepo,
-    IUnitOfWork uow)
+    IUnitOfWork uow,
+    IPayerCurrencyResolver payerCurrency)
 {
     /// <summary>
     /// Value written to the legacy single-currency price columns. They are kept one release so a
@@ -33,7 +40,8 @@ public sealed class CreateProductHandler(
         var product = Product.Create(
             cmd.GroupId, cmd.Name, cmd.Description, cmd.Website, cmd.Slug, cmd.PackageName, cmd.Type,
             LegacyPrice, LegacyPrice, cmd.ServerGroupId);
-        cmd.Prices.ApplyTo(product);
+        var prices = await ProductPriceInputs.ResolveAsync(cmd.Prices, cmd.MonthlyPrice, cmd.AnnualPrice, payerCurrency, ct);
+        prices.ApplyTo(product);
 
         repo.Add(product);
         await uow.SaveChangesAsync(ct);

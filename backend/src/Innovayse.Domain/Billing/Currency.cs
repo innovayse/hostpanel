@@ -8,8 +8,8 @@ using Innovayse.Domain.Common;
 /// </summary>
 /// <remarks>
 /// Prices are never computed from the rate at checkout. The rate exists for one admin action,
-/// "update product prices", which writes converted figures into product price rows the admin
-/// then edits. What a client sees and is charged is always a stored number.
+/// "update product prices", which writes converted figures into <see cref="Products.ProductPrice"/>
+/// rows the admin then edits. What a client sees and is charged is always a stored number.
 /// </remarks>
 public sealed class Currency : AggregateRoot
 {

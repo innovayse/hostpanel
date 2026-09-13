@@ -373,6 +373,7 @@ public static class DependencyInjection
         services.AddScoped<ITransactionRepository, TransactionRepository>();
         services.AddScoped<IBillableItemRepository, BillableItemRepository>();
         services.AddScoped<IQuoteRepository, QuoteRepository>();
+        services.AddScoped<ICurrencyRepository, CurrencyRepository>();
         services.AddScoped<IPaymentGateway, NullPaymentGateway>();
         services.AddScoped<IPayerCurrencyResolver, PayerCurrencyResolver>();
 

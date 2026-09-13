@@ -3,6 +3,7 @@ using System;
 using Innovayse.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Innovayse.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260913141144_AddCurrencies")]
+    partial class AddCurrencies
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -201,11 +204,6 @@ namespace Innovayse.Infrastructure.Migrations
 
                     b.Property<decimal>("Credit")
                         .HasColumnType("numeric(18,4)");
-
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("character varying(3)");
 
                     b.Property<DateTimeOffset>("DueDate")
                         .HasColumnType("timestamp with time zone");
@@ -1920,38 +1918,6 @@ namespace Innovayse.Infrastructure.Migrations
                     b.ToTable("product_groups", (string)null);
                 });
 
-            modelBuilder.Entity("Innovayse.Domain.Products.ProductPrice", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("numeric(18,4)");
-
-                    b.Property<string>("CurrencyCode")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("character varying(3)");
-
-                    b.Property<string>("Cycle")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProductId", "CurrencyCode", "Cycle")
-                        .IsUnique();
-
-                    b.ToTable("product_prices", (string)null);
-                });
-
             modelBuilder.Entity("Innovayse.Domain.Servers.Server", b =>
                 {
                     b.Property<int>("Id")
@@ -3179,15 +3145,6 @@ namespace Innovayse.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Innovayse.Domain.Products.ProductPrice", b =>
-                {
-                    b.HasOne("Innovayse.Domain.Products.Product", null)
-                        .WithMany("Prices")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Innovayse.Domain.Servers.Server", b =>
                 {
                     b.HasOne("Innovayse.Domain.Servers.ServerGroup", null)
@@ -3316,11 +3273,6 @@ namespace Innovayse.Infrastructure.Migrations
             modelBuilder.Entity("Innovayse.Domain.Orders.Order", b =>
                 {
                     b.Navigation("Items");
-                });
-
-            modelBuilder.Entity("Innovayse.Domain.Products.Product", b =>
-                {
-                    b.Navigation("Prices");
                 });
 
             modelBuilder.Entity("Innovayse.Domain.Products.ProductGroup", b =>

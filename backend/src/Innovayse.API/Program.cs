@@ -53,17 +53,6 @@ try
                   .AllowAnyMethod()
                   .AllowCredentials()));
 
-    // Application-layer settings, bound here because IConfiguration stops at the composition
-    // root: below it a handler states what it needs as a typed options class and nothing reads
-    // a settings key by string.
-    builder.Services.AddOptions<BillingOptions>()
-        .Bind(builder.Configuration.GetSection(BillingOptions.SectionName))
-        .Validate(
-            o => o.DefaultCurrency.Length == 3,
-            $"{BillingOptions.SectionName}:{nameof(BillingOptions.DefaultCurrency)} must be a "
-                + "three-letter ISO 4217 alpha code.")
-        .ValidateOnStart();
-
     // Not a section of its own. A payer may only be handed back to an origin the web edge
     // already trusts, so the list is the CORS one read just above rather than a second copy
     // that could drift from it -- see GatewayReturnUrlOptions for why it carries no SectionName.

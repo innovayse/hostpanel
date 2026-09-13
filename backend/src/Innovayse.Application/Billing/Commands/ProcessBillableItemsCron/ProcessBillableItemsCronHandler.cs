@@ -1,5 +1,6 @@
 namespace Innovayse.Application.Billing.Commands.ProcessBillableItemsCron;
 
+using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Billing.Interfaces;
@@ -11,9 +12,16 @@ using Wolverine;
 /// that are due for automatic processing, including recurring items.
 /// Re-schedules itself for the next day after completion.
 /// </summary>
+/// <param name="billableItemRepo">Billable item repository.</param>
+/// <param name="invoiceRepo">Invoice repository.</param>
+/// <param name="payerCurrency">The currency each invoiced client is billed in, stamped on their invoice.</param>
+/// <param name="uow">Unit of work.</param>
+/// <param name="bus">Message bus, for re-scheduling the job.</param>
+/// <param name="logger">Structured logger.</param>
 public sealed class ProcessBillableItemsCronHandler(
     IBillableItemRepository billableItemRepo,
     IInvoiceRepository invoiceRepo,
+    IPayerCurrencyResolver payerCurrency,
     IUnitOfWork uow,
     IMessageBus bus,
     ILogger<ProcessBillableItemsCronHandler> logger)
@@ -60,7 +68,8 @@ public sealed class ProcessBillableItemsCronHandler(
         foreach (var group in grouped)
         {
             var clientId = group.Key;
-            var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(PaymentTermDays));
+            var currency = (await payerCurrency.ForClientAsync(clientId, ct)).Code;
+            var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(PaymentTermDays), currency);
 
             foreach (var item in group)
             {
@@ -102,7 +111,8 @@ public sealed class ProcessBillableItemsCronHandler(
         foreach (var group in grouped)
         {
             var clientId = group.Key;
-            var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(PaymentTermDays));
+            var currency = (await payerCurrency.ForClientAsync(clientId, ct)).Code;
+            var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(PaymentTermDays), currency);
 
             foreach (var item in group)
             {

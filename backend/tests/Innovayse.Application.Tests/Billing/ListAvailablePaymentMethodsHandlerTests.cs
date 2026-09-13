@@ -3,15 +3,11 @@
 using Innovayse.Application.Admin.Plugins.Interfaces;
 using Innovayse.Application.Billing.Common;
 using Innovayse.Application.Billing.Interfaces;
-using Innovayse.Application.Billing.Options;
 using Innovayse.Application.Billing.Queries.ListAvailablePaymentMethods;
-using Innovayse.Application.Common;
-using Innovayse.Domain.Clients;
-using Innovayse.Domain.Clients.Interfaces;
+using Innovayse.Domain.Billing;
 using Innovayse.Domain.Settings;
 using Innovayse.Domain.Settings.Interfaces;
 using Innovayse.SDK.Plugins;
-using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
@@ -30,34 +26,36 @@ public sealed class ListAvailablePaymentMethodsHandlerTests
     private readonly Mock<IPaymentPluginResolver> resolver = new();
     private readonly Mock<ISettingRepository> settings = new();
     private readonly Mock<IStripeService> stripe = new();
-    private readonly Mock<ICurrentRequestContext> caller = new();
-    private readonly Mock<IClientRepository> clientRepo = new();
+    private readonly Mock<IPayerCurrencyResolver> payerCurrency = new();
 
-    /// <summary>Panel default currency; individual tests override it through <see cref="BilledIn"/>.</summary>
-    private string defaultCurrency = "AMD";
-
-    /// <summary>No plugins loaded unless a test says otherwise (Moq's default for the collection is null).</summary>
-    public ListAvailablePaymentMethodsHandlerTests() =>
-        plugins.Setup(p => p.GetLoadedManifests()).Returns([]);
-
-    private ListAvailablePaymentMethodsHandler Handler() =>
-        new(plugins.Object, resolver.Object, settings.Object, stripe.Object,
-            caller.Object, clientRepo.Object, Options.Create(new BillingOptions { DefaultCurrency = defaultCurrency }));
-
-    /// <summary>Makes the caller a signed-in client billed in <paramref name="currency"/> (null = no currency recorded).</summary>
-    private void SignedInClientBilledIn(string? currency)
+    /// <summary>The ISO numeric codes of the currencies these tests bill in.</summary>
+    private static readonly Dictionary<string, string> Numerics = new(StringComparer.Ordinal)
     {
-        var client = Client.Create("user-1", "Jane", "Doe", "jane@example.com");
-        client.UpdatePreferences(currency, null, null, null);
-        caller.SetupGet(c => c.UserId).Returns("user-1");
-        clientRepo.Setup(r => r.FindByUserIdAsync("user-1", It.IsAny<CancellationToken>())).ReturnsAsync(client);
+        ["AMD"] = "051",
+        ["USD"] = "840",
+    };
+
+    /// <summary>
+    /// No plugins loaded unless a test says otherwise (Moq's default for the collection is null),
+    /// and the caller billed in AMD unless a test says otherwise.
+    /// </summary>
+    public ListAvailablePaymentMethodsHandlerTests()
+    {
+        plugins.Setup(p => p.GetLoadedManifests()).Returns([]);
+        BilledIn("AMD");
     }
 
-    /// <summary>Makes the caller anonymous, as a guest at checkout is.</summary>
-    private void Guest() => caller.SetupGet(c => c.UserId).Returns((string?)null);
+    private ListAvailablePaymentMethodsHandler Handler() =>
+        new(plugins.Object, resolver.Object, settings.Object, stripe.Object, payerCurrency.Object);
 
-    /// <summary>Sets the panel default currency.</summary>
-    private void BilledIn(string currency) => defaultCurrency = currency;
+    /// <summary>
+    /// Makes the caller billed in <paramref name="currency"/>. Whether that is their own client
+    /// record's currency or the base a guest falls back to is the resolver's business, not this
+    /// handler's: it asks one question and lists against the answer.
+    /// </summary>
+    private void BilledIn(string currency) =>
+        payerCurrency.Setup(r => r.ForCallerAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Currency.Create(currency, Numerics[currency], string.Empty, string.Empty, 2, 1m, isBase: false));
 
     /// <summary>Loads one payment plugin that the resolver accepts and that charges in <paramref name="numericCurrency"/>.</summary>
     private void LoadedGateway(string id, string name, string numericCurrency)
@@ -142,7 +140,6 @@ public sealed class ListAvailablePaymentMethodsHandlerTests
     [Fact]
     public async Task PluginsFollowTheResolver()
     {
-        Guest();
         plugins.Setup(p => p.GetLoadedManifests())
             .Returns([PaymentManifest("inecobank", "Inecobank"), PaymentManifest("other-bank", "Other")]);
         var accepted = new Mock<IPaymentPlugin>();
@@ -164,59 +161,38 @@ public sealed class ListAvailablePaymentMethodsHandlerTests
     /// was refused at Place Order. The refusal is right; the offer was the defect.
     /// </summary>
     [Fact]
-    public async Task AGatewayInAnotherCurrencyIsNotOfferedToASignedInClient()
-    {
-        SignedInClientBilledIn("USD");
-        LoadedGateway("inecobank", "Inecobank", "051");
-
-        Assert.DoesNotContain("inecobank", await ListedModulesAsync());
-    }
-
-    /// <summary>A client billed in the gateway's currency sees it.</summary>
-    [Fact]
-    public async Task AGatewayInTheClientsCurrencyIsOffered()
-    {
-        SignedInClientBilledIn("AMD");
-        LoadedGateway("inecobank", "Inecobank", "051");
-
-        Assert.Contains("inecobank", await ListedModulesAsync());
-    }
-
-    /// <summary>
-    /// A client with no currency recorded is billed in the panel default -- the same rule the
-    /// start uses -- so the default decides what they see.
-    /// </summary>
-    [Fact]
-    public async Task AClientWithNoCurrencyFallsBackToThePanelDefault()
+    public async Task AGatewayInAnotherCurrencyIsNotOffered()
     {
         BilledIn("USD");
-        SignedInClientBilledIn(null);
         LoadedGateway("inecobank", "Inecobank", "051");
 
         Assert.DoesNotContain("inecobank", await ListedModulesAsync());
     }
 
-    /// <summary>A guest has no client record; the panel default is the currency their order will carry.</summary>
+    /// <summary>A payer billed in the gateway's currency sees it.</summary>
     [Fact]
-    public async Task AGuestIsBilledInThePanelDefault()
+    public async Task AGatewayInThePayersCurrencyIsOffered()
     {
         BilledIn("AMD");
-        Guest();
         LoadedGateway("inecobank", "Inecobank", "051");
 
         Assert.Contains("inecobank", await ListedModulesAsync());
     }
 
     /// <summary>
-    /// A currency with no ISO numeric mapping cannot go through any gateway -- the start would
-    /// refuse it -- so no gateway is offered rather than one that will fail.
+    /// The currency the list is built against is the payer resolver's answer -- the same one
+    /// every invoice is created with -- and nothing else. The handler holds no client
+    /// repository and no default of its own to read around it.
     /// </summary>
     [Fact]
-    public async Task AnUnmappedCurrencyGetsNoGateway()
+    public async Task TheListIsBuiltAgainstThePayerResolversAnswer()
     {
-        SignedInClientBilledIn("XYZ");
+        BilledIn("AMD");
         LoadedGateway("inecobank", "Inecobank", "051");
 
-        Assert.DoesNotContain("inecobank", await ListedModulesAsync());
+        await ListedModulesAsync();
+
+        payerCurrency.Verify(r => r.ForCallerAsync(It.IsAny<CancellationToken>()), Times.Once);
+        payerCurrency.VerifyNoOtherCalls();
     }
 }

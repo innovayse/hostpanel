@@ -64,12 +64,12 @@ public sealed class MyInvoiceOwnershipTests
     /// <summary>An ownership rule that refuses everything, for the handler tests.</summary>
     /// <returns>A rule that throws <see cref="InvoiceNotFoundException"/>.</returns>
     private static IInvoiceOwnership RefusingOwnership() =>
-        OwnershipOver(CallerClient(), Invoice.Create(StrangersClientId, DateTimeOffset.UtcNow.AddDays(7)));
+        OwnershipOver(CallerClient(), Invoice.Create(StrangersClientId, DateTimeOffset.UtcNow.AddDays(7), "USD"));
 
     /// <summary>An ownership rule that accepts, for the handler tests.</summary>
     /// <returns>A rule that completes.</returns>
     private static IInvoiceOwnership AcceptingOwnership() =>
-        OwnershipOver(CallerClient(), Invoice.Create(clientId: 0, DateTimeOffset.UtcNow.AddDays(7)));
+        OwnershipOver(CallerClient(), Invoice.Create(clientId: 0, DateTimeOffset.UtcNow.AddDays(7), "USD"));
 
     /// <summary>The whole point: an invoice belonging to another client is not readable.</summary>
     /// <returns>A task representing the test.</returns>
@@ -97,7 +97,7 @@ public sealed class MyInvoiceOwnershipTests
                 .RequireOwnedByCallerAsync(InvoiceId, CancellationToken.None));
 
         var noProfile = await Assert.ThrowsAsync<InvoiceNotFoundException>(
-            () => OwnershipOver(client: null, Invoice.Create(StrangersClientId, DateTimeOffset.UtcNow))
+            () => OwnershipOver(client: null, Invoice.Create(StrangersClientId, DateTimeOffset.UtcNow, "USD"))
                 .RequireOwnedByCallerAsync(InvoiceId, CancellationToken.None));
 
         Assert.Equal(InvoiceNotFoundException.PublicMessage, strangers.Message);

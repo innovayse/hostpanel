@@ -34,22 +34,6 @@ public static class CurrencyCodes
         AlphaToNumeric.TryGetValue(alpha, out var numeric) ? numeric : null;
 
     /// <summary>
-    /// Resolves the alpha currency a payer is billed in: the client's own, or the panel default
-    /// when the client has none recorded (or there is no client — a guest at checkout).
-    /// </summary>
-    /// <remarks>
-    /// One rule, used both where a gateway payment is started and where the list of gateways is
-    /// built. It lives here so the two cannot disagree: a method the list offers because it read
-    /// the currency one way, and the start refuses because it read it another, is exactly the
-    /// checkout dead-end this exists to prevent.
-    /// </remarks>
-    /// <param name="clientCurrency">The client's recorded currency, or <see langword="null"/>.</param>
-    /// <param name="defaultCurrency">The panel-wide default from <c>Billing:DefaultCurrency</c>.</param>
-    /// <returns>The alpha code the payer is billed in.</returns>
-    public static string ResolvePayerCurrency(string? clientCurrency, string defaultCurrency) =>
-        string.IsNullOrWhiteSpace(clientCurrency) ? defaultCurrency : clientCurrency;
-
-    /// <summary>
     /// Converts a decimal major-unit amount (e.g. 10.005 dollars) to its integer minor-unit
     /// form (e.g. 1001 cents), rounding half-away-from-zero so e.g. 10.0050 rounds to 1001
     /// rather than truncating to 1000.

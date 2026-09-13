@@ -27,6 +27,13 @@ public sealed class DevDataSeeder(
 {
     private static readonly Random Rng = new(42);
 
+    /// <summary>
+    /// Currency every seeded invoice bills in. Seeded clients carry no currency of their own and
+    /// the prices above are dollar figures, so the seed names the currency those figures are in
+    /// rather than resolving one per client.
+    /// </summary>
+    private const string SeedInvoiceCurrency = "USD";
+
     private static DateTimeOffset MonthsAgo(int months, int day = 15) =>
         new DateTimeOffset(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, TimeSpan.Zero)
             .AddMonths(-months)
@@ -205,7 +212,7 @@ public sealed class DevDataSeeder(
                     var dueDate = invoiceDate.AddDays(30);
                     var productIndex = Rng.Next(products.Length);
 
-                    var invoice = Invoice.Create(client.Id, dueDate);
+                    var invoice = Invoice.Create(client.Id, dueDate, SeedInvoiceCurrency);
                     invoice.AddItem(products[productIndex], prices[productIndex], 1);
 
                     if (Rng.Next(3) == 0)
@@ -456,7 +463,7 @@ public sealed class DevDataSeeder(
                     var product = products[Rng.Next(products.Count)];
                     var invoiceDate = MonthsAgo(monthsBack, Rng.Next(1, 25));
 
-                    var invoice = Invoice.Create(client.Id, invoiceDate.AddDays(30));
+                    var invoice = Invoice.Create(client.Id, invoiceDate.AddDays(30), SeedInvoiceCurrency);
                     invoice.AddItem(product.Name, product.MonthlyPrice, 1);
                     if (Rng.Next(3) == 0)
                     {

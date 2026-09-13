@@ -1,6 +1,7 @@
 ﻿namespace Innovayse.Application.Orders.Commands.PlaceOrder;
 
 using Innovayse.Application.Auth.Interfaces;
+using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Billing.Queries.ListAvailablePaymentMethods;
 using Innovayse.Application.Common;
 using Innovayse.Application.Domains.Common;
@@ -34,6 +35,7 @@ using Wolverine;
 /// <param name="bus">Wolverine message bus for invoking TLD pricing queries.</param>
 /// <param name="caller">Who is ordering, and from where; the command says neither, and must not.</param>
 /// <param name="localizer">The refusal sentences, in the caller's own language.</param>
+/// <param name="payerCurrency">The currency the ordering client is billed in, stamped on the order's invoice.</param>
 public sealed class PlaceOrderHandler(
     IOrderRepository orderRepo,
     IProductRepository productRepo,
@@ -44,7 +46,8 @@ public sealed class PlaceOrderHandler(
     ISubjectRoleStore roles,
     IMessageBus bus,
     ICurrentRequestContext caller,
-    IStringLocalizer<ValidationMessages> localizer)
+    IStringLocalizer<ValidationMessages> localizer,
+    IPayerCurrencyResolver payerCurrency)
 {
     /// <summary>
     /// Resource key for the refusal a signed-in caller with no client record reads.
@@ -147,7 +150,8 @@ public sealed class PlaceOrderHandler(
 
         orderRepo.Add(order);
 
-        var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7));
+        var currency = (await payerCurrency.ForClientAsync(clientId, ct)).Code;
+        var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), currency);
 
         foreach (var item in order.Items)
         {

@@ -1,5 +1,6 @@
 namespace Innovayse.Application.Billing.Commands.InvoiceSelectedItems;
 
+using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Billing.Interfaces;
@@ -7,9 +8,14 @@ using Innovayse.Domain.Billing.Interfaces;
 /// <summary>
 /// Creates an invoice from selected uninvoiced billable items and marks them as invoiced.
 /// </summary>
+/// <param name="billableItemRepo">Billable item repository.</param>
+/// <param name="invoiceRepo">Invoice repository.</param>
+/// <param name="payerCurrency">The currency the invoiced client is billed in, stamped on the invoice.</param>
+/// <param name="uow">Unit of work.</param>
 public sealed class InvoiceSelectedItemsHandler(
     IBillableItemRepository billableItemRepo,
     IInvoiceRepository invoiceRepo,
+    IPayerCurrencyResolver payerCurrency,
     IUnitOfWork uow)
 {
     /// <summary>
@@ -45,7 +51,8 @@ public sealed class InvoiceSelectedItemsHandler(
             }
         }
 
-        var invoice = Invoice.Create(cmd.ClientId, DateTimeOffset.UtcNow.AddDays(14));
+        var currency = (await payerCurrency.ForClientAsync(cmd.ClientId, ct)).Code;
+        var invoice = Invoice.Create(cmd.ClientId, DateTimeOffset.UtcNow.AddDays(14), currency);
 
         foreach (var item in items)
         {

@@ -1,6 +1,7 @@
 namespace Innovayse.Application.Migration.Services;
 
 using Innovayse.Application.Auth.Interfaces;
+using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Common;
 using Innovayse.Application.Migration.Interfaces;
 using Innovayse.Domain.Auth;
@@ -37,6 +38,7 @@ public sealed class MigrationPullWorker(
     ISubjectRoleStore roles,
     IClientRepository clientRepo,
     IInvoiceRepository invoiceRepo,
+    IPayerCurrencyResolver payerCurrency,
     IClientServiceRepository serviceRepo,
     IDomainRepository domainRepo,
     ITicketRepository ticketRepo,
@@ -339,11 +341,15 @@ public sealed class MigrationPullWorker(
             }
         }
 
+        // The source record carries no currency, so the imported invoice bills in what the
+        // migrated client is billed in here: their recorded currency, else the base.
+        var currency = (await payerCurrency.ForClientAsync(clientId.Value, ct)).Code;
+
         // Draft invoices need a different factory — Create() produces Unpaid directly.
         var isDraft = rec.Status == "Draft";
         var invoice = isDraft
-            ? Invoice.CreateDraft(clientId.Value, rec.DueDate)
-            : Invoice.Create(clientId.Value, rec.DueDate); // starts as Unpaid
+            ? Invoice.CreateDraft(clientId.Value, rec.DueDate, currency)
+            : Invoice.Create(clientId.Value, rec.DueDate, currency); // starts as Unpaid
 
         foreach (var item in rec.Items)
         {

@@ -26,6 +26,11 @@
     -->
     <link rel="manifest" href="/site.webmanifest">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <!--
+      An operator console, never a search result. The edge proxy sends the matching
+      X-Robots-Tag header; this covers any deployment that serves the SPA without it.
+    -->
+    <meta name="robots" content="noindex, nofollow">
     <title>Innovayse Admin</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

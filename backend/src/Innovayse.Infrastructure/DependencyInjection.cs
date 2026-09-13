@@ -4,6 +4,7 @@ using Innovayse.Application.Admin.Plugins.Interfaces;
 using Innovayse.Application.Admin.Servers.Interfaces;
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Billing.Interfaces;
+using Innovayse.Application.Billing.Services;
 using Innovayse.Application.Common;
 using Innovayse.Application.Migration.Interfaces;
 using Innovayse.Application.Notifications.Interfaces;
@@ -373,6 +374,7 @@ public static class DependencyInjection
         services.AddScoped<IBillableItemRepository, BillableItemRepository>();
         services.AddScoped<IQuoteRepository, QuoteRepository>();
         services.AddScoped<IPaymentGateway, NullPaymentGateway>();
+        services.AddScoped<IPayerCurrencyResolver, PayerCurrencyResolver>();
 
         // Stripe
         // Optional in the same way cPanel is: no Stripe section at all is a deployment that takes

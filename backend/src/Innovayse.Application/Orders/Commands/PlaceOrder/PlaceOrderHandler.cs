@@ -1,6 +1,7 @@
 ﻿namespace Innovayse.Application.Orders.Commands.PlaceOrder;
 
 using Innovayse.Application.Auth.Interfaces;
+using Innovayse.Application.Billing.Extensions;
 using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Billing.Queries.ListAvailablePaymentMethods;
 using Innovayse.Application.Common;
@@ -36,6 +37,7 @@ using Wolverine;
 /// <param name="caller">Who is ordering, and from where; the command says neither, and must not.</param>
 /// <param name="localizer">The refusal sentences, in the caller's own language.</param>
 /// <param name="payerCurrency">The currency the ordering client is billed in, stamped on the order's invoice.</param>
+/// <param name="currencies">The currencies this panel offers, for checking the one a guest chose.</param>
 public sealed class PlaceOrderHandler(
     IOrderRepository orderRepo,
     IProductRepository productRepo,
@@ -47,7 +49,8 @@ public sealed class PlaceOrderHandler(
     IMessageBus bus,
     ICurrentRequestContext caller,
     IStringLocalizer<ValidationMessages> localizer,
-    IPayerCurrencyResolver payerCurrency)
+    IPayerCurrencyResolver payerCurrency,
+    ICurrencyRepository currencies)
 {
     /// <summary>
     /// Resource key for the refusal a signed-in caller with no client record reads.
@@ -65,6 +68,11 @@ public sealed class PlaceOrderHandler(
     /// Resource key for the refusal of a payment method the checkout is not offering.
     /// </summary>
     private const string PaymentMethodUnavailableKey = "OrderPaymentMethodUnavailable";
+
+    /// <summary>
+    /// Resource key for the refusal of a currency the checkout is not offering.
+    /// </summary>
+    private const string CurrencyUnavailableKey = "OrderCurrencyUnavailable";
 
     /// <summary>
     /// Refuses a payment method the checkout is not offering right now.
@@ -98,8 +106,9 @@ public sealed class PlaceOrderHandler(
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A <see cref="PlaceOrderResultDto"/> with the new order and invoice ids and the order's payment token.</returns>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when a guest registration fails, a client is not found,
-    /// a product is not found or inactive, or an invalid billing cycle is specified.
+    /// Thrown when a guest registration fails, a client is not found, a product is not found
+    /// or inactive, an invalid billing cycle is specified, or a new client asks for a currency
+    /// the panel is not offering.
     /// </exception>
     public async Task<PlaceOrderResultDto> HandleAsync(PlaceOrderCommand cmd, CancellationToken ct)
     {
@@ -222,10 +231,52 @@ public sealed class PlaceOrderHandler(
         await roles.AddAsync(userId, Roles.Client, ct);
 
         var newClient = Client.Create(userId, cmd.FirstName!, cmd.LastName!, cmd.Email!);
+        newClient.SetCurrency(await ResolveNewClientCurrencyAsync(cmd, ct));
         clientRepo.Add(newClient);
         await uow.SaveChangesAsync(ct);
 
         return newClient.Id;
+    }
+
+    /// <summary>
+    /// The currency a client record created by this order is billed in: the checkout's choice,
+    /// else the base.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This is the one moment a customer chooses their currency; after the first invoice it is
+    /// locked (see <c>UpdateClientHandler</c>). It is recorded explicitly even when the choice
+    /// is the base, so the row says what the client was billed in rather than leaving a later
+    /// reader to work out what the base was at the time.
+    /// </para>
+    /// <para>
+    /// Only a client this order creates is asked. An existing client's order carries the same
+    /// field, because the checkout form sends it either way, and it is ignored: they already
+    /// have a currency, and their invoices are in it.
+    /// </para>
+    /// <para>
+    /// The check that the code is offered lives here rather than in <c>PlaceOrderValidator</c>:
+    /// no validator in this project takes a repository, and the refusal is one a customer reads,
+    /// which means it needs the localizer the validators do not have.
+    /// </para>
+    /// </remarks>
+    /// <param name="cmd">The order being placed.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The ISO 4217 code to record on the new client.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the chosen currency is not configured and enabled.</exception>
+    private async Task<string> ResolveNewClientCurrencyAsync(PlaceOrderCommand cmd, CancellationToken ct)
+    {
+        if (cmd.Currency is null)
+        {
+            return (await payerCurrency.BaseAsync(ct)).Code;
+        }
+
+        if (!await currencies.IsOfferedAsync(cmd.Currency, ct))
+        {
+            throw new InvalidOperationException(localizer[CurrencyUnavailableKey]);
+        }
+
+        return cmd.Currency;
     }
 
     /// <summary>
@@ -254,6 +305,10 @@ public sealed class PlaceOrderHandler(
             FirstNonBlank(cmd.FirstName, credentialFirst) ?? string.Empty,
             FirstNonBlank(cmd.LastName, credentialLast) ?? string.Empty,
             caller.UserEmail ?? cmd.Email ?? string.Empty);
+
+        // A new row, so this order is the one that chooses its currency — the same rule as a
+        // guest's, because the caller is choosing at the same checkout.
+        client.SetCurrency(await ResolveNewClientCurrencyAsync(cmd, ct));
 
         clientRepo.Add(client);
         await uow.SaveChangesAsync(ct);

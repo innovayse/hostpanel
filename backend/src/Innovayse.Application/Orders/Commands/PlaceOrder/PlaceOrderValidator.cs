@@ -6,6 +6,9 @@ using Innovayse.Application.Common;
 /// <summary>Validates <see cref="PlaceOrderCommand"/> before it reaches the handler.</summary>
 public sealed class PlaceOrderValidator : AbstractValidator<PlaceOrderCommand>
 {
+    /// <summary>Length of an ISO 4217 alpha code, the only shape a currency may arrive in.</summary>
+    private const int CurrencyCodeLength = 3;
+
     /// <summary>Initialises all validation rules for placing an order.</summary>
     /// <param name="caller">
     /// Who is checking out. The command no longer names a client, so whether the registration
@@ -15,6 +18,14 @@ public sealed class PlaceOrderValidator : AbstractValidator<PlaceOrderCommand>
     {
         RuleFor(x => x.PaymentMethod).NotEmpty();
         RuleFor(x => x.Items).NotEmpty();
+
+        // Shape only. Whether the code names a currency this panel offers is an I/O question,
+        // and no validator here takes a repository; the handler asks it and refuses with a
+        // sentence the customer can read.
+        RuleFor(x => x.Currency)
+            .Length(CurrencyCodeLength)
+            .When(x => x.Currency is not null)
+            .WithMessage("'Currency' must be a three-letter ISO 4217 code.");
 
         RuleForEach(x => x.Items).ChildRules(item =>
         {

@@ -4,6 +4,7 @@ using Innovayse.Application.Auth.Common;
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Clients.Commands.UpdateClient;
 using Innovayse.Application.Common;
+using Innovayse.Domain.Billing.Interfaces;
 using Innovayse.Domain.Clients;
 using Innovayse.Domain.Clients.Interfaces;
 using Moq;
@@ -95,7 +96,8 @@ public class UpdateClientHandlerTests
             .ThrowsAsync(new UserProvisioningNotAllowedException(UserProvisioningOperation.ChangeName));
 
         return new UpdateClientHandler(
-            repo.Object, Mock.Of<IUnitOfWork>(), provisioning.Object, identity.Object);
+            repo.Object, Mock.Of<IUnitOfWork>(), provisioning.Object, identity.Object,
+            Mock.Of<IInvoiceRepository>(), Mock.Of<ICurrencyRepository>());
     }
 
     /// <summary>
@@ -124,7 +126,8 @@ public class UpdateClientHandlerTests
         provisioning = new Mock<IUserProvisioning>();
 
         return new UpdateClientHandler(
-            repo.Object, Mock.Of<IUnitOfWork>(), provisioning.Object, identity.Object);
+            repo.Object, Mock.Of<IUnitOfWork>(), provisioning.Object, identity.Object,
+            Mock.Of<IInvoiceRepository>(), Mock.Of<ICurrencyRepository>());
     }
 
     /// <summary>

@@ -66,7 +66,8 @@ public sealed class OrdersController(IMessageBus bus) : ControllerBase
             request.Password,
             request.PhoneNumber,
             request.PaymentMethod,
-            items);
+            items,
+            request.Currency);
 
         var result = await bus.InvokeAsync<PlaceOrderResultDto>(cmd, ct);
         return StatusCode(StatusCodes.Status201Created, result);

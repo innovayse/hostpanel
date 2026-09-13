@@ -265,7 +265,9 @@ public sealed class MigrationPullWorker(
 
         if (!string.IsNullOrWhiteSpace(rec.Currency))
         {
-            clientEntity.UpdatePreferences(rec.Currency, null, null, null);
+            // Recorded as the source had it; whether the code is one this panel offers is the
+            // operator's to sort out after the pull, the same as every other field imported here.
+            clientEntity.SetCurrency(rec.Currency);
         }
 
         if (rec.TaxExempt)

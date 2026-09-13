@@ -30,7 +30,11 @@ public sealed class PayerCurrencyResolverTests
     private Client ClientBilledIn(string? currency)
     {
         var c = Client.Create("user-1", "Jane", "Doe", "jane@example.com");
-        c.UpdatePreferences(currency, null, null, null);
+        if (currency is not null)
+        {
+            c.SetCurrency(currency);
+        }
+
         return c;
     }
 

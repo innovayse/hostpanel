@@ -106,9 +106,12 @@ public sealed class PlaceOrderClientProvisioningTests
 
         // The order's invoice is created in whatever the new client is billed in; a brand-new
         // client has no currency of their own, so the resolver answers with the base.
+        var usd = Currency.Create("USD", "840", "$", string.Empty, 2, 1m, isBase: true);
         var payerCurrency = new Mock<IPayerCurrencyResolver>();
         payerCurrency.Setup(r => r.ForClientAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Currency.Create("USD", "840", "$", string.Empty, 2, 1m, isBase: true));
+            .ReturnsAsync(usd);
+        // The new row is stamped with the base, since a signed-in order carries no choice.
+        payerCurrency.Setup(r => r.BaseAsync(It.IsAny<CancellationToken>())).ReturnsAsync(usd);
 
         return new PlaceOrderHandler(
             orders.Object,
@@ -121,7 +124,8 @@ public sealed class PlaceOrderClientProvisioningTests
             BusOffering("stripe"),
             caller.Object,
             Mock.Of<IStringLocalizer<ValidationMessages>>(),
-            payerCurrency.Object);
+            payerCurrency.Object,
+            Mock.Of<ICurrencyRepository>());
     }
 
     /// <summary>

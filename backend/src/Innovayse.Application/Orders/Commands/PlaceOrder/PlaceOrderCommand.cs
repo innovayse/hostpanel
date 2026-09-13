@@ -23,6 +23,11 @@ namespace Innovayse.Application.Orders.Commands.PlaceOrder;
 /// <param name="Phone">Guest's phone number (optional).</param>
 /// <param name="PaymentMethod">Payment gateway module name selected at checkout.</param>
 /// <param name="Items">One or more products to include in the order.</param>
+/// <param name="Currency">
+/// The currency the guest chose to be billed in; <see langword="null"/> means the base. Read
+/// only when the order creates a client record — a client who already exists already has a
+/// currency, and it is not the checkout's to change.
+/// </param>
 public record PlaceOrderCommand(
     string? FirstName,
     string? LastName,
@@ -30,4 +35,5 @@ public record PlaceOrderCommand(
     string? Password,
     string? Phone,
     string PaymentMethod,
-    IReadOnlyList<PlaceOrderItemDto> Items);
+    IReadOnlyList<PlaceOrderItemDto> Items,
+    string? Currency = null);

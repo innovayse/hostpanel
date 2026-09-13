@@ -291,4 +291,8 @@
     <value>That image is too large. Upload a file under 5 MB and no more than 8000 pixels on a side.</value>
     <comment>BRANDING_IMAGE_TOO_LARGE. Byte ceiling or pixel ceiling. Answered 413.</comment>
   </data>
+  <data name="OrderCurrencyUnavailable" xml:space="preserve">
+    <value>The selected currency is not available. Go back to checkout and choose another one.</value>
+    <comment>PlaceOrderHandler. A guest checkout asked to be billed in a currency the panel does not offer — never configured, or switched off in the admin currencies page — so it is refused before an account exists.</comment>
+  </data>
 </root>

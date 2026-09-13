@@ -1,4 +1,4 @@
-namespace Innovayse.Infrastructure.Resilience.Options;
+﻿namespace Innovayse.Infrastructure.Resilience.Options;
 
 /// <summary>
 /// One resilience profile per outbound HTTP client this product registers. Bound from the
@@ -395,6 +395,32 @@ public sealed class HttpResilienceOptions
     };
 
     /// <summary>
+    /// The Central Bank of Armenia's daily rate bulletin, for "update exchange rates". One
+    /// idempotent GET, triggered by an operator, so it is registered read-only with retries.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>5 seconds an attempt, 15 in total.</b> The call sits behind an admin button, so the
+    /// budget is what a person will wait for a click to answer, not what the bank might eventually
+    /// manage; two retries of five seconds with backoff fit inside fifteen.
+    /// </para>
+    /// <para>
+    /// <b>No breaker.</b> The bulletin is fetched a few times a day at most, and a breaker over a
+    /// call that rare would never see the throughput it needs to open — so the setting would be
+    /// documentation of a mechanism that cannot fire. A failure is answered to the operator as a
+    /// failure, and the stored rates are left as they were.
+    /// </para>
+    /// </remarks>
+    public ResilienceProfileOptions Cba { get; set; } = new()
+    {
+        AttemptTimeout = TimeSpan.FromSeconds(5),
+        TotalTimeout = TimeSpan.FromSeconds(15),
+        MaxRetryAttempts = 2,
+        RetryDelay = TimeSpan.FromSeconds(1),
+        CircuitBreakerEnabled = false,
+    };
+
+    /// <summary>
     /// The factory's default, unnamed client. Registered with no retry stage and no breaker.
     /// </summary>
     /// <remarks>
@@ -439,6 +465,7 @@ public sealed class HttpResilienceOptions
         yield return (nameof(NameAm), NameAm);
         yield return (nameof(Namecheap), Namecheap);
         yield return (nameof(Inecobank), Inecobank);
+        yield return (nameof(Cba), Cba);
         yield return (nameof(Default), Default);
     }
 }

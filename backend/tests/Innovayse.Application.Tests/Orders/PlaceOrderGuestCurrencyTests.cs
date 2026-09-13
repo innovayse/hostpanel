@@ -73,6 +73,10 @@ public sealed class PlaceOrderGuestCurrencyTests
             packageName: null, type: ProductType.SharedHosting,
             monthlyPrice: 19.99m, annualPrice: 199.99m);
 
+        // The order reads the per-currency price rows, not the legacy columns; the payer here is
+        // billed in the base, so one USD row is what makes the product orderable.
+        product.SetPrice("USD", BillingCycle.Monthly, 19.99m);
+
         // Create leaves Id at 0 for EF to assign, and the handler looks the product up by id.
         typeof(Innovayse.Domain.Common.Entity)
             .GetField("<Id>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!

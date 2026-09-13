@@ -107,14 +107,19 @@ public sealed class PlaceOrderHandler(
     /// <returns>A <see cref="PlaceOrderResultDto"/> with the new order and invoice ids and the order's payment token.</returns>
     /// <exception cref="InvalidOperationException">
     /// Thrown when a guest registration fails, a client is not found, a product is not found
-    /// or inactive, an invalid billing cycle is specified, or a new client asks for a currency
-    /// the panel is not offering.
+    /// or inactive, an invalid billing cycle is specified, a new client asks for a currency
+    /// the panel is not offering, or a line has no price in the payer's currency.
     /// </exception>
     public async Task<PlaceOrderResultDto> HandleAsync(PlaceOrderCommand cmd, CancellationToken ct)
     {
         await EnsurePaymentMethodAvailableAsync(cmd.PaymentMethod, ct);
 
         var clientId = await ResolveClientIdAsync(cmd, ct);
+
+        // Resolved once the client is known — for a client this order just created, after their
+        // currency was recorded and saved, so a guest who chose AMD is priced in AMD, not the base.
+        // Every line below is read from the stored price in this currency; nothing is converted.
+        var currency = await payerCurrency.ForClientAsync(clientId, ct);
 
         var nextNumber = await orderRepo.GetNextOrderNumberAsync(ct);
         var orderNumber = $"ORD-{nextNumber:D4}";
@@ -125,10 +130,12 @@ public sealed class PlaceOrderHandler(
 
         var order = Order.Create(orderNumber, clientId, cmd.PaymentMethod, caller.IpAddress);
 
-        // Pre-fetch TLD pricing if any domain items exist
+        // Pre-fetch TLD pricing if any domain items exist. The table is asked for in the payer's
+        // currency so that a TLD sold in it comes back unconverted; one sold in another currency
+        // is refused per line rather than billed through the query's conversion.
         var hasDomainItems = cmd.Items.Any(i => i.DomainAction is not null);
         var tldPricing = hasDomainItems
-            ? await bus.InvokeAsync<TldPricingDto>(new GetTldPricingQuery(), ct)
+            ? await bus.InvokeAsync<TldPricingDto>(new GetTldPricingQuery(currency.Code), ct)
             : null;
 
         foreach (var item in cmd.Items)
@@ -146,11 +153,11 @@ public sealed class PlaceOrderHandler(
             decimal price;
             if (item.DomainAction is not null)
             {
-                price = ResolveDomainPrice(tldPricing!, item.Domain!, item.DomainAction, item.Years ?? 1);
+                price = ResolveDomainPrice(tldPricing!, currency, item.Domain!, item.DomainAction, item.Years ?? 1);
             }
             else
             {
-                price = ResolvePrice(product, item.BillingCycle);
+                price = ResolvePrice(product, item.BillingCycle, currency);
             }
 
             order.AddItem(item.ProductId, product.Name, item.BillingCycle, price, price,
@@ -159,8 +166,7 @@ public sealed class PlaceOrderHandler(
 
         orderRepo.Add(order);
 
-        var currency = (await payerCurrency.ForClientAsync(clientId, ct)).Code;
-        var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), currency);
+        var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), currency.Code);
 
         foreach (var item in order.Items)
         {
@@ -347,39 +353,55 @@ public sealed class PlaceOrderHandler(
         return (parts[0], parts.Length > 1 ? parts[1] : null);
     }
 
-    /// <summary>
-    /// Resolves the correct price for a product based on the billing cycle.
-    /// </summary>
-    /// <param name="product">The product to price.</param>
-    /// <param name="billingCycle">Billing cycle: "monthly" or "annual".</param>
-    /// <returns>The resolved price.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when the billing cycle is not recognised.</exception>
-    private static decimal ResolvePrice(Product product, string billingCycle)
+    /// <summary>Reads the stored price for a product in the payer's currency and cycle.</summary>
+    /// <remarks>
+    /// A product with no price in that currency is not for sale to that payer; the order refuses
+    /// rather than converting from another currency, because a converted figure is not a price
+    /// the operator set.
+    /// </remarks>
+    /// <param name="product">The product.</param>
+    /// <param name="billingCycle">The requested cycle string.</param>
+    /// <param name="currency">The payer's currency.</param>
+    /// <returns>The amount.</returns>
+    /// <exception cref="ArgumentException">Thrown when the billing cycle is not recognised.</exception>
+    /// <exception cref="InvalidOperationException">The product has no price in that currency and cycle.</exception>
+    private static decimal ResolvePrice(Product product, string billingCycle, Currency currency)
     {
-        return billingCycle.ToLowerInvariant() switch
-        {
-            "monthly" => product.MonthlyPrice,
-            "annual" or "annually" => product.AnnualPrice,
-            _ => throw new InvalidOperationException($"Unsupported billing cycle: {billingCycle}.")
-        };
+        var cycle = BillingCycleParser.Parse(billingCycle);
+        return product.PriceFor(currency.Code, cycle)
+            ?? throw new InvalidOperationException(
+                $"'{product.Name}' has no {cycle} price in {currency.Code}; it cannot be ordered in that currency.");
     }
 
     /// <summary>
     /// Resolves the price for a domain registration or transfer from the TLD pricing table.
     /// </summary>
-    /// <param name="tldPricing">Pre-fetched TLD pricing data.</param>
+    /// <param name="tldPricing">Pre-fetched TLD pricing data, asked for in <paramref name="currency"/>.</param>
+    /// <param name="currency">The payer's currency; a TLD sold in any other is refused.</param>
     /// <param name="domainName">Fully-qualified domain name (e.g. "example.com").</param>
     /// <param name="action">Domain action: "register", "transfer" or "renew".</param>
     /// <param name="years">Registration period in years.</param>
     /// <returns>The validated price for the domain operation.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when the TLD is not supported or years not available.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the TLD is not supported, is sold in a currency other than the payer's, or has
+    /// no price for the period.
+    /// </exception>
     /// <remarks>
+    /// <para>
+    /// TLD prices are still single-currency (their own plan follows), so the table's figures are
+    /// trusted only when the TLD's sell currency is the payer's — then the query's rate is one and
+    /// the figure is the stored one. Any other pairing would bill a converted amount the operator
+    /// never set, so it is refused instead.
+    /// </para>
+    /// <para>
     /// "renew" prices from the TLD table's renewal column, which has always been loaded and
     /// published to the public pricing page and had no order path behind it. It is here so a
     /// client-initiated renewal is a purchase like the other two rather than a free call to the
     /// registrar; see <c>RenewMyDomainHandler</c>.
+    /// </para>
     /// </remarks>
-    private static decimal ResolveDomainPrice(TldPricingDto tldPricing, string domainName, string action, int years)
+    private static decimal ResolveDomainPrice(
+        TldPricingDto tldPricing, Currency currency, string domainName, string action, int years)
     {
         var dotIndex = domainName.IndexOf('.');
         if (dotIndex < 0)
@@ -392,6 +414,12 @@ public sealed class PlaceOrderHandler(
         if (!tldPricing.Pricing.TryGetValue(tld, out var entry))
         {
             throw new InvalidOperationException($"TLD '.{tld}' is not supported for domain {action}.");
+        }
+
+        if (!string.Equals(entry.SellCurrency, currency.Code, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"Domains under .{tld} are sold in {entry.SellCurrency}, not {currency.Code}.");
         }
 
         var priceMap = action.ToLowerInvariant() switch

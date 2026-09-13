@@ -48,6 +48,10 @@ public sealed class PlaceOrderClientProvisioningTests
             packageName: null, type: ProductType.SharedHosting,
             monthlyPrice: 19.99m, annualPrice: 199.99m);
 
+        // The order reads the per-currency price rows, not the legacy columns; the payer here is
+        // billed in the base, so one USD row is what makes the product orderable.
+        product.SetPrice("USD", BillingCycle.Monthly, 19.99m);
+
         // Create leaves Id at 0 for EF to assign, and the handler looks the product up by id.
         // Entity.Id has a private setter, so the backing field is the only way in — the same
         // approach StartGatewayPaymentHandlerTests uses for the same reason.

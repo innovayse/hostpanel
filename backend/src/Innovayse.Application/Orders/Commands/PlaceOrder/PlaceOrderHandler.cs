@@ -1,6 +1,8 @@
 ﻿namespace Innovayse.Application.Orders.Commands.PlaceOrder;
 
 using Innovayse.Application.Auth.Interfaces;
+using Innovayse.Application.Billing.Extensions;
+using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Billing.Queries.ListAvailablePaymentMethods;
 using Innovayse.Application.Common;
 using Innovayse.Application.Domains.Common;
@@ -34,6 +36,8 @@ using Wolverine;
 /// <param name="bus">Wolverine message bus for invoking TLD pricing queries.</param>
 /// <param name="caller">Who is ordering, and from where; the command says neither, and must not.</param>
 /// <param name="localizer">The refusal sentences, in the caller's own language.</param>
+/// <param name="payerCurrency">The currency the ordering client is billed in, stamped on the order's invoice.</param>
+/// <param name="currencies">The currencies this panel offers, for checking the one a guest chose.</param>
 public sealed class PlaceOrderHandler(
     IOrderRepository orderRepo,
     IProductRepository productRepo,
@@ -44,7 +48,9 @@ public sealed class PlaceOrderHandler(
     ISubjectRoleStore roles,
     IMessageBus bus,
     ICurrentRequestContext caller,
-    IStringLocalizer<ValidationMessages> localizer)
+    IStringLocalizer<ValidationMessages> localizer,
+    IPayerCurrencyResolver payerCurrency,
+    ICurrencyRepository currencies)
 {
     /// <summary>
     /// Resource key for the refusal a signed-in caller with no client record reads.
@@ -64,6 +70,11 @@ public sealed class PlaceOrderHandler(
     private const string PaymentMethodUnavailableKey = "OrderPaymentMethodUnavailable";
 
     /// <summary>
+    /// Resource key for the refusal of a currency the checkout is not offering.
+    /// </summary>
+    private const string CurrencyUnavailableKey = "OrderCurrencyUnavailable";
+
+    /// <summary>
     /// Refuses a payment method the checkout is not offering right now.
     /// </summary>
     /// <remarks>
@@ -73,14 +84,21 @@ public sealed class PlaceOrderHandler(
     /// a bank-transfer order would sit pending for a transfer nobody expects, and a card order
     /// would fail later, on the first call that needed the gateway. The same query the checkout
     /// lists from decides here, so what is shown and what is accepted cannot drift apart.
+    /// <para>
+    /// The query is asked for the currency this order will bill in rather than the caller's. For
+    /// a guest the two differ: the caller has no client yet, so the query would answer for the
+    /// base, and a guest who chose AMD could place an order against a USD-only gateway that the
+    /// payment start then refuses.
+    /// </para>
     /// </remarks>
     /// <param name="paymentMethod">Module id the checkout sent.</param>
+    /// <param name="currencyCode">ISO 4217 alpha code the order's invoice will bill in.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="InvalidOperationException">Thrown when the method is not available.</exception>
-    private async Task EnsurePaymentMethodAvailableAsync(string paymentMethod, CancellationToken ct)
+    private async Task EnsurePaymentMethodAvailableAsync(string paymentMethod, string currencyCode, CancellationToken ct)
     {
         var available = await bus.InvokeAsync<IReadOnlyList<AvailablePaymentMethodDto>>(
-            new ListAvailablePaymentMethodsQuery(), ct);
+            new ListAvailablePaymentMethodsQuery(currencyCode), ct);
 
         if (!available.Any(m => string.Equals(m.Module, paymentMethod, StringComparison.OrdinalIgnoreCase)))
         {
@@ -95,14 +113,25 @@ public sealed class PlaceOrderHandler(
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A <see cref="PlaceOrderResultDto"/> with the new order and invoice ids and the order's payment token.</returns>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when a guest registration fails, a client is not found,
-    /// a product is not found or inactive, or an invalid billing cycle is specified.
+    /// Thrown when a guest registration fails, a client is not found, a product is not found
+    /// or inactive, an invalid billing cycle is specified, a new client asks for a currency
+    /// the panel is not offering, or a line has no price in the payer's currency.
     /// </exception>
     public async Task<PlaceOrderResultDto> HandleAsync(PlaceOrderCommand cmd, CancellationToken ct)
     {
-        await EnsurePaymentMethodAvailableAsync(cmd.PaymentMethod, ct);
+        // The currency is settled before anything is created: an existing client is billed in
+        // theirs, and a client this order is about to create in the checkout's choice, else the
+        // base. Knowing it first is what lets a payment method be refused before an account
+        // exists for it, and lets a guest who chose AMD be priced in AMD, not the base. Every
+        // line below is read from the stored price in this currency; nothing is converted.
+        var existingClient = await FindCallersClientAsync(ct);
+        var currency = existingClient is null
+            ? await ResolveNewClientCurrencyAsync(cmd, ct)
+            : await payerCurrency.ForClientAsync(existingClient.Id, ct);
 
-        var clientId = await ResolveClientIdAsync(cmd, ct);
+        await EnsurePaymentMethodAvailableAsync(cmd.PaymentMethod, currency.Code, ct);
+
+        var clientId = existingClient?.Id ?? await CreateClientAsync(cmd, currency.Code, ct);
 
         var nextNumber = await orderRepo.GetNextOrderNumberAsync(ct);
         var orderNumber = $"ORD-{nextNumber:D4}";
@@ -113,10 +142,12 @@ public sealed class PlaceOrderHandler(
 
         var order = Order.Create(orderNumber, clientId, cmd.PaymentMethod, caller.IpAddress);
 
-        // Pre-fetch TLD pricing if any domain items exist
+        // Pre-fetch TLD pricing if any domain items exist. The table is asked for in the payer's
+        // currency so that a TLD sold in it comes back unconverted; one sold in another currency
+        // is refused per line rather than billed through the query's conversion.
         var hasDomainItems = cmd.Items.Any(i => i.DomainAction is not null);
         var tldPricing = hasDomainItems
-            ? await bus.InvokeAsync<TldPricingDto>(new GetTldPricingQuery(), ct)
+            ? await bus.InvokeAsync<TldPricingDto>(new GetTldPricingQuery(currency.Code), ct)
             : null;
 
         foreach (var item in cmd.Items)
@@ -134,11 +165,11 @@ public sealed class PlaceOrderHandler(
             decimal price;
             if (item.DomainAction is not null)
             {
-                price = ResolveDomainPrice(tldPricing!, item.Domain!, item.DomainAction, item.Years ?? 1);
+                price = ResolveDomainPrice(tldPricing!, currency, item.Domain!, item.DomainAction, item.Years ?? 1);
             }
             else
             {
-                price = ResolvePrice(product, item.BillingCycle);
+                price = ResolvePrice(product, item.BillingCycle, currency);
             }
 
             order.AddItem(item.ProductId, product.Name, item.BillingCycle, price, price,
@@ -147,7 +178,7 @@ public sealed class PlaceOrderHandler(
 
         orderRepo.Add(order);
 
-        var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7));
+        var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), currency.Code);
 
         foreach (var item in order.Items)
         {
@@ -164,9 +195,25 @@ public sealed class PlaceOrderHandler(
     }
 
     /// <summary>
-    /// Resolves the client the order belongs to. A caller the credential names and who already
-    /// has an account orders against it; anyone else creates a new account and
-    /// <see cref="Client"/> record as part of guest checkout.
+    /// Finds the client record the caller's credential names, when it names one that exists.
+    /// </summary>
+    /// <remarks>
+    /// A signed-in caller orders for their own account. The subject comes from the credential,
+    /// so there is no id anyone could send to order against another account. A caller the
+    /// credential names but who has no client record yet, and a guest, both come back as
+    /// nothing here and get a record from <see cref="CreateClientAsync"/>.
+    /// </remarks>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The caller's client, or <see langword="null"/> when they have none yet.</returns>
+    private async Task<Client?> FindCallersClientAsync(CancellationToken ct) =>
+        caller.UserId is { } subject
+            ? await clientRepo.FindByUserIdAsync(subject, ct)
+            : null;
+
+    /// <summary>
+    /// Creates the client record the order belongs to, for a caller who has none. A caller the
+    /// credential names gets a record against their existing account; anyone else creates a new
+    /// account and <see cref="Client"/> record as part of guest checkout.
     ///
     /// <para>
     /// Guest checkout is a local-mode flow. Where an SSO owns the accounts this product
@@ -175,24 +222,17 @@ public sealed class PlaceOrderHandler(
     /// </para>
     /// </summary>
     /// <param name="cmd">The place order command.</param>
+    /// <param name="currencyCode">The currency the new record is billed in, already checked to be on offer.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The resolved client ID.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when the client cannot be found or created.</exception>
-    private async Task<int> ResolveClientIdAsync(PlaceOrderCommand cmd, CancellationToken ct)
+    /// <returns>The new client's ID.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the client cannot be created.</exception>
+    private async Task<int> CreateClientAsync(PlaceOrderCommand cmd, string currencyCode, CancellationToken ct)
     {
-        // A signed-in caller orders for their own account. The subject comes from the
-        // credential, so there is no id anyone could send to order against another account.
-        // A caller the credential names but who has no client record yet falls through to
-        // registration below, which is what used to happen when the controller resolved this.
+        // A caller the credential names but who has no client record yet is registered against
+        // that credential, which is what used to happen when the controller resolved this.
         var subject = caller.UserId;
         if (subject is not null)
         {
-            var existing = await clientRepo.FindByUserIdAsync(subject, ct);
-            if (existing is not null)
-            {
-                return existing.Id;
-            }
-
             // Their first order. The account already exists — they authenticated to get here —
             // so what is missing is only this product's client row, and the credential carries
             // everything it needs. Provisioning is deliberately not called: it creates accounts,
@@ -202,7 +242,7 @@ public sealed class PlaceOrderHandler(
             // Without this the caller cannot order at all. The validator asks a signed-in caller
             // for no email and no password, so the guest branch below always refused them, and
             // the client area they were sent back to says they have no account to order against.
-            return await CreateClientForCallerAsync(subject, cmd, ct);
+            return await CreateClientForCallerAsync(subject, cmd, currencyCode, ct);
         }
 
         // Anonymous, and guest checkout is the only way left. The validator already requires all
@@ -218,10 +258,48 @@ public sealed class PlaceOrderHandler(
         await roles.AddAsync(userId, Roles.Client, ct);
 
         var newClient = Client.Create(userId, cmd.FirstName!, cmd.LastName!, cmd.Email!);
+        newClient.SetCurrency(currencyCode);
         clientRepo.Add(newClient);
         await uow.SaveChangesAsync(ct);
 
         return newClient.Id;
+    }
+
+    /// <summary>
+    /// The currency a client record created by this order is billed in: the checkout's choice,
+    /// else the base.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This is the one moment a customer chooses their currency; after the first invoice it is
+    /// locked (see <c>UpdateClientHandler</c>). It is recorded explicitly even when the choice
+    /// is the base, so the row says what the client was billed in rather than leaving a later
+    /// reader to work out what the base was at the time.
+    /// </para>
+    /// <para>
+    /// Only a client this order creates is asked. An existing client's order carries the same
+    /// field, because the checkout form sends it either way, and it is ignored: they already
+    /// have a currency, and their invoices are in it.
+    /// </para>
+    /// <para>
+    /// The check that the code is offered lives here rather than in <c>PlaceOrderValidator</c>:
+    /// no validator in this project takes a repository, and the refusal is one a customer reads,
+    /// which means it needs the localizer the validators do not have.
+    /// </para>
+    /// </remarks>
+    /// <param name="cmd">The order being placed.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The configured currency to record on the new client and bill the order in.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the chosen currency is not configured and enabled.</exception>
+    private async Task<Currency> ResolveNewClientCurrencyAsync(PlaceOrderCommand cmd, CancellationToken ct)
+    {
+        if (cmd.Currency is null)
+        {
+            return await payerCurrency.BaseAsync(ct);
+        }
+
+        return await currencies.FindOfferedAsync(cmd.Currency, ct)
+            ?? throw new InvalidOperationException(localizer[CurrencyUnavailableKey]);
     }
 
     /// <summary>
@@ -239,9 +317,10 @@ public sealed class PlaceOrderHandler(
     /// </remarks>
     /// <param name="subject">The caller's subject, already known to have no client row.</param>
     /// <param name="cmd">The order being placed.</param>
+    /// <param name="currencyCode">The currency the new row is billed in, already checked to be on offer.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The new client's ID.</returns>
-    private async Task<int> CreateClientForCallerAsync(string subject, PlaceOrderCommand cmd, CancellationToken ct)
+    private async Task<int> CreateClientForCallerAsync(string subject, PlaceOrderCommand cmd, string currencyCode, CancellationToken ct)
     {
         var (credentialFirst, credentialLast) = SplitDisplayName(caller.UserName);
 
@@ -250,6 +329,10 @@ public sealed class PlaceOrderHandler(
             FirstNonBlank(cmd.FirstName, credentialFirst) ?? string.Empty,
             FirstNonBlank(cmd.LastName, credentialLast) ?? string.Empty,
             caller.UserEmail ?? cmd.Email ?? string.Empty);
+
+        // A new row, so this order is the one that chooses its currency — the same rule as a
+        // guest's, because the caller is choosing at the same checkout.
+        client.SetCurrency(currencyCode);
 
         clientRepo.Add(client);
         await uow.SaveChangesAsync(ct);
@@ -288,39 +371,55 @@ public sealed class PlaceOrderHandler(
         return (parts[0], parts.Length > 1 ? parts[1] : null);
     }
 
-    /// <summary>
-    /// Resolves the correct price for a product based on the billing cycle.
-    /// </summary>
-    /// <param name="product">The product to price.</param>
-    /// <param name="billingCycle">Billing cycle: "monthly" or "annual".</param>
-    /// <returns>The resolved price.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when the billing cycle is not recognised.</exception>
-    private static decimal ResolvePrice(Product product, string billingCycle)
+    /// <summary>Reads the stored price for a product in the payer's currency and cycle.</summary>
+    /// <remarks>
+    /// A product with no price in that currency is not for sale to that payer; the order refuses
+    /// rather than converting from another currency, because a converted figure is not a price
+    /// the operator set.
+    /// </remarks>
+    /// <param name="product">The product.</param>
+    /// <param name="billingCycle">The requested cycle string.</param>
+    /// <param name="currency">The payer's currency.</param>
+    /// <returns>The amount.</returns>
+    /// <exception cref="ArgumentException">Thrown when the billing cycle is not recognised.</exception>
+    /// <exception cref="InvalidOperationException">The product has no price in that currency and cycle.</exception>
+    private static decimal ResolvePrice(Product product, string billingCycle, Currency currency)
     {
-        return billingCycle.ToLowerInvariant() switch
-        {
-            "monthly" => product.MonthlyPrice,
-            "annual" or "annually" => product.AnnualPrice,
-            _ => throw new InvalidOperationException($"Unsupported billing cycle: {billingCycle}.")
-        };
+        var cycle = BillingCycleParser.Parse(billingCycle);
+        return product.PriceFor(currency.Code, cycle)
+            ?? throw new InvalidOperationException(
+                $"'{product.Name}' has no {cycle} price in {currency.Code}; it cannot be ordered in that currency.");
     }
 
     /// <summary>
     /// Resolves the price for a domain registration or transfer from the TLD pricing table.
     /// </summary>
-    /// <param name="tldPricing">Pre-fetched TLD pricing data.</param>
+    /// <param name="tldPricing">Pre-fetched TLD pricing data, asked for in <paramref name="currency"/>.</param>
+    /// <param name="currency">The payer's currency; a TLD sold in any other is refused.</param>
     /// <param name="domainName">Fully-qualified domain name (e.g. "example.com").</param>
     /// <param name="action">Domain action: "register", "transfer" or "renew".</param>
     /// <param name="years">Registration period in years.</param>
     /// <returns>The validated price for the domain operation.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when the TLD is not supported or years not available.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the TLD is not supported, is sold in a currency other than the payer's, or has
+    /// no price for the period.
+    /// </exception>
     /// <remarks>
+    /// <para>
+    /// TLD prices are still single-currency (their own plan follows), so the table's figures are
+    /// trusted only when the TLD's sell currency is the payer's — then the query's rate is one and
+    /// the figure is the stored one. Any other pairing would bill a converted amount the operator
+    /// never set, so it is refused instead.
+    /// </para>
+    /// <para>
     /// "renew" prices from the TLD table's renewal column, which has always been loaded and
     /// published to the public pricing page and had no order path behind it. It is here so a
     /// client-initiated renewal is a purchase like the other two rather than a free call to the
     /// registrar; see <c>RenewMyDomainHandler</c>.
+    /// </para>
     /// </remarks>
-    private static decimal ResolveDomainPrice(TldPricingDto tldPricing, string domainName, string action, int years)
+    private static decimal ResolveDomainPrice(
+        TldPricingDto tldPricing, Currency currency, string domainName, string action, int years)
     {
         var dotIndex = domainName.IndexOf('.');
         if (dotIndex < 0)
@@ -333,6 +432,12 @@ public sealed class PlaceOrderHandler(
         if (!tldPricing.Pricing.TryGetValue(tld, out var entry))
         {
             throw new InvalidOperationException($"TLD '.{tld}' is not supported for domain {action}.");
+        }
+
+        if (!string.Equals(entry.SellCurrency, currency.Code, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"Domains under .{tld} are sold in {entry.SellCurrency}, not {currency.Code}.");
         }
 
         var priceMap = action.ToLowerInvariant() switch

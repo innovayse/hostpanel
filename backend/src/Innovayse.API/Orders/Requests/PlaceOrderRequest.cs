@@ -8,6 +8,10 @@ namespace Innovayse.API.Orders.Requests;
 /// <param name="Email">Guest email (required for guest checkout).</param>
 /// <param name="Password">Guest password (required for guest checkout).</param>
 /// <param name="PhoneNumber">Guest phone number (optional).</param>
+/// <param name="Currency">
+/// ISO 4217 code the guest chose to be billed in; omitted means the base. Ignored for a
+/// signed-in client who already has one.
+/// </param>
 public record PlaceOrderRequest(
     IReadOnlyList<PlaceOrderItemRequest> Items,
     string PaymentMethod,
@@ -15,4 +19,5 @@ public record PlaceOrderRequest(
     string? LastName,
     string? Email,
     string? Password,
-    string? PhoneNumber);
+    string? PhoneNumber,
+    string? Currency = null);

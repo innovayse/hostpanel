@@ -93,7 +93,7 @@ public sealed class GetTldPricingHandler(
 
             var categories = config.Categories.ToList();
 
-            pricing[config.Tld] = new TldPriceEntryDto(register, transfer, renew, categories);
+            pricing[config.Tld] = new TldPriceEntryDto(config.SellCurrency, register, transfer, renew, categories);
         }
 
         return new TldPricingDto(new TldCurrencyDto(targetCurrency.ToUpperInvariant(), prefix), pricing);

@@ -86,6 +86,17 @@ public interface IInvoiceRepository
     /// <returns>How many of the client's invoices have no service link on any line.</returns>
     Task<int> CountUnattributedByClientAsync(int clientId, CancellationToken ct);
 
+    /// <summary>Whether a client has ever been invoiced, in any status.</summary>
+    /// <remarks>
+    /// Answers "may this client's currency still change?". A draft or a cancelled invoice counts:
+    /// each carries a currency and an amount that would be re-labelled by a change, so the first
+    /// invoice of any kind is the moment the currency is fixed.
+    /// </remarks>
+    /// <param name="clientId">The client's primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><see langword="true"/> when at least one invoice belongs to the client.</returns>
+    Task<bool> AnyForClientAsync(int clientId, CancellationToken ct);
+
     /// <summary>
     /// Returns a paginated, filtered list of invoices for a specific client.
     /// </summary>

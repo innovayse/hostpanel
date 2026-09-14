@@ -29,6 +29,6 @@ public sealed class PayMyInvoiceHandler(IInvoiceOwnership ownership, IMessageBus
     public async Task HandleAsync(PayMyInvoiceCommand cmd, CancellationToken ct)
     {
         await ownership.RequireOwnedByCallerAsync(cmd.InvoiceId, ct);
-        await bus.InvokeAsync(new PayInvoiceCommand(cmd.InvoiceId, cmd.Currency), ct);
+        await bus.InvokeAsync(new PayInvoiceCommand(cmd.InvoiceId), ct);
     }
 }

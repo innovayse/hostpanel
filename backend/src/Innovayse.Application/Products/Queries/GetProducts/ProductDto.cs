@@ -12,7 +12,8 @@ using Innovayse.Domain.Products;
 /// <param name="PackageName">Optional hosting package name used for provisioning.</param>
 /// <param name="Type">Product type.</param>
 /// <param name="Status">Current status.</param>
-/// <param name="Pricing">Monthly and annual pricing.</param>
+/// <param name="Pricing">Monthly and annual pricing in the caller's currency.</param>
+/// <param name="Prices">Every stored price, one entry per currency the product sells in.</param>
 /// <param name="ServerGroupId">Optional FK to the server group for provisioning.</param>
 public record ProductDto(
     int Id,
@@ -25,4 +26,5 @@ public record ProductDto(
     ProductType Type,
     ProductStatus Status,
     ProductPricingDto Pricing,
+    IReadOnlyList<ProductPriceDto> Prices,
     int? ServerGroupId);

@@ -21,8 +21,8 @@ using Innovayse.Domain.Slides;
 /// <param name="Features">Optional array of feature strings in the resolved locale.</param>
 /// <param name="CtaText">Optional CTA button label in the resolved locale.</param>
 /// <param name="CtaUrl">Optional CTA button link in the resolved locale.</param>
-/// <param name="MonthlyPrice">Monthly price from the linked product, or null if no product linked.</param>
-/// <param name="AnnualPrice">Annual price from the linked product, or null if no product linked.</param>
+/// <param name="MonthlyPrice">Monthly price of the linked product in the caller's currency, or null when there is no product or no such price.</param>
+/// <param name="AnnualPrice">Annual price of the linked product in the caller's currency, or null when there is no product or no such price.</param>
 public record SlidePublicDto(
     int Id,
     string IconName,

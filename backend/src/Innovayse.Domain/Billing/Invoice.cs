@@ -49,6 +49,19 @@ public sealed class Invoice : AggregateRoot
     /// <summary>Gets the final total (SubTotal + Tax − Credit).</summary>
     public decimal Total { get; private set; }
 
+    /// <summary>Length of an ISO 4217 alpha code.</summary>
+    private const int CurrencyCodeLength = 3;
+
+    /// <summary>
+    /// ISO 4217 alpha code every amount on this invoice is in. Set at creation, never changed.
+    /// </summary>
+    /// <remarks>
+    /// Before this existed an invoice's currency was inferred from the client at payment time,
+    /// so changing a client's currency silently re-labelled every past invoice — $100 became
+    /// ֏100. WHMCS documents exactly that failure. The number and its currency travel together.
+    /// </remarks>
+    public string Currency { get; private set; } = string.Empty;
+
     /// <summary>Gets the payment gateway transaction reference; null until paid.</summary>
     public string? GatewayTransactionId { get; private set; }
 
@@ -79,18 +92,19 @@ public sealed class Invoice : AggregateRoot
     /// <summary>EF Core parameterless constructor — do not call directly.</summary>
     private Invoice() : base(0) { }
 
-    /// <summary>
-    /// Creates a new draft invoice (not yet sent to client).
-    /// </summary>
+    /// <summary>Creates a draft invoice (not yet sent to the client).</summary>
     /// <param name="clientId">FK to the client being invoiced.</param>
     /// <param name="dueDate">Payment due date (UTC).</param>
+    /// <param name="currency">ISO 4217 alpha code the invoice bills in.</param>
     /// <returns>A new <see cref="Invoice"/> with <see cref="InvoiceStatus.Draft"/> status.</returns>
-    public static Invoice CreateDraft(int clientId, DateTimeOffset dueDate)
+    /// <exception cref="ArgumentException">The currency is not a three-letter code.</exception>
+    public static Invoice CreateDraft(int clientId, DateTimeOffset dueDate, string currency)
     {
         var now = DateTimeOffset.UtcNow;
         var invoice = new Invoice
         {
             ClientId = clientId,
+            Currency = NormaliseCurrency(currency),
             Status = InvoiceStatus.Draft,
             InvoiceDate = now,
             DueDate = dueDate,
@@ -100,35 +114,42 @@ public sealed class Invoice : AggregateRoot
         return invoice;
     }
 
-    /// <summary>
-    /// Creates a new invoice, optionally as a draft.
-    /// </summary>
+    /// <summary>Creates an unpaid invoice.</summary>
     /// <param name="clientId">FK to the client being invoiced.</param>
     /// <param name="dueDate">Payment due date (UTC).</param>
+    /// <param name="currency">ISO 4217 alpha code the invoice bills in.</param>
+    /// <returns>A new <see cref="Invoice"/> with <see cref="InvoiceStatus.Unpaid"/> status.</returns>
+    /// <exception cref="ArgumentException">The currency is not a three-letter code.</exception>
+    public static Invoice Create(int clientId, DateTimeOffset dueDate, string currency)
+    {
+        // Same construction and the same InvoiceCreatedEvent as a draft; only the status differs.
+        var invoice = CreateDraft(clientId, dueDate, currency);
+        invoice.Status = InvoiceStatus.Unpaid;
+        return invoice;
+    }
+
+    /// <summary>Creates a draft or unpaid invoice.</summary>
+    /// <param name="clientId">FK to the client being invoiced.</param>
+    /// <param name="dueDate">Payment due date (UTC).</param>
+    /// <param name="currency">ISO 4217 alpha code the invoice bills in.</param>
     /// <param name="isDraft">When true, creates a Draft; otherwise creates an Unpaid invoice.</param>
     /// <returns>A new <see cref="Invoice"/>.</returns>
-    public static Invoice Create(int clientId, DateTimeOffset dueDate, bool isDraft) =>
-        isDraft ? CreateDraft(clientId, dueDate) : Create(clientId, dueDate);
+    /// <exception cref="ArgumentException">The currency is not a three-letter code.</exception>
+    public static Invoice Create(int clientId, DateTimeOffset dueDate, string currency, bool isDraft) =>
+        isDraft ? CreateDraft(clientId, dueDate, currency) : Create(clientId, dueDate, currency);
 
-    /// <summary>
-    /// Creates a new unpaid invoice.
-    /// </summary>
-    /// <param name="clientId">FK to the client being invoiced.</param>
-    /// <param name="dueDate">Payment due date (UTC).</param>
-    /// <returns>A new <see cref="Invoice"/> with <see cref="InvoiceStatus.Unpaid"/> status.</returns>
-    public static Invoice Create(int clientId, DateTimeOffset dueDate)
+    /// <summary>Validates and upper-cases a currency code.</summary>
+    /// <param name="currency">The raw code.</param>
+    /// <returns>The code in upper case.</returns>
+    /// <exception cref="ArgumentException">The code is not three letters.</exception>
+    private static string NormaliseCurrency(string currency)
     {
-        var now = DateTimeOffset.UtcNow;
-        var invoice = new Invoice
+        if (string.IsNullOrWhiteSpace(currency) || currency.Length != CurrencyCodeLength)
         {
-            ClientId = clientId,
-            Status = InvoiceStatus.Unpaid,
-            InvoiceDate = now,
-            DueDate = dueDate,
-            CreatedAt = now,
-        };
-        invoice.AddDomainEvent(new InvoiceCreatedEvent(0, clientId));
-        return invoice;
+            throw new ArgumentException("An invoice needs a three-letter ISO 4217 currency.", nameof(currency));
+        }
+
+        return currency.ToUpperInvariant();
     }
 
     /// <summary>Sets the external system ID for migration deduplication.</summary>
@@ -396,10 +417,11 @@ public sealed class Invoice : AggregateRoot
     /// is the same charges billed again, so a line that was for a service is still for that
     /// service; dropping the link here would quietly hide the copy from the service it belongs to.
     /// </remarks>
-    /// <returns>A new Draft invoice with the same client, due date and lines.</returns>
+    /// <returns>A new Draft invoice with the same client, due date, currency and lines.</returns>
     public Invoice Duplicate()
     {
-        var copy = CreateDraft(ClientId, DueDate);
+        // The same amounts in the same currency: a copy never re-labels the lines it carries.
+        var copy = CreateDraft(ClientId, DueDate, Currency);
         foreach (var item in _items)
         {
             copy.AddItem(item.Description, item.UnitPrice, item.Quantity, item.ClientServiceId);

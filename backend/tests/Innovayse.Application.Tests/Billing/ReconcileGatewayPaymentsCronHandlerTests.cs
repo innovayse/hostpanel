@@ -20,9 +20,9 @@ public class ReconcileGatewayPaymentsCronHandlerTests
     {
         var invoiceRepo = new Mock<IInvoiceRepository>();
         var bus = new Mock<IMessageBus>();
-        var a = Invoice.Create(1, DateTimeOffset.UtcNow.AddDays(7));
+        var a = Invoice.Create(1, DateTimeOffset.UtcNow.AddDays(7), "USD");
         a.SetGatewaySession("inecobank", "gw-a");
-        var b = Invoice.Create(2, DateTimeOffset.UtcNow.AddDays(7));
+        var b = Invoice.Create(2, DateTimeOffset.UtcNow.AddDays(7), "USD");
         b.SetGatewaySession("inecobank", "gw-b");
 
         DateTimeOffset capturedStartedAfter = default;
@@ -74,9 +74,9 @@ public class ReconcileGatewayPaymentsCronHandlerTests
     {
         var invoiceRepo = new Mock<IInvoiceRepository>();
         var bus = new Mock<IMessageBus>();
-        var a = Invoice.Create(1, DateTimeOffset.UtcNow.AddDays(7));
+        var a = Invoice.Create(1, DateTimeOffset.UtcNow.AddDays(7), "USD");
         a.SetGatewaySession("inecobank", "gw-a");
-        var b = Invoice.Create(2, DateTimeOffset.UtcNow.AddDays(7));
+        var b = Invoice.Create(2, DateTimeOffset.UtcNow.AddDays(7), "USD");
         b.SetGatewaySession("inecobank", "gw-b");
         invoiceRepo.Setup(r => r.ListPendingGatewayPaymentsAsync(
                 It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))

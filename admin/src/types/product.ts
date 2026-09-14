@@ -24,8 +24,8 @@ export interface Product {
   type: string
   /** Current status (Active, Inactive). */
   status: string
-  /** Monthly and annual pricing. */
-  pricing: { monthly: number; annual: number }
+  /** Monthly and annual pricing in the caller's currency; null when the product has no price for that cycle. */
+  pricing: { monthly: number | null; annual: number | null }
   /** Optional FK to the server group for provisioning. */
   serverGroupId: number | null
 }

@@ -34,7 +34,9 @@ public sealed class PayInvoiceHandler(
         var invoice = await repo.FindByIdAsync(cmd.InvoiceId, ct)
             ?? throw new InvalidOperationException($"Invoice {cmd.InvoiceId} not found.");
 
-        var chargeRequest = new ChargeRequest(invoice.ClientId, invoice.Id, invoice.Total, cmd.Currency);
+        // Charged in the currency the invoice was issued in. The command used to carry a code
+        // the caller chose, defaulting to USD, which charged an AMD invoice's total as dollars.
+        var chargeRequest = new ChargeRequest(invoice.ClientId, invoice.Id, invoice.Total, invoice.Currency);
         var result = await gateway.ChargeAsync(chargeRequest, ct);
 
         if (!result.Success)

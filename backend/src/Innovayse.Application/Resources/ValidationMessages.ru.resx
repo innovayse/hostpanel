@@ -247,4 +247,8 @@
     <value>Изображение слишком большое. Загрузите файл до 5 МБ и не более 8000 пикселей по стороне.</value>
     <comment>BRANDING_IMAGE_TOO_LARGE.</comment>
   </data>
+  <data name="OrderCurrencyUnavailable" xml:space="preserve">
+    <value>Выбранная валюта недоступна. Вернитесь к оформлению заказа и выберите другую.</value>
+    <comment>PlaceOrderHandler. A guest checkout asked to be billed in a currency the panel does not offer — never configured, or switched off in the admin currencies page — so it is refused before an account exists.</comment>
+  </data>
 </root>

@@ -2,7 +2,9 @@ namespace Innovayse.Application.Clients.Commands.UpdateClient;
 
 using Innovayse.Application.Auth.Common;
 using Innovayse.Application.Auth.Interfaces;
+using Innovayse.Application.Billing.Extensions;
 using Innovayse.Application.Common;
+using Innovayse.Domain.Billing.Interfaces;
 using Innovayse.Domain.Clients;
 using Innovayse.Domain.Clients.Interfaces;
 
@@ -21,19 +23,35 @@ using Innovayse.Domain.Clients.Interfaces;
 /// Reads the address the account currently signs in with, so a save that did not touch it
 /// can be told apart from one that did.
 /// </param>
+/// <param name="invoices">
+/// Answers whether the client has ever been billed, which is what decides whether their
+/// currency may still change.
+/// </param>
+/// <param name="currencies">The currencies this panel offers, for checking a requested one.</param>
 public sealed class UpdateClientHandler(
     IClientRepository clientRepo,
     IUnitOfWork uow,
     IUserProvisioning provisioning,
-    IIdentityProvider identity)
+    IIdentityProvider identity,
+    IInvoiceRepository invoices,
+    ICurrencyRepository currencies)
 {
+    /// <summary>
+    /// What the refusal names as the billing currency of a client who has none recorded: such a
+    /// client's invoices were raised in the base, whatever code that is on this panel.
+    /// </summary>
+    private const string BaseCurrencyLabel = "the base currency";
+
     /// <summary>
     /// Updates the client's profile, billing address, preferences, notifications,
     /// settings, and status.
     /// </summary>
     /// <param name="cmd">The update command.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <exception cref="InvalidOperationException">Thrown when the client is not found.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the client is not found, when the currency is changed on a client who has
+    /// already been invoiced, or when the requested currency is not one this panel offers.
+    /// </exception>
     public async Task HandleAsync(UpdateClientCommand cmd, CancellationToken ct)
     {
         var client = await clientRepo.FindByIdAsync(cmd.ClientId, ct)
@@ -41,7 +59,8 @@ public sealed class UpdateClientHandler(
 
         client.Update(cmd.FirstName, cmd.LastName, cmd.CompanyName, cmd.Phone);
         client.UpdateAddress(cmd.Street, cmd.Address2, cmd.City, cmd.State, cmd.PostCode, cmd.Country);
-        client.UpdatePreferences(cmd.Currency, cmd.PaymentMethod, cmd.BillingContact, cmd.AdminNotes);
+        client.UpdatePreferences(cmd.PaymentMethod, cmd.BillingContact, cmd.AdminNotes);
+        await ApplyCurrencyAsync(client, cmd.Currency, ct);
         client.UpdateNotifications(cmd.NotifyGeneral, cmd.NotifyInvoice, cmd.NotifySupport, cmd.NotifyProduct, cmd.NotifyDomain, cmd.NotifyAffiliate);
         client.UpdateSettings(cmd.LateFees, cmd.OverdueNotices, cmd.TaxExempt, cmd.SeparateInvoices, cmd.DisableCcProcessing, cmd.MarketingOptIn, cmd.StatusUpdate, cmd.AllowSso);
 
@@ -157,5 +176,46 @@ public sealed class UpdateClientHandler(
         }
 
         await uow.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// Moves the client to the requested currency, when that is still allowed.
+    /// </summary>
+    /// <remarks>
+    /// Asked as "has the currency changed?", never as "was a currency sent?": the account form
+    /// posts the field on every save, and a client who has been invoiced must still be able to
+    /// save their phone number. Changing the code would re-label every existing invoice without
+    /// converting an amount — $100 would read as ֏100 — so once billed, the currency is fixed; a
+    /// client who genuinely needs another is a new client record.
+    /// </remarks>
+    /// <param name="client">The client under edit.</param>
+    /// <param name="requested">The currency the form posted, or <see langword="null"/> to leave it alone.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the client has already been invoiced, or the currency is not one this panel offers.
+    /// </exception>
+    private async Task ApplyCurrencyAsync(Client client, string? requested, CancellationToken ct)
+    {
+        if (requested is null || string.Equals(requested, client.Currency, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        if (await invoices.AnyForClientAsync(client.Id, ct))
+        {
+            // A client with no recorded currency was billed in the base; the sentence must not
+            // print a blank where a code belongs.
+            var billedIn = client.Currency ?? BaseCurrencyLabel;
+            throw new InvalidOperationException(
+                $"Client {client.Id} has already been invoiced in {billedIn}; the currency cannot be changed.");
+        }
+
+        if (!await currencies.IsOfferedAsync(requested, ct))
+        {
+            throw new InvalidOperationException(
+                $"Currency '{requested}' is not configured and enabled on this panel.");
+        }
+
+        client.SetCurrency(requested);
     }
 }

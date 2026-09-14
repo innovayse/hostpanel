@@ -1,9 +1,10 @@
-namespace Innovayse.Infrastructure;
+﻿namespace Innovayse.Infrastructure;
 
 using Innovayse.Application.Admin.Plugins.Interfaces;
 using Innovayse.Application.Admin.Servers.Interfaces;
 using Innovayse.Application.Auth.Interfaces;
 using Innovayse.Application.Billing.Interfaces;
+using Innovayse.Application.Billing.Services;
 using Innovayse.Application.Common;
 using Innovayse.Application.Migration.Interfaces;
 using Innovayse.Application.Notifications.Interfaces;
@@ -372,7 +373,19 @@ public static class DependencyInjection
         services.AddScoped<ITransactionRepository, TransactionRepository>();
         services.AddScoped<IBillableItemRepository, BillableItemRepository>();
         services.AddScoped<IQuoteRepository, QuoteRepository>();
+        services.AddScoped<ICurrencyRepository, CurrencyRepository>();
         services.AddScoped<IPaymentGateway, NullPaymentGateway>();
+        services.AddScoped<IPayerCurrencyResolver, PayerCurrencyResolver>();
+
+        // Exchange rates come from the Central Bank of Armenia's bulletin. The URL and its shape
+        // are argued on CbaExchangeRateSource; the read-only profile with retries is argued on
+        // HttpResilienceOptions.Cba. The interface is what the handler depends on, so another
+        // bank is another class here and nothing in Application moves.
+        services.AddHttpClient<IExchangeRateSource, CbaExchangeRateSource>(client =>
+        {
+            client.BaseAddress = new Uri(CbaExchangeRateSource.BaseAddress);
+        })
+            .AddReadOnlyResilience(o => o.Cba);
 
         // Stripe
         // Optional in the same way cPanel is: no Stripe section at all is a deployment that takes

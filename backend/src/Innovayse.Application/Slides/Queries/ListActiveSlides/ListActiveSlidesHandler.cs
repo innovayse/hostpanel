@@ -1,7 +1,9 @@
 namespace Innovayse.Application.Slides.Queries.ListActiveSlides;
 
 using System.Text.Json;
+using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Common.Options;
+using Innovayse.Domain.Products;
 using Innovayse.Domain.Products.Interfaces;
 using Innovayse.Domain.Slides;
 using Innovayse.Domain.Slides.Interfaces;
@@ -15,10 +17,12 @@ using Microsoft.Extensions.Options;
 /// <param name="slideRepo">Slide repository for listing active slides.</param>
 /// <param name="productRepo">Product repository for resolving pricing data.</param>
 /// <param name="localeOptions">The panel fallback locale, for content with no translation in the requested one.</param>
+/// <param name="payerCurrency">The currency the caller is billed in; a linked product is priced in it.</param>
 public sealed class ListActiveSlidesHandler(
     ISlideRepository slideRepo,
     IProductRepository productRepo,
-    IOptions<LocaleOptions> localeOptions)
+    IOptions<LocaleOptions> localeOptions,
+    IPayerCurrencyResolver payerCurrency)
 {
     /// <summary>
     /// Returns active slides visible now, filtered by audience, with resolved translations and pricing.
@@ -49,13 +53,18 @@ public sealed class ListActiveSlidesHandler(
             .Distinct()
             .ToList();
 
-        var productMap = new Dictionary<int, (decimal Monthly, decimal Annual)>();
+        // A slide shows the linked product's price in the visitor's own currency; a cycle the
+        // product does not sell in that currency stays null and the slide renders no figure.
+        var productMap = new Dictionary<int, (decimal? Monthly, decimal? Annual)>();
         if (productIds.Count > 0)
         {
+            var currency = (await payerCurrency.ForCallerAsync(ct)).Code;
             var products = await productRepo.FindByIdsAsync(productIds, ct);
             foreach (var product in products)
             {
-                productMap[product.Id] = (product.MonthlyPrice, product.AnnualPrice);
+                productMap[product.Id] = (
+                    product.PriceFor(currency, BillingCycle.Monthly),
+                    product.PriceFor(currency, BillingCycle.Annual));
             }
         }
 
@@ -70,13 +79,13 @@ public sealed class ListActiveSlidesHandler(
     /// <param name="slide">The slide aggregate to map.</param>
     /// <param name="requestedLocale">The locale requested by the client.</param>
     /// <param name="defaultLocale">The application default locale as fallback.</param>
-    /// <param name="productMap">Map of product ID to monthly and annual prices.</param>
+    /// <param name="productMap">Map of product ID to monthly and annual prices in the caller's currency.</param>
     /// <returns>A <see cref="SlidePublicDto"/> with the best available translation and pricing.</returns>
     private static SlidePublicDto MapToDto(
         Slide slide,
         string requestedLocale,
         string defaultLocale,
-        Dictionary<int, (decimal Monthly, decimal Annual)> productMap)
+        Dictionary<int, (decimal? Monthly, decimal? Annual)> productMap)
     {
         // Locale resolution: requested → default → first available
         var translation =

@@ -37,7 +37,7 @@ public class FulfillPaidOrderHandlerTests
     /// <summary>Builds a Paid invoice with a positive total, linked to the given gateway module/order id.</summary>
     private static Invoice MakePaidInvoiceWithGatewaySession(string module, string gatewayOrderId)
     {
-        var invoice = Invoice.Create(clientId: 5, dueDate: DateTimeOffset.UtcNow.AddDays(7));
+        var invoice = Invoice.Create(clientId: 5, dueDate: DateTimeOffset.UtcNow.AddDays(7), currency: "USD");
         invoice.AddItem("Domain registration", 25m, 1);
         invoice.SetGatewaySession(module, gatewayOrderId);
         // Paid via its own gateway session — MarkPaidViaGateway (not MarkPaid) retains the
@@ -61,7 +61,7 @@ public class FulfillPaidOrderHandlerTests
         order.LinkInvoice(10);
         orderRepo.Setup(r => r.FindByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(order);
         invoiceRepo.Setup(r => r.FindByIdAsync(10, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Invoice.Create(clientId: 5, dueDate: DateTimeOffset.UtcNow.AddDays(7)));
+            .ReturnsAsync(Invoice.Create(clientId: 5, dueDate: DateTimeOffset.UtcNow.AddDays(7), currency: "USD"));
         bus.Setup(b => b.InvokeAsync<int>(It.IsAny<OrderServiceCommand>(), It.IsAny<CancellationToken>(), null))
             .ReturnsAsync(77);
 
@@ -185,7 +185,7 @@ public class FulfillPaidOrderHandlerTests
         order.LinkInvoice(10);
         orderRepo.Setup(r => r.FindByIdAsync(4, It.IsAny<CancellationToken>())).ReturnsAsync(order);
         invoiceRepo.Setup(r => r.FindByIdAsync(10, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Invoice.Create(clientId: 5, dueDate: DateTimeOffset.UtcNow.AddDays(7)));
+            .ReturnsAsync(Invoice.Create(clientId: 5, dueDate: DateTimeOffset.UtcNow.AddDays(7), currency: "USD"));
 
         bus.SetupSequence(b => b.InvokeAsync<int>(It.IsAny<OrderServiceCommand>(), It.IsAny<CancellationToken>(), null))
             .ThrowsAsync(new InvalidOperationException("provisioning API unavailable"))

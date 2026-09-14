@@ -129,7 +129,7 @@ public sealed class MyServiceInvoicesTests
     [Fact]
     public async Task HandleAsync_ReturnsTheLinkedInvoicesAsync()
     {
-        var linked = Invoice.Create(CallerClientId, DateTimeOffset.UtcNow.AddDays(14));
+        var linked = Invoice.Create(CallerClientId, DateTimeOffset.UtcNow.AddDays(14), "USD");
         linked.AddItem("Renewal: Starter Hosting", 5000m, 1, clientServiceId: ServiceId);
 
         var invoices = new Mock<IInvoiceRepository>();

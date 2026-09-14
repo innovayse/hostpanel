@@ -53,6 +53,16 @@ function groupName(groupId: number): string {
 }
 
 /**
+ * Formats a price cell. A product that does not sell a cycle in the caller's currency
+ * has no figure for it, and the grid shows a dash rather than a number.
+ *
+ * @param amount - The price, or null when the product has none for that cycle.
+ * @returns The formatted amount, or "—" when there is none.
+ */
+const formatPrice = (amount: number | null): string =>
+  amount === null ? '—' : `$${amount.toFixed(2)}`
+
+/**
  * Opens the modal in create mode.
  */
 function openCreate(): void {
@@ -156,8 +166,8 @@ async function handleSave(payload: CreateProductPayload): Promise<void> {
             </td>
             <td class="px-5 py-3.5 text-text-secondary">{{ groupName(product.groupId) }}</td>
             <td class="px-5 py-3.5 text-text-secondary">{{ typeLabels[product.type] ?? product.type }}</td>
-            <td class="px-5 py-3.5 text-text-primary font-mono">${{ product.pricing.monthly.toFixed(2) }}</td>
-            <td class="px-5 py-3.5 text-text-primary font-mono">${{ product.pricing.annual.toFixed(2) }}</td>
+            <td class="px-5 py-3.5 text-text-primary font-mono">{{ formatPrice(product.pricing.monthly) }}</td>
+            <td class="px-5 py-3.5 text-text-primary font-mono">{{ formatPrice(product.pricing.annual) }}</td>
             <td class="px-5 py-3.5">
               <span
                 class="text-[0.65rem] font-semibold rounded-full px-2.5 py-1"

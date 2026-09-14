@@ -1,11 +1,13 @@
 namespace Innovayse.Application.Tests.Orders;
 
 using Innovayse.Application.Auth.Interfaces;
+using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Billing.Queries.ListAvailablePaymentMethods;
 using Innovayse.Application.Common;
 using Innovayse.Application.Orders.Commands.PlaceOrder;
 using Innovayse.Application.Resources;
 using Innovayse.Domain.Auth.Interfaces;
+using Innovayse.Domain.Billing;
 using Innovayse.Domain.Billing.Interfaces;
 using Innovayse.Domain.Clients;
 using Innovayse.Domain.Clients.Interfaces;
@@ -45,6 +47,10 @@ public sealed class PlaceOrderClientProvisioningTests
             groupId: 1, name: "Pro Hosting", description: null, website: null, slug: null,
             packageName: null, type: ProductType.SharedHosting,
             monthlyPrice: 19.99m, annualPrice: 199.99m);
+
+        // The order reads the per-currency price rows, not the legacy columns; the payer here is
+        // billed in the base, so one USD row is what makes the product orderable.
+        product.SetPrice("USD", BillingCycle.Monthly, 19.99m);
 
         // Create leaves Id at 0 for EF to assign, and the handler looks the product up by id.
         // Entity.Id has a private setter, so the backing field is the only way in — the same
@@ -102,6 +108,15 @@ public sealed class PlaceOrderClientProvisioningTests
         // Strict: any call to the provisioner is a failure, asserted by the test that says so.
         provisioning = new Mock<IUserProvisioning>(MockBehavior.Strict);
 
+        // The order's invoice is created in whatever the new client is billed in; a brand-new
+        // client has no currency of their own, so the resolver answers with the base.
+        var usd = Currency.Create("USD", "840", "$", string.Empty, 2, 1m, isBase: true);
+        var payerCurrency = new Mock<IPayerCurrencyResolver>();
+        payerCurrency.Setup(r => r.ForClientAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(usd);
+        // The new row is stamped with the base, since a signed-in order carries no choice.
+        payerCurrency.Setup(r => r.BaseAsync(It.IsAny<CancellationToken>())).ReturnsAsync(usd);
+
         return new PlaceOrderHandler(
             orders.Object,
             products.Object,
@@ -112,7 +127,9 @@ public sealed class PlaceOrderClientProvisioningTests
             Mock.Of<ISubjectRoleStore>(),
             BusOffering("stripe"),
             caller.Object,
-            Mock.Of<IStringLocalizer<ValidationMessages>>());
+            Mock.Of<IStringLocalizer<ValidationMessages>>(),
+            payerCurrency.Object,
+            Mock.Of<ICurrencyRepository>());
     }
 
     /// <summary>

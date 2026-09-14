@@ -9,6 +9,5 @@ public sealed class PayInvoiceValidator : AbstractValidator<PayInvoiceCommand>
     public PayInvoiceValidator()
     {
         RuleFor(x => x.InvoiceId).GreaterThan(0);
-        RuleFor(x => x.Currency).NotEmpty().Length(3);
     }
 }

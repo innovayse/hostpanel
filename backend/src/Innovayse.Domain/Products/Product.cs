@@ -46,6 +46,17 @@ public sealed class Product : AggregateRoot
     /// <summary>Gets the UTC timestamp when the product was created.</summary>
     public DateTimeOffset CreatedAt { get; private set; }
 
+    /// <summary>Backing list for per-currency prices.</summary>
+    private readonly List<ProductPrice> _prices = [];
+
+    /// <summary>Gets the stored prices, one per currency and cycle.</summary>
+    /// <remarks>
+    /// <see cref="MonthlyPrice"/> and <see cref="AnnualPrice"/> are the pre-multi-currency
+    /// columns. They are kept for one release so a rollback has data to read: the handlers keep
+    /// them mirroring the base-currency rows here, and the migration copied them into USD rows.
+    /// </remarks>
+    public IReadOnlyList<ProductPrice> Prices => _prices.AsReadOnly();
+
     /// <summary>EF Core parameterless constructor — do not call directly.</summary>
     private Product() : base(0) { }
 
@@ -122,4 +133,53 @@ public sealed class Product : AggregateRoot
 
     /// <summary>Marks the product active so it can be ordered again.</summary>
     public void Activate() => Status = ProductStatus.Active;
+
+    /// <summary>Sets (or replaces) the price for a currency and cycle.</summary>
+    /// <param name="currencyCode">ISO 4217 alpha code, any case.</param>
+    /// <param name="cycle">The billing cycle.</param>
+    /// <param name="amount">The amount; must not be negative.</param>
+    /// <exception cref="ArgumentOutOfRangeException">The amount is negative.</exception>
+    public void SetPrice(string currencyCode, BillingCycle cycle, decimal amount)
+    {
+        ArgumentNullException.ThrowIfNull(currencyCode);
+        if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount), "A price cannot be negative.");
+
+        var code = currencyCode.ToUpperInvariant();
+        var existing = _prices.FirstOrDefault(p => p.CurrencyCode == code && p.Cycle == cycle);
+        if (existing is null)
+        {
+            _prices.Add(new ProductPrice(code, cycle, amount));
+        }
+        else
+        {
+            existing.SetAmount(amount);
+        }
+    }
+
+    /// <summary>Removes every price in a currency, so the product no longer sells in it.</summary>
+    /// <param name="currencyCode">ISO 4217 alpha code, any case.</param>
+    public void RemovePrices(string currencyCode)
+    {
+        var code = currencyCode.ToUpperInvariant();
+        _prices.RemoveAll(p => p.CurrencyCode == code);
+    }
+
+    /// <summary>Reads the stored price for a currency and cycle.</summary>
+    /// <param name="currencyCode">ISO 4217 alpha code, any case.</param>
+    /// <param name="cycle">The billing cycle.</param>
+    /// <returns>The amount, or <see langword="null"/> when the product has no price for that pair.</returns>
+    public decimal? PriceFor(string currencyCode, BillingCycle cycle)
+    {
+        var code = currencyCode.ToUpperInvariant();
+        return _prices.FirstOrDefault(p => p.CurrencyCode == code && p.Cycle == cycle)?.Amount;
+    }
+
+    /// <summary>Whether the product has at least one price in a currency.</summary>
+    /// <param name="currencyCode">ISO 4217 alpha code, any case.</param>
+    /// <returns><see langword="true"/> when a client billed in that currency can buy it.</returns>
+    public bool SellsIn(string currencyCode)
+    {
+        var code = currencyCode.ToUpperInvariant();
+        return _prices.Any(p => p.CurrencyCode == code);
+    }
 }

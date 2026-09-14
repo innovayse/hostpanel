@@ -1,53 +1,24 @@
 ﻿namespace Innovayse.Application.Billing.Common;
 
 /// <summary>
-/// Maps ISO 4217 alpha currency codes — as stored on <see cref="Innovayse.Domain.Clients.Client.Currency"/> —
-/// to their ISO 4217 numeric codes — as declared by hosted-gateway payment plugins via
-/// <see cref="Innovayse.SDK.Plugins.IPaymentPlugin.CurrencyCode"/>. Extend this map before enabling
-/// billing/payment in a new currency; an unmapped alpha code is treated as unsupported rather than
-/// silently allowed through.
+/// Turns a major-unit amount into the integer minor-unit form hosted-gateway payment plugins
+/// expect.
 /// </summary>
+/// <remarks>
+/// <see cref="ToMinorUnits"/> assumes the ISO 4217 exponent is 2 — a hundred minor units to the
+/// major — for every currency it is handed. <see cref="Innovayse.Domain.Billing.Currency.Decimals"/>
+/// is a display setting (how many places the storefront shows) and says nothing about the minor
+/// unit, so it is deliberately not consulted here. A currency's numeric code lives on that same
+/// row, which the operator configures, so no lookup table is compiled in.
+/// </remarks>
 public static class CurrencyCodes
 {
-    /// <summary>The alpha→numeric lookup table for currencies this panel plausibly bills in.</summary>
-    private static readonly Dictionary<string, string> AlphaToNumeric = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["USD"] = "840",
-        ["AMD"] = "051",
-        ["EUR"] = "978",
-        ["RUB"] = "643",
-    };
-
     /// <summary>
     /// Number of minor units (cents/luma/etc.) per major currency unit for every currency this
     /// panel bills in — all are 2-decimal ISO 4217 currencies, so a single constant covers them.
     /// Used to convert a decimal amount into the integer minor-unit form gateway APIs expect.
     /// </summary>
     public const int MinorUnitsPerMajor = 100;
-
-    /// <summary>
-    /// Maps an ISO 4217 alpha currency code to its numeric equivalent.
-    /// </summary>
-    /// <param name="alpha">The alpha code (e.g. "USD", "AMD").</param>
-    /// <returns>The numeric code (e.g. "840"), or <see langword="null"/> when the code is not mapped.</returns>
-    public static string? ToNumeric(string alpha) =>
-        AlphaToNumeric.TryGetValue(alpha, out var numeric) ? numeric : null;
-
-    /// <summary>
-    /// Resolves the alpha currency a payer is billed in: the client's own, or the panel default
-    /// when the client has none recorded (or there is no client — a guest at checkout).
-    /// </summary>
-    /// <remarks>
-    /// One rule, used both where a gateway payment is started and where the list of gateways is
-    /// built. It lives here so the two cannot disagree: a method the list offers because it read
-    /// the currency one way, and the start refuses because it read it another, is exactly the
-    /// checkout dead-end this exists to prevent.
-    /// </remarks>
-    /// <param name="clientCurrency">The client's recorded currency, or <see langword="null"/>.</param>
-    /// <param name="defaultCurrency">The panel-wide default from <c>Billing:DefaultCurrency</c>.</param>
-    /// <returns>The alpha code the payer is billed in.</returns>
-    public static string ResolvePayerCurrency(string? clientCurrency, string defaultCurrency) =>
-        string.IsNullOrWhiteSpace(clientCurrency) ? defaultCurrency : clientCurrency;
 
     /// <summary>
     /// Converts a decimal major-unit amount (e.g. 10.005 dollars) to its integer minor-unit

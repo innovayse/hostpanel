@@ -60,9 +60,8 @@ public sealed class MyBillingController(IMessageBus bus) : ControllerBase
         return Ok(invoice);
     }
 
-    /// <summary>Pays an invoice belonging to the authenticated client.</summary>
+    /// <summary>Pays an invoice belonging to the authenticated client, in the invoice's own currency.</summary>
     /// <param name="id">Invoice primary key.</param>
-    /// <param name="request">Payment request (currency).</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>204 No Content on success; 404 with <c>INVOICE_NOT_FOUND</c> when it is not the caller's.</returns>
     [HttpPost("{id:int}/pay")]
@@ -70,9 +69,9 @@ public sealed class MyBillingController(IMessageBus bus) : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> PayAsync(int id, [FromBody] PayInvoiceRequest request, CancellationToken ct)
+    public async Task<IActionResult> PayAsync(int id, CancellationToken ct)
     {
-        await bus.InvokeAsync(new PayMyInvoiceCommand(id, request.Currency), ct);
+        await bus.InvokeAsync(new PayMyInvoiceCommand(id), ct);
         return NoContent();
     }
 

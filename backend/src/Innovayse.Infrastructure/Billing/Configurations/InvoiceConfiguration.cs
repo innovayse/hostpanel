@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 /// <summary>EF Core configuration for the <see cref="Invoice"/> aggregate.</summary>
 public sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
 {
+    /// <summary>Column width for a three-character ISO 4217 currency code.</summary>
+    private const int CurrencyCodeLength = 3;
+
     /// <summary>Configures the <c>invoices</c> table mapping.</summary>
     /// <param name="builder">The entity type builder.</param>
     public void Configure(EntityTypeBuilder<Invoice> builder)
@@ -45,6 +48,9 @@ public sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.Property(x => x.Tax).HasColumnType("numeric(18,4)").IsRequired();
         builder.Property(x => x.SubTotal).HasColumnType("numeric(18,4)").IsRequired();
         builder.Property(x => x.Credit).HasColumnType("numeric(18,4)").IsRequired();
+        // The ISO 4217 code every amount on this invoice is in. Backfilled to USD by the
+        // AddInvoiceCurrency migration, because every invoice raised before it was a dollar figure.
+        builder.Property(x => x.Currency).IsRequired().HasMaxLength(CurrencyCodeLength);
 
         // Navigation: Invoice owns a collection of InvoiceItems via private backing field _items.
         builder.HasMany(x => x.Items)

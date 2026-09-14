@@ -97,6 +97,10 @@ public sealed class InvoiceRepository(AppDbContext db) : IInvoiceRepository
             .CountAsync(ct);
 
     /// <inheritdoc/>
+    public async Task<bool> AnyForClientAsync(int clientId, CancellationToken ct) =>
+        await db.Invoices.AnyAsync(i => i.ClientId == clientId, ct);
+
+    /// <inheritdoc/>
     public async Task<(IReadOnlyList<Invoice> Items, int TotalCount)> ListByClientAsync(
         int clientId, int page, int pageSize, InvoiceStatus? status,
         DateTimeOffset? from, DateTimeOffset? to, CancellationToken ct)

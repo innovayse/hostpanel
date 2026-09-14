@@ -29,7 +29,7 @@ public class CompleteGatewayPaymentHandlerTests
 
     private Invoice CreateInvoiceWithSession()
     {
-        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
+        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14), currency: "USD");
         invoice.AddItem("Hosting", 10m, 1);
         invoice.SetGatewaySession("inecobank", "gw-1");
         invoiceRepo.Setup(r => r.FindByIdAsync(invoice.Id, It.IsAny<CancellationToken>()))
@@ -126,7 +126,7 @@ public class CompleteGatewayPaymentHandlerTests
         uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ConcurrencyConflictException("concurrency conflict"));
 
-        var winner = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
+        var winner = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14), currency: "USD");
         winner.AddItem("Hosting", 10m, 1);
         winner.SetGatewaySession("inecobank", "gw-1");
         winner.MarkPaidViaGateway("ref-9");
@@ -159,7 +159,7 @@ public class CompleteGatewayPaymentHandlerTests
         // The reload must be a genuinely distinct, still-Unpaid instance — reusing `invoice`
         // would reflect its in-memory MarkPaidViaGateway() mutation even though SaveChanges
         // never persisted it, masking the very race this test exercises.
-        var stillUnpaidOnReload = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
+        var stillUnpaidOnReload = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14), currency: "USD");
         stillUnpaidOnReload.AddItem("Hosting", 10m, 1);
         stillUnpaidOnReload.SetGatewaySession("inecobank", "gw-1");
         invoiceRepo.SetupSequence(r => r.FindByIdAsync(invoice.Id, It.IsAny<CancellationToken>()))

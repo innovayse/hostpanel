@@ -133,6 +133,58 @@ namespace Innovayse.Infrastructure.Migrations
                     b.ToTable("billable_items", (string)null);
                 });
 
+            modelBuilder.Entity("Innovayse.Domain.Billing.Currency", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<int>("Decimals")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsBase")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Numeric")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<string>("Prefix")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<decimal>("RateToBase")
+                        .HasColumnType("numeric(18,8)");
+
+                    b.Property<string>("Suffix")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("IsBase")
+                        .IsUnique()
+                        .HasFilter("\"IsBase\" = true");
+
+                    b.ToTable("currencies", (string)null);
+                });
+
             modelBuilder.Entity("Innovayse.Domain.Billing.Invoice", b =>
                 {
                     b.Property<int>("Id")
@@ -149,6 +201,11 @@ namespace Innovayse.Infrastructure.Migrations
 
                     b.Property<decimal>("Credit")
                         .HasColumnType("numeric(18,4)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
 
                     b.Property<DateTimeOffset>("DueDate")
                         .HasColumnType("timestamp with time zone");
@@ -1863,6 +1920,38 @@ namespace Innovayse.Infrastructure.Migrations
                     b.ToTable("product_groups", (string)null);
                 });
 
+            modelBuilder.Entity("Innovayse.Domain.Products.ProductPrice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<string>("Cycle")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId", "CurrencyCode", "Cycle")
+                        .IsUnique();
+
+                    b.ToTable("product_prices", (string)null);
+                });
+
             modelBuilder.Entity("Innovayse.Domain.Servers.Server", b =>
                 {
                     b.Property<int>("Id")
@@ -3090,6 +3179,15 @@ namespace Innovayse.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Innovayse.Domain.Products.ProductPrice", b =>
+                {
+                    b.HasOne("Innovayse.Domain.Products.Product", null)
+                        .WithMany("Prices")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Innovayse.Domain.Servers.Server", b =>
                 {
                     b.HasOne("Innovayse.Domain.Servers.ServerGroup", null)
@@ -3218,6 +3316,11 @@ namespace Innovayse.Infrastructure.Migrations
             modelBuilder.Entity("Innovayse.Domain.Orders.Order", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("Innovayse.Domain.Products.Product", b =>
+                {
+                    b.Navigation("Prices");
                 });
 
             modelBuilder.Entity("Innovayse.Domain.Products.ProductGroup", b =>

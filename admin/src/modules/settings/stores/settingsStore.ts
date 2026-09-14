@@ -106,7 +106,7 @@ export const useSettingsStore = defineStore('settings', () => {
     loading.value = true
     error.value = null
     try {
-      products.value = await request<Product[]>('/products?activeOnly=false')
+      products.value = await request<Product[]>('/products?activeOnly=false&includeUnsellable=true')
     } catch {
       error.value = 'Failed to load products.'
     } finally {

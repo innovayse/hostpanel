@@ -2,14 +2,12 @@
 
 using Innovayse.Application.Admin.Plugins.Interfaces;
 using Innovayse.Application.Billing.Common;
+using Innovayse.Application.Billing.Extensions;
 using Innovayse.Application.Billing.Interfaces;
-using Innovayse.Application.Billing.Options;
-using Innovayse.Application.Common;
-using Innovayse.Domain.Clients.Interfaces;
+using Innovayse.Domain.Billing.Interfaces;
 using Innovayse.Domain.Settings;
 using Innovayse.Domain.Settings.Interfaces;
 using Innovayse.SDK.Plugins;
-using Microsoft.Extensions.Options;
 
 /// <summary>
 /// Lists the payment gateways a payer can actually use: the built-in methods that are both
@@ -29,26 +27,40 @@ using Microsoft.Extensions.Options;
 /// is not offered no matter what credentials the deployment carries.
 /// </param>
 /// <param name="stripe">Stripe service, asked whether the deployment carries a key at all.</param>
-/// <param name="caller">The caller, so a signed-in client's own billing currency can be read.</param>
-/// <param name="clientRepo">Client repository, for that currency.</param>
-/// <param name="billingOptions">Panel billing defaults, for the currency a guest or an unset client is billed in.</param>
+/// <param name="payerCurrency">
+/// The one rule for which currency the caller is billed in -- their client's, else the base --
+/// shared with everything that creates an invoice, so a listed gateway and the invoice it will
+/// be asked to pay cannot disagree.
+/// </param>
+/// <param name="currencies">
+/// The configured currencies, for the one a caller names instead of their own.
+/// </param>
 public sealed class ListAvailablePaymentMethodsHandler(
     IPluginRegistry plugins,
     IPaymentPluginResolver pluginResolver,
     ISettingRepository settings,
     IStripeService stripe,
-    ICurrentRequestContext caller,
-    IClientRepository clientRepo,
-    IOptions<BillingOptions> billingOptions)
+    IPayerCurrencyResolver payerCurrency,
+    ICurrencyRepository currencies)
 {
     /// <summary>Builds the list of methods available right now.</summary>
-    /// <param name="query">The query (no parameters).</param>
+    /// <param name="query">The query; names the currency to list for, or none for the caller's own.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Available methods, built-ins first, then plugins in load order.</returns>
+    /// <returns>
+    /// Available methods, built-ins first, then plugins in load order — empty when the query
+    /// names a currency the panel does not offer, since nothing can take money in it.
+    /// </returns>
     public async Task<IReadOnlyList<AvailablePaymentMethodDto>> HandleAsync(
         ListAvailablePaymentMethodsQuery query, CancellationToken ct)
     {
         var methods = new List<AvailablePaymentMethodDto>();
+
+        // Settled first: a currency nobody can be billed in has no methods, whatever is switched on.
+        var payerCurrencyNumeric = await ResolvePayerCurrencyNumericAsync(query.CurrencyCode, ct);
+        if (payerCurrencyNumeric is null)
+        {
+            return methods;
+        }
 
         // Configured is not enough on its own: an operator who switched Stripe off on the admin
         // integrations page still had it offered at checkout as long as the deployment carried
@@ -73,9 +85,8 @@ public sealed class ListAvailablePaymentMethodsHandler(
         // "299" and have it read as 2.99 AMD for a $2.99 invoice. That refusal is right, but it
         // was landing *after* the payer had picked the method and pressed Place Order. The
         // currency is known here too, so a gateway that cannot take this payer's money is simply
-        // not offered. Same rule, same helper, so the two cannot drift.
-        var payerCurrencyNumeric = await ResolvePayerCurrencyNumericAsync(ct);
-
+        // not offered. The resolver that names the currency here is the one every invoice is
+        // created with, so what is listed and what the invoice then bills in cannot drift.
         foreach (var manifest in plugins.GetLoadedManifests().Where(m => m.Type == PluginType.Payment))
         {
             // Ask the resolver rather than re-deriving "enabled and configured" from settings by
@@ -87,10 +98,7 @@ public sealed class ListAvailablePaymentMethodsHandler(
                 continue;
             }
 
-            // A payer whose currency has no ISO numeric mapping cannot pay through any gateway --
-            // the start would refuse for that very reason -- so none is listed for them.
-            if (payerCurrencyNumeric is null
-                || !string.Equals(payerCurrencyNumeric, plugin.CurrencyCode, StringComparison.Ordinal))
+            if (!string.Equals(payerCurrencyNumeric, plugin.CurrencyCode, StringComparison.Ordinal))
             {
                 continue;
             }
@@ -102,24 +110,24 @@ public sealed class ListAvailablePaymentMethodsHandler(
     }
 
     /// <summary>
-    /// Works out which ISO 4217 numeric currency the caller is billed in: their client record's
-    /// when they are signed in and have one, the panel default otherwise (a guest at checkout is
-    /// billed in the default, and that is the currency the order they are about to place will
-    /// carry).
+    /// Works out which ISO 4217 numeric currency the list is for: the one the query names when it
+    /// names one, otherwise the caller's — their client record's when they are signed in and
+    /// have one, the base currency for anyone else.
     /// </summary>
+    /// <param name="requested">The alpha code the query named, or <see langword="null"/> for the caller's own.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The numeric code, or <see langword="null"/> when the alpha code has no mapping.</returns>
-    private async Task<string?> ResolvePayerCurrencyNumericAsync(CancellationToken ct)
+    /// <returns>
+    /// The numeric code of the configured currency, or <see langword="null"/> when the query
+    /// named one the panel does not offer.
+    /// </returns>
+    private async Task<string?> ResolvePayerCurrencyNumericAsync(string? requested, CancellationToken ct)
     {
-        string? clientCurrency = null;
-        if (caller.UserId is { } userId)
+        if (requested is null)
         {
-            var client = await clientRepo.FindByUserIdAsync(userId, ct);
-            clientCurrency = client?.Currency;
+            return (await payerCurrency.ForCallerAsync(ct)).Numeric;
         }
 
-        var alpha = CurrencyCodes.ResolvePayerCurrency(clientCurrency, billingOptions.Value.DefaultCurrency);
-        return CurrencyCodes.ToNumeric(alpha);
+        return (await currencies.FindOfferedAsync(requested, ct))?.Numeric;
     }
 
     /// <summary>

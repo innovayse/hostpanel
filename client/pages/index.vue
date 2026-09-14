@@ -22,6 +22,8 @@
  * and schema.org output, which is why those calls live here and never inside a
  * template.
  */
+import { useCurrencyStore } from '~/stores/currency'
+
 const { t } = useI18n()
 const { slot } = useTemplate()
 
@@ -48,6 +50,12 @@ injectSchema([
 
 const { results: domainResults, pending: domainPending, search, offeredTlds } = useDomainLookup()
 const { plans } = usePortalPlans()
+
+const currencyStore = useCurrencyStore()
+onMounted(() => {
+  currencyStore.init()
+  currencyStore.load()
+})
 
 const yearly = ref(false)
 

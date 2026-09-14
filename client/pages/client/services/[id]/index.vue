@@ -405,11 +405,7 @@
                       </td>
                       <td class="py-3 text-gray-500 dark:text-gray-400">{{ formatDate(inv.invoiceDate) }}</td>
                       <td class="py-3 text-gray-500 dark:text-gray-400">{{ formatDate(inv.dueDate) }}</td>
-                      <!--
-                        No currency argument: the API sends none on an invoice, and
-                        `formatCurrency` renders grouped digits rather than guessing a symbol.
-                      -->
-                      <td class="py-3 text-right text-gray-900 dark:text-white font-medium">{{ formatCurrency(inv.total) }}</td>
+                      <td class="py-3 text-right text-gray-900 dark:text-white font-medium">{{ formatCurrency(inv.total, { code: inv.currency }) }}</td>
                       <td class="py-3 text-right"><ClientStatusBadge :status="inv.status" /></td>
                     </tr>
                   </tbody>
@@ -772,6 +768,8 @@ interface ServiceInvoice {
   dueDate: string
   /** Grand total after tax and credit. */
   total: number
+  /** ISO 4217 code this invoice was raised and is payable in — fixed at creation. */
+  currency: string
   /** Lifecycle status name, e.g. `Unpaid`, `Paid`, `Overdue`. */
   status: string
 }

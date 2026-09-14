@@ -12,7 +12,16 @@
  * product copy is a backend change — a `ProductTranslation` entity beside the existing
  * `SlideTranslation` — and until it exists this parameter can only mislead its caller.
  */
-export default defineCachedEventHandler(async (event) => {
+import type { H3Event } from 'h3'
+
+/**
+ * The actual product fetch — pulled out so a signed-in caller can bypass the shared cache
+ * below entirely (see the wrapper's note).
+ *
+ * @param event - The request event.
+ * @returns The catalogue, filtered to `pid` when given, priced in the caller's own currency.
+ */
+async function loadProducts(event: H3Event) {
   const query = getQuery(event)
   const params = new URLSearchParams()
 
@@ -30,6 +39,11 @@ export default defineCachedEventHandler(async (event) => {
     params.set('groupId', String(query.gid))
   }
 
+  // Anonymous callers may ask for prices in a specific enabled currency (the storefront's
+  // currency picker) — forwarded straight through, same as `tld-pricing.get.ts` does.
+  // `ProductsController`/`GetProductsHandler` ignore it for a signed-in caller.
+  if (query.currency) params.set('currency', String(query.currency))
+
   const qs = params.toString()
   const all = await internalApiCall<Record<string, unknown>[]>(event, `/products${qs ? `?${qs}` : ''}`)
 
@@ -45,35 +59,44 @@ export default defineCachedEventHandler(async (event) => {
     ? all.filter(p => Number(p.id) === pid)
     : all
 
-  // Map backend fields to frontend WHMCS-compatible format
-  return products.map(p => {
-    const pricing = p.pricing as { monthly?: number; annual?: number } | undefined
-    return {
-      ...p,
-      pid: p.id,
-      pricing: {
-        USD: {
-          prefix: '$',
-          suffix: '',
-          monthly: pricing?.monthly?.toFixed(2) ?? '-1.00',
-          quarterly: '-1.00',
-          semiannually: '-1.00',
-          annually: pricing?.annual?.toFixed(2) ?? '-1.00',
-          biennially: '-1.00',
-          triennially: '-1.00',
-        },
-      },
-    }
-  })
-}, {
+  // `pricing` and `prices` are forwarded exactly as `ProductDto` sends them — `pricing` is
+  // already the amount in the caller's own currency (their client record's, the base currency
+  // for a guest with no `currency` request, or the requested enabled currency otherwise), and
+  // relabelling it here used to hardcode `USD`/`$` regardless of what currency it actually was.
+  // See the note on `types/portalproduct.ts`.
+  return products.map(p => ({
+    ...p,
+    pid: p.id
+  }))
+}
+
+const cachedLoadProducts = defineCachedEventHandler(loadProducts, {
   name: 'backend-products',
   maxAge: 3600,
   swr: true,
-  // The key carries no locale. It used to, which meant three cached copies of a response the
-  // backend renders identically in every language.
+  // The key carries no locale — a page's language was never the right thing to price by, and
+  // this cached path is only ever reached anonymously (see the wrapper below). It DOES carry
+  // `currency` now: an anonymous caller can request pricing in any enabled currency, and a
+  // response priced in USD must never be served back to a request that asked for AMD (or vice
+  // versa) — the entries below are one cache per (filters, currency) pair.
   getKey: (event) => {
     const query = getQuery(event)
     const filters = query.pid ? `p${query.pid}` : (query.gids || query.gid || 'all')
-    return `products:${filters}`
+    const currency = query.currency ? String(query.currency).toUpperCase() : 'base'
+    return `products:${filters}:${currency}`
   }
+})
+
+/**
+ * A signed-in caller's products are priced in *their* currency, not the base currency the
+ * cached path above answers with — sharing that cache across every signed-in client would
+ * hand one client's prices to another the next time the key matched. So a request carrying an
+ * auth cookie skips the cache and calls the backend directly; only a guest's request, always
+ * priced in the base currency, is safe to share.
+ */
+export default defineEventHandler(async (event) => {
+  if (getCookie(event, 'auth_token')) {
+    return await loadProducts(event)
+  }
+  return await cachedLoadProducts(event)
 })

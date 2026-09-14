@@ -37,7 +37,8 @@
           <button
             v-if="result.status === 'available'"
             type="button"
-            :disabled="inCart.includes(result.name)"
+            :disabled="inCart.includes(result.name) || currencyBlocked.includes(result.name)"
+            :title="currencyBlocked.includes(result.name) ? t('domains.currencyMismatch') : undefined"
             class="rounded-[10px] border border-line2 bg-brand px-[18px] py-[11px] text-sm font-bold text-on-tint hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
             @click="emit('add', result.name)"
           >
@@ -69,7 +70,13 @@ withDefaults(defineProps<{
   hasZones?: boolean
   /** Domains already in the cart, so their button reads as done rather than repeating. */
   inCart?: string[]
-}>(), { results: () => [], pending: false, hasZones: true, inCart: () => [] })
+  /**
+   * Available result names whose TLD sells in a currency other than the payer's current one —
+   * the cart store refuses these, so the button is shown disabled with a hint instead of doing
+   * nothing when clicked. Same rule as the classic template's `canAddDomain`.
+   */
+  currencyBlocked?: string[]
+}>(), { results: () => [], pending: false, hasZones: true, inCart: () => [], currencyBlocked: () => [] })
 
 const emit = defineEmits<{ add: [domain: string] }>()
 

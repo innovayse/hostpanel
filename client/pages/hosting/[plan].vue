@@ -188,24 +188,40 @@
 <script setup lang="ts">
 import { ArrowLeft, AlertCircle, CheckCircle, ShoppingCart, Lock } from 'lucide-vue-next'
 import { useCartStore } from '~/stores/cart'
+import { useCurrencyStore } from '~/stores/currency'
 import { useCatalogApi } from '~/composables/apis/useCatalogApi'
+import { formatMoney } from '~/utils/formatMoney'
+import type { PortalProduct } from '~/types/portalproduct'
 
 const { t: $t, locale } = useI18n()
 const route = useRoute()
 const localePath = useLocalePath()
 const cart = useCartStore()
+const currencyStore = useCurrencyStore()
+onMounted(() => {
+  currencyStore.init()
+  currencyStore.load()
+})
 
-const currencyByLocale: Record<string, string> = { en: 'USD', hy: 'AMD', ru: 'RUB' }
+/** The payer's currency to format and price with — never chosen by the page's language. */
+const payerCurrency = computed(() => currencyStore.moneyCurrencyFor(currencyStore.payerCode))
 
 // Straight from the API composable rather than through a store: this page fetches once and
 // owns the result alone, which is the named exception to component -> store -> api. A store
 // would also cost the SSR dedup and the locale re-fetch that `useApi()` gives for free, and
 // this page is server-rendered and indexed.
+// `currency` is passed the same way `usePortalPlans.ts` passes it — the payer's currency, so
+// the getter re-reads and the request re-fetches once `payerCode` resolves or changes.
 const { data: plans, pending } = await useCatalogApi().loadProducts(
-  () => ({ gid: 1 })
+  () => ({ gid: 1, currency: currencyStore.payerCode ?? undefined })
 )
 
-const selectedCycle = ref('monthly')
+/** The billing cycle the visitor has chosen; the backend prices only these two. */
+type CycleKey = 'monthly' | 'annual'
+const selectedCycle = ref<CycleKey>('monthly')
+
+/** Maps the API's cycle key to the `hosting.cycles.*` i18n key — spelled differently. */
+const cycleI18nKey: Record<CycleKey, string> = { monthly: 'monthly', annual: 'annually' }
 
 function planSlug(name: string): string {
   const clean = (name || '')
@@ -239,45 +255,48 @@ const planSummary = computed(() => parsedPlan.value.summary)
 /** Bullet lines of the plan description, markers stripped. */
 const planFeatures = computed(() => parsedPlan.value.features)
 
-function getPlanPrice(plan: any): string {
-  const preferred = currencyByLocale[locale.value] ?? 'USD'
-  const currency = plan.pricing[preferred] ?? Object.values(plan.pricing)[0] as any
-  if (!currency) return $t('hosting.custom')
-  const amount = currency[selectedCycle.value] || currency.monthly
-  if (!amount || amount === '-1.00' || amount === '0.00') return $t('hosting.custom')
-  return `${currency.prefix}${amount}`
+/**
+ * The plan's price for one cycle, in the caller's own currency, as the API sent it.
+ *
+ * @param plan - The plan.
+ * @param key - The billing cycle.
+ * @returns The amount, or null when the plan carries no price for that cycle.
+ */
+function cycleAmount(plan: PortalProduct, key: CycleKey): number | null {
+  return plan.pricing?.[key] ?? null
+}
+
+function getPlanPrice(plan: PortalProduct): string {
+  const amount = cycleAmount(plan, selectedCycle.value) ?? cycleAmount(plan, 'monthly')
+  if (amount === null) return $t('hosting.custom')
+  return formatMoney(amount, payerCurrency.value)
 }
 
 function handleAddToCart() {
-  if (!currentPlan.value) return
+  if (!currentPlan.value || !currencyStore.payerCode) return
   const plan = currentPlan.value
-  const preferred = currencyByLocale[locale.value] ?? 'USD'
-  const pricing = plan.pricing[preferred] ?? Object.values(plan.pricing)[0] as any
-  
-  // Determine best cycle: if selected cycle has price > 0, use it. 
-  // Otherwise, look for 'free' or 0.00 pricing.
-  let amount = pricing[selectedCycle.value] || pricing.monthly
-  let finalCycle = selectedCycle.value
-  
-  if (!amount || amount === '-1.00' || amount === '0.00') {
-    // Check if it's a free plan or has no price for the selected cycle
+
+  // Determine best cycle: if the selected one is priced, use it; otherwise fall back to
+  // monthly, and finally to a "free" plan the name itself declares.
+  let amount = cycleAmount(plan, selectedCycle.value) ?? cycleAmount(plan, 'monthly')
+  let finalCycle: string = selectedCycle.value
+
+  if (amount === null) {
     if (plan.name.toLowerCase().includes('free')) {
       finalCycle = 'free'
-      amount = '0.00'
+      amount = 0
     } else {
-      // Fallback to monthly or first available
-      amount = pricing.monthly || '0.00'
+      return
     }
   }
-  
+
   cart.addItem({
-    pid: plan.pid,
+    pid: plan.pid!,
     name: plan.name,
     billingcycle: finalCycle,
-    cycleLabel: finalCycle === 'free' ? $t('hosting.cycles.free') : $t(`hosting.cycles.${finalCycle}`),
-    price: (finalCycle === 'free' || amount === '0.00') ? $t('hosting.custom') : `${pricing.prefix}${amount}`,
-    prefix: pricing.prefix,
-    rawPrice: amount
+    cycleLabel: finalCycle === 'free' ? $t('hosting.cycles.free') : $t(`hosting.cycles.${cycleI18nKey[finalCycle as CycleKey]}`),
+    amount,
+    currency: currencyStore.payerCode
   })
 }
 
@@ -285,17 +304,13 @@ const billingCycles = computed(() => {
   const plan = currentPlan.value
   if (!plan?.pricing) return []
 
-  const preferred = currencyByLocale[locale.value] ?? 'USD'
-  const currency = plan.pricing[preferred] ?? Object.values(plan.pricing)[0] as any
-  if (!currency) return []
-
-  const cycleKeys = ['monthly', 'quarterly', 'semiannually', 'annually', 'biennially', 'triennially'] as const
+  const cycleKeys: readonly CycleKey[] = ['monthly', 'annual']
   return cycleKeys
-    .filter(key => currency[key] && currency[key] !== '-1.00' && currency[key] !== '0.00')
+    .filter(key => cycleAmount(plan, key) !== null)
     .map(key => ({
       key,
-      label: $t(`hosting.cycles.${key}`),
-      price: `${currency.prefix}${currency[key]}`
+      label: $t(`hosting.cycles.${cycleI18nKey[key]}`),
+      price: formatMoney(cycleAmount(plan, key), payerCurrency.value)
     }))
 })
 

@@ -126,10 +126,16 @@
 <script setup lang="ts">
 import { Zap, Rocket, ShieldCheck, CheckCircle, Clock, CreditCard, Headphones } from 'lucide-vue-next'
 import { useCatalogApi } from '~/composables/apis/useCatalogApi'
+import { useCurrencyStore } from '~/stores/currency'
 
 const route = useRoute()
 const { t } = useI18n()
 const localePath = useLocalePath()
+const currencyStore = useCurrencyStore()
+onMounted(() => {
+  currencyStore.init()
+  currencyStore.load()
+})
 
 const productSlug = route.params.product as string
 
@@ -147,10 +153,14 @@ const cfg = computed(() => productConfig[productSlug] ?? {
 // owns the result alone, which is the named exception to component -> store -> api. A store
 // would also cost the SSR dedup and the locale re-fetch that `useApi()` gives for free, and
 // this page is server-rendered and indexed.
+// `currency` is passed the same way `usePortalPlans.ts` passes it — the payer's currency, so
+// the getter re-reads and the request re-fetches once `payerCode` resolves or changes. This
+// page shows no price itself, but sharing the query shape keeps it on the same cache key as
+// every other caller instead of forcing a second, base-currency fetch of the same products.
 const { data: products } = await useCatalogApi().loadProducts(
   () => {
     const gid = Object.entries(productGidToKey).find(([, key]) => key === productSlug)?.[0]
-    return { gid: gid ? Number(gid) : undefined }
+    return { gid: gid ? Number(gid) : undefined, currency: currencyStore.payerCode ?? undefined }
   }
 )
 

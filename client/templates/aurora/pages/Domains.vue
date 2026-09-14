@@ -29,6 +29,7 @@
       :pending="pending"
       :has-zones="priceRows.length > 0"
       :in-cart="inCart"
+      :currency-blocked="currencyBlocked"
       @add="domain => emit('add', domain)"
     />
 
@@ -58,6 +59,11 @@ withDefaults(defineProps<{
   activeCategory?: string
   /** Domains already in the cart. */
   inCart?: string[]
+  /**
+   * Available result names whose TLD sells in a currency other than the payer's — the store
+   * refuses to add these, so the "Add" button is shown disabled instead of silently no-oping.
+   */
+  currencyBlocked?: string[]
 }>(), {
   priceRows: () => [],
   results: () => [],
@@ -65,6 +71,7 @@ withDefaults(defineProps<{
   categories: () => [],
   activeCategory: ALL_CATEGORY,
   inCart: () => [],
+  currencyBlocked: () => [],
 })
 
 const emit = defineEmits<{

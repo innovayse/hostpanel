@@ -36,6 +36,7 @@ const invoice = (over: Partial<ClientInvoice> = {}): ClientInvoice => ({
   clientId: 1,
   clientName: 'Test Client',
   status: 'Unpaid',
+  currency: 'USD',
   invoiceDate: '2026-08-01T00:00:00+00:00',
   dueDate: '2026-08-15T00:00:00+00:00',
   createdAt: '2026-08-01T00:00:00+00:00',

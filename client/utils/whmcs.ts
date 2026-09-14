@@ -2,9 +2,6 @@
  * Shared WHMCS helpers — auto-imported by Nuxt from utils/
  */
 
-/** Maps locale code to the currency code used by WHMCS pricing */
-export const currencyByLocale: Record<string, string> = { hy: 'AMD', ru: 'RUB', en: 'USD' }
-
 /** All product group IDs shown on /products (hosting + SaaS) */
 export const productGids = [1, 3, 4, 5, 6, 7, 8, 9]
 

@@ -8,14 +8,15 @@ export interface CartItem {
   billingcycle: string
   /** Localised cycle label, e.g. "Monthly", "1 Year" */
   cycleLabel: string
-  /** Formatted price string, e.g. "$9.99" (used for hosting items) */
-  price: string
-  /** Currency prefix, e.g. "$" (used for hosting items) */
-  prefix: string
-  /** Raw numeric price string, e.g. "9.99" (used for hosting items) */
-  rawPrice: string
-  /** Base price in AMD for domain items — converted to display currency at render time */
-  priceAmd?: number
+  /**
+   * Numeric price for one billing cycle, in {@link currency}. Stored as sent by the API —
+   * never converted, never re-labelled. An item whose `currency` no longer matches the payer's
+   * current currency (they changed it after adding) is excluded from the cart total and
+   * flagged for removal rather than silently reprised; see `stores/cart.ts`.
+   */
+  amount: number
+  /** ISO 4217 code {@link amount} is priced in, e.g. "AMD". */
+  currency: string
   /** Domain name for hosting or domain items */
   domain?: string
   /** Hostname for VPS/server items */

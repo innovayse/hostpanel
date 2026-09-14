@@ -99,7 +99,7 @@
                     : { backgroundColor: 'transparent', borderColor: 'rgba(255,255,255,0.15)', color: '#9ca3af' }"
                   @click="selectedCycle = cycle"
                 >
-                  {{ $t(`products.pricing.cycles.${cycle}`) }}
+                  {{ $t(`products.pricing.cycles.${cycleI18nKey[cycle]}`) }}
                 </button>
               </div>
 
@@ -260,7 +260,9 @@
 
 import { Sparkle, CheckCircle, DollarSign, ShieldCheck, PlayCircle, ShoppingCart, Check } from 'lucide-vue-next'
 import { useCartStore } from '~/stores/cart'
+import { useCurrencyStore } from '~/stores/currency'
 import { useCatalogApi } from '~/composables/apis/useCatalogApi'
+import { formatMoney } from '~/utils/formatMoney'
 
 const { t, locale } = useI18n()
 const localePath = useLocalePath()
@@ -273,15 +275,22 @@ const _productsBaseUrl = _productsConfig.public.baseUrl || 'https://innovayse.co
 /** Route param: e.g. "smartlearn-system" */
 const productId = route.params.product as string
 
-// productConfig, currencyByLocale, nameToKey, parseDescription — auto-imported from utils/whmcs.ts
+// Declared before the fetch below: its getter reads `currencyStore.payerCode` immediately, so
+// the store must already exist by the time `loadProducts` calls it.
+const currencyStore = useCurrencyStore()
+
+// productConfig, nameToKey, parseDescription — auto-imported from utils/whmcs.ts
 
 // Fetch all SaaS product groups in one request (gids 3-9, fetched in parallel server-side)
 // Straight from the API composable rather than through a store: this page fetches once and
 // owns the result alone, which is the named exception to component -> store -> api. A store
 // would also cost the SSR dedup and the locale re-fetch that `useApi()` gives for free, and
 // this page is server-rendered and indexed.
+//
+// `currency` is passed the same way `usePortalPlans.ts` passes it — the payer's currency, so
+// the getter re-reads and the request re-fetches once `payerCode` resolves or changes.
 const { data: whmcsRaw } = await useCatalogApi().loadProducts(
-  () => ({ gids: productGids.join(',') })
+  () => ({ gids: productGids.join(','), currency: currencyStore.payerCode ?? undefined })
 )
 
 /** Find and shape the single product matching the route param */
@@ -309,8 +318,6 @@ const productData = computed(() => {
   const key = productGidToKey[Number(w.groupId)] ?? (w.slug as string)?.trim() ?? nameToKey(w.name as string)
   const cfg = productConfig[key] ?? { icon: 'cube', color: '#6366f1', demoUrl: '', learnMoreUrl: '' }
 
-  const preferred = currencyByLocale[locale.value] ?? 'USD'
-
   // Features come from the description. A structured `group_features` array and a
   // `translated_description` used to be preferred ahead of it; the API sends neither, so this
   // parse was always the one that produced the list. Structured specification lines are their
@@ -322,19 +329,15 @@ const productData = computed(() => {
     Number(p.groupId) === Number(w.groupId) && (p.slug as string)?.trim() !== key
   )
 
-  const cycleKeys = ['monthly', 'quarterly', 'semiannually', 'annually', 'biennially', 'triennially'] as const
+  const cycleKeys = ['monthly', 'annual'] as const
 
   const plans = childPlans.map((plan: any) => {
-    const planCurrency = plan.pricing
-      ? (plan.pricing[preferred] ?? Object.values(plan.pricing)[0] as any)
-      : null
     const { features: planFeatures } = parseDescription(plan.description || '')
     return {
       pid: plan.pid as number,
       product_url: (plan.product_url as string) || '',
       tier: plan.name,
-      currency: planCurrency as Record<string, string> | null,
-      prefix: planCurrency?.prefix ?? '',
+      pricing: (plan.pricing ?? null) as { monthly: number | null; annual: number | null } | null,
       features: planFeatures
     }
   })
@@ -359,14 +362,15 @@ const productData = computed(() => {
   }
 })
 
-const allCycleKeys = ['monthly', 'quarterly', 'semiannually', 'annually', 'biennially', 'triennially'] as const
+const allCycleKeys = ['monthly', 'annual'] as const
 type CycleKey = typeof allCycleKeys[number]
+
+/** Maps the API's cycle key to the `products.pricing.cycles.*` / `hosting.cycles.*` i18n key. */
+const cycleI18nKey: Record<CycleKey, string> = { monthly: 'monthly', annual: 'annually' }
 
 const availableCycles = computed(() =>
   allCycleKeys.filter(k =>
-    productData.value?.plans.some(p =>
-      p.currency?.[k] && p.currency[k] !== '-1.00' && p.currency[k] !== '0.00'
-    )
+    productData.value?.plans.some(p => p.pricing?.[k] !== null && p.pricing?.[k] !== undefined)
   )
 )
 
@@ -378,10 +382,13 @@ watch(availableCycles, (cycles) => {
   }
 }, { immediate: true })
 
-function planPrice(plan: { currency: Record<string, string> | null; prefix: string }): string {
-  const val = plan.currency?.[selectedCycle.value]
-  if (!val || val === '-1.00' || val === '0.00') return ''
-  return `${plan.prefix}${val}`
+/** The payer's currency to format prices with — never chosen by the page's language. */
+const payerCurrency = computed(() => currencyStore.moneyCurrencyFor(currencyStore.payerCode))
+
+function planPrice(plan: { pricing: { monthly: number | null; annual: number | null } | null }): string {
+  const val = plan.pricing?.[selectedCycle.value]
+  if (val === null || val === undefined) return ''
+  return formatMoney(val, payerCurrency.value)
 }
 
 // Breadcrumb items
@@ -391,7 +398,11 @@ const breadcrumbItems = computed(() => [
 ])
 
 const cart = useCartStore()
-onMounted(() => cart.init())
+onMounted(() => {
+  cart.init()
+  currencyStore.init()
+  currencyStore.load()
+})
 
 const openDemo = (url?: string) => {
   if (url) window.open(url, '_blank')
@@ -436,22 +447,18 @@ const handlePricingCTA = (plan: { product_url: string; pid: number }) => {
 }
 
 /** Add a plan to cart with the currently-selected billing cycle */
-function addPlanToCart(plan: { pid: number; tier: string; currency: Record<string, string> | null; prefix: string }) {
+function addPlanToCart(plan: { pid: number; tier: string; pricing: { monthly: number | null; annual: number | null } | null }) {
   const cycleKey = selectedCycle.value
-  const rawPrice = plan.currency?.[cycleKey] ?? '0'
-  const cycleLabel = t(`hosting.cycles.${cycleKey}`)
-  const price = (rawPrice && rawPrice !== '-1.00' && rawPrice !== '0.00')
-    ? `${plan.prefix}${rawPrice}`
-    : t('hosting.custom')
+  const amount = plan.pricing?.[cycleKey]
+  if (amount === null || amount === undefined || !currencyStore.payerCode) return
 
   cart.addItem({
     pid: plan.pid,
     name: plan.tier,
     billingcycle: cycleKey,
-    cycleLabel,
-    price,
-    prefix: plan.prefix,
-    rawPrice
+    cycleLabel: t(`hosting.cycles.${cycleI18nKey[cycleKey]}`),
+    amount,
+    currency: currencyStore.payerCode
   })
 }
 

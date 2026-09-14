@@ -149,13 +149,13 @@
                 </div>
 
                 <div class="mb-8 p-6 rounded-3xl bg-white/[0.03] border border-white/5">
-                  <div v-if="getPlanPriceRawHelper(plan, selectedCycle)" class="flex items-baseline gap-1 mb-6">
-                    <span v-if="locale !== 'hy'" class="text-xl font-bold text-gray-500">{{ activeCurrencyPrefix }}</span>
+                  <div v-if="getPlanPriceRawHelper(plan, selectedCycle) !== null" class="flex items-baseline gap-1 mb-6">
+                    <span v-if="activeCurrencyPrefix" class="text-xl font-bold text-gray-500">{{ activeCurrencyPrefix }}</span>
                     <span class="text-5xl font-black text-white tabular-nums tracking-tighter">
                       {{ formatAmountHelper(getPlanPriceRawHelper(plan, selectedCycle)) }}
                     </span>
-                    <span v-if="locale === 'hy'" class="text-xl font-bold text-white ml-1">֏</span>
-                    <span class="text-gray-500 text-xs font-bold uppercase tracking-widest">/ {{ $t(`hosting.cycles.${selectedCycle}`) }}</span>
+                    <span v-if="payerCurrency.suffix" class="text-xl font-bold text-white ml-1">{{ payerCurrency.suffix }}</span>
+                    <span class="text-gray-500 text-xs font-bold uppercase tracking-widest">/ {{ $t(`hosting.cycles.${cycleI18nKey[selectedCycle]}`) }}</span>
                   </div>
                   <div v-else class="mb-6">
                     <span class="text-2xl font-black text-white uppercase tracking-tighter">{{ $t('hosting.custom') }}</span>
@@ -173,7 +173,7 @@
                         : 'text-gray-500 hover:bg-white/5 hover:text-gray-300'"
                       @click="selectedCycle = c.key"
                     >
-                      <span class="uppercase tracking-widest">{{ $t(`hosting.cycles.${c.key}`) }}</span>
+                      <span class="uppercase tracking-widest">{{ $t(`hosting.cycles.${cycleI18nKey[c.key]}`) }}</span>
                       <span class="font-mono">{{ c.price }}</span>
                     </div>
                   </div>
@@ -241,14 +241,14 @@
                 </div>
                 <div class="w-full lg:w-[320px] flex flex-col items-center lg:items-end gap-8 text-center lg:text-right">
                   <div class="flex flex-col gap-1">
-                    <div v-if="getPlanPriceRawHelper(agencyPlan, selectedCycle)" class="flex items-baseline justify-center lg:justify-end gap-1">
-                      <span v-if="locale !== 'hy'" class="text-2xl font-bold text-gray-500">{{ activeCurrencyPrefix }}</span>
+                    <div v-if="agencyPlan && getPlanPriceRawHelper(agencyPlan, selectedCycle) !== null" class="flex items-baseline justify-center lg:justify-end gap-1">
+                      <span v-if="activeCurrencyPrefix" class="text-2xl font-bold text-gray-500">{{ activeCurrencyPrefix }}</span>
                       <span class="text-6xl md:text-7xl font-black text-white tabular-nums tracking-tighter-2 bg-clip-text text-transparent bg-gradient-to-b from-white to-primary-500 leading-none">
                         {{ formatAmountHelper(getPlanPriceRawHelper(agencyPlan, selectedCycle)) }}
                       </span>
-                      <span v-if="locale === 'hy'" class="text-3xl font-bold text-white ml-2">֏</span>
+                      <span v-if="payerCurrency.suffix" class="text-3xl font-bold text-white ml-2">{{ payerCurrency.suffix }}</span>
                     </div>
-                    <div class="text-gray-500 text-xs font-black uppercase tracking-[0.2em] mt-2">/ {{ $t(`hosting.cycles.${selectedCycle}`) }}</div>
+                    <div class="text-gray-500 text-xs font-black uppercase tracking-[0.2em] mt-2">/ {{ $t(`hosting.cycles.${cycleI18nKey[selectedCycle]}`) }}</div>
                   </div>
                   <div class="flex flex-col gap-4 w-full">
                     <UiButton 
@@ -292,8 +292,8 @@
                         <div class="text-[10px] md:text-sm font-black text-white mb-2 group-hover/col:text-cyan-400 transition-colors uppercase tracking-widest leading-tight">
                           {{ formatPlanNameHelper(plan.name) }}
                         </div>
-                        <div v-if="getPlanPriceRawHelper(plan, selectedCycle)" class="text-[8px] md:text-[10px] text-gray-500 font-black tracking-widest uppercase opacity-80 tabular-nums">
-                          {{ activeCurrencyPrefix }}{{ formatAmountHelper(getPlanPriceRawHelper(plan, selectedCycle)) }}
+                        <div v-if="getPlanPriceRawHelper(plan, selectedCycle) !== null" class="text-[8px] md:text-[10px] text-gray-500 font-black tracking-widest uppercase opacity-80 tabular-nums">
+                          {{ formatMoney(getPlanPriceRawHelper(plan, selectedCycle), payerCurrency) }}
                         </div>
                       </th>
                     </tr>
@@ -362,13 +362,16 @@ import {
   Mail, Database, ShieldCheck, History, Headphones 
 } from 'lucide-vue-next'
 import { useCartStore } from '~/stores/cart'
+import { useCurrencyStore } from '~/stores/currency'
 import { useCatalogApi } from '~/composables/apis/useCatalogApi'
+import { formatMoney } from '~/utils/formatMoney'
 import { parseDescription } from '~/utils/whmcs'
 
-interface WhmcsCurrency {
-  prefix: string; suffix: string; monthly: string; quarterly: string; 
-  semiannually: string; annually: string; biennially: string; triennially: string;
-}
+/** The two billing cycles the backend prices — see the note on `types/portalproduct.ts`. */
+type CycleKey = 'monthly' | 'annual'
+
+/** Maps the API's cycle key to the `hosting.cycles.*` i18n key — spelled differently. */
+const cycleI18nKey: Record<CycleKey, string> = { monthly: 'monthly', annual: 'annually' }
 
 /**
  * The subset of the catalogue product this page reads.
@@ -390,20 +393,30 @@ interface WhmcsPlan {
   description: string
   /** `'on'` when the operator flagged the plan as the featured one. */
   is_featured?: string
-  /** Prices per currency code, each keyed by billing cycle. */
-  pricing: Record<string, WhmcsCurrency>
+  /** The plan's price in the caller's own currency; null fields when not offered. */
+  pricing?: { monthly: number | null; annual: number | null } | null
 }
 
 const { t: $t, locale } = useI18n()
 const localePath = useLocalePath()
 const cart = useCartStore()
+const currencyStore = useCurrencyStore()
+onMounted(() => {
+  currencyStore.init()
+  currencyStore.load()
+})
+
+/** The payer's currency to format and price with — never chosen by the page's language. */
+const payerCurrency = computed(() => currencyStore.moneyCurrencyFor(currencyStore.payerCode))
 
 onMounted(() => cart.init())
 
 // Straight from the API composable rather than through a store: this page reads the
 // catalogue once and owns it alone, which is the named exception to component -> store -> api.
+// `currency` is passed the same way `usePortalPlans.ts` passes it — the payer's currency, so
+// the getter re-reads and the request re-fetches once `payerCode` resolves or changes.
 const { data: _plansRaw, pending, error, refresh } = await useCatalogApi().loadProducts(
-  () => ({ gid: 1 })
+  () => ({ gid: 1, currency: currencyStore.payerCode ?? undefined })
 )
 
 const plans = computed<WhmcsPlan[]>(() => (_plansRaw.value as WhmcsPlan[]) ?? [])
@@ -434,25 +447,15 @@ const comparisonRows = [
   { key: 'support', icon: Headphones, valueType: 'check' }
 ]
 
-const selectedCycle = ref<'monthly'|'quarterly'|'semiannually'|'annually'|'biennially'|'triennially'>('monthly')
-const allCycleKeys = ['monthly', 'quarterly', 'semiannually', 'annually', 'biennially', 'triennially'] as const
-type CycleKey = typeof allCycleKeys[number]
-
-function getCurrencyHelper(plan: WhmcsPlan): WhmcsCurrency | undefined {
-  const currencyByLocale: Record<string, string> = { en: 'USD', hy: 'AMD', ru: 'RUB' }
-  const preferred = currencyByLocale[locale.value] ?? 'USD'
-  return plan.pricing[preferred] ?? Object.values(plan.pricing)[0]
-}
+const selectedCycle = ref<CycleKey>('monthly')
+const allCycleKeys: readonly CycleKey[] = ['monthly', 'annual']
 
 const availableCycles = computed(() =>
-  allCycleKeys.filter(key => plans.value.some(p => {
-    const c = getCurrencyHelper(p); return c?.[key] && c[key] !== '-1.00' && c[key] !== '0.00'
-  })).map(key => ({ key, label: $t(`hosting.cycles.${key}`) }))
+  allCycleKeys.filter(key => plans.value.some(p => p.pricing?.[key] !== null && p.pricing?.[key] !== undefined))
+    .map(key => ({ key, label: $t(`hosting.cycles.${cycleI18nKey[key]}`) }))
 )
 
-const activeCurrencyPrefix = computed(() => {
-  const first = plans.value?.[0]; return first ? (getCurrencyHelper(first)?.prefix ?? '') : ''
-})
+const activeCurrencyPrefix = computed(() => payerCurrency.value.prefix ?? '')
 
 function getComparisonCheckValueHelperFn(plan: WhmcsPlan, key: string): boolean {
   const desc = (plan.description || '').toLowerCase()
@@ -481,25 +484,37 @@ function getComparisonRawValueHelperFn(plan: WhmcsPlan, key: string): string {
   return '—'
 }
 
-function formatAmountHelper(amount: string): string {
-  if (!amount) return ''
-  let formatted = amount.replace(/\.00$/, '').replace(/\.0$/, '')
-  if (!isNaN(Number(formatted))) {
-    formatted = Number(formatted).toLocaleString(locale.value === 'hy' ? 'hy-AM' : 'en-US').replace(/,/g, locale.value === 'hy' ? ' ' : ',')
-  }
-  return formatted
+/**
+ * Formats just the grouped digits of an amount — no currency symbol — for markup that renders
+ * the symbol separately at a different size. Decimal count comes from the payer's own
+ * currency configuration, never a locale guess.
+ *
+ * @param amount - The amount, or null.
+ * @returns The grouped digits, or '' for null.
+ */
+function formatAmountHelper(amount: number | null): string {
+  if (amount === null) return ''
+  return new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: payerCurrency.value.decimals,
+    maximumFractionDigits: payerCurrency.value.decimals
+  }).format(amount)
 }
 
-function getPlanPriceRawHelper(plan: WhmcsPlan, cycle: CycleKey): string {
-  const c = getCurrencyHelper(plan); return (c?.[cycle] && c[cycle] !== '-1.00' && c[cycle] !== '0.00') ? c[cycle] : ''
+/**
+ * The plan's price for one cycle, in the caller's own currency, as the API sent it.
+ *
+ * @param plan - The plan.
+ * @param cycle - The billing cycle.
+ * @returns The amount, or null when the plan carries no price for that cycle.
+ */
+function getPlanPriceRawHelper(plan: WhmcsPlan, cycle: CycleKey): number | null {
+  return plan.pricing?.[cycle] ?? null
 }
 
 function getPlanCyclesHelperHelper(plan: WhmcsPlan): Array<{ key: CycleKey; price: string }> {
-  const c = getCurrencyHelper(plan); if (!c) return []
-  return allCycleKeys.filter(key => c[key] && c[key] !== '-1.00' && c[key] !== '0.00').map(key => {
-      const amt = formatAmountHelper(c[key]); let price = locale.value === 'hy' && c.prefix === '֏' ? `${amt} ${c.prefix}` : `${c.prefix}${amt}`
-      return { key, price }
-    })
+  return allCycleKeys
+    .filter(key => getPlanPriceRawHelper(plan, key) !== null)
+    .map(key => ({ key, price: formatMoney(getPlanPriceRawHelper(plan, key), payerCurrency.value) }))
 }
 
 /**
@@ -553,11 +568,15 @@ function planSlugHelper(plan: WhmcsPlan): string {
 }
 
 function addToCartHelper(plan: WhmcsPlan) {
-  const c = getCurrencyHelper(plan); const amt = getPlanPriceRawHelper(plan, selectedCycle.value)
-  const priceLabel = amt ? (locale.value === 'hy' && c?.prefix === '֏' ? `${formatAmountHelper(amt)} ${c.prefix}` : `${c?.prefix}${formatAmountHelper(amt)}`) : $t('hosting.custom')
+  const amt = getPlanPriceRawHelper(plan, selectedCycle.value)
+  if (amt === null || !currencyStore.payerCode) return
   cart.addItem({
-    pid: plan.pid || plan.id || 0, name: plan.name, billingcycle: selectedCycle.value,
-    cycleLabel: $t(`hosting.cycles.${selectedCycle.value}`), price: priceLabel, prefix: c?.prefix ?? '', rawPrice: amt || '0'
+    pid: plan.pid || plan.id || 0,
+    name: plan.name,
+    billingcycle: selectedCycle.value,
+    cycleLabel: $t(`hosting.cycles.${cycleI18nKey[selectedCycle.value]}`),
+    amount: amt,
+    currency: currencyStore.payerCode
   })
 }
 </script>

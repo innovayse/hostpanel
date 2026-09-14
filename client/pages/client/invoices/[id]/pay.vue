@@ -281,7 +281,6 @@
 <script setup lang="ts">
 import { AlertCircle, CheckCircle, CreditCard, Plus, Lock, Loader2 } from 'lucide-vue-next'
 import { useBillingApi } from '~/composables/apis/useBillingApi'
-import { useClientStore } from '~/stores/client'
 import type { ClientInvoice } from '~/types/clientinvoice'
 import type { PaymentMethod } from '~/types/payment'
 import { apiErrorMessage } from '~/utils/apiError'
@@ -294,7 +293,6 @@ const route = useRoute()
 const localePath = useLocalePath()
 const { t } = useI18n()
 const config = useRuntimeConfig()
-const store = useClientStore()
 
 /**
  * Base URL of the WHMCS instance this deployment fronts, or an empty string.
@@ -327,19 +325,21 @@ const hostedGatewayModule = computed(() =>
     .find(m => m.module !== PAYMENT_MODULE_STRIPE && m.module !== PAYMENT_MODULE_BANK_TRANSFER)?.module ?? null)
 
 /**
- * Formats one amount on this invoice in the account's billing currency.
+ * Formats one amount on this invoice in the invoice's own billing currency.
  *
  * Every figure on this page was previously interpolated between a literal `$` and a literal
  * ` USD` — a hardcoded symbol *and* a hardcoded currency name, on the screen where the customer
  * authorises a payment, in a portal that also bills in drams and roubles. The replacement read
- * `currencycode` / `currencyprefix` / `currencysuffix` off the invoice, which `InvoiceDto` does
- * not carry; the currency lives on the account, as `ClientDto.Currency`.
+ * `currencycode` / `currencyprefix` / `currencysuffix` off the invoice, which `InvoiceDto` did
+ * not carry, then read the account's currency — which is wrong for the same reason described
+ * on `pages/client/invoices/[id].vue`: an invoice's currency is fixed at creation and is not
+ * always the account's *current* one. `InvoiceDto.Currency` (Plan §3) is the authority.
  *
  * @param amount - The amount the API sent for this figure.
  * @returns The formatted amount, or an em dash when there is no figure.
  */
 const money = (amount: string | number | null | undefined): string =>
-  formatCurrency(amount, { code: store.user?.currency })
+  formatCurrency(amount, { code: invoice.value?.currency })
 
 /** How much has actually been received against this invoice — see `utils/invoice.ts`. */
 const received = computed(() => paymentsToDate(invoice.value?.transactions))

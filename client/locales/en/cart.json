@@ -13,6 +13,11 @@
     "secureCheckout": "Secure checkout — your data is encrypted",
     "multipleCurrencies": "Multiple currencies",
     "items": "items",
-    "itemsCount": "items"
+    "itemsCount": "items",
+    "staleCurrencyNotice": "These items were added in a currency you no longer pay in. Remove them and add them again to see their current price.",
+    "currency": {
+      "label": "Currency",
+      "changeConfirm": "Changing currency clears your cart, since prices must be shown fresh in the new currency. Continue?"
+    }
   }
 }

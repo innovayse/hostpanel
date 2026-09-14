@@ -12,6 +12,7 @@ import { CLIENT_STATUS_OPTIONS, CONTACT_TYPE_STYLES } from '../../../utils/const
 import { useGeoOptions } from '../../../composables/useGeoOptions'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiToggleSwitch from '../../../components/ui/UiToggleSwitch.vue'
+import { apiErrorMessage } from '../../../utils/apiErrorMessage'
 
 const route = useRoute()
 const store = useClientsStore()
@@ -275,8 +276,8 @@ async function handleSave(): Promise<void> {
     })
     saveSuccess.value = true
     setTimeout(() => { saveSuccess.value = false }, 3000)
-  } catch {
-    saveError.value = 'Failed to save changes.'
+  } catch (e) {
+    saveError.value = apiErrorMessage(e, 'Failed to save changes.')
   } finally {
     saving.value = false
   }

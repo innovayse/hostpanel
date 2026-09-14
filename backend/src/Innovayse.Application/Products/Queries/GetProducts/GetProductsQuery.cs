@@ -8,4 +8,13 @@ namespace Innovayse.Application.Products.Queries.GetProducts;
 /// with <see cref="ProductPricingDto"/> values of <see langword="null"/> — the admin grid must
 /// show every product. The storefront (the default) omits them, because a visitor cannot buy them.
 /// </param>
-public record GetProductsQuery(int? GroupId = null, bool ActiveOnly = true, bool IncludeUnsellable = false);
+/// <param name="Currency">
+/// ISO 4217 code an anonymous caller wants prices in (e.g. "AMD"). Ignored for a signed-in client,
+/// whose own billing currency always wins — matches <c>GetTldPricingQuery</c>'s anonymous-only use.
+/// An unknown or disabled code is ignored too, falling back to the resolver's usual base currency.
+/// </param>
+public record GetProductsQuery(
+    int? GroupId = null,
+    bool ActiveOnly = true,
+    bool IncludeUnsellable = false,
+    string? Currency = null);

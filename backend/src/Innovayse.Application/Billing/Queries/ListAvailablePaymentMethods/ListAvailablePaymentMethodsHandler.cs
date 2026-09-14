@@ -2,7 +2,9 @@
 
 using Innovayse.Application.Admin.Plugins.Interfaces;
 using Innovayse.Application.Billing.Common;
+using Innovayse.Application.Billing.Extensions;
 using Innovayse.Application.Billing.Interfaces;
+using Innovayse.Domain.Billing.Interfaces;
 using Innovayse.Domain.Settings;
 using Innovayse.Domain.Settings.Interfaces;
 using Innovayse.SDK.Plugins;
@@ -30,21 +32,35 @@ using Innovayse.SDK.Plugins;
 /// shared with everything that creates an invoice, so a listed gateway and the invoice it will
 /// be asked to pay cannot disagree.
 /// </param>
+/// <param name="currencies">
+/// The configured currencies, for the one a caller names instead of their own.
+/// </param>
 public sealed class ListAvailablePaymentMethodsHandler(
     IPluginRegistry plugins,
     IPaymentPluginResolver pluginResolver,
     ISettingRepository settings,
     IStripeService stripe,
-    IPayerCurrencyResolver payerCurrency)
+    IPayerCurrencyResolver payerCurrency,
+    ICurrencyRepository currencies)
 {
     /// <summary>Builds the list of methods available right now.</summary>
-    /// <param name="query">The query (no parameters).</param>
+    /// <param name="query">The query; names the currency to list for, or none for the caller's own.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Available methods, built-ins first, then plugins in load order.</returns>
+    /// <returns>
+    /// Available methods, built-ins first, then plugins in load order — empty when the query
+    /// names a currency the panel does not offer, since nothing can take money in it.
+    /// </returns>
     public async Task<IReadOnlyList<AvailablePaymentMethodDto>> HandleAsync(
         ListAvailablePaymentMethodsQuery query, CancellationToken ct)
     {
         var methods = new List<AvailablePaymentMethodDto>();
+
+        // Settled first: a currency nobody can be billed in has no methods, whatever is switched on.
+        var payerCurrencyNumeric = await ResolvePayerCurrencyNumericAsync(query.CurrencyCode, ct);
+        if (payerCurrencyNumeric is null)
+        {
+            return methods;
+        }
 
         // Configured is not enough on its own: an operator who switched Stripe off on the admin
         // integrations page still had it offered at checkout as long as the deployment carried
@@ -71,8 +87,6 @@ public sealed class ListAvailablePaymentMethodsHandler(
         // currency is known here too, so a gateway that cannot take this payer's money is simply
         // not offered. The resolver that names the currency here is the one every invoice is
         // created with, so what is listed and what the invoice then bills in cannot drift.
-        var payerCurrencyNumeric = await ResolvePayerCurrencyNumericAsync(ct);
-
         foreach (var manifest in plugins.GetLoadedManifests().Where(m => m.Type == PluginType.Payment))
         {
             // Ask the resolver rather than re-deriving "enabled and configured" from settings by
@@ -96,15 +110,25 @@ public sealed class ListAvailablePaymentMethodsHandler(
     }
 
     /// <summary>
-    /// Works out which ISO 4217 numeric currency the caller is billed in: their client record's
-    /// when they are signed in and have one, the base currency otherwise (a guest at checkout is
-    /// billed in the base, and that is the currency the order they are about to place will
-    /// carry).
+    /// Works out which ISO 4217 numeric currency the list is for: the one the query names when it
+    /// names one, otherwise the caller's — their client record's when they are signed in and
+    /// have one, the base currency for anyone else.
     /// </summary>
+    /// <param name="requested">The alpha code the query named, or <see langword="null"/> for the caller's own.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The numeric code of the configured currency the caller is billed in.</returns>
-    private async Task<string> ResolvePayerCurrencyNumericAsync(CancellationToken ct) =>
-        (await payerCurrency.ForCallerAsync(ct)).Numeric;
+    /// <returns>
+    /// The numeric code of the configured currency, or <see langword="null"/> when the query
+    /// named one the panel does not offer.
+    /// </returns>
+    private async Task<string?> ResolvePayerCurrencyNumericAsync(string? requested, CancellationToken ct)
+    {
+        if (requested is null)
+        {
+            return (await payerCurrency.ForCallerAsync(ct)).Numeric;
+        }
+
+        return (await currencies.FindOfferedAsync(requested, ct))?.Numeric;
+    }
 
     /// <summary>
     /// Reads the admin's <c>is_enabled</c> flag for an integration. A missing setting counts as

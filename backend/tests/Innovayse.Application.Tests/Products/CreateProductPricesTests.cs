@@ -42,6 +42,8 @@ public sealed class CreateProductPricesTests
         Assert.Equal(4.99m, added!.PriceFor("USD", BillingCycle.Monthly));
         Assert.Equal(49.99m, added.PriceFor("USD", BillingCycle.Annual));
         Assert.Single(added.Prices.Select(p => p.CurrencyCode).Distinct());
+        Assert.Equal(4.99m, added.MonthlyPrice);
+        Assert.Equal(49.99m, added.AnnualPrice);
     }
 
     [Fact]
@@ -58,5 +60,7 @@ public sealed class CreateProductPricesTests
         Assert.NotNull(added);
         Assert.Equal(1200m, added!.PriceFor("AMD", BillingCycle.Monthly));
         Assert.False(added.SellsIn("USD"));
+        Assert.Equal(0m, added.MonthlyPrice);
+        Assert.Equal(0m, added.AnnualPrice);
     }
 }

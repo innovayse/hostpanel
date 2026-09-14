@@ -2,10 +2,15 @@
 
 /// <summary>
 /// Turns a major-unit amount into the integer minor-unit form hosted-gateway payment plugins
-/// expect. The alpha-to-numeric lookup this class used to carry is gone: a currency's numeric code
-/// now lives on the <see cref="Innovayse.Domain.Billing.Currency"/> row the operator configures,
-/// so the panel is not limited to a list compiled into it.
+/// expect.
 /// </summary>
+/// <remarks>
+/// <see cref="ToMinorUnits"/> assumes the ISO 4217 exponent is 2 — a hundred minor units to the
+/// major — for every currency it is handed. <see cref="Innovayse.Domain.Billing.Currency.Decimals"/>
+/// is a display setting (how many places the storefront shows) and says nothing about the minor
+/// unit, so it is deliberately not consulted here. A currency's numeric code lives on that same
+/// row, which the operator configures, so no lookup table is compiled in.
+/// </remarks>
 public static class CurrencyCodes
 {
     /// <summary>

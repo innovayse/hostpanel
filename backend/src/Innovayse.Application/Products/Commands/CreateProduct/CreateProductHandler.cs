@@ -11,20 +11,13 @@ using Innovayse.Domain.Products.Interfaces;
 /// <param name="repo">Product repository the new product is added to.</param>
 /// <param name="groupRepo">Product group repository, to check the parent group exists.</param>
 /// <param name="uow">Unit of work for persistence.</param>
-/// <param name="payerCurrency">Resolves the base currency the legacy price fields are in.</param>
+/// <param name="payerCurrency">Resolves the base currency the legacy price fields and columns are in.</param>
 public sealed class CreateProductHandler(
     IProductRepository repo,
     IProductGroupRepository groupRepo,
     IUnitOfWork uow,
     IPayerCurrencyResolver payerCurrency)
 {
-    /// <summary>
-    /// Value written to the legacy single-currency price columns. They are kept one release so a
-    /// rollback has data to read and are no longer written meaningfully; the prices live in
-    /// <see cref="Product.Prices"/>.
-    /// </summary>
-    private const decimal LegacyPrice = 0m;
-
     /// <summary>
     /// Handles <see cref="CreateProductCommand"/>.
     /// </summary>
@@ -37,10 +30,13 @@ public sealed class CreateProductHandler(
         _ = await groupRepo.FindByIdAsync(cmd.GroupId, ct)
             ?? throw new InvalidOperationException($"Product group {cmd.GroupId} not found.");
 
+        var prices = await ProductPriceInputs.ResolveAsync(cmd.Prices, cmd.MonthlyPrice, cmd.AnnualPrice, payerCurrency, ct);
+
+        // The legacy single-currency columns are kept one release so a rollback and the admin
+        // services grid still read real numbers: they mirror the base-currency prices.
         var product = Product.Create(
             cmd.GroupId, cmd.Name, cmd.Description, cmd.Website, cmd.Slug, cmd.PackageName, cmd.Type,
-            LegacyPrice, LegacyPrice, cmd.ServerGroupId);
-        var prices = await ProductPriceInputs.ResolveAsync(cmd.Prices, cmd.MonthlyPrice, cmd.AnnualPrice, payerCurrency, ct);
+            prices.BaseMonthly, prices.BaseAnnual, cmd.ServerGroupId);
         prices.ApplyTo(product);
 
         repo.Add(product);

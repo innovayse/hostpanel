@@ -82,11 +82,15 @@ public sealed class UpdateProductPricesTests
         Assert.False(product.SellsIn("USD"));
     }
 
-    /// <summary>The pre-multi-currency admin form sends the legacy pair and no list; it prices the base currency.</summary>
+    /// <summary>
+    /// The pre-multi-currency admin form sends the legacy pair and no list; it replaces the base
+    /// currency's rows and leaves every other currency as it was.
+    /// </summary>
     [Fact]
-    public async Task Handle_LegacyPairWithoutAListPricesTheBaseCurrency()
+    public async Task Handle_LegacyPairWithoutAListReplacesOnlyTheBaseCurrency()
     {
         var product = Product.Create(1, "Starter", null, null, null, null, ProductType.SharedHosting, 0m, 0m);
+        product.SetPrice("USD", BillingCycle.Monthly, 2.99m);
         product.SetPrice("AMD", BillingCycle.Monthly, 1200m);
         var repo = new Mock<IProductRepository>();
         repo.Setup(r => r.FindByIdAsync(7, It.IsAny<CancellationToken>())).ReturnsAsync(product);
@@ -98,6 +102,39 @@ public sealed class UpdateProductPricesTests
 
         Assert.Equal(4.99m, product.PriceFor("USD", BillingCycle.Monthly));
         Assert.Equal(49.99m, product.PriceFor("USD", BillingCycle.Annual));
-        Assert.False(product.SellsIn("AMD"));
+        Assert.Equal(1200m, product.PriceFor("AMD", BillingCycle.Monthly));
+        Assert.True(product.SellsIn("AMD"));
+    }
+
+    /// <summary>The legacy single-currency columns mirror the base-currency rows after a list save.</summary>
+    [Fact]
+    public async Task Handle_LegacyColumnsMirrorTheBaseCurrencyRows()
+    {
+        var product = Product.Create(1, "Starter", null, null, null, null, ProductType.SharedHosting, 0m, 0m);
+        var repo = new Mock<IProductRepository>();
+        repo.Setup(r => r.FindByIdAsync(7, It.IsAny<CancellationToken>())).ReturnsAsync(product);
+
+        var handler = new UpdateProductHandler(repo.Object, new Mock<IUnitOfWork>().Object, Resolver());
+        await handler.HandleAsync(new UpdateProductCommand(7, "Starter", null, null, null, null,
+            [new ProductPriceInput("AMD", 1200m, null), new ProductPriceInput("USD", 2.99m, null)], null), CancellationToken.None);
+
+        Assert.Equal(2.99m, product.MonthlyPrice);
+        Assert.Equal(0m, product.AnnualPrice);
+    }
+
+    /// <summary>A save that prices no base-currency row zeroes the legacy columns rather than leaving stale numbers.</summary>
+    [Fact]
+    public async Task Handle_LegacyColumnsAreZeroWithoutABaseCurrencyRow()
+    {
+        var product = Product.Create(1, "Starter", null, null, null, null, ProductType.SharedHosting, 2.99m, 29.99m);
+        var repo = new Mock<IProductRepository>();
+        repo.Setup(r => r.FindByIdAsync(7, It.IsAny<CancellationToken>())).ReturnsAsync(product);
+
+        var handler = new UpdateProductHandler(repo.Object, new Mock<IUnitOfWork>().Object, Resolver());
+        await handler.HandleAsync(new UpdateProductCommand(7, "Starter", null, null, null, null,
+            [new ProductPriceInput("AMD", 1200m, null)], null), CancellationToken.None);
+
+        Assert.Equal(0m, product.MonthlyPrice);
+        Assert.Equal(0m, product.AnnualPrice);
     }
 }

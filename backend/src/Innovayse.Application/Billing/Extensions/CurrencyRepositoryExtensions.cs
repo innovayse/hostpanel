@@ -1,5 +1,6 @@
 ﻿namespace Innovayse.Application.Billing.Extensions;
 
+using Innovayse.Domain.Billing;
 using Innovayse.Domain.Billing.Interfaces;
 
 /// <summary>Questions handlers ask <see cref="ICurrencyRepository"/> that it does not answer by itself.</summary>
@@ -17,12 +18,24 @@ public static class CurrencyRepositoryExtensions
     /// <param name="code">ISO 4217 alpha code, any case; looked up in the upper case it is stored in.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns><see langword="true"/> when the currency exists and is enabled.</returns>
-    public static async Task<bool> IsOfferedAsync(this ICurrencyRepository currencies, string code, CancellationToken ct)
+    public static async Task<bool> IsOfferedAsync(this ICurrencyRepository currencies, string code, CancellationToken ct) =>
+        await currencies.FindOfferedAsync(code, ct) is not null;
+
+    /// <summary>The currency a code names, when this panel is currently offering it to clients.</summary>
+    /// <remarks>
+    /// The same question as <see cref="IsOfferedAsync"/>, answered with the row itself for a
+    /// caller that goes on to bill in it and would otherwise look it up a second time.
+    /// </remarks>
+    /// <param name="currencies">The configured currencies.</param>
+    /// <param name="code">ISO 4217 alpha code, any case; looked up in the upper case it is stored in.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The currency when it exists and is enabled; <see langword="null"/> otherwise.</returns>
+    public static async Task<Currency?> FindOfferedAsync(this ICurrencyRepository currencies, string code, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(currencies);
         ArgumentNullException.ThrowIfNull(code);
 
         var currency = await currencies.FindAsync(code.ToUpperInvariant(), ct);
-        return currency is { IsEnabled: true };
+        return currency is { IsEnabled: true } ? currency : null;
     }
 }

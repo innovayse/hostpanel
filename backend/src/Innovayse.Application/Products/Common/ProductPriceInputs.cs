@@ -1,15 +1,17 @@
-namespace Innovayse.Application.Products.Common;
+﻿namespace Innovayse.Application.Products.Common;
 
 using Innovayse.Application.Billing.Interfaces;
 
 /// <summary>
 /// Turns what an admin form sent — either the per-currency list or the two legacy single-currency
-/// figures — into the one list of prices a product is written from.
+/// figures — into the one price list a product is written from.
 /// </summary>
 /// <remarks>
 /// The pre-multi-currency admin form still posts <c>monthlyPrice</c>/<c>annualPrice</c> and no
 /// <c>prices</c>. Until that form is replaced, those two figures are the product's prices in the
-/// base currency. Both the create and the update handler go through here so the rule lives once.
+/// base currency — and only there: a save from that form replaces the base currency's rows and
+/// leaves every other currency as it was. Both the create and the update handler go through here
+/// so the rule lives once.
 /// </remarks>
 public static class ProductPriceInputs
 {
@@ -20,10 +22,11 @@ public static class ProductPriceInputs
     /// <param name="payerCurrency">Resolves the base currency the legacy figures are in.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// <paramref name="prices"/> when present; otherwise one entry in the base currency built from
-    /// the legacy figures — empty when neither figure was sent.
+    /// <paramref name="prices"/>, replacing every currency, when present; otherwise one entry in
+    /// the base currency built from the legacy figures, touching that currency alone — and an
+    /// empty list that touches nothing when neither figure was sent.
     /// </returns>
-    public static async Task<IReadOnlyList<ProductPriceInput>> ResolveAsync(
+    public static async Task<ResolvedPrices> ResolveAsync(
         IReadOnlyList<ProductPriceInput>? prices,
         decimal? legacyMonthly,
         decimal? legacyAnnual,
@@ -32,17 +35,21 @@ public static class ProductPriceInputs
     {
         ArgumentNullException.ThrowIfNull(payerCurrency);
 
+        var baseCurrency = await payerCurrency.BaseAsync(ct);
+
         if (prices is not null)
         {
-            return prices;
+            return new ResolvedPrices(prices, ReplaceAllCurrencies: true, baseCurrency.Code);
         }
 
         if (legacyMonthly is null && legacyAnnual is null)
         {
-            return [];
+            return new ResolvedPrices([], ReplaceAllCurrencies: false, baseCurrency.Code);
         }
 
-        var baseCurrency = await payerCurrency.BaseAsync(ct);
-        return [new ProductPriceInput(baseCurrency.Code, legacyMonthly, legacyAnnual)];
+        return new ResolvedPrices(
+            [new ProductPriceInput(baseCurrency.Code, legacyMonthly, legacyAnnual)],
+            ReplaceAllCurrencies: false,
+            baseCurrency.Code);
     }
 }

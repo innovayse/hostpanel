@@ -5,6 +5,7 @@ using Innovayse.Application.Billing.Common;
 using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Billing.Queries.ListAvailablePaymentMethods;
 using Innovayse.Domain.Billing;
+using Innovayse.Domain.Billing.Interfaces;
 using Innovayse.Domain.Settings;
 using Innovayse.Domain.Settings.Interfaces;
 using Innovayse.SDK.Plugins;
@@ -27,6 +28,7 @@ public sealed class ListAvailablePaymentMethodsHandlerTests
     private readonly Mock<ISettingRepository> settings = new();
     private readonly Mock<IStripeService> stripe = new();
     private readonly Mock<IPayerCurrencyResolver> payerCurrency = new();
+    private readonly Mock<ICurrencyRepository> currencies = new();
 
     /// <summary>The ISO numeric codes of the currencies these tests bill in.</summary>
     private static readonly Dictionary<string, string> Numerics = new(StringComparer.Ordinal)
@@ -46,7 +48,12 @@ public sealed class ListAvailablePaymentMethodsHandlerTests
     }
 
     private ListAvailablePaymentMethodsHandler Handler() =>
-        new(plugins.Object, resolver.Object, settings.Object, stripe.Object, payerCurrency.Object);
+        new(plugins.Object, resolver.Object, settings.Object, stripe.Object, payerCurrency.Object, currencies.Object);
+
+    /// <summary>Configures <paramref name="currency"/> as one the panel offers, so a query may name it.</summary>
+    private void Offered(string currency) =>
+        currencies.Setup(c => c.FindAsync(currency, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Currency.Create(currency, Numerics[currency], string.Empty, string.Empty, 2, 1m, isBase: false));
 
     /// <summary>
     /// Makes the caller billed in <paramref name="currency"/>. Whether that is their own client
@@ -194,5 +201,35 @@ public sealed class ListAvailablePaymentMethodsHandlerTests
 
         payerCurrency.Verify(r => r.ForCallerAsync(It.IsAny<CancellationToken>()), Times.Once);
         payerCurrency.VerifyNoOtherCalls();
+    }
+
+    /// <summary>
+    /// The order flow names the currency a guest chose, whose client does not exist yet; the
+    /// list is then built against that and the caller's own currency is not consulted.
+    /// </summary>
+    [Fact]
+    public async Task ANamedCurrencyReplacesTheCallersOwn()
+    {
+        BilledIn("USD");
+        Offered("AMD");
+        LoadedGateway("inecobank", "Inecobank", "051");
+
+        var methods = await Handler().HandleAsync(new ListAvailablePaymentMethodsQuery("amd"), CancellationToken.None);
+
+        Assert.Contains("inecobank", methods.Select(m => m.Module));
+        payerCurrency.Verify(r => r.ForCallerAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>A named currency the panel does not offer lists nothing, not the base's methods.</summary>
+    [Fact]
+    public async Task ANamedCurrencyNotOnOfferListsNothing()
+    {
+        BilledIn("AMD");
+        SwitchIntegration(BuiltInPaymentModules.BankTransferIntegrationSlug, enabled: true);
+        LoadedGateway("inecobank", "Inecobank", "051");
+
+        var methods = await Handler().HandleAsync(new ListAvailablePaymentMethodsQuery("XXX"), CancellationToken.None);
+
+        Assert.Empty(methods);
     }
 }

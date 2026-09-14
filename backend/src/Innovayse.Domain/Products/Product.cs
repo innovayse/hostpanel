@@ -52,8 +52,8 @@ public sealed class Product : AggregateRoot
     /// <summary>Gets the stored prices, one per currency and cycle.</summary>
     /// <remarks>
     /// <see cref="MonthlyPrice"/> and <see cref="AnnualPrice"/> are the pre-multi-currency
-    /// columns. They are kept for one release so a rollback has data to read, and are no longer
-    /// written by anything; the migration copied them into USD rows here.
+    /// columns. They are kept for one release so a rollback has data to read: the handlers keep
+    /// them mirroring the base-currency rows here, and the migration copied them into USD rows.
     /// </remarks>
     public IReadOnlyList<ProductPrice> Prices => _prices.AsReadOnly();
 

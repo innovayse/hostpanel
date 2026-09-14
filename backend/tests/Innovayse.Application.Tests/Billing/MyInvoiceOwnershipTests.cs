@@ -148,7 +148,7 @@ public sealed class MyInvoiceOwnershipTests
             Times.Never);
     }
 
-    /// <summary>On the caller's own invoice the payment goes through, currency and all.</summary>
+    /// <summary>On the caller's own invoice the payment goes through.</summary>
     /// <returns>A task representing the test.</returns>
     [Fact]
     public async Task PayMyInvoiceHandler_WhenInvoiceIsTheCallersOwn_DispatchesTheSharedWriteAsync()
@@ -156,11 +156,11 @@ public sealed class MyInvoiceOwnershipTests
         var bus = new Mock<IMessageBus>();
         var handler = new PayMyInvoiceHandler(AcceptingOwnership(), bus.Object);
 
-        await handler.HandleAsync(new PayMyInvoiceCommand(InvoiceId, "AMD"), CancellationToken.None);
+        await handler.HandleAsync(new PayMyInvoiceCommand(InvoiceId), CancellationToken.None);
 
         bus.Verify(
             b => b.InvokeAsync(
-                It.Is<PayInvoiceCommand>(c => c.InvoiceId == InvoiceId && c.Currency == "AMD"),
+                It.Is<PayInvoiceCommand>(c => c.InvoiceId == InvoiceId),
                 It.IsAny<CancellationToken>(),
                 It.IsAny<TimeSpan?>()),
             Times.Once);

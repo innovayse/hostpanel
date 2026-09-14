@@ -27,6 +27,12 @@ public sealed class CurrenciesEndpointTests(IntegrationTestFactory factory)
     /// <summary>The seeded AMD rate: 1 AMD = 0.0025641 USD, so $2.99 is 1166 ֏ at zero decimals.</summary>
     private const decimal ExpectedAmdMonthly = 1166m;
 
+    /// <summary>USD's rate once AMD is the base: 1 / 0.0025641, which is 390 to within a hundredth.</summary>
+    private const decimal ExpectedUsdRateInAmd = 390m;
+
+    /// <summary>How far a re-expressed rate may sit from its round figure at numeric(18,8).</summary>
+    private const decimal RateTolerance = 0.01m;
+
     /// <summary>A client carrying the seeded admin's bearer token.</summary>
     /// <returns>An authenticated client.</returns>
     private async Task<HttpClient> AdminClientAsync()
@@ -129,6 +135,34 @@ public sealed class CurrenciesEndpointTests(IntegrationTestFactory factory)
             new { currencies = new[] { "USD" } });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    /// <summary>
+    /// Making AMD the base against Postgres: exactly one row is the base afterwards, it is AMD,
+    /// and USD's rate is re-expressed as 1 / 0.0025641 ≈ 390. The base is put back to USD at the
+    /// end because the fixture is shared and the other cases read the seeded pair.
+    /// </summary>
+    [Fact]
+    public async Task MakeBaseSwitchesTheBaseAndReexpressesTheOtherRate()
+    {
+        var client = await AdminClientAsync();
+        try
+        {
+            var response = await client.PostAsync("/api/admin/currencies/AMD/make-base", content: null);
+            response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+            var list = await client.GetFromJsonAsync<List<JsonElement>>("/api/admin/currencies");
+            var bases = list!.Where(r => r.GetProperty("isBase").GetBoolean()).ToList();
+            bases.Should().ContainSingle();
+            bases.Single().GetProperty("code").GetString().Should().Be("AMD");
+            list.Single(r => r.GetProperty("code").GetString() == "USD")
+                .GetProperty("rateToBase").GetDecimal().Should().BeApproximately(ExpectedUsdRateInAmd, RateTolerance);
+        }
+        finally
+        {
+            var restored = await client.PostAsync("/api/admin/currencies/USD/make-base", content: null);
+            restored.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        }
     }
 
     /// <summary>The storefront list is anonymous, lists only enabled rows, and carries no rate.</summary>

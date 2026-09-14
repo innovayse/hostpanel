@@ -67,7 +67,10 @@ public sealed class ClientProfileController(IMessageBus bus) : ControllerBase
                 request.PostCode,
                 request.Country,
                 request.Language,
-                request.Currency,
+                // A client's currency is set once, at their first order or by the admin who
+                // created them, and only an admin may change it before the first invoice. The
+                // portal form still carries the field; it is not forwarded.
+                Currency: null,
                 request.PaymentMethod,
                 request.BillingContact,
                 request.AdminNotes,

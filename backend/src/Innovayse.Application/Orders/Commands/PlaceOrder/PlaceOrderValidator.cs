@@ -30,7 +30,12 @@ public sealed class PlaceOrderValidator : AbstractValidator<PlaceOrderCommand>
         RuleForEach(x => x.Items).ChildRules(item =>
         {
             item.RuleFor(i => i.ProductId).GreaterThan(0);
-            item.RuleFor(i => i.BillingCycle).NotEmpty();
+            // The three spellings BillingCycleParser accepts. Anything else used to reach the
+            // handler, where the parser's ArgumentException surfaced as a 500 instead of a 400.
+            item.RuleFor(i => i.BillingCycle)
+                .NotEmpty()
+                .Must(c => c.ToLowerInvariant() is "monthly" or "annual" or "annually")
+                .WithMessage("BillingCycle must be 'monthly', 'annual' or 'annually'.");
         });
 
         // Guest checkout is "no credential", not "no client id in the body". The handler

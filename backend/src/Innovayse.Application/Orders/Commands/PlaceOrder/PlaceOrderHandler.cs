@@ -84,14 +84,21 @@ public sealed class PlaceOrderHandler(
     /// a bank-transfer order would sit pending for a transfer nobody expects, and a card order
     /// would fail later, on the first call that needed the gateway. The same query the checkout
     /// lists from decides here, so what is shown and what is accepted cannot drift apart.
+    /// <para>
+    /// The query is asked for the currency this order will bill in rather than the caller's. For
+    /// a guest the two differ: the caller has no client yet, so the query would answer for the
+    /// base, and a guest who chose AMD could place an order against a USD-only gateway that the
+    /// payment start then refuses.
+    /// </para>
     /// </remarks>
     /// <param name="paymentMethod">Module id the checkout sent.</param>
+    /// <param name="currencyCode">ISO 4217 alpha code the order's invoice will bill in.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="InvalidOperationException">Thrown when the method is not available.</exception>
-    private async Task EnsurePaymentMethodAvailableAsync(string paymentMethod, CancellationToken ct)
+    private async Task EnsurePaymentMethodAvailableAsync(string paymentMethod, string currencyCode, CancellationToken ct)
     {
         var available = await bus.InvokeAsync<IReadOnlyList<AvailablePaymentMethodDto>>(
-            new ListAvailablePaymentMethodsQuery(), ct);
+            new ListAvailablePaymentMethodsQuery(currencyCode), ct);
 
         if (!available.Any(m => string.Equals(m.Module, paymentMethod, StringComparison.OrdinalIgnoreCase)))
         {
@@ -112,14 +119,19 @@ public sealed class PlaceOrderHandler(
     /// </exception>
     public async Task<PlaceOrderResultDto> HandleAsync(PlaceOrderCommand cmd, CancellationToken ct)
     {
-        await EnsurePaymentMethodAvailableAsync(cmd.PaymentMethod, ct);
+        // The currency is settled before anything is created: an existing client is billed in
+        // theirs, and a client this order is about to create in the checkout's choice, else the
+        // base. Knowing it first is what lets a payment method be refused before an account
+        // exists for it, and lets a guest who chose AMD be priced in AMD, not the base. Every
+        // line below is read from the stored price in this currency; nothing is converted.
+        var existingClient = await FindCallersClientAsync(ct);
+        var currency = existingClient is null
+            ? await ResolveNewClientCurrencyAsync(cmd, ct)
+            : await payerCurrency.ForClientAsync(existingClient.Id, ct);
 
-        var clientId = await ResolveClientIdAsync(cmd, ct);
+        await EnsurePaymentMethodAvailableAsync(cmd.PaymentMethod, currency.Code, ct);
 
-        // Resolved once the client is known — for a client this order just created, after their
-        // currency was recorded and saved, so a guest who chose AMD is priced in AMD, not the base.
-        // Every line below is read from the stored price in this currency; nothing is converted.
-        var currency = await payerCurrency.ForClientAsync(clientId, ct);
+        var clientId = existingClient?.Id ?? await CreateClientAsync(cmd, currency.Code, ct);
 
         var nextNumber = await orderRepo.GetNextOrderNumberAsync(ct);
         var orderNumber = $"ORD-{nextNumber:D4}";
@@ -183,9 +195,25 @@ public sealed class PlaceOrderHandler(
     }
 
     /// <summary>
-    /// Resolves the client the order belongs to. A caller the credential names and who already
-    /// has an account orders against it; anyone else creates a new account and
-    /// <see cref="Client"/> record as part of guest checkout.
+    /// Finds the client record the caller's credential names, when it names one that exists.
+    /// </summary>
+    /// <remarks>
+    /// A signed-in caller orders for their own account. The subject comes from the credential,
+    /// so there is no id anyone could send to order against another account. A caller the
+    /// credential names but who has no client record yet, and a guest, both come back as
+    /// nothing here and get a record from <see cref="CreateClientAsync"/>.
+    /// </remarks>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The caller's client, or <see langword="null"/> when they have none yet.</returns>
+    private async Task<Client?> FindCallersClientAsync(CancellationToken ct) =>
+        caller.UserId is { } subject
+            ? await clientRepo.FindByUserIdAsync(subject, ct)
+            : null;
+
+    /// <summary>
+    /// Creates the client record the order belongs to, for a caller who has none. A caller the
+    /// credential names gets a record against their existing account; anyone else creates a new
+    /// account and <see cref="Client"/> record as part of guest checkout.
     ///
     /// <para>
     /// Guest checkout is a local-mode flow. Where an SSO owns the accounts this product
@@ -194,24 +222,17 @@ public sealed class PlaceOrderHandler(
     /// </para>
     /// </summary>
     /// <param name="cmd">The place order command.</param>
+    /// <param name="currencyCode">The currency the new record is billed in, already checked to be on offer.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The resolved client ID.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when the client cannot be found or created.</exception>
-    private async Task<int> ResolveClientIdAsync(PlaceOrderCommand cmd, CancellationToken ct)
+    /// <returns>The new client's ID.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the client cannot be created.</exception>
+    private async Task<int> CreateClientAsync(PlaceOrderCommand cmd, string currencyCode, CancellationToken ct)
     {
-        // A signed-in caller orders for their own account. The subject comes from the
-        // credential, so there is no id anyone could send to order against another account.
-        // A caller the credential names but who has no client record yet falls through to
-        // registration below, which is what used to happen when the controller resolved this.
+        // A caller the credential names but who has no client record yet is registered against
+        // that credential, which is what used to happen when the controller resolved this.
         var subject = caller.UserId;
         if (subject is not null)
         {
-            var existing = await clientRepo.FindByUserIdAsync(subject, ct);
-            if (existing is not null)
-            {
-                return existing.Id;
-            }
-
             // Their first order. The account already exists — they authenticated to get here —
             // so what is missing is only this product's client row, and the credential carries
             // everything it needs. Provisioning is deliberately not called: it creates accounts,
@@ -221,7 +242,7 @@ public sealed class PlaceOrderHandler(
             // Without this the caller cannot order at all. The validator asks a signed-in caller
             // for no email and no password, so the guest branch below always refused them, and
             // the client area they were sent back to says they have no account to order against.
-            return await CreateClientForCallerAsync(subject, cmd, ct);
+            return await CreateClientForCallerAsync(subject, cmd, currencyCode, ct);
         }
 
         // Anonymous, and guest checkout is the only way left. The validator already requires all
@@ -237,7 +258,7 @@ public sealed class PlaceOrderHandler(
         await roles.AddAsync(userId, Roles.Client, ct);
 
         var newClient = Client.Create(userId, cmd.FirstName!, cmd.LastName!, cmd.Email!);
-        newClient.SetCurrency(await ResolveNewClientCurrencyAsync(cmd, ct));
+        newClient.SetCurrency(currencyCode);
         clientRepo.Add(newClient);
         await uow.SaveChangesAsync(ct);
 
@@ -268,21 +289,17 @@ public sealed class PlaceOrderHandler(
     /// </remarks>
     /// <param name="cmd">The order being placed.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The ISO 4217 code to record on the new client.</returns>
+    /// <returns>The configured currency to record on the new client and bill the order in.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the chosen currency is not configured and enabled.</exception>
-    private async Task<string> ResolveNewClientCurrencyAsync(PlaceOrderCommand cmd, CancellationToken ct)
+    private async Task<Currency> ResolveNewClientCurrencyAsync(PlaceOrderCommand cmd, CancellationToken ct)
     {
         if (cmd.Currency is null)
         {
-            return (await payerCurrency.BaseAsync(ct)).Code;
+            return await payerCurrency.BaseAsync(ct);
         }
 
-        if (!await currencies.IsOfferedAsync(cmd.Currency, ct))
-        {
-            throw new InvalidOperationException(localizer[CurrencyUnavailableKey]);
-        }
-
-        return cmd.Currency;
+        return await currencies.FindOfferedAsync(cmd.Currency, ct)
+            ?? throw new InvalidOperationException(localizer[CurrencyUnavailableKey]);
     }
 
     /// <summary>
@@ -300,9 +317,10 @@ public sealed class PlaceOrderHandler(
     /// </remarks>
     /// <param name="subject">The caller's subject, already known to have no client row.</param>
     /// <param name="cmd">The order being placed.</param>
+    /// <param name="currencyCode">The currency the new row is billed in, already checked to be on offer.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The new client's ID.</returns>
-    private async Task<int> CreateClientForCallerAsync(string subject, PlaceOrderCommand cmd, CancellationToken ct)
+    private async Task<int> CreateClientForCallerAsync(string subject, PlaceOrderCommand cmd, string currencyCode, CancellationToken ct)
     {
         var (credentialFirst, credentialLast) = SplitDisplayName(caller.UserName);
 
@@ -314,7 +332,7 @@ public sealed class PlaceOrderHandler(
 
         // A new row, so this order is the one that chooses its currency — the same rule as a
         // guest's, because the caller is choosing at the same checkout.
-        client.SetCurrency(await ResolveNewClientCurrencyAsync(cmd, ct));
+        client.SetCurrency(currencyCode);
 
         clientRepo.Add(client);
         await uow.SaveChangesAsync(ct);

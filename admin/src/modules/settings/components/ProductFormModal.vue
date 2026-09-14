@@ -6,14 +6,17 @@
  * Emits `save` with the payload on submit, and `close` on cancel.
  */
 import { ref, watch, computed, onMounted } from 'vue'
-import type { CreateProductPayload, Product, ProductGroup } from '@/types/product'
+import type { CreateProductPayload, Product, ProductGroup, ProductPrice } from '@/types/product'
 import type { ServerGroupDto } from '@/modules/servers/types/server.types'
 import { useApi } from '@/composables/useApi'
+import { useCurrenciesStore } from '@/modules/settings/stores/currenciesStore'
 import UiToggleSwitch from '@/components/ui/UiToggleSwitch.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
+import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 
 const { request } = useApi()
+const currenciesStore = useCurrenciesStore()
 
 /** Props for ProductFormModal. */
 const props = defineProps<{
@@ -64,11 +67,37 @@ const slugManuallyEdited = ref(false)
 /** Product description textarea value. */
 const description = ref('')
 
-/** Monthly price input value. */
-const monthlyPrice = ref(0)
+/** One pricing row per configured currency, keyed by ISO 4217 code. */
+interface PriceRow {
+  /** Whether the product is sold in this currency. */
+  enabled: boolean
+  /** Monthly price; meaningless when {@link enabled} is false. */
+  monthly: number
+  /** Annual price; meaningless when {@link enabled} is false. */
+  annual: number
+}
 
-/** Annual price input value. */
-const annualPrice = ref(0)
+/** Pricing grid rows, one per configured currency, keyed by ISO 4217 code. */
+const priceRows = ref<Record<string, PriceRow>>({})
+
+/**
+ * Rebuilds {@link priceRows} from the configured currencies and, when editing, the
+ * product's existing prices. The base currency's row is always enabled.
+ *
+ * @param existingPrices - The product's stored prices, or undefined when creating.
+ */
+function resetPriceRows(existingPrices?: ProductPrice[]): void {
+  const rows: Record<string, PriceRow> = {}
+  for (const currency of currenciesStore.enabledCurrencies) {
+    const existing = existingPrices?.find(p => p.currencyCode === currency.code)
+    rows[currency.code] = {
+      enabled: currency.isBase || existing !== undefined,
+      monthly: existing?.monthly ?? 0,
+      annual: existing?.annual ?? 0,
+    }
+  }
+  priceRows.value = rows
+}
 
 /** Selected server group ID, or null for no group. */
 const serverGroupId = ref<number | null>(null)
@@ -80,7 +109,7 @@ const serverGroups = ref<ServerGroupDto[]>([])
 const isHidden = ref(false)
 
 /**
- * Fetches available server groups from the API on mount.
+ * Fetches available server groups and configured currencies from the API on mount.
  */
 onMounted(async () => {
   try {
@@ -88,6 +117,10 @@ onMounted(async () => {
   } catch {
     /* silent — dropdown will simply be empty */
   }
+  if (currenciesStore.currencies.length === 0) {
+    await currenciesStore.fetchAll()
+  }
+  resetPriceRows(props.product?.prices)
 })
 
 /**
@@ -105,12 +138,9 @@ watch(() => props.product, (p) => {
     slugManuallyEdited.value = true
     packageName.value = p.packageName ?? ''
     description.value = p.description ?? ''
-    // A cycle the product does not sell in the base currency comes back null; the legacy form
-    // has one number per cycle, so it shows 0 until Plan 2 replaces this form.
-    monthlyPrice.value = p.pricing.monthly ?? 0
-    annualPrice.value = p.pricing.annual ?? 0
     serverGroupId.value = p.serverGroupId ?? null
     isHidden.value = p.status === 'Inactive'
+    resetPriceRows(p.prices)
   } else {
     type.value = 'SharedHosting'
     groupId.value = props.groups[0]?.id ?? 0
@@ -119,12 +149,33 @@ watch(() => props.product, (p) => {
     slugManuallyEdited.value = false
     packageName.value = ''
     description.value = ''
-    monthlyPrice.value = 0
-    annualPrice.value = 0
     serverGroupId.value = null
     isHidden.value = false
+    resetPriceRows()
   }
 }, { immediate: true })
+
+/** Configured currencies with a pricing row, base first. */
+const currencyRows = computed(() =>
+  [...currenciesStore.enabledCurrencies].sort((a, b) => (a.isBase === b.isBase ? 0 : a.isBase ? -1 : 1))
+)
+
+/**
+ * Returns the pricing row for a currency code, creating a blank one if
+ * {@link resetPriceRows} has not run for it yet — every code in {@link currencyRows}
+ * is populated on mount and on every product change, so this is a defensive default
+ * rather than a path the UI normally takes.
+ *
+ * @param code - ISO 4217 currency code.
+ * @returns The row to bind the grid's inputs to.
+ */
+function rowFor(code: string): PriceRow {
+  const existing = priceRows.value[code]
+  if (existing) return existing
+  const blank: PriceRow = { enabled: false, monthly: 0, annual: 0 }
+  priceRows.value[code] = blank
+  return blank
+}
 
 /** Options formatted for the UiSelect component. */
 const groupOptions = computed(() =>
@@ -169,6 +220,22 @@ function handleSlugInput(): void {
 }
 
 /**
+ * Builds the `prices` payload from {@link priceRows}: enabled rows only, a blank
+ * cycle sent as `null` rather than zero.
+ *
+ * @returns One entry per enabled currency.
+ */
+function buildPricesPayload(): ProductPrice[] {
+  return Object.entries(priceRows.value)
+    .filter(([, row]) => row.enabled)
+    .map(([currencyCode, row]) => ({
+      currencyCode,
+      monthly: row.monthly || null,
+      annual: row.annual || null,
+    }))
+}
+
+/**
  * Submits the form by emitting the save event with the current field values.
  */
 function handleSubmit(): void {
@@ -180,8 +247,7 @@ function handleSubmit(): void {
     slug: slug.value || null,
     packageName: packageName.value || null,
     type: type.value,
-    monthlyPrice: monthlyPrice.value,
-    annualPrice: annualPrice.value,
+    prices: buildPricesPayload(),
     serverGroupId: serverGroupId.value || null,
   })
 }
@@ -326,29 +392,53 @@ function handleSubmit(): void {
           />
         </div>
 
-        <!-- Pricing -->
+        <!-- Pricing grid -->
         <div>
           <label class="block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-muted mb-1.5">Pricing</label>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-[0.68rem] text-text-muted mb-1">Monthly Price</label>
-              <UiNumberInput
-                v-model="monthlyPrice"
-                :min="0"
-                :step="0.01"
-                placeholder="0.00"
-              />
-            </div>
-            <div>
-              <label class="block text-[0.68rem] text-text-muted mb-1">Annual Price</label>
-              <UiNumberInput
-                v-model="annualPrice"
-                :min="0"
-                :step="0.01"
-                placeholder="0.00"
-              />
-            </div>
+          <div class="border border-border rounded-xl overflow-hidden">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-border bg-white/[0.02]">
+                  <th class="px-3 py-2 text-left text-[0.68rem] font-semibold uppercase tracking-[0.06em] text-text-muted">Enabled</th>
+                  <th class="px-3 py-2 text-left text-[0.68rem] font-semibold uppercase tracking-[0.06em] text-text-muted">Currency</th>
+                  <th class="px-3 py-2 text-left text-[0.68rem] font-semibold uppercase tracking-[0.06em] text-text-muted">Monthly</th>
+                  <th class="px-3 py-2 text-left text-[0.68rem] font-semibold uppercase tracking-[0.06em] text-text-muted">Annual</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-border">
+                <tr v-for="currency in currencyRows" :key="currency.code">
+                  <td class="px-3 py-2">
+                    <UiCheckbox
+                      v-if="!currency.isBase"
+                      :model-value="rowFor(currency.code).enabled"
+                      @update:model-value="v => { rowFor(currency.code).enabled = v }"
+                    />
+                    <span v-else class="text-[0.65rem] font-semibold text-primary-400">Base</span>
+                  </td>
+                  <td class="px-3 py-2 text-text-primary font-medium">{{ currency.code }}</td>
+                  <td class="px-3 py-2">
+                    <UiNumberInput
+                      v-model="rowFor(currency.code).monthly"
+                      :min="0"
+                      :step="0.01"
+                      :disabled="!rowFor(currency.code).enabled"
+                      placeholder="0.00"
+                    />
+                  </td>
+                  <td class="px-3 py-2">
+                    <UiNumberInput
+                      v-model="rowFor(currency.code).annual"
+                      :min="0"
+                      :step="0.01"
+                      :disabled="!rowFor(currency.code).enabled"
+                      placeholder="0.00"
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
+          <p class="mt-1 text-[0.7rem] text-text-muted">A blank cycle leaves the product unsellable on that cycle in that currency.</p>
         </div>
 
         <!-- Hidden toggle -->

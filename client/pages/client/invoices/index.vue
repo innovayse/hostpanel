@@ -48,7 +48,7 @@
           <UiTableTd class="text-gray-900 dark:text-white font-medium">#{{ invoice.id }}</UiTableTd>
           <UiTableTd class="text-gray-500 dark:text-gray-400">{{ formatDate(invoice.invoiceDate) }}</UiTableTd>
           <UiTableTd :class="isOverdue(invoice) ? 'text-red-400 font-medium' : 'text-gray-500 dark:text-gray-400'">{{ formatDate(invoice.dueDate) }}</UiTableTd>
-          <UiTableTd align="right" class="text-gray-900 dark:text-white font-semibold">{{ formatCurrency(invoice.total, { code: store.user?.currency }) }}</UiTableTd>
+          <UiTableTd align="right" class="text-gray-900 dark:text-white font-semibold">{{ formatCurrency(invoice.total, { code: invoice.currency }) }}</UiTableTd>
           <UiTableTd align="center">
             <ClientStatusBadge :status="invoice.status" />
           </UiTableTd>

@@ -136,6 +136,7 @@ const router = createRouter({
         { path: 'settings/tld-pricing/create', component: () => import('../modules/settings/views/TldConfigFormView.vue') },
         { path: 'settings/tld-pricing/:id/edit', component: () => import('../modules/settings/views/TldConfigFormView.vue') },
         { path: 'settings/gateways', component: () => import('../modules/settings/views/GatewaysView.vue') },
+        { path: 'settings/currencies', component: () => import('../modules/settings/views/CurrenciesView.vue') },
       ],
     },
     { path: '/:pathMatch(.*)*', redirect: '/login' },

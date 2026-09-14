@@ -22,12 +22,17 @@
  * therefore covers the list page, the detail page and the payment page, and there is no
  * lighter list variant to keep in step with it.
  *
- * ## There is no currency on an invoice
+ * ## The invoice carries its own currency
  *
- * `InvoiceDto` has no currency field of any kind. The account's currency is the authority —
- * `ClientDto.Currency`, an ISO 4217 code, reaching the portal as `ClientUser.currency` through
- * `server/api/portal/client/me.get.ts`. Amounts here are plain `number`s in that currency; see
- * `utils/formatCurrency.ts` for how one is rendered without inventing the other.
+ * `InvoiceDto.Currency` (added alongside the multi-currency pricing work — see
+ * `docs/superpowers/specs/2026-09-13-multi-currency-pricing-design.md` §3) is an ISO 4217
+ * code set once, at creation, from the payer's currency at the time, and never changed. An
+ * invoice's own currency is the authority for formatting it — never the account's *current*
+ * currency (`ClientUser.currency`), which can differ if the account's currency were ever
+ * changed, and never the page's language. Amounts here are plain `number`s in {@link
+ * ClientInvoice.currency}; format them via `stores/currency.ts` and `utils/formatMoney.ts`
+ * when the currency is a configured one, falling back to `utils/formatCurrency.ts`'s bare ISO
+ * code path otherwise.
  *
  * @module types/clientinvoice
  */
@@ -100,6 +105,8 @@ export interface ClientInvoice {
   clientName: string
   /** Current lifecycle status. */
   status: ClientInvoiceStatus
+  /** ISO 4217 code this invoice was raised and is payable in — fixed at creation, never changed. */
+  currency: string
   /** Issue date (UTC, ISO 8601). */
   invoiceDate: string
   /** Payment due date (UTC, ISO 8601). */

@@ -60,7 +60,8 @@
       "tldPricing": "Цены на TLD",
       "slides": "Слайды",
       "emailTemplates": "Шаблоны писем",
-      "gateways": "Платёжные шлюзы"
+      "gateways": "Платёжные шлюзы",
+      "currencies": "Валюты"
     },
     "servicesTitle": "Услуги"
   },
@@ -207,6 +208,91 @@
         "chatwoot": "Chatwoot",
         "innochat": "Innochat"
       }
+    }
+  },
+  "currencies": {
+    "title": "Валюты",
+    "description": "Настройка валют, курсов обмена и базовой валюты",
+    "updateRates": "Обновить курсы обмена",
+    "updatingRates": "Обновление...",
+    "updateProductPrices": "Обновить цены товаров",
+    "addCurrency": "Добавить валюту",
+    "table": {
+      "code": "Код",
+      "numeric": "Числовой код",
+      "format": "Формат",
+      "decimals": "Знаков после запятой",
+      "rateToBase": "Курс к базовой",
+      "base": "База",
+      "enabled": "Включена",
+      "actions": "Действия"
+    },
+    "makeBase": "Сделать базовой",
+    "baseBadge": "База",
+    "enabledBadge": "Включена",
+    "disabledBadge": "Отключена",
+    "editTooltip": "Редактировать валюту",
+    "empty": "Валюты ещё не настроены. Добавьте первую валюту, чтобы начать.",
+    "makeBaseModal": {
+      "title": "Сделать базовой валютой",
+      "message": "Сделать {code} базовой валютой? Курсы всех остальных валют будут пересчитаны относительно новой базы.",
+      "confirmLabel": "Сделать базовой",
+      "loadingLabel": "Переключение..."
+    },
+    "pricesPicker": {
+      "title": "Обновить цены товаров",
+      "description": "Выберите небазовые валюты для пересчёта цен от базовых.",
+      "cancel": "Отмена",
+      "continue": "Продолжить"
+    },
+    "pricesConfirm": {
+      "title": "Перезаписать цены товаров",
+      "message": "Это перезапишет цены товаров в валютах {codes}, пересчитанные из базовой валюты. Действие необратимо.",
+      "confirmLabel": "Перезаписать",
+      "loadingLabel": "Обновление..."
+    },
+    "toasts": {
+      "saveFailed": "Не удалось сохранить валюту.",
+      "makeBaseSucceeded": "{code} теперь базовая валюта.",
+      "makeBaseFailed": "Не удалось переключить базовую валюту.",
+      "ratesUpdated": "Курсы обновлены: {updated}{missing}",
+      "ratesMissing": "; не котируются: {codes}",
+      "ratesUpdateFailed": "Не удалось обновить курсы обмена.",
+      "pricesUpdated": "Пересчитано строк цен товаров: {count}.",
+      "pricesUpdateFailed": "Не удалось пересчитать цены товаров."
+    },
+    "form": {
+      "editTitle": "Редактировать валюту",
+      "addTitle": "Добавить валюту",
+      "code": {
+        "label": "Код ISO",
+        "placeholder": "например USD"
+      },
+      "numeric": {
+        "label": "Числовой код",
+        "placeholder": "например 840"
+      },
+      "prefix": {
+        "label": "Префикс",
+        "placeholder": "например $"
+      },
+      "suffix": {
+        "label": "Суффикс",
+        "placeholder": "например ֏"
+      },
+      "formatSample": "Пример формата: 2.99 → {sample}",
+      "decimals": "Знаков после запятой",
+      "rateToBase": "Курс к базовой",
+      "rateToBaseBaseHint": "Базовая валюта всегда равна 1 самой себе.",
+      "enabled": {
+        "label": "Включена",
+        "baseHint": "Базовая валюта всегда включена.",
+        "hint": "Может ли плательщик быть выставлен счёт в этой валюте"
+      },
+      "cancel": "Отмена",
+      "save": "Сохранить изменения",
+      "add": "Добавить валюту",
+      "saving": "Сохранение..."
     }
   }
 }

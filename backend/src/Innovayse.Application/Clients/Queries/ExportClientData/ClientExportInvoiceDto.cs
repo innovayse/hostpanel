@@ -9,10 +9,12 @@ using Innovayse.Domain.Billing;
 /// <param name="CreatedAt">When the invoice was raised.</param>
 /// <param name="DueDate">When payment falls due.</param>
 /// <param name="PaidAt">When it was settled, or null while it is still outstanding.</param>
+/// <param name="Currency">ISO 4217 currency code the invoice was raised and is payable in.</param>
 public sealed record ClientExportInvoiceDto(
     int Id,
     InvoiceStatus Status,
     decimal Total,
     DateTimeOffset CreatedAt,
     DateTimeOffset DueDate,
-    DateTimeOffset? PaidAt);
+    DateTimeOffset? PaidAt,
+    string Currency);

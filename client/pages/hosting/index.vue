@@ -18,6 +18,8 @@
  * implies is absorbed by the products endpoint's server-side cache, and it buys
  * a far smaller change to a 500-line page that already works.
  */
+import { useCurrencyStore } from '~/stores/currency'
+
 const { t } = useI18n()
 const { slot } = useTemplate()
 
@@ -35,6 +37,12 @@ useSeo({
 
 const { plans } = usePortalPlans()
 const yearly = ref(false)
+
+const currencyStore = useCurrencyStore()
+onMounted(() => {
+  currencyStore.init()
+  currencyStore.load()
+})
 
 // The comparison rows are assembled here rather than in the template: which
 // column a value belongs to is data, and templates only render what they are

@@ -50,9 +50,17 @@
             </div>
 
             <!-- Items -->
-            <template v-else>
-              <div 
-                v-for="item in cart.items" 
+            <template v-if="!cart.isEmpty">
+              <!-- Notice for items priced in a currency the payer no longer holds -->
+              <div
+                v-if="staleItems.length"
+                class="p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-xs text-yellow-300"
+              >
+                {{ $t('cart.staleCurrencyNotice') }}
+              </div>
+
+              <div
+                v-for="item in cart.itemsInCurrency(currencyStore.payerCode)"
                 :key="item.pid"
                 class="group relative p-4 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-primary-500/30 transition-all duration-300"
               >
@@ -126,51 +134,33 @@
 
 <script setup lang="ts">
 import { ShoppingCart, Server, Trash2, CreditCard, Lock, X } from 'lucide-vue-next'
-import { useCartStore, formatCartItemPrice, convertFromAmd } from '~/stores/cart'
+import { useCartStore } from '~/stores/cart'
+import { useCurrencyStore } from '~/stores/currency'
+import { formatMoney } from '~/utils/formatMoney'
 
 const cart = useCartStore()
+const currencyStore = useCurrencyStore()
 const localePath = useLocalePath()
-const { t: $t, locale } = useI18n()
+const { t: $t } = useI18n()
 const router = useRouter()
 
-/** Maps the current locale to the display currency. */
-const cartCurrency = computed(() => {
-  switch (locale.value) {
-    case 'hy': return 'AMD'
-    case 'ru': return 'RUB'
-    default: return 'USD'
-  }
-})
-
-/** Currency symbols keyed by code. */
-const currencySymbols: Record<string, string> = {
-  AMD: '֏', USD: '$', EUR: '€', RUB: '₽', GBP: '£',
-}
-
 /**
- * Returns the display price for a cart item in the current locale currency.
+ * Returns the display price for a cart item, in the currency it was actually added in — never
+ * converted, never re-labelled by the page language. See `stores/cart.ts`'s module note.
  *
  * @param item - Cart item.
  * @returns Formatted price string.
  */
 function itemPrice(item: typeof cart.items[number]): string {
-  return formatCartItemPrice(item, cartCurrency.value)
+  return formatMoney(item.amount, currencyStore.moneyCurrencyFor(item.currency))
 }
 
+/** Items priced in a currency other than the payer's current one — excluded from the total. */
+const staleItems = computed(() => cart.staleItems(currencyStore.payerCode))
+
 const totalLabel = computed(() => {
-  const items = cart.items
-  if (!items.length) return ''
-  const currency = cartCurrency.value
-  const symbol = currencySymbols[currency] ?? '$'
-  let sum = 0
-  for (const item of items) {
-    if (item.priceAmd !== undefined) {
-      sum += convertFromAmd(item.priceAmd, currency)
-    } else {
-      sum += parseFloat(item.rawPrice || '0')
-    }
-  }
-  return `${symbol}${sum.toFixed(2)}`
+  if (!cart.items.length) return ''
+  return formatMoney(cart.total(currencyStore.payerCode), currencyStore.moneyCurrencyFor(currencyStore.payerCode))
 })
 
 function handleBrowse() {
@@ -190,6 +180,8 @@ onMounted(() => {
       if (e.key === 'Escape' && cart.isOpen) cart.close()
     })
   }
+  currencyStore.init()
+  currencyStore.load()
 })
 
 // Watch route change to close drawer

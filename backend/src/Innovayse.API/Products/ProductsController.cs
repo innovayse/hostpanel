@@ -23,6 +23,10 @@ public sealed class ProductsController(IMessageBus bus) : ControllerBase
     /// Also return products with no price in the caller's currency. The admin grid passes
     /// <see langword="true"/>; the storefront leaves the default, so a visitor only sees what they can buy.
     /// </param>
+    /// <param name="currency">
+    /// Target currency code for an anonymous caller (e.g. "AMD"). Ignored for a signed-in client, whose
+    /// own currency always wins; an unknown or disabled code falls back to the base, same as tld-pricing.
+    /// </param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>List of product DTOs.</returns>
     [HttpGet]
@@ -31,10 +35,11 @@ public sealed class ProductsController(IMessageBus bus) : ControllerBase
         [FromQuery] int? groupId = null,
         [FromQuery] bool activeOnly = true,
         [FromQuery] bool includeUnsellable = false,
+        [FromQuery] string? currency = null,
         CancellationToken ct = default)
     {
         var result = await bus.InvokeAsync<IReadOnlyList<ProductDto>>(
-            new GetProductsQuery(groupId, activeOnly, includeUnsellable), ct);
+            new GetProductsQuery(groupId, activeOnly, includeUnsellable, currency), ct);
         return Ok(result);
     }
 

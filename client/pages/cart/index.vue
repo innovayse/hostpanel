@@ -38,6 +38,14 @@
       </div>
 
       <div v-else class="space-y-6">
+        <!-- Notice for items priced in a currency the payer no longer holds -->
+        <div
+          v-if="staleItems.length"
+          class="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-sm text-yellow-300"
+        >
+          {{ $t('cart.staleCurrencyNotice') }}
+        </div>
+
         <!-- Cart Items -->
         <div class="space-y-3">
           <TransitionGroup name="cart-item" tag="div" class="space-y-3">
@@ -60,7 +68,7 @@
               <!-- Price + Remove -->
               <div class="flex items-center gap-4 flex-shrink-0">
                 <div class="text-right">
-                  <div class="text-lg font-bold text-white">{{ item.price }}</div>
+                  <div class="text-lg font-bold text-white">{{ itemPrice(item) }}</div>
                   <div class="text-xs text-gray-500">/ {{ item.cycleLabel }}</div>
                 </div>
                 <button
@@ -80,7 +88,7 @@
           <div class="space-y-2">
             <div v-for="item in cart.items" :key="item.pid" class="flex justify-between text-sm">
               <span class="text-gray-400 truncate max-w-[60%]">{{ item.name }}</span>
-              <span class="text-white">{{ item.price }}</span>
+              <span class="text-white">{{ itemPrice(item) }}</span>
             </div>
             <div class="border-t border-white/10 pt-3 mt-3 flex justify-between font-bold text-base">
               <span class="text-white">{{ $t('cart.total') }}</span>
@@ -124,24 +132,39 @@
 <script setup lang="ts">
 import { ShoppingCart, Server, Trash2, CreditCard, Lock } from 'lucide-vue-next'
 import { useCartStore } from '~/stores/cart'
+import { useCurrencyStore } from '~/stores/currency'
+import { formatMoney } from '~/utils/formatMoney'
 
 const localePath = useLocalePath()
 const { t: $t } = useI18n()
 
 const cart = useCartStore()
+const currencyStore = useCurrencyStore()
 
-// Load cart from localStorage on mount
-onMounted(() => cart.init())
+// Load cart from localStorage and currencies on mount
+onMounted(() => {
+  cart.init()
+  currencyStore.init()
+  currencyStore.load()
+})
 
-/** Summary label: if all items have the same prefix, show total; otherwise show "Multiple currencies" */
+/**
+ * Formats one cart item's price, in the currency it was actually added in.
+ *
+ * @param item - The cart item.
+ * @returns The formatted price.
+ */
+function itemPrice(item: typeof cart.items[number]): string {
+  return formatMoney(item.amount, currencyStore.moneyCurrencyFor(item.currency))
+}
+
+/** Items priced in a currency other than the payer's current one. */
+const staleItems = computed(() => cart.staleItems(currencyStore.payerCode))
+
+/** Total of items priced in the payer's current currency. */
 const totalLabel = computed(() => {
-  const items = cart.items
-  if (!items.length) return ''
-  const prefixes = [...new Set(items.map(i => i.prefix))]
-  if (prefixes.length > 1) return $t('cart.multipleCurrencies')
-  const prefix = prefixes[0] ?? ''
-  const sum = items.reduce((acc, i) => acc + parseFloat(i.rawPrice || '0'), 0)
-  return `${prefix}${sum.toFixed(2)}`
+  if (!cart.items.length) return ''
+  return formatMoney(cart.total(currencyStore.payerCode), currencyStore.moneyCurrencyFor(currencyStore.payerCode))
 })
 
 useHead({ title: computed(() => `${$t('cart.title')} — Innovayse`) })

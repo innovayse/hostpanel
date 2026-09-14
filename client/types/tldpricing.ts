@@ -14,6 +14,12 @@ export interface TldPricing {
   }
   /** One entry per offered extension, keyed by the extension. */
   pricing: Record<string, {
+    /**
+     * ISO 4217 code this TLD's own sell prices are set in. An order can only be placed in
+     * this currency — the figures above may be converted for display when it differs from
+     * {@link TldPricing.currency}, but the frontend refuses to add such a TLD to the cart.
+     */
+    sellCurrency: string
     /** Registration price per period. */
     register: Record<string, string>
     /** Transfer price per period; falls back to registration when absent. */

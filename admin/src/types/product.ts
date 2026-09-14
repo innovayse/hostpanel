@@ -26,8 +26,20 @@ export interface Product {
   status: string
   /** Monthly and annual pricing in the caller's currency; null when the product has no price for that cycle. */
   pricing: { monthly: number | null; annual: number | null }
+  /** Every stored price, one entry per currency the product sells in. */
+  prices: ProductPrice[]
   /** Optional FK to the server group for provisioning. */
   serverGroupId: number | null
+}
+
+/** A product's stored prices in one currency. */
+export interface ProductPrice {
+  /** ISO 4217 alpha code. */
+  currencyCode: string
+  /** Monthly price, or null when the product does not bill monthly in this currency. */
+  monthly: number | null
+  /** Annual price, or null when the product does not bill annually in this currency. */
+  annual: number | null
 }
 
 /** Represents a product group. */
@@ -60,10 +72,8 @@ export interface CreateProductPayload {
   packageName: string | null
   /** Product type. */
   type: string
-  /** Monthly price. */
-  monthlyPrice: number
-  /** Annual price. */
-  annualPrice: number
+  /** The product's prices, one entry per currency it sells in; enabled rows only. */
+  prices: ProductPrice[]
   /** Optional FK to the server group for provisioning. */
   serverGroupId: number | null
 }
@@ -80,10 +90,8 @@ export interface UpdateProductPayload {
   slug: string | null
   /** Optional hosting package name. */
   packageName: string | null
-  /** Monthly price. */
-  monthlyPrice: number
-  /** Annual price. */
-  annualPrice: number
+  /** The product's prices after the update, one entry per currency it sells in; enabled rows only. */
+  prices: ProductPrice[]
   /** Optional FK to the server group for provisioning. */
   serverGroupId: number | null
 }

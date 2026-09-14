@@ -113,10 +113,17 @@
                            type="password" 
                            :label="$t('checkout.fields.password')" 
                            placeholder="••••••••" required />
-                  <UiPhoneInput v-model="form.phonenumber" 
-                                :label="$t('checkout.fields.phonenumber')" 
+                  <UiPhoneInput v-model="form.phonenumber"
+                                :label="$t('checkout.fields.phonenumber')"
                                 required />
                 </div>
+
+                <UiSelect
+                  :model-value="currencyStore.payerCode ?? undefined"
+                  :label="$t('cart.currency.label')"
+                  :options="currencyStore.currencies.map(c => ({ value: c.code, label: c.code }))"
+                  @update:model-value="value => changeGuestCurrency(String(value))"
+                />
               </div>
             </section>
 
@@ -186,8 +193,15 @@
                 {{ $t('checkout.yourOrder') }}
               </h3>
 
+              <div
+                v-if="staleItems.length"
+                class="mb-4 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-xs text-yellow-300"
+              >
+                {{ $t('cart.staleCurrencyNotice') }}
+              </div>
+
               <div class="space-y-4 mb-8">
-                <div v-for="item in cart.items" :key="item.pid" 
+                <div v-for="item in cart.itemsInCurrency(currencyStore.payerCode)" :key="item.pid"
                      class="flex items-start justify-between gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-400 shrink-0">
@@ -198,7 +212,7 @@
                       <div class="text-[10px] uppercase font-bold tracking-widest text-cyan-400/60 mt-0.5">{{ item.cycleLabel }}</div>
                     </div>
                   </div>
-                  <div class="text-sm font-black text-white whitespace-nowrap">{{ formatCartItemPrice(item, checkoutCurrency) }}</div>
+                  <div class="text-sm font-black text-white whitespace-nowrap">{{ itemPrice(item) }}</div>
                 </div>
               </div>
 
@@ -262,27 +276,17 @@ import {
   CreditCard, ShoppingCart, Server, CheckCircle, User, 
   AlertCircle, Lock, ShieldCheck, Info, Receipt, HelpCircle, X 
 } from 'lucide-vue-next'
-import { useCartStore, formatCartItemPrice, convertFromAmd } from '~/stores/cart'
+import { useCartStore } from '~/stores/cart'
+import { useCurrencyStore } from '~/stores/currency'
+import { formatMoney } from '~/utils/formatMoney'
 import { useBillingApi } from '~/composables/apis/useBillingApi'
 
 const localePath = useLocalePath()
-const { t: $t, locale } = useI18n()
+const { t: $t } = useI18n()
 
 const cart = useCartStore()
+const currencyStore = useCurrencyStore()
 
-/** Maps the current locale to the display currency. */
-const checkoutCurrency = computed(() => {
-  switch (locale.value) {
-    case 'hy': return 'AMD'
-    case 'ru': return 'RUB'
-    default: return 'USD'
-  }
-})
-
-/** Currency symbols keyed by code. */
-const currencySymbols: Record<string, string> = {
-  AMD: '֏', USD: '$', EUR: '€', RUB: '₽', GBP: '£',
-}
 const authStore = useAuthStore()
 const { isLoggedIn, user } = storeToRefs(authStore)
 const { fetchUser, logout, login } = authStore
@@ -290,8 +294,39 @@ const { fetchUser, logout, login } = authStore
 // Registration from previous version
 onMounted(async () => {
   cart.init()
+  currencyStore.init()
+  currencyStore.load()
   if (isLoggedIn.value) await fetchUser()
 })
+
+/** Items priced in a currency other than the payer's current one. */
+const staleItems = computed(() => cart.staleItems(currencyStore.payerCode))
+
+/**
+ * Formats one cart item's price, in the currency it was actually added in.
+ *
+ * @param item - The cart item.
+ * @returns The formatted price.
+ */
+function itemPrice(item: typeof cart.items[number]): string {
+  return formatMoney(item.amount, currencyStore.moneyCurrencyFor(item.currency))
+}
+
+/**
+ * Changes the guest's chosen checkout currency.
+ *
+ * Prices already in the cart were fetched in the previous currency and cannot be converted —
+ * nothing on the frontend converts a stored price — so the cart is cleared once the visitor
+ * confirms, per `docs/superpowers/specs/2026-09-13-multi-currency-pricing-design.md` §5.
+ *
+ * @param code - The newly chosen currency code.
+ */
+function changeGuestCurrency(code: string) {
+  if (code === currencyStore.payerCode) return
+  if (cart.items.length && !confirm($t('cart.currency.changeConfirm'))) return
+  currencyStore.select(code)
+  cart.clear()
+}
 
 // ── Payment methods ────────────────────────────────────────────────────────
 
@@ -339,19 +374,8 @@ const hostingItemsCount = computed(() => hostingItems.value.length)
 // ── Order total ────────────────────────────────────────────────────────────
 
 const totalLabel = computed(() => {
-  const items = cart.items
-  if (!items.length) return '0.00'
-  const currency = checkoutCurrency.value
-  const symbol = currencySymbols[currency] ?? '$'
-  let sum = 0
-  for (const item of items) {
-    if (item.priceAmd !== undefined) {
-      sum += convertFromAmd(item.priceAmd, currency)
-    } else {
-      sum += parseFloat(item.rawPrice || '0')
-    }
-  }
-  return `${symbol}${sum.toFixed(2)}`
+  if (!cart.items.length) return formatMoney(0, currencyStore.moneyCurrencyFor(currencyStore.payerCode))
+  return formatMoney(cart.total(currencyStore.payerCode), currencyStore.moneyCurrencyFor(currencyStore.payerCode))
 })
 
 // ── Submit ─────────────────────────────────────────────────────────────────
@@ -371,7 +395,9 @@ async function submitOrder() {
   orderError.value = ''
 
   const body: Record<string, unknown> = {
-    items: cart.items.map(i => ({
+    // Stale-currency items are never sent — they are excluded from the total and flagged in
+    // the summary for removal, and must not silently ride along into the order.
+    items: cart.itemsInCurrency(currencyStore.payerCode).map(i => ({
       pid: i.pid,
       billingcycle: i.billingcycle,
       domain: i.domain || undefined,
@@ -381,6 +407,8 @@ async function submitOrder() {
       years: i.years || undefined,
     })),
     paymentmethod: selectedMethod.value,
+    // The guest's chosen currency; ignored by the backend for an existing signed-in client.
+    currency: currencyStore.payerCode,
   }
 
   if (!isLoggedIn.value) {

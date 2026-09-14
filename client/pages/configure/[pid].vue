@@ -94,7 +94,7 @@
                   >
                     <div v-if="selectedCycle === cycle.key" class="w-2 h-2 rounded-full bg-cyan-400" />
                   </div>
-                  <span class="text-white font-medium">{{ $t(`hosting.cycles.${cycle.key}`) }}</span>
+                  <span class="text-white font-medium">{{ $t(`hosting.cycles.${cycleI18nKey[cycle.key]}`) }}</span>
                 </div>
                 <span class="font-bold text-white">{{ cycle.price }}</span>
                 <input v-model="selectedCycle" type="radio" :value="cycle.key" class="sr-only" />
@@ -130,7 +130,7 @@
                   <span class="text-gray-400">{{ setupFee }}</span>
                 </div>
                 <div class="flex justify-between text-sm">
-                  <span class="text-gray-400">{{ $t(`hosting.cycles.${selectedCycle}`) }}</span>
+                  <span class="text-gray-400">{{ $t(`hosting.cycles.${cycleI18nKey[selectedCycle]}`) }}</span>
                   <span class="text-white">{{ selectedPrice }}</span>
                 </div>
               </div>
@@ -171,14 +171,21 @@
 <script setup lang="ts">
 import { ArrowLeft, ArrowRight, CheckCircle, AlertCircle, HelpCircle } from 'lucide-vue-next'
 import { useCartStore } from '~/stores/cart'
+import { useCurrencyStore } from '~/stores/currency'
 import { useCatalogApi } from '~/composables/apis/useCatalogApi'
-import type { PortalProduct, PortalProductPricing } from '~/types/portalproduct'
+import { formatMoney } from '~/utils/formatMoney'
+import type { PortalProduct } from '~/types/portalproduct'
 
 const route = useRoute()
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const localePath = useLocalePath()
 const cart = useCartStore()
-onMounted(() => cart.init())
+const currencyStore = useCurrencyStore()
+onMounted(() => {
+  cart.init()
+  currencyStore.init()
+  currencyStore.load()
+})
 
 const pid = Number(route.params.pid)
 
@@ -187,8 +194,10 @@ const pid = Number(route.params.pid)
 // owns the result alone, which is the named exception to component -> store -> api. A store
 // would also cost the SSR dedup and the locale re-fetch that `useApi()` gives for free, and
 // this page is server-rendered and indexed.
+// `currency` is passed the same way `usePortalPlans.ts` passes it — the payer's currency, so
+// the getter re-reads and the request re-fetches once `payerCode` resolves or changes.
 const { data: products, pending } = await useCatalogApi().loadProducts(
-  () => ({ pid })
+  () => ({ pid, currency: currencyStore.payerCode ?? undefined })
 )
 
 const product = computed<PortalProduct | null>(() => products.value?.[0] ?? null)
@@ -232,33 +241,29 @@ const productDesc = computed(() => parsedDesc.value.summary)
 /** Feature bullets, parsed out of the product description — the only source the API offers. */
 const features = computed(() => parsedDesc.value.features)
 
-// Pricing
-const allCycleKeys = ['monthly', 'quarterly', 'semiannually', 'annually', 'biennially', 'triennially'] as const
+// Pricing — the backend prices only monthly and annually; see the note on
+// `types/portalproduct.ts` for why there is no longer a quarterly/semiannual/biennial/triennial
+// key to look up.
+const allCycleKeys = ['monthly', 'annual'] as const
 type CycleKey = typeof allCycleKeys[number]
 
+/** Maps the API's cycle key to the `hosting.cycles.*` i18n key — they are spelled differently. */
+const cycleI18nKey: Record<CycleKey, string> = { monthly: 'monthly', annual: 'annually' }
+
+/** The payer's currency to format and price with — never chosen by the page's language. */
+const payerCurrency = computed(() => currencyStore.moneyCurrencyFor(currencyStore.payerCode))
+
 /**
- * The price block to read amounts from.
+ * Raw numeric price for one cycle, in the caller's own currency, as the API sent it.
  *
- * The BFF only ever populates `USD`, so the locale-preferred lookup below almost always falls
- * through to the first (and only) entry. It is kept because the shape allows more.
- *
- * @returns The price block, or null when the product carries no pricing at all.
+ * @param key - The billing cycle to read.
+ * @returns The amount, or null when the product carries no price for that cycle.
  */
-const getCurrency = (): PortalProductPricing | null => {
-  const pricing = product.value?.pricing
-  if (!pricing) return null
+const cycleAmount = (key: CycleKey): number | null => product.value?.pricing?.[key] ?? null
 
-  const preferred = currencyByLocale[locale.value] ?? 'USD'
-  return pricing[preferred] ?? Object.values(pricing)[0] ?? null
-}
-
-const availableCycles = computed(() => {
-  const c = getCurrency()
-  if (!c) return []
-  return allCycleKeys
-    .filter(k => c[k] && c[k] !== '-1.00' && c[k] !== '0.00')
-    .map(k => ({ key: k, price: `${c.prefix}${c[k]}` }))
-})
+const availableCycles = computed(() => allCycleKeys
+  .filter(k => cycleAmount(k) !== null)
+  .map(k => ({ key: k, price: formatMoney(cycleAmount(k), payerCurrency.value) })))
 
 const selectedCycle = ref<CycleKey>('monthly')
 
@@ -270,36 +275,32 @@ watch(availableCycles, (cycles) => {
   }
 }, { immediate: true })
 
+const selectedAmount = computed(() => cycleAmount(selectedCycle.value))
+
 const selectedPrice = computed(() => {
-  const c = getCurrency()
-  if (!c) return ''
-  const amount = c[selectedCycle.value]
-  if (!amount || amount === '-1.00' || amount === '0.00') return ''
-  return `${c.prefix}${amount}`
+  if (selectedAmount.value === null) return ''
+  return formatMoney(selectedAmount.value, payerCurrency.value)
 })
 
 /**
  * The setup fee for the selected cycle.
  *
- * Always zero, and now says so directly. This used to index the price block with WHMCS's
- * per-cycle setup-fee keys — `msetupfee`, `qsetupfee` and four more — none of which the BFF
- * emits and none of which exist in `ProductPricingDto`. Every lookup missed and every render
- * fell to the same `'0.00'`, so nothing about the displayed figure changes; what changes is
- * that the code no longer implies a setup fee could arrive through a path that does not exist.
+ * Always zero — `ProductPricingDto` carries no setup fee, and there is no per-cycle
+ * setup-fee field anywhere in the C# API for one to come from.
  */
-const setupFee = computed(() => `${getCurrency()?.prefix ?? ''}0.00`)
+const setupFee = computed(() => formatMoney(0, payerCurrency.value))
 
 /** Adds the configured plan to the cart and moves the visitor to checkout. */
 const addToCart = () => {
-  const c = getCurrency()
+  const amount = selectedAmount.value
+  if (amount === null || !currencyStore.payerCode) return
   cart.addItem({
     pid,
     name: productName.value,
     billingcycle: selectedCycle.value,
-    cycleLabel: t(`hosting.cycles.${selectedCycle.value}`),
-    price: selectedPrice.value,
-    prefix: c?.prefix ?? '',
-    rawPrice: c?.[selectedCycle.value] ?? '0'
+    cycleLabel: t(`hosting.cycles.${cycleI18nKey[selectedCycle.value]}`),
+    amount,
+    currency: currencyStore.payerCode
   })
   navigateTo(localePath('/checkout'))
 }

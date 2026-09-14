@@ -1,9 +1,11 @@
 namespace Innovayse.Application.Clients.Commands.AdminCreateClient;
 
 using Innovayse.Application.Auth.Interfaces;
+using Innovayse.Application.Billing.Extensions;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Auth;
 using Innovayse.Domain.Auth.Interfaces;
+using Innovayse.Domain.Billing.Interfaces;
 using Innovayse.Domain.Clients;
 using Innovayse.Domain.Clients.Interfaces;
 
@@ -17,12 +19,14 @@ using Innovayse.Domain.Clients.Interfaces;
 /// <param name="roles">Role store, for granting the Client role.</param>
 /// <param name="clientRepo">Client persistence repository.</param>
 /// <param name="uow">Unit of work for transactional persistence.</param>
+/// <param name="currencies">The currencies this panel offers, for checking a requested one.</param>
 public sealed class AdminCreateClientHandler(
     IIdentityProvider identity,
     IUserProvisioning provisioning,
     ISubjectRoleStore roles,
     IClientRepository clientRepo,
-    IUnitOfWork uow)
+    IUnitOfWork uow,
+    ICurrencyRepository currencies)
 {
     /// <summary>
     /// Processes the admin client creation command.
@@ -33,7 +37,8 @@ public sealed class AdminCreateClientHandler(
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The ID of the newly created client.</returns>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when the existing user ID is not found or already has a linked client.
+    /// Thrown when the existing user ID is not found or already has a linked client, or when
+    /// the requested currency is not one this panel offers.
     /// </exception>
     public async Task<int> HandleAsync(AdminCreateClientCommand cmd, CancellationToken ct)
     {
@@ -82,7 +87,21 @@ public sealed class AdminCreateClientHandler(
 
         client.UpdateAddress(cmd.Street, cmd.Address2, cmd.City, cmd.State, cmd.PostCode, cmd.Country);
 
-        client.UpdatePreferences(cmd.Currency, cmd.PaymentMethod, cmd.BillingContact, cmd.AdminNotes);
+        client.UpdatePreferences(cmd.PaymentMethod, cmd.BillingContact, cmd.AdminNotes);
+
+        // A currency is chosen once. Left blank, the client has none recorded and is billed in
+        // the base by the resolver; given, it must be one the panel actually offers, because
+        // this row is what every later invoice is raised in.
+        if (cmd.Currency is not null)
+        {
+            if (!await currencies.IsOfferedAsync(cmd.Currency, ct))
+            {
+                throw new InvalidOperationException(
+                    $"Currency '{cmd.Currency}' is not configured and enabled on this panel.");
+            }
+
+            client.SetCurrency(cmd.Currency);
+        }
 
         client.UpdateNotifications(
             cmd.NotifyGeneral, cmd.NotifyInvoice, cmd.NotifySupport,

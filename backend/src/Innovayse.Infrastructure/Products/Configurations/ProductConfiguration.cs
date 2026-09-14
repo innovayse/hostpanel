@@ -23,6 +23,18 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(x => x.AnnualPrice).IsRequired().HasColumnType("numeric(18,4)");
         builder.Property(x => x.ServerGroupId).IsRequired(false);
         builder.Property(x => x.CreatedAt).IsRequired();
+
+        // Per-currency prices. ProductPrice.ProductId is never set in memory — SetPrice leaves it 0 —
+        // so this foreign key is what stamps it when the product is saved.
+        builder.HasMany(x => x.Prices)
+            .WithOne()
+            .HasForeignKey(x => x.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
+        // The backing field, not the read-only wrapper, so EF tracks adds and removes.
+        builder.Navigation(x => x.Prices)
+            .HasField("_prices")
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
         builder.Ignore(x => x.DomainEvents);
     }
 }

@@ -6,7 +6,6 @@ using Innovayse.Application.Billing.Options;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Billing.Interfaces;
-using Innovayse.Domain.Clients.Interfaces;
 using Innovayse.SDK.Plugins;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -17,18 +16,16 @@ using Microsoft.Extensions.Options;
 /// reused ones), stores the session on the invoice, and returns the redirect URL.
 /// </summary>
 /// <param name="invoiceRepo">Invoice repository.</param>
-/// <param name="clientRepo">Client repository, used to resolve the invoice's billing currency.</param>
+/// <param name="currencies">The configured currencies, for the numeric code of the one the invoice bills in.</param>
 /// <param name="pluginResolver">Payment plugin resolver.</param>
 /// <param name="uow">Unit of work.</param>
-/// <param name="billingOptions">Panel billing defaults, for the currency a client with none of their own is billed in.</param>
 /// <param name="returnUrlOptions">The origins a payer may be handed back to, used to validate <c>ReturnUrl</c>.</param>
 /// <param name="logger">Structured logger, used to record gateway status-probe failures during the live-session check.</param>
 public sealed class StartGatewayPaymentHandler(
     IInvoiceRepository invoiceRepo,
-    IClientRepository clientRepo,
+    ICurrencyRepository currencies,
     IPaymentPluginResolver pluginResolver,
     IUnitOfWork uow,
-    IOptions<BillingOptions> billingOptions,
     IOptions<GatewayReturnUrlOptions> returnUrlOptions,
     ILogger<StartGatewayPaymentHandler> logger)
 {
@@ -152,28 +149,25 @@ public sealed class StartGatewayPaymentHandler(
     }
 
     /// <summary>
-    /// Verifies the invoice's client bills in the same ISO 4217 currency the plugin will
-    /// actually charge in, refusing before any money moves when they disagree or the client's
-    /// currency has no known numeric mapping.
+    /// Verifies the invoice bills in the currency the plugin charges in, refusing before any
+    /// money moves when they disagree.
     /// </summary>
     /// <param name="invoice">The invoice being paid.</param>
     /// <param name="plugin">The resolved payment plugin.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when the client's currency has no numeric mapping or does not match the plugin's currency.
-    /// </exception>
+    /// <exception cref="InvalidOperationException">The invoice's currency is not configured, or does not match the plugin's.</exception>
     private async Task EnsureCurrencyMatchesAsync(Invoice invoice, IPaymentPlugin plugin, CancellationToken ct)
     {
-        var client = await clientRepo.FindByIdAsync(invoice.ClientId, ct);
-        var clientCurrency = CurrencyCodes.ResolvePayerCurrency(client?.Currency, billingOptions.Value.DefaultCurrency);
-        var clientCurrencyNumeric = CurrencyCodes.ToNumeric(clientCurrency)
+        // The invoice's own currency, not the client's current one: an invoice raised in AMD is
+        // paid in AMD even if the client's record has since been changed.
+        var invoiceCurrency = await currencies.FindAsync(invoice.Currency, ct)
             ?? throw new InvalidOperationException(
-                $"Invoice {invoice.Id}: client currency '{clientCurrency}' has no known ISO 4217 numeric mapping.");
+                $"Invoice {invoice.Id} bills in '{invoice.Currency}', which is not a configured currency.");
 
-        if (!string.Equals(clientCurrencyNumeric, plugin.CurrencyCode, StringComparison.Ordinal))
+        if (!string.Equals(invoiceCurrency.Numeric, plugin.CurrencyCode, StringComparison.Ordinal))
         {
             throw new InvalidOperationException(
-                $"Currency mismatch: invoice {invoice.Id} bills in '{clientCurrency}' (ISO 4217 {clientCurrencyNumeric}) " +
+                $"Currency mismatch: invoice {invoice.Id} bills in '{invoice.Currency}' (ISO 4217 {invoiceCurrency.Numeric}) " +
                 $"but payment method resolves to currency ISO 4217 {plugin.CurrencyCode}.");
         }
     }

@@ -73,7 +73,8 @@ public sealed class MyServicesController(IMessageBus bus) : ControllerBase
         // than from anything the request could carry.
         var profile = await bus.InvokeAsync<ClientDto>(new GetMyProfileQuery(), ct);
 
-        var cmd = new OrderServiceCommand(profile.Id, request.ProductId, request.BillingCycle, 0, 0);
+        // Null amounts: the handler prices the service from the product in the client's currency.
+        var cmd = new OrderServiceCommand(profile.Id, request.ProductId, request.BillingCycle, null, null);
         var id = await bus.InvokeAsync<int>(cmd, ct);
         return StatusCode(StatusCodes.Status201Created, id);
     }

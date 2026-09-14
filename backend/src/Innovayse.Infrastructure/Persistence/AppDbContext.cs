@@ -59,6 +59,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
     /// <summary>Gets the product specification lines table.</summary>
     public DbSet<ProductFeature> ProductFeatures => Set<ProductFeature>();
 
+    /// <summary>Gets the per-currency product prices table.</summary>
+    public DbSet<ProductPrice> ProductPrices => Set<ProductPrice>();
+
+    /// <summary>Gets the currencies table — one base row plus every rated currency.</summary>
+    public DbSet<Currency> Currencies => Set<Currency>();
+
     /// <summary>Gets the client services table.</summary>
     public DbSet<ClientService> ClientServices => Set<ClientService>();
 

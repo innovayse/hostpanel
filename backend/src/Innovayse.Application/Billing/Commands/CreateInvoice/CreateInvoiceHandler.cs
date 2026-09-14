@@ -1,5 +1,6 @@
 namespace Innovayse.Application.Billing.Commands.CreateInvoice;
 
+using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Audit;
 using Innovayse.Domain.Audit.Interfaces;
@@ -13,11 +14,13 @@ using Innovayse.Domain.Billing.Interfaces;
 /// <param name="uow">Unit of work for persistence.</param>
 /// <param name="activityLogRepo">Activity log repository for audit trail.</param>
 /// <param name="ctx">Current request context providing admin identity and IP.</param>
+/// <param name="payerCurrency">The currency the invoiced client is billed in, stamped on the invoice.</param>
 public sealed class CreateInvoiceHandler(
     IInvoiceRepository repo,
     IUnitOfWork uow,
     IActivityLogRepository activityLogRepo,
-    ICurrentRequestContext ctx)
+    ICurrentRequestContext ctx,
+    IPayerCurrencyResolver payerCurrency)
 {
     /// <summary>
     /// Handles <see cref="CreateInvoiceCommand"/>.
@@ -28,7 +31,8 @@ public sealed class CreateInvoiceHandler(
     /// <exception cref="InvalidOperationException">Propagated from domain when invoice invariants are violated (e.g., invalid item price or quantity).</exception>
     public async Task<int> HandleAsync(CreateInvoiceCommand cmd, CancellationToken ct)
     {
-        var invoice = Invoice.Create(cmd.ClientId, cmd.DueDate, cmd.IsDraft);
+        var currency = (await payerCurrency.ForClientAsync(cmd.ClientId, ct)).Code;
+        var invoice = Invoice.Create(cmd.ClientId, cmd.DueDate, currency, cmd.IsDraft);
 
         foreach (var item in cmd.Items)
         {

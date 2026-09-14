@@ -9,7 +9,7 @@ public class InvoiceGatewaySessionTests
     [Fact]
     public void SetGatewaySession_OnUnpaidInvoice_StoresModuleOrderIdAndTimestamp()
     {
-        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
+        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14), currency: "USD");
         var before = DateTimeOffset.UtcNow;
 
         invoice.SetGatewaySession("inecobank", "32faa424-858a-4f22");
@@ -23,7 +23,7 @@ public class InvoiceGatewaySessionTests
     [Fact]
     public void SetGatewaySession_SecondAttempt_OverwritesPreviousSession()
     {
-        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
+        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14), currency: "USD");
         invoice.SetGatewaySession("inecobank", "first-attempt");
 
         invoice.SetGatewaySession("inecobank", "second-attempt");
@@ -34,7 +34,7 @@ public class InvoiceGatewaySessionTests
     [Fact]
     public void SetGatewaySession_OnPaidInvoice_Throws()
     {
-        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
+        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14), currency: "USD");
         invoice.SetGatewaySession("inecobank", "attempt-1");
         invoice.MarkPaid("txn-1");
 
@@ -49,7 +49,7 @@ public class InvoiceGatewaySessionTests
         // (e.g. Stripe, or an admin recorded a manual payment). The stale session must not
         // survive — otherwise refund/reconciliation code would later mistake it for the
         // gateway that actually took the money.
-        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
+        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14), currency: "USD");
         invoice.SetGatewaySession("inecobank", "abandoned-session");
 
         invoice.MarkPaid("stripe-txn-1");
@@ -65,7 +65,7 @@ public class InvoiceGatewaySessionTests
     {
         // The completion path for the invoice's own live gateway session — the session fields
         // must be retained so refund/reconciliation code can identify which gateway paid.
-        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
+        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14), currency: "USD");
         invoice.SetGatewaySession("inecobank", "gw-order-1");
 
         invoice.MarkPaidViaGateway("gw-order-1");
@@ -79,7 +79,7 @@ public class InvoiceGatewaySessionTests
     [Fact]
     public void MarkPaidViaGateway_OnPaidInvoice_Throws()
     {
-        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
+        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14), currency: "USD");
         invoice.SetGatewaySession("inecobank", "gw-order-1");
         invoice.MarkPaidViaGateway("gw-order-1");
 
@@ -93,7 +93,7 @@ public class InvoiceGatewaySessionTests
         // reconciler looks back 24 hours for pending gateway sessions, and a leftover session
         // here would let it re-query the gateway and silently re-mark the invoice Paid again,
         // undoing the admin's reversal.
-        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
+        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14), currency: "USD");
         invoice.SetGatewaySession("inecobank", "gw-order-1");
         invoice.MarkPaidViaGateway("gw-order-1");
 

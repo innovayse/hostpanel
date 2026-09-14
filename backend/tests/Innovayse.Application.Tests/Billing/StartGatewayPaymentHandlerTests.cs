@@ -6,8 +6,6 @@ using Innovayse.Application.Billing.Options;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Billing.Interfaces;
-using Innovayse.Domain.Clients;
-using Innovayse.Domain.Clients.Interfaces;
 using Innovayse.Domain.Common;
 using Innovayse.SDK.Plugins;
 using Microsoft.Extensions.Logging;
@@ -22,24 +20,30 @@ public class StartGatewayPaymentHandlerTests
     private const string ReturnUrl = "https://portal/payment/result?invoice=1";
 
     private readonly Mock<IInvoiceRepository> invoiceRepo = new();
-    private readonly Mock<IClientRepository> clientRepo = new();
+    private readonly Mock<ICurrencyRepository> currencies = new();
     private readonly Mock<IPaymentPluginResolver> resolver = new();
     private readonly Mock<IPaymentPlugin> plugin = new();
     private readonly Mock<IUnitOfWork> uow = new();
 
     public StartGatewayPaymentHandlerTests()
     {
-        // Matches the default (null client currency → BillingOptions left at its own AMD default
-        // → "051") currency path used by most tests below.
-        plugin.SetupGet(p => p.CurrencyCode).Returns("051");
+        // The configured currencies every test runs against. The fixture invoice bills in USD
+        // and the plugin charges in USD (840) unless a test says otherwise, so the default path
+        // starts normally.
+        ConfiguredCurrency("AMD", "051");
+        ConfiguredCurrency("USD", "840");
+        plugin.SetupGet(p => p.CurrencyCode).Returns("840");
     }
 
-    private StartGatewayPaymentHandler CreateHandler(
-        IOptions<BillingOptions>? billingOptions = null, ILogger<StartGatewayPaymentHandler>? logger = null) =>
-        new(invoiceRepo.Object, clientRepo.Object, resolver.Object, uow.Object,
-            billingOptions ?? Options.Create(new BillingOptions()),
+    private StartGatewayPaymentHandler CreateHandler(ILogger<StartGatewayPaymentHandler>? logger = null) =>
+        new(invoiceRepo.Object, currencies.Object, resolver.Object, uow.Object,
             AllowedOriginOptions(),
             logger ?? NullLogger<StartGatewayPaymentHandler>.Instance);
+
+    /// <summary>Makes <paramref name="code"/> a configured currency with the given ISO numeric.</summary>
+    private void ConfiguredCurrency(string code, string numeric) =>
+        currencies.Setup(c => c.FindAsync(code, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Currency.Create(code, numeric, string.Empty, string.Empty, 2, 1m, isBase: false));
 
     /// <summary>The return-url origins every test runs with, matching <see cref="ReturnUrl"/>.</summary>
     private static IOptions<GatewayReturnUrlOptions> AllowedOriginOptions(params string[] origins) =>
@@ -48,14 +52,10 @@ public class StartGatewayPaymentHandlerTests
             AllowedOrigins = origins.Length > 0 ? origins : ["https://portal"],
         });
 
-    /// <summary>Builds billing options with an explicit default currency, to prove that value
-    /// overrides the option class's own AMD default.</summary>
-    private static IOptions<BillingOptions> BillingOptionsWithDefaultCurrency(string defaultCurrency) =>
-        Options.Create(new BillingOptions { DefaultCurrency = defaultCurrency });
-
-    private Invoice CreateInvoice(decimal total = 25.50m, string? clientCurrency = null, int? id = null)
+    /// <summary>Builds an unpaid invoice in <paramref name="currency"/> and wires the repository to hand it back.</summary>
+    private Invoice CreateInvoice(decimal total = 25.50m, string currency = "USD", int? id = null)
     {
-        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14));
+        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(14), currency: currency);
         if (id is not null)
         {
             // Applied before the repo Setup below so the mock is wired to the id the test
@@ -66,19 +66,6 @@ public class StartGatewayPaymentHandlerTests
         invoice.AddItem("Hosting", total, 1);
         invoiceRepo.Setup(r => r.FindByIdAsync(invoice.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(invoice);
-
-        if (clientCurrency is not null)
-        {
-            var client = Client.Create("user-1", "Jane", "Doe", "jane@example.com");
-            client.UpdatePreferences(clientCurrency, null, null, null);
-            clientRepo.Setup(r => r.FindByIdAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(client);
-        }
-        else
-        {
-            clientRepo.Setup(r => r.FindByIdAsync(1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Client?)null);
-        }
 
         return invoice;
     }
@@ -109,9 +96,9 @@ public class StartGatewayPaymentHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_AmdClientAgainstAmdPlugin_RegistersNormally()
+    public async Task HandleAsync_AmdInvoiceAgainstAmdPlugin_RegistersNormally()
     {
-        var invoice = CreateInvoice(total: 10m, clientCurrency: "AMD");
+        var invoice = CreateInvoice(total: 10m, currency: "AMD");
         plugin.SetupGet(p => p.CurrencyCode).Returns("051");
         resolver.Setup(r => r.ResolveAsync("inecobank", It.IsAny<CancellationToken>()))
             .ReturnsAsync(plugin.Object);
@@ -126,9 +113,9 @@ public class StartGatewayPaymentHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_UsdClientAgainstAmdPlugin_RefusesWithoutCallingGateway()
+    public async Task HandleAsync_UsdInvoiceAgainstAmdPlugin_RefusesWithoutCallingGateway()
     {
-        var invoice = CreateInvoice(total: 25m, clientCurrency: "USD");
+        var invoice = CreateInvoice(total: 25m, currency: "USD");
         plugin.SetupGet(p => p.CurrencyCode).Returns("051"); // gateway configured for AMD
         resolver.Setup(r => r.ResolveAsync("inecobank", It.IsAny<CancellationToken>()))
             .ReturnsAsync(plugin.Object);
@@ -143,55 +130,46 @@ public class StartGatewayPaymentHandlerTests
             p => p.CreatePaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>
+    /// The invoice's own currency decides the match, not the client's current one. A client
+    /// whose currency was changed after an invoice was raised still pays that invoice in what it
+    /// was raised in.
+    /// </summary>
     [Fact]
-    public async Task HandleAsync_NullClientCurrencyWithNoConfiguredDefault_TreatedAsAmd()
+    public async Task Handle_ComparesThePluginToTheInvoiceCurrency_NotTheClients()
     {
-        // CreateInvoice with clientCurrency: null → clientRepo.FindByIdAsync returns null (unset mock).
-        // CreateHandler() below leaves BillingOptions at its own default, so the handler must
-        // bill in AMD.
-        var invoice = CreateInvoice(total: 25m);
-        plugin.SetupGet(p => p.CurrencyCode).Returns("051"); // AMD
+        var invoice = CreateInvoice(total: 25.50m, currency: "AMD");
+        plugin.SetupGet(p => p.CurrencyCode).Returns("051");
         resolver.Setup(r => r.ResolveAsync("inecobank", It.IsAny<CancellationToken>()))
             .ReturnsAsync(plugin.Object);
         plugin.Setup(p => p.CreatePaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new PaymentSession("gw-amd-default", "https://pg/pay?mdOrder=gw-amd-default"));
+            .ReturnsAsync(new PaymentSession("gw-amd", "https://pg/pay?mdOrder=gw-amd"));
 
-        var redirect = await CreateHandler().HandleAsync(
-            new StartGatewayPaymentCommand(invoice.Id, "inecobank", ReturnUrl),
-            CancellationToken.None);
+        // The handler never asks who the client is or what they are billed in today: the only
+        // currency lookup it may make is the invoice's own code. A payer resolver is deliberately
+        // absent from the constructor, so "the client record now says USD" cannot reach it.
+        var url = await CreateHandler().HandleAsync(
+            new StartGatewayPaymentCommand(invoice.Id, "inecobank", ReturnUrl), CancellationToken.None);
 
-        Assert.Equal("https://pg/pay?mdOrder=gw-amd-default", redirect);
+        Assert.NotNull(url);
+        currencies.Verify(c => c.FindAsync("AMD", It.IsAny<CancellationToken>()), Times.Once);
+        currencies.Verify(c => c.FindAsync(It.Is<string>(s => s != "AMD"), It.IsAny<CancellationToken>()), Times.Never);
+        currencies.Verify(c => c.GetBaseAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>An invoice in a currency the panel no longer has configured cannot be paid through a gateway.</summary>
     [Fact]
-    public async Task HandleAsync_NullClientCurrencyWithConfiguredDefault_UsesConfiguredValue()
+    public async Task HandleAsync_InvoiceCurrencyNotConfigured_Refuses()
     {
-        // An explicit Billing:DefaultCurrency must win over the option class's AMD default.
-        var invoice = CreateInvoice(total: 25m);
-        plugin.SetupGet(p => p.CurrencyCode).Returns("978"); // EUR — matches the configured default below
-        resolver.Setup(r => r.ResolveAsync("inecobank", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(plugin.Object);
-        plugin.Setup(p => p.CreatePaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new PaymentSession("gw-eur-config", "https://pg/pay?mdOrder=gw-eur-config"));
-
-        var redirect = await CreateHandler(BillingOptionsWithDefaultCurrency("EUR")).HandleAsync(
-            new StartGatewayPaymentCommand(invoice.Id, "inecobank", ReturnUrl),
-            CancellationToken.None);
-
-        Assert.Equal("https://pg/pay?mdOrder=gw-eur-config", redirect);
-    }
-
-    [Fact]
-    public async Task HandleAsync_UnmappableClientCurrency_Refuses()
-    {
-        var invoice = CreateInvoice(total: 25m, clientCurrency: "XYZ");
+        var invoice = CreateInvoice(total: 25m, currency: "XYZ");
         resolver.Setup(r => r.ResolveAsync("inecobank", It.IsAny<CancellationToken>()))
             .ReturnsAsync(plugin.Object);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => CreateHandler().HandleAsync(
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => CreateHandler().HandleAsync(
             new StartGatewayPaymentCommand(invoice.Id, "inecobank", ReturnUrl),
             CancellationToken.None));
 
+        Assert.Contains("XYZ", ex.Message);
         plugin.Verify(
             p => p.CreatePaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -315,7 +293,7 @@ public class StartGatewayPaymentHandlerTests
     }
 
     /// <summary>Overrides <see cref="Entity.Id"/> via reflection (its setter is private) so tests
-    /// can exercise id values — like <see cref="int.MaxValue"/> — that <see cref="Invoice.Create(int, DateTimeOffset)"/>
+    /// can exercise id values — like <see cref="int.MaxValue"/> — that <see cref="Invoice.Create(int, DateTimeOffset, string)"/>
     /// never produces on its own.</summary>
     private static void SetInvoiceId(Invoice invoice, int id)
     {

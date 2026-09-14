@@ -16,9 +16,13 @@ using Wolverine;
 [Route("api/products")]
 public sealed class ProductsController(IMessageBus bus) : ControllerBase
 {
-    /// <summary>Returns products, optionally filtered by group or active status.</summary>
+    /// <summary>Returns products, optionally filtered by group or active status, priced in the caller's currency.</summary>
     /// <param name="groupId">Optional group filter.</param>
     /// <param name="activeOnly">Filter to active products only. Defaults to <see langword="true"/>.</param>
+    /// <param name="includeUnsellable">
+    /// Also return products with no price in the caller's currency. The admin grid passes
+    /// <see langword="true"/>; the storefront leaves the default, so a visitor only sees what they can buy.
+    /// </param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>List of product DTOs.</returns>
     [HttpGet]
@@ -26,10 +30,11 @@ public sealed class ProductsController(IMessageBus bus) : ControllerBase
     public async Task<ActionResult<IReadOnlyList<ProductDto>>> GetAllAsync(
         [FromQuery] int? groupId = null,
         [FromQuery] bool activeOnly = true,
+        [FromQuery] bool includeUnsellable = false,
         CancellationToken ct = default)
     {
         var result = await bus.InvokeAsync<IReadOnlyList<ProductDto>>(
-            new GetProductsQuery(groupId, activeOnly), ct);
+            new GetProductsQuery(groupId, activeOnly, includeUnsellable), ct);
         return Ok(result);
     }
 

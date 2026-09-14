@@ -247,4 +247,8 @@
     <value>Պատկերը չափազանց մեծ է։ Վերբեռնեք 5 ՄԲ-ից փոքր ֆայլ, կողմով առավելագույնը 8000 պիքսել։</value>
     <comment>BRANDING_IMAGE_TOO_LARGE.</comment>
   </data>
+  <data name="OrderCurrencyUnavailable" xml:space="preserve">
+    <value>Ընտրված արժույթը հասանելի չէ։ Վերադարձեք վճարման էջ և ընտրեք այլ արժույթ։</value>
+    <comment>PlaceOrderHandler. A guest checkout asked to be billed in a currency the panel does not offer — never configured, or switched off in the admin currencies page — so it is refused before an account exists.</comment>
+  </data>
 </root>

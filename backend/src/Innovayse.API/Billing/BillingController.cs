@@ -171,16 +171,15 @@ public sealed class BillingController(IMessageBus bus) : ControllerBase
         return NoContent();
     }
 
-    /// <summary>Charges the client and marks the invoice as paid.</summary>
+    /// <summary>Charges the client, in the invoice's own currency, and marks the invoice as paid.</summary>
     /// <param name="id">Invoice primary key.</param>
-    /// <param name="request">Payment request (currency).</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>204 No Content.</returns>
     [HttpPost("{id:int}/pay")]
     [Authorize(Roles = Roles.Admin)]
-    public async Task<IActionResult> PayAsync(int id, [FromBody] PayInvoiceRequest request, CancellationToken ct)
+    public async Task<IActionResult> PayAsync(int id, CancellationToken ct)
     {
-        await bus.InvokeAsync(new PayInvoiceCommand(id, request.Currency), ct);
+        await bus.InvokeAsync(new PayInvoiceCommand(id), ct);
         return NoContent();
     }
 

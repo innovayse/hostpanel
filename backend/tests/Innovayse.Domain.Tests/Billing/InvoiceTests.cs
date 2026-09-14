@@ -13,7 +13,7 @@ public sealed class InvoiceTests
     {
         var due = DateTimeOffset.UtcNow.AddDays(14);
 
-        var invoice = Invoice.Create(clientId: 7, dueDate: due);
+        var invoice = Invoice.Create(clientId: 7, dueDate: due, currency: "USD");
 
         invoice.ClientId.Should().Be(7);
         invoice.Status.Should().Be(InvoiceStatus.Unpaid);
@@ -31,7 +31,7 @@ public sealed class InvoiceTests
     [Fact]
     public void AddItem_IncreasesTotalAndAddsItem()
     {
-        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(7));
+        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(7), currency: "USD");
 
         invoice.AddItem("Hosting Plan", unitPrice: 10m, quantity: 2);
 
@@ -47,7 +47,7 @@ public sealed class InvoiceTests
     [Fact]
     public void AddItem_Twice_AccumulatesTotal()
     {
-        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(7));
+        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(7), currency: "USD");
 
         invoice.AddItem("Domain", 12m, 1);
         invoice.AddItem("SSL", 5m, 3);
@@ -60,7 +60,7 @@ public sealed class InvoiceTests
     [Fact]
     public void MarkPaid_SetsStatusAndRaisesEvent()
     {
-        var invoice = Invoice.Create(clientId: 3, dueDate: DateTimeOffset.UtcNow.AddDays(7));
+        var invoice = Invoice.Create(clientId: 3, dueDate: DateTimeOffset.UtcNow.AddDays(7), currency: "USD");
         invoice.AddItem("VPS", 20m, 1);
         invoice.ClearDomainEvents();
 
@@ -78,7 +78,7 @@ public sealed class InvoiceTests
     [Fact]
     public void MarkPaid_WhenAlreadyPaid_Throws()
     {
-        var invoice = Invoice.Create(clientId: 3, dueDate: DateTimeOffset.UtcNow.AddDays(7));
+        var invoice = Invoice.Create(clientId: 3, dueDate: DateTimeOffset.UtcNow.AddDays(7), currency: "USD");
         invoice.MarkPaid("txn_1");
 
         var act = () => invoice.MarkPaid("txn_2");
@@ -90,7 +90,7 @@ public sealed class InvoiceTests
     [Fact]
     public void MarkOverdue_SetsOverdueAndRaisesEvent()
     {
-        var invoice = Invoice.Create(clientId: 5, dueDate: DateTimeOffset.UtcNow.AddDays(-1));
+        var invoice = Invoice.Create(clientId: 5, dueDate: DateTimeOffset.UtcNow.AddDays(-1), currency: "USD");
         invoice.ClearDomainEvents();
 
         invoice.MarkOverdue();
@@ -104,7 +104,7 @@ public sealed class InvoiceTests
     [Fact]
     public void Cancel_WhenUnpaid_SetsCancelled()
     {
-        var invoice = Invoice.Create(clientId: 2, dueDate: DateTimeOffset.UtcNow.AddDays(7));
+        var invoice = Invoice.Create(clientId: 2, dueDate: DateTimeOffset.UtcNow.AddDays(7), currency: "USD");
 
         invoice.Cancel();
 
@@ -115,7 +115,7 @@ public sealed class InvoiceTests
     [Fact]
     public void Cancel_WhenPaid_Throws()
     {
-        var invoice = Invoice.Create(clientId: 2, dueDate: DateTimeOffset.UtcNow.AddDays(7));
+        var invoice = Invoice.Create(clientId: 2, dueDate: DateTimeOffset.UtcNow.AddDays(7), currency: "USD");
         invoice.MarkPaid("txn_99");
 
         var act = () => invoice.Cancel();
@@ -127,7 +127,7 @@ public sealed class InvoiceTests
     [Fact]
     public void MarkOverdue_WhenAlreadyOverdue_IsIdempotent()
     {
-        var invoice = Invoice.Create(clientId: 5, dueDate: DateTimeOffset.UtcNow.AddDays(-1));
+        var invoice = Invoice.Create(clientId: 5, dueDate: DateTimeOffset.UtcNow.AddDays(-1), currency: "USD");
         invoice.MarkOverdue();
         invoice.ClearDomainEvents();
 
@@ -141,7 +141,7 @@ public sealed class InvoiceTests
     [Fact]
     public void AddItem_WhenOverdue_Throws()
     {
-        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(-1));
+        var invoice = Invoice.Create(clientId: 1, dueDate: DateTimeOffset.UtcNow.AddDays(-1), currency: "USD");
         invoice.MarkOverdue();
 
         var act = () => invoice.AddItem("SSL", 5m, 1);

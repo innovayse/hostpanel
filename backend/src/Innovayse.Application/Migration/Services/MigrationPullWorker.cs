@@ -1,6 +1,7 @@
 namespace Innovayse.Application.Migration.Services;
 
 using Innovayse.Application.Auth.Interfaces;
+using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Common;
 using Innovayse.Application.Migration.Interfaces;
 using Innovayse.Domain.Auth;
@@ -37,6 +38,7 @@ public sealed class MigrationPullWorker(
     ISubjectRoleStore roles,
     IClientRepository clientRepo,
     IInvoiceRepository invoiceRepo,
+    IPayerCurrencyResolver payerCurrency,
     IClientServiceRepository serviceRepo,
     IDomainRepository domainRepo,
     ITicketRepository ticketRepo,
@@ -263,7 +265,9 @@ public sealed class MigrationPullWorker(
 
         if (!string.IsNullOrWhiteSpace(rec.Currency))
         {
-            clientEntity.UpdatePreferences(rec.Currency, null, null, null);
+            // Recorded as the source had it; whether the code is one this panel offers is the
+            // operator's to sort out after the pull, the same as every other field imported here.
+            clientEntity.SetCurrency(rec.Currency);
         }
 
         if (rec.TaxExempt)
@@ -339,11 +343,15 @@ public sealed class MigrationPullWorker(
             }
         }
 
+        // The source record carries no currency, so the imported invoice bills in what the
+        // migrated client is billed in here: their recorded currency, else the base.
+        var currency = (await payerCurrency.ForClientAsync(clientId.Value, ct)).Code;
+
         // Draft invoices need a different factory — Create() produces Unpaid directly.
         var isDraft = rec.Status == "Draft";
         var invoice = isDraft
-            ? Invoice.CreateDraft(clientId.Value, rec.DueDate)
-            : Invoice.Create(clientId.Value, rec.DueDate); // starts as Unpaid
+            ? Invoice.CreateDraft(clientId.Value, rec.DueDate, currency)
+            : Invoice.Create(clientId.Value, rec.DueDate, currency); // starts as Unpaid
 
         foreach (var item in rec.Items)
         {
@@ -731,6 +739,7 @@ public sealed class MigrationPullWorker(
         // Step 2: page through products
         int imported = 0, skipped = 0;
         var allProducts = await productRepo.ListAsync(null, false, ct);
+        var baseCurrency = (await payerCurrency.BaseAsync(ct)).Code;
 
         await foreach (var page in PagesAsync<ProductRecord>(job, "products", ct))
         {
@@ -755,6 +764,9 @@ public sealed class MigrationPullWorker(
                         continue;
                     }
 
+                    // The source install is single-currency, so its two figures become the
+                    // product's prices in this install's base currency. The legacy columns get
+                    // the same figures for the rollback release.
                     var product = Product.Create(
                         localGroupId,
                         rec.Name,
@@ -765,6 +777,8 @@ public sealed class MigrationPullWorker(
                         MapProductType(rec.Type),
                         rec.MonthlyPrice,
                         rec.AnnualPrice);
+                    product.SetPrice(baseCurrency, BillingCycle.Monthly, rec.MonthlyPrice);
+                    product.SetPrice(baseCurrency, BillingCycle.Annual, rec.AnnualPrice);
 
                     productRepo.Add(product);
                     await uow.SaveChangesAsync(ct);

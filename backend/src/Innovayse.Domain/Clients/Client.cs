@@ -11,6 +11,9 @@ using Innovayse.Domain.Common;
 /// </summary>
 public sealed class Client : AggregateRoot
 {
+    /// <summary>Length of an ISO 4217 alpha code, the only shape <see cref="Currency"/> is stored in.</summary>
+    private const int CurrencyCodeLength = 3;
+
     /// <summary>Internal mutable contacts list.</summary>
     private readonly List<Contact> _contacts = [];
 
@@ -222,16 +225,37 @@ public sealed class Client : AggregateRoot
     /// <summary>
     /// Updates the client's billing preferences.
     /// </summary>
-    /// <param name="currency">ISO 4217 currency code.</param>
+    /// <remarks>
+    /// The currency is deliberately not one of these. It is set through <see cref="SetCurrency"/>,
+    /// because whether it may change at all depends on billing history the handler has to ask
+    /// for first; folding it in here let every save of the preferences form rewrite it unchecked.
+    /// </remarks>
     /// <param name="paymentMethod">Preferred payment method label.</param>
     /// <param name="billingContact">Billing contact reference.</param>
     /// <param name="adminNotes">Internal admin notes.</param>
-    public void UpdatePreferences(string? currency, string? paymentMethod, string? billingContact, string? adminNotes)
+    public void UpdatePreferences(string? paymentMethod, string? billingContact, string? adminNotes)
     {
-        Currency = currency;
         PaymentMethod = paymentMethod;
         BillingContact = billingContact;
         AdminNotes = adminNotes;
+    }
+
+    /// <summary>Sets the currency the client is billed in.</summary>
+    /// <remarks>
+    /// Whether this is allowed is not the client's to know — it depends on whether any invoice
+    /// exists, which lives elsewhere. The handler checks and refuses; this method only records,
+    /// in the same shape <c>Invoice</c> stores it: three letters, upper case.
+    /// </remarks>
+    /// <param name="code">ISO 4217 alpha code, normalised to upper case.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="code"/> is not three characters.</exception>
+    public void SetCurrency(string code)
+    {
+        if (string.IsNullOrWhiteSpace(code) || code.Length != CurrencyCodeLength)
+        {
+            throw new ArgumentException("A client's currency is a three-letter ISO 4217 code.", nameof(code));
+        }
+
+        Currency = code.ToUpperInvariant();
     }
 
     /// <summary>

@@ -1,5 +1,6 @@
 namespace Innovayse.Application.Billing.Commands.ProcessRenewalsCron;
 
+using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Application.Common;
 using Innovayse.Domain.Billing;
 using Innovayse.Domain.Billing.Interfaces;
@@ -14,10 +15,18 @@ using Wolverine;
 /// Groups services by client and creates one invoice per client.
 /// Re-schedules itself for the next day after completion.
 /// </summary>
+/// <param name="serviceRepo">Client service repository.</param>
+/// <param name="productRepo">Product repository, for line descriptions.</param>
+/// <param name="invoiceRepo">Invoice repository.</param>
+/// <param name="payerCurrency">The currency each renewing client is billed in, stamped on their invoice.</param>
+/// <param name="uow">Unit of work.</param>
+/// <param name="bus">Message bus, for re-scheduling the job.</param>
+/// <param name="logger">Structured logger.</param>
 public sealed class ProcessRenewalsCronHandler(
     IClientServiceRepository serviceRepo,
     IProductRepository productRepo,
     IInvoiceRepository invoiceRepo,
+    IPayerCurrencyResolver payerCurrency,
     IUnitOfWork uow,
     IMessageBus bus,
     ILogger<ProcessRenewalsCronHandler> logger)
@@ -51,7 +60,8 @@ public sealed class ProcessRenewalsCronHandler(
             foreach (var group in grouped)
             {
                 var clientId = group.Key;
-                var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(PaymentTermDays));
+                var currency = (await payerCurrency.ForClientAsync(clientId, ct)).Code;
+                var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(PaymentTermDays), currency);
 
                 foreach (var service in group)
                 {

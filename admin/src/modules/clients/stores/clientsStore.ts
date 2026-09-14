@@ -159,7 +159,9 @@ export const useClientsStore = defineStore('clients', () => {
   }
 
   /**
-   * Fetches the list of currencies from the reference endpoint.
+   * Fetches the currencies a client may be billed in from the admin currency
+   * configuration, so the picker only ever offers a currency the operator actually
+   * enabled — not the full ISO reference list.
    * Caches the result so subsequent calls are no-ops.
    *
    * @returns Promise that resolves when currencies are loaded.
@@ -167,7 +169,10 @@ export const useClientsStore = defineStore('clients', () => {
   async function fetchCurrencies(): Promise<void> {
     if (currencies.value.length > 0) return
     try {
-      currencies.value = await request<CurrencyOption[]>('/reference/currencies')
+      const configured = await request<{ code: string; prefix: string; suffix: string; isEnabled: boolean }[]>('/admin/currencies')
+      currencies.value = configured
+        .filter(c => c.isEnabled)
+        .map(c => ({ code: c.code, name: c.code, symbol: c.prefix || c.suffix }))
     } catch {
       currencies.value = []
     }

@@ -4,59 +4,40 @@
  * Persisted to localStorage so items survive page reloads.
  * SSR-safe — localStorage access is gated by `import.meta.client`.
  *
+ * ## Currency is never converted here
+ *
+ * Every {@link CartItem} carries the `amount` and `currency` it was added in, both read
+ * verbatim from the API at add time. This store used to hold a hardcoded `AMD_RATES` table and
+ * convert every item's price into whatever currency the page's *language* implied — a page in
+ * Russian billed in roubles regardless of what the visitor had actually been shown. Per
+ * `docs/superpowers/specs/2026-09-13-multi-currency-pricing-design.md` §5, a page's language
+ * says nothing about money: the payer's currency comes from `stores/currency.ts`, and the total
+ * is a sum, not a conversion.
+ *
  * @module stores/cart
  */
 
 import { defineStore } from 'pinia'
 import type { CartItem } from '~/types/cartitem'
 
-/** Exchange rates: 1 AMD = X target currency */
-const AMD_RATES: Record<string, number> = {
-  AMD: 1,
-  USD: 1 / 390,
-  EUR: 1 / 420,
-  RUB: 1 / 4.5,
-  GBP: 1 / 490,
-}
-
-/** Currency symbols keyed by code */
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  AMD: '֏',
-  USD: '$',
-  EUR: '€',
-  RUB: '₽',
-  GBP: '£',
-}
-
-/**
- * Converts an AMD price to the target currency.
- *
- * @param amountAmd - Price in Armenian drams.
- * @param targetCurrency - ISO 4217 currency code.
- * @returns Converted numeric amount.
- */
-export function convertFromAmd(amountAmd: number, targetCurrency: string): number {
-  const rate = AMD_RATES[targetCurrency] ?? AMD_RATES['USD']!
-  return amountAmd * rate
-}
-
-/**
- * Formats a cart item price for display based on the target currency.
- *
- * @param item - The cart item.
- * @param targetCurrency - ISO 4217 currency code to display in.
- * @returns Formatted price string, e.g. "$22.82 USD".
- */
-export function formatCartItemPrice(item: CartItem, targetCurrency: string): string {
-  if (item.priceAmd !== undefined) {
-    const converted = convertFromAmd(item.priceAmd, targetCurrency)
-    const symbol = CURRENCY_SYMBOLS[targetCurrency] ?? '$'
-    return `${symbol}${converted.toFixed(2)} ${targetCurrency}`
-  }
-  return item.price
-}
-
 const STORAGE_KEY = 'innovayse_cart'
+
+/**
+ * True when a persisted item still has the pre-multi-currency shape (`price`/`prefix`/
+ * `rawPrice`/`priceAmd` instead of `amount`/`currency`).
+ *
+ * A cart loaded from an old `localStorage` entry has no reliable amount to show any more — the
+ * old fields were formatted strings or AMD-only figures, never a currency-tagged number — so
+ * such items are dropped on load rather than guessed at. See {@link useCartStore.init}.
+ *
+ * @param item - The parsed localStorage entry.
+ * @returns True when the item predates `amount`/`currency` and must be dropped.
+ */
+function isLegacyItem(item: unknown): boolean {
+  return typeof item !== 'object' || item === null ||
+    typeof (item as { amount?: unknown }).amount !== 'number' ||
+    typeof (item as { currency?: unknown }).currency !== 'string'
+}
 
 // ---------------------------------------------------------------------------
 // Store
@@ -84,19 +65,54 @@ export const useCartStore = defineStore('cart', {
 
     /** Check if a domain + action combo is already in cart */
     hasDomainItem: (state) => (domain: string, action: string): boolean =>
-      state.items.some(i => i.itemType === 'domain' && i.domain === domain && i.domainAction === action)
+      state.items.some(i => i.itemType === 'domain' && i.domain === domain && i.domainAction === action),
+
+    /**
+     * Items priced in `payerCode`, ready to sum and display.
+     *
+     * @returns A function taking the payer's current currency code and returning the items
+     * still valid to charge in it.
+     */
+    itemsInCurrency: (state) => (payerCode: string | null): CartItem[] =>
+      payerCode ? state.items.filter(i => i.currency === payerCode) : state.items,
+
+    /**
+     * Items priced in some other currency than `payerCode` — added before the payer changed
+     * currency. Excluded from {@link total} and shown with a "remove and re-add" notice rather
+     * than reprised, because nothing on the frontend is allowed to convert a stored price.
+     *
+     * @returns A function taking the payer's current currency code and returning the stale items.
+     */
+    staleItems: (state) => (payerCode: string | null): CartItem[] =>
+      payerCode ? state.items.filter(i => i.currency !== payerCode) : [],
+
+    /**
+     * Sum of {@link CartItem.amount} for items priced in `payerCode`.
+     *
+     * @returns A function taking the payer's current currency code and returning the total.
+     */
+    total: (state) => (payerCode: string | null): number =>
+      state.items
+        .filter(i => !payerCode || i.currency === payerCode)
+        .reduce((sum, i) => sum + i.amount, 0)
   },
 
   actions: {
     /**
      * Load cart from localStorage.
      * Must be called on the client side only (e.g. in onMounted).
+     *
+     * Items persisted before multi-currency pricing (no `amount`/`currency`) are dropped —
+     * see {@link isLegacyItem} — since their stored price can no longer be trusted or shown.
      */
     init() {
       if (!import.meta.client) return
       try {
         const saved = localStorage.getItem(STORAGE_KEY)
-        if (saved) this.items = JSON.parse(saved) as CartItem[]
+        if (!saved) return
+        const parsed = JSON.parse(saved) as unknown[]
+        this.items = parsed.filter(i => !isLegacyItem(i)) as CartItem[]
+        if (this.items.length !== parsed.length) this._save()
       } catch {
         // ignore corrupt storage
       }
@@ -128,7 +144,7 @@ export const useCartStore = defineStore('cart', {
         this.items.push(item)
         this._save()
       }
-      
+
       // Automatically open drawer when item is added
       this.open()
 

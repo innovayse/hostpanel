@@ -1,10 +1,16 @@
 /**
  * One catalogue product, as `GET /api/portal/public/products` returns it.
  *
- * The route spreads the C# `ProductDto` verbatim and adds exactly two things: `pid`, a
- * WHMCS-compatible alias of `id`, and a `pricing.USD` block replacing `ProductPricingDto`'s
- * `{ monthly, annual }` numbers with decimal strings under all six billing-cycle keys. Every
- * other field below is `ProductDto`'s own, camelCase, as `System.Text.Json` writes it.
+ * The route spreads the C# `ProductDto` verbatim and adds exactly one thing: `pid`, a
+ * WHMCS-compatible alias of `id`. Every other field below is `ProductDto`'s own, camelCase, as
+ * `System.Text.Json` writes it — including `pricing` and `prices`, which the route used to
+ * replace with a hardcoded `pricing.USD` block of decimal strings under six billing-cycle
+ * keys. The backend prices only monthly and annually, and `pricing` already arrives in the
+ * caller's own currency (the signed-in client's, or the base currency for a guest) — see
+ * `Innovayse.Application.Products.Common.ProductPricingDto` and
+ * `PayerCurrencyResolver.ForCallerAsync`. Relabelling it `USD` and formatting it with `$` was
+ * wrong for every currency but the base, and a page's language was never the right thing to
+ * decide it either (`docs/superpowers/specs/2026-09-13-multi-currency-pricing-design.md` §5).
  *
  * ## `groupId`, not `gid`
  *
@@ -41,24 +47,29 @@
  * @module types/portalproduct
  */
 
-/** Prices for one currency, as the BFF's `pricing` block carries them. */
+/**
+ * The product's price in the caller's own currency, as `ProductPricingDto` sends it.
+ *
+ * Both fields are `null` when the product carries no price in that currency at all — the
+ * storefront hides such a product for the cycle that is null (`GET /products` without
+ * `includeUnsellable` already excludes a product with no price in any currency, but a product
+ * priced only annually, say, still needs the monthly card hidden).
+ */
 export interface PortalProductPricing {
-  /** Symbol printed before an amount. */
-  prefix?: string
-  /** Symbol printed after an amount. */
-  suffix?: string
-  /** Monthly price as a decimal string; `-1.00` when the cycle is not offered. */
-  monthly?: string
-  /** Quarterly price; the BFF sends `-1.00` — the backend prices only monthly and annually. */
-  quarterly?: string
-  /** Semi-annual price; `-1.00`, as above. */
-  semiannually?: string
-  /** Annual price as a decimal string; `-1.00` when the cycle is not offered. */
-  annually?: string
-  /** Biennial price; `-1.00`, as above. */
-  biennially?: string
-  /** Triennial price; `-1.00`, as above. */
-  triennially?: string
+  /** Monthly price in the caller's currency, or null when not offered. */
+  monthly: number | null
+  /** Annual price in the caller's currency, or null when not offered. */
+  annual: number | null
+}
+
+/** One product's price in one specific currency, as `ProductDto.prices` carries them. */
+export interface PortalProductCurrencyPrice {
+  /** ISO 4217 alpha code this row is priced in. */
+  currencyCode: string
+  /** Monthly price in this currency, or null when not offered. */
+  monthly: number | null
+  /** Annual price in this currency, or null when not offered. */
+  annual: number | null
 }
 
 /** One catalogue product. */
@@ -85,9 +96,8 @@ export interface PortalProduct {
   status?: string
   /** FK to the server group used for provisioning. */
   serverGroupId?: number | null
-  /**
-   * Prices keyed by currency code. Only `USD` is populated: the BFF hardcodes the key and the
-   * `$` prefix, so this is not the account's billing currency and must not be read as one.
-   */
-  pricing?: Partial<Record<string, PortalProductPricing>>
+  /** The product's price in the caller's own currency; null when it carries no price at all. */
+  pricing?: PortalProductPricing | null
+  /** The product's price in every currency it is sold in — what the admin pricing grid edits. */
+  prices?: PortalProductCurrencyPrice[]
 }

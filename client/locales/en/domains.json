@@ -12,6 +12,7 @@
     "checkFailed": "Domain check failed. Please try again.",
     "tldNotSupported": "This TLD is not available for registration",
     "alreadyInCart": "Already in Cart",
+    "currencyMismatch": "This domain is priced in a currency you're not currently billed in.",
     "tabRegister": "Register",
     "tabTransfer": "Transfer",
     "transferPlaceholder": "Enter domain to transfer (e.g. mysite.com)",

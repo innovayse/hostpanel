@@ -29,6 +29,18 @@
  * **So the authoritative currency is `Client.Currency`, and it now reaches this file** as
  * `store.user?.currency`, passed as {@link CurrencyInfo.code}.
  *
+ * ## `formatMoney` is the sibling, for the common case now
+ *
+ * Multi-currency pricing (`docs/superpowers/specs/2026-09-13-multi-currency-pricing-design.md`)
+ * added `stores/currency.ts`, which loads the operator's configured currencies — each with its
+ * own `prefix`/`suffix`/`decimals` — from `GET /api/currencies`. Most call sites now know
+ * exactly which configured currency an amount is in (a cart item, an invoice, a product price)
+ * and should call `utils/formatMoney.ts`'s `formatMoney(amount, currency)` instead of this
+ * function, because it renders with the operator's own decimal count rather than `Intl`'s
+ * per-ISO-code guess. This function remains for the cases described above, where only a bare
+ * ISO code (or nothing at all) is known.
+ *
+
  * ## What this does instead of guessing
  *
  * Nothing in the frontend knows whether `24000` is drams, roubles or dollars. Printing `֏`

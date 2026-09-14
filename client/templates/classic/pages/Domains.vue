@@ -91,8 +91,9 @@
                 <button
                   v-if="result.available"
                   class="flex-1 sm:flex-none px-8 py-3.5 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-black text-xs uppercase tracking-widest hover:shadow-xl hover:shadow-green-500/20 transition-all scale-100 active:scale-95 text-center disabled:opacity-50 disabled:cursor-not-allowed"
-                  :disabled="cart.hasDomainItem(result.domain, 'register')"
-                  @click="addDomainToCart(result.domain, getRegisterPrice(result.domain), 1)"
+                  :disabled="cart.hasDomainItem(result.domain, 'register') || !canAddDomain(result.domain)"
+                  :title="!canAddDomain(result.domain) ? $t('domains.currencyMismatch') : undefined"
+                  @click="addDomainToCart(result.domain, 1)"
                 >
                   {{ cart.hasDomainItem(result.domain, 'register') ? $t('domains.alreadyInCart') : $t('domains.registerNow') }}
                 </button>
@@ -304,10 +305,12 @@
 import { Globe, CheckCircle, XCircle, ArrowLeftRight, Server, ArrowRight, AlertCircle } from 'lucide-vue-next'
 import { apiFetch } from '~/composables/useApi'
 import { useCartStore } from '~/stores/cart'
+import { useCurrencyStore } from '~/stores/currency'
 import { useCatalogApi } from '~/composables/apis/useCatalogApi'
 import { apiErrorMessage } from '~/utils/apiError'
+import { formatMoney } from '~/utils/formatMoney'
 
-const { t: $t, locale } = useI18n()
+const { t: $t } = useI18n()
 const localePath = useLocalePath()
 const route = useRoute()
 const cart = useCartStore()
@@ -388,31 +391,46 @@ function quickSearch(ext: string) {
 /**
  * Adds a domain registration to the cart.
  *
+ * Refuses when the TLD's own sell currency is not the payer's current currency — the
+ * frontend never converts a stored price, so a mismatch means this domain simply cannot be
+ * sold in what the payer is billed in right now. Callers gate the button on
+ * {@link canAddDomain} first; this is the second line of defence.
+ *
  * @param domain - Full domain name (e.g. "example.com")
- * @param price - Registration price for the selected period
  * @param years - Registration period in years
  */
-function addDomainToCart(domain: string, price: number, years: number = 1) {
-  if (!domainProductId.value) return
+function addDomainToCart(domain: string, years: number = 1) {
+  if (!domainProductId.value || !currencyStore.payerCode) return
 
   const tld = domain.substring(domain.indexOf('.') + 1)
-  const amdPrice = getRegisterPriceAmd(domain)
+  const entry = tldPricing.value?.pricing?.[tld]
+  if (!entry?.register?.['1'] || entry.sellCurrency !== currencyStore.payerCode) return
 
   cart.addItem({
     pid: domainProductId.value,
     name: domain,
     billingcycle: 'annually',
     cycleLabel: `${years} Year${years > 1 ? 's' : ''}`,
-    price: '',
-    prefix: '$',
-    rawPrice: '0',
-    priceAmd: amdPrice,
+    amount: parseFloat(entry.register['1']),
+    currency: currencyStore.payerCode,
     domain,
     itemType: 'domain',
     domainAction: 'register',
     tld,
     years,
   })
+}
+
+/**
+ * Whether a domain can be added to the cart in the payer's current currency.
+ *
+ * @param domain - Full domain name.
+ * @returns True when the TLD's sell currency matches the payer's currency.
+ */
+function canAddDomain(domain: string): boolean {
+  const tld = domain.substring(domain.indexOf('.') + 1)
+  const entry = tldPricing.value?.pricing?.[tld]
+  return !!entry && entry.sellCurrency === currencyStore.payerCode
 }
 
 /**
@@ -427,48 +445,11 @@ const isTldSupported = computed<boolean>(() => {
   return !!tldPricing.value?.pricing?.[tld]
 })
 
-/**
- * Looks up the 1-year registration price for a domain from the TLD pricing data.
- * Returns the price already converted to the current locale's currency.
- *
- * @param domain - Full domain name
- * @returns Registration price in the current display currency, or 0 if not found.
- */
-function getRegisterPrice(domain: string): number {
-  const tld = domain.substring(domain.indexOf('.') + 1)
-  const entry = tldPricing.value?.pricing?.[tld]
-  if (!entry?.register?.['1']) return 0
-  return parseFloat(entry.register['1'])
-}
-
-/**
- * Looks up the 1-year registration price in AMD for a domain.
- * The AMD price is the base price before currency conversion.
- *
- * @param domain - Full domain name
- * @returns Registration price in AMD, or 0 if not found.
- */
-function getRegisterPriceAmd(domain: string): number {
-  const tld = domain.substring(domain.indexOf('.') + 1)
-  const entry = tldPricing.value?.pricing?.[tld]
-  if (!entry?.register?.['1']) return 0
-  const displayPrice = parseFloat(entry.register['1'])
-  // Reverse-convert from display currency back to AMD
-  const rate = AMD_RATES[localeCurrency.value] ?? AMD_RATES['USD']!
-  return rate > 0 ? displayPrice / rate : 0
-}
-
-/** Exchange rates: 1 AMD = X target currency (must match backend) */
-const AMD_RATES: Record<string, number> = {
-  AMD: 1,
-  USD: 1 / 390,
-  EUR: 1 / 420,
-  RUB: 1 / 4.5,
-  GBP: 1 / 490,
-}
 
 /** Price entries keyed by period in years. */
 interface TldPriceEntry {
+  /** ISO 4217 code this TLD's own sell prices are set in — see `TldPriceEntryDto`'s note. */
+  sellCurrency: string
   /** Registration prices keyed by period in years. */
   register: Record<string, string>
   /** Transfer prices keyed by period in years. */
@@ -487,14 +468,12 @@ interface TldPricingResponse {
   pricing: Record<string, TldPriceEntry>
 }
 
-// TLD Pricing — convert to locale-appropriate currency
-/** Maps the current locale to the display currency. */
-const localeCurrency = computed(() => {
-  switch (locale.value) {
-    case 'hy': return 'AMD'
-    case 'ru': return 'RUB'
-    default: return 'USD'
-  }
+// TLD Pricing — priced in the payer's own currency, never the page's language. See
+// `docs/superpowers/specs/2026-09-13-multi-currency-pricing-design.md` §5.
+const currencyStore = useCurrencyStore()
+onMounted(() => {
+  currencyStore.init()
+  currencyStore.load()
 })
 
 // Straight from the API composable rather than through a store: this page reads the price
@@ -503,7 +482,7 @@ const localeCurrency = computed(() => {
 // a URL string here — building URLs is not a page's job.
 const catalog = useCatalogApi()
 const { data: tldPricing, pending: pricingPending } =
-  await catalog.loadTldPricing(() => localeCurrency.value)
+  await catalog.loadTldPricing(() => currencyStore.payerCode ?? undefined)
 
 const activeCategory = ref<string | null>(null)
 
@@ -539,9 +518,8 @@ const displayedTlds = computed(() => Object.fromEntries(filteredEntries.value) a
  */
 function formatPrice(price: string) {
   if (!price || price === '-1' || price === '0.00') return 'N/A'
-  const currency = tldPricing.value?.currency
-  const code = currency?.code ? ` ${currency.code}` : ' USD'
-  return currency ? `${currency.prefix}${price}${code}` : `$${price} USD`
+  const code = tldPricing.value?.currency?.code
+  return formatMoney(parseFloat(price), currencyStore.moneyCurrencyFor(code))
 }
 
 /**

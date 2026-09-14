@@ -19,6 +19,7 @@ using Innovayse.Domain.Billing;
 /// <param name="InvoiceDate">Invoice issue date (UTC).</param>
 /// <param name="PaymentMethod">Preferred payment method; null when not specified.</param>
 /// <param name="ClientName">Display name of the owning client.</param>
+/// <param name="Currency">ISO 4217 currency code the invoice was raised and is payable in.</param>
 /// <param name="Items">Line items on the invoice.</param>
 /// <param name="Transactions">Financial transactions recorded against the invoice.</param>
 public record InvoiceDto(
@@ -38,5 +39,6 @@ public record InvoiceDto(
     DateTimeOffset InvoiceDate,
     string? PaymentMethod,
     string ClientName,
+    string Currency,
     IReadOnlyList<InvoiceItemDto> Items,
     IReadOnlyList<InvoiceTransactionDto> Transactions);

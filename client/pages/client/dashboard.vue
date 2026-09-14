@@ -162,7 +162,7 @@
               <div class="text-gray-500 text-xs">{{ $t('client.dashboard.due') }} {{ formatDate(invoice.dueDate) }}</div>
             </div>
             <div class="flex items-center gap-3">
-              <span class="text-gray-900 dark:text-white font-semibold text-sm">{{ formatCurrency(invoice.total, { code: store.user?.currency }) }}</span>
+              <span class="text-gray-900 dark:text-white font-semibold text-sm">{{ formatCurrency(invoice.total, { code: invoice.currency }) }}</span>
               <ClientStatusBadge :status="invoice.status" />
             </div>
           </NuxtLink>

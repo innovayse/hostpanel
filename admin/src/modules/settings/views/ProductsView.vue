@@ -7,11 +7,13 @@
  */
 import { computed, onMounted, ref } from 'vue'
 import { useSettingsStore } from '../stores/settingsStore'
+import { useCurrenciesStore } from '../stores/currenciesStore'
 import ProductFormModal from '../components/ProductFormModal.vue'
 import ProductFeaturesModal from '../components/ProductFeaturesModal.vue'
 import type { CreateProductPayload, Product } from '@/types/product'
 
 const store = useSettingsStore()
+const currenciesStore = useCurrenciesStore()
 
 /** Whether the product form modal is visible. */
 const showModal = ref(false)
@@ -29,8 +31,24 @@ onMounted(async () => {
   await Promise.all([
     store.fetchProducts(),
     store.fetchProductGroups(),
+    currenciesStore.currencies.length === 0 ? currenciesStore.fetchAll() : Promise.resolve(),
   ])
 })
+
+/** The base currency, used to format the grid's Monthly/Annual columns. */
+const baseCurrency = computed(() => currenciesStore.currencies.find(c => c.isBase))
+
+/**
+ * Lists the other currencies (besides the base) a product sells in, for the "+AMD, EUR" hint.
+ *
+ * @param product - The product to inspect.
+ * @returns Currency codes the product has a price row for, excluding the base currency.
+ */
+function otherCurrencyCodes(product: Product): string[] {
+  return product.prices
+    .map(p => p.currencyCode)
+    .filter(code => code !== baseCurrency.value?.code)
+}
 
 /** Product type display labels. */
 const typeLabels: Record<string, string> = {
@@ -53,14 +71,18 @@ function groupName(groupId: number): string {
 }
 
 /**
- * Formats a price cell. A product that does not sell a cycle in the caller's currency
- * has no figure for it, and the grid shows a dash rather than a number.
+ * Formats a price cell in the base currency. A product that does not sell a cycle in
+ * the base currency has no figure for it, and the grid shows a dash rather than a number.
  *
  * @param amount - The price, or null when the product has none for that cycle.
  * @returns The formatted amount, or "—" when there is none.
  */
-const formatPrice = (amount: number | null): string =>
-  amount === null ? '—' : `$${amount.toFixed(2)}`
+const formatPrice = (amount: number | null): string => {
+  if (amount === null) return '—'
+  const currency = baseCurrency.value
+  if (!currency) return amount.toFixed(2)
+  return `${currency.prefix}${amount.toFixed(currency.decimals)}${currency.suffix}`
+}
 
 /**
  * Opens the modal in create mode.
@@ -95,8 +117,7 @@ async function handleSave(payload: CreateProductPayload): Promise<void> {
         website: payload.website,
         slug: payload.slug,
         packageName: payload.packageName,
-        monthlyPrice: payload.monthlyPrice,
-        annualPrice: payload.annualPrice,
+        prices: payload.prices,
         serverGroupId: payload.serverGroupId,
       })
     } else {
@@ -166,7 +187,12 @@ async function handleSave(payload: CreateProductPayload): Promise<void> {
             </td>
             <td class="px-5 py-3.5 text-text-secondary">{{ groupName(product.groupId) }}</td>
             <td class="px-5 py-3.5 text-text-secondary">{{ typeLabels[product.type] ?? product.type }}</td>
-            <td class="px-5 py-3.5 text-text-primary font-mono">{{ formatPrice(product.pricing.monthly) }}</td>
+            <td class="px-5 py-3.5 text-text-primary font-mono">
+              {{ formatPrice(product.pricing.monthly) }}
+              <span v-if="otherCurrencyCodes(product).length > 0" class="ml-1 text-[0.68rem] text-text-muted font-sans">
+                +{{ otherCurrencyCodes(product).join(', ') }}
+              </span>
+            </td>
             <td class="px-5 py-3.5 text-text-primary font-mono">{{ formatPrice(product.pricing.annual) }}</td>
             <td class="px-5 py-3.5">
               <span

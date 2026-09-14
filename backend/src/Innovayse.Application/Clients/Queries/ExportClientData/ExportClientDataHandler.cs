@@ -118,7 +118,7 @@ public sealed class ExportClientDataHandler(
         {
             var rows = await invoices.ListByClientAsync(clientId, ct);
             invoiceRows = rows
-                .Select(i => new ClientExportInvoiceDto(i.Id, i.Status, i.Total, i.CreatedAt, i.DueDate, i.PaidAt))
+                .Select(i => new ClientExportInvoiceDto(i.Id, i.Status, i.Total, i.CreatedAt, i.DueDate, i.PaidAt, i.Currency))
                 .ToList();
         }
 

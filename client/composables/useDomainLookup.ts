@@ -1,4 +1,6 @@
 import { useCatalogApi } from '~/composables/apis/useCatalogApi'
+import { useCurrencyStore } from '~/stores/currency'
+import { formatMoney } from '~/utils/formatMoney'
 import { ALL_CATEGORY } from '~/templates/aurora/types'
 import type { DomainResult } from '~/templates/aurora/types'
 import type { TldPriceRow } from '~/types/tldpricerow'
@@ -9,6 +11,10 @@ import type { TldPriceRow } from '~/types/tldpricerow'
  * The backend checks one domain per request, so a search fans out across the
  * offered extensions and waits for all of them.
  *
+ * Prices are quoted in the payer's own currency — {@link useCurrencyStore.payerCode} — never
+ * by the page's language. See
+ * `docs/superpowers/specs/2026-09-13-multi-currency-pricing-design.md` §5.
+ *
  * @param tldLimit How many extensions the search offers.
  * @returns Price rows, the search results, pending state and the search action.
  */
@@ -16,12 +22,14 @@ export const useDomainLookup = (tldLimit = 4) => {
   // Through the API composable rather than a raw `useFetch`: that is the layer that owns the
   // URL, and `useApi()` beneath it sends the locale header the raw call was skipping.
   const { loadTldPricing, checkDomain } = useCatalogApi()
-  const { data } = loadTldPricing()
+  const currencyStore = useCurrencyStore()
+  const { data } = loadTldPricing(() => currencyStore.payerCode ?? undefined)
 
   const results = ref<DomainResult[]>([])
   const pending = ref(false)
 
-  const prefix = computed(() => data.value?.currency?.prefix ?? '')
+  /** The row's own currency, shaped for {@link formatMoney}. */
+  const rowCurrency = computed(() => currencyStore.moneyCurrencyFor(data.value?.currency?.code))
 
   /**
    * Formats a price from the period-keyed map, falling back to a dash.
@@ -30,7 +38,7 @@ export const useDomainLookup = (tldLimit = 4) => {
    */
   const oneYear = (map: Record<string, string> | undefined) => {
     const value = map?.['1']
-    return value ? `${prefix.value}${value}` : '—'
+    return value ? formatMoney(parseFloat(value), rowCurrency.value) : '—'
   }
 
   /** Every priced extension, for the full price table. */
@@ -42,6 +50,7 @@ export const useDomainLookup = (tldLimit = 4) => {
       transfer: oneYear(entry?.transfer ?? entry?.register),
       categories: entry?.categories ?? [],
       registerAmount: Number(entry?.register?.['1'] ?? 0) || 0,
+      sellCurrency: entry?.sellCurrency ?? '',
     })))
 
   /**
@@ -93,11 +102,7 @@ export const useDomainLookup = (tldLimit = 4) => {
     }
   }
 
-  /**
-   * Currency the prices are quoted in, as the API reports it. The cart converts
-   * from AMD when told to, so a caller has to know which it is holding rather
-   * than assuming, the way the original page did.
-   */
+  /** Currency the prices are quoted in, as the API reports it — the payer's own currency. */
   const currencyCode = computed(() => data.value?.currency?.code ?? '')
 
   return { priceRows, categories, currencyCode, offeredTlds, results, pending, search }

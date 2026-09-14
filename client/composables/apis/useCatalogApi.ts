@@ -73,13 +73,14 @@ export function useCatalogApi() {
   /**
    * Server-rendered read of the TLD price table.
    *
-   * @param currency - ISO 4217 code to quote prices in. Omit to take the backend's default.
-   * A getter so the table re-reads when the visitor switches locale.
+   * @param currency - ISO 4217 code to quote prices in — the payer's currency, never the
+   * page's language. Omit to take the backend's default. A getter so the table re-reads once
+   * the payer's currency resolves (it is not known synchronously on first render).
    * @returns The `useApi()` handle for the price table.
    */
-  const loadTldPricing = (currency?: () => string) =>
+  const loadTldPricing = (currency?: () => string | undefined) =>
     useApi<TldPricing>('/api/portal/public/tld-pricing', {
-      query: () => (currency ? { currency: currency() } : {})
+      query: () => (currency?.() ? { currency: currency() } : {})
     })
 
   /**

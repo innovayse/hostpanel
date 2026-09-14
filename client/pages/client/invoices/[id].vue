@@ -115,7 +115,6 @@
 <script setup lang="ts">
 import { ArrowLeft, AlertCircle, CreditCard } from 'lucide-vue-next'
 import { useBillingApi } from '~/composables/apis/useBillingApi'
-import { useClientStore } from '~/stores/client'
 import { formatCurrency } from '~/utils/formatCurrency'
 import { EMPTY_DATE, formatDate, formatDateTime } from '~/utils/formatDate'
 import { isInvoiceOutstanding, isInvoiceOverdue } from '~/utils/invoice'
@@ -124,7 +123,6 @@ definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
 const route = useRoute()
 const localePath = useLocalePath()
-const store = useClientStore()
 
 // Straight from the API composables rather than through a store: this page reads these once
 // and owns the results alone, which is the named exception to component -> store -> api.
@@ -133,22 +131,26 @@ const { data: invoice, pending, error } = await useBillingApi().loadInvoice(
 )
 
 /**
- * Formats one amount on this invoice in the account's billing currency.
+ * Formats one amount on this invoice in the invoice's own billing currency.
  *
  * Every figure on the page used to be prefixed with a literal `$`, which asserted US dollars on
  * a bill that may be in none. The replacement then read `currencycode` / `currencyprefix` /
  * `currencysuffix` off the invoice — three fields `InvoiceDto` does not have and never sent, so
- * it printed no symbol for a different reason.
+ * it printed no symbol for a different reason. Then it read the *account's* currency, which is
+ * wrong in a different way: `Invoice.Currency` is fixed at creation and never changes even if
+ * the account's currency somehow did, so the account's current currency is not always the
+ * currency this specific invoice was actually raised in.
  *
- * The currency lives on the account, not the invoice: `ClientDto.Currency`, an ISO 4217 code,
- * reaching here as `store.user.currency`. When the account carries none, `formatCurrency` still
- * shows a grouped number with no symbol rather than repeating the old guess.
+ * `InvoiceDto.Currency` — added alongside multi-currency pricing, see
+ * `docs/superpowers/specs/2026-09-13-multi-currency-pricing-design.md` §3 — is the authority.
+ * When it is absent (an invoice predating the change), `formatCurrency` still shows a grouped
+ * number with no symbol rather than guessing.
  *
  * @param amount - The amount the API sent for this line.
  * @returns The formatted amount, or an em dash when the line carries no figure.
  */
 const money = (amount: string | number | null | undefined): string =>
-  formatCurrency(amount, { code: store.user?.currency })
+  formatCurrency(amount, { code: invoice.value?.currency })
 
 /** Whether this invoice still has money owing — one definition, in `utils/invoice.ts`. */
 const isOutstanding = computed(() => Boolean(invoice.value) && isInvoiceOutstanding(invoice.value!))

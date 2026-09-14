@@ -477,22 +477,35 @@
 import { testimonials } from '../../lib/data'
 import { ArrowDown, Calendar, ShieldCheck, Lock, Trophy, PlayCircle, Star, DollarSign, Sparkle, CheckCircle, Infinity, Search, ArrowLeftRight } from 'lucide-vue-next'
 import { useCartStore } from '~/stores/cart'
+import { useCurrencyStore } from '~/stores/currency'
 import { useCatalogApi } from '~/composables/apis/useCatalogApi'
+import { formatMoney } from '~/utils/formatMoney'
+import type { PortalProduct } from '~/types/portalproduct'
 
-const { t, tm, locale } = useI18n()
+const { t, tm } = useI18n()
 const localePath = useLocalePath()
 const cart = useCartStore()
-onMounted(() => cart.init())
+const currencyStore = useCurrencyStore()
+onMounted(() => {
+  cart.init()
+  currencyStore.init()
+  currencyStore.load()
+})
 
-// productConfig, currencyByLocale, nameToKey, parseDescription — auto-imported from utils/whmcs.ts
+/** The payer's currency to format prices with — never chosen by the page's language. */
+const payerCurrency = computed(() => currencyStore.moneyCurrencyFor(currencyStore.payerCode))
+
+// productConfig, nameToKey, parseDescription — auto-imported from utils/whmcs.ts
 
 // Fetch all product groups (hosting gid=1 + SaaS gids 3-9)
 // Straight from the API composable rather than through a store: this page fetches once and
 // owns the result alone, which is the named exception to component -> store -> api. A store
 // would also cost the SSR dedup and the locale re-fetch that `useApi()` gives for free, and
 // this page is server-rendered and indexed.
+// `currency` is passed the same way `usePortalPlans.ts` passes it — the payer's currency, so
+// the getter re-reads and the request re-fetches once `payerCode` resolves or changes.
 const { data: whmcsRaw } = await useCatalogApi().loadProducts(
-  () => ({ gids: productGids.join(',') })
+  () => ({ gids: productGids.join(','), currency: currencyStore.payerCode ?? undefined })
 )
 
 // SEO setup with canonical, hreflang, OG, Twitter tags
@@ -520,7 +533,7 @@ productsInjectSchema([
   }
 ])
 
-// productGids, productGidToKey, productConfig, currencyByLocale, parseDescription — auto-imported from utils/whmcs.ts
+// productGids, productGidToKey, productConfig, parseDescription — auto-imported from utils/whmcs.ts
 
 /**
  * Maps catalogue products onto the pricing rows a family card renders.
@@ -529,29 +542,26 @@ productsInjectSchema([
  * @returns One row per plan: id, tier name, first offered price and its billing cycle, and
  * the feature lines parsed out of the description.
  */
-const buildPricing = (plans: any[]) => {
-  const preferred = (currencyByLocale[locale.value] ?? 'USD') as string
-  return plans.map((plan: any) => {
-    const currency = plan.pricing
-      ? (plan.pricing[preferred] ?? Object.values(plan.pricing)[0] as any)
-      : null
-    const cycleKeys = ['monthly', 'quarterly', 'semiannually', 'annually', 'biennially', 'triennially'] as const
-    const firstCycle = cycleKeys.find(k => currency?.[k] && currency[k] !== '-1.00' && currency[k] !== '0.00')
-    const price = firstCycle && currency ? `${currency.prefix}${currency[firstCycle]}` : ''
+const buildPricing = (plans: PortalProduct[]) => {
+  return plans.map((plan) => {
+    const cycleKeys = ['monthly', 'annual'] as const
+    const firstCycle = cycleKeys.find(k => plan.pricing?.[k] !== null && plan.pricing?.[k] !== undefined)
+    const amount = firstCycle ? plan.pricing![firstCycle] : null
+    const price = amount !== null ? formatMoney(amount, payerCurrency.value) : ''
     // One parse, not two: the `translated_description` that used to be preferred here is not
     // a field the API sends, so the second parse of `description` was the only one that ever
     // produced anything.
     const { features: planFeatures } = parseDescription(plan.description || '')
     return {
       pid: plan.pid as number,
-      product_url: (plan.product_url as string) || '',
+      product_url: '',
       tier: plan.name,
-      slug: (plan.slug as string) || '',
+      slug: plan.slug || '',
       price,
-      prefix: currency?.prefix ?? '',
-      rawPrice: firstCycle && currency ? currency[firstCycle] : '0',
+      amount: amount ?? 0,
+      currency: currencyStore.payerCode ?? '',
       billingcycle: firstCycle ?? 'monthly',
-      paytype: (plan.paytype as string) || 'recurring',
+      paytype: 'recurring',
       features: planFeatures
     }
   })

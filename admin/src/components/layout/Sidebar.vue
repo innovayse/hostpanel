@@ -154,6 +154,7 @@ const navItems: NavItem[] = [
       { to: '/settings/slides', labelKey: 'nav.settingsChildren.slides' },
       { to: '/settings/email-templates', labelKey: 'nav.settingsChildren.emailTemplates' },
       { to: '/settings/gateways', labelKey: 'nav.settingsChildren.gateways' },
+      { to: '/settings/currencies', labelKey: 'nav.settingsChildren.currencies' },
     ],
   },
 ]

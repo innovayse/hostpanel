@@ -60,7 +60,8 @@
       "tldPricing": "TLD Pricing",
       "slides": "Slides",
       "emailTemplates": "Email Templates",
-      "gateways": "Payment Gateways"
+      "gateways": "Payment Gateways",
+      "currencies": "Currencies"
     },
     "servicesTitle": "Services"
   },
@@ -207,6 +208,91 @@
         "chatwoot": "Chatwoot",
         "innochat": "Innochat"
       }
+    }
+  },
+  "currencies": {
+    "title": "Currencies",
+    "description": "Configure billing currencies, exchange rates and the base currency",
+    "updateRates": "Update Exchange Rates",
+    "updatingRates": "Updating...",
+    "updateProductPrices": "Update Product Prices",
+    "addCurrency": "Add Currency",
+    "table": {
+      "code": "Code",
+      "numeric": "Numeric",
+      "format": "Format",
+      "decimals": "Decimals",
+      "rateToBase": "Rate to Base",
+      "base": "Base",
+      "enabled": "Enabled",
+      "actions": "Actions"
+    },
+    "makeBase": "Make base",
+    "baseBadge": "Base",
+    "enabledBadge": "Enabled",
+    "disabledBadge": "Disabled",
+    "editTooltip": "Edit currency",
+    "empty": "No currencies configured yet. Add your first currency to get started.",
+    "makeBaseModal": {
+      "title": "Make Base Currency",
+      "message": "Make {code} the base currency? Rates of every other currency are re-expressed against the new base.",
+      "confirmLabel": "Make Base",
+      "loadingLabel": "Switching..."
+    },
+    "pricesPicker": {
+      "title": "Update Product Prices",
+      "description": "Choose which non-base currencies to recompute from the base prices.",
+      "cancel": "Cancel",
+      "continue": "Continue"
+    },
+    "pricesConfirm": {
+      "title": "Overwrite Product Prices",
+      "message": "This overwrites {codes} product prices, recomputed from the base currency. This cannot be undone.",
+      "confirmLabel": "Overwrite",
+      "loadingLabel": "Updating..."
+    },
+    "toasts": {
+      "saveFailed": "Failed to save currency.",
+      "makeBaseSucceeded": "{code} is now the base currency.",
+      "makeBaseFailed": "Failed to switch base currency.",
+      "ratesUpdated": "Rates updated: {updated}{missing}",
+      "ratesMissing": "; not quoted: {codes}",
+      "ratesUpdateFailed": "Failed to update exchange rates.",
+      "pricesUpdated": "{count} product price row(s) recomputed.",
+      "pricesUpdateFailed": "Failed to recompute product prices."
+    },
+    "form": {
+      "editTitle": "Edit Currency",
+      "addTitle": "Add Currency",
+      "code": {
+        "label": "ISO Code",
+        "placeholder": "e.g. USD"
+      },
+      "numeric": {
+        "label": "Numeric Code",
+        "placeholder": "e.g. 840"
+      },
+      "prefix": {
+        "label": "Prefix",
+        "placeholder": "e.g. $"
+      },
+      "suffix": {
+        "label": "Suffix",
+        "placeholder": "e.g. ֏"
+      },
+      "formatSample": "Format sample: 2.99 → {sample}",
+      "decimals": "Decimals",
+      "rateToBase": "Rate to Base",
+      "rateToBaseBaseHint": "The base currency is always worth 1 of itself.",
+      "enabled": {
+        "label": "Enabled",
+        "baseHint": "The base currency is always enabled.",
+        "hint": "Whether payers may be billed in this currency"
+      },
+      "cancel": "Cancel",
+      "save": "Save Changes",
+      "add": "Add Currency",
+      "saving": "Saving..."
     }
   }
 }

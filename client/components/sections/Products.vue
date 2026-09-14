@@ -209,9 +209,15 @@
 import { CheckCircle, ArrowRight } from 'lucide-vue-next'
 import { products as visualData } from '~/lib/data'
 import { useCatalogApi } from '~/composables/apis/useCatalogApi'
+import { useCurrencyStore } from '~/stores/currency'
 
 const { t } = useI18n()
 const localePath = useLocalePath()
+const currencyStore = useCurrencyStore()
+onMounted(() => {
+  currencyStore.init()
+  currencyStore.load()
+})
 
 // image map: product id → local image path
 const imageMap = Object.fromEntries(visualData.map(p => [p.id, p.image]))
@@ -228,8 +234,10 @@ const hostingVisual = {
 // Fetch all products (hosting gid=1 + SaaS gids 3-9) in one request
 // Straight from the API composable rather than through a store: this section reads the
 // catalogue once and owns it alone, which is the named exception to component -> store -> api.
+// `currency` is passed the same way `usePortalPlans.ts` passes it — the payer's currency, so
+// the getter re-reads and the request re-fetches once `payerCode` resolves or changes.
 const { data: whmcsRaw } = await useCatalogApi().loadProducts(
-  () => ({ gids: productGids.join(',') })
+  () => ({ gids: productGids.join(','), currency: currencyStore.payerCode ?? undefined })
 )
 
 /** Build product cards from WHMCS data + visual config */

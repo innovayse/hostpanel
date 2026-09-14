@@ -50,6 +50,7 @@ public sealed class GetInvoiceHandler(IInvoiceRepository repo, IClientRepository
             invoice.InvoiceDate,
             invoice.PaymentMethod,
             clientName,
+            invoice.Currency,
             invoice.Items.Select(i => new InvoiceItemDto(i.Id, i.Description, i.UnitPrice, i.Quantity, i.Amount))
                          .ToList(),
             invoice.Transactions.Select(t => new InvoiceTransactionDto(

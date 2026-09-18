@@ -302,7 +302,19 @@ export default defineNuxtConfig({
       ],
       script: [
         ...(process.env.NUXT_PUBLIC_MAIN_URL
-          ? [{ src: `${process.env.NUXT_PUBLIC_MAIN_URL}/widget/header.js`, async: true }]
+          // `?v=` is a ONE-TIME cache bust. Do not bump it per widget release.
+          //
+          // The portal served /widget/header.js — an URL with no content hash — behind `expires 1y` +
+          // `Cache-Control: public, immutable`, so every browser that had loaded the widget kept that copy
+          // until 2027 and never revalidated: a new widget reached nobody who had already visited. Measured
+          // 2026-09-18 on production, the app launcher put `?authuser=` on 0 of its 9 links while the
+          // deployed file appends it on all 9; the same file with a cache-busting query gave 9 of 9.
+          //
+          // ProdServer's nginx was fixed the same day (`location = /widget/header.js`, verified answering
+          // `public, max-age=0, must-revalidate` and 304), so the bare URL revalidates now and so does this
+          // one. This token exists only to reach browsers still holding the old year-long entry; once those
+          // have aged out it can be deleted.
+          ? [{ src: `${process.env.NUXT_PUBLIC_MAIN_URL}/widget/header.js?v=20260918`, async: true }]
           : []),
       ],
       link: [

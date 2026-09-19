@@ -35,8 +35,8 @@ services:
     # the name Nuxt reads at RUNTIME. nuxt.config.ts resolves each process.env it
     # names while the app is being built, so in the prod target those reads happen
     # inside `docker build`, where none of them are set, and the fallbacks are
-    # baked into .output — which is how stage came to send visitors to sso.local
-    # with a redirect_uri of panel.local. Once built, the only lever left is
+    # baked into .output — which is how stage came to send visitors to sso.innovayse.local
+    # with a redirect_uri of panel.innovayse.local. Once built, the only lever left is
     # Nuxt's own override: NUXT_<KEY> for a server key, NUXT_PUBLIC_<KEY> for a
     # public one. The dev target does not need any of this (it evaluates
     # nuxt.config at startup, with the container's env already in place), which is

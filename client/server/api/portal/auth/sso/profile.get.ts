@@ -1,7 +1,7 @@
 /**
  * GET /api/portal/auth/sso/profile
  * Proxies to SSO GET /api/account/profile and returns user data.
- * Appends panel.local-specific menuItems so the widget can render
+ * Appends panel.innovayse.local-specific menuItems so the widget can render
  * quick-links (Dashboard, Services, Domains, Invoices, Support) inside
  * the account popup under "Manage your Innovayse Account".
  */

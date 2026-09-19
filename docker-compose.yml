@@ -206,7 +206,7 @@ services:
 
       Cors__AllowedOrigins__0: http://localhost:3001
       Cors__AllowedOrigins__1: http://localhost:5174
-      Cors__AllowedOrigins__2: http://panel.local
+      Cors__AllowedOrigins__2: ${PANEL_DEV_ORIGIN}
       Cors__AllowedOrigins__3: https://stage-panel.innovayse.com
 
       # Testcontainers starts sibling containers on the host, not children of this one,

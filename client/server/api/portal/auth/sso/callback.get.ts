@@ -111,7 +111,7 @@ export default defineEventHandler(async (event) => {
   // This used to fetch /connect/userinfo and write the result — subject id, email, first
   // and last name — into a non-httpOnly `inno_pending_account` cookie, so the widget
   // could merge it into its innovayse_accounts localStorage list and show the account in
-  // the switcher without a visit to app.local first.
+  // the switcher without a visit to app.innovayse.local first.
   //
   // Nothing consumes it any more. The widget asks the SSO directly, through the
   // /accounts-embed iframe, and the SSO's own remembered list already includes this

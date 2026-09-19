@@ -211,8 +211,8 @@ async function handleLogout() {
       await useAuthApi().logout()
     } catch { /* ignore — clear session regardless */ }
     store.reset()
-    // Navigate browser to SSO endsession (required to clear SSO session cookie at sso.local)
-    const ssoPublicUrl = (config.public.ssoPublicUrl as string) || 'http://sso.local'
+    // Navigate browser to SSO endsession (required to clear SSO session cookie at sso.innovayse.local)
+    const ssoPublicUrl = (config.public.ssoPublicUrl as string) || 'http://sso.innovayse.local'
     window.location.href = `${ssoPublicUrl}/connect/endsession?post_logout_redirect_uri=${encodeURIComponent(window.location.origin)}`
   } else {
     await logout()

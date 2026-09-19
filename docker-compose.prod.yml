@@ -93,7 +93,7 @@ services:
       Jwt__Audience: ${JWT_AUDIENCE}
       # No default. An unset key here means every server credential this product
       # stores goes to the database unencrypted, so the API refuses to start instead.
-      EncryptionKey: ${ENCRYPTION_KEY:?required}
+      EncryptionKey: ${ENCRYPTION_KEY}
       # SSO is optional — only meaningful where a real SSO deployment shares
       # innovayse_network with this stack (see the `networks:` block below).
       #

@@ -309,11 +309,9 @@ export default defineNuxtConfig({
         { name: 'format-detection', content: 'telephone=no' },
         { name: 'theme-color', content: '#0ea5e9' }
       ],
-      script: [
-        ...(process.env.NUXT_PUBLIC_MAIN_URL
-          ? [{ src: `${process.env.NUXT_PUBLIC_MAIN_URL}/widget/header.js`, async: true }]
-          : []),
-      ],
+      // The portal header widget's <script> is NOT here: process.env is read at build time,
+      // so it would bake the builder's URL into the image. plugins/header-widget.ts adds it
+      // from runtimeConfig instead.
       link: [
         // No preconnect to a tag or analytics host here: whether either is contacted at
         // all is the operator's setting plus the visitor's consent (plugins/tracking.client.ts).
@@ -326,4 +324,4 @@ export default defineNuxtConfig({
       ]
     }
   }
-})
+})

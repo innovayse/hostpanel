@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isLauncherEnabled, resolveAppUrl } from './usePortalApps'
+import { isLauncherEnabled, resolveAppUrl, withAccountHandoff } from './usePortalApps'
 
 describe('isLauncherEnabled', () => {
   it('is off for a stock install, so no operator inherits links into nothing', () => {
@@ -43,5 +43,23 @@ describe('resolveAppUrl', () => {
   it('takes an operator override as a complete URL, path and all', () => {
     expect(resolveAppUrl('https://my.host/portal', 'https://example.com', '/account'))
       .toBe('https://my.host/portal')
+  })
+})
+
+describe('withAccountHandoff', () => {
+  it('names the signed-in account on a cross-origin app URL', () => {
+    expect(withAccountHandoff('https://sheets.innovayse.com', 'a@innovayse.com'))
+      .toBe('https://sheets.innovayse.com/?authuser=a%40innovayse.com')
+  })
+
+  it('replaces rather than repeats an authuser already there', () => {
+    expect(withAccountHandoff('https://docs.innovayse.com/?authuser=old@x.com', 'new@x.com'))
+      .toBe('https://docs.innovayse.com/?authuser=new%40x.com')
+  })
+
+  it('leaves the URL alone with nobody signed in, or when it is not an absolute URL', () => {
+    expect(withAccountHandoff('https://sheets.innovayse.com', undefined)).toBe('https://sheets.innovayse.com')
+    expect(withAccountHandoff('/client', 'a@innovayse.com')).toBe('/client')
+    expect(withAccountHandoff('not a url', 'a@innovayse.com')).toBe('not a url')
   })
 })

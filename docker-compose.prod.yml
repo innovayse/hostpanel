@@ -48,6 +48,12 @@ services:
         # fresh base and never re-declares the ARG, so nothing carries it.
         NuGetPackageSourceCredentials_innovayse: ${NUGET_INNOVAYSE_CREDENTIALS}
     environment:
+      # .NET GC tuned for a shared host: workstation GC (server GC reserves a heap per
+      # core and grows freely), a conservative collector, and a hard cap at 75% of what the
+      # container/host allows - so one API cannot take the box down with it.
+      DOTNET_gcServer: "0"
+      DOTNET_GCConserveMemory: "5"
+      DOTNET_GCHeapHardLimitPercent: "75"
       # Named here rather than in docker-compose.yml because neither deploy chain
       # loads that file: staging composes prod+platform, production composes
       # prod+prodserver+platform. This overlay is the one file both have in common,

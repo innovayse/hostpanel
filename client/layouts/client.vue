@@ -20,10 +20,14 @@
         <div class="hidden lg:flex items-center gap-3">
           <UiThemeToggle />
           <UiLanguageSwitcher />
-          <div id="inno-launcher-mount"></div>
+          <!-- data-user hands the signed-in person to the widget so its launcher appends
+               ?authuser= to every tile from the first paint, instead of only after its own
+               profile round-trip. The widget reads it from either mount; this is the one
+               present at every width. -->
+          <div id="inno-launcher-mount" :data-user="widgetUser" />
         </div>
         <!-- Account popup: always visible (mobile needs account switching too) -->
-        <div id="inno-account-mount"></div>
+        <div id="inno-account-mount" :data-user="widgetUser" />
         <!-- Hamburger: mobile only -->
         <button
           class="lg:hidden p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
@@ -139,6 +143,13 @@ import { Permission } from '~/composables/usePermissions'
 const route = useRoute()
 const { t } = useI18n()
 const { logout } = useAuthStore()
+
+/** The signed-in person in the widget's own shape — `{ firstName, lastName, email }`. */
+const widgetUser = computed(() => {
+  const u = store.user
+  if (!u?.email) return undefined
+  return JSON.stringify({ email: u.email, firstName: u.firstname, lastName: u.lastname })
+})
 const { hasPermission } = usePermissions()
 const store = useClientStore()
 const config = useRuntimeConfig()

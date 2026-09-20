@@ -71,6 +71,32 @@ export const resolveAppUrl = (override: string, base: string, path = ''): string
 }
 
 /**
+ * Tells a sibling product which account to open as.
+ *
+ * Every Innovayse product accepts `?authuser=<email>` and routes the visit to that
+ * account's slot (or to the SSO chooser when it does not hold one). Without it a click
+ * from a browser signed in to two accounts lands on the first — the platform-wide
+ * regression fixed on 2026-09-18. Same rule as the portal's `withAccountHandoff`.
+ *
+ * @param url Resolved app URL.
+ * @param email The signed-in account, or nothing when nobody is.
+ * @returns The URL with the hand-off, or unchanged when there is nobody to hand off or
+ *   the value is not an absolute URL (a relative path is this origin, which already knows).
+ */
+export const withAccountHandoff = (url: string, email: string | undefined): string => {
+  if (!email || !/^https?:\/\//i.test(url)) return url
+  try {
+    const target = new URL(url)
+    // Set rather than appended: a second authuser would be ambiguous, and the last
+    // writer should win.
+    target.searchParams.set('authuser', email)
+    return target.toString()
+  } catch {
+    return url
+  }
+}
+
+/**
  * Resolves the launcher entries for the current deployment.
  *
  * @returns The entries to show — empty when the launcher is switched off.
@@ -79,6 +105,7 @@ export const usePortalApps = () => {
   const { get } = usePortalSettings()
   const config = useRuntimeConfig()
   const { t } = useI18n()
+  const { user } = storeToRefs(useAuthStore())
 
   /**
    * The deployment's URL for an app, before any per-app setting overrides it.
@@ -107,7 +134,7 @@ export const usePortalApps = () => {
         tint: def.tint,
         label: t(`aurora.apps.items.${def.id}.label`),
         desc: t(`aurora.apps.items.${def.id}.desc`),
-        url,
+        url: withAccountHandoff(url, user.value?.email),
       }]
     })
   })

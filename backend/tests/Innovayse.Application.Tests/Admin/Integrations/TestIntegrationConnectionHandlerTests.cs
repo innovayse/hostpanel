@@ -1,5 +1,6 @@
 ﻿namespace Innovayse.Application.Tests.Admin.Integrations;
 
+using Innovayse.Application.Admin.Integrations;
 using Innovayse.Application.Admin.Integrations.Commands.TestIntegrationConnection;
 using Innovayse.Application.Billing.Interfaces;
 using Innovayse.Domain.Settings;
@@ -9,14 +10,75 @@ using Moq;
 using Xunit;
 
 /// <summary>Tests for <see cref="TestIntegrationConnectionHandler"/>, focused on the
-/// live-probe branch added for the "inecobank" slug.</summary>
+/// live-probe branches: the "inecobank" plugin and built-in probes such as "nameam".</summary>
 public class TestIntegrationConnectionHandlerTests
 {
     private readonly Mock<ISettingRepository> settings = new();
     private readonly Mock<IPaymentPluginResolver> resolver = new();
     private readonly Mock<IPaymentPlugin> plugin = new();
 
-    private TestIntegrationConnectionHandler CreateHandler() => new(settings.Object, resolver.Object);
+    private readonly Mock<IIntegrationConnectionProbe> nameAmProbe = new();
+
+    /// <summary>Wires the "nameam" probe mock into every handler under test.</summary>
+    public TestIntegrationConnectionHandlerTests()
+    {
+        nameAmProbe.SetupGet(p => p.Slug).Returns("nameam");
+    }
+
+    private TestIntegrationConnectionHandler CreateHandler() =>
+        new(settings.Object, resolver.Object, [nameAmProbe.Object]);
+
+    /// <summary>Stores both required "nameam" fields so execution reaches the probe.</summary>
+    private void SeedNameAmSettings()
+    {
+        var stored = new List<Setting>
+        {
+            Setting.Create("integration:nameam:email", "user@example.com", null),
+            Setting.Create("integration:nameam:password", "secret", null),
+        };
+        settings.Setup(s => s.ListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(stored);
+    }
+
+    [Fact]
+    public async Task HandleAsync_NameAm_ProbeSucceeds_ReportsCredentialsAccepted()
+    {
+        SeedNameAmSettings();
+
+        var result = await CreateHandler().HandleAsync(
+            new TestIntegrationConnectionCommand("nameam"), CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.Contains("credentials accepted", result.Message, StringComparison.OrdinalIgnoreCase);
+        nameAmProbe.Verify(p => p.ProbeAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task HandleAsync_NameAm_ProbeThrows_ReportsFailureWithMessage()
+    {
+        // A filled-in but wrong password used to read "Connection OK"; it must now fail.
+        SeedNameAmSettings();
+        nameAmProbe.Setup(p => p.ProbeAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("Response status code does not indicate success: 401 (Unauthorized)."));
+
+        var result = await CreateHandler().HandleAsync(
+            new TestIntegrationConnectionCommand("nameam"), CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Contains("401", result.Message);
+    }
+
+    [Fact]
+    public async Task HandleAsync_NameAm_MissingPassword_DoesNotProbe()
+    {
+        settings.Setup(s => s.ListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(
+            [Setting.Create("integration:nameam:email", "user@example.com", null)]);
+
+        var result = await CreateHandler().HandleAsync(
+            new TestIntegrationConnectionCommand("nameam"), CancellationToken.None);
+
+        Assert.False(result.Success);
+        nameAmProbe.Verify(p => p.ProbeAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
 
     /// <summary>
     /// Stores all three required fields for "inecobank" so the handler's

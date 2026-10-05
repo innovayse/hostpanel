@@ -33,6 +33,7 @@ using Innovayse.Infrastructure.Domains;
 using Innovayse.Infrastructure.Integrations.CPanel;
 using Innovayse.Infrastructure.Integrations.CPanel.Options;
 using Innovayse.Infrastructure.Integrations.Migration;
+using Innovayse.Application.Admin.Integrations;
 using Innovayse.Infrastructure.Integrations.NameAm;
 using Innovayse.Infrastructure.Integrations.NameAm.Options;
 using Innovayse.Infrastructure.Integrations.Namecheap;
@@ -596,6 +597,7 @@ public static class DependencyInjection
         services.AddScoped<IRegistrarProviderFactory, RegistrarProviderFactory>();
         services.AddScoped<Innovayse.Application.Domains.Services.RegistrarProviderResolver>();
         services.AddScoped<NameAmRegistrarProvider>();
+        services.AddScoped<IIntegrationConnectionProbe, NameAmConnectionProbe>();
         services.AddScoped<NamecheapRegistrarProvider>();
         // Reads and purchases on the same client, so the predicate has to tell them apart rather
         // than the client being retried wholesale. GET and PUT are repeated -- Name.am's PUT is a

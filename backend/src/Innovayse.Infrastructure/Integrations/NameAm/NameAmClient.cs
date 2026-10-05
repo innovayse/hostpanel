@@ -30,8 +30,12 @@ public sealed class NameAmClient
     /// <summary>Cached JWT access token obtained from <c>/auth/login</c>.</summary>
     private string? _accessToken;
 
-    /// <summary>Cached test-mode override loaded from the database settings table.</summary>
-    private bool? _testModeOverride;
+    /// <summary>
+    /// Effective configuration: values saved on the admin Integrations page
+    /// (<c>integration:nameam:*</c>) over the bound <see cref="NameAmOptions"/>.
+    /// <see langword="null"/> until <see cref="LoadOverridesAsync"/> has run.
+    /// </summary>
+    private NameAmOptions? _effective;
 
     /// <summary>Semaphore guarding concurrent login attempts to prevent token races.</summary>
     private readonly SemaphoreSlim _loginLock = new(1, 1);
@@ -62,10 +66,30 @@ public sealed class NameAmClient
         _logger = logger;
     }
 
-    /// <summary>Gets whether the Name.am API is configured with valid credentials.</summary>
-    public bool IsConfigured =>
-        !string.IsNullOrWhiteSpace(_settings.Email) &&
-        !string.IsNullOrWhiteSpace(_settings.Password);
+    /// <summary>
+    /// Gets whether the Name.am API has credentials, from the admin settings or from configuration.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><see langword="true"/> when both an e-mail and a password are available.</returns>
+    public async Task<bool> IsConfiguredAsync(CancellationToken ct)
+    {
+        var effective = await LoadOverridesAsync(ct);
+        return !string.IsNullOrWhiteSpace(effective.Email) &&
+            !string.IsNullOrWhiteSpace(effective.Password);
+    }
+
+    /// <summary>
+    /// Authenticates against Name.am with the effective credentials, bypassing the cached token,
+    /// so the admin "Test Connection" reflects what Name.am actually accepts.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <exception cref="HttpRequestException">Thrown when Name.am rejects the login or is unreachable.</exception>
+    public async Task VerifyCredentialsAsync(CancellationToken ct)
+    {
+        await LoadOverridesAsync(ct);
+        _accessToken = null;
+        await LoginAsync(ct);
+    }
 
     /// <summary>
     /// Sends a GET request to the Name.am API and returns the parsed JSON response.
@@ -77,7 +101,7 @@ public sealed class NameAmClient
     /// <exception cref="HttpRequestException">Thrown when the API returns a non-success status after retry.</exception>
     public async Task<JsonDocument> GetAsync(string path, CancellationToken ct)
     {
-        await LoadTestModeOverrideAsync(ct);
+        await LoadOverridesAsync(ct);
         await EnsureAuthenticatedAsync(ct);
 
         var url = BuildUrl(path);
@@ -114,7 +138,7 @@ public sealed class NameAmClient
     /// <exception cref="HttpRequestException">Thrown when the API returns a non-success status after retry.</exception>
     public async Task<JsonDocument> PostAsync(string path, object body, CancellationToken ct)
     {
-        await LoadTestModeOverrideAsync(ct);
+        await LoadOverridesAsync(ct);
         await EnsureAuthenticatedAsync(ct);
 
         var url = BuildUrl(path);
@@ -159,7 +183,7 @@ public sealed class NameAmClient
     /// <exception cref="HttpRequestException">Thrown when the API returns a non-success status after retry.</exception>
     public async Task<JsonDocument> PutAsync(string path, object body, CancellationToken ct)
     {
-        await LoadTestModeOverrideAsync(ct);
+        await LoadOverridesAsync(ct);
         await EnsureAuthenticatedAsync(ct);
 
         var url = BuildUrl(path);
@@ -218,12 +242,12 @@ public sealed class NameAmClient
         await _loginLock.WaitAsync(ct);
         try
         {
-            _logger.LogInformation("Authenticating with Name.am API as {Email}", _settings.Email);
+            _logger.LogInformation("Authenticating with Name.am API as {Email}", Settings.Email);
 
             var loginPayload = new
             {
-                email = _settings.Email,
-                password = _settings.Password,
+                email = Settings.Email,
+                password = Settings.Password,
                 token = "",
             };
 
@@ -273,29 +297,50 @@ public sealed class NameAmClient
     }
 
     /// <summary>
-    /// Loads the test-mode override from the database settings table.
-    /// The DB value (<c>integration:nameam:test_mode</c>) takes precedence over
-    /// <see cref="NameAmOptions.TestMode"/> from <c>appsettings.json</c>.
+    /// Gets the effective settings, or the bound options when <see cref="LoadOverridesAsync"/>
+    /// has not run yet.
+    /// </summary>
+    private NameAmOptions Settings => _effective ?? _settings;
+
+    /// <summary>
+    /// Loads the Name.am fields saved on the admin Integrations page and lays every non-empty one
+    /// over <see cref="NameAmOptions"/> from <c>appsettings.json</c>. Before this, the page saved
+    /// e-mail, password and API URL that no request ever read -- only <c>test_mode</c> was honoured.
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
-    private async Task LoadTestModeOverrideAsync(CancellationToken ct)
+    /// <returns>The effective settings.</returns>
+    private async Task<NameAmOptions> LoadOverridesAsync(CancellationToken ct)
     {
-        if (_testModeOverride is not null)
+        if (_effective is not null)
         {
-            return;
+            return _effective;
         }
 
-        var setting = await _settingRepo.FindByKeyAsync("integration:nameam:test_mode", ct);
-        _testModeOverride = setting is not null
-            && string.Equals(setting.Value, "true", StringComparison.OrdinalIgnoreCase);
+        async Task<string?> ReadAsync(string field)
+        {
+            var setting = await _settingRepo.FindByKeyAsync($"integration:nameam:{field}", ct);
+            return string.IsNullOrWhiteSpace(setting?.Value) ? null : setting.Value.Trim();
+        }
+
+        var testMode = await ReadAsync("test_mode");
+        _effective = new NameAmOptions
+        {
+            Email = await ReadAsync("email") ?? _settings.Email,
+            Password = await ReadAsync("password") ?? _settings.Password,
+            ApiUrl = await ReadAsync("api_url") ?? _settings.ApiUrl,
+            TestMode = testMode is null
+                ? _settings.TestMode
+                : string.Equals(testMode, "true", StringComparison.OrdinalIgnoreCase),
+        };
+
+        return _effective;
     }
 
     /// <summary>
-    /// Gets whether test mode is active, checking the DB override first,
-    /// then falling back to <see cref="NameAmOptions.TestMode"/>.
-    /// Call <see cref="LoadTestModeOverrideAsync"/> before reading to ensure the DB value is loaded.
+    /// Gets whether test mode is active. The admin setting wins over
+    /// <see cref="NameAmOptions.TestMode"/>; call <see cref="LoadOverridesAsync"/> first.
     /// </summary>
-    public bool IsTestMode => _testModeOverride ?? _settings.TestMode;
+    public bool IsTestMode => Settings.TestMode;
 
     /// <summary>
     /// Builds a full URL by combining the configured API base URL with the given path.
@@ -306,7 +351,7 @@ public sealed class NameAmClient
     /// <returns>Absolute URL string.</returns>
     private string BuildUrl(string path)
     {
-        var url = $"{_settings.ApiUrl.TrimEnd('/')}{path}";
+        var url = $"{Settings.ApiUrl.TrimEnd('/')}{path}";
 
         if (IsTestMode)
         {

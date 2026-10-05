@@ -11,9 +11,11 @@ using Innovayse.Domain.Settings.Interfaces;
 /// </summary>
 /// <param name="settings">Setting repository for key-value lookups.</param>
 /// <param name="pluginResolver">Payment plugin resolver, used for live gateway probes.</param>
+/// <param name="probes">Live credential checks for built-in integrations, matched by slug.</param>
 public sealed class TestIntegrationConnectionHandler(
     ISettingRepository settings,
-    IPaymentPluginResolver pluginResolver)
+    IPaymentPluginResolver pluginResolver,
+    IEnumerable<IIntegrationConnectionProbe> probes)
 {
     /// <summary>
     /// Plugin id / slug of the Inecobank gateway. The provider assembly already exposes this
@@ -125,6 +127,33 @@ public sealed class TestIntegrationConnectionHandler(
                     return new IntegrationTestResultDto(
                         Success: false,
                         Message: $"Gateway test failed: {ex.Message}",
+                        TestedAt: testedAt);
+                }
+            }
+
+            // Built-in integrations with a live probe: without it a "Connection OK" only meant
+            // that the fields were not empty.
+            var probe = probes.FirstOrDefault(p =>
+                string.Equals(p.Slug, command.Slug, StringComparison.OrdinalIgnoreCase));
+            if (probe is not null)
+            {
+                try
+                {
+                    await probe.ProbeAsync(ct);
+                    return new IntegrationTestResultDto(
+                        Success: true,
+                        Message: "Provider reachable and credentials accepted.",
+                        TestedAt: testedAt);
+                }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    return new IntegrationTestResultDto(
+                        Success: false,
+                        Message: $"Connection test failed: {ex.Message}",
                         TestedAt: testedAt);
                 }
             }

@@ -18,7 +18,7 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
     /// <inheritdoc/>
     public async Task<RegistrarResult> RegisterAsync(RegisterDomainRequest request, CancellationToken ct)
     {
-        if (!client.IsConfigured)
+        if (!await client.IsConfiguredAsync(ct))
         {
             return _notConfiguredResult;
         }
@@ -71,7 +71,7 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
     /// <inheritdoc/>
     public async Task<RegistrarResult> TransferAsync(TransferDomainRequest request, CancellationToken ct)
     {
-        if (!client.IsConfigured)
+        if (!await client.IsConfiguredAsync(ct))
         {
             return _notConfiguredResult;
         }
@@ -114,7 +114,7 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
     /// <inheritdoc/>
     public async Task<RegistrarResult> RenewAsync(RenewDomainRequest request, CancellationToken ct)
     {
-        if (!client.IsConfigured)
+        if (!await client.IsConfiguredAsync(ct))
         {
             return _notConfiguredResult;
         }
@@ -158,7 +158,7 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
         string registrarRef,
         CancellationToken ct)
     {
-        if (!client.IsConfigured)
+        if (!await client.IsConfiguredAsync(ct))
         {
             return _notConfiguredResult;
         }
@@ -168,22 +168,22 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
     }
 
     /// <inheritdoc/>
-    public Task<RegistrarResult> SetAutoRenewAsync(
+    public async Task<RegistrarResult> SetAutoRenewAsync(
         string domainName,
         string registrarRef,
         bool enabled,
         CancellationToken ct)
     {
-        if (!client.IsConfigured)
+        if (!await client.IsConfiguredAsync(ct))
         {
-            return Task.FromResult(_notConfiguredResult);
+            return _notConfiguredResult;
         }
 
         // Name.am manages auto-renew on their side; no dedicated API endpoint.
         logger.LogInformation("Auto-renew for {DomainName} set to {Enabled} (managed by Name.am)",
             domainName, enabled);
 
-        return Task.FromResult(new RegistrarResult(true, registrarRef, null, null));
+        return new RegistrarResult(true, registrarRef, null, null);
     }
 
     /// <inheritdoc/>
@@ -193,7 +193,7 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
         bool enabled,
         CancellationToken ct)
     {
-        if (!client.IsConfigured)
+        if (!await client.IsConfiguredAsync(ct))
         {
             return _notConfiguredResult;
         }
@@ -215,7 +215,7 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
         bool locked,
         CancellationToken ct)
     {
-        if (!client.IsConfigured)
+        if (!await client.IsConfiguredAsync(ct))
         {
             return _notConfiguredResult;
         }
@@ -236,7 +236,7 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
         string registrarRef,
         CancellationToken ct)
     {
-        if (!client.IsConfigured)
+        if (!await client.IsConfiguredAsync(ct))
         {
             return null;
         }
@@ -260,7 +260,7 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
         IReadOnlyList<string> nameservers,
         CancellationToken ct)
     {
-        if (!client.IsConfigured)
+        if (!await client.IsConfiguredAsync(ct))
         {
             return _notConfiguredResult;
         }
@@ -282,7 +282,7 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
         string registrarRef,
         CancellationToken ct)
     {
-        if (!client.IsConfigured)
+        if (!await client.IsConfiguredAsync(ct))
         {
             return [];
         }
@@ -333,7 +333,7 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
         DnsRecord record,
         CancellationToken ct)
     {
-        if (!client.IsConfigured)
+        if (!await client.IsConfiguredAsync(ct))
         {
             return _notConfiguredResult;
         }
@@ -352,7 +352,7 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
         DnsRecord record,
         CancellationToken ct)
     {
-        if (!client.IsConfigured)
+        if (!await client.IsConfiguredAsync(ct))
         {
             return _notConfiguredResult;
         }
@@ -373,7 +373,7 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
         int recordId,
         CancellationToken ct)
     {
-        if (!client.IsConfigured)
+        if (!await client.IsConfiguredAsync(ct))
         {
             return _notConfiguredResult;
         }
@@ -391,7 +391,7 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
     /// <inheritdoc/>
     public async Task<RegistrarResult> CheckDomainActiveAsync(string domainName, CancellationToken ct)
     {
-        if (!client.IsConfigured)
+        if (!await client.IsConfiguredAsync(ct))
         {
             return new RegistrarResult(false, null, null, "Name.am is not configured.");
         }
@@ -442,7 +442,7 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
     /// <inheritdoc/>
     public async Task<bool> CheckAvailabilityAsync(string domainName, CancellationToken ct)
     {
-        if (!client.IsConfigured)
+        if (!await client.IsConfiguredAsync(ct))
         {
             // Not "taken" — unknown. Every other method here answers an unconfigured
             // registrar with a success no-op, but availability has no such answer: a
@@ -483,7 +483,7 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
     /// <inheritdoc/>
     public async Task<WhoisInfo?> GetWhoisAsync(string domainName, CancellationToken ct)
     {
-        if (!client.IsConfigured)
+        if (!await client.IsConfiguredAsync(ct))
         {
             return null;
         }
@@ -544,7 +544,7 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
         DomainContact contact,
         CancellationToken ct)
     {
-        if (!client.IsConfigured)
+        if (!await client.IsConfiguredAsync(ct))
         {
             return _notConfiguredResult;
         }
@@ -621,7 +621,7 @@ public sealed class NameAmRegistrarProvider(NameAmClient client, ILogger<NameAmR
     /// <inheritdoc/>
     public async Task<IReadOnlyList<TldPricing>> GetTldPricingAsync(CancellationToken ct)
     {
-        if (!client.IsConfigured)
+        if (!await client.IsConfiguredAsync(ct))
         {
             return [];
         }

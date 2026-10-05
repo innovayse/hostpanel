@@ -41,6 +41,16 @@ stages: [test, build, deploy]
     # the workspace project must list this project in its CI_JOB_TOKEN allowlist,
     # since a job token is scoped to its own project by default.
     NuGetPackageSourceCredentials_innovayse: "Username=gitlab-ci-token;Password=${CI_JOB_TOKEN}"
+    # Testcontainers starts Ryuk, its reaper container, before the first real container and
+    # then dials it on a mapped port. On the builder runner that connection is never made:
+    # it waits its full minute, throws "ResourceReaperException: Initialization has been
+    # cancelled", and every Integration.Tests case fails in IntegrationTestFactory.InitializeAsync
+    # before a Postgres container is even requested -- twice in a row on 2026-10-05.
+    #
+    # Ryuk only removes containers a crashed run leaves behind. IntegrationTestFactory.DisposeAsync
+    # disposes its Postgres on every normal exit, so without Ryuk a leak needs a killed job, and
+    # what it leaves is one Postgres container on the builder host to remove by hand.
+    TESTCONTAINERS_RYUK_DISABLED: "true"
   script:
     - cd "$SERVICE"
     # -m:1 keeps MSBuild to a single node, so the solution's test projects build and run one

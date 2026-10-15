@@ -42,7 +42,7 @@
   </ItemGroup>
   <!-- Microsoft Extensions -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.Extensions.Caching.Abstractions" Version="9.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.Abstractions" Version="10.0.13" />
     <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="9.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.1" />

@@ -14,6 +14,8 @@
   <a href="https://github.com/innovayse/hostpanel/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/innovayse/hostpanel?style=flat"></a>
   <a href="https://github.com/innovayse/hostpanel/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22"><img alt="Good first issues" src="https://img.shields.io/github/issues/innovayse/hostpanel/good%20first%20issue?label=good%20first%20issues&color=7057ff"></a>
   <a href="https://github.com/innovayse/hostpanel/discussions"><img alt="Discussions" src="https://img.shields.io/github/discussions/innovayse/hostpanel"></a>
+  <a href="https://discord.gg/NfqTkyTgD"><img alt="Discord" src="https://img.shields.io/badge/chat-on%20Discord-5865F2?logo=discord&logoColor=white"></a>
+  <a href="https://github.com/innovayse/hostpanel/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/innovayse/hostpanel/actions/workflows/ci.yml/badge.svg"></a>
 </p>
 
 ---

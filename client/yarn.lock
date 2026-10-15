@@ -7741,10 +7741,10 @@ strip-literal@^3.1.0:
   dependencies:
     js-tokens "^9.0.1"
 
-stripe@^20.4.0:
-  version "20.4.1"
-  resolved "https://registry.npmjs.org/stripe/-/stripe-20.4.1.tgz"
-  integrity sha512-axCguHItc8Sxt0HC6aSkdVRPffjYPV7EQqZRb2GkIa8FzWDycE7nHJM19C6xAIynH1Qp1/BHiopSi96jGBxT0w==
+stripe@^23.0.0:
+  version "23.0.0"
+  resolved "https://registry.yarnpkg.com/stripe/-/stripe-23.0.0.tgz#4730d07671871986e6e5b31e018668e9743676da"
+  integrity sha512-MDE2A5ZVVluYURORaZEVghSmnLJc3w6aHAlZSxDQMsOjOb3V0O6ro/CiaeFlJS4N7uIVmsg98ocRsPmUK6YfyA==
 
 strnum@^2.2.2:
   version "2.2.2"

@@ -28,7 +28,7 @@
     "date-fns": "^4.4.0",
     "eslint": "^9.39.2",
     "libphonenumber-js": "^1.13.3",
-    "lucide-vue-next": "^0.564.0",
+    "lucide-vue-next": "^1.0.0",
     "nuxt": "^4.3.0",
     "nuxt-gtag": "^4.1.0",
     "nuxt-swiper": "^2.0.1",

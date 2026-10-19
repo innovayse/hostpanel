@@ -15,24 +15,24 @@ test('the toggle switches the palette and the logo, and the choice persists acro
 
   // Light by operator default: the light wordmark shows, the dark one is hidden.
   await expect(page.locator('html')).not.toHaveClass(/\bdark\b/)
-  await expect(page.getByTestId('site-logo-light')).toBeVisible()
-  await expect(page.getByTestId('site-logo-dark')).toBeHidden()
+  await expect(page.getByTestId('app-logo-light')).toBeVisible()
+  await expect(page.getByTestId('app-logo-dark')).toBeHidden()
 
   // Toggle -> dark palette, and the wordmarks swap.
   await page.getByTestId('theme-toggle').click()
   await expect(page.locator('html')).toHaveClass(/\bdark\b/)
-  await expect(page.getByTestId('site-logo-dark')).toBeVisible()
-  await expect(page.getByTestId('site-logo-light')).toBeHidden()
+  await expect(page.getByTestId('app-logo-dark')).toBeVisible()
+  await expect(page.getByTestId('app-logo-light')).toBeHidden()
 
   // The choice is remembered: after a reload the server renders dark again.
   await page.reload()
   await waitForHydration(page)
   await expect(page.locator('html')).toHaveClass(/\bdark\b/)
-  await expect(page.getByTestId('site-logo-dark')).toBeVisible()
-  await expect(page.getByTestId('site-logo-light')).toBeHidden()
+  await expect(page.getByTestId('app-logo-dark')).toBeVisible()
+  await expect(page.getByTestId('app-logo-light')).toBeHidden()
 
   // And back to light.
   await page.getByTestId('theme-toggle').click()
   await expect(page.locator('html')).not.toHaveClass(/\bdark\b/)
-  await expect(page.getByTestId('site-logo-light')).toBeVisible()
+  await expect(page.getByTestId('app-logo-light')).toBeVisible()
 })

@@ -18,6 +18,9 @@ test('clicking a link leaves no focus outline or ring', async ({ page }) => {
   // release would navigate. A full click() leaves /faq/general, so the link is gone from the
   // page before its style can be read and the evaluate below waits until the test times out.
   const back = page.getByTestId('faq-back-to-all')
+  // The link sits under the accordion, below the fold; the mouse cannot press what is off
+  // screen, so bring it into view before reading where it is.
+  await back.scrollIntoViewIfNeeded()
   const box = await back.boundingBox()
   expect(box).not.toBeNull()
   if (!box) {

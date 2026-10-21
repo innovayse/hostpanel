@@ -97,3 +97,42 @@
     width: calc(100vw - 16px);
   }
 }
+
+/*
+ * UiBalancedGrid: a wrapping, centred flex row. The column count arrives as the data-columns
+ * (desktop) and data-columns-md (tablet) attributes, up to four columns, so an incomplete last row
+ * sits in the middle instead of against the left edge.
+ */
+.ui-balanced-grid {
+  --ui-bg-gap: 1.5rem;
+  --ui-bg-active: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--ui-bg-gap);
+}
+
+.ui-balanced-grid > * {
+  flex: 0 0 calc((100% - (var(--ui-bg-active) - 1) * var(--ui-bg-gap)) / var(--ui-bg-active));
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .ui-balanced-grid[data-columns-md="2"] {
+    --ui-bg-active: 2;
+  }
+}
+
+@media (min-width: 1024px) {
+  .ui-balanced-grid[data-columns="2"] {
+    --ui-bg-active: 2;
+  }
+
+  .ui-balanced-grid[data-columns="3"] {
+    --ui-bg-active: 3;
+  }
+
+  .ui-balanced-grid[data-columns="4"] {
+    --ui-bg-active: 4;
+  }
+}

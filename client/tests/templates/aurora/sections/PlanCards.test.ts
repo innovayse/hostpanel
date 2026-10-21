@@ -118,7 +118,7 @@ describe('PlanCards', () => {
     const grid = wrapper.find('[data-testid="plan-grid"]').element as HTMLElement
 
     expect(wrapper.findAll('[data-testid^="plan-card-"]')).toHaveLength(count)
-    expect(grid.style.getPropertyValue('--ui-bg-cols')).toBe(String(balancedColumns(count)))
+    expect(grid.getAttribute('data-columns')).toBe(String(balancedColumns(count)))
     expect(wrapper.find('[data-testid="plan-card-100"]').classes()).toContain('h-full')
   })
 

@@ -90,7 +90,7 @@ describe('ProductFamilyGrid', () => {
     const grid = wrapper.find('[data-testid="product-grid"]').element as HTMLElement
 
     expect(wrapper.findAll('[data-testid^="product-card-"]')).toHaveLength(count)
-    expect(grid.style.getPropertyValue('--ui-bg-cols')).toBe(String(balancedColumns(count)))
+    expect(grid.getAttribute('data-columns')).toBe(String(balancedColumns(count)))
   })
 
   it('keeps cards the same height with very long text: clamped description, three bullets, wrapped name', () => {

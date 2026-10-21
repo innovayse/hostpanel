@@ -28,8 +28,8 @@ describe('UiBalancedGrid', () => {
     const wrapper = mountGrid(count)
     const root = wrapper.element as HTMLElement
 
-    expect(root.style.getPropertyValue('--ui-bg-cols')).toBe(desktop)
-    expect(root.style.getPropertyValue('--ui-bg-cols-md')).toBe(tablet)
+    expect(root.getAttribute('data-columns')).toBe(desktop)
+    expect(root.getAttribute('data-columns-md')).toBe(tablet)
     expect(wrapper.findAll('.cell')).toHaveLength(count)
   })
 

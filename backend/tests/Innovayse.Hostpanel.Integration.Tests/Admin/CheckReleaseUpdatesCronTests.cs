@@ -10,7 +10,7 @@ using Microsoft.Extensions.Hosting;
 using Wolverine;
 using Wolverine.Tracking;
 
-namespace Innovayse.Hostpanel.Integration.Tests.Shared;
+namespace Innovayse.Hostpanel.Integration.Tests.Admin;
 
 /// <summary>
 /// <see cref="CheckReleaseUpdatesCronHandler"/>: a successful run stores the GitHub release in the

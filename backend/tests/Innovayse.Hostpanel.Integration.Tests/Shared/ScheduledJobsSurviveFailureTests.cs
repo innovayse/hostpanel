@@ -1,3 +1,7 @@
+using Innovayse.Hostpanel.Application.Admin.Commands.CheckReleaseUpdatesCron;
+using Innovayse.Hostpanel.Application.Common;
+using Innovayse.Hostpanel.Integration.Tests.Fixtures;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Innovayse.Hostpanel.Application.Admin.Servers.Commands.SyncServerAccountCountsCron;
 using Innovayse.Hostpanel.Application.Billing.Commands.CheckOverdueInvoicesCron;
 using Innovayse.Hostpanel.Application.Billing.Commands.DispatchFulfilmentCron;
@@ -49,6 +53,7 @@ public sealed class ScheduledJobsSurviveFailureTests(IntegrationTestFactory fact
         new SendRenewalRemindersCronCommand(),
         new ReconcileGatewayPaymentsCronCommand(),
         new DispatchFulfilmentCronCommand(),
+        new CheckReleaseUpdatesCronCommand(),
     };
 
     /// <summary>
@@ -108,6 +113,22 @@ public sealed class ScheduledJobsSurviveFailureTests(IntegrationTestFactory fact
                         .UseNpgsql("Host=127.0.0.1;Port=1;Database=unreachable;Username=x;Password=x;Timeout=1")
                         .Options,
                     new ModelOnlyEncryptionService()));
+
+                // The derived factory gets its own FakeGitHubReleasesClient instance (Next = null by
+                // default). CheckReleaseUpdatesCronHandler returns early when GitHub returns null,
+                // never reaching the broken database. Give it a release so the handler hits the DB.
+                s.RemoveAll<FakeGitHubReleasesClient>();
+                s.RemoveAll<IGitHubReleasesClient>();
+                s.AddSingleton<FakeGitHubReleasesClient>(_ =>
+                {
+                    var fake = new FakeGitHubReleasesClient();
+                    fake.Next = new GitHubReleaseInfo(
+                        "99.0.0",
+                        DateTimeOffset.UtcNow,
+                        "https://github.com/innovayse/hostpanel/releases/tag/v99.0.0");
+                    return fake;
+                });
+                s.AddSingleton<IGitHubReleasesClient>(sp => sp.GetRequiredService<FakeGitHubReleasesClient>());
             });
         });
 

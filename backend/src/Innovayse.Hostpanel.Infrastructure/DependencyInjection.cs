@@ -15,6 +15,7 @@ using Innovayse.Hostpanel.Infrastructure.Demo;
 using Innovayse.Hostpanel.Infrastructure.Email;
 using Innovayse.Hostpanel.Infrastructure.Email.Settings;
 using Innovayse.Hostpanel.Infrastructure.ImageProcessing;
+using Innovayse.Hostpanel.Infrastructure.Integrations.GitHub;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Settings;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Migration;
@@ -600,6 +601,18 @@ public static class DependencyInjection
             // lost response posts the enquiry to the operator's chat twice, and the mail has
             // already delivered it, so the duplicate buys nothing.
             .AddNoRetryResilience(o => o.Telegram);
+
+        // GitHub Releases: daily release-update check. User-Agent is required by GitHub's API
+        // policy; read-only resilience (retries + circuit breaker) is applied via the standard
+        // profile because this is a GET with no side effects.
+        services.AddSingleton<IInstalledVersionProvider, InstalledVersionProvider>();
+        services.AddHttpClient<IGitHubReleasesClient, GitHubReleasesClient>(client =>
+        {
+            client.BaseAddress = new Uri("https://api.github.com/");
+            client.DefaultRequestHeaders.Add("User-Agent", "Hostpanel-ReleaseCheck");
+            client.DefaultRequestHeaders.Add("Accept", "application/vnd.github+json");
+        })
+            .AddReadOnlyResilience(o => o.Default);
 
         // Reports
         services.AddScoped<ISslMonitoringService, SslMonitoringService>();

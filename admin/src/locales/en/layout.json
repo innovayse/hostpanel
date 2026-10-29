@@ -20,5 +20,11 @@
     "light": "Light",
     "dark": "Dark",
     "system": "System"
+  },
+  "releaseUpdate": {
+    "title": "Hostpanel {version} available",
+    "releaseNotes": "Release notes",
+    "copy": "Copy upgrade command",
+    "copied": "Copied!"
   }
 }

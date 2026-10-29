@@ -155,6 +155,12 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
             // recording fake instead, so none of them reaches the network.
             services.RemoveAll<IHostingProbe>();
             services.AddSingleton<IHostingProbe, FakeHostingProbe>();
+
+            // The GitHub releases client would reach api.github.com on every CheckReleaseUpdatesCron
+            // run; all integration tests get a configurable in-memory fake instead.
+            services.RemoveAll<IGitHubReleasesClient>();
+            services.AddSingleton<FakeGitHubReleasesClient>();
+            services.AddSingleton<IGitHubReleasesClient>(sp => sp.GetRequiredService<FakeGitHubReleasesClient>());
         });
     }
 

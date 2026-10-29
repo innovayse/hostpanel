@@ -12,6 +12,7 @@ import type { Contact } from '@/types/contact'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
@@ -26,7 +27,6 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { UiAlign } from '@/utils/ui/table'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
-import { UiSize } from '@/utils/ui/size'
 import { NOTICE_VISIBLE_MS } from '@/lib/limits'
 
 const { t } = useI18n()
@@ -236,24 +236,12 @@ onBeforeUnmount(() => {
               <UiBadge :tone="contactTypeTone(contact.type)" small>{{ contact.type }}</UiBadge>
             </UiTableCell>
             <UiTableCell :align="UiAlign.Right">
-              <UiStack direction="row" :justify="UiJustify.End" gap="sm">
-                <UiButton
-                  :variant="UiButtonVariant.Secondary"
-                  :size="UiSize.Sm"
-                  :data-testid="`client-contacts-edit-${contact.id}`"
-                  @click="openEditModal(contact)"
-                >
-                  {{ t('shared.edit') }}
-                </UiButton>
-                <UiButton
-                  :variant="UiButtonVariant.Danger"
-                  :size="UiSize.Sm"
-                  :data-testid="`client-contacts-delete-${contact.id}`"
-                  @click="handleDeleteContact(contact.id)"
-                >
-                  {{ t('shared.delete') }}
-                </UiButton>
-              </UiStack>
+              <UiRowActions
+                :actions="[
+                  { label: t('shared.edit'), testid: `client-contacts-edit-${contact.id}`, onSelect: () => openEditModal(contact) },
+                  { label: t('shared.delete'), testid: `client-contacts-delete-${contact.id}`, onSelect: () => handleDeleteContact(contact.id), danger: true },
+                ]"
+              />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

@@ -20,6 +20,7 @@ import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
@@ -325,6 +326,17 @@ const dismissDelete = (): void => {
  *
  * @param category - The category to open.
  */
+/**
+ * Returns the row actions for a category card.
+ *
+ * @param category - The category the actions target.
+ * @returns The actions array for UiRowActions.
+ */
+const categoryActions = (category: DownloadCategory) => [
+  { label: t('shared.edit'), testid: `downloads-category-${category.id}-edit`, onSelect: () => { editingCategory.value = category } },
+  { label: t('shared.delete'), testid: `downloads-category-${category.id}-delete`, onSelect: () => { deleteRequest.value = { type: DownloadTarget.Category, id: category.id, name: category.name } }, danger: true as const },
+]
+
 const navigateToCategory = (category: DownloadCategory): void => {
   breadcrumbs.value.push({ id: category.id, name: category.name })
   currentCategoryId.value = category.id
@@ -552,24 +564,7 @@ onMounted(() => {
                       {{ category.name }} ({{ category.downloadCount }})
                     </UiButton>
                   </UiStack>
-                  <UiStack direction="row" gap="xs">
-                    <UiIconButton
-                      :label="t('shared.edit')"
-                      :size="UiSize.Sm"
-                      :data-testid="`downloads-category-${category.id}-edit`"
-                      @click="editingCategory = category"
-                    >
-                      <UiIcon :markup="Icon.Edit" :size="UiSize.Sm" />
-                    </UiIconButton>
-                    <UiIconButton
-                      :label="t('shared.delete')"
-                      :size="UiSize.Sm"
-                      :data-testid="`downloads-category-${category.id}-delete`"
-                      @click="deleteRequest = { type: DownloadTarget.Category, id: category.id, name: category.name }"
-                    >
-                      <UiIcon :markup="Icon.Remove" :size="UiSize.Sm" />
-                    </UiIconButton>
-                  </UiStack>
+                  <UiRowActions :actions="categoryActions(category)" />
                 </UiStack>
                 <UiText v-if="category.description" tone="muted" size="sm">{{ category.description }}</UiText>
                 <UiStack direction="row">

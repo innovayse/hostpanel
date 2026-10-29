@@ -17,6 +17,7 @@ import ChangePasswordModal from '@/components/clients/ChangePasswordModal.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiFilterCard from '@/components/ui/UiFilterCard.vue'
 import UiInput from '@/components/ui/UiInput.vue'
@@ -304,7 +305,7 @@ onUnmounted(() => {
           <UiTableHeader>{{ t('shared.lastName') }}</UiTableHeader>
           <UiTableHeader>{{ t('shared.email') }}</UiTableHeader>
           <UiTableHeader>{{ t('clients.manageUsers.lastLogin') }}</UiTableHeader>
-          <UiTableHeader align="center">{{ t('shared.actions') }}</UiTableHeader>
+          <UiTableHeader align="right">{{ t('shared.actions') }}</UiTableHeader>
         </UiTableRow>
       </UiTableHead>
       <UiTableBody divided>
@@ -314,33 +315,14 @@ onUnmounted(() => {
           <UiTableCell>{{ user.lastName }}</UiTableCell>
           <UiTableCell muted>{{ user.email }}</UiTableCell>
           <UiTableCell muted>{{ formatDate(user.lastLoginAt) }}</UiTableCell>
-          <UiTableCell align="center">
-            <UiStack direction="row" gap="xs" justify="center" wrap>
-              <UiButton
-                variant="secondary"
-                size="sm"
-                :data-testid="`users-manage-${user.id}`"
-                @click="openManageModal(user.id)"
-              >
-                {{ t('clients.manageUsers.manageUser') }}
-              </UiButton>
-              <UiButton
-                variant="ghost"
-                size="sm"
-                :data-testid="`users-reset-${user.id}`"
-                @click="handleSendPasswordReset(user.id)"
-              >
-                {{ t('clients.manageUsers.sendPasswordResetEmail') }}
-              </UiButton>
-              <UiButton
-                variant="ghost"
-                size="sm"
-                :data-testid="`users-password-${user.id}`"
-                @click="openChangePasswordModal(user.id)"
-              >
-                {{ t('shared.changePassword') }}
-              </UiButton>
-            </UiStack>
+          <UiTableCell align="right">
+            <UiRowActions
+              :actions="[
+                { label: t('clients.manageUsers.manageUser'), testid: `users-manage-${user.id}`, onSelect: () => openManageModal(user.id) },
+                { label: t('clients.manageUsers.sendPasswordResetEmail'), testid: `users-reset-${user.id}`, onSelect: () => handleSendPasswordReset(user.id) },
+                { label: t('shared.changePassword'), testid: `users-password-${user.id}`, onSelect: () => openChangePasswordModal(user.id) },
+              ]"
+            />
           </UiTableCell>
         </UiTableRow>
       </UiTableBody>

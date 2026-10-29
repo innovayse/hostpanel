@@ -33,6 +33,7 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
@@ -376,28 +377,15 @@ onMounted(loadAll)
                   </UiText>
                 </UiStack>
               </UiTableCell>
-              <UiTableCell>
-                <UiStack direction="row" gap="xs" wrap>
-                  <UiButton
-                    variant="ghost"
-                    size="sm"
-                    :disabled="testingIds.includes(server.id)"
-                    :data-testid="`server-test-${server.id}`"
-                    @click="handleTestConnection(server.id)"
-                  >
-                    {{ t('shared.testConnection') }}
-                  </UiButton>
-                  <UiButton variant="ghost" size="sm" :data-testid="`server-ssh-${server.id}`" @click="sshServerTarget = server">
-                    {{ t('servers.ssh.open') }}
-                  </UiButton>
-                  <UiButton variant="ghost" size="sm" :data-testid="`server-edit-${server.id}`" @click="openEditServer(server)">
-                    {{ t('shared.edit') }}
-                  </UiButton>
-                  <UiButton variant="danger" size="sm" :data-testid="`server-delete-${server.id}`" @click="deleteServerTarget = server">
-                    {{ t('shared.delete') }}
-                  </UiButton>
-                </UiStack>
-              </UiTableCell>
+              <UiTableCell align="right">
+                <UiRowActions
+                  :actions="[
+                    { label: t('shared.testConnection'), testid: `server-test-${server.id}`, onSelect: () => handleTestConnection(server.id) },
+                    { label: t('servers.ssh.open'), testid: `server-ssh-${server.id}`, onSelect: () => { sshServerTarget = server } },
+                    { label: t('shared.edit'), testid: `server-edit-${server.id}`, onSelect: () => openEditServer(server) },
+                    { label: t('shared.delete'), testid: `server-delete-${server.id}`, onSelect: () => { deleteServerTarget = server }, danger: true },
+                  ]"
+                /></UiTableCell>
             </UiTableRow>
           </UiTableBody>
         </UiTable>
@@ -434,15 +422,13 @@ onMounted(loadAll)
             <UiTableCell muted>
               {{ group.servers.length > 0 ? group.servers.map(s => s.name).join(', ') : '—' }}
             </UiTableCell>
-            <UiTableCell>
-              <UiStack direction="row" gap="xs" wrap>
-                <UiButton variant="ghost" size="sm" :data-testid="`server-group-edit-${group.id}`" @click="openEditGroup(group)">
-                  {{ t('shared.edit') }}
-                </UiButton>
-                <UiButton variant="danger" size="sm" :data-testid="`server-group-delete-${group.id}`" @click="deleteGroupTarget = group">
-                  {{ t('shared.delete') }}
-                </UiButton>
-              </UiStack>
+            <UiTableCell align="right">
+              <UiRowActions
+                :actions="[
+                  { label: t('shared.edit'), testid: `server-group-edit-${group.id}`, onSelect: () => openEditGroup(group) },
+                  { label: t('shared.delete'), testid: `server-group-delete-${group.id}`, onSelect: () => { deleteGroupTarget = group }, danger: true },
+                ]"
+              />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

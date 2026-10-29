@@ -15,10 +15,10 @@ import SettingsLoading from '@/components/settings/SettingsLoading.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
-import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiImage from '@/components/ui/UiImage.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
@@ -322,22 +322,12 @@ const formatDateRange = (from: string | null, until: string | null): string => {
 
               <!-- Actions -->
               <UiTableCell align="right">
-                <UiIconButton
-                  :label="t('settings.slides.editSlide')"
-                  size="sm"
-                  :data-testid="`slide-edit-${slide.id}`"
-                  @click="navigateEdit(slide)"
-                >
-                  <UiIcon :markup="Icon.Edit" size="sm" />
-                </UiIconButton>
-                <UiIconButton
-                  :label="t('settings.slides.deleteSlide')"
-                  size="sm"
-                  :data-testid="`slide-delete-${slide.id}`"
-                  @click="handleDelete(slide)"
-                >
-                  <UiIcon :markup="Icon.Trash" size="sm" />
-                </UiIconButton>
+                <UiRowActions
+                  :actions="[
+                    { label: t('settings.slides.editSlide'), testid: `slide-edit-${slide.id}`, onSelect: () => navigateEdit(slide) },
+                    { label: t('settings.slides.deleteSlide'), testid: `slide-delete-${slide.id}`, onSelect: () => handleDelete(slide), danger: true },
+                  ]"
+                />
               </UiTableCell>
             </UiTableRow>
           </template>

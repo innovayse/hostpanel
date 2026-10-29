@@ -14,13 +14,13 @@ import SettingsLoading from '@/components/settings/SettingsLoading.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
 import UiIcon from '@/components/ui/UiIcon.vue'
-import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
@@ -390,22 +390,12 @@ watch(statusFilter, () => {
             </UiTableCell>
             <UiTableCell muted>{{ lastSyncedText(item.lastSyncedAt) }}</UiTableCell>
             <UiTableCell align="right">
-              <UiIconButton
-                :label="t('settings.tldConfigs.editTld')"
-                size="sm"
-                :data-testid="`tld-edit-${item.tld}`"
-                @click="navigateEdit(item)"
-              >
-                <UiIcon :markup="Icon.Edit" size="sm" />
-              </UiIconButton>
-              <UiIconButton
-                :label="t('settings.tldConfigs.deleteTld')"
-                size="sm"
-                :data-testid="`tld-delete-${item.tld}`"
-                @click="promptDelete(item)"
-              >
-                <UiIcon :markup="Icon.Trash" size="sm" />
-              </UiIconButton>
+              <UiRowActions
+                :actions="[
+                  { label: t('settings.tldConfigs.editTld'), testid: `tld-edit-${item.tld}`, onSelect: () => navigateEdit(item) },
+                  { label: t('settings.tldConfigs.deleteTld'), testid: `tld-delete-${item.tld}`, onSelect: () => promptDelete(item), danger: true },
+                ]"
+              />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

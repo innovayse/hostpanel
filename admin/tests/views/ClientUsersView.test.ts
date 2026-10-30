@@ -57,6 +57,7 @@ describe('ClientUsersView', () => {
     })
     const wrapper = await mountUsers()
 
+    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
     await wrapper.get('[data-testid="client-users-remove-u2"]').trigger('click')
     expect(mock.mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === 'DELETE')).toBe(false)
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
@@ -72,6 +73,7 @@ describe('ClientUsersView', () => {
     })
     const wrapper = await mountUsers()
 
+    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
     await wrapper.get('[data-testid="client-users-remove-u2"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
@@ -84,6 +86,7 @@ describe('ClientUsersView', () => {
     const mock = stubRoutes({ 'GET /api/clients/7/users': () => json([member]) })
     const wrapper = await mountUsers()
 
+    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
     await wrapper.get('[data-testid="client-users-remove-u2"]').trigger('click')
     await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')
     await flushPromises()
@@ -102,6 +105,7 @@ describe('ClientUsersView', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-testid="client-users-load-error"]').exists()).toBe(false)
+    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
     expect(wrapper.find('[data-testid="client-users-remove-u2"]').exists()).toBe(true)
   })
 })

@@ -91,6 +91,7 @@ describe('SlidesView', () => {
       expect(router.currentRoute.value.path).toBe('/settings/slides/create')
     })
 
+    await wrapper.get('[data-testid="slide-row-2"]').get('[data-testid="row-actions-trigger"]').trigger('click')
     await wrapper.get('[data-testid="slide-edit-2"]').trigger('click')
     await vi.waitFor(() => {
       expect(router.currentRoute.value.path).toBe('/settings/slides/2/edit')
@@ -104,6 +105,7 @@ describe('SlidesView', () => {
     })
     const { wrapper } = await mountScreen(SlidesView)
 
+    await wrapper.get('[data-testid="slide-row-1"]').get('[data-testid="row-actions-trigger"]').trigger('click')
     await wrapper.get('[data-testid="slide-delete-1"]').trigger('click')
     expect(wrapper.get('[role="dialog"]').text()).toContain('Delete "Welcome"?')
     expect(requestsOf(mock)).not.toContain('DELETE /admin/slides/1')
@@ -122,6 +124,7 @@ describe('SlidesView', () => {
     const mock = stubRouteTable({ 'GET /admin/slides': () => json(slides) })
     const { wrapper } = await mountScreen(SlidesView)
 
+    await wrapper.get('[data-testid="slide-row-1"]').get('[data-testid="row-actions-trigger"]').trigger('click')
     await wrapper.get('[data-testid="slide-delete-1"]').trigger('click')
     await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')
 
@@ -145,8 +148,10 @@ describe('SlidesView', () => {
     await wrapper.get('[data-testid="slides-error-retry"]').trigger('click')
 
     await vi.waitFor(() => {
-      expect(wrapper.find('[data-testid="slide-delete-1"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="slide-row-1"]').exists()).toBe(true)
     })
+    await wrapper.get('[data-testid="slide-row-1"]').get('[data-testid="row-actions-trigger"]').trigger('click')
+    expect(wrapper.find('[data-testid="slide-delete-1"]').exists()).toBe(true)
   })
 
   it('shows the API sentence when a delete is refused', async () => {
@@ -156,6 +161,7 @@ describe('SlidesView', () => {
     })
     const { wrapper } = await mountScreen(SlidesView)
 
+    await wrapper.get('[data-testid="slide-row-1"]').get('[data-testid="row-actions-trigger"]').trigger('click')
     await wrapper.get('[data-testid="slide-delete-1"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
 

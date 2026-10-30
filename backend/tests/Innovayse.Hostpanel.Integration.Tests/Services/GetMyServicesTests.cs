@@ -99,6 +99,23 @@ public sealed class GetMyServicesTests(IntegrationTestFactory factory) : IClassF
         rows.Single(s => s.GetProperty("id").GetInt32() == hostingId).GetProperty("isDigital").GetBoolean().Should().BeFalse();
     }
 
+    /// <summary>A service carries its product's SKU, in the normalised form it is stored in, and null when the product has none.</summary>
+    [Fact]
+    public async Task GetMyServicesAsync_CarriesTheProductSkuOrNullAsync()
+    {
+        var (client, clientId) = await ServicesTestSeeds.RegisterOwnerAsync(factory, "get-my-services-sku");
+        var withSkuId = await ServicesTestSeeds.SeedPendingServiceAsync(factory, clientId, sku: $"sku-{Guid.NewGuid():N}");
+        var withoutSkuId = await ServicesTestSeeds.SeedPendingServiceAsync(factory, clientId);
+
+        var response = await client.GetAsync("/api/me/services");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var rows = body.RootElement.EnumerateArray().ToList();
+        rows.Single(s => s.GetProperty("id").GetInt32() == withSkuId).GetProperty("sku").GetString().Should().StartWith("SKU-");
+        rows.Single(s => s.GetProperty("id").GetInt32() == withoutSkuId).GetProperty("sku").ValueKind.Should().Be(JsonValueKind.Null);
+    }
+
     /// <summary>
     /// A suspended service names why it is suspended, and carries the disk and bandwidth figures its
     /// server last reported for its domain.

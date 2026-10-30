@@ -3,7 +3,7 @@
     <UiHeading :level="3" size="subsection" class="!text-sm mb-3">{{ $t('client.services.whatToday') }}</UiHeading>
     <UiStack gap="xs" align="start">
       <UiButton
-        v-if="hasServer && store.mayDo(Permission.AllowSingleSignOn)"
+        v-if="hasServer && isActive && store.mayDo(Permission.AllowSingleSignOn)"
         variant="ghost"
         size="sm"
         :loading="ssoLoading"
@@ -53,6 +53,8 @@ const store = useClientStore()
 interface Props {
   /** Whether the service sits on a known server (the control-panel shortcut needs one). */
   hasServer: boolean
+  /** Whether the service is active; a suspended or terminated account has no panel to sign in to. */
+  isActive: boolean
   /** Whether the control-panel sign-in is in flight. */
   ssoLoading: boolean
 }

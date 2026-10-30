@@ -79,6 +79,25 @@ public sealed class GetControlPanelSsoUrlTests(IntegrationTestFactory factory) :
         (await ProvisioningTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.SERVICE_CPANEL_SSO_UPSTREAM_FAILED);
     }
 
+    /// <summary>
+    /// A terminated service keeps its reference but no longer has an account, so a sign-in link is
+    /// refused with 400 <c>SERVICE_NOT_ACTIVE</c> instead of asking the panel.
+    /// </summary>
+    [Fact]
+    public async Task GetControlPanelSsoUrl_TerminatedService_Returns400WithServiceNotActiveAsync()
+    {
+        var http = factory.CreateClient();
+        var adminToken = await factory.GetAdminTokenAsync();
+        var serviceId = await ProvisioningTestSeeds.SeedServiceAsync(factory, http, adminToken);
+        (await http.PostAsync($"/api/provisioning/{serviceId}/provision", null)).EnsureSuccessStatusCode();
+        (await http.PostAsJsonAsync($"/api/provisioning/{serviceId}/terminate", new { reason = "test" })).EnsureSuccessStatusCode();
+
+        var response = await http.GetAsync($"/api/provisioning/{serviceId}/cpanel-sso");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await ProvisioningTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.SERVICE_NOT_ACTIVE);
+    }
+
     /// <summary>Requesting a control-panel sign-in link without authentication is refused.</summary>
     [Fact]
     public async Task GetControlPanelSsoUrl_Returns401_WithoutAuthAsync()

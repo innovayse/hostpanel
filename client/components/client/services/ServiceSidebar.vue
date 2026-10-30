@@ -53,6 +53,7 @@ import { CLIENT_TICKET_NEW_PATH, clientServiceSetupPath } from '~/constants/clie
 import { Permission } from '~/composables/usePermissions'
 import { useClientStore } from '~/stores/client'
 import type { ClientService } from '~/types/clientservice'
+import { ServiceStatus } from '~/types/servicestatus'
 import { ServiceTab } from '~/types/servicetab'
 import { webmailUrl as buildWebmailUrl } from '~/utils/controlPanel'
 import { serviceSetupPending } from '~/utils/serviceSetup'
@@ -98,7 +99,8 @@ const canOrder = computed(() => store.mayDo(Permission.PlaceNewOrders))
 const canSetUp = computed(() => serviceSetupPending(props.service) && canOrder.value)
 
 /** Whether the person may sign in to the control panel from here. */
-const canSignIn = computed(() => store.mayDo(Permission.AllowSingleSignOn))
+const canSignIn = computed(() =>
+  props.service.status === ServiceStatus.Active && store.mayDo(Permission.AllowSingleSignOn))
 
 /** Whether the person may change the service's control-panel password. */
 const canChangePassword = computed(() => store.mayDo(Permission.ViewModifyPasswords))

@@ -404,9 +404,12 @@ public sealed class PayMyInvoiceTests(IntegrationTestFactory factory) : IClassFi
         responses.Should().Contain(r => r.StatusCode == HttpStatusCode.NoContent);
         foreach (var response in responses.Where(r => r.StatusCode != HttpStatusCode.NoContent))
         {
-            // The slower click read the invoice after the faster one saved, so it was refused
-            // before any charge.
-            (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.INVOICE_NOT_PAYABLE);
+            // Depending on whether the slower click read the invoice before or after the faster one
+            // saved, it was refused either before charge with INVOICE_NOT_PAYABLE or at settlement
+            // with PAYMENT_INTENT_MISMATCH. Both indicate a safely lost race with no duplicate payment.
+            (await BillingTestSeeds.CodeOfAsync(response)).Should().BeOneOf(
+                HostpanelErrorCodes.INVOICE_NOT_PAYABLE,
+                HostpanelErrorCodes.PAYMENT_INTENT_MISMATCH);
         }
 
         (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.Paid));

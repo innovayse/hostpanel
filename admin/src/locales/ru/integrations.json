@@ -10,6 +10,19 @@
     "configure": "Настроить →",
     "notConfigured": "Не настроено"
   },
+  "categories": {
+    "fulfilment": "Выполнение заказов",
+    "identity": "Идентификация",
+    "hosted": "Фоновые процессы"
+  },
+  "pluginType": {
+    "provisioning": "Провижининг",
+    "payment": "Платёж",
+    "registrar": "Регистратор",
+    "identity": "Идентификация",
+    "fulfilment": "Выполнение заказов",
+    "hosted": "Фоновый процесс"
+  },
   "integrationStatusSidebar": {
     "connectionStatus": "Состояние соединения",
     "testingConnection": "Проверка соединения…",

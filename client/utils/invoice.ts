@@ -1,5 +1,5 @@
 /**
- * The three questions the portal asks about an invoice that the API does not answer directly.
+ * The questions the portal asks about an invoice that the API does not answer directly.
  *
  * `MyInvoiceDto` sends what it stores (a total, a due date, a status and a list of transactions)
  * and leaves the derivations to the reader:
@@ -63,6 +63,19 @@ export const balanceDue = (invoice: ClientInvoice | null | undefined): number =>
  */
 export const isInvoiceOutstanding = (invoice: Pick<ClientInvoice, 'status'>): boolean =>
   invoice.status === InvoiceStatus.Unpaid || invoice.status === InvoiceStatus.Overdue
+
+/**
+ * Whether an invoice has been paid and still counts as paid.
+ *
+ * Mirrors the backend's `Invoice.PaidStatuses`: `Paid`, and `PartiallyRefunded`, which is a paid
+ * invoice of which part was given back. Both settle the invoice, so both belong on the paid tab and
+ * neither can be paid again; a fully `Refunded` invoice holds none of the money and is not paid.
+ *
+ * @param invoice - The invoice to judge.
+ * @returns True when the invoice is paid.
+ */
+export const isInvoicePaid = (invoice: Pick<ClientInvoice, 'status'>): boolean =>
+  invoice.status === InvoiceStatus.Paid || invoice.status === InvoiceStatus.PartiallyRefunded
 
 /**
  * Whether an invoice should be shown to the customer as late.

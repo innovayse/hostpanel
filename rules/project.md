@@ -17,9 +17,9 @@ products, billing, provisioning and integrations. A public demo
 is the same build with `Demo__Enabled=true` (`deploy:demo`); its sign-in page shows the demo accounts,
 served by `GET /api/public/demo` — they are not written in `README.md`.
 
-**This is a public, separately licensed repository.** AGPL-3.0-or-later. `origin` is **github.com/innovayse/hostpanel**, not GitLab. Anything written here
+**This is a public, separately licensed repository.** AGPL-3.0-or-later, except the plugin SDK (`backend/src/Innovayse.SDK`), which is MIT (its own `LICENSE`, packed into the package) so a plugin may be free or paid, open or closed; `SdkPackageTests` pins the package metadata. The SDK lives in its own public repository, **github.com/innovayse/hostpanel-sdk**, and is a git submodule at that same path (`.gitmodules`): clone with `--recurse-submodules` (or run `git submodule update --init` after a plain clone), and an SDK change lands as a pull request there first, then as a submodule bump here. `origin` is **github.com/innovayse/hostpanel**, not GitLab. Anything written here
 is read by people who have never seen the rest of the workspace, and the repo must build from
-a clone of itself alone — that is why `Innovayse.Auth` is consumed as an optional package (only in an
+a clone of itself alone (with its submodule) — that is why `Innovayse.Auth` is consumed as an optional package (only in an
 `InnovayseSso=true` build, see `backend/Directory.Build.props`) rather than a project reference, and why `backend/nuget.config` restricts `auditSources` to nuget.org.
 
 **Read first:** the six rules files beside this one — [clean-architecture.md](clean-architecture.md),
@@ -127,7 +127,7 @@ backend/src/
                                      Common/Interfaces/ (every port), Common/Errors/, Resources/
   Innovayse.Hostpanel.Infrastructure/ AppDbContext, migrations, <Capability>/ adapters, Integrations/
   Innovayse.Hostpanel.API/           controllers, Program.cs, composition root
-  Innovayse.SDK/                     the plugin contract third parties compile against
+  Innovayse.SDK/                     the plugin contract third parties compile against (git submodule, own repository)
   Innovayse.Providers.CWP/ CWP7/ Inecobank/   provisioning and payment providers (Inecobank is net8.0)
 backend/tests/                       Domain, Integration, Architecture, CWP, Inecobank
 client/  admin/                    Nuxt 4 portal, Vite admin SPA — each owns its Dockerfile (backend/Dockerfile too)
@@ -171,11 +171,26 @@ docker/                              compose set (shared·dev·prod·platform), 
   stages exactly two files — the provider assembly and its `plugin.json`. Never widen that to a
   `**\*.*` glob: the provider's `bin` also holds a build-time copy of `Innovayse.SDK.dll`, and
   `Assembly.LoadFrom` over it would give the process two distinct `IPaymentPlugin` types with the
-  same name, after which every cast in `PaymentPluginResolver` fails. The CWP providers are
+  same name, after which every cast in `PluginActivator` fails. The CWP providers are
   deliberately **not** staged, so they cannot activate at runtime by accident.
-- **`PaymentPluginResolver` takes `IConfiguration` (documented exception to configuration.md rule 6).**
-  The plugin SDK's payment plugin base classes take an `IConfiguration` in their constructor, so the
-  resolver hands each plugin a configuration built from **its own section only**: the host's
+- **Six plugin types, one activator.** The loader registers each plugin under the SDK contract of the
+  type its manifest declares: provisioning, payment, registrar, identity (`IClientResolver`),
+  fulfilment (`IFulfilmentPlugin`) and hosted (`IHostedPlugin`). Every plugin becomes an instance in
+  one place, `Infrastructure/Plugins/PluginActivator`: it checks the loaded type really implements the
+  contract, that `integration:{id}:is_enabled` is `true` and that every required manifest field is
+  stored, then builds the plugin with its own configuration. The resolvers only choose:
+  `PaymentPluginResolver` (`IPaymentPluginResolver`, one plugin by module id),
+  `FulfilmentPluginResolver` (`IFulfilmentPluginResolver`, every enabled fulfilment plugin in id order) and
+  `IdentityPluginResolver` (`IIdentityPluginResolver`, the one enabled identity plugin; two or more
+  enabled throw `IdentityPluginConflictException` rather than picking one). `HostedPluginRunner` starts
+  every enabled hosted plugin (manifest type `Hosted`, or any plugin that also implements
+  `IHostedPlugin`) once the host has started and stops them as it begins to stop; an activation, start or
+  stop that throws is logged with the plugin id and never stops the host or the other plugins. A plugin
+  is enabled from the admin Integrations page, where it is listed (with its type) when its manifest sets
+  `showInIntegrations`.
+- **`PluginActivator` takes `IConfiguration` (documented exception to configuration.md rule 6).**
+  The plugin SDK's base classes take an `IConfiguration` in their constructor, so the
+  activator hands each plugin a configuration built from **its own section only**: the host's
   `integration:{id}` section with the plugin's `integration:{id}:*` settings rows layered over it
   (the rows are filtered by prefix in SQL, never the whole `Settings` table). Connection strings,
   signing keys and other integrations never reach a plugin. The keys keep their full path because
@@ -226,8 +241,8 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   constructor whose parameters are public too, and never takes `IServiceProvider`. A vendor type stays `internal` by
   never appearing in an adapter's public signature, not by hiding the adapter. The services only the container
   can build are named once in `MessagingRegistration.ContainerBuiltServices`: the data context and its
-  `IHostpanelDbContext` port, Identity's `UserManager<AppUser>`, `IPaymentPluginResolver` (it activates a
-  plugin type loaded at run time) and every typed HTTP client `AddHttpClient<T>` registers. A test double
+  `IHostpanelDbContext` port, Identity's `UserManager<AppUser>`, `PluginActivator` (it builds a
+  plugin type loaded at run time, for every plugin resolver) and every typed HTTP client `AddHttpClient<T>` registers. A test double
   is registered as an instance (`AddSingleton<IPort>(fake)`) or by type, never through a factory.
   `MessagingRegistrationTests` builds every chain, with and without the demo, both on the test host and on a
   host that keeps the production container (`IntegrationTestFactory.WithProductionAdapters`, no test double), and
@@ -544,8 +559,12 @@ backend on the shared network, and Docker's DNS round-robins between the two.
   `ssh <host> 'sh -s' < scripts/check-client-owner-ids.sh`.
 - `scripts/pack-cwp-plugin.sh` — publishes `Innovayse.Providers.CWP` (Release, net8.0) on the host, strips
   PDB/XML and framework DLLs, adds `plugin.json` and writes `dist/innovayse-cwp.zip`.
+- `scripts/check-empty-plugins.sh <test project> ...` — fails when `plugins/` or `plugins-installed/` in a
+  built test project's output holds anything. Every backend test job of both pipelines runs it between the
+  build and the tests, so the whole suite is proven green with no plugin loaded in the jobs that already
+  run it, not in a duplicate set. A test that needs a plugin stages it itself and removes it.
 
-Both are `*.sh`, which `.gitattributes` (`*.sh text eol=lf`) pins to LF: the ssh pipe above fails with
+All are `*.sh`, which `.gitattributes` (`*.sh text eol=lf`) pins to LF: the ssh pipe above fails with
 "Illegal option" on a CRLF copy.
 
 ## CI is on GitLab. Pull requests are on GitHub. Both halves are load-bearing.
@@ -563,6 +582,14 @@ starts the pipeline. The consequences are not obvious and cost time every few mo
   setting for.
 - Tests, image builds and both deploys live in `.gitlab-ci.yml`. `deploy:staging` runs on
   `develop` against the staging host; `deploy:prod` is **manual** on `main` against the production host.
+- **The plugin SDK package is not published from here.** `backend/src/Innovayse.SDK` is a submodule of
+  github.com/innovayse/hostpanel-sdk, whose own workflows build, pack and publish it (a raised `<Version>` on its
+  `main`, or a version tag). This repository only builds against the commit the submodule pins. Every checkout
+  fetches it: `submodules: true` on each `actions/checkout`, `GIT_SUBMODULE_STRATEGY: recursive` in
+  `.gitlab-ci.yml`, and the deploy jobs (`GIT_STRATEGY: none`) run `git submodule sync --recursive` and
+  `git submodule update --init --recursive` after every checkout of their deploy directory, the rollback included.
+  The SDK project opts out of central package management and pins its two package versions itself, so it
+  builds alone; keep those versions equal to the ones in `backend/Directory.Packages.props`.
 - `.gitlab-ci.yml` inlines its templates. This repo cannot see the workspace's shared
   `ci/templates.yml`, so the hidden jobs are copied in. Change one here and the workspace
   copy does not move with it.

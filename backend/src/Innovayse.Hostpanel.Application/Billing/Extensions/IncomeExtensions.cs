@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,7 +15,7 @@ namespace Innovayse.Hostpanel.Application.Billing.Extensions;
 /// each refund row on the date it was given back. An invoice that turned Paid without a payment
 /// row (credit covered it, or it is imported history) counts its <c>Total</c> at its
 /// <c>PaidAt</c>; that total is already net of credit, so credit is never counted as income.
-/// A refunded one keeps its <c>PaidAt</c>, so its total and its refund rows cancel out; a Refunded
+/// A partially refunded one counts the same way, less its refund rows. A refunded one keeps its <c>PaidAt</c>, so its total and its refund rows cancel out; a Refunded
 /// invoice with no refund row (imported history) took and gave back nothing here.
 /// Credit top-ups and credit refunds live only in the client ledger and are not invoice income.
 /// Amounts stay in the invoice currency; a caller groups them by currency in SQL and converts
@@ -50,7 +51,7 @@ public static class IncomeExtensions
 
         var settledWithoutPayment = context.Invoices
             .AsNoTracking()
-            .Where(i => (i.Status == InvoiceStatus.Paid
+            .Where(i => (Invoice.PaidStatuses.Contains(i.Status)
                     || (i.Status == InvoiceStatus.Refunded && i.Transactions.Any(t => t.Type == InvoiceTransactionType.Refund)))
                 && i.PaidAt != null
                 && !i.Transactions.Any(t => t.Type == InvoiceTransactionType.Payment))

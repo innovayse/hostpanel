@@ -55,6 +55,15 @@ describe('invoice payment page', () => {
     expect(wrapper.find('[data-testid="invoice-pay-panel"]').exists()).toBe(false)
   })
 
+  it('treats a partially refunded invoice as already paid and offers no payment', async () => {
+    billingApi.fetchInvoice.mockResolvedValue(invoice(InvoiceStatus.PartiallyRefunded))
+
+    const wrapper = await mountPage(PayPage)
+
+    expect(wrapper.find('[data-testid="invoice-already-paid"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="invoice-pay-panel"]').exists()).toBe(false)
+  })
+
   it('says the invoice was not found when the read fails', async () => {
     billingApi.fetchInvoice.mockRejectedValue({ data: { detail: 'No such invoice.' } })
 

@@ -74,6 +74,7 @@ const INVOICE_TONES: Record<InvoiceStatus, UiTone> = {
   [InvoiceStatus.Overdue]: UiTone.Danger,
   [InvoiceStatus.Cancelled]: UiTone.Neutral,
   [InvoiceStatus.Refunded]: UiTone.Info,
+  [InvoiceStatus.PartiallyRefunded]: UiTone.Info,
   [InvoiceStatus.Collections]: UiTone.Danger,
   [InvoiceStatus.PaymentPending]: UiTone.Warning,
 }
@@ -135,6 +136,7 @@ const REPORT_STATUS_TONES: Record<string, UiTone> = {
   Overdue: UiTone.Danger,
   Expired: UiTone.Danger,
   Refunded: UiTone.Info,
+  PartiallyRefunded: UiTone.Info,
   Transferred: UiTone.Info,
   Draft: UiTone.Info,
   Inactive: UiTone.Neutral,

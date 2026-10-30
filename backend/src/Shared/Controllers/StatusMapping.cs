@@ -110,6 +110,11 @@ public static class StatusMapping
             // quotes nothing against the configured base (the deployment's state, a conflict).
             "EXCHANGE_RATE_SOURCE_UNAVAILABLE" => new(503, "Service Unavailable"),
             "EXCHANGE_RATE_BASE_NOT_QUOTED" => new(409, "Conflict"),
+            // Exact rows: only a failed fulfilment record may be retried, so the record's state stands
+            // in the way (a conflict); a fulfilment plugin that cannot advise on a refund is a
+            // dependency that did not answer (503 with Retry-After). Neither name carries a token.
+            "FULFILMENT_RECORD_NOT_RETRYABLE" => new(409, "Conflict"),
+            "FULFILMENT_ADVICE_UNAVAILABLE" => new(503, "Service Unavailable"),
             var code when code.Contains("UNAUTHORIZED", StringComparison.Ordinal) => new(401, "Unauthorized"),
             var code when code.Contains("FORBIDDEN", StringComparison.Ordinal) => new(403, "Forbidden"),
             var code when code.Contains("ACCESS_DENIED", StringComparison.Ordinal) => new(403, "Forbidden"),

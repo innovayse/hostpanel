@@ -146,7 +146,7 @@ public sealed partial class MigraDocInvoicePdfRenderer : IInvoicePdfRenderer
     /// <summary>Colour of the CANCELLED stamp, translucent so the page shows through.</summary>
     private static readonly XColor CancelledStamp = XColor.FromArgb(0x55, 0xDC, 0x26, 0x26);
 
-    /// <summary>Colour of the REFUNDED stamp, translucent so the page shows through.</summary>
+    /// <summary>Colour of the REFUNDED and PARTIALLY REFUNDED stamps, translucent so the page shows through.</summary>
     private static readonly XColor RefundedStamp = XColor.FromArgb(0x55, 0xD9, 0x77, 0x06);
 
     /// <summary>Where the web root is, for finding an uploaded logo.</summary>
@@ -485,7 +485,10 @@ public sealed partial class MigraDocInvoicePdfRenderer : IInvoicePdfRenderer
         footer.AddNumPagesField();
     }
 
-    /// <summary>Stamps the first page PAID (with the date), DRAFT, CANCELLED or REFUNDED; other statuses get no stamp.</summary>
+    /// <summary>
+    /// Stamps the first page PAID (with the date), DRAFT, CANCELLED, PARTIALLY REFUNDED or REFUNDED;
+    /// other statuses get no stamp.
+    /// </summary>
     /// <param name="page">The rendered first page.</param>
     /// <param name="model">The invoice.</param>
     private static void DrawStamp(PdfSharp.Pdf.PdfPage page, InvoicePdfModel model)
@@ -497,6 +500,7 @@ public sealed partial class MigraDocInvoicePdfRenderer : IInvoicePdfRenderer
                 PaidStamp),
             InvoiceStatus.Draft => ("DRAFT", DraftStamp),
             InvoiceStatus.Cancelled => ("CANCELLED", CancelledStamp),
+            InvoiceStatus.PartiallyRefunded => ("PARTIALLY REFUNDED", RefundedStamp),
             InvoiceStatus.Refunded => ("REFUNDED", RefundedStamp),
             _ => (null, XColors.Transparent),
         };

@@ -1,9 +1,10 @@
 /**
- * Mount tests for IntegrationCard: name, status badge, plugin and not-configured badges and the link to the
- * configuration page.
+ * Mount tests for IntegrationCard: name, status badge, plugin, plugin type and not-configured badges and the
+ * link to the configuration page.
  */
 import { describe, expect, it } from 'vitest'
 import IntegrationCard from '@/components/integrations/IntegrationCard.vue'
+import { PluginType } from '@/types/plugin'
 import { mountWithApp } from '../../helpers/mount'
 import { integrationDto } from '../../helpers/integrationFixtures'
 
@@ -34,5 +35,22 @@ describe('IntegrationCard', () => {
     const wrapper = mountWithApp(IntegrationCard, { props: { integration: integrationDto({ isPlugin: true }) } })
 
     expect(wrapper.text()).toContain('Plugin')
+  })
+
+  it.each([
+    [PluginType.Fulfilment, 'Fulfilment'],
+    [PluginType.Identity, 'Identity'],
+    [PluginType.Hosted, 'Background worker'],
+    [PluginType.Payment, 'Payment'],
+  ])('labels a %s plugin with its type', (pluginType, label) => {
+    const wrapper = mountWithApp(IntegrationCard, { props: { integration: integrationDto({ isPlugin: true, pluginType }) } })
+
+    expect(wrapper.get('[data-testid="integration-type-stripe"]').text()).toBe(label)
+  })
+
+  it('shows no type badge on a built-in integration', () => {
+    const wrapper = mountWithApp(IntegrationCard, { props: { integration: integrationDto() } })
+
+    expect(wrapper.find('[data-testid="integration-type-stripe"]').exists()).toBe(false)
   })
 })

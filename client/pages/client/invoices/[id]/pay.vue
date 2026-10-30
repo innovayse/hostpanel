@@ -16,7 +16,7 @@
     <UiEmptyState v-else-if="!invoice" :icon="AlertCircle" :title="$t('client.invoices.notFound')" />
 
     <UiEmptyState
-      v-else-if="invoice.status === InvoiceStatus.Paid"
+      v-else-if="isInvoicePaid(invoice)"
       :icon="CheckCircle"
       :title="$t('invoicePay.alreadyPaid')"
       data-testid="invoice-already-paid"
@@ -46,7 +46,7 @@
 import { CLIENT_INVOICES_PATH, clientInvoicePath } from '~/constants/clientRoutes'
 import { AlertCircle, CheckCircle } from 'lucide-vue-next'
 import { useInvoicePaymentStore } from '~/stores/invoicepayment'
-import { InvoiceStatus } from '~/types/invoicestatus'
+import { isInvoicePaid } from '~/utils/invoice'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 

@@ -1,0 +1,3 @@
+[submodule "backend/src/Innovayse.SDK"]
+	path = backend/src/Innovayse.SDK
+	url = https://github.com/innovayse/hostpanel-sdk.git

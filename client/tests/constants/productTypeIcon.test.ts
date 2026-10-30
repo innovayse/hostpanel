@@ -41,6 +41,7 @@ describe('productTypeIcon', () => {
     expect(productTypeIcon(ProductType.Email)).toBe('mdi:email-outline')
     expect(productTypeIcon(ProductType.Addon)).toBe('mdi:puzzle-outline')
     expect(productTypeIcon(ProductType.Domain)).toBe('mdi:earth')
+    expect(productTypeIcon(ProductType.Digital)).toBe('mdi:download-box')
   })
 
   it('falls back to the default for a missing or unknown type', () => {

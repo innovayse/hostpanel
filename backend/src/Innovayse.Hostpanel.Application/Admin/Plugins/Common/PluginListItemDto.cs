@@ -8,7 +8,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 /// <param name="Version">Semver version string.</param>
 /// <param name="Author">Author name or organisation.</param>
 /// <param name="Description">Short description shown in the admin panel.</param>
-/// <param name="Type">Plugin type string: provisioning | payment | registrar.</param>
+/// <param name="Type">Plugin type string: provisioning | payment | registrar | identity | fulfilment | hosted.</param>
 /// <param name="Category">Display category label, e.g. "Hosting / Provisioning".</param>
 /// <param name="Color">Hex colour for the plugin logo block.</param>
 /// <param name="IsLoaded">Whether the DLL was successfully loaded at startup.</param>

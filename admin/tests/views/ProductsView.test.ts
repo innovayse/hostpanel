@@ -72,6 +72,13 @@ describe('ProductsView', () => {
     expect(wrapper.get('[data-testid="product-row-2"]').text()).toContain('Inactive')
   })
 
+  it('labels a digital product with its type', async () => {
+    stubRouteTable({ ...routes, 'GET /products': () => json([{ ...plan, type: 'Digital' }]) })
+    const { wrapper } = await mountScreen(ProductsView)
+
+    expect(wrapper.get('[data-testid="product-row-1"]').text()).toContain('Digital')
+  })
+
   it('opens the create dialog and closes it from Cancel', async () => {
     stubRouteTable(routes)
     const { wrapper } = await mountScreen(ProductsView)

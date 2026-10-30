@@ -49,7 +49,7 @@ public sealed class RaiseClientRenewalInvoicesHandler
     /// Statuses of a renew order's invoice while the order still blocks the auto-renewal: open, or
     /// paid with the order not fulfilled yet (the registrar renewal is still in flight).
     /// </summary>
-    private static readonly InvoiceStatus[] RenewOrderBlockingStatuses = [.. RenewalInvoiceStatuses.Open, InvoiceStatus.Paid];
+    private static readonly InvoiceStatus[] RenewOrderBlockingStatuses = [.. RenewalInvoiceStatuses.Open, .. Invoice.PaidStatuses];
 
     /// <summary>Invoices and currencies.</summary>
     private readonly IHostpanelDbContext _context;
@@ -359,7 +359,7 @@ public sealed class RaiseClientRenewalInvoicesHandler
                      l => l.ClientServiceId == serviceId
                           && l.RenewalPeriodStart != null
                           && (OpenStatuses.Contains(i.Status)
-                              || (i.Status == InvoiceStatus.Paid && l.RenewalAppliedAt == null)
+                              || (Invoice.PaidStatuses.Contains(i.Status) && l.RenewalAppliedAt == null)
                               || l.RenewalPeriodStart == start)),
             ct);
 
@@ -375,7 +375,7 @@ public sealed class RaiseClientRenewalInvoicesHandler
                      l => l.RegisteredDomainId == domainId
                           && l.RenewalPeriodStart != null
                           && (OpenStatuses.Contains(i.Status)
-                              || (i.Status == InvoiceStatus.Paid && l.RenewalAppliedAt == null)
+                              || (Invoice.PaidStatuses.Contains(i.Status) && l.RenewalAppliedAt == null)
                               || l.RenewalPeriodStart == start)),
             ct);
 

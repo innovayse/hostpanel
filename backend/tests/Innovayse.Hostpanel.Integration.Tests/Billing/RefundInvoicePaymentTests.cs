@@ -77,28 +77,48 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.Refunded));
     }
 
-    /// <summary>A partial manual refund records the refund and leaves the invoice Paid.</summary>
+    /// <summary>
+    /// A partial manual refund leaves the invoice PartiallyRefunded and writes its client ledger row,
+    /// under the refund's own reference, with the status change.
+    /// </summary>
     [Fact]
-    public async Task PartialRefundLeavesTheInvoicePaid()
+    public async Task PartialRefundLeavesTheInvoicePartiallyRefundedWithItsLedgerRow()
     {
         var admin = await BillingTestSeeds.AdminClientAsync(factory);
         var invoiceId = await PaidInvoiceAsync(admin, 20m);
+        var reference = $"refund-{Guid.NewGuid():N}";
 
         var refunded = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/refund", new
         {
             amount = 5m,
             refundType = nameof(RefundType.Manual),
             gateway = PaymentMethodNames.BankTransfer,
-            refundTransactionId = $"refund-{Guid.NewGuid():N}",
+            refundTransactionId = reference,
         });
 
         refunded.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.Paid));
+        (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.PartiallyRefunded));
+        (await RefundRowsAsync(invoiceId)).Should().ContainSingle()
+            .Which.Should().Match<Transaction>(t => t.TransactionId == reference && t.AmountOut == 5m);
+    }
+
+    /// <summary>Reads the client ledger rows that took money out for an invoice, oldest first.</summary>
+    /// <param name="invoiceId">The invoice.</param>
+    /// <returns>The refund rows on the client ledger.</returns>
+    private async Task<List<Transaction>> RefundRowsAsync(int invoiceId)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        return await context.Transactions.AsNoTracking()
+            .Where(t => t.InvoiceId == invoiceId && t.AmountOut > 0)
+            .OrderBy(t => t.Id)
+            .ToListAsync();
     }
 
     /// <summary>
     /// Two partial refunds in a row are each capped by what was paid less the earlier ones: the
     /// second may not pass the rest, the exact rest is accepted, and only then is the invoice Refunded.
+    /// Each accepted refund writes its own ledger row; the refused one writes none.
     /// </summary>
     [Fact]
     public async Task SecondPartialRefundIsCappedByWhatTheFirstLeftAsync()
@@ -107,14 +127,36 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         var invoiceId = await PaidInvoiceAsync(admin, 20m);
 
         var first = await ManualRefundAsync(admin, invoiceId, 15m);
+        var afterFirst = await StatusOfAsync(admin, invoiceId);
         var tooMuch = await ManualRefundAsync(admin, invoiceId, 10m);
         var theRest = await ManualRefundAsync(admin, invoiceId, 5m);
 
         first.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        afterFirst.Should().Be(nameof(InvoiceStatus.PartiallyRefunded));
         tooMuch.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await BillingTestSeeds.CodeOfAsync(tooMuch)).Should().Be(HostpanelErrorCodes.INVOICE_REFUND_EXCEEDS_PAID);
         theRest.StatusCode.Should().Be(HttpStatusCode.NoContent);
         (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.Refunded));
+        (await RefundRowsAsync(invoiceId)).Select(t => t.AmountOut).Should().Equal(15m, 5m);
+    }
+
+    /// <summary>
+    /// Two partial refunds in a row that both stay below what was paid each pass the cap and leave the
+    /// invoice PartiallyRefunded, with what is left still refundable.
+    /// </summary>
+    [Fact]
+    public async Task TwoPartialRefundsInARowStayPartiallyRefunded()
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        var invoiceId = await PaidInvoiceAsync(admin, 30m);
+
+        var first = await ManualRefundAsync(admin, invoiceId, 10m);
+        var second = await ManualRefundAsync(admin, invoiceId, 12.5m);
+
+        first.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        second.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.PartiallyRefunded));
+        (await RefundRowsAsync(invoiceId)).Select(t => t.AmountOut).Should().Equal(10m, 12.5m);
     }
 
     /// <summary>Refunds <paramref name="amount"/> of an invoice by hand, under a fresh refund reference.</summary>
@@ -206,7 +248,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         instruction.TransactionId.Should().Be(chargeId);
         instruction.Amount.Should().Be(4m);
         instruction.Currency.Should().Be("USD");
-        (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.Paid));
+        (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.PartiallyRefunded));
 
         using var readScope = host.Services.CreateScope();
         var readContext = readScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
@@ -297,7 +339,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         });
 
         first.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.Paid));
+        (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.PartiallyRefunded));
 
         var rest = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/refund", new
         {
@@ -339,7 +381,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
             .Select(t => t.AmountOut)
             .ToListAsync();
         refunds.Should().BeEquivalentTo(new[] { 60m, 30m });
-        (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.Paid));
+        (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.PartiallyRefunded));
 
         var restResponse = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/refund", new
         {
@@ -471,7 +513,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
             .Where(t => t.InvoiceId == invoiceId && t.AmountOut > 0)
             .ToListAsync();
         refunds.Should().ContainSingle(t => t.AmountOut == 60m && t.TransactionId == "re_midway");
-        (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.Paid));
+        (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.PartiallyRefunded));
     }
 
     /// <summary>
@@ -507,7 +549,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
 
         gatewayPart.StatusCode.Should().Be(HttpStatusCode.NoContent);
         plugin.LastRefundAmountMinor.Should().Be(7000);
-        (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.Paid));
+        (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.PartiallyRefunded));
     }
 
     /// <summary>

@@ -74,6 +74,11 @@ public sealed class StatusMappingTests
     [InlineData(HostpanelErrorCodes.CLIENT_OWNER_CANNOT_BE_REMOVED, 409)]
     [InlineData(HostpanelErrorCodes.CLIENT_RECORD_CLOSED, 409)]
     [InlineData(HostpanelErrorCodes.EMAIL_ALREADY_IN_USE, 409)]
+    [InlineData(HostpanelErrorCodes.PRODUCT_SKU_ALREADY_IN_USE, 409)]
+    [InlineData(HostpanelErrorCodes.EXTERNAL_ACCOUNT_ALREADY_LINKED, 409)]
+    [InlineData(HostpanelErrorCodes.FULFILMENT_RECORD_NOT_FOUND, 404)]
+    [InlineData(HostpanelErrorCodes.FULFILMENT_RECORD_NOT_RETRYABLE, 409)]
+    [InlineData(HostpanelErrorCodes.FULFILMENT_ADVICE_UNAVAILABLE, 503)]
     [InlineData("SHARE_NOT_FOUND_SEND_FAILED", 404)]
     [InlineData("SOMETHING_ELSE", 400)]
     public void MapsCodeToStatus(string code, int status)

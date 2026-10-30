@@ -394,6 +394,7 @@
     "email": "Էլ. փոստ",
     "addon": "Հավելում",
     "backup": "Պահուստավորում",
+    "digital": "Թվային",
     "other": "Այլ",
     "vps": "VPS"
   },
@@ -427,6 +428,7 @@
     "typeEmail": "Էլ. փոստ",
     "typeAddon": "Հավելում",
     "typeBackup": "Պահուստավորում",
+    "typeDigital": "Թվային",
     "typeOther": "Այլ",
     "typeVps": "VPS",
     "typeSsl": "SSL"

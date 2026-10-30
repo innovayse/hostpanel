@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Products.Events;
 using Innovayse.Hostpanel.SharedKernel.Domain;
@@ -14,6 +16,15 @@ public sealed class Product : BaseEntity, IAggregateRoot
 {
     /// <summary>Longest a website URL may be: matches the <c>Products.Website</c> column.</summary>
     public const int WebsiteMaxLength = 500;
+
+    /// <summary>The grace period a product starts with, in days.</summary>
+    public const int DefaultGracePeriodDays = 7;
+
+    /// <summary>The shortest grace period accepted, in days: none at all.</summary>
+    public const int MinGracePeriodDays = 0;
+
+    /// <summary>The longest grace period accepted, in days.</summary>
+    public const int MaxGracePeriodDays = 365;
 
     /// <summary>Gets the FK to the <see cref="ProductGroup"/> this product belongs to.</summary>
     public int GroupId { get; private set; }
@@ -63,6 +74,25 @@ public sealed class Product : BaseEntity, IAggregateRoot
     /// </summary>
     public int SortOrder { get; private set; }
 
+    /// <summary>
+    /// Gets the optional stock-keeping unit: the stable machine identifier a fulfilment plugin keys
+    /// on. Always stored normalised (see <see cref="ProductSku.Normalize"/>); unique across products,
+    /// which the handler checks because the rule spans aggregates.
+    /// </summary>
+    public string? Sku { get; private set; }
+
+    /// <summary>
+    /// Gets the optional free metadata bag, a JSON object kept in compact form, that tells a
+    /// fulfilment plugin what to deliver (a licence tier, a credit amount, a plan code).
+    /// </summary>
+    public string? Metadata { get; private set; }
+
+    /// <summary>
+    /// Gets how many days a service of this product stays usable after its due date before it is
+    /// suspended, from <see cref="MinGracePeriodDays"/> to <see cref="MaxGracePeriodDays"/>.
+    /// </summary>
+    public int GracePeriodDays { get; private set; } = DefaultGracePeriodDays;
+
     /// <summary>Gets the UTC timestamp when the product was created.</summary>
     public DateTimeOffset CreatedAt { get; private set; }
 
@@ -76,6 +106,12 @@ public sealed class Product : BaseEntity, IAggregateRoot
     /// them mirroring the base-currency rows here, and the migration copied them into USD rows.
     /// </remarks>
     public IReadOnlyList<ProductPrice> Prices => _prices.AsReadOnly();
+
+    /// <summary>
+    /// Gets whether the product is a digital good: a fulfilment plugin delivers it and nothing is
+    /// provisioned on a hosting account.
+    /// </summary>
+    public bool IsDigital => Type == ProductType.Digital;
 
     /// <summary>EF Core parameterless constructor: do not call directly.</summary>
     private Product() { }
@@ -186,6 +222,86 @@ public sealed class Product : BaseEntity, IAggregateRoot
     /// <param name="sortOrder">The new position, lowest first.</param>
     public void SetSortOrder(int sortOrder) => SortOrder = sortOrder;
 
+    /// <summary>Whether <paramref name="days"/> is an acceptable grace period.</summary>
+    /// <param name="days">The candidate grace period, in days.</param>
+    /// <returns>
+    /// <see langword="true"/> when <paramref name="days"/> is from <see cref="MinGracePeriodDays"/>
+    /// to <see cref="MaxGracePeriodDays"/>, inclusive.
+    /// </returns>
+    public static bool IsValidGracePeriod(int days)
+    {
+        return days is >= MinGracePeriodDays and <= MaxGracePeriodDays;
+    }
+
+    /// <summary>Whether <paramref name="metadata"/> is well-formed JSON whose root is an object.</summary>
+    /// <param name="metadata">The candidate metadata text.</param>
+    /// <returns>
+    /// <see langword="true"/> for a JSON object; <see langword="false"/> for an array, a scalar,
+    /// <c>null</c>, empty text or text that is not JSON.
+    /// </returns>
+    public static bool IsValidMetadata(string? metadata)
+    {
+        return ParseMetadataObject(metadata) is not null;
+    }
+
+    /// <summary>
+    /// Sets or clears the SKU. The value is normalised first (see <see cref="ProductSku.Normalize"/>),
+    /// so <c>" lic-pro "</c> is stored as <c>"LIC-PRO"</c>.
+    /// </summary>
+    /// <param name="sku">The new SKU in any case, or <see langword="null"/> or white space to clear it.</param>
+    /// <exception cref="DomainRuleException">
+    /// <see cref="ProductsErrors.ProductSkuInvalid"/>: the normalised SKU fails <see cref="ProductSku.IsValid"/>.
+    /// </exception>
+    public void SetSku(string? sku)
+    {
+        var normalized = ProductSku.Normalize(sku);
+        if (normalized is not null && !ProductSku.IsValid(normalized))
+        {
+            throw new DomainRuleException(
+                ProductsErrors.ProductSkuInvalid,
+                $"The SKU '{normalized}' must be at most {ProductSku.MaxLength} characters of letters and digits joined by single '-', '_' or '.'.");
+        }
+
+        Sku = normalized;
+    }
+
+    /// <summary>Sets or clears the metadata bag. The JSON is stored in compact form.</summary>
+    /// <param name="metadata">A JSON object, or <see langword="null"/> or white space to clear the bag.</param>
+    /// <exception cref="DomainRuleException">
+    /// <see cref="ProductsErrors.ProductMetadataInvalid"/>: the text is not a JSON object.
+    /// </exception>
+    public void SetMetadata(string? metadata)
+    {
+        if (string.IsNullOrWhiteSpace(metadata))
+        {
+            Metadata = null;
+            return;
+        }
+
+        var parsed = ParseMetadataObject(metadata)
+            ?? throw new DomainRuleException(
+                ProductsErrors.ProductMetadataInvalid,
+                "Product metadata must be a JSON object.");
+        Metadata = parsed.ToJsonString();
+    }
+
+    /// <summary>Sets how many days a service stays usable after its due date before it is suspended.</summary>
+    /// <param name="days">The grace period, from <see cref="MinGracePeriodDays"/> to <see cref="MaxGracePeriodDays"/>.</param>
+    /// <exception cref="DomainRuleException">
+    /// <see cref="ProductsErrors.ProductGracePeriodOutOfRange"/>: <paramref name="days"/> fails <see cref="IsValidGracePeriod"/>.
+    /// </exception>
+    public void SetGracePeriodDays(int days)
+    {
+        if (!IsValidGracePeriod(days))
+        {
+            throw new DomainRuleException(
+                ProductsErrors.ProductGracePeriodOutOfRange,
+                $"A grace period of {days} days is outside {MinGracePeriodDays} to {MaxGracePeriodDays}.");
+        }
+
+        GracePeriodDays = days;
+    }
+
     /// <summary>Marks the product inactive so it cannot be ordered.</summary>
     public void Deactivate() => Status = ProductStatus.Inactive;
 
@@ -278,5 +394,26 @@ public sealed class Product : BaseEntity, IAggregateRoot
     {
         var code = currencyCode.ToUpperInvariant();
         return _prices.Any(p => p.CurrencyCode == code);
+    }
+
+    /// <summary>Parses metadata text and keeps it only when its root is a JSON object.</summary>
+    /// <param name="metadata">The candidate metadata text.</param>
+    /// <returns>The parsed object, or <see langword="null"/> when the text is empty, not JSON, or not an object.</returns>
+    private static JsonObject? ParseMetadataObject(string? metadata)
+    {
+        if (string.IsNullOrWhiteSpace(metadata))
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonNode.Parse(metadata) as JsonObject;
+        }
+        catch (JsonException)
+        {
+            // Malformed JSON is a refusal the caller decides on, not a crash.
+            return null;
+        }
     }
 }

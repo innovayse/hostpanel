@@ -41,7 +41,15 @@ const none = { count: 0, total: 0 }
 
 /** The summary figures of client 7 as `GET /api/clients/7/summary` returns them. */
 const summary: ClientSummaryData = {
-  invoices: { draft: none, unpaid: none, paid: { count: 2, total: 40 }, overdue: none, cancelled: none, refunded: none },
+  invoices: {
+    draft: none,
+    unpaid: none,
+    paid: { count: 2, total: 40 },
+    overdue: none,
+    cancelled: none,
+    refunded: none,
+    partiallyRefunded: { count: 1, total: 15 },
+  },
   transactions: { grossRevenue: 40, clientExpenses: 0, totalFees: 0, netIncome: 40 },
   creditBalance: 0,
   counts: {
@@ -108,6 +116,15 @@ describe('ClientSummaryView', () => {
     await flushPromises()
 
     expect(fetchMock.mock.calls.length).toBeGreaterThan(before)
+  })
+
+  it('lists the partially refunded invoices on their own row of the billing card', async () => {
+    stubRoutes(summaryRoutes(() => new Response(null, { status: 204 })))
+    const wrapper = await mountSummary()
+
+    const billing = wrapper.get('[data-testid="client-summary-billing"]').text()
+    expect(billing).toContain('Partially Refunded')
+    expect(billing).toMatch(/Partially Refunded\s*1/)
   })
 
   it('reports saved notes under the Save button', async () => {

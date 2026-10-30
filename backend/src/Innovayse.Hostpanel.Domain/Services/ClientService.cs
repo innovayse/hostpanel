@@ -255,6 +255,41 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
     /// </exception>
     public void Activate(string provisioningRef, DateTimeOffset billingAnchor, DateTimeOffset now)
     {
+        StartBilling(billingAnchor);
+        ProvisioningRef = provisioningRef;
+
+        AddDomainEvent(new ServiceProvisionedEvent(Id, ClientId, provisioningRef, now));
+    }
+
+    /// <summary>
+    /// Activates a pending service of a digital product, which has no hosting account to provision: it turns
+    /// Active and its first billing period starts, the same as <see cref="Activate"/>, but it gets no
+    /// provisioning reference and no server, and raises no <see cref="ServiceProvisionedEvent"/>.
+    /// </summary>
+    /// <remarks>
+    /// The provisioning event would send the client the hosting account mail, and nothing was set up on a
+    /// panel. What a digital product delivers is told to fulfilment plugins by its paid invoice, not by
+    /// this activation. The caller decides the product is digital; the service does not hold that fact.
+    /// </remarks>
+    /// <param name="billingAnchor">The moment the billing period starts from (UTC): the activation moment.</param>
+    /// <exception cref="DomainRuleException">
+    /// Thrown with <see cref="ServicesErrors.ServiceNotPending"/> when the service is not in Pending status.
+    /// </exception>
+    public void ActivateDigital(DateTimeOffset billingAnchor)
+    {
+        StartBilling(billingAnchor);
+    }
+
+    /// <summary>
+    /// The half of activation every pending service shares, provisioned or digital: refuses anything but
+    /// Pending, turns the service Active and starts its first billing period from the anchor.
+    /// </summary>
+    /// <param name="billingAnchor">The moment the billing period starts from (UTC).</param>
+    /// <exception cref="DomainRuleException">
+    /// Thrown with <see cref="ServicesErrors.ServiceNotPending"/> when the service is not in Pending status.
+    /// </exception>
+    private void StartBilling(DateTimeOffset billingAnchor)
+    {
         if (Status is not ServiceStatus.Pending)
         {
             throw new DomainRuleException(
@@ -263,13 +298,10 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
         }
 
         Status = ServiceStatus.Active;
-        ProvisioningRef = provisioningRef;
 
         // A renewal date already later than the first period's end (staff set it while the
         // service was pending) is kept, the same rule as ExtendRenewalTo.
         ExtendRenewalTo(RenewalPeriod.EndOf(billingAnchor, BillingCycle, billingAnchor.Day));
-
-        AddDomainEvent(new ServiceProvisionedEvent(Id, ClientId, provisioningRef, now));
     }
 
     /// <summary>

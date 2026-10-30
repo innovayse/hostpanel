@@ -37,7 +37,7 @@ public sealed class InvoiceRefundTests
         invoice.AddRefund(Now, PaymentMethodNames.Manual, "r1", 60m, 0m, null);
 
         invoice.RefundStartedAt.Should().Be(Now);
-        invoice.Status.Should().Be(InvoiceStatus.Paid);
+        invoice.Status.Should().Be(InvoiceStatus.PartiallyRefunded);
         invoice.IsRefundInFlight(Now).Should().BeFalse();
     }
 
@@ -51,6 +51,105 @@ public sealed class InvoiceRefundTests
         var act = () => invoice.AddRefund(Now.AddSeconds(1), PaymentMethodNames.Manual, "r2", 60m, 0m, null);
 
         act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.InvoiceRefundExceedsPaid);
+    }
+
+    /// <summary>
+    /// Two partial refunds in a row keep the invoice PartiallyRefunded, each held to what was paid
+    /// less the refunds before it, and the refund that reaches the whole amount paid turns it Refunded.
+    /// </summary>
+    [Fact]
+    public void AddRefund_TwoPartialsThenTheRest_EndsRefunded()
+    {
+        var invoice = PaidFor(100m);
+
+        invoice.AddRefund(Now, PaymentMethodNames.Manual, "r1", 30m, 0m, null);
+        invoice.Status.Should().Be(InvoiceStatus.PartiallyRefunded);
+        invoice.RefundableAmount.Should().Be(70m);
+
+        invoice.AddRefund(Now.AddSeconds(1), PaymentMethodNames.Manual, "r2", 45m, 0m, null);
+        invoice.Status.Should().Be(InvoiceStatus.PartiallyRefunded);
+        invoice.RefundableAmount.Should().Be(25m);
+
+        invoice.AddRefund(Now.AddSeconds(2), PaymentMethodNames.Manual, "r3", 25m, 0m, null);
+        invoice.Status.Should().Be(InvoiceStatus.Refunded);
+        invoice.RefundableAmount.Should().Be(0m);
+        invoice.AmountRefunded.Should().Be(100m);
+    }
+
+    /// <summary>
+    /// The cap after a partial refund is what was paid less that refund: a cent more is refused and
+    /// leaves the invoice as it was, the exact rest is accepted.
+    /// </summary>
+    [Fact]
+    public void AddRefund_AfterAPartial_IsCappedAtPaidLessEarlierRefunds()
+    {
+        var invoice = PaidFor(50m);
+        invoice.AddRefund(Now, PaymentMethodNames.Manual, "r1", 20m, 0m, null);
+
+        var tooMuch = () => invoice.AddRefund(Now.AddSeconds(1), PaymentMethodNames.Manual, "r2", 30.01m, 0m, null);
+
+        tooMuch.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.InvoiceRefundExceedsPaid);
+        invoice.Status.Should().Be(InvoiceStatus.PartiallyRefunded);
+        invoice.AmountRefunded.Should().Be(20m);
+
+        invoice.AddRefund(Now.AddSeconds(2), PaymentMethodNames.Manual, "r3", 30m, 0m, null);
+        invoice.Status.Should().Be(InvoiceStatus.Refunded);
+    }
+
+    /// <summary>A single refund of the whole amount paid turns the invoice Refunded at once, never PartiallyRefunded.</summary>
+    [Fact]
+    public void AddRefund_OfTheWholeAmount_TurnsRefunded()
+    {
+        var invoice = PaidFor(80m);
+
+        invoice.AddRefund(Now, PaymentMethodNames.Manual, "r1", 80m, 0m, null);
+
+        invoice.Status.Should().Be(InvoiceStatus.Refunded);
+    }
+
+    /// <summary>
+    /// A PartiallyRefunded invoice is still paid: it settles nothing more, owes nothing, counts as paid in
+    /// full for its renewals, can be claimed for the next refund, and cannot be reopened as Unpaid.
+    /// </summary>
+    [Fact]
+    public void PartiallyRefunded_IsStillPaidAndSettled()
+    {
+        var invoice = PaidFor(100m);
+        invoice.AddRefund(Now, PaymentMethodNames.Manual, "r1", 10m, 0m, null);
+
+        invoice.IsPaid.Should().BeTrue();
+        invoice.IsSettled.Should().BeTrue();
+        invoice.IsPayable.Should().BeFalse();
+        invoice.IsPaidInFull.Should().BeTrue();
+        invoice.AmountDue.Should().Be(0m);
+        invoice.AmountPaid.Should().Be(100m);
+        invoice.CanMarkUnpaid.Should().BeFalse();
+        invoice.CanCancel.Should().BeFalse();
+
+        invoice.BeginRefund(Now.AddSeconds(1));
+        invoice.RefundStartedAt.Should().Be(Now.AddSeconds(1));
+    }
+
+    /// <summary>A Refunded invoice holds nothing more: neither a further refund nor a claim is accepted.</summary>
+    [Fact]
+    public void Refunded_RefusesAnotherRefund()
+    {
+        var invoice = PaidFor(10m);
+        invoice.AddRefund(Now, PaymentMethodNames.Manual, "r1", 10m, 0m, null);
+
+        var addRefund = () => invoice.AddRefund(Now.AddSeconds(1), PaymentMethodNames.Manual, "r2", 1m, 0m, null);
+        var beginRefund = () => invoice.BeginRefund(Now.AddSeconds(1));
+
+        addRefund.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.InvoiceNotPaid);
+        beginRefund.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.InvoiceNotPaid);
+        invoice.RefundableAmount.Should().Be(0m);
+    }
+
+    /// <summary><see cref="Invoice.PaidStatuses"/> names exactly the two statuses that still hold paid money.</summary>
+    [Fact]
+    public void PaidStatuses_ArePaidAndPartiallyRefunded()
+    {
+        Invoice.PaidStatuses.Should().Equal(InvoiceStatus.Paid, InvoiceStatus.PartiallyRefunded);
     }
 
     /// <summary>A claimed refund holds the invoice: a second claim is refused with <c>INVOICE_REFUND_CONFLICT</c>.</summary>

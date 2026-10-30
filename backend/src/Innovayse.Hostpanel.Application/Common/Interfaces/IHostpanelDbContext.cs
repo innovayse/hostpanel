@@ -94,6 +94,9 @@ public interface IHostpanelDbContext
     /// <summary>Gets the sent renewal reminders.</summary>
     public DbSet<InvoiceReminder> InvoiceReminders { get; }
 
+    /// <summary>Gets the fulfilment records: one plugin told one thing about one invoice, and how far it got.</summary>
+    public DbSet<FulfilmentRecord> FulfilmentRecords { get; }
+
     /// <summary>Gets the transactions table.</summary>
     public DbSet<Transaction> Transactions { get; }
 

@@ -5,6 +5,7 @@
 
 import { IntegrationEncryption, IntegrationFieldType, IntegrationMode, IntegrationYesNo } from '@/types/integration'
 import type { IntegrationMeta, IntegrationSlug, IntegrationCategory } from '@/types/integration'
+import { PluginType } from '@/types/plugin'
 import { translate } from '@/lib/translate'
 import { publicAssetUrl } from '@/lib/runtimeConfig'
 
@@ -238,4 +239,17 @@ export const INTEGRATION_CATEGORIES: IntegrationCategoryMeta[] = [
   { key: 'provisioning', get label() { return translate('integrations.cwp7Integration.hostingProvisioning') }, icon: '🖥️' },
   { key: 'email', get label() { return translate('integrationMeta.maxmind.fieldEmail') }, icon: '📧' },
   { key: 'fraud', get label() { return translate('integrationMeta.maxmind.fieldFraud') }, icon: '🛡️' },
+  { key: 'fulfilment', get label() { return translate('integrations.categories.fulfilment') }, icon: '📦' },
+  { key: 'identity', get label() { return translate('integrations.categories.identity') }, icon: '🪪' },
+  { key: 'hosted', get label() { return translate('integrations.categories.hosted') }, icon: '⚙️' },
 ]
+
+/** The badge label of each plugin type, read in the active language. */
+export const PLUGIN_TYPE_LABELS: Record<PluginType, string> = {
+  get [PluginType.Provisioning]() { return translate('integrations.pluginType.provisioning') },
+  get [PluginType.Payment]() { return translate('integrations.pluginType.payment') },
+  get [PluginType.Registrar]() { return translate('integrations.pluginType.registrar') },
+  get [PluginType.Identity]() { return translate('integrations.pluginType.identity') },
+  get [PluginType.Fulfilment]() { return translate('integrations.pluginType.fulfilment') },
+  get [PluginType.Hosted]() { return translate('integrations.pluginType.hosted') },
+}

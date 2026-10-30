@@ -414,6 +414,7 @@
     "overdue": "Overdue",
     "cancelled": "Cancelled",
     "refunded": "Refunded",
+    "partiallyRefunded": "Partially Refunded",
     "grossRevenue": "Gross Revenue",
     "clientExpenses": "Client Expenses",
     "netIncome": "Net Income",
@@ -550,5 +551,15 @@
   "clientInnerSidebar": {
     "users": "Users",
     "log": "Log"
+  },
+  "addExistingService": {
+    "open": "Add existing account",
+    "title": "Add an existing hosting account",
+    "intro": "For an account that already exists on the server: restored, moved from another server, or set up by hand. The service starts Active; nothing is created on the panel and no email is sent.",
+    "username": "Panel username",
+    "recurringAmount": "Recurring amount",
+    "startedAt": "Current period started",
+    "today": "Today",
+    "add": "Add service"
   }
 }

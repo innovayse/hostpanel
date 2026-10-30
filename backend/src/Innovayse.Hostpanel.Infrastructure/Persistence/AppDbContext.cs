@@ -137,6 +137,9 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// <summary>Gets the sent renewal reminders.</summary>
     public DbSet<InvoiceReminder> InvoiceReminders => Set<InvoiceReminder>();
 
+    /// <summary>Gets the fulfilment records: one plugin told one thing about one invoice, and how far it got.</summary>
+    public DbSet<FulfilmentRecord> FulfilmentRecords => Set<FulfilmentRecord>();
+
     /// <summary>Gets the transactions table.</summary>
     public DbSet<Transaction> Transactions => Set<Transaction>();
 

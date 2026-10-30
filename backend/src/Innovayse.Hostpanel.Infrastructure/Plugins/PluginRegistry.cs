@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.SDK.Plugins;
+using Innovayse.SDK.Plugins.Enums;
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 
@@ -30,6 +31,18 @@ public sealed class PluginRegistry : IPluginRegistry
     /// <returns>The <see cref="LoadedPlugin"/>, or <see langword="null"/> if not found.</returns>
     public LoadedPlugin? Find(string id)
         => _plugins.GetValueOrDefault(id);
+
+    /// <summary>
+    /// Returns the loaded plugins whose manifest declares <paramref name="type"/>, ordered by plugin id so every
+    /// caller sees them in the same order, whatever order the plugin folders were read in.
+    /// </summary>
+    /// <param name="type">The plugin type the manifest must declare.</param>
+    /// <returns>The matching plugins; empty when none is loaded.</returns>
+    public IReadOnlyList<LoadedPlugin> OfType(PluginType type)
+        => _plugins.Values
+            .Where(plugin => plugin.Manifest.Type == type)
+            .OrderBy(plugin => plugin.Manifest.Id, StringComparer.Ordinal)
+            .ToList();
 
     /// <inheritdoc/>
     public bool IsLoaded(string pluginId)

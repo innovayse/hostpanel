@@ -96,12 +96,16 @@ public sealed class InvoicePaymentsController : BaseApiController
         return HandleResult(outcome);
     }
 
-    /// <summary>Refunds a paid invoice.</summary>
+    /// <summary>
+    /// Refunds all or part of a paid invoice. A refund that leaves part of the money turns the invoice
+    /// PartiallyRefunded, which can be refunded again up to what is left; one that reaches the whole
+    /// amount paid turns it Refunded.
+    /// </summary>
     /// <param name="id">Invoice primary key; wins over any invoice id in the body.</param>
     /// <param name="command">The refund details.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 204 when refunded; 400 when the invoice is not paid, the amount exceeds what is still
+    /// 204 when refunded; 400 when the invoice is neither Paid nor PartiallyRefunded, the amount exceeds what is still
     /// refundable, or a gateway refund is asked for money no gateway took; 404 when the id names no
     /// invoice, or a CreditBalance refund names a client that no longer exists; 409 with
     /// <c>PAYMENT_METHOD_UNAVAILABLE</c> when the card gateway that took the money is no longer

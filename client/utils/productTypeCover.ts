@@ -34,6 +34,7 @@ export const PRODUCT_TYPE_COVER: Readonly<Record<ProductType, string>> = {
   [ProductType.Email]: `[mask-image:url(/covers/email.svg)] ${COVER_MASK_BASE}`,
   [ProductType.Addon]: `[mask-image:url(/covers/addon.svg)] ${COVER_MASK_BASE}`,
   [ProductType.Backup]: `[mask-image:url(/covers/backup.svg)] ${COVER_MASK_BASE}`,
+  [ProductType.Digital]: `[mask-image:url(/covers/digital.svg)] ${COVER_MASK_BASE}`,
   [ProductType.Other]: DEFAULT_COVER_CLASS,
 }
 

@@ -11,7 +11,7 @@ import { invoiceFixture } from '../../helpers/billingFixtures'
 import { json, problem } from '../../helpers/fetch'
 import { mountWithApp } from '../../helpers/mount'
 import { stubRoutes } from '../../helpers/routes'
-import { InvoiceRefundType } from '@/types/invoice'
+import { InvoiceRefundType, InvoiceStatus } from '@/types/invoice'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -27,6 +27,15 @@ describe('InvoiceRefundTab', () => {
     expect(cancelled.find('[data-testid="billing-invoice-refund-cancelled"]').exists()).toBe(true)
     expect(refunded.find('[data-testid="billing-invoice-refund-refunded"]').exists()).toBe(true)
     expect(draft.find('[data-testid="billing-invoice-refund-form"]').exists()).toBe(false)
+  })
+
+  it('keeps the form for a partially refunded invoice, which can still be refunded up to what is left', () => {
+    const wrapper = mountWithApp(InvoiceRefundTab, {
+      props: { invoice: invoiceFixture({ status: InvoiceStatus.PartiallyRefunded }) },
+    })
+
+    expect(wrapper.find('[data-testid="billing-invoice-refund-form"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="billing-invoice-refund-refunded"]').exists()).toBe(false)
   })
 
   it('warns read-only when no payment can be refunded', () => {

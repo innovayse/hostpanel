@@ -1,7 +1,7 @@
 using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Reports.Common;
-using Innovayse.Hostpanel.Domain.Billing.Enums;
+using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -50,7 +50,7 @@ public sealed class GetIncomeByProductGroupedHandler
         var invoices = await _context.Invoices
             .AsNoTracking()
             .Include(i => i.Items)
-            .Where(i => i.Status == InvoiceStatus.Paid && i.PaidAt >= from && i.PaidAt < to)
+            .Where(i => Invoice.PaidStatuses.Contains(i.Status) && i.PaidAt >= from && i.PaidAt < to)
             .ToListAsync(ct);
 
         var lines = invoices

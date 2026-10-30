@@ -69,6 +69,7 @@ const typeLabels = computed<Record<string, string>>(() => ({
   [ProductType.Email]: t('settings.products.typeEmail'),
   [ProductType.Addon]: t('settings.products.typeAddon'),
   [ProductType.Backup]: t('settings.products.typeBackup'),
+  [ProductType.Digital]: t('settings.products.typeDigital'),
   [ProductType.Other]: t('settings.products.typeOther'),
 }))
 

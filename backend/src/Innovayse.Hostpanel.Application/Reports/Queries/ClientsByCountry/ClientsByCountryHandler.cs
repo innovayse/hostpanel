@@ -1,7 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Reports.Common;
 using Innovayse.Hostpanel.Domain.Billing;
-using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -37,7 +36,7 @@ public sealed class ClientsByCountryHandler
 
         var revenue = await _context.Invoices
             .AsNoTracking()
-            .Where(i => i.Status == InvoiceStatus.Paid)
+            .Where(i => Invoice.PaidStatuses.Contains(i.Status))
             .Join(_context.Clients.AsNoTracking(), i => i.ClientId, c => c.Id, (i, c) => new { c.Country, i.Total })
             .GroupBy(x => x.Country)
             .Select(g => new { Country = g.Key, Total = g.Sum(x => x.Total) })

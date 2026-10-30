@@ -42,6 +42,7 @@ public sealed class ReferentialIntegrityTests(IntegrationTestFactory factory) : 
         { typeof(Transaction), nameof(Transaction.InvoiceId), typeof(Invoice), DeleteBehavior.SetNull },
         { typeof(BillableItem), nameof(BillableItem.InvoiceId), typeof(Invoice), DeleteBehavior.SetNull },
         { typeof(Order), nameof(Order.InvoiceId), typeof(Invoice), DeleteBehavior.SetNull },
+        { typeof(FulfilmentRecord), nameof(FulfilmentRecord.InvoiceId), typeof(Invoice), DeleteBehavior.Restrict },
         { typeof(ClientService), nameof(ClientService.ProductId), typeof(Product), DeleteBehavior.Restrict },
         { typeof(OrderItem), nameof(OrderItem.ProductId), typeof(Product), DeleteBehavior.Restrict },
         { typeof(CancellationRequest), nameof(CancellationRequest.ServiceId), typeof(ClientService), DeleteBehavior.Cascade },

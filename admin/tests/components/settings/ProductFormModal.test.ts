@@ -79,6 +79,16 @@ describe('ProductFormModal', () => {
     expect(wrapper.find('[data-testid="product-form-type-Vps"]').exists()).toBe(true)
   })
 
+  it('offers a digital product type card that can be chosen', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: null, groups, saving: false })
+    const digital = wrapper.get('[data-testid="product-form-type-Digital"]')
+
+    expect(digital.text()).toContain('Digital')
+    await digital.trigger('click')
+    expect(digital.attributes('aria-pressed')).toBe('true')
+  })
+
   it('follows the name with a generated slug until the slug is edited by hand', async () => {
     stubRouteTable(lists)
     const { wrapper } = await mountScreen(ProductFormModal, { product: null, groups, saving: false })

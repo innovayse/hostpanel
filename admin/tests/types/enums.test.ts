@@ -30,6 +30,7 @@ describe('status enums', () => {
     expect(Object.values(ClientStatus)).toEqual(['Active', 'Inactive', 'Suspended', 'Closed'])
     expect(Object.values(ContactType)).toEqual(['Billing', 'Technical', 'General'])
     expect(InvoiceStatus.PaymentPending).toBe('PaymentPending')
+    expect(InvoiceStatus.PartiallyRefunded).toBe('PartiallyRefunded')
     expect(DomainStatus.PendingTransfer).toBe('PendingTransfer')
   })
 })

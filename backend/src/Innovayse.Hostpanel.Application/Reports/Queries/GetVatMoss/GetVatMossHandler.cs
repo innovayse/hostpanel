@@ -59,7 +59,7 @@ public sealed class GetVatMossHandler
         var memberStates = EuMemberStates.Codes;
 
         var sales = await _context.Invoices.AsNoTracking()
-            .Where(i => (i.Status == InvoiceStatus.Paid
+            .Where(i => (Invoice.PaidStatuses.Contains(i.Status)
                     || (i.Status == InvoiceStatus.Refunded && i.Transactions.Any(t => t.Type == InvoiceTransactionType.Refund)))
                 && i.Tax > 0
                 && i.PaidAt >= from

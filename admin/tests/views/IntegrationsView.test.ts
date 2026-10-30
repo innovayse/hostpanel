@@ -8,6 +8,7 @@ import { stubRoutes } from '../helpers/routes'
 import { json, problem, stubFetch } from '../helpers/fetch'
 import { mountView } from '../helpers/mount'
 import { integrationDto } from '../helpers/integrationFixtures'
+import { PluginType } from '@/types/plugin'
 import { flushPromises } from '@vue/test-utils'
 
 describe('IntegrationsView', () => {
@@ -30,6 +31,21 @@ describe('IntegrationsView', () => {
     expect(wrapper.find('[data-testid="integration-card-smtp"]').exists()).toBe(false)
     expect(wrapper.text()).toContain('Integrations: 2')
     expect(wrapper.text()).toContain('1 active')
+  })
+
+  it('shows a fulfilment plugin on the fulfilment page, labelled with its type', async () => {
+    stubRoutes({
+      'GET /api/admin/integrations': () => json([
+        integrationDto(),
+        integrationDto({ slug: 'deliver', name: 'Deliver', category: 'payments', isPlugin: true, pluginType: PluginType.Fulfilment }),
+      ]),
+    })
+    const wrapper = await mountView(IntegrationsView, { path: '/integrations/fulfilment', pattern: '/integrations/:category?' })
+
+    expect(wrapper.find('[data-testid="integration-card-deliver"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="integration-card-stripe"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="integration-type-deliver"]').text()).toBe('Fulfilment')
+    expect(wrapper.text()).toContain('Integrations: 1')
   })
 
   it('defaults to payments on the bare section', async () => {

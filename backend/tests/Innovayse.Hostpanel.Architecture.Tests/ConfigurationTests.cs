@@ -31,13 +31,13 @@ public sealed class ConfigurationTests
 
     /// <summary>
     /// Types below the composition root that may hold <see cref="IConfiguration"/>, each a documented
-    /// exception in hostpanel/rules/project.md. The payment plugin resolver hands the plugin SDK's base
-    /// classes the <see cref="IConfiguration"/> their public constructor requires; typed plugin
+    /// exception in hostpanel/rules/project.md. The plugin activator hands every plugin the
+    /// <see cref="IConfiguration"/> the SDK's base classes take in their public constructor; typed plugin
     /// settings are planned for a later SDK version.
     /// </summary>
     private static readonly HashSet<string> ConfigurationExceptions = new(StringComparer.Ordinal)
     {
-        "Innovayse.Hostpanel.Infrastructure.Plugins.PaymentPluginResolver",
+        "Innovayse.Hostpanel.Infrastructure.Plugins.PluginActivator",
     };
 
     /// <summary>

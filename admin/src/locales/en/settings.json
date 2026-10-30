@@ -394,6 +394,7 @@
     "email": "Email",
     "addon": "Add-on",
     "backup": "Backup",
+    "digital": "Digital",
     "other": "Other",
     "vps": "VPS"
   },
@@ -427,6 +428,7 @@
     "typeEmail": "Email",
     "typeAddon": "Add-on",
     "typeBackup": "Backup",
+    "typeDigital": "Digital",
     "typeOther": "Other",
     "typeVps": "VPS",
     "typeSsl": "SSL"

@@ -348,6 +348,9 @@
 <data name="SERVICE_NOT_FOUND" xml:space="preserve">
     <value>No such client service.</value>
   </data>
+<data name="SERVICE_HOSTING_ACCOUNT_EXISTS" xml:space="preserve">
+    <value>A service already holds this account on this server.</value>
+  </data>
 <data name="CANCELLATION_ALREADY_PENDING" xml:space="preserve">
     <value>A cancellation request is already pending for this service.</value>
   </data>
@@ -570,6 +573,9 @@
   </data>
   <data name="INVOICE_NOT_UNPAID" xml:space="preserve">
     <value>Only an unpaid invoice can be marked overdue.</value>
+  </data>
+  <data name="INVOICE_NOT_OVERDUE" xml:space="preserve">
+    <value>Only an overdue invoice can be marked lapsed.</value>
   </data>
   <data name="INVOICE_CANCEL_NOT_ALLOWED" xml:space="preserve">
     <value>A paid, refunded or already cancelled invoice cannot be cancelled.</value>
@@ -879,5 +885,29 @@
   </data>
   <data name="CLIENT_TAX_EXEMPT" xml:space="preserve">
     <value>This client is tax exempt, so a tax rate cannot be set on their invoices.</value>
+  </data>
+  <data name="PRODUCT_SKU_ALREADY_IN_USE" xml:space="preserve">
+    <value>Another product already uses this SKU. Choose a different one.</value>
+  </data>
+  <data name="PRODUCT_SKU_INVALID" xml:space="preserve">
+    <value>The SKU may contain only letters and digits joined by single hyphens, underscores or dots, and may be at most 64 characters long.</value>
+  </data>
+  <data name="PRODUCT_METADATA_INVALID" xml:space="preserve">
+    <value>Product metadata must be a JSON object.</value>
+  </data>
+  <data name="PRODUCT_GRACE_PERIOD_OUT_OF_RANGE" xml:space="preserve">
+    <value>The grace period must be from 0 to 365 days.</value>
+  </data>
+  <data name="EXTERNAL_ACCOUNT_ALREADY_LINKED" xml:space="preserve">
+    <value>This external account is already linked to another client.</value>
+  </data>
+  <data name="FULFILMENT_RECORD_NOT_FOUND" xml:space="preserve">
+    <value>The fulfilment record was not found.</value>
+  </data>
+  <data name="FULFILMENT_RECORD_NOT_RETRYABLE" xml:space="preserve">
+    <value>Only a failed fulfilment record can be retried.</value>
+  </data>
+  <data name="FULFILMENT_ADVICE_UNAVAILABLE" xml:space="preserve">
+    <value>The refund could not be checked right now, so nothing was refunded. Try again later.</value>
   </data>
 </root>

@@ -18,6 +18,7 @@ describe('statusTone', () => {
     [BadgeStatus.AwaitingReply, UiTone.Info],
     [BadgeStatus.Answered, UiTone.Info],
     [BadgeStatus.Refunded, UiTone.Info],
+    [BadgeStatus.PartiallyRefunded, UiTone.Info],
     [BadgeStatus.Pending, UiTone.Warning],
     [BadgeStatus.PendingTransfer, UiTone.Warning],
     [BadgeStatus.Unpaid, UiTone.Warning],

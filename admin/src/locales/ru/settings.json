@@ -394,6 +394,7 @@
     "email": "Почта",
     "addon": "Дополнение",
     "backup": "Резервное копирование",
+    "digital": "Цифровой",
     "other": "Другое",
     "vps": "VPS"
   },
@@ -427,6 +428,7 @@
     "typeEmail": "Почта",
     "typeAddon": "Дополнение",
     "typeBackup": "Резервное копирование",
+    "typeDigital": "Цифровой",
     "typeOther": "Другое",
     "typeVps": "VPS",
     "typeSsl": "SSL"

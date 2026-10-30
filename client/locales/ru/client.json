@@ -797,6 +797,7 @@
       "PaymentPending": "Ожидает оплаты",
       "Draft": "Черновик",
       "Refunded": "Возвращён",
+      "PartiallyRefunded": "Частично возвращён",
       "Collections": "Взыскание",
       "Suspended": "Приостановлена",
       "Terminated": "Завершена",

@@ -26,4 +26,10 @@ public enum InvoiceStatus
 
     /// <summary>Payment has been initiated and is awaiting confirmation.</summary>
     PaymentPending = 7,
+
+    /// <summary>
+    /// Paid, and part of the money has been refunded; the rest is still held and can still be
+    /// refunded. A refund that reaches the whole amount paid turns it <see cref="Refunded"/>.
+    /// </summary>
+    PartiallyRefunded = 8,
 }

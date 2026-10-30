@@ -371,6 +371,21 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
         CompactText(document).Should().Contain("REFUNDED");
     }
 
+    /// <summary>A partially refunded invoice is stamped PARTIALLY REFUNDED, not PAID.</summary>
+    [Fact]
+    public async Task Render_StampsPartiallyRefunded()
+    {
+        using var document = await RenderAsync(SampleModel() with
+        {
+            Status = InvoiceStatus.PartiallyRefunded,
+            PaidAt = new DateTimeOffset(2026, 10, 20, 12, 0, 0, TimeSpan.Zero),
+        });
+
+        var text = CompactText(document);
+        text.Should().Contain("PARTIALLYREFUNDED");
+        text.Should().NotContain("PAID2026-10-20");
+    }
+
     /// <summary>An unpaid invoice carries no stamp.</summary>
     [Fact]
     public async Task Render_NoStampForUnpaid()

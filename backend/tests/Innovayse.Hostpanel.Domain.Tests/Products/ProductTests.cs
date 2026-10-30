@@ -160,4 +160,230 @@ public class ProductTests
         Assert.True(product.IsFeatured);
         Assert.Equal(6, product.SortOrder);
     }
+
+    /// <summary>The Digital type keeps its own number after the existing values, which are not renumbered.</summary>
+    [Fact]
+    public void ProductType_Digital_IsAppendedWithoutRenumbering()
+    {
+        Assert.Equal(0, (int)ProductType.SharedHosting);
+        Assert.Equal(5, (int)ProductType.Other);
+        Assert.Equal(8, (int)ProductType.Backup);
+        Assert.Equal(9, (int)ProductType.Digital);
+    }
+
+    /// <summary>IsDigital is true only for a product of the Digital type.</summary>
+    /// <param name="type">The product type.</param>
+    /// <param name="expected">Whether the product counts as digital.</param>
+    [Theory]
+    [InlineData(ProductType.Digital, true)]
+    [InlineData(ProductType.SharedHosting, false)]
+    [InlineData(ProductType.Addon, false)]
+    [InlineData(ProductType.Other, false)]
+    public void IsDigital_IsTrueOnlyForTheDigitalType(ProductType type, bool expected)
+    {
+        var product = NewProduct(type);
+
+        Assert.Equal(expected, product.IsDigital);
+    }
+
+    /// <summary>A new product has no SKU, no metadata and the default grace period of seven days.</summary>
+    [Fact]
+    public void Create_StartsWithoutSkuOrMetadata_AndWithTheDefaultGracePeriod()
+    {
+        var product = NewProduct(ProductType.Digital);
+
+        Assert.Null(product.Sku);
+        Assert.Null(product.Metadata);
+        Assert.Equal(7, Product.DefaultGracePeriodDays);
+        Assert.Equal(Product.DefaultGracePeriodDays, product.GracePeriodDays);
+    }
+
+    /// <summary>SetSku trims and upper-cases the value before it stores it.</summary>
+    [Fact]
+    public void SetSku_StoresTheNormalisedValue()
+    {
+        var product = NewProduct(ProductType.Digital);
+
+        product.SetSku("  lic-pro_1y.v2 ");
+
+        Assert.Equal("LIC-PRO_1Y.V2", product.Sku);
+    }
+
+    /// <summary>SetSku with null or white space clears a SKU set earlier.</summary>
+    /// <param name="sku">The clearing value.</param>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void SetSku_WithNothing_ClearsTheSku(string? sku)
+    {
+        var product = NewProduct(ProductType.Digital);
+        product.SetSku("CREDITS-100");
+
+        product.SetSku(sku);
+
+        Assert.Null(product.Sku);
+    }
+
+    /// <summary>SetSku refuses a value that breaks the format and keeps the SKU it had.</summary>
+    /// <param name="sku">A malformed SKU.</param>
+    [Theory]
+    [InlineData("LIC PRO")]
+    [InlineData("LIC--PRO")]
+    [InlineData("-LIC")]
+    [InlineData("LIC-")]
+    [InlineData("LIC/PRO")]
+    [InlineData("ЛИЦ-1")]
+    public void SetSku_WithAMalformedValue_ThrowsAndKeepsTheOldSku(string sku)
+    {
+        var product = NewProduct(ProductType.Digital);
+        product.SetSku("CREDITS-100");
+
+        var ex = Assert.Throws<DomainRuleException>(() => product.SetSku(sku));
+
+        Assert.Equal(ProductsErrors.ProductSkuInvalid, ex.Code);
+        Assert.Equal("CREDITS-100", product.Sku);
+    }
+
+    /// <summary>SetSku accepts a SKU of exactly the maximum length and refuses one character more.</summary>
+    [Fact]
+    public void SetSku_EnforcesTheMaximumLength()
+    {
+        var product = NewProduct(ProductType.Digital);
+
+        product.SetSku(new string('a', ProductSku.MaxLength));
+        var ex = Assert.Throws<DomainRuleException>(() => product.SetSku(new string('A', ProductSku.MaxLength + 1)));
+
+        Assert.Equal(new string('A', ProductSku.MaxLength), product.Sku);
+        Assert.Equal(ProductsErrors.ProductSkuInvalid, ex.Code);
+    }
+
+    /// <summary>SetMetadata stores a JSON object in compact form.</summary>
+    [Fact]
+    public void SetMetadata_WithAnObject_StoresItCompact()
+    {
+        var product = NewProduct(ProductType.Digital);
+
+        product.SetMetadata("{ \"tier\": \"pro\", \"credits\": 100, \"features\": [\"a\", \"b\"] }");
+
+        Assert.Equal("{\"tier\":\"pro\",\"credits\":100,\"features\":[\"a\",\"b\"]}", product.Metadata);
+    }
+
+    /// <summary>SetMetadata accepts the empty object.</summary>
+    [Fact]
+    public void SetMetadata_WithTheEmptyObject_StoresIt()
+    {
+        var product = NewProduct(ProductType.Digital);
+
+        product.SetMetadata("{}");
+
+        Assert.Equal("{}", product.Metadata);
+    }
+
+    /// <summary>SetMetadata with null or white space clears the bag.</summary>
+    /// <param name="metadata">The clearing value.</param>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("  ")]
+    public void SetMetadata_WithNothing_ClearsTheBag(string? metadata)
+    {
+        var product = NewProduct(ProductType.Digital);
+        product.SetMetadata("{\"tier\":\"pro\"}");
+
+        product.SetMetadata(metadata);
+
+        Assert.Null(product.Metadata);
+    }
+
+    /// <summary>SetMetadata refuses anything that is not a JSON object and keeps the bag it had.</summary>
+    /// <param name="metadata">Text that is not a JSON object.</param>
+    [Theory]
+    [InlineData("[1, 2]")]
+    [InlineData("\"text\"")]
+    [InlineData("42")]
+    [InlineData("true")]
+    [InlineData("null")]
+    [InlineData("{\"tier\": }")]
+    [InlineData("not json")]
+    public void SetMetadata_WithANonObject_ThrowsAndKeepsTheOldBag(string metadata)
+    {
+        var product = NewProduct(ProductType.Digital);
+        product.SetMetadata("{\"tier\":\"pro\"}");
+
+        var ex = Assert.Throws<DomainRuleException>(() => product.SetMetadata(metadata));
+
+        Assert.Equal(ProductsErrors.ProductMetadataInvalid, ex.Code);
+        Assert.Equal("{\"tier\":\"pro\"}", product.Metadata);
+    }
+
+    /// <summary>IsValidMetadata answers true only for a JSON object.</summary>
+    /// <param name="metadata">The candidate text.</param>
+    /// <param name="expected">Whether it is a JSON object.</param>
+    [Theory]
+    [InlineData("{\"a\":1}", true)]
+    [InlineData("{}", true)]
+    [InlineData("[]", false)]
+    [InlineData("1", false)]
+    [InlineData("{", false)]
+    [InlineData(null, false)]
+    [InlineData("", false)]
+    public void IsValidMetadata_AcceptsOnlyAJsonObject(string? metadata, bool expected)
+    {
+        Assert.Equal(expected, Product.IsValidMetadata(metadata));
+    }
+
+    /// <summary>SetGracePeriodDays accepts every value from 0 to 365 inclusive.</summary>
+    /// <param name="days">An in-range grace period.</param>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(30)]
+    [InlineData(365)]
+    public void SetGracePeriodDays_InRange_StoresIt(int days)
+    {
+        var product = NewProduct(ProductType.SharedHosting);
+
+        product.SetGracePeriodDays(days);
+
+        Assert.Equal(days, product.GracePeriodDays);
+    }
+
+    /// <summary>SetGracePeriodDays refuses a value outside 0 to 365 and keeps the period it had.</summary>
+    /// <param name="days">An out-of-range grace period.</param>
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(366)]
+    [InlineData(int.MinValue)]
+    [InlineData(int.MaxValue)]
+    public void SetGracePeriodDays_OutOfRange_ThrowsAndKeepsTheOldPeriod(int days)
+    {
+        var product = NewProduct(ProductType.SharedHosting);
+
+        var ex = Assert.Throws<DomainRuleException>(() => product.SetGracePeriodDays(days));
+
+        Assert.Equal(ProductsErrors.ProductGracePeriodOutOfRange, ex.Code);
+        Assert.Equal(Product.DefaultGracePeriodDays, product.GracePeriodDays);
+    }
+
+    /// <summary>IsValidGracePeriod draws the boundary at 0 and 365 inclusive.</summary>
+    /// <param name="days">The candidate grace period.</param>
+    /// <param name="expected">Whether it is in range.</param>
+    [Theory]
+    [InlineData(-1, false)]
+    [InlineData(0, true)]
+    [InlineData(365, true)]
+    [InlineData(366, false)]
+    public void IsValidGracePeriod_DrawsTheBoundaryInclusive(int days, bool expected)
+    {
+        Assert.Equal(expected, Product.IsValidGracePeriod(days));
+    }
+
+    /// <summary>Creates a product of the given type with fixed, irrelevant values.</summary>
+    /// <param name="type">The product type.</param>
+    /// <returns>A new active product.</returns>
+    private static Product NewProduct(ProductType type)
+    {
+        return Product.Create(1, "P", null, null, null, null, type, 5m, 50m, Now);
+    }
 }

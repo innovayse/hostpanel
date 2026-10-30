@@ -16,7 +16,9 @@ set -euo pipefail
 
 container="${1:-hp-sdk}"
 
-tar --exclude=bin --exclude=obj --exclude=plugins -cf - src tests |
+# --exclude=.git: src/Innovayse.SDK is a git submodule whose .git file points into this checkout's
+# .git directory, which the container does not have; the build needs only the sources beside it.
+tar --exclude=bin --exclude=obj --exclude=plugins --exclude=.git -cf - src tests |
     docker exec -i "$container" bash -lc "cd /work && tar -xf - && find src tests -name '*.cs' | xargs -r sed -i 's/\r\$//'"
 
 # The laptop's file list, as /work-relative paths.

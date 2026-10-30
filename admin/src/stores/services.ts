@@ -11,6 +11,7 @@ import { useServicesApi } from '@/composables/apis/useServicesApi'
 import { runAction } from '@/lib/runAction'
 import type { PaginatedList } from '@/types/paginatedlist'
 import type {
+  AddExistingServicePayload,
   ServiceAutomationPayload,
   ServiceBillingTermsPayload,
   ServiceDetail,
@@ -139,6 +140,15 @@ export const useServicesStore = defineStore('services', () => {
     mutate(() => api.updateBillingTerms(id, payload))
 
   /**
+   * Adds a service for a hosting account that already exists on a server.
+   *
+   * @param payload - The client, product, billing terms and account.
+   * @returns True when added; false when refused (see `actionError` and `fieldErrors`).
+   */
+  const addExisting = (payload: AddExistingServicePayload): Promise<boolean> =>
+    mutate(() => api.addExistingService(payload))
+
+  /**
    * Saves the hosting account record of a service.
    *
    * @param id - Service primary key.
@@ -258,7 +268,7 @@ export const useServicesStore = defineStore('services', () => {
   return {
     services, current, page, pageSize, totalCount, loading, error, actionError, fieldErrors,
     fetchAll, fetchClientPage, fetchById, fetchClientServices,
-    updateBillingTerms, updateHostingAccount, updateAutomation, updateNotes, changeStatus, correctTerminationDate,
+    addExisting, updateBillingTerms, updateHostingAccount, updateAutomation, updateNotes, changeStatus, correctTerminationDate,
     fetchPanelLoginUrl, provision, changePassword, changePackage, suspend, unsuspend, terminate,
   }
 })

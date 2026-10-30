@@ -348,6 +348,9 @@
 <data name="SERVICE_NOT_FOUND" xml:space="preserve">
     <value>Հաճախորդի այդպիսի ծառայություն չի գտնվել։</value>
   </data>
+<data name="SERVICE_HOSTING_ACCOUNT_EXISTS" xml:space="preserve">
+    <value>Այս server-ի այս հաշիվն արդեն կապված է ծառայության հետ։</value>
+  </data>
 <data name="CANCELLATION_ALREADY_PENDING" xml:space="preserve">
     <value>Այս ծառայության համար արդեն կա չեղարկման սպասող հայտ։</value>
   </data>
@@ -570,6 +573,9 @@
   </data>
   <data name="INVOICE_NOT_UNPAID" xml:space="preserve">
     <value>Ժամկետանց կարելի է նշել միայն չվճարված հաշիվ-ապրանքագիրը։</value>
+  </data>
+  <data name="INVOICE_NOT_OVERDUE" xml:space="preserve">
+    <value>Ժամկետը լրացած կարելի է նշել միայն ժամկետանց հաշիվ-ապրանքագիրը։</value>
   </data>
   <data name="INVOICE_CANCEL_NOT_ALLOWED" xml:space="preserve">
     <value>Վճարված, վերադարձված կամ արդեն չեղարկված հաշիվ-ապրանքագիրը հնարավոր չէ չեղարկել։</value>
@@ -879,5 +885,29 @@
   </data>
   <data name="CLIENT_TAX_EXEMPT" xml:space="preserve">
     <value>Այս հաճախորդն ազատված է հարկից, ուստի նրա հաշիվ-ապրանքագրերի համար հարկի դրույք սահմանել հնարավոր չէ։</value>
+  </data>
+  <data name="PRODUCT_SKU_ALREADY_IN_USE" xml:space="preserve">
+    <value>Այս SKU-ն արդեն օգտագործվում է մեկ այլ ապրանքում։ Ընտրեք այլ SKU։</value>
+  </data>
+  <data name="PRODUCT_SKU_INVALID" xml:space="preserve">
+    <value>SKU-ն կարող է պարունակել միայն տառեր և թվեր՝ միացված մեկական գծիկով, ընդգծիկով կամ կետով, և չի կարող գերազանցել 64 նիշը։</value>
+  </data>
+  <data name="PRODUCT_METADATA_INVALID" xml:space="preserve">
+    <value>Ապրանքի մետատվյալները պետք է լինեն JSON օբյեկտ։</value>
+  </data>
+  <data name="PRODUCT_GRACE_PERIOD_OUT_OF_RANGE" xml:space="preserve">
+    <value>Արտոնյալ ժամկետը պետք է լինի 0-ից 365 օր։</value>
+  </data>
+  <data name="EXTERNAL_ACCOUNT_ALREADY_LINKED" xml:space="preserve">
+    <value>Այս արտաքին հաշիվն արդեն կապված է մեկ այլ հաճախորդի։</value>
+  </data>
+  <data name="FULFILMENT_RECORD_NOT_FOUND" xml:space="preserve">
+    <value>Կատարման գրառումը չի գտնվել։</value>
+  </data>
+  <data name="FULFILMENT_RECORD_NOT_RETRYABLE" xml:space="preserve">
+    <value>Կրկին փորձել կարելի է միայն ձախողված կատարման գրառումը։</value>
+  </data>
+  <data name="FULFILMENT_ADVICE_UNAVAILABLE" xml:space="preserve">
+    <value>Վերադարձը հիմա հնարավոր չեղավ ստուգել, ուստի գումար չի վերադարձվել։ Փորձեք ավելի ուշ։</value>
   </data>
 </root>

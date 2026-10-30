@@ -85,6 +85,7 @@ const productTypes = computed(() => [
   { value: ProductType.Email, label: t('settings.productForm.email'), icon: Icon.Mail },
   { value: ProductType.Addon, label: t('settings.productForm.addon'), icon: Icon.Puzzle },
   { value: ProductType.Backup, label: t('settings.productForm.backup'), icon: Icon.Archive },
+  { value: ProductType.Digital, label: t('settings.productForm.digital'), icon: Icon.Download },
   { value: ProductType.Other, label: t('settings.productForm.other'), icon: Icon.Box },
 ])
 

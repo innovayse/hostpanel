@@ -33,6 +33,20 @@ describe('integrationsStore.fetchAll', () => {
     expect(store.loading).toBe(false)
   })
 
+  it('lists a plugin under the category of its declared type, whatever its manifest category says', async () => {
+    stubFetch(json([
+      { slug: 'deliver', category: 'Extensions', pluginType: 'Fulfilment' },
+      { slug: 'sign-in', category: 'Extensions', pluginType: 'Identity' },
+      { slug: 'worker', category: 'Payment Gateways', pluginType: 'Hosted' },
+      { slug: 'bank', category: 'Payment', pluginType: 'Payment' },
+      { slug: 'smtp', category: 'Email / SMTP', pluginType: null },
+    ]))
+    const store = useIntegrationsStore()
+
+    await store.fetchAll()
+    expect(store.integrations.map(i => i.category)).toEqual(['fulfilment', 'identity', 'hosted', 'payments', 'email'])
+  })
+
   it('keeps the API sentence on refusal', async () => {
     stubFetch(problem('Integrations unavailable.', 503))
     const store = useIntegrationsStore()

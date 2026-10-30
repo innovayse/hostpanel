@@ -96,6 +96,8 @@ export interface ClientInvoiceStatuses {
   cancelled: InvoiceStatusCount
   /** Refunded invoice stats. */
   refunded: InvoiceStatusCount
+  /** Stats of the paid invoices of which part has been refunded. */
+  partiallyRefunded: InvoiceStatusCount
 }
 
 /** What a client's transactions add up to. */

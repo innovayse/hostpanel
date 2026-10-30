@@ -835,6 +835,16 @@ public static class DependencyInjection
         var pluginOptions = configuration.GetSection(PluginOptions.SectionName).Get<PluginOptions>() ?? new PluginOptions();
         PluginLoader.DiscoverAndRegister(services, [PluginOptions.BuiltInRoot, pluginOptions.InstallRoot], loggerFactory);
 
+        // Every plugin is turned into an instance by the one activator (its settings gate and configuration),
+        // whichever resolver or runner asks for it. Scoped: it reads the settings through the request's context.
+        services.AddScoped<PluginActivator>();
+        services.AddScoped<IFulfilmentPluginResolver, FulfilmentPluginResolver>();
+        services.AddScoped<IIdentityPluginResolver, IdentityPluginResolver>();
+
+        // Hosted plugins start once the host is up and stop as it begins to stop, each failure kept to its plugin.
+        // Registered in every environment: with no hosted plugin loaded it opens nothing and reads nothing.
+        services.AddHostedService<HostedPluginRunner>();
+
         // Public demo. Last on purpose: when Demo:Enabled is true this swaps the outward ports
         // registered above (payment, registrar, provisioning, rates, monitoring) for offline fakes,
         // and a Replace can only replace what is already there. Email is not among them: it stays

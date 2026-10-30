@@ -35,6 +35,8 @@ jobs:
           # repo's log on the very first sync.
           fetch-depth: 0
           persist-credentials: false
+          # No submodules: the push carries the SDK as a commit pointer only, and the GitLab
+          # pipeline fetches the submodule itself (GIT_SUBMODULE_STRATEGY in .gitlab-ci.yml).
 
       - name: Push to GitLab
         run: |

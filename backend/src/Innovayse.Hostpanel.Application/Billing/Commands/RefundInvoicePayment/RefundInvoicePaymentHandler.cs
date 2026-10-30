@@ -91,7 +91,8 @@ public sealed class RefundInvoicePaymentHandler
     /// <param name="cmd">The refund command.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// Success, or <c>INVOICE_NOT_FOUND</c>; <c>INVOICE_NOT_PAID</c> when the invoice is not Paid;
+    /// Success, or <c>INVOICE_NOT_FOUND</c>; <c>INVOICE_NOT_PAID</c> when the invoice is not Paid or
+    /// PartiallyRefunded;
     /// <c>INVOICE_REFUND_CONFLICT</c> when another refund of the invoice is still waiting for its
     /// gateway; <c>INVOICE_REFUND_EXCEEDS_PAID</c> when the amount is more than is still refundable,
     /// or more than the card charges or the hosted gateway's payments still hold; <c>CLIENT_NOT_FOUND</c>
@@ -117,7 +118,7 @@ public sealed class RefundInvoicePaymentHandler
         }
 
         // Checked before any money moves; the domain repeats them when the refund is recorded.
-        if (invoice.Status != InvoiceStatus.Paid)
+        if (!invoice.IsPaid)
         {
             return Result.FailureCode(HostpanelErrorCodes.INVOICE_NOT_PAID);
         }

@@ -12,6 +12,7 @@ import {
   DNS_RECORD_TYPE_OPTIONS,
   DOMAIN_STATUS_OPTIONS,
   GATEWAY_OPTIONS,
+  INVOICE_STATUS_OPTIONS,
   ORDER_STATUS_OPTIONS,
   PAYMENT_METHOD_OPTIONS,
   QUOTE_STAGE_OPTIONS,
@@ -26,6 +27,7 @@ import { BillableItemType, RecurringPeriod } from '@/types/billableitem'
 import { ClientStatus } from '@/types/client'
 import { DnsRecordType, DomainStatus } from '@/types/domain'
 import { PaymentGateway } from '@/types/gateway'
+import { InvoiceStatus } from '@/types/invoice'
 import { OrderStatus } from '@/types/order'
 import { QuoteStage } from '@/types/quote'
 import { BillingCycle, ServiceStatus } from '@/types/service'
@@ -62,6 +64,13 @@ describe('option lists', () => {
     expect(valuesOf(BILLABLE_ITEM_TYPE_OPTIONS)).toEqual(membersOf(BillableItemType))
     expect(valuesOf(RECURRING_PERIOD_OPTIONS)).toEqual(membersOf(RecurringPeriod))
     expect(valuesOf(GATEWAY_OPTIONS)).toEqual(membersOf(PaymentGateway))
+  })
+
+  it('offer the partially refunded invoices in the status filter, under a translated label', () => {
+    const option = INVOICE_STATUS_OPTIONS.find((entry) => entry.value === InvoiceStatus.PartiallyRefunded)
+
+    expect(option?.label).toBe(translate('clients.clientSummary.partiallyRefunded'))
+    expect(option?.label).toBe('Partially Refunded')
   })
 
   it('draw payment methods from the payment method set', () => {

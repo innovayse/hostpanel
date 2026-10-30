@@ -1,12 +1,13 @@
 <script setup lang="ts">
 /**
  * Displays a single integration as a clickable card with logo, title, description, and status,
- * marking an integration whose required fields are not all stored as not configured.
+ * marking a plugin with its declared type and an integration whose required fields are not all stored
+ * as not configured.
  *
  * Clicking the card navigates to the integration's configuration page.
  */
 import { useI18n } from 'vue-i18n'
-import { INTEGRATION_META } from '@/types/integrationmeta'
+import { INTEGRATION_META, PLUGIN_TYPE_LABELS } from '@/types/integrationmeta'
 import type { IntegrationDto, IntegrationSlug } from '@/types/integration'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -16,6 +17,7 @@ import UiLink from '@/components/ui/UiLink.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { integrationConfigurePath } from '@/lib/routes'
+import { UiTone } from '@/utils/ui/tone'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -52,6 +54,14 @@ const meta = INTEGRATION_META[props.integration.slug as IntegrationSlug]
           <UiHeading :level="3" variant="card">{{ integration.name }}</UiHeading>
           <UiBadge v-if="integration.isPlugin" tone="primary" small>
             {{ t('integrations.integrationCard.plugin') }}
+          </UiBadge>
+          <UiBadge
+            v-if="integration.pluginType !== null"
+            :tone="UiTone.Info"
+            small
+            :data-testid="`integration-type-${integration.slug}`"
+          >
+            {{ PLUGIN_TYPE_LABELS[integration.pluginType] }}
           </UiBadge>
           <UiBadge
             v-if="!integration.isConfigured"

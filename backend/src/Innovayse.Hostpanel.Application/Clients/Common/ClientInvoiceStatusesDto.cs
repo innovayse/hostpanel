@@ -7,10 +7,12 @@ namespace Innovayse.Hostpanel.Application.Clients.Common;
 /// <param name="Overdue">Overdue invoice stats.</param>
 /// <param name="Cancelled">Cancelled invoice stats.</param>
 /// <param name="Refunded">Refunded invoice stats.</param>
+/// <param name="PartiallyRefunded">Stats of the paid invoices of which part has been refunded.</param>
 public sealed record ClientInvoiceStatusesDto(
     InvoiceStatusCountDto Draft,
     InvoiceStatusCountDto Unpaid,
     InvoiceStatusCountDto Paid,
     InvoiceStatusCountDto Overdue,
     InvoiceStatusCountDto Cancelled,
-    InvoiceStatusCountDto Refunded);
+    InvoiceStatusCountDto Refunded,
+    InvoiceStatusCountDto PartiallyRefunded);

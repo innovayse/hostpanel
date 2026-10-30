@@ -3,6 +3,9 @@ using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Extensions;
 using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
+using Innovayse.SDK.Plugins.Fulfilment;
+using Innovayse.SDK.Plugins.Hosting;
+using Innovayse.SDK.Plugins.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
@@ -119,6 +122,7 @@ public static class PluginLoader
                     Slug: manifest.Id,
                     Name: manifest.Name,
                     Category: manifest.IntegrationsCategory ?? manifest.Category,
+                    Type: manifest.Type,
                     Color: manifest.Color,
                     FieldDefinitions: manifest.Fields
                         .Select(f => f.ToFieldDefinition())
@@ -140,13 +144,13 @@ public static class PluginLoader
     }
 
     /// <summary>
-    /// Registers a plugin type as a keyed scoped service based on its <see cref="PluginType"/>.
+    /// Registers a plugin type as a keyed scoped service under the SDK contract of its <see cref="PluginType"/>.
     /// </summary>
     /// <param name="services">The application service collection.</param>
     /// <param name="manifest">The plugin manifest.</param>
     /// <param name="pluginType">The concrete type to register.</param>
     /// <param name="logger">Logger for warnings.</param>
-    private static void RegisterPluginType(
+    internal static void RegisterPluginType(
         IServiceCollection services,
         PluginManifest manifest,
         Type pluginType,
@@ -162,6 +166,15 @@ public static class PluginLoader
                 break;
             case PluginType.Registrar:
                 services.AddKeyedScoped(typeof(IRegistrarPlugin), manifest.Id, pluginType);
+                break;
+            case PluginType.Identity:
+                services.AddKeyedScoped(typeof(IClientResolver), manifest.Id, pluginType);
+                break;
+            case PluginType.Fulfilment:
+                services.AddKeyedScoped(typeof(IFulfilmentPlugin), manifest.Id, pluginType);
+                break;
+            case PluginType.Hosted:
+                services.AddKeyedScoped(typeof(IHostedPlugin), manifest.Id, pluginType);
                 break;
             default:
                 logger.LogWarning("Unknown plugin type {Type} for plugin {Id} — skipping DI registration",

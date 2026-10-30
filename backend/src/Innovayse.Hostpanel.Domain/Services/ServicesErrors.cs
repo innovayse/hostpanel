@@ -22,8 +22,8 @@ public static class ServicesErrors
     public const string ServiceNotSuspended = "SERVICE_NOT_SUSPENDED";
 
     /// <summary>
-    /// The service is not Pending (400), from <see cref="ClientService.AssignHostingAccount"/> and
-    /// <see cref="ClientService.Activate"/>.
+    /// The service is not Pending (400), from <see cref="ClientService.AssignHostingAccount"/>,
+    /// <see cref="ClientService.Activate"/> and <see cref="ClientService.ActivateDigital"/>.
     /// </summary>
     public const string ServiceNotPending = "SERVICE_NOT_PENDING";
 

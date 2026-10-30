@@ -70,6 +70,17 @@ public sealed class InvoiceItem : BaseEntity
     /// </summary>
     public DateTimeOffset? RenewalAttemptAt { get; private set; }
 
+    /// <summary>
+    /// Gets what the product this line charges for was at billing time, or <see langword="null"/> when the
+    /// line is not a product's charge (a domain renewal, a billable item, an adjustment) or was written
+    /// before snapshots were kept. Set once when the line is created and never changed after: an edit of the
+    /// description or price and a later change in the catalogue both leave it as it was sold.
+    /// </summary>
+    public ProductSnapshot? ProductSnapshot { get; private set; }
+
+    /// <summary>Gets whether this line charges for a digital product, as it was when billed.</summary>
+    public bool IsDigital => ProductSnapshot is { IsDigital: true };
+
     /// <summary>Gets whether this line is a renewal (it carries a period). Lines written before renewals were tracked never are.</summary>
     public bool IsRenewal => RenewalPeriodStart is not null;
 
@@ -100,10 +111,15 @@ public sealed class InvoiceItem : BaseEntity
     /// eleven existing call sites that have no service in hand keep compiling and keep meaning
     /// what they meant; only a caller holding the actual <c>ClientService</c> passes it.
     /// </param>
+    /// <param name="productSnapshot">
+    /// What the product charged for was at billing time, or <see langword="null"/> when the line is not a
+    /// product's charge. Optional for the same reason as <paramref name="clientServiceId"/>: only a caller
+    /// that read the product passes it, and nothing may reconstruct it from the description.
+    /// </param>
     /// <returns>A new <see cref="InvoiceItem"/>.</returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="unitPrice"/> is negative or <paramref name="quantity"/> is less than 1.</exception>
     public static InvoiceItem Create(
-        string description, decimal unitPrice, int quantity, int? clientServiceId = null)
+        string description, decimal unitPrice, int quantity, int? clientServiceId = null, ProductSnapshot? productSnapshot = null)
     {
         if (unitPrice < 0)
         {
@@ -122,6 +138,7 @@ public sealed class InvoiceItem : BaseEntity
             Quantity = quantity,
             Amount = unitPrice * quantity,
             ClientServiceId = clientServiceId,
+            ProductSnapshot = productSnapshot,
         };
     }
 
@@ -132,11 +149,12 @@ public sealed class InvoiceItem : BaseEntity
     /// <param name="registeredDomainId">The domain renewed, or <see langword="null"/> for a service line.</param>
     /// <param name="start">Period start.</param>
     /// <param name="end">Period end; must be after <paramref name="start"/>.</param>
+    /// <param name="productSnapshot">What the renewed service's product is at billing time, or <see langword="null"/> for a domain line.</param>
     /// <returns>The new line.</returns>
-    /// <exception cref="ArgumentException">Not exactly one target, or an empty period.</exception>
+    /// <exception cref="ArgumentException">Not exactly one target, an empty period, or a product snapshot on a domain line.</exception>
     internal static InvoiceItem CreateRenewal(
         string description, decimal amount, int? clientServiceId, int? registeredDomainId,
-        DateTimeOffset start, DateTimeOffset end)
+        DateTimeOffset start, DateTimeOffset end, ProductSnapshot? productSnapshot)
     {
         if ((clientServiceId is null) == (registeredDomainId is null))
         {
@@ -148,7 +166,13 @@ public sealed class InvoiceItem : BaseEntity
             throw new ArgumentException("A renewal period must end after it starts.", nameof(end));
         }
 
-        var item = Create(description, amount, 1, clientServiceId);
+        // A domain is not a catalogue product, so a domain line can never carry a product's snapshot.
+        if (registeredDomainId is not null && productSnapshot is not null)
+        {
+            throw new ArgumentException("A domain renewal line carries no product snapshot.", nameof(productSnapshot));
+        }
+
+        var item = Create(description, amount, 1, clientServiceId, productSnapshot);
         item.RegisteredDomainId = registeredDomainId;
         item.RenewalPeriodStart = start;
         item.RenewalPeriodEnd = end;
@@ -207,9 +231,10 @@ public sealed class InvoiceItem : BaseEntity
     /// Updates the line item properties and recalculates <see cref="Amount"/>.
     /// </summary>
     /// <remarks>
-    /// Deliberately leaves <see cref="ClientServiceId"/> alone. Re-wording a description or
-    /// correcting a price does not change which service the money was for, and an edit path that
-    /// silently cleared the link would make a charge stop showing on the service it belongs to.
+    /// Deliberately leaves <see cref="ClientServiceId"/> and <see cref="ProductSnapshot"/> alone.
+    /// Re-wording a description or correcting a price does not change which service the money was
+    /// for or what was sold, and an edit path that silently cleared either would make a charge stop
+    /// showing on the service it belongs to, or change what a fulfilment plugin delivers for it.
     /// </remarks>
     /// <param name="description">New human-readable charge description.</param>
     /// <param name="unitPrice">New price per unit (≥ 0).</param>

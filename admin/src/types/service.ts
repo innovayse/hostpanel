@@ -280,3 +280,23 @@ export enum ServiceSection {
   /** Termination date correction. */
   TerminationDate = 'termination-date',
 }
+
+/** Body of `POST /api/services/existing`: a service for an account that already exists on a server. */
+export interface AddExistingServicePayload {
+  /** Client the service belongs to. */
+  clientId: number
+  /** Product the service is of. */
+  productId: number
+  /** Billing cycle. */
+  billingCycle: string
+  /** Amount each renewal invoice charges. */
+  recurringAmount: number
+  /** Server the account lives on. */
+  serverId: number
+  /** The account's primary domain. */
+  domain: string
+  /** The account's username on the panel. */
+  username: string
+  /** When the current billing period began (ISO date), or null for today. */
+  startedAt: string | null
+}

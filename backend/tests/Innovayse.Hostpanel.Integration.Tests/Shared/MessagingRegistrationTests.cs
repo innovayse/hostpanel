@@ -180,7 +180,7 @@ public sealed class MessagingRegistrationTests(IntegrationTestFactory factory) :
             if (implementation is null)
             {
                 // A keyed descriptor throws on ImplementationFactory; keyed services are the plugins,
-                // which the exempt resolver activates, so only unkeyed factories are judged.
+                // which the exempt activator builds, so only unkeyed factories are judged.
                 if (!descriptor.IsKeyedService
                     && descriptor.ImplementationFactory is not null
                     && descriptor.Lifetime != ServiceLifetime.Singleton

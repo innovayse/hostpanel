@@ -10,7 +10,7 @@ describe('IntegrationsInnerSidebar', () => {
   it('renders one link per category', async () => {
     const wrapper = await mountView(IntegrationsInnerSidebar, { path: '/integrations/email' })
 
-    for (const key of ['payments', 'registrars', 'provisioning', 'email', 'fraud']) {
+    for (const key of ['payments', 'registrars', 'provisioning', 'email', 'fraud', 'fulfilment', 'identity', 'hosted']) {
       expect(wrapper.find(`[data-testid="integrations-nav-${key}"]`).exists()).toBe(true)
     }
     expect(wrapper.get('[data-testid="integrations-nav-email"]').attributes('href')).toBe('/integrations/email')

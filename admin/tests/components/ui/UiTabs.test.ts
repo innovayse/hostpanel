@@ -23,6 +23,12 @@ describe('UiTabs', () => {
     expect(tabs[2]?.attributes('aria-selected')).toBe('false')
   })
 
+  it('hides vertical overflow on the horizontally scrollable tablist', () => {
+    const wrapper = mount(UiTabs, { props: { items, modelValue: 'a' } })
+
+    expect(wrapper.get('[role="tablist"]').classes()).toContain('overflow-y-hidden')
+  })
+
   it('selects a tab on click', async () => {
     const wrapper = mount(UiTabs, { props: { items, modelValue: 'a' } })
 

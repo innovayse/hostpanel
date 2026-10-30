@@ -257,4 +257,8 @@ would rewrite the compose files under the running production stack. Its `DEPLOY_
 to `demo/hostpanel`) is a directory of its own, and the job creates it (`git init`, then a fetch of the
 pipeline's commit) when missing.
 
+Every deploy job (staging, demo, production and the production rollback) runs `git submodule sync --recursive`
+and `git submodule update --init --recursive` after it checks out its `DEPLOY_DIR`: the plugin SDK
+(`backend/src/Innovayse.SDK`) is a submodule from its own public repository, so the host must be able to fetch it.
+
 The demo's GitLab scope is `demo/hostpanel`.

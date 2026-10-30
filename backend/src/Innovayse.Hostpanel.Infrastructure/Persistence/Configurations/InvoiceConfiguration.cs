@@ -29,6 +29,12 @@ public sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.Property(x => x.DueDate).IsRequired();
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property(x => x.PaidAt);
+        builder.Property(x => x.LapsedAt);
+
+        // Recomputed from the lines on every change; the default is what every invoice raised before
+        // product snapshots were kept is, since none of its lines can be known to be digital.
+        builder.Property(x => x.HasDigitalItems).IsRequired().HasDefaultValue(false);
+
         builder.Property(x => x.Total).HasColumnType("numeric(18,4)").IsRequired();
         builder.Property(x => x.GatewayTransactionId).HasMaxLength(255);
         builder.Property(x => x.Notes).HasMaxLength(2000);

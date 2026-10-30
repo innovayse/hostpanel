@@ -348,6 +348,9 @@
 <data name="SERVICE_NOT_FOUND" xml:space="preserve">
     <value>Такая услуга клиента не найдена.</value>
   </data>
+<data name="SERVICE_HOSTING_ACCOUNT_EXISTS" xml:space="preserve">
+    <value>Эта учётная запись на этом сервере уже привязана к услуге.</value>
+  </data>
 <data name="CANCELLATION_ALREADY_PENDING" xml:space="preserve">
     <value>Для этой услуги уже есть незавершённый запрос на отмену.</value>
   </data>
@@ -570,6 +573,9 @@
   </data>
   <data name="INVOICE_NOT_UNPAID" xml:space="preserve">
     <value>Просроченным можно пометить только неоплаченный счёт.</value>
+  </data>
+  <data name="INVOICE_NOT_OVERDUE" xml:space="preserve">
+    <value>Истёкшим можно пометить только просроченный счёт.</value>
   </data>
   <data name="INVOICE_CANCEL_NOT_ALLOWED" xml:space="preserve">
     <value>Оплаченный, возвращённый или уже отменённый счёт нельзя отменить.</value>
@@ -879,5 +885,29 @@
   </data>
   <data name="CLIENT_TAX_EXEMPT" xml:space="preserve">
     <value>Клиент освобождён от налога, поэтому для его счетов нельзя задать налоговую ставку.</value>
+  </data>
+  <data name="PRODUCT_SKU_ALREADY_IN_USE" xml:space="preserve">
+    <value>Этот SKU уже используется другим продуктом. Выберите другой.</value>
+  </data>
+  <data name="PRODUCT_SKU_INVALID" xml:space="preserve">
+    <value>SKU может содержать только буквы и цифры, разделённые одиночными дефисами, подчёркиваниями или точками, и быть не длиннее 64 символов.</value>
+  </data>
+  <data name="PRODUCT_METADATA_INVALID" xml:space="preserve">
+    <value>Метаданные продукта должны быть объектом JSON.</value>
+  </data>
+  <data name="PRODUCT_GRACE_PERIOD_OUT_OF_RANGE" xml:space="preserve">
+    <value>Льготный период должен быть от 0 до 365 дней.</value>
+  </data>
+  <data name="EXTERNAL_ACCOUNT_ALREADY_LINKED" xml:space="preserve">
+    <value>Эта внешняя учётная запись уже привязана к другому клиенту.</value>
+  </data>
+  <data name="FULFILMENT_RECORD_NOT_FOUND" xml:space="preserve">
+    <value>Запись о выполнении не найдена.</value>
+  </data>
+  <data name="FULFILMENT_RECORD_NOT_RETRYABLE" xml:space="preserve">
+    <value>Повторить можно только неудавшуюся запись о выполнении.</value>
+  </data>
+  <data name="FULFILMENT_ADVICE_UNAVAILABLE" xml:space="preserve">
+    <value>Сейчас не удалось проверить возврат, поэтому средства не возвращены. Повторите попытку позже.</value>
   </data>
 </root>

@@ -130,6 +130,7 @@ export const INVOICE_STATUS_OPTIONS: SelectOption[] = [
   { value: InvoiceStatus.Paid, get label() { return translate('clients.clientSummary.paid') } },
   { value: InvoiceStatus.Overdue, get label() { return translate('clients.clientSummary.overdue') } },
   { value: InvoiceStatus.Cancelled, get label() { return translate('clients.clientSummary.cancelled') } },
+  { value: InvoiceStatus.PartiallyRefunded, get label() { return translate('clients.clientSummary.partiallyRefunded') } },
   { value: InvoiceStatus.Refunded, get label() { return translate('clients.clientSummary.refunded') } },
 ]
 

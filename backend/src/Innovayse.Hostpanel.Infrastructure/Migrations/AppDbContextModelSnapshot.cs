@@ -189,6 +189,64 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("Currencies");
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Billing.FulfilmentRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("InvoiceId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTimeOffset>("NextAttemptAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PluginId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status", "NextAttemptAt");
+
+                    b.HasIndex("InvoiceId", "PluginId", "Kind")
+                        .IsUnique();
+
+                    b.ToTable("FulfilmentRecords");
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Billing.Invoice", b =>
                 {
                     b.Property<int>("Id")
@@ -247,7 +305,15 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<bool>("HasDigitalItems")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<DateTimeOffset>("InvoiceDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("LapsedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Notes")
@@ -669,6 +735,14 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<bool>("DisableCcProcessing")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("ExternalAccountId")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("ExternalAccountProvider")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -769,7 +843,14 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("Clients");
+                    b.HasIndex("ExternalAccountProvider", "ExternalAccountId")
+                        .IsUnique()
+                        .HasFilter("\"ExternalAccountProvider\" IS NOT NULL AND \"ExternalAccountId\" IS NOT NULL");
+
+                    b.ToTable("Clients", t =>
+                        {
+                            t.HasCheckConstraint("CK_Clients_ExternalAccount", "(\"ExternalAccountProvider\" IS NULL) = (\"ExternalAccountId\" IS NULL)");
+                        });
                 });
 
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Clients.ClientUser", b =>
@@ -2283,11 +2364,19 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<int>("GracePeriodDays")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(7);
+
                     b.Property<int>("GroupId")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsFeatured")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("jsonb");
 
                     b.Property<decimal>("MonthlyPrice")
                         .HasColumnType("numeric(18,4)");
@@ -2303,6 +2392,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.Property<int?>("ServerGroupId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Sku")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.Property<string>("Slug")
                         .HasMaxLength(200)
@@ -2329,7 +2422,14 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.HasIndex("GroupId");
 
-                    b.ToTable("Products");
+                    b.HasIndex("Sku")
+                        .IsUnique()
+                        .HasFilter("\"Sku\" IS NOT NULL");
+
+                    b.ToTable("Products", t =>
+                        {
+                            t.HasCheckConstraint("CK_Products_GracePeriodDays", "\"GracePeriodDays\" BETWEEN 0 AND 365");
+                        });
                 });
 
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Products.ProductFeature", b =>
@@ -3969,6 +4069,15 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Billing.FulfilmentRecord", b =>
+                {
+                    b.HasOne("Innovayse.Hostpanel.Domain.Billing.Invoice", null)
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Billing.Invoice", b =>
                 {
                     b.HasOne("Innovayse.Hostpanel.Domain.Clients.Client", null)
@@ -3985,6 +4094,44 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasForeignKey("InvoiceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.OwnsOne("Innovayse.Hostpanel.Domain.Billing.ProductSnapshot", "ProductSnapshot", b1 =>
+                        {
+                            b1.Property<int>("InvoiceItemId")
+                                .HasColumnType("integer");
+
+                            b1.Property<string>("BillingCycle")
+                                .IsRequired()
+                                .HasMaxLength(20)
+                                .HasColumnType("character varying(20)")
+                                .HasColumnName("BillingCycle");
+
+                            b1.Property<bool>("IsDigital")
+                                .HasColumnType("boolean")
+                                .HasColumnName("IsDigital");
+
+                            b1.Property<string>("Metadata")
+                                .HasColumnType("jsonb")
+                                .HasColumnName("ProductMetadata");
+
+                            b1.Property<int>("ProductId")
+                                .HasColumnType("integer")
+                                .HasColumnName("ProductId");
+
+                            b1.Property<string>("Sku")
+                                .HasMaxLength(64)
+                                .HasColumnType("character varying(64)")
+                                .HasColumnName("Sku");
+
+                            b1.HasKey("InvoiceItemId");
+
+                            b1.ToTable("InvoiceItems");
+
+                            b1.WithOwner()
+                                .HasForeignKey("InvoiceItemId");
+                        });
+
+                    b.Navigation("ProductSnapshot");
                 });
 
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Billing.InvoiceReminder", b =>

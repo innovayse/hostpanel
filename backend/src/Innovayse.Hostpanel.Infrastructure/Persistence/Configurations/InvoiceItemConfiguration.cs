@@ -1,4 +1,6 @@
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Products;
+using Innovayse.Hostpanel.Domain.Products.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -7,6 +9,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Persistence.Configurations;
 /// <summary>EF Core configuration for the <see cref="InvoiceItem"/> entity.</summary>
 public sealed class InvoiceItemConfiguration : IEntityTypeConfiguration<InvoiceItem>
 {
+    /// <summary>Column width for a <see cref="BillingCycle"/> name stored as text, as on the service it renews.</summary>
+    private const int BillingCycleLength = 20;
+
     /// <summary>Configures the <c>InvoiceItems</c> table mapping.</summary>
     /// <param name="builder">The entity type builder.</param>
     public void Configure(EntityTypeBuilder<InvoiceItem> builder)
@@ -47,6 +52,24 @@ public sealed class InvoiceItemConfiguration : IEntityTypeConfiguration<InvoiceI
             .HasFilter("\"RenewalAppliedAt\" IS NULL AND \"RenewalPeriodStart\" IS NOT NULL");
 
         builder.Ignore(x => x.IsRenewal);
+        builder.Ignore(x => x.IsDigital);
+
+        // What the product was when the line was billed, stored in the line's own row. Optional: a line that
+        // is not a product's charge, and every line written before snapshots were kept, has none, and all
+        // five columns are null. ProductId is never null on a snapshot, which is how EF tells the two apart.
+        // The column names are given here because EF would otherwise prefix them with the navigation's name.
+        builder.OwnsOne(x => x.ProductSnapshot, snapshot =>
+        {
+            snapshot.Property(x => x.ProductId).HasColumnName("ProductId");
+            snapshot.Property(x => x.BillingCycle)
+                .HasColumnName("BillingCycle")
+                .HasConversion<string>()
+                .HasMaxLength(BillingCycleLength);
+            snapshot.Property(x => x.IsDigital).HasColumnName("IsDigital");
+            snapshot.Property(x => x.Sku).HasColumnName("Sku").HasMaxLength(ProductSku.MaxLength);
+            snapshot.Property(x => x.Metadata).HasColumnName("ProductMetadata").HasColumnType("jsonb");
+        });
+        builder.Navigation(x => x.ProductSnapshot).IsRequired(false);
 
         builder.Property(x => x.Description).HasMaxLength(500).IsRequired();
         builder.Property(x => x.UnitPrice).HasColumnType("numeric(18,4)").IsRequired();

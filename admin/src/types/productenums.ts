@@ -25,6 +25,8 @@ export enum ProductType {
   Addon = 'Addon',
   /** Backup storage and restore. */
   Backup = 'Backup',
+  /** A digital good (a licence, a credit pack, a plan) delivered by a fulfilment plugin, not provisioned. */
+  Digital = 'Digital',
 }
 
 /** Whether the storefront shows a product. */

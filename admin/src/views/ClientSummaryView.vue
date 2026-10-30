@@ -198,6 +198,7 @@ const invoiceRows = computed<InvoiceRow[]>(() => {
     { label: t('clients.clientSummary.unpaidDue'), count: s.invoices.unpaid.count, total: s.invoices.unpaid.total },
     { label: t('clients.clientSummary.overdue'), count: s.invoices.overdue.count, total: s.invoices.overdue.total },
     { label: t('clients.clientSummary.cancelled'), count: s.invoices.cancelled.count, total: s.invoices.cancelled.total },
+    { label: t('clients.clientSummary.partiallyRefunded'), count: s.invoices.partiallyRefunded.count, total: s.invoices.partiallyRefunded.total },
     { label: t('clients.clientSummary.refunded'), count: s.invoices.refunded.count, total: s.invoices.refunded.total },
   ]
 })

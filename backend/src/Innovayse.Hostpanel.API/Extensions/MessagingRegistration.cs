@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Auth;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
+using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Middleware;
@@ -134,8 +135,10 @@ public static class MessagingRegistration
     /// no registration of ours can make it constructible; every local-mode account adapter depends on it.
     /// </description></item>
     /// <item><description>
-    /// <b>The payment plugin resolver.</b> It builds a plugin type loaded from a folder at run time,
-    /// whose constructor is only known then, so it hands the container to <c>ActivatorUtilities</c>.
+    /// <b>The plugin activator.</b> It builds a plugin type loaded from a folder at run time, whose
+    /// constructor is only known then, so it hands the container to <c>ActivatorUtilities</c>. Every plugin
+    /// resolver (payment, fulfilment, identity) goes through it, so the resolvers themselves are plain
+    /// constructor-built adapters and only this one type is located.
     /// </description></item>
     /// <item><description>
     /// <b>Typed HTTP clients.</b> <c>AddHttpClient&lt;T&gt;</c> registers a transient factory that asks
@@ -164,7 +167,7 @@ public static class MessagingRegistration
             typeof(AppDbContext),
             typeof(IHostpanelDbContext),
             typeof(UserManager<AppUser>),
-            typeof(IPaymentPluginResolver),
+            typeof(PluginActivator),
         ];
 
         return containerBuilt.Concat(typedClients).Distinct().ToList();

@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The plugin SDK (`Innovayse.SDK`) is MIT licensed, so a plugin may be free or paid, open or closed source; the rest of the repository stays AGPL-3.0-or-later. The package ships with its license text and readme inside, and its readme shows how to pin a version and write a minimal plugin.
+- The plugin SDK moved to its own repository, [innovayse/hostpanel-sdk](https://github.com/innovayse/hostpanel-sdk), with its history, and is included here as a git submodule at the same path (`backend/src/Innovayse.SDK`). Clone with `git clone --recurse-submodules`, or run `git submodule update --init` after a plain clone. The SDK package is now built and published from that repository; this repository no longer publishes it.
 - Gateway payment reconciliation no longer gives up on a payment that is still pending after 24 hours. It asks the gateway again with a doubling wait (5 minutes at first, at most 6 hours, set in `ScheduledJobs`) until the gateway gives a final answer, and staff are mailed once per payment when it stays pending for 24 hours.
 - Automatic termination of a long suspension waits `billing.renewal.terminate_after_suspended_days` (default 14) instead of a fixed 14 days, and staff are mailed when the hosting account cannot be removed; the service stays suspended and the next run retries it.
 - Recurring jobs may run as long as their lease (`ScheduledJobs:LeaseMinutes`) instead of being cancelled after one minute.

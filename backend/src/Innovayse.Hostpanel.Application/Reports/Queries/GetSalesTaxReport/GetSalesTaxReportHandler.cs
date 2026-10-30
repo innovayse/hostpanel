@@ -1,7 +1,7 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Reports.Common;
 using Innovayse.Hostpanel.Application.Reports.Extensions;
-using Innovayse.Hostpanel.Domain.Billing.Enums;
+using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Shared.Extensions;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -35,7 +35,7 @@ public sealed class GetSalesTaxReportHandler
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var paid = _context.Invoices.AsNoTracking().Where(i => i.Status == InvoiceStatus.Paid && i.PaidAt != null);
+        var paid = _context.Invoices.AsNoTracking().Where(i => Invoice.PaidStatuses.Contains(i.Status) && i.PaidAt != null);
 
         if (query.From.HasValue)
         {

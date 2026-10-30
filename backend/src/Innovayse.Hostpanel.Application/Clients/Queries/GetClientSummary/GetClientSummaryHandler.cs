@@ -103,7 +103,8 @@ public sealed class GetClientSummaryHandler
                 Paid: GetStatusCount(invoicesByStatus, InvoiceStatus.Paid),
                 Overdue: GetStatusCount(invoicesByStatus, InvoiceStatus.Overdue),
                 Cancelled: GetStatusCount(invoicesByStatus, InvoiceStatus.Cancelled),
-                Refunded: GetStatusCount(invoicesByStatus, InvoiceStatus.Refunded)),
+                Refunded: GetStatusCount(invoicesByStatus, InvoiceStatus.Refunded),
+                PartiallyRefunded: GetStatusCount(invoicesByStatus, InvoiceStatus.PartiallyRefunded)),
             Transactions: new ClientTransactionTotalsDto(
                 GrossRevenue: totalIn,
                 ClientExpenses: totalOut,

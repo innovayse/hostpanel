@@ -19,6 +19,9 @@ name: Publish to Docker Hub
 # SLSA provenance (mode=max) and an SBOM attestation. Third-party actions are pinned to a commit
 # SHA with the version in a comment; Dependabot keeps them up to date.
 #
+# Every checkout fetches submodules: the API image builds the plugin SDK from backend/src/Innovayse.SDK,
+# a git submodule from its own public repository.
+#
 # Secrets: DOCKERHUB_USERNAME, DOCKERHUB_TOKEN. Variable: DOCKERHUB_NAMESPACE.
 on:
   push:
@@ -48,6 +51,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          submodules: true
           fetch-depth: 0
           persist-credentials: false
 
@@ -78,6 +82,8 @@ jobs:
       licenses: ${{ steps.meta_in.outputs.licenses }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          submodules: true
 
       - name: Resolve the version and licence
         id: meta_in
@@ -144,6 +150,8 @@ jobs:
       NAMESPACE: ${{ vars.DOCKERHUB_NAMESPACE }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          submodules: true
 
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
@@ -207,6 +215,8 @@ jobs:
       NAMESPACE: ${{ vars.DOCKERHUB_NAMESPACE }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          submodules: true
 
       - name: Download the digests
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4

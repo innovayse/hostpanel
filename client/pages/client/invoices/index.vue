@@ -68,11 +68,10 @@
 import { clientInvoicePath } from '~/constants/clientRoutes'
 import { FileText } from 'lucide-vue-next'
 import { useClientStore } from '~/stores/client'
-import { InvoiceStatus } from '~/types/invoicestatus'
 import { ListFilter } from '~/types/listfilter'
 import { formatCurrency } from '~/utils/formatCurrency'
 import { formatDate } from '~/utils/formatDate'
-import { isInvoiceOutstanding, isInvoiceOverdue as isOverdue } from '~/utils/invoice'
+import { isInvoiceOutstanding, isInvoiceOverdue as isOverdue, isInvoicePaid } from '~/utils/invoice'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
@@ -107,7 +106,7 @@ const filteredInvoices = computed(() => {
     return store.invoices.filter(isInvoiceOutstanding)
   }
   if (activeTab.value === ListFilter.Finished) {
-    return store.invoices.filter((invoice) => invoice.status === InvoiceStatus.Paid)
+    return store.invoices.filter(isInvoicePaid)
   }
   return store.invoices
 })

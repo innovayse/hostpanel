@@ -173,6 +173,15 @@ describe('settingsStore products', () => {
     expect(store.fieldErrors).toEqual({})
   })
 
+  it('drops the message of one field when the operator changes it and keeps the others', () => {
+    const store = useSettingsStore()
+    store.fieldErrors = { sku: 'SKU taken.', metadata: 'Too large.' }
+
+    store.clearFieldError('sku')
+
+    expect(store.fieldErrors).toEqual({ metadata: 'Too large.' })
+  })
+
   it('puts a taken SKU on the sku field instead of the form-level sentence', async () => {
     stubFetch(new Response(
       JSON.stringify({ type: 'PRODUCT_SKU_ALREADY_IN_USE', title: 'Conflict', status: 409, detail: 'Another product already uses this SKU.' }),

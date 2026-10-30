@@ -217,45 +217,6 @@ describe('ProductFormModal', () => {
     expect(wrapper.emitted('save')?.[0]?.[0]).toMatchObject({ sku: '', metadata: '' })
   })
 
-  it('refuses metadata that is not JSON and does not emit', async () => {
-    stubRouteTable(lists)
-    const { wrapper } = await mountScreen(ProductFormModal, { product: null, groups, saving: false })
-
-    await wrapper.get('[data-testid="product-form-name"]').setValue('Plan')
-    await wrapper.get('[data-testid="product-form-metadata"]').setValue('{oops')
-    await wrapper.get('[data-testid="product-form"]').trigger('submit')
-
-    expect(wrapper.text()).toContain('This is not valid JSON.')
-    expect(wrapper.emitted('save')).toBeUndefined()
-  })
-
-  it('refuses metadata that is JSON but not an object, then accepts a fixed one', async () => {
-    stubRouteTable(lists)
-    const { wrapper } = await mountScreen(ProductFormModal, { product: null, groups, saving: false })
-
-    await wrapper.get('[data-testid="product-form-name"]').setValue('Plan')
-    await wrapper.get('[data-testid="product-form-metadata"]').setValue('[1, 2]')
-    await wrapper.get('[data-testid="product-form"]').trigger('submit')
-    expect(wrapper.text()).toContain('The metadata must be a JSON object')
-    expect(wrapper.emitted('save')).toBeUndefined()
-
-    await wrapper.get('[data-testid="product-form-metadata"]').setValue('{"a": 1}')
-    await wrapper.get('[data-testid="product-form"]').trigger('submit')
-    expect(wrapper.emitted('save')).toHaveLength(1)
-  })
-
-  it('refuses a grace period that is not a whole number of days', async () => {
-    stubRouteTable(lists)
-    const { wrapper } = await mountScreen(ProductFormModal, { product: null, groups, saving: false })
-
-    await wrapper.get('[data-testid="product-form-name"]').setValue('Plan')
-    await wrapper.get('[data-testid="product-form-grace-period"] input').setValue('7.5')
-    await wrapper.get('[data-testid="product-form"]').trigger('submit')
-
-    expect(wrapper.text()).toContain('Enter a whole number of days from 0 to 365.')
-    expect(wrapper.emitted('save')).toBeUndefined()
-  })
-
   it('shows the API field errors under the SKU, metadata and grace period inputs', async () => {
     stubRouteTable(lists)
     const { wrapper } = await mountScreen(ProductFormModal, {
@@ -269,6 +230,34 @@ describe('ProductFormModal', () => {
     expect(wrapper.text()).toContain('Too large.')
     expect(wrapper.text()).toContain('Out of range.')
     expect(wrapper.get('[data-testid="product-form-sku"]').attributes('aria-invalid')).toBe('true')
+  })
+
+  it('asks to drop the API message of a field as soon as the operator changes that field', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, {
+      product: null,
+      groups,
+      saving: false,
+      fieldErrors: { sku: 'SKU taken.', metadata: 'Too large.', gracePeriodDays: 'Out of range.' },
+    })
+
+    await wrapper.get('[data-testid="product-form-sku"]').setValue('NEW-1')
+    expect(wrapper.emitted('clearFieldError')).toEqual([['sku']])
+
+    await wrapper.get('[data-testid="product-form-metadata"]').setValue('{}')
+    await wrapper.get('[data-testid="product-form-grace-period"] input').setValue('14')
+    expect(wrapper.emitted('clearFieldError')).toEqual([['sku'], ['metadata'], ['gracePeriodDays']])
+  })
+
+  it('does not ask to drop a message for a field the API did not refuse', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, {
+      product: null, groups, saving: false, fieldErrors: { sku: 'SKU taken.' },
+    })
+
+    await wrapper.get('[data-testid="product-form-metadata"]').setValue('{}')
+
+    expect(wrapper.emitted('clearFieldError')).toBeUndefined()
   })
 
   it('closes from Cancel and blocks Save while saving', async () => {

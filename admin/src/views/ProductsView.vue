@@ -275,6 +275,7 @@ const handleSave = async (payload: CreateProductPayload): Promise<void> => {
       :error="store.actionError"
       :field-errors="store.fieldErrors"
       @save="handleSave"
+      @clear-field-error="store.clearFieldError"
       @close="showModal = false"
     />
 

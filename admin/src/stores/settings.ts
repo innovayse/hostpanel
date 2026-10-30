@@ -205,6 +205,17 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   /**
+   * Drops the API's message for one field of the product form, once the operator changed it.
+   *
+   * @param field - The wire name of the field (`sku`, `metadata`, `gracePeriodDays` ...).
+   */
+  const clearFieldError = (field: string): void => {
+    const rest = { ...fieldErrors.value }
+    delete rest[field]
+    fieldErrors.value = rest
+  }
+
+  /**
    * Creates a new product and refreshes the list.
    *
    * @param payload - Product creation data.
@@ -235,7 +246,7 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   return {
-    settings, emailTemplates, products, productGroups, fieldErrors,
+    settings, emailTemplates, products, productGroups, fieldErrors, clearFieldError,
     loading, error, actionError, uploadError,
     fetchSettings, updateSetting, clearSetting, fetchEmailTemplates, saveEmailTemplateVersion, fetchProducts, fetchProductGroups,
     createProduct, updateProduct, uploadBrandingFile,

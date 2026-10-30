@@ -2,13 +2,13 @@
 /**
  * Dialog for creating or editing a product.
  *
- * Shows the product type cards (create mode only), the group selector, the name, slug and package
- * fields, the server group, the description, the SKU, the metadata (a JSON object) and the grace
- * period, a pricing grid with one row per configured currency, and a hidden toggle. Emits `save` with the payload on submit, and `close` on cancel, Escape or a
- * backdrop click. A refused save (the `error` prop) shows next to the save button; the API's
- * per-field messages (the `fieldErrors` prop) show under their inputs. The metadata and grace
- * period are also checked here after the first submit, only to tell the operator sooner; the API
- * stays the source of truth.
+ * Shows the product type cards (create mode only), the group selector, the name, slug and
+ * package fields, the server group, the description, the SKU, the metadata (a JSON object) and
+ * the grace period, a pricing grid with one row per configured currency, and a hidden toggle.
+ * Emits `save` with the payload on submit, and `close` on cancel, Escape or a backdrop click. A
+ * refused save (the `error` prop) shows next to the save button; the API's per-field messages
+ * (the `fieldErrors` prop) show under their inputs and go away, through `clearFieldError`, as
+ * soon as the operator changes that field. The API is the only validator.
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -45,12 +45,6 @@ const { t } = useI18n()
 /** Grace period a new product starts with, the same default the API applies. */
 const DEFAULT_GRACE_PERIOD_DAYS = 7
 
-/** Smallest grace period the API accepts. */
-const MIN_GRACE_PERIOD_DAYS = 0
-
-/** Largest grace period the API accepts. */
-const MAX_GRACE_PERIOD_DAYS = 365
-
 /** Servers store: owns the server groups the product can be assigned to. */
 const serversStore = useServersStore()
 
@@ -84,6 +78,8 @@ const emit = defineEmits<{
   save: [payload: CreateProductPayload]
   /** Emitted when the user closes or cancels the dialog. */
   close: []
+  /** Emitted when the operator changes a field the API refused, so its message can be dropped. */
+  clearFieldError: [field: string]
 }>()
 
 /** One pricing row per configured currency, keyed by ISO 4217 code. */
@@ -155,9 +151,6 @@ const metadata = ref('')
 
 /** Grace period in days. */
 const gracePeriodDays = ref(DEFAULT_GRACE_PERIOD_DAYS)
-
-/** Whether the operator has tried to save, which switches on the local checks. */
-const submitted = ref(false)
 
 /** Available server groups (owned by the servers store). */
 const serverGroups = computed(() => serversStore.groups)
@@ -324,52 +317,37 @@ const buildPricesPayload = (): ProductPrice[] =>
     }))
 
 /**
- * Local check of the metadata text: empty is fine (no metadata), otherwise it must parse to a JSON
- * object. Size and everything else is left to the API.
+ * Drops the API's message for a field as soon as the operator changes that field.
+ *
+ * @param field - The wire name of the field (`sku`, `metadata`, `gracePeriodDays`).
  */
-const localMetadataError = computed<string | undefined>(() => {
-  const text = metadata.value.trim()
-  if (text === '') {
-    return undefined
+const clearErrorOf = (field: string): void => {
+  if (props.fieldErrors[field] !== undefined) {
+    emit('clearFieldError', field)
   }
-  try {
-    const parsed: unknown = JSON.parse(text)
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      return t('settings.productForm.metadataNotObject')
-    }
-  } catch {
-    return t('settings.productForm.metadataInvalidJson')
-  }
-  return undefined
+}
+
+/** Drops the API's SKU message once the SKU is edited. */
+watch(sku, () => {
+  clearErrorOf('sku')
 })
 
-/** Local check of the grace period: a whole number of days inside the range the API accepts. */
-const localGraceError = computed<string | undefined>(() => {
-  const days = Number(gracePeriodDays.value)
-  if (!Number.isInteger(days) || days < MIN_GRACE_PERIOD_DAYS || days > MAX_GRACE_PERIOD_DAYS) {
-    return t('settings.productForm.gracePeriodOutOfRange', { min: MIN_GRACE_PERIOD_DAYS, max: MAX_GRACE_PERIOD_DAYS })
-  }
-  return undefined
+/** Drops the API's metadata message once the metadata is edited. */
+watch(metadata, () => {
+  clearErrorOf('metadata')
 })
 
-/** Message under the metadata field: the local check once the operator tried to save, else the API's. */
-const metadataError = computed<string | undefined>(() =>
-  (submitted.value ? localMetadataError.value : undefined) ?? props.fieldErrors.metadata)
-
-/** Message under the grace period field: the local check once the operator tried to save, else the API's. */
-const graceError = computed<string | undefined>(() =>
-  (submitted.value ? localGraceError.value : undefined) ?? props.fieldErrors.gracePeriodDays)
+/** Drops the API's grace period message once the grace period is edited. */
+watch(gracePeriodDays, () => {
+  clearErrorOf('gracePeriodDays')
+})
 
 /**
- * Submits the form by emitting the save event with the current field values, unless a local check
- * failed. The SKU and metadata are always sent, empty text included, because on update an empty
- * string clears the stored value while an omitted one keeps it.
+ * Submits the form by emitting the save event with the current field values. The SKU and
+ * metadata are always sent, empty text included, because on update an empty string clears the
+ * stored value while an omitted one keeps it.
  */
 const handleSubmit = (): void => {
-  submitted.value = true
-  if (localMetadataError.value !== undefined || localGraceError.value !== undefined) {
-    return
-  }
   emit('save', {
     groupId: groupId.value,
     name: name.value,
@@ -509,7 +487,7 @@ const handleSubmit = (): void => {
         </template>
       </UiField>
 
-      <UiField :label="t('settings.productForm.metadata')" :hint="t('settings.productForm.metadataHint')" :error="metadataError">
+      <UiField :label="t('settings.productForm.metadata')" :hint="t('settings.productForm.metadataHint')" :error="props.fieldErrors.metadata">
         <template #default="{ id, invalid, describedby }">
           <UiTextarea
             :id="id"
@@ -524,11 +502,9 @@ const handleSubmit = (): void => {
         </template>
       </UiField>
 
-      <UiField :label="t('settings.productForm.gracePeriod')" :hint="t('settings.productForm.gracePeriodHint')" :error="graceError">
+      <UiField :label="t('settings.productForm.gracePeriod')" :hint="t('settings.productForm.gracePeriodHint')" :error="props.fieldErrors.gracePeriodDays">
         <UiNumberInput
           v-model="gracePeriodDays"
-          :min="MIN_GRACE_PERIOD_DAYS"
-          :max="MAX_GRACE_PERIOD_DAYS"
           :step="1"
           :placeholder="t('settings.productForm.gracePeriodPlaceholder')"
           data-testid="product-form-grace-period"

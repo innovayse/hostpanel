@@ -333,6 +333,49 @@ public class ProductTests
         Assert.Equal(expected, Product.IsValidMetadata(metadata));
     }
 
+    /// <summary>SetMetadata stores a JSON object of exactly the size cap.</summary>
+    [Fact]
+    public void SetMetadata_AtTheSizeCap_StoresIt()
+    {
+        var product = NewProduct(ProductType.Digital);
+        var metadata = MetadataOfBytes(Product.MaxMetadataBytes);
+
+        product.SetMetadata(metadata);
+
+        Assert.Equal(metadata, product.Metadata);
+    }
+
+    /// <summary>SetMetadata refuses a bag one byte over the size cap and keeps the bag it had.</summary>
+    [Fact]
+    public void SetMetadata_OverTheSizeCap_ThrowsAndKeepsTheOldBag()
+    {
+        var product = NewProduct(ProductType.Digital);
+        product.SetMetadata("{\"tier\":\"pro\"}");
+
+        var ex = Assert.Throws<DomainRuleException>(() => product.SetMetadata(MetadataOfBytes(Product.MaxMetadataBytes + 1)));
+
+        Assert.Equal(ProductsErrors.ProductMetadataInvalid, ex.Code);
+        Assert.Equal("{\"tier\":\"pro\"}", product.Metadata);
+    }
+
+    /// <summary>IsWithinMetadataSize measures UTF-8 bytes, so a multi-byte character counts for each of its bytes.</summary>
+    [Fact]
+    public void IsWithinMetadataSize_CountsUtf8Bytes()
+    {
+        // "Ա" is two bytes in UTF-8: half the cap in characters is exactly the cap in bytes.
+        var atTheCap = new string('Ա', Product.MaxMetadataBytes / 2);
+
+        Assert.True(Product.IsWithinMetadataSize(atTheCap));
+        Assert.False(Product.IsWithinMetadataSize(atTheCap + "a"));
+    }
+
+    /// <summary>IsWithinMetadataSize accepts an absent bag.</summary>
+    [Fact]
+    public void IsWithinMetadataSize_AcceptsNull()
+    {
+        Assert.True(Product.IsWithinMetadataSize(null));
+    }
+
     /// <summary>SetGracePeriodDays accepts every value from 0 to 365 inclusive.</summary>
     /// <param name="days">An in-range grace period.</param>
     [Theory]
@@ -377,6 +420,16 @@ public class ProductTests
     public void IsValidGracePeriod_DrawsTheBoundaryInclusive(int days, bool expected)
     {
         Assert.Equal(expected, Product.IsValidGracePeriod(days));
+    }
+
+    /// <summary>A JSON object whose text is exactly <paramref name="bytes"/> bytes of UTF-8.</summary>
+    /// <param name="bytes">The size wanted, at least the size of the empty wrapper object.</param>
+    /// <returns>The metadata text.</returns>
+    private static string MetadataOfBytes(int bytes)
+    {
+        const string Prefix = "{\"blob\":\"";
+        const string Suffix = "\"}";
+        return Prefix + new string('a', bytes - Prefix.Length - Suffix.Length) + Suffix;
     }
 
     /// <summary>Creates a product of the given type with fixed, irrelevant values.</summary>

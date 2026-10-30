@@ -899,6 +899,18 @@
   <data name="ProductSortOrderInvalid" xml:space="preserve">
     <value>Sort order cannot be negative.</value>
   </data>
+  <data name="ProductSkuInvalid" xml:space="preserve">
+    <value>Use letters and digits joined by single hyphens, underscores or dots for the SKU, at most {0} characters.</value>
+  </data>
+  <data name="ProductMetadataInvalid" xml:space="preserve">
+    <value>Metadata must be a JSON object.</value>
+  </data>
+  <data name="ProductMetadataTooLarge" xml:space="preserve">
+    <value>Keep the metadata within {0} bytes.</value>
+  </data>
+  <data name="ProductGracePeriodOutOfRange" xml:space="preserve">
+    <value>The grace period must be from {0} to {1} days.</value>
+  </data>
   <data name="ProductPriceRequired" xml:space="preserve">
     <value>A new product needs at least one price.</value>
   </data>

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
@@ -8,12 +9,14 @@ namespace Innovayse.Hostpanel.Integration.Tests.Products;
 
 /// <summary>
 /// <c>PUT /api/products/{id}</c> against Postgres: the per-currency price list replacement rules,
-/// and the missing-product refusal.
+/// the fulfilment fields (SKU, metadata, grace period: null keeps, empty clears), and the
+/// missing-product and taken-SKU refusals.
 /// </summary>
 /// <remarks>
 /// Pins how <c>UpdateProductHandler</c>
-/// resolves the per-currency price list against the legacy single-currency pair, and the refusal
-/// <c>PRODUCT_NOT_FOUND</c> (404).
+/// resolves the per-currency price list against the legacy single-currency pair, and the refusals
+/// <c>PRODUCT_NOT_FOUND</c> (404) and <c>PRODUCT_SKU_ALREADY_IN_USE</c> (409), the latter also when the
+/// unique index refuses a save that won the race past the handler's own check.
 /// </remarks>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
@@ -262,4 +265,184 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
+
+    /// <summary>The SKU, metadata and grace period sent on update are stored and returned, the SKU normalised.</summary>
+    [Fact]
+    public async Task UpdateProduct_FulfilmentFields_AreStoredAndReturned()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var id = await ProductsTestSeeds.CreateProductAsync(client);
+        var sku = ProductsTestSeeds.UniqueSku();
+
+        var updated = await client.PutAsJsonAsync($"/api/products/{id}", FulfilmentBody(sku, "{ \"plan\": \"gold\" }", 14));
+
+        updated.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var dto = await ProductsTestSeeds.GetProductAsync(client, id);
+        dto.GetProperty("sku").GetString().Should().Be(sku.ToUpperInvariant());
+        ProductsTestSeeds.AssertMetadata(dto, "{\"plan\":\"gold\"}");
+        dto.GetProperty("gracePeriodDays").GetInt32().Should().Be(14);
+    }
+
+    /// <summary>
+    /// An update that omits the fulfilment fields keeps what is stored, so a form that does not know them
+    /// never wipes them.
+    /// </summary>
+    [Fact]
+    public async Task UpdateProduct_WithoutFulfilmentFields_KeepsThem()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var id = await ProductsTestSeeds.CreateProductAsync(client);
+        var sku = ProductsTestSeeds.UniqueSku();
+        await client.PutAsJsonAsync($"/api/products/{id}", FulfilmentBody(sku, "{\"plan\":\"gold\"}", 14));
+
+        var updated = await client.PutAsJsonAsync($"/api/products/{id}", new { name = "Renamed", monthlyPrice = 1m, annualPrice = 10m });
+
+        updated.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var dto = await ProductsTestSeeds.GetProductAsync(client, id);
+        dto.GetProperty("name").GetString().Should().Be("Renamed");
+        dto.GetProperty("sku").GetString().Should().Be(sku.ToUpperInvariant());
+        ProductsTestSeeds.AssertMetadata(dto, "{\"plan\":\"gold\"}");
+        dto.GetProperty("gracePeriodDays").GetInt32().Should().Be(14);
+    }
+
+    /// <summary>An empty SKU and empty metadata on update clear both.</summary>
+    [Fact]
+    public async Task UpdateProduct_EmptySkuAndMetadata_ClearThem()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var id = await ProductsTestSeeds.CreateProductAsync(client);
+        await client.PutAsJsonAsync($"/api/products/{id}", FulfilmentBody(ProductsTestSeeds.UniqueSku(), "{\"plan\":\"gold\"}", 14));
+
+        var updated = await client.PutAsJsonAsync($"/api/products/{id}", FulfilmentBody(string.Empty, string.Empty, null));
+
+        updated.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var dto = await ProductsTestSeeds.GetProductAsync(client, id);
+        dto.GetProperty("sku").ValueKind.Should().Be(JsonValueKind.Null);
+        dto.GetProperty("metadata").ValueKind.Should().Be(JsonValueKind.Null);
+        dto.GetProperty("gracePeriodDays").GetInt32().Should().Be(14);
+    }
+
+    /// <summary>Sending the product's own SKU again, in another case, is not a clash with itself.</summary>
+    [Fact]
+    public async Task UpdateProduct_KeepingItsOwnSku_Succeeds()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var id = await ProductsTestSeeds.CreateProductAsync(client);
+        var sku = ProductsTestSeeds.UniqueSku();
+        await client.PutAsJsonAsync($"/api/products/{id}", FulfilmentBody(sku, null, null));
+
+        var updated = await client.PutAsJsonAsync($"/api/products/{id}", FulfilmentBody(sku.ToUpperInvariant(), null, null));
+
+        updated.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    /// <summary>A SKU another product holds is refused with 409 <c>PRODUCT_SKU_ALREADY_IN_USE</c> and nothing is changed.</summary>
+    [Fact]
+    public async Task UpdateProduct_SkuOfAnotherProduct_RefusesWithConflict()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var holderId = await ProductsTestSeeds.CreateProductAsync(client);
+        var id = await ProductsTestSeeds.CreateProductAsync(client);
+        var sku = ProductsTestSeeds.UniqueSku();
+        await client.PutAsJsonAsync($"/api/products/{holderId}", FulfilmentBody(sku, null, null));
+
+        var updated = await client.PutAsJsonAsync($"/api/products/{id}", FulfilmentBody(sku, null, 3));
+
+        updated.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        await ProductsTestSeeds.AssertCodeAsync(updated, HostpanelErrorCodes.PRODUCT_SKU_ALREADY_IN_USE);
+        var dto = await ProductsTestSeeds.GetProductAsync(client, id);
+        dto.GetProperty("sku").ValueKind.Should().Be(JsonValueKind.Null);
+        dto.GetProperty("gracePeriodDays").GetInt32().Should().Be(Product.DefaultGracePeriodDays);
+    }
+
+    /// <summary>
+    /// A SKU another writer takes after the handler's check but before its save is refused by the unique
+    /// index, and the handler answers 409 <c>PRODUCT_SKU_ALREADY_IN_USE</c> rather than a server error,
+    /// leaving the product as it was.
+    /// </summary>
+    [Fact]
+    public async Task UpdateProduct_SkuTakenDuringTheSave_RefusesWithConflict()
+    {
+        var sku = ProductsTestSeeds.UniqueSku();
+        var race = new SkuRaceSaveInterceptor(sku.ToUpperInvariant());
+        using var host = SkuRaceHost.Create(factory, race);
+        var client = await SkuRaceHost.AdminClientAsync(factory, host);
+        var id = await ProductsTestSeeds.CreateProductAsync(client);
+
+        var updated = await client.PutAsJsonAsync($"/api/products/{id}", FulfilmentBody(sku, null, 3));
+
+        race.Fired.Should().BeTrue();
+        updated.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        await ProductsTestSeeds.AssertCodeAsync(updated, HostpanelErrorCodes.PRODUCT_SKU_ALREADY_IN_USE);
+        var dto = await ProductsTestSeeds.GetProductAsync(client, id);
+        dto.GetProperty("sku").ValueKind.Should().Be(JsonValueKind.Null);
+        dto.GetProperty("gracePeriodDays").GetInt32().Should().Be(Product.DefaultGracePeriodDays);
+    }
+
+    /// <summary>A malformed SKU on update is refused with 400 naming the field.</summary>
+    [Fact]
+    public async Task UpdateProduct_MalformedSku_IsRefused()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var id = await ProductsTestSeeds.CreateProductAsync(client);
+
+        var response = await client.PutAsJsonAsync($"/api/products/{id}", FulfilmentBody("lic..pro", null, null));
+
+        await ProductsTestSeeds.AssertFieldRefusedAsync(response, "sku");
+    }
+
+    /// <summary>Metadata that is not a JSON object on update is refused with 400 naming the field.</summary>
+    [Fact]
+    public async Task UpdateProduct_MetadataThatIsNotAnObject_IsRefused()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var id = await ProductsTestSeeds.CreateProductAsync(client);
+
+        var response = await client.PutAsJsonAsync($"/api/products/{id}", FulfilmentBody(null, "\"text\"", null));
+
+        await ProductsTestSeeds.AssertFieldRefusedAsync(response, "metadata");
+    }
+
+    /// <summary>Metadata over the 16 KB cap on update is refused with 400 naming the field.</summary>
+    [Fact]
+    public async Task UpdateProduct_MetadataOverTheSizeCap_IsRefused()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var id = await ProductsTestSeeds.CreateProductAsync(client);
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/products/{id}", FulfilmentBody(null, ProductsTestSeeds.MetadataOverTheCap(), null));
+
+        await ProductsTestSeeds.AssertFieldRefusedAsync(response, "metadata");
+    }
+
+    /// <summary>A grace period outside 0 to 365 days on update is refused with 400 naming the field.</summary>
+    /// <param name="days">A grace period just outside either bound.</param>
+    [Theory]
+    [InlineData(Product.MinGracePeriodDays - 1)]
+    [InlineData(Product.MaxGracePeriodDays + 1)]
+    public async Task UpdateProduct_GracePeriodOutOfRange_IsRefused(int days)
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var id = await ProductsTestSeeds.CreateProductAsync(client);
+
+        var response = await client.PutAsJsonAsync($"/api/products/{id}", FulfilmentBody(null, null, days));
+
+        await ProductsTestSeeds.AssertFieldRefusedAsync(response, "gracePeriodDays");
+    }
+
+    /// <summary>The body of an update that keeps the seeded name and prices and sends the fulfilment fields under test.</summary>
+    /// <param name="sku">The SKU to send; null keeps, empty clears.</param>
+    /// <param name="metadata">The metadata to send; null keeps, empty clears.</param>
+    /// <param name="gracePeriodDays">The grace period to send; null keeps.</param>
+    /// <returns>The anonymous body the endpoint binds.</returns>
+    private static object FulfilmentBody(string? sku, string? metadata, int? gracePeriodDays) => new
+    {
+        name = "Featured",
+        monthlyPrice = 1m,
+        annualPrice = 10m,
+        sku,
+        metadata,
+        gracePeriodDays,
+    };
 }

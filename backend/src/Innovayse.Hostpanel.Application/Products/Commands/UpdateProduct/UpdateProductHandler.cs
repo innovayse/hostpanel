@@ -37,7 +37,10 @@ public sealed class UpdateProductHandler
     /// </summary>
     /// <param name="cmd">The product's new details and prices.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Success, or <c>PRODUCT_NOT_FOUND</c> when the id names no product.</returns>
+    /// <returns>
+    /// Success, <c>PRODUCT_NOT_FOUND</c> when the id names no product, or
+    /// <c>PRODUCT_SKU_ALREADY_IN_USE</c> when another product already holds the SKU.
+    /// </returns>
     public async Task<Result> HandleAsync(UpdateProductCommand cmd, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(cmd);
@@ -46,6 +49,12 @@ public sealed class UpdateProductHandler
         if (product is null)
         {
             return Result.FailureCode(HostpanelErrorCodes.PRODUCT_NOT_FOUND);
+        }
+
+        // A null SKU keeps the stored one, so only a SKU actually sent is checked; a blank one clears.
+        if (cmd.Sku is not null && await _context.ProductSkuInUseAsync(cmd.Sku, product.Id, ct))
+        {
+            return Result.FailureCode(HostpanelErrorCodes.PRODUCT_SKU_ALREADY_IN_USE);
         }
 
         var prices = await _payerCurrency.ResolveProductPricesAsync(
@@ -63,12 +72,45 @@ public sealed class UpdateProductHandler
             cmd.IsFeatured,
             cmd.SortOrder);
 
+        if (cmd.Sku is not null)
+        {
+            product.SetSku(cmd.Sku);
+        }
+
+        if (cmd.Metadata is not null)
+        {
+            product.SetMetadata(cmd.Metadata);
+        }
+
+        if (cmd.GracePeriodDays is { } gracePeriodDays)
+        {
+            product.SetGracePeriodDays(gracePeriodDays);
+        }
+
         if (cmd.IsFeatured == true)
         {
             await product.UnfeatureSiblingsAsync(_context, ct);
         }
 
-        await _context.SaveChangesAsync(ct);
+        try
+        {
+            await _context.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException) when (cmd.Sku is not null && product.Sku is { } sku)
+        {
+            // Another writer took the SKU between the check above and this save, and the unique index
+            // refused. Read before the discard below puts the stored SKU back on the product, and asked
+            // again rather than assumed: any other failed save is not this conflict and must still
+            // surface as the error it is.
+            _context.DiscardPendingChanges();
+            if (await _context.ProductSkuInUseAsync(sku, product.Id, ct))
+            {
+                return Result.FailureCode(HostpanelErrorCodes.PRODUCT_SKU_ALREADY_IN_USE);
+            }
+
+            throw;
+        }
+
         return Result.Success();
     }
 }

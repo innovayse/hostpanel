@@ -32,7 +32,10 @@ public static class ProductExtensions
             product.ToPriceDtos(),
             product.ServerGroupId,
             product.IsFeatured,
-            product.SortOrder);
+            product.SortOrder,
+            product.Sku,
+            product.Metadata,
+            product.GracePeriodDays);
     }
 
     /// <summary>Maps a product to its storefront catalogue DTO, pricing it in the caller's currency.</summary>

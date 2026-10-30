@@ -225,6 +225,7 @@ variables:
     - git checkout -B "$CI_COMMIT_BRANCH" "origin/$CI_COMMIT_BRANCH"
     # The plugin SDK is a submodule: point it at the URL and commit this checkout records.
     - git submodule sync --recursive
+    - sh scripts/clear-stale-submodule-dirs.sh .
     - git submodule update --init --recursive
     # docker-compose.platform.yml joins the platform network - without it the containers are
     # unreachable by name from the reverse proxy. The chain (COMPOSE_FILE) is shared + prod + platform,
@@ -578,6 +579,7 @@ deploy:demo:
     - git -C "$DEPLOY_DIR" fetch "$CI_REPOSITORY_URL" "$CI_COMMIT_SHA"
     - git -C "$DEPLOY_DIR" checkout -f "$CI_COMMIT_SHA"
     - git -C "$DEPLOY_DIR" submodule sync --recursive
+    - sh "$DEPLOY_DIR/scripts/clear-stale-submodule-dirs.sh" "$DEPLOY_DIR"
     - git -C "$DEPLOY_DIR" submodule update --init --recursive
     - cd "$DEPLOY_DIR"
     # The demo's edge network is external (docker-compose.demo.yml) and is not the platform network: create it
@@ -664,6 +666,7 @@ deploy:prod:
     - git -C "$DEPLOY_DIR" checkout -f "$CI_COMMIT_SHA"
     # The plugin SDK is a submodule: point it at the URL and commit this checkout records.
     - git -C "$DEPLOY_DIR" submodule sync --recursive
+    - sh "$DEPLOY_DIR/scripts/clear-stale-submodule-dirs.sh" "$DEPLOY_DIR"
     - git -C "$DEPLOY_DIR" submodule update --init --recursive
     - cd "$DEPLOY_DIR"
     # Dump the database before anything is rebuilt. The API applies pending EF

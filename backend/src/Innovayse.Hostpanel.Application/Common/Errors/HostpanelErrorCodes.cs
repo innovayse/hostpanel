@@ -1117,7 +1117,10 @@ public static class HostpanelErrorCodes
     /// </summary>
     public const string PRODUCT_SKU_INVALID = Domain.Products.ProductsErrors.ProductSkuInvalid;
 
-    /// <summary>The product metadata is not a JSON object (400): <see cref="Domain.Products.Product.SetMetadata"/>.</summary>
+    /// <summary>
+    /// The product metadata is not a JSON object or is larger than
+    /// <see cref="Domain.Products.Product.MaxMetadataBytes"/> (400): <see cref="Domain.Products.Product.SetMetadata"/>.
+    /// </summary>
     public const string PRODUCT_METADATA_INVALID = Domain.Products.ProductsErrors.ProductMetadataInvalid;
 
     /// <summary>

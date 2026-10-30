@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Innovayse.Hostpanel.Domain.Products.Enums;
@@ -25,6 +26,12 @@ public sealed class Product : BaseEntity, IAggregateRoot
 
     /// <summary>The longest grace period accepted, in days.</summary>
     public const int MaxGracePeriodDays = 365;
+
+    /// <summary>
+    /// The largest metadata bag accepted, in UTF-8 bytes of the text as sent (16 KB). The bag tells a
+    /// fulfilment plugin what to deliver; anything larger is content, not a delivery hint.
+    /// </summary>
+    public const int MaxMetadataBytes = 16 * 1024;
 
     /// <summary>Gets the FK to the <see cref="ProductGroup"/> this product belongs to.</summary>
     public int GroupId { get; private set; }
@@ -233,6 +240,17 @@ public sealed class Product : BaseEntity, IAggregateRoot
         return days is >= MinGracePeriodDays and <= MaxGracePeriodDays;
     }
 
+    /// <summary>Whether <paramref name="metadata"/> fits in <see cref="MaxMetadataBytes"/>.</summary>
+    /// <param name="metadata">The candidate metadata text, measured as sent, before it is compacted.</param>
+    /// <returns>
+    /// <see langword="true"/> when the text is absent or its UTF-8 form is at most
+    /// <see cref="MaxMetadataBytes"/> bytes long.
+    /// </returns>
+    public static bool IsWithinMetadataSize(string? metadata)
+    {
+        return metadata is null || Encoding.UTF8.GetByteCount(metadata) <= MaxMetadataBytes;
+    }
+
     /// <summary>Whether <paramref name="metadata"/> is well-formed JSON whose root is an object.</summary>
     /// <param name="metadata">The candidate metadata text.</param>
     /// <returns>
@@ -266,9 +284,13 @@ public sealed class Product : BaseEntity, IAggregateRoot
     }
 
     /// <summary>Sets or clears the metadata bag. The JSON is stored in compact form.</summary>
-    /// <param name="metadata">A JSON object, or <see langword="null"/> or white space to clear the bag.</param>
+    /// <param name="metadata">
+    /// A JSON object of at most <see cref="MaxMetadataBytes"/> bytes, or <see langword="null"/> or white
+    /// space to clear the bag.
+    /// </param>
     /// <exception cref="DomainRuleException">
-    /// <see cref="ProductsErrors.ProductMetadataInvalid"/>: the text is not a JSON object.
+    /// <see cref="ProductsErrors.ProductMetadataInvalid"/>: the text is larger than
+    /// <see cref="MaxMetadataBytes"/> or is not a JSON object.
     /// </exception>
     public void SetMetadata(string? metadata)
     {
@@ -276,6 +298,14 @@ public sealed class Product : BaseEntity, IAggregateRoot
         {
             Metadata = null;
             return;
+        }
+
+        // Measured before parsing, so an oversized bag is refused without building its whole tree.
+        if (!IsWithinMetadataSize(metadata))
+        {
+            throw new DomainRuleException(
+                ProductsErrors.ProductMetadataInvalid,
+                $"Product metadata must be at most {MaxMetadataBytes} bytes.");
         }
 
         var parsed = ParseMetadataObject(metadata)

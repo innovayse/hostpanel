@@ -893,7 +893,7 @@
     <value>SKU может содержать только буквы и цифры, разделённые одиночными дефисами, подчёркиваниями или точками, и быть не длиннее 64 символов.</value>
   </data>
   <data name="PRODUCT_METADATA_INVALID" xml:space="preserve">
-    <value>Метаданные продукта должны быть объектом JSON.</value>
+    <value>Метаданные продукта должны быть объектом JSON размером не более 16 КБ.</value>
   </data>
   <data name="PRODUCT_GRACE_PERIOD_OUT_OF_RANGE" xml:space="preserve">
     <value>Льготный период должен быть от 0 до 365 дней.</value>

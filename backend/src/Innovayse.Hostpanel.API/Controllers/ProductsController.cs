@@ -67,15 +67,18 @@ public sealed class ProductsController : BaseApiController
     /// <param name="command">The product's details and prices.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 201 with the new product's id; 400 when a field is refused; 404 with
-    /// <c>PRODUCT_GROUP_NOT_FOUND</c>; 401 without a session; 403 for a caller who is not an admin;
-    /// 429 when the rate limit is hit.
+    /// 201 with the new product's id; 400 when a field is refused (a malformed SKU, metadata that is
+    /// not a JSON object or is over the size cap, a grace period out of range); 404 with
+    /// <c>PRODUCT_GROUP_NOT_FOUND</c>; 409 with <c>PRODUCT_SKU_ALREADY_IN_USE</c> when another product
+    /// holds the SKU; 401 without a session; 403 for a caller who is not an admin; 429 when the rate
+    /// limit is hit.
     /// </returns>
     [HttpPost]
     [Authorize(Policy = Policies.Admin)]
     [ProducesResponseType(typeof(int), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> CreateAsync([FromBody] CreateProductCommand command, CancellationToken ct)
@@ -89,14 +92,17 @@ public sealed class ProductsController : BaseApiController
     /// <param name="command">The product's new details and prices.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 204 on success; 400 when a field is refused; 404 with <c>PRODUCT_NOT_FOUND</c>; 401 without a session; 403 for a caller who is not an admin;
-    /// 429 when the rate limit is hit.
+    /// 204 on success; 400 when a field is refused (a malformed SKU, metadata that is not a JSON object
+    /// or is over the size cap, a grace period out of range); 404 with <c>PRODUCT_NOT_FOUND</c>; 409
+    /// with <c>PRODUCT_SKU_ALREADY_IN_USE</c> when another product holds the SKU; 401 without a session;
+    /// 403 for a caller who is not an admin; 429 when the rate limit is hit.
     /// </returns>
     [HttpPut("{id:int}")]
     [Authorize(Policy = Policies.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UpdateAsync(

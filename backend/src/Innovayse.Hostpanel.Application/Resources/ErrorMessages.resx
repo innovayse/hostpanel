@@ -893,7 +893,7 @@
     <value>The SKU may contain only letters and digits joined by single hyphens, underscores or dots, and may be at most 64 characters long.</value>
   </data>
   <data name="PRODUCT_METADATA_INVALID" xml:space="preserve">
-    <value>Product metadata must be a JSON object.</value>
+    <value>Product metadata must be a JSON object of at most 16 KB.</value>
   </data>
   <data name="PRODUCT_GRACE_PERIOD_OUT_OF_RANGE" xml:space="preserve">
     <value>The grace period must be from 0 to 365 days.</value>

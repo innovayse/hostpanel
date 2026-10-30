@@ -1,6 +1,7 @@
 using FluentValidation;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Products.Common;
+using Innovayse.Hostpanel.Application.Products.Extensions;
 using Innovayse.Hostpanel.Application.Resources;
 using Innovayse.Hostpanel.Domain.Products;
 using Microsoft.Extensions.Localization;
@@ -46,5 +47,12 @@ public sealed class UpdateProductValidator : LocalizedValidator<UpdateProductCom
             .WithMessage(L["ProductPriceAmountInvalid"]);
         RuleFor(x => x.AnnualPrice).GreaterThanOrEqualTo(0).When(x => x.AnnualPrice is not null)
             .WithMessage(L["ProductPriceAmountInvalid"]);
+
+        // The fulfilment fields ask the aggregate's own predicates, so the limits are written once.
+        RuleFor(x => x.Sku).MustBeProductSku(L["ProductSkuInvalid", ProductSku.MaxLength]);
+        RuleFor(x => x.Metadata).MustBeProductMetadata(
+            L["ProductMetadataTooLarge", Product.MaxMetadataBytes], L["ProductMetadataInvalid"]);
+        RuleFor(x => x.GracePeriodDays).MustBeGracePeriod(
+            L["ProductGracePeriodOutOfRange", Product.MinGracePeriodDays, Product.MaxGracePeriodDays]);
     }
 }

@@ -851,6 +851,18 @@
   <data name="ProductSortOrderInvalid" xml:space="preserve">
     <value>Դասավորության համարը չի կարող բացասական լինել։</value>
   </data>
+  <data name="ProductSkuInvalid" xml:space="preserve">
+    <value>SKU-ն կարող է պարունակել միայն տառեր և թվեր՝ միացված մեկական գծիկով, ընդգծիկով կամ կետով, և չպետք է գերազանցի {0} նիշը։</value>
+  </data>
+  <data name="ProductMetadataInvalid" xml:space="preserve">
+    <value>Մետատվյալները պետք է լինեն JSON օբյեկտ։</value>
+  </data>
+  <data name="ProductMetadataTooLarge" xml:space="preserve">
+    <value>Մետատվյալները չպետք է գերազանցեն {0} բայթը։</value>
+  </data>
+  <data name="ProductGracePeriodOutOfRange" xml:space="preserve">
+    <value>Արտոնյալ ժամկետը պետք է լինի {0}-ից {1} օր։</value>
+  </data>
   <data name="ProductPriceRequired" xml:space="preserve">
     <value>Նոր ապրանքը պահանջում է առնվազն մեկ գին։</value>
   </data>

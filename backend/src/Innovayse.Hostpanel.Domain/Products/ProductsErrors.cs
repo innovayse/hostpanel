@@ -20,7 +20,10 @@ public static class ProductsErrors
     /// </summary>
     public const string ProductSkuInvalid = "PRODUCT_SKU_INVALID";
 
-    /// <summary>The metadata is not a JSON object (400): <see cref="Product.SetMetadata"/>.</summary>
+    /// <summary>
+    /// The metadata is not a JSON object or is larger than <see cref="Product.MaxMetadataBytes"/> (400):
+    /// <see cref="Product.SetMetadata"/>.
+    /// </summary>
     public const string ProductMetadataInvalid = "PRODUCT_METADATA_INVALID";
 
     /// <summary>

@@ -899,6 +899,18 @@
   <data name="ProductSortOrderInvalid" xml:space="preserve">
     <value>Порядок сортировки не может быть отрицательным.</value>
   </data>
+  <data name="ProductSkuInvalid" xml:space="preserve">
+    <value>SKU может содержать только буквы и цифры, разделённые одиночными дефисами, подчёркиваниями или точками, не длиннее {0} символов.</value>
+  </data>
+  <data name="ProductMetadataInvalid" xml:space="preserve">
+    <value>Метаданные должны быть объектом JSON.</value>
+  </data>
+  <data name="ProductMetadataTooLarge" xml:space="preserve">
+    <value>Метаданные не должны превышать {0} байт.</value>
+  </data>
+  <data name="ProductGracePeriodOutOfRange" xml:space="preserve">
+    <value>Льготный период должен быть от {0} до {1} дней.</value>
+  </data>
   <data name="ProductPriceRequired" xml:space="preserve">
     <value>Новому продукту требуется хотя бы одна цена.</value>
   </data>

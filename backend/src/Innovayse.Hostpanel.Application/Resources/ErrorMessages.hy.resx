@@ -893,7 +893,7 @@
     <value>SKU-ն կարող է պարունակել միայն տառեր և թվեր՝ միացված մեկական գծիկով, ընդգծիկով կամ կետով, և չի կարող գերազանցել 64 նիշը։</value>
   </data>
   <data name="PRODUCT_METADATA_INVALID" xml:space="preserve">
-    <value>Ապրանքի մետատվյալները պետք է լինեն JSON օբյեկտ։</value>
+    <value>Ապրանքի մետատվյալները պետք է լինեն JSON օբյեկտ՝ ոչ ավելի, քան 16 ԿԲ։</value>
   </data>
   <data name="PRODUCT_GRACE_PERIOD_OUT_OF_RANGE" xml:space="preserve">
     <value>Արտոնյալ ժամկետը պետք է լինի 0-ից 365 օր։</value>

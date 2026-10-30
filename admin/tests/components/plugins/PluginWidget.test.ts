@@ -15,6 +15,14 @@ const widget = { pluginId: 'sites', widgetId: 'usage', label: 'Site usage', orde
 /** A body that renders at once. */
 const Healthy = defineComponent({ render: () => h('p', { 'data-testid': 'body' }, 'All good') })
 
+/** A body that settles one tick after it starts, so the widget has a pending body to time. */
+const Settling = defineComponent({
+  setup: async () => {
+    await Promise.resolve()
+    return () => h('p', { 'data-testid': 'body' }, 'Settled')
+  },
+})
+
 /** A body whose setup throws. */
 const Throwing = defineComponent({
   setup: () => {
@@ -93,12 +101,21 @@ describe('PluginWidget', () => {
     expect(wrapper.find('[data-testid="plugin-widget-loading-sites-usage"]').exists()).toBe(false)
   })
 
-  it('clears its timer when the body settles', async () => {
-    const wrapper = mountWithBody(Healthy)
+  it('starts its timer for a pending body and clears it when the body settles', async () => {
+    const start = vi.spyOn(globalThis, 'setTimeout')
+    const wrapper = mountWithBody(Settling)
+
+    // The body is still pending: the timeout is running.
+    expect(start).toHaveBeenCalledWith(expect.any(Function), 10_000)
+    expect(vi.getTimerCount()).toBe(1)
+
     await flushPromises()
 
+    expect(wrapper.get('[data-testid="body"]').text()).toBe('Settled')
     expect(vi.getTimerCount()).toBe(0)
-    wrapper.unmount()
+    await vi.advanceTimersByTimeAsync(10_000)
+    expect(wrapper.find('[data-testid="plugin-widget-note-sites-usage"]').exists()).toBe(false)
+    start.mockRestore()
   })
 
   it('clears its timer when destroyed while the body is pending', async () => {

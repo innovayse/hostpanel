@@ -3,8 +3,9 @@
  *
  * The only caller of `usePluginSlotsApi`. What is loaded is kept per slot and per record, so two
  * slots on one page, or the same slot for two clients, never share a list: an answer that arrives
- * after the page moved on lands under the key it was asked for and is read by nobody. A refused
- * load is kept as the API's own sentence in `error`, a refused hide in `actionError`, never thrown.
+ * after the page moved on lands under the key it was asked for and is read by nobody. A refused load
+ * leaves the slot empty, because the page owns its own error state and a plugin must never take it
+ * down; a refused hide is kept as the API's own sentence in `actionError`. Nothing is thrown.
  */
 
 import { defineStore } from 'pinia'
@@ -33,9 +34,6 @@ export const usePluginSlotsStore = defineStore('pluginSlots', () => {
   /** Widgets by slot and record; a key with no entry has not been loaded. */
   const lists = ref<Record<string, PluginSlotWidgetDto[]>>({})
 
-  /** Sentence for the last failed load, null when none. */
-  const error = ref<string | null>(null)
-
   /** Sentence for the last refused hide, null when none. */
   const actionError = ref<string | null>(null)
 
@@ -57,13 +55,15 @@ export const usePluginSlotsStore = defineStore('pluginSlots', () => {
    *
    * @param slotId - Id of the slot.
    * @param context - The slot's context.
-   * @returns Resolves when the request is over; a refusal is left in `error`.
+   * @returns Resolves when the request is over; a refusal leaves the slot empty.
    */
   const load = async (slotId: PluginSlotId, context: PluginSlotContext): Promise<void> => {
     const key = listKey(slotId, context)
     const ticket = (latest.get(key) ?? 0) + 1
     latest.set(key, ticket)
-    const result = await runAction(error, () => api.getSlot(slotId, context))
+    // The sentence of a refused load has nowhere to go: the slot shows nothing, and the page owns its error state.
+    const refusal = ref<string | null>(null)
+    const result = await runAction(refusal, () => api.getSlot(slotId, context))
     // A newer load of the same key owns the list: a slow older answer must not overwrite it.
     if (result.ok && latest.get(key) === ticket) {
       lists.value = { ...lists.value, [key]: result.value }
@@ -99,7 +99,10 @@ export const usePluginSlotsStore = defineStore('pluginSlots', () => {
       return false
     }
     const hidden = (row.value ?? '').split(',').filter((entry) => entry !== '')
-    const saved = await settingsStore.updateSetting(row.id, [...hidden, widgetRef(widget)].join(','))
+    // A widget the setting already lists (the list on screen predates the host's filtering, or the
+    // operator hid it in another tab) is not written twice: the row stays as it is.
+    const alreadyHidden = hidden.includes(widgetRef(widget))
+    const saved = alreadyHidden || (await settingsStore.updateSetting(row.id, [...hidden, widgetRef(widget)].join(',')))
     if (!saved) {
       actionError.value = settingsStore.actionError
       return false
@@ -109,5 +112,5 @@ export const usePluginSlotsStore = defineStore('pluginSlots', () => {
     return true
   }
 
-  return { error, actionError, widgetsFor, load, hide }
+  return { actionError, widgetsFor, load, hide }
 })

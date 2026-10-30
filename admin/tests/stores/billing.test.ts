@@ -168,3 +168,109 @@ describe('billingStore pdf download', () => {
     expect(store.error).toBe('The invoice has too many lines for a PDF.')
   })
 })
+
+describe('billingStore fulfilment', () => {
+  it('fetchFulfilment fills the records without touching the page-level state', async () => {
+    const mock = stubFetch(json([{ id: 31, invoiceId: 5 }]))
+    const store = useBillingStore()
+
+    await store.fetchFulfilment(5)
+
+    expect(callOf(mock)).toMatchObject({ url: '/api/billing/5/fulfilment', method: 'GET' })
+    expect(store.fulfilment).toEqual([{ id: 31, invoiceId: 5 }])
+    expect(store.fulfilmentError).toBeNull()
+    expect(store.fulfilmentLoading).toBe(false)
+    expect(store.loading).toBe(false)
+  })
+
+  it('fetchFulfilment keeps a refusal in fulfilmentError, not in error', async () => {
+    stubFetch(problem('Invoice not found.', 404))
+    const store = useBillingStore()
+
+    await store.fetchFulfilment(5)
+
+    expect(store.fulfilmentError).toBe('Invoice not found.')
+    expect(store.error).toBeNull()
+    expect(store.fulfilmentLoading).toBe(false)
+  })
+
+  it('retryFulfilment posts and then reloads the list', async () => {
+    const mock = stubFetch(new Response(null, { status: 204 }), json([{ id: 31, invoiceId: 5 }]))
+    const store = useBillingStore()
+
+    expect(await store.retryFulfilment(5, 31)).toBe(true)
+
+    expect(mock).toHaveBeenCalledTimes(2)
+    expect(callOf(mock, 0)).toMatchObject({ url: '/api/billing/5/fulfilment/31/retry', method: 'POST' })
+    expect(callOf(mock, 1)).toMatchObject({ url: '/api/billing/5/fulfilment', method: 'GET' })
+    expect(store.fulfilment).toEqual([{ id: 31, invoiceId: 5 }])
+  })
+
+  it('retryFulfilment keeps the API sentence on refusal and does not reload', async () => {
+    const mock = stubFetch(problem('This record cannot be retried.', 409))
+    const store = useBillingStore()
+
+    expect(await store.retryFulfilment(5, 31)).toBe(false)
+
+    expect(store.fulfilmentRetryError).toBe('This record cannot be retried.')
+    expect(store.error).toBeNull()
+    expect(mock).toHaveBeenCalledTimes(1)
+  })
+
+  it('retryFulfilment that succeeds while the reload fails still reports success and shows the load failure', async () => {
+    stubFetch(new Response(null, { status: 204 }), problem('Fulfilment is unavailable.', 500))
+    const store = useBillingStore()
+
+    expect(await store.retryFulfilment(5, 31)).toBe(true)
+
+    expect(store.fulfilmentRetryError).toBeNull()
+    expect(store.fulfilmentError).toBe('Fulfilment is unavailable.')
+    expect(store.error).toBeNull()
+    expect(store.fulfilmentLoading).toBe(false)
+  })
+
+  it('fetchFulfilment ignores a first answer that arrives after the second call', async () => {
+    /** Resolves the pending first request. */
+    let answerFirst: (response: Response) => void = () => undefined
+    const first = new Promise<Response>((resolve) => {
+      answerFirst = resolve
+    })
+    const mock = vi
+      .fn()
+      .mockImplementationOnce(() => first)
+      .mockImplementationOnce(() => Promise.resolve(json([{ id: 41, invoiceId: 6 }])))
+    vi.stubGlobal('fetch', mock)
+    const store = useBillingStore()
+
+    const stale = store.fetchFulfilment(5)
+    await store.fetchFulfilment(6)
+    answerFirst(problem('Invoice not found.', 404))
+    await stale
+
+    expect(store.fulfilment).toEqual([{ id: 41, invoiceId: 6 }])
+    expect(store.fulfilmentError).toBeNull()
+    expect(store.fulfilmentLoading).toBe(false)
+  })
+
+  it('fetchFulfilment does not let a stale success overwrite the newer records', async () => {
+    /** Resolves the pending first request. */
+    let answerFirst: (response: Response) => void = () => undefined
+    const first = new Promise<Response>((resolve) => {
+      answerFirst = resolve
+    })
+    const mock = vi
+      .fn()
+      .mockImplementationOnce(() => first)
+      .mockImplementationOnce(() => Promise.resolve(problem('Fulfilment is unavailable.', 500)))
+    vi.stubGlobal('fetch', mock)
+    const store = useBillingStore()
+
+    const stale = store.fetchFulfilment(5)
+    await store.fetchFulfilment(6)
+    answerFirst(json([{ id: 31, invoiceId: 5 }]))
+    await stale
+
+    expect(store.fulfilment).toEqual([])
+    expect(store.fulfilmentError).toBe('Fulfilment is unavailable.')
+  })
+})

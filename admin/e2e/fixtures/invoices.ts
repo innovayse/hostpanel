@@ -2,7 +2,8 @@
  * Fixtures for the invoices list: one unpaid and one paid invoice on a single page, and the detail
  * of the unpaid one.
  */
-import type { Invoice, InvoiceDetail } from '../../src/types/invoice'
+import { FulfilmentKind, FulfilmentStatus } from '../../src/types/invoice'
+import type { FulfilmentRecord, Invoice, InvoiceDetail } from '../../src/types/invoice'
 import type { PaginatedList } from '../../src/types/paginatedlist'
 
 /** An invoice the operator can mark paid. */
@@ -58,4 +59,19 @@ export const invoicesPage: PaginatedList<Invoice> = {
   pageSize: 25,
   totalCount: 2,
   totalPages: 1,
+}
+
+/** `GET /api/billing/601/fulfilment`: one failed run the operator may retry. */
+export const failedFulfilment: FulfilmentRecord = {
+  id: 91,
+  invoiceId: unpaidInvoice.id,
+  pluginId: 'provisioning-demo',
+  kind: FulfilmentKind.Paid,
+  status: FulfilmentStatus.Failed,
+  attempts: 3,
+  nextAttemptAt: '2026-10-02T09:00:00Z',
+  lastError: 'The upstream account is locked.',
+  completedAt: null,
+  createdAt: '2026-10-02T08:00:00Z',
+  canRetry: true,
 }

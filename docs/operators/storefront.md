@@ -1,3 +1,8 @@
+---
+title: Storefront & branding
+description: How to choose and configure a client portal template, set brand colours and logos, and control which features appear on the public storefront.
+---
+
 # Storefront templates and branding
 
 How the public client portal picks a design, how to add one, and which settings brand it.

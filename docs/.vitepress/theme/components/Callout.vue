@@ -1,12 +1,18 @@
 <script setup lang="ts">
-type CalloutType = 'info' | 'warning' | 'danger' | 'tip'
+/** The visual style of the callout box. */
+type CalloutType = 'note' | 'warning' | 'danger' | 'tip'
 
-const props = withDefaults(defineProps<{ type?: CalloutType }>(), {
-  type: 'info',
+/** Props accepted by the Callout component. */
+const props = withDefaults(defineProps<{
+  /** Visual style; defaults to `note` (blue info box). */
+  type?: CalloutType
+}>(), {
+  type: 'note',
 })
 
+/** Icon character rendered inside the coloured badge for each callout type. */
 const icons: Record<CalloutType, string> = {
-  info: 'ℹ',
+  note: 'ℹ',
   warning: '⚠',
   danger: '✕',
   tip: '✓',
@@ -50,13 +56,13 @@ const icons: Record<CalloutType, string> = {
   margin-bottom: 0;
 }
 
-/* info — blue */
-.callout--info {
+/* note — blue */
+.callout--note {
   border-color: var(--vp-c-brand-1);
   background-color: var(--vp-c-brand-soft);
   color: var(--vp-c-text-1);
 }
-.callout--info .callout__icon {
+.callout--note .callout__icon {
   color: var(--vp-c-brand-1);
 }
 

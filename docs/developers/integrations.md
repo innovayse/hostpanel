@@ -1,4 +1,5 @@
 # Linking the demo, admin panel and client portal
 
-> [!WARNING]
-> This page is being written. Check back soon.
+::: warning Work in progress
+This page is being written. Check back soon.
+:::

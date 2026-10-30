@@ -1,3 +1,11 @@
+/**
+ * VitePress site configuration for the Hostpanel documentation website.
+ * Served by GitHub Pages under /hostpanel/; the `base` option must match
+ * the repository name so that all asset and page links resolve correctly.
+ *
+ * Before the first deploy, switch the GitHub Pages source to "GitHub Actions"
+ * in Settings → Pages → Build and deployment.
+ */
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
@@ -6,19 +14,26 @@ export default defineConfig({
   lang: 'en-US',
   cleanUrls: true,
 
+  /**
+   * Must match the GitHub repository name so that GitHub Pages serves the site
+   * at https://<org>.github.io/hostpanel/ with all assets resolving correctly.
+   */
+  base: '/hostpanel/',
+
   head: [
-    ['link', { rel: 'icon', href: '/mark.svg', type: 'image/svg+xml' }],
+    ['link', { rel: 'icon', href: '/hostpanel/mark.svg', type: 'image/svg+xml' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:title', content: 'Hostpanel' }],
     ['meta', { property: 'og:description', content: 'Open source web hosting control panel' }],
-    ['meta', { property: 'og:image', content: '/social-preview.png' }],
+    ['meta', { property: 'og:image', content: 'https://innovayse.github.io/hostpanel/social-preview.png' }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
     ['meta', { name: 'twitter:title', content: 'Hostpanel' }],
     ['meta', { name: 'twitter:description', content: 'Open source web hosting control panel' }],
-    ['meta', { name: 'twitter:image', content: '/social-preview.png' }],
+    ['meta', { name: 'twitter:image', content: 'https://innovayse.github.io/hostpanel/social-preview.png' }],
   ],
 
   themeConfig: {
+    /** Separate light and dark logos; VitePress prepends `base` automatically. */
     logo: {
       light: '/logo-light.svg',
       dark: '/logo-dark.svg',
@@ -53,10 +68,7 @@ export default defineConfig({
           { text: 'Installation', link: '/operators/install' },
           { text: 'Upgrade', link: '/operators/upgrade' },
           { text: 'Backup', link: '/operators/backup' },
-          {
-            text: 'Rollback',
-            link: 'https://github.com/innovayse/hostpanel/issues/602',
-          },
+          { text: 'Rollback', link: '/operators/rollback' },
           { text: 'Storefront & branding', link: '/operators/storefront' },
           { text: 'Configuration reference', link: '/operators/configuration' },
         ],
@@ -78,10 +90,7 @@ export default defineConfig({
         collapsed: true,
         items: [
           { text: 'Overview', link: '/customers/' },
-          {
-            text: 'Client portal',
-            link: 'https://github.com/innovayse/hostpanel/issues/611',
-          },
+          { text: 'Client portal', link: '/customers/portal' },
         ],
       },
       {
@@ -90,10 +99,7 @@ export default defineConfig({
         items: [
           { text: 'Overview', link: '/payments/' },
           { text: 'Gateways', link: '/payments/gateways' },
-          {
-            text: 'Plugins',
-            link: 'https://github.com/innovayse/hostpanel/issues/609',
-          },
+          { text: 'Plugins', link: '/payments/plugins' },
         ],
       },
       {
@@ -103,10 +109,7 @@ export default defineConfig({
           { text: 'Overview', link: '/servers/' },
           { text: 'Servers', link: '/servers/servers' },
           { text: 'SSH key agent', link: '/servers/ssh-key-agent' },
-          {
-            text: 'Provisioning',
-            link: 'https://github.com/innovayse/hostpanel/issues/607',
-          },
+          { text: 'Provisioning', link: '/servers/provisioning' },
         ],
       },
       {
@@ -114,10 +117,7 @@ export default defineConfig({
         collapsed: true,
         items: [
           { text: 'Overview', link: '/migration/' },
-          {
-            text: 'From WHMCS',
-            link: 'https://github.com/innovayse/hostpanel/issues/610',
-          },
+          { text: 'Moving from another billing system', link: '/migration/from-whmcs' },
         ],
       },
       {

@@ -1,31 +1,44 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 
+/** Props accepted by the Screenshot component. */
 const props = withDefaults(
-  defineProps<{ src: string; alt?: string }>(),
+  defineProps<{
+    /** Path to the image, relative to the VitePress `public/` directory. */
+    src: string
+    /** Accessible description of the image content. */
+    alt?: string
+  }>(),
   { alt: '' },
 )
 
+/** Whether the full-size lightbox overlay is currently open. */
 const open = ref(false)
+
+/**
+ * True once the component is mounted in the browser.
+ * The Teleport target (`body`) does not exist during SSR, so the overlay is
+ * rendered only after mount to avoid a hydration mismatch.
+ */
 const isMounted = ref(false)
 
-onMounted(() => {
-  isMounted.value = true
-})
-
-function openLightbox() {
+/** Opens the full-size lightbox overlay. */
+const openLightbox = (): void => {
   open.value = true
 }
 
-function closeLightbox() {
+/** Closes the full-size lightbox overlay. */
+const closeLightbox = (): void => {
   open.value = false
 }
 
-function handleKeydown(e: KeyboardEvent) {
+/** Closes the overlay when the user presses Escape. */
+const handleKeydown = (e: KeyboardEvent): void => {
   if (e.key === 'Escape') closeLightbox()
 }
 
 onMounted(() => {
+  isMounted.value = true
   window.addEventListener('keydown', handleKeydown)
 })
 

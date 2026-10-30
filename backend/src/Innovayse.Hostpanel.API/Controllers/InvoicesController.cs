@@ -4,12 +4,14 @@ using Innovayse.Hostpanel.Application.Billing.Commands.DeleteInvoice;
 using Innovayse.Hostpanel.Application.Billing.Commands.DuplicateInvoice;
 using Innovayse.Hostpanel.Application.Billing.Commands.MarkInvoiceOverdue;
 using Innovayse.Hostpanel.Application.Billing.Commands.PublishInvoice;
+using Innovayse.Hostpanel.Application.Billing.Commands.RetryFulfilmentRecord;
 using Innovayse.Hostpanel.Application.Billing.Commands.UpdateInvoiceItems;
 using Innovayse.Hostpanel.Application.Billing.Commands.UpdateInvoiceNotes;
 using Innovayse.Hostpanel.Application.Billing.Commands.UpdateInvoiceOptions;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Queries.GetInvoice;
 using Innovayse.Hostpanel.Application.Billing.Queries.GetInvoicePdf;
+using Innovayse.Hostpanel.Application.Billing.Queries.ListInvoiceFulfilment;
 using Innovayse.Hostpanel.Application.Billing.Queries.ListClientInvoices;
 using Innovayse.Hostpanel.Application.Billing.Queries.ListInvoices;
 using Innovayse.Hostpanel.Application.Common;
@@ -125,6 +127,52 @@ public sealed class InvoicesController : BaseApiController
     {
         var outcome = await _bus.InvokeAsync<Result<FileDownloadDto>>(new GetInvoicePdfQuery(id), ct);
         return FileResult(outcome);
+    }
+
+    /// <summary>Returns the fulfilment records of an invoice: which plugins were told what, and how far each delivery got.</summary>
+    /// <param name="id">Invoice primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the records, oldest first (an empty list when no plugin was told anything); 400 when the request is refused;
+    /// 401 without a session; 403 for a caller who is not an admin; 404 with <c>INVOICE_NOT_FOUND</c> when the id names no invoice;
+    /// 429 when the rate limit is hit.
+    /// </returns>
+    [HttpGet("{id:int}/fulfilment")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(typeof(IReadOnlyList<FulfilmentRecordDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ListFulfilmentAsync(int id, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<FulfilmentRecordDto>>>(
+            new ListInvoiceFulfilmentQuery(id), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Sends a failed fulfilment record of an invoice again, with a fresh allowance of attempts.</summary>
+    /// <param name="id">Invoice primary key.</param>
+    /// <param name="recordId">Fulfilment record primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 when the record is queued again; 400 when the request is refused;
+    /// 401 without a session; 403 for a caller who is not an admin; 404 with <c>FULFILMENT_RECORD_NOT_FOUND</c> when the
+    /// invoice has no such record; 409 with <c>FULFILMENT_RECORD_NOT_RETRYABLE</c> when the record has not failed;
+    /// 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPost("{id:int}/fulfilment/{recordId:int}/retry")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RetryFulfilmentAsync(int id, int recordId, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(new RetryFulfilmentRecordCommand(id, recordId), ct);
+        return HandleResult(outcome);
     }
 
     /// <summary>Creates a new invoice for a client.</summary>

@@ -143,6 +143,9 @@
 <data name="InvoiceIdInvalid" xml:space="preserve">
     <value>Name a valid invoice.</value>
   </data>
+<data name="FulfilmentRecordIdInvalid" xml:space="preserve">
+    <value>Name a valid fulfilment record.</value>
+  </data>
 <data name="InvoiceClientIdInvalid" xml:space="preserve">
     <value>Name a valid client to invoice.</value>
   </data>

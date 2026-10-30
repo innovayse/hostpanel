@@ -60,6 +60,35 @@ internal sealed class FulfilmentScenario : IDisposable
     /// <summary>Gets the services of the scenario host.</summary>
     public IServiceProvider Services => _host.Services;
 
+    /// <summary>Gets the host the scenario runs on, for a test that calls its routes.</summary>
+    public WebApplicationFactory<Program> Host => _host;
+
+    /// <summary>
+    /// Seeds a record of this scenario plugin that failed every attempt, the way the dispatcher leaves it:
+    /// claimed and failed up to the attempt limit, each a day after the last so every back-off is over.
+    /// </summary>
+    /// <param name="invoiceId">The invoice.</param>
+    /// <param name="kind">The kind of the record.</param>
+    /// <param name="error">The error the last attempt failed with.</param>
+    /// <returns>The saved record id.</returns>
+    public async Task<int> SeedFailedRecordAsync(int invoiceId, FulfilmentKind kind, string error)
+    {
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var now = Clock.GetUtcNow();
+        var record = FulfilmentRecord.Create(invoiceId, PluginId, kind, now);
+        for (var attempt = 0; attempt < FulfilmentRecord.MaxAttempts; attempt++)
+        {
+            now = now.AddDays(1);
+            record.Claim(now, TimeSpan.FromMinutes(5)).Should().BeTrue();
+            record.MarkFailed(error, now);
+        }
+
+        db.FulfilmentRecords.Add(record);
+        await db.SaveChangesAsync(CancellationToken.None);
+        return record.Id;
+    }
+
     /// <summary>Runs one pass of the dispatch in a scope of its own.</summary>
     /// <returns>A task that completes when the pass ended.</returns>
     public async Task RunPassAsync()

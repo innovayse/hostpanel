@@ -37,7 +37,7 @@ public sealed class GitHubReleasesClientTests : IAsyncLifetime
         return new GitHubReleasesClient(http, options);
     }
 
-    /// <summary>A published release with a standard tag returns a populated <see cref="ReleaseInfo"/>.</summary>
+    /// <summary>A published release with a standard tag returns a populated release info record.</summary>
     [Fact]
     public async Task GetLatestAsync_PublishedRelease_ReturnsParsedInfo()
     {

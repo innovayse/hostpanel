@@ -48,16 +48,16 @@ const plans = [
 
 /**
  * Stands in for `useAsyncData` the way Nuxt runs it: the handler once, and again whenever a watched
- * source changes - which is what re-reads the plans once the payer currency resolves.
+ * source or a getter key changes - which is what re-reads the plans once the payer currency resolves.
  *
- * @param _key The cache key, unused here.
+ * @param key The cache key; a getter is watched like a source.
  * @param handler The read to run.
  * @param options The `watch` sources to re-run on.
  * @returns The refs a page destructures.
  */
-const runAsyncData = async (_key: string, handler: () => Promise<unknown>, options: { watch?: Array<() => unknown> } = {}) => {
+const runAsyncData = async (key: string | (() => string), handler: () => Promise<unknown>, options: { watch?: Array<() => unknown> } = {}) => {
   await handler()
-  for (const source of options.watch ?? []) {
+  for (const source of [...(options.watch ?? []), ...(typeof key === 'function' ? [key] : [])]) {
     watch(source, () => handler())
   }
   return { data: ref(null), error: ref(null), pending: ref(false), refresh: handler }

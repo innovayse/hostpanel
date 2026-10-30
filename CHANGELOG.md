@@ -104,6 +104,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A signed-in client whose currency differs from the base currency saw the storefront's prices (domain search, domain table, hosting plans, trials) in the base currency after a full page load: the server render, which does not know the client, was kept in the browser. Those reads are now keyed by the payer's currency, so the browser reads them again in the client's own (#662).
 - SSH key agent 1.2.2: jails also get `rsync`, `tar`, `gzip` and `unzip`, so a CI job can deploy a site over SSH.
 - SSH key agent 1.2.1: jails get `uname`, `id`, `hostname`, `dircolors`, `/etc/bashrc` and `/etc/profile.d/colorls.sh` (`jail_extras`), so customer logins no longer print `/usr/bin/uname: No such file or directory` and `ll` works; existing jails get them on the next key.
 - The client setup wizard now provisions on a server from the product's server group; it picked from every server of the module, so a product tied to one server was set up on the default one.

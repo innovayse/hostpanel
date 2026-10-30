@@ -25,6 +25,7 @@
  * (in the payer's currency, like every other caller, so the cache key is shared), takes the
  * product's visual config from its group (`familyConfig`) and hands both to the trial components. It owns the head only.
  */
+import { usePayerAsyncData } from '~/composables/usePayerAsyncData'
 import { useCatalogStore } from '~/stores/catalog'
 import { useCurrencyStore } from '~/stores/currency'
 import { FAMILY_ICON, familyConfig, familyKey, parseDescription } from '~/utils/catalogGroups'
@@ -52,8 +53,8 @@ const productSlug = route.params.product as string
 /** The catalogue group the route names, when it is a known family. */
 const group = computed(() => catalogStore.familyGroups.find((candidate) => familyKey(candidate) === productSlug))
 
-await useAsyncData(`trial:${productSlug}`, () => catalogStore.loadFamilies(), {
-  watch: [() => currencyStore.payerCode, locale],
+await usePayerAsyncData(`trial:${productSlug}`, () => catalogStore.loadFamilies(), {
+  watch: [locale],
 })
 
 /** Display name, icon, accent colour and catalogue page of the product. */

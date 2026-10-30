@@ -61,6 +61,16 @@ describe('useClientsApi', () => {
     expect(callOf(mock, 1)).toMatchObject({ url: '/api/clients/4', method: 'PUT', body: update })
   })
 
+  it('setExternalAccount PUTs the pair, and both null to clear', async () => {
+    const mock = stubFetch(new Response(null, { status: 204 }))
+    const api = useClientsApi()
+
+    await api.setExternalAccount(4, { provider: 'crm', accountId: 'acct-1' })
+    await api.setExternalAccount(4, { provider: null, accountId: null })
+    expect(callOf(mock, 0)).toMatchObject({ url: '/api/clients/4/external-account', method: 'PUT', body: { provider: 'crm', accountId: 'acct-1' } })
+    expect(callOf(mock, 1)).toMatchObject({ url: '/api/clients/4/external-account', method: 'PUT', body: { provider: null, accountId: null } })
+  })
+
   it('searchUsers asks the admin users endpoint for the first page', async () => {
     const mock = stubFetch(json({ items: [], totalCount: 0 }))
 

@@ -8,10 +8,12 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { makeEvent, setRuntimeConfig, startBackend } from '../../helpers/bffHarness'
+import { startAttempt } from '../../helpers/signonAttempt'
 import type { MiddlewareModule } from '../../helpers/bffHarness'
 import type { StubServer } from '../../helpers/stubServer'
 import { AuthMode } from '~/types/authmode'
 import { HttpMethod } from '~/types/httpmethod'
+import { SignonTransactionKind } from '~/types/signontransactionkind'
 
 /** The stub the harness points the runtime config at (the middleware itself calls nothing). */
 let backend: StubServer
@@ -27,7 +29,12 @@ const navigation = { 'user-agent': BROWSER_AGENT, 'sec-fetch-dest': 'document', 
 
 beforeEach(async () => {
   backend = await startBackend()
-  setRuntimeConfig({ authMode: AuthMode.Sso })
+  setRuntimeConfig({
+    authMode: AuthMode.Sso,
+    ssoClientId: 'client',
+    ssoCallbackUrl: 'https://portal.test/api/portal/auth/sso/callback',
+    public: { ssoPublicUrl: 'https://sso.test' },
+  })
   middleware = await import('~/server/middleware/sso-silent')
 })
 
@@ -36,13 +43,13 @@ afterEach(async () => {
 })
 
 describe('sso-silent middleware', () => {
-  it('redirects a signed-out page navigation to the silent authorize probe and remembers where it was going', () => {
+  it('redirects a signed-out page navigation to the silent authorize probe and hands it where it was going', () => {
     const event = makeEvent({ path: '/client/dashboard', headers: navigation })
 
     middleware.default(event)
 
-    expect(event.redirectedTo).toBe('/api/portal/auth/sso/authorize?prompt=none')
-    expect(event.written['sso_silent_return']).toMatchObject({ value: '/client/dashboard', options: { httpOnly: true, maxAge: 30, sameSite: 'lax', path: '/', secure: true } })
+    expect(event.redirectedTo).toBe('/api/portal/auth/sso/authorize?prompt=none&returnTo=%2Fclient%2Fdashboard')
+    expect(event.written['sso_silent_return']).toBeUndefined()
     expect(event.written['sso_silent_tried']).toMatchObject({ value: '1', options: { httpOnly: true, maxAge: 30, secure: true } })
   })
 
@@ -51,7 +58,7 @@ describe('sso-silent middleware', () => {
 
     middleware.default(event)
 
-    expect(event.redirectedTo).toBe('/api/portal/auth/sso/authorize?prompt=none')
+    expect(event.redirectedTo).toBe('/api/portal/auth/sso/authorize?prompt=none&returnTo=%2Fhosting')
   })
 
   it('does nothing in local authentication mode', () => {
@@ -101,8 +108,32 @@ describe('sso-silent middleware', () => {
 
     middleware.default(event)
 
-    expect(event.redirectedTo).toBe('/api/portal/auth/sso/authorize?prompt=none&authuser=person%40example.test')
-    expect(event.written['sso_silent_return']?.value).toBe('/hosting?authuser=person%40example.test')
+    expect(event.redirectedTo).toBe(
+      '/api/portal/auth/sso/authorize?prompt=none&returnTo=%2Fhosting%3Fauthuser%3Dperson%2540example.test&authuser=person%40example.test'
+    )
+  })
+
+  it('does not probe while this browser has an interactive sign-in under way, and sets no loop guard', () => {
+    const { cookies } = startAttempt()
+    const event = makeEvent({ path: '/client/dashboard', headers: navigation, cookies })
+
+    middleware.default(event)
+
+    expect(event.redirectedTo).toBeUndefined()
+    expect(event.written).toEqual({})
+  })
+
+  it('still probes when the only attempt this browser holds is a silent one, or one that is not authentic', () => {
+    const silent = startAttempt({}, null, SignonTransactionKind.Silent)
+    const forged = { [silent.cookieName.replace(/.$/, (digit) => (digit === '0' ? '1' : '0'))]: 'forged' }
+
+    for (const cookies of [silent.cookies, forged]) {
+      const event = makeEvent({ path: '/pricing', headers: navigation, cookies })
+
+      middleware.default(event)
+
+      expect(event.redirectedTo).toBe('/api/portal/auth/sso/authorize?prompt=none&returnTo=%2Fpricing')
+    }
   })
 })
 
@@ -148,7 +179,7 @@ describe('sso-silent middleware with clients that are not a person opening a pag
   it('does not probe the page a failed probe came back to, even for a browser that keeps no cookies', () => {
     const first = makeEvent({ path: '/pricing', headers: navigation })
     middleware.default(first)
-    expect(first.redirectedTo).toBe('/api/portal/auth/sso/authorize?prompt=none')
+    expect(first.redirectedTo).toBe('/api/portal/auth/sso/authorize?prompt=none&returnTo=%2Fpricing')
 
     // Second pass, no cookies: the callback returned to the page flagged with the sign-in prompt.
     const second = makeEvent({ path: '/pricing?signin=required', headers: navigation, query: { signin: 'required' } })

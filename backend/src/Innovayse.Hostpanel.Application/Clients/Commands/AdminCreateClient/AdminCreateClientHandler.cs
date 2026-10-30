@@ -154,6 +154,13 @@ public sealed class AdminCreateClientHandler
             }
 
             clientId = await SaveClientAsync(cmd, userId, email, cmd.Status ?? ClientStatus.Active, currencyCode, ct);
+
+            // An existing account linked as owner holds no Client role unless it once registered or
+            // ordered here, and without it the portal answers 403 to its own client.
+            if (!createdAccount)
+            {
+                await _roles.AddAsync(userId, Role.Client, ct);
+            }
         }
         catch (Exception) when (createdAccount)
         {

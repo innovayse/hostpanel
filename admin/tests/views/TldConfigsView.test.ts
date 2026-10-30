@@ -117,6 +117,7 @@ describe('TldConfigsView', () => {
     })
     const { wrapper } = await mountScreen(TldConfigsView)
 
+    await wrapper.get('[data-testid="tld-row-com"]').get('[data-testid="row-actions-trigger"]').trigger('click')
     await wrapper.get('[data-testid="tld-delete-com"]').trigger('click')
     expect(wrapper.get('[role="dialog"]').text()).toContain('Delete ".com" TLD configuration?')
     expect(requestsOf(mock)).not.toContain(`DELETE /admin/tld-configs/${id}`)
@@ -139,10 +140,12 @@ describe('TldConfigsView', () => {
     })
     const { wrapper } = await mountScreen(TldConfigsView)
 
+    await wrapper.get('[data-testid="tld-row-com"]').get('[data-testid="row-actions-trigger"]').trigger('click')
     await wrapper.get('[data-testid="tld-delete-com"]').trigger('click')
     await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')
     expect(requestsOf(mock)).not.toContain(`DELETE /admin/tld-configs/${id}`)
 
+    await wrapper.get('[data-testid="tld-row-com"]').get('[data-testid="row-actions-trigger"]').trigger('click')
     await wrapper.get('[data-testid="tld-delete-com"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await vi.waitFor(() => {
@@ -159,6 +162,7 @@ describe('TldConfigsView', () => {
       expect(router.currentRoute.value.path).toBe('/settings/tld-pricing/create')
     })
 
+    await wrapper.get('[data-testid="tld-row-com"]').get('[data-testid="row-actions-trigger"]').trigger('click')
     await wrapper.get('[data-testid="tld-edit-com"]').trigger('click')
     await vi.waitFor(() => {
       expect(router.currentRoute.value.path).toBe(`/settings/tld-pricing/${item('com').id}/edit`)
@@ -191,7 +195,9 @@ describe('TldConfigsView', () => {
     await wrapper.get('[data-testid="tld-configs-error-retry"]').trigger('click')
 
     await vi.waitFor(() => {
-      expect(wrapper.find('[data-testid="tld-delete-com"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="tld-row-com"]').exists()).toBe(true)
     })
+    await wrapper.get('[data-testid="tld-row-com"]').get('[data-testid="row-actions-trigger"]').trigger('click')
+    expect(wrapper.find('[data-testid="tld-delete-com"]').exists()).toBe(true)
   })
 })

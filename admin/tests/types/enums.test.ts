@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { ActivityEventType } from '@/types/activityevent'
 import { LogoutScope } from '@/types/auth'
 import { BillableItemType, RecurringPeriod } from '@/types/billableitem'
-import { ClientStatus } from '@/types/client'
+import { ClientStatus, ExternalAccountField } from '@/types/client'
 import { ContactType } from '@/types/contact'
 import { CurrencyCode } from '@/types/currency'
 import { DemoAccountRole } from '@/types/demo'
@@ -28,6 +28,7 @@ describe('status enums', () => {
     expect(Object.values(OrderItemStatus)).toEqual(['Pending', 'Active', 'Cancelled'])
     expect(Object.values(ServiceStatus)).toEqual(['Active', 'Pending', 'Suspended', 'Terminated'])
     expect(Object.values(ClientStatus)).toEqual(['Active', 'Inactive', 'Suspended', 'Closed'])
+    expect(Object.values(ExternalAccountField)).toEqual(['provider', 'accountId'])
     expect(Object.values(ContactType)).toEqual(['Billing', 'Technical', 'General'])
     expect(InvoiceStatus.PaymentPending).toBe('PaymentPending')
     expect(InvoiceStatus.PartiallyRefunded).toBe('PartiallyRefunded')

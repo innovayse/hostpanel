@@ -1,6 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Auth.Enums;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 
@@ -19,6 +22,30 @@ public sealed class AddUserToClientTests(IntegrationTestFactory factory) : IClas
         var response = await admin.PostAsJsonAsync($"/api/clients/{clientId}/users", new { memberUserId = userId, permissions = 0 });
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    /// <summary>
+    /// A linked account that does not hold the Client role, as one staff created elsewhere does not,
+    /// is granted it, so the portal serves it the client it was linked to.
+    /// </summary>
+    [Fact]
+    public async Task AddGrantsTheClientRole()
+    {
+        var (clientId, _) = await ClientsTestSeeds.SeedClientAsync(factory);
+        var (userId, _) = await ClientsTestSeeds.RegisterRealClientAsync(factory, "add-user-role");
+        using (var scope = factory.Services.CreateScope())
+        {
+            await scope.ServiceProvider.GetRequiredService<ISubjectRoleStore>().RemoveAsync(userId, Role.Client, CancellationToken.None);
+        }
+
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+
+        var response = await admin.PostAsJsonAsync($"/api/clients/{clientId}/users", new { memberUserId = userId, permissions = 0 });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        using var check = factory.Services.CreateScope();
+        (await check.ServiceProvider.GetRequiredService<ISubjectRoleStore>().HoldsAsync(userId, Role.Client, CancellationToken.None))
+            .Should().BeTrue();
     }
 
     /// <summary>Linking a user to an id that names no client answers 404 with <c>CLIENT_NOT_FOUND</c>.</summary>

@@ -105,6 +105,7 @@ vi.stubGlobal('getCookie', (event: FakeEvent, name: string) => event.cookies[nam
 vi.stubGlobal('setCookie', (event: FakeEvent, name: string, value: string, options: Record<string, unknown> = {}) => {
   event.written[name] = { value, options }
 })
+vi.stubGlobal('parseCookies', (event: FakeEvent) => ({ ...event.cookies }))
 vi.stubGlobal('deleteCookie', (event: FakeEvent, name: string) => {
   event.deleted.push(name)
 })

@@ -28,6 +28,10 @@ git config -f "$dir/.gitmodules" --get-regexp '^submodule\..*\.path$' | while re
   target="$dir/$path"
   if [ -d "$target" ] && [ ! -e "$target/.git" ]; then
     echo "Removing $path: a leftover folder where the submodule now goes."
-    rm -rf --one-file-system "$target"
+    # A build once run in a container can leave root-owned bin/ and obj/ behind, which the deploy
+    # user cannot delete; the deploy user can run Docker, so a throwaway container removes them.
+    rm -rf --one-file-system "$target" 2>/dev/null \
+      || docker run --rm -v "$(dirname "$target"):/parent" alpine:3.20 rm -rf "/parent/$(basename "$target")"
+    [ ! -e "$target" ] || { echo "Could not remove $path" >&2; exit 1; }
   fi
 done

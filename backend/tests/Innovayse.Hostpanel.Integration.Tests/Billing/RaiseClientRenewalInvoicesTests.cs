@@ -236,7 +236,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
         var invoice = (await InvoicesOfAsync(context, clientId)).Should().ContainSingle().Subject;
         var snapshot = invoice.Items.Should().ContainSingle().Which.ProductSnapshot!;
         snapshot.Should().BeEquivalentTo(
-            new ProductSnapshot(service.ProductId, BillingCycle.Annual, digital, sku.ToUpperInvariant(), Metadata: null),
+            new ProductSnapshot(service.ProductId, BillingCycle.Annual, digital, sku.ToUpperInvariant(), Metadata: null, GracePeriodDays: Product.DefaultGracePeriodDays),
             options => options.Excluding(s => s.Metadata));
 
         // The database normalises the JSON text (spacing), so the metadata is compared by content, not by characters.

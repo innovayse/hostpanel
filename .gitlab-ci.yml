@@ -226,7 +226,7 @@ variables:
     # The plugin SDK is a submodule: point it at the URL and commit this checkout records.
     - git submodule sync --recursive
     - sh scripts/clear-stale-submodule-dirs.sh .
-    - git submodule update --init --recursive
+    - git submodule update --init --recursive --force
     # docker-compose.platform.yml joins the platform network - without it the containers are
     # unreachable by name from the reverse proxy. The chain (COMPOSE_FILE) is shared + prod + platform,
     # the same set every deployed tier runs. Compose reads docker/.env (the host's values) because
@@ -580,7 +580,7 @@ deploy:demo:
     - git -C "$DEPLOY_DIR" checkout -f "$CI_COMMIT_SHA"
     - git -C "$DEPLOY_DIR" submodule sync --recursive
     - sh "$DEPLOY_DIR/scripts/clear-stale-submodule-dirs.sh" "$DEPLOY_DIR"
-    - git -C "$DEPLOY_DIR" submodule update --init --recursive
+    - git -C "$DEPLOY_DIR" submodule update --init --recursive --force
     - cd "$DEPLOY_DIR"
     # The demo's edge network is external (docker-compose.demo.yml) and is not the platform network: create it
     # when missing. The edge proxy must also be attached to it (edge-proxy/docker-compose.yml) to route here.
@@ -686,7 +686,7 @@ deploy:prod:
     # The plugin SDK is a submodule: point it at the URL and commit this checkout records.
     - git -C "$DEPLOY_DIR" submodule sync --recursive
     - sh "$DEPLOY_DIR/scripts/clear-stale-submodule-dirs.sh" "$DEPLOY_DIR"
-    - git -C "$DEPLOY_DIR" submodule update --init --recursive
+    - git -C "$DEPLOY_DIR" submodule update --init --recursive --force
     - cd "$DEPLOY_DIR"
     # Dump the database before anything is rebuilt. The API applies pending EF
     # migrations on startup, so `up -d` is the moment the schema and sometimes the
@@ -754,7 +754,7 @@ deploy:prod:
       echo "──── rolling back to $(cat "$state/previous-commit") ────"
       git checkout -f "$(cat "$state/previous-commit")"
       git submodule sync --recursive
-      git submodule update --init --recursive
+      git submodule update --init --recursive --force
       while read -r svc tag previous; do
         docker tag "$previous" "$tag"
         docker compose up -d --no-deps --force-recreate --no-build "$svc"

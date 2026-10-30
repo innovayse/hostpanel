@@ -46,6 +46,18 @@ public sealed record JobSchedule
         return _hour is { } hour ? DailySchedule.NextOccurrence(hour, now) : now + _interval;
     }
 
+    /// <summary>
+    /// How long a job stays closed to other instances after a pass that succeeded. An interval job never
+    /// stays closed for more than half its interval, or a short interval (the fulfilment dispatch runs
+    /// every few seconds) would find its own job closed at every second beat and run at half its pace.
+    /// </summary>
+    /// <param name="configured">The rest configured for all jobs.</param>
+    /// <returns><paramref name="configured"/>, or half the interval of an interval job when that is shorter.</returns>
+    public TimeSpan RestAfterSuccess(TimeSpan configured)
+    {
+        return _hour is null && _interval / 2 < configured ? _interval / 2 : configured;
+    }
+
     /// <summary>Whether the job has missed its turn: it has never succeeded, or not since its latest due moment.</summary>
     /// <param name="lastSucceededAt">When the job last succeeded, or <see langword="null"/> when it never has.</param>
     /// <param name="now">The current moment.</param>

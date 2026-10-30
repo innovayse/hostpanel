@@ -7,15 +7,17 @@
  * - lg+: full sidebar (220px), always visible
  * - Emits `navigate` on link click so the mobile drawer can close.
  */
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useNavigationStore } from '@/stores/navigation'
+import { useReleaseStatusStore } from '@/stores/releaseStatus'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import BrandLogo from '@/components/layout/BrandLogo.vue'
+import ReleaseUpdateNotice from '@/components/layout/ReleaseUpdateNotice.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -52,6 +54,14 @@ const { t } = useI18n()
 
 /** Auth store: the sign-out action. */
 const authStore = useAuthStore()
+
+/** Release status store: fetched once on mount to show the upgrade notice when available. */
+const releaseStatusStore = useReleaseStatusStore()
+
+/** Fetches the release status once the sidebar is mounted. */
+onMounted(() => {
+  void releaseStatusStore.fetch()
+})
 
 /** Router, for the redirect after sign-out. */
 const router = useRouter()
@@ -328,6 +338,9 @@ const isExpanded = (item: NavItem): boolean => {
         </template>
       </UiStack>
     </nav>
+
+    <!-- Release update notice: shown only when an upgrade is available -->
+    <ReleaseUpdateNotice />
 
     <!-- Footer -->
     <UiStack direction="row" align="center" justify="between" class="border-t border-border px-3 py-3">

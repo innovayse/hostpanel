@@ -103,8 +103,14 @@ RUN SSO=$([ "$AUTH_MODE" = "sso" ] && echo "-p:InnovayseSso=true"); \
     Auth__ClientId=codegen Auth__ClientSecret=codegen Auth__RedisConnection=localhost:6379 \
     dotnet run -c Release --no-restore --no-launch-profile $SSO -- codegen write
 
+ARG VERSION=0.0.0-dev
+
 RUN SSO=$([ "$AUTH_MODE" = "sso" ] && echo "-p:InnovayseSso=true"); \
-    dotnet publish src/Innovayse.Hostpanel.API/Innovayse.Hostpanel.API.csproj -c Release -o /out --no-restore /p:ErrorOnDuplicatePublishOutputFiles=false $SSO
+    dotnet publish src/Innovayse.Hostpanel.API/Innovayse.Hostpanel.API.csproj -c Release -o /out --no-restore \
+        /p:ErrorOnDuplicatePublishOutputFiles=false \
+        /p:Version=$VERSION \
+        /p:InformationalVersion=$VERSION \
+        $SSO
 
 FROM mcr.microsoft.com/dotnet/aspnet:9.0.22-alpine3.24@sha256:c8e9a3262af499a08fd3911542af57a35c7a11819ba5db2a0a1658e47417d11b AS prod
 

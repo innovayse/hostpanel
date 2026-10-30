@@ -164,6 +164,13 @@ public static class DependencyInjection
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        // Where release-update checks point and what upgrade command is shown. Operators that fork
+        // the repository or run without outbound internet access override these without touching code.
+        services.AddOptions<ReleaseOptions>()
+            .BindConfiguration(ReleaseOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         services.ConfigureModelStateProblemDetails();
         services.ConfigureProblemDetailsAuthEvents();
         services.PostConfigure<JwtBearerOptions>(LocalJwtScheme.Name, o => o.UseProblemDetailsResponses());
@@ -184,6 +191,9 @@ public static class DependencyInjection
 
             // Billing scheduled jobs: the daily billing, renewal and suspension crons and the gateway reconcile.
             services.AddHostedService<BillingScheduledJobsStartup>();
+
+            // Admin scheduled jobs: the daily GitHub release-update check.
+            services.AddHostedService<AdminScheduledJobsStartup>();
 
             // Recurring recovery of migration jobs left queued or in progress with a stale heartbeat. Not in Testing:
             // the tests derive extra hosts over one database mid-test, and a recovery there would

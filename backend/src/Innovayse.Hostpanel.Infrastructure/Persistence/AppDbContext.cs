@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Admin;
 using Innovayse.Hostpanel.Domain.Audit;
 using Innovayse.Hostpanel.Domain.Auth;
 using Innovayse.Hostpanel.Domain.Billing;
@@ -63,7 +64,11 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
         _encryption = encryption;
     }
 
+    /// <inheritdoc/>
+    public DbSet<LatestRelease> LatestReleases => Set<LatestRelease>();
+
     /// <summary>Gets the activity log entries table.</summary>
+    /// <inheritdoc/>
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
 
     /// <summary>

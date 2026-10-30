@@ -4,10 +4,12 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
+using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Wolverine;
@@ -375,6 +377,84 @@ public sealed class SettleInvoiceCardPaymentTests(IntegrationTestFactory factory
             .InvoiceId.Should().Be(invoiceId);
     }
 
+    /// <summary>
+    /// Another request settles the invoice with this very transaction between this settlement's
+    /// ledger read and its invoice load, so the invoice it then loads is already paid and refuses the
+    /// payment with <c>INVOICE_NOT_PAYABLE</c>. The payment is recorded, so this is a replay: success,
+    /// one ledger row, nothing refunded.
+    /// </summary>
+    [Fact]
+    public async Task HandleAsync_SettledInlineWithTheSameTransactionAtTheLoad_AnswersSuccessWithoutRefundAsync()
+    {
+        var invoiceId = await SeedUnpaidInvoiceAsync(await BillingTestSeeds.SeedClientAsync(factory));
+        var transactionId = $"pi_{Guid.NewGuid():N}";
+        _host = BuildHost(new InvoiceLoadHookInterceptor(async () =>
+            (await InvokeAsync(Payment(invoiceId, transactionId))).IsSuccess.Should().BeTrue()));
+
+        var result = await InvokeAsync(Payment(invoiceId, transactionId));
+
+        result.IsSuccess.Should().BeTrue();
+        _cardGateway.RefundInstructions.Should().BeEmpty();
+        (await LedgerRowAsync(transactionId)).InvoiceId.Should().Be(invoiceId);
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await context.Invoices.AsNoTracking().SingleAsync(i => i.Id == invoiceId)).Status.Should().Be(InvoiceStatus.Paid);
+    }
+
+    /// <summary>
+    /// Another request records this very transaction as a part payment of the invoice between this
+    /// settlement's ledger read and its invoice load: the invoice is still open but now owes less than
+    /// this payment, so it is refused with <c>PAYMENT_INTENT_MISMATCH</c>. The payment is recorded on
+    /// the invoice, so this is a replay: success, one ledger row, nothing refunded.
+    /// </summary>
+    [Fact]
+    public async Task HandleAsync_RecordedInlineWithTheSameTransactionAtTheLoad_AnswersSuccessWithoutRefundAsync()
+    {
+        var invoiceId = await SeedUnpaidInvoiceAsync(await BillingTestSeeds.SeedClientAsync(factory));
+        var transactionId = $"pi_{Guid.NewGuid():N}";
+        _host = BuildHost(new InvoiceLoadHookInterceptor(async () =>
+        {
+            using var other = factory.Services.CreateScope();
+            var context = other.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            var invoice = await context.Invoices.Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
+            context.Transactions.Add(invoice.AddPayment(
+                DateTimeOffset.UtcNow, PaymentMethodNames.Card, transactionId, 5m, 0m, null));
+            await context.SaveChangesAsync(CancellationToken.None);
+        }));
+
+        var result = await InvokeAsync(Payment(invoiceId, transactionId));
+
+        result.IsSuccess.Should().BeTrue();
+        _cardGateway.RefundInstructions.Should().BeEmpty();
+        (await LedgerRowAsync(transactionId)).InvoiceId.Should().Be(invoiceId);
+    }
+
+    /// <summary>
+    /// Another request records the transaction for a different invoice between this settlement's
+    /// ledger read and its invoice load, and this settlement is then refused (the amount is not what is
+    /// due). Handing the payment back would refund money the ledger holds, so the refusal answers
+    /// <c>PAYMENT_INTENT_ALREADY_USED</c> and the gateway is not asked to refund.
+    /// </summary>
+    [Fact]
+    public async Task ReturnPayment_WhenTheTransactionIsRecordedForAnotherInvoice_AnswersAlreadyUsedWithoutRefundAsync()
+    {
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
+        var invoiceId = await SeedUnpaidInvoiceAsync(clientId);
+        var otherInvoiceId = await SeedUnpaidInvoiceAsync(clientId);
+        var transactionId = $"pi_{Guid.NewGuid():N}";
+        _host = BuildHost(new InvoiceLoadHookInterceptor(async () =>
+            (await InvokeAsync(Payment(otherInvoiceId, transactionId))).IsSuccess.Should().BeTrue()));
+
+        var result = await InvokeAsync(new SettleInvoiceCardPaymentCommand(invoiceId, transactionId, 25m, "USD"));
+
+        result.ErrorCode.Should().Be(HostpanelErrorCodes.PAYMENT_INTENT_ALREADY_USED);
+        _cardGateway.RefundInstructions.Should().BeEmpty();
+        (await LedgerRowAsync(transactionId)).InvoiceId.Should().Be(otherInvoiceId);
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await context.Invoices.AsNoTracking().SingleAsync(i => i.Id == invoiceId)).Status.Should().Be(InvoiceStatus.Unpaid);
+    }
+
     /// <summary>Reads the one ledger row written under a payment reference.</summary>
     /// <param name="transactionId">The card gateway's transaction id.</param>
     /// <returns>The ledger row.</returns>
@@ -417,9 +497,17 @@ public sealed class SettleInvoiceCardPaymentTests(IntegrationTestFactory factory
         return await bus.InvokeAsync<Result>(cmd);
     }
 
-    /// <summary>Builds a host whose card gateway is <see cref="_cardGateway"/>.</summary>
+    /// <summary>Builds a host whose card gateway is <see cref="_cardGateway"/> and whose data context carries <paramref name="interceptors"/>.</summary>
+    /// <param name="interceptors">Interceptors every data context of the host is built with, to act at a chosen point of a settlement.</param>
     /// <returns>The test host.</returns>
-    private WebApplicationFactory<Program> BuildHost() =>
+    private WebApplicationFactory<Program> BuildHost(params IInterceptor[] interceptors) =>
         factory.WithWebHostBuilder(builder =>
-            builder.ConfigureTestServices(services => services.AddSingleton<ICardPaymentGateway>(_cardGateway)));
+            builder.ConfigureTestServices(services =>
+            {
+                services.AddSingleton<ICardPaymentGateway>(_cardGateway);
+                if (interceptors.Length > 0)
+                {
+                    services.ConfigureDbContext<AppDbContext>(options => options.AddInterceptors(interceptors));
+                }
+            }));
 }

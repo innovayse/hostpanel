@@ -7,6 +7,7 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
+using Innovayse.Hostpanel.Domain.Billing.Events;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.SDK.Plugins;
@@ -15,8 +16,10 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Wolverine;
+using Wolverine.Tracking;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 
@@ -491,6 +494,141 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         var check = checkScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         (await check.Transactions.AsNoTracking().SingleAsync(t => t.TransactionId == gatewayReference))
             .AddedToCredit.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// A gateway that took more than the invoice still owed (a payment was recorded during the
+    /// session) puts the surplus on the client's balance and tells staff exactly once, after the save:
+    /// the replay finds the settled invoice and its ledger row and publishes nothing.
+    /// </summary>
+    [Fact]
+    public async Task SurplusCreditedToTheBalance_PublishesOneAlertAndNoneOnReplay()
+    {
+        var invoiceId = await SeedInvoiceWithSessionDirectlyAsync();
+        await RecordManualPaymentAsync(invoiceId, 4m);
+        var gatewayReference = $"ref-{Guid.NewGuid():N}";
+        var resolver = PaidResolver(gatewayReference);
+
+        var first = await CompleteTrackedAsync(invoiceId, resolver);
+        var replay = await CompleteTrackedAsync(invoiceId, resolver);
+
+        var alert = first.Should().ContainSingle().Which;
+        alert.InvoiceId.Should().Be(invoiceId);
+        alert.Module.Should().Be("bank-gateway");
+        alert.Reference.Should().Be(gatewayReference);
+        alert.Amount.Should().Be(4m);
+        alert.Currency.Should().Be("USD");
+        alert.Credited.Should().BeTrue();
+        replay.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// A session paid for an invoice another path already settled: the whole amount is kept on the
+    /// client's balance, staff are told once with the amount credited, and a replay tells nobody.
+    /// </summary>
+    [Fact]
+    public async Task PaymentForAnAlreadySettledInvoice_PublishesOneCreditedAlertAndNoneOnReplay()
+    {
+        var invoiceId = await SeedInvoiceWithSessionDirectlyAsync();
+        await RecordManualPaymentAsync(invoiceId, 10m);
+        var gatewayReference = $"ref-{Guid.NewGuid():N}";
+        var resolver = PaidResolver(gatewayReference);
+
+        var first = await CompleteTrackedAsync(invoiceId, resolver);
+        var replay = await CompleteTrackedAsync(invoiceId, resolver);
+
+        var alert = first.Should().ContainSingle().Which;
+        alert.Amount.Should().Be(10m);
+        alert.Reference.Should().Be(gatewayReference);
+        alert.Credited.Should().BeTrue();
+        replay.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Money the client's balance cannot take (a client billed in another currency than the charge) is
+    /// held for an operator, and the alert says it was not credited. It is sent once, not on replay.
+    /// </summary>
+    [Fact]
+    public async Task PaymentHeldForAnOperator_PublishesOneAlertMarkedNotCreditedAndNoneOnReplay()
+    {
+        var invoiceId = await SeedInvoiceWithSessionDirectlyAsync();
+        await RecordManualPaymentAsync(invoiceId, 10m);
+        using (var seed = factory.Services.CreateScope())
+        {
+            var context = seed.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            var clientId = (await context.Invoices.AsNoTracking().SingleAsync(i => i.Id == invoiceId)).ClientId;
+            (await context.Clients.SingleAsync(c => c.Id == clientId)).SetCurrency("EUR");
+            await context.SaveChangesAsync(CancellationToken.None);
+        }
+
+        var resolver = PaidResolver($"ref-{Guid.NewGuid():N}");
+
+        var first = await CompleteTrackedAsync(invoiceId, resolver);
+        var replay = await CompleteTrackedAsync(invoiceId, resolver);
+
+        var alert = first.Should().ContainSingle().Which;
+        alert.Amount.Should().Be(10m);
+        alert.Credited.Should().BeFalse();
+        replay.Should().BeEmpty();
+    }
+
+    /// <summary>A payment of exactly what is due leaves nothing over, so no alert is published.</summary>
+    [Fact]
+    public async Task ExactPayment_PublishesNoAlert()
+    {
+        var invoiceId = await SeedInvoiceWithSessionDirectlyAsync();
+
+        var published = await CompleteTrackedAsync(invoiceId, PaidResolver($"ref-{Guid.NewGuid():N}"));
+
+        published.Should().BeEmpty();
+    }
+
+    /// <summary>A resolver whose bank gateway reports the full 10.00 paid under a reference.</summary>
+    /// <param name="reference">The gateway's reference of the payment.</param>
+    /// <returns>The resolver.</returns>
+    private static FakePaymentPluginResolver PaidResolver(string reference)
+    {
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", new FakePaymentPlugin
+        {
+            StatusResult = new(GatewayPaymentState.Paid, reference, "orderStatus:2", AmountMinor: 1000),
+        });
+        return resolver;
+    }
+
+    /// <summary>Records a manual payment on an invoice, as staff would while the client's session is open.</summary>
+    /// <param name="invoiceId">The invoice.</param>
+    /// <param name="amount">The amount paid.</param>
+    /// <returns>A task that completes once saved.</returns>
+    private async Task RecordManualPaymentAsync(int invoiceId, decimal amount)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var invoice = await context.Invoices.Include(i => i.Transactions).FirstAsync(i => i.Id == invoiceId);
+        context.Transactions.Add(invoice.AddPayment(
+            DateTimeOffset.UtcNow, PaymentMethodNames.Manual, $"manual-{Guid.NewGuid():N}", amount, 0m, null));
+        await context.SaveChangesAsync(CancellationToken.None);
+    }
+
+    /// <summary>
+    /// Completes the invoice's gateway payment on a fresh scope and waits until the bus has handled
+    /// everything the completion published.
+    /// </summary>
+    /// <param name="invoiceId">The invoice.</param>
+    /// <param name="resolver">The fake plugin resolver.</param>
+    /// <returns>The credited-payment alerts the completion published.</returns>
+    private async Task<IReadOnlyList<GatewayPaymentCreditedEvent>> CompleteTrackedAsync(
+        int invoiceId, FakePaymentPluginResolver resolver)
+    {
+        var session = await factory.Services.GetRequiredService<IHost>().TrackActivity()
+            .Timeout(TimeSpan.FromSeconds(60))
+            .ExecuteAndWaitAsync((Func<IMessageContext, Task>)(async _ =>
+            {
+                using var scope = factory.Services.CreateScope();
+                var result = await HandlerFor(scope, resolver).HandleAsync(new CompleteGatewayPaymentCommand(invoiceId), CancellationToken.None);
+                result.IsSuccess.Should().BeTrue();
+            }));
+        return session.Executed.MessagesOf<GatewayPaymentCreditedEvent>().ToList();
     }
 
     /// <summary>Builds the handler on a scope's own context, with plugins from <paramref name="resolver"/>.</summary>

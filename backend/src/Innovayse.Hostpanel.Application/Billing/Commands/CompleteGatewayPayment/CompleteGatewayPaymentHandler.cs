@@ -6,6 +6,7 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Orders.Commands.FulfillInvoicedOrder;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Events;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
 using Innovayse.SDK.Plugins;
@@ -71,7 +72,8 @@ public sealed class CompleteGatewayPaymentHandler
     /// <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c>, or <c>GATEWAY_PAYMENT_MISMATCH</c> when the gateway
     /// reports a paid amount below what the invoice owes, or another currency (the invoice stays
     /// unpaid). A paid amount above what is owed (a payment recorded while the session was open)
-    /// settles the invoice and puts the rest on the client's credit balance. A paid status without
+    /// settles the invoice and puts the rest on the client's credit balance, and staff are alerted once
+    /// after the save that credited it. A paid status without
     /// an amount is a mismatch. When another path settled or closed the invoice while the session
     /// was open, whatever the session took that the ledger does not hold goes to the client's
     /// balance (<c>INVOICE_NOT_PAYABLE</c> when the invoice was closed unpaid).
@@ -145,10 +147,10 @@ public sealed class CompleteGatewayPaymentHandler
         // The session was opened for the amount due then; a payment recorded while it was open
         // lowered what is due now, so the gateway took more than the settlement records. The rest
         // belongs to the client and is kept on their balance, in the same save.
+        var surplus = CurrencyCode.FromMinorUnits(Math.Max(paidMinor - dueMinor, 0L), invoice.Currency);
         if (paidMinor > dueMinor)
         {
-            var credited = await _clientCredit.AddAsync(
-                new ClientCreditChange(invoice.ClientId, CurrencyCode.FromMinorUnits(paidMinor - dueMinor, invoice.Currency)), ct);
+            var credited = await _clientCredit.AddAsync(new ClientCreditChange(invoice.ClientId, surplus), ct);
             if (credited.IsFailure)
             {
                 return Result<GatewayCompletionDto>.FailureCode(credited.ErrorCode!);
@@ -173,6 +175,18 @@ public sealed class CompleteGatewayPaymentHandler
             }
 
             return outcome;
+        }
+
+        // Published only after the save, like the reconciler's stalled alert: a save that lost to a
+        // conflict above publishes nothing, and a replay finds the ledger row and publishes nothing,
+        // so staff are told once.
+        if (paidMinor > dueMinor)
+        {
+            await _bus.PublishAsync(new GatewayPaymentCreditedEvent(
+                invoice.Id, invoice.ClientId, module, gatewayTransactionId, surplus, invoice.Currency, Credited: true)
+            {
+                OccurredAt = _clock.UtcNow,
+            });
         }
 
         await _bus.InvokeAsync(new FulfillInvoicedOrderCommand(invoice.Id), ct);
@@ -236,7 +250,7 @@ public sealed class CompleteGatewayPaymentHandler
             return null;
         }
 
-        if (current.Transactions.Any(t => t.TransactionId == reference) || await IsOnLedgerAsync(reference, ct))
+        if (current.Transactions.Any(t => t.TransactionId == reference) || await _context.IsRecordedAsync(reference, ct))
         {
             _logger.LogInformation("Invoice {InvoiceId} was already marked paid by a concurrent completion.", invoiceId);
         }
@@ -254,20 +268,12 @@ public sealed class CompleteGatewayPaymentHandler
         return Result<GatewayCompletionDto>.Success(new GatewayCompletionDto(GatewayCompletionState.Paid));
     }
 
-    /// <summary>Whether a payment reference is already on the ledger.</summary>
-    /// <param name="reference">The gateway's reference of the payment.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns><see langword="true"/> when a ledger row carries it.</returns>
-    private async Task<bool> IsOnLedgerAsync(string reference, CancellationToken ct)
-    {
-        return await _context.Transactions.AsNoTracking().AnyAsync(t => t.TransactionId == reference, ct);
-    }
-
     /// <summary>
     /// Puts the whole amount a gateway session took on the client's credit balance when the invoice
     /// could not record it (another path settled it, or it was closed), the same rule as the part
     /// above what is due on a settlement. The money is written to the ledger under the gateway's
-    /// reference in the same save, so a replay finds it there and never credits it twice. Money in
+    /// reference in the same save, so a replay finds it there and never credits it twice, and staff are
+    /// told once, after that save, through <see cref="GatewayPaymentCreditedEvent"/>. Money in
     /// another currency than the client's billing currency, or that the gateway reports without an
     /// amount, is not credited: it is written as held and raised as a critical log line for an operator.
     /// </summary>
@@ -281,7 +287,7 @@ public sealed class CompleteGatewayPaymentHandler
         Invoice invoice, string module, string reference, GatewayPaymentStatus status, CancellationToken ct)
     {
         // Recorded on the invoice's own payment history or on the ledger: the money is accounted for.
-        if (invoice.Transactions.Any(t => t.TransactionId == reference) || await IsOnLedgerAsync(reference, ct))
+        if (invoice.Transactions.Any(t => t.TransactionId == reference) || await _context.IsRecordedAsync(reference, ct))
         {
             return;
         }
@@ -321,6 +327,14 @@ public sealed class CompleteGatewayPaymentHandler
             addedToCredit: credit,
             invoice.Currency));
         await _context.SaveChangesAsync(ct);
+
+        // After the save, so a failed save repeats the whole hand-back and the alert is never sent
+        // twice: the next pass finds the ledger row and returns above.
+        await _bus.PublishAsync(new GatewayPaymentCreditedEvent(
+            invoice.Id, invoice.ClientId, module, reference, amount, invoice.Currency, credit)
+        {
+            OccurredAt = _clock.UtcNow,
+        });
     }
 
     /// <summary>

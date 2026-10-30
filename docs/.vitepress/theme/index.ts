@@ -13,6 +13,7 @@ import SettingTable from './components/SettingTable.vue'
 import Label from './components/Label.vue'
 import Screenshot from './components/Screenshot.vue'
 import PageFeedback from './components/PageFeedback.vue'
+import HomeSearch from './components/HomeSearch.vue'
 
 /** The theme object exported to VitePress. */
 export default {
@@ -39,5 +40,6 @@ export default {
     app.component('Label', Label)
     app.component('Screenshot', Screenshot)
     app.component('PageFeedback', PageFeedback)
+    app.component('HomeSearch', HomeSearch)
   },
 } satisfies Theme

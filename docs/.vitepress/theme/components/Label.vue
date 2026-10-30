@@ -1,4 +1,9 @@
+/**
+ * Inline badge used in documentation pages to mark features as admin-only,
+ * newly added, locally hosted, or SSO-managed.
+ */
 <script setup lang="ts">
+/** The visual variant of the label. */
 type LabelType = 'admin' | 'new' | 'local' | 'sso'
 
 withDefaults(

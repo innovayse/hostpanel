@@ -1,6 +1,8 @@
+/**
+ * Wraps an ordered list with styled numbered circles.
+ * Usage: place `<li>` elements as slot content.
+ */
 <script setup lang="ts">
-// Wraps an ordered list with styled numbered circles.
-// Usage: place <li> elements as slot content.
 </script>
 
 <template>

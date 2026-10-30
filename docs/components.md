@@ -12,12 +12,12 @@ This page showcases the reusable Vue components available to all contributors wr
 
 A highlighted callout box with a colored left border. Use it to draw attention to important information.
 
-**Prop:** `type` — `info` (default) | `warning` | `danger` | `tip`
+**Prop:** `type` — `note` (default) | `warning` | `danger` | `tip`
 
 **Usage:**
 
 ```md
-<Callout type="info">
+<Callout type="note">
 This is an informational note.
 </Callout>
 
@@ -36,7 +36,7 @@ This action is irreversible.
 
 **Preview:**
 
-<Callout type="info">
+<Callout type="note">
 This is an informational note. Use it for general guidance or context.
 </Callout>
 

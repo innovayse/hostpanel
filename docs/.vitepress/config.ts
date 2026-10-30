@@ -117,7 +117,7 @@ export default defineConfig({
         collapsed: true,
         items: [
           { text: 'Overview', link: '/migration/' },
-          { text: 'Moving from another billing system', link: '/migration/from-whmcs' },
+          { text: 'Moving from another billing system', link: '/migration/from-another-system' },
         ],
       },
       {

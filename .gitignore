@@ -66,6 +66,8 @@ admin/.env.production
 !client/public/*.jpg
 !admin/public/*.png
 !client/public/images/**
+# Screenshots committed under docs/ are tracked assets, not local dev dumps.
+!docs/**/*.png
 
 # IDEs
 .idea/

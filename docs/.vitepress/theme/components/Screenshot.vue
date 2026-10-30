@@ -34,7 +34,7 @@ const closeLightbox = (): void => {
 
 /** Closes the overlay when the user presses Escape. */
 const handleKeydown = (e: KeyboardEvent): void => {
-  if (e.key === 'Escape') closeLightbox()
+  if (e.key === 'Escape') { closeLightbox() }
 }
 
 onMounted(() => {

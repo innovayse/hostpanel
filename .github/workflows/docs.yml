@@ -13,8 +13,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 # Only one deployment at a time; a push to main cancels the queued run but never the active one.
 concurrency:
@@ -62,6 +60,9 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      pages: write
+      id-token: write
 
     environment:
       name: github-pages

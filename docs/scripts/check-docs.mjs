@@ -51,7 +51,7 @@ for (const htmlFile of collectHtml(distDir)) {
   while ((m = imgSrcRe.exec(html)) !== null) {
     const src = m[1]
     // Skip external URLs and data URIs.
-    if (src.startsWith('http') || src.startsWith('data:')) continue
+    if (src.startsWith('http') || src.startsWith('data:')) { continue }
     // Strip query/hash, strip leading slash.
     const clean = src.split('?')[0].split('#')[0].replace(/^\/hostpanel\//, '')
     const abs = join(distDir, clean)
@@ -80,7 +80,7 @@ const sidebarLinks = () => {
   let m
   while ((m = linkRe.exec(config)) !== null) {
     // Skip external links.
-    if (m[1].startsWith('http')) continue
+    if (m[1].startsWith('http')) { continue }
     links.add(m[1].replace(/\/$/, ''))
   }
   return links
@@ -97,9 +97,9 @@ const collectMd = (dir, base = '') => {
   const entries = readdirSync(dir, { withFileTypes: true })
   return entries.flatMap((e) => {
     // Skip directories that are not user-facing docs pages.
-    if (e.isDirectory() && (e.name === 'brand' || e.name === 'node_modules' || e.name.startsWith('.'))) return []
-    if (e.isDirectory()) return collectMd(join(dir, e.name), `${base}/${e.name}`)
-    if (extname(e.name) !== '.md') return []
+    if (e.isDirectory() && (e.name === 'brand' || e.name === 'node_modules' || e.name.startsWith('.'))) { return [] }
+    if (e.isDirectory()) { return collectMd(join(dir, e.name), `${base}/${e.name}`) }
+    if (extname(e.name) !== '.md') { return [] }
     const stem = e.name.replace(/\.md$/, '')
     // index.md → the directory URL itself
     return [`${base}${stem === 'index' ? '' : '/' + stem}`]
@@ -112,7 +112,7 @@ const links = sidebarLinks()
 const excluded = new Set(['', '/components'])
 
 for (const page of collectMd(docsRoot)) {
-  if (excluded.has(page)) continue
+  if (excluded.has(page)) { continue }
   if (!links.has(page)) {
     console.error(`Page not in sidebar: ${page}.md`)
     failures++

@@ -87,6 +87,9 @@
 <data name="INVOICE_PDF_EXCEEDS_LIMIT" xml:space="preserve">
     <value>Այս հաշիվ-ապրանքագիրը չափազանց շատ տողեր ունի PDF-ով ներբեռնելու համար։</value>
   </data>
+<data name="INVOICE_PDF_RENDER_BUSY" xml:space="preserve">
+    <value>Այս պահին չափազանց շատ հաշիվ-ապրանքագրեր են պատրաստվում PDF-ով։ Խնդրում ենք փորձել մի փոքր ուշ։</value>
+  </data>
 <data name="QUOTE_NOT_FOUND" xml:space="preserve">
     <value>Այդպիսի նախահաշիվ չի գտնվել։</value>
   </data>

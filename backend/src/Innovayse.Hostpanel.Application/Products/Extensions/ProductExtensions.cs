@@ -38,6 +38,16 @@ public static class ProductExtensions
             product.GracePeriodDays);
     }
 
+    /// <summary>Maps a product to the facts a billed line keeps a copy of.</summary>
+    /// <param name="product">The product to project.</param>
+    /// <returns>The DTO the billing modules build a line's product snapshot from.</returns>
+    public static ProductFulfilmentDto ToFulfilmentDto(this Product product)
+    {
+        ArgumentNullException.ThrowIfNull(product);
+
+        return new ProductFulfilmentDto(product.Id, product.IsDigital, product.Sku, product.Metadata);
+    }
+
     /// <summary>Maps a product to its storefront catalogue DTO, pricing it in the caller's currency.</summary>
     /// <param name="product">The product to project.</param>
     /// <param name="callerCurrencyCode">ISO 4217 code of the currency the caller is billed in.</param>

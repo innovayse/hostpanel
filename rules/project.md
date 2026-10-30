@@ -71,7 +71,7 @@ repositories. The departures are short:
 - **Recurring jobs and background handlers return `Task`, not `Result`.** The crons
   (`CheckOverdueInvoicesCron`, `ProcessBillableItemsCron`, `ProcessRenewalsCron`,
   `ReconcileGatewayPaymentsCron`, `SendRenewalRemindersCron`, `SuspendOverdueServicesCron`,
-  `AutoTerminateSuspendedCron`, `SyncServerAccountCountsCron`) and `ResetDemoData`,
+  `AutoTerminateSuspendedCron`, `SyncServerAccountCountsCron`, `DispatchFulfilmentCron`) and `ResetDemoData`,
   `CheckDomainExpiries` and `SyncPendingDomainStatuses` are scheduled messages, not dispatched by a
   caller, so nothing would receive a `Result`. So are `RunMigrationPull` (published by
   `MigrationPullQueue` once a job's queued state is saved; the job row records how the pull ended)
@@ -86,6 +86,11 @@ repositories. The departures are short:
   is older than its period, and otherwise schedules its next regular run. Every hour and interval lives in
   `ScheduledJobsOptions` (section `ScheduledJobs`), read by the startup services and the handlers alike; a
   scheduled run is in memory, so a host that is stopping ends the chain and the next start catches up.
+  `DispatchFulfilmentCron` runs every 30 seconds and delivers the due `FulfilmentRecords` to their plugins
+  (`FulfilmentDispatcher`, claim with a lease, back-off, paid then refunded then lapsed per invoice and plugin);
+  `DispatchFulfilmentNow` is one extra pass of the same job under the same lease, scheduling nothing, for the
+  kick after a commit, so a kick never starts a second chain. `JobSchedule.RestAfterSuccess` keeps the rest of
+  an interval job under half its interval, or the 30-second job would run every second beat.
 - **Our own API contracts carry no `[JsonPropertyName]`**: the wire name is the property name in camelCase.
   A route id is overlaid on the bound command with `with { ... }`; there are no `*Body` types. The SDK ports are
   vendor-free too (`IHostingPanelApiClient`, `IHostingPanelV7ApiClient`; `NoVendorNamesTests` covers the SDK).

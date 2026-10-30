@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Admin.Servers.Commands.SyncServerAccountCountsCron;
 using Innovayse.Hostpanel.Application.Billing.Commands.CheckOverdueInvoicesCron;
+using Innovayse.Hostpanel.Application.Billing.Commands.DispatchFulfilmentCron;
 using Innovayse.Hostpanel.Application.Billing.Commands.ProcessBillableItemsCron;
 using Innovayse.Hostpanel.Application.Billing.Commands.ProcessRenewalsCron;
 using Innovayse.Hostpanel.Application.Billing.Commands.ReconcileGatewayPaymentsCron;
@@ -47,6 +48,7 @@ public sealed class ScheduledJobsSurviveFailureTests(IntegrationTestFactory fact
         new SuspendOverdueServicesCronCommand(),
         new SendRenewalRemindersCronCommand(),
         new ReconcileGatewayPaymentsCronCommand(),
+        new DispatchFulfilmentCronCommand(),
     };
 
     /// <summary>

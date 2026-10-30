@@ -115,6 +115,10 @@ public static class StatusMapping
             // dependency that did not answer (503 with Retry-After). Neither name carries a token.
             "FULFILMENT_RECORD_NOT_RETRYABLE" => new(409, "Conflict"),
             "FULFILMENT_ADVICE_UNAVAILABLE" => new(503, "Service Unavailable"),
+            // Exact row: no invoice PDF render slot came free for the request within the configured
+            // wait, the server's capacity rather than the request (503 with Retry-After), and the name
+            // carries no token for it.
+            "INVOICE_PDF_RENDER_BUSY" => new(503, "Service Unavailable"),
             var code when code.Contains("UNAUTHORIZED", StringComparison.Ordinal) => new(401, "Unauthorized"),
             var code when code.Contains("FORBIDDEN", StringComparison.Ordinal) => new(403, "Forbidden"),
             var code when code.Contains("ACCESS_DENIED", StringComparison.Ordinal) => new(403, "Forbidden"),

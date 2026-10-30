@@ -1,7 +1,9 @@
 using Innovayse.Hostpanel.Application.Billing.Commands.CreateOrderInvoice;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
+using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +19,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class CreateOrderInvoiceTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The snapshot the hosting line of the first test is sold as.</summary>
+    private static readonly ProductSnapshot Snapshot = new(7, BillingCycle.Monthly, IsDigital: false, Sku: "STARTER", Metadata: null);
+
     /// <summary>The invoice is unpaid, in the order's currency, with one line per order line, due in a week.</summary>
     [Fact]
     public async Task HandleAsync_OrderLines_CreatesAnUnpaidInvoiceInTheOrdersCurrencyAsync()
@@ -28,7 +33,7 @@ public sealed class CreateOrderInvoiceTests(IntegrationTestFactory factory) : IC
         {
             var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
             result = await bus.InvokeAsync<Result<int>>(new CreateOrderInvoiceCommand(
-                clientId, "USD", [new CreateInvoiceItemDto("Starter Hosting", 10m, 1), new CreateInvoiceItemDto("example.test", 5m, 1)]));
+                clientId, "USD", [new OrderInvoiceItemDto("Starter Hosting", 10m, 1, Snapshot), new OrderInvoiceItemDto("example.test", 5m, 1, null)]));
         }
 
         result.IsSuccess.Should().BeTrue();
@@ -40,6 +45,8 @@ public sealed class CreateOrderInvoiceTests(IntegrationTestFactory factory) : IC
         invoice.Currency.Should().Be("USD");
         invoice.Total.Should().Be(15m);
         invoice.Items.Should().HaveCount(2);
+        invoice.Items.Single(i => i.Description == "Starter Hosting").ProductSnapshot.Should().Be(Snapshot);
+        invoice.Items.Single(i => i.Description == "example.test").ProductSnapshot.Should().BeNull();
         invoice.DueDate.Should().BeCloseTo(DateTimeOffset.UtcNow.AddDays(7), TimeSpan.FromMinutes(5));
     }
 
@@ -56,7 +63,7 @@ public sealed class CreateOrderInvoiceTests(IntegrationTestFactory factory) : IC
         {
             var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
             result = await bus.InvokeAsync<Result<int>>(new CreateOrderInvoiceCommand(
-                clientId, "USD", [new CreateInvoiceItemDto("Starter Hosting", 10m, 1)]));
+                clientId, "USD", [new OrderInvoiceItemDto("Starter Hosting", 10m, 1, null)]));
         }
 
         result.IsSuccess.Should().BeTrue();

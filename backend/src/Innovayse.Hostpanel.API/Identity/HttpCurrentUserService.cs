@@ -69,6 +69,9 @@ public sealed class HttpCurrentUserService : ICurrentUserService
     private ClaimsPrincipal? User => _httpContextAccessor.HttpContext?.User;
 
     /// <inheritdoc/>
+    public ClaimsPrincipal? Principal => IsAuthenticated ? User : null;
+
+    /// <inheritdoc/>
     public string? UserId => User?.GetSubject();
 
     /// <inheritdoc/>

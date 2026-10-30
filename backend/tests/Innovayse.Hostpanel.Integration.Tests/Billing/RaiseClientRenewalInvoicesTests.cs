@@ -62,13 +62,16 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     /// <param name="autoRenew">Whether the service renews automatically.</param>
     /// <param name="clientId">The owning client, or <see langword="null"/> to seed a new one.</param>
     /// <param name="recurringAmount">The service's recurring price.</param>
+    /// <param name="type">The product's type.</param>
+    /// <param name="sku">The product's SKU, which is unique across products, or <see langword="null"/> for none.</param>
     /// <returns>
     /// The client id, the seeded service, and the renewal date as Postgres actually stored it,
     /// truncated to microseconds, so comparisons after a reload never fail on a dropped tick.
     /// </returns>
     private static async Task<SeededRenewalService> SeedServiceAsync(
         IHostpanelDbContext context, DateTimeOffset nextRenewalAt, BillingCycle cycle = BillingCycle.Monthly,
-        bool autoRenew = true, int? clientId = null, decimal recurringAmount = 5m)
+        bool autoRenew = true, int? clientId = null, decimal recurringAmount = 5m, ProductType type = ProductType.SharedHosting,
+        string? sku = null)
     {
         var ownerId = clientId ?? (await SeedClientAsync(context)).Id;
 
@@ -76,7 +79,9 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
         context.ProductGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var product = Product.Create(group.Id, "Starter", null, null, null, null, ProductType.SharedHosting, 5m, 50m, DateTimeOffset.UtcNow);
+        var product = Product.Create(group.Id, "Starter", null, null, null, null, type, 5m, 50m, DateTimeOffset.UtcNow);
+        product.SetSku(sku);
+        product.SetMetadata("{\"tier\":\"basic\"}");
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -205,6 +210,38 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
         again.IsSuccess.Should().BeTrue();
         again.Value.Should().Be(0);
         (await InvoicesOfAsync(context, clientId)).Should().ContainSingle();
+    }
+
+    /// <summary>
+    /// A service's renewal line keeps a copy of its product as it is sold now, on the service's cycle, so a
+    /// fulfilment plugin told about the paid renewal delivers the same as for the first order.
+    /// </summary>
+    /// <param name="type">The product's type.</param>
+    /// <param name="digital">Whether the snapshot must flag the product as digital.</param>
+    [Theory]
+    [InlineData(ProductType.SharedHosting, false)]
+    [InlineData(ProductType.Digital, true)]
+    public async Task ServiceRenewalLine_CarriesTheProductSnapshot(ProductType type, bool digital)
+    {
+        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+        var sku = $"snap-{Guid.NewGuid():N}";
+        var (clientId, service, _) = await SeedServiceAsync(
+            context, DateTimeOffset.UtcNow.AddDays(10), BillingCycle.Annual, type: type, sku: sku);
+
+        var result = await RaiseAsync(bus, clientId);
+
+        result.IsSuccess.Should().BeTrue();
+        var invoice = (await InvoicesOfAsync(context, clientId)).Should().ContainSingle().Subject;
+        var snapshot = invoice.Items.Should().ContainSingle().Which.ProductSnapshot!;
+        snapshot.Should().BeEquivalentTo(
+            new ProductSnapshot(service.ProductId, BillingCycle.Annual, digital, sku.ToUpperInvariant(), Metadata: null),
+            options => options.Excluding(s => s.Metadata));
+
+        // The database normalises the JSON text (spacing), so the metadata is compared by content, not by characters.
+        System.Text.Json.JsonDocument.Parse(snapshot.Metadata!).RootElement.GetProperty("tier").GetString().Should().Be("basic");
+        invoice.HasDigitalItems.Should().Be(digital);
     }
 
     /// <summary>A service outside the lead time is not invoiced yet.</summary>

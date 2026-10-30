@@ -3,7 +3,8 @@
  * Invoice detail: the invoice loaded by id and shown in six tabs (summary, add payment, options,
  * credit, refund, notes). The route decides the mode (`/view` is read-only, `/edit` lets the
  * operator change the invoice) and a button on the page toggles it. Every tab shows the outcome
- * of its own actions next to them; the page itself only reports a failed load, with Retry.
+ * of its own actions next to them, and the PDF download shows its refusal beside its button; the
+ * page itself only reports a failed load, with Retry.
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -21,12 +22,15 @@ import UiIcon from '@/components/ui/UiIcon.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
+import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import { Icon } from '@/lib/icons'
 import { useBillingStore } from '@/stores/billing'
 import { InvoiceOpenAction, InvoiceTab, InvoiceStatus } from '@/types/invoice'
 import type { InvoiceDetail } from '@/types/invoice'
+import { saveBlob } from '@/utils/saveBlob'
 import type { UiTabItem } from '@/utils/ui/tabs'
+import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
 
@@ -42,6 +46,9 @@ const activeTab = ref<string>(InvoiceTab.Summary)
 
 /** True when the operator can change the invoice (the `/edit` route, or toggled on). */
 const manageMode = ref(route.params.action === EDIT_ACTION)
+
+/** Sentence of a failed PDF download, shown beside its button; null while there is none. */
+const pdfError = ref<string | null>(null)
 
 /** Id of the invoice from the route. */
 const invoiceId = computed<number>(() => Number(route.params.id))
@@ -95,9 +102,15 @@ const print = (): void => {
   window.print()
 }
 
-/** Opens the invoice's PDF in a new tab, where the browser downloads it. */
-const downloadPdf = (): void => {
-  window.open(store.pdfUrl(invoiceId.value), '_blank')
+/** Downloads the invoice's PDF and saves it; a refusal is shown beside the button. */
+const downloadPdf = async (): Promise<void> => {
+  pdfError.value = null
+  const file = await store.downloadPdf(invoiceId.value)
+  if (file === null) {
+    pdfError.value = store.error
+    return
+  }
+  saveBlob(file.blob, file.fileName ?? `invoice-${invoiceId.value}.pdf`)
 }
 
 onMounted(load)
@@ -125,6 +138,7 @@ watch(invoiceId, load)
         <UiButton variant="secondary" data-testid="billing-invoice-download" @click="downloadPdf">
           {{ t('billing.invoiceDetail.downloadPdf') }}
         </UiButton>
+        <UiStatusMessage :message="pdfError" :tone="UiTone.Danger" data-testid="billing-invoice-download-feedback" />
       </template>
     </UiPageHeader>
 

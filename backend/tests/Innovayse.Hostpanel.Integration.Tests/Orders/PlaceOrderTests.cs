@@ -14,6 +14,7 @@ using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
+using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -79,8 +80,13 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     /// <param name="amdMonthly">The AMD price to set, or <see langword="null"/> for USD only.</param>
     /// <param name="name">The product's name, which the invoice line carries.</param>
     /// <param name="usdMonthly">The USD monthly price; <see cref="UsdMonthly"/> when omitted.</param>
+    /// <param name="type">The product's type; shared hosting when omitted.</param>
+    /// <param name="sku">The product's SKU, or <see langword="null"/> for none.</param>
+    /// <param name="metadata">The product's metadata as JSON object text, or <see langword="null"/> for none.</param>
     /// <returns>The new product's primary key.</returns>
-    private async Task<int> SeedProductAsync(decimal? amdMonthly = null, string name = "Starter Hosting", decimal usdMonthly = UsdMonthly)
+    private async Task<int> SeedProductAsync(
+        decimal? amdMonthly = null, string name = "Starter Hosting", decimal usdMonthly = UsdMonthly,
+        ProductType type = ProductType.SharedHosting, string? sku = null, string? metadata = null)
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -90,7 +96,9 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
         await db.SaveChangesAsync();
 
         var product = Product.Create(
-            group.Id, name, null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+            group.Id, name, null, null, null, null, type, 0m, 0m, DateTimeOffset.UtcNow);
+        product.SetSku(sku);
+        product.SetMetadata(metadata);
         product.SetPrice("USD", BillingCycle.Monthly, usdMonthly);
         if (amdMonthly.HasValue)
         {
@@ -656,6 +664,61 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
         (await db.Invoices.AsNoTracking().SingleAsync(i => i.Id == invoiceId)).Status.Should().Be(InvoiceStatus.Paid);
         (await db.Orders.AsNoTracking().SingleAsync(o => o.Id == orderId)).Status.Should().NotBe(OrderStatus.Pending);
         (await db.Transactions.AsNoTracking().AnyAsync(t => t.InvoiceId == invoiceId)).Should().BeFalse();
+    }
+
+    /// <summary>
+    /// The invoice line of an order keeps a copy of the product as it was sold: its id, cycle, digital flag, SKU
+    /// and metadata, so what a paid line delivers does not follow later catalogue edits.
+    /// </summary>
+    [Fact]
+    public async Task OrderLineKeepsTheProductSnapshotOnItsInvoiceLine()
+    {
+        await EnableBankTransferAsync();
+        var sku = $"credits-{Guid.NewGuid():N}";
+        var productId = await SeedProductAsync(type: ProductType.Digital, sku: sku, metadata: "{\"credits\":100}");
+
+        var response = await factory.CreateClient().PostAsJsonAsync("/api/orders", GuestOrder(productId));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var invoiceId = body.RootElement.GetProperty("invoiceId").GetInt32();
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var invoice = await db.Invoices.AsNoTracking().Include(i => i.Items).SingleAsync(i => i.Id == invoiceId);
+        var snapshot = invoice.Items.Should().ContainSingle().Which.ProductSnapshot!;
+        snapshot.Should().BeEquivalentTo(
+            new ProductSnapshot(productId, BillingCycle.Monthly, IsDigital: true, Sku: sku.ToUpperInvariant(), Metadata: null),
+            options => options.Excluding(s => s.Metadata));
+
+        // The database normalises the JSON text (spacing), so the metadata is compared by content, not by characters.
+        JsonDocument.Parse(snapshot.Metadata!).RootElement.GetProperty("credits").GetInt32().Should().Be(100);
+        invoice.HasDigitalItems.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// A free digital order is settled and fulfilled at placement: its service is Active at once and was never
+    /// provisioned, where a free hosting order leaves its service Pending for the client's setup.
+    /// </summary>
+    [Fact]
+    public async Task FreeDigitalOrderActivatesItsServiceWithoutProvisioning()
+    {
+        await EnableBankTransferAsync();
+        var digitalId = await SeedProductAsync(usdMonthly: 0m, type: ProductType.Digital);
+        var hostingId = await SeedProductAsync(usdMonthly: 0m);
+
+        var digital = await factory.CreateClient().PostAsJsonAsync("/api/orders", GuestOrder(digitalId));
+        var hosting = await factory.CreateClient().PostAsJsonAsync("/api/orders", GuestOrder(hostingId));
+
+        digital.StatusCode.Should().Be(HttpStatusCode.Created, await digital.Content.ReadAsStringAsync());
+        hosting.StatusCode.Should().Be(HttpStatusCode.Created, await hosting.Content.ReadAsStringAsync());
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var digitalService = await db.ClientServices.AsNoTracking().SingleAsync(s => s.ProductId == digitalId);
+        digitalService.Status.Should().Be(ServiceStatus.Active);
+        digitalService.NextRenewalAt.Should().NotBeNull();
+        digitalService.ProvisioningRef.Should().BeNull();
+        digitalService.ServerId.Should().BeNull();
+        (await db.ClientServices.AsNoTracking().SingleAsync(s => s.ProductId == hostingId)).Status.Should().Be(ServiceStatus.Pending);
     }
 
     /// <summary>

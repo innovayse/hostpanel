@@ -1,9 +1,10 @@
+using System.Security.Claims;
+
 namespace Innovayse.Hostpanel.Shared.MultiTenancy;
 
 /// <summary>
-/// The caller, as far as a handler is concerned. Keeps <c>ClaimsPrincipal</c> and <c>HttpContext</c>
-/// out of the Application layer: identity comes from the token through this port, never from a
-/// command's body.
+/// The caller, as far as a handler is concerned. Keeps <c>HttpContext</c> out of the Application layer:
+/// identity comes from the token through this port, never from a command's body.
 /// </summary>
 /// <remarks>
 /// Identifiers are strings (the sign-on provider <c>sub</c>, or the local Identity user id), not
@@ -11,6 +12,12 @@ namespace Innovayse.Hostpanel.Shared.MultiTenancy;
 /// </remarks>
 public interface ICurrentUserService
 {
+    /// <summary>
+    /// The authenticated caller with its claims, for the one consumer that must hand it on whole (an identity
+    /// plugin decides from the principal's claims); null when the request carries no authenticated caller.
+    /// </summary>
+    public ClaimsPrincipal? Principal { get; }
+
     /// <summary>The caller's subject id, or null when the request carries no authenticated caller.</summary>
     public string? UserId { get; }
 

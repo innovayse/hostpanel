@@ -1,21 +1,26 @@
 /**
  * Mount tests for InvoiceDetailView: the invoice loads by id into the tabs, the Options tab
- * exists only while managing, each tab reports its own outcome (never the page), and a refused
- * load shows the API sentence with Retry.
+ * exists only while managing, each tab reports its own outcome (never the page), the PDF
+ * download saves the file or shows its refusal beside the button, and a refused load shows the
+ * API sentence with Retry.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import InvoiceDetailView from '@/views/InvoiceDetailView.vue'
+import { saveBlob } from '@/utils/saveBlob'
 import { invoiceFixture } from '../helpers/billingFixtures'
 import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
+
+vi.mock('@/utils/saveBlob', () => ({ saveBlob: vi.fn() }))
 
 /** Route pattern of the screen, with the optional mode segment. */
 const PATTERN = '/billing/:id/:action?'
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  vi.mocked(saveBlob).mockClear()
 })
 
 describe('InvoiceDetailView', () => {
@@ -108,18 +113,57 @@ describe('InvoiceDetailView', () => {
     expect(wrapper.find('[data-testid="billing-invoice-error"]').exists()).toBe(false)
   })
 
-  it('opens the PDF download in a new tab', async () => {
-    stubRoutes({ 'GET /api/billing/1': () => json(invoiceFixture()) })
-    const open = vi.fn()
-    vi.stubGlobal('open', open)
+  it('downloads the PDF as a blob under the name the API gives', async () => {
+    stubRoutes({
+      'GET /api/billing/1/pdf': () =>
+        new Response('%PDF', {
+          status: 200,
+          headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="invoice-1.pdf"' },
+        }),
+      'GET /api/billing/1': () => json(invoiceFixture()),
+    })
     const { wrapper } = await mountRouted(InvoiceDetailView, PATTERN, '/billing/1')
     await flushPromises()
 
     const button = wrapper.get('[data-testid="billing-invoice-download"]')
     await button.trigger('click')
+    await flushPromises()
 
     expect(button.text()).toContain('Download PDF')
-    expect(open).toHaveBeenCalledWith('/api/billing/1/pdf', '_blank')
+    expect(saveBlob).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(saveBlob).mock.calls[0]?.[1]).toBe('invoice-1.pdf')
+    expect(wrapper.get('[data-testid="billing-invoice-download-feedback"]').text()).toBe('')
+  })
+
+  it('falls back to a default file name when the API sends none', async () => {
+    stubRoutes({
+      'GET /api/billing/1/pdf': () => new Response('%PDF', { status: 200 }),
+      'GET /api/billing/1': () => json(invoiceFixture()),
+    })
+    const { wrapper } = await mountRouted(InvoiceDetailView, PATTERN, '/billing/1')
+    await flushPromises()
+
+    await wrapper.get('[data-testid="billing-invoice-download"]').trigger('click')
+    await flushPromises()
+
+    expect(vi.mocked(saveBlob).mock.calls[0]?.[1]).toBe('invoice-1.pdf')
+  })
+
+  it('shows a refused PDF download beside its button only, and saves nothing', async () => {
+    stubRoutes({
+      'GET /api/billing/1/pdf': () => problem('The invoice has too many lines for a PDF.', 409),
+      'GET /api/billing/1': () => json(invoiceFixture()),
+    })
+    const { wrapper } = await mountRouted(InvoiceDetailView, PATTERN, '/billing/1')
+    await flushPromises()
+
+    await wrapper.get('[data-testid="billing-invoice-download"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="billing-invoice-download-feedback"]').text())
+      .toBe('The invoice has too many lines for a PDF.')
+    expect(saveBlob).not.toHaveBeenCalled()
+    expect(wrapper.find('[data-testid="billing-invoice-error"]').exists()).toBe(false)
   })
 
   it('shows the API sentence with Retry when the invoice cannot be loaded, and loads it again', async () => {

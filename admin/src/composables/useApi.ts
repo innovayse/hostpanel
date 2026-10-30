@@ -20,6 +20,7 @@ import { i18n } from '@/i18n'
 import { API_BASE } from '@/lib/apiPaths'
 import { HttpMethod } from '@/types/http'
 import { MimeType } from '@/types/http'
+import type { DownloadedFile } from '@/types/download'
 
 /**
  * Builds the `X-Language` header from the active i18n locale, the only header the API reads
@@ -108,10 +109,34 @@ const failureOf = async (response: Response): Promise<ApiError> => {
 }
 
 /**
+ * Reads the file name a response offers in its `Content-Disposition` header.
+ *
+ * @param response - A successful response.
+ * @returns The file name, or null when the header is missing or names no file.
+ */
+const fileNameOf = (response: Response): string | null => {
+  const header = response.headers.get('Content-Disposition')
+  if (header === null) {
+    return null
+  }
+  const encoded = /filename\*\s*=\s*UTF-8''([^;]+)/i.exec(header)
+  if (encoded?.[1]) {
+    try {
+      return decodeURIComponent(encoded[1].trim())
+    } catch {
+      // Malformed escape: fall back to the plain `filename`.
+    }
+  }
+  const plain = /filename\s*=\s*"?([^";]+)"?/i.exec(header)
+  const name = plain?.[1]?.trim()
+  return name ? name : null
+}
+
+/**
  * Composable for making authenticated API calls via the same-origin proxy.
  *
  * @returns `request` for JSON calls, `upload` for one multipart file, `probe` for 401-tolerant reads
- * and `href` for an address the browser opens itself.
+ * and `download` for a file read as a blob.
  */
 export const useApi = () => {
   /**
@@ -209,13 +234,24 @@ export const useApi = () => {
   }
 
   /**
-   * The address of an endpoint the browser opens itself (a file download in a new tab) instead of
-   * a request made here. The session cookie goes with it like with any same-origin request.
+   * Fetches a file as a blob, so the page can save it and show a refusal instead of
+   * navigating to it.
    *
    * @param endpoint - API path (e.g. '/billing/5/pdf').
-   * @returns The full address to open.
+   * @returns The file and the name the API gave it.
+   * @throws {ApiError} When the API answers with a non-2xx status; the problem+json body travels on the error.
    */
-  const href = (endpoint: string): string => `${API_BASE}${endpoint}`
+  const download = async (endpoint: string): Promise<DownloadedFile> => {
+    const response = await fetch(`${API_BASE}${endpoint}`, {
+      headers: { ...CSRF_HEADER, ...languageHeader() },
+    })
 
-  return { request, upload, probe, href }
+    if (!response.ok) {
+      throw await failureOf(response)
+    }
+
+    return { blob: await response.blob(), fileName: fileNameOf(response) }
+  }
+
+  return { request, upload, probe, download }
 }

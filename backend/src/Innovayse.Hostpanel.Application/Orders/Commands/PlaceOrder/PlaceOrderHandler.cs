@@ -248,7 +248,7 @@ public sealed class PlaceOrderHandler
 
         // Raised before the order is saved: an invoice whose order then fails to save is cancelled
         // below, while an order saved without its invoice was a Pending order nobody could pay.
-        var invoiceItems = lines.Select(line => new CreateInvoiceItemDto(DescribeLine(line), line.Price, 1)).ToList();
+        var invoiceItems = lines.Select(line => new OrderInvoiceItemDto(DescribeLine(line), line.Price, 1, line.Snapshot)).ToList();
         var invoice = await _bus.InvokeAsync<Result<int>>(
             new CreateOrderInvoiceCommand(clientId.Value, currency.Value!, invoiceItems), ct);
         if (invoice.IsFailure)
@@ -330,7 +330,9 @@ public sealed class PlaceOrderHandler
                 return Result<IReadOnlyList<PricedOrderLine>>.FailureCode(priceOutcome.ErrorCode!);
             }
 
-            lines.Add(new PricedOrderLine(item, product.Name, priceOutcome.Value));
+            // A domain line charges for a domain, not for the catalogue product it names, so it keeps no snapshot.
+            var snapshot = item.DomainAction is null ? product.Fulfilment.ToSnapshot(item.BillingCycle) : null;
+            lines.Add(new PricedOrderLine(item, product.Name, priceOutcome.Value, snapshot));
         }
 
         return Result<IReadOnlyList<PricedOrderLine>>.Success(lines);

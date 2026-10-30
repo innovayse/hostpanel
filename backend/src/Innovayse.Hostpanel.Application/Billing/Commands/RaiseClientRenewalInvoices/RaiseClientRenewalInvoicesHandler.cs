@@ -259,8 +259,13 @@ public sealed class RaiseClientRenewalInvoicesHandler
                 continue;
             }
 
-            var name = products[service.ProductId].Name;
-            result.Add(new PendingLine(start, inv => inv.AddServiceRenewal($"Renewal: {name}", service.RecurringAmount, service.Id, start, end)));
+            // The line keeps what the product is now, so a fulfilment plugin told about the paid renewal
+            // delivers what is sold today, not what the catalogue held when the service was first ordered.
+            var product = products[service.ProductId];
+            var snapshot = product.Fulfilment.ToSnapshot(service.BillingCycle);
+            result.Add(new PendingLine(
+                start,
+                inv => inv.AddServiceRenewal($"Renewal: {product.Name}", service.RecurringAmount, service.Id, start, end, snapshot)));
         }
 
         return result;

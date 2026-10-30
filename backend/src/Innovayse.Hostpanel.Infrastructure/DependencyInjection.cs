@@ -183,6 +183,7 @@ public static class DependencyInjection
         services.AddScoped<IClientRecordStore, ClientRecordStore>();
         services.AddScoped<IActivityLogger, ActivityLogger>();
         services.AddScoped<IClientCredit, ClientCredit>();
+        services.AddScoped<IClientExternalAccounts, ClientExternalAccounts>();
         services.AddScoped<ISetupTokenStore, SetupTokenStore>();
         services.AddScoped<INumberSequence, NumberSequence>();
 

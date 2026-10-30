@@ -143,6 +143,9 @@
 <data name="InvoiceIdInvalid" xml:space="preserve">
     <value>Name a valid invoice.</value>
   </data>
+<data name="FulfilmentRecordIdInvalid" xml:space="preserve">
+    <value>Name a valid fulfilment record.</value>
+  </data>
 <data name="InvoiceClientIdInvalid" xml:space="preserve">
     <value>Name a valid client to invoice.</value>
   </data>
@@ -1327,5 +1330,14 @@
   </data>
   <data name="ContactNotificationTopicInvalid" xml:space="preserve">
     <value>The notification kind is not valid.</value>
+  </data>
+  <data name="ClientExternalAccountPairRequired" xml:space="preserve">
+    <value>Both the external system and the account id are required, or neither to clear the link.</value>
+  </data>
+  <data name="ClientExternalAccountProviderInvalid" xml:space="preserve">
+    <value>The external system name is required and at most 64 characters.</value>
+  </data>
+  <data name="ClientExternalAccountIdInvalid" xml:space="preserve">
+    <value>The external account id is required and at most 256 characters.</value>
   </data>
 </root>

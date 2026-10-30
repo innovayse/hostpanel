@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Orders.Commands.FulfillOrderLines;
 using Innovayse.Hostpanel.Application.Orders.Common;
 using Innovayse.Hostpanel.Application.Orders.Common.Enums;
+using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -48,6 +49,32 @@ public sealed class FulfillOrderLinesTests(IntegrationTestFactory factory) : ICl
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var services = await db.ClientServices.AsNoTracking().Where(s => s.ClientId == seeded.ClientId).ToListAsync();
         services.Should().ContainSingle(s => s.ProductId == seeded.ProductId);
+    }
+
+    /// <summary>
+    /// A digital line becomes an Active service at once, with no provisioning reference and no server, while a
+    /// hosting line in the same order is created exactly as before: Pending, left for the client's setup.
+    /// </summary>
+    [Fact]
+    public async Task ActivatesTheDigitalLineWithoutProvisioningAndLeavesTheHostingLinePending()
+    {
+        var seeded = await OrdersTestSeeds.SeedDigitalAndHostingOrderAsync(factory);
+
+        var result = await InvokeAsync(new FulfillOrderLinesCommand(seeded.OrderId));
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.FailedLines.Should().BeEmpty();
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var services = await db.ClientServices.AsNoTracking().Where(s => s.ClientId == seeded.ClientId).ToListAsync();
+        var digital = services.Should().ContainSingle(s => s.ProductId == seeded.DigitalProductId).Which;
+        digital.Status.Should().Be(ServiceStatus.Active);
+        digital.NextRenewalAt.Should().NotBeNull();
+        digital.ProvisioningRef.Should().BeNull();
+        digital.ServerId.Should().BeNull();
+        var hosting = services.Should().ContainSingle(s => s.ProductId == seeded.HostingProductId).Which;
+        hosting.Status.Should().Be(ServiceStatus.Pending);
+        hosting.NextRenewalAt.Should().BeNull();
     }
 
     /// <summary>Dispatches the command on a fresh scope's bus.</summary>

@@ -1,12 +1,16 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Reflection;
+using System.Text.Json;
 using Innovayse.Hostpanel.API.Controllers;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Infrastructure.Pdf;
 using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 
@@ -50,6 +54,28 @@ public sealed class GetMyInvoicePdfTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>
+    /// A client's download waits no longer than <c>InvoicePdf:MaxRenderWaitSeconds</c> for a render
+    /// slot either: with the only one taken, it answers 503 with the configured <c>Retry-After</c>.
+    /// </summary>
+    [Fact]
+    public async Task GetMyPdf_AnswersBusyWhenNoRenderSlotFrees()
+    {
+        using var host = BillingTestSeeds.RenderBusyHost(factory);
+        var (owner, ownerClientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "pdf-busy");
+        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, ownerClientId, 10m);
+        using var held = await host.Services.GetRequiredService<InvoicePdfRenderGate>().TryEnterAsync(CancellationToken.None);
+
+        var response = await owner.GetAsync($"/api/me/invoices/{invoiceId}/pdf");
+
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        response.Headers.RetryAfter!.Delta.Should().Be(TimeSpan.FromSeconds(BillingTestSeeds.BusyRetryAfterSeconds));
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("type").GetString().Should().Be(HostpanelErrorCodes.INVOICE_PDF_RENDER_BUSY);
+        body.GetProperty("detail").GetString().Should().NotBeNullOrWhiteSpace().And.NotBe(HostpanelErrorCodes.INVOICE_PDF_RENDER_BUSY);
+    }
+
+    /// <summary>
     /// Rendering holds a thread and a few megabytes, so a client may only have a few in flight.
     /// Limiting is switched off in the Testing environment, hence the attribute is checked rather
     /// than provoked.
@@ -82,6 +108,7 @@ public sealed class GetMyInvoicePdfTests(IntegrationTestFactory factory) : IClas
             (StatusCodes.Status401Unauthorized, typeof(ErrorResponse)),
             (StatusCodes.Status403Forbidden, typeof(ErrorResponse)),
             (StatusCodes.Status404NotFound, typeof(ErrorResponse)),
+            (StatusCodes.Status503ServiceUnavailable, typeof(ErrorResponse)),
         });
     }
 

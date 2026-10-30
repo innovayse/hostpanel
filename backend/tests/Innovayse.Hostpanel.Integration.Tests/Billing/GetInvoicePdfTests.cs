@@ -2,9 +2,11 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Reflection;
+using System.Text.Json;
 using Innovayse.Hostpanel.API.Controllers;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Infrastructure.Pdf;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -82,6 +84,28 @@ public sealed class GetInvoicePdfTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>
+    /// With the only render slot taken for longer than <c>InvoicePdf:MaxRenderWaitSeconds</c>, the
+    /// download answers 503 with the configured <c>Retry-After</c> instead of queueing on.
+    /// </summary>
+    [Fact]
+    public async Task GetPdf_AnswersBusyWhenNoRenderSlotFrees()
+    {
+        using var host = BillingTestSeeds.RenderBusyHost(factory);
+        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
+        var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 12.50m);
+        using var held = await host.Services.GetRequiredService<InvoicePdfRenderGate>().TryEnterAsync(CancellationToken.None);
+
+        var response = await admin.GetAsync($"/api/billing/{invoiceId}/pdf");
+
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        response.Headers.RetryAfter!.Delta.Should().Be(TimeSpan.FromSeconds(BillingTestSeeds.BusyRetryAfterSeconds));
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("type").GetString().Should().Be(HostpanelErrorCodes.INVOICE_PDF_RENDER_BUSY);
+        body.GetProperty("detail").GetString().Should().NotBeNullOrWhiteSpace().And.NotBe(HostpanelErrorCodes.INVOICE_PDF_RENDER_BUSY);
+    }
+
+    /// <summary>
     /// The action documents every status it can answer, with the error body on each refusal, so the
     /// generated API description matches what a caller can actually receive.
     /// </summary>
@@ -100,6 +124,7 @@ public sealed class GetInvoicePdfTests(IntegrationTestFactory factory) : IClassF
             (StatusCodes.Status401Unauthorized, typeof(ErrorResponse)),
             (StatusCodes.Status403Forbidden, typeof(ErrorResponse)),
             (StatusCodes.Status404NotFound, typeof(ErrorResponse)),
+            (StatusCodes.Status503ServiceUnavailable, typeof(ErrorResponse)),
         });
     }
 
@@ -108,6 +133,7 @@ public sealed class GetInvoicePdfTests(IntegrationTestFactory factory) : IClassF
     [Theory]
     [InlineData("InvoicePdf:MaxLines")]
     [InlineData("InvoicePdf:MaxConcurrentRenders")]
+    [InlineData("InvoicePdf:MaxRenderWaitSeconds")]
     public void Startup_RefusesANonPositiveLimit(string key)
     {
         using var host = factory.WithWebHostBuilder(builder => builder.UseSetting(key, "0"));

@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Admin.Servers.Commands.SyncServerAccountCountsCron;
 using Innovayse.Hostpanel.Application.Billing.Commands.CheckOverdueInvoicesCron;
+using Innovayse.Hostpanel.Application.Billing.Commands.DispatchFulfilmentCron;
 using Innovayse.Hostpanel.Application.Billing.Commands.ProcessBillableItemsCron;
 using Innovayse.Hostpanel.Application.Billing.Commands.ProcessRenewalsCron;
 using Innovayse.Hostpanel.Application.Billing.Commands.ReconcileGatewayPaymentsCron;
@@ -15,7 +16,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Scheduling;
 /// <summary>
 /// Hosted service that starts the billing jobs on application startup: renewal invoices, billable
 /// items processing, renewal reminders, overdue checks, overdue suspensions, plus the server sync,
-/// auto-terminate and gateway reconcile jobs. Their hours and intervals are the
+/// auto-terminate, gateway reconcile and fulfilment dispatch jobs. Their hours and intervals are the
 /// <c>ScheduledJobsOptions</c> values the job handlers read too.
 /// </summary>
 /// <remarks>
@@ -52,6 +53,7 @@ public sealed class BillingScheduledJobsStartup : IHostedService
         await jobs.StartAsync<SyncServerAccountCountsCronCommand>(schedules.SyncServerAccountCounts, cancellationToken);
         await jobs.StartAsync<AutoTerminateSuspendedCronCommand>(schedules.AutoTerminateSuspended, cancellationToken);
         await jobs.StartAsync<ReconcileGatewayPaymentsCronCommand>(schedules.ReconcileGatewayPayments, cancellationToken);
+        await jobs.StartAsync<DispatchFulfilmentCronCommand>(schedules.DispatchFulfilment, cancellationToken);
     }
 
     /// <summary>

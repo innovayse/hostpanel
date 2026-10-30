@@ -127,18 +127,52 @@ public sealed class RecurringJobs
     public async Task<DateTimeOffset?> RunAsync<TCommand>(JobSchedule schedule, Func<Task> run, CancellationToken ct)
         where TCommand : IRecurringJob, new()
     {
+        if (!await TryRunAsync<TCommand>(schedule, run, ct))
+        {
+            return null;
+        }
+
+        return await ScheduleAsync<TCommand>(schedule.NextAfter(_clock.UtcNow));
+    }
+
+    /// <summary>
+    /// Runs one pass of a job under its lease exactly as <see cref="RunAsync{TCommand}"/> does, and
+    /// schedules nothing: for a pass started on demand beside the scheduled chain (the fulfilment
+    /// dispatch run right after a payment), where scheduling would start a second chain. The pass takes
+    /// the same lease as the chain's, so the two never run at once. Never throws for a failed pass.
+    /// </summary>
+    /// <typeparam name="TCommand">The marker command of the job whose pass this is; also names the job and its lease.</typeparam>
+    /// <param name="schedule">When the job runs; names how long the lease stays closed after a success.</param>
+    /// <param name="run">The pass itself.</param>
+    /// <param name="ct">The handler's cancellation token.</param>
+    /// <returns>A task that completes when the pass ended or was skipped.</returns>
+    public async Task RunOnceAsync<TCommand>(JobSchedule schedule, Func<Task> run, CancellationToken ct)
+        where TCommand : IRecurringJob, new()
+    {
+        await TryRunAsync<TCommand>(schedule, run, ct);
+    }
+
+    /// <summary>Runs one pass under the lease and handles how it ended: a failure or a timeout is logged and swallowed.</summary>
+    /// <typeparam name="TCommand">The job's marker command; also names the job.</typeparam>
+    /// <param name="schedule">When the job runs.</param>
+    /// <param name="run">The pass itself.</param>
+    /// <param name="ct">The handler's cancellation token.</param>
+    /// <returns><see langword="false"/> when the pass was cut off because the host is stopping, which ends a chain; <see langword="true"/> otherwise.</returns>
+    private async Task<bool> TryRunAsync<TCommand>(JobSchedule schedule, Func<Task> run, CancellationToken ct)
+        where TCommand : IRecurringJob, new()
+    {
         var jobName = typeof(TCommand).Name;
 
         try
         {
-            await RunUnderLeaseAsync(jobName, run, ct);
+            await RunUnderLeaseAsync(jobName, schedule, run, ct);
         }
         catch (OperationCanceledException ex) when (ct.IsCancellationRequested)
         {
             if (_lifetime.ApplicationStopping.IsCancellationRequested)
             {
                 _logger.LogInformation("{JobName} was cut off because the host is stopping; the next start catches it up.", jobName);
-                return null;
+                return false;
             }
 
             _logger.LogWarning(ex, "{JobName} was cancelled before it finished; its next run is still scheduled.", jobName);
@@ -148,15 +182,16 @@ public sealed class RecurringJobs
             _logger.LogError(ex, "{JobName} failed; its next run is still scheduled.", jobName);
         }
 
-        return await ScheduleAsync<TCommand>(schedule.NextAfter(_clock.UtcNow));
+        return true;
     }
 
     /// <summary>Takes the lease, runs the pass when it was granted, and gives the lease back however the pass ended.</summary>
     /// <param name="jobName">The job's name.</param>
+    /// <param name="schedule">When the job runs; names how long the lease stays closed after a success.</param>
     /// <param name="run">The pass itself.</param>
     /// <param name="ct">The handler's cancellation token.</param>
     /// <returns>A task; it faults with whatever the lease or the pass threw.</returns>
-    private async Task RunUnderLeaseAsync(string jobName, Func<Task> run, CancellationToken ct)
+    private async Task RunUnderLeaseAsync(string jobName, JobSchedule schedule, Func<Task> run, CancellationToken ct)
     {
         var options = _options.Value;
         var owner = $"{Environment.MachineName}:{Guid.NewGuid():N}";
@@ -176,7 +211,8 @@ public sealed class RecurringJobs
         }
         finally
         {
-            await ReleaseAsync(new JobLeaseRelease(jobName, owner, _clock.UtcNow, succeeded, options.Rest));
+            var rest = schedule.RestAfterSuccess(options.Rest);
+            await ReleaseAsync(new JobLeaseRelease(jobName, owner, _clock.UtcNow, succeeded, rest));
         }
     }
 

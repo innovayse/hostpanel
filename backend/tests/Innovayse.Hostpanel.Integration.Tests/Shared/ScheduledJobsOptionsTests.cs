@@ -54,6 +54,26 @@ public sealed class ScheduledJobsOptionsTests
         Validate(options).Should().ContainSingle();
     }
 
+    /// <summary>The fulfilment dispatch runs every 30 seconds, its claim lasts twice the call timeout, and the defaults fit the job lease.</summary>
+    [Fact]
+    public void FulfilmentDispatch_DefaultsAreThirtySecondsWithATwiceTimeoutLease()
+    {
+        var options = new ScheduledJobsOptions();
+
+        options.DispatchFulfilmentIntervalSeconds.Should().Be(30);
+        options.FulfilmentLease.Should().Be(options.FulfilmentCallTimeout * 2);
+        (options.FulfilmentCallTimeout * options.FulfilmentBatchSize).Should().BeLessThan(options.Lease);
+    }
+
+    /// <summary>A batch that could outlast the job lease is refused, or another instance would start a second pass over the same records.</summary>
+    [Fact]
+    public void FulfilmentBatchThatCouldOutlastTheJobLease_IsRefused()
+    {
+        var options = new ScheduledJobsOptions { FulfilmentBatchSize = 100, FulfilmentCallTimeoutSeconds = 60, LeaseMinutes = 60 };
+
+        Validate(options).Should().ContainSingle();
+    }
+
     /// <summary>Runs the full options validation, annotations and relations alike.</summary>
     /// <param name="options">The options to check.</param>
     /// <returns>The failures found.</returns>

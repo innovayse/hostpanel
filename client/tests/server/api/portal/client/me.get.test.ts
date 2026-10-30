@@ -96,6 +96,7 @@ describe('GET /api/portal/client/me in single sign-on mode', () => {
       email: 'sso@b.test',
       twoFactorEnabled: true,
       permissions: granted,
+      actsForAccount: true,
       hasClientProfile: true,
     })
   })
@@ -113,6 +114,62 @@ describe('GET /api/portal/client/me in single sign-on mode', () => {
     const result = await route.default(makeEvent({ cookies: await signedIn('jwt') })) as Record<string, unknown>
 
     expect(result['permissions']).toBe(Permission.None)
+  })
+
+  describe('actsForAccount', () => {
+    /**
+     * Answers the SSO profile and the billing profile as usual, and `/auth/me` with the given account fields.
+     *
+     * @param account - What the account answer adds to the permissions: `clientId`, `externalAccount`, or neither.
+     */
+    const respondWithAccount = (account: Record<string, unknown>): void => {
+      backend.respondWith(request => (
+        request.url === '/api/auth/me'
+          ? { body: { email: 'sso@b.test', roles: ['Client'], emailVerified: true, clientPermissions: granted, ...account } }
+          : answer(request)
+      ))
+    }
+
+    it('is true for the owner of a client record', async () => {
+      respondWithAccount({ clientId: 7, externalAccount: null })
+
+      const result = await route.default(makeEvent({ cookies: await signedIn('jwt') })) as Record<string, unknown>
+
+      expect(result['actsForAccount']).toBe(true)
+    })
+
+    it('is true for a member an identity plugin vouches for, who has no client record yet', async () => {
+      respondWithAccount({ clientId: null, externalAccount: { provider: 'acme-sso', id: 'u-1' } })
+
+      const result = await route.default(makeEvent({ cookies: await signedIn('jwt') })) as Record<string, unknown>
+
+      expect(result['actsForAccount']).toBe(true)
+    })
+
+    it('is false for a signed-in person who acts for no account, such as a first-time buyer', async () => {
+      respondWithAccount({ clientId: null, externalAccount: null, clientPermissions: 0 })
+
+      const result = await route.default(makeEvent({ cookies: await signedIn('jwt') })) as Record<string, unknown>
+
+      expect(result['actsForAccount']).toBe(false)
+      expect(result['permissions']).toBe(Permission.None)
+    })
+
+    it('is true when the account cannot be read, so nothing that needs a permission is offered on a guess', async () => {
+      backend.respondWith(request => (request.url === '/api/auth/me' ? { status: 500, body: {} } : answer(request)))
+
+      const result = await route.default(makeEvent({ cookies: await signedIn('jwt') })) as Record<string, unknown>
+
+      expect(result['actsForAccount']).toBe(true)
+    })
+
+    it('is true when an older backend sends neither field', async () => {
+      respondWithAccount({})
+
+      const result = await route.default(makeEvent({ cookies: await signedIn('jwt') })) as Record<string, unknown>
+
+      expect(result['actsForAccount']).toBe(true)
+    })
   })
 
   it('answers the identity with every billing field null when the billing profile is refused', async () => {
@@ -135,6 +192,7 @@ describe('GET /api/portal/client/me in single sign-on mode', () => {
       twoFactorEnabled: true,
       contacts: [],
       permissions: granted,
+      actsForAccount: true,
       hasClientProfile: false,
     })
   })
@@ -197,7 +255,7 @@ describe('GET /api/portal/client/me in local mode', () => {
     const result = await route.default(makeEvent({ cookies: await signedIn('jwt') }))
 
     expect(backend.requests.map(request => request.url)).toEqual(['/api/clients/me', '/api/auth/me'])
-    expect(result).toEqual({ ...billing, permissions: granted, hasClientProfile: true })
+    expect(result).toEqual({ ...billing, permissions: granted, actsForAccount: true, hasClientProfile: true })
   })
 
   it('passes the backend refusal through with its code and sentence', async () => {

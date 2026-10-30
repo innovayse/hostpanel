@@ -316,6 +316,15 @@ describe('useClientStore sections the person has no permission for', () => {
     expect(store.mayDo(Permission.ViewEmails | Permission.ViewPayInvoices)).toBe(false)
   })
 
+  it('answers mayDo yes for a signed-in person who acts for no account yet, who holds no flag', async () => {
+    fetchMe.mockResolvedValue({ ...profile, permissions: Permission.None, actsForAccount: false })
+    const store = useClientStore()
+
+    await store.fetchUser()
+
+    expect(store.mayDo(Permission.PlaceNewOrders)).toBe(true)
+  })
+
   it('keeps the API sentence when the server refuses a section anyway, for instance after a grant was withdrawn', async () => {
     fetchMe.mockResolvedValue(profile)
     // The shape the browser gets through the BFF: the sentence in statusMessage, the code under data.

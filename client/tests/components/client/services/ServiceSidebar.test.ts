@@ -44,6 +44,12 @@ describe('ServiceSidebar', () => {
     expect(pending.find('[data-testid="service-nav-setup"]').attributes('href')).toBe('/client/services/4/setup')
   })
 
+  it('does not offer the setup of a pending digital service', () => {
+    const wrapper = mountSidebar({ service: service({ status: ServiceStatus.Pending, isDigital: true }) })
+
+    expect(wrapper.find('[data-testid="service-nav-setup"]').exists()).toBe(false)
+  })
+
   it('offers the quick links only with a known server', () => {
     const known = mountSidebar()
     const unknown = mountSidebar({ service: service({ server: null }) })

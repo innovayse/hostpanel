@@ -25,6 +25,8 @@
  *   text hero), so only the spec that covers the slider turns them on, until the next reset;
  * - `POST /__e2e/email-verified`: sets whether the signed-in address reads as confirmed (it does by default),
  *   so only the spec for the verification banner turns it off, until the next reset;
+ * - `POST /__e2e/account`: overrides fields of the signed-in person's account (`GET /api/auth/me`), such as
+ *   `clientPermissions` or `clientId`, so a spec can sign in a member without a permission or a first-time buyer, until the next reset;
  * - `POST /__e2e/reset`: clears the log, the scripted answers, the settings overrides, demo mode and
  *   everything a spec changed: tickets, profile, services, the domain, payment methods, contacts,
  *   the team and the two-factor flag.
@@ -151,6 +153,9 @@ let tickets = seedTickets()
 
 /** @type {Map<string, string>} Public settings a spec overrode, keyed by setting key; cleared on reset. */
 const settingOverrides = new Map()
+
+/** The account `GET /api/auth/me` answers; a spec overrides fields of it, a reset restores it. */
+let account = { ...ACCOUNT }
 
 /** Whether the stub reports a demo; off by default, a spec turns it on, a reset turns it off. */
 let demoEnabled = false
@@ -496,7 +501,7 @@ const route = (method, path, body, res, query = new URLSearchParams()) => {
 
   // Client area: the stub trusts any bearer; the specs do not test authorisation here.
   if (isGet && path === '/api/auth/me') {
-    send(res, 200, ACCOUNT)
+    send(res, 200, account)
     return true
   }
   if (isGet && path === '/api/clients/me') {
@@ -879,6 +884,7 @@ const server = createServer(async (req, res) => {
     settingOverrides.clear()
     demoEnabled = false
     slidesEnabled = false
+    account = { ...ACCOUNT }
     emailVerified = true
     tickets = seedTickets()
     profile = { ...CLIENT }
@@ -903,6 +909,11 @@ const server = createServer(async (req, res) => {
   if (path === '/__e2e/settings') {
     const setting = await readJson(req)
     settingOverrides.set(String(setting.key), String(setting.value))
+    send(res, 204)
+    return
+  }
+  if (path === '/__e2e/account') {
+    account = { ...ACCOUNT, ...(await readJson(req)) }
     send(res, 204)
     return
   }

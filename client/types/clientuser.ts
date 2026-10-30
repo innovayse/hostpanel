@@ -27,4 +27,10 @@ export interface ClientUser extends Omit<MyProfile, 'id' | 'address' | 'notifica
   hasClientProfile: boolean
   /** The `ClientPermission` flags the person holds, as an integer (8191 = All). */
   permissions: number
+  /**
+   * True when the person acts for a client account (they own a client record, are linked to one,
+   * or an identity plugin vouches for an external account). The permission flags only restrict
+   * such a person; a signed-in first-time buyer with no account yet may place their first order.
+   */
+  actsForAccount: boolean
 }

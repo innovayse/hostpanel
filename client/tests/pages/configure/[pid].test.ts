@@ -10,6 +10,7 @@ import CatalogConfigure from '~/components/catalog/Configure.vue'
 import { useCartStore } from '~/stores/cart'
 import type { BillingCurrency } from '~/types/currency'
 import type { PortalProduct } from '~/types/portalproduct'
+import { ProductType } from '~/types/producttype'
 
 /** The mocked catalogue endpoints, re-created for every test. */
 const api = { fetchProducts: vi.fn(), fetchProductGroups: vi.fn() }
@@ -88,6 +89,15 @@ describe('configure page', () => {
     await wrapper.find('[data-testid="configure-cycle-annual"]').trigger('click')
 
     expect(wrapper.find('[data-testid="configure-total"]').text()).toContain('50.00')
+  })
+
+  it('keeps the product type on the cart line, so the order of a digital good offers no hosting setup', async () => {
+    api.fetchProducts.mockResolvedValue([{ ...starter, type: ProductType.Digital }])
+    const wrapper = await mountConfigure()
+
+    await wrapper.find('[data-testid="configure-continue"]').trigger('click')
+
+    expect(useCartStore().items[0]?.productType).toBe(ProductType.Digital)
   })
 
   it('puts the product in the cart in the chosen cycle and moves on to checkout', async () => {

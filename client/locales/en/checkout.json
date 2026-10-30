@@ -15,6 +15,7 @@
     "redirecting": "Redirecting",
     "redirectingToBank": "You are being redirected to the bank's secure payment page.",
     "noPaymentMethods": "No payment methods available. Please contact support.",
+    "permissionDenied": "Your account is not allowed to place orders. Ask the account owner to grant you the permission to place new orders.",
     "fields": {
       "firstname": "First Name",
       "lastname": "Last Name",

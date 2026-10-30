@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Suspense, defineComponent, h, reactive, ref } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { CheckoutDestinationKind } from '~/types/checkoutdestinationkind'
+import { Permission } from '~/composables/usePermissions'
 import { useCheckoutPage } from '~/composables/useCheckoutPage'
 
 /** The fake stores and their spies, shared with the module mocks below. */
@@ -18,12 +19,18 @@ const fakes = vi.hoisted(() => ({
   currency: null as null | Record<string, unknown>,
   checkout: null as null | Record<string, unknown>,
   auth: null as null | Record<string, unknown>,
+  /** The permissions the signed-in person holds; `null` stands for a person who acts for no account. */
+  held: null as number | null,
 }))
 
 vi.mock('~/stores/cart', () => ({ useCartStore: () => fakes.cart }))
 vi.mock('~/stores/currency', () => ({ useCurrencyStore: () => fakes.currency }))
 vi.mock('~/stores/checkout', () => ({ useCheckoutStore: () => fakes.checkout }))
 vi.mock('~/stores/auth', () => ({ useAuthStore: () => fakes.auth }))
+// The client store's own decision (`mayPerform`) is covered by its tests; here only the wiring is.
+vi.mock('~/stores/client', () => ({
+  useClientStore: () => ({ mayDo: (flag: number) => fakes.held === null || (fakes.held & flag) === flag }),
+}))
 
 /**
  * Builds the four fake stores.
@@ -83,6 +90,7 @@ const runInPage = async () => {
 
 describe('useCheckoutPage', () => {
   beforeEach(() => {
+    fakes.held = Permission.All
     vi.stubGlobal('useHead', vi.fn())
     vi.stubGlobal('useLocalePath', () => (path: string) => path)
   })
@@ -132,6 +140,7 @@ describe('useCheckoutPage', () => {
     const page = await runInPage()
 
     await page.submitOrder()
+    /** The arguments the page passed to placeOrder, holding the total change confirmation. */
     const input = (placeOrder.mock.calls[0] as unknown as [{ confirmTotalChange: (shown: string, charged: string) => boolean }])[0]
 
     expect(input.confirmTotalChange('$10.00', '$12.00')).toBe(true)
@@ -158,5 +167,47 @@ describe('useCheckoutPage', () => {
     await page.submitOrder()
 
     expect(navigateTo).not.toHaveBeenCalled()
+  })
+})
+
+describe('useCheckoutPage permissions', () => {
+  beforeEach(() => {
+    vi.stubGlobal('useHead', vi.fn())
+    vi.stubGlobal('useLocalePath', () => (path: string) => path)
+    vi.mocked(navigateTo).mockClear()
+  })
+
+  it('lets a person who may place orders order', async () => {
+    fakes.held = Permission.PlaceNewOrders
+    const { placeOrder } = buildStores({ kind: CheckoutDestinationKind.Route, target: '/client/order-success' })
+    const page = await runInPage()
+
+    await page.submitOrder()
+
+    expect(page.mayPlaceOrders.value).toBe(true)
+    expect(placeOrder).toHaveBeenCalled()
+  })
+
+  it('sends nothing when a member of the account lacks the permission to place orders', async () => {
+    fakes.held = Permission.ViewPayInvoices
+    const { placeOrder } = buildStores({ kind: CheckoutDestinationKind.Route, target: '/client/order-success' })
+    const page = await runInPage()
+
+    await page.submitOrder()
+
+    expect(page.mayPlaceOrders.value).toBe(false)
+    expect(placeOrder).not.toHaveBeenCalled()
+    expect(navigateTo).not.toHaveBeenCalled()
+  })
+
+  it('lets a signed-in first-time buyer, who acts for no account, order', async () => {
+    fakes.held = null
+    const { placeOrder } = buildStores({ kind: CheckoutDestinationKind.Route, target: '/client/order-success' })
+    const page = await runInPage()
+
+    await page.submitOrder()
+
+    expect(page.mayPlaceOrders.value).toBe(true)
+    expect(placeOrder).toHaveBeenCalled()
   })
 })

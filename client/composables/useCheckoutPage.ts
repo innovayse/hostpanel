@@ -6,13 +6,20 @@
  * the glue around it. Only the markup differs between them, so a template calls this once and lays
  * the returned state out in its own design.
  *
+ * `mayPlaceOrders` is the permission side of the page: a person who acts for a client account
+ * without the "place new orders" flag is shown the payment step disabled with the reason, and the
+ * order is not sent. The API refuses the same order with 403 `CLIENT_PERMISSION_DENIED`, which stays
+ * the real check. A signed-in first-time buyer has no account and no flags, and may order.
+ *
  * @module composables/useCheckoutPage
  */
 
 import { storeToRefs } from 'pinia'
+import { Permission } from '~/composables/usePermissions'
 import { useAuthStore } from '~/stores/auth'
 import { useCartStore } from '~/stores/cart'
 import { useCheckoutStore } from '~/stores/checkout'
+import { useClientStore } from '~/stores/client'
 import { useCurrencyStore } from '~/stores/currency'
 import { CheckoutDestinationKind } from '~/types/checkoutdestinationkind'
 import { redirectToExternal } from '~/utils/externalRedirect'
@@ -49,6 +56,12 @@ export const useCheckoutPage = async () => {
 
   /** Whether a client is signed in, and who. */
   const { isLoggedIn, user } = storeToRefs(authStore)
+
+  /** Client store: the signed-in person and what they may do on their account. */
+  const clientStore = useClientStore()
+
+  /** Whether the signed-in person may place an order; true for a guest and for a first-time buyer. */
+  const mayPlaceOrders = computed(() => clientStore.mayDo(Permission.PlaceNewOrders))
 
   /** Auth actions: reload the signed-in client, sign out. */
   const { fetchUser, logout } = authStore
@@ -122,9 +135,14 @@ export const useCheckoutPage = async () => {
   /**
    * Places the order through the checkout store and goes where it says.
    *
-   * @returns Nothing; a refusal stays in the store's `error` and `fieldErrors`.
+   * @returns Nothing; a refusal stays in the store's `error` and `fieldErrors`. Nothing is sent
+   * while {@link mayPlaceOrders} is false.
    */
   const submitOrder = async (): Promise<void> => {
+    // The buttons are disabled in this state; this keeps a stray call from sending an order the API would refuse.
+    if (!mayPlaceOrders.value) {
+      return
+    }
     const destination = await checkout.placeOrder({
       guest: { ...form },
       confirmCard: (clientSecret) => {
@@ -155,6 +173,7 @@ export const useCheckoutPage = async () => {
     cart,
     currencyStore,
     isLoggedIn,
+    mayPlaceOrders,
     staleItems,
     totalLabel,
     submittingLabel,

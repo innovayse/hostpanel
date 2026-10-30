@@ -43,6 +43,7 @@
  */
 import { Server } from 'lucide-vue-next'
 import { useClientStore } from '~/stores/client'
+import { serviceAwaitsSetup } from '~/utils/serviceSetup'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
@@ -63,8 +64,8 @@ const clientCurrency = computed(() => ({ code: store.user?.currency }))
 
 await useAsyncData('client-services', () => store.fetchServices(true))
 
-/** The services that have no control-panel account yet. */
-const servicesNeedingSetup = computed(() => store.services.filter((service) => !service.username))
+/** The hosting services that have no control-panel account yet; a digital service has nothing to set up. */
+const servicesNeedingSetup = computed(() => store.services.filter(serviceAwaitsSetup))
 
 /** Headline of the setup banner, singular or plural by how many services wait. */
 const setupAlertTitle = computed(() =>

@@ -7,6 +7,7 @@
 import type { CartItemType } from '~/types/cartitemtype'
 import type { DomainOrderAction } from '~/types/domainorderaction'
 import type { PricingCycle } from '~/types/pricingcycle'
+import type { ProductType } from '~/types/producttype'
 
 /** A single line in the shopping cart: a hosting plan or a domain. */
 export interface CartItem {
@@ -41,4 +42,9 @@ export interface CartItem {
   tld?: string
   /** Registration/transfer period in years */
   years?: number
+  /**
+   * Type of the catalogue product the line orders, when the page that added it knew it. A line
+   * saved before this field existed has none, and is treated like any non-digital line.
+   */
+  productType?: ProductType
 }

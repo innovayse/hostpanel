@@ -206,6 +206,7 @@ const addPlanToCart = (plan: ProductPlan): void => {
     cycleLabel: t(`hosting.cycles.${PRICING_CYCLE_I18N_KEY[cycle]}`),
     amount,
     currency: currencyStore.payerCode,
+    productType: plan.type,
   })
 }
 

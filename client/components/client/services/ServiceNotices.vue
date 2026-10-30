@@ -71,8 +71,8 @@ const headingId = useId()
 /** Whether a cancellation is pending on the service. */
 const cancelPending = computed<boolean>(() => Boolean(props.cancelStatus?.pending))
 
-/** Whether the service still needs its setup finished. */
-const setupRequired = computed<boolean>(() => props.service.status === ServiceStatus.Pending)
+/** Whether the service still needs its setup finished; a digital service has nothing to set up. */
+const setupRequired = computed<boolean>(() => !props.service.isDigital && props.service.status === ServiceStatus.Pending)
 
 /** Whether any notice shows; the region is left out when it would be empty. */
 const hasNotices = computed<boolean>(() => cancelPending.value || setupRequired.value)

@@ -58,4 +58,19 @@ describe('GatewayOption', () => {
 
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([PaymentModule.Stripe])
   })
+
+  it('can be chosen when it is not disabled', () => {
+    const wrapper = mountOption(PaymentModule.Stripe, 'Card')
+
+    expect(wrapper.find('[data-testid="gw-row-input"]').attributes('disabled')).toBeUndefined()
+  })
+
+  it('cannot be chosen when it is disabled', () => {
+    const wrapper = mountWithKit(GatewayOption, {
+      props: { method: { module: PaymentModule.Stripe, displayName: 'Card' }, name: 'gw', disabled: true },
+      attrs: { testid: 'gw-row' },
+    })
+
+    expect(wrapper.find('[data-testid="gw-row-input"]').attributes('disabled')).toBeDefined()
+  })
 })

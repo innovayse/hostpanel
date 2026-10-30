@@ -316,6 +316,7 @@
  */
 import { DOMAIN_SEARCH_QUERY_PARAM } from '~/constants/domainSearchQuery'
 import { Globe, CheckCircle, XCircle, ArrowLeftRight, Server, ArrowRight, AlertCircle } from 'lucide-vue-next'
+import { usePayerAsyncData } from '~/composables/usePayerAsyncData'
 import { useCartStore } from '~/stores/cart'
 import { useCurrencyStore } from '~/stores/currency'
 import { useCatalogStore } from '~/stores/catalog'
@@ -423,8 +424,8 @@ const nuxtApp = useNuxtApp()
 // The price table is read in the payer's currency; the read runs again once `payerCode`
 // resolves or changes. The read runs inside the Nuxt context, for the reason given on the hosting page.
 /** Whether the price table is still loading. */
-const { pending: pricingPending } = await useAsyncData('domains:classic-tld-pricing', () => nuxtApp.runWithContext(() => catalogStore.loadTldPricing()), {
-  watch: [() => currencyStore.payerCode, locale]
+const { pending: pricingPending } = await usePayerAsyncData('domains:classic-tld-pricing', () => nuxtApp.runWithContext(() => catalogStore.loadTldPricing()), {
+  watch: [locale]
 })
 
 /** The price table (owned by the catalogue store). */

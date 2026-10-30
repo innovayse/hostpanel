@@ -23,6 +23,7 @@
  * template.
  */
 import { HOSTING_GROUP_ID } from '~/constants/catalogGroup'
+import { usePayerAsyncData } from '~/composables/usePayerAsyncData'
 import { useCatalogStore } from '~/stores/catalog'
 import { useCurrencyStore } from '~/stores/currency'
 import { useDomainsStore } from '~/stores/domains'
@@ -76,11 +77,11 @@ await useAsyncData('home:currencies', () => currencyStore.load())
 
 // Prices follow the payer's currency, so each read runs again when it resolves or changes.
 await Promise.all([
-  useAsyncData('home:tld-pricing', () => catalogStore.loadTldPricing(), {
-    watch: [() => currencyStore.payerCode, locale]
+  usePayerAsyncData('home:tld-pricing', () => catalogStore.loadTldPricing(), {
+    watch: [locale]
   }),
-  useAsyncData('home:hosting-plans', () => catalogStore.loadHostingPlans(), {
-    watch: [() => currencyStore.payerCode, locale]
+  usePayerAsyncData('home:hosting-plans', () => catalogStore.loadHostingPlans(), {
+    watch: [locale]
   }),
   useAsyncData('home:hosting-features', () => catalogStore.loadProductFeatures(HOSTING_GROUP_ID), {
     watch: [locale]

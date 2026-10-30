@@ -36,3 +36,9 @@ export enum ProductStatus {
   /** Hidden from the storefront. */
   Inactive = 'Inactive',
 }
+
+/** Machine-readable API error codes (`type` of a problem response) the product screens branch on. */
+export enum ProductErrorCode {
+  /** Another product already uses the SKU (409). */
+  SkuAlreadyInUse = 'PRODUCT_SKU_ALREADY_IN_USE',
+}

@@ -34,9 +34,9 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
 {
     /// <summary>The amounts the seed produces; they are fixed, so a change here is a deliberate change of the demo.</summary>
     private static readonly Counts Expected = new(
-        Currencies: 2, ProductGroups: 7, Products: 31, Prices: 124, Features: 161, Tlds: 19,
+        Currencies: 2, ProductGroups: 8, Products: 32, Prices: 128, Features: 164, Tlds: 19,
         Clients: 65, Users: 73, SubjectRoles: 73, Contacts: 99, ClientUsers: 3, Invitations: 4,
-        Servers: 7, ServerGroups: 3, SslChecks: 66, DiskUsage: 63, Services: 140, Cancellations: 75,
+        Servers: 7, ServerGroups: 3, SslChecks: 66, DiskUsage: 58, Services: 140, Cancellations: 75,
         Domains: 108, DomainReminders: 40, DnsRecords: 280, ForwardingRules: 46,
         Invoices: 517, InvoiceTransactions: 399, Transactions: 409, Quotes: 66, QuoteItems: 165, BillableItems: 66, Orders: 160,
         Departments: 5, ReplyCategories: 4, Replies: 12, KbCategories: 7, Articles: 33, Tickets: 66, TicketReplies: 117,
@@ -165,6 +165,24 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
 
         // The hosting plans are the ones the home page compares, so they carry a full specification.
         products.Where(p => p.Type == ProductType.SharedHosting).Should().OnlyContain(p => features[p.Id].Count() == 9);
+    }
+
+    /// <summary>The sample has one digital product with a SKU, small JSON metadata and a grace period, so the product form's new fields have data to show.</summary>
+    [Fact]
+    public async Task SeededCatalogue_HasOneDigitalProductWithSkuMetadataAndGracePeriodAsync()
+    {
+        var host = DemoTestHost.Enabled(factory);
+        await ResetAsync(host);
+        using var scope = host.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var digital = await db.Products.Where(p => p.Type == ProductType.Digital).ToListAsync();
+
+        var product = digital.Should().ContainSingle().Subject;
+        product.Sku.Should().Be(DemoCatalogueSeeder.DigitalSku);
+        product.Metadata.Should().Be(DemoCatalogueSeeder.DigitalMetadata);
+        product.GracePeriodDays.Should().Be(DemoCatalogueSeeder.DigitalGracePeriodDays);
+        product.PackageName.Should().BeNull("a digital product is delivered, not provisioned on a hosting account");
     }
 
     /// <summary>Exactly one hosting plan and one VPS plan are featured, and each group's plans read in a logical order.</summary>

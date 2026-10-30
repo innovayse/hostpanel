@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { MessageLanguage } from '@/locales/messages'
 import { useSettingsStore } from '@/stores/settings'
-import { json, problem, stubFetch, stubOffline } from '../helpers/fetch'
+import { callOf, invalid, json, problem, stubFetch, stubOffline } from '../helpers/fetch'
 import { installStoreHooks, NO_ANSWER } from '../helpers/storeHooks'
 
 /** A file standing in for the picked image. */
@@ -160,6 +160,38 @@ describe('settingsStore products', () => {
 
     expect(await store.createProduct({} as never)).toBeNull()
     expect(store.actionError).toBe('Slug already used.')
+  })
+
+  it('keeps the API field errors of a refused save and clears them on the next try', async () => {
+    stubFetch(invalid('Validation failed.', { Metadata: ['Not an object.'], GracePeriodDays: ['Out of range.'] }), json(12), json([]))
+    const store = useSettingsStore()
+
+    expect(await store.createProduct({} as never)).toBeNull()
+    expect(store.fieldErrors).toEqual({ metadata: 'Not an object.', gracePeriodDays: 'Out of range.' })
+
+    expect(await store.createProduct({} as never)).toBe(12)
+    expect(store.fieldErrors).toEqual({})
+  })
+
+  it('puts a taken SKU on the sku field instead of the form-level sentence', async () => {
+    stubFetch(new Response(
+      JSON.stringify({ type: 'PRODUCT_SKU_ALREADY_IN_USE', title: 'Conflict', status: 409, detail: 'Another product already uses this SKU.' }),
+      { status: 409 },
+    ))
+    const store = useSettingsStore()
+
+    expect(await store.updateProduct(1, {} as never)).toBe(false)
+    expect(store.fieldErrors).toEqual({ sku: 'Another product already uses this SKU.' })
+    expect(store.actionError).toBeNull()
+  })
+
+  it('sends the SKU, metadata and grace period in the create body', async () => {
+    const mock = stubFetch(json(5), json([]))
+    const store = useSettingsStore()
+
+    await store.createProduct({ sku: 'A-1', metadata: '{}', gracePeriodDays: 3 } as never)
+
+    expect(callOf(mock).body).toMatchObject({ sku: 'A-1', metadata: '{}', gracePeriodDays: 3 })
   })
 
   it('updateProduct returns false offline with the fallback sentence', async () => {

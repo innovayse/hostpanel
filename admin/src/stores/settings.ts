@@ -9,10 +9,13 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useSettingsApi } from '@/composables/apis/useSettingsApi'
 import { useUploadApi } from '@/composables/apis/useUploadApi'
+import { errorCode } from '@/lib/errorHandler'
 import { runAction } from '@/lib/runAction'
+import type { ActionResult } from '@/lib/runAction'
 import type { EmailTemplate, EmailTemplateContent } from '@/types/emailtemplate'
 import type { MessageLanguage } from '@/locales/messages'
 import type { CreateProductPayload, Product, ProductGroup, UpdateProductPayload } from '@/types/product'
+import { ProductErrorCode } from '@/types/productenums'
 import type { Setting } from '@/types/setting'
 import type { BrandingImageKind } from '@/types/upload'
 
@@ -42,6 +45,9 @@ export const useSettingsStore = defineStore('settings', () => {
 
   /** Sentence for the last failed product create or update, null when none. */
   const actionError = ref<string | null>(null)
+
+  /** The API's per-field messages for the last failed product create or update (`sku`, `metadata`, `gracePeriodDays` ...), empty when none. */
+  const fieldErrors = ref<Record<string, string>>({})
 
   /** Sentence for the last failed branding upload, null when none. */
   const uploadError = ref<string | null>(null)
@@ -174,13 +180,38 @@ export const useSettingsStore = defineStore('settings', () => {
     })
 
   /**
+   * Runs one product save under the field-error capture. A taken SKU answers 409 without a field
+   * map, so its sentence is moved onto the `sku` field, where the operator is looking, instead
+   * of the form-level message.
+   *
+   * @param task - The create or update request.
+   * @returns The outcome of the request; a refusal is left in `actionError` and `fieldErrors`.
+   */
+  const saveProduct = async <T>(task: () => Promise<T>): Promise<ActionResult<T>> => {
+    let skuTaken = false
+    const result = await runAction(actionError, async () => {
+      try {
+        return await task()
+      } catch (cause) {
+        skuTaken = errorCode(cause) === ProductErrorCode.SkuAlreadyInUse
+        throw cause
+      }
+    }, fieldErrors)
+    if (!result.ok && skuTaken && actionError.value !== null) {
+      fieldErrors.value = { ...fieldErrors.value, sku: actionError.value }
+      actionError.value = null
+    }
+    return result
+  }
+
+  /**
    * Creates a new product and refreshes the list.
    *
    * @param payload - Product creation data.
-   * @returns The new product ID, or null when refused (see `actionError`).
+   * @returns The new product ID, or null when refused (see `actionError` and `fieldErrors`).
    */
   const createProduct = async (payload: CreateProductPayload): Promise<number | null> => {
-    const result = await runAction(actionError, () => api.createProduct(payload))
+    const result = await saveProduct(() => api.createProduct(payload))
     if (!result.ok) {
       return null
     }
@@ -193,10 +224,10 @@ export const useSettingsStore = defineStore('settings', () => {
    *
    * @param id - Product ID.
    * @param payload - Updated product data.
-   * @returns True when updated; false when refused (see `actionError`).
+   * @returns True when updated; false when refused (see `actionError` and `fieldErrors`).
    */
   const updateProduct = async (id: number, payload: UpdateProductPayload): Promise<boolean> => {
-    const result = await runAction(actionError, () => api.updateProduct(id, payload))
+    const result = await saveProduct(() => api.updateProduct(id, payload))
     if (result.ok) {
       await fetchProducts()
     }
@@ -204,7 +235,7 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   return {
-    settings, emailTemplates, products, productGroups,
+    settings, emailTemplates, products, productGroups, fieldErrors,
     loading, error, actionError, uploadError,
     fetchSettings, updateSetting, clearSetting, fetchEmailTemplates, saveEmailTemplateVersion, fetchProducts, fetchProductGroups,
     createProduct, updateProduct, uploadBrandingFile,

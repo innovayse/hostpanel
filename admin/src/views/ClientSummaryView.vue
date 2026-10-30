@@ -13,6 +13,7 @@ import { QUOTE_STAGE_OPTIONS, SERVICE_STATUS_OPTIONS } from '@/lib/constants'
 import { capitalize, formatDate } from '@/lib/format'
 import { formatMoney, formatPrice } from '@/lib/money'
 import { domainStatusTone, serviceStatusTone, statusLabel, clientStatusTone, contactTypeTone, quoteStageTone } from '@/lib/tones'
+import PluginSlot from '@/components/plugins/PluginSlot.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -33,6 +34,7 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
+import { PluginSlotId } from '@/types/pluginslot'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
@@ -688,6 +690,8 @@ onMounted(() => {
           </UiTable>
         </UiCard>
       </UiStack>
+
+      <PluginSlot :key="clientId" :slot-id="PluginSlotId.AdminClientPanels" :context="{ clientId }" />
     </template>
   </UiStack>
 </template>

@@ -51,13 +51,16 @@ const detail: ServiceDetail = {
  *
  * @param service - The service the detail endpoint returns.
  * @param save - The answer to every section save.
+ * @param extra - Answers for further endpoints, tried before the page's own.
  * @returns The wrapper and the fetch mock.
  */
 const mountLoaded = async (
   service: ServiceDetail = detail,
   save: () => Response = () => new Response(null, { status: 204 }),
+  extra: Record<string, () => Response> = {},
 ): Promise<{ wrapper: VueWrapper; mock: ReturnType<typeof vi.fn> }> => {
   const mock = stubRoutes({
+    ...extra,
     'GET /api/services/9': () => json(service),
     'GET /api/services': () => json({ items: [], totalCount: 0 }),
     'PUT /api/services/9/': save,
@@ -104,6 +107,23 @@ describe('ClientServiceDetailView', () => {
     const wrapper = await mountClientView(ClientServiceDetailView, 'Server said no')
 
     expect(wrapper.text()).toContain('Server said no')
+  })
+
+  it('lists the plugin widgets of the service in its slot', async () => {
+    const { wrapper } = await mountLoaded(detail, undefined, {
+      'GET /api/admin/plugins/slots/admin.service.panels?serviceId=9': () =>
+        json([{ pluginId: 'sites', widgetId: 'usage', label: 'Site usage', order: 1 }]),
+    })
+
+    expect(wrapper.get('[data-testid="plugin-slot-admin.service.panels"]').text()).toContain('Site usage')
+  })
+
+  it('shows no slot when no plugin offers a widget for the service', async () => {
+    const { wrapper } = await mountLoaded(detail, undefined, {
+      'GET /api/admin/plugins/slots/admin.service.panels?serviceId=9': () => json([]),
+    })
+
+    expect(wrapper.find('[data-testid^="plugin-slot-"]').exists()).toBe(false)
   })
 
   it('saves the notes alone through the notes endpoint', async () => {

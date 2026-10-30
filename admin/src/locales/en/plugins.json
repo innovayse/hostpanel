@@ -33,5 +33,11 @@
     "pluginRemoved": "Plugin removed.",
     "confirmRemoveTitle": "Remove this plugin?",
     "confirmRemoveMessage": "The plugin {id} will be removed from the server."
+  },
+  "pluginSlot": {
+    "hide": "Hide widget",
+    "unavailable": "This widget could not be shown.",
+    "timedOut": "This widget took too long to load.",
+    "hideNotSeeded": "The setting {key} does not exist on this server, so the widget cannot be hidden."
   }
 }

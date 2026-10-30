@@ -34,7 +34,7 @@ export const useReleaseStatusStore = defineStore('releaseStatus', () => {
    *
    * @returns Resolves when the request is over; a refusal is left in {@link error}.
    */
-  async function fetch(): Promise<void> {
+  const fetch = async (): Promise<void> => {
     loading.value = true
     const result = await runAction(error, api.getReleaseStatus)
     loading.value = false

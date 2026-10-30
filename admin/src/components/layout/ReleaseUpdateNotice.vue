@@ -9,6 +9,7 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useReleaseStatusStore } from '@/stores/releaseStatus'
+import UiButton from '@/components/ui/UiButton.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiStack from '@/components/ui/UiStack.vue'
@@ -32,7 +33,7 @@ const copied = ref(false)
 /**
  * Copies the upgrade command to the clipboard and sets the copied flag for two seconds.
  */
-async function copyCommand(): Promise<void> {
+const copyCommand = async (): Promise<void> => {
   const command = releaseStatus.status?.upgradeCommand
   if (!command) {
     return
@@ -81,15 +82,16 @@ async function copyCommand(): Promise<void> {
         <code class="block break-all font-mono text-[0.7rem] text-text-secondary leading-relaxed pr-6">
           {{ releaseStatus.status.upgradeCommand }}
         </code>
-        <button
-          type="button"
-          class="absolute right-1.5 top-1.5 rounded p-0.5 text-text-muted transition-colors hover:text-text-primary"
+        <UiButton
+          variant="ghost"
+          size="sm"
+          class="absolute right-1.5 top-1.5 p-0.5 text-text-muted hover:text-text-primary"
           :aria-label="t('layout.releaseUpdate.copy')"
           data-testid="release-update-copy"
           @click="copyCommand"
         >
-          <UiIcon :markup="COPY_ICON" size="xs" />
-        </button>
+          <UiIcon :markup="COPY_ICON" size="sm" />
+        </UiButton>
       </div>
 
       <!-- Copied feedback -->

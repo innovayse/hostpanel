@@ -184,7 +184,7 @@ public sealed class CheckReleaseUpdatesCronTests(IntegrationTestFactory factory)
 
     /// <summary>
     /// Counts the runs of a job sent during the session other than the one being handled.
-    /// Mirrors the helper in <see cref="ScheduledJobsSurviveFailureTests"/>.
+    /// Mirrors the helper in <see cref="Innovayse.Hostpanel.Integration.Tests.Shared.ScheduledJobsSurviveFailureTests"/>.
     /// </summary>
     /// <param name="session">The tracked session.</param>
     /// <param name="jobType">The job's command type.</param>

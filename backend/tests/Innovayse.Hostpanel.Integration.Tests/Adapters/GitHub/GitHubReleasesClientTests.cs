@@ -13,26 +13,26 @@ namespace Innovayse.Hostpanel.Integration.Tests.Adapters.GitHub;
 public sealed class GitHubReleasesClientTests : IAsyncLifetime
 {
     /// <summary>The loopback server standing in for the GitHub API.</summary>
-    private StubHttpServer _github = null!;
+    private StubHttpServer _stubServer = null!;
 
     /// <summary>Starts the stub server before each test.</summary>
     /// <returns>A task that completes when the server is listening.</returns>
     public async Task InitializeAsync()
     {
-        _github = await StubHttpServer.StartAsync();
+        _stubServer = await StubHttpServer.StartAsync();
     }
 
     /// <summary>Stops the stub server after each test.</summary>
     /// <returns>A task that completes when the server is stopped.</returns>
     public async Task DisposeAsync()
     {
-        await _github.DisposeAsync();
+        await _stubServer.DisposeAsync();
     }
 
     /// <summary>Builds a <see cref="GitHubReleasesClient"/> aimed at the stub server.</summary>
     private GitHubReleasesClient BuildClient()
     {
-        var http = new HttpClient { BaseAddress = _github.BaseAddress };
+        var http = new HttpClient { BaseAddress = _stubServer.BaseAddress };
         var options = Options.Create(new ReleaseOptions());
         return new GitHubReleasesClient(http, options);
     }
@@ -41,7 +41,7 @@ public sealed class GitHubReleasesClientTests : IAsyncLifetime
     [Fact]
     public async Task GetLatestAsync_PublishedRelease_ReturnsParsedInfo()
     {
-        _github.Enqueue("""
+        _stubServer.Enqueue("""
             {
                 "tag_name": "v1.5.0",
                 "html_url": "https://github.com/innovayse/hostpanel/releases/tag/v1.5.0",
@@ -62,7 +62,7 @@ public sealed class GitHubReleasesClientTests : IAsyncLifetime
     [Fact]
     public async Task GetLatestAsync_TagWithLeadingV_StripsOnlyOneV()
     {
-        _github.Enqueue("""
+        _stubServer.Enqueue("""
             {
                 "tag_name": "v2.0.0",
                 "html_url": "https://github.com/innovayse/hostpanel/releases/tag/v2.0.0",
@@ -77,11 +77,30 @@ public sealed class GitHubReleasesClientTests : IAsyncLifetime
         result!.Version.Should().Be("2.0.0");
     }
 
+    /// <summary>A tag with two leading <c>v</c> characters strips only the first one.</summary>
+    [Fact]
+    public async Task GetLatestAsync_TagWithDoubleLeadingV_StripsOnlyFirstV()
+    {
+        _stubServer.Enqueue("""
+            {
+                "tag_name": "vv1.0.0",
+                "html_url": "https://github.com/innovayse/hostpanel/releases/tag/vv1.0.0",
+                "published_at": "2026-09-01T00:00:00Z",
+                "prerelease": false,
+                "draft": false
+            }
+            """);
+
+        var result = await BuildClient().GetLatestAsync(CancellationToken.None);
+
+        result!.Version.Should().Be("v1.0.0");
+    }
+
     /// <summary>A tag without a leading <c>v</c> is returned unchanged.</summary>
     [Fact]
     public async Task GetLatestAsync_TagWithoutLeadingV_ReturnsTagAsIs()
     {
-        _github.Enqueue("""
+        _stubServer.Enqueue("""
             {
                 "tag_name": "3.1.0",
                 "html_url": "https://github.com/innovayse/hostpanel/releases/tag/3.1.0",
@@ -100,7 +119,7 @@ public sealed class GitHubReleasesClientTests : IAsyncLifetime
     [Fact]
     public async Task GetLatestAsync_DraftRelease_ReturnsNull()
     {
-        _github.Enqueue("""
+        _stubServer.Enqueue("""
             {
                 "tag_name": "v1.5.0",
                 "html_url": "https://github.com/innovayse/hostpanel/releases/tag/v1.5.0",
@@ -119,7 +138,7 @@ public sealed class GitHubReleasesClientTests : IAsyncLifetime
     [Fact]
     public async Task GetLatestAsync_Prerelease_ReturnsNull()
     {
-        _github.Enqueue("""
+        _stubServer.Enqueue("""
             {
                 "tag_name": "v1.5.0-rc1",
                 "html_url": "https://github.com/innovayse/hostpanel/releases/tag/v1.5.0-rc1",
@@ -138,7 +157,7 @@ public sealed class GitHubReleasesClientTests : IAsyncLifetime
     [Fact]
     public async Task GetLatestAsync_EmptyTag_ReturnsNull()
     {
-        _github.Enqueue("""
+        _stubServer.Enqueue("""
             {
                 "tag_name": "",
                 "html_url": "https://github.com/innovayse/hostpanel/releases/tag/",

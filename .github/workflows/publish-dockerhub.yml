@@ -133,7 +133,9 @@ jobs:
             dockerfile: backend/Dockerfile
             context: backend
             target: prod
-            build_args: AUTH_MODE=local
+            build_args: |
+              AUTH_MODE=local
+              VERSION=${{ needs.prepare.outputs.version }}
           - name: client
             dockerfile: client/Dockerfile
             context: client

@@ -26,11 +26,18 @@ public sealed class ReleaseOptions
 
     /// <summary>
     /// URL of the install script streamed into <c>sh</c> for the upgrade command shown in the
-    /// admin panel. The version placeholder <c>{0}</c> is appended as the <c>--version</c>
-    /// argument.
+    /// admin panel.
     /// </summary>
     [Required]
     [Url]
     public string InstallScriptUrl { get; init; } =
         "https://raw.githubusercontent.com/innovayse/hostpanel/main/install.sh";
+
+    /// <summary>
+    /// Formats the one-liner upgrade command shown in the admin panel.
+    /// </summary>
+    /// <param name="version">The target version string, without a leading <c>v</c>.</param>
+    /// <returns>A shell command that downloads and runs the install script at the given version.</returns>
+    public string FormatUpgradeCommand(string version) =>
+        $"curl -fsSL {InstallScriptUrl} | sh -s -- --version {version}";
 }

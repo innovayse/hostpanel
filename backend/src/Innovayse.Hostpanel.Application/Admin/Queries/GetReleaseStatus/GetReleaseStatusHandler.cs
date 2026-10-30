@@ -60,7 +60,7 @@ public sealed class GetReleaseStatusHandler
 
         var isUpgrade = IsNewerVersion(installed, latest.Version);
         var upgradeCommand = isUpgrade
-            ? $"curl -fsSL {_releaseOptions.InstallScriptUrl} | sh -s -- --version {latest.Version}"
+            ? _releaseOptions.FormatUpgradeCommand(latest.Version)
             : null;
 
         return Result<ReleaseStatusDto>.Success(new ReleaseStatusDto(

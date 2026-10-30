@@ -5,7 +5,9 @@ namespace Innovayse.Hostpanel.Domain.Tests.Admin;
 /// <summary>Unit tests for the <see cref="LatestRelease"/> entity.</summary>
 public sealed class LatestReleaseTests
 {
+    /// <summary>A fixed publication timestamp used across all test cases.</summary>
     private static readonly DateTimeOffset Published = new(2026, 6, 1, 0, 0, 0, TimeSpan.Zero);
+    /// <summary>A fixed checked-at timestamp used across all test cases.</summary>
     private static readonly DateTimeOffset Checked = new(2026, 6, 2, 0, 0, 0, TimeSpan.Zero);
 
     /// <summary>

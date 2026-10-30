@@ -49,6 +49,7 @@ test('deleting a server asks first and then removes it', async ({ page }) => {
   })
 
   await page.goto('/servers')
+  await page.getByTestId(`server-row-${hostServer.id}`).getByTestId('row-actions-trigger').click()
   await page.getByTestId(`server-delete-${hostServer.id}`).click()
   expect(api.callsTo(HttpMethod.Delete, `/api/admin/servers/${hostServer.id}`)).toHaveLength(0)
   await page.getByTestId('dialog-confirm').click()

@@ -56,8 +56,8 @@ public sealed class GetIncomeForecastHandler
         IReadOnlyList<IncomeForecastRowDto> rows = [.. monthly.Select((amount, index) => new IncomeForecastRowDto(
             MonthNames[index],
             amount,
-            monthly.Skip(Math.Max(0, index - (QuarterWindow - 1))).Take(QuarterWindow).Sum(),
-            monthly.Skip(Math.Max(0, index - (SemiAnnualWindow - 1))).Take(SemiAnnualWindow).Sum(),
+            monthly.Take(index + 1).TakeLast(QuarterWindow).Sum(),
+            monthly.Take(index + 1).TakeLast(SemiAnnualWindow).Sum(),
             annual,
             monthly.Take(index + 1).Sum(),
             income.Currency))];

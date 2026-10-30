@@ -37,7 +37,10 @@ public sealed class GetIncomeForecastTests(IntegrationTestFactory factory) : ICl
 
         rows.Select(r => r.GetProperty("monthly").GetDecimal())
             .Should().Equal(100m, 300m, -50m, 40m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m);
+        rows[0].GetProperty("quarterly").GetDecimal().Should().Be(100m);
+        rows[1].GetProperty("quarterly").GetDecimal().Should().Be(400m);
         rows[2].GetProperty("quarterly").GetDecimal().Should().Be(350m);
+        rows[0].GetProperty("semiAnnual").GetDecimal().Should().Be(100m);
         rows[3].GetProperty("total").GetDecimal().Should().Be(390m);
         rows[0].GetProperty("annual").GetDecimal().Should().Be(390m);
         rows.Should().OnlyContain(r => r.GetProperty("currency").GetString() == scenario.BaseCurrency);

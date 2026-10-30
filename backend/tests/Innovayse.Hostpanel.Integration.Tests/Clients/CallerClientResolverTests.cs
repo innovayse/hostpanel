@@ -173,6 +173,7 @@ public sealed class CallerClientResolverTests(IntegrationTestFactory factory) : 
         var access = await ResolveAsAsync(host, subject);
 
         access.ClientId.Should().BeNull();
+        access.Account.Should().NotBeNull("the first order links the client it creates to the account the plugin named");
         access.Permissions.Should().HaveFlag(ClientPermission.PlaceNewOrders);
     }
 

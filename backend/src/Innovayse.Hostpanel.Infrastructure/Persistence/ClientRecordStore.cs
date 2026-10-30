@@ -7,8 +7,8 @@ using Npgsql;
 namespace Innovayse.Hostpanel.Infrastructure.Persistence;
 
 /// <summary>
-/// EF Core implementation of <see cref="IClientRecordStore"/>: inserts the record and, when the
-/// unique index on the user refuses it, answers with the row that won instead.
+/// EF Core implementation of <see cref="IClientRecordStore"/>: inserts the record and, when a unique
+/// index on the user or on the external account refuses it, answers with the row that won instead.
 /// </summary>
 public sealed class ClientRecordStore : IClientRecordStore
 {
@@ -38,12 +38,18 @@ public sealed class ClientRecordStore : IClientRecordStore
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: UniqueViolation })
         {
-            // Another writer inserted this user's row between our lookup and our insert. Drop the
-            // rejected candidate from the tracker so the next save does not retry it, then read
-            // the winner. If the lookup finds nothing the violation was on some other index, and
-            // that is a real failure, so it is rethrown.
+            // Another writer inserted this user's row, or took the external account the candidate is
+            // linked to (a second member of the same account ordering at the same moment), between our
+            // lookup and our insert. Drop the rejected candidate from the tracker so the next save does
+            // not retry it, then read the winner. If the lookup finds nothing the violation was on some
+            // other index, and that is a real failure, so it is rethrown.
             _db.Entry(candidate).State = EntityState.Detached;
-            var existing = await _db.Clients.FirstOrDefaultAsync(c => c.UserId == candidate.UserId, ct);
+            var provider = candidate.ExternalAccountProvider;
+            var accountId = candidate.ExternalAccountId;
+            var existing = await _db.Clients.FirstOrDefaultAsync(
+                c => c.UserId == candidate.UserId
+                    || (provider != null && c.ExternalAccountProvider == provider && c.ExternalAccountId == accountId),
+                ct);
             if (existing is null)
             {
                 throw;

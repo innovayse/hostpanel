@@ -19,12 +19,14 @@ using Innovayse.Hostpanel.Application.Products.Common;
 using Innovayse.Hostpanel.Application.Products.Queries.GetOrderableProducts;
 using Innovayse.Hostpanel.Domain.Auth.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
+using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Innovayse.Hostpanel.Shared.MultiTenancy;
+using Innovayse.SDK.Plugins.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Wolverine;
@@ -157,7 +159,16 @@ public sealed class PlaceOrderHandler
         // lines are read from the stored price in this currency; domain lines from the TLD table,
         // which the pricing query converts to it with the stored exchange rates.
         var now = _clock.UtcNow;
-        var existingClient = await FindCallersClientAsync(ct);
+        var access = await _callerClient.ResolveAsync(ct);
+
+        // A sub-user or plugin member orders only where the account grants it; the route is open to
+        // guests, so the permission filter that guards the portal routes never runs here.
+        if (!MayPlaceOrders(access))
+        {
+            return Result<PlaceOrderResultDto>.FailureCode(HostpanelErrorCodes.CLIENT_PERMISSION_DENIED);
+        }
+
+        var existingClient = await FindCallersClientAsync(access, ct);
 
         // A suspended or closed account orders nothing; refused before anything is priced or created.
         var mayOrder = existingClient?.Status.EnsureMayTransact() ?? Result.Success();
@@ -197,7 +208,7 @@ public sealed class PlaceOrderHandler
         var clientId = existingClient?.Id;
         if (clientId is null)
         {
-            var created = await CreateClientAsync(cmd, currency.Value!, now, ct);
+            var created = await CreateClientAsync(cmd, currency.Value!, now, access.Account, ct);
             if (created.IsFailure)
             {
                 return Result<PlaceOrderResultDto>.FailureCode(created.ErrorCode!);
@@ -491,20 +502,33 @@ public sealed class PlaceOrderHandler
     }
 
     /// <summary>
+    /// Whether the caller may place an order on the account they act for.
+    /// </summary>
+    /// <remarks>
+    /// A caller who acts for an account, or whom an identity plugin vouched for, needs the
+    /// <see cref="ClientPermission.PlaceNewOrders"/> permission there. A guest and a signed-in user with no
+    /// account yet hold no permissions by definition and are about to get an account of their own, so
+    /// they are not refused here.
+    /// </remarks>
+    /// <param name="access">What the resolver answered for the caller.</param>
+    /// <returns><see langword="false"/> when the caller acts for an account but may not order on it.</returns>
+    private static bool MayPlaceOrders(CallerClientAccess access) =>
+        (access.ClientId is null && access.Account is null) || access.Permissions.HasFlag(ClientPermission.PlaceNewOrders);
+
+    /// <summary>
     /// Finds the client record the caller's credential acts for, when it acts for one.
     /// </summary>
     /// <remarks>
-    /// A signed-in caller orders for the account they own or are linked to. It is resolved from
-    /// the credential, so there is no id anyone could send to order against another account. A
-    /// caller the credential names but who acts for no account yet, and a guest, both come back as
-    /// nothing here and get a record from <see cref="CreateClientAsync"/>.
+    /// A signed-in caller orders for the account they own or are linked to, or the one the identity
+    /// plugin names. It is resolved from the credential, so there is no id anyone could send to order
+    /// against another account. A caller the credential names but who acts for no account yet, and a
+    /// guest, both come back as nothing here and get a record from <see cref="CreateClientAsync"/>.
     /// </remarks>
+    /// <param name="access">What the resolver answered for the caller.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The caller's client brief, or <see langword="null"/> when they have none yet.</returns>
-    private async Task<ClientBriefDto?> FindCallersClientAsync(CancellationToken ct)
+    private async Task<ClientBriefDto?> FindCallersClientAsync(CallerClientAccess access, CancellationToken ct)
     {
-        var access = await _callerClient.ResolveAsync(ct);
-
         return access.ClientId is { } clientId
             ? await _bus.FindClientBriefAsync(clientId, withEmail: false, ct)
             : null;
@@ -524,6 +548,7 @@ public sealed class PlaceOrderHandler
     /// <param name="cmd">The place order command.</param>
     /// <param name="currencyCode">The currency the new record is billed in, already checked to be on offer.</param>
     /// <param name="now">The moment the order is being placed (UTC), read once by the handler.</param>
+    /// <param name="account">The external account the identity plugin vouched for, linked to the new record; none without a plugin.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The new client's ID, <see langword="null"/> when a signed-in caller's record was saved by
@@ -534,7 +559,8 @@ public sealed class PlaceOrderHandler
     /// handler some other way), or <c>USER_PROVISIONING_NOT_ALLOWED_CREATE_ACCOUNT</c> where
     /// the sign-on provider owns the accounts.
     /// </returns>
-    private async Task<Result<int?>> CreateClientAsync(PlaceOrderCommand cmd, string currencyCode, DateTimeOffset now, CancellationToken ct)
+    private async Task<Result<int?>> CreateClientAsync(
+        PlaceOrderCommand cmd, string currencyCode, DateTimeOffset now, ExternalAccount? account, CancellationToken ct)
     {
         // A caller the credential names but who has no client record yet is registered against
         // that credential, so a signed-in buyer's order lands on their own account.
@@ -546,7 +572,7 @@ public sealed class PlaceOrderHandler
             // everything it needs. Provisioning is deliberately not called: it creates accounts,
             // and where an external sign-on provider owns them it refuses, which is correct and not what is wanted
             // here.
-            return await CreateClientForCallerAsync(subject, cmd, currencyCode, now, ct);
+            return await CreateClientForCallerAsync(subject, cmd, currencyCode, now, account, ct);
         }
 
         // Anonymous, and guest checkout is the only way left. The validator already requires all
@@ -634,16 +660,22 @@ public sealed class PlaceOrderHandler
     /// <param name="cmd">The order being placed.</param>
     /// <param name="currencyCode">The currency the new row is billed in, already checked to be on offer.</param>
     /// <param name="now">The moment the order is being placed (UTC), read once by the handler.</param>
+    /// <param name="account">
+    /// The external account the identity plugin vouched for; the new row is linked to it so the caller, and every
+    /// other member of that account, resolve to this client from the next request on. None without a plugin.
+    /// </param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The new client's ID, <see langword="null"/> when another writer saved this user's record
     /// first, the registration handler runs on the bus after the register call returns, so a
-    /// caller who orders at once can reach this before it has, or
+    /// caller who orders at once can reach this before it has (or, for a plugin member, another member of the
+    /// same account created the client first), <see cref="HostpanelErrorCodes.CLIENT_PROFILE_NOT_FOUND"/> when
+    /// the row that won is not linked to the plugin account, so the next resolution would not find it, or
     /// <see cref="HostpanelErrorCodes.ORDER_GUEST_DETAILS_REQUIRED"/> when neither the order, the
     /// credential nor the email supplies a first name.
     /// </returns>
     private async Task<Result<int?>> CreateClientForCallerAsync(
-        string subject, PlaceOrderCommand cmd, string currencyCode, DateTimeOffset now, CancellationToken ct)
+        string subject, PlaceOrderCommand cmd, string currencyCode, DateTimeOffset now, ExternalAccount? account, CancellationToken ct)
     {
         var (credentialFirst, credentialLast) = SplitDisplayName(await _caller.GetUserNameAsync(ct));
         var email = _caller.Email ?? cmd.Email ?? string.Empty;
@@ -668,10 +700,33 @@ public sealed class PlaceOrderHandler
         // guest's, because the caller is choosing at the same checkout.
         client.SetCurrency(currencyCode);
 
-        var written = await _clientRecords.AddOrGetAsync(client, ct);
+        // A plugin member's first order creates the client of their whole account, so it is linked to
+        // the account the plugin named: that link is what the resolver finds it by afterwards.
+        if (account is not null)
+        {
+            client.SetExternalAccount(account.Provider, account.Id);
+        }
 
-        return Result.Success<int?>(written.Created ? written.Client.Id : null);
+        var written = await _clientRecords.AddOrGetAsync(client, ct);
+        if (written.Created)
+        {
+            return Result.Success<int?>(written.Client.Id);
+        }
+
+        // Another writer got there first. Retrying is only sound when the winner is a row the resolver
+        // will now find for this caller; a plugin member who already owns an unlinked record would
+        // otherwise be sent round in circles.
+        return account is not null && !SameAccount(written.Client, client)
+            ? Result<int?>.FailureCode(HostpanelErrorCodes.CLIENT_PROFILE_NOT_FOUND)
+            : Result.Success<int?>(null);
     }
+
+    /// <summary>Whether two client rows are linked to the same external account.</summary>
+    /// <param name="left">The first row.</param>
+    /// <param name="right">The second row.</param>
+    /// <returns><see langword="true"/> when both carry the same provider and account id.</returns>
+    private static bool SameAccount(Client left, Client right) =>
+        left.ExternalAccountProvider == right.ExternalAccountProvider && left.ExternalAccountId == right.ExternalAccountId;
 
     /// <summary>Returns the first of two values that is neither null nor blank.</summary>
     /// <param name="preferred">The value to use when it says something.</param>

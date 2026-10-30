@@ -613,6 +613,25 @@ deploy:demo:
 # just the deploy directory:
 #
 #   docker inspect "$(docker ps -q -f label=com.docker.compose.project=hostpanel -f label=com.docker.compose.service=hostpanel-api)" --format '{{.Config.Image}} {{index .Config.Labels "com.docker.compose.project.config_files"}}'
+# Frees disk on the production host: Docker's build cache and untagged images only. Running
+# containers, volumes, the database and the hostpanel-rollback/*:previous images are kept. A full
+# disk stopped the deploy of 2026-10-30 and its rollback alike.
+maintenance:prod-free-disk:
+  stage: deploy
+  tags: [prod]
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - df -h / /var/lib/docker 2>/dev/null || df -h /
+    - docker builder prune -af
+    - docker image prune -f
+    - df -h / /var/lib/docker 2>/dev/null || df -h /
+  when: manual
+  allow_failure: true
+  rules:
+    - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "main"
+      when: manual
+
 deploy:prod:
   extends: .nuget-credentials
   stage: deploy

@@ -348,10 +348,16 @@ const openQuote = (id: number): void => {
   router.push(quotePath(id))
 }
 
-/** Fills the external account inputs from the client detail whenever it loads or is refreshed. */
-watch(() => client.value?.externalAccount, (link) => {
-  externalProvider.value = link?.provider ?? ''
-  externalAccountId.value = link?.id ?? ''
+/**
+ * Fills the external account inputs when the held link changes. It watches the two values, not the
+ * object: a notes save replaces the client with a new object holding the same link, and that must
+ * not wipe what the operator is typing in the card.
+ *
+ * @returns Nothing.
+ */
+watch([() => client.value?.externalAccount?.provider, () => client.value?.externalAccount?.id], ([provider, id]) => {
+  externalProvider.value = provider ?? ''
+  externalAccountId.value = id ?? ''
 }, { immediate: true })
 
 /** Initialize admin notes from the client detail when it loads. */

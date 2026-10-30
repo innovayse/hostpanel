@@ -11,6 +11,7 @@ import { callOf, json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import type { ClientSummaryData } from '@/types/client'
+import type { ClientExternalAccount } from '@/types/clientexternalaccount'
 
 /**
  * Client 7 as the detail endpoint returns it.
@@ -18,7 +19,7 @@ import type { ClientSummaryData } from '@/types/client'
  * @param externalAccount - The link the client holds, null for none.
  * @returns The response.
  */
-const client = (externalAccount: { provider: string, id: string } | null = null) =>
+const client = (externalAccount: ClientExternalAccount | null = null) =>
   json({
     externalAccount,
     id: 7,
@@ -214,7 +215,7 @@ describe('ClientSummaryView', () => {
   })
 
   it('shows the new link after a save refreshed the client', async () => {
-    let held: { provider: string, id: string } | null = null
+    let held: ClientExternalAccount | null = null
     stubRoutes(summaryRoutes(
       () => new Response(null, { status: 204 }),
       () => {
@@ -234,8 +235,21 @@ describe('ClientSummaryView', () => {
     expect(wrapper.find('[data-testid="client-external-account-clear"]').exists()).toBe(true)
   })
 
+  it('keeps what is typed in the card when the notes are saved', async () => {
+    stubRoutes(summaryRoutes(() => new Response(null, { status: 204 }), undefined, () => client({ provider: 'crm', id: 'acct-1' })))
+    const wrapper = await mountSummary()
+
+    await wrapper.get('[data-testid="client-external-account-provider"]').setValue('billing')
+    await wrapper.get('[data-testid="client-summary-notes-input"]').setValue('Prefers mail')
+    await wrapper.get('[data-testid="client-summary-notes-save"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="client-summary-notes-feedback"]').text()).toBe('Notes saved.')
+    expect((wrapper.get('[data-testid="client-external-account-provider"]').element as HTMLInputElement).value).toBe('billing')
+  })
+
   it('clears the link after the confirmation and empties the inputs', async () => {
-    let held: { provider: string, id: string } | null = { provider: 'crm', id: 'acct-1' }
+    let held: ClientExternalAccount | null = { provider: 'crm', id: 'acct-1' }
     const mock = stubRoutes(summaryRoutes(
       () => new Response(null, { status: 204 }),
       () => {

@@ -190,3 +190,11 @@ export enum ClientStatus {
   Suspended = 'Suspended',
   Closed = 'Closed',
 }
+
+/** Wire names of the fields of the external account link, the keys the API's per-field messages come under. */
+export enum ExternalAccountField {
+  /** The name of the other system. */
+  Provider = 'provider',
+  /** The identifier the other system gives the client. */
+  AccountId = 'accountId',
+}

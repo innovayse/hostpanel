@@ -1,15 +1,7 @@
 /**
- * The external account link of a client: the body `PUT /api/clients/{id}/external-account`
- * takes and the names of the fields the API can refuse.
+ * The external account link of a client: the account as the client detail carries it and the body
+ * `PUT /api/clients/{id}/external-account` takes.
  */
-
-/** Wire names of the fields of the link, the keys the API's per-field messages come under. */
-export enum ExternalAccountField {
-  /** The name of the other system. */
-  Provider = 'provider',
-  /** The identifier the other system gives the client. */
-  AccountId = 'accountId',
-}
 
 /** The account in another system a client is linked to, as the client detail carries it. */
 export interface ClientExternalAccount {

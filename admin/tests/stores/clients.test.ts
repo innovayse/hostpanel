@@ -169,6 +169,19 @@ describe('clientsStore.saveExternalAccount', () => {
     expect(store.externalAccountFieldErrors).toEqual({ accountId: 'Account id is required.' })
   })
 
+  it('forgets a refusal when another client is opened', async () => {
+    stubFetch(invalid('Fix the form.', { Provider: ['Provider is required.'] }), json({ id: 8 }))
+    const store = useClientsStore()
+
+    expect(await store.saveExternalAccount(7, { provider: null, accountId: 'acct-1' })).toBe(false)
+    expect(store.externalAccountError).toBe('Fix the form.')
+
+    await store.fetchById(8)
+
+    expect(store.externalAccountError).toBeNull()
+    expect(store.externalAccountFieldErrors).toEqual({})
+  })
+
   it('does not touch the profile save state', async () => {
     stubFetch(problem('Refused.', 409))
     const store = useClientsStore()

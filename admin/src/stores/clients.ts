@@ -105,6 +105,9 @@ export const useClientsStore = defineStore('clients', () => {
   const fetchById = async (id: number | string): Promise<void> => {
     loading.value = true
     current.value = null
+    // A refusal of the link save belongs to the client it was typed for, not to the next one opened.
+    externalAccountError.value = null
+    externalAccountFieldErrors.value = {}
     const result = await runAction(error, () => api.get(id))
     loading.value = false
     if (result.ok) {

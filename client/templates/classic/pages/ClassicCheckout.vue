@@ -153,6 +153,10 @@
                 </UiStack>
               </UiStack>
 
+              <UiAlert v-if="!mayPlaceOrders" variant="warning" data-testid="checkout-permission-denied">
+                {{ $t('checkout.permissionDenied') }}
+              </UiAlert>
+
               <UiGrid v-if="methodsPending" cols="2" gap="sm" data-testid="checkout-methods-loading">
                 <UiSkeleton v-for="i in 3" :key="i" shape="block" class="h-14 rounded-md" />
               </UiGrid>
@@ -167,6 +171,7 @@
                   :key="method.module"
                   v-model="selectedMethod"
                   :method="method"
+                  :disabled="!mayPlaceOrders"
                   name="payment-method"
                   :testid="`checkout-method-${method.module}`"
                   active-class="border-classic-brand bg-classic-brand-soft"
@@ -185,7 +190,7 @@
                 leave-from-class="opacity-100 max-h-40"
                 leave-to-class="opacity-0 max-h-0"
               >
-                <UiStack v-if="selectedMethod === PaymentModule.Stripe" gap="none" class="mt-6 overflow-hidden" data-testid="checkout-card-form">
+                <UiStack v-if="mayPlaceOrders && selectedMethod === PaymentModule.Stripe" gap="none" class="mt-6 overflow-hidden" data-testid="checkout-card-form">
                   <CheckoutStripeCardForm ref="stripeCardFormRef" />
                 </UiStack>
               </Transition>
@@ -253,7 +258,7 @@
                 size="md"
                 full-width
                 :loading="submitting"
-                :disabled="submitting || cart.isEmpty || !selectedMethod"
+                :disabled="submitting || cart.isEmpty || !selectedMethod || !mayPlaceOrders"
                 class="!h-12 font-semibold"
                 data-testid="checkout-submit"
                 @click="submitOrder"
@@ -319,6 +324,7 @@ const {
   cart,
   currencyStore,
   isLoggedIn,
+  mayPlaceOrders,
   staleItems,
   totalLabel,
   submittingLabel,

@@ -24,9 +24,9 @@ describe('REFRESH_TOKEN_MAX_AGE', () => {
 })
 
 describe('the other cookie lifetimes', () => {
-  it('keeps the flag at seven days, the sign-in round trip at five minutes and the silent attempt at thirty seconds', () => {
+  it('keeps the flag at seven days, the sign-in round trip at fifteen minutes and the silent attempt at thirty seconds', () => {
     expect(AUTHED_FLAG_MAX_AGE).toBe(7 * 24 * 60 * 60)
-    expect(SSO_FLOW_COOKIE_MAX_AGE).toBe(300)
+    expect(SSO_FLOW_COOKIE_MAX_AGE).toBe(900)
     expect(SSO_SILENT_COOKIE_MAX_AGE).toBe(30)
   })
 

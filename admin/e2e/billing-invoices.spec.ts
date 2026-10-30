@@ -4,8 +4,9 @@
  */
 import { HttpMethod } from '../src/types/http'
 import { expect, test } from '@playwright/test'
-import { invoicesPage, paidInvoice, unpaidInvoice } from './fixtures/invoices'
-import type { Invoice } from '../src/types/invoice'
+import { failedFulfilment, invoicesPage, paidInvoice, unpaidInvoice, unpaidInvoiceDetail } from './fixtures/invoices'
+import { FulfilmentStatus } from '../src/types/invoice'
+import type { FulfilmentRecord, Invoice } from '../src/types/invoice'
 import { json, stubApi } from './support/stubApi'
 
 test('marking the ticked invoices paid posts their ids and reloads the list', async ({ page }) => {
@@ -85,4 +86,39 @@ test('a refused load shows the API sentence', async ({ page }) => {
   await page.goto('/billing/invoices')
 
   await expect(page.getByTestId('billing-invoices-error')).toContainText(sentence)
+})
+
+test('the Fulfilment tab lists the records and a confirmed retry posts and reloads them', async ({ page }) => {
+  // The record as the "database" holds it; the retry call puts it back in the queue.
+  const stored: FulfilmentRecord = { ...failedFulfilment }
+
+  const api = await stubApi(page, {
+    signedIn: true,
+    routes: [
+      { method: HttpMethod.Get, path: `/api/billing/${unpaidInvoice.id}`, respond: () => ({ body: unpaidInvoiceDetail }) },
+      { method: HttpMethod.Get, path: `/api/billing/${unpaidInvoice.id}/fulfilment`, respond: () => ({ body: [stored] }) },
+      {
+        method: HttpMethod.Post,
+        path: `/api/billing/${unpaidInvoice.id}/fulfilment/${stored.id}/retry`,
+        respond: () => {
+          stored.status = FulfilmentStatus.Pending
+          stored.canRetry = false
+          return { status: 204 }
+        },
+      },
+    ],
+  })
+
+  await page.goto(`/billing/invoices/${unpaidInvoice.id}/edit`)
+  await page.getByTestId('billing-invoice-tab-fulfilment').click()
+  await expect(page.getByTestId('billing-invoice-fulfilment-table')).toContainText('The upstream account is locked.')
+
+  await page.getByTestId(`billing-invoice-fulfilment-retry-${stored.id}`).click()
+  // Nothing is sent until the dialog is confirmed.
+  expect(api.callsTo(HttpMethod.Post, `/api/billing/${unpaidInvoice.id}/fulfilment/${stored.id}/retry`)).toHaveLength(0)
+  await page.getByTestId('dialog-confirm').click()
+
+  await expect(page.getByTestId('billing-invoice-fulfilment-feedback')).toBeVisible()
+  await expect(page.getByTestId(`billing-invoice-fulfilment-retry-${stored.id}`)).toHaveCount(0)
+  await expect(page.getByTestId('billing-invoice-fulfilment-table')).toContainText('Pending')
 })

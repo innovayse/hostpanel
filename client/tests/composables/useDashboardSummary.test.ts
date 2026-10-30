@@ -63,6 +63,18 @@ describe('useDashboardSummary.servicesNeedingSetup', () => {
 
     expect(servicesNeedingSetup.value.map((service) => service.id)).toEqual([1])
   })
+
+  it('leaves out a digital service, which has no username and nothing to set up', () => {
+    const store = useClientStore()
+    store.services = [
+      { id: 1, username: '', isDigital: false },
+      { id: 2, username: null, isDigital: true }
+    ] as unknown as ClientService[]
+
+    const { servicesNeedingSetup } = useDashboardSummary()
+
+    expect(servicesNeedingSetup.value.map((service) => service.id)).toEqual([1])
+  })
 })
 
 describe('useDashboardSummary.unpaidInvoices', () => {

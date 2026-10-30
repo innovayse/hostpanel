@@ -88,14 +88,15 @@ public sealed class CallerClientResolver : ICallerClientResolver
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The linked client with the mapped permissions, never as owner. A principal the plugin refuses acts for
-    /// no account. An account no client is linked to yet keeps its mapped permissions with no client id, so the
+    /// no account and is marked <see cref="CallerClientAccess.Refused"/>, so the order route does not take them for a
+    /// first time buyer. An account no client is linked to yet keeps its mapped permissions with no client id, so the
     /// order flow that creates the client is still authorised while every read answers "no client profile".
     /// </returns>
     private async Task<CallerClientAccess> ResolveThroughPluginAsync(IClientResolver plugin, CancellationToken ct)
     {
         if (_caller.Principal is not { } principal || await plugin.ResolveAsync(principal, ct) is not { } granted)
         {
-            return CallerClientAccess.None;
+            return CallerClientAccess.Refused;
         }
 
         var account = granted.Account;

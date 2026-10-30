@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountAccount } from '~/tests/helpers/mountAccount'
 import { stubLocalePath } from '~/tests/helpers/runtimeStubs'
 import PaymentMethodsTab from '~/components/account/PaymentMethodsTab.vue'
+import { Permission } from '~/composables/usePermissions'
+import { grantPermissions } from '~/tests/helpers/grantPermissions'
 import { useAccountStore } from '~/stores/account'
 import { ActionOutcome } from '~/types/actionoutcome'
 import { PaymentMethodType } from '~/types/payment'
@@ -104,5 +106,28 @@ describe('PaymentMethodsTab', () => {
     await wrapper.vm.$nextTick()
 
     expect(wrapper.find('[data-testid="account-payment-action-error"]').text()).toContain('Cannot remove the last method')
+  })
+
+  describe('without the permission to view and pay invoices', () => {
+    it('shows only the reason, no list, no empty state and no skeleton', async () => {
+      const wrapper = mountAccount(PaymentMethodsTab)
+      useAccountStore().paymentMethods = [method]
+      await grantPermissions(Permission.ViewEmails)
+
+      expect(wrapper.find('[data-testid="account-payment-denied"]').text()).toContain('client.payment.permissionDenied')
+      expect(wrapper.find('[data-testid="account-payment-default-9"]').exists()).toBe(false)
+      expect(wrapper.find('[data-testid="account-payment-remove-9"]').exists()).toBe(false)
+      expect(wrapper.find('[data-testid="ui-empty-state"]').exists()).toBe(false)
+      expect(wrapper.find('[data-testid="account-payment-loading"]').exists()).toBe(false)
+    })
+
+    it('shows the saved methods when the person holds the permission', async () => {
+      const wrapper = mountAccount(PaymentMethodsTab)
+      useAccountStore().paymentMethods = [method]
+      await grantPermissions(Permission.ViewPayInvoices)
+
+      expect(wrapper.find('[data-testid="account-payment-denied"]').exists()).toBe(false)
+      expect(wrapper.find('[data-testid="account-payment-default-9"]').exists()).toBe(true)
+    })
   })
 })

@@ -161,6 +161,12 @@ public sealed class PlaceOrderHandler
         var now = _clock.UtcNow;
         var access = await _callerClient.ResolveAsync(ct);
 
+        // A signed-in caller the identity plugin refused is no first time buyer: nothing is created for them.
+        if (access.IdentityRefused)
+        {
+            return Result<PlaceOrderResultDto>.FailureCode(HostpanelErrorCodes.CLIENT_PERMISSION_DENIED);
+        }
+
         // A sub-user or plugin member orders only where the account grants it; the route is open to
         // guests, so the permission filter that guards the portal routes never runs here.
         if (!MayPlaceOrders(access))

@@ -252,6 +252,14 @@ describe('findProductDetail', () => {
     expect(detail?.plans[0]).toMatchObject({ id: 11, pricing: { monthly: 10, annual: 100 }, features: ['One site'], description: '', isFeatured: false })
   })
 
+  it('carries the product type of each plan, which the cart keeps to tell digital goods from hosting', () => {
+    const plans = learnGroup.map((entry) => (entry.id === 11 ? { ...entry, type: ProductType.Digital } : entry))
+
+    const detail = findProductDetail(groups, plans, 'alpha-suite')
+
+    expect(detail?.plans.map((plan) => plan.type)).toEqual([ProductType.Digital, undefined])
+  })
+
   it('names the page after the family, never after the plan the address matched', () => {
     const hosting = [group(1, 'Web Hosting', { description: 'Fast, secure hosting.', productCount: 2 })]
     const plans = [

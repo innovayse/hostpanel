@@ -18,6 +18,7 @@ import { defineStore } from 'pinia'
 import { RECENTLY_ADDED_MS } from '~/constants/uiDefaults'
 import type { CartItem } from '~/types/cartitem'
 import { CartItemType } from '~/types/cartitemtype'
+import { ProductType } from '~/types/producttype'
 import { DomainOrderAction } from '~/types/domainorderaction'
 import type { PortalProduct } from '~/types/portalproduct'
 import { PricingCycle } from '~/types/pricingcycle'
@@ -79,7 +80,9 @@ const isValidItem = (item: unknown): item is CartItem => {
     (i.domainAction === undefined || isMember(Object.values(DomainOrderAction), i.domainAction)) &&
     isOptional(i.eppCode, 'string') &&
     isOptional(i.tld, 'string') &&
-    isOptional(i.years, 'number')
+    isOptional(i.years, 'number') &&
+    // Absent on a line saved before the field existed: still a valid line.
+    (i.productType === undefined || isMember(Object.values(ProductType), i.productType))
 }
 
 // ---------------------------------------------------------------------------
@@ -123,6 +126,19 @@ export const useCartStore = defineStore('cart', {
      */
     itemsInCurrency: (state) => (payerCode: string | null): CartItem[] =>
       payerCode ? state.items.filter(i => i.currency === payerCode) : state.items,
+
+    /**
+     * Whether everything the payer will be charged for is a digital good: the order then has no
+     * hosting service to set up, so the confirmation offers no setup. A line without a known type
+     * counts as not digital, and an empty set is not "only digital".
+     *
+     * @returns A function taking the payer's current currency code and answering for the items
+     * priced in it.
+     */
+    onlyDigital: (state) => (payerCode: string | null): boolean => {
+      const ordered = payerCode ? state.items.filter(i => i.currency === payerCode) : state.items
+      return ordered.length > 0 && ordered.every(i => i.productType === ProductType.Digital)
+    },
 
     /**
      * Items priced in some other currency than `payerCode`: added before the payer changed

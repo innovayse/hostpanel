@@ -12,6 +12,7 @@ import ResultPage from '~/pages/payment/result.vue'
 import { useCartStore } from '~/stores/cart'
 import { GatewayPaymentState } from '~/types/gatewaypaymentstate'
 import { PricingCycle } from '~/types/pricingcycle'
+import { ProductType } from '~/types/producttype'
 
 /** The mocked billing endpoints, re-created for every test. */
 const billing = { completeGatewayPayment: vi.fn() }
@@ -138,6 +139,17 @@ describe('payment result page', () => {
     const paidPinia = filledPinia()
     await mountResult({ order: '5' }, paidPinia)
     expect(useCartStore(paidPinia).items).toEqual([])
+  })
+
+  it('offers the order page of digital goods, which asks for no hosting setup, when the paid cart held only those', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    useCartStore().items = [{ pid: 1, name: 'Credits', billingcycle: PricingCycle.Monthly, cycleLabel: 'Monthly', amount: 5, currency: 'USD', productType: ProductType.Digital }]
+    billing.completeGatewayPayment.mockResolvedValue({ state: GatewayPaymentState.Paid, orderNumber: 'ORD-5' })
+
+    const wrapper = await mountResult({ order: '5' }, pinia)
+
+    expect(wrapper.find('[data-testid="payment-continue"]').attributes('href')).toBe('/en/client/order-success?order=ORD-5&digital=1')
   })
 
   it('treats a repeated or malformed id as missing and does not call the backend', async () => {

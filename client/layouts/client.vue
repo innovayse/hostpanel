@@ -115,9 +115,6 @@ const { t } = useI18n()
 const authStore = useAuthStore()
 /** Client store: the signed-in person and their services, invoices, domains and tickets. */
 const store = useClientStore()
-/** Permission check for the signed-in person. */
-const { hasPermission } = usePermissions()
-
 /** Whether the platform widget is served here; without it nothing is polled for and the top bar draws its own account menu. */
 const { enabled: widgetEnabled } = useHeaderWidget()
 
@@ -208,9 +205,9 @@ const navItems = computed<NavEntry[]>(() => [
   { to: CLIENT_ACCOUNT_PATH, label: t('client.nav.account'), icon: UserCog, permission: Permission.None }
 ])
 
-/** Nav items filtered by the current user's permissions. */
+/** Nav items filtered by what the signed-in person may do, by the same rule as the actions behind them. */
 const visibleNavItems = computed(() =>
-  navItems.value.filter((item) => hasPermission(item.permission))
+  navItems.value.filter((item) => store.mayDo(item.permission))
 )
 
 /**

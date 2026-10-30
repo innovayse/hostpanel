@@ -16,4 +16,6 @@ export interface OrderSuccessQuery {
   domain?: string
   /** What was done to {@link domain}: registered or transferred. */
   action?: DomainOrderAction
+  /** True when everything in the order was digital, so the page offers no hosting setup. */
+  digital?: boolean
 }

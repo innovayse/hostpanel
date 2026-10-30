@@ -1,7 +1,7 @@
 /**
  * GET /api/portal/client/me
  * Returns the authenticated client's profile: the backend `MyProfileDto` as it is sent, plus the
- * caller's `permissions` and `hasClientProfile`.
+ * caller's `permissions`, `actsForAccount` and `hasClientProfile`.
  *
  * In SSO mode: the profile is the same record `PATCH` (me.patch.ts) writes to, with `email` and
  * `twoFactorEnabled` taken from SSO's own /api/account/profile, where sign-in and 2FA live.
@@ -20,6 +20,15 @@
  * grant for a linked user, nothing for anyone else. It only decides what the portal shows (the API
  * enforces the same flags on every request), so when `/auth/me` cannot be read the value is 0
  * (show nothing that needs a permission) rather than a guess that grants.
+ *
+ * `actsForAccount` says whether those flags apply to the person at all: true when `/auth/me` names a
+ * client account (`clientId`) or an external account for the caller, false for a signed-in person
+ * with neither, such as a first-time buyer whose account the first order creates. The flags only
+ * restrict members of an account, so the portal offers such a person the purchase. It is derived
+ * here, once, so no page repeats the rule. False also covers a person linked to several accounts
+ * (`/auth/me` names none of them), where the server decides, and the cases where the answer is
+ * unknown: when `/auth/me` cannot be read, or an older backend sends neither field, the answer is
+ * false too. Unknown means offer: the portal shows the action and the server stays the real check.
  *
  * @module server/api/portal/client/me.get
  */
@@ -58,18 +67,25 @@ interface BackendAccount {
   externalAccount?: { provider: string, id: string } | null
 }
 
+/** What the portal reads of the caller's access to a client account. */
+type ClientAccess = Pick<ClientUser, 'permissions' | 'actsForAccount'>
+
 /**
- * Reads the permissions the signed-in person holds on a client account.
+ * Reads the permissions the signed-in person holds and whether they act for a client account.
  *
  * @param event - The incoming browser request, whose session the backend call carries.
- * @returns The permission integer; 0 when the backend does not answer or sends no value.
+ * @returns The permission integer (0 when the backend does not answer or sends no value) and
+ *          whether the person acts for an account (false when that is unknown, so nothing is hidden on a guess).
  */
-const readClientPermissions = async (event: H3Event): Promise<number> => {
+const readClientAccess = async (event: H3Event): Promise<ClientAccess> => {
   try {
     const account = await internalApiCall<BackendAccount>(event, '/auth/me')
-    return typeof account.clientPermissions === 'number' ? account.clientPermissions : 0
+    const permissions = typeof account.clientPermissions === 'number' ? account.clientPermissions : 0
+    const accountKnown = account.clientId !== undefined || account.externalAccount !== undefined
+    const actsForAccount = accountKnown && (account.clientId != null || account.externalAccount != null)
+    return { permissions, actsForAccount }
   } catch {
-    return 0
+    return { permissions: 0, actsForAccount: false }
   }
 }
 
@@ -93,14 +109,14 @@ export default defineEventHandler(async (event): Promise<ClientUser> => {
         return null
       })
 
-    const permissions = await readClientPermissions(event)
+    const access = await readClientAccess(event)
     // SSO owns sign-in and 2FA in this mode, so its email and totpEnabled, not anything the
     // client record might carry, are the one answer for who signs in and whether 2FA is on.
     const twoFactorEnabled = identity.totpEnabled === true
     const email = identity.email
 
     if (billing) {
-      return { ...billing, email, twoFactorEnabled, permissions, hasClientProfile: true }
+      return { ...billing, email, twoFactorEnabled, ...access, hasClientProfile: true }
     }
 
     // No client record to pass through: the identity alone, with every billing field empty.
@@ -120,12 +136,12 @@ export default defineEventHandler(async (event): Promise<ClientUser> => {
       notifications: null,
       twoFactorEnabled,
       contacts: [],
-      permissions,
+      ...access,
       hasClientProfile: !notACustomer,
     }
   }
 
   const data = await internalApiCall<MyProfile>(event, '/clients/me')
 
-  return { ...data, permissions: await readClientPermissions(event), hasClientProfile: true }
+  return { ...data, ...(await readClientAccess(event)), hasClientProfile: true }
 })

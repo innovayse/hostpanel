@@ -39,6 +39,8 @@ export enum ApiPath {
   AdminServerGroups = '/admin/server-groups',
   /** `/admin/servers` collection and its members. */
   AdminServers = '/admin/servers',
+  /** `/admin/release-status` — installed version and latest GitHub release. */
+  AdminReleaseStatus = '/admin/release-status',
   /** `/admin/settings` collection and its members. */
   AdminSettings = '/admin/settings',
   /** `/admin/slides` collection and its members. */

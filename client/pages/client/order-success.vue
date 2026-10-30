@@ -38,7 +38,7 @@
         >
           {{ $t('checkout.success.manageDomain') }}
         </UiButton>
-        <UiButton size="lg" full-width data-testid="order-success-setup-service" @click="openServices">
+        <UiButton v-if="!digitalOnly" size="lg" full-width data-testid="order-success-setup-service" @click="openServices">
           {{ $t('checkout.success.setupService') }}
         </UiButton>
         <UiButton
@@ -58,7 +58,7 @@
 <script setup lang="ts">
 /**
  * Payment success page shown after a successful checkout: the order confirmation and links on to
- * the service setup, the domain and the invoices.
+ * the service setup (left out for an order of digital goods only), the domain and the invoices.
  */
 import { CLIENT_DOMAINS_PATH, CLIENT_INVOICES_PATH, CLIENT_SERVICES_PATH } from '~/constants/clientRoutes'
 import { CheckCircle } from 'lucide-vue-next'
@@ -99,6 +99,9 @@ const domainName = computed(() => (route.query.domain as string) || null)
 
 /** Domain action from query params, when a domain was registered or transferred. */
 const domainAction = computed(() => (route.query.action as DomainOrderAction) || null)
+
+/** True when the order held only digital goods: they are delivered, so there is no service to set up. */
+const digitalOnly = computed(() => route.query.digital === '1')
 
 onMounted(async () => {
   if (invoiceId.value) {

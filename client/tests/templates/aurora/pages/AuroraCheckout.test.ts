@@ -11,6 +11,7 @@ import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import AuroraCheckout from '~/templates/aurora/pages/AuroraCheckout.vue'
 import GatewayOption from '~/components/checkout/GatewayOption.vue'
 import SubmitHint from '~/components/checkout/SubmitHint.vue'
+import { Permission } from '~/composables/usePermissions'
 import { CheckoutDestinationKind } from '~/types/checkoutdestinationkind'
 import { stubAuroraGlobals } from '../auroraGlobals'
 
@@ -19,11 +20,17 @@ const fakes = vi.hoisted(() => ({
   cart: null as null | Record<string, unknown>,
   currency: null as null | Record<string, unknown>,
   checkout: null as null | Record<string, unknown>,
+  /** The permissions the signed-in person holds; `null` stands for a first-time buyer who acts for no account. */
+  held: null as number | null,
 }))
 
 vi.mock('~/stores/cart', () => ({ useCartStore: () => fakes.cart }))
 vi.mock('~/stores/currency', () => ({ useCurrencyStore: () => fakes.currency }))
 vi.mock('~/stores/checkout', () => ({ useCheckoutStore: () => fakes.checkout }))
+// The client store's own decision is covered by its tests; the page only reads its answer.
+vi.mock('~/stores/client', () => ({
+  useClientStore: () => ({ mayDo: (flag: number) => fakes.held === null || (fakes.held & flag) === flag }),
+}))
 // The page reaches the session through the store module; the test's session is the stand-in
 // `stubAuroraGlobals` registers as the global store accessor.
 vi.mock('~/stores/auth', () => ({
@@ -120,6 +127,7 @@ const mountPage = async () => {
 
 describe('AuroraCheckout', () => {
   beforeEach(() => {
+    fakes.held = Permission.All
     vi.stubGlobal('useHead', vi.fn())
   })
 
@@ -228,5 +236,52 @@ describe('AuroraCheckout', () => {
     const wrapper = await mountPage()
 
     expect(wrapper.find('[data-testid="checkout-place-order"]').attributes('disabled')).toBeDefined()
+  })
+
+  describe('purchase permission', () => {
+    it('offers the gateways and the order button to a member who may place orders', async () => {
+      stubAuroraGlobals()
+      fakes.held = Permission.PlaceNewOrders
+      buildStores()
+      const wrapper = await mountPage()
+
+      expect(wrapper.find('[data-testid="checkout-permission-denied"]').exists()).toBe(false)
+      expect(wrapper.find('[data-testid="checkout-method-stripe-input"]').attributes('disabled')).toBeUndefined()
+      expect(wrapper.find('[data-testid="checkout-place-order"]').attributes('disabled')).toBeUndefined()
+    })
+
+    it('disables the gateways and the order button, and says why, for a member who may not place orders', async () => {
+      stubAuroraGlobals()
+      fakes.held = Permission.ViewPayInvoices
+      const { placeOrder } = buildStores()
+      const wrapper = await mountPage()
+
+      expect(wrapper.find('[data-testid="checkout-permission-denied"]').text()).toContain('checkout.permissionDenied')
+      expect(wrapper.find('[data-testid="checkout-method-stripe-input"]').attributes('disabled')).toBeDefined()
+      expect(wrapper.find('[data-testid="checkout-place-order"]').attributes('disabled')).toBeDefined()
+
+      await wrapper.find('[data-testid="checkout-place-order"]').trigger('click')
+      await flushPromises()
+      expect(placeOrder).not.toHaveBeenCalled()
+    })
+
+    it('does not open the card form for a member who may not place orders', async () => {
+      stubAuroraGlobals()
+      fakes.held = Permission.None
+      buildStores().selectedMethod.value = 'stripe'
+      const wrapper = await mountPage()
+
+      expect(wrapper.find('[data-testid="card-form-stub"]').exists()).toBe(false)
+    })
+
+    it('keeps the checkout open for a signed-in first-time buyer who acts for no account', async () => {
+      stubAuroraGlobals({ user: { firstName: 'Ann', lastName: 'Lee', email: 'ann@acme.test' } })
+      fakes.held = null
+      buildStores()
+      const wrapper = await mountPage()
+
+      expect(wrapper.find('[data-testid="checkout-permission-denied"]').exists()).toBe(false)
+      expect(wrapper.find('[data-testid="checkout-place-order"]').attributes('disabled')).toBeUndefined()
+    })
   })
 })

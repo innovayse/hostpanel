@@ -146,6 +146,7 @@ const addToCart = (): void => {
     cycleLabel: selectedCycleLabel.value,
     amount,
     currency: currencyStore.payerCode,
+    productType: product.value?.type,
   })
   navigateTo(localePath('/checkout'))
 }

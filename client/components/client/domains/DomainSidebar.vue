@@ -15,7 +15,7 @@
     </UiNavGroup>
 
     <UiNavGroup v-if="canOrder" :title="$t('client.domains.sectionActions')" :icon="Zap">
-      <UiNavItem :icon="RefreshCw" testid="domain-action-renew" @click="emit('update:activeTab', DomainTab.Renew)">
+      <UiNavItem :icon="RefreshCw" :disabled="isPending" testid="domain-action-renew" @click="choose(DomainTab.Renew)">
         {{ $t('client.domains.actionRenewDomain') }}
       </UiNavItem>
       <UiNavItem to="/domains" :icon="PlusCircle" testid="domain-action-register">

@@ -11,8 +11,8 @@
  *
  * Why a GET is safe: the handler never changes the local session. It only starts the sign-on
  * authorize flow, exactly as `authorize.get.ts` does: a fresh `state` and PKCE verifier are bound to
- * this browser in httpOnly cookies. The account actually changes in `callback.get.ts`, after the
- * returned `state` and the PKCE proof are verified against those cookies. A cross-site GET can
+ * this browser in a sealed httpOnly transaction cookie. The account actually changes in `callback.get.ts`, after the
+ * returned `state` and the PKCE proof are verified against that cookie. A cross-site GET can
  * therefore at most send the visitor through the sign-on page for an account they already have; it
  * cannot sign them in as anyone or end their session.
  *

@@ -54,6 +54,16 @@ describe('InvoicesListView', () => {
     expect(JSON.parse(String((post?.[1] as RequestInit | undefined)?.body))).toEqual({ invoiceIds: [1], action: 'MarkPaid' })
   })
 
+  it('drops the ticked invoices when the list is loaded again', async () => {
+    stubRoutes({ 'GET /api/billing?': () => json({ items: [invoiceRowFixture()], pageNumber: 1, pageSize: 25, totalCount: 1, totalPages: 1 }) })
+    const wrapper = await mountList()
+    await wrapper.get('[data-testid="billing-invoice-select-1"]').trigger('click')
+    await wrapper.get('[data-testid="billing-invoices-filter-toggle"]').trigger('click')
+    await wrapper.get('[data-testid="billing-invoices-search"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[data-testid="billing-invoices-bulk"]').exists()).toBe(false)
+  })
+
   it('deletes an invoice only after the confirmation', async () => {
     const mock = stubRoutes({
       'GET /api/billing?': () => json({ items: [invoiceRowFixture()], pageNumber: 1, pageSize: 25, totalCount: 1, totalPages: 1 }),

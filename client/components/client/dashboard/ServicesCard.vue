@@ -19,7 +19,7 @@
       <ClientDashboardListRow
         v-for="service in store.services.slice(0, 4)"
         :key="service.id"
-        :to="service.username ? clientServicePath(service.id) : clientServiceSetupPath(service.id)"
+        :to="serviceAwaitsSetup(service) ? clientServiceSetupPath(service.id) : clientServicePath(service.id)"
         :testid="`dashboard-service-${service.id}`"
       >
         <UiStack direction="row" align="center" gap="sm" class="min-w-0">
@@ -41,8 +41,8 @@
             :testid="`dashboard-service-cpanel-${service.id}`"
             @click.stop.prevent="loginToCpanel(service)"
           />
-          <ClientStatusBadge v-if="service.username" :status="service.status" />
-          <UiBadge v-else variant="info" size="sm">{{ $t('client.dashboard.needsSetup') }}</UiBadge>
+          <UiBadge v-if="serviceAwaitsSetup(service)" variant="info" size="sm">{{ $t('client.dashboard.needsSetup') }}</UiBadge>
+          <ClientStatusBadge v-else :status="service.status" />
         </UiStack>
       </ClientDashboardListRow>
     </UiStack>
@@ -57,6 +57,7 @@
 import { CLIENT_SERVICES_PATH, clientServicePath, clientServiceSetupPath } from '~/constants/clientRoutes'
 import { ArrowRight, Loader, Monitor, Server } from 'lucide-vue-next'
 import { useClientStore } from '~/stores/client'
+import { serviceAwaitsSetup } from '~/utils/serviceSetup'
 import { useServiceManagementStore } from '~/stores/servicemanagement'
 import type { ClientService } from '~/types/clientservice'
 import { ServiceStatus } from '~/types/servicestatus'

@@ -634,14 +634,35 @@ export const EDITED_CONTACT_FIRST_NAME = 'Carla'
 
 /**
  * The signed-in person's account, as `GET /api/auth/me` answers (`MyAccountDto`). The portal reads
- * `clientPermissions` from it to decide which sections to show; the owner of a client record holds
- * every flag, so every section is visible to the flows.
+ * `clientPermissions` from it to decide which sections to show, and `clientId` / `externalAccount`
+ * to know whether the person acts for an account at all; the owner of a client record holds every
+ * flag, so every section is visible to the flows.
  */
 export const ACCOUNT = {
   email: CLIENT.email,
   roles: ['Client'],
   emailVerified: true,
   clientPermissions: 8191,
+  clientId: CLIENT.id,
+  externalAccount: null,
+}
+
+/**
+ * `GET /api/auth/me` fields of a member of the account who holds only the read-only email flag: no
+ * right to place orders and none to view or pay invoices (`ClientPermission.ViewEmails` is 2048).
+ */
+export const MEMBER_WITHOUT_PURCHASE_ACCOUNT = {
+  clientPermissions: 2048,
+}
+
+/**
+ * `GET /api/auth/me` fields of a signed-in first-time buyer: no client record and no external
+ * account yet (the first order creates the account), so no permission flag is held.
+ */
+export const FIRST_TIME_BUYER_ACCOUNT = {
+  clientPermissions: 0,
+  clientId: null,
+  externalAccount: null,
 }
 
 /** The account owner, listed first in the team and never removable (`ClientUserDto`). */

@@ -160,6 +160,44 @@ public sealed class PlaceOrderCallerAccountTests(IntegrationTestFactory factory)
         (await ClientsOfAccountAsync(accountId)).Should().Be(0);
     }
 
+    /// <summary>A signed-in user the plugin refuses is refused the order and no client row is created for them.</summary>
+    [Fact]
+    public async Task PluginRefusedMember_IsRefusedAndNoClientIsCreatedAsync()
+    {
+        await OrdersTestSeeds.EnableBankTransferAsync(factory);
+        var productId = await OrdersTestSeeds.SeedProductAsync(factory);
+        var member = await ClientsTestSeeds.CreateUnlinkedUserAsync(factory, "order-refused");
+        using var host = BuildHost(new StubClientResolver());
+        using var http = host.CreateClient();
+        http.DefaultRequestHeaders.Authorization = member.Client.DefaultRequestHeaders.Authorization;
+
+        var response = await OrderAsync(http, productId);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        await OrdersTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.CLIENT_PERMISSION_DENIED);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await db.Clients.AsNoTracking().CountAsync(c => c.UserId == member.UserId)).Should().Be(0);
+    }
+
+    /// <summary>With no identity plugin a signed-in first time buyer still orders and gets a client.</summary>
+    [Fact]
+    public async Task FirstTimeBuyerWithoutAPlugin_StillOrdersAsync()
+    {
+        await OrdersTestSeeds.EnableBankTransferAsync(factory);
+        var productId = await OrdersTestSeeds.SeedProductAsync(factory);
+        var buyer = await ClientsTestSeeds.CreateUnlinkedUserAsync(factory, "order-nopluginbuyer");
+        using var host = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services =>
+                services.AddSingleton<IIdentityPluginResolver>(new FakeIdentityPluginResolver(null))));
+        using var http = host.CreateClient();
+        http.DefaultRequestHeaders.Authorization = buyer.Client.DefaultRequestHeaders.Authorization;
+
+        var response = await OrderAsync(http, productId);
+
+        (await ClientOfOrderAsync(response)).Should().BeGreaterThan(0);
+    }
+
     /// <summary>
     /// A plugin member with no client yet gets one linked to their plugin account on the first order, the same
     /// client takes the second order, and another member of the account lands on it too.

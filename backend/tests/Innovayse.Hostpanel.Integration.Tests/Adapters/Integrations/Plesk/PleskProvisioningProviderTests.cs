@@ -337,17 +337,52 @@ public sealed class PleskProvisioningProviderTests : IAsyncLifetime
         plesk.Requests.Should().ContainSingle();
     }
 
-    /// <summary>Single sign-on is refused without calling the panel, since its session is bound to the browser's address.</summary>
+    /// <summary>
+    /// Single sign-on opens a session bound to the caller's address (base64, as Plesk wants it) and
+    /// returns the panel's session entry link.
+    /// </summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
-    public async Task GetSsoUrl_IsNotSupportedAsync()
+    public async Task GetSsoUrl_OpensASessionForTheCallersAddressAsync()
+    {
+        const string session =
+            """<packet><server><create_session><result><status>ok</status><id>ec2c87d14b1b811929a463be165a9eba</id></result></create_session></server></packet>""";
+        var provider = BuildProvider(new CapturingLogger<PleskProvisioningProvider>(), null, session);
+
+        var url = await provider.GetCPanelSsoUrlAsync("testuser", "203.0.113.50", CancellationToken.None);
+
+        url.Should().Be($"{plesk.BaseAddress.ToString().TrimEnd('/')}/enterprise/rsession_init.php?PLESKSESSID=ec2c87d14b1b811929a463be165a9eba");
+        plesk.Requests.Should().ContainSingle().Which.Body.Should()
+            .Contain("<create_session><login>testuser</login>")
+            .And.Contain($"<user_ip>{Convert.ToBase64String("203.0.113.50"u8.ToArray())}</user_ip>");
+    }
+
+    /// <summary>Without the caller's address no link is issued and the panel is not called, since it could not work.</summary>
+    /// <param name="callerIp">The missing address.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Theory]
+    [InlineData(null)]
+    [InlineData(" ")]
+    public async Task GetSsoUrl_Throws_WhenTheCallersAddressIsUnknownAsync(string? callerIp)
     {
         var provider = BuildProvider(new CapturingLogger<PleskProvisioningProvider>(), null);
 
-        var act = () => provider.GetCPanelSsoUrlAsync("testuser", CancellationToken.None);
+        var act = () => provider.GetCPanelSsoUrlAsync("testuser", callerIp, CancellationToken.None);
 
-        await act.Should().ThrowAsync<NotSupportedException>();
+        await act.Should().ThrowAsync<InvalidOperationException>();
         plesk.Requests.Should().BeEmpty();
+    }
+
+    /// <summary>A refused session is a failure, never a link without a session id.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task GetSsoUrl_Throws_WhenPleskRefusesTheSessionAsync()
+    {
+        var provider = BuildProvider(new CapturingLogger<PleskProvisioningProvider>(), null, NoSuchCustomer);
+
+        var act = () => provider.GetCPanelSsoUrlAsync("testuser", "203.0.113.50", CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
     /// <summary>No log line repeats the panel's error text or the order's domain.</summary>

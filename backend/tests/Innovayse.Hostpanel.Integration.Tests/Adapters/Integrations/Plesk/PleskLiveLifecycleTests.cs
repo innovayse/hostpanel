@@ -57,6 +57,25 @@ public sealed class PleskLiveLifecycleTests
             await provider.ChangePasswordAsync(user, "Nw9$ab3Kq7!z", CancellationToken.None);
             await provider.ChangePackageAsync(user, "Unlimited", CancellationToken.None);
 
+            // The session is bound to the address the request reaches Plesk from, so the test asks
+            // for it under PLESK_LIVE_CALLER_IP and then opens the link itself, from that address.
+            var callerIp = Environment.GetEnvironmentVariable("PLESK_LIVE_CALLER_IP");
+            if (!string.IsNullOrWhiteSpace(callerIp))
+            {
+                var link = await provider.GetCPanelSsoUrlAsync(user, callerIp, CancellationToken.None);
+
+                using var browserHandler = new HttpClientHandler
+                {
+                    ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
+                    UseCookies = true,
+                };
+                using var browser = new HttpClient(browserHandler) { Timeout = TimeSpan.FromMinutes(1) };
+                using var landing = await browser.GetAsync(link, CancellationToken.None);
+
+                // An accepted session lands inside the customer's panel; a refused one on the sign-in page.
+                landing.RequestMessage!.RequestUri!.AbsolutePath.Should().NotStartWith("/login_up.php");
+            }
+
             await provider.TerminateAsync(new TerminateAccountOrder(1, user, "test"), CancellationToken.None);
             await provider.TerminateAsync(new TerminateAccountOrder(1, user, "test"), CancellationToken.None);
             (await client.FindCustomerAsync(connection, user, CancellationToken.None)).Outcome

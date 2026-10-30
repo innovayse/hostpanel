@@ -9,7 +9,8 @@ namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Integrations.Plesk;
 /// Set <c>PLESK_LIVE_URL</c> (scheme, host and port, e.g. <c>https://127.0.0.1:8443</c>) and
 /// <c>PLESK_LIVE_KEY</c> (a secret key created for the address the tests run from) to run it. The
 /// server must have the stock <c>Default Domain</c> and <c>Unlimited</c> service plans and room for
-/// one more customer; a trial licence allows exactly one.
+/// one more customer; a trial licence allows exactly one. Set <c>PLESK_LIVE_CALLER_IP</c> too, to the
+/// address Plesk sees the tests' requests come from, and the run also opens a single sign-on link.
 /// </para>
 /// </remarks>
 public sealed class LivePleskFactAttribute : FactAttribute

@@ -59,7 +59,7 @@ public sealed class RecordingProvisioningProvider : IProvisioningProvider
             "recording-user", "recording-pass", "recording.example.test", "10.0.0.1", "http://panel.recording.example.test"));
 
     /// <inheritdoc/>
-    public Task<string> GetCPanelSsoUrlAsync(string provisioningRef, CancellationToken ct) =>
+    public Task<string> GetCPanelSsoUrlAsync(string provisioningRef, string? callerIp, CancellationToken ct) =>
         Task.FromResult("https://recording-panel.example.test/sso");
 
     /// <inheritdoc/>

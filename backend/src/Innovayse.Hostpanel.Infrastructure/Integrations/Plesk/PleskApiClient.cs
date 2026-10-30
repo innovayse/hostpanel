@@ -238,6 +238,24 @@ public sealed class PleskApiClient
                 new XElement("plan-guid", planGuid))),
             ct);
 
+    /// <summary>Opens a panel session for a customer, valid only from the given browser address.</summary>
+    /// <param name="connection">The server the customer is on.</param>
+    /// <param name="login">The customer's login.</param>
+    /// <param name="userIp">The address of the browser that will enter the session.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The session id, or null when Plesk refused or the reply could not be read.</returns>
+    public async Task<string?> CreateSessionAsync(PleskConnection connection, string login, string userIp, CancellationToken ct)
+    {
+        // Plesk wants the address base64-encoded, and an empty source_server for a local session.
+        var operation = new XElement("server", new XElement("create_session",
+            new XElement("login", login),
+            new XElement("data",
+                new XElement("user_ip", Convert.ToBase64String(Encoding.ASCII.GetBytes(userIp))),
+                new XElement("source_server", string.Empty))));
+        var reply = await SendAsync(connection, operation, ct);
+        return reply.Result?.Element("id")?.Value is { Length: > 0 } id ? id : null;
+    }
+
     /// <summary>Finds an IP address every subscription on the server may share.</summary>
     /// <param name="connection">The server to ask.</param>
     /// <param name="ct">Cancellation token.</param>

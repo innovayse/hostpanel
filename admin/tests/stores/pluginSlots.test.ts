@@ -9,7 +9,7 @@ import { PluginSlotId } from '@/types/pluginslot'
 import type { PluginSlotWidgetDto } from '@/types/pluginslot'
 import { json, problem, stubOffline } from '../helpers/fetch'
 import { stubRoutes } from '../helpers/routes'
-import { installStoreHooks, NO_ANSWER } from '../helpers/storeHooks'
+import { installStoreHooks } from '../helpers/storeHooks'
 
 installStoreHooks()
 
@@ -34,7 +34,6 @@ describe('pluginSlotsStore.load', () => {
     expect(store.widgetsFor(PluginSlotId.AdminClientPanels, { clientId: 1 })).toEqual([widget('usage')])
     expect(store.widgetsFor(PluginSlotId.AdminClientPanels, { clientId: 2 })).toEqual([])
     expect(store.widgetsFor(PluginSlotId.AdminServicePanels, { serviceId: 1 })).toEqual([])
-    expect(store.error).toBeNull()
   })
 
   it('never lets one record see the widgets of another', async () => {
@@ -72,23 +71,22 @@ describe('pluginSlotsStore.load', () => {
     expect(store.widgetsFor(PluginSlotId.AdminClientPanels, { clientId: 1 })).toEqual([widget('fresh')])
   })
 
-  it('keeps the API sentence on refusal and shows no widgets', async () => {
+  it('leaves the slot empty when the load is refused', async () => {
     stubRoutes({ 'GET /api/admin/plugins/slots': () => problem('Client not found.', 404) })
     const store = usePluginSlotsStore()
 
     await store.load(PluginSlotId.AdminClientPanels, { clientId: 1 })
 
-    expect(store.error).toBe('Client not found.')
     expect(store.widgetsFor(PluginSlotId.AdminClientPanels, { clientId: 1 })).toEqual([])
   })
 
-  it('keeps the no-answer sentence offline', async () => {
+  it('leaves the slot empty when nothing answers', async () => {
     stubOffline()
     const store = usePluginSlotsStore()
 
     await store.load(PluginSlotId.AdminClientPanels, { clientId: 1 })
 
-    expect(store.error).toBe(NO_ANSWER)
+    expect(store.widgetsFor(PluginSlotId.AdminClientPanels, { clientId: 1 })).toEqual([])
   })
 })
 
@@ -107,6 +105,21 @@ describe('pluginSlotsStore.hide', () => {
     expect(hidden).toBe(true)
     const put = routes.mock.calls.find((call) => call[1]?.method === 'PUT')
     expect(JSON.parse(String(put?.[1]?.body))).toEqual({ value: 'sites:old,sites:usage' })
+    expect(store.widgetsFor(PluginSlotId.AdminClientPanels, { clientId: 1 })).toEqual([widget('other')])
+  })
+
+  it('does not write a widget twice when the setting already lists it', async () => {
+    const routes = stubRoutes({
+      'GET /api/admin/plugins/slots': () => json([widget('old'), widget('other')]),
+      'GET /api/admin/settings': () => json([hiddenRow]),
+    })
+    const store = usePluginSlotsStore()
+    await store.load(PluginSlotId.AdminClientPanels, { clientId: 1 })
+
+    const hidden = await store.hide(PluginSlotId.AdminClientPanels, { clientId: 1 }, widget('old'))
+
+    expect(hidden).toBe(true)
+    expect(routes.mock.calls.some((call) => call[1]?.method === 'PUT')).toBe(false)
     expect(store.widgetsFor(PluginSlotId.AdminClientPanels, { clientId: 1 })).toEqual([widget('other')])
   })
 

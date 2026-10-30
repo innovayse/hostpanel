@@ -50,6 +50,9 @@ public static class RenewalPeriod
     {
         BillingCycle.Monthly => 1,
         BillingCycle.Annual => 12,
+        BillingCycle.Quarterly => 3,
+        BillingCycle.SemiAnnual => 6,
+        BillingCycle.Biennial => 24,
         _ => throw new ArgumentOutOfRangeException(nameof(cycle), cycle, "No month count for this cycle."),
     };
 }

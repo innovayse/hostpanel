@@ -395,14 +395,9 @@ public sealed class Product : BaseEntity, IAggregateRoot
         foreach (var entry in prices)
         {
             RemovePrices(entry.CurrencyCode);
-            if (entry.Monthly is { } monthly)
+            foreach (var (cycle, amount) in entry.Priced())
             {
-                SetPrice(entry.CurrencyCode, BillingCycle.Monthly, monthly);
-            }
-
-            if (entry.Annual is { } annual)
-            {
-                SetPrice(entry.CurrencyCode, BillingCycle.Annual, annual);
+                SetPrice(entry.CurrencyCode, cycle, amount);
             }
         }
     }

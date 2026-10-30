@@ -58,7 +58,7 @@ public sealed class UpdateProductHandler
         }
 
         var prices = await _payerCurrency.ResolveProductPricesAsync(
-            cmd.Prices, cmd.MonthlyPrice, cmd.AnnualPrice, ct);
+            cmd.Prices, cmd.MonthlyPrice, cmd.AnnualPrice, product, ct);
         product.ReplacePrices(prices.CurrencyPrices, prices.ReplaceAllCurrencies);
 
         // The legacy single-currency columns are kept one release so a rollback and the admin

@@ -31,6 +31,7 @@ import { Icon } from '@/lib/icons'
 import { useCurrenciesStore } from '@/stores/currencies'
 import { formatAffixed } from '@/lib/money'
 import { useSettingsStore } from '@/stores/settings'
+import { PRODUCT_PRICE_CYCLES } from '@/types/product'
 import type { CreateProductPayload, Product } from '@/types/product'
 import { ProductStatus, ProductType } from '@/types/productenums'
 import { useResultBanner } from '@/composables/useResultBanner'
@@ -203,7 +204,7 @@ const handleSave = async (payload: CreateProductPayload): Promise<void> => {
     />
 
     <UiCard v-else class="overflow-hidden">
-      <UiTable density="comfortable" :empty="store.products.length === 0" :colspan="7">
+      <UiTable density="comfortable" :empty="store.products.length === 0" :colspan="10">
         <template #empty>
           {{ t('settings.products.noProductsFoundCreateYour') }}
         </template>
@@ -212,8 +213,7 @@ const handleSave = async (payload: CreateProductPayload): Promise<void> => {
             <UiTableHeader align="left">{{ t('shared.name') }}</UiTableHeader>
             <UiTableHeader align="left">{{ t('settings.products.group') }}</UiTableHeader>
             <UiTableHeader align="left">{{ t('shared.type') }}</UiTableHeader>
-            <UiTableHeader align="left">{{ t('settings.products.monthly') }}</UiTableHeader>
-            <UiTableHeader align="left">{{ t('settings.products.annual') }}</UiTableHeader>
+            <UiTableHeader v-for="cycle in PRODUCT_PRICE_CYCLES" :key="cycle" align="left">{{ t(`settings.productForm.${cycle}`) }}</UiTableHeader>
             <UiTableHeader align="left">{{ t('shared.status') }}</UiTableHeader>
             <UiTableHeader align="right">{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
@@ -231,13 +231,12 @@ const handleSave = async (payload: CreateProductPayload): Promise<void> => {
             </UiTableCell>
             <UiTableCell muted>{{ groupName(product.groupId) }}</UiTableCell>
             <UiTableCell muted>{{ typeLabels[product.type] ?? product.type }}</UiTableCell>
-            <UiTableCell class="font-mono text-text-primary">
-              {{ formatPrice(product.pricing.monthly) }}
-              <UiText v-if="otherCurrencyCodes(product).length > 0" tone="muted" size="xs" class="ml-1 inline font-sans">
+            <UiTableCell v-for="(cycle, position) in PRODUCT_PRICE_CYCLES" :key="cycle" class="font-mono text-text-primary">
+              {{ formatPrice(product.pricing[cycle]) }}
+              <UiText v-if="position === 0 && otherCurrencyCodes(product).length > 0" tone="muted" size="xs" class="ml-1 inline font-sans">
                 +{{ otherCurrencyCodes(product).join(', ') }}
               </UiText>
             </UiTableCell>
-            <UiTableCell class="font-mono text-text-primary">{{ formatPrice(product.pricing.annual) }}</UiTableCell>
             <UiTableCell>
               <UiBadge :tone="product.status === ProductStatus.Active ? 'success' : 'neutral'" small>
                 {{ product.status === ProductStatus.Active ? t('shared.active') : t('shared.inactive') }}

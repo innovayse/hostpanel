@@ -2,6 +2,7 @@ using FluentValidation;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Products.Common;
 using Innovayse.Hostpanel.Application.Resources;
+using Innovayse.Hostpanel.Domain.Products.Enums;
 using Microsoft.Extensions.Localization;
 
 namespace Innovayse.Hostpanel.Application.Products.Common;
@@ -25,9 +26,10 @@ public sealed class ProductPriceDtoValidator : LocalizedValidator<ProductPriceDt
             .Length(CurrencyCodeLength)
             .Must(code => code.All(char.IsAsciiLetter))
             .WithMessage(L["ProductPriceCurrencyInvalid"]);
-        RuleFor(x => x.Monthly).GreaterThanOrEqualTo(0).When(x => x.Monthly is not null)
-            .WithMessage(L["ProductPriceAmountInvalid"]);
-        RuleFor(x => x.Annual).GreaterThanOrEqualTo(0).When(x => x.Annual is not null)
-            .WithMessage(L["ProductPriceAmountInvalid"]);
+        foreach (var cycle in Enum.GetValues<BillingCycle>())
+        {
+            RuleFor(x => x.For(cycle)).GreaterThanOrEqualTo(0).When(x => x.For(cycle) is not null)
+                .WithMessage(L["ProductPriceAmountInvalid"]);
+        }
     }
 }

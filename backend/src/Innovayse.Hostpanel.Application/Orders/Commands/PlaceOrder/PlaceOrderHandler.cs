@@ -782,7 +782,7 @@ public sealed class PlaceOrderHandler
     /// </returns>
     private Result<decimal> ResolvePrice(OrderableProductDto product, BillingCycle cycle)
     {
-        var price = cycle == BillingCycle.Monthly ? product.Price.Monthly : product.Price.Annual;
+        var price = product.Price.For(cycle);
         if (price is null)
         {
             _logger.LogWarning(

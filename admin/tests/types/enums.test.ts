@@ -41,7 +41,7 @@ describe('billing value sets', () => {
     expect(PaymentMethod.Card).toBe('Credit/Debit Card')
     expect(PaymentMethod.BankTransfer).toBe('Bank Transfer')
     expect(PaymentGateway.BankTransfer).toBe('BankTransfer')
-    expect(Object.values(BillingCycle)).toEqual(['Monthly', 'Annual'])
+    expect(Object.values(BillingCycle)).toEqual(['Monthly', 'Quarterly', 'SemiAnnual', 'Annual', 'Biennial'])
     expect(Object.values(BillableItemType)).toEqual(['OneTime', 'Recurring'])
     expect(Object.values(RecurringPeriod)).toEqual(['weekly', 'monthly', 'quarterly', 'annually'])
     expect(Object.values(DnsRecordType)).toEqual(['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'SRV'])

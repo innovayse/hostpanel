@@ -19,7 +19,7 @@ const plan: PortalProduct = { id: 2, groupId: 1, name: 'Starter', description: '
  */
 const mountHero = (props: Record<string, unknown> = {}) =>
   mountWithKit(HostingPlanHero, {
-    props: { pending: false, plan, summary: 'Small sites', price: '$5.00', inCart: false, ...props },
+    props: { pending: false, plan, summary: 'Small sites', price: '$5.00', period: '/mo', inCart: false, ...props },
   })
 
 describe('HostingPlanHero', () => {
@@ -39,6 +39,12 @@ describe('HostingPlanHero', () => {
 
     expect(wrapper.find('[data-testid="hosting-plan-missing"]').text()).toContain('hosting.planNotFound')
     expect(wrapper.find('[data-testid="hosting-plan-all"]').attributes('href')).toBe('/en/hosting')
+  })
+
+  it('names the unit the price is per, whatever the cycle', () => {
+    expect(mountHero().text()).toContain('/mo')
+    expect(mountHero({ price: '$170.00', period: '/2 yr' }).text()).toContain('/2 yr')
+    expect(mountHero({ price: '$170.00', period: '/2 yr' }).text()).not.toContain('/month')
   })
 
   it('shows the plan name, summary and price', () => {

@@ -17,7 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 /// <summary>
 /// <see cref="ICallerClientResolver"/> against Postgres: the owner, a sub-user and the members an identity plugin
 /// vouches for resolve through the one port, and a plugin member who may view but not buy is refused the
-/// ordering route with <c>CLIENT_PERMISSION_DENIED</c> like any user without the permission.
+/// ordering route with <c>CLIENT_PERMISSION_DENIED</c> like any user without the permission, and a principal the plugin refuses is marked refused.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class CallerClientResolverTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
@@ -158,7 +158,22 @@ public sealed class CallerClientResolverTests(IntegrationTestFactory factory) : 
 
         var access = await ResolveAsAsync(host, seeded.UserId);
 
+        access.Should().Be(CallerClientAccess.Refused);
+        access.IdentityRefused.Should().BeTrue();
+    }
+
+    /// <summary>A caller who is not identified at all is no refusal: the resolver answers <c>None</c> even with a plugin.</summary>
+    [Fact]
+    public async Task WithAPlugin_AnUnauthenticatedCallerIsNotMarkedRefusedAsync()
+    {
+        using var host = BuildHost(new StubClientResolver());
+        using var scope = host.Services.CreateScope();
+        scope.ServiceProvider.GetRequiredService<IHttpContextAccessor>().HttpContext = new DefaultHttpContext();
+
+        var access = await scope.ServiceProvider.GetRequiredService<ICallerClientResolver>().ResolveAsync(CancellationToken.None);
+
         access.Should().Be(CallerClientAccess.None);
+        access.IdentityRefused.Should().BeFalse();
     }
 
     /// <summary>An account no client is linked to yet keeps its mapped permissions and names no client.</summary>

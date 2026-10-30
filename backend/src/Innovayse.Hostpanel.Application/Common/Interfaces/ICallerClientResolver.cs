@@ -21,8 +21,8 @@ public interface ICallerClientResolver
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// When an identity plugin is enabled: the client linked to the account it names, with the permissions
-    /// mapped from its rights and never as owner, or <see cref="CallerClientAccess.None"/> when it refuses
-    /// the principal. Otherwise the owner of a client record acts for it with all permissions. A caller linked to exactly one
+    /// mapped from its rights and never as owner, or <see cref="CallerClientAccess.Refused"/> when it refuses
+    /// the signed-in principal (a caller who is not identified at all still gets <see cref="CallerClientAccess.None"/>). Otherwise the owner of a client record acts for it with all permissions. A caller linked to exactly one
     /// account acts for it with the permissions the link grants, limited to the flags this product
     /// defines. A caller linked to several accounts holds only what every link grants and acts for
     /// none of them. A caller who owns no record, is linked to none, or is not identified gets

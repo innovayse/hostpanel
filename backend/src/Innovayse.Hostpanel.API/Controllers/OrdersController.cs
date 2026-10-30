@@ -65,7 +65,8 @@ public sealed class OrdersController : BaseApiController
     /// <c>ORDER_CURRENCY_UNAVAILABLE</c>, <c>ORDER_GUEST_DETAILS_REQUIRED</c>,
     /// <c>PRODUCT_NOT_AVAILABLE</c>, <c>ORDER_PRODUCT_PRICE_UNAVAILABLE</c>,
     /// <c>ORDER_DOMAIN_PRICING_INVALID</c> or <c>USER_PROVISIONING_NOT_ALLOWED_CREATE_ACCOUNT</c>;
-    /// 403 with <c>CLIENT_SUSPENDED</c> or <c>CLIENT_CLOSED</c> when the signed-in caller's account may not order;
+    /// 403 with <c>CLIENT_SUSPENDED</c> or <c>CLIENT_CLOSED</c> when the signed-in caller's account may not order, or
+    /// <c>CLIENT_PERMISSION_DENIED</c> when they lack the ordering permission or the enabled identity plugin refuses them;
     /// 404 with <c>PRODUCT_NOT_FOUND</c>, or <c>DOMAIN_NOT_FOUND</c> when a renewal names a domain
     /// the client does not hold; 409 with <c>ACCOUNT_EMAIL_EXISTS</c> when a guest's address already
     /// has an account; 429 when the rate limit is hit; 500 on an unexpected fault (the invoice of an

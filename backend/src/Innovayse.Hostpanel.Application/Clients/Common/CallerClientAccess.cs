@@ -21,8 +21,17 @@ namespace Innovayse.Hostpanel.Application.Clients.Common;
 /// <see langword="null"/> when no plugin is enabled or it refused the caller. A first order links the client it
 /// creates to it.
 /// </param>
-public sealed record CallerClientAccess(int? ClientId, bool IsOwner, ClientPermission Permissions, ExternalAccount? Account = null)
+/// <param name="IdentityRefused">
+/// <see langword="true"/> when an enabled identity plugin was asked about a signed-in caller and refused them.
+/// It differs from <see cref="None"/>, a caller who simply has no client yet: a refused caller must not be
+/// treated as a first time buyer.
+/// </param>
+public sealed record CallerClientAccess(
+    int? ClientId, bool IsOwner, ClientPermission Permissions, ExternalAccount? Account = null, bool IdentityRefused = false)
 {
     /// <summary>Gets the access of a caller who owns no account, is linked to none, or is not identified at all.</summary>
     public static CallerClientAccess None { get; } = new(null, false, ClientPermission.None);
+
+    /// <summary>Gets the access of a signed-in caller an enabled identity plugin refused: no account, no permission.</summary>
+    public static CallerClientAccess Refused { get; } = new(null, false, ClientPermission.None, null, true);
 }

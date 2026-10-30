@@ -14,6 +14,10 @@ namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 /// index on the user decides which one wins; the loser must not fail, because the record it
 /// wanted exists. Telling that conflict apart from any other failed save means knowing the
 /// database's error, so it lives behind this port rather than in the handlers.
+/// <para>
+/// The same holds for a client linked to an external account: two members of one account ordering at the
+/// same moment race on the unique index over the account, and the loser answers with the row that won.
+/// </para>
 /// </remarks>
 public interface IClientRecordStore
 {

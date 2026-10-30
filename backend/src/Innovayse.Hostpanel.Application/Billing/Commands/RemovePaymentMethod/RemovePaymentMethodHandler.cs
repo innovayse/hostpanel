@@ -37,6 +37,7 @@ public sealed class RemovePaymentMethodHandler
     /// Success, or <c>CLIENT_PROFILE_NOT_FOUND</c> when the caller has no client record,
     /// <c>NO_SAVED_PAYMENT_METHODS</c> when the client has never saved one, or
     /// <c>PAYMENT_METHOD_NOT_OWNED</c> when the id does not belong to this client, or
+    /// <c>PAYMENT_METHOD_UNAVAILABLE</c> when the card gateway has no keys, or
     /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> / <c>PAYMENT_METHOD_UPSTREAM_FAILED</c> when the card
     /// gateway could not be reached or refused the call.
     /// </returns>
@@ -54,6 +55,13 @@ public sealed class RemovePaymentMethodHandler
         if (customerId is null)
         {
             return Result.FailureCode(HostpanelErrorCodes.NO_SAVED_PAYMENT_METHODS);
+        }
+
+        // Without the gateway's keys there is no card to change, and the gateway would throw on its
+        // empty key rather than answer (#606).
+        if (!_cardGateway.IsConfigured)
+        {
+            return Result.FailureCode(HostpanelErrorCodes.PAYMENT_METHOD_UNAVAILABLE);
         }
 
         // Detach takes a bare payment method ID with no customer scoping, so without this

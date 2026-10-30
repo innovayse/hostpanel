@@ -60,6 +60,7 @@ public sealed class GetProductSummariesHandler
                 p.Name,
                 p.PriceFor(currency, BillingCycle.Monthly),
                 p.PriceFor(currency, BillingCycle.Annual),
+                p.Sku,
                 p.ToFulfilmentDto()))
             .ToList();
 

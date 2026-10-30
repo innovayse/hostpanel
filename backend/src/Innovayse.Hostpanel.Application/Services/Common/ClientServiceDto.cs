@@ -8,6 +8,7 @@ namespace Innovayse.Hostpanel.Application.Services.Common;
 /// <param name="Id">Primary key.</param>
 /// <param name="ProductId">FK to the ordered product.</param>
 /// <param name="ProductName">Name of the ordered product; every service has one, since its product cannot be deleted.</param>
+/// <param name="Sku">The ordered product's SKU, or <see langword="null"/> when the product has none.</param>
 /// <param name="IsDigital">Whether the product is a digital one, delivered by fulfilment plugins: it has nothing to set up on a server, so the client area never asks for setup.</param>
 /// <param name="BillingCycle">The billing cycle.</param>
 /// <param name="Status">Current lifecycle status.</param>
@@ -25,6 +26,7 @@ public sealed record ClientServiceDto(
     int Id,
     int ProductId,
     string ProductName,
+    string? Sku,
     bool IsDigital,
     BillingCycle BillingCycle,
     ServiceStatus Status,

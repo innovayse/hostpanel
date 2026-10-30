@@ -155,7 +155,6 @@ import { ActionOutcome } from '~/types/actionoutcome'
 import { EmailPreference } from '~/types/emailpreference'
 import type { ProfileUpdate } from '~/types/profileupdate'
 import { decodeEmailPrefs } from '~/utils/emailPreferences'
-import { validateProfile } from '~/utils/profileValidation'
 
 /** The draft of the profile: a {@link ProfileUpdate} whose address is always present, so its inputs bind to it. */
 type ProfileDraft = ProfileUpdate & { address: Required<NonNullable<ProfileUpdate['address']>> }
@@ -199,17 +198,11 @@ const { countries: storedCountries } = storeToRefs(useCatalogStore())
 /** The country choices; empty until the catalogue has loaded them. */
 const countries = computed<Option[]>(() => storedCountries.value ?? [])
 
-/** Translator for the local validation reasons and the confirmation. */
+/** Translator for the confirmation. */
 const { t } = useI18n()
 
-/** The i18n key of each field the local check refused, by field name; empty when the draft passed. */
-const localErrors = ref<Record<string, string>>({})
-
-/** The message on each field: the local check's reason, else the API's per-field message. */
-const errors = computed<Record<string, string>>(() => {
-  const local = Object.fromEntries(Object.entries(localErrors.value).map(([field, key]) => [field, t(key)]))
-  return { ...fieldErrors.value, ...local }
-})
+/** The per-field messages returned by the API. */
+const errors = computed<Record<string, string>>(() => fieldErrors.value)
 
 /** The confirmation shown after a successful save; empty otherwise. */
 const success = ref('')
@@ -249,11 +242,7 @@ account.clearModalErrors()
  */
 const onSubmit = async (): Promise<void> => {
   success.value = ''
-  localErrors.value = validateProfile(form)
-  if (Object.keys(localErrors.value).length > 0) {
-    return
-  }
-  // A refusal stays in the store as `saveError`, worded by the API.
+  // A refusal stays in the store as `saveError` and `fieldErrors`, worded by the API.
   const prefs = emailPrefs.value
   const profile: ProfileUpdate = {
     ...form,

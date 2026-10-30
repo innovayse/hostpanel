@@ -89,5 +89,11 @@
     "PluginIdInvalid": "The plugin id is not valid: use lowercase words joined by single hyphens.",
     "EndpointsNotDeclared": "The plugin declares routes, pages or slots, but it is not an app plugin and does not declare the endpoints capability.",
     "CapabilityNotAllowed": "The plugin declares a capability this server does not know or its plugin type cannot carry."
+  },
+  "pluginSlot": {
+    "hide": "Hide widget",
+    "unavailable": "This widget could not be shown.",
+    "timedOut": "This widget took too long to load.",
+    "hideNotSeeded": "The setting {key} does not exist on this server, so the widget cannot be hidden."
   }
 }

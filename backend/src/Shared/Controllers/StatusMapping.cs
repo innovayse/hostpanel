@@ -76,7 +76,10 @@ public static class StatusMapping
             // Exact row: the card gateway or the hosted gateway refused or failed the refund, an
             // upstream refusal rather than a malformed request, and neither name carries the
             // _UPSTREAM_FAILED suffix.
-            "CARD_REFUND_REFUSED" or "GATEWAY_REFUND_REFUSED" => new(502, "Bad Gateway"),
+            "CARD_REFUND_REFUSED" or "GATEWAY_REFUND_REFUSED" or "REFUND_ADVICE_UNAVAILABLE" => new(502, "Bad Gateway"),
+            // Exact row: a fulfilment plugin's decision stands in the way of the refund, a state
+            // conflict, and the name carries no CONFLICT / ALREADY token for the generic arms.
+            "REFUND_BLOCKED_BY_PLUGIN" => new(409, "Conflict"),
             // Exact rows: the registrar's own state stands in the way (no such operation there, the
             // domain not active yet, no privacy subscription), and none of the names carries a
             // CONFLICT / ALREADY token for the generic arms.

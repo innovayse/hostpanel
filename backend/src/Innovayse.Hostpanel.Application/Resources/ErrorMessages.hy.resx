@@ -826,6 +826,12 @@
   <data name="GATEWAY_REFUND_REFUSED" xml:space="preserve">
     <value>Վճարային շլյուզը մերժել է վերադարձը կամ չի կարողացել այն կատարել։ Դրա միջոցով ոչինչ չի վերադարձվել։</value>
   </data>
+  <data name="REFUND_ADVICE_UNAVAILABLE" xml:space="preserve">
+    <value>Կատարման պլագինը չկարողացավ նշել, թե այս հաշիվ-ապրանքագրից որքան կարելի է վերադարձնել, ուստի վերադարձ չի կատարվել։ Փորձեք կրկին ավելի ուշ։</value>
+  </data>
+  <data name="REFUND_BLOCKED_BY_PLUGIN" xml:space="preserve">
+    <value>Կատարման պլագինը այս պահին թույլ չի տալիս վերադարձ այս հաշիվ-ապրանքագրով։ Ոչինչ չի վերադարձվել։</value>
+  </data>
   <data name="GATEWAY_PAYMENT_MISMATCH" xml:space="preserve">
     <value>Վճարային շլյուզը հաղորդել է գումար կամ արժույթ, որը չի համապատասխանում հաշիվ-ապրանքագրին։</value>
   </data>

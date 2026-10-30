@@ -52,7 +52,7 @@ describe('UiRowActions', () => {
     const wrapper = mountIt()
     await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
     await wrapper.get('[data-testid="action-edit"]').trigger('click')
-    expect(actions[0].onSelect).toHaveBeenCalledOnce()
+    expect(actions[0]!.onSelect).toHaveBeenCalledOnce()
     expect(wrapper.find('[data-testid="row-actions-menu"]').exists()).toBe(false)
     wrapper.unmount()
   })

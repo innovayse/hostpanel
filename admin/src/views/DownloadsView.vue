@@ -332,11 +332,22 @@ const dismissDelete = (): void => {
  * @param category - The category the actions target.
  * @returns The actions array for UiRowActions.
  */
-const categoryActions = (category: DownloadCategory) => [
-  { label: t('shared.edit'), testid: `downloads-category-${category.id}-edit`, onSelect: () => { editingCategory.value = category } },
-  { label: t('shared.delete'), testid: `downloads-category-${category.id}-delete`, onSelect: () => { deleteRequest.value = { type: DownloadTarget.Category, id: category.id, name: category.name } }, danger: true as const },
-]
+const categoryActions = (category: DownloadCategory) => {
+  /** Opens the edit dialog for the category. */
+  const onEdit = () => { editingCategory.value = category }
+  /** Opens the delete confirmation for the category. */
+  const onDelete = () => { deleteRequest.value = { type: DownloadTarget.Category, id: category.id, name: category.name } }
+  return [
+    { label: t('shared.edit'), testid: `downloads-category-${category.id}-edit`, onSelect: onEdit },
+    { label: t('shared.delete'), testid: `downloads-category-${category.id}-delete`, onSelect: onDelete, danger: true as const },
+  ]
+}
 
+/**
+ * Drills into a category: pushes it onto the breadcrumb trail and loads its downloads.
+ *
+ * @param category - The category to navigate into.
+ */
 const navigateToCategory = (category: DownloadCategory): void => {
   breadcrumbs.value.push({ id: category.id, name: category.name })
   currentCategoryId.value = category.id

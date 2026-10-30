@@ -67,6 +67,7 @@ const typeLabels = computed<Record<string, string>>(() => ({
   [ProductType.Email]: t('settings.products.typeEmail'),
   [ProductType.Addon]: t('settings.products.typeAddon'),
   [ProductType.Backup]: t('settings.products.typeBackup'),
+  [ProductType.Digital]: t('settings.products.typeDigital'),
   [ProductType.Other]: t('settings.products.typeOther'),
 }))
 
@@ -126,6 +127,7 @@ const formatPrice = (amount: number | null): string => {
 /** Opens the dialog in create mode. */
 const openCreate = (): void => {
   store.actionError = null
+  store.fieldErrors = {}
   editingProduct.value = null
   showModal.value = true
 }
@@ -137,6 +139,7 @@ const openCreate = (): void => {
  */
 const openEdit = (product: Product): void => {
   store.actionError = null
+  store.fieldErrors = {}
   editingProduct.value = product
   showModal.value = true
 }
@@ -276,7 +279,9 @@ const productActions = (product: Product): UiRowAction[] => {
       :groups="store.productGroups"
       :saving="saving"
       :error="store.actionError"
+      :field-errors="store.fieldErrors"
       @save="handleSave"
+      @clear-field-error="store.clearFieldError"
       @close="showModal = false"
     />
 

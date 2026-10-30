@@ -19,7 +19,7 @@ namespace Innovayse.Hostpanel.Application.Reports.Queries.ClientStatement;
 /// </para>
 /// <list type="bullet">
 /// <item>
-/// A debit per invoice that asks for money (Unpaid, Overdue, Paid or Refunded; a draft, a
+/// A debit per invoice that asks for money (Unpaid, Overdue, Paid, PartiallyRefunded or Refunded; a draft, a
 /// cancelled invoice, one in collections or one waiting for its gateway is not a charge). The debit
 /// is the invoice's full amount, <see cref="Invoice.Total"/> plus the <see cref="Invoice.Credit"/>
 /// applied to it, less what was refunded on it.
@@ -50,7 +50,7 @@ public sealed class ClientStatementHandler
 {
     /// <summary>Invoice statuses that put a charge on the statement.</summary>
     private static readonly InvoiceStatus[] ChargedStatuses =
-        [InvoiceStatus.Unpaid, InvoiceStatus.Overdue, InvoiceStatus.Paid, InvoiceStatus.Refunded];
+        [InvoiceStatus.Unpaid, InvoiceStatus.Overdue, InvoiceStatus.Paid, InvoiceStatus.PartiallyRefunded, InvoiceStatus.Refunded];
 
     /// <summary>The module's data context.</summary>
     private readonly IHostpanelDbContext _context;
@@ -100,7 +100,7 @@ public sealed class ClientStatementHandler
                 Charge = i.Total + i.Credit - i.Transactions
                     .Where(t => t.Type == InvoiceTransactionType.Refund)
                     .Sum(t => t.Amount),
-                PaidElsewhere = (i.Status == InvoiceStatus.Paid || i.Status == InvoiceStatus.Refunded)
+                PaidElsewhere = (Invoice.PaidStatuses.Contains(i.Status) || i.Status == InvoiceStatus.Refunded)
                     && i.Total > 0
                     && !i.Transactions.Any(t => t.Type == InvoiceTransactionType.Payment),
             })

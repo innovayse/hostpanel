@@ -20,5 +20,11 @@
     "light": "Բաց",
     "dark": "Մուգ",
     "system": "Համակարգային"
+  },
+  "releaseUpdate": {
+    "title": "Հասանելի է Hostpanel {version}",
+    "releaseNotes": "Թողարկման նշումներ",
+    "copy": "Պատճենել թարմացման հրամանը",
+    "copied": "Պատճենված է։"
   }
 }

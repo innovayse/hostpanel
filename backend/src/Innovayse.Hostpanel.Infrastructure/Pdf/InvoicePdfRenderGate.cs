@@ -15,8 +15,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Pdf;
 /// </para>
 /// <para>
 /// A render over the cap waits asynchronously, holding no thread, and leaves the queue if its
-/// request is cancelled. Registered as a singleton, so every renderer shares the one semaphore;
-/// the container disposes it at shutdown.
+/// request is cancelled. The wait is bounded by <see cref="InvoicePdfOptions.MaxRenderWaitSeconds"/>:
+/// a render still queued when it runs out is turned away, so a burst cannot keep requests open for
+/// as long as it lasts. Registered as a singleton, so every renderer shares the one semaphore; the
+/// container disposes it at shutdown.
 /// </para>
 /// </remarks>
 public sealed class InvoicePdfRenderGate : IDisposable
@@ -25,21 +27,27 @@ public sealed class InvoicePdfRenderGate : IDisposable
     private readonly SemaphoreSlim _slots;
 
     /// <summary>Initializes the gate.</summary>
-    /// <param name="options">How many renders may run at once.</param>
+    /// <param name="options">How many renders may run at once, and how long one waits for a slot.</param>
     public InvoicePdfRenderGate(IOptions<InvoicePdfOptions> options)
     {
-        var limit = options.Value.MaxConcurrentRenders;
-        _slots = new SemaphoreSlim(limit, limit);
+        Limit = options.Value.MaxConcurrentRenders;
+        MaxWait = TimeSpan.FromSeconds(options.Value.MaxRenderWaitSeconds);
+        _slots = new SemaphoreSlim(Limit, Limit);
     }
 
-    /// <summary>Waits for a free slot and takes it.</summary>
+    /// <summary>How many renders may run at once.</summary>
+    public int Limit { get; }
+
+    /// <summary>How long a render waits for a free slot before it is turned away.</summary>
+    public TimeSpan MaxWait { get; }
+
+    /// <summary>Waits up to <see cref="MaxWait"/> for a free slot and takes it.</summary>
     /// <param name="ct">Cancels the wait; a cancelled wait never takes a slot.</param>
-    /// <returns>The slot, given back when it is disposed.</returns>
+    /// <returns>The slot, given back when it is disposed; null when none freed within <see cref="MaxWait"/>.</returns>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="ct"/> is cancelled first.</exception>
-    public async Task<IDisposable> EnterAsync(CancellationToken ct)
+    public async Task<IDisposable?> TryEnterAsync(CancellationToken ct)
     {
-        await _slots.WaitAsync(ct);
-        return new InvoicePdfRenderSlot(_slots);
+        return await _slots.WaitAsync(MaxWait, ct) ? new InvoicePdfRenderSlot(_slots) : null;
     }
 
     /// <inheritdoc/>

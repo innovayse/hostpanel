@@ -414,6 +414,7 @@
     "overdue": "Overdue",
     "cancelled": "Cancelled",
     "refunded": "Refunded",
+    "partiallyRefunded": "Partially Refunded",
     "grossRevenue": "Gross Revenue",
     "clientExpenses": "Client Expenses",
     "netIncome": "Net Income",
@@ -550,5 +551,31 @@
   "clientInnerSidebar": {
     "users": "Users",
     "log": "Log"
+  },
+  "addExistingService": {
+    "open": "Add existing account",
+    "title": "Add an existing hosting account",
+    "intro": "For an account that already exists on the server: restored, moved from another server, or set up by hand. The service starts Active; nothing is created on the panel and no email is sent.",
+    "username": "Panel username",
+    "recurringAmount": "Recurring amount",
+    "startedAt": "Current period started",
+    "today": "Today",
+    "add": "Add service"
+  },
+  "externalAccount": {
+    "title": "External account",
+    "provider": "External system",
+    "providerHint": "The name of the other system this client also has an account in.",
+    "providerPlaceholder": "Enter the system name",
+    "accountId": "Account ID",
+    "accountIdHint": "The identifier that system gives this client.",
+    "accountIdPlaceholder": "Enter the account ID",
+    "clear": "Clear link",
+    "clearConfirmTitle": "Clear the external account link?",
+    "clearConfirmMessage": "The client will no longer be linked to an account in the other system. You can link it again later.",
+    "saved": "External account link saved.",
+    "cleared": "External account link cleared.",
+    "linkedTo": "Linked to {provider}, account {id}.",
+    "notLinked": "Not linked to an external account."
   }
 }

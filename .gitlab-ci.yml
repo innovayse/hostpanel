@@ -46,6 +46,10 @@ variables:
   COMPOSE_FILES_DEPLOYED: docker/docker-compose.shared.yml:docker/docker-compose.prod.yml:docker/docker-compose.platform.yml
   # How long a deploy waits for the health endpoint to answer before the job fails.
   HEALTH_TIMEOUT_SECONDS: "180"
+  # The plugin SDK (backend/src/Innovayse.SDK) is a git submodule from its own public repository,
+  # so every job the runner checks out fetches it too. The deploy jobs run with GIT_STRATEGY: none
+  # and sync their own checkout, so they run `git submodule update` themselves after each checkout.
+  GIT_SUBMODULE_STRATEGY: recursive
 
 # ── Reusable templates (inlined — this project runs on a GitLab pull-mirror
 #    of the GitHub repo, so the shared job definitions are copied here) ───────────
@@ -57,8 +61,9 @@ variables:
   variables:
     PRIVATE_FEED_CREDENTIALS: "Username=gitlab-ci-token;Password=${CI_JOB_TOKEN}"
 
-# Every test job a deploy waits for. A job's rules may leave a test out of a pipeline (the `changes:`
-# filters), so each is optional: a test that did not run does not block, a test that failed does.
+# Every test job a deploy waits for. A job's rules may leave a test out of a
+# pipeline (the `changes:` filters), so each is optional: a test that did not run does not block, a test
+# that failed does.
 .deploy-needs-tests:
   needs:
     - { job: "backend:test", optional: true }
@@ -67,6 +72,7 @@ variables:
     - { job: "backend:test:integration:b", optional: true }
     - { job: "backend:test:integration:c", optional: true }
     - { job: "backend:test:integration:d", optional: true }
+    - { job: "backend:test:integration:e", optional: true }
     - { job: "backend:test:migration-addon", optional: true }
     - { job: "client:test", optional: true }
     - { job: "client:e2e", optional: true }
@@ -120,12 +126,20 @@ variables:
     # and a dump beside it. Costs nothing on a passing run.
     #
     # The solution is no longer tested in one `dotnet test`: the Integration suite is split
-    # into four jobs by test namespace (see backend:test:integration:a-d below), because one
+    # into five jobs by test namespace (see backend:test:integration:a-e below), because one
     # host running the whole suite held the EF model plus a Postgres container for every
     # test and exhausted the runner's memory. Each job names its projects in TEST_PROJECTS
     # (folders under tests/) and, optionally, a --filter in TEST_FILTER.
+    #
+    # Each project is built first and scripts/check-empty-plugins.sh then proves its output holds no
+    # plugin (plugins/ and plugins-installed/ beside the test binaries are what the host scans), so
+    # every backend suite is shown green with an empty plugins directory in the same jobs rather than in
+    # a duplicate set of them. The `dotnet test` after it finds the build up to date; do not turn that
+    # into --no-build, which on the integration suite exits 0 with no output (see rules/project.md).
     - |
       for project in $TEST_PROJECTS; do
+        dotnet build "tests/$project" --nologo -m:1 || exit 1
+        sh ../scripts/check-empty-plugins.sh "tests/$project" || exit 1
         if [ -n "$TEST_FILTER" ]; then
           dotnet test "tests/$project" --nologo -m:1 --blame-crash --filter "$TEST_FILTER" || exit 1
         else
@@ -209,6 +223,10 @@ variables:
     # triggered the pipeline so the tier really is the branch.
     - git fetch --prune origin
     - git checkout -B "$CI_COMMIT_BRANCH" "origin/$CI_COMMIT_BRANCH"
+    # The plugin SDK is a submodule: point it at the URL and commit this checkout records.
+    - git submodule sync --recursive
+    - sh scripts/clear-stale-submodule-dirs.sh .
+    - git submodule update --init --recursive --force
     # docker-compose.platform.yml joins the platform network - without it the containers are
     # unreachable by name from the reverse proxy. The chain (COMPOSE_FILE) is shared + prod + platform,
     # the same set every deployed tier runs. Compose reads docker/.env (the host's values) because
@@ -278,10 +296,13 @@ backend:test:shards:
         - .gitlab-ci.yml
         - .github/workflows/ci.yml
 
-# The Integration suite, in four shards that run ONE AT A TIME. Every top-level folder of the
-# test project belongs to exactly one shard; a new folder must be added to one of them or its
-# tests run nowhere, which backend:test:shards enforces. (Fixtures/ holds fakes only, no tests.)
-# The split is the same as the four shards of .github/workflows/ci.yml.
+# The Integration suite, in five shards that run ONE AT A TIME. Every top-level folder of the
+# test project belongs to exactly one shard, except Billing, which is split by the first letter of
+# the test class name (A to K in b, L to Z in c); a new folder
+# must be added to one of them or its tests run nowhere, and the Billing letters must cover A to Z
+# exactly once, which backend:test:shards enforces. (Fixtures/ holds fakes only, no tests.)
+# The split is the same as the five shards of .github/workflows/ci.yml, where they run in
+# parallel on hosted runners that the whole of Billing in one shard took to their limit.
 #
 # Each test class starts a full API host on a database of its own on one shared Postgres
 # container, and the test project's integration.runsettings (picked up by dotnet test) sets the
@@ -307,21 +328,27 @@ backend:test:integration:a:
   extends: .test-integration
   variables:
     TEST_FILTER: >-
-      FullyQualifiedName~Integration.Tests.Adapters.|FullyQualifiedName~Integration.Tests.Admin.|FullyQualifiedName~Integration.Tests.Audit.|FullyQualifiedName~Integration.Tests.Auth.|FullyQualifiedName~Integration.Tests.Clients.|FullyQualifiedName~Integration.Tests.Common.|FullyQualifiedName~Integration.Tests.Demo.|FullyQualifiedName~Integration.Tests.Health.|FullyQualifiedName~Integration.Tests.Identity.|FullyQualifiedName~Integration.Tests.Security.|FullyQualifiedName~Integration.Tests.Shared.
+      FullyQualifiedName~Integration.Tests.Adapters.|FullyQualifiedName~Integration.Tests.Admin.|FullyQualifiedName~Integration.Tests.Audit.|FullyQualifiedName~Integration.Tests.Common.|FullyQualifiedName~Integration.Tests.Health.|FullyQualifiedName~Integration.Tests.Identity.|FullyQualifiedName~Integration.Tests.Security.|FullyQualifiedName~Integration.Tests.Shared.
 
 backend:test:integration:b:
   extends: .test-integration
   variables:
     TEST_FILTER: >-
-      FullyQualifiedName~Integration.Tests.Billing.|FullyQualifiedName~Integration.Tests.Domains.|FullyQualifiedName~Integration.Tests.Time.|FullyQualifiedName~Integration.Tests.Scheduling.
+      FullyQualifiedName~Integration.Tests.Auth.|FullyQualifiedName~Integration.Tests.Clients.|FullyQualifiedName~Integration.Tests.Demo.|FullyQualifiedName~Integration.Tests.Scheduling.|FullyQualifiedName~Integration.Tests.Time.|FullyQualifiedName~Integration.Tests.Billing.A|FullyQualifiedName~Integration.Tests.Billing.B|FullyQualifiedName~Integration.Tests.Billing.C|FullyQualifiedName~Integration.Tests.Billing.D|FullyQualifiedName~Integration.Tests.Billing.E|FullyQualifiedName~Integration.Tests.Billing.F|FullyQualifiedName~Integration.Tests.Billing.G|FullyQualifiedName~Integration.Tests.Billing.H|FullyQualifiedName~Integration.Tests.Billing.I|FullyQualifiedName~Integration.Tests.Billing.J|FullyQualifiedName~Integration.Tests.Billing.K
 
 backend:test:integration:c:
   extends: .test-integration
   variables:
     TEST_FILTER: >-
-      FullyQualifiedName~Integration.Tests.Reports.|FullyQualifiedName~Integration.Tests.Slides.|FullyQualifiedName~Integration.Tests.Support.|FullyQualifiedName~Integration.Tests.Faqs.|FullyQualifiedName~Integration.Tests.Partners.|FullyQualifiedName~Integration.Tests.Locations.|FullyQualifiedName~Integration.Tests.Projects.|FullyQualifiedName~Integration.Tests.Testimonials.
+      FullyQualifiedName~Integration.Tests.Billing.L|FullyQualifiedName~Integration.Tests.Billing.M|FullyQualifiedName~Integration.Tests.Billing.N|FullyQualifiedName~Integration.Tests.Billing.O|FullyQualifiedName~Integration.Tests.Billing.P|FullyQualifiedName~Integration.Tests.Billing.Q|FullyQualifiedName~Integration.Tests.Billing.R|FullyQualifiedName~Integration.Tests.Billing.S|FullyQualifiedName~Integration.Tests.Billing.T|FullyQualifiedName~Integration.Tests.Billing.U|FullyQualifiedName~Integration.Tests.Billing.V|FullyQualifiedName~Integration.Tests.Billing.W|FullyQualifiedName~Integration.Tests.Billing.X|FullyQualifiedName~Integration.Tests.Billing.Y|FullyQualifiedName~Integration.Tests.Billing.Z|FullyQualifiedName~Integration.Tests.Reports.|FullyQualifiedName~Integration.Tests.Slides.|FullyQualifiedName~Integration.Tests.Faqs.|FullyQualifiedName~Integration.Tests.Partners.|FullyQualifiedName~Integration.Tests.Locations.|FullyQualifiedName~Integration.Tests.Projects.|FullyQualifiedName~Integration.Tests.Testimonials.
 
 backend:test:integration:d:
+  extends: .test-integration
+  variables:
+    TEST_FILTER: >-
+      FullyQualifiedName~Integration.Tests.Domains.|FullyQualifiedName~Integration.Tests.Support.
+
+backend:test:integration:e:
   extends: .test-integration
   variables:
     TEST_FILTER: >-
@@ -551,6 +578,9 @@ deploy:demo:
     - test -d "$DEPLOY_DIR/.git" || git init "$DEPLOY_DIR"
     - git -C "$DEPLOY_DIR" fetch "$CI_REPOSITORY_URL" "$CI_COMMIT_SHA"
     - git -C "$DEPLOY_DIR" checkout -f "$CI_COMMIT_SHA"
+    - git -C "$DEPLOY_DIR" submodule sync --recursive
+    - sh "$DEPLOY_DIR/scripts/clear-stale-submodule-dirs.sh" "$DEPLOY_DIR"
+    - git -C "$DEPLOY_DIR" submodule update --init --recursive --force
     - cd "$DEPLOY_DIR"
     # The demo's edge network is external (docker-compose.demo.yml) and is not the platform network: create it
     # when missing. The edge proxy must also be attached to it (edge-proxy/docker-compose.yml) to route here.
@@ -583,6 +613,25 @@ deploy:demo:
 # just the deploy directory:
 #
 #   docker inspect "$(docker ps -q -f label=com.docker.compose.project=hostpanel -f label=com.docker.compose.service=hostpanel-api)" --format '{{.Config.Image}} {{index .Config.Labels "com.docker.compose.project.config_files"}}'
+# Frees disk on the production host: Docker's build cache and untagged images only. Running
+# containers, volumes, the database and the hostpanel-rollback/*:previous images are kept. A full
+# disk stopped the deploy of 2026-10-30 and its rollback alike.
+maintenance:prod-free-disk:
+  stage: deploy
+  tags: [prod]
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - df -h / /var/lib/docker 2>/dev/null || df -h /
+    - docker builder prune -af
+    - docker image prune -f
+    - df -h / /var/lib/docker 2>/dev/null || df -h /
+  when: manual
+  allow_failure: true
+  rules:
+    - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "main"
+      when: manual
+
 deploy:prod:
   extends: .nuget-credentials
   stage: deploy
@@ -634,6 +683,10 @@ deploy:prod:
       cat "$DEPLOY_DIR/.deploy/previous-images"
     - git -C "$DEPLOY_DIR" fetch "$CI_REPOSITORY_URL" "$CI_COMMIT_SHA"
     - git -C "$DEPLOY_DIR" checkout -f "$CI_COMMIT_SHA"
+    # The plugin SDK is a submodule: point it at the URL and commit this checkout records.
+    - git -C "$DEPLOY_DIR" submodule sync --recursive
+    - sh "$DEPLOY_DIR/scripts/clear-stale-submodule-dirs.sh" "$DEPLOY_DIR"
+    - git -C "$DEPLOY_DIR" submodule update --init --recursive --force
     - cd "$DEPLOY_DIR"
     # Dump the database before anything is rebuilt. The API applies pending EF
     # migrations on startup, so `up -d` is the moment the schema and sometimes the
@@ -700,6 +753,8 @@ deploy:prod:
       done
       echo "──── rolling back to $(cat "$state/previous-commit") ────"
       git checkout -f "$(cat "$state/previous-commit")"
+      git submodule sync --recursive
+      git submodule update --init --recursive --force
       while read -r svc tag previous; do
         docker tag "$previous" "$tag"
         docker compose up -d --no-deps --force-recreate --no-build "$svc"

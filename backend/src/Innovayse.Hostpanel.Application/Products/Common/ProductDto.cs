@@ -3,7 +3,10 @@ using Innovayse.Hostpanel.Domain.Products.Enums;
 
 namespace Innovayse.Hostpanel.Application.Products.Common;
 
-/// <summary>Represents a product in list and detail responses.</summary>
+/// <summary>
+/// Represents a product in the staff list. Carries the provisioning and fulfilment fields, so it is
+/// never answered to the storefront (which reads <see cref="CatalogProductDto"/>).
+/// </summary>
 /// <param name="Id">Primary key.</param>
 /// <param name="GroupId">Parent product group ID.</param>
 /// <param name="Name">Display name.</param>
@@ -18,6 +21,9 @@ namespace Innovayse.Hostpanel.Application.Products.Common;
 /// <param name="ServerGroupId">Optional FK to the server group for provisioning.</param>
 /// <param name="IsFeatured">Whether the product is the group's recommended plan.</param>
 /// <param name="SortOrder">Operator-defined position inside the group, lowest first.</param>
+/// <param name="Sku">The normalised stock-keeping unit a fulfilment plugin keys on, or null when none is set.</param>
+/// <param name="Metadata">The metadata bag as JSON object text, or null when none is set.</param>
+/// <param name="GracePeriodDays">Days a service stays usable after its due date before it is suspended.</param>
 public sealed record ProductDto(
     int Id,
     int GroupId,
@@ -32,4 +38,7 @@ public sealed record ProductDto(
     IReadOnlyList<ProductPriceDto> Prices,
     int? ServerGroupId,
     bool IsFeatured,
-    int SortOrder);
+    int SortOrder,
+    string? Sku,
+    string? Metadata,
+    int GracePeriodDays);

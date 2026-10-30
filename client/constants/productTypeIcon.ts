@@ -22,6 +22,7 @@ export const PRODUCT_TYPE_ICON: Readonly<Record<ProductType, string>> = {
   [ProductType.Email]: 'mdi:email-outline',
   [ProductType.Addon]: 'mdi:puzzle-outline',
   [ProductType.Backup]: 'mdi:backup-restore',
+  [ProductType.Digital]: 'mdi:download-box',
   [ProductType.Other]: DEFAULT_PRODUCT_ICON,
 }
 

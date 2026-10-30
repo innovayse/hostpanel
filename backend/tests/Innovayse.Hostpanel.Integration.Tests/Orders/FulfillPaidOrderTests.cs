@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Orders.Commands.FulfillPaidOrder;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Orders;
@@ -277,7 +278,8 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
 
     /// <summary>
     /// A card-paid invoice is refunded at the card gateway for the rejected line's amount in the
-    /// invoice currency, against the original charge, and the refund is on the ledger.
+    /// invoice currency, against the original charge, and the refund is on the ledger. The line was
+    /// the whole invoice, so the invoice ends Refunded.
     /// </summary>
     [Fact]
     public async Task RejectedDomainOnACardPaymentRefundsTheLineAtTheCardGateway()
@@ -300,7 +302,48 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         var ledger = await context.Transactions.AsNoTracking()
             .Where(t => t.InvoiceId == invoice.Id && t.AmountOut > 0).ToListAsync(CancellationToken.None);
         ledger.Should().ContainSingle(t => t.AmountOut == 25m && t.TransactionId == "re_card_1");
+        (await StatusOfAsync(context, invoice.Id)).Should().Be(InvoiceStatus.Refunded);
     }
+
+    /// <summary>
+    /// The automatic refund of a rejected domain in a mixed card-paid order goes through the same refund
+    /// use case as the admin action: the card gateway gets the original charge's reference for the
+    /// line's amount only, the refund's ledger row is written, and the invoice is left
+    /// PartiallyRefunded because the hosting line stays paid.
+    /// </summary>
+    [Fact]
+    public async Task RejectedDomainInAMixedCardOrderLeavesTheInvoicePartiallyRefunded()
+    {
+        var cardGateway = new FakeCardPaymentGateway { IsConfigured = true, RefundId = "re_mixed_card" };
+        var host = BuildHost(new FakePaymentPluginResolver(), cardGateway);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var (clientId, productId) = await SeedClientAndProductAsync(context);
+        var (orderId, invoice) = await SeedRejectedDomainOrderAsync(context, clientId, lineAmount: 10m, productId);
+        var payment = invoice.Settle(PaymentMethodNames.Card, "ch_mixed_card", DateTimeOffset.UtcNow);
+        context.Transactions.Add(payment!);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var result = await BuildHandler(scope).HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        cardGateway.RefundInstructions.Should().ContainSingle()
+            .Which.Should().Be(new CardRefundInstruction("ch_mixed_card", 10m, "USD", $"refund-{invoice.Id}-ch_mixed_card-0"));
+        var ledger = await context.Transactions.AsNoTracking()
+            .Where(t => t.InvoiceId == invoice.Id && t.AmountOut > 0).ToListAsync(CancellationToken.None);
+        ledger.Should().ContainSingle(t => t.AmountOut == 10m && t.TransactionId == "re_mixed_card");
+        (await StatusOfAsync(context, invoice.Id)).Should().Be(InvoiceStatus.PartiallyRefunded);
+    }
+
+    /// <summary>Reads an invoice's status as the database now holds it, past the scope's tracked copy.</summary>
+    /// <param name="context">The context to read through.</param>
+    /// <param name="invoiceId">The invoice.</param>
+    /// <returns>The stored status.</returns>
+    private static Task<InvoiceStatus> StatusOfAsync(IHostpanelDbContext context, int invoiceId) =>
+        context.Invoices.AsNoTracking()
+            .Where(i => i.Id == invoiceId)
+            .Select(i => i.Status)
+            .SingleAsync(CancellationToken.None);
 
     /// <summary>
     /// On a taxed invoice the rejected line is refunded with its tax: the refund is the line's share

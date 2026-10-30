@@ -87,6 +87,9 @@
 <data name="INVOICE_PDF_EXCEEDS_LIMIT" xml:space="preserve">
     <value>Այս հաշիվ-ապրանքագիրը չափազանց շատ տողեր ունի PDF-ով ներբեռնելու համար։</value>
   </data>
+<data name="INVOICE_PDF_RENDER_BUSY" xml:space="preserve">
+    <value>Այս պահին չափազանց շատ հաշիվ-ապրանքագրեր են պատրաստվում PDF-ով։ Խնդրում ենք փորձել մի փոքր ուշ։</value>
+  </data>
 <data name="QUOTE_NOT_FOUND" xml:space="preserve">
     <value>Այդպիսի նախահաշիվ չի գտնվել։</value>
   </data>
@@ -348,6 +351,9 @@
 <data name="SERVICE_NOT_FOUND" xml:space="preserve">
     <value>Հաճախորդի այդպիսի ծառայություն չի գտնվել։</value>
   </data>
+<data name="SERVICE_HOSTING_ACCOUNT_EXISTS" xml:space="preserve">
+    <value>Այս server-ի այս հաշիվն արդեն կապված է ծառայության հետ։</value>
+  </data>
 <data name="CANCELLATION_ALREADY_PENDING" xml:space="preserve">
     <value>Այս ծառայության համար արդեն կա չեղարկման սպասող հայտ։</value>
   </data>
@@ -570,6 +576,9 @@
   </data>
   <data name="INVOICE_NOT_UNPAID" xml:space="preserve">
     <value>Ժամկետանց կարելի է նշել միայն չվճարված հաշիվ-ապրանքագիրը։</value>
+  </data>
+  <data name="INVOICE_NOT_OVERDUE" xml:space="preserve">
+    <value>Ժամկետը լրացած կարելի է նշել միայն ժամկետանց հաշիվ-ապրանքագիրը։</value>
   </data>
   <data name="INVOICE_CANCEL_NOT_ALLOWED" xml:space="preserve">
     <value>Վճարված, վերադարձված կամ արդեն չեղարկված հաշիվ-ապրանքագիրը հնարավոր չէ չեղարկել։</value>
@@ -817,6 +826,12 @@
   <data name="GATEWAY_REFUND_REFUSED" xml:space="preserve">
     <value>Վճարային շլյուզը մերժել է վերադարձը կամ չի կարողացել այն կատարել։ Դրա միջոցով ոչինչ չի վերադարձվել։</value>
   </data>
+  <data name="REFUND_ADVICE_UNAVAILABLE" xml:space="preserve">
+    <value>Կատարման պլագինը չկարողացավ նշել, թե այս հաշիվ-ապրանքագրից որքան կարելի է վերադարձնել, ուստի վերադարձ չի կատարվել։ Փորձեք կրկին ավելի ուշ։</value>
+  </data>
+  <data name="REFUND_BLOCKED_BY_PLUGIN" xml:space="preserve">
+    <value>Կատարման պլագինը այս պահին թույլ չի տալիս վերադարձ այս հաշիվ-ապրանքագրով։ Ոչինչ չի վերադարձվել։</value>
+  </data>
   <data name="GATEWAY_PAYMENT_MISMATCH" xml:space="preserve">
     <value>Վճարային շլյուզը հաղորդել է գումար կամ արժույթ, որը չի համապատասխանում հաշիվ-ապրանքագրին։</value>
   </data>
@@ -879,5 +894,29 @@
   </data>
   <data name="CLIENT_TAX_EXEMPT" xml:space="preserve">
     <value>Այս հաճախորդն ազատված է հարկից, ուստի նրա հաշիվ-ապրանքագրերի համար հարկի դրույք սահմանել հնարավոր չէ։</value>
+  </data>
+  <data name="PRODUCT_SKU_ALREADY_IN_USE" xml:space="preserve">
+    <value>Այս SKU-ն արդեն օգտագործվում է մեկ այլ ապրանքում։ Ընտրեք այլ SKU։</value>
+  </data>
+  <data name="PRODUCT_SKU_INVALID" xml:space="preserve">
+    <value>SKU-ն կարող է պարունակել միայն տառեր և թվեր՝ միացված մեկական գծիկով, ընդգծիկով կամ կետով, և չի կարող գերազանցել 64 նիշը։</value>
+  </data>
+  <data name="PRODUCT_METADATA_INVALID" xml:space="preserve">
+    <value>Ապրանքի մետատվյալները պետք է լինեն JSON օբյեկտ՝ ոչ ավելի, քան 16 ԿԲ։</value>
+  </data>
+  <data name="PRODUCT_GRACE_PERIOD_OUT_OF_RANGE" xml:space="preserve">
+    <value>Արտոնյալ ժամկետը պետք է լինի 0-ից 365 օր։</value>
+  </data>
+  <data name="EXTERNAL_ACCOUNT_ALREADY_LINKED" xml:space="preserve">
+    <value>Այս արտաքին հաշիվն արդեն կապված է մեկ այլ հաճախորդի։</value>
+  </data>
+  <data name="FULFILMENT_RECORD_NOT_FOUND" xml:space="preserve">
+    <value>Կատարման գրառումը չի գտնվել։</value>
+  </data>
+  <data name="FULFILMENT_RECORD_NOT_RETRYABLE" xml:space="preserve">
+    <value>Կրկին փորձել կարելի է միայն ձախողված կատարման գրառումը։</value>
+  </data>
+  <data name="FULFILMENT_ADVICE_UNAVAILABLE" xml:space="preserve">
+    <value>Վերադարձը հիմա հնարավոր չեղավ ստուգել, ուստի գումար չի վերադարձվել։ Փորձեք ավելի ուշ։</value>
   </data>
 </root>

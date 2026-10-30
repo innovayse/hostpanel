@@ -12,6 +12,7 @@ import { ref } from 'vue'
 import { useIntegrationsApi } from '@/composables/apis/useIntegrationsApi'
 import { runAction } from '@/lib/runAction'
 import { IntegrationCategory, IntegrationCategoryName } from '@/types/integration'
+import { PluginType } from '@/types/plugin'
 import type { CwpServerInfoDto } from '@/types/cwp'
 import type {
   IntegrationConfigPayload,
@@ -30,12 +31,30 @@ const CATEGORY_MAP: Record<string, IntegrationCategory> = {
 }
 
 /**
- * Normalises a raw API category string to the frontend IntegrationCategory key.
+ * The category a plugin of each type is listed under. A plugin's category name is free text from its
+ * manifest, so its declared type decides; fulfilment, identity and hosted plugins have no built-in category
+ * name that could hold them.
+ */
+const PLUGIN_TYPE_CATEGORY: Record<PluginType, IntegrationCategory> = {
+  [PluginType.Payment]: IntegrationCategory.Payments,
+  [PluginType.Registrar]: IntegrationCategory.Registrars,
+  [PluginType.Provisioning]: IntegrationCategory.Provisioning,
+  [PluginType.Fulfilment]: IntegrationCategory.Fulfilment,
+  [PluginType.Identity]: IntegrationCategory.Identity,
+  [PluginType.Hosted]: IntegrationCategory.Hosted,
+}
+
+/**
+ * Normalises an integration's category to the frontend IntegrationCategory key: a plugin by its declared
+ * type, a built-in integration by the API's category name.
  *
- * @param raw - Category string as returned by the backend.
+ * @param integration - The summary as returned by the backend.
  * @returns Mapped frontend category key, or the original string cast as IntegrationCategory.
  */
-const normaliseCategory = (raw: string): IntegrationCategory => CATEGORY_MAP[raw] ?? (raw as IntegrationCategory)
+const normaliseCategory = (integration: IntegrationDto): IntegrationCategory => {
+  const byType = integration.pluginType === null ? undefined : PLUGIN_TYPE_CATEGORY[integration.pluginType]
+  return byType ?? CATEGORY_MAP[integration.category] ?? integration.category
+}
 
 /** Manages the integrations summary list and the config of the integration being edited. */
 export const useIntegrationsStore = defineStore('integrations', () => {
@@ -83,7 +102,7 @@ export const useIntegrationsStore = defineStore('integrations', () => {
     const result = await runAction(error, api.listIntegrations)
     loading.value = false
     if (result.ok) {
-      integrations.value = result.value.map(i => ({ ...i, category: normaliseCategory(i.category) }))
+      integrations.value = result.value.map(i => ({ ...i, category: normaliseCategory(i) }))
     }
   }
 

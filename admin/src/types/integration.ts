@@ -1,10 +1,18 @@
-/** Closed set of integration categories. */
+import type { PluginType } from '@/types/plugin'
+
+/** Closed set of integration categories; the last three hold only plugins, grouped by their type. */
 export const IntegrationCategory = {
   Payments: 'payments',
   Registrars: 'registrars',
   Provisioning: 'provisioning',
   Email: 'email',
   Fraud: 'fraud',
+  /** Fulfilment plugins: deliver digital products after payment. */
+  Fulfilment: 'fulfilment',
+  /** Identity plugins: decide which client a signed-in person acts for. */
+  Identity: 'identity',
+  /** Hosted plugins: background workers. */
+  Hosted: 'hosted',
 } as const
 
 /** Category grouping for an integration. */
@@ -62,6 +70,8 @@ export interface IntegrationDto {
   isConfigured: boolean
   /** True if this integration comes from an installed plugin (not built-in). */
   isPlugin: boolean
+  /** The type a plugin's manifest declares; null for a built-in integration. */
+  pluginType: PluginType | null
 }
 
 /** Metadata for one configuration field, returned by the detail endpoint. */

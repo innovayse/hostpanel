@@ -2,10 +2,13 @@
 /**
  * Dialog for creating or editing a product.
  *
- * Shows the product type cards (create mode only), the group selector, the name, slug and package
- * fields, the server group, the description, a pricing grid with one row per configured currency,
- * and a hidden toggle. Emits `save` with the payload on submit, and `close` on cancel, Escape or a
- * backdrop click. A refused save (the `error` prop) shows next to the save button.
+ * Shows the product type cards (create mode only), the group selector, the name, slug and
+ * package fields, the server group, the description, the SKU, the metadata (a JSON object) and
+ * the grace period, a pricing grid with one row per configured currency, and a hidden toggle.
+ * Emits `save` with the payload on submit, and `close` on cancel, Escape or a backdrop click. A
+ * refused save (the `error` prop) shows next to the save button; the API's per-field messages
+ * (the `fieldErrors` prop) show under their inputs and go away, through `clearFieldError`, as
+ * soon as the operator changes that field. The API is the only validator.
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -39,6 +42,9 @@ import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
 
+/** Grace period a new product starts with, the same default the API applies. */
+const DEFAULT_GRACE_PERIOD_DAYS = 7
+
 /** Servers store: owns the server groups the product can be assigned to. */
 const serversStore = useServersStore()
 
@@ -46,7 +52,7 @@ const serversStore = useServersStore()
 const currenciesStore = useCurrenciesStore()
 
 /** Props for ProductFormModal. */
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   /** Product to edit, or null when creating a new product. */
   product: Product | null
   /** Available product groups for the group dropdown. */
@@ -55,13 +61,25 @@ const props = defineProps<{
   saving: boolean
   /** The API's sentence for the last refused save, shown next to the save button; null when none. */
   error?: string | null
-}>()
+  /** The API's messages for the last refused save, keyed by field name (`sku`, `metadata`, `gracePeriodDays`). */
+  fieldErrors?: Record<string, string>
+}>(), {
+  error: null,
+  /**
+   * Default for the field errors.
+   *
+   * @returns No messages.
+   */
+  fieldErrors: () => ({}),
+})
 
 const emit = defineEmits<{
   /** Emitted when the user submits a valid form. */
   save: [payload: CreateProductPayload]
   /** Emitted when the user closes or cancels the dialog. */
   close: []
+  /** Emitted when the operator changes a field the API refused, so its message can be dropped. */
+  clearFieldError: [field: string]
 }>()
 
 /** One pricing row per configured currency, keyed by ISO 4217 code. */
@@ -85,6 +103,7 @@ const productTypes = computed(() => [
   { value: ProductType.Email, label: t('settings.productForm.email'), icon: Icon.Mail },
   { value: ProductType.Addon, label: t('settings.productForm.addon'), icon: Icon.Puzzle },
   { value: ProductType.Backup, label: t('settings.productForm.backup'), icon: Icon.Archive },
+  { value: ProductType.Digital, label: t('settings.productForm.digital'), icon: Icon.Download },
   { value: ProductType.Other, label: t('settings.productForm.other'), icon: Icon.Box },
 ])
 
@@ -123,6 +142,15 @@ const isFeatured = ref(false)
 
 /** Position inside the group, lowest first. */
 const sortOrder = ref(0)
+
+/** SKU input value; an empty text means the product has none. */
+const sku = ref('')
+
+/** Metadata textarea value: JSON object text, or empty for none. */
+const metadata = ref('')
+
+/** Grace period in days. */
+const gracePeriodDays = ref(DEFAULT_GRACE_PERIOD_DAYS)
 
 /** Available server groups (owned by the servers store). */
 const serverGroups = computed(() => serversStore.groups)
@@ -172,6 +200,9 @@ watch(() => props.product, (p) => {
     isHidden.value = p.status === ProductStatus.Inactive
     isFeatured.value = p.isFeatured
     sortOrder.value = p.sortOrder
+    sku.value = p.sku ?? ''
+    metadata.value = p.metadata ?? ''
+    gracePeriodDays.value = p.gracePeriodDays
     resetPriceRows(p.prices)
   } else {
     type.value = ProductType.SharedHosting
@@ -185,6 +216,9 @@ watch(() => props.product, (p) => {
     isHidden.value = false
     isFeatured.value = false
     sortOrder.value = 0
+    sku.value = ''
+    metadata.value = ''
+    gracePeriodDays.value = DEFAULT_GRACE_PERIOD_DAYS
     resetPriceRows()
   }
 }, { immediate: true })
@@ -282,7 +316,38 @@ const buildPricesPayload = (): ProductPrice[] =>
       annual: row.annual || null,
     }))
 
-/** Submits the form by emitting the save event with the current field values. */
+/**
+ * Drops the API's message for a field as soon as the operator changes that field.
+ *
+ * @param field - The wire name of the field (`sku`, `metadata`, `gracePeriodDays`).
+ * @returns Nothing; emits `clearFieldError` only when that field has a message.
+ */
+const clearErrorOf = (field: string): void => {
+  if (props.fieldErrors[field] !== undefined) {
+    emit('clearFieldError', field)
+  }
+}
+
+/** Drops the API's SKU message once the SKU is edited. */
+watch(sku, () => {
+  clearErrorOf('sku')
+})
+
+/** Drops the API's metadata message once the metadata is edited. */
+watch(metadata, () => {
+  clearErrorOf('metadata')
+})
+
+/** Drops the API's grace period message once the grace period is edited. */
+watch(gracePeriodDays, () => {
+  clearErrorOf('gracePeriodDays')
+})
+
+/**
+ * Submits the form by emitting the save event with the current field values. The SKU and
+ * metadata are always sent, empty text included, because on update an empty string clears the
+ * stored value while an omitted one keeps it.
+ */
 const handleSubmit = (): void => {
   emit('save', {
     groupId: groupId.value,
@@ -296,6 +361,9 @@ const handleSubmit = (): void => {
     serverGroupId: serverGroupId.value || null,
     isFeatured: isFeatured.value,
     sortOrder: Math.max(0, Math.trunc(Number(sortOrder.value)) || 0),
+    sku: sku.value.trim(),
+    metadata: metadata.value.trim(),
+    gracePeriodDays: Number(gracePeriodDays.value),
   })
 }
 </script>
@@ -403,6 +471,44 @@ const handleSubmit = (): void => {
           :step="1"
           :placeholder="t('settings.productForm.sortOrderPlaceholder')"
           data-testid="product-form-sort-order"
+        />
+      </UiField>
+
+      <UiField :label="t('settings.productForm.sku')" :hint="t('settings.productForm.skuHint')" :error="props.fieldErrors.sku">
+        <template #default="{ id, invalid, describedby }">
+          <UiInput
+            :id="id"
+            v-model="sku"
+            type="text"
+            :invalid="invalid"
+            :aria-describedby="describedby"
+            :placeholder="t('settings.productForm.skuPlaceholder')"
+            data-testid="product-form-sku"
+          />
+        </template>
+      </UiField>
+
+      <UiField :label="t('settings.productForm.metadata')" :hint="t('settings.productForm.metadataHint')" :error="props.fieldErrors.metadata">
+        <template #default="{ id, invalid, describedby }">
+          <UiTextarea
+            :id="id"
+            v-model="metadata"
+            rows="4"
+            :invalid="invalid"
+            :aria-describedby="describedby"
+            :placeholder="t('settings.productForm.metadataPlaceholder')"
+            data-testid="product-form-metadata"
+            class="resize-none font-mono"
+          />
+        </template>
+      </UiField>
+
+      <UiField :label="t('settings.productForm.gracePeriod')" :hint="t('settings.productForm.gracePeriodHint')" :error="props.fieldErrors.gracePeriodDays">
+        <UiNumberInput
+          v-model="gracePeriodDays"
+          :step="1"
+          :placeholder="t('settings.productForm.gracePeriodPlaceholder')"
+          data-testid="product-form-grace-period"
         />
       </UiField>
 

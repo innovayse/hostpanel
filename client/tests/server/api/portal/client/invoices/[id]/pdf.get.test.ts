@@ -88,6 +88,24 @@ describe('GET /api/portal/client/invoices/:id/pdf', () => {
     expect(error).toMatchObject({ statusCode: 404, statusMessage: 'Invoice not found.', data: { code: 'INVOICE_NOT_FOUND' } })
   })
 
+  it('passes a busy 503 through with its Retry-After, so the browser knows when to ask again', async () => {
+    backend.respondWith(() => ({
+      status: 503,
+      headers: { 'Retry-After': '30' },
+      body: { type: 'INVOICE_PDF_RENDER_BUSY', detail: 'Too many invoice PDFs are being prepared right now.' },
+    }))
+    const event = makeEvent({ params: { id: '7' }, cookies: await signedIn('jwt') })
+
+    const error = await refusal(async () => route.default(event))
+
+    expect(error).toMatchObject({
+      statusCode: 503,
+      statusMessage: 'Too many invoice PDFs are being prepared right now.',
+      data: { code: 'INVOICE_PDF_RENDER_BUSY' },
+    })
+    expect(event.responseHeaders['Retry-After']).toBe('30')
+  })
+
   it('refreshes the session once on a 401 and retries', async () => {
     backend.respondWith((request) => {
       if (request.url === '/connect/token') {

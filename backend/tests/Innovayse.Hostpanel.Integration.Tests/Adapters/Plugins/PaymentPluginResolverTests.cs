@@ -12,7 +12,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 
 /// <summary>
-/// <see cref="PaymentPluginResolver"/> settings gating and instantiation, against Postgres.
+/// <see cref="PaymentPluginResolver"/> settings gating and instantiation through the shared
+/// <see cref="PluginActivator"/>, against Postgres. The cases predate the activator and are kept as they
+/// were, so moving the activation out of the resolver is proven not to change what a payment caller gets.
 /// </summary>
 /// <remarks>
 /// The resolver reads <c>AppDbContext</c>, so these tests run against a real database. Every test names its own module id (a fresh
@@ -80,9 +82,10 @@ public sealed class PaymentPluginResolverTests(IntegrationTestFactory factory)
         registry.Register(new LoadedPlugin(Manifest(module, pluginType), implementationType ?? typeof(ConfigurationCapturingPaymentPlugin)));
 
         var services = new ServiceCollection().BuildServiceProvider();
-        return new PaymentPluginResolver(
-            db, factory.Services.GetRequiredService<ISecretSettingCipher>(), registry, services, hostConfig ?? new ConfigurationBuilder().Build(),
-            NullLogger<PaymentPluginResolver>.Instance);
+        var activator = new PluginActivator(
+            db, factory.Services.GetRequiredService<ISecretSettingCipher>(), services, hostConfig ?? new ConfigurationBuilder().Build(),
+            NullLogger<PluginActivator>.Instance);
+        return new PaymentPluginResolver(activator, registry, NullLogger<PaymentPluginResolver>.Instance);
     }
 
     /// <summary>An enabled, fully configured plugin resolves with the composed configuration.</summary>

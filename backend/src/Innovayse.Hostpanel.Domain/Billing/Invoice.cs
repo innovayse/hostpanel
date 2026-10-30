@@ -26,6 +26,14 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// </summary>
     public static readonly TimeSpan RefundClaimLease = TimeSpan.FromMinutes(15);
 
+    /// <summary>
+    /// The statuses of an invoice that was paid and still holds at least part of that money: Paid,
+    /// and PartiallyRefunded after a refund that did not reach the whole amount. The one list a query
+    /// filters on (<c>PaidStatuses.Contains(i.Status)</c>) and <see cref="IsPaid"/> reads, so a report,
+    /// a renewal sweep and the entity itself never disagree on which invoices count as paid.
+    /// </summary>
+    public static readonly InvoiceStatus[] PaidStatuses = [InvoiceStatus.Paid, InvoiceStatus.PartiallyRefunded];
+
     /// <summary>Gets the FK to the owning client.</summary>
     public int ClientId { get; private set; }
 
@@ -46,6 +54,21 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// stays when the invoice is refunded, so read <see cref="Status"/> to know whether it is paid now.
     /// </summary>
     public DateTimeOffset? PaidAt { get; private set; }
+
+    /// <summary>
+    /// Gets when the invoice was marked lapsed (UTC): it stayed overdue past its grace period, so the
+    /// period it billed was never paid for. <see langword="null"/> while it has not lapsed. A historical
+    /// fact like <see cref="PaidAt"/>: a lapsed invoice paid later keeps it, and <see cref="Status"/> says
+    /// whether it is paid now.
+    /// </summary>
+    public DateTimeOffset? LapsedAt { get; private set; }
+
+    /// <summary>
+    /// Gets whether at least one line charges for a digital product (<see cref="InvoiceItem.IsDigital"/>).
+    /// Stored rather than read from the lines, so the fulfilment path can tell from the invoice row alone
+    /// whether plugins have anything to hear about; recomputed with the totals whenever a line changes.
+    /// </summary>
+    public bool HasDigitalItems { get; private set; }
 
     /// <summary>Gets the sum of all line item amounts before tax and credit.</summary>
     public decimal SubTotal { get; private set; }
@@ -136,7 +159,7 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// may still have taken money the ledger does not hold.
     /// </summary>
     public static Expression<Func<Invoice, bool>> SettledWithUnrecordedSessionFilter =>
-        i => (i.Status == InvoiceStatus.Paid || i.Status == InvoiceStatus.Refunded)
+        i => (PaidStatuses.Contains(i.Status) || i.Status == InvoiceStatus.Refunded)
             && i.GatewayModule != null
             && i.GatewayOrderId != null
             && !i.Transactions.Any(t => t.Type == InvoiceTransactionType.Payment && t.Gateway == i.GatewayModule);
@@ -152,8 +175,43 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// <summary>Gets whether the invoice is open for payment: Unpaid or Overdue.</summary>
     public bool IsPayable => Status is InvoiceStatus.Unpaid or InvoiceStatus.Overdue;
 
-    /// <summary>Gets whether the invoice's money question is closed: Paid or Refunded.</summary>
-    public bool IsSettled => Status is InvoiceStatus.Paid or InvoiceStatus.Refunded;
+    /// <summary>
+    /// Gets whether the invoice was paid and still holds at least part of that money: Paid or
+    /// PartiallyRefunded (<see cref="PaidStatuses"/>). Only such an invoice can be refunded.
+    /// </summary>
+    public bool IsPaid => PaidStatuses.Contains(Status);
+
+    /// <summary>Gets whether the invoice's money question is closed: Paid, PartiallyRefunded or Refunded.</summary>
+    public bool IsSettled => IsPaid || Status == InvoiceStatus.Refunded;
+
+    /// <summary>
+    /// Gets whether <see cref="MarkLapsed"/> would mark the invoice now: it is Overdue and has not lapsed yet.
+    /// A sweep asks this before marking, so an invoice is never reported lapsed twice.
+    /// </summary>
+    public bool CanLapse => Status == InvoiceStatus.Overdue && LapsedAt is null;
+
+    /// <summary>
+    /// Whether every digital renewal line on the invoice is past its product's grace period at
+    /// <paramref name="now"/>: the invoice has at least one such line and each of them has stayed unpaid for
+    /// more than the grace period its own <see cref="InvoiceItem.ProductSnapshot"/> recorded, counted from
+    /// <see cref="DueDate"/>. A line is past grace only when <paramref name="now"/> is strictly after the end
+    /// of its grace, the same strict comparison the overdue suspension makes.
+    /// </summary>
+    /// <remarks>
+    /// Only digital renewal lines are judged. A hosting line, a digital line that is not a renewal and a
+    /// line with no product snapshot neither count towards lapsing nor hold it back, so a mixed invoice
+    /// lapses on its digital renewal lines alone and its hosting side is never touched. A digital renewal line
+    /// whose snapshot has no grace period (written before it was kept) is not past grace, so it holds the
+    /// invoice back rather than lapsing it on a guessed value.
+    /// </remarks>
+    /// <param name="now">The moment to judge at (UTC).</param>
+    /// <returns><see langword="true"/> when there is a digital renewal line and all of them are past grace.</returns>
+    public bool IsPastDigitalGrace(DateTimeOffset now)
+    {
+        var digitalRenewals = _items.Where(i => i.IsDigital && i.IsRenewal).ToList();
+        return digitalRenewals.Count > 0
+            && digitalRenewals.All(i => i.ProductSnapshot!.GracePeriodDays is { } days && DueDate.AddDays(days) < now);
+    }
 
     /// <summary>
     /// Gets whether <see cref="Cancel"/> is allowed: Draft, Unpaid or Overdue, and no payment
@@ -201,22 +259,24 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// <summary>
     /// Gets what is still owed: <see cref="Total"/> (already net of credit) less the recorded
     /// payments, never negative, while the invoice can still take money. A closed invoice (Paid,
-    /// Refunded or Cancelled) owes nothing, whatever its transactions add up to: one closed without a
+    /// PartiallyRefunded, Refunded or Cancelled) owes nothing, whatever its transactions add up to: one closed without a
     /// payment row (credit, imported history) would otherwise show its whole total as owed.
     /// Every path that settles the invoice charges this, not the total, so a payment recorded
     /// earlier is never charged again.
     /// </summary>
     public decimal AmountDue => IsClosed ? 0m : Math.Max(0m, Total - PaymentsRecorded);
 
-    /// <summary>Gets whether the invoice's money question is over and nothing more is owed: Paid, Refunded or Cancelled.</summary>
+    /// <summary>Gets whether the invoice's money question is over and nothing more is owed: Paid, PartiallyRefunded, Refunded or Cancelled.</summary>
     private bool IsClosed => IsSettled || Status == InvoiceStatus.Cancelled;
 
     /// <summary>
     /// Gets what can still be refunded: <see cref="AmountPaid"/> less <see cref="AmountRefunded"/>
-    /// while the invoice is Paid, otherwise zero. Only a Paid invoice is refunded, and an imported
-    /// Refunded invoice has no refund rows, so without the status rule it would offer its whole total again.
+    /// while the invoice <see cref="IsPaid"/> (Paid or PartiallyRefunded), otherwise zero. Only such an
+    /// invoice is refunded, and an imported Refunded invoice has no refund rows, so without the status
+    /// rule it would offer its whole total again. This is the cap every refund is held to: what was
+    /// paid less every earlier refund, so two partial refunds in a row can never return more than was paid.
     /// </summary>
-    public decimal RefundableAmount => Status == InvoiceStatus.Paid ? Math.Max(0m, AmountPaid - AmountRefunded) : 0m;
+    public decimal RefundableAmount => IsPaid ? Math.Max(0m, AmountPaid - AmountRefunded) : 0m;
 
     /// <summary>
     /// Gets the credit the invoice holds beyond what it still needs: the amount <see cref="Total"/>
@@ -259,8 +319,12 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
         && now - started < RefundClaimLease
         && !_transactions.Any(t => t.Type == InvoiceTransactionType.Refund && t.Date >= started);
 
-    /// <summary>Gets whether the invoice is Paid and the money covers it.</summary>
-    public bool IsPaidInFull => Status is InvoiceStatus.Paid && AmountPaid >= Total;
+    /// <summary>
+    /// Gets whether the invoice was paid (<see cref="IsPaid"/>) and the money covers it. A partial
+    /// refund since does not undo it: the payment covered the invoice, and a refund of one line (a
+    /// domain the registrar refused) leaves the other lines paid for.
+    /// </summary>
+    public bool IsPaidInFull => IsPaid && AmountPaid >= Total;
 
     /// <summary>EF Core parameterless constructor: do not call directly.</summary>
     private Invoice() { }
@@ -368,12 +432,17 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// the service itself may pass it: see <see cref="InvoiceItem.ClientServiceId"/> for why
     /// inferring it from the description is not allowed.
     /// </param>
+    /// <param name="productSnapshot">
+    /// What the product this line charges for is at billing time, or <see langword="null"/> when the line
+    /// is not a product's charge; see <see cref="InvoiceItem.ProductSnapshot"/>.
+    /// </param>
     /// <exception cref="DomainRuleException">Thrown when the invoice is no longer editable.</exception>
-    public void AddItem(string description, decimal unitPrice, int quantity, int? clientServiceId = null)
+    public void AddItem(
+        string description, decimal unitPrice, int quantity, int? clientServiceId = null, ProductSnapshot? productSnapshot = null)
     {
         EnsureEditable();
 
-        var item = InvoiceItem.Create(description, unitPrice, quantity, clientServiceId);
+        var item = InvoiceItem.Create(description, unitPrice, quantity, clientServiceId, productSnapshot);
         _items.Add(item);
         RecalculateTotals();
     }
@@ -384,9 +453,15 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// <param name="clientServiceId">The service renewed.</param>
     /// <param name="start">Period start.</param>
     /// <param name="end">Period end.</param>
+    /// <param name="productSnapshot">
+    /// What the renewed service's product is at billing time, so the renewal is fulfilled as what is sold
+    /// now; <see langword="null"/> only when the caller has no product for the service.
+    /// </param>
     /// <exception cref="DomainRuleException">The invoice is no longer editable.</exception>
-    public void AddServiceRenewal(string description, decimal amount, int clientServiceId, DateTimeOffset start, DateTimeOffset end) =>
-        AddRenewal(InvoiceItem.CreateRenewal(description, amount, clientServiceId, null, start, end));
+    public void AddServiceRenewal(
+        string description, decimal amount, int clientServiceId, DateTimeOffset start, DateTimeOffset end,
+        ProductSnapshot? productSnapshot = null) =>
+        AddRenewal(InvoiceItem.CreateRenewal(description, amount, clientServiceId, null, start, end, productSnapshot));
 
     /// <summary>Adds a renewal line for one domain and one period, and recalculates totals.</summary>
     /// <param name="description">Line description.</param>
@@ -396,7 +471,7 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// <param name="end">Period end.</param>
     /// <exception cref="DomainRuleException">The invoice is no longer editable.</exception>
     public void AddDomainRenewal(string description, decimal amount, int registeredDomainId, DateTimeOffset start, DateTimeOffset end) =>
-        AddRenewal(InvoiceItem.CreateRenewal(description, amount, null, registeredDomainId, start, end));
+        AddRenewal(InvoiceItem.CreateRenewal(description, amount, null, registeredDomainId, start, end, null));
 
     /// <summary>Appends a renewal line under the same editability rule as <see cref="AddItem"/>.</summary>
     /// <param name="item">The renewal line.</param>
@@ -810,6 +885,36 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     }
 
     /// <summary>
+    /// Marks an overdue invoice lapsed: it stayed unpaid past its grace period, so the period it billed was
+    /// never paid for. Sets <see cref="LapsedAt"/> and raises <see cref="SubscriptionLapsedEvent"/>. Marking an
+    /// invoice that has already lapsed is a no-op, so a sweep that runs twice reports it once. The status stays
+    /// Overdue: the debt is still owed and can still be paid.
+    /// </summary>
+    /// <param name="now">The current moment (UTC); becomes <see cref="LapsedAt"/> and is stamped on the event.</param>
+    /// <exception cref="DomainRuleException">
+    /// <see cref="BillingErrors.InvoiceNotOverdue"/> when the invoice has not lapsed yet and is not Overdue.
+    /// </exception>
+    public void MarkLapsed(DateTimeOffset now)
+    {
+        // Checked before the status: an invoice paid after it lapsed is no longer Overdue, and asking again
+        // must still answer that it has lapsed rather than refuse a fact that stands.
+        if (LapsedAt is not null)
+        {
+            return;
+        }
+
+        if (Status != InvoiceStatus.Overdue)
+        {
+            throw new DomainRuleException(
+                BillingErrors.InvoiceNotOverdue,
+                $"Only Overdue invoices can be marked lapsed; current status is {Status}.");
+        }
+
+        LapsedAt = now;
+        AddDomainEvent(new SubscriptionLapsedEvent(Id, ClientId, HasDigitalItems) { OccurredAt = now });
+    }
+
+    /// <summary>
     /// Cancels the invoice so it will not be collected. Applied credit stays on the invoice; the
     /// caller takes it back with <see cref="RemoveCredit"/> first so the client does not lose it.
     /// </summary>
@@ -876,8 +981,9 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
 
     /// <summary>
     /// Records a refund against this paid invoice, full or partial, never more than
-    /// <see cref="RefundableAmount"/>. The invoice turns Refunded only once the refunds cover
-    /// everything it took; a partial refund leaves it Paid.
+    /// <see cref="RefundableAmount"/>. The invoice turns Refunded once the refunds cover everything
+    /// it took; a refund that leaves part of the money turns it PartiallyRefunded, and a further
+    /// refund of a PartiallyRefunded invoice is held to what is left.
     /// </summary>
     /// <param name="date">When the refund was made.</param>
     /// <param name="gateway">Name of the payment gateway or method.</param>
@@ -889,19 +995,14 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// <returns>The client ledger row for this refund, to be saved with the invoice.</returns>
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="amount"/> is not positive.</exception>
     /// <exception cref="DomainRuleException">
-    /// The invoice is not Paid, the amount is more than can still be refunded, or another refund
-    /// begun at a different moment is still in flight.
+    /// The invoice is not Paid or PartiallyRefunded, the amount is more than can still be refunded,
+    /// or another refund begun at a different moment is still in flight.
     /// </exception>
     public Transaction AddRefund(
         DateTimeOffset date, string gateway, string transactionId, decimal amount, decimal fees, string? notes, bool addedToCredit = false)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
-
-        if (Status != InvoiceStatus.Paid)
-        {
-            throw new DomainRuleException(
-                BillingErrors.InvoiceNotPaid, $"Only Paid invoices can be refunded; current status is {Status}.");
-        }
+        EnsureRefundable();
 
         if (amount > RefundableAmount)
         {
@@ -926,6 +1027,10 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
         {
             Refund();
         }
+        else
+        {
+            Status = InvoiceStatus.PartiallyRefunded;
+        }
 
         return Transaction.CreateInvoiceRefund(this, date, gateway, transactionId, amount, addedToCredit);
     }
@@ -938,14 +1043,10 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// the claim is given back with <see cref="ReleaseRefundClaim"/> when it returned nothing.
     /// </summary>
     /// <param name="at">When the refund begins (UTC); also the date its parts are recorded under.</param>
-    /// <exception cref="DomainRuleException">The invoice is not Paid, or another refund is still in flight.</exception>
+    /// <exception cref="DomainRuleException">The invoice is not Paid or PartiallyRefunded, or another refund is still in flight.</exception>
     public void BeginRefund(DateTimeOffset at)
     {
-        if (Status != InvoiceStatus.Paid)
-        {
-            throw new DomainRuleException(
-                BillingErrors.InvoiceNotPaid, $"Only Paid invoices can be refunded; current status is {Status}.");
-        }
+        EnsureRefundable();
 
         if (IsRefundInFlight(at))
         {
@@ -1010,9 +1111,11 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// Creates a new Draft copy of this invoice (with all its line items).
     /// </summary>
     /// <remarks>
-    /// The copy carries each line's <see cref="InvoiceItem.ClientServiceId"/> across. A duplicate
-    /// is the same charges billed again, so a line that was for a service is still for that
-    /// service; dropping the link here would quietly hide the copy from the service it belongs to.
+    /// The copy carries each line's <see cref="InvoiceItem.ClientServiceId"/> and
+    /// <see cref="InvoiceItem.ProductSnapshot"/> across. A duplicate is the same charges billed
+    /// again, so a line that was for a service is still for that service and sells what it sold;
+    /// dropping the link here would quietly hide the copy from the service it belongs to, and
+    /// dropping the snapshot would leave a paid digital copy with nothing to fulfil.
     /// </remarks>
     /// <param name="issuedAt">When the copy is issued (UTC).</param>
     /// <returns>A new Draft invoice with the same client, due date, currency and lines.</returns>
@@ -1023,7 +1126,7 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
         // AddItem, never a renewal factory: a copy is not a renewal, and paying it must extend nothing.
         foreach (var item in _items)
         {
-            copy.AddItem(item.Description, item.UnitPrice, item.Quantity, item.ClientServiceId);
+            copy.AddItem(item.Description, item.UnitPrice, item.Quantity, item.ClientServiceId, item.ProductSnapshot);
         }
         return copy;
     }
@@ -1032,16 +1135,24 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// Refunds a paid invoice and marks it as Refunded. <see cref="PaidAt"/> stays: the invoice
     /// was paid at that moment, and Refunded already says the money was given back.
     /// </summary>
+    /// <exception cref="DomainRuleException"><c>INVOICE_NOT_PAID</c> when the invoice is not Paid or PartiallyRefunded.</exception>
     public void Refund()
     {
-        if (Status != InvoiceStatus.Paid)
-        {
-            throw new DomainRuleException(
-                BillingErrors.InvoiceNotPaid, $"Only Paid invoices can be refunded; current status is {Status}.");
-        }
+        EnsureRefundable();
 
         Status = InvoiceStatus.Refunded;
         GatewayTransactionId = null;
+    }
+
+    /// <summary>Refuses a refund of an invoice that holds no paid money: anything but Paid or PartiallyRefunded.</summary>
+    /// <exception cref="DomainRuleException"><c>INVOICE_NOT_PAID</c> when <see cref="IsPaid"/> is false.</exception>
+    private void EnsureRefundable()
+    {
+        if (!IsPaid)
+        {
+            throw new DomainRuleException(
+                BillingErrors.InvoiceNotPaid, $"Only Paid or PartiallyRefunded invoices can be refunded; current status is {Status}.");
+        }
     }
 
     /// <summary>Refuses any payment while the invoice is not open for one.</summary>
@@ -1126,10 +1237,13 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
 
     /// <summary>
     /// Recomputes <see cref="SubTotal"/>, <see cref="Tax"/>, and <see cref="Total"/> from current
-    /// line items, the tax and the total rounded to the currency's minor unit.
+    /// line items, the tax and the total rounded to the currency's minor unit, and
+    /// <see cref="HasDigitalItems"/> from the lines' snapshots. Every path that changes a line runs
+    /// through here, so the stored flag cannot drift from the lines.
     /// </summary>
     private void RecalculateTotals()
     {
+        HasDigitalItems = _items.Any(i => i.IsDigital);
         SubTotal = _items.Sum(i => i.Amount);
         Tax = TaxOn(SubTotal, TaxRate);
         Total = CurrencyCode.RoundToMinorUnits(SubTotal + Tax - Credit, Currency);

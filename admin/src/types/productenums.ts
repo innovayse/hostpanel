@@ -25,6 +25,8 @@ export enum ProductType {
   Addon = 'Addon',
   /** Backup storage and restore. */
   Backup = 'Backup',
+  /** A digital good (a licence, a credit pack, a plan) delivered by a fulfilment plugin, not provisioned. */
+  Digital = 'Digital',
 }
 
 /** Whether the storefront shows a product. */
@@ -33,4 +35,10 @@ export enum ProductStatus {
   Active = 'Active',
   /** Hidden from the storefront. */
   Inactive = 'Inactive',
+}
+
+/** Machine-readable API error codes (`type` of a problem response) the product screens branch on. */
+export enum ProductErrorCode {
+  /** Another product already uses the SKU (409). */
+  SkuAlreadyInUse = 'PRODUCT_SKU_ALREADY_IN_USE',
 }

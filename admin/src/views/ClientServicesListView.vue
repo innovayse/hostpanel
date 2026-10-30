@@ -12,7 +12,9 @@ import { serviceStatusTone, statusLabel } from '@/lib/tones'
 import { capitalize, formatDate } from '@/lib/format'
 import { formatPrice } from '@/lib/money'
 import type { ServiceListItem } from '@/types/service'
+import AddExistingServiceModal from '@/components/clients/AddExistingServiceModal.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
+import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
@@ -97,11 +99,36 @@ const viewService = (serviceId: number): void => {
   router.push(clientItemPath(clientId.value, ClientSection.Services, serviceId))
 }
 
+/** Whether the add-existing-account modal is open. */
+const showAddExisting = ref(false)
+
+/**
+ * Closes the modal and reloads the list after a service was added.
+ *
+ * @returns Nothing.
+ */
+const onExistingAdded = (): void => {
+  showAddExisting.value = false
+  fetchServices()
+}
+
 onMounted(() => fetchServices())
 </script>
 
 <template>
   <UiStack>
+    <UiStack direction="row" :justify="UiJustify.End">
+      <UiButton size="sm" data-testid="client-services-add-existing" @click="showAddExisting = true">
+        {{ t('clients.addExistingService.open') }}
+      </UiButton>
+    </UiStack>
+    <AddExistingServiceModal
+      v-if="showAddExisting"
+      :client-id="Number(clientId)"
+      @added="onExistingAdded"
+      @close="showAddExisting = false"
+    />
+
     <UiStack v-if="loading && services.length === 0" data-testid="client-services-loading">
       <UiSkeleton :lines="3" />
       <UiText :tone="UiTextTone.Secondary">{{ t('clients.clientServicesList.loadingServices') }}</UiText>

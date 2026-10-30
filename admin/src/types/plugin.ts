@@ -1,3 +1,22 @@
+/** Closed set of plugin types a manifest declares; the strings are the API's enum names. */
+export const PluginType = {
+  /** Hosting and server provisioning through a hosting panel. */
+  Provisioning: 'Provisioning',
+  /** Payment gateway. */
+  Payment: 'Payment',
+  /** Domain registrar. */
+  Registrar: 'Registrar',
+  /** Decides which client a signed-in person acts for; at most one is enabled. */
+  Identity: 'Identity',
+  /** Delivers digital products after an invoice is paid. */
+  Fulfilment: 'Fulfilment',
+  /** A background worker the server starts and stops with itself. */
+  Hosted: 'Hosted',
+} as const
+
+/** One of the {@link PluginType} values. */
+export type PluginType = (typeof PluginType)[keyof typeof PluginType]
+
 /** Summary of one installed plugin returned by GET /api/admin/plugins. */
 export interface PluginListItemDto {
   /** Unique plugin identifier, the `id` field of plugin.json. */
@@ -10,7 +29,7 @@ export interface PluginListItemDto {
   author: string
   /** Short description shown in the plugin card. */
   description: string
-  /** Plugin type: "provisioning" | "payment" | "registrar". */
+  /** Plugin type in lower case: "provisioning" | "payment" | "registrar" | "identity" | "fulfilment" | "hosted". */
   type: string
   /** Display category label (e.g. "Hosting / Provisioning"). */
   category: string

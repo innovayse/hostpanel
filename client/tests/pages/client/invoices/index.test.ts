@@ -56,13 +56,19 @@ describe('invoice list page', () => {
     expect(rowIds(wrapper)).toEqual(['1', '2'])
   })
 
-  it('shows only the paid invoices under the paid tab', async () => {
-    clientApi.fetchInvoices.mockResolvedValue([invoice(1, InvoiceStatus.Unpaid), invoice(2, InvoiceStatus.Paid), invoice(3, InvoiceStatus.Cancelled)])
+  it('shows only the paid invoices under the paid tab, a partially refunded one included', async () => {
+    clientApi.fetchInvoices.mockResolvedValue([
+      invoice(1, InvoiceStatus.Unpaid),
+      invoice(2, InvoiceStatus.Paid),
+      invoice(3, InvoiceStatus.Cancelled),
+      invoice(4, InvoiceStatus.PartiallyRefunded),
+      invoice(5, InvoiceStatus.Refunded)
+    ])
 
     const wrapper = await mountPage(InvoicesPage)
     await wrapper.find('[data-testid="ui-tab-finished"]').trigger('click')
 
-    expect(rowIds(wrapper)).toEqual(['2'])
+    expect(rowIds(wrapper)).toEqual(['2', '4'])
   })
 
   it('shows the empty state without invoices', async () => {

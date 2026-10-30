@@ -39,7 +39,8 @@ public sealed class CreateProductHandler
     /// <param name="cmd">The product to create.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// The newly created product id, or <c>PRODUCT_GROUP_NOT_FOUND</c> when the group does not exist.
+    /// The newly created product id, <c>PRODUCT_GROUP_NOT_FOUND</c> when the group does not exist, or
+    /// <c>PRODUCT_SKU_ALREADY_IN_USE</c> when another product already holds the SKU.
     /// </returns>
     public async Task<Result<int>> HandleAsync(CreateProductCommand cmd, CancellationToken ct)
     {
@@ -51,6 +52,11 @@ public sealed class CreateProductHandler
             return Result<int>.FailureCode(HostpanelErrorCodes.PRODUCT_GROUP_NOT_FOUND);
         }
 
+        if (cmd.Sku is not null && await _context.ProductSkuInUseAsync(cmd.Sku, excludingId: null, ct))
+        {
+            return Result<int>.FailureCode(HostpanelErrorCodes.PRODUCT_SKU_ALREADY_IN_USE);
+        }
+
         var prices = await _payerCurrency.ResolveProductPricesAsync(
             cmd.Prices, cmd.MonthlyPrice, cmd.AnnualPrice, ct);
 
@@ -60,6 +66,12 @@ public sealed class CreateProductHandler
             cmd.GroupId, cmd.Name, cmd.Description, cmd.Website, cmd.Slug, cmd.PackageName, cmd.Type,
             prices.BaseMonthly, prices.BaseAnnual, _clock.UtcNow, cmd.ServerGroupId, cmd.IsFeatured, cmd.SortOrder);
         product.ReplacePrices(prices.CurrencyPrices, prices.ReplaceAllCurrencies);
+        product.SetSku(cmd.Sku);
+        product.SetMetadata(cmd.Metadata);
+        if (cmd.GracePeriodDays is { } gracePeriodDays)
+        {
+            product.SetGracePeriodDays(gracePeriodDays);
+        }
 
         if (cmd.IsFeatured)
         {
@@ -67,7 +79,24 @@ public sealed class CreateProductHandler
         }
 
         _context.Products.Add(product);
-        await _context.SaveChangesAsync(ct);
+        try
+        {
+            await _context.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException) when (product.Sku is { } sku)
+        {
+            // Another writer took the SKU between the check above and this save, and the unique index
+            // refused. Asked again rather than assumed: any other failed save is not this conflict and
+            // must still surface as the error it is.
+            _context.DiscardPendingChanges();
+            if (await _context.ProductSkuInUseAsync(sku, excludingId: null, ct))
+            {
+                return Result<int>.FailureCode(HostpanelErrorCodes.PRODUCT_SKU_ALREADY_IN_USE);
+            }
+
+            throw;
+        }
+
         return Result<int>.Success(product.Id);
     }
 }

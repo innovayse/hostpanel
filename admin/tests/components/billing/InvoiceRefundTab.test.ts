@@ -11,7 +11,7 @@ import { invoiceFixture } from '../../helpers/billingFixtures'
 import { json, problem } from '../../helpers/fetch'
 import { mountWithApp } from '../../helpers/mount'
 import { stubRoutes } from '../../helpers/routes'
-import { InvoiceRefundType } from '@/types/invoice'
+import { InvoiceRefundType, InvoiceStatus } from '@/types/invoice'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -27,6 +27,15 @@ describe('InvoiceRefundTab', () => {
     expect(cancelled.find('[data-testid="billing-invoice-refund-cancelled"]').exists()).toBe(true)
     expect(refunded.find('[data-testid="billing-invoice-refund-refunded"]').exists()).toBe(true)
     expect(draft.find('[data-testid="billing-invoice-refund-form"]').exists()).toBe(false)
+  })
+
+  it('keeps the form for a partially refunded invoice, which can still be refunded up to what is left', () => {
+    const wrapper = mountWithApp(InvoiceRefundTab, {
+      props: { invoice: invoiceFixture({ status: InvoiceStatus.PartiallyRefunded }) },
+    })
+
+    expect(wrapper.find('[data-testid="billing-invoice-refund-form"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="billing-invoice-refund-refunded"]').exists()).toBe(false)
   })
 
   it('warns read-only when no payment can be refunded', () => {
@@ -92,6 +101,43 @@ describe('InvoiceRefundTab', () => {
     await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')
     await flushPromises()
     expect(wrapper.find('[data-testid="dialog-confirm"]').exists()).toBe(false)
+  })
+
+  it('formats refund confirmation and transaction amounts with the invoice currency when not USD', async () => {
+    stubRoutes({ 'GET /api/billing/1': () => json(invoiceFixture()) })
+    const wrapper = mountWithApp(InvoiceRefundTab, {
+      props: {
+        invoice: invoiceFixture({
+          currency: 'AMD',
+          amounts: { ...invoiceFixture().amounts, total: 24000, credit: 5000 },
+          transactions: [
+            {
+              id: 21,
+              date: '2026-10-15T00:00:00Z',
+              gateway: 'Stripe',
+              transactionId: 'ch_1',
+              amount: 24000,
+              fees: 500,
+              type: 'Payment',
+            },
+          ],
+        }),
+      },
+    })
+
+    wrapper.findAllComponents(UiSelect)[0]?.vm.$emit('update:modelValue', '21')
+    await flushPromises()
+    await wrapper.get('[data-testid="billing-invoice-refund-credit-leave"]').setValue(true)
+    await wrapper.get('[data-testid="billing-invoice-refund-form"]').trigger('submit')
+    await flushPromises()
+
+    const body = wrapper.get('[data-testid="dialog-body"]').text()
+    expect(body).toContain('24000.00 AMD')
+    expect(body).not.toContain('$')
+    const creditNotice = wrapper.get('[data-testid="billing-invoice-refund-credit"]').text()
+    expect(creditNotice).toContain('24000.00 AMD')
+    expect(creditNotice).toContain('5000.00 AMD')
+    expect(creditNotice).not.toContain('$')
   })
 
   it('shows the API sentence in the tab when the refund is refused', async () => {

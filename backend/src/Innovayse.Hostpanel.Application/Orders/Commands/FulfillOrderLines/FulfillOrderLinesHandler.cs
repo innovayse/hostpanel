@@ -6,9 +6,13 @@ using Innovayse.Hostpanel.Application.Domains.Commands.RenewOrderedDomain;
 using Innovayse.Hostpanel.Application.Domains.Commands.TransferDomain;
 using Innovayse.Hostpanel.Application.Orders.Common;
 using Innovayse.Hostpanel.Application.Orders.Common.Enums;
+using Innovayse.Hostpanel.Application.Products.Common;
+using Innovayse.Hostpanel.Application.Products.Queries.GetProductsByIds;
+using Innovayse.Hostpanel.Application.Services.Commands.ActivateDigitalService;
 using Innovayse.Hostpanel.Application.Services.Commands.OrderService;
 using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
+using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -63,6 +67,7 @@ public sealed class FulfillOrderLinesHandler
             return Result<OrderFulfillmentDto>.FailureCode(HostpanelErrorCodes.ORDER_NOT_FOUND);
         }
 
+        var digitalProductIds = await FindDigitalProductIdsAsync(order, ct);
         var failures = new List<OrderLineFailureDto>();
         int? createdDomainId = null;
         int? createdServiceId = null;
@@ -99,7 +104,8 @@ public sealed class FulfillOrderLinesHandler
                 continue;
             }
 
-            var service = await FulfillServiceAsync(order, item, item.Domain ?? orderDomainName, ct);
+            var service = await FulfillServiceAsync(
+                order, item, item.Domain ?? orderDomainName, digitalProductIds.Contains(item.ProductId), ct);
             if (service.IsFailure)
             {
                 failures.Add(Failure(item, OrderLineKind.Service, service.ErrorCode, DescribeFailure(service)));
@@ -134,9 +140,13 @@ public sealed class FulfillOrderLinesHandler
     /// <param name="order">The accepted order the line belongs to.</param>
     /// <param name="item">The product line.</param>
     /// <param name="domain">The domain the service is for: the line's own, else one ordered beside it.</param>
+    /// <param name="isDigital">
+    /// Whether the line's product is a digital one. Such a service has no hosting account to set up, so it is
+    /// activated at once, without provisioning; any other service stays Pending until the client sets it up.
+    /// </param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The new service's id, or the failure the line ended with.</returns>
-    private async Task<Result<int>> FulfillServiceAsync(Order order, OrderItem item, string? domain, CancellationToken ct)
+    private async Task<Result<int>> FulfillServiceAsync(Order order, OrderItem item, string? domain, bool isDigital, CancellationToken ct)
     {
         Result<int> outcome;
         try
@@ -164,9 +174,65 @@ public sealed class FulfillOrderLinesHandler
                 "Service provisioning failed for order {OrderId} item {ItemId} (product {ProductId}): {Reason}. " +
                 "The order is accepted but this line was never provisioned and needs manual intervention.",
                 order.Id, item.Id, item.ProductId, DescribeFailure(outcome));
+            return outcome;
         }
 
-        return outcome;
+        return isDigital ? await ActivateDigitalAsync(order, item, outcome.Value, ct) : outcome;
+    }
+
+    /// <summary>
+    /// Activates the service of a digital line, which has no hosting account to provision. A refusal or a
+    /// fault is logged loud and returned, so one failing line never aborts the rest; the service is then left Pending for staff.
+    /// </summary>
+    /// <param name="order">The accepted order the line belongs to.</param>
+    /// <param name="item">The digital product line.</param>
+    /// <param name="serviceId">The service the line created.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The service's id once it is Active, or the failure the line ended with.</returns>
+    private async Task<Result<int>> ActivateDigitalAsync(Order order, OrderItem item, int serviceId, CancellationToken ct)
+    {
+        Result activated;
+        try
+        {
+            activated = await _bus.InvokeAsync<Result>(new ActivateDigitalServiceCommand(serviceId), ct);
+        }
+        catch (Exception ex)
+        {
+            // A genuine fault out of the dispatch, not an answer of the use case.
+            _logger.LogCritical(
+                ex,
+                "Activation of digital service {ServiceId} failed for order {OrderId} item {ItemId} (product {ProductId}); " +
+                "the service stays Pending and needs manual intervention.",
+                serviceId, order.Id, item.Id, item.ProductId);
+            return Result<int>.FailureCode(HostpanelErrorCodes.HOSTPANEL_UNEXPECTED);
+        }
+
+        if (activated.IsFailure)
+        {
+            _logger.LogCritical(
+                "Activation of digital service {ServiceId} failed for order {OrderId} item {ItemId} (product {ProductId}): {Reason}. " +
+                "The service stays Pending and needs manual intervention.",
+                serviceId, order.Id, item.Id, item.ProductId, DescribeFailure(activated));
+            return Result<int>.FailureCode(activated.ErrorCode ?? HostpanelErrorCodes.HOSTPANEL_UNEXPECTED);
+        }
+
+        return Result<int>.Success(serviceId);
+    }
+
+    /// <summary>Finds which of the order's service lines name a digital product.</summary>
+    /// <param name="order">The accepted order.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The ids of the digital products among the lines' products; a product the Products module does not know is not digital.</returns>
+    private async Task<IReadOnlySet<int>> FindDigitalProductIdsAsync(Order order, CancellationToken ct)
+    {
+        var productIds = order.Items.Where(i => i.DomainAction is null).Select(i => i.ProductId).Distinct().ToList();
+        if (productIds.Count == 0)
+        {
+            return new HashSet<int>();
+        }
+
+        var products = await _bus.InvokeAsync<Result<IReadOnlyList<ProductDto>>>(new GetProductsByIdsQuery(productIds), ct);
+        return (products.Value ?? []).Where(p => p.Type == ProductType.Digital).Select(p => p.Id).ToHashSet();
     }
 
     /// <summary>Runs the one domain action an order line carries.</summary>

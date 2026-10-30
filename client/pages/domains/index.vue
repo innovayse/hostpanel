@@ -25,6 +25,7 @@
 import { APP_LOCALES } from '~/constants/appLocales'
 import { DOMAIN_SEARCH_QUERY_PARAM } from '~/constants/domainSearchQuery'
 import { SCHEMA_ORG_CONTEXT } from '~/constants/schemaOrg'
+import { usePayerAsyncData } from '~/composables/usePayerAsyncData'
 import { useCartStore } from '~/stores/cart'
 import { useCatalogStore } from '~/stores/catalog'
 import { useCurrencyStore } from '~/stores/currency'
@@ -84,8 +85,8 @@ injectSchema([
 ])
 
 // Prices follow the payer's currency, so the table is read again when it resolves or changes.
-await useAsyncData('domains:tld-pricing', () => catalogStore.loadTldPricing(), {
-  watch: [() => currencyStore.payerCode, locale],
+await usePayerAsyncData('domains:tld-pricing', () => catalogStore.loadTldPricing(), {
+  watch: [locale],
 })
 
 /** Price table, categories and name lookup state of the domains store. */
@@ -111,9 +112,7 @@ onMounted(() => {
 })
 
 // The cart needs a product to hang a domain order on; the catalogue store finds it.
-await useAsyncData('domains:catalogue', () => catalogStore.loadProducts(), {
-  watch: [() => currencyStore.payerCode],
-})
+await usePayerAsyncData('domains:catalogue', () => catalogStore.loadProducts())
 
 /** The id of the product a domain cart line hangs on; null when the operator has none. */
 const domainProductId = computed(() => catalogStore.domainProductId)

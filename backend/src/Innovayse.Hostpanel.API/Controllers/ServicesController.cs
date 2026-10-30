@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Services.Commands.AddExistingService;
 using Innovayse.Hostpanel.Application.Services.Commands.ChangeServiceStatus;
 using Innovayse.Hostpanel.Application.Services.Commands.CorrectServiceTerminationDate;
 using Innovayse.Hostpanel.Application.Services.Commands.SuspendService;
@@ -95,6 +96,32 @@ public sealed class ServicesController : BaseApiController
     {
         var outcome = await _bus.InvokeAsync<Result>(command with { ServiceId = id }, ct);
         return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// Adds a service to a client for a hosting account that already exists on a server. The service
+    /// starts Active; nothing is created on the panel and no welcome mail is sent.
+    /// </summary>
+    /// <param name="command">The client, product, billing terms and the existing account.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 201 with the new service's id; 400 when a field is refused; 404 with <c>CLIENT_NOT_FOUND</c>,
+    /// <c>PRODUCT_NOT_FOUND</c> or <c>SERVER_NOT_FOUND</c>; 409 with <c>SERVICE_HOSTING_ACCOUNT_EXISTS</c>
+    /// when a live service already holds that username on that server; 401 when the caller is not
+    /// signed in; 403 when the caller's role is not allowed; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPost("existing")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(typeof(int), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> AddExistingAsync([FromBody] AddExistingServiceCommand command, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<int>>(command, ct);
+        return HandleResult(outcome, id => CreatedResult($"/api/services/{id}", id));
     }
 
     /// <summary>Corrects the record of the hosting account a client service lives on; nothing changes on the panel.</summary>

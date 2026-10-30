@@ -17,6 +17,7 @@ export const integrationDto = (overrides: Partial<IntegrationDto> = {}): Integra
   isEnabled: true,
   isConfigured: true,
   isPlugin: false,
+  pluginType: null,
   ...overrides,
 })
 

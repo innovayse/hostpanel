@@ -49,7 +49,7 @@ public sealed class RaiseClientRenewalInvoicesHandler
     /// Statuses of a renew order's invoice while the order still blocks the auto-renewal: open, or
     /// paid with the order not fulfilled yet (the registrar renewal is still in flight).
     /// </summary>
-    private static readonly InvoiceStatus[] RenewOrderBlockingStatuses = [.. RenewalInvoiceStatuses.Open, InvoiceStatus.Paid];
+    private static readonly InvoiceStatus[] RenewOrderBlockingStatuses = [.. RenewalInvoiceStatuses.Open, .. Invoice.PaidStatuses];
 
     /// <summary>Invoices and currencies.</summary>
     private readonly IHostpanelDbContext _context;
@@ -259,8 +259,13 @@ public sealed class RaiseClientRenewalInvoicesHandler
                 continue;
             }
 
-            var name = products[service.ProductId].Name;
-            result.Add(new PendingLine(start, inv => inv.AddServiceRenewal($"Renewal: {name}", service.RecurringAmount, service.Id, start, end)));
+            // The line keeps what the product is now, so a fulfilment plugin told about the paid renewal
+            // delivers what is sold today, not what the catalogue held when the service was first ordered.
+            var product = products[service.ProductId];
+            var snapshot = product.Fulfilment.ToSnapshot(service.BillingCycle);
+            result.Add(new PendingLine(
+                start,
+                inv => inv.AddServiceRenewal($"Renewal: {product.Name}", service.RecurringAmount, service.Id, start, end, snapshot)));
         }
 
         return result;
@@ -359,7 +364,7 @@ public sealed class RaiseClientRenewalInvoicesHandler
                      l => l.ClientServiceId == serviceId
                           && l.RenewalPeriodStart != null
                           && (OpenStatuses.Contains(i.Status)
-                              || (i.Status == InvoiceStatus.Paid && l.RenewalAppliedAt == null)
+                              || (Invoice.PaidStatuses.Contains(i.Status) && l.RenewalAppliedAt == null)
                               || l.RenewalPeriodStart == start)),
             ct);
 
@@ -375,7 +380,7 @@ public sealed class RaiseClientRenewalInvoicesHandler
                      l => l.RegisteredDomainId == domainId
                           && l.RenewalPeriodStart != null
                           && (OpenStatuses.Contains(i.Status)
-                              || (i.Status == InvoiceStatus.Paid && l.RenewalAppliedAt == null)
+                              || (Invoice.PaidStatuses.Contains(i.Status) && l.RenewalAppliedAt == null)
                               || l.RenewalPeriodStart == start)),
             ct);
 

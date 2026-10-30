@@ -30,6 +30,7 @@ const STATUS_TONES: Record<BadgeStatus, UiTone> = {
   [BadgeStatus.Expired]: UiTone.Danger,
   [BadgeStatus.Redemption]: UiTone.Danger,
   [BadgeStatus.Refunded]: UiTone.Info,
+  [BadgeStatus.PartiallyRefunded]: UiTone.Info,
   [BadgeStatus.Draft]: UiTone.Default,
   [BadgeStatus.Terminated]: UiTone.Default,
   [BadgeStatus.Transferred]: UiTone.Default,

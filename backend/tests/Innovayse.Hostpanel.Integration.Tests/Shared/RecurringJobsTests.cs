@@ -117,6 +117,57 @@ public sealed class RecurringJobsTests(IntegrationTestFactory factory) : IClassF
         ScheduledRuns(session).Should().Be(1);
     }
 
+    /// <summary>A pass started on demand runs under the lease and records its success, and schedules no next run.</summary>
+    /// <returns>A task.</returns>
+    [Fact]
+    public async Task OnDemandPass_RunsUnderTheLeaseAndSchedulesNothing()
+    {
+        using var scope = _host.Services.CreateScope();
+        var jobs = JobsIn(scope, new StoppableLifetime());
+        var ran = 0;
+
+        var (_, session) = await TrackedAsync(async () =>
+        {
+            await jobs.RunOnceAsync<CheckOverdueInvoicesCronCommand>(Daily, () => { ran++; return Task.CompletedTask; }, CancellationToken.None);
+            return null;
+        });
+
+        ran.Should().Be(1);
+        ScheduledRuns(session).Should().Be(0);
+        (await scope.ServiceProvider.GetRequiredService<IJobLease>().GetLastSucceededAtAsync(JobName, CancellationToken.None))
+            .Should().Be(Now);
+    }
+
+    /// <summary>A pass started on demand while another instance holds the job is skipped.</summary>
+    /// <returns>A task.</returns>
+    [Fact]
+    public async Task OnDemandPass_OfAHeldJob_IsSkipped()
+    {
+        using var scope = _host.Services.CreateScope();
+        var jobs = JobsIn(scope, new StoppableLifetime());
+        await scope.ServiceProvider.GetRequiredService<IJobLease>().TryAcquireAsync(
+            new JobLeaseClaim(JobName, "other-instance", Now, TimeSpan.FromHours(1)), CancellationToken.None);
+        var ran = 0;
+
+        await jobs.RunOnceAsync<CheckOverdueInvoicesCronCommand>(Daily, () => { ran++; return Task.CompletedTask; }, CancellationToken.None);
+
+        ran.Should().Be(0);
+    }
+
+    /// <summary>A pass started on demand that throws is logged and swallowed, like a scheduled one.</summary>
+    /// <returns>A task.</returns>
+    [Fact]
+    public async Task OnDemandPass_ThatThrows_IsSwallowed()
+    {
+        using var scope = _host.Services.CreateScope();
+        var jobs = JobsIn(scope, new StoppableLifetime());
+
+        var act = () => jobs.RunOnceAsync<CheckOverdueInvoicesCronCommand>(
+            Daily, () => throw new InvalidOperationException("boom"), CancellationToken.None);
+
+        await act.Should().NotThrowAsync();
+    }
+
     /// <summary>A holder that crashed left its lease behind; once it has expired this instance runs the pass.</summary>
     /// <returns>A task.</returns>
     [Fact]

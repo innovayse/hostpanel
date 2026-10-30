@@ -18,7 +18,7 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { transactionTypeTone } from '@/lib/tones'
 import { formatDate } from '@/lib/format'
-import { formatUsdPlain } from '@/lib/money'
+import { formatPlainAmount } from '@/lib/money'
 import { InvoiceTransactionType } from '@/types/invoice'
 import type { InvoiceDetail, InvoiceTransaction } from '@/types/invoice'
 
@@ -67,9 +67,9 @@ const payments = computed<InvoiceTransaction[]>(() =>
               <UiTableCell>{{ transaction.gateway }}</UiTableCell>
               <UiTableCell muted>{{ transaction.transactionId || '—' }}</UiTableCell>
               <UiTableCell>
-                <UiText tone="success">{{ formatUsdPlain(transaction.amount) }}</UiText>
+                <UiText tone="success">{{ formatPlainAmount(transaction.amount, props.invoice.currency) }}</UiText>
               </UiTableCell>
-              <UiTableCell muted>{{ formatUsdPlain(transaction.fees) }}</UiTableCell>
+              <UiTableCell muted>{{ formatPlainAmount(transaction.fees, props.invoice.currency) }}</UiTableCell>
             </UiTableRow>
           </UiTableBody>
           <template #empty>

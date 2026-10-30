@@ -15,7 +15,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { balanceDue, isInvoiceOutstanding, isInvoiceOverdue, paymentsToDate } from '~/utils/invoice'
+import { balanceDue, isInvoiceOutstanding, isInvoiceOverdue, isInvoicePaid, paymentsToDate } from '~/utils/invoice'
 import type { ClientInvoice } from '~/types/clientinvoice'
 import type { ClientInvoiceTransaction } from '~/types/clientinvoicetransaction'
 import { InvoiceStatus } from '~/types/invoicestatus'
@@ -143,9 +143,32 @@ describe('isInvoiceOutstanding', () => {
   })
 
   it('does not count a status with nothing owing on it', () => {
-    // Draft was never issued, Cancelled was voided, Refunded was returned, Paid is settled.
-    for (const status of [InvoiceStatus.Paid, InvoiceStatus.Draft, InvoiceStatus.Cancelled, InvoiceStatus.Refunded]) {
+    // Draft was never issued, Cancelled was voided, Refunded was returned, Paid is settled, and a
+    // partly refunded invoice was settled before part of it went back.
+    for (const status of [InvoiceStatus.Paid, InvoiceStatus.Draft, InvoiceStatus.Cancelled, InvoiceStatus.Refunded, InvoiceStatus.PartiallyRefunded]) {
       expect(isInvoiceOutstanding(invoice({ status }))).toBe(false)
+    }
+  })
+})
+
+describe('isInvoicePaid', () => {
+  it('counts a paid invoice and a partially refunded one as paid', () => {
+    expect(isInvoicePaid(invoice({ status: InvoiceStatus.Paid }))).toBe(true)
+    expect(isInvoicePaid(invoice({ status: InvoiceStatus.PartiallyRefunded }))).toBe(true)
+  })
+
+  it('does not count a fully refunded invoice, nor one that is not settled', () => {
+    // A Refunded invoice gave all of its money back; the rest never took any.
+    for (const status of [
+      InvoiceStatus.Refunded,
+      InvoiceStatus.Unpaid,
+      InvoiceStatus.Overdue,
+      InvoiceStatus.Draft,
+      InvoiceStatus.Cancelled,
+      InvoiceStatus.Collections,
+      InvoiceStatus.PaymentPending
+    ]) {
+      expect(isInvoicePaid(invoice({ status }))).toBe(false)
     }
   })
 })
@@ -171,7 +194,14 @@ describe('isInvoiceOverdue', () => {
   it('never calls a paid, draft, cancelled or refunded invoice overdue, whatever its date', () => {
     // A past due date on any of these is not a debt: the invoice was paid, never issued,
     // voided, or already returned.
-    for (const status of [InvoiceStatus.Paid, InvoiceStatus.Draft, InvoiceStatus.Cancelled, InvoiceStatus.Refunded, InvoiceStatus.Collections]) {
+    for (const status of [
+      InvoiceStatus.Paid,
+      InvoiceStatus.Draft,
+      InvoiceStatus.Cancelled,
+      InvoiceStatus.Refunded,
+      InvoiceStatus.PartiallyRefunded,
+      InvoiceStatus.Collections
+    ]) {
       expect(isInvoiceOverdue(invoice({ status, dueDate: '2026-01-01T00:00:00+00:00' }), now)).toBe(false)
     }
   })

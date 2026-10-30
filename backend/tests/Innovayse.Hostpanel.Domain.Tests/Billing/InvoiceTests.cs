@@ -601,7 +601,7 @@ public sealed class InvoiceTests
 
         invoice.AddRefund(Now, "Bank", "refund-part", 30m, 0m, null);
 
-        invoice.Status.Should().Be(InvoiceStatus.Paid);
+        invoice.Status.Should().Be(InvoiceStatus.PartiallyRefunded);
         invoice.RefundableAmount.Should().Be(70m);
     }
 
@@ -754,16 +754,16 @@ public sealed class InvoiceTests
         act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.InvoiceNotPayable);
     }
 
-    /// <summary>A partial refund leaves the invoice Paid; refunding the rest marks it Refunded.</summary>
+    /// <summary>A partial refund leaves the invoice PartiallyRefunded; refunding the rest marks it Refunded.</summary>
     [Fact]
-    public void AddRefund_Partial_LeavesInvoicePaidUntilFullyRefunded()
+    public void AddRefund_Partial_LeavesInvoicePartiallyRefundedUntilFullyRefunded()
     {
         var invoice = UnpaidFor(10m);
         invoice.RecordPaidHistory("ref", Now);
 
         var row = invoice.AddRefund(Now, "Manual", "r1", 3m, 0m, null, addedToCredit: true);
 
-        invoice.Status.Should().Be(InvoiceStatus.Paid);
+        invoice.Status.Should().Be(InvoiceStatus.PartiallyRefunded);
         invoice.RefundableAmount.Should().Be(7m);
         row.AmountOut.Should().Be(3m);
         row.AddedToCredit.Should().BeTrue();

@@ -39,7 +39,8 @@ public sealed class MyPaymentMethodsController : BaseApiController
     /// <summary>Lists the authenticated client's saved cards and bank accounts.</summary>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 with the saved payment methods, empty when none have been added yet; 401 without a session;
+    /// 200 with the saved payment methods, empty when none have been added yet or the card gateway has
+    /// no keys; 401 without a session;
     /// 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>ViewPayInvoices</c>, or for a
     /// caller who is not a client; 404 with <c>CLIENT_PROFILE_NOT_FOUND</c> when the caller has no
     /// client record;
@@ -70,7 +71,8 @@ public sealed class MyPaymentMethodsController : BaseApiController
     /// 204 when made the default; 400 with <c>VALIDATION_ERROR</c> when <c>SetAsDefault</c> is not
     /// true, <c>NO_SAVED_PAYMENT_METHODS</c> or <c>PAYMENT_METHOD_NOT_OWNED</c>; 401 without a session; 403 with
     /// <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>ViewPayInvoices</c>, or for a caller who
-    /// is not a client; 404 with <c>CLIENT_PROFILE_NOT_FOUND</c>;
+    /// is not a client; 404 with <c>CLIENT_PROFILE_NOT_FOUND</c>; 409 with <c>PAYMENT_METHOD_UNAVAILABLE</c>
+    /// when the card gateway has no keys;
     /// 502 with <c>PAYMENT_METHOD_UPSTREAM_FAILED</c> when the card gateway refuses the call; 503 with
     /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when it cannot be reached; 429 when the rate limit is hit.
     /// </returns>
@@ -82,6 +84,7 @@ public sealed class MyPaymentMethodsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> UpdateMyPaymentMethodAsync(
@@ -98,7 +101,7 @@ public sealed class MyPaymentMethodsController : BaseApiController
     /// 204 when removed; 400 with <c>VALIDATION_ERROR</c>, <c>NO_SAVED_PAYMENT_METHODS</c> or
     /// <c>PAYMENT_METHOD_NOT_OWNED</c>; 401 without a session; 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user
     /// lacks <c>ViewPayInvoices</c>, or for a caller who is not a client; 404 with
-    /// <c>CLIENT_PROFILE_NOT_FOUND</c>;
+    /// <c>CLIENT_PROFILE_NOT_FOUND</c>; 409 with <c>PAYMENT_METHOD_UNAVAILABLE</c> when the card gateway has no keys;
     /// 502 with <c>PAYMENT_METHOD_UPSTREAM_FAILED</c> when the card gateway refuses the call; 503 with
     /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when it cannot be reached; 429 when the rate limit is hit.
     /// </returns>
@@ -110,6 +113,7 @@ public sealed class MyPaymentMethodsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> RemoveMyPaymentMethodAsync(string id, CancellationToken ct)

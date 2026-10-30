@@ -24,13 +24,15 @@ describe('DomainSidebar', () => {
     expect(wrapper.emitted('update:activeTab')).toEqual([[DomainTab.Nameservers]])
   })
 
-  it('locks every panel but the overview while the domain is pending', async () => {
+  it('locks every panel but the overview, and the renew action, while the domain is pending', async () => {
     const wrapper = mountClient(DomainSidebar, { props: { activeTab: DomainTab.Overview, isPending: true } })
 
     expect(wrapper.find('[data-testid="domain-tab-contact"]').attributes('disabled')).toBeDefined()
     expect(wrapper.find('[data-testid="domain-tab-overview"]').attributes('disabled')).toBeUndefined()
+    expect(wrapper.find('[data-testid="domain-action-renew"]').attributes('disabled')).toBeDefined()
 
     await wrapper.find('[data-testid="domain-tab-contact"]').trigger('click')
+    await wrapper.find('[data-testid="domain-action-renew"]').trigger('click')
     expect(wrapper.emitted('update:activeTab')).toBeUndefined()
   })
 

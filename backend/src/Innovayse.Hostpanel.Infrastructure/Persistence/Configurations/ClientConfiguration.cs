@@ -41,6 +41,18 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<Client>
         builder.Property(x => x.Currency).HasMaxLength(3);
         builder.Property(x => x.PaymentMethod).HasMaxLength(50);
         builder.Property(x => x.CardGatewayCustomerId).HasMaxLength(50);
+
+        // The link to an account in another system is whole or absent, which the domain keeps and the
+        // check enforces for every writer. One external account belongs to one client only, so the pair is
+        // unique; clients without a link stay out of the index.
+        builder.Property(x => x.ExternalAccountProvider).HasMaxLength(Client.ExternalAccountProviderMaxLength);
+        builder.Property(x => x.ExternalAccountId).HasMaxLength(Client.ExternalAccountIdMaxLength);
+        builder.HasIndex(x => new { x.ExternalAccountProvider, x.ExternalAccountId })
+            .IsUnique()
+            .HasFilter("\"ExternalAccountProvider\" IS NOT NULL AND \"ExternalAccountId\" IS NOT NULL");
+        builder.ToTable(table => table.HasCheckConstraint(
+            "CK_Clients_ExternalAccount",
+            "(\"ExternalAccountProvider\" IS NULL) = (\"ExternalAccountId\" IS NULL)"));
         builder.Property(x => x.BillingContact).HasMaxLength(256);
         builder.Property(x => x.AdminNotes).HasMaxLength(2000);
 

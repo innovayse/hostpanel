@@ -50,7 +50,7 @@ your own machine and extend.
 | Admin panel | Clients, orders, products, gateways, integrations, e-mail templates, plugins, reports, audit log |
 | Demo mode | Fake payments, registrar and provisioning, caught mail, fixed sample data reset on a schedule, on a network isolated from production |
 | Languages | English, Russian and Armenian in both the portal and the admin panel |
-| Plugin SDK | `Innovayse.SDK` for your own payment, registrar and provisioning providers |
+| Plugin SDK | `Innovayse.SDK` (MIT, a NuGet package, developed in [hostpanel-sdk](https://github.com/innovayse/hostpanel-sdk)) for your own payment, registrar, provisioning, identity, fulfilment and hosted plugins |
 | Data import | Importers for moving clients and data from another billing system |
 
 See the [open feature requests](https://github.com/innovayse/hostpanel/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
@@ -184,12 +184,16 @@ You need Docker with Compose v2 and nothing else.
 > Do not expose it to the internet.
 
 ```bash
-git clone https://github.com/innovayse/hostpanel.git
+git clone --recurse-submodules https://github.com/innovayse/hostpanel.git
 cd hostpanel/docker
 cp .env.example .env      # AUTH_MODE=local and ASPNETCORE_ENVIRONMENT=Development by default
 docker compose -f docker-compose.shared.yml -f docker-compose.dev.yml up -d
 docker compose -f docker-compose.shared.yml -f docker-compose.dev.yml logs -f hostpanel-api   # migrations and seeding run on startup
 ```
+
+The plugin SDK in `backend/src/Innovayse.SDK` is a git submodule from its own repository,
+[innovayse/hostpanel-sdk](https://github.com/innovayse/hostpanel-sdk). After a plain `git clone`, and after every pull
+that moves it, run `git submodule update --init` from the repository root; without it the backend has no SDK to build.
 
 | | URL |
 |---|---|
@@ -224,7 +228,7 @@ its own PostgreSQL through Testcontainers, so Docker must be running). Run `yarn
 | Messaging | RabbitMQ with the Wolverine outbox | Reliable events between modules |
 | Client portal `client/` | Nuxt 4, Vue 3, TypeScript, Tailwind, Pinia | Server-rendered storefront; pages own data and SEO, `templates/` hold the switchable designs |
 | Admin panel `admin/` | Vite, Vue 3, TypeScript, Tailwind | Single-page app served by nginx |
-| Plugins | `Innovayse.SDK` and `Innovayse.Providers.*` | Payment, registrar and provisioning providers behind small interfaces |
+| Plugins | `Innovayse.SDK` and `Innovayse.Providers.*` | Six plugin types behind small interfaces, all loaded at run time: payment, registrar and provisioning providers, plus fulfilment (`IFulfilmentPlugin`: deliver digital products after payment, advise on refunds), identity (`IClientResolver`: decide which client a signed-in user acts for) and hosted (`IHostedPlugin`: a background worker). The core names no deployment-specific plugin namespace; an architecture test enforces it |
 | Auth | ASP.NET Core Identity, JWT in an httpOnly cookie | `local` mode by default |
 
 Each app owns its Dockerfile (`backend/Dockerfile`, `client/Dockerfile`, `admin/Dockerfile`). A new payment gateway, registrar
@@ -241,3 +245,8 @@ or control-panel integration is one of the most useful contributions: open an is
 - **License:** Copyright (c) 2024-2026 Innovayse LLC. Free software under the
   [GNU Affero General Public License v3.0 or later](LICENSE): use, modify and self-host it, including commercially. If you
   run a modified version as a network service, offer your users its source.
+- **Plugin SDK license:** the plugin SDK (`backend/src/Innovayse.SDK`, a git submodule of its own repository
+  [innovayse/hostpanel-sdk](https://github.com/innovayse/hostpanel-sdk), where it is developed and published) is under the
+  [MIT License](https://github.com/innovayse/hostpanel-sdk/blob/main/LICENSE) and ships as the `Innovayse.SDK` NuGet package,
+  so a plugin may be free or paid, open or closed source, as its author decides. Everything else in this repository stays
+  AGPL-3.0-or-later.

@@ -41,8 +41,20 @@ open an issue first so we can agree on the approach before you spend time on cod
 ## Development setup
 
 Follow the [Quick start](README.md#quick-start-with-docker) and [Development](README.md#run-from-source)
-sections of the README. A plain clone builds and runs with `AUTH_MODE=local`; you do not
+sections of the README. A clone builds and runs with `AUTH_MODE=local`; you do not
 need any token or account.
+
+### The plugin SDK is a submodule
+
+`backend/src/Innovayse.SDK` is a git submodule of
+[innovayse/hostpanel-sdk](https://github.com/innovayse/hostpanel-sdk). Clone with
+`git clone --recurse-submodules`, or run `git submodule update --init` after a plain clone and after
+any pull that moves the submodule; without it the backend has no SDK project to build.
+
+A change to the SDK itself (a plugin contract, a base class, the package readme) is a pull request
+in that repository. When the host has to support the change too, open the matching pull request
+here as well: it moves the submodule to the new SDK commit and carries the host side. Mention each
+pull request in the other.
 
 ### Running the backend tests while the dev stack is up
 

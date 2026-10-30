@@ -2,9 +2,11 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using Innovayse.Hostpanel.Application.Billing.Common;
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Infrastructure.Storage.Settings;
+using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -146,7 +148,7 @@ public sealed partial class MigraDocInvoicePdfRenderer : IInvoicePdfRenderer
     /// <summary>Colour of the CANCELLED stamp, translucent so the page shows through.</summary>
     private static readonly XColor CancelledStamp = XColor.FromArgb(0x55, 0xDC, 0x26, 0x26);
 
-    /// <summary>Colour of the REFUNDED stamp, translucent so the page shows through.</summary>
+    /// <summary>Colour of the REFUNDED and PARTIALLY REFUNDED stamps, translucent so the page shows through.</summary>
     private static readonly XColor RefundedStamp = XColor.FromArgb(0x55, 0xD9, 0x77, 0x06);
 
     /// <summary>Where the web root is, for finding an uploaded logo.</summary>
@@ -158,14 +160,14 @@ public sealed partial class MigraDocInvoicePdfRenderer : IInvoicePdfRenderer
     /// <summary>The process-wide limit on renders in flight.</summary>
     private readonly InvoicePdfRenderGate _gate;
 
-    /// <summary>Logs why a configured logo was left out.</summary>
+    /// <summary>Logs why a configured logo was left out, and a render turned away as busy.</summary>
     private readonly ILogger<MigraDocInvoicePdfRenderer> _logger;
 
     /// <summary>Initializes the renderer.</summary>
     /// <param name="env">Where the web root is, for finding an uploaded logo.</param>
     /// <param name="branding">Where branding uploads live under the web root.</param>
     /// <param name="gate">The process-wide limit on renders in flight.</param>
-    /// <param name="logger">Logs why a configured logo was left out.</param>
+    /// <param name="logger">Logs why a configured logo was left out, and a render turned away as busy.</param>
     public MigraDocInvoicePdfRenderer(
         IWebHostEnvironment env,
         IOptions<BrandingOptions> branding,
@@ -181,16 +183,26 @@ public sealed partial class MigraDocInvoicePdfRenderer : IInvoicePdfRenderer
     /// <inheritdoc/>
     /// <remarks>
     /// Waits for a slot in <see cref="InvoicePdfRenderGate"/> first, then renders inline and holds
-    /// the slot until the bytes are written; a render that throws gives its slot back too.
+    /// the slot until the bytes are written; a render that throws gives its slot back too. When this
+    /// request gets no slot within the gate's wait, nothing is rendered and the result is
+    /// <c>INVOICE_PDF_RENDER_BUSY</c>, logged at Warning so a deployment that keeps hitting the cap
+    /// can see it.
     /// </remarks>
-    public async Task<byte[]> RenderAsync(InvoicePdfModel model, CancellationToken ct)
+    public async Task<Result<byte[]>> RenderAsync(InvoicePdfModel model, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(model);
 
-        using (await _gate.EnterAsync(ct))
+        using var slot = await _gate.TryEnterAsync(ct);
+        if (slot is null)
         {
-            return Render(model);
+            _logger.LogWarning(
+                "Invoice PDF render refused as busy: it waited {WaitSeconds}s and no slot came free, with {Limit} render(s) allowed at once. Raise InvoicePdf__MaxConcurrentRenders if this keeps happening.",
+                _gate.MaxWait.TotalSeconds,
+                _gate.Limit);
+            return Result<byte[]>.FailureCode(HostpanelErrorCodes.INVOICE_PDF_RENDER_BUSY);
         }
+
+        return Result<byte[]>.Success(Render(model));
     }
 
     /// <summary>Lays out and renders the invoice.</summary>
@@ -485,7 +497,10 @@ public sealed partial class MigraDocInvoicePdfRenderer : IInvoicePdfRenderer
         footer.AddNumPagesField();
     }
 
-    /// <summary>Stamps the first page PAID (with the date), DRAFT, CANCELLED or REFUNDED; other statuses get no stamp.</summary>
+    /// <summary>
+    /// Stamps the first page PAID (with the date), DRAFT, CANCELLED, PARTIALLY REFUNDED or REFUNDED;
+    /// other statuses get no stamp.
+    /// </summary>
     /// <param name="page">The rendered first page.</param>
     /// <param name="model">The invoice.</param>
     private static void DrawStamp(PdfSharp.Pdf.PdfPage page, InvoicePdfModel model)
@@ -497,6 +512,7 @@ public sealed partial class MigraDocInvoicePdfRenderer : IInvoicePdfRenderer
                 PaidStamp),
             InvoiceStatus.Draft => ("DRAFT", DraftStamp),
             InvoiceStatus.Cancelled => ("CANCELLED", CancelledStamp),
+            InvoiceStatus.PartiallyRefunded => ("PARTIALLY REFUNDED", RefundedStamp),
             InvoiceStatus.Refunded => ("REFUNDED", RefundedStamp),
             _ => (null, XColors.Transparent),
         };

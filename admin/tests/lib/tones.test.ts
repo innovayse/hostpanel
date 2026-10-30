@@ -86,6 +86,7 @@ describe('lifecycle status tones', () => {
     expect(invoiceStatusTone(InvoiceStatus.Unpaid)).toBe(UiTone.Warning)
     expect(invoiceStatusTone(InvoiceStatus.Overdue)).toBe(UiTone.Danger)
     expect(invoiceStatusTone(InvoiceStatus.Refunded)).toBe(UiTone.Info)
+    expect(invoiceStatusTone(InvoiceStatus.PartiallyRefunded)).toBe(UiTone.Info)
     expect(invoiceStatusTone(InvoiceStatus.Draft)).toBe(UiTone.Primary)
     expect(invoiceStatusTone(InvoiceStatus.Cancelled)).toBe(UiTone.Neutral)
   })
@@ -138,6 +139,7 @@ describe('report status tones', () => {
     expect(reportStatusTone('Overdue')).toBe(UiTone.Danger)
     expect(reportStatusTone('Cancelled')).toBe(UiTone.Neutral)
     expect(reportStatusTone('Refunded')).toBe(UiTone.Info)
+    expect(reportStatusTone('PartiallyRefunded')).toBe(UiTone.Info)
   })
 })
 

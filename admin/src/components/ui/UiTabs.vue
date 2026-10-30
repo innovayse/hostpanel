@@ -46,7 +46,7 @@ const onKeydown = (event: KeyboardEvent, index: number): void => {
 
 <template>
   <div>
-    <div role="tablist" class="flex gap-1 border-b border-border overflow-x-auto">
+    <div role="tablist" class="flex gap-1 border-b border-border overflow-x-auto overflow-y-hidden">
       <button
         v-for="(item, index) in items"
         :key="item.value"

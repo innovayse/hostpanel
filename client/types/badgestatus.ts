@@ -36,6 +36,8 @@ export enum BadgeStatus {
   Draft = 'Draft',
   /** An invoice paid and then returned. */
   Refunded = 'Refunded',
+  /** An invoice paid and then partly returned. */
+  PartiallyRefunded = 'PartiallyRefunded',
   /** An invoice handed to collections. */
   Collections = 'Collections',
   /** A service switched off. */

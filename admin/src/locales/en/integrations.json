@@ -10,6 +10,19 @@
     "configure": "Configure →",
     "notConfigured": "Not configured"
   },
+  "categories": {
+    "fulfilment": "Fulfilment",
+    "identity": "Identity",
+    "hosted": "Background workers"
+  },
+  "pluginType": {
+    "provisioning": "Provisioning",
+    "payment": "Payment",
+    "registrar": "Registrar",
+    "identity": "Identity",
+    "fulfilment": "Fulfilment",
+    "hosted": "Background worker"
+  },
   "integrationStatusSidebar": {
     "connectionStatus": "Connection Status",
     "testingConnection": "Testing connection…",

@@ -1,8 +1,10 @@
 using Innovayse.Hostpanel.Application.Billing.Common;
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Infrastructure.Pdf;
 using Innovayse.Hostpanel.Infrastructure.Storage.Settings;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using SkiaSharp;
@@ -30,19 +32,29 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     /// path that climbs out of the web root still lands somewhere the test owns.
     /// </summary>
     /// <param name="gate">The render gate; a fresh one with the default limit when null.</param>
+    /// <param name="logger">Receives the renderer's log lines; discarded when null.</param>
     /// <returns>The renderer under test.</returns>
-    private MigraDocInvoicePdfRenderer Create(InvoicePdfRenderGate? gate = null) =>
+    private MigraDocInvoicePdfRenderer Create(
+        InvoicePdfRenderGate? gate = null, ILogger<MigraDocInvoicePdfRenderer>? logger = null) =>
         new(
             new StubWebHostEnvironment(Path.Combine(_webRoot, "web")),
             Options.Create(new BrandingOptions()),
             gate ?? Gate(new InvoicePdfOptions().MaxConcurrentRenders),
-            NullLogger<MigraDocInvoicePdfRenderer>.Instance);
+            logger ?? NullLogger<MigraDocInvoicePdfRenderer>.Instance);
 
     /// <summary>A render gate that lets <paramref name="limit"/> renders run at once.</summary>
     /// <param name="limit">The most renders in flight.</param>
+    /// <param name="waitSeconds">How long a render waits for a slot before it is refused.</param>
     /// <returns>The gate; the test disposes it.</returns>
-    private static InvoicePdfRenderGate Gate(int limit) =>
-        new(Options.Create(new InvoicePdfOptions { MaxConcurrentRenders = limit }));
+    private static InvoicePdfRenderGate Gate(int limit, int waitSeconds = 10) =>
+        new(Options.Create(new InvoicePdfOptions { MaxConcurrentRenders = limit, MaxRenderWaitSeconds = waitSeconds }));
+
+    /// <summary>Takes a slot the way a render in flight would, for the test to hold.</summary>
+    /// <param name="gate">The gate to take it from; it must have a slot free.</param>
+    /// <returns>The slot, given back when it is disposed.</returns>
+    private static async Task<IDisposable> HoldAsync(InvoicePdfRenderGate gate) =>
+        await gate.TryEnterAsync(CancellationToken.None)
+            ?? throw new InvalidOperationException("The gate had no free slot to hold.");
 
     /// <summary>A one-line unpaid invoice with Cyrillic and Armenian names on it.</summary>
     /// <returns>The model.</returns>
@@ -68,7 +80,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     /// <returns>The parsed document; the caller disposes it.</returns>
     private async Task<PdfDocument> RenderAsync(InvoicePdfModel model)
     {
-        var bytes = await Create().RenderAsync(model, CancellationToken.None);
+        var bytes = (await Create().RenderAsync(model, CancellationToken.None)).Value!;
         return PdfDocument.Open(bytes);
     }
 
@@ -92,13 +104,13 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     {
         using var gate = Gate(1);
         var renderer = Create(gate);
-        var held = await gate.EnterAsync(CancellationToken.None);
+        var held = await HoldAsync(gate);
 
         var render = renderer.RenderAsync(SampleModel(), CancellationToken.None);
 
         render.IsCompleted.Should().BeFalse();
         held.Dispose();
-        var bytes = await render;
+        var bytes = (await render).Value!;
         System.Text.Encoding.ASCII.GetString(bytes, 0, 5).Should().Be("%PDF-");
     }
 
@@ -108,7 +120,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     {
         using var gate = Gate(1);
         var renderer = Create(gate);
-        var held = await gate.EnterAsync(CancellationToken.None);
+        var held = await HoldAsync(gate);
         using var cts = new CancellationTokenSource();
 
         var render = renderer.RenderAsync(SampleModel(), cts.Token);
@@ -116,9 +128,35 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
 
         await render.Invoking(r => r).Should().ThrowAsync<OperationCanceledException>();
         held.Dispose();
-        var next = gate.EnterAsync(CancellationToken.None);
+        var next = gate.TryEnterAsync(CancellationToken.None);
         next.IsCompletedSuccessfully.Should().BeTrue("the cancelled render must not be holding the only slot");
-        (await next).Dispose();
+        (await next)!.Dispose();
+    }
+
+    /// <summary>
+    /// A render that finds every slot taken for the whole wait is refused as busy rather than
+    /// rendered, says so in the log, and leaves no permit behind: the slot is free again the moment
+    /// its holder lets go.
+    /// </summary>
+    [Fact]
+    public async Task Render_WhenNoSlotFreesInTime_IsRefusedAsBusy()
+    {
+        using var gate = Gate(1, waitSeconds: 1);
+        var logger = new CapturingLogger<MigraDocInvoicePdfRenderer>();
+        var renderer = Create(gate, logger);
+        var held = await HoldAsync(gate);
+
+        var result = await renderer.RenderAsync(SampleModel(), CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(30));
+
+        result.IsFailure.Should().BeTrue();
+        result.ErrorCode.Should().Be(HostpanelErrorCodes.INVOICE_PDF_RENDER_BUSY);
+        var entry = logger.Entries.Should().ContainSingle().Subject;
+        entry.Level.Should().Be(LogLevel.Warning);
+        entry.Message.Should().Contain("1 render").And.Contain("1s");
+        held.Dispose();
+        var next = gate.TryEnterAsync(CancellationToken.None);
+        next.IsCompletedSuccessfully.Should().BeTrue("the refused render must not have kept a permit");
+        (await next)!.Dispose();
     }
 
     /// <summary>A render that fails gives its slot back, so the next one is not stuck behind it.</summary>
@@ -133,7 +171,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
 
         var next = renderer.RenderAsync(SampleModel(), CancellationToken.None);
         next.IsCompleted.Should().BeTrue("the failed render must have released the only slot");
-        (await next).Should().NotBeEmpty();
+        (await next).Value.Should().NotBeEmpty();
     }
 
     /// <summary>
@@ -144,7 +182,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     public async Task Gate_DisposedWhileASlotIsHeld_ReleasesQuietly()
     {
         var gate = Gate(1);
-        var held = await gate.EnterAsync(CancellationToken.None);
+        var held = await HoldAsync(gate);
 
         gate.Dispose();
 
@@ -155,7 +193,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     [Fact]
     public async Task Render_ProducesPdf()
     {
-        var bytes = await Create().RenderAsync(SampleModel(), CancellationToken.None);
+        var bytes = (await Create().RenderAsync(SampleModel(), CancellationToken.None)).Value!;
 
         System.Text.Encoding.ASCII.GetString(bytes, 0, 5).Should().Be("%PDF-");
         using var document = PdfDocument.Open(bytes);
@@ -371,6 +409,21 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
         CompactText(document).Should().Contain("REFUNDED");
     }
 
+    /// <summary>A partially refunded invoice is stamped PARTIALLY REFUNDED, not PAID.</summary>
+    [Fact]
+    public async Task Render_StampsPartiallyRefunded()
+    {
+        using var document = await RenderAsync(SampleModel() with
+        {
+            Status = InvoiceStatus.PartiallyRefunded,
+            PaidAt = new DateTimeOffset(2026, 10, 20, 12, 0, 0, TimeSpan.Zero),
+        });
+
+        var text = CompactText(document);
+        text.Should().Contain("PARTIALLYREFUNDED");
+        text.Should().NotContain("PAID2026-10-20");
+    }
+
     /// <summary>An unpaid invoice carries no stamp.</summary>
     [Fact]
     public async Task Render_NoStampForUnpaid()
@@ -511,7 +564,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     [Fact]
     public async Task Render_StaysSmallEnoughToEmail()
     {
-        var bytes = await Create().RenderAsync(SampleModel() with { Status = InvoiceStatus.Paid, PaidAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+        var bytes = (await Create().RenderAsync(SampleModel() with { Status = InvoiceStatus.Paid, PaidAt = DateTimeOffset.UtcNow }, CancellationToken.None)).Value!;
 
         bytes.Length.Should().BeLessThan(60_000);
     }
@@ -546,7 +599,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
                 Money = new InvoicePdfMoneyFormat(string.Empty, " ֏", 0),
                 Lines = Enumerable.Range(1, 20).Select(i => new InvoicePdfLine($"Service {id}-{i} Ծաղկաձոր", 1, 1m, 1m)).ToList(),
             };
-            return (Id: id, Bytes: await renderer.RenderAsync(model, CancellationToken.None));
+            return (Id: id, Bytes: (await renderer.RenderAsync(model, CancellationToken.None)).Value!);
         })));
 
         foreach (var (id, bytes) in rendered)

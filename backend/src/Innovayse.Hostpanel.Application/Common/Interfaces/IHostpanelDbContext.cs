@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Domain.Admin;
 using Innovayse.Hostpanel.Domain.Audit;
 using Innovayse.Hostpanel.Domain.Auth;
 using Innovayse.Hostpanel.Domain.Billing;
@@ -32,6 +33,9 @@ namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 /// </summary>
 public interface IHostpanelDbContext
 {
+    /// <summary>Gets the cached latest GitHub release row (singleton, at most one row).</summary>
+    public DbSet<LatestRelease> LatestReleases { get; }
+
     /// <summary>Gets the activity log entries table.</summary>
     public DbSet<ActivityLog> ActivityLogs { get; }
 
@@ -93,6 +97,9 @@ public interface IHostpanelDbContext
 
     /// <summary>Gets the sent renewal reminders.</summary>
     public DbSet<InvoiceReminder> InvoiceReminders { get; }
+
+    /// <summary>Gets the fulfilment records: one plugin told one thing about one invoice, and how far it got.</summary>
+    public DbSet<FulfilmentRecord> FulfilmentRecords { get; }
 
     /// <summary>Gets the transactions table.</summary>
     public DbSet<Transaction> Transactions { get; }

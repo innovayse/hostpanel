@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Products.Common;
+using Innovayse.Hostpanel.Domain.Products;
 
 namespace Innovayse.Hostpanel.Application.Products.Commands.UpdateProduct;
 
@@ -33,6 +34,20 @@ namespace Innovayse.Hostpanel.Application.Products.Commands.UpdateProduct;
 /// handler clears the flag on the group's other products, so at most one stays featured.
 /// </param>
 /// <param name="SortOrder">Position inside the group, lowest first; null keeps the stored value.</param>
+/// <param name="Sku">
+/// The stock-keeping unit a fulfilment plugin keys on, in any case; stored normalised and unique
+/// across products. Null keeps the stored SKU and an empty string clears it, so a form that does not
+/// know the field yet never wipes it.
+/// </param>
+/// <param name="Metadata">
+/// A JSON object of at most <see cref="Product.MaxMetadataBytes"/> bytes telling a fulfilment plugin
+/// what to deliver. Null keeps the stored bag and an empty string clears it.
+/// </param>
+/// <param name="GracePeriodDays">
+/// Days a service stays usable after its due date before it is suspended, from
+/// <see cref="Product.MinGracePeriodDays"/> to <see cref="Product.MaxGracePeriodDays"/>; null keeps
+/// the stored value.
+/// </param>
 public sealed record UpdateProductCommand(
     int Id,
     string Name,
@@ -45,4 +60,7 @@ public sealed record UpdateProductCommand(
     decimal? MonthlyPrice = null,
     decimal? AnnualPrice = null,
     bool? IsFeatured = null,
-    int? SortOrder = null);
+    int? SortOrder = null,
+    string? Sku = null,
+    string? Metadata = null,
+    int? GracePeriodDays = null);

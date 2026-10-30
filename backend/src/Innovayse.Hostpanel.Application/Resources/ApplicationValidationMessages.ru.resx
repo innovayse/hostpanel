@@ -143,6 +143,9 @@
 <data name="InvoiceIdInvalid" xml:space="preserve">
     <value>Укажите корректный счёт.</value>
   </data>
+<data name="FulfilmentRecordIdInvalid" xml:space="preserve">
+    <value>Укажите корректную запись выполнения.</value>
+  </data>
 <data name="InvoiceClientIdInvalid" xml:space="preserve">
     <value>Укажите корректного клиента для выставления счёта.</value>
   </data>
@@ -899,6 +902,18 @@
   <data name="ProductSortOrderInvalid" xml:space="preserve">
     <value>Порядок сортировки не может быть отрицательным.</value>
   </data>
+  <data name="ProductSkuInvalid" xml:space="preserve">
+    <value>SKU может содержать только буквы и цифры, разделённые одиночными дефисами, подчёркиваниями или точками, не длиннее {0} символов.</value>
+  </data>
+  <data name="ProductMetadataInvalid" xml:space="preserve">
+    <value>Метаданные должны быть объектом JSON.</value>
+  </data>
+  <data name="ProductMetadataTooLarge" xml:space="preserve">
+    <value>Метаданные не должны превышать {0} байт.</value>
+  </data>
+  <data name="ProductGracePeriodOutOfRange" xml:space="preserve">
+    <value>Льготный период должен быть от {0} до {1} дней.</value>
+  </data>
   <data name="ProductPriceRequired" xml:space="preserve">
     <value>Новому продукту требуется хотя бы одна цена.</value>
   </data>
@@ -1315,5 +1330,14 @@
   </data>
   <data name="ContactNotificationTopicInvalid" xml:space="preserve">
     <value>Недопустимый вид уведомления.</value>
+  </data>
+  <data name="ClientExternalAccountPairRequired" xml:space="preserve">
+    <value>Укажите и внешнюю систему, и идентификатор аккаунта, либо ни одного, чтобы убрать связь.</value>
+  </data>
+  <data name="ClientExternalAccountProviderInvalid" xml:space="preserve">
+    <value>Название внешней системы обязательно и не длиннее 64 символов.</value>
+  </data>
+  <data name="ClientExternalAccountIdInvalid" xml:space="preserve">
+    <value>Идентификатор внешнего аккаунта обязателен и не длиннее 256 символов.</value>
   </data>
 </root>

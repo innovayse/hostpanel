@@ -15,6 +15,7 @@ export const emptyClientSummary: ClientSummaryData = {
     overdue: none,
     cancelled: none,
     refunded: none,
+    partiallyRefunded: none,
   },
   transactions: {
     grossRevenue: 0,

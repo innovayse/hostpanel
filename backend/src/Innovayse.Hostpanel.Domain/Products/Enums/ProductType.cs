@@ -29,4 +29,10 @@ public enum ProductType
 
     /// <summary>Backup storage and restore.</summary>
     Backup = 8,
+
+    /// <summary>
+    /// A digital good (a licence, a credit pack, a plan) delivered by a fulfilment plugin keyed on the
+    /// product's SKU and metadata; nothing is provisioned on a hosting account.
+    /// </summary>
+    Digital = 9,
 }

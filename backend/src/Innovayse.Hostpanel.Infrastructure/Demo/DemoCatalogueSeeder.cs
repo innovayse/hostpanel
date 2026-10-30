@@ -46,6 +46,15 @@ internal sealed class DemoCatalogueSeeder
         "vps-pro",
     };
 
+    /// <summary>The SKU of the demo digital product, so the product form's SKU field has a value to show.</summary>
+    internal const string DigitalSku = "CREDITS-100";
+
+    /// <summary>The metadata (a JSON object) of the demo digital product.</summary>
+    internal const string DigitalMetadata = "{\"credits\": 100, \"delivery\": \"instant\"}";
+
+    /// <summary>Days the demo digital product stays usable after its due date before it is suspended.</summary>
+    internal const int DigitalGracePeriodDays = 14;
+
     /// <summary>The data context the rows are added to and saved through.</summary>
     private readonly AppDbContext _db;
 
@@ -190,6 +199,11 @@ internal sealed class DemoCatalogueSeeder
                 ("Site Monitoring", "site-monitoring", "Uptime checks every minute with alerts by mail and text.", 4.99m, 49.99m,
                     "Billing=Per site;Setup=Instant;Availability=Every minute"),
             ]),
+            ("Digital Goods", "Licences and credit packs delivered on payment, nothing to provision.", ProductType.Digital,
+            [
+                ("Credit Pack", "credit-pack", "One hundred credits delivered instantly after payment.", 9.99m, 99.99m,
+                    "Delivery=Instant;Licence=Single user;Support=Standard"),
+            ]),
         ];
 
         foreach (var (groupName, groupDescription, type, products) in catalogue)
@@ -219,6 +233,14 @@ internal sealed class DemoCatalogueSeeder
                 product.SetPrice(BaseCurrency, BillingCycle.Annual, annual);
                 product.SetPrice(LocalCurrency, BillingCycle.Monthly, ToEuros(monthly));
                 product.SetPrice(LocalCurrency, BillingCycle.Annual, ToEuros(annual));
+
+                // The digital product shows the three fields only it uses: a SKU, JSON metadata and a grace period.
+                if (type == ProductType.Digital)
+                {
+                    product.SetSku(DigitalSku);
+                    product.SetMetadata(DigitalMetadata);
+                    product.SetGracePeriodDays(DigitalGracePeriodDays);
+                }
 
                 // The one product that is no longer sold stays listed so the admin sees an inactive row.
                 if (slug == "dedicated-legacy")

@@ -1,7 +1,7 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Reports.Common;
 using Innovayse.Hostpanel.Application.Reports.Extensions;
-using Innovayse.Hostpanel.Domain.Billing.Enums;
+using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -49,7 +49,7 @@ public sealed class DailyPerformanceHandler
         // An invoice counts as paid on the day it was paid, not the day it was raised.
         var paidInvoices = await CountByDayAsync(
             _context.Invoices.AsNoTracking()
-                .Where(i => i.Status == InvoiceStatus.Paid && i.PaidAt >= fromUtc && i.PaidAt < toUtc)
+                .Where(i => Invoice.PaidStatuses.Contains(i.Status) && i.PaidAt >= fromUtc && i.PaidAt < toUtc)
                 .Select(i => i.PaidAt!.Value),
             ct);
 

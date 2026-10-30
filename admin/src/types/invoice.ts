@@ -82,7 +82,7 @@ export interface InvoiceDetail {
   clientId: number
   /** Display name of the owning client; every invoice has one, since its client cannot be deleted. */
   clientName: string
-  /** Invoice status (Draft, Unpaid, Paid, Overdue, Cancelled, Refunded, Collections, PaymentPending). */
+  /** Invoice status (Draft, Unpaid, Paid, Overdue, Cancelled, Refunded, Collections, PaymentPending, PartiallyRefunded). */
   status: string
   /** ISO 4217 code of the currency the invoice is issued in. */
   currency: string
@@ -90,7 +90,7 @@ export interface InvoiceDetail {
   dates: InvoiceDates
   /** Sub-total, credit, tax, tax rate and total. */
   amounts: InvoiceAmounts
-  /** What is still owed, as the API computes it: the total less the payments recorded; 0 for Paid, Refunded or Cancelled. */
+  /** What is still owed, as the API computes it: the total less the payments recorded; 0 for Paid, PartiallyRefunded, Refunded or Cancelled. */
   amountDue: number
   /** Payment method and gateway reference. */
   payment: InvoicePayment
@@ -110,7 +110,7 @@ export interface Invoice {
   clientId: number
   /** Display name of the owning client; every invoice has one, since its client cannot be deleted. */
   clientName: string
-  /** Invoice status (Draft, Unpaid, Paid, Overdue, Cancelled, Refunded, Collections, PaymentPending). */
+  /** Invoice status (Draft, Unpaid, Paid, Overdue, Cancelled, Refunded, Collections, PaymentPending, PartiallyRefunded). */
   status: string
   /** ISO 8601 due date. */
   dueDate: string
@@ -241,6 +241,8 @@ export enum InvoiceStatus {
   Refunded = 'Refunded',
   Collections = 'Collections',
   PaymentPending = 'PaymentPending',
+  /** Paid, and part of the money refunded; the rest can still be refunded. */
+  PartiallyRefunded = 'PartiallyRefunded',
 }
 
 /** Kinds of transaction recorded against an invoice. */

@@ -8,6 +8,7 @@
 import { buildQuery, useApi } from '@/composables/useApi'
 import type { PaginatedList } from '@/types/paginatedlist'
 import {
+  type AddExistingServicePayload,
   type ProvisioningReasonPayload,
   type ServiceAutomationPayload,
   type ServiceBillingTermsPayload,
@@ -188,8 +189,17 @@ export const useServicesApi = () => {
   const terminateService = (id: number | string, payload: ProvisioningReasonPayload): Promise<void> =>
     request<void>(`${ApiPath.Provisioning}/${id}/terminate`, { method: HttpMethod.Post, body: JSON.stringify(payload) })
 
+  /**
+   * Adds a service for a hosting account that already exists on a server; nothing is provisioned.
+   *
+   * @param payload - The client, product, billing terms and account.
+   * @returns The new service's id.
+   */
+  const addExistingService = (payload: AddExistingServicePayload): Promise<number> =>
+    request<number>(`${ApiPath.Services}/existing`, { method: HttpMethod.Post, body: JSON.stringify(payload) })
+
   return {
-    listServices, getService, updateBillingTerms, updateHostingAccount, updateAutomation, updateNotes,
+    addExistingService, listServices, getService, updateBillingTerms, updateHostingAccount, updateAutomation, updateNotes,
     changeStatus, correctTerminationDate, getPanelLoginUrl,
     provisionService, changePassword, changePackage, suspendService, unsuspendService, terminateService,
   }

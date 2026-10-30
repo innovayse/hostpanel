@@ -90,11 +90,11 @@ public sealed class ApplyPaidRenewalsHandler
             // Extending would give a whole period for part of the price. A partial payment keeps the
             // invoice open now, so a Paid invoice that is short is one marked Unpaid and paid again,
             // or older data; staff resolve it.
-            if (invoice.Status is InvoiceStatus.Paid)
+            if (invoice.IsPaid)
             {
                 _logger.LogWarning(
-                    "Invoice {InvoiceId} is Paid but not paid in full; its renewals are left unapplied until staff resolve it.",
-                    invoice.Id);
+                    "Invoice {InvoiceId} is {Status} but not paid in full; its renewals are left unapplied until staff resolve it.",
+                    invoice.Id, invoice.Status);
             }
 
             return Result.Success();

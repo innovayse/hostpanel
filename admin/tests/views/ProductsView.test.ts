@@ -40,6 +40,9 @@ const plan: Product = {
   serverGroupId: null,
   isFeatured: false,
   sortOrder: 0,
+  sku: null,
+  metadata: null,
+  gracePeriodDays: 7,
 }
 
 /** Answers for everything the screen and its dialogs load. */
@@ -142,7 +145,7 @@ describe('ProductsView', () => {
     expect(sent).toMatchObject({ id: 1, sku: 'bad sku', metadata: '', gracePeriodDays: 7 })
     expect(wrapper.text()).toContain('Out of range.')
 
-    // Editing the SKU clears only its own message (the view wires clear-field-error to the store)
+    // Editing the SKU clears only its own message (the view wires clear-field-error to the store).
     await wrapper.get('[data-testid="product-form-sku"]').setValue('good-sku')
     expect(wrapper.text()).not.toContain('Use letters and digits.')
     expect(wrapper.text()).toContain('Out of range.')

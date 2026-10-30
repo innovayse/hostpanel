@@ -143,6 +143,9 @@
 <data name="InvoiceIdInvalid" xml:space="preserve">
     <value>Name a valid invoice.</value>
   </data>
+<data name="FulfilmentRecordIdInvalid" xml:space="preserve">
+    <value>Name a valid fulfilment record.</value>
+  </data>
 <data name="InvoiceClientIdInvalid" xml:space="preserve">
     <value>Name a valid client to invoice.</value>
   </data>
@@ -899,6 +902,18 @@
   <data name="ProductSortOrderInvalid" xml:space="preserve">
     <value>Sort order cannot be negative.</value>
   </data>
+  <data name="ProductSkuInvalid" xml:space="preserve">
+    <value>Use letters and digits joined by single hyphens, underscores or dots for the SKU, at most {0} characters.</value>
+  </data>
+  <data name="ProductMetadataInvalid" xml:space="preserve">
+    <value>Metadata must be a JSON object.</value>
+  </data>
+  <data name="ProductMetadataTooLarge" xml:space="preserve">
+    <value>Keep the metadata within {0} bytes.</value>
+  </data>
+  <data name="ProductGracePeriodOutOfRange" xml:space="preserve">
+    <value>The grace period must be from {0} to {1} days.</value>
+  </data>
   <data name="ProductPriceRequired" xml:space="preserve">
     <value>A new product needs at least one price.</value>
   </data>
@@ -1315,5 +1330,14 @@
   </data>
   <data name="ContactNotificationTopicInvalid" xml:space="preserve">
     <value>The notification kind is not valid.</value>
+  </data>
+  <data name="ClientExternalAccountPairRequired" xml:space="preserve">
+    <value>Both the external system and the account id are required, or neither to clear the link.</value>
+  </data>
+  <data name="ClientExternalAccountProviderInvalid" xml:space="preserve">
+    <value>The external system name is required and at most 64 characters.</value>
+  </data>
+  <data name="ClientExternalAccountIdInvalid" xml:space="preserve">
+    <value>The external account id is required and at most 256 characters.</value>
   </data>
 </root>

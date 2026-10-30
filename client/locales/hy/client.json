@@ -694,8 +694,6 @@
       "prefAffiliateDesc": "Ստանալ գործընկերային ծանուցումներ",
       "saved": "Պրոֆիլը պահպանվեց։",
       "validation": {
-        "firstNameRequired": "Մուտքագրեք ձեր անունը։",
-        "lastNameRequired": "Մուտքագրեք ձեր ազգանունը։",
         "emailRequired": "Մուտքագրեք ձեր էլ. հասցեն։",
         "emailInvalid": "Մուտքագրեք վավեր էլ. հասցե, օրինակ՝ name{'@'}example.com։"
       }
@@ -797,6 +795,7 @@
       "PaymentPending": "Սպասում է վճարման",
       "Draft": "Սևագիր",
       "Refunded": "Վերադարձված",
+      "PartiallyRefunded": "Մասնակի վերադարձված",
       "Collections": "Բռնագանձում",
       "Suspended": "Կասեցված",
       "Terminated": "Ավարտված",

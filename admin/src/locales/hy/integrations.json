@@ -10,6 +10,19 @@
     "configure": "Կարգավորել →",
     "notConfigured": "Կարգավորված չէ"
   },
+  "categories": {
+    "fulfilment": "Պատվերների կատարում",
+    "identity": "Նույնականացում",
+    "hosted": "Ֆոնային գործընթացներ"
+  },
+  "pluginType": {
+    "provisioning": "Մատակարարում",
+    "payment": "Վճարում",
+    "registrar": "Գրանցող",
+    "identity": "Նույնականացում",
+    "fulfilment": "Պատվերների կատարում",
+    "hosted": "Ֆոնային գործընթաց"
+  },
   "integrationStatusSidebar": {
     "connectionStatus": "Միացման վիճակ",
     "testingConnection": "Միացումը ստուգվում է…",

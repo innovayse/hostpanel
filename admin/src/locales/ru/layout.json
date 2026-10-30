@@ -20,5 +20,11 @@
     "light": "Светлая",
     "dark": "Тёмная",
     "system": "Системная"
+  },
+  "releaseUpdate": {
+    "title": "Доступна Hostpanel {version}",
+    "releaseNotes": "Примечания к выпуску",
+    "copy": "Скопировать команду обновления",
+    "copied": "Скопировано!"
   }
 }

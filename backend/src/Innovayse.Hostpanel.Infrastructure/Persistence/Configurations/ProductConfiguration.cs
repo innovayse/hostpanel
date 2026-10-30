@@ -26,6 +26,28 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(x => x.SortOrder).IsRequired();
         builder.Property(x => x.CreatedAt).IsRequired();
 
+        // A SKU names one product only, so it is unique; most products have none, and the filter keeps
+        // every product without one out of the index instead of making them collide on null.
+        builder.Property(x => x.Sku).HasMaxLength(ProductSku.MaxLength);
+        builder.HasIndex(x => x.Sku)
+            .IsUnique()
+            .HasFilter("\"Sku\" IS NOT NULL");
+
+        // The metadata bag is a JSON object the domain has already validated; jsonb keeps it queryable.
+        builder.Property(x => x.Metadata).HasColumnType("jsonb");
+
+        // The default fills the column on rows that existed before it. The sentinel is a value the domain
+        // never holds, so EF always writes the product's own grace period: with the CLR default 0 as the
+        // sentinel, a product saved with no grace period at all would silently get the database's 7.
+        builder.Property(x => x.GracePeriodDays)
+            .IsRequired()
+            .HasDefaultValue(Product.DefaultGracePeriodDays)
+            .HasSentinel(int.MinValue);
+
+        builder.ToTable(table => table.HasCheckConstraint(
+            "CK_Products_GracePeriodDays",
+            $"\"GracePeriodDays\" BETWEEN {Product.MinGracePeriodDays} AND {Product.MaxGracePeriodDays}"));
+
         // Per-currency prices. ProductPrice.ProductId is never set in memory, SetPrice leaves it 0,
         // so this foreign key is what stamps it when the product is saved.
         builder.HasMany(x => x.Prices)

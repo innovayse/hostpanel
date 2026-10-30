@@ -84,8 +84,28 @@ describe('useInvoicesApi', () => {
     expect(callOf(mock)).toMatchObject({ url: '/api/billing/5/duplicate', method: 'POST' })
   })
 
-  it('pdfUrl builds the address of the invoice PDF download', () => {
-    expect(useInvoicesApi().pdfUrl(5)).toBe('/api/billing/5/pdf')
+  it('pdf downloads the invoice PDF with the file name the API gives', async () => {
+    const mock = stubFetch(
+      new Response('%PDF', {
+        status: 200,
+        headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="invoice-5.pdf"' },
+      }),
+    )
+
+    const file = await useInvoicesApi().pdf(5)
+
+    expect(callOf(mock)).toMatchObject({ url: '/api/billing/5/pdf', method: 'GET' })
+    expect(file.fileName).toBe('invoice-5.pdf')
+    expect(file.blob.size).toBe(4)
+  })
+
+  it('pdf rejects with an ApiError carrying the refusal body', async () => {
+    stubFetch(problem('The invoice has too many lines for a PDF.', 409))
+
+    await expect(useInvoicesApi().pdf(5)).rejects.toMatchObject({
+      status: 409,
+      body: { detail: 'The invoice has too many lines for a PDF.' },
+    })
   })
 
   it('rejects with an ApiError carrying the refusal body', async () => {

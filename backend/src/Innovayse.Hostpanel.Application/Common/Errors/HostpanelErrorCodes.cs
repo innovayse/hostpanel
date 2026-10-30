@@ -109,6 +109,9 @@ public static class HostpanelErrorCodes
     /// <summary>The invoice has more lines than <c>InvoicePdf:MaxLines</c> allows in a PDF (400).</summary>
     public const string INVOICE_PDF_EXCEEDS_LIMIT = "INVOICE_PDF_EXCEEDS_LIMIT";
 
+    /// <summary>No invoice PDF render slot came free for the request within <c>InvoicePdf:MaxRenderWaitSeconds</c> (503, with <c>Retry-After</c>).</summary>
+    public const string INVOICE_PDF_RENDER_BUSY = "INVOICE_PDF_RENDER_BUSY";
+
     // Billing: quotes
 
     /// <summary>The id names no quote (404).</summary>
@@ -141,6 +144,24 @@ public static class HostpanelErrorCodes
     /// refund cannot be executed against it (503).
     /// </summary>
     public const string PAYMENT_PLUGIN_NOT_CONFIGURED = "PAYMENT_PLUGIN_NOT_CONFIGURED";
+
+    // Billing: fulfilment
+
+    /// <summary>The id names no fulfilment record on this invoice (404).</summary>
+    public const string FULFILMENT_RECORD_NOT_FOUND = "FULFILMENT_RECORD_NOT_FOUND";
+
+    /// <summary>
+    /// The fulfilment record has not failed, so there is nothing to retry (409, an exact
+    /// <c>StatusMapping</c> row): only a failed record may be sent again,
+    /// <see cref="Domain.Billing.FulfilmentRecord.Retry"/>.
+    /// </summary>
+    public const string FULFILMENT_RECORD_NOT_RETRYABLE = Domain.Billing.BillingErrors.FulfilmentRecordNotRetryable;
+
+    /// <summary>
+    /// A fulfilment plugin could not be asked how much of the payment may be refunded, so the refund
+    /// is refused and no money moved (503, an exact <c>StatusMapping</c> row).
+    /// </summary>
+    public const string FULFILMENT_ADVICE_UNAVAILABLE = "FULFILMENT_ADVICE_UNAVAILABLE";
 
     // Billing: gateway payments and saved payment methods
 
@@ -246,6 +267,9 @@ public static class HostpanelErrorCodes
 
     /// <summary>The client has already been invoiced, so its currency is fixed (409).</summary>
     public const string CLIENT_CURRENCY_ALREADY_INVOICED = "CLIENT_CURRENCY_ALREADY_INVOICED";
+
+    /// <summary>The external account is already linked to another client, so it cannot be linked to this one (409).</summary>
+    public const string EXTERNAL_ACCOUNT_ALREADY_LINKED = "EXTERNAL_ACCOUNT_ALREADY_LINKED";
 
     // Notifications
 
@@ -536,6 +560,9 @@ public static class HostpanelErrorCodes
     /// </summary>
     public const string SERVICE_NOT_FOUND = "SERVICE_NOT_FOUND";
 
+    /// <summary>A service that is not terminated already holds that username on that server (409): <see cref="Services.Commands.AddExistingService.AddExistingServiceHandler"/>.</summary>
+    public const string SERVICE_HOSTING_ACCOUNT_EXISTS = "SERVICE_HOSTING_ACCOUNT_EXISTS";
+
     // Services: SSH key management
 
     /// <summary>The pasted text is not a single, valid ED25519 public key (400).</summary>
@@ -759,6 +786,9 @@ public static class HostpanelErrorCodes
     /// </summary>
     public const string PRODUCT_FEATURE_LABEL_DUPLICATE = "PRODUCT_FEATURE_LABEL_DUPLICATE";
 
+    /// <summary>Another product already uses this SKU; a SKU names one product only (409).</summary>
+    public const string PRODUCT_SKU_ALREADY_IN_USE = "PRODUCT_SKU_ALREADY_IN_USE";
+
     // Slides
 
     /// <summary>The id names no homepage slide (404).</summary>
@@ -918,12 +948,18 @@ public static class HostpanelErrorCodes
     /// </summary>
     public const string INVOICE_NOT_UNPAID = Domain.Billing.BillingErrors.InvoiceNotUnpaid;
 
+    /// <summary>
+    /// The invoice is not eligible to be marked lapsed (400): <see cref="Domain.Billing.Invoice.MarkLapsed"/>
+    /// requires Overdue.
+    /// </summary>
+    public const string INVOICE_NOT_OVERDUE = Domain.Billing.BillingErrors.InvoiceNotOverdue;
+
     /// <summary>A paid, refunded or already cancelled invoice cannot be cancelled (400): <see cref="Domain.Billing.Invoice.Cancel"/>.</summary>
     public const string INVOICE_CANCEL_NOT_ALLOWED = Domain.Billing.BillingErrors.InvoiceCancelNotAllowed;
 
     /// <summary>
-    /// The invoice must be Paid for this action (400): <see cref="Domain.Billing.Invoice.MarkUnpaid"/>
-    /// and <see cref="Domain.Billing.Invoice.Refund"/>.
+    /// The invoice must be Paid for this action (400): <see cref="Domain.Billing.Invoice.MarkUnpaid"/>;
+    /// or Paid or PartiallyRefunded for a refund: <see cref="Domain.Billing.Invoice.Refund"/>.
     /// </summary>
     public const string INVOICE_NOT_PAID = Domain.Billing.BillingErrors.InvoiceNotPaid;
 
@@ -1078,6 +1114,24 @@ public static class HostpanelErrorCodes
     /// </summary>
     public const string ORDER_NOT_PENDING = Domain.Orders.OrdersErrors.OrderNotPending;
 
+    /// <summary>
+    /// The SKU is not letters and digits joined by single hyphens, underscores or dots, or is too long
+    /// (400): <see cref="Domain.Products.Product.SetSku"/>.
+    /// </summary>
+    public const string PRODUCT_SKU_INVALID = Domain.Products.ProductsErrors.ProductSkuInvalid;
+
+    /// <summary>
+    /// The product metadata is not a JSON object or is larger than
+    /// <see cref="Domain.Products.Product.MaxMetadataBytes"/> (400): <see cref="Domain.Products.Product.SetMetadata"/>.
+    /// </summary>
+    public const string PRODUCT_METADATA_INVALID = Domain.Products.ProductsErrors.ProductMetadataInvalid;
+
+    /// <summary>
+    /// The grace period is outside the accepted range of days (400):
+    /// <see cref="Domain.Products.Product.SetGracePeriodDays"/>.
+    /// </summary>
+    public const string PRODUCT_GRACE_PERIOD_OUT_OF_RANGE = Domain.Products.ProductsErrors.ProductGracePeriodOutOfRange;
+
     /// <summary>The service is not Active (400): <see cref="Domain.Services.ClientService.Suspend"/>.</summary>
     public const string SERVICE_NOT_ACTIVE = Domain.Services.ServicesErrors.ServiceNotActive;
 
@@ -1161,6 +1215,12 @@ public static class HostpanelErrorCodes
 
     /// <summary>The hosted payment gateway refused or failed a refund (502); nothing was returned through it.</summary>
     public const string GATEWAY_REFUND_REFUSED = "GATEWAY_REFUND_REFUSED";
+
+    /// <summary>A fulfilment plugin enabled on this deployment could not say how much may be refunded, because it threw or did not answer in time (502); nothing was refunded.</summary>
+    public const string REFUND_ADVICE_UNAVAILABLE = "REFUND_ADVICE_UNAVAILABLE";
+
+    /// <summary>A fulfilment plugin allows no refund of this invoice at the moment (409); nothing was refunded.</summary>
+    public const string REFUND_BLOCKED_BY_PLUGIN = "REFUND_BLOCKED_BY_PLUGIN";
 
     /// <summary>The gateway reported a paid amount or currency other than what the invoice owes (400); the invoice stays unpaid.</summary>
     public const string GATEWAY_PAYMENT_MISMATCH = "GATEWAY_PAYMENT_MISMATCH";

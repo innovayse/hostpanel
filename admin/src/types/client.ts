@@ -2,6 +2,7 @@
  * A client account: the list row, the full record, and the two rollups its screens show.
  */
 
+import type { ClientExternalAccount } from '@/types/clientexternalaccount'
 import type { Contact } from '@/types/contact'
 import type { ContactNotifications } from '@/types/contactnotifications'
 import type { EmailLog } from '@/types/emaillog'
@@ -80,6 +81,8 @@ export interface ClientDetail extends ClientListItem {
   twoFactorEnabled: boolean
   /** Associated contacts. */
   contacts: Contact[]
+  /** The account in another system the client is linked to; null or absent when there is no link. */
+  externalAccount?: ClientExternalAccount | null
 }
 
 /** Invoice count and total per status for one client. */
@@ -96,6 +99,8 @@ export interface ClientInvoiceStatuses {
   cancelled: InvoiceStatusCount
   /** Refunded invoice stats. */
   refunded: InvoiceStatusCount
+  /** Stats of the paid invoices of which part has been refunded. */
+  partiallyRefunded: InvoiceStatusCount
 }
 
 /** What a client's transactions add up to. */
@@ -184,4 +189,12 @@ export enum ClientStatus {
   Inactive = 'Inactive',
   Suspended = 'Suspended',
   Closed = 'Closed',
+}
+
+/** Wire names of the fields of the external account link, the keys the API's per-field messages come under. */
+export enum ExternalAccountField {
+  /** The name of the other system. */
+  Provider = 'provider',
+  /** The identifier the other system gives the client. */
+  AccountId = 'accountId',
 }

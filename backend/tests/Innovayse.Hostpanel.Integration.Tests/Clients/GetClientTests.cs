@@ -1,5 +1,7 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json;
+using Innovayse.Hostpanel.Application.Clients.Commands.SetClientExternalAccount;
 using Innovayse.Hostpanel.Application.Common.Errors;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Clients;
@@ -20,6 +22,39 @@ public sealed class GetClientTests(IntegrationTestFactory factory) : IClassFixtu
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         body.RootElement.GetProperty("firstName").GetString().Should().Be("Ada");
+    }
+
+    /// <summary>A client with no external account link answers a null <c>externalAccount</c>.</summary>
+    [Fact]
+    public async Task GetClientWithoutALinkReturnsNullExternalAccount()
+    {
+        var (clientId, _) = await ClientsTestSeeds.SeedClientAsync(factory);
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+
+        var response = await admin.GetAsync($"/api/clients/{clientId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        body.RootElement.GetProperty("externalAccount").ValueKind.Should().Be(JsonValueKind.Null);
+    }
+
+    /// <summary>A linked client answers its provider and account id.</summary>
+    [Fact]
+    public async Task GetLinkedClientReturnsTheExternalAccount()
+    {
+        var (clientId, _) = await ClientsTestSeeds.SeedClientAsync(factory);
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+        (await admin.PutAsJsonAsync(
+            $"/api/clients/{clientId}/external-account", new SetClientExternalAccountCommand(0, "crm", "acct-get-1")))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var response = await admin.GetAsync($"/api/clients/{clientId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var link = body.RootElement.GetProperty("externalAccount");
+        link.GetProperty("provider").GetString().Should().Be("crm");
+        link.GetProperty("id").GetString().Should().Be("acct-get-1");
     }
 
     /// <summary>Reading an id that names no client answers 404 with <c>CLIENT_NOT_FOUND</c>.</summary>

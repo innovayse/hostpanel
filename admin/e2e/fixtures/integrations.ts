@@ -14,6 +14,7 @@ export const stripe: IntegrationDto = {
   isEnabled: false,
   isConfigured: false,
   isPlugin: false,
+  pluginType: null,
 }
 
 /** The same integration with the fields its configuration form renders. */

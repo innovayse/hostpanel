@@ -22,6 +22,18 @@ public sealed class Client : BaseEntity, IAggregateRoot
     /// <summary>Longest company name the stored column holds.</summary>
     private const int CompanyNameMaxLength = 200;
 
+    /// <summary>
+    /// Longest name of the other system an external account link points into, in characters; the
+    /// <c>Clients.ExternalAccountProvider</c> column is this wide.
+    /// </summary>
+    public const int ExternalAccountProviderMaxLength = 64;
+
+    /// <summary>
+    /// Longest identifier the other system may give the account, in characters; the
+    /// <c>Clients.ExternalAccountId</c> column is this wide.
+    /// </summary>
+    public const int ExternalAccountIdMaxLength = 256;
+
     /// <summary>Internal mutable contacts list.</summary>
     private readonly List<Contact> _contacts = [];
 
@@ -75,6 +87,19 @@ public sealed class Client : BaseEntity, IAggregateRoot
     /// <see langword="null"/> until the client has added their first card.
     /// </summary>
     public string? CardGatewayCustomerId { get; private set; }
+
+    /// <summary>
+    /// Gets the name of the other system this client is linked to (for example a CRM), or
+    /// <see langword="null"/> when the client has no external account link. Set and cleared
+    /// together with <see cref="ExternalAccountId"/>, so one is never present without the other.
+    /// </summary>
+    public string? ExternalAccountProvider { get; private set; }
+
+    /// <summary>
+    /// Gets the identifier the system named by <see cref="ExternalAccountProvider"/> gives this client,
+    /// or <see langword="null"/> when the client has no external account link.
+    /// </summary>
+    public string? ExternalAccountId { get; private set; }
 
     /// <summary>Gets the billing contact reference.</summary>
     public string? BillingContact { get; private set; }
@@ -290,6 +315,49 @@ public sealed class Client : BaseEntity, IAggregateRoot
     public void SetCardGatewayCustomerId(string customerId)
     {
         CardGatewayCustomerId = customerId;
+    }
+
+    /// <summary>
+    /// Links this client to an account in another system: this client is account
+    /// <paramref name="accountId"/> in <paramref name="provider"/>. Replaces any earlier link.
+    /// </summary>
+    /// <remarks>
+    /// Both values are written here and only here, so a link is always whole; hostpanel stores the
+    /// pair as given (trimmed) and attaches no meaning to either value.
+    /// </remarks>
+    /// <param name="provider">The other system's name; not blank, trimmed before it is stored.</param>
+    /// <param name="accountId">The identifier that system gives the client; not blank, trimmed before it is stored.</param>
+    /// <exception cref="ArgumentException">
+    /// Thrown when either value is blank or longer than its column after trimming.
+    /// </exception>
+    public void SetExternalAccount(string provider, string accountId)
+    {
+        var trimmedProvider = provider?.Trim();
+        if (string.IsNullOrEmpty(trimmedProvider) || trimmedProvider.Length > ExternalAccountProviderMaxLength)
+        {
+            throw new ArgumentException(
+                $"An external account link names its system in at most {ExternalAccountProviderMaxLength} characters.", nameof(provider));
+        }
+
+        var trimmedAccountId = accountId?.Trim();
+        if (string.IsNullOrEmpty(trimmedAccountId) || trimmedAccountId.Length > ExternalAccountIdMaxLength)
+        {
+            throw new ArgumentException(
+                $"An external account link carries an account id of at most {ExternalAccountIdMaxLength} characters.", nameof(accountId));
+        }
+
+        ExternalAccountProvider = trimmedProvider;
+        ExternalAccountId = trimmedAccountId;
+    }
+
+    /// <summary>
+    /// Removes the link to an account in another system, clearing both halves at once.
+    /// Does nothing when the client has no link.
+    /// </summary>
+    public void ClearExternalAccount()
+    {
+        ExternalAccountProvider = null;
+        ExternalAccountId = null;
     }
 
     /// <summary>

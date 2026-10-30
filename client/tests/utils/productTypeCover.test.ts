@@ -62,6 +62,7 @@ describe('PRODUCT_TYPE_COVER', () => {
 describe('productTypeCover', () => {
   it('returns the type cover, and the generic one for a missing or unknown type', () => {
     expect(productTypeCover(ProductType.Vps)).toBe(PRODUCT_TYPE_COVER[ProductType.Vps])
+    expect(productTypeCover(ProductType.Digital)).toContain('url(/covers/digital.svg)')
     // A value a newer backend may send that this build's enum does not know yet.
     expect(productTypeCover('Mystery' as ProductType)).toBe(DEFAULT_COVER_CLASS)
     expect(productTypeCover(undefined)).toBe(DEFAULT_COVER_CLASS)

@@ -2,7 +2,7 @@
  * Lifecycle status of an invoice, as `Innovayse.Hostpanel.Domain.Billing.InvoiceStatus` serialises.
  *
  * `Program.cs` registers a `JsonStringEnumConverter`, so these arrive as the member names
- * verbatim. All eight members are listed.
+ * verbatim. All nine members are listed.
  */
 export enum InvoiceStatus {
   /** Not yet issued. */
@@ -20,5 +20,7 @@ export enum InvoiceStatus {
   /** Handed to collections. */
   Collections = 'Collections',
   /** A payment is in flight. */
-  PaymentPending = 'PaymentPending'
+  PaymentPending = 'PaymentPending',
+  /** Paid, and part of the money returned; the rest can still be refunded. */
+  PartiallyRefunded = 'PartiallyRefunded'
 }

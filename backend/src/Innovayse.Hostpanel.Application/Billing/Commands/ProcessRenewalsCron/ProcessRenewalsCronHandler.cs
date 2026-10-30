@@ -167,7 +167,7 @@ public sealed class ProcessRenewalsCronHandler
         {
             var invoiceIds = await _context.Invoices.AsNoTracking()
                 .Where(i => i.Id > lastId
-                            && i.Status == InvoiceStatus.Paid
+                            && Invoice.PaidStatuses.Contains(i.Status)
                             && i.Items.Any(l => l.RenewalPeriodStart != null && l.RenewalAppliedAt == null && l.RenewalAttemptAt == null))
                 .OrderBy(i => i.Id)
                 .Select(i => i.Id)

@@ -1,4 +1,5 @@
 using FluentValidation;
+using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Clients.Commands.AcceptInvitation;
 using Innovayse.Hostpanel.Application.Common;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,6 +34,12 @@ public static class DependencyInjection
 
         // Runs the passes of the recurring jobs under their lease; scoped because it holds the scoped lease port.
         services.AddScoped<RecurringJobs>();
+
+        // One pass of the fulfilment dispatch, run by the scheduled chain and by the pass kicked after a payment.
+        services.AddScoped<FulfilmentDispatcher>();
+
+        // Asks the enabled fulfilment plugins to cap a refund before any money moves.
+        services.AddScoped<RefundAdviser>();
 
         return services;
     }

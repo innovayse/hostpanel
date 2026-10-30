@@ -83,6 +83,12 @@ export interface CreateProductPayload {
   isFeatured: boolean
   /** Position inside the group, lowest first; zero or more. */
   sortOrder: number
+  /** SKU; an empty string clears the stored one on update, omitted keeps it. */
+  sku?: string
+  /** Metadata as JSON object text, at most 16 KB; an empty string clears it on update, omitted keeps it. */
+  metadata?: string
+  /** Grace period in days, 0 to 365; omitted keeps the stored value on update. */
+  gracePeriodDays?: number
 }
 
 /** Payload for updating an existing product. */
@@ -105,4 +111,10 @@ export interface UpdateProductPayload {
   isFeatured: boolean
   /** Position inside the group, lowest first; zero or more. */
   sortOrder: number
+  /** SKU; an empty string clears the stored one, omitted keeps it. */
+  sku?: string
+  /** Metadata as JSON object text, at most 16 KB; an empty string clears it, omitted keeps it. */
+  metadata?: string
+  /** Grace period in days, 0 to 365; omitted keeps the stored value. */
+  gracePeriodDays?: number
 }

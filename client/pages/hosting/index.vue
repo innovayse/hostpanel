@@ -19,6 +19,7 @@
  * a far smaller change to a 500-line page that already works.
  */
 import { HOSTING_GROUP_ID } from '~/constants/catalogGroup'
+import { usePayerAsyncData } from '~/composables/usePayerAsyncData'
 import { useCatalogStore } from '~/stores/catalog'
 import { useCurrencyStore } from '~/stores/currency'
 import { SeoPageType } from '~/types/seopagetype'
@@ -57,8 +58,8 @@ await useAsyncData('hosting:currencies', () => currencyStore.load())
 
 // Prices follow the payer's currency, so the plans are read again when it resolves or changes.
 await Promise.all([
-  useAsyncData('hosting:plans', () => catalogStore.loadHostingPlans(), {
-    watch: [() => currencyStore.payerCode, locale]
+  usePayerAsyncData('hosting:plans', () => catalogStore.loadHostingPlans(), {
+    watch: [locale]
   }),
   useAsyncData('hosting:features', () => catalogStore.loadProductFeatures(HOSTING_GROUP_ID), {
     watch: [locale]

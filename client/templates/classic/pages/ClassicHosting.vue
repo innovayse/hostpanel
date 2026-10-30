@@ -349,6 +349,7 @@
 
 import { revealDelay } from '~/utils/reveal'
 import { Server, CheckCircle, AlertCircle, ShoppingCart, Check, ArrowRight } from 'lucide-vue-next'
+import { usePayerAsyncData } from '~/composables/usePayerAsyncData'
 import { useCartStore } from '~/stores/cart'
 import { useCurrencyStore } from '~/stores/currency'
 import { useCatalogStore } from '~/stores/catalog'
@@ -425,8 +426,8 @@ const nuxtApp = useNuxtApp()
 // and a read that starts outside the context cannot reach the request (NUXT_E1001) and left the
 // page on its error state.
 /** Whether the plans are loading, and the retry action. */
-const { pending, refresh } = await useAsyncData('hosting:classic-plans', () => nuxtApp.runWithContext(() => catalogStore.loadProducts(hostingFilter)), {
-  watch: [() => currencyStore.payerCode, locale]
+const { pending, refresh } = await usePayerAsyncData('hosting:classic-plans', () => nuxtApp.runWithContext(() => catalogStore.loadProducts(hostingFilter)), {
+  watch: [locale]
 })
 
 /** The store's failure sentence, shown in place of the plans. */

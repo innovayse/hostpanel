@@ -31,6 +31,7 @@
  */
 import { PRICING_CYCLES, PRICING_CYCLE_I18N_KEY } from '~/constants/pricingCycle'
 import { HOSTING_GROUP_ID } from '~/constants/catalogGroup'
+import { usePayerAsyncData } from '~/composables/usePayerAsyncData'
 import { useCartStore } from '~/stores/cart'
 import { useCatalogStore } from '~/stores/catalog'
 import { useCurrencyStore } from '~/stores/currency'
@@ -69,8 +70,8 @@ const payerCurrency = computed(() => currencyStore.moneyCurrencyFor(currencyStor
 const hostingFilter = { gid: HOSTING_GROUP_ID }
 
 /** Whether the catalogue read is still running. */
-const { pending } = await useAsyncData('hosting:plan-products', () => catalogStore.loadProducts(hostingFilter), {
-  watch: [() => currencyStore.payerCode, locale],
+const { pending } = await usePayerAsyncData('hosting:plan-products', () => catalogStore.loadProducts(hostingFilter), {
+  watch: [locale],
 })
 
 /** Every hosting plan, in the payer's currency. */

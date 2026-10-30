@@ -6,6 +6,7 @@ using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Shared.Models;
@@ -237,8 +238,8 @@ public sealed class UpdateClientHandler
     /// <param name="requested">The currency the form posted, or <see langword="null"/> to leave it alone.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// Success, or <c>CLIENT_CURRENCY_ALREADY_INVOICED</c> when the client has already been
-    /// invoiced, or <c>CURRENCY_NOT_FOUND</c> when the currency is not configured and enabled.
+    /// Success, or <c>CLIENT_CURRENCY_ALREADY_INVOICED</c> when the client has an invoice that is
+    /// not cancelled, or <c>CURRENCY_NOT_FOUND</c> when the currency is not configured and enabled.
     /// </returns>
     private async Task<Result> ApplyCurrencyAsync(Client client, string? requested, CancellationToken ct)
     {
@@ -247,9 +248,14 @@ public sealed class UpdateClientHandler
             return Result.Success();
         }
 
+        // Only a live invoice locks the currency: a cancelled one charges nothing and keeps its own
+        // currency, so a client whose every invoice was cancelled has no billing history to split.
         var invoices = await _bus.InvokeAsync<Result<PaginatedList<InvoiceListItemDto>>>(
             new ListClientInvoicesQuery(client.Id, Page: 1, PageSize: 1), ct);
-        var alreadyInvoiced = invoices.Value is not { TotalCount: 0 };
+        var cancelled = await _bus.InvokeAsync<Result<PaginatedList<InvoiceListItemDto>>>(
+            new ListClientInvoicesQuery(client.Id, Page: 1, PageSize: 1, Status: InvoiceStatus.Cancelled), ct);
+        var alreadyInvoiced = invoices.Value is not { } all || cancelled.Value is not { } gone
+            || all.TotalCount > gone.TotalCount;
         if (alreadyInvoiced)
         {
             return Result.FailureCode(HostpanelErrorCodes.CLIENT_CURRENCY_ALREADY_INVOICED);

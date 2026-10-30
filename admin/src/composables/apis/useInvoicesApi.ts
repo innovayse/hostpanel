@@ -7,6 +7,7 @@
  */
 
 import { buildQuery, useApi } from '@/composables/useApi'
+import type { DownloadedFile } from '@/types/download'
 import type {
   CreatedId,
   CreateInvoicePayload,
@@ -28,7 +29,7 @@ import { HttpMethod } from '@/types/http'
  * @returns One typed function per invoice endpoint the admin panel uses.
  */
 export const useInvoicesApi = () => {
-  const { request, href } = useApi()
+  const { request, download } = useApi()
 
   /**
    * Lists invoices across all clients.
@@ -189,19 +190,18 @@ export const useInvoicesApi = () => {
     request<void>(`${ApiPath.Billing}/bulk`, { method: HttpMethod.Post, body: JSON.stringify({ invoiceIds, action }) })
 
   /**
-   * The address of an invoice's PDF download. A download is a browser navigation, not a request,
-   * so the page opens the address `useApi` builds for it.
+   * Downloads an invoice's PDF as a file the page can save.
    *
    * @param id - Invoice id.
-   * @returns The address to open.
+   * @returns The PDF and the file name the API gave it.
    */
-  const pdfUrl = (id: number): string => href(`${ApiPath.Billing}/${id}/pdf`)
+  const pdf = (id: number): Promise<DownloadedFile> => download(`${ApiPath.Billing}/${id}/pdf`)
 
   return {
     list,
     listByClient,
     get,
-    pdfUrl,
+    pdf,
     create,
     updateItems,
     updateOptions,

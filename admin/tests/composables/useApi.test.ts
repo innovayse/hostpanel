@@ -1,12 +1,12 @@
 /**
  * Tests for the admin `useApi` transport: every API call carries `X-Language`, read from the
- * active i18n locale at call time; queries, failures, the 401 probe, and `href` for browser-opened addresses.
+ * active i18n locale at call time; queries, failures, the 401 probe, and `download` for files read as blobs.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { i18n } from '@/i18n'
 import { MessageLanguage } from '@/locales/messages'
 import { buildQuery, useApi } from '@/composables/useApi'
-import { json } from '../helpers/fetch'
+import { json, problem } from '../helpers/fetch'
 
 /**
  * Stubs `fetch` with a JSON answer and returns the stub for header inspection.
@@ -117,12 +117,61 @@ describe('useApi probe', () => {
   })
 })
 
-describe('useApi href', () => {
-  it('builds the address of an endpoint the browser opens itself, without a request', () => {
-    const fetchSpy = vi.fn()
-    vi.stubGlobal('fetch', fetchSpy)
+describe('useApi download', () => {
+  it('returns the file and the name from Content-Disposition', async () => {
+    const fetchMock = vi.fn(async () =>
+      new Response('%PDF', {
+        status: 200,
+        headers: { 'Content-Disposition': 'attachment; filename="invoice-5.pdf"' },
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
 
-    expect(useApi().href('/billing/5/pdf')).toBe('/api/billing/5/pdf')
-    expect(fetchSpy).not.toHaveBeenCalled()
+    const file = await useApi().download('/billing/5/pdf')
+
+    expect((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[0]).toBe('/api/billing/5/pdf')
+    expect(file.fileName).toBe('invoice-5.pdf')
+    expect(file.blob.size).toBe(4)
+  })
+
+  it('prefers the encoded filename* when the header has both', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () =>
+      new Response('%PDF', {
+        status: 200,
+        headers: { 'Content-Disposition': "attachment; filename=\"fallback.pdf\"; filename*=UTF-8''Rechnung%20%C3%A4.pdf" },
+      }),
+    ))
+
+    const file = await useApi().download('/billing/5/pdf')
+
+    expect(file.fileName).toBe('Rechnung ä.pdf')
+  })
+
+  it('gives a null name when the response has no Content-Disposition', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('%PDF', { status: 200 })))
+
+    const file = await useApi().download('/billing/5/pdf')
+
+    expect(file.fileName).toBeNull()
+  })
+
+  it('sends X-Language on a download', async () => {
+    const fetchMock = vi.fn(async () => new Response('%PDF', { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    i18n.global.locale.value = MessageLanguage.Ru
+
+    await useApi().download('/billing/5/pdf')
+
+    const headers = (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].headers as Record<string, string>
+    expect(headers['X-Language']).toBe('ru')
+  })
+
+  it('throws an ApiError that keeps the problem body on a refusal', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => problem('The invoice has too many lines for a PDF.', 409)))
+
+    await expect(useApi().download('/billing/5/pdf')).rejects.toMatchObject({
+      status: 409,
+      body: { detail: 'The invoice has too many lines for a PDF.' },
+    })
   })
 })

@@ -18,7 +18,6 @@ import {
   formatReportAmount,
   formatPlainAmount,
   formatSymbolPrice,
-  formatUsd,
   formatUsdPlain,
 } from '@/lib/money'
 import { CurrencyCode } from '@/types/currency'
@@ -46,15 +45,13 @@ describe('money', () => {
 })
 
 describe('billing sums', () => {
-  it('writes the dollar sign and the code, or the code alone', () => {
-    expect(formatUsd(12.5)).toBe('$12.50 USD')
+  it('writes the amount and the USD code', () => {
     expect(formatUsdPlain(12.5)).toBe('12.50 USD')
   })
 
   it('reads a missing amount as zero', () => {
-    expect(formatUsd(undefined)).toBe('$0.00 USD')
     expect(formatUsdPlain(null)).toBe('0.00 USD')
-    expect(formatUsd()).toBe('$0.00 USD')
+    expect(formatUsdPlain()).toBe('0.00 USD')
   })
 })
 

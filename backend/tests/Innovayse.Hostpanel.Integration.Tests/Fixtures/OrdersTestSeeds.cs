@@ -135,6 +135,34 @@ public static class OrdersTestSeeds
         return new TakenDomainOrder(order.Id, client.Id, product.Id, domainName);
     }
 
+    /// <summary>Seeds a client and a Pending order with one line for a digital product and one for a hosting product.</summary>
+    /// <param name="factory">The factory whose database to seed against.</param>
+    /// <returns>The order, client and the two products.</returns>
+    public static async Task<DigitalAndHostingOrder> SeedDigitalAndHostingOrderAsync(IntegrationTestFactory factory)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        db.Clients.Add(client);
+        var group = ProductGroup.Create($"orders-digital-{Guid.NewGuid():N}", null);
+        db.ProductGroups.Add(group);
+        await db.SaveChangesAsync();
+
+        var digital = Product.Create(group.Id, "Credits", null, null, null, null, ProductType.Digital, 0m, 0m, DateTimeOffset.UtcNow);
+        var hosting = Product.Create(group.Id, "Starter Hosting", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+        db.Products.AddRange(digital, hosting);
+        await db.SaveChangesAsync();
+
+        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..12], client.Id, "bank_transfer", ipAddress: null, currency: "USD", now: DateTimeOffset.UtcNow);
+        order.AddItem(digital.Id, "Credits", BillingCycle.Monthly, 10m, 10m, domain: null, hostname: null);
+        order.AddItem(hosting.Id, "Starter Hosting", BillingCycle.Monthly, 10m, 10m, domain: null, hostname: null);
+        db.Orders.Add(order);
+        await db.SaveChangesAsync();
+
+        return new DigitalAndHostingOrder(order.Id, client.Id, digital.Id, hosting.Id);
+    }
+
     /// <summary>Seeds an active hosting product priced in USD.</summary>
     /// <param name="factory">The factory whose database to seed against.</param>
     /// <returns>The new product's primary key.</returns>

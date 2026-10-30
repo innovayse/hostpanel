@@ -24,6 +24,32 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
             modelBuilder.HasSequence("OrderNumberSequence");
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Admin.LatestRelease", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CheckedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("PublishedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReleaseNotesUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LatestReleases");
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Audit.ActivityLog", b =>
                 {
                     b.Property<int>("Id")
@@ -4105,6 +4131,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                                 .HasMaxLength(20)
                                 .HasColumnType("character varying(20)")
                                 .HasColumnName("BillingCycle");
+
+                            b1.Property<int?>("GracePeriodDays")
+                                .HasColumnType("integer")
+                                .HasColumnName("GracePeriodDays");
 
                             b1.Property<bool>("IsDigital")
                                 .HasColumnType("boolean")

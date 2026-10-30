@@ -7,6 +7,7 @@ using Innovayse.Hostpanel.Application.Clients.Commands.ExportClientData;
 using Innovayse.Hostpanel.Application.Clients.Commands.InviteUserToClient;
 using Innovayse.Hostpanel.Application.Clients.Commands.RemoveContact;
 using Innovayse.Hostpanel.Application.Clients.Commands.RemoveUserFromClient;
+using Innovayse.Hostpanel.Application.Clients.Commands.SetClientExternalAccount;
 using Innovayse.Hostpanel.Application.Clients.Commands.TransferOwnership;
 using Innovayse.Hostpanel.Application.Clients.Commands.UpdateClient;
 using Innovayse.Hostpanel.Application.Clients.Commands.UpdateContact;
@@ -106,6 +107,31 @@ public sealed class ClientsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateAsync(int id, [FromBody] UpdateClientCommand command, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(command with { ClientId = id }, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// Sets or clears the link between a client and an account in another system. Staff only; the
+    /// client's own profile update cannot change it.
+    /// </summary>
+    /// <param name="id">The client primary key; wins over any client id in the body.</param>
+    /// <param name="command">The provider and account id, both null to clear the link.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 when written; 404 with <c>CLIENT_NOT_FOUND</c>; 409 with <c>EXTERNAL_ACCOUNT_ALREADY_LINKED</c>; 400 when the body or route fails validation; 401 without a session; 403 for a caller who is not staff;
+    /// 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPut("{id:int}/external-account")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> SetExternalAccountAsync(int id, [FromBody] SetClientExternalAccountCommand command, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result>(command with { ClientId = id }, ct);
         return HandleResult(outcome);

@@ -26,7 +26,7 @@ import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { Icon } from '@/lib/icons'
-import { formatUsdPlain } from '@/lib/money'
+import { formatPlainAmount } from '@/lib/money'
 import { useBillingStore } from '@/stores/billing'
 import type { InvoiceDetail, InvoiceItemUpdate } from '@/types/invoice'
 import { MAX_PERCENT } from '@/lib/limits'
@@ -270,7 +270,7 @@ watch(
           <UiTableBody divided>
             <UiTableRow v-for="item in invoice.items ?? []" :key="item.id" hoverable>
               <UiTableCell>{{ item.description }}</UiTableCell>
-              <UiTableCell align="right">{{ formatUsdPlain(item.amount) }}</UiTableCell>
+              <UiTableCell align="right">{{ formatPlainAmount(item.amount, props.invoice.currency) }}</UiTableCell>
             </UiTableRow>
           </UiTableBody>
           <template #empty>
@@ -339,7 +339,7 @@ watch(
                 />
               </UiTableCell>
               <UiTableCell align="right">
-                {{ formatUsdPlain(lineTotal(line)) }}
+                {{ formatPlainAmount(lineTotal(line), props.invoice.currency) }}
               </UiTableCell>
               <UiTableCell align="right">
                 <UiIconButton
@@ -379,7 +379,7 @@ watch(
           <UiStack v-for="row in totalRows" :key="row.key" direction="row" gap="lg" align="center">
             <UiText :tone="row.strong ? 'primary' : 'muted'" size="md">{{ row.label }}</UiText>
             <UiText :tone="row.strong ? 'primary' : 'secondary'" size="md" :data-testid="`billing-invoice-total-${row.key}`">
-              {{ formatUsdPlain(row.value) }}
+              {{ formatPlainAmount(row.value, props.invoice.currency) }}
             </UiText>
           </UiStack>
         </UiStack>

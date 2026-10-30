@@ -113,6 +113,7 @@ const lastShown = computed<number>(() => pageLastRow(page.value, LEDGER_PAGE_SIZ
  */
 const load = async (next: number): Promise<void> => {
   page.value = next
+  store.selectedIds = []
   await store.fetchAll(
     next,
     LEDGER_PAGE_SIZE,

@@ -143,6 +143,9 @@
 <data name="InvoiceIdInvalid" xml:space="preserve">
     <value>Նշեք վավեր հաշիվ-ապրանքագիր։</value>
   </data>
+<data name="FulfilmentRecordIdInvalid" xml:space="preserve">
+    <value>Նշեք վավեր կատարման գրառում։</value>
+  </data>
 <data name="InvoiceClientIdInvalid" xml:space="preserve">
     <value>Նշեք հաշիվ-ապրանքագիր ստանալիք վավեր հաճախորդ։</value>
   </data>
@@ -1327,5 +1330,14 @@
   </data>
   <data name="ContactNotificationTopicInvalid" xml:space="preserve">
     <value>Ծանուցման տեսակը վավեր չէ։</value>
+  </data>
+  <data name="ClientExternalAccountPairRequired" xml:space="preserve">
+    <value>Նշեք և արտաքին համակարգը, և հաշվի ID-ն, կամ ոչ մեկը՝ կապը հեռացնելու համար։</value>
+  </data>
+  <data name="ClientExternalAccountProviderInvalid" xml:space="preserve">
+    <value>Արտաքին համակարգի անունը պարտադիր է և ոչ ավելի քան 64 նիշ։</value>
+  </data>
+  <data name="ClientExternalAccountIdInvalid" xml:space="preserve">
+    <value>Արտաքին հաշվի ID-ն պարտադիր է և ոչ ավելի քան 256 նիշ։</value>
   </data>
 </root>

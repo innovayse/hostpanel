@@ -68,4 +68,32 @@ public sealed class JobScheduleTests
         schedule.IsOverdue(AfterTheHour.AddMinutes(-14), AfterTheHour).Should().BeFalse();
         schedule.IsOverdue(AfterTheHour.AddMinutes(-15), AfterTheHour).Should().BeTrue();
     }
+
+    /// <summary>A daily job keeps the configured rest.</summary>
+    [Fact]
+    public void Daily_RestAfterSuccess_IsTheConfiguredRest()
+    {
+        JobSchedule.Daily(5).RestAfterSuccess(TimeSpan.FromSeconds(60)).Should().Be(TimeSpan.FromSeconds(60));
+    }
+
+    /// <summary>An interval job never rests longer than half its interval, so its own next beat is never closed.</summary>
+    /// <param name="intervalSeconds">The interval of the job.</param>
+    /// <param name="expectedSeconds">The rest it keeps.</param>
+    [Theory]
+    [InlineData(30, 15)]
+    [InlineData(120, 60)]
+    [InlineData(300, 60)]
+    public void Every_RestAfterSuccess_NeverExceedsHalfTheInterval(int intervalSeconds, int expectedSeconds)
+    {
+        JobSchedule.Every(TimeSpan.FromSeconds(intervalSeconds)).RestAfterSuccess(TimeSpan.FromSeconds(60))
+            .Should().Be(TimeSpan.FromSeconds(expectedSeconds));
+    }
+
+    /// <summary>A rest of zero stays zero for every kind of job.</summary>
+    [Fact]
+    public void RestAfterSuccess_OfZero_StaysZero()
+    {
+        JobSchedule.Every(TimeSpan.FromSeconds(30)).RestAfterSuccess(TimeSpan.Zero).Should().Be(TimeSpan.Zero);
+        JobSchedule.Daily(5).RestAfterSuccess(TimeSpan.Zero).Should().Be(TimeSpan.Zero);
+    }
 }

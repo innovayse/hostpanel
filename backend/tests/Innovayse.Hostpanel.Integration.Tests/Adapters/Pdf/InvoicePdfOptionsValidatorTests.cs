@@ -16,6 +16,14 @@ public sealed class InvoicePdfOptionsValidatorTests
         _validator.Validate(null, new InvoicePdfOptions()).Succeeded.Should().BeTrue();
     }
 
+    /// <summary>A render wait exactly at the ceiling is still accepted.</summary>
+    [Fact]
+    public void ARenderWaitAtTheCeiling_Passes()
+    {
+        _validator.Validate(null, new InvoicePdfOptions { MaxRenderWaitSeconds = InvoicePdfOptions.MaxRenderWaitSecondsCeiling })
+            .Succeeded.Should().BeTrue();
+    }
+
     /// <summary>A zero or negative line ceiling refuses startup and names the key.</summary>
     /// <param name="maxLines">The unusable ceiling.</param>
     [Theory]
@@ -40,5 +48,23 @@ public sealed class InvoicePdfOptionsValidatorTests
 
         result.Failed.Should().BeTrue();
         result.FailureMessage.Should().Contain(nameof(InvoicePdfOptions.MaxConcurrentRenders));
+    }
+
+    /// <summary>
+    /// A render wait of zero or less, or past the hour ceiling, refuses startup and names the key,
+    /// rather than passing startup and failing every download at request time.
+    /// </summary>
+    /// <param name="maxRenderWaitSeconds">The unusable wait.</param>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-10)]
+    [InlineData(InvoicePdfOptions.MaxRenderWaitSecondsCeiling + 1)]
+    [InlineData(3_000_000)]
+    public void ARenderWaitOutOfRange_Fails(int maxRenderWaitSeconds)
+    {
+        var result = _validator.Validate(null, new InvoicePdfOptions { MaxRenderWaitSeconds = maxRenderWaitSeconds });
+
+        result.Failed.Should().BeTrue();
+        result.FailureMessage.Should().Contain(nameof(InvoicePdfOptions.MaxRenderWaitSeconds));
     }
 }

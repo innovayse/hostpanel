@@ -71,7 +71,7 @@ repositories. The departures are short:
 - **Recurring jobs and background handlers return `Task`, not `Result`.** The crons
   (`CheckOverdueInvoicesCron`, `ProcessBillableItemsCron`, `ProcessRenewalsCron`,
   `ReconcileGatewayPaymentsCron`, `SendRenewalRemindersCron`, `SuspendOverdueServicesCron`,
-  `AutoTerminateSuspendedCron`, `SyncServerAccountCountsCron`) and `ResetDemoData`,
+  `AutoTerminateSuspendedCron`, `SyncServerAccountCountsCron`, `DispatchFulfilmentCron`) and `ResetDemoData`,
   `CheckDomainExpiries` and `SyncPendingDomainStatuses` are scheduled messages, not dispatched by a
   caller, so nothing would receive a `Result`. So are `RunMigrationPull` (published by
   `MigrationPullQueue` once a job's queued state is saved; the job row records how the pull ended)
@@ -86,6 +86,11 @@ repositories. The departures are short:
   is older than its period, and otherwise schedules its next regular run. Every hour and interval lives in
   `ScheduledJobsOptions` (section `ScheduledJobs`), read by the startup services and the handlers alike; a
   scheduled run is in memory, so a host that is stopping ends the chain and the next start catches up.
+  `DispatchFulfilmentCron` runs every 30 seconds and delivers the due `FulfilmentRecords` to their plugins
+  (`FulfilmentDispatcher`, claim with a lease, back-off, paid then refunded then lapsed per invoice and plugin);
+  `DispatchFulfilmentNow` is one extra pass of the same job under the same lease, scheduling nothing, for the
+  kick after a commit, so a kick never starts a second chain. `JobSchedule.RestAfterSuccess` keeps the rest of
+  an interval job under half its interval, or the 30-second job would run every second beat.
 - **Our own API contracts carry no `[JsonPropertyName]`**: the wire name is the property name in camelCase.
   A route id is overlaid on the bound command with `with { ... }`; there are no `*Body` types. The SDK ports are
   vendor-free too (`IHostingPanelApiClient`, `IHostingPanelV7ApiClient`; `NoVendorNamesTests` covers the SDK).
@@ -188,6 +193,33 @@ docker/                              compose set (shared·dev·prod·platform), 
   stop that throws is logged with the plugin id and never stops the host or the other plugins. A plugin
   is enabled from the admin Integrations page, where it is listed (with its type) when its manifest sets
   `showInIntegrations`.
+- **What the three newer plugin types promise.** *Fulfilment* (`IFulfilmentPlugin`): the host writes a
+  `FulfilmentRecords` row in the payment's own transaction and `DispatchFulfilmentCron` delivers it, so delivery is
+  **at least once** with back-off; every method must be idempotent on `InvoiceId` (the same paid invoice can arrive
+  twice), a throw marks the attempt failed and retries, a normal return marks it done. The host calls
+  `OnInvoicePaidAsync` once a paid invoice has a digital line, `OnInvoiceRefundedAsync` after money moved back,
+  `OnSubscriptionLapsedAsync` when a renewal invoice passes its grace period unpaid, and `AdviseRefundAsync`
+  **before** a refund moves money. *Refund advice* (`RefundAdviser`, the one place that asks): every enabled
+  fulfilment plugin is asked, the smallest `MaxRefundableAmount` wins, a cap of zero or less refuses the refund
+  (`REFUND_BLOCKED_BY_PLUGIN`), a smaller positive cap reduces it and the plugin's `Reason` goes into the refund
+  notes, and a plugin that throws or times out refuses it too (`REFUND_ADVICE_UNAVAILABLE`, fail closed). With no
+  fulfilment plugin enabled the refund is unchanged. *Identity* (`IClientResolver`): when one is enabled, every
+  client-portal route asks `ResolveAsync(principal)` for the acting client instead of the default owner-subject rule;
+  `null` means no client profile. The host links the returned `ExternalAccount` (provider plus id) to a client row,
+  creating it on the first order, and `IdentityPluginPermissions` maps the rights to client permissions: every
+  admitted principal gets the read-only flags (services, domains, open tickets, emails); `CanPurchase` adds
+  `PlaceNewOrders` and `ViewPayInvoices`; `CanManagePaymentMethods` adds `ViewPayInvoices` (the payment method
+  actions are guarded by it). A plugin can grant nothing else. *Hosted* (`IHostedPlugin`): `StartAsync` runs once
+  per process after the host started and `StopAsync` as it begins to stop; return from `StartAsync` once the worker
+  runs, do not block on its loop.
+- **The core is plugin neutral.** `PluginNeutralCoreTests` fails when a type in the Domain, Application,
+  Infrastructure or API assembly (base type, interface, attribute, member signature or called method), or one of
+  their referenced assemblies, sits under a reserved namespace `Innovayse.<Segment>`. The reserved segments and the
+  allow-list are in one place, `ReservedPluginNamespaces` in `Architecture.Tests` (today `Plugins`, `Deployment`,
+  `Custom` and `Auth`; allow-listed: `Innovayse.Auth`, the optional external identity provider package, which is
+  referenced only inside `#if INNOVAYSE_SSO`). A deployment-specific plugin is reached through an SDK contract
+  loaded by `PluginLoader`, never named by the core. The test proves it bites: the same rule runs on a planted type
+  in the test assembly and must report it.
 - **`PluginActivator` takes `IConfiguration` (documented exception to configuration.md rule 6).**
   The plugin SDK's base classes take an `IConfiguration` in their constructor, so the
   activator hands each plugin a configuration built from **its own section only**: the host's
@@ -259,7 +291,7 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   caller's own client record (`FindReadOnlyByUserIdAsync`), so a linked user with no record of their own passes the
   gate and is then answered by the use case; letting them act on the account they are linked to is a separate change.
 - **Architecture tests** (`Architecture.Tests`): `ControllerBase`, `ExplicitConstructor`,
-  `NoRequestTypes`, `NoIdentityOnMessages`, `PortPlacement`, `EnumPlacement`, `NoVendorNames`,
+  `NoRequestTypes`, `NoIdentityOnMessages`, `PortPlacement`, `EnumPlacement`, `NoVendorNames`, `PluginNeutralCore`,
   plus resource coverage, kernel purity, SDK contract and use-case shape. Application types carry
   no vendor names (`ICardPaymentGateway`, `GetControlPanelSsoUrl`,
   `GetHostingPanelServerInfo`/`V7`).

@@ -742,8 +742,6 @@
       "prefAffiliateDesc": "Получать партнёрские уведомления",
       "saved": "Профиль сохранён.",
       "validation": {
-        "firstNameRequired": "Укажите имя.",
-        "lastNameRequired": "Укажите фамилию.",
         "emailRequired": "Укажите адрес электронной почты.",
         "emailInvalid": "Укажите корректный адрес электронной почты, например name{'@'}example.com."
       }

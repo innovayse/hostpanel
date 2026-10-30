@@ -40,6 +40,9 @@ const stored: Product = {
   serverGroupId: null,
   isFeatured: true,
   sortOrder: 4,
+  sku: 'PRO-1',
+  metadata: '{"tier":"pro"}',
+  gracePeriodDays: 30,
 }
 
 /** Answers for the two lists the dialog loads on mount. */
@@ -133,6 +136,9 @@ describe('ProductFormModal', () => {
       serverGroupId: null,
       isFeatured: false,
       sortOrder: 0,
+      sku: '',
+      metadata: '',
+      gracePeriodDays: 7,
     }]])
   })
 
@@ -164,6 +170,94 @@ describe('ProductFormModal', () => {
     expect(wrapper.find('[data-testid="product-form-type-Vps"]').exists()).toBe(false)
     expect((wrapper.get('[data-testid="product-form-name"]').element as HTMLInputElement).value).toBe('Pro Plan')
     expect(wrapper.get('[data-testid="product-form-hidden"]').attributes('aria-checked')).toBe('true')
+  })
+
+  it('starts a new product with no SKU, no metadata and the default grace period', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: null, groups, saving: false })
+
+    expect((wrapper.get('[data-testid="product-form-sku"]').element as HTMLInputElement).value).toBe('')
+    expect((wrapper.get('[data-testid="product-form-metadata"]').element as HTMLTextAreaElement).value).toBe('')
+    expect((wrapper.get('[data-testid="product-form-grace-period"] input').element as HTMLInputElement).value).toBe('7')
+  })
+
+  it('opens an existing product with its SKU, metadata and grace period', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: stored, groups, saving: false })
+
+    expect((wrapper.get('[data-testid="product-form-sku"]').element as HTMLInputElement).value).toBe('PRO-1')
+    expect((wrapper.get('[data-testid="product-form-metadata"]').element as HTMLTextAreaElement).value).toBe('{"tier":"pro"}')
+    expect((wrapper.get('[data-testid="product-form-grace-period"] input').element as HTMLInputElement).value).toBe('30')
+  })
+
+  it('emits the SKU, metadata and grace period the operator typed, trimmed', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: null, groups, saving: false })
+
+    await wrapper.get('[data-testid="product-form-type-Digital"]').trigger('click')
+    await wrapper.get('[data-testid="product-form-name"]').setValue('Credits')
+    await wrapper.get('[data-testid="product-form-sku"]').setValue('  CREDITS-100 ')
+    await wrapper.get('[data-testid="product-form-metadata"]').setValue(' {"credits": 100} ')
+    await wrapper.get('[data-testid="product-form-grace-period"] input').setValue('14')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    expect(wrapper.emitted('save')?.[0]?.[0]).toMatchObject({
+      type: 'Digital', sku: 'CREDITS-100', metadata: '{"credits": 100}', gracePeriodDays: 14,
+    })
+  })
+
+  it('sends empty text for a cleared SKU and metadata so the API clears the stored ones', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: stored, groups, saving: false })
+
+    await wrapper.get('[data-testid="product-form-sku"]').setValue('')
+    await wrapper.get('[data-testid="product-form-metadata"]').setValue('')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    expect(wrapper.emitted('save')?.[0]?.[0]).toMatchObject({ sku: '', metadata: '' })
+  })
+
+  it('shows the API field errors under the SKU, metadata and grace period inputs', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, {
+      product: null,
+      groups,
+      saving: false,
+      fieldErrors: { sku: 'SKU taken.', metadata: 'Too large.', gracePeriodDays: 'Out of range.' },
+    })
+
+    expect(wrapper.text()).toContain('SKU taken.')
+    expect(wrapper.text()).toContain('Too large.')
+    expect(wrapper.text()).toContain('Out of range.')
+    expect(wrapper.get('[data-testid="product-form-sku"]').attributes('aria-invalid')).toBe('true')
+  })
+
+  it('asks to drop the API message of a field as soon as the operator changes that field', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, {
+      product: null,
+      groups,
+      saving: false,
+      fieldErrors: { sku: 'SKU taken.', metadata: 'Too large.', gracePeriodDays: 'Out of range.' },
+    })
+
+    await wrapper.get('[data-testid="product-form-sku"]').setValue('NEW-1')
+    expect(wrapper.emitted('clearFieldError')).toEqual([['sku']])
+
+    await wrapper.get('[data-testid="product-form-metadata"]').setValue('{}')
+    await wrapper.get('[data-testid="product-form-grace-period"] input').setValue('14')
+    expect(wrapper.emitted('clearFieldError')).toEqual([['sku'], ['metadata'], ['gracePeriodDays']])
+  })
+
+  it('does not ask to drop a message for a field the API did not refuse', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, {
+      product: null, groups, saving: false, fieldErrors: { sku: 'SKU taken.' },
+    })
+
+    await wrapper.get('[data-testid="product-form-metadata"]').setValue('{}')
+
+    expect(wrapper.emitted('clearFieldError')).toBeUndefined()
   })
 
   it('closes from Cancel and blocks Save while saving', async () => {

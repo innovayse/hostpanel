@@ -87,6 +87,9 @@
 <data name="INVOICE_PDF_EXCEEDS_LIMIT" xml:space="preserve">
     <value>В этом счёте слишком много строк, чтобы скачать его в PDF.</value>
   </data>
+<data name="INVOICE_PDF_RENDER_BUSY" xml:space="preserve">
+    <value>Сейчас готовится слишком много счетов в PDF. Повторите попытку чуть позже.</value>
+  </data>
 <data name="QUOTE_NOT_FOUND" xml:space="preserve">
     <value>Такая смета не найдена.</value>
   </data>
@@ -822,6 +825,12 @@
   </data>
   <data name="GATEWAY_REFUND_REFUSED" xml:space="preserve">
     <value>Платёжный шлюз отклонил возврат или не смог его выполнить. Через него ничего не возвращено.</value>
+  </data>
+  <data name="REFUND_ADVICE_UNAVAILABLE" xml:space="preserve">
+    <value>Плагин выполнения не смог сообщить, какую сумму по этому счёту можно вернуть, поэтому возврат не выполнен. Повторите позже.</value>
+  </data>
+  <data name="REFUND_BLOCKED_BY_PLUGIN" xml:space="preserve">
+    <value>Плагин выполнения сейчас не разрешает возврат по этому счёту. Ничего не возвращено.</value>
   </data>
   <data name="GATEWAY_PAYMENT_MISMATCH" xml:space="preserve">
     <value>Платёжный шлюз сообщил сумму или валюту, которая не совпадает со счётом.</value>

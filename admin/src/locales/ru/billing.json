@@ -1,7 +1,7 @@
 {
   "invoiceCreditTab": {
     "addCreditToInvoice": "Добавить кредит к счёту",
-    "valueUsdAvailable": "Доступно: ${value} USD",
+    "valueAvailable": "Доступно: {value}",
     "removeCreditFromInvoice": "Снять кредит со счёта",
     "creditApplied": "Кредит применён к счёту.",
     "creditRemoved": "Кредит снят со счёта.",
@@ -47,7 +47,7 @@
   },
   "invoiceSummaryTab": {
     "thisIsADraftInvoice": "Это черновик счёта. Клиент не видит этот счёт и не имеет к нему доступа, пока он не опубликован.",
-    "viewInvoices": "( Посмотреть счета )",
+    "viewInvoices": "(Посмотреть счета)",
     "invoiceAmount": "Сумма счёта",
     "paymentMethod": "Способ оплаты:",
     "publish": "Опубликовать",

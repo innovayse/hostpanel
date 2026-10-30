@@ -9,6 +9,7 @@
 
 import { buildQuery, useApi } from '@/composables/useApi'
 import type { AdminCreateClientPayload } from '@/types/admincreateclientpayload'
+import type { SetClientExternalAccountPayload } from '@/types/clientexternalaccount'
 import type { ClientDetail, ClientFilters, ClientListItem, ClientSummaryData, ConfiguredCurrency } from '@/types/client'
 import type { CountryOption } from '@/types/countryoption'
 import type { DomainRegistration } from '@/types/domain'
@@ -64,6 +65,16 @@ export const useClientsApi = () => {
    */
   const update = (id: number | string, payload: UpdateClientPayload): Promise<void> =>
     request<void>(`${ApiPath.Clients}/${id}`, { method: HttpMethod.Put, body: JSON.stringify(payload) })
+
+  /**
+   * Sets or clears the link between a client and an account in another system (staff only).
+   *
+   * @param id - The client id.
+   * @param payload - The provider and account id; both null clears the link.
+   * @returns Nothing.
+   */
+  const setExternalAccount = (id: number | string, payload: SetClientExternalAccountPayload): Promise<void> =>
+    request<void>(`${ApiPath.Clients}/${id}/external-account`, { method: HttpMethod.Put, body: JSON.stringify(payload) })
 
   /**
    * Searches Identity users by name or email.
@@ -165,6 +176,7 @@ export const useClientsApi = () => {
     get,
     create,
     update,
+    setExternalAccount,
     searchUsers,
     countries,
     configuredCurrencies,

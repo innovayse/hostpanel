@@ -87,6 +87,9 @@
 <data name="INVOICE_PDF_EXCEEDS_LIMIT" xml:space="preserve">
     <value>This invoice has too many lines to download as a PDF.</value>
   </data>
+<data name="INVOICE_PDF_RENDER_BUSY" xml:space="preserve">
+    <value>Too many invoice PDFs are being prepared right now. Please try again shortly.</value>
+  </data>
 <data name="QUOTE_NOT_FOUND" xml:space="preserve">
     <value>No such quote.</value>
   </data>
@@ -822,6 +825,12 @@
   </data>
   <data name="GATEWAY_REFUND_REFUSED" xml:space="preserve">
     <value>The payment gateway refused or failed the refund. Nothing was returned through it.</value>
+  </data>
+  <data name="REFUND_ADVICE_UNAVAILABLE" xml:space="preserve">
+    <value>A fulfilment plugin could not say how much of this invoice may be refunded, so nothing was refunded. Try again later.</value>
+  </data>
+  <data name="REFUND_BLOCKED_BY_PLUGIN" xml:space="preserve">
+    <value>A fulfilment plugin allows no refund of this invoice right now. Nothing was refunded.</value>
   </data>
   <data name="GATEWAY_PAYMENT_MISMATCH" xml:space="preserve">
     <value>The payment gateway reported an amount or currency that does not match the invoice.</value>

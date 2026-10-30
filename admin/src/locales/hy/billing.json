@@ -1,7 +1,7 @@
 {
   "invoiceCreditTab": {
     "addCreditToInvoice": "Ավելացնել կրեդիտ հաշվին",
-    "valueUsdAvailable": "Հասանելի է՝ ${value} USD",
+    "valueAvailable": "Հասանելի է՝ {value}",
     "removeCreditFromInvoice": "Հանել կրեդիտը հաշվից",
     "creditApplied": "Կրեդիտը կիրառվեց հաշվին։",
     "creditRemoved": "Կրեդիտը հանվեց հաշվից։",
@@ -47,7 +47,7 @@
   },
   "invoiceSummaryTab": {
     "thisIsADraftInvoice": "Սա հաշվի սևագիր է։ Հաճախորդը չի տեսնում այս հաշիվը և հասանելիություն չունի դրան՝ մինչև այն հրապարակվի։",
-    "viewInvoices": "( Դիտել հաշիվները )",
+    "viewInvoices": "(Դիտել հաշիվները)",
     "invoiceAmount": "Հաշվի գումար",
     "paymentMethod": "Վճարման եղանակ՝",
     "publish": "Հրապարակել",

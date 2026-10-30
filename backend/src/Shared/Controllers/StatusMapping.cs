@@ -76,7 +76,10 @@ public static class StatusMapping
             // Exact row: the card gateway or the hosted gateway refused or failed the refund, an
             // upstream refusal rather than a malformed request, and neither name carries the
             // _UPSTREAM_FAILED suffix.
-            "CARD_REFUND_REFUSED" or "GATEWAY_REFUND_REFUSED" => new(502, "Bad Gateway"),
+            "CARD_REFUND_REFUSED" or "GATEWAY_REFUND_REFUSED" or "REFUND_ADVICE_UNAVAILABLE" => new(502, "Bad Gateway"),
+            // Exact row: a fulfilment plugin's decision stands in the way of the refund, a state
+            // conflict, and the name carries no CONFLICT / ALREADY token for the generic arms.
+            "REFUND_BLOCKED_BY_PLUGIN" => new(409, "Conflict"),
             // Exact rows: the registrar's own state stands in the way (no such operation there, the
             // domain not active yet, no privacy subscription), and none of the names carries a
             // CONFLICT / ALREADY token for the generic arms.
@@ -115,6 +118,10 @@ public static class StatusMapping
             // dependency that did not answer (503 with Retry-After). Neither name carries a token.
             "FULFILMENT_RECORD_NOT_RETRYABLE" => new(409, "Conflict"),
             "FULFILMENT_ADVICE_UNAVAILABLE" => new(503, "Service Unavailable"),
+            // Exact row: no invoice PDF render slot came free for the request within the configured
+            // wait, the server's capacity rather than the request (503 with Retry-After), and the name
+            // carries no token for it.
+            "INVOICE_PDF_RENDER_BUSY" => new(503, "Service Unavailable"),
             var code when code.Contains("UNAUTHORIZED", StringComparison.Ordinal) => new(401, "Unauthorized"),
             var code when code.Contains("FORBIDDEN", StringComparison.Ordinal) => new(403, "Forbidden"),
             var code when code.Contains("ACCESS_DENIED", StringComparison.Ordinal) => new(403, "Forbidden"),

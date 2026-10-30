@@ -139,8 +139,32 @@ describe('billingStore mutations', () => {
     expect(await store.refundPayment(5, { amount: 1, refundType: InvoiceRefundType.Gateway })).toBe(true)
     expect(mock).toHaveBeenCalledTimes(14)
   })
+})
 
-  it('pdfUrl gives the address of the invoice PDF download', () => {
-    expect(useBillingStore().pdfUrl(5)).toBe('/api/billing/5/pdf')
+describe('billingStore pdf download', () => {
+  it('downloadPdf returns the file and its name', async () => {
+    const mock = stubFetch(
+      new Response('%PDF', {
+        status: 200,
+        headers: { 'Content-Disposition': 'attachment; filename="invoice-5.pdf"' },
+      }),
+    )
+    const store = useBillingStore()
+
+    const file = await store.downloadPdf(5)
+
+    expect(callOf(mock)).toMatchObject({ url: '/api/billing/5/pdf', method: 'GET' })
+    expect(file?.fileName).toBe('invoice-5.pdf')
+    expect(file?.blob.size).toBe(4)
+    expect(store.error).toBeNull()
+    expect(store.loading).toBe(false)
+  })
+
+  it('downloadPdf returns null and keeps the API sentence on refusal', async () => {
+    stubFetch(problem('The invoice has too many lines for a PDF.', 409))
+    const store = useBillingStore()
+
+    expect(await store.downloadPdf(5)).toBeNull()
+    expect(store.error).toBe('The invoice has too many lines for a PDF.')
   })
 })

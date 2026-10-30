@@ -26,6 +26,11 @@ namespace Innovayse.Hostpanel.Application.Billing.Commands.RefundInvoicePayment;
 /// <c>INVOICE_REFUND_CONFLICT</c>. Whatever the gateway did return is recorded afterwards, even when
 /// a later part was refused or threw.
 /// <para>
+/// Before the claim, every enabled fulfilment plugin is asked how much may be refunded
+/// (<see cref="RefundAdviser"/>): the refund is reduced to the smallest answer with the plugin's reason
+/// added to the notes, refused when an answer is zero, and refused when a plugin cannot answer.
+/// </para>
+/// <para>
 /// Once the claim is saved, the gateway calls and the recording run on
 /// <see cref="CancellationToken.None"/>: a caller that disconnects must not abandon a refund whose
 /// money has already moved. A recording save that fails (another writer touched the invoice, a
@@ -58,6 +63,9 @@ public sealed class RefundInvoicePaymentHandler
     /// <summary>Puts a CreditBalance refund on the client's balance in the same save as the ledger row.</summary>
     private readonly IClientCredit _clientCredit;
 
+    /// <summary>Asks the enabled fulfilment plugins to cap the refund before any money moves.</summary>
+    private readonly RefundAdviser _adviser;
+
     /// <summary>The clock every moment in this handler is read from.</summary>
     private readonly IClock _clock;
 
@@ -69,6 +77,7 @@ public sealed class RefundInvoicePaymentHandler
     /// <param name="pluginResolver">Resolves the hosted-gateway plugin for the invoice's gateway.</param>
     /// <param name="cardGateway">The card gateway that refunds a payment taken by card.</param>
     /// <param name="clientCredit">Puts a CreditBalance refund on the client's balance in the same save as the ledger row.</param>
+    /// <param name="adviser">Asks the enabled fulfilment plugins to cap the refund before any money moves.</param>
     /// <param name="clock">The clock the current moment is read from.</param>
     /// <param name="logger">Structured logger.</param>
     public RefundInvoicePaymentHandler(
@@ -76,6 +85,7 @@ public sealed class RefundInvoicePaymentHandler
         IPaymentPluginResolver pluginResolver,
         ICardPaymentGateway cardGateway,
         IClientCredit clientCredit,
+        RefundAdviser adviser,
         IClock clock,
         ILogger<RefundInvoicePaymentHandler> logger)
     {
@@ -83,6 +93,7 @@ public sealed class RefundInvoicePaymentHandler
         _pluginResolver = pluginResolver;
         _cardGateway = cardGateway;
         _clientCredit = clientCredit;
+        _adviser = adviser;
         _clock = clock;
         _logger = logger;
     }
@@ -101,7 +112,9 @@ public sealed class RefundInvoicePaymentHandler
     /// card gateway that took it is no longer configured; <c>CARD_REFUND_REFUSED</c> when the card
     /// gateway refuses or fails a refund (the parts it already returned are recorded);
     /// <c>GATEWAY_REFUND_REFUSED</c> when the hosted gateway fails it; or
-    /// <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c> when the session's plugin is gone. A refund that lost
+    /// <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c> when the session's plugin is gone; <c>REFUND_ADVICE_UNAVAILABLE</c> when an
+    /// enabled fulfilment plugin could not say how much may be refunded, or <c>REFUND_BLOCKED_BY_PLUGIN</c> when one allows
+    /// none. A refund that lost
     /// the race for the invoice row surfaces as the concurrency conflict (409).
     /// </returns>
     public async Task<Result> HandleAsync(RefundInvoicePaymentCommand cmd, CancellationToken ct)
@@ -134,6 +147,17 @@ public sealed class RefundInvoicePaymentHandler
             return Result.FailureCode(HostpanelErrorCodes.INVOICE_REFUND_EXCEEDS_PAID);
         }
 
+        // Asked before any money moves or the invoice is claimed: a plugin may cap the amount, and one that
+        // cannot answer refuses the refund. The automatic refund of a failed order arrives here as well.
+        var advised = await _adviser.AdviseAsync(invoice, cmd.Amount, cmd.Notes, ct);
+        if (advised.IsFailure)
+        {
+            return Result.FailureCode(advised.ErrorCode!);
+        }
+
+        var amount = advised.Value!.Amount;
+        var notes = advised.Value.Notes;
+
         var toCreditBalance = cmd.RefundType == RefundType.CreditBalance;
         var refunds = new List<RefundOutcome>();
         var gatewayOutcome = Result.Success();
@@ -142,19 +166,19 @@ public sealed class RefundInvoicePaymentHandler
             case RefundType.Manual:
                 // RefundInvoicePaymentValidator requires a non-empty Gateway and RefundTransactionId
                 // whenever RefundType is Manual, so neither is null on this branch.
-                refunds.Add(new RefundOutcome(cmd.Gateway!, cmd.RefundTransactionId!, cmd.Amount));
+                refunds.Add(new RefundOutcome(cmd.Gateway!, cmd.RefundTransactionId!, amount));
                 break;
 
             case RefundType.CreditBalance:
                 refunds.Add(new RefundOutcome(
-                    PaymentMethodNames.CreditBalance, $"credit-refund-{invoice.Id}-{now.Ticks}", cmd.Amount));
+                    PaymentMethodNames.CreditBalance, $"credit-refund-{invoice.Id}-{now.Ticks}", amount));
                 break;
 
             default:
-                gatewayOutcome = await RefundAtGatewayAsync(invoice, cmd.Amount, now, refunds, ct);
+                gatewayOutcome = await RefundAtGatewayAsync(invoice, amount, now, refunds, ct);
                 if (refunds.Count > 0)
                 {
-                    await RecordGatewayRefundsAsync(invoice, refunds, now, cmd.Notes);
+                    await RecordGatewayRefundsAsync(invoice, refunds, now, notes);
                     return gatewayOutcome;
                 }
 
@@ -173,13 +197,13 @@ public sealed class RefundInvoicePaymentHandler
         foreach (var refund in refunds)
         {
             var ledgerRow = invoice.AddRefund(
-                now, refund.Gateway, refund.Reference, refund.Amount, 0m, cmd.Notes, addedToCredit: toCreditBalance);
+                now, refund.Gateway, refund.Reference, refund.Amount, 0m, notes, addedToCredit: toCreditBalance);
             _context.Transactions.Add(ledgerRow);
         }
 
         if (toCreditBalance)
         {
-            var credited = await _clientCredit.AddAsync(new ClientCreditChange(invoice.ClientId, cmd.Amount), ct);
+            var credited = await _clientCredit.AddAsync(new ClientCreditChange(invoice.ClientId, amount), ct);
             if (credited.IsFailure)
             {
                 return Result.FailureCode(credited.ErrorCode!);

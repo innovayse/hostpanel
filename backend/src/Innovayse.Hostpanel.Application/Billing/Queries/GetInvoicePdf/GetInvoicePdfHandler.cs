@@ -64,8 +64,9 @@ public sealed class GetInvoicePdfHandler
     /// <param name="query">The invoice to render.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// The PDF as <c>invoice-{id}.pdf</c>, <c>INVOICE_NOT_FOUND</c> when the id names no invoice, or
-    /// <c>INVOICE_PDF_EXCEEDS_LIMIT</c> when it has more lines than <c>InvoicePdf:MaxLines</c>.
+    /// The PDF as <c>invoice-{id}.pdf</c>, <c>INVOICE_NOT_FOUND</c> when the id names no invoice,
+    /// <c>INVOICE_PDF_EXCEEDS_LIMIT</c> when it has more lines than <c>InvoicePdf:MaxLines</c>, or
+    /// <c>INVOICE_PDF_RENDER_BUSY</c> when no render slot freed within <c>InvoicePdf:MaxRenderWaitSeconds</c>.
     /// </returns>
     /// <exception cref="InvalidOperationException">The invoice names a client that does not exist, so the database is broken.</exception>
     public async Task<Result<FileDownloadDto>> HandleAsync(GetInvoicePdfQuery query, CancellationToken ct)
@@ -166,8 +167,13 @@ public sealed class GetInvoicePdfHandler
             // can tell which currency the figures are in.
             Money: invoice.Money ?? new InvoicePdfMoneyFormat(string.Empty, " " + invoice.Currency, FallbackDecimals));
 
-        var bytes = await _renderer.RenderAsync(model, ct);
-        return Result<FileDownloadDto>.Success(new FileDownloadDto(bytes, PdfContentType, $"invoice-{invoice.Id}.pdf"));
+        var rendered = await _renderer.RenderAsync(model, ct);
+        if (rendered.IsFailure)
+        {
+            return Result<FileDownloadDto>.FailureCode(rendered.ErrorCode!);
+        }
+
+        return Result<FileDownloadDto>.Success(new FileDownloadDto(rendered.Value!, PdfContentType, $"invoice-{invoice.Id}.pdf"));
     }
 
     /// <summary>The values that are not null or blank, trimmed, in order.</summary>

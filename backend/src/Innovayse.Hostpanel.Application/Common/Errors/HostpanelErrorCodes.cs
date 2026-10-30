@@ -109,6 +109,9 @@ public static class HostpanelErrorCodes
     /// <summary>The invoice has more lines than <c>InvoicePdf:MaxLines</c> allows in a PDF (400).</summary>
     public const string INVOICE_PDF_EXCEEDS_LIMIT = "INVOICE_PDF_EXCEEDS_LIMIT";
 
+    /// <summary>No invoice PDF render slot came free for the request within <c>InvoicePdf:MaxRenderWaitSeconds</c> (503, with <c>Retry-After</c>).</summary>
+    public const string INVOICE_PDF_RENDER_BUSY = "INVOICE_PDF_RENDER_BUSY";
+
     // Billing: quotes
 
     /// <summary>The id names no quote (404).</summary>
@@ -1212,6 +1215,12 @@ public static class HostpanelErrorCodes
 
     /// <summary>The hosted payment gateway refused or failed a refund (502); nothing was returned through it.</summary>
     public const string GATEWAY_REFUND_REFUSED = "GATEWAY_REFUND_REFUSED";
+
+    /// <summary>A fulfilment plugin enabled on this deployment could not say how much may be refunded, because it threw or did not answer in time (502); nothing was refunded.</summary>
+    public const string REFUND_ADVICE_UNAVAILABLE = "REFUND_ADVICE_UNAVAILABLE";
+
+    /// <summary>A fulfilment plugin allows no refund of this invoice at the moment (409); nothing was refunded.</summary>
+    public const string REFUND_BLOCKED_BY_PLUGIN = "REFUND_BLOCKED_BY_PLUGIN";
 
     /// <summary>The gateway reported a paid amount or currency other than what the invoice owes (400); the invoice stays unpaid.</summary>
     public const string GATEWAY_PAYMENT_MISMATCH = "GATEWAY_PAYMENT_MISMATCH";

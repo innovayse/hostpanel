@@ -56,7 +56,7 @@ public sealed class InvoiceItemConfiguration : IEntityTypeConfiguration<InvoiceI
 
         // What the product was when the line was billed, stored in the line's own row. Optional: a line that
         // is not a product's charge, and every line written before snapshots were kept, has none, and all
-        // five columns are null. ProductId is never null on a snapshot, which is how EF tells the two apart.
+        // six columns are null. ProductId is never null on a snapshot, which is how EF tells the two apart.
         // The column names are given here because EF would otherwise prefix them with the navigation's name.
         builder.OwnsOne(x => x.ProductSnapshot, snapshot =>
         {
@@ -68,6 +68,7 @@ public sealed class InvoiceItemConfiguration : IEntityTypeConfiguration<InvoiceI
             snapshot.Property(x => x.IsDigital).HasColumnName("IsDigital");
             snapshot.Property(x => x.Sku).HasColumnName("Sku").HasMaxLength(ProductSku.MaxLength);
             snapshot.Property(x => x.Metadata).HasColumnName("ProductMetadata").HasColumnType("jsonb");
+            snapshot.Property(x => x.GracePeriodDays).HasColumnName("GracePeriodDays");
         });
         builder.Navigation(x => x.ProductSnapshot).IsRequired(false);
 

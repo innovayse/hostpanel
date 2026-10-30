@@ -111,16 +111,18 @@ describe('ProfileForm', () => {
     expect(wrapper.find('[data-testid="ui-form-success"]').exists()).toBe(false)
   })
 
-  it('refuses a blank required field on its input without saving', async () => {
+  it('shows API field errors on inputs when save is refused', async () => {
     const wrapper = mountForm()
-    const save = vi.spyOn(useAccountStore(), 'saveProfile').mockResolvedValue(ActionOutcome.Succeeded)
+    const accountStore = useAccountStore()
+    vi.spyOn(accountStore, 'saveProfile').mockImplementation(async () => {
+      accountStore.fieldErrors = { firstName: 'Enter your first name.' }
+      return ActionOutcome.Failed
+    })
 
-    await wrapper.find('[data-testid="account-firstname"]').setValue('  ')
     await wrapper.find('form').trigger('submit')
     await wrapper.vm.$nextTick()
 
-    expect(save).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('client.profile.validation.firstNameRequired')
+    expect(wrapper.text()).toContain('Enter your first name.')
   })
 
   it('emits cancel from the cancel button', async () => {

@@ -21,13 +21,21 @@ public sealed class GetReleaseStatusTests(IntegrationTestFactory factory)
     /// <summary>The endpoint path.</summary>
     private const string Url = "/api/admin/release-status";
 
-    /// <summary>Clears the <c>LatestReleases</c> table so each test starts from a clean state.</summary>
+    /// <summary>Fixed installed version used by all version-comparison tests.</summary>
+    private const string InstalledVersion = "1.0.0";
+
+    /// <summary>
+    /// Clears the <c>LatestReleases</c> table and resets the installed version to the baseline
+    /// so each test starts from a clean state.
+    /// </summary>
     /// <returns>A task.</returns>
     public async Task InitializeAsync()
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         await context.LatestReleases.ExecuteDeleteAsync();
+
+        factory.Services.GetRequiredService<FakeInstalledVersionProvider>().Version = InstalledVersion;
     }
 
     /// <summary>Nothing to clean up after a test.</summary>
@@ -44,7 +52,7 @@ public sealed class GetReleaseStatusTests(IntegrationTestFactory factory)
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        body.TryGetProperty("installedVersion", out _).Should().BeTrue();
+        body.GetProperty("installedVersion").GetString().Should().Be(InstalledVersion);
     }
 
     /// <summary>
@@ -74,6 +82,105 @@ public sealed class GetReleaseStatusTests(IntegrationTestFactory factory)
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         context.LatestReleases.Add(LatestRelease.Create(
+            "2.0.0",
+            new DateTimeOffset(2026, 6, 1, 0, 0, 0, TimeSpan.Zero),
+            "https://github.com/innovayse/hostpanel/releases/tag/v2.0.0",
+            DateTimeOffset.UtcNow));
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var client = await AdminTestSeeds.AdminClientAsync(factory);
+        var response = await client.GetAsync(Url);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("isUpgradeAvailable").GetBoolean().Should().BeTrue();
+        body.GetProperty("latestVersion").GetString().Should().Be("2.0.0");
+        body.GetProperty("upgradeCommand").GetString().Should().Contain("--version 2.0.0");
+        body.GetProperty("releaseNotesUrl").GetString().Should().Contain("v2.0.0");
+    }
+
+    /// <summary>
+    /// When the cached version equals the installed version, no upgrade is available.
+    /// </summary>
+    [Fact]
+    public async Task ReturnsNoUpgradeWhenCachedVersionMatchesInstalledAsync()
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        context.LatestReleases.Add(LatestRelease.Create(
+            InstalledVersion,
+            new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+            "https://github.com/innovayse/hostpanel/releases/tag/v1.0.0",
+            DateTimeOffset.UtcNow));
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var client = await AdminTestSeeds.AdminClientAsync(factory);
+        var response = await client.GetAsync(Url);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("isUpgradeAvailable").GetBoolean().Should().BeFalse();
+    }
+
+    /// <summary>
+    /// When the cached version is older than the installed version, no upgrade is available.
+    /// </summary>
+    [Fact]
+    public async Task ReturnsNoUpgradeWhenCachedVersionIsOlderThanInstalledAsync()
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        context.LatestReleases.Add(LatestRelease.Create(
+            "0.9.0",
+            new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero),
+            "https://github.com/innovayse/hostpanel/releases/tag/v0.9.0",
+            DateTimeOffset.UtcNow));
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var client = await AdminTestSeeds.AdminClientAsync(factory);
+        var response = await client.GetAsync(Url);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("isUpgradeAvailable").GetBoolean().Should().BeFalse();
+    }
+
+    /// <summary>
+    /// When the cached version string is not a parseable semantic version, no upgrade is shown
+    /// (unparseable versions are never treated as upgrades).
+    /// </summary>
+    [Fact]
+    public async Task ReturnsNoUpgradeWhenCachedVersionIsUnparseableAsync()
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        context.LatestReleases.Add(LatestRelease.Create(
+            "not-a-version",
+            new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+            "https://github.com/innovayse/hostpanel/releases/tag/v0.0.0",
+            DateTimeOffset.UtcNow));
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var client = await AdminTestSeeds.AdminClientAsync(factory);
+        var response = await client.GetAsync(Url);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("isUpgradeAvailable").GetBoolean().Should().BeFalse();
+    }
+
+    /// <summary>
+    /// When the installed version itself is unparseable, no upgrade is shown even when the
+    /// cache has a well-formed version.
+    /// </summary>
+    [Fact]
+    public async Task ReturnsNoUpgradeWhenInstalledVersionIsUnparseableAsync()
+    {
+        factory.Services.GetRequiredService<FakeInstalledVersionProvider>().Version = "dev";
+
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        context.LatestReleases.Add(LatestRelease.Create(
             "99.0.0",
             new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
             "https://github.com/innovayse/hostpanel/releases/tag/v99.0.0",
@@ -85,37 +192,6 @@ public sealed class GetReleaseStatusTests(IntegrationTestFactory factory)
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        body.GetProperty("isUpgradeAvailable").GetBoolean().Should().BeTrue();
-        body.GetProperty("latestVersion").GetString().Should().Be("99.0.0");
-        body.GetProperty("upgradeCommand").GetString().Should().Contain("--version 99.0.0");
-        body.GetProperty("releaseNotesUrl").GetString().Should().Contain("v99.0.0");
-    }
-
-    /// <summary>
-    /// When the installed version matches the cached version, no upgrade is available.
-    /// </summary>
-    [Fact]
-    public async Task ReturnsNoUpgradeWhenInstalledVersionMatchesCacheAsync()
-    {
-        using var scope = factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-
-        // The test host's IInstalledVersionProvider returns "dev" (no assembly attribute in tests),
-        // which is not a parseable System.Version — so any cached version with a real semver
-        // is never treated as an upgrade over "dev".
-        context.LatestReleases.Add(LatestRelease.Create(
-            "1.0.0",
-            new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero),
-            "https://github.com/innovayse/hostpanel/releases/tag/v1.0.0",
-            DateTimeOffset.UtcNow));
-        await context.SaveChangesAsync(CancellationToken.None);
-
-        var client = await AdminTestSeeds.AdminClientAsync(factory);
-        var response = await client.GetAsync(Url);
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        // "dev" is not a parseable version, so it is never treated as older than any release.
         body.GetProperty("isUpgradeAvailable").GetBoolean().Should().BeFalse();
     }
 

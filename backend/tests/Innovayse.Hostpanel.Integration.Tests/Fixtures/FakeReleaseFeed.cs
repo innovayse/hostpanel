@@ -4,17 +4,17 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
 /// <summary>
-/// In-memory replacement for <see cref="IGitHubReleasesClient"/> used by the integration test
+/// In-memory replacement for <see cref="IReleaseFeed"/> used by the integration test
 /// host. Tests configure the return value before exercising the handler or endpoint under test.
 /// </summary>
-public sealed class FakeGitHubReleasesClient : IGitHubReleasesClient
+public sealed class FakeReleaseFeed : IReleaseFeed
 {
     /// <summary>
-    /// The value <see cref="GetLatestAsync"/> returns. Set to a <see cref="GitHubReleaseInfo"/>
+    /// The value <see cref="GetLatestAsync"/> returns. Set to a <see cref="ReleaseInfo"/>
     /// to simulate a successful fetch, or leave <see langword="null"/> to simulate GitHub
     /// returning no published release.
     /// </summary>
-    public GitHubReleaseInfo? Next { get; set; }
+    public ReleaseInfo? Next { get; set; }
 
     /// <summary>
     /// When <see langword="true"/>, <see cref="GetLatestAsync"/> throws
@@ -34,7 +34,7 @@ public sealed class FakeGitHubReleasesClient : IGitHubReleasesClient
     }
 
     /// <inheritdoc/>
-    public Task<GitHubReleaseInfo?> GetLatestAsync(CancellationToken ct)
+    public Task<ReleaseInfo?> GetLatestAsync(CancellationToken ct)
     {
         CallCount++;
         if (ShouldFail)

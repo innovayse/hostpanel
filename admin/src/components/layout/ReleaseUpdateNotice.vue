@@ -6,7 +6,7 @@
  * The upgrade command is shown in a copyable code block so the operator can paste it directly
  * into a terminal.
  */
-import { ref } from 'vue'
+import { onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useReleaseStatusStore } from '@/stores/releaseStatus'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -30,6 +30,15 @@ const COPY_ICON = '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path
 /** True for two seconds after the command is copied, to show "Copied!" feedback. */
 const copied = ref(false)
 
+/** Active timeout handle, kept so it can be cleared on unmount. */
+let copyTimeout: ReturnType<typeof setTimeout> | null = null
+
+onUnmounted(() => {
+  if (copyTimeout !== null) {
+    clearTimeout(copyTimeout)
+  }
+})
+
 /**
  * Copies the upgrade command to the clipboard and sets the copied flag for two seconds.
  */
@@ -38,10 +47,18 @@ const copyCommand = async (): Promise<void> => {
   if (!command) {
     return
   }
-  await navigator.clipboard.writeText(command)
+  try {
+    await navigator.clipboard.writeText(command)
+  } catch {
+    return
+  }
   copied.value = true
-  setTimeout(() => {
+  if (copyTimeout !== null) {
+    clearTimeout(copyTimeout)
+  }
+  copyTimeout = setTimeout(() => {
     copied.value = false
+    copyTimeout = null
   }, 2000)
 }
 </script>

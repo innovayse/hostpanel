@@ -20,7 +20,7 @@ public sealed class CheckReleaseUpdatesCronHandler
     private readonly IHostpanelDbContext _context;
 
     /// <summary>Fetches the latest published release from GitHub.</summary>
-    private readonly IGitHubReleasesClient _github;
+    private readonly IReleaseFeed _github;
 
     /// <summary>Runs the pass under its lease and schedules the next run.</summary>
     private readonly RecurringJobs _jobs;
@@ -43,7 +43,7 @@ public sealed class CheckReleaseUpdatesCronHandler
     /// <param name="logger">Structured logger.</param>
     public CheckReleaseUpdatesCronHandler(
         IHostpanelDbContext context,
-        IGitHubReleasesClient github,
+        IReleaseFeed github,
         RecurringJobs jobs,
         IClock clock,
         IOptions<ScheduledJobsOptions> options,

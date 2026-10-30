@@ -1,10 +1,10 @@
 using Innovayse.Hostpanel.Application.Admin.Commands.CheckReleaseUpdatesCron;
-using Microsoft.Extensions.Configuration;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Admin;
 using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Wolverine;
@@ -30,7 +30,7 @@ public sealed class CheckReleaseUpdatesCronTests(IntegrationTestFactory factory)
         await context.LatestReleases.ExecuteDeleteAsync();
 
         // Reset the fake between tests, including the call counter.
-        factory.Services.GetRequiredService<FakeGitHubReleasesClient>().Reset();
+        factory.Services.GetRequiredService<FakeReleaseFeed>().Reset();
     }
 
     /// <summary>Nothing to clean up after a case.</summary>
@@ -45,8 +45,8 @@ public sealed class CheckReleaseUpdatesCronTests(IntegrationTestFactory factory)
     [Fact]
     public async Task SuccessfulRun_StoresTheLatestReleaseAndSchedulesNextRunAsync()
     {
-        var fake = factory.Services.GetRequiredService<FakeGitHubReleasesClient>();
-        fake.Next = new GitHubReleaseInfo(
+        var fake = factory.Services.GetRequiredService<FakeReleaseFeed>();
+        fake.Next = new ReleaseInfo(
             "2.0.0",
             new DateTimeOffset(2026, 6, 1, 0, 0, 0, TimeSpan.Zero),
             "https://github.com/innovayse/hostpanel/releases/tag/v2.0.0");
@@ -76,7 +76,7 @@ public sealed class CheckReleaseUpdatesCronTests(IntegrationTestFactory factory)
     [Fact]
     public async Task WhenGitHubReturnsNoRelease_NothingIsStoredAndNextRunIsScheduledAsync()
     {
-        var fake = factory.Services.GetRequiredService<FakeGitHubReleasesClient>();
+        var fake = factory.Services.GetRequiredService<FakeReleaseFeed>();
         fake.Next = null; // simulate GitHub returning no published release
 
         var host = factory.Services.GetRequiredService<IHost>();
@@ -99,8 +99,8 @@ public sealed class CheckReleaseUpdatesCronTests(IntegrationTestFactory factory)
     [Fact]
     public async Task SecondRun_UpdatesTheExistingRowAsync()
     {
-        var fake = factory.Services.GetRequiredService<FakeGitHubReleasesClient>();
-        fake.Next = new GitHubReleaseInfo(
+        var fake = factory.Services.GetRequiredService<FakeReleaseFeed>();
+        fake.Next = new ReleaseInfo(
             "1.0.0",
             new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
             "https://github.com/innovayse/hostpanel/releases/tag/v1.0.0");
@@ -110,7 +110,7 @@ public sealed class CheckReleaseUpdatesCronTests(IntegrationTestFactory factory)
             .Timeout(TimeSpan.FromSeconds(60))
             .InvokeMessageAndWaitAsync(new CheckReleaseUpdatesCronCommand());
 
-        fake.Next = new GitHubReleaseInfo(
+        fake.Next = new ReleaseInfo(
             "1.1.0",
             new DateTimeOffset(2026, 3, 1, 0, 0, 0, TimeSpan.Zero),
             "https://github.com/innovayse/hostpanel/releases/tag/v1.1.0");
@@ -136,15 +136,17 @@ public sealed class CheckReleaseUpdatesCronTests(IntegrationTestFactory factory)
     [Fact]
     public async Task WhenChecksAreDisabled_GitHubIsNotCalledAndNextRunIsScheduledAsync()
     {
-        var fake = factory.Services.GetRequiredService<FakeGitHubReleasesClient>();
-
-        var host = factory.WithWebHostBuilder(b =>
+        var derivedFactory = factory.WithWebHostBuilder(b =>
             b.ConfigureAppConfiguration((_, cfg) =>
                 cfg.AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     ["ScheduledJobs:DisableReleaseUpdateChecks"] = "true"
-                })))
-            .Services.GetRequiredService<IHost>();
+                })));
+
+        // The fake must be taken from the derived host because the request runs there, not on
+        // the base factory's host.
+        var fake = derivedFactory.Services.GetRequiredService<FakeReleaseFeed>();
+        var host = derivedFactory.Services.GetRequiredService<IHost>();
 
         var session = await host.TrackActivity()
             .Timeout(TimeSpan.FromSeconds(60))
@@ -167,7 +169,7 @@ public sealed class CheckReleaseUpdatesCronTests(IntegrationTestFactory factory)
     [Fact]
     public async Task FailedRun_StillSchedulesTheNextRunOnceAsync()
     {
-        var fake = factory.Services.GetRequiredService<FakeGitHubReleasesClient>();
+        var fake = factory.Services.GetRequiredService<FakeReleaseFeed>();
         fake.ShouldFail = true;
 
         var host = factory.Services.GetRequiredService<IHost>();

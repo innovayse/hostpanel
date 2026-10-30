@@ -158,9 +158,16 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
 
             // The GitHub releases client would reach api.github.com on every CheckReleaseUpdatesCron
             // run; all integration tests get a configurable in-memory fake instead.
-            services.RemoveAll<IGitHubReleasesClient>();
-            services.AddSingleton<FakeGitHubReleasesClient>();
-            services.AddSingleton<IGitHubReleasesClient>(sp => sp.GetRequiredService<FakeGitHubReleasesClient>());
+            services.RemoveAll<IReleaseFeed>();
+            services.AddSingleton<FakeReleaseFeed>();
+            services.AddSingleton<IReleaseFeed>(sp => sp.GetRequiredService<FakeReleaseFeed>());
+
+            // The installed version provider reads the entry assembly's informational version, which
+            // carries no version attribute in the test runner; replace it with a fake that tests can
+            // set to a deterministic baseline (default "1.0.0").
+            services.RemoveAll<IInstalledVersionProvider>();
+            services.AddSingleton<FakeInstalledVersionProvider>();
+            services.AddSingleton<IInstalledVersionProvider>(sp => sp.GetRequiredService<FakeInstalledVersionProvider>());
         });
     }
 

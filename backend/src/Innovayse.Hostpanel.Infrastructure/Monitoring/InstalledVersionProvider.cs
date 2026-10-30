@@ -14,16 +14,19 @@ public sealed class InstalledVersionProvider : IInstalledVersionProvider
     private const string DevVersion = "dev";
 
     /// <inheritdoc/>
-    public string Version { get; } = ReadVersion();
-
-    /// <summary>Reads the informational version from the entry assembly at startup.</summary>
-    /// <returns>The version string without metadata suffix, or <c>dev</c> when absent.</returns>
-    private static string ReadVersion()
-    {
-        var raw = Assembly.GetEntryAssembly()
+    public string Version { get; } = ParseVersion(
+        Assembly.GetEntryAssembly()
             ?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-            ?.InformationalVersion;
+            ?.InformationalVersion);
 
+    /// <summary>
+    /// Parses the raw informational version string from an assembly attribute into a clean version
+    /// string, stripping the <c>+&lt;commit&gt;</c> suffix that the SDK appends.
+    /// </summary>
+    /// <param name="raw">The raw attribute value, e.g. <c>1.4.0+abc1234</c>.</param>
+    /// <returns>The version without a metadata suffix, or <c>dev</c> when the input is absent.</returns>
+    internal static string ParseVersion(string? raw)
+    {
         if (string.IsNullOrWhiteSpace(raw))
         {
             return DevVersion;

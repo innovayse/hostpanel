@@ -604,11 +604,13 @@ public static class DependencyInjection
 
         // GitHub Releases: daily release-update check. User-Agent is required by GitHub's API
         // policy; read-only resilience (retries + circuit breaker) is applied via the standard
-        // profile because this is a GET with no side effects.
+        // profile because this is a GET with no side effects. The base address comes from
+        // ReleaseOptions so a fork or an air-gapped deployment can point at its own feed.
         services.AddSingleton<IInstalledVersionProvider, InstalledVersionProvider>();
-        services.AddHttpClient<IGitHubReleasesClient, GitHubReleasesClient>(client =>
+        services.AddHttpClient<IReleaseFeed, GitHubReleasesClient>((sp, client) =>
         {
-            client.BaseAddress = new Uri("https://api.github.com/");
+            var releaseOptions = sp.GetRequiredService<IOptions<ReleaseOptions>>().Value;
+            client.BaseAddress = new Uri(releaseOptions.GitHubApiBaseUrl);
             client.DefaultRequestHeaders.Add("User-Agent", "Hostpanel-ReleaseCheck");
             client.DefaultRequestHeaders.Add("Accept", "application/vnd.github+json");
         })

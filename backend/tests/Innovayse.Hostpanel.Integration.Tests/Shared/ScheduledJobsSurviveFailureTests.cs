@@ -114,21 +114,21 @@ public sealed class ScheduledJobsSurviveFailureTests(IntegrationTestFactory fact
                         .Options,
                     new ModelOnlyEncryptionService()));
 
-                // The derived factory gets its own FakeGitHubReleasesClient instance (Next = null by
+                // The derived factory gets its own FakeReleaseFeed instance (Next = null by
                 // default). CheckReleaseUpdatesCronHandler returns early when GitHub returns null,
                 // never reaching the broken database. Give it a release so the handler hits the DB.
-                s.RemoveAll<FakeGitHubReleasesClient>();
-                s.RemoveAll<IGitHubReleasesClient>();
-                s.AddSingleton<FakeGitHubReleasesClient>(_ =>
+                s.RemoveAll<FakeReleaseFeed>();
+                s.RemoveAll<IReleaseFeed>();
+                s.AddSingleton<FakeReleaseFeed>(_ =>
                 {
-                    var fake = new FakeGitHubReleasesClient();
-                    fake.Next = new GitHubReleaseInfo(
+                    var fake = new FakeReleaseFeed();
+                    fake.Next = new ReleaseInfo(
                         "99.0.0",
                         DateTimeOffset.UtcNow,
                         "https://github.com/innovayse/hostpanel/releases/tag/v99.0.0");
                     return fake;
                 });
-                s.AddSingleton<IGitHubReleasesClient>(sp => sp.GetRequiredService<FakeGitHubReleasesClient>());
+                s.AddSingleton<IReleaseFeed>(sp => sp.GetRequiredService<FakeReleaseFeed>());
             });
         });
 

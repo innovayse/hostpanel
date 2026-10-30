@@ -164,6 +164,13 @@ public static class DependencyInjection
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        // Where release-update checks point and what upgrade command is shown. Operators that fork
+        // the repository or run without outbound internet access override these without touching code.
+        services.AddOptions<ReleaseOptions>()
+            .BindConfiguration(ReleaseOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         services.ConfigureModelStateProblemDetails();
         services.ConfigureProblemDetailsAuthEvents();
         services.PostConfigure<JwtBearerOptions>(LocalJwtScheme.Name, o => o.UseProblemDetailsResponses());

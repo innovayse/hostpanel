@@ -64,10 +64,10 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
         _encryption = encryption;
     }
 
-    /// <summary>Gets the activity log entries table.</summary>
     /// <inheritdoc/>
     public DbSet<LatestRelease> LatestReleases => Set<LatestRelease>();
 
+    /// <summary>Gets the activity log entries table.</summary>
     /// <inheritdoc/>
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
 

@@ -2,7 +2,9 @@ using Innovayse.Hostpanel.Application.Admin.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Admin;
 using Innovayse.Hostpanel.Shared.Models;
+using Innovayse.Hostpanel.Shared.Settings;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Innovayse.Hostpanel.Application.Admin.Queries.GetReleaseStatus;
 
@@ -13,22 +15,27 @@ namespace Innovayse.Hostpanel.Application.Admin.Queries.GetReleaseStatus;
 /// </summary>
 public sealed class GetReleaseStatusHandler
 {
-    /// <summary>Upgrade command template; the placeholder is replaced with the target version.</summary>
-    private const string UpgradeCommandTemplate = "curl -fsSL https://raw.githubusercontent.com/innovayse/hostpanel/main/install.sh | sh -s -- --version {0}";
-
     /// <summary>The data context, for the cached latest release row.</summary>
     private readonly IHostpanelDbContext _context;
 
     /// <summary>Returns the version of the running build.</summary>
     private readonly IInstalledVersionProvider _versionProvider;
 
+    /// <summary>Release configuration, supplying the install script URL.</summary>
+    private readonly ReleaseOptions _releaseOptions;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The data context, for the cached latest release row.</param>
     /// <param name="versionProvider">Returns the version of the running build.</param>
-    public GetReleaseStatusHandler(IHostpanelDbContext context, IInstalledVersionProvider versionProvider)
+    /// <param name="releaseOptions">Release configuration, supplying the install script URL.</param>
+    public GetReleaseStatusHandler(
+        IHostpanelDbContext context,
+        IInstalledVersionProvider versionProvider,
+        IOptions<ReleaseOptions> releaseOptions)
     {
         _context = context;
         _versionProvider = versionProvider;
+        _releaseOptions = releaseOptions.Value;
     }
 
     /// <summary>Reads the release status and returns a DTO safe to send to the admin panel.</summary>
@@ -53,7 +60,7 @@ public sealed class GetReleaseStatusHandler
 
         var isUpgrade = IsNewerVersion(installed, latest.Version);
         var upgradeCommand = isUpgrade
-            ? string.Format(UpgradeCommandTemplate, latest.Version)
+            ? $"curl -fsSL {_releaseOptions.InstallScriptUrl} | sh -s -- --version {latest.Version}"
             : null;
 
         return Result<ReleaseStatusDto>.Success(new ReleaseStatusDto(

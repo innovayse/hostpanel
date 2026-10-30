@@ -52,6 +52,10 @@ const NOT_A_CUSTOMER_STATUSES: ReadonlySet<number> = new Set([403, 404])
 interface BackendAccount {
   /** The `ClientPermission` flags the caller holds on a client account, as an integer. */
   clientPermissions?: number
+  /** The client account the caller acts for; null when they act for none, absent on an older backend. */
+  clientId?: number | null
+  /** The account in another system the client is linked to; null when there is none, absent on an older backend. */
+  externalAccount?: { provider: string, id: string } | null
 }
 
 /**

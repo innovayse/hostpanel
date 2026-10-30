@@ -57,6 +57,10 @@ export interface MeResponse {
   roles: string[]
   /** Whether the identity provider reports the address as confirmed. */
   emailVerified: boolean
+  /** The client account the caller acts for; null when they act for none. Optional because the admin never reads it. */
+  clientId?: number | null
+  /** The account in another system the client is linked to; null when there is none. Optional because the admin never reads it. */
+  externalAccount?: { provider: string, id: string } | null
 }
 
 /**

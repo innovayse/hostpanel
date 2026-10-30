@@ -150,6 +150,7 @@ public static class DependencyInjection
         // bulk writer (migration pull, dev seed) discard events, and the interceptor reads it.
         services.AddScoped<IDomainEventGate, DomainEventGate>();
         services.AddScoped<DomainEventDispatchInterceptor>();
+        services.AddScoped<FulfilmentRecordInterceptor>();
 
         // Creation and change timestamps are stamped on save from the one clock, never by a factory.
         services.AddSingleton<IClock, SystemClock>();
@@ -158,6 +159,8 @@ public static class DependencyInjection
         services.AddDbContext<AppDbContext>((serviceProvider, options) =>
         {
             options.AddInterceptors(
+                // Before the auditable stamp, so the records it adds are stamped on insert.
+                serviceProvider.GetRequiredService<FulfilmentRecordInterceptor>(),
                 serviceProvider.GetRequiredService<AuditableEntityInterceptor>(),
                 serviceProvider.GetRequiredService<DomainEventDispatchInterceptor>());
 

@@ -694,8 +694,6 @@
       "prefAffiliateDesc": "Ստանալ գործընկերային ծանուցումներ",
       "saved": "Պրոֆիլը պահպանվեց։",
       "validation": {
-        "firstNameRequired": "Մուտքագրեք ձեր անունը։",
-        "lastNameRequired": "Մուտքագրեք ձեր ազգանունը։",
         "emailRequired": "Մուտքագրեք ձեր էլ. հասցեն։",
         "emailInvalid": "Մուտքագրեք վավեր էլ. հասցե, օրինակ՝ name{'@'}example.com։"
       }

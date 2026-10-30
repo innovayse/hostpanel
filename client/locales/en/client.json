@@ -742,8 +742,6 @@
       "prefAffiliateDesc": "Receive Affiliate Notifications",
       "saved": "Your profile has been saved.",
       "validation": {
-        "firstNameRequired": "Enter your first name.",
-        "lastNameRequired": "Enter your last name.",
         "emailRequired": "Enter your email address.",
         "emailInvalid": "Enter a valid email address, for example name{'@'}example.com."
       }

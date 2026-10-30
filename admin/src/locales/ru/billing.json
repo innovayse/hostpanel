@@ -1,7 +1,7 @@
 {
   "invoiceCreditTab": {
     "addCreditToInvoice": "Добавить кредит к счёту",
-    "valueUsdAvailable": "Доступно: ${value} USD",
+    "valueAvailable": "Доступно: {value}",
     "removeCreditFromInvoice": "Снять кредит со счёта",
     "creditApplied": "Кредит применён к счёту.",
     "creditRemoved": "Кредит снят со счёта.",

@@ -24,6 +24,21 @@ describe('InvoiceSummaryTab', () => {
     expect(wrapper.get('[data-testid="billing-invoice-fact-balance"]').text()).toContain('60.00 USD')
   })
 
+  it('keeps the invoice currency on the summary values even when the invoice is in AMD', () => {
+    const wrapper = mountWithApp(InvoiceSummaryTab, {
+      props: {
+        invoice: invoiceFixture({
+          currency: 'AMD',
+          amounts: { ...invoiceFixture().amounts, total: 24000, credit: 0 },
+          amountDue: 24000,
+        }),
+      },
+    })
+
+    expect(wrapper.get('[data-testid="billing-invoice-fact-amount"]').text()).toContain('24000.00 AMD')
+    expect(wrapper.get('[data-testid="billing-invoice-fact-balance"]').text()).toContain('24000.00 AMD')
+  })
+
   it('shows no balance for a paid invoice settled without a payment row of its own', () => {
     const wrapper = mountWithApp(InvoiceSummaryTab, { props: { invoice: invoiceFixture({ status: 'Paid', amountDue: 0, transactions: [] }) } })
 

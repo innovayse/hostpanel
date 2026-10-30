@@ -21,7 +21,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { formatDate } from '@/lib/format'
 import { invoiceStatusTone } from '@/lib/tones'
-import { formatUsd } from '@/lib/money'
+import { formatPlainAmount } from '@/lib/money'
 import { useBillingStore } from '@/stores/billing'
 import { InvoiceBulkAction, InvoiceStatus } from '@/types/invoice'
 import type { InvoiceDetail } from '@/types/invoice'
@@ -105,8 +105,8 @@ const balance = computed<number>(() => props.invoice.amountDue)
 const facts = computed<FactRow[]>(() => [
   { key: 'invoiceDate', label: t('shared.invoiceDate'), value: formatDate(props.invoice.dates.invoiceDate), tone: UiTextTone.Secondary },
   { key: 'dueDate', label: t('shared.dueDate'), value: formatDate(props.invoice.dates.dueDate), tone: UiTextTone.Secondary },
-  { key: 'amount', label: t('billing.invoiceSummaryTab.invoiceAmount'), value: formatUsd(props.invoice.amounts.total ?? 0), tone: UiTextTone.Secondary },
-  { key: 'balance', label: t('shared.balance'), value: formatUsd(balance.value), tone: balance.value > 0 ? UiTextTone.Danger : UiTextTone.Success },
+  { key: 'amount', label: t('billing.invoiceSummaryTab.invoiceAmount'), value: formatPlainAmount(props.invoice.amounts.total ?? 0, props.invoice.currency), tone: UiTextTone.Secondary },
+  { key: 'balance', label: t('shared.balance'), value: formatPlainAmount(balance.value, props.invoice.currency), tone: balance.value > 0 ? UiTextTone.Danger : UiTextTone.Success },
 ])
 
 /** True when the confirmation prompt for cancelling is open. */
@@ -272,7 +272,7 @@ const markPaid = (): Promise<void> =>
       :open="confirmingMarkPaid"
       :variant="UiDialogVariant.Confirm"
       :title="t('billing.invoiceSummaryTab.confirmMarkPaidTitle')"
-      :message="t('billing.invoiceSummaryTab.confirmMarkPaidMessage', { id: invoice.id, amount: formatUsd(balance) })"
+      :message="t('billing.invoiceSummaryTab.confirmMarkPaidMessage', { id: invoice.id, amount: formatPlainAmount(balance, invoice.currency) })"
       :confirm-label="t('billing.invoiceSummaryTab.markPaid')"
       :loading="running === SummaryAction.MarkPaid"
       :tone="UiTone.Primary"

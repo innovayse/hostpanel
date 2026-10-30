@@ -25,7 +25,21 @@ describe('InvoiceCreditTab', () => {
   it('shows the credit available under each box', () => {
     const wrapper = mountWithApp(InvoiceCreditTab, { props: { invoice: invoiceFixture() } })
 
-    expect(wrapper.text()).toContain('5.00 USD Available')
+    expect(wrapper.text()).toContain('5.00 USD available')
+  })
+
+  it('shows the credit available in the invoice currency when the invoice is in AMD', () => {
+    const wrapper = mountWithApp(InvoiceCreditTab, {
+      props: {
+        invoice: invoiceFixture({
+          currency: 'AMD',
+          amounts: { ...invoiceFixture().amounts, credit: 1000 },
+        }),
+      },
+    })
+
+    expect(wrapper.text()).toContain('1000.00 AMD available')
+    expect(wrapper.text()).not.toContain('$1000.00')
   })
 
   it('applies the credit and confirms it in the tab', async () => {

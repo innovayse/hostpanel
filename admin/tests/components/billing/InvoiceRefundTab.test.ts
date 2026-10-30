@@ -103,6 +103,43 @@ describe('InvoiceRefundTab', () => {
     expect(wrapper.find('[data-testid="dialog-confirm"]').exists()).toBe(false)
   })
 
+  it('formats refund confirmation and transaction amounts with the invoice currency when not USD', async () => {
+    stubRoutes({ 'GET /api/billing/1': () => json(invoiceFixture()) })
+    const wrapper = mountWithApp(InvoiceRefundTab, {
+      props: {
+        invoice: invoiceFixture({
+          currency: 'AMD',
+          amounts: { ...invoiceFixture().amounts, total: 24000, credit: 5000 },
+          transactions: [
+            {
+              id: 21,
+              date: '2026-10-15T00:00:00Z',
+              gateway: 'Stripe',
+              transactionId: 'ch_1',
+              amount: 24000,
+              fees: 500,
+              type: 'Payment',
+            },
+          ],
+        }),
+      },
+    })
+
+    wrapper.findAllComponents(UiSelect)[0]?.vm.$emit('update:modelValue', '21')
+    await flushPromises()
+    await wrapper.get('[data-testid="billing-invoice-refund-credit-leave"]').setValue(true)
+    await wrapper.get('[data-testid="billing-invoice-refund-form"]').trigger('submit')
+    await flushPromises()
+
+    const body = wrapper.get('[data-testid="dialog-body"]').text()
+    expect(body).toContain('24000.00 AMD')
+    expect(body).not.toContain('$')
+    const creditNotice = wrapper.get('[data-testid="billing-invoice-refund-credit"]').text()
+    expect(creditNotice).toContain('24000.00 AMD')
+    expect(creditNotice).toContain('5000.00 AMD')
+    expect(creditNotice).not.toContain('$')
+  })
+
   it('shows the API sentence in the tab when the refund is refused', async () => {
     stubRoutes({ 'POST /api/billing/1/refund': () => problem('The gateway declined the refund.', 409) })
     const wrapper = mountWithApp(InvoiceRefundTab, { props: { invoice: invoiceFixture() } })

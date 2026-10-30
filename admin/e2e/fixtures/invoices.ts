@@ -48,7 +48,7 @@ export const unpaidInvoiceDetail: InvoiceDetail = {
   amountDue: 120,
   payment: { method: null, gatewayTransactionId: null },
   notes: null,
-  items: [{ id: 1, description: 'Hosting', unitPrice: 120, quantity: 1, amount: 120 }],
+  items: [{ id: 1, description: 'Hosting', unitPrice: 120, quantity: 1, amount: 120, sku: null }],
   transactions: [],
 }
 

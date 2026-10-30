@@ -1,7 +1,7 @@
 {
   "invoiceCreditTab": {
     "addCreditToInvoice": "Ավելացնել կրեդիտ հաշվին",
-    "valueUsdAvailable": "Հասանելի է՝ ${value} USD",
+    "valueAvailable": "Հասանելի է՝ {value}",
     "removeCreditFromInvoice": "Հանել կրեդիտը հաշվից",
     "creditApplied": "Կրեդիտը կիրառվեց հաշվին։",
     "creditRemoved": "Կրեդիտը հանվեց հաշվից։",

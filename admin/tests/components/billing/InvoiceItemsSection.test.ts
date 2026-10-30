@@ -24,6 +24,22 @@ describe('InvoiceItemsSection', () => {
     expect(wrapper.find('[data-testid="billing-invoice-items-save"]').exists()).toBe(false)
   })
 
+  it('uses the invoice currency for the line and total values when the invoice is not USD', () => {
+    const wrapper = mountWithApp(InvoiceItemsSection, {
+      props: {
+        invoice: invoiceFixture({
+          currency: 'AMD',
+          amounts: { ...invoiceFixture().amounts, total: 24000, subTotal: 24000 },
+          items: [{ id: 11, description: 'Managed hosting', unitPrice: 24000, quantity: 1, amount: 24000 }],
+        }),
+        readonly: true,
+      },
+    })
+
+    expect(wrapper.get('[data-testid="billing-invoice-items-table"]').text()).toContain('24000.00 AMD')
+    expect(wrapper.get('[data-testid="billing-invoice-total-total"]').text()).toBe('24000.00 AMD')
+  })
+
   it('shows only the description and amount of a read-only line, since tax is invoice-wide', () => {
     const wrapper = mountWithApp(InvoiceItemsSection, { props: { invoice: invoiceFixture(), readonly: true } })
 

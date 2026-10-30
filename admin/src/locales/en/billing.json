@@ -1,7 +1,7 @@
 {
   "invoiceCreditTab": {
     "addCreditToInvoice": "Add Credit to Invoice",
-    "valueUsdAvailable": "${value} USD Available",
+    "valueAvailable": "{value} available",
     "removeCreditFromInvoice": "Remove Credit from Invoice",
     "creditApplied": "Credit applied to the invoice.",
     "creditRemoved": "Credit removed from the invoice.",

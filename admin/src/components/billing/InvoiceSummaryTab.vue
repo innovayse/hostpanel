@@ -188,9 +188,9 @@ const markPaid = (): Promise<void> =>
 
     <UiCard padding="md">
       <UiGrid :columns="2" gap="lg">
-        <UiStack gap="sm">
-          <UiStack direction="row" gap="md" align="center" wrap>
-            <UiText tone="muted" size="md">{{ t('shared.clientName') }}</UiText>
+        <UiGrid :columns="2" gap="sm" class="items-center">
+          <UiText tone="muted" size="md">{{ t('shared.clientName') }}</UiText>
+          <UiStack direction="row" gap="sm" align="center" wrap>
             <UiText tone="primary" size="md" data-testid="billing-invoice-client-name">{{ invoice.clientName }}</UiText>
             <UiLink
               variant="link"
@@ -200,11 +200,11 @@ const markPaid = (): Promise<void> =>
               {{ t('billing.invoiceSummaryTab.viewInvoices') }}
             </UiLink>
           </UiStack>
-          <UiStack v-for="fact in facts" :key="fact.key" direction="row" gap="md" align="center">
+          <template v-for="fact in facts" :key="fact.key">
             <UiText tone="muted" size="md">{{ fact.label }}</UiText>
             <UiText :tone="fact.tone" size="md" :data-testid="`billing-invoice-fact-${fact.key}`">{{ fact.value }}</UiText>
-          </UiStack>
-        </UiStack>
+          </template>
+        </UiGrid>
 
         <UiStack align="center" gap="sm">
           <UiBadge :tone="invoiceStatusTone(invoice.status)" data-testid="billing-invoice-status">

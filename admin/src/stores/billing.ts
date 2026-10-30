@@ -64,8 +64,11 @@ export const useBillingStore = defineStore('billing', () => {
   /** Sentence for the last failed fulfilment load, null when none; separate from `error` so the tab reports its own failure. */
   const fulfilmentError = ref<string | null>(null)
 
-  /** Counts fulfilment loads, so the answer of an earlier invoice never overwrites a later one. */
-  let fulfilmentRequest = 0
+  /** Sentence for the last refused fulfilment retry, null when none; separate from `error` so a refusal never reaches the invoice page. */
+  const fulfilmentRetryError = ref<string | null>(null)
+
+  /** Counts fulfilment loads, so the answer of an earlier load never overwrites a later one. */
+  let fulfilmentLoadCount = 0
 
   /**
    * Runs one request with the loading flag and the error state around it.
@@ -314,13 +317,14 @@ export const useBillingStore = defineStore('billing', () => {
    * @returns Resolves when the request has settled.
    */
   const fetchFulfilment = async (id: number): Promise<void> => {
-    fulfilmentRequest += 1
-    const request = fulfilmentRequest
+    fulfilmentLoadCount += 1
+    /** Number of this load; a later load makes it stale. */
+    const loadId = fulfilmentLoadCount
     fulfilmentLoading.value = true
     /** Sentence of this load's refusal, kept apart from the page-level `error`; null when it succeeds. */
     const failure = ref<string | null>(null)
     const result = await runAction(failure, () => api.listFulfilment(id))
-    if (request !== fulfilmentRequest) {
+    if (loadId !== fulfilmentLoadCount) {
       return
     }
     fulfilmentLoading.value = false
@@ -336,10 +340,11 @@ export const useBillingStore = defineStore('billing', () => {
    *
    * @param invoiceId - The invoice id.
    * @param recordId - The fulfilment record id.
-   * @returns True when the retry was accepted; false when refused (see `error`).
+   * @returns True when the retry was accepted; false when refused (see `fulfilmentRetryError`,
+   * never the page-level `error`).
    */
   const retryFulfilment = async (invoiceId: number, recordId: number): Promise<boolean> => {
-    const result = await run(() => api.retryFulfilment(invoiceId, recordId))
+    const result = await runAction(fulfilmentRetryError, () => api.retryFulfilment(invoiceId, recordId))
     if (result.ok) {
       await fetchFulfilment(invoiceId)
     }
@@ -359,6 +364,7 @@ export const useBillingStore = defineStore('billing', () => {
     fulfilment,
     fulfilmentLoading,
     fulfilmentError,
+    fulfilmentRetryError,
     fetchAll,
     fetchById,
     downloadPdf,

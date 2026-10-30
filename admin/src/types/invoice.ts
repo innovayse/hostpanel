@@ -308,7 +308,7 @@ export enum FulfilmentStatus {
   Processing = 'Processing',
   /** Finished successfully. */
   Done = 'Done',
-  /** Gave up or is waiting for another attempt after an error. */
+  /** Gave up after an error; final until staff retry it. */
   Failed = 'Failed',
 }
 
@@ -326,8 +326,8 @@ export interface FulfilmentRecord {
   status: FulfilmentStatus
   /** How many times the plugin was tried. */
   attempts: number
-  /** When the next attempt is due (ISO 8601); null when none is scheduled. */
-  nextAttemptAt: string | null
+  /** When the next attempt is due (ISO 8601); the API always sends it. */
+  nextAttemptAt: string
   /** Error of the last attempt, for staff; null when it did not fail. */
   lastError: string | null
   /** When the record finished (ISO 8601); null while it has not. */

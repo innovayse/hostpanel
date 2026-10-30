@@ -151,7 +151,7 @@
     "tabSummary": "Сводка",
     "tabCredit": "Кредит",
     "tabRefund": "Возврат",
-    "tabFulfilment": "Исполнение",
+    "tabFulfilment": "Выполнение заказов",
     "downloadPdf": "Скачать PDF"
   },
   "invoicesList": {
@@ -232,7 +232,7 @@
     "tax": "Налог"
   },
   "invoiceFulfilmentTab": {
-    "title": "Исполнение",
+    "title": "Выполнение заказов",
     "plugin": "Плагин",
     "kind": "Действие",
     "attempts": "Попытки",
@@ -246,7 +246,7 @@
     "statusFailed": "Сбой",
     "kindPaid": "Оплата",
     "kindRefunded": "Возврат",
-    "kindLapsed": "Истечение",
+    "kindLapsed": "Истечение срока",
     "confirmRetryTitle": "Повторить исполнение",
     "confirmRetryMessage": "Запустить плагин {plugin} для этого счёта ещё раз?",
     "retried": "Повтор запрошен."

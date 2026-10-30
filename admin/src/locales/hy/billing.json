@@ -151,7 +151,7 @@
     "tabSummary": "Ամփոփում",
     "tabCredit": "Կրեդիտ",
     "tabRefund": "Վերադարձ",
-    "tabFulfilment": "Կատարում",
+    "tabFulfilment": "Պատվերների կատարում",
     "downloadPdf": "Ներբեռնել PDF"
   },
   "invoicesList": {
@@ -232,7 +232,7 @@
     "tax": "Հարկ"
   },
   "invoiceFulfilmentTab": {
-    "title": "Կատարում",
+    "title": "Պատվերների կատարում",
     "plugin": "Պլագին",
     "kind": "Գործողություն",
     "attempts": "Փորձեր",
@@ -246,9 +246,9 @@
     "statusFailed": "Ձախողված",
     "kindPaid": "Վճարում",
     "kindRefunded": "Վերադարձ",
-    "kindLapsed": "Ավարտ",
+    "kindLapsed": "Ժամկետի ավարտ",
     "confirmRetryTitle": "Կրկնել կատարումը",
     "confirmRetryMessage": "Կրկին գործարկե՞լ {plugin} պլագինը այս հաշիվ-ապրանքագրի համար։",
-    "retried": "Կրկնությունը հայցվեց։"
+    "retried": "Կրկնությունը գործարկվեց։"
   }
 }

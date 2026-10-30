@@ -30,11 +30,15 @@ import { fulfilmentStatusTone } from '@/lib/tones'
 import { useBillingStore } from '@/stores/billing'
 import { FulfilmentKind, FulfilmentStatus } from '@/types/invoice'
 import type { FulfilmentRecord, InvoiceDetail } from '@/types/invoice'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiTableDensity } from '@/utils/ui/injection'
+import { UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
 
+/** Props of the tab. */
 const props = defineProps<{
   /** The invoice whose fulfilment records are listed. */
   invoice: InvoiceDetail
@@ -42,6 +46,7 @@ const props = defineProps<{
   readonly?: boolean
 }>()
 
+/** The invoices store: owns the records, the load state and the retry. */
 const store = useBillingStore()
 
 /** The record whose retry the operator is asked to confirm; null while no prompt is open. */
@@ -63,6 +68,9 @@ const loading = computed<boolean>(() => store.fulfilmentLoading && records.value
 
 /** The sentence of a failed load, null when the load worked. */
 const loadError = computed<string | null>(() => store.fulfilmentError)
+
+/** The sentence a refused retry is reported with; the store keeps it apart from the page error. */
+const retryError = computed<string | null>(() => store.fulfilmentRetryError)
 
 /** Labels of the record statuses. */
 const statusLabels = computed<Record<FulfilmentStatus, string>>(() => ({
@@ -92,12 +100,24 @@ const confirmMessage = computed<string>(() =>
 const load = (): Promise<void> => store.fetchFulfilment(props.invoice.id)
 
 /**
- * Gives the time of a record's last or next step: when it finished, else when the next attempt is due.
+ * Gives the time that matters for a record: when a Done record finished, when a Pending or
+ * Processing record is next attempted. A Failed record is final until staff retry it, so it has
+ * no time.
  *
  * @param record - The record.
- * @returns The formatted time, or a dash when neither is set.
+ * @returns The formatted time, or a dash when the status has none.
  */
-const whenOf = (record: FulfilmentRecord): string => formatDateTime(record.completedAt ?? record.nextAttemptAt)
+const whenOf = (record: FulfilmentRecord): string => {
+  switch (record.status) {
+    case FulfilmentStatus.Done:
+      return formatDateTime(record.completedAt)
+    case FulfilmentStatus.Pending:
+    case FulfilmentStatus.Processing:
+      return formatDateTime(record.nextAttemptAt)
+    default:
+      return formatDateTime(null)
+  }
+}
 
 /**
  * Opens the confirmation prompt of a retry.
@@ -121,24 +141,33 @@ const dismiss = (): void => {
  * @returns Resolves when the request has settled.
  */
 const retry = async (): Promise<void> => {
+  /** The record the operator confirmed. */
   const record = pending.value
   if (record === null) {
     return
   }
   feedback.clear()
   retrying.value = true
+  /** True when the API accepted the retry. */
   const ok = await store.retryFulfilment(props.invoice.id, record.id)
   retrying.value = false
   pending.value = null
   if (!ok) {
-    feedback.show(store.error ?? t('errors.noAnswer'), true)
+    feedback.show(retryError.value ?? t('errors.noAnswer'), true)
     return
   }
   feedback.show(t('billing.invoiceFulfilmentTab.retried'), false)
 }
 
 onMounted(load)
-watch(() => props.invoice.id, load)
+watch(
+  () => props.invoice.id,
+  () => {
+    feedback.clear()
+    pending.value = null
+    void load()
+  },
+)
 </script>
 
 <template>
@@ -167,7 +196,7 @@ watch(() => props.invoice.id, load)
 
         <UiTable
           v-else
-          density="compact"
+          :density="UiTableDensity.Compact"
           :loading="loading"
           :empty="!loading && records.length === 0"
           :colspan="7"
@@ -195,15 +224,15 @@ watch(() => props.invoice.id, load)
               </UiTableCell>
               <UiTableCell muted>{{ record.attempts }}</UiTableCell>
               <UiTableCell muted>
-                <UiText v-if="record.lastError" tone="danger">{{ record.lastError }}</UiText>
+                <UiText v-if="record.lastError" :tone="UiTextTone.Danger">{{ record.lastError }}</UiText>
                 <template v-else>—</template>
               </UiTableCell>
               <UiTableCell muted>{{ whenOf(record) }}</UiTableCell>
               <UiTableCell>
                 <UiButton
                   v-if="record.canRetry && !readonly"
-                  type="button"
-                  variant="secondary"
+                  :type="UiButtonType.Button"
+                  :variant="UiButtonVariant.Secondary"
                   :data-testid="`billing-invoice-fulfilment-retry-${record.id}`"
                   @click="askRetry(record)"
                 >
@@ -213,7 +242,7 @@ watch(() => props.invoice.id, load)
             </UiTableRow>
           </UiTableBody>
           <template #empty>
-            <span data-testid="billing-invoice-fulfilment-empty">{{ t('billing.invoiceFulfilmentTab.empty') }}</span>
+            <UiText data-testid="billing-invoice-fulfilment-empty">{{ t('billing.invoiceFulfilmentTab.empty') }}</UiText>
           </template>
         </UiTable>
       </UiStack>

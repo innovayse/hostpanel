@@ -69,7 +69,7 @@ export const failedFulfilment: FulfilmentRecord = {
   kind: FulfilmentKind.Paid,
   status: FulfilmentStatus.Failed,
   attempts: 3,
-  nextAttemptAt: null,
+  nextAttemptAt: '2026-10-02T09:00:00Z',
   lastError: 'The upstream account is locked.',
   completedAt: null,
   createdAt: '2026-10-02T08:00:00Z',

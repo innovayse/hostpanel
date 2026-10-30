@@ -212,7 +212,65 @@ describe('billingStore fulfilment', () => {
 
     expect(await store.retryFulfilment(5, 31)).toBe(false)
 
-    expect(store.error).toBe('This record cannot be retried.')
+    expect(store.fulfilmentRetryError).toBe('This record cannot be retried.')
+    expect(store.error).toBeNull()
     expect(mock).toHaveBeenCalledTimes(1)
+  })
+
+  it('retryFulfilment that succeeds while the reload fails still reports success and shows the load failure', async () => {
+    stubFetch(new Response(null, { status: 204 }), problem('Fulfilment is unavailable.', 500))
+    const store = useBillingStore()
+
+    expect(await store.retryFulfilment(5, 31)).toBe(true)
+
+    expect(store.fulfilmentRetryError).toBeNull()
+    expect(store.fulfilmentError).toBe('Fulfilment is unavailable.')
+    expect(store.error).toBeNull()
+    expect(store.fulfilmentLoading).toBe(false)
+  })
+
+  it('fetchFulfilment ignores a first answer that arrives after the second call', async () => {
+    /** Resolves the pending first request. */
+    let answerFirst: (response: Response) => void = () => undefined
+    const first = new Promise<Response>((resolve) => {
+      answerFirst = resolve
+    })
+    const mock = vi
+      .fn()
+      .mockImplementationOnce(() => first)
+      .mockImplementationOnce(() => Promise.resolve(json([{ id: 41, invoiceId: 6 }])))
+    vi.stubGlobal('fetch', mock)
+    const store = useBillingStore()
+
+    const stale = store.fetchFulfilment(5)
+    await store.fetchFulfilment(6)
+    answerFirst(problem('Invoice not found.', 404))
+    await stale
+
+    expect(store.fulfilment).toEqual([{ id: 41, invoiceId: 6 }])
+    expect(store.fulfilmentError).toBeNull()
+    expect(store.fulfilmentLoading).toBe(false)
+  })
+
+  it('fetchFulfilment does not let a stale success overwrite the newer records', async () => {
+    /** Resolves the pending first request. */
+    let answerFirst: (response: Response) => void = () => undefined
+    const first = new Promise<Response>((resolve) => {
+      answerFirst = resolve
+    })
+    const mock = vi
+      .fn()
+      .mockImplementationOnce(() => first)
+      .mockImplementationOnce(() => Promise.resolve(problem('Fulfilment is unavailable.', 500)))
+    vi.stubGlobal('fetch', mock)
+    const store = useBillingStore()
+
+    const stale = store.fetchFulfilment(5)
+    await store.fetchFulfilment(6)
+    answerFirst(json([{ id: 31, invoiceId: 5 }]))
+    await stale
+
+    expect(store.fulfilment).toEqual([])
+    expect(store.fulfilmentError).toBe('Fulfilment is unavailable.')
   })
 })

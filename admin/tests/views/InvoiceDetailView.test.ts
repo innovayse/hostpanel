@@ -111,6 +111,25 @@ describe('InvoiceDetailView', () => {
     expect(wrapper.find('[data-testid="billing-invoice-error"]').exists()).toBe(false)
   })
 
+  it('keeps a refused fulfilment retry in its tab, not at the top', async () => {
+    stubRoutes({
+      'POST /api/billing/1/fulfilment/31/retry': () => problem('This record cannot be retried.', 409),
+      'GET /api/billing/1/fulfilment': () => json([fulfilmentFixture()]),
+      'GET /api/billing/1': () => json(invoiceFixture()),
+    })
+    const { wrapper } = await mountRouted(InvoiceDetailView, PATTERN, '/billing/1/edit')
+    await flushPromises()
+    await wrapper.get('[data-testid="billing-invoice-tab-fulfilment"]').trigger('click')
+    await flushPromises()
+
+    await wrapper.get('[data-testid="billing-invoice-fulfilment-retry-31"]').trigger('click')
+    await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="billing-invoice-fulfilment-feedback"]').text()).toBe('This record cannot be retried.')
+    expect(wrapper.find('[data-testid="billing-invoice-error"]').exists()).toBe(false)
+  })
+
   it('shows a refused save in its tab only, not again at the top', async () => {
     stubRoutes({
       'PUT /api/billing/1/notes': () => problem('Notes are too long.', 400),

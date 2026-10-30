@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Billing.Commands.LapseOverdueInvoice;
 using Innovayse.Hostpanel.Application.Billing.Commands.MarkInvoiceOverdue;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
@@ -12,7 +13,8 @@ namespace Innovayse.Hostpanel.Application.Billing.Commands.CheckOverdueInvoicesC
 
 /// <summary>
 /// Handles <see cref="CheckOverdueInvoicesCronCommand"/> by marking all unpaid invoices
-/// past their due date as overdue. Re-schedules itself for the next day after completion.
+/// past their due date as overdue, then lapsing the overdue digital invoices whose digital renewal lines are all
+/// past their product grace period. Re-schedules itself for the next day after completion.
 /// </summary>
 public sealed class CheckOverdueInvoicesCronHandler
 {
@@ -72,6 +74,19 @@ public sealed class CheckOverdueInvoicesCronHandler
     /// <returns>A task.</returns>
     private async Task RunAsync(DateTimeOffset now, CancellationToken ct)
     {
+        // Overdue first, so an invoice that fell due long ago is marked and then judged for lapse in the same pass.
+        var marked = await MarkOverdueAsync(now, ct);
+        var lapsed = await LapseAsync(now, ct);
+
+        _logger.LogInformation("CheckOverdueInvoicesCron marked {Count} invoices as overdue and {Lapsed} as lapsed.", marked, lapsed);
+    }
+
+    /// <summary>Sends a <see cref="MarkInvoiceOverdueCommand"/> for every unpaid invoice past its due date.</summary>
+    /// <param name="now">The moment this pass started.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>How many invoices were marked overdue.</returns>
+    private async Task<int> MarkOverdueAsync(DateTimeOffset now, CancellationToken ct)
+    {
         var marked = 0;
         var lastId = 0;
         while (true)
@@ -112,6 +127,59 @@ public sealed class CheckOverdueInvoicesCronHandler
             lastId = invoiceIds[^1];
         }
 
-        _logger.LogInformation("CheckOverdueInvoicesCron marked {Count} invoices as overdue.", marked);
+        return marked;
+    }
+
+    /// <summary>
+    /// Sends a <see cref="LapseOverdueInvoiceCommand"/> for every overdue, not yet lapsed invoice that has a
+    /// digital line. Whether the grace period of its digital renewal lines is over is decided per invoice by
+    /// the command, from the product snapshot on each line; this query only narrows the candidates.
+    /// </summary>
+    /// <param name="now">The moment this pass started.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>How many invoices were marked lapsed.</returns>
+    private async Task<int> LapseAsync(DateTimeOffset now, CancellationToken ct)
+    {
+        var lapsed = 0;
+        var lastId = 0;
+        while (true)
+        {
+            // A grace period is never negative, so an invoice not yet past its due date cannot be past grace.
+            var invoiceIds = await _context.Invoices.AsNoTracking()
+                .Where(i => i.Id > lastId && i.Status == InvoiceStatus.Overdue && i.LapsedAt == null
+                    && i.HasDigitalItems && i.DueDate < now)
+                .OrderBy(i => i.Id)
+                .Select(i => i.Id)
+                .Take(JobBatch.Size)
+                .ToListAsync(ct);
+            if (invoiceIds.Count == 0)
+            {
+                break;
+            }
+
+            foreach (var invoiceId in invoiceIds)
+            {
+                try
+                {
+                    var outcome = await _bus.InvokeAsync<Result<bool>>(new LapseOverdueInvoiceCommand(invoiceId), ct);
+                    if (outcome.IsFailure)
+                    {
+                        _logger.LogWarning("Lapsing invoice {InvoiceId} was refused ({ErrorCode}).", invoiceId, outcome.ErrorCode);
+                    }
+                    else if (outcome.Value)
+                    {
+                        lapsed++;
+                    }
+                }
+                catch (Exception ex) when (JobFailure.IsFailure(ex, ct))
+                {
+                    _logger.LogError(ex, "Lapsing invoice {InvoiceId} failed; the next run retries it.", invoiceId);
+                }
+            }
+
+            lastId = invoiceIds[^1];
+        }
+
+        return lapsed;
     }
 }

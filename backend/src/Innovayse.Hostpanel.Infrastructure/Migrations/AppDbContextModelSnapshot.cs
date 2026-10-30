@@ -4106,6 +4106,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                                 .HasColumnType("character varying(20)")
                                 .HasColumnName("BillingCycle");
 
+                            b1.Property<int?>("GracePeriodDays")
+                                .HasColumnType("integer")
+                                .HasColumnName("GracePeriodDays");
+
                             b1.Property<bool>("IsDigital")
                                 .HasColumnType("boolean")
                                 .HasColumnName("IsDigital");

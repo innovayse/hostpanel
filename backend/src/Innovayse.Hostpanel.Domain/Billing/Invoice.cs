@@ -191,6 +191,29 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     public bool CanLapse => Status == InvoiceStatus.Overdue && LapsedAt is null;
 
     /// <summary>
+    /// Whether every digital renewal line on the invoice is past its product's grace period at
+    /// <paramref name="now"/>: the invoice has at least one such line and each of them has stayed unpaid for
+    /// more than the grace period its own <see cref="InvoiceItem.ProductSnapshot"/> recorded, counted from
+    /// <see cref="DueDate"/>. A line is past grace only when <paramref name="now"/> is strictly after the end
+    /// of its grace, the same strict comparison the overdue suspension makes.
+    /// </summary>
+    /// <remarks>
+    /// Only digital renewal lines are judged. A hosting line, a digital line that is not a renewal and a
+    /// line with no product snapshot neither count towards lapsing nor hold it back, so a mixed invoice
+    /// lapses on its digital renewal lines alone and its hosting side is never touched. A digital renewal line
+    /// whose snapshot has no grace period (written before it was kept) is not past grace, so it holds the
+    /// invoice back rather than lapsing it on a guessed value.
+    /// </remarks>
+    /// <param name="now">The moment to judge at (UTC).</param>
+    /// <returns><see langword="true"/> when there is a digital renewal line and all of them are past grace.</returns>
+    public bool IsPastDigitalGrace(DateTimeOffset now)
+    {
+        var digitalRenewals = _items.Where(i => i.IsDigital && i.IsRenewal).ToList();
+        return digitalRenewals.Count > 0
+            && digitalRenewals.All(i => i.ProductSnapshot!.GracePeriodDays is { } days && DueDate.AddDays(days) < now);
+    }
+
+    /// <summary>
     /// Gets whether <see cref="Cancel"/> is allowed: Draft, Unpaid or Overdue, and no payment
     /// recorded yet. Money already taken would be stranded on a cancelled invoice, so a part-paid
     /// invoice is refunded or paid in full, never cancelled.

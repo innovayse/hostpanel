@@ -687,7 +687,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
         var invoice = await db.Invoices.AsNoTracking().Include(i => i.Items).SingleAsync(i => i.Id == invoiceId);
         var snapshot = invoice.Items.Should().ContainSingle().Which.ProductSnapshot!;
         snapshot.Should().BeEquivalentTo(
-            new ProductSnapshot(productId, BillingCycle.Monthly, IsDigital: true, Sku: sku.ToUpperInvariant(), Metadata: null),
+            new ProductSnapshot(productId, BillingCycle.Monthly, IsDigital: true, Sku: sku.ToUpperInvariant(), Metadata: null, GracePeriodDays: Product.DefaultGracePeriodDays),
             options => options.Excluding(s => s.Metadata));
 
         // The database normalises the JSON text (spacing), so the metadata is compared by content, not by characters.

@@ -129,6 +129,7 @@ const formatPrice = (amount: number | null): string => {
 /** Opens the dialog in create mode. */
 const openCreate = (): void => {
   store.actionError = null
+  store.fieldErrors = {}
   editingProduct.value = null
   showModal.value = true
 }
@@ -140,6 +141,7 @@ const openCreate = (): void => {
  */
 const openEdit = (product: Product): void => {
   store.actionError = null
+  store.fieldErrors = {}
   editingProduct.value = product
   showModal.value = true
 }
@@ -164,6 +166,9 @@ const handleSave = async (payload: CreateProductPayload): Promise<void> => {
       serverGroupId: payload.serverGroupId,
       isFeatured: payload.isFeatured,
       sortOrder: payload.sortOrder,
+      sku: payload.sku,
+      metadata: payload.metadata,
+      gracePeriodDays: payload.gracePeriodDays,
     })
   } else {
     saved = (await store.createProduct(payload)) !== null
@@ -268,7 +273,9 @@ const handleSave = async (payload: CreateProductPayload): Promise<void> => {
       :groups="store.productGroups"
       :saving="saving"
       :error="store.actionError"
+      :field-errors="store.fieldErrors"
       @save="handleSave"
+      @clear-field-error="store.clearFieldError"
       @close="showModal = false"
     />
 

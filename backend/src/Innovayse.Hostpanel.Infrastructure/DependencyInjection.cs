@@ -724,6 +724,15 @@ public static class DependencyInjection
             .AddOutboundAddressGuard()
             .AddNoRetryResilience(o => o.Cwp7);
 
+        // Plesk XML API client, named only: the provider factory and the connection tester both
+        // build a PleskApiClient over it per server, so one registration covers both paths.
+        services.AddHttpClient(HttpClientNames.Plesk, client =>
+        {
+            client.Timeout = HttpBackstopTimeouts.Plesk;
+        })
+            .AddOutboundAddressGuard()
+            .AddNoRetryResilience(o => o.Plesk);
+
         // Migration
         services.AddScoped<MigrationPullWorker>();
         services.AddScoped<MigrationPullQueue>();

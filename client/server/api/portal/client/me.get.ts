@@ -25,8 +25,10 @@
  * client account (`clientId`) or an external account for the caller, false for a signed-in person
  * with neither, such as a first-time buyer whose account the first order creates. The flags only
  * restrict members of an account, so the portal offers such a person the purchase. It is derived
- * here, once, so no page repeats the rule. When `/auth/me` cannot be read, or an older backend
- * sends neither field, the answer is true: unknown counts as an account, the side that shows less.
+ * here, once, so no page repeats the rule. False also covers a person linked to several accounts
+ * (`/auth/me` names none of them), where the server decides, and the cases where the answer is
+ * unknown: when `/auth/me` cannot be read, or an older backend sends neither field, the answer is
+ * false too. Unknown means offer: the portal shows the action and the server stays the real check.
  *
  * @module server/api/portal/client/me.get
  */
@@ -73,17 +75,17 @@ type ClientAccess = Pick<ClientUser, 'permissions' | 'actsForAccount'>
  *
  * @param event - The incoming browser request, whose session the backend call carries.
  * @returns The permission integer (0 when the backend does not answer or sends no value) and
- *          whether the person acts for an account (true when that is unknown).
+ *          whether the person acts for an account (false when that is unknown, so nothing is hidden on a guess).
  */
 const readClientAccess = async (event: H3Event): Promise<ClientAccess> => {
   try {
     const account = await internalApiCall<BackendAccount>(event, '/auth/me')
     const permissions = typeof account.clientPermissions === 'number' ? account.clientPermissions : 0
     const accountKnown = account.clientId !== undefined || account.externalAccount !== undefined
-    const actsForAccount = !accountKnown || account.clientId != null || account.externalAccount != null
+    const actsForAccount = accountKnown && (account.clientId != null || account.externalAccount != null)
     return { permissions, actsForAccount }
   } catch {
-    return { permissions: 0, actsForAccount: true }
+    return { permissions: 0, actsForAccount: false }
   }
 }
 

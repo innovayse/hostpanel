@@ -10,6 +10,7 @@
  */
 
 import type { ClientService } from '~/types/clientservice'
+import { ServiceStatus } from '~/types/servicestatus'
 
 /**
  * Whether the list entry of a service shows "needs setup" and links to the wizard.
@@ -19,3 +20,16 @@ import type { ClientService } from '~/types/clientservice'
  */
 export const serviceAwaitsSetup = (service: Pick<ClientService, 'isDigital' | 'username'>): boolean =>
   !service.isDigital && !service.username
+
+/**
+ * Whether the detail page of a service shows the "finish setup" notice and action.
+ *
+ * Unlike {@link serviceAwaitsSetup}, which reads the username the lists have, the detail page goes
+ * by the order's status: a hosting service whose order is still pending. A digital service is
+ * delivered by its plugin and never offered the wizard.
+ *
+ * @param service - The service as the detail page reads it.
+ * @returns True for a pending hosting service; false for a digital one or any other status.
+ */
+export const serviceSetupPending = (service: Pick<ClientService, 'isDigital' | 'status'>): boolean =>
+  !service.isDigital && service.status === ServiceStatus.Pending

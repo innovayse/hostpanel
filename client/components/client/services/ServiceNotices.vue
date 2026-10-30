@@ -50,7 +50,7 @@ import { Zap } from 'lucide-vue-next'
 import { CancellationType } from '~/types/cancellationtype'
 import type { CancellationStatus } from '~/types/cancellationstatus'
 import type { ClientService } from '~/types/clientservice'
-import { ServiceStatus } from '~/types/servicestatus'
+import { serviceSetupPending } from '~/utils/serviceSetup'
 
 /** Props of ServiceNotices. */
 interface Props {
@@ -72,7 +72,7 @@ const headingId = useId()
 const cancelPending = computed<boolean>(() => Boolean(props.cancelStatus?.pending))
 
 /** Whether the service still needs its setup finished; a digital service has nothing to set up. */
-const setupRequired = computed<boolean>(() => !props.service.isDigital && props.service.status === ServiceStatus.Pending)
+const setupRequired = computed<boolean>(() => serviceSetupPending(props.service))
 
 /** Whether any notice shows; the region is left out when it would be empty. */
 const hasNotices = computed<boolean>(() => cancelPending.value || setupRequired.value)

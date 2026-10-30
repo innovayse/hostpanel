@@ -56,4 +56,13 @@ describe('hosting setup page', () => {
     expect(wrapper.find('[data-testid="setup-wizard"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="setup-back-to-services"]').attributes('href')).toBe('/client/services')
   })
+
+  it('sends a digital service to its own page instead of offering a wizard', async () => {
+    clientApi.fetchService.mockResolvedValue(service({ isDigital: true, username: null }))
+    stubClientRuntime({ params: { id: '4' } })
+
+    await mountPage(SetupPage)
+
+    expect(navigateTo).toHaveBeenCalledWith('/client/services/4', { replace: true })
+  })
 })

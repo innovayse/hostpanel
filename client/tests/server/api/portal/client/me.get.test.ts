@@ -65,7 +65,7 @@ const answer = (request: StubRequest): StubReply => {
     return { body: { id: 'sso-1', firstName: 'Id', lastName: 'Entity', email: 'sso@b.test', phoneNumber: '+9', totpEnabled: true } }
   }
   if (request.url === '/api/auth/me') {
-    return { body: { email: 'sso@b.test', roles: ['Client'], emailVerified: true, clientPermissions: granted } }
+    return { body: { email: 'sso@b.test', roles: ['Client'], emailVerified: true, clientPermissions: granted, clientId: 7, externalAccount: null } }
   }
   return { body: billing }
 }
@@ -155,20 +155,20 @@ describe('GET /api/portal/client/me in single sign-on mode', () => {
       expect(result['permissions']).toBe(Permission.None)
     })
 
-    it('is true when the account cannot be read, so nothing that needs a permission is offered on a guess', async () => {
+    it('is false when the account cannot be read: unknown means offer, the server stays the check', async () => {
       backend.respondWith(request => (request.url === '/api/auth/me' ? { status: 500, body: {} } : answer(request)))
 
       const result = await route.default(makeEvent({ cookies: await signedIn('jwt') })) as Record<string, unknown>
 
-      expect(result['actsForAccount']).toBe(true)
+      expect(result['actsForAccount']).toBe(false)
     })
 
-    it('is true when an older backend sends neither field', async () => {
+    it('is false when an older backend sends neither field', async () => {
       respondWithAccount({})
 
       const result = await route.default(makeEvent({ cookies: await signedIn('jwt') })) as Record<string, unknown>
 
-      expect(result['actsForAccount']).toBe(true)
+      expect(result['actsForAccount']).toBe(false)
     })
   })
 

@@ -53,9 +53,9 @@ import { CLIENT_TICKET_NEW_PATH, clientServiceSetupPath } from '~/constants/clie
 import { Permission } from '~/composables/usePermissions'
 import { useClientStore } from '~/stores/client'
 import type { ClientService } from '~/types/clientservice'
-import { ServiceStatus } from '~/types/servicestatus'
 import { ServiceTab } from '~/types/servicetab'
 import { webmailUrl as buildWebmailUrl } from '~/utils/controlPanel'
+import { serviceSetupPending } from '~/utils/serviceSetup'
 
 /** Translates a key into the active locale. */
 const { t } = useI18n()
@@ -95,7 +95,7 @@ const canTicket = computed(() => store.mayDo(Permission.ViewOpenSupportTickets))
 const canOrder = computed(() => store.mayDo(Permission.PlaceNewOrders))
 
 /** Whether the setup action is offered: a pending hosting service (a digital one has none) the person may order for. */
-const canSetUp = computed(() => !props.service.isDigital && props.service.status === ServiceStatus.Pending && canOrder.value)
+const canSetUp = computed(() => serviceSetupPending(props.service) && canOrder.value)
 
 /** Whether the person may sign in to the control panel from here. */
 const canSignIn = computed(() => store.mayDo(Permission.AllowSingleSignOn))

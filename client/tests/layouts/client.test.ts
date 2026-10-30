@@ -40,7 +40,7 @@ vi.mock('~/composables/apis/useAuthApi', () => ({
 
 const { default: ClientLayout } = await import('~/layouts/client.vue')
 const { default: LayoutDemoBanner } = await import('~/components/layout/DemoBanner.vue')
-const { Permission, usePermissions } = await import('~/composables/usePermissions')
+const { Permission } = await import('~/composables/usePermissions')
 const { useAuthStore } = await import('~/stores/auth')
 const { useClientStore } = await import('~/stores/client')
 
@@ -58,7 +58,6 @@ const SHELL_CONFIG = { authMode: 'sso', mainUrl: 'https://main.example.test' }
 
 beforeEach(() => {
   stubAuthRuntime({ publicConfig: SHELL_CONFIG })
-  vi.stubGlobal('usePermissions', usePermissions)
   vi.stubGlobal('useAuthStore', useAuthStore)
   vi.stubGlobal('useClientStore', useClientStore)
   vi.stubGlobal('storeToRefs', storeToRefs)
@@ -137,6 +136,15 @@ describe('client layout', () => {
     expect(wrapper.find('[data-testid="nav-client-services"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="nav-client-invoices"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="nav-client-dashboard"]').exists()).toBe(true)
+  })
+
+  it('keeps every link for a person who acts for no account yet, by the same rule as the actions', async () => {
+    const wrapper = await mountLayout()
+    useClientStore().user = { ...ME, permissions: Permission.None, actsForAccount: false } as never
+    await nextTick()
+
+    expect(wrapper.find('[data-testid="nav-client-services"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="nav-client-invoices"]').exists()).toBe(true)
   })
 
   it('opens the mobile drawer with the menu button and closes it from the backdrop', async () => {

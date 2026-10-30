@@ -18,6 +18,7 @@ import type { BillingCurrency } from '~/types/currency'
 import type { PortalProduct } from '~/types/portalproduct'
 import type { PortalProductGroup } from '~/types/portalproductgroup'
 import type { ProductFeature } from '~/types/productfeature'
+import { ProductType } from '~/types/producttype'
 
 /** The mocked catalogue endpoints, re-created for every test. */
 const api = { fetchProducts: vi.fn(), fetchProductGroups: vi.fn(), fetchProductFeatures: vi.fn() }
@@ -170,6 +171,18 @@ describe('product detail page', () => {
     await wrapper.find('[data-testid="product-add-11"]').trigger('click')
 
     expect(useCartStore().items[0]).toMatchObject({ pid: 11, name: 'Starter', billingcycle: 'monthly', amount: 10, currency: 'USD' })
+  })
+
+  it('keeps the type of a digital plan on its cart line, and none for a plan without one', async () => {
+    api.fetchProducts.mockResolvedValue(catalogue.map((entry) => (entry.id === 11 ? { ...entry, type: ProductType.Digital } : entry)))
+    const wrapper = await mountProduct()
+
+    await wrapper.find('[data-testid="product-add-11"]').trigger('click')
+    await wrapper.find('[data-testid="product-add-12"]').trigger('click')
+
+    const [digital, other] = useCartStore().items
+    expect(digital?.productType).toBe(ProductType.Digital)
+    expect(other?.productType).toBeUndefined()
   })
 
   it('marks a plan that is already in the cart', async () => {

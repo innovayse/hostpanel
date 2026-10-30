@@ -86,4 +86,11 @@ describe('ServiceNotices', () => {
     expect(wrapper.find('[data-testid="service-setup-required"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="service-complete-setup"]').attributes('href')).toBe('/client/services/4/setup')
   })
+
+  it('asks for no setup of a pending digital service, which has nothing to set up', () => {
+    const wrapper = mountClient(ServiceNotices, { props: { service: makeClientService({ status: ServiceStatus.Pending, isDigital: true }), serviceId: '4', cancelStatus: { pending: false } } })
+
+    expect(wrapper.find('[data-testid="service-setup-required"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="service-notices"]').exists()).toBe(false)
+  })
 })

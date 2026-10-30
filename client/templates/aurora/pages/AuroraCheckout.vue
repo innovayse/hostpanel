@@ -170,6 +170,10 @@
                   <UiHeading :level="3" size="bare" class="text-[17px] font-bold text-tx">{{ $t('checkout.paymentMethod') }}</UiHeading>
                 </UiStack>
 
+                <UiAlert v-if="!mayPlaceOrders" variant="warning" class="mt-5" data-testid="checkout-permission-denied">
+                  {{ $t('checkout.permissionDenied') }}
+                </UiAlert>
+
                 <UiGrid v-if="methodsPending" cols="2" gap="sm" class="mt-5">
                   <UiSkeleton v-for="i in 3" :key="i" shape="block" class="h-14" />
                 </UiGrid>
@@ -190,6 +194,7 @@
                     :key="method.module"
                     v-model="selectedMethod"
                     :method="method"
+                    :disabled="!mayPlaceOrders"
                     name="aurora-payment-method"
                     :testid="`checkout-method-${method.module}`"
                     active-class="border-ac1 bg-acbg"
@@ -199,7 +204,7 @@
                   />
                 </UiGrid>
 
-                <UiStack v-if="selectedMethod === PaymentModule.Stripe" gap="none" class="mt-6 overflow-hidden">
+                <UiStack v-if="mayPlaceOrders && selectedMethod === PaymentModule.Stripe" gap="none" class="mt-6 overflow-hidden">
                   <CheckoutStripeCardForm ref="stripeCardFormRef" />
                 </UiStack>
               </UiCard>
@@ -270,7 +275,7 @@
                   full-width
                   data-testid="checkout-place-order"
                   :loading="submitting"
-                  :disabled="submitting || cart.isEmpty || !selectedMethod"
+                  :disabled="submitting || cart.isEmpty || !selectedMethod || !mayPlaceOrders"
                   class="h-14 rounded-xl font-bold"
                   @click="submitOrder"
                 >
@@ -338,6 +343,7 @@ const {
   cart,
   currencyStore,
   isLoggedIn,
+  mayPlaceOrders,
   staleItems,
   totalLabel,
   submittingLabel,

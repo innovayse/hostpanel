@@ -143,4 +143,14 @@ describe('client account page permissions', () => {
 
     expect(wrapper.text()).toContain('client.account.tabUsers')
   })
+
+  it('keeps the payment tab listed and openable without the invoices permission, so the tab can say why it offers nothing', async () => {
+    held.value = Permission.ViewEmails
+    stubRouteWith({ tab: 'payment' })
+
+    const wrapper = await mountPage(AccountPage, { components: TAB_STUBS })
+
+    expect(wrapper.text()).toContain('client.account.tabPayment')
+    expect(wrapper.find('[data-testid="tab-payment"]').exists()).toBe(true)
+  })
 })

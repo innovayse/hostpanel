@@ -1,5 +1,5 @@
 <template>
-  <UiLinkCard :to="service.username ? clientServicePath(service.id) : clientServiceSetupPath(service.id)" :highlight="!service.username" :testid="`service-card-${service.id}`">
+  <UiLinkCard :to="awaitsSetup ? clientServiceSetupPath(service.id) : clientServicePath(service.id)" :highlight="awaitsSetup" :testid="`service-card-${service.id}`">
     <UiStack direction="row" justify="between" align="start" class="mb-3">
       <UiStack direction="row" align="center" gap="sm" class="min-w-0">
         <UiTile size="lg" :icon="Server" tone="primary" />
@@ -11,7 +11,7 @@
         </UiStack>
       </UiStack>
       <div class="flex-shrink-0">
-        <UiBadge v-if="!service.username" variant="info" size="sm" data-testid="service-needs-setup">{{ $t('client.dashboard.needsSetup') }}</UiBadge>
+        <UiBadge v-if="awaitsSetup" variant="info" size="sm" data-testid="service-needs-setup">{{ $t('client.dashboard.needsSetup') }}</UiBadge>
         <ClientStatusBadge v-else :status="service.status" />
       </div>
     </UiStack>
@@ -39,16 +39,18 @@
 
 <script setup lang="ts">
 /**
- * ServiceCard - one service of the list: name, domain, status (or a "needs setup" badge), next
+ * ServiceCard - one service of the list: name, domain, status (or a "needs setup" badge, never for a digital service), next
  * renewal date, recurring amount and a disk-usage bar when the server reported a limit. The whole card links to the service, or to
  * its setup wizard while it has no control-panel account yet.
  */
+import { computed } from 'vue'
 import { clientServicePath, clientServiceSetupPath } from '~/constants/clientRoutes'
 import { Server } from 'lucide-vue-next'
 import type { ClientService } from '~/types/clientservice'
 import type { CurrencyInfo } from '~/utils/formatCurrency'
 import { formatCurrency } from '~/utils/formatCurrency'
 import { formatDate } from '~/utils/formatDate'
+import { serviceAwaitsSetup } from '~/utils/serviceSetup'
 import { hasUsageLimit } from '~/utils/serviceUsage'
 
 /** Props of ServiceCard. */
@@ -59,5 +61,9 @@ interface Props {
   currency: CurrencyInfo
 }
 
-defineProps<Props>()
+/** The props, read for the setup decision. */
+const props = defineProps<Props>()
+
+/** Whether the card says "needs setup" and links to the wizard; never for a digital service. */
+const awaitsSetup = computed(() => serviceAwaitsSetup(props.service))
 </script>

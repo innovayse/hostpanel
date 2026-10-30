@@ -24,6 +24,14 @@ describe('ServiceCard', () => {
     expect(wrapper.find('[data-testid="service-needs-setup"]').exists()).toBe(true)
   })
 
+  it('links a digital service to its page, with its status and no setup flag', () => {
+    const wrapper = mountClient(ServiceCard, { props: { service: service({ isDigital: true, username: null }), currency: {} } })
+
+    expect(wrapper.attributes('href')).toBe('/client/services/4')
+    expect(wrapper.find('[data-testid="service-needs-setup"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Active')
+  })
+
   it('shows the status badge for a set-up service', () => {
     const wrapper = mountClient(ServiceCard, { props: { service: service(), currency: {} } })
 

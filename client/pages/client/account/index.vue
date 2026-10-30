@@ -49,7 +49,10 @@ const allTabs = computed(() => [
   // The flags have no user-management bit: the team is for a person with full access.
   { value: AccountTab.Users, label: t('client.account.tabUsers'), permission: Permission.All },
   { value: AccountTab.Emails, label: t('client.account.tabEmails'), permission: Permission.ViewEmails },
-  { value: AccountTab.Payment, label: t('client.account.tabPayment'), permission: Permission.ViewPayInvoices }
+  // Always listed: a person without the invoices permission opens the tab and reads why it is
+  // disabled, instead of the tab silently missing. The saved-card list is not requested for them:
+  // `loadPaymentMethods` in stores/account.ts checks `mayDo(ViewPayInvoices)` before asking.
+  { value: AccountTab.Payment, label: t('client.account.tabPayment'), permission: Permission.None }
 ])
 
 /** The tab strip: only the tabs the person may open. */

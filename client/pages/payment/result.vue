@@ -75,6 +75,7 @@
 import { CLIENT_INVOICES_PATH, clientInvoicePayPath, clientOrderSuccessPath } from '~/constants/clientRoutes'
 import { AlertTriangle, CheckCircle2, Clock, Loader2, XCircle } from 'lucide-vue-next'
 import { useCartStore } from '~/stores/cart'
+import { useCurrencyStore } from '~/stores/currency'
 import { useInvoicePaymentStore } from '~/stores/invoicepayment'
 import { GatewayPaymentState } from '~/types/gatewaypaymentstate'
 import { PaymentTarget } from '~/types/paymenttarget'
@@ -88,6 +89,8 @@ const localePath = useLocalePath()
 const { t } = useI18n()
 /** The invoice payment store, which verifies a hosted-gateway payment. */
 const paymentStore = useInvoicePaymentStore()
+/** The currency store: the payer's currency decides which cart lines the paid order held. */
+const currencyStore = useCurrencyStore()
 /** The cart, emptied once a checkout payment is confirmed. */
 const cart = useCartStore()
 /** Reads and forgets the token an order was placed with, and the invoice it was billed on. */
@@ -127,12 +130,18 @@ const state = ref<GatewayPaymentState>(GatewayPaymentState.Verifying)
 const checking = ref(false)
 
 /**
+ * Whether the order that was just paid held only digital goods, read from the cart before it is
+ * emptied: the confirmation then offers no hosting setup.
+ */
+const orderWasDigital = ref(false)
+
+/**
  * Where the primary button leads after a successful payment. An order's number is the one the
  * backend answered with, never built here from the id: the prefix and padding are the operator's.
  */
 const continueTarget = computed(() =>
   orderId.value
-    ? localePath(clientOrderSuccessPath({ order: paymentStore.verifiedOrderNumber }))
+    ? localePath(clientOrderSuccessPath({ order: paymentStore.verifiedOrderNumber, digital: orderWasDigital.value }))
     : localePath(`${CLIENT_INVOICES_PATH}/${invoiceId.value}`))
 
 /**
@@ -182,7 +191,8 @@ const check = async (): Promise<void> => {
   state.value = result
   if (target === PaymentTarget.Order && result === GatewayPaymentState.Paid) {
     // The cart was kept while the payer was at the bank so a declined payment loses nothing; it is
-    // emptied only now that the payment is confirmed.
+    // emptied only now that the payment is confirmed, after noting whether it held only digital goods.
+    orderWasDigital.value = cart.onlyDigital(currencyStore.payerCode)
     cart.clear()
   }
   if (target === PaymentTarget.Order && result !== GatewayPaymentState.Pending && result !== GatewayPaymentState.Unknown) {

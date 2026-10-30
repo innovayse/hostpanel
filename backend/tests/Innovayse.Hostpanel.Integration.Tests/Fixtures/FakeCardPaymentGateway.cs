@@ -79,6 +79,12 @@ public sealed class FakeCardPaymentGateway : ICardPaymentGateway
     public Func<CardRefundInstruction, Task>? AfterRefundIssued { get; set; }
 
     /// <summary>
+    /// Runs after a charge is recorded under its idempotency key and before the gateway answers;
+    /// null for none. A test awaits a gate or synchronizes concurrent callers through it.
+    /// </summary>
+    public Func<CardChargeInstruction, Task>? AfterChargeRecorded { get; set; }
+
+    /// <summary>
     /// What <see cref="ChargeSavedPaymentMethodAsync"/> answers with. The default transaction id is
     /// unique per fake, as a real gateway's is: the ledger refuses a transaction it already holds.
     /// </summary>
@@ -116,20 +122,26 @@ public sealed class FakeCardPaymentGateway : ICardPaymentGateway
     public Dictionary<string, CardChargeResult> ChargesByKey { get; } = [];
 
     /// <inheritdoc/>
-    public Task<CardChargeResult> ChargeSavedPaymentMethodAsync(CardChargeInstruction instruction, CancellationToken ct)
+    public async Task<CardChargeResult> ChargeSavedPaymentMethodAsync(CardChargeInstruction instruction, CancellationToken ct)
     {
+        CardChargeResult outcome;
         lock (ChargesByKey)
         {
             LastChargeInstruction = instruction;
-            if (!ChargesByKey.TryGetValue(instruction.IdempotencyKey, out var outcome))
+            if (!ChargesByKey.TryGetValue(instruction.IdempotencyKey, out outcome!))
             {
                 outcome = Charge;
                 ChargesByKey[instruction.IdempotencyKey] = outcome;
                 ChargeInstructionsByKey[instruction.IdempotencyKey] = instruction;
             }
-
-            return Task.FromResult(outcome);
         }
+
+        if (AfterChargeRecorded is not null)
+        {
+            await AfterChargeRecorded(instruction);
+        }
+
+        return outcome;
     }
 
     /// <summary>The instruction of the first charge under each idempotency key, which says what it took.</summary>

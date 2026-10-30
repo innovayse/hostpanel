@@ -375,6 +375,50 @@ public sealed class SettleInvoiceCardPaymentTests(IntegrationTestFactory factory
             .InvoiceId.Should().Be(invoiceId);
     }
 
+    /// <summary>
+    /// When an invoice encounters a refusal because another concurrent request already settled it with this
+    /// payment, the handler rechecks the ledger before returning payment, recognizes the replay, and answers
+    /// success without issuing a refund.
+    /// </summary>
+    [Fact]
+    public async Task HandleAsync_RefusalWhenTransactionAlreadySettledByConcurrentWriter_AnswersSuccessWithoutRefundAsync()
+    {
+        var invoiceId = await SeedUnpaidInvoiceAsync(await BillingTestSeeds.SeedClientAsync(factory));
+        var transactionId = $"pi_{Guid.NewGuid():N}";
+
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var handler = new SettleInvoiceCardPaymentHandler(
+            context,
+            scope.ServiceProvider.GetRequiredService<IActivityLogger>(),
+            scope.ServiceProvider.GetRequiredService<IClock>(),
+            _cardGateway,
+            scope.ServiceProvider.GetRequiredService<IClientCredit>(),
+            scope.ServiceProvider.GetRequiredService<IMessageBus>(),
+            NullLogger<SettleInvoiceCardPaymentHandler>.Instance);
+
+        // Pre-settle the invoice with this transaction in a competing scope, so the invoice is
+        // no longer payable (INVOICE_NOT_PAYABLE) when the handler loads it.
+        using (var otherScope = factory.Services.CreateScope())
+        {
+            var otherContext = otherScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            var other = await otherContext.Invoices.Include(i => i.Transactions).FirstAsync(i => i.Id == invoiceId);
+            var ledgerRow = other.Settle(PaymentMethodNames.Card, transactionId, DateTimeOffset.UtcNow);
+            if (ledgerRow is not null)
+            {
+                otherContext.Transactions.Add(ledgerRow);
+            }
+
+            await otherContext.SaveChangesAsync(CancellationToken.None);
+        }
+
+        var result = await handler.HandleAsync(Payment(invoiceId, transactionId), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        _cardGateway.RefundInstructions.Should().BeEmpty();
+    }
+
+
     /// <summary>Reads the one ledger row written under a payment reference.</summary>
     /// <param name="transactionId">The card gateway's transaction id.</param>
     /// <returns>The ledger row.</returns>

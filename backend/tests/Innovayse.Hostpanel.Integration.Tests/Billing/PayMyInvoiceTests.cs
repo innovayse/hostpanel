@@ -1,3 +1,4 @@
+using System.Data.Common;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -6,9 +7,11 @@ using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
+using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
@@ -37,12 +40,21 @@ public sealed class PayMyInvoiceTests(IntegrationTestFactory factory) : IClassFi
         SavedPaymentMethods = [new CardPaymentMethodDto(SavedMethodId, SavedPaymentMethodType.Card, "visa", "4242", 12, 2035, true)],
     };
 
-    /// <summary>Builds a host whose card gateway is <paramref name="cardGateway"/>.</summary>
+    /// <summary>Builds a host whose card gateway is <paramref name="cardGateway"/> and applies optional database interceptors.</summary>
     /// <param name="cardGateway">The fake card gateway to serve every call through.</param>
+    /// <param name="interceptors">Optional database interceptors to register.</param>
     /// <returns>The test host.</returns>
-    private WebApplicationFactory<Program> BuildHost(FakeCardPaymentGateway cardGateway) =>
+    private WebApplicationFactory<Program> BuildHost(
+        FakeCardPaymentGateway cardGateway, params IInterceptor[] interceptors) =>
         factory.WithWebHostBuilder(builder =>
-            builder.ConfigureTestServices(services => services.AddSingleton<ICardPaymentGateway>(cardGateway)));
+            builder.ConfigureTestServices(services =>
+            {
+                services.AddSingleton<ICardPaymentGateway>(cardGateway);
+                if (interceptors.Length > 0)
+                {
+                    services.ConfigureDbContext<AppDbContext>(options => options.AddInterceptors(interceptors));
+                }
+            }));
 
     /// <summary>Registers a client with a card customer on file and raises an unpaid invoice for them.</summary>
     /// <param name="host">The test host.</param>
@@ -385,37 +397,86 @@ public sealed class PayMyInvoiceTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>
-    /// A double click of one pay action: both requests carry the same attempt and reach the gateway,
-    /// which answers the second with the first charge (same idempotency key, same transaction). The
-    /// invoice is paid once, with one ledger row, and nothing is refunded; neither request fails with
-    /// an unhandled conflict.
+    /// A double click of one pay action: both requests carry the same attempt ID and reach the gateway
+    /// with the same idempotency key and payment transaction.
+    /// <para>
+    /// Synchronizes both requests using a fake gateway gate and ledger-read interceptor to reproduce the
+    /// race window where the second request reads the ledger before the first commits, but loads the
+    /// invoice after the first marks it paid. The refusal on the second request must recognize the
+    /// transaction on the ledger as a replay and answer 204 rather than initiating an unintended refund.
+    /// Exactly one ledger entry is created, and no refund instruction is generated.
+    /// </para>
     /// </summary>
     [Fact]
     public async Task Pay_DoubleClick_RecordsOnePaymentAndRefundsNothing()
     {
         var cardGateway = ConfiguredGateway();
-        var host = BuildHost(cardGateway);
+        var firstChargeReached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseFirstCharge = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var secondLedgerReadDone = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseSecondToLoadInvoice = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        cardGateway.AfterChargeRecorded = async _ =>
+        {
+            if (firstChargeReached.TrySetResult())
+            {
+                await releaseFirstCharge.Task.WaitAsync(TimeSpan.FromSeconds(30));
+            }
+        };
+
+        var readCount = 0;
+        var interceptor = new SettlementLedgerReadGateInterceptor(async () =>
+        {
+            if (Interlocked.Increment(ref readCount) == 1)
+            {
+                secondLedgerReadDone.TrySetResult();
+                await releaseSecondToLoadInvoice.Task.WaitAsync(TimeSpan.FromSeconds(30));
+            }
+        });
+
+        var host = BuildHost(cardGateway, interceptor);
         var (owner, admin, invoiceId) = await SeedAsync(host, "owner-double-click");
         var attemptId = Guid.NewGuid();
 
-        var responses = await Task.WhenAll(
-            PayAsync(owner, invoiceId, SavedMethodId, attemptId), PayAsync(owner, invoiceId, SavedMethodId, attemptId));
-
-        responses.Should().Contain(r => r.StatusCode == HttpStatusCode.NoContent);
-        foreach (var response in responses.Where(r => r.StatusCode != HttpStatusCode.NoContent))
+        Task<HttpResponseMessage>? firstPayTask = null;
+        Task<HttpResponseMessage>? secondPayTask = null;
+        try
         {
-            // Depending on whether the slower click read the invoice before or after the faster one
-            // saved, it was refused either before charge with INVOICE_NOT_PAYABLE or at settlement
-            // with PAYMENT_INTENT_MISMATCH. Both indicate a safely lost race with no duplicate payment.
-            (await BillingTestSeeds.CodeOfAsync(response)).Should().BeOneOf(
-                HostpanelErrorCodes.INVOICE_NOT_PAYABLE,
-                HostpanelErrorCodes.PAYMENT_INTENT_MISMATCH);
+            // 1. Start the first pay request; it reads the unpaid invoice and holds at the gateway after recording charge.
+            firstPayTask = PayAsync(owner, invoiceId, SavedMethodId, attemptId);
+            await firstChargeReached.Task.WaitAsync(TimeSpan.FromSeconds(30));
+
+            // 2. Start the second pay request with identical attempt ID and idempotency key.
+            //    It reads the unpaid invoice, reuses the charge from the gateway, enters settlement,
+            //    and executes the ledger check query before the first request has committed.
+            secondPayTask = PayAsync(owner, invoiceId, SavedMethodId, attemptId);
+            await secondLedgerReadDone.Task.WaitAsync(TimeSpan.FromSeconds(30));
+
+            // 3. Release the first request to settle the invoice, commit the ledger row, and answer 204.
+            releaseFirstCharge.TrySetResult();
+            var firstResponse = await firstPayTask.WaitAsync(TimeSpan.FromSeconds(30));
+            firstResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+            // 4. Release the second request to resume and load the invoice (which is now marked Paid).
+            //    Because the ledger check read empty initially, it encounters refusal (INVOICE_NOT_PAYABLE
+            //    or PAYMENT_INTENT_MISMATCH), performs the replay recheck, finds the recorded transaction,
+            //    and answers 204 without refunding.
+            releaseSecondToLoadInvoice.TrySetResult();
+            var secondResponse = await secondPayTask.WaitAsync(TimeSpan.FromSeconds(30));
+            secondResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        }
+        finally
+        {
+            firstChargeReached.TrySetResult();
+            releaseFirstCharge.TrySetResult();
+            secondLedgerReadDone.TrySetResult();
+            releaseSecondToLoadInvoice.TrySetResult();
         }
 
         (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.Paid));
         (await LedgerRowsAsync(host, invoiceId)).Should().Be(1);
         cardGateway.RefundInstructions.Should().BeEmpty();
-        cardGateway.ChargesByKey.Should().HaveCountLessThanOrEqualTo(1);
+        cardGateway.ChargesByKey.Should().ContainSingle();
     }
 
     /// <summary>
@@ -508,3 +569,28 @@ public sealed class PayMyInvoiceTests(IntegrationTestFactory factory) : IClassFi
         (await LedgerRowsAsync(host, invoiceId)).Should().Be(1);
     }
 }
+
+/// <summary>
+/// A command interceptor that signals and pauses once a query against <c>Transactions</c>
+/// for a payment reference has executed, before the subsequent invoice query runs.
+/// </summary>
+/// <param name="onLedgerReadAsync">Action invoked after the ledger query executes.</param>
+internal sealed class SettlementLedgerReadGateInterceptor(Func<Task> onLedgerReadAsync) : DbCommandInterceptor
+{
+    /// <inheritdoc/>
+    public override async ValueTask<DbDataReader> ReaderExecutedAsync(
+        DbCommand command,
+        CommandExecutedEventData eventData,
+        DbDataReader result,
+        CancellationToken cancellationToken = default)
+    {
+        if (command.CommandText.Contains("Transactions", StringComparison.OrdinalIgnoreCase)
+            && command.CommandText.Contains("TransactionId", StringComparison.OrdinalIgnoreCase))
+        {
+            await onLedgerReadAsync();
+        }
+
+        return result;
+    }
+}
+

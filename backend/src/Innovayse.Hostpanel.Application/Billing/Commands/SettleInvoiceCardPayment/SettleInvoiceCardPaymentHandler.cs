@@ -130,7 +130,13 @@ public sealed class SettleInvoiceCardPaymentHandler
         var refusal = Refusal(cmd, invoice);
         if (refusal is not null)
         {
-            return await ReturnPaymentAsync(cmd, invoice, refusal, ct);
+            var reloaded = await ReloadAfterConflictAsync(cmd, ct);
+            if (reloaded.Settled)
+            {
+                return Result.Success();
+            }
+
+            return await ReturnPaymentAsync(cmd, reloaded.Invoice ?? invoice, refusal, ct);
         }
 
         if (await TrySettleAsync(cmd, invoice, ct))

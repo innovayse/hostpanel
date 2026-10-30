@@ -86,6 +86,24 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     [Range(1, 1440)]
     public int SyncPendingDomainStatusesIntervalMinutes { get; init; } = 15;
 
+    /// <summary>Seconds between the end of one fulfilment dispatch pass and the start of the next.</summary>
+    [Range(1, 3600)]
+    public int DispatchFulfilmentIntervalSeconds { get; init; } = 30;
+
+    /// <summary>
+    /// How many fulfilment deliveries one dispatch pass makes at most. A pass stops there and the next
+    /// one carries on, so a backlog never keeps one pass (and the job it holds) running without end.
+    /// </summary>
+    [Range(1, 500)]
+    public int FulfilmentBatchSize { get; init; } = 50;
+
+    /// <summary>
+    /// Seconds a fulfilment plugin has to answer one delivery before the attempt counts as failed, so a
+    /// plugin that never answers cannot hold the dispatch pass. The claim on the record lasts twice as long.
+    /// </summary>
+    [Range(1, 600)]
+    public int FulfilmentCallTimeoutSeconds { get; init; } = 60;
+
     /// <summary>
     /// Minutes a pass may hold its job before another instance may take it over. Longer than the
     /// longest pass, or a slow pass is started a second time while it is still running.
@@ -161,6 +179,20 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     public JobSchedule SyncPendingDomainStatuses =>
         JobSchedule.Every(TimeSpan.FromMinutes(SyncPendingDomainStatusesIntervalMinutes));
 
+    /// <summary>Gets the schedule of the fulfilment dispatch.</summary>
+    public JobSchedule DispatchFulfilment =>
+        JobSchedule.Every(TimeSpan.FromSeconds(DispatchFulfilmentIntervalSeconds));
+
+    /// <summary>Gets how long a fulfilment plugin has to answer one delivery, as a span.</summary>
+    public TimeSpan FulfilmentCallTimeout => TimeSpan.FromSeconds(FulfilmentCallTimeoutSeconds);
+
+    /// <summary>
+    /// Gets how long a dispatcher's claim on a fulfilment record lasts: twice the time the plugin has to
+    /// answer, so the claim outlives the call and the save of its outcome. A dispatcher that dies in
+    /// between is noticed once the claim has run out.
+    /// </summary>
+    public TimeSpan FulfilmentLease => FulfilmentCallTimeout * 2;
+
     /// <summary>Gets how long a pass holds its job, as a span.</summary>
     public TimeSpan Lease => TimeSpan.FromMinutes(LeaseMinutes);
 
@@ -215,6 +247,15 @@ public sealed class ScheduledJobsOptions : IValidatableObject
             yield return new ValidationResult(
                 "GatewayCheckMaxIntervalMinutes must not be shorter than GatewayCheckBackoffStartMinutes.",
                 [nameof(GatewayCheckMaxIntervalMinutes), nameof(GatewayCheckBackoffStartMinutes)]);
+        }
+
+        // A dispatch pass that made every delivery and waited out every timeout must still end before its
+        // job lease does, or another instance would start a second pass over the same records.
+        if (FulfilmentCallTimeout * FulfilmentBatchSize >= Lease)
+        {
+            yield return new ValidationResult(
+                "FulfilmentBatchSize times FulfilmentCallTimeoutSeconds must be shorter than LeaseMinutes.",
+                [nameof(FulfilmentBatchSize), nameof(FulfilmentCallTimeoutSeconds), nameof(LeaseMinutes)]);
         }
 
         // A job is abandoned only after it missed several beats; a threshold at or under two beats

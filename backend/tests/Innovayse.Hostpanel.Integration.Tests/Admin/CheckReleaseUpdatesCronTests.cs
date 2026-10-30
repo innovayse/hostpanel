@@ -29,10 +29,8 @@ public sealed class CheckReleaseUpdatesCronTests(IntegrationTestFactory factory)
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         await context.LatestReleases.ExecuteDeleteAsync();
 
-        // Reset the fake between tests.
-        var fake = factory.Services.GetRequiredService<FakeGitHubReleasesClient>();
-        fake.Next = null;
-        fake.ShouldFail = false;
+        // Reset the fake between tests, including the call counter.
+        factory.Services.GetRequiredService<FakeGitHubReleasesClient>().Reset();
     }
 
     /// <summary>Nothing to clean up after a case.</summary>

@@ -25,6 +25,14 @@ public sealed class FakeGitHubReleasesClient : IGitHubReleasesClient
     /// <summary>Number of times <see cref="GetLatestAsync"/> was called.</summary>
     public int CallCount { get; private set; }
 
+    /// <summary>Resets all state so the next test starts from a clean slate.</summary>
+    public void Reset()
+    {
+        Next = null;
+        ShouldFail = false;
+        CallCount = 0;
+    }
+
     /// <inheritdoc/>
     public Task<GitHubReleaseInfo?> GetLatestAsync(CancellationToken ct)
     {

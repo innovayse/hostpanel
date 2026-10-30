@@ -20,7 +20,7 @@ import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
-import UiRowActions from '@/components/ui/UiRowActions.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
@@ -322,24 +322,45 @@ const dismissDelete = (): void => {
 }
 
 /**
- * Goes into a sub-category.
+ * Opens the edit dialog for a category.
  *
- * @param category - The category to open.
+ * @param category - The category to edit.
  */
+const editCategory = (category: DownloadCategory): void => {
+  editingCategory.value = category
+}
+
+/**
+ * Opens the delete confirmation for a category.
+ *
+ * @param category - The category to delete.
+ */
+const askToDeleteCategory = (category: DownloadCategory): void => {
+  deleteRequest.value = { type: DownloadTarget.Category, id: category.id, name: category.name }
+}
+
 /**
  * Returns the row actions for a category card.
  *
  * @param category - The category the actions target.
  * @returns The actions array for UiRowActions.
  */
-const categoryActions = (category: DownloadCategory) => {
-  /** Opens the edit dialog for the category. */
-  const onEdit = () => { editingCategory.value = category }
-  /** Opens the delete confirmation for the category. */
-  const onDelete = () => { deleteRequest.value = { type: DownloadTarget.Category, id: category.id, name: category.name } }
+const categoryActions = (category: DownloadCategory): UiRowAction[] => {
+  /**
+   * Forwards to {@link editCategory} for this specific category row.
+   *
+   * @returns Nothing.
+   */
+  const onEdit = (): void => editCategory(category)
+  /**
+   * Forwards to {@link askToDeleteCategory} for this specific category row.
+   *
+   * @returns Nothing.
+   */
+  const onDelete = (): void => askToDeleteCategory(category)
   return [
     { label: t('shared.edit'), testid: `downloads-category-${category.id}-edit`, onSelect: onEdit },
-    { label: t('shared.delete'), testid: `downloads-category-${category.id}-delete`, onSelect: onDelete, danger: true as const },
+    { label: t('shared.delete'), testid: `downloads-category-${category.id}-delete`, onSelect: onDelete, danger: true },
   ]
 }
 

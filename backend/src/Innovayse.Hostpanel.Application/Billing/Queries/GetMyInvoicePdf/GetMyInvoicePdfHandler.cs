@@ -45,7 +45,8 @@ public sealed class GetMyInvoicePdfHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The PDF, or <c>INVOICE_NOT_FOUND</c> (404) when the invoice is not the caller's, is a draft,
-    /// does not exist, or the caller has no client record.
+    /// does not exist, or the caller has no client record; otherwise whatever
+    /// <c>GetInvoicePdfHandler</c> answers, <c>INVOICE_PDF_RENDER_BUSY</c> (503) included.
     /// </returns>
     /// <exception cref="UnauthorizedAccessException">Thrown when the request carries no subject.</exception>
     public async Task<Result<FileDownloadDto>> HandleAsync(GetMyInvoicePdfQuery query, CancellationToken ct)

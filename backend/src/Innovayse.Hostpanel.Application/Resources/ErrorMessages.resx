@@ -87,6 +87,9 @@
 <data name="INVOICE_PDF_EXCEEDS_LIMIT" xml:space="preserve">
     <value>This invoice has too many lines to download as a PDF.</value>
   </data>
+<data name="INVOICE_PDF_RENDER_BUSY" xml:space="preserve">
+    <value>Too many invoice PDFs are being prepared right now. Please try again shortly.</value>
+  </data>
 <data name="QUOTE_NOT_FOUND" xml:space="preserve">
     <value>No such quote.</value>
   </data>

@@ -109,6 +109,9 @@ public static class HostpanelErrorCodes
     /// <summary>The invoice has more lines than <c>InvoicePdf:MaxLines</c> allows in a PDF (400).</summary>
     public const string INVOICE_PDF_EXCEEDS_LIMIT = "INVOICE_PDF_EXCEEDS_LIMIT";
 
+    /// <summary>No invoice PDF render slot came free for the request within <c>InvoicePdf:MaxRenderWaitSeconds</c> (503, with <c>Retry-After</c>).</summary>
+    public const string INVOICE_PDF_RENDER_BUSY = "INVOICE_PDF_RENDER_BUSY";
+
     // Billing: quotes
 
     /// <summary>The id names no quote (404).</summary>

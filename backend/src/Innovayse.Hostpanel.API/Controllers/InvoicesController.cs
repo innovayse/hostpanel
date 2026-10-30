@@ -110,7 +110,8 @@ public sealed class InvoicesController : BaseApiController
     /// 200 with <c>invoice-{id}.pdf</c> as an attachment; 400 for an id that is not positive, or with
     /// <c>INVOICE_PDF_EXCEEDS_LIMIT</c> when the invoice has more lines than <c>InvoicePdf:MaxLines</c>;
     /// 401 without a session; 403 for a caller who is not staff; 404 with <c>INVOICE_NOT_FOUND</c> when the id
-    /// names no invoice; 429 when the rate limit is hit.
+    /// names no invoice; 429 when the rate limit is hit; 503 with <c>INVOICE_PDF_RENDER_BUSY</c> and
+    /// <c>Retry-After</c> when no render slot frees within <c>InvoicePdf:MaxRenderWaitSeconds</c>.
     /// </returns>
     [HttpGet("{id:int}/pdf")]
     [Authorize(Policy = Policies.Admin)]
@@ -119,6 +120,7 @@ public sealed class InvoicesController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> GetPdfAsync(int id, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<FileDownloadDto>>(new GetInvoicePdfQuery(id), ct);

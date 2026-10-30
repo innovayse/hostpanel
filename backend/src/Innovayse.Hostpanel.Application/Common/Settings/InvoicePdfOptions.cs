@@ -13,6 +13,13 @@ public sealed class InvoicePdfOptions
     public const string SectionName = "InvoicePdf";
 
     /// <summary>
+    /// Longest <see cref="MaxRenderWaitSeconds"/> accepted at startup: an hour, the same ceiling as
+    /// <c>ServiceUnavailable:RetryAfterSeconds</c>. A wait anywhere near it already defeats the point
+    /// of bounding it, and far past it the semaphore refuses the timeout at request time.
+    /// </summary>
+    public const int MaxRenderWaitSecondsCeiling = 3600;
+
+    /// <summary>
     /// Most line items an invoice may have and still be rendered (<c>InvoicePdf__MaxLines</c>).
     /// An invoice over it answers <c>INVOICE_PDF_EXCEEDS_LIMIT</c> before anything is drawn.
     /// </summary>
@@ -28,4 +35,16 @@ public sealed class InvoicePdfOptions
     /// the API container is given.
     /// </remarks>
     public int MaxConcurrentRenders { get; init; } = 4;
+
+    /// <summary>
+    /// Longest a render waits for a free slot, in seconds (<c>InvoicePdf__MaxRenderWaitSeconds</c>),
+    /// from 1 to <see cref="MaxRenderWaitSecondsCeiling"/>. A render that gets no slot within it answers
+    /// <c>INVOICE_PDF_RENDER_BUSY</c> (503, with <c>Retry-After</c>) instead of rendering.
+    /// </summary>
+    /// <remarks>
+    /// Without it a burst over <see cref="MaxConcurrentRenders"/> queues for as long as the burst
+    /// lasts, and every request in the queue keeps its connection open the whole time. A render
+    /// takes well under a second, so the default of 10 still covers a full queue draining.
+    /// </remarks>
+    public int MaxRenderWaitSeconds { get; init; } = 10;
 }

@@ -87,6 +87,9 @@
 <data name="INVOICE_PDF_EXCEEDS_LIMIT" xml:space="preserve">
     <value>В этом счёте слишком много строк, чтобы скачать его в PDF.</value>
   </data>
+<data name="INVOICE_PDF_RENDER_BUSY" xml:space="preserve">
+    <value>Сейчас готовится слишком много счетов в PDF. Повторите попытку чуть позже.</value>
+  </data>
 <data name="QUOTE_NOT_FOUND" xml:space="preserve">
     <value>Такая смета не найдена.</value>
   </data>

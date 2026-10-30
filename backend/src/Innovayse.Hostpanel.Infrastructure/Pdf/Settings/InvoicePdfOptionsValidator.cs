@@ -24,6 +24,13 @@ public sealed class InvoicePdfOptionsValidator : IValidateOptions<InvoicePdfOpti
             return Fail(nameof(InvoicePdfOptions.MaxConcurrentRenders));
         }
 
+        if (options.MaxRenderWaitSeconds is <= 0 or > InvoicePdfOptions.MaxRenderWaitSecondsCeiling)
+        {
+            return ValidateOptionsResult.Fail(
+                $"{InvoicePdfOptions.SectionName}:{nameof(InvoicePdfOptions.MaxRenderWaitSeconds)} must be between 1 and {InvoicePdfOptions.MaxRenderWaitSecondsCeiling} " +
+                $"(set {InvoicePdfOptions.SectionName}__{nameof(InvoicePdfOptions.MaxRenderWaitSeconds)}).");
+        }
+
         return ValidateOptionsResult.Success;
     }
 

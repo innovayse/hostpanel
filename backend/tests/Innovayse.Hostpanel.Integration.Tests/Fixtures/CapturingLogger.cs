@@ -12,6 +12,9 @@ public sealed class CapturingLogger<T> : ILogger<T>
     /// <summary>Gets every message logged so far, formatted, in order.</summary>
     public List<string> Messages { get; } = [];
 
+    /// <summary>Gets every entry logged so far with its level, in order, for a test that asserts how loudly something was logged.</summary>
+    public List<(LogLevel Level, string Message)> Entries { get; } = [];
+
     /// <inheritdoc/>
     public IDisposable? BeginScope<TState>(TState state)
         where TState : notnull => null;
@@ -27,6 +30,8 @@ public sealed class CapturingLogger<T> : ILogger<T>
         Exception? exception,
         Func<TState, Exception?, string> formatter)
     {
-        Messages.Add(formatter(state, exception));
+        var message = formatter(state, exception);
+        Messages.Add(message);
+        Entries.Add((logLevel, message));
     }
 }

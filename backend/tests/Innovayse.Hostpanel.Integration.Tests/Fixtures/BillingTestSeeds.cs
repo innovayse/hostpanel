@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -25,6 +26,21 @@ public static class BillingTestSeeds
 
     /// <summary>An origin the test host's CORS configuration allows a payer to be returned to.</summary>
     public const string AllowedReturnUrl = "https://client.test/payment/result";
+
+    /// <summary>The <c>Retry-After</c> a <see cref="RenderBusyHost"/> sends on a 503: not the default, so the test sees it was read.</summary>
+    public const int BusyRetryAfterSeconds = 7;
+
+    /// <summary>
+    /// A host that renders one invoice PDF at a time and gives a waiting render one second, so a test
+    /// holding the slot through <c>InvoicePdfRenderGate</c> sees the next download refused as busy.
+    /// </summary>
+    /// <param name="factory">The shared host to derive from.</param>
+    /// <returns>The derived host; the caller disposes it.</returns>
+    public static WebApplicationFactory<Program> RenderBusyHost(IntegrationTestFactory factory) =>
+        factory.WithWebHostBuilder(builder => builder
+            .UseSetting("InvoicePdf:MaxConcurrentRenders", "1")
+            .UseSetting("InvoicePdf:MaxRenderWaitSeconds", "1")
+            .UseSetting("ServiceUnavailable:RetryAfterSeconds", BusyRetryAfterSeconds.ToString(CultureInfo.InvariantCulture)));
 
     /// <summary>Builds a client carrying the seeded admin's bearer token.</summary>
     /// <param name="factory">The factory whose admin credentials to mint a token from.</param>

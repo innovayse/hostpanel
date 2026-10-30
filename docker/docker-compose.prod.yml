@@ -2,6 +2,15 @@
 # build: block so a host that builds in place gets the same image name.
 name: hostpanel
 
+# Container logs rotate: without a bound the json-file driver keeps every line of a container's
+# life on disk and can fill the host's disk. Literal values on purpose: a ${VAR} here fails the
+# deploy pre-flight when the variable is not set in CI.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "5"
+
 # The stack's own network gets a fixed subnet: the API believes X-Forwarded-For only from it, where the edge
 # proxy and the client container sit (RateLimit__KnownNetworks__0 below). docker/README.md, Trusted proxies.
 networks:
@@ -12,7 +21,19 @@ networks:
 
 services:
   hostpanel-api:
+    logging: *logging
     container_name: hostpanel-api
+    # Memory limit: the GC heap cap in the environment (DOTNET_GCHeapHardLimitPercent) is a percentage of this;
+    # with no limit it is taken from the host's RAM and the heap keeps whatever it grew to.
+    # The demo API extends this service and inherits the limit.
+    # The value matches API_MEMORY in docker/.env.example, which the dev compose already uses.
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          memory: 512M
     image: ${IMAGE_REGISTRY:?IMAGE_REGISTRY must be set}/api:${IMAGE_TAG}
     build:
       context: ../backend
@@ -116,7 +137,23 @@ services:
     restart: unless-stopped
 
   hostpanel-client:
+    logging: *logging
     container_name: hostpanel-client
+    # Memory limit: with none, the runtime sizes itself against the host's RAM and one container
+    # can take the whole box. A hard cap; over it the kernel kills the container (exit 137).
+    # CPU guard: `cpus` is a runaway ceiling only; normal use stays far below it.
+    # Reservation: a soft floor of a quarter of the limit; under cgroup v2 the kernel reclaims first from
+    # containers above it. Logs rotate through the shared anchor, so a chatty container cannot fill the disk.
+    # The demo services extend this one and inherit the limit. Higher than the static front ends
+    # because this one renders on the server, and a heavy page grows the Node heap.
+    # The value matches CLIENT_MEMORY in docker/.env.example, which the dev compose already uses.
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          memory: 512M
     image: ${IMAGE_REGISTRY:?IMAGE_REGISTRY must be set}/client:${IMAGE_TAG}
     build:
       context: ../client
@@ -198,7 +235,22 @@ services:
     restart: unless-stopped
 
   hostpanel-admin:
+    logging: *logging
     container_name: hostpanel-admin
+    # Memory limit: with none, the runtime sizes itself against the host's RAM and one container
+    # can take the whole box. A hard cap; over it the kernel kills the container (exit 137).
+    # CPU guard: `cpus` is a runaway ceiling only; normal use stays far below it.
+    # Reservation: a soft floor of a quarter of the limit; under cgroup v2 the kernel reclaims first from
+    # containers above it. Logs rotate through the shared anchor, so a chatty container cannot fill the disk.
+    # The demo services extend this one and inherit the limit.
+    # The value matches ADMIN_MEMORY in docker/.env.example, which the dev compose already uses.
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1536M
+        reservations:
+          memory: 384M
     image: ${IMAGE_REGISTRY:?IMAGE_REGISTRY must be set}/admin:${IMAGE_TAG}
     build:
       context: ..
@@ -228,6 +280,19 @@ services:
     restart: unless-stopped
 
   hostpanel-nginx:
+    logging: *logging
+    # Memory limit: with none, the runtime sizes itself against the host's RAM and one container
+    # can take the whole box. A hard cap; over it the kernel kills the container (exit 137).
+    # CPU guard: `cpus` is a runaway ceiling only; normal use stays far below it.
+    # Reservation: a soft floor of a quarter of the limit; under cgroup v2 the kernel reclaims first from
+    # containers above it. Logs rotate through the shared anchor, so a chatty container cannot fill the disk.
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 256M
+        reservations:
+          memory: 64M
     build:
       context: ./nginx
       args:
@@ -266,6 +331,39 @@ services:
       hostpanel-admin:
         condition: service_healthy
     restart: unless-stopped
+
+  # The next three are defined in docker-compose.shared.yml; this overlay adds the logging, limits and reservation alone (CPU guard and soft reservation as on the services above).
+  # PostgreSQL gets no less than 1G: the page cache is charged to the container, and a tight limit
+  # makes the database thrash.
+  hostpanel-db:
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          memory: 256M
+
+  hostpanel-rabbitmq:
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          memory: 128M
+
+  hostpanel-redis:
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 256M
+        reservations:
+          memory: 64M
 
 volumes:
   hostpanel_branding:

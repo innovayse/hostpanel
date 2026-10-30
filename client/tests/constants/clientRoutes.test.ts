@@ -61,5 +61,7 @@ describe('client routes', () => {
     expect(clientOrderSuccessPath({ order: 'ORD-0042' })).toBe('/client/order-success?order=ORD-0042')
     expect(clientOrderSuccessPath({ order: 'A 1', invoice: 7, domain: 'a&b.com', action: DomainOrderAction.Transfer }))
       .toBe('/client/order-success?order=A+1&invoice=7&domain=a%26b.com&action=transfer')
+    expect(clientOrderSuccessPath({ order: 'ORD-0042', digital: true })).toBe('/client/order-success?order=ORD-0042&digital=1')
+    expect(clientOrderSuccessPath({ order: 'ORD-0042', digital: false })).toBe('/client/order-success?order=ORD-0042')
   })
 })

@@ -97,6 +97,14 @@ describe('service page', () => {
     expect(navigate).toHaveBeenCalledWith('/client/services/4/setup')
   })
 
+  it('keeps a digital service on its page, which has nothing to set up and no control-panel account', async () => {
+    clientApi.fetchService.mockResolvedValue(service({ username: null, status: ServiceStatus.Pending, isDigital: true }))
+
+    await mountPage(ServicePage)
+
+    expect(navigate).not.toHaveBeenCalled()
+  })
+
   it('does not send a terminated service to setup', async () => {
     clientApi.fetchService.mockResolvedValue(service({ username: null, status: ServiceStatus.Terminated }))
 

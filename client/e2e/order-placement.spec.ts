@@ -4,12 +4,14 @@
  * A signed-in customer with a plan in the cart pays by bank transfer: the order reaches the
  * backend with the cart's items, the chosen method and the payer's currency, and the customer is
  * sent to the invoice the backend raised. A refused order keeps the customer on the checkout with
- * the backend's sentence. Bank transfer is the method used because it needs neither a card
+ * the backend's sentence. A member of the account without the permission to place orders sees the
+ * payment step disabled with the reason and cannot send the order, while a signed-in first-time
+ * buyer, who acts for no account yet, can. Bank transfer is the method used because it needs neither a card
  * element nor a redirect to a bank, so the whole path runs against the stub backend.
  */
 import { expect, test } from './support/test'
-import { ORDER, PLAN } from './support/fixtures.mjs'
-import { resetStub, scriptStub, signIn, stubRequests, waitForHydration } from './support/helpers'
+import { FIRST_TIME_BUYER_ACCOUNT, MEMBER_WITHOUT_PURCHASE_ACCOUNT, ORDER, PLAN } from './support/fixtures.mjs'
+import { resetStub, scriptStub, setAccount, signIn, stubRequests, waitForHydration } from './support/helpers'
 import { HttpMethod } from '../types/httpmethod'
 
 /** localStorage key the cart is persisted under (`stores/cart.ts`). */
@@ -57,4 +59,30 @@ test('a refused order keeps the customer on the checkout with the backend senten
   await expect(page.getByTestId('checkout-error')).toContainText('E2E: the order was refused.')
   await expect(page).toHaveURL(/\/checkout$/)
   await expect(page.getByTestId('checkout-place-order')).toBeEnabled()
+})
+
+test('a member without the permission to place orders sees the payment step disabled with the reason', async ({ page, request }) => {
+  await setAccount(request, MEMBER_WITHOUT_PURCHASE_ACCOUNT)
+
+  await page.goto('/checkout')
+  await waitForHydration(page)
+
+  await expect(page.getByTestId('checkout-permission-denied')).toBeVisible()
+  await expect(page.getByTestId('checkout-method-bank_transfer-input')).toBeDisabled()
+  await expect(page.getByTestId('checkout-place-order')).toBeDisabled()
+  expect((await stubRequests(request)).some(r => r.method === 'POST' && r.path === '/api/orders')).toBe(false)
+})
+
+test('a signed-in first-time buyer, who acts for no account yet, can place the order', async ({ page, request }) => {
+  await setAccount(request, FIRST_TIME_BUYER_ACCOUNT)
+
+  await page.goto('/checkout')
+  await waitForHydration(page)
+
+  await expect(page.getByTestId('checkout-permission-denied')).toHaveCount(0)
+  await expect(page.getByTestId('checkout-place-order')).toBeEnabled()
+
+  await page.getByTestId('checkout-place-order').click()
+
+  await expect(page).toHaveURL(new RegExp(`/client/invoices/${ORDER.invoiceId}/pay$`))
 })

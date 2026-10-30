@@ -35,7 +35,7 @@ public sealed class PolicyRegistrationTests
         return policy.Requirements.OfType<RolesAuthorizationRequirement>().SelectMany(r => r.AllowedRoles).ToList();
     }
 
-    /// <summary>Each policy requires exactly its roles.</summary>
+    /// <summary>Each role policy requires exactly its roles, and the client portal policy requires the portal requirement instead of a role.</summary>
     /// <param name="isLocalMode">The deployment mode.</param>
     [Theory]
     [InlineData(true)]
@@ -49,7 +49,11 @@ public sealed class PolicyRegistrationTests
         member.Requirements.OfType<DenyAnonymousAuthorizationRequirement>().Should().ContainSingle();
 
         RolesOf(options.GetPolicy(Policies.Admin)!).Should().BeEquivalentTo([Roles.Admin]);
-        RolesOf(options.GetPolicy(Policies.Client)!).Should().BeEquivalentTo([Roles.Client]);
+
+        // The client portal is not a plain role check: a member an identity plugin vouches for holds no role.
+        var client = options.GetPolicy(Policies.Client)!;
+        client.Requirements.OfType<ClientPortalRequirement>().Should().ContainSingle();
+        RolesOf(client).Should().BeEmpty();
     }
 
     /// <summary>In local mode the policies name no scheme: the one default scheme authenticates.</summary>

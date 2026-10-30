@@ -2,7 +2,8 @@
  * Fixtures the billing screen tests share: an invoice with its lines and transactions, an invoice
  * list row, a quote list row and a ledger transaction, shaped as the API sends them.
  */
-import type { Invoice, InvoiceDetail } from '@/types/invoice'
+import { FulfilmentKind, FulfilmentStatus } from '@/types/invoice'
+import type { FulfilmentRecord, Invoice, InvoiceDetail } from '@/types/invoice'
 import type { QuoteListItem } from '@/types/quote'
 import type { Transaction } from '@/types/transaction'
 
@@ -96,5 +97,26 @@ export const transactionFixture = (overrides: Partial<Transaction> = {}): Transa
   fees: 3.5,
   addedToCredit: false,
   currency: 'USD',
+  ...overrides,
+})
+
+/**
+ * Builds a fulfilment record of invoice 1 as the API sends it: a failed run that can be retried.
+ *
+ * @param overrides - Fields to replace.
+ * @returns The record.
+ */
+export const fulfilmentFixture = (overrides: Partial<FulfilmentRecord> = {}): FulfilmentRecord => ({
+  id: 31,
+  invoiceId: 1,
+  pluginId: 'provisioning-demo',
+  kind: FulfilmentKind.Paid,
+  status: FulfilmentStatus.Failed,
+  attempts: 2,
+  nextAttemptAt: '2026-10-20T10:00:00Z',
+  lastError: 'The upstream account is locked.',
+  completedAt: null,
+  createdAt: '2026-10-19T08:00:00Z',
+  canRetry: true,
   ...overrides,
 })

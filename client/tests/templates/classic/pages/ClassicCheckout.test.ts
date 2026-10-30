@@ -11,9 +11,11 @@ import GatewayOption from '~/components/checkout/GatewayOption.vue'
 import SubmitHint from '~/components/checkout/SubmitHint.vue'
 import { useAuthStore } from '~/stores/auth'
 import { useCartStore } from '~/stores/cart'
+import { useClientStore } from '~/stores/client'
 import type { BillingCurrency } from '~/types/currency'
 import type { CartItem } from '~/types/cartitem'
 import { makeClientUser } from '~/tests/helpers/clientUser'
+import { Permission } from '~/composables/usePermissions'
 import { PaymentModule } from '~/types/paymentmodule'
 import { PricingCycle } from '~/types/pricingcycle'
 
@@ -230,6 +232,51 @@ describe('ClassicCheckout', () => {
 
     expect(wrapper.find('[data-testid="checkout-no-methods"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="checkout-submit"]').attributes('disabled')).toBeDefined()
+  })
+
+  describe('purchase permission', () => {
+    it('offers the gateways and the order button to a member of the account who may place orders', async () => {
+      const wrapper = await mountCheckout()
+
+      useClientStore().user = makeClientUser({ permissions: Permission.PlaceNewOrders })
+      await flushPromises()
+
+      expect(wrapper.find('[data-testid="checkout-permission-denied"]').exists()).toBe(false)
+      expect(wrapper.find(`[data-testid="checkout-method-${PaymentModule.Stripe}-input"]`).attributes('disabled')).toBeUndefined()
+      expect(wrapper.find('[data-testid="checkout-submit"]').attributes('disabled')).toBeUndefined()
+    })
+
+    it('disables the gateways and the order button, and says why, for a member who may not place orders', async () => {
+      const wrapper = await mountCheckout()
+
+      useClientStore().user = makeClientUser({ permissions: Permission.ViewPayInvoices })
+      await flushPromises()
+
+      expect(wrapper.find('[data-testid="checkout-permission-denied"]').text()).toContain('checkout.permissionDenied')
+      expect(wrapper.find(`[data-testid="checkout-method-${PaymentModule.Stripe}-input"]`).attributes('disabled')).toBeDefined()
+      expect(wrapper.find('[data-testid="checkout-submit"]').attributes('disabled')).toBeDefined()
+    })
+
+    it('does not open the card form for a member who may not place orders', async () => {
+      const wrapper = await mountCheckout()
+      await wrapper.find(`[data-testid="checkout-method-${PaymentModule.Stripe}-input"]`).setValue(true)
+      expect(wrapper.find('[data-testid="checkout-card-form"]').exists()).toBe(true)
+
+      useClientStore().user = makeClientUser({ permissions: Permission.None })
+      await flushPromises()
+
+      expect(wrapper.find('[data-testid="checkout-card-form"]').exists()).toBe(false)
+    })
+
+    it('keeps the checkout open for a signed-in first-time buyer who acts for no account and holds no flag', async () => {
+      const wrapper = await mountCheckout()
+
+      useClientStore().user = makeClientUser({ id: null, permissions: Permission.None, actsForAccount: false })
+      await flushPromises()
+
+      expect(wrapper.find('[data-testid="checkout-permission-denied"]').exists()).toBe(false)
+      expect(wrapper.find('[data-testid="checkout-submit"]').attributes('disabled')).toBeUndefined()
+    })
   })
 
   it('opens the card form only for the card gateway', async () => {

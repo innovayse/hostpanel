@@ -151,6 +151,7 @@
     "tabSummary": "Summary",
     "tabCredit": "Credit",
     "tabRefund": "Refund",
+    "tabFulfilment": "Fulfilment",
     "downloadPdf": "Download PDF"
   },
   "invoicesList": {
@@ -229,5 +230,25 @@
   "invoiceItems": {
     "removeItem": "Remove line",
     "tax": "Tax"
+  },
+  "invoiceFulfilmentTab": {
+    "title": "Fulfilment",
+    "plugin": "Plugin",
+    "kind": "Action",
+    "attempts": "Attempts",
+    "lastError": "Last error",
+    "when": "Completed / next attempt",
+    "retry": "Retry",
+    "empty": "No fulfilment records for this invoice.",
+    "statusPending": "Pending",
+    "statusProcessing": "Processing",
+    "statusDone": "Done",
+    "statusFailed": "Failed",
+    "kindPaid": "Paid",
+    "kindRefunded": "Refunded",
+    "kindLapsed": "Lapsed",
+    "confirmRetryTitle": "Retry fulfilment",
+    "confirmRetryMessage": "Run the {plugin} plugin again for this invoice?",
+    "retried": "Retry requested."
   }
 }

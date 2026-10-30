@@ -5,7 +5,12 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { SessionCookie } from '~/constants/sessionCookie'
+import {
+  HOST_COOKIE_PREFIX,
+  SSO_TRANSACTION_COOKIE_STEM,
+  SSO_TRANSACTION_NAME_HASH_LENGTH,
+  SessionCookie
+} from '~/constants/sessionCookie'
 
 describe('SessionCookie', () => {
   it('keeps the wire names of the session cookies', () => {
@@ -18,12 +23,21 @@ describe('SessionCookie', () => {
     expect(SessionCookie.LegacyRefreshToken).toBe('refresh_token')
   })
 
-  it('keeps the wire names of the sign-in round-trip cookies', () => {
-    expect(SessionCookie.PkceVerifier).toBe('pkce_verifier')
-    expect(SessionCookie.OauthState).toBe('oauth_state')
-    expect(SessionCookie.PostLoginRedirect).toBe('post_login_redirect')
+  it('keeps the wire name of the silent sign-in loop guard', () => {
     expect(SessionCookie.SsoSilentTried).toBe('sso_silent_tried')
-    expect(SessionCookie.SsoSilentReturn).toBe('sso_silent_return')
+  })
+
+  it('keeps the wire names of the old shared sign-in cookies it still clears', () => {
+    expect(SessionCookie.LegacyPkceVerifier).toBe('pkce_verifier')
+    expect(SessionCookie.LegacyOauthState).toBe('oauth_state')
+    expect(SessionCookie.LegacyPostLoginRedirect).toBe('post_login_redirect')
+    expect(SessionCookie.LegacySsoSilentReturn).toBe('sso_silent_return')
+  })
+
+  it('keeps the parts of the sign-in transaction cookie name', () => {
+    expect(SSO_TRANSACTION_COOKIE_STEM).toBe('sso_tx_')
+    expect(SSO_TRANSACTION_NAME_HASH_LENGTH).toBe(16)
+    expect(HOST_COOKIE_PREFIX).toBe('__Host-')
   })
 
   it('keeps the wire names of the legacy account cookie', () => {

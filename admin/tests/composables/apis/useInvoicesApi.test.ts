@@ -108,6 +108,29 @@ describe('useInvoicesApi', () => {
     })
   })
 
+  it('listFulfilment reads the records of the invoice', async () => {
+    const mock = stubFetch(json([{ id: 31 }]))
+
+    const records = await useInvoicesApi().listFulfilment(5)
+
+    expect(callOf(mock)).toMatchObject({ url: '/api/billing/5/fulfilment', method: 'GET' })
+    expect(records).toEqual([{ id: 31 }])
+  })
+
+  it('retryFulfilment posts to the record retry endpoint', async () => {
+    const mock = stubFetch(new Response(null, { status: 204 }))
+
+    await useInvoicesApi().retryFulfilment(5, 31)
+
+    expect(callOf(mock)).toMatchObject({ url: '/api/billing/5/fulfilment/31/retry', method: 'POST' })
+  })
+
+  it('retryFulfilment rejects with an ApiError when the record cannot be retried', async () => {
+    stubFetch(problem('This record cannot be retried.', 409))
+
+    await expect(useInvoicesApi().retryFulfilment(5, 31)).rejects.toMatchObject({ status: 409 })
+  })
+
   it('rejects with an ApiError carrying the refusal body', async () => {
     stubFetch(problem('Invoice is locked.', 409))
 

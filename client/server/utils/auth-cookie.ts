@@ -62,10 +62,25 @@ export const authCookieMaxAge = (token: string, nowSeconds: number = Math.floor(
 /** Lifetime of the readable `authed` flag cookie, in seconds (seven days). */
 export const AUTHED_FLAG_MAX_AGE = 60 * 60 * 24 * 7
 
-/** Lifetime, in seconds, of the short cookies that carry a single sign-in round trip (PKCE verifier, state, return address). */
-export const SSO_FLOW_COOKIE_MAX_AGE = 60 * 5
+/**
+ * Lifetime, in seconds, of the cookie that carries a single sign-in round trip (the sealed
+ * transaction holding the PKCE verifier, the state and the return address): fifteen minutes.
+ *
+ * The clock runs while a person is on the identity provider's page: choosing between remembered
+ * accounts, typing a password, using a password manager, answering a second factor, retyping after
+ * a mistake. That is minutes of ordinary human time, so a budget sized for the network round trip
+ * (five minutes) sat too close to it. It bounds one attempt only: the state is single use and the
+ * first callback clears it, so a longer value widens nothing.
+ */
+export const SSO_FLOW_COOKIE_MAX_AGE = 60 * 15
 
-/** Lifetime, in seconds, of the loop guard and return address of the silent sign-in attempt. */
+/**
+ * The most sign-in attempts a browser keeps live at once (one sealed transaction cookie each).
+ * Starting a sixth drops the oldest, so the cookies a browser sends back stay bounded.
+ */
+export const SSO_MAX_LIVE_TRANSACTIONS = 5
+
+/** Lifetime, in seconds, of the loop guard of the silent sign-in attempt. */
 export const SSO_SILENT_COOKIE_MAX_AGE = 30
 
 /** Access-token lifetime, in seconds, assumed when the identity provider does not state one (15 minutes). */

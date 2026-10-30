@@ -17,6 +17,9 @@
  *   - No session      → login_required error → callback returns to the page with the sign-in
  *                        prompt flag, so the page offers the sign-in instead of rendering as a silent guest
  *
+ * The probe is skipped while this browser has an interactive sign-in under way (a person typing a
+ * password in another tab): the page is shown as it is, and a later navigation probes as usual.
+ *
  * An `authuser` query on the page (the account the visitor arrived for) is handed to the probe, which
  * passes it to the identity provider as `login_hint`.
  *
@@ -35,6 +38,10 @@ import { HttpMethod } from '~/types/httpmethod'
 import { SessionCookie } from '~/constants/sessionCookie'
 import { SSO_SILENT_COOKIE_MAX_AGE, cookieOptions } from '~/server/utils/auth-cookie'
 import { isBotUserAgent } from '~/server/utils/bot-agent'
+import { hasPendingInteractiveTransaction } from '~/server/utils/signon-transaction'
+
+/** The query key that carries the page to return to once the probe finishes. */
+const RETURN_TO_QUERY = 'returnTo'
 
 /** The value of `Sec-Fetch-Dest` for a navigation to a page. */
 const FETCH_DEST_DOCUMENT = 'document'
@@ -98,13 +105,16 @@ export default defineEventHandler((event) => {
     return
   }
 
-  // Store the current URL to return to after silent SSO
-  setCookie(event, SessionCookie.SsoSilentReturn, url || '/', cookieOptions(SSO_SILENT_COOKIE_MAX_AGE))
+  // A person is completing a sign-in elsewhere: starting a probe now would only compete with it.
+  if (hasPendingInteractiveTransaction(event)) {
+    return
+  }
 
   // Mark that we've tried: prevents redirect loop when SSO returns login_required
   setCookie(event, SessionCookie.SsoSilentTried, '1', cookieOptions(SSO_SILENT_COOKIE_MAX_AGE))
 
-  const probe = new URLSearchParams({ prompt: 'none' })
+  // The page to return to travels in the probe's address; the authorize route seals it into the attempt.
+  const probe = new URLSearchParams({ prompt: 'none', [RETURN_TO_QUERY]: url || '/' })
   const loginHint = query[LOGIN_HINT_QUERY]
   if (typeof loginHint === 'string' && loginHint) {
     probe.set(LOGIN_HINT_QUERY, loginHint)

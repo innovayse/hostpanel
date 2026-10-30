@@ -16,6 +16,7 @@ import type { PlaceOrderInput } from '~/types/placeorderinput'
 import { CartItemType } from '~/types/cartitemtype'
 import { DomainOrderAction } from '~/types/domainorderaction'
 import { PricingCycle } from '~/types/pricingcycle'
+import { ProductType } from '~/types/producttype'
 
 /** The mocked order endpoints, re-created for every test. */
 const billing = {
@@ -334,6 +335,32 @@ describe('useCheckoutStore.placeOrder', () => {
       target: '/en/client/order-success?order=A+42&invoice=77'
     })
     expect(useCartStore().items).toEqual([])
+  })
+
+  it('marks the success link digital when the order held digital goods only', async () => {
+    billing.createOrder.mockResolvedValue({ ...placed, total: 0 })
+    const digital: CartItem = { ...hosting, productType: ProductType.Digital }
+    const store = arrange('inecobank', [digital])
+
+    const destination = await store.placeOrder(input())
+
+    expect(destination).toEqual({
+      kind: CheckoutDestinationKind.Route,
+      target: '/en/client/order-success?order=A+42&invoice=77&digital=1'
+    })
+  })
+
+  it('does not mark the success link digital when the order also held a hosting line', async () => {
+    billing.createOrder.mockResolvedValue({ ...placed, total: 0 })
+    const digital: CartItem = { ...hosting, pid: 99, productType: ProductType.Digital }
+    const store = arrange('inecobank', [digital, hosting])
+
+    const destination = await store.placeOrder(input())
+
+    expect(destination).toEqual({
+      kind: CheckoutDestinationKind.Route,
+      target: '/en/client/order-success?order=A+42&invoice=77'
+    })
   })
 
   it('keeps the API sentence and the field messages when the order is refused, and keeps the cart', async () => {

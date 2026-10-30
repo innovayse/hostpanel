@@ -1,6 +1,12 @@
 <template>
   <div data-testid="account-payment-tab">
-    <UiStack v-if="paymentLoading" gap="sm" data-testid="account-payment-loading">
+    <!-- The API refuses every payment-method request of a member without the invoices permission, so
+         the tab offers nothing and says why; the store does not load the list either. -->
+    <UiAlert v-if="!maySeePaymentMethods" variant="warning" data-testid="account-payment-denied">
+      {{ $t('client.payment.permissionDenied') }}
+    </UiAlert>
+
+    <UiStack v-else-if="paymentLoading" gap="sm" data-testid="account-payment-loading">
       <UiSkeleton v-for="index in 3" :key="index" shape="block" class="h-16" />
     </UiStack>
 
@@ -63,7 +69,8 @@
  *
  * The API has no way to add a card here, so the tab offers no add action: a customer without a
  * saved card is told to pay an invoice through the hosted gateway and is linked to the invoices.
- * Every refusal is the store's sentence.
+ * Every refusal is the store's sentence. A member of the account without the permission to view and
+ * pay invoices (the flag the payment-method actions need) sees the tab disabled with the reason.
  *
  * @module components/account/PaymentMethodsTab
  */
@@ -71,7 +78,9 @@
 import { CreditCard } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { CLIENT_INVOICES_PATH } from '~/constants/clientRoutes'
+import { Permission } from '~/composables/usePermissions'
 import { useAccountStore } from '~/stores/account'
+import { useClientStore } from '~/stores/client'
 import { ActionOutcome } from '~/types/actionoutcome'
 
 /** Translator for the success sentences. */
@@ -82,6 +91,12 @@ const localePath = useLocalePath()
 
 /** The account store that holds and changes the saved methods. */
 const account = useAccountStore()
+
+/** The client store, which knows what the signed-in person may do. */
+const client = useClientStore()
+
+/** Whether the person may see and change saved payment methods. */
+const maySeePaymentMethods = computed(() => client.mayDo(Permission.ViewPayInvoices))
 
 /** The methods, their loading and error state, and the per-action progress and refusal. */
 const {

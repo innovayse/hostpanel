@@ -17,7 +17,7 @@ import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiRowActions from '@/components/ui/UiRowActions.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -171,6 +171,29 @@ const handleSave = async (payload: CreateProductPayload): Promise<void> => {
     feedback.show(t('shared.changesSavedSuccessfully'), false)
   }
 }
+
+/**
+ * Row actions for a product.
+ *
+ * @param product - The product whose actions to build.
+ * @returns The action list passed to UiRowActions.
+ */
+const productActions = (product: Product): UiRowAction[] => {
+  /**
+   * Opens the specification editor for this product.
+   * @returns Nothing.
+   */
+  const onSpec = (): void => { featuresProduct.value = product }
+  /**
+   * Opens the edit dialog for this product.
+   * @returns Nothing.
+   */
+  const onEdit = (): void => openEdit(product)
+  return [
+    { label: t('settings.products.editSpecification'), testid: `product-spec-${product.id}`, onSelect: onSpec },
+    { label: t('settings.products.editProduct'), testid: `product-edit-${product.id}`, onSelect: onEdit },
+  ]
+}
 </script>
 
 <template>
@@ -236,12 +259,7 @@ const handleSave = async (payload: CreateProductPayload): Promise<void> => {
               </UiBadge>
             </UiTableCell>
             <UiTableCell align="right">
-              <UiRowActions
-                :actions="[
-                  { label: t('settings.products.editSpecification'), testid: `product-spec-${product.id}`, onSelect: () => { featuresProduct = product } },
-                  { label: t('settings.products.editProduct'), testid: `product-edit-${product.id}`, onSelect: () => openEdit(product) },
-                ]"
-              />
+              <UiRowActions :actions="productActions(product)" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

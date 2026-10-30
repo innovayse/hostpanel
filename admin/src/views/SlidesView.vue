@@ -15,7 +15,7 @@ import SettingsLoading from '@/components/settings/SettingsLoading.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
-import UiRowActions from '@/components/ui/UiRowActions.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
@@ -222,6 +222,29 @@ const formatDateRange = (from: string | null, until: string | null): string => {
   }
   return t('settings.slides.always')
 }
+
+/**
+ * Row actions for a slide.
+ *
+ * @param slide - The slide whose actions to build.
+ * @returns The action list passed to UiRowActions.
+ */
+const slideActions = (slide: Slide): UiRowAction[] => {
+  /**
+   * Navigates to the edit page for this slide.
+   * @returns Nothing.
+   */
+  const onEdit = (): void => navigateEdit(slide)
+  /**
+   * Forwards delete for this slide.
+   * @returns Nothing.
+   */
+  const onDelete = (): void => handleDelete(slide)
+  return [
+    { label: t('settings.slides.editSlide'), testid: `slide-edit-${slide.id}`, onSelect: onEdit },
+    { label: t('settings.slides.deleteSlide'), testid: `slide-delete-${slide.id}`, onSelect: onDelete, danger: true },
+  ]
+}
 </script>
 
 <template>
@@ -322,12 +345,7 @@ const formatDateRange = (from: string | null, until: string | null): string => {
 
               <!-- Actions -->
               <UiTableCell align="right">
-                <UiRowActions
-                  :actions="[
-                    { label: t('settings.slides.editSlide'), testid: `slide-edit-${slide.id}`, onSelect: () => navigateEdit(slide) },
-                    { label: t('settings.slides.deleteSlide'), testid: `slide-delete-${slide.id}`, onSelect: () => handleDelete(slide), danger: true },
-                  ]"
-                />
+                <UiRowActions :actions="slideActions(slide)" />
               </UiTableCell>
             </UiTableRow>
           </template>

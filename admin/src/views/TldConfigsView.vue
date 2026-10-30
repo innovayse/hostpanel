@@ -14,7 +14,7 @@ import SettingsLoading from '@/components/settings/SettingsLoading.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
-import UiRowActions from '@/components/ui/UiRowActions.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
@@ -265,6 +265,29 @@ watch(providerFilter, () => {
 watch(statusFilter, () => {
   currentPage.value = 1
 })
+
+/**
+ * Row actions for a TLD configuration entry.
+ *
+ * @param item - The TLD entry whose actions to build.
+ * @returns The action list passed to UiRowActions.
+ */
+const tldActions = (item: TldConfigListItem): UiRowAction[] => {
+  /**
+   * Navigates to the edit page for this TLD entry.
+   * @returns Nothing.
+   */
+  const onEdit = (): void => navigateEdit(item)
+  /**
+   * Prompts deletion of this TLD entry.
+   * @returns Nothing.
+   */
+  const onDelete = (): void => promptDelete(item)
+  return [
+    { label: t('settings.tldConfigs.editTld'), testid: `tld-edit-${item.tld}`, onSelect: onEdit },
+    { label: t('settings.tldConfigs.deleteTld'), testid: `tld-delete-${item.tld}`, onSelect: onDelete, danger: true },
+  ]
+}
 </script>
 
 <template>
@@ -390,12 +413,7 @@ watch(statusFilter, () => {
             </UiTableCell>
             <UiTableCell muted>{{ lastSyncedText(item.lastSyncedAt) }}</UiTableCell>
             <UiTableCell align="right">
-              <UiRowActions
-                :actions="[
-                  { label: t('settings.tldConfigs.editTld'), testid: `tld-edit-${item.tld}`, onSelect: () => navigateEdit(item) },
-                  { label: t('settings.tldConfigs.deleteTld'), testid: `tld-delete-${item.tld}`, onSelect: () => promptDelete(item), danger: true },
-                ]"
-              />
+              <UiRowActions :actions="tldActions(item)" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

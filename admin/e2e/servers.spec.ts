@@ -23,6 +23,7 @@ test('testing a connection shows the panel version on the server row', async ({ 
   await expect(page.getByTestId(`server-row-${hostServer.id}`)).toContainText(hostServer.name)
   await expect(page.getByTestId(`server-state-${hostServer.id}`)).toBeVisible()
 
+  await page.getByTestId(`server-row-${hostServer.id}`).getByTestId('row-actions-trigger').click()
   await page.getByTestId(`server-test-${hostServer.id}`).click()
 
   await expect(page.getByTestId(`server-test-result-${hostServer.id}`)).toContainText(connectionOk.version ?? '')
@@ -70,6 +71,7 @@ test('a failed connection test shows the API sentence on the row', async ({ page
   })
 
   await page.goto('/servers')
+  await page.getByTestId(`server-row-${hostServer.id}`).getByTestId('row-actions-trigger').click()
   await page.getByTestId(`server-test-${hostServer.id}`).click()
 
   await expect(page.getByTestId(`server-test-result-${hostServer.id}`)).toContainText(sentence)

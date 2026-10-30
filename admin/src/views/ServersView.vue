@@ -33,7 +33,7 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import UiRowActions from '@/components/ui/UiRowActions.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
@@ -303,6 +303,65 @@ const dismissDeleteGroup = (): void => {
   }
 }
 
+/**
+ * Row actions for a server. The "test connection" action is disabled while a test is already
+ * running for that server so a second concurrent request cannot be sent.
+ *
+ * @param server - The server whose actions to build.
+ * @returns The action list passed to UiRowActions.
+ */
+const serverActions = (server: ServerDto): UiRowAction[] => {
+  /**
+   * Forwards to {@link handleTestConnection} for this server row.
+   * @returns Nothing.
+   */
+  const onTest = (): void => { handleTestConnection(server.id) }
+  /**
+   * Opens the SSH key management dialog for this server row.
+   * @returns Nothing.
+   */
+  const onSsh = (): void => { sshServerTarget.value = server }
+  /**
+   * Opens the edit dialog for this server row.
+   * @returns Nothing.
+   */
+  const onEdit = (): void => openEditServer(server)
+  /**
+   * Stages this server for deletion.
+   * @returns Nothing.
+   */
+  const onDelete = (): void => { deleteServerTarget.value = server }
+  return [
+    { label: t('shared.testConnection'), testid: `server-test-${server.id}`, disabled: testingIds.value.includes(server.id), onSelect: onTest },
+    { label: t('servers.ssh.open'), testid: `server-ssh-${server.id}`, onSelect: onSsh },
+    { label: t('shared.edit'), testid: `server-edit-${server.id}`, onSelect: onEdit },
+    { label: t('shared.delete'), testid: `server-delete-${server.id}`, onSelect: onDelete, danger: true },
+  ]
+}
+
+/**
+ * Row actions for a server group.
+ *
+ * @param group - The group whose actions to build.
+ * @returns The action list passed to UiRowActions.
+ */
+const serverGroupActions = (group: ServerGroupDto): UiRowAction[] => {
+  /**
+   * Opens the edit dialog for this group row.
+   * @returns Nothing.
+   */
+  const onEdit = (): void => openEditGroup(group)
+  /**
+   * Stages this group for deletion.
+   * @returns Nothing.
+   */
+  const onDelete = (): void => { deleteGroupTarget.value = group }
+  return [
+    { label: t('shared.edit'), testid: `server-group-edit-${group.id}`, onSelect: onEdit },
+    { label: t('shared.delete'), testid: `server-group-delete-${group.id}`, onSelect: onDelete, danger: true },
+  ]
+}
+
 onMounted(loadAll)
 </script>
 
@@ -378,14 +437,7 @@ onMounted(loadAll)
                 </UiStack>
               </UiTableCell>
               <UiTableCell align="right">
-                <UiRowActions
-                  :actions="[
-                    { label: t('shared.testConnection'), testid: `server-test-${server.id}`, onSelect: () => handleTestConnection(server.id) },
-                    { label: t('servers.ssh.open'), testid: `server-ssh-${server.id}`, onSelect: () => { sshServerTarget = server } },
-                    { label: t('shared.edit'), testid: `server-edit-${server.id}`, onSelect: () => openEditServer(server) },
-                    { label: t('shared.delete'), testid: `server-delete-${server.id}`, onSelect: () => { deleteServerTarget = server }, danger: true },
-                  ]"
-                /></UiTableCell>
+                <UiRowActions :actions="serverActions(server)" /></UiTableCell>
             </UiTableRow>
           </UiTableBody>
         </UiTable>
@@ -423,12 +475,7 @@ onMounted(loadAll)
               {{ group.servers.length > 0 ? group.servers.map(s => s.name).join(', ') : '—' }}
             </UiTableCell>
             <UiTableCell align="right">
-              <UiRowActions
-                :actions="[
-                  { label: t('shared.edit'), testid: `server-group-edit-${group.id}`, onSelect: () => openEditGroup(group) },
-                  { label: t('shared.delete'), testid: `server-group-delete-${group.id}`, onSelect: () => { deleteGroupTarget = group }, danger: true },
-                ]"
-              />
+              <UiRowActions :actions="serverGroupActions(group)" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

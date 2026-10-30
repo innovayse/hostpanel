@@ -20,7 +20,7 @@ import UserFormModal from '@/components/clients/UserFormModal.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiRowActions from '@/components/ui/UiRowActions.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
@@ -409,6 +409,29 @@ onMounted(() => fetchUsers())
 onBeforeUnmount(() => {
   clearTimeout(successTimer)
 })
+
+/**
+ * Row actions for a client user.
+ *
+ * @param u - The user whose actions to build.
+ * @returns The action list passed to UiRowActions.
+ */
+const clientUserActions = (u: ClientUserItem): UiRowAction[] => {
+  /**
+   * Opens the manage dialog for this user.
+   * @returns Nothing.
+   */
+  const onManage = (): Promise<void> => openManageModal(u)
+  /**
+   * Removes this user from the client.
+   * @returns Nothing.
+   */
+  const onRemove = (): void => handleRemoveUser(u)
+  return [
+    { label: t('clients.clientUsers.manage'), testid: `client-users-manage-${u.userId}`, onSelect: onManage },
+    ...(!u.isOwner ? [{ label: t('clients.clientUsers.remove'), testid: `client-users-remove-${u.userId}`, onSelect: onRemove, danger: true }] : []),
+  ]
+}
 </script>
 
 <template>
@@ -564,12 +587,7 @@ onBeforeUnmount(() => {
               </UiTableCell>
               <UiTableCell muted>{{ formatDate(u.lastLoginAt) }}</UiTableCell>
               <UiTableCell :align="UiAlign.Right">
-                <UiRowActions
-                  :actions="[
-                    { label: t('clients.clientUsers.manage'), testid: `client-users-manage-${u.userId}`, onSelect: () => openManageModal(u) },
-                    ...(!u.isOwner ? [{ label: t('clients.clientUsers.remove'), testid: `client-users-remove-${u.userId}`, onSelect: () => handleRemoveUser(u), danger: true }] : []),
-                  ]"
-                />
+                <UiRowActions :actions="clientUserActions(u)" />
               </UiTableCell>
             </UiTableRow>
           </UiTableBody>

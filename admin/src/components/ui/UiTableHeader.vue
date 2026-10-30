@@ -9,8 +9,7 @@
  */
 import { computed, inject } from 'vue'
 import { UI_TABLE_CONTEXT, UiTableDensity } from '@/utils/ui/injection'
-import { alignClasses, headerDensityClasses, UiSortDirection } from '@/utils/ui/table'
-import type { UiAlign } from '@/utils/ui/table'
+import { UiAlign, alignClasses, headerDensityClasses, UiSortDirection } from '@/utils/ui/table'
 
 /** Props for UiTableHeader. */
 const props = withDefaults(defineProps<{
@@ -40,7 +39,7 @@ const context = inject(UI_TABLE_CONTEXT, { density: UiTableDensity.Plain })
 /** Padding and alignment classes. */
 const classes = computed<string[]>(() => [
   headerDensityClasses[context.density],
-  props.align === undefined ? '' : alignClasses[props.align],
+  alignClasses[props.align ?? UiAlign.Left],
 ])
 
 /** Arrow glyph of the current order. */

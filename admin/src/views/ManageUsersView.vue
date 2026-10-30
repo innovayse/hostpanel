@@ -11,12 +11,13 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useUsersStore } from '@/stores/clientAccounts'
-import type { UserDetail } from '@/types/useraccount'
+import type { UserDetail, UserListItem } from '@/types/useraccount'
 import UserFormModal from '@/components/clients/UserFormModal.vue'
 import ChangePasswordModal from '@/components/clients/ChangePasswordModal.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiFilterCard from '@/components/ui/UiFilterCard.vue'
 import UiInput from '@/components/ui/UiInput.vue'
@@ -235,6 +236,35 @@ onUnmounted(() => {
     clearTimeout(successTimer.value)
   }
 })
+
+/**
+ * Row actions for a managed user.
+ *
+ * @param user - The user whose actions to build.
+ * @returns The action list passed to UiRowActions.
+ */
+const manageUserActions = (user: UserListItem): UiRowAction[] => {
+  /**
+   * Opens the manage dialog for this user.
+   * @returns Nothing.
+   */
+  const onManage = (): Promise<void> => openManageModal(user.id)
+  /**
+   * Sends a password reset email to this user.
+   * @returns Nothing.
+   */
+  const onReset = (): Promise<void> => handleSendPasswordReset(user.id)
+  /**
+   * Opens the change-password dialog for this user.
+   * @returns Nothing.
+   */
+  const onPassword = (): void => openChangePasswordModal(user.id)
+  return [
+    { label: t('clients.manageUsers.manageUser'), testid: `users-manage-${user.id}`, onSelect: onManage },
+    { label: t('clients.manageUsers.sendPasswordResetEmail'), testid: `users-reset-${user.id}`, onSelect: onReset },
+    { label: t('shared.changePassword'), testid: `users-password-${user.id}`, onSelect: onPassword },
+  ]
+}
 </script>
 
 <template>
@@ -304,7 +334,7 @@ onUnmounted(() => {
           <UiTableHeader>{{ t('shared.lastName') }}</UiTableHeader>
           <UiTableHeader>{{ t('shared.email') }}</UiTableHeader>
           <UiTableHeader>{{ t('clients.manageUsers.lastLogin') }}</UiTableHeader>
-          <UiTableHeader align="center">{{ t('shared.actions') }}</UiTableHeader>
+          <UiTableHeader align="right">{{ t('shared.actions') }}</UiTableHeader>
         </UiTableRow>
       </UiTableHead>
       <UiTableBody divided>
@@ -314,33 +344,8 @@ onUnmounted(() => {
           <UiTableCell>{{ user.lastName }}</UiTableCell>
           <UiTableCell muted>{{ user.email }}</UiTableCell>
           <UiTableCell muted>{{ formatDate(user.lastLoginAt) }}</UiTableCell>
-          <UiTableCell align="center">
-            <UiStack direction="row" gap="xs" justify="center" wrap>
-              <UiButton
-                variant="secondary"
-                size="sm"
-                :data-testid="`users-manage-${user.id}`"
-                @click="openManageModal(user.id)"
-              >
-                {{ t('clients.manageUsers.manageUser') }}
-              </UiButton>
-              <UiButton
-                variant="ghost"
-                size="sm"
-                :data-testid="`users-reset-${user.id}`"
-                @click="handleSendPasswordReset(user.id)"
-              >
-                {{ t('clients.manageUsers.sendPasswordResetEmail') }}
-              </UiButton>
-              <UiButton
-                variant="ghost"
-                size="sm"
-                :data-testid="`users-password-${user.id}`"
-                @click="openChangePasswordModal(user.id)"
-              >
-                {{ t('shared.changePassword') }}
-              </UiButton>
-            </UiStack>
+          <UiTableCell align="right">
+            <UiRowActions :actions="manageUserActions(user)" />
           </UiTableCell>
         </UiTableRow>
       </UiTableBody>

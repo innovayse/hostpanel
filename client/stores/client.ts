@@ -179,9 +179,9 @@ export const useClientStore = defineStore('client', {
     activeServiceCount: (state): number =>
       state.services.filter(s => s.status === ServiceStatus.Active).length,
 
-    /** Count of open tickets */
+    /** Count of open tickets: anything not closed, as the Open tab of the tickets page counts them */
     openTicketCount: (state): number =>
-      state.tickets.filter(t => t.status === TicketStatus.Open).length
+      state.tickets.filter(t => t.status !== TicketStatus.Closed).length
   },
 
   actions: {

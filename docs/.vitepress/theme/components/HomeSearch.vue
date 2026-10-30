@@ -1,9 +1,10 @@
+<script setup lang="ts">
 /**
  * A search prompt rendered on the home page between the features grid and the
  * popular guides section. Clicking the button opens the VitePress local search
  * dialog (the same one bound to Ctrl K / Cmd K in the navigation bar).
  */
-<script setup lang="ts">
+
 /** Opens the VitePress local search overlay programmatically. */
 const openSearch = (): void => {
   const btn = document.querySelector<HTMLButtonElement>('.VPLocalSearchBox, button[aria-label*="Search"]')

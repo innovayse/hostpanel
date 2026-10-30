@@ -1,8 +1,9 @@
+<script setup lang="ts">
 /**
  * Renders a bordered table of configuration settings with name, type, default
  * value, and description columns.
  */
-<script setup lang="ts">
+
 /** A single row in the settings table. */
 export interface Setting {
   name: string

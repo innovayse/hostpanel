@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import InvoiceDetailView from '@/views/InvoiceDetailView.vue'
 import { saveBlob } from '@/utils/saveBlob'
-import { invoiceFixture } from '../helpers/billingFixtures'
+import { fulfilmentFixture, invoiceFixture } from '../helpers/billingFixtures'
 import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
@@ -79,6 +79,36 @@ describe('InvoiceDetailView', () => {
     expect(wrapper.get('[data-testid="billing-invoice-notes-feedback"]').text()).toBe('Changes saved successfully.')
     expect((wrapper.get('[data-testid="billing-invoice-notes-input"]').element as HTMLTextAreaElement).value)
       .toBe('Saved note')
+  })
+
+  it('opens the Fulfilment tab and loads the records of the invoice', async () => {
+    stubRoutes({
+      'GET /api/billing/1/fulfilment': () => json([fulfilmentFixture()]),
+      'GET /api/billing/1': () => json(invoiceFixture()),
+    })
+    const { wrapper } = await mountRouted(InvoiceDetailView, PATTERN, '/billing/1/edit')
+    await flushPromises()
+
+    await wrapper.get('[data-testid="billing-invoice-tab-fulfilment"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="billing-invoice-fulfilment-table"]').text()).toContain('provisioning-demo')
+    expect(wrapper.find('[data-testid="billing-invoice-fulfilment-retry-31"]').exists()).toBe(true)
+  })
+
+  it('keeps a failed fulfilment load in its tab, not at the top', async () => {
+    stubRoutes({
+      'GET /api/billing/1/fulfilment': () => problem('Fulfilment is unavailable.', 500),
+      'GET /api/billing/1': () => json(invoiceFixture()),
+    })
+    const { wrapper } = await mountRouted(InvoiceDetailView, PATTERN, '/billing/1')
+    await flushPromises()
+
+    await wrapper.get('[data-testid="billing-invoice-tab-fulfilment"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="billing-invoice-fulfilment-error"]').text()).toContain('Fulfilment is unavailable.')
+    expect(wrapper.find('[data-testid="billing-invoice-error"]').exists()).toBe(false)
   })
 
   it('shows a refused save in its tab only, not again at the top', async () => {

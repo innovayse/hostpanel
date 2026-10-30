@@ -13,6 +13,7 @@ import { runAction } from '@/lib/runAction'
 import type { DownloadedFile } from '@/types/download'
 import type {
   CreateInvoicePayload,
+  FulfilmentRecord,
   Invoice,
   InvoiceDetail,
   InvoiceItemInput,
@@ -53,6 +54,18 @@ export const useBillingStore = defineStore('billing', () => {
 
   /** Selected invoice ids for bulk actions. */
   const selectedIds = ref<number[]>([])
+
+  /** Fulfilment records of the open invoice, oldest first. */
+  const fulfilment = ref<FulfilmentRecord[]>([])
+
+  /** True while the fulfilment records are loading; separate from `loading` so the page does not flicker. */
+  const fulfilmentLoading = ref(false)
+
+  /** Sentence for the last failed fulfilment load, null when none; separate from `error` so the tab reports its own failure. */
+  const fulfilmentError = ref<string | null>(null)
+
+  /** Counts fulfilment loads, so the answer of an earlier invoice never overwrites a later one. */
+  let fulfilmentRequest = 0
 
   /**
    * Runs one request with the loading flag and the error state around it.
@@ -293,6 +306,46 @@ export const useBillingStore = defineStore('billing', () => {
     return result.ok ? result.value : null
   }
 
+  /**
+   * Loads the fulfilment records of an invoice into `fulfilment`. A failure lands in
+   * `fulfilmentError`, never in the page-level `error`.
+   *
+   * @param id - The invoice id.
+   * @returns Resolves when the request has settled.
+   */
+  const fetchFulfilment = async (id: number): Promise<void> => {
+    fulfilmentRequest += 1
+    const request = fulfilmentRequest
+    fulfilmentLoading.value = true
+    /** Sentence of this load's refusal, kept apart from the page-level `error`; null when it succeeds. */
+    const failure = ref<string | null>(null)
+    const result = await runAction(failure, () => api.listFulfilment(id))
+    if (request !== fulfilmentRequest) {
+      return
+    }
+    fulfilmentLoading.value = false
+    fulfilmentError.value = failure.value
+    if (result.ok) {
+      fulfilment.value = result.value
+    }
+  }
+
+  /**
+   * Asks for another attempt of a fulfilment record, then reloads the list so the tab shows the
+   * record as it now stands.
+   *
+   * @param invoiceId - The invoice id.
+   * @param recordId - The fulfilment record id.
+   * @returns True when the retry was accepted; false when refused (see `error`).
+   */
+  const retryFulfilment = async (invoiceId: number, recordId: number): Promise<boolean> => {
+    const result = await run(() => api.retryFulfilment(invoiceId, recordId))
+    if (result.ok) {
+      await fetchFulfilment(invoiceId)
+    }
+    return result.ok
+  }
+
   return {
     invoices,
     totalCount,
@@ -303,6 +356,9 @@ export const useBillingStore = defineStore('billing', () => {
     clientInvoices,
     clientInvoicesTotal,
     selectedIds,
+    fulfilment,
+    fulfilmentLoading,
+    fulfilmentError,
     fetchAll,
     fetchById,
     downloadPdf,
@@ -320,5 +376,7 @@ export const useBillingStore = defineStore('billing', () => {
     duplicateInvoice,
     deleteInvoice,
     bulkAction,
+    fetchFulfilment,
+    retryFulfilment,
   }
 })

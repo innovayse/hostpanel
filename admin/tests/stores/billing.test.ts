@@ -168,3 +168,51 @@ describe('billingStore pdf download', () => {
     expect(store.error).toBe('The invoice has too many lines for a PDF.')
   })
 })
+
+describe('billingStore fulfilment', () => {
+  it('fetchFulfilment fills the records without touching the page-level state', async () => {
+    const mock = stubFetch(json([{ id: 31, invoiceId: 5 }]))
+    const store = useBillingStore()
+
+    await store.fetchFulfilment(5)
+
+    expect(callOf(mock)).toMatchObject({ url: '/api/billing/5/fulfilment', method: 'GET' })
+    expect(store.fulfilment).toEqual([{ id: 31, invoiceId: 5 }])
+    expect(store.fulfilmentError).toBeNull()
+    expect(store.fulfilmentLoading).toBe(false)
+    expect(store.loading).toBe(false)
+  })
+
+  it('fetchFulfilment keeps a refusal in fulfilmentError, not in error', async () => {
+    stubFetch(problem('Invoice not found.', 404))
+    const store = useBillingStore()
+
+    await store.fetchFulfilment(5)
+
+    expect(store.fulfilmentError).toBe('Invoice not found.')
+    expect(store.error).toBeNull()
+    expect(store.fulfilmentLoading).toBe(false)
+  })
+
+  it('retryFulfilment posts and then reloads the list', async () => {
+    const mock = stubFetch(new Response(null, { status: 204 }), json([{ id: 31, invoiceId: 5 }]))
+    const store = useBillingStore()
+
+    expect(await store.retryFulfilment(5, 31)).toBe(true)
+
+    expect(mock).toHaveBeenCalledTimes(2)
+    expect(callOf(mock, 0)).toMatchObject({ url: '/api/billing/5/fulfilment/31/retry', method: 'POST' })
+    expect(callOf(mock, 1)).toMatchObject({ url: '/api/billing/5/fulfilment', method: 'GET' })
+    expect(store.fulfilment).toEqual([{ id: 31, invoiceId: 5 }])
+  })
+
+  it('retryFulfilment keeps the API sentence on refusal and does not reload', async () => {
+    const mock = stubFetch(problem('This record cannot be retried.', 409))
+    const store = useBillingStore()
+
+    expect(await store.retryFulfilment(5, 31)).toBe(false)
+
+    expect(store.error).toBe('This record cannot be retried.')
+    expect(mock).toHaveBeenCalledTimes(1)
+  })
+})

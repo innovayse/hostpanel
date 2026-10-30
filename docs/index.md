@@ -55,3 +55,13 @@ features:
     details: Architecture overview, local dev setup and contribution guidelines.
     link: /developers/
 ---
+
+## Popular guides
+
+- [Quick start](/get-started/quick-start) — up and running in under 10 minutes
+- [Installation](/operators/install) — full production setup with Docker
+- [Storefront & branding](/operators/storefront) — customise the client portal look
+- [Payment gateways](/payments/gateways) — connect Stripe, PayPal and more
+- [SSH key agent](/servers/ssh-key-agent) — manage server access securely
+
+[View all guides →](/get-started/)

@@ -58,6 +58,7 @@ export default defineConfig({
             link: 'https://github.com/innovayse/hostpanel/issues/602',
           },
           { text: 'Storefront & branding', link: '/operators/storefront' },
+          { text: 'Configuration reference', link: '/operators/configuration' },
         ],
       },
       {
@@ -67,10 +68,9 @@ export default defineConfig({
           { text: 'Overview', link: '/staff/' },
           { text: 'Clients', link: '/staff/clients' },
           { text: 'Orders', link: '/staff/orders' },
-          {
-            text: 'Billing',
-            link: 'https://github.com/innovayse/hostpanel/issues/604',
-          },
+          { text: 'Billing', link: '/staff/billing' },
+          { text: 'Products & pricing', link: '/staff/products' },
+          { text: 'Support desk', link: '/staff/support' },
         ],
       },
       {
@@ -127,10 +127,9 @@ export default defineConfig({
           { text: 'Overview', link: '/developers/' },
           { text: 'Architecture', link: '/developers/architecture' },
           { text: 'Local development', link: '/developers/local-dev' },
-          {
-            text: 'Contributing',
-            link: 'https://github.com/innovayse/hostpanel/issues/612',
-          },
+          { text: 'Contributing', link: '/developers/contributing' },
+          { text: 'Translating', link: '/developers/translating' },
+          { text: 'Integrations', link: '/developers/integrations' },
         ],
       },
       {

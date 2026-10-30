@@ -124,8 +124,8 @@ they are set:
 | `portal.chat.website_token` | `NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN` | The website token from the chat inbox. `.ru` / `.hy` variants override it per language. |
 
 **E-mails follow the brand.** Every template rendered by the API can use
-`{{ site.name }}`, `{{ brand.primary }}`, `{{ brand.primary_dark }}`,
-`{{ brand.on_primary }}`, `{{ brand.accent }}` and `{{ brand.logo_url }}` (the dark-background
+<span v-pre>`{{ site.name }}`, `{{ brand.primary }}`, `{{ brand.primary_dark }}`,
+`{{ brand.on_primary }}`, `{{ brand.accent }}` and `{{ brand.logo_url }}`</span> (the dark-background
 logo as an absolute URL, empty when none is uploaded). The password-reset template shipped
 with a fresh install uses them; an install that already has that row keeps its stored HTML
 until it is re-saved in **Admin → Settings → Email Templates**.

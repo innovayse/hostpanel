@@ -96,6 +96,8 @@ const sidebarLinks = () => {
 const collectMd = (dir, base = '') => {
   const entries = readdirSync(dir, { withFileTypes: true })
   return entries.flatMap((e) => {
+    // Skip directories that are not user-facing docs pages.
+    if (e.isDirectory() && (e.name === 'brand' || e.name === 'node_modules' || e.name.startsWith('.'))) return []
     if (e.isDirectory()) return collectMd(join(dir, e.name), `${base}/${e.name}`)
     if (extname(e.name) !== '.md') return []
     const stem = e.name.replace(/\.md$/, '')

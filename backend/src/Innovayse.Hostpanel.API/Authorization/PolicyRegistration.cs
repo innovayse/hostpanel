@@ -60,8 +60,24 @@ public static class PolicyRegistration
 
             AddRolePolicy(Policies.Member);
             AddRolePolicy(Policies.Admin, Roles.Admin);
-            AddRolePolicy(Policies.Client, Roles.Client);
+
+            // The client portal is open to the stored client role and, when an identity plugin is enabled, to the
+            // members it vouches for (they never receive the role; see ClientPortalAccessHandler).
+            opts.AddPolicy(Policies.Client, p =>
+            {
+                if (!isLocalMode)
+                {
+                    p.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme, Innovayse.Hostpanel.Shared.Constants.LocalJwtScheme.Name,
+                        AuthenticationRegistration.SsoCookieScheme);
+                }
+
+                p.RequireAuthenticatedUser();
+                p.AddRequirements(new ClientPortalRequirement());
+            });
         });
+
+        // Scoped: the handler asks the per-request caller resolver, which must not outlive the request.
+        services.AddScoped<IAuthorizationHandler, ClientPortalAccessHandler>();
 
         return services;
     }

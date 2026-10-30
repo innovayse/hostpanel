@@ -208,6 +208,7 @@ export const useSettingsStore = defineStore('settings', () => {
    * Drops the API's message for one field of the product form, once the operator changed it.
    *
    * @param field - The wire name of the field (`sku`, `metadata`, `gracePeriodDays` ...).
+   * @returns Nothing; the field's message is removed from the shared field errors.
    */
   const clearFieldError = (field: string): void => {
     const rest = { ...fieldErrors.value }

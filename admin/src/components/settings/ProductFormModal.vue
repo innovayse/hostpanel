@@ -320,6 +320,7 @@ const buildPricesPayload = (): ProductPrice[] =>
  * Drops the API's message for a field as soon as the operator changes that field.
  *
  * @param field - The wire name of the field (`sku`, `metadata`, `gracePeriodDays`).
+ * @returns Nothing; emits `clearFieldError` only when that field has a message.
  */
 const clearErrorOf = (field: string): void => {
   if (props.fieldErrors[field] !== undefined) {

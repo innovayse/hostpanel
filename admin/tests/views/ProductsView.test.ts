@@ -142,6 +142,11 @@ describe('ProductsView', () => {
     })
     expect(sent).toMatchObject({ id: 1, sku: 'bad sku', metadata: '', gracePeriodDays: 7 })
     expect(wrapper.text()).toContain('Out of range.')
+
+    // Editing the SKU clears only its own message (the view wires clear-field-error to the store).
+    await wrapper.get('[data-testid="product-form-sku"]').setValue('good-sku')
+    expect(wrapper.text()).not.toContain('Use letters and digits.')
+    expect(wrapper.text()).toContain('Out of range.')
   })
 
   it('shows the API sentence next to the save button when a save is refused', async () => {

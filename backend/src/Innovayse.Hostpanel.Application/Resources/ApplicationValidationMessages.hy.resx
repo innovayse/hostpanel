@@ -143,6 +143,9 @@
 <data name="InvoiceIdInvalid" xml:space="preserve">
     <value>Նշեք վավեր հաշիվ-ապրանքագիր։</value>
   </data>
+<data name="FulfilmentRecordIdInvalid" xml:space="preserve">
+    <value>Նշեք վավեր կատարման գրառում։</value>
+  </data>
 <data name="InvoiceClientIdInvalid" xml:space="preserve">
     <value>Նշեք հաշիվ-ապրանքագիր ստանալիք վավեր հաճախորդ։</value>
   </data>

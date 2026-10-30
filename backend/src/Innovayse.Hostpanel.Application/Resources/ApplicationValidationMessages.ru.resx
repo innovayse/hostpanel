@@ -143,6 +143,9 @@
 <data name="InvoiceIdInvalid" xml:space="preserve">
     <value>Укажите корректный счёт.</value>
   </data>
+<data name="FulfilmentRecordIdInvalid" xml:space="preserve">
+    <value>Укажите корректную запись выполнения.</value>
+  </data>
 <data name="InvoiceClientIdInvalid" xml:space="preserve">
     <value>Укажите корректного клиента для выставления счёта.</value>
   </data>

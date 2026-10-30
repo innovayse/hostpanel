@@ -47,7 +47,7 @@
   },
   "invoiceSummaryTab": {
     "thisIsADraftInvoice": "This is a Draft Invoice. The client is not able to see or access this invoice until it is published.",
-    "viewInvoices": "( View Invoices )",
+    "viewInvoices": "(View Invoices)",
     "invoiceAmount": "Invoice Amount",
     "paymentMethod": "Payment Method:",
     "publish": "Publish",

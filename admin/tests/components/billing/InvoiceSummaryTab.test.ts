@@ -20,6 +20,7 @@ describe('InvoiceSummaryTab', () => {
     const wrapper = mountWithApp(InvoiceSummaryTab, { props: { invoice: invoiceFixture() } })
 
     expect(wrapper.get('[data-testid="billing-invoice-client-name"]').text()).toBe('Ada Lovelace')
+    expect(wrapper.get('[data-testid="billing-invoice-client-invoices"]').text()).toBe('(View Invoices)')
     expect(wrapper.get('[data-testid="billing-invoice-status"]').text()).toBe('Unpaid')
     expect(wrapper.get('[data-testid="billing-invoice-fact-balance"]').text()).toContain('60.00 USD')
   })

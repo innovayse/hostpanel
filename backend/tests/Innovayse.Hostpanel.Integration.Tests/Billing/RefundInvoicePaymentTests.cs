@@ -757,6 +757,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
             scope.ServiceProvider.GetRequiredService<IPaymentPluginResolver>(),
             cardGateway,
             scope.ServiceProvider.GetRequiredService<IClientCredit>(),
+            scope.ServiceProvider.GetRequiredService<RefundAdviser>(),
             new SystemClock(time),
             NullLogger<RefundInvoicePaymentHandler>.Instance);
         return await handler.HandleAsync(command, CancellationToken.None);

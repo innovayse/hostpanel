@@ -24,6 +24,15 @@ public sealed class StubFulfilmentPlugin : IFulfilmentPlugin
     /// <summary>Gets the context of the latest lapsed call, or <see langword="null"/> when there was none.</summary>
     public SubscriptionLapsedContext? LastLapsed { get; private set; }
 
+    /// <summary>Gets the context of the latest refund-advice call, or <see langword="null"/> when there was none.</summary>
+    public RefundAdviceContext? LastAdvised { get; private set; }
+
+    /// <summary>
+    /// Gets or sets how the plugin answers a refund-advice call: cap, throw or wait for the token.
+    /// Unset, it allows the amount asked for.
+    /// </summary>
+    public Func<RefundAdviceContext, CancellationToken, Task<RefundAdvice>>? Advice { get; set; }
+
     /// <summary>
     /// Gets or sets what every call does after it was recorded: throw, wait for the token, or return.
     /// Unset, a call returns at once.
@@ -40,7 +49,9 @@ public sealed class StubFulfilmentPlugin : IFulfilmentPlugin
     /// <inheritdoc/>
     public Task<RefundAdvice> AdviseRefundAsync(RefundAdviceContext context, CancellationToken ct)
     {
-        return Task.FromResult(new RefundAdvice(context.RequestedAmount, null));
+        LastAdvised = context;
+        _calls.Add((nameof(AdviseRefundAsync), context.InvoiceId));
+        return Advice?.Invoke(context, ct) ?? Task.FromResult(new RefundAdvice(context.RequestedAmount, null));
     }
 
     /// <inheritdoc/>

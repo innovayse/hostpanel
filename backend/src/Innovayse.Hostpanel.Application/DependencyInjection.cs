@@ -38,6 +38,9 @@ public static class DependencyInjection
         // One pass of the fulfilment dispatch, run by the scheduled chain and by the pass kicked after a payment.
         services.AddScoped<FulfilmentDispatcher>();
 
+        // Asks the enabled fulfilment plugins to cap a refund before any money moves.
+        services.AddScoped<RefundAdviser>();
+
         return services;
     }
 }

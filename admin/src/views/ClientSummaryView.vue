@@ -13,6 +13,7 @@ import { QUOTE_STAGE_OPTIONS, SERVICE_STATUS_OPTIONS } from '@/lib/constants'
 import { capitalize, formatDate } from '@/lib/format'
 import { formatMoney, formatPrice } from '@/lib/money'
 import { domainStatusTone, serviceStatusTone, statusLabel, clientStatusTone, contactTypeTone, quoteStageTone } from '@/lib/tones'
+import ClientExternalAccountCard from '@/components/clients/ClientExternalAccountCard.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -33,6 +34,7 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
+import type { SetClientExternalAccountPayload } from '@/types/clientexternalaccount'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
@@ -275,6 +277,47 @@ const saveNotes = async (): Promise<void> => {
   }
 }
 
+/** Name of the other system in the external account card. */
+const externalProvider = ref('')
+
+/** Account id in the external account card. */
+const externalAccountId = ref('')
+
+/** The outcome line of the last external account save or clear, shown inside its card. */
+const externalAccountNotice = useResultBanner()
+
+/**
+ * Sets or clears the external account link and, once the API accepted it, reports it.
+ *
+ * @param payload - The provider and account id; both null clears the link.
+ * @param doneKey - Locale key of the outcome line shown on success.
+ * @returns Promise that resolves when the call finishes; a refusal shows as the card's error.
+ */
+const writeExternalAccount = async (payload: SetClientExternalAccountPayload, doneKey: string): Promise<void> => {
+  externalAccountNotice.clear()
+  const saved = await clientsStore.saveExternalAccount(clientId.value, payload)
+  if (saved) {
+    externalAccountNotice.show(t(doneKey), false)
+  }
+}
+
+/**
+ * Saves the typed external account link.
+ *
+ * @param payload - The provider and account id the operator typed.
+ * @returns Promise that resolves when the call finishes.
+ */
+const saveExternalAccount = (payload: SetClientExternalAccountPayload): Promise<void> =>
+  writeExternalAccount(payload, 'clients.externalAccount.saved')
+
+/**
+ * Removes the external account link; the refreshed client detail empties the card's inputs.
+ *
+ * @returns Promise that resolves when the call finishes.
+ */
+const clearExternalAccount = (): Promise<void> =>
+  writeExternalAccount({ provider: null, accountId: null }, 'clients.externalAccount.cleared')
+
 /**
  * Opens a service of this client.
  *
@@ -304,6 +347,12 @@ const openDomain = (id: number): void => {
 const openQuote = (id: number): void => {
   router.push(quotePath(id))
 }
+
+/** Fills the external account inputs from the client detail whenever it loads or is refreshed. */
+watch(() => client.value?.externalAccount, (link) => {
+  externalProvider.value = link?.provider ?? ''
+  externalAccountId.value = link?.id ?? ''
+}, { immediate: true })
 
 /** Initialize admin notes from the client detail when it loads. */
 watch(() => client.value?.preferences.adminNotes, (val) => {
@@ -499,6 +548,20 @@ onMounted(() => {
             <UiStatusMessage :message="notesFeedback.message.value" :tone="notesFeedbackTone" data-testid="client-summary-notes-feedback" />
           </UiStack>
         </UiCard>
+
+        <ClientExternalAccountCard
+          v-if="client"
+          v-model:provider="externalProvider"
+          v-model:account-id="externalAccountId"
+          :linked="client.externalAccount ?? null"
+          :saving="clientsStore.externalAccountSaving"
+          :error="clientsStore.externalAccountError"
+          :field-errors="clientsStore.externalAccountFieldErrors"
+          :notice="externalAccountNotice.message.value"
+          @save="saveExternalAccount"
+          @clear="clearExternalAccount"
+          @clear-field-error="clientsStore.clearExternalAccountFieldError"
+        />
       </UiGrid>
 
       <UiStack>

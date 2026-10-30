@@ -2,6 +2,7 @@
  * A client account: the list row, the full record, and the two rollups its screens show.
  */
 
+import type { ClientExternalAccount } from '@/types/clientexternalaccount'
 import type { Contact } from '@/types/contact'
 import type { ContactNotifications } from '@/types/contactnotifications'
 import type { EmailLog } from '@/types/emaillog'
@@ -80,6 +81,8 @@ export interface ClientDetail extends ClientListItem {
   twoFactorEnabled: boolean
   /** Associated contacts. */
   contacts: Contact[]
+  /** The account in another system the client is linked to; null or absent when there is no link. */
+  externalAccount?: ClientExternalAccount | null
 }
 
 /** Invoice count and total per status for one client. */

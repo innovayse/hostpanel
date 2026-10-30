@@ -7,14 +7,20 @@ import { flushPromises } from '@vue/test-utils'
 import ClientSummaryView from '@/views/ClientSummaryView.vue'
 import { useClientsStore } from '@/stores/clients'
 import { mountClientView } from '../helpers/clientViews'
-import { json, problem } from '../helpers/fetch'
+import { callOf, json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import type { ClientSummaryData } from '@/types/client'
 
-/** Client 7 as the detail endpoint returns it. */
-const client = () =>
+/**
+ * Client 7 as the detail endpoint returns it.
+ *
+ * @param externalAccount - The link the client holds, null for none.
+ * @returns The response.
+ */
+const client = (externalAccount: { provider: string, id: string } | null = null) =>
   json({
+    externalAccount,
     id: 7,
     firstName: 'Ada',
     lastName: 'Lovelace',
@@ -69,12 +75,19 @@ const summary: ClientSummaryData = {
  * detail, whose path is a prefix of the summary's.
  *
  * @param save - Answer to the notes save.
+ * @param link - Answer to the external account save or clear.
+ * @param detail - Answer to the client detail read.
  * @returns The route table for `stubRoutes`.
  */
-const summaryRoutes = (save: () => Response): Record<string, () => Response> => ({
+const summaryRoutes = (
+  save: () => Response,
+  link: () => Response = () => new Response(null, { status: 204 }),
+  detail: () => Response = client,
+): Record<string, () => Response> => ({
+  'PUT /api/clients/7/external-account': link,
   'PUT /api/clients/7': save,
   'GET /api/clients/7/summary': () => json(summary),
-  'GET /api/clients/7': client,
+  'GET /api/clients/7': detail,
 })
 
 /**
@@ -92,6 +105,17 @@ const mountSummary = async () => {
 afterEach(() => {
   vi.unstubAllGlobals()
 })
+
+/**
+ * Reads back the external account writes a stubbed `fetch` received.
+ *
+ * @param mock - The mock returned by `stubRoutes`.
+ * @returns The decoded PUT calls to the external account endpoint, in order.
+ */
+const externalAccountPuts = (mock: ReturnType<typeof stubRoutes>) =>
+  mock.mock.calls
+    .map((_, index) => callOf(mock, index))
+    .filter((call) => call.method === 'PUT' && call.url === '/api/clients/7/external-account')
 
 describe('ClientSummaryView', () => {
   it('mounts without throwing', async () => {
@@ -146,5 +170,89 @@ describe('ClientSummaryView', () => {
     await flushPromises()
 
     expect(wrapper.get('[data-testid="client-summary-notes-feedback"]').text()).toBe('Notes are too long.')
+  })
+
+  it('links the external account and reports it inside its card', async () => {
+    const mock = stubRoutes(summaryRoutes(() => new Response(null, { status: 204 })))
+    const wrapper = await mountSummary()
+
+    await wrapper.get('[data-testid="client-external-account-provider"]').setValue('crm')
+    await wrapper.get('[data-testid="client-external-account-id"]').setValue('acct-1')
+    await wrapper.get('[data-testid="client-external-account-save"]').trigger('click')
+    await flushPromises()
+
+    expect(externalAccountPuts(mock)[0]?.body).toEqual({ provider: 'crm', accountId: 'acct-1' })
+    expect(wrapper.get('[data-testid="client-external-account-status"]').text()).toBe('External account link saved.')
+  })
+
+  it('shows the conflict sentence of the API when another client holds the pair', async () => {
+    stubRoutes(summaryRoutes(() => new Response(null, { status: 204 }), () => problem('Already linked to another client.', 409)))
+    const wrapper = await mountSummary()
+
+    await wrapper.get('[data-testid="client-external-account-provider"]').setValue('crm')
+    await wrapper.get('[data-testid="client-external-account-id"]').setValue('acct-1')
+    await wrapper.get('[data-testid="client-external-account-save"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="client-external-account-status"]').text()).toBe('Already linked to another client.')
+  })
+
+  it('fills the card from the link the client holds', async () => {
+    stubRoutes(summaryRoutes(() => new Response(null, { status: 204 }), undefined, () => client({ provider: 'crm', id: 'acct-9' })))
+    const wrapper = await mountSummary()
+
+    expect((wrapper.get('[data-testid="client-external-account-provider"]').element as HTMLInputElement).value).toBe('crm')
+    expect((wrapper.get('[data-testid="client-external-account-id"]').element as HTMLInputElement).value).toBe('acct-9')
+    expect(wrapper.get('[data-testid="client-external-account-current"]').text()).toBe('Linked to crm, account acct-9.')
+  })
+
+  it('offers no Clear link while the client has no link', async () => {
+    stubRoutes(summaryRoutes(() => new Response(null, { status: 204 })))
+    const wrapper = await mountSummary()
+
+    expect(wrapper.find('[data-testid="client-external-account-clear"]').exists()).toBe(false)
+  })
+
+  it('shows the new link after a save refreshed the client', async () => {
+    let held: { provider: string, id: string } | null = null
+    stubRoutes(summaryRoutes(
+      () => new Response(null, { status: 204 }),
+      () => {
+        held = { provider: 'crm', id: 'acct-1' }
+        return new Response(null, { status: 204 })
+      },
+      () => client(held),
+    ))
+    const wrapper = await mountSummary()
+
+    await wrapper.get('[data-testid="client-external-account-provider"]').setValue('crm')
+    await wrapper.get('[data-testid="client-external-account-id"]').setValue('acct-1')
+    await wrapper.get('[data-testid="client-external-account-save"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="client-external-account-current"]').text()).toBe('Linked to crm, account acct-1.')
+    expect(wrapper.find('[data-testid="client-external-account-clear"]').exists()).toBe(true)
+  })
+
+  it('clears the link after the confirmation and empties the inputs', async () => {
+    let held: { provider: string, id: string } | null = { provider: 'crm', id: 'acct-1' }
+    const mock = stubRoutes(summaryRoutes(
+      () => new Response(null, { status: 204 }),
+      () => {
+        held = null
+        return new Response(null, { status: 204 })
+      },
+      () => client(held),
+    ))
+    const wrapper = await mountSummary()
+
+    await wrapper.get('[data-testid="client-external-account-clear"]').trigger('click')
+    await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
+    await flushPromises()
+
+    expect(externalAccountPuts(mock)[0]?.body).toEqual({ provider: null, accountId: null })
+    expect((wrapper.get('[data-testid="client-external-account-provider"]').element as HTMLInputElement).value).toBe('')
+    expect(wrapper.find('[data-testid="client-external-account-clear"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="client-external-account-status"]').text()).toBe('External account link cleared.')
   })
 })

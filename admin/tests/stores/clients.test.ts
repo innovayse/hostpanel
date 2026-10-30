@@ -6,7 +6,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useClientsStore } from '@/stores/clients'
-import { json, problem, stubFetch, stubOffline, callOf } from '../helpers/fetch'
+import { invalid, json, problem, stubFetch, stubOffline, callOf } from '../helpers/fetch'
 import { installStoreHooks, NO_ANSWER } from '../helpers/storeHooks'
 import { toUpdateClientPayload } from '@/lib/clientPayload'
 import type { ClientDetail } from '@/types/client'
@@ -118,6 +118,63 @@ describe('clientsStore.saveAdminNotes', () => {
 
     expect(await store.saveAdminNotes(8, 'note')).toBe(false)
     expect(mock).not.toHaveBeenCalled()
+  })
+})
+
+describe('clientsStore.saveExternalAccount', () => {
+  installStoreHooks()
+
+  it('PUTs the pair, refreshes the open client and leaves the error state empty', async () => {
+    const mock = stubFetch(new Response(null, { status: 204 }), json({ id: 7, externalAccount: { provider: 'crm', id: 'acct-1' } }))
+    const store = useClientsStore()
+
+    expect(await store.saveExternalAccount(7, { provider: 'crm', accountId: 'acct-1' })).toBe(true)
+
+    expect(callOf(mock, 0)).toMatchObject({ url: '/api/clients/7/external-account', method: 'PUT', body: { provider: 'crm', accountId: 'acct-1' } })
+    expect(callOf(mock, 1)).toMatchObject({ url: '/api/clients/7', method: 'GET' })
+    expect(store.current?.externalAccount).toEqual({ provider: 'crm', id: 'acct-1' })
+    expect(store.externalAccountSaving).toBe(false)
+    expect(store.externalAccountError).toBeNull()
+    expect(store.externalAccountFieldErrors).toEqual({})
+  })
+
+  it('clears the link when both are null', async () => {
+    const mock = stubFetch(new Response(null, { status: 204 }))
+    const store = useClientsStore()
+
+    expect(await store.saveExternalAccount(7, { provider: null, accountId: null })).toBe(true)
+    expect(callOf(mock, 0).body).toEqual({ provider: null, accountId: null })
+  })
+
+  it('keeps the API sentence of a conflict', async () => {
+    const mock = stubFetch(problem('This account is already linked to another client.', 409))
+    const store = useClientsStore()
+
+    expect(await store.saveExternalAccount(7, { provider: 'crm', accountId: 'acct-1' })).toBe(false)
+    expect(store.externalAccountError).toBe('This account is already linked to another client.')
+    // A refused write is not followed by a read.
+    expect(mock).toHaveBeenCalledTimes(1)
+    expect(store.externalAccountSaving).toBe(false)
+  })
+
+  it('keeps the field messages of a refused half link and drops one on request', async () => {
+    stubFetch(invalid('Fix the form.', { Provider: ['Provider is required.'], AccountId: ['Account id is required.'] }))
+    const store = useClientsStore()
+
+    expect(await store.saveExternalAccount(7, { provider: null, accountId: 'acct-1' })).toBe(false)
+    expect(store.externalAccountError).toBe('Fix the form.')
+    expect(store.externalAccountFieldErrors).toEqual({ provider: 'Provider is required.', accountId: 'Account id is required.' })
+
+    store.clearExternalAccountFieldError('provider')
+    expect(store.externalAccountFieldErrors).toEqual({ accountId: 'Account id is required.' })
+  })
+
+  it('does not touch the profile save state', async () => {
+    stubFetch(problem('Refused.', 409))
+    const store = useClientsStore()
+
+    await store.saveExternalAccount(7, { provider: 'crm', accountId: 'acct-1' })
+    expect(store.saveError).toBeNull()
   })
 })
 

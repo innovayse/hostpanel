@@ -4,7 +4,7 @@
  * Owns the paged client list, the open client, the profile save, contacts, export and the
  * pickers the other screens read. It is the only caller of `useClientsApi`; a refusal
  * becomes the API sentence in the matching error ref (`error`, `saveError`, `contactError`,
- * `exportError`), so no view holds a `catch`.
+ * `exportError`, `externalAccountError`), so no view holds a `catch`.
  */
 
 import { defineStore } from 'pinia'
@@ -14,6 +14,7 @@ import { toUpdateClientPayload } from '@/lib/clientPayload'
 import { runAction } from '@/lib/runAction'
 import type { AdminCreateClientPayload } from '@/types/admincreateclientpayload'
 import type { ClientDetail, ClientFilters, ClientListItem } from '@/types/client'
+import type { SetClientExternalAccountPayload } from '@/types/clientexternalaccount'
 import type { ClientOption } from '@/types/clientoption'
 import type { UserSearchHit } from '@/types/clientuser'
 import type { UpdateClientPayload } from '@/types/updateclientpayload'
@@ -57,6 +58,15 @@ export const useClientsStore = defineStore('clients', () => {
 
   /** Per-field messages of the last refused profile save, keyed by camelCase field name. */
   const fieldErrors = ref<Record<string, string>>({})
+
+  /** True while an external account link save or clear is in flight. */
+  const externalAccountSaving = ref(false)
+
+  /** Sentence for the last refused external account link save or clear, null when none. */
+  const externalAccountError = ref<string | null>(null)
+
+  /** Per-field messages of the last refused external account link save, keyed by camelCase field name. */
+  const externalAccountFieldErrors = ref<Record<string, string>>({})
 
   /** Sentence for the last failed contact add/update/remove, null when none. */
   const contactError = ref<string | null>(null)
@@ -157,6 +167,41 @@ export const useClientsStore = defineStore('clients', () => {
     return updateClient(id, toUpdateClientPayload(detail, {
       preferences: { ...detail.preferences, adminNotes: adminNotes.trim() || null },
     }))
+  }
+
+  /**
+   * Drops the API's message for one field of the external account link, once the operator edits it.
+   *
+   * @param field - The wire name of the field (see `ExternalAccountField`).
+   * @returns Nothing; the field's message is removed from `externalAccountFieldErrors`.
+   */
+  const clearExternalAccountFieldError = (field: string): void => {
+    const rest = { ...externalAccountFieldErrors.value }
+    delete rest[field]
+    externalAccountFieldErrors.value = rest
+  }
+
+  /**
+   * Sets or clears the external account link of a client; the API is the only validator and
+   * answers a pair another client holds with a conflict sentence.
+   *
+   * @param id - The client identifier.
+   * @param payload - The provider and account id; both null clears the link.
+   * @returns True when written and the detail refreshed; false when refused (see `externalAccountError`, `externalAccountFieldErrors`).
+   */
+  const saveExternalAccount = async (id: number | string, payload: SetClientExternalAccountPayload): Promise<boolean> => {
+    externalAccountSaving.value = true
+    const result = await runAction(
+      externalAccountError,
+      async () => {
+        await api.setExternalAccount(id, payload)
+        // Re-read in place, as the profile save does, so the card shows the link the API now holds.
+        current.value = await api.get(id)
+      },
+      externalAccountFieldErrors,
+    )
+    externalAccountSaving.value = false
+    return result.ok
   }
 
   /**
@@ -322,6 +367,9 @@ export const useClientsStore = defineStore('clients', () => {
     saving,
     saveError,
     fieldErrors,
+    externalAccountSaving,
+    externalAccountError,
+    externalAccountFieldErrors,
     contactError,
     exportError,
     countries,
@@ -331,6 +379,8 @@ export const useClientsStore = defineStore('clients', () => {
     createClient,
     updateClient,
     saveAdminNotes,
+    saveExternalAccount,
+    clearExternalAccountFieldError,
     fetchClientOptions,
     searchClients,
     searchUsers,

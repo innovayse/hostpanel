@@ -202,14 +202,18 @@ public sealed class FakeCardPaymentGateway : ICardPaymentGateway
     }
 
     /// <inheritdoc/>
-    public Task<CardPaymentMethodsResult> ListPaymentMethodsAsync(CardCustomerInstruction instruction, CancellationToken ct) =>
-        Task.FromResult(ListFailure is { } failure
+    public Task<CardPaymentMethodsResult> ListPaymentMethodsAsync(CardCustomerInstruction instruction, CancellationToken ct)
+    {
+        ThrowIfNotConfigured();
+        return Task.FromResult(ListFailure is { } failure
             ? CardPaymentMethodsResult.Failed(failure)
             : new CardPaymentMethodsResult(SavedPaymentMethods));
+    }
 
     /// <inheritdoc/>
     public Task<CardGatewayOperationResult> SetDefaultPaymentMethodAsync(CardDefaultMethodInstruction instruction, CancellationToken ct)
     {
+        ThrowIfNotConfigured();
         if (MethodChangeFailure is { } failure)
         {
             return Task.FromResult(new CardGatewayOperationResult(failure));
@@ -222,6 +226,7 @@ public sealed class FakeCardPaymentGateway : ICardPaymentGateway
     /// <inheritdoc/>
     public Task<CardGatewayOperationResult> DetachPaymentMethodAsync(CardDetachInstruction instruction, CancellationToken ct)
     {
+        ThrowIfNotConfigured();
         if (MethodChangeFailure is { } failure)
         {
             return Task.FromResult(new CardGatewayOperationResult(failure));
@@ -229,5 +234,18 @@ public sealed class FakeCardPaymentGateway : ICardPaymentGateway
 
         LastDetachedPaymentMethodId = instruction.PaymentMethodId;
         return Task.FromResult(CardGatewayOperationResult.Succeeded);
+    }
+
+    /// <summary>
+    /// Throws as the Stripe adapter does when it has no secret key: its client is built on first
+    /// use and the Stripe library refuses an empty API key with an <see cref="ArgumentException"/>.
+    /// </summary>
+    /// <exception cref="ArgumentException">When <see cref="IsConfigured"/> is false.</exception>
+    private void ThrowIfNotConfigured()
+    {
+        if (!IsConfigured)
+        {
+            throw new ArgumentException("The card gateway has no API key.", "ApiKey");
+        }
     }
 }

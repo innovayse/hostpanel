@@ -30,6 +30,7 @@ test('deleting a slide asks first and then removes it from the list', async ({ p
   await page.goto('/settings/slides')
   await expect(page.getByTestId(`slide-row-${welcomeSlide.id}`)).toContainText('Welcome')
 
+  await page.getByTestId(`slide-row-${welcomeSlide.id}`).getByTestId('row-actions-trigger').click()
   await page.getByTestId(`slide-delete-${welcomeSlide.id}`).click()
   expect(api.callsTo(HttpMethod.Delete, `/api/admin/slides/${welcomeSlide.id}`)).toHaveLength(0)
   await page.getByTestId('dialog-confirm').click()

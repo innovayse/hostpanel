@@ -16,9 +16,8 @@ import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
-import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -27,7 +26,6 @@ import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { Icon } from '@/lib/icons'
 import { useCurrenciesStore } from '@/stores/currencies'
 import { formatAffixed } from '@/lib/money'
 import { useSettingsStore } from '@/stores/settings'
@@ -129,6 +127,7 @@ const formatPrice = (amount: number | null): string => {
 /** Opens the dialog in create mode. */
 const openCreate = (): void => {
   store.actionError = null
+  store.fieldErrors = {}
   editingProduct.value = null
   showModal.value = true
 }
@@ -140,6 +139,7 @@ const openCreate = (): void => {
  */
 const openEdit = (product: Product): void => {
   store.actionError = null
+  store.fieldErrors = {}
   editingProduct.value = product
   showModal.value = true
 }
@@ -164,6 +164,9 @@ const handleSave = async (payload: CreateProductPayload): Promise<void> => {
       serverGroupId: payload.serverGroupId,
       isFeatured: payload.isFeatured,
       sortOrder: payload.sortOrder,
+      sku: payload.sku,
+      metadata: payload.metadata,
+      gracePeriodDays: payload.gracePeriodDays,
     })
   } else {
     saved = (await store.createProduct(payload)) !== null
@@ -173,6 +176,29 @@ const handleSave = async (payload: CreateProductPayload): Promise<void> => {
     showModal.value = false
     feedback.show(t('shared.changesSavedSuccessfully'), false)
   }
+}
+
+/**
+ * Row actions for a product.
+ *
+ * @param product - The product whose actions to build.
+ * @returns The action list passed to UiRowActions.
+ */
+const productActions = (product: Product): UiRowAction[] => {
+  /**
+   * Opens the specification editor for this product.
+   * @returns Nothing.
+   */
+  const onSpec = (): void => { featuresProduct.value = product }
+  /**
+   * Opens the edit dialog for this product.
+   * @returns Nothing.
+   */
+  const onEdit = (): void => openEdit(product)
+  return [
+    { label: t('settings.products.editSpecification'), testid: `product-spec-${product.id}`, onSelect: onSpec },
+    { label: t('settings.products.editProduct'), testid: `product-edit-${product.id}`, onSelect: onEdit },
+  ]
 }
 </script>
 
@@ -239,22 +265,7 @@ const handleSave = async (payload: CreateProductPayload): Promise<void> => {
               </UiBadge>
             </UiTableCell>
             <UiTableCell align="right">
-              <UiIconButton
-                :label="t('settings.products.editSpecification')"
-                size="sm"
-                :data-testid="`product-spec-${product.id}`"
-                @click="featuresProduct = product"
-              >
-                <UiIcon :markup="Icon.List" size="sm" />
-              </UiIconButton>
-              <UiIconButton
-                :label="t('settings.products.editProduct')"
-                size="sm"
-                :data-testid="`product-edit-${product.id}`"
-                @click="openEdit(product)"
-              >
-                <UiIcon :markup="Icon.Edit" size="sm" />
-              </UiIconButton>
+              <UiRowActions :actions="productActions(product)" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>
@@ -268,7 +279,9 @@ const handleSave = async (payload: CreateProductPayload): Promise<void> => {
       :groups="store.productGroups"
       :saving="saving"
       :error="store.actionError"
+      :field-errors="store.fieldErrors"
       @save="handleSave"
+      @clear-field-error="store.clearFieldError"
       @close="showModal = false"
     />
 

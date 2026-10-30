@@ -26,6 +26,9 @@ const product: Product = {
   serverGroupId: null,
   isFeatured: false,
   sortOrder: 0,
+  sku: null,
+  metadata: null,
+  gracePeriodDays: 7,
 }
 
 /** Two stored lines. */

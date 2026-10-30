@@ -7,7 +7,7 @@
  * in the tab. The line items and the transaction ledgers sit below.
  */
 import { computed, ref, watch } from 'vue'
-import { formatUsd, formatUsdPlain } from '@/lib/money'
+import { formatPlainAmount } from '@/lib/money'
 import { useI18n } from 'vue-i18n'
 import InvoiceItemsSection from '@/components/billing/InvoiceItemsSection.vue'
 import InvoiceTransactionsSection from '@/components/billing/InvoiceTransactionsSection.vue'
@@ -135,7 +135,7 @@ const transactionOptions = computed(() => {
     { value: '', label: t('billing.invoiceRefundTab.selectATransaction') },
     ...payments.value.map((transaction) => ({
       value: String(transaction.id),
-      label: `#${transaction.id} — ${formatUsdPlain(transaction.amount)} (${transaction.gateway})`,
+      label: `#${transaction.id} — ${formatPlainAmount(transaction.amount, props.invoice.currency)} (${transaction.gateway})`,
     })),
   ]
 })
@@ -155,15 +155,15 @@ const sentKind = computed<InvoiceRefundType>(() =>
 /** The confirmation sentence, naming the amount and the method of the refund. */
 const confirmMessage = computed<string>(() =>
   t('billing.invoiceRefundTab.confirmRefundMessage', {
-    amount: formatUsd(refundAmount.value),
+    amount: formatPlainAmount(refundAmount.value, props.invoice.currency),
     method: refundTypeOptions.value.find((option) => option.value === sentKind.value)?.label ?? sentKind.value,
   }),
 )
 
 /** The warning that explains what the credit question is about. */
 const creditWarning = computed<string>(() => {
-  const refunded = formatUsd(selectedPayment.value?.amount)
-  const balance = formatUsd(props.invoice.amounts.credit)
+  const refunded = formatPlainAmount(selectedPayment.value?.amount, props.invoice.currency)
+  const balance = formatPlainAmount(props.invoice.amounts.credit, props.invoice.currency)
   return `${t('billing.invoiceRefundTab.theseTransactionsResultedInA')} ${refunded}${t('billing.invoiceRefundTab.theCurrentCreditBalanceIs')} ${balance}.`
 })
 

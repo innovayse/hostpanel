@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Application.Audit.Common;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Auth.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -100,6 +101,9 @@ public sealed class TransferOwnershipHandler
             throw;
         }
 
+        // The new owner may never have registered or ordered here, so the transfer grants the role
+        // the portal requires.
+        await _roles.AddAsync(cmd.NewOwnerUserId, Role.Client, ct);
         return Result.Success();
     }
 

@@ -22,10 +22,35 @@ public sealed class GetMyPaymentMethodsTests(IntegrationTestFactory factory) : I
 {
     /// <summary>Builds a host whose card payment gateway calls answer from <paramref name="cardGateway"/>.</summary>
     /// <param name="cardGateway">The fake card payment gateway service the host should report through.</param>
+    /// <param name="configured">Whether the gateway has its keys; false stands in for a deployment without them.</param>
     /// <returns>The test host.</returns>
-    private WebApplicationFactory<Program> BuildHost(FakeCardPaymentGateway cardGateway) =>
-        factory.WithWebHostBuilder(builder =>
+    private WebApplicationFactory<Program> BuildHost(FakeCardPaymentGateway cardGateway, bool configured = true)
+    {
+        cardGateway.IsConfigured = configured;
+        return factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services => services.AddSingleton<ICardPaymentGateway>(cardGateway)));
+    }
+
+    /// <summary>
+    /// With no card gateway keys (the demo, a bank-transfer-only install) there can be no saved card, so
+    /// the list is empty rather than a 500 from the gateway refusing its empty key (#606).
+    /// </summary>
+    [Fact]
+    public async Task GetMine_CardGatewayNotConfigured_ReturnsAnEmptyList()
+    {
+        var host = BuildHost(new FakeCardPaymentGateway
+        {
+            SavedPaymentMethods = [new CardPaymentMethodDto("pm_1", SavedPaymentMethodType.Card, "visa", "4242", 12, 2030, true)],
+        }, configured: false);
+        var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "list-not-configured");
+        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, "cus_1");
+
+        var response = await client.GetAsync("/api/me/payment-methods");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<List<CardPaymentMethodDto>>();
+        body.Should().BeEmpty();
+    }
 
     /// <summary>A client who has never saved a payment method sees an empty list.</summary>
     [Fact]

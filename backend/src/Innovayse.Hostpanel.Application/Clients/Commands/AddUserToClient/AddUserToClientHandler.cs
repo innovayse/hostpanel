@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Application.Audit.Common;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Auth.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -70,6 +71,10 @@ public sealed class AddUserToClientHandler
         await _activity.RecordAsync(
             new ActivityLogEntry(client.Id, $"Added User - Client ID: {client.Id} - User ID: {cmd.MemberUserId}"), ct);
         await _context.SaveChangesAsync(ct);
+
+        // The portal serves only holders of the Client role. A user linked here by staff never
+        // registered or ordered, the two other places that grant it, so the link grants it.
+        await _roles.AddAsync(cmd.MemberUserId, Role.Client, ct);
         return Result.Success();
     }
 }

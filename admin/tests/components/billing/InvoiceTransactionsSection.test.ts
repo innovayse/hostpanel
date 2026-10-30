@@ -17,6 +17,32 @@ describe('InvoiceTransactionsSection', () => {
     expect(wrapper.get('[data-testid="billing-invoice-payments-table"]').text()).toContain('40.00 USD')
   })
 
+  it('formats payment amounts and fees with the invoice currency when not USD', () => {
+    const wrapper = mountWithApp(InvoiceTransactionsSection, {
+      props: {
+        invoice: invoiceFixture({
+          currency: 'AMD',
+          transactions: [
+            {
+              id: 21,
+              date: '2026-10-15T00:00:00Z',
+              gateway: 'Stripe',
+              transactionId: 'ch_1',
+              amount: 24000,
+              fees: 500,
+              type: 'Payment',
+            },
+          ],
+        }),
+      },
+    })
+
+    const paymentsTable = wrapper.get('[data-testid="billing-invoice-payments-table"]')
+    expect(paymentsTable.text()).toContain('24000.00 AMD')
+    expect(paymentsTable.text()).toContain('500.00 AMD')
+    expect(paymentsTable.text()).not.toContain('$')
+  })
+
   it('shows the empty message in both ledgers when there are no transactions', () => {
     const wrapper = mountWithApp(InvoiceTransactionsSection, { props: { invoice: invoiceFixture({ transactions: [] }) } })
 

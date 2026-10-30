@@ -12,6 +12,7 @@ import type { Contact } from '@/types/contact'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
@@ -26,7 +27,6 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { UiAlign } from '@/utils/ui/table'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
-import { UiSize } from '@/utils/ui/size'
 import { NOTICE_VISIBLE_MS } from '@/lib/limits'
 
 const { t } = useI18n()
@@ -192,6 +192,29 @@ const openEditModal = (contact: Contact): void => {
 onBeforeUnmount(() => {
   clearTimeout(successTimer)
 })
+
+/**
+ * Row actions for a contact.
+ *
+ * @param contact - The contact whose actions to build.
+ * @returns The action list passed to UiRowActions.
+ */
+const contactActions = (contact: Contact): UiRowAction[] => {
+  /**
+   * Opens the edit dialog for this contact.
+   * @returns Nothing.
+   */
+  const onEdit = (): void => openEditModal(contact)
+  /**
+   * Forwards delete for this contact.
+   * @returns Nothing.
+   */
+  const onDelete = (): void => handleDeleteContact(contact.id)
+  return [
+    { label: t('shared.edit'), testid: `client-contacts-edit-${contact.id}`, onSelect: onEdit },
+    { label: t('shared.delete'), testid: `client-contacts-delete-${contact.id}`, onSelect: onDelete, danger: true },
+  ]
+}
 </script>
 
 <template>
@@ -236,24 +259,7 @@ onBeforeUnmount(() => {
               <UiBadge :tone="contactTypeTone(contact.type)" small>{{ contact.type }}</UiBadge>
             </UiTableCell>
             <UiTableCell :align="UiAlign.Right">
-              <UiStack direction="row" :justify="UiJustify.End" gap="sm">
-                <UiButton
-                  :variant="UiButtonVariant.Secondary"
-                  :size="UiSize.Sm"
-                  :data-testid="`client-contacts-edit-${contact.id}`"
-                  @click="openEditModal(contact)"
-                >
-                  {{ t('shared.edit') }}
-                </UiButton>
-                <UiButton
-                  :variant="UiButtonVariant.Danger"
-                  :size="UiSize.Sm"
-                  :data-testid="`client-contacts-delete-${contact.id}`"
-                  @click="handleDeleteContact(contact.id)"
-                >
-                  {{ t('shared.delete') }}
-                </UiButton>
-              </UiStack>
+              <UiRowActions :actions="contactActions(contact)" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

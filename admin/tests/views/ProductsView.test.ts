@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import ProductsView from '@/views/ProductsView.vue'
 import type { CurrencyDto } from '@/types/currency'
 import type { Product, ProductGroup } from '@/types/product'
-import { json, problem } from '../helpers/fetch'
+import { invalid, json, problem } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
 
@@ -40,6 +40,9 @@ const plan: Product = {
   serverGroupId: null,
   isFeatured: false,
   sortOrder: 0,
+  sku: null,
+  metadata: null,
+  gracePeriodDays: 7,
 }
 
 /** Answers for everything the screen and its dialogs load. */
@@ -108,6 +111,7 @@ describe('ProductsView', () => {
     const mock = stubRouteTable({ ...routes, 'PUT /products/1': () => new Response(null, { status: 204 }) })
     const { wrapper } = await mountScreen(ProductsView)
 
+    await wrapper.get('[data-testid="product-row-1"]').get('[data-testid="row-actions-trigger"]').trigger('click')
     await wrapper.get('[data-testid="product-edit-1"]').trigger('click')
     expect((wrapper.get('[data-testid="product-form-name"]').element as HTMLInputElement).value).toBe('Starter')
     await wrapper.get('[data-testid="product-form"]').trigger('submit')
@@ -117,6 +121,34 @@ describe('ProductsView', () => {
     await vi.waitFor(() => {
       expect(wrapper.get('[data-testid="products-feedback"]').text()).toBe('Changes saved successfully.')
     })
+  })
+
+  it('sends the SKU, metadata and grace period of the edited product and shows the API field errors under the inputs', async () => {
+    let sent: unknown
+    stubRouteTable({
+      ...routes,
+      'PUT /products/1': (body) => {
+        sent = body
+        return invalid('Validation failed.', { Sku: ['Use letters and digits.'], GracePeriodDays: ['Out of range.'] })
+      },
+    })
+    const { wrapper } = await mountScreen(ProductsView)
+
+    await wrapper.get('[data-testid="product-row-1"]').get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="product-edit-1"]').trigger('click')
+    await wrapper.get('[data-testid="product-form-sku"]').setValue(' bad sku ')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain('Use letters and digits.')
+    })
+    expect(sent).toMatchObject({ id: 1, sku: 'bad sku', metadata: '', gracePeriodDays: 7 })
+    expect(wrapper.text()).toContain('Out of range.')
+
+    // Editing the SKU clears only its own message (the view wires clear-field-error to the store).
+    await wrapper.get('[data-testid="product-form-sku"]').setValue('good-sku')
+    expect(wrapper.text()).not.toContain('Use letters and digits.')
+    expect(wrapper.text()).toContain('Out of range.')
   })
 
   it('shows the API sentence next to the save button when a save is refused', async () => {
@@ -137,6 +169,7 @@ describe('ProductsView', () => {
     stubRouteTable(routes)
     const { wrapper } = await mountScreen(ProductsView)
 
+    await wrapper.get('[data-testid="product-row-1"]').get('[data-testid="row-actions-trigger"]').trigger('click')
     await wrapper.get('[data-testid="product-spec-1"]').trigger('click')
 
     await vi.waitFor(() => {

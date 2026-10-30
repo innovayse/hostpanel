@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Auth.Common;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 
@@ -19,6 +20,7 @@ namespace Innovayse.Hostpanel.Application.Clients.Common;
 /// <param name="TwoFactorEnabled">True if the user has TOTP 2FA enabled.</param>
 /// <param name="CreatedAt">Account creation timestamp.</param>
 /// <param name="Contacts">Additional contacts linked to this client.</param>
+/// <param name="ExternalAccount">The account in another system the client is linked to, null when there is no link.</param>
 public sealed record ClientDto(
     int Id,
     string UserId,
@@ -34,4 +36,5 @@ public sealed record ClientDto(
     ClientSettingsDto Settings,
     bool TwoFactorEnabled,
     DateTimeOffset CreatedAt,
-    IReadOnlyList<ContactDto> Contacts);
+    IReadOnlyList<ContactDto> Contacts,
+    ExternalAccountDto? ExternalAccount);

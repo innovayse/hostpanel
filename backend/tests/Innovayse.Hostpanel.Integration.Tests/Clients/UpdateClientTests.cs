@@ -97,6 +97,33 @@ public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFi
         unchanged.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
 
+    /// <summary>
+    /// Invoices that were all cancelled do not lock the currency: a client whose only invoice was
+    /// cancelled can still be moved to another currency.
+    /// </summary>
+    [Fact]
+    public async Task UpdateAllowsACurrencyChangeWhenEveryInvoiceIsCancelled()
+    {
+        var (clientId, _) = await ClientsTestSeeds.SeedClientAsync(factory);
+        await BillingTestSeeds.EnsureCurrencyAsync(factory, "AMD", "051", 0.0026m);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(14), "USD", DateTimeOffset.UtcNow);
+            invoice.Cancel();
+            db.Invoices.Add(invoice);
+            await db.SaveChangesAsync();
+        }
+
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+
+        var response = await admin.PutAsJsonAsync($"/api/clients/{clientId}", ClientsTestSeeds.UpdateBody(currency: "AMD"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var fetched = await admin.GetFromJsonAsync<JsonElement>($"/api/clients/{clientId}");
+        fetched.GetProperty("preferences").GetProperty("currency").GetString().Should().Be("AMD");
+    }
+
     /// <summary>A currency this panel has not configured and enabled is refused as missing.</summary>
     [Fact]
     public async Task UpdateRefusesAnUnconfiguredCurrency()

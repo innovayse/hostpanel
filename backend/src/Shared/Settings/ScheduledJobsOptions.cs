@@ -49,6 +49,17 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     [Range(0, 23)]
     public int CheckDomainExpiriesHour { get; init; } = 9;
 
+    /// <summary>UTC hour (0-23) of the daily GitHub release update check.</summary>
+    [Range(0, 23)]
+    public int CheckReleaseUpdatesHour { get; init; } = 10;
+
+    /// <summary>
+    /// When <see langword="true"/>, the daily release-update check is skipped entirely and no
+    /// outbound request is made to GitHub. Set this for installations that have no outbound
+    /// internet access.
+    /// </summary>
+    public bool DisableReleaseUpdateChecks { get; init; }
+
     /// <summary>Minutes between the end of one gateway payment reconciliation and the start of the next.</summary>
     [Range(1, 1440)]
     public int ReconcileGatewayPaymentsIntervalMinutes { get; init; } = 5;
@@ -170,6 +181,9 @@ public sealed class ScheduledJobsOptions : IValidatableObject
 
     /// <summary>Gets the schedule of the domain expiry check.</summary>
     public JobSchedule CheckDomainExpiries => JobSchedule.Daily(CheckDomainExpiriesHour);
+
+    /// <summary>Gets the schedule of the GitHub release update check.</summary>
+    public JobSchedule CheckReleaseUpdates => JobSchedule.Daily(CheckReleaseUpdatesHour);
 
     /// <summary>Gets the schedule of the gateway payment reconciliation.</summary>
     public JobSchedule ReconcileGatewayPayments =>

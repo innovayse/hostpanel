@@ -105,6 +105,6 @@ public sealed class CallerClientResolver : ICallerClientResolver
             .FirstOrDefaultAsync(ct);
 
         // Owner-only actions stay closed: the plugin knows members of an account, not its holder.
-        return new CallerClientAccess(clientId, false, IdentityPluginPermissions.From(granted));
+        return new CallerClientAccess(clientId, false, IdentityPluginPermissions.From(granted), account);
     }
 }

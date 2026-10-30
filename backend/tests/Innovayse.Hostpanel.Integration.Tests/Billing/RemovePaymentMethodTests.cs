@@ -20,10 +20,28 @@ public sealed class RemovePaymentMethodTests(IntegrationTestFactory factory) : I
 {
     /// <summary>Builds a host whose card payment gateway calls answer from <paramref name="cardGateway"/>.</summary>
     /// <param name="cardGateway">The fake card payment gateway service the host should report through.</param>
+    /// <param name="configured">Whether the gateway has its keys; false stands in for a deployment without them.</param>
     /// <returns>The test host.</returns>
-    private WebApplicationFactory<Program> BuildHost(FakeCardPaymentGateway cardGateway) =>
-        factory.WithWebHostBuilder(builder =>
+    private WebApplicationFactory<Program> BuildHost(FakeCardPaymentGateway cardGateway, bool configured = true)
+    {
+        cardGateway.IsConfigured = configured;
+        return factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services => services.AddSingleton<ICardPaymentGateway>(cardGateway)));
+    }
+
+    /// <summary>With no card gateway keys there is no card to remove, which is a conflict rather than a 500 (#606).</summary>
+    [Fact]
+    public async Task Remove_CardGatewayNotConfigured_RefusesPaymentMethodUnavailable()
+    {
+        var host = BuildHost(new FakeCardPaymentGateway(), configured: false);
+        var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "remove-not-configured");
+        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, "cus_1");
+
+        var response = await client.DeleteAsync("/api/me/payment-methods/pm_1");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.PAYMENT_METHOD_UNAVAILABLE);
+    }
 
     /// <summary>Removing a saved card the client owns detaches it from card payment gateway.</summary>
     [Fact]

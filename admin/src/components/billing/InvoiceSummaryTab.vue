@@ -21,7 +21,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { formatDate } from '@/lib/format'
 import { invoiceStatusTone } from '@/lib/tones'
-import { formatUsd } from '@/lib/money'
+import { formatPlainAmount } from '@/lib/money'
 import { useBillingStore } from '@/stores/billing'
 import { InvoiceBulkAction, InvoiceStatus } from '@/types/invoice'
 import type { InvoiceDetail } from '@/types/invoice'
@@ -105,8 +105,8 @@ const balance = computed<number>(() => props.invoice.amountDue)
 const facts = computed<FactRow[]>(() => [
   { key: 'invoiceDate', label: t('shared.invoiceDate'), value: formatDate(props.invoice.dates.invoiceDate), tone: UiTextTone.Secondary },
   { key: 'dueDate', label: t('shared.dueDate'), value: formatDate(props.invoice.dates.dueDate), tone: UiTextTone.Secondary },
-  { key: 'amount', label: t('billing.invoiceSummaryTab.invoiceAmount'), value: formatUsd(props.invoice.amounts.total ?? 0), tone: UiTextTone.Secondary },
-  { key: 'balance', label: t('shared.balance'), value: formatUsd(balance.value), tone: balance.value > 0 ? UiTextTone.Danger : UiTextTone.Success },
+  { key: 'amount', label: t('billing.invoiceSummaryTab.invoiceAmount'), value: formatPlainAmount(props.invoice.amounts.total ?? 0, props.invoice.currency), tone: UiTextTone.Secondary },
+  { key: 'balance', label: t('shared.balance'), value: formatPlainAmount(balance.value, props.invoice.currency), tone: balance.value > 0 ? UiTextTone.Danger : UiTextTone.Success },
 ])
 
 /** True when the confirmation prompt for cancelling is open. */
@@ -188,9 +188,9 @@ const markPaid = (): Promise<void> =>
 
     <UiCard padding="md">
       <UiGrid :columns="2" gap="lg">
-        <UiStack gap="sm">
-          <UiStack direction="row" gap="md" align="center" wrap>
-            <UiText tone="muted" size="md">{{ t('shared.clientName') }}</UiText>
+        <UiGrid :columns="2" gap="sm" class="items-center">
+          <UiText tone="muted" size="md">{{ t('shared.clientName') }}</UiText>
+          <UiStack direction="row" gap="sm" align="center" wrap>
             <UiText tone="primary" size="md" data-testid="billing-invoice-client-name">{{ invoice.clientName }}</UiText>
             <UiLink
               variant="link"
@@ -200,11 +200,11 @@ const markPaid = (): Promise<void> =>
               {{ t('billing.invoiceSummaryTab.viewInvoices') }}
             </UiLink>
           </UiStack>
-          <UiStack v-for="fact in facts" :key="fact.key" direction="row" gap="md" align="center">
+          <template v-for="fact in facts" :key="fact.key">
             <UiText tone="muted" size="md">{{ fact.label }}</UiText>
             <UiText :tone="fact.tone" size="md" :data-testid="`billing-invoice-fact-${fact.key}`">{{ fact.value }}</UiText>
-          </UiStack>
-        </UiStack>
+          </template>
+        </UiGrid>
 
         <UiStack align="center" gap="sm">
           <UiBadge :tone="invoiceStatusTone(invoice.status)" data-testid="billing-invoice-status">
@@ -272,7 +272,7 @@ const markPaid = (): Promise<void> =>
       :open="confirmingMarkPaid"
       :variant="UiDialogVariant.Confirm"
       :title="t('billing.invoiceSummaryTab.confirmMarkPaidTitle')"
-      :message="t('billing.invoiceSummaryTab.confirmMarkPaidMessage', { id: invoice.id, amount: formatUsd(balance) })"
+      :message="t('billing.invoiceSummaryTab.confirmMarkPaidMessage', { id: invoice.id, amount: formatPlainAmount(balance, invoice.currency) })"
       :confirm-label="t('billing.invoiceSummaryTab.markPaid')"
       :loading="running === SummaryAction.MarkPaid"
       :tone="UiTone.Primary"

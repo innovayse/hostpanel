@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Auth.Common;
 using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Domain.Clients;
 
@@ -35,7 +36,11 @@ public static class ClientMappingExtensions
             client.ToSettings(),
             twoFactorEnabled,
             client.CreatedAt,
-            client.Contacts.Select(ToContactDto).ToList());
+            client.Contacts.Select(ToContactDto).ToList(),
+            // The two halves are set and cleared together, so one being present means both are.
+            client.ExternalAccountProvider is null || client.ExternalAccountId is null
+                ? null
+                : new ExternalAccountDto(client.ExternalAccountProvider, client.ExternalAccountId));
 
     /// <summary>
     /// Maps a <see cref="Client"/> aggregate, with its contacts loaded, to the client's own

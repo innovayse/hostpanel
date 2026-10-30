@@ -20,6 +20,7 @@ import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
@@ -321,9 +322,52 @@ const dismissDelete = (): void => {
 }
 
 /**
- * Goes into a sub-category.
+ * Opens the edit dialog for a category.
  *
- * @param category - The category to open.
+ * @param category - The category to edit.
+ */
+const editCategory = (category: DownloadCategory): void => {
+  editingCategory.value = category
+}
+
+/**
+ * Opens the delete confirmation for a category.
+ *
+ * @param category - The category to delete.
+ */
+const askToDeleteCategory = (category: DownloadCategory): void => {
+  deleteRequest.value = { type: DownloadTarget.Category, id: category.id, name: category.name }
+}
+
+/**
+ * Returns the row actions for a category card.
+ *
+ * @param category - The category the actions target.
+ * @returns The actions array for UiRowActions.
+ */
+const categoryActions = (category: DownloadCategory): UiRowAction[] => {
+  /**
+   * Forwards to {@link editCategory} for this specific category row.
+   *
+   * @returns Nothing.
+   */
+  const onEdit = (): void => editCategory(category)
+  /**
+   * Forwards to {@link askToDeleteCategory} for this specific category row.
+   *
+   * @returns Nothing.
+   */
+  const onDelete = (): void => askToDeleteCategory(category)
+  return [
+    { label: t('shared.edit'), testid: `downloads-category-${category.id}-edit`, onSelect: onEdit },
+    { label: t('shared.delete'), testid: `downloads-category-${category.id}-delete`, onSelect: onDelete, danger: true },
+  ]
+}
+
+/**
+ * Drills into a category: pushes it onto the breadcrumb trail and loads its downloads.
+ *
+ * @param category - The category to navigate into.
  */
 const navigateToCategory = (category: DownloadCategory): void => {
   breadcrumbs.value.push({ id: category.id, name: category.name })
@@ -552,24 +596,7 @@ onMounted(() => {
                       {{ category.name }} ({{ category.downloadCount }})
                     </UiButton>
                   </UiStack>
-                  <UiStack direction="row" gap="xs">
-                    <UiIconButton
-                      :label="t('shared.edit')"
-                      :size="UiSize.Sm"
-                      :data-testid="`downloads-category-${category.id}-edit`"
-                      @click="editingCategory = category"
-                    >
-                      <UiIcon :markup="Icon.Edit" :size="UiSize.Sm" />
-                    </UiIconButton>
-                    <UiIconButton
-                      :label="t('shared.delete')"
-                      :size="UiSize.Sm"
-                      :data-testid="`downloads-category-${category.id}-delete`"
-                      @click="deleteRequest = { type: DownloadTarget.Category, id: category.id, name: category.name }"
-                    >
-                      <UiIcon :markup="Icon.Remove" :size="UiSize.Sm" />
-                    </UiIconButton>
-                  </UiStack>
+                  <UiRowActions :actions="categoryActions(category)" />
                 </UiStack>
                 <UiText v-if="category.description" tone="muted" size="sm">{{ category.description }}</UiText>
                 <UiStack direction="row">

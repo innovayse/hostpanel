@@ -34,7 +34,7 @@ public sealed class GetMyPaymentMethodsHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The client's saved cards and bank accounts, empty for a client who has never had one
-    /// attached; <c>CLIENT_PROFILE_NOT_FOUND</c> when the caller has no client record; or
+    /// attached or when the card gateway has no keys; <c>CLIENT_PROFILE_NOT_FOUND</c> when the caller has no client record; or
     /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> / <c>PAYMENT_METHOD_UPSTREAM_FAILED</c> when the card
     /// gateway could not be reached or refused the call.
     /// </returns>
@@ -51,6 +51,13 @@ public sealed class GetMyPaymentMethodsHandler
 
         var customerId = customer.Value!.CustomerId;
         if (customerId is null)
+        {
+            return Result.Success<IReadOnlyList<CardPaymentMethodDto>>([]);
+        }
+
+        // Without the gateway's keys no card can have been saved, and the gateway would throw on its
+        // empty key rather than answer (#606).
+        if (!_cardGateway.IsConfigured)
         {
             return Result.Success<IReadOnlyList<CardPaymentMethodDto>>([]);
         }

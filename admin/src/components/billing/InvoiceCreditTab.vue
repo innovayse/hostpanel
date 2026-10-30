@@ -18,7 +18,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
-import { formatUsd } from '@/lib/money'
+import { formatPlainAmount } from '@/lib/money'
 import { useBillingStore } from '@/stores/billing'
 import type { InvoiceDetail } from '@/types/invoice'
 import { UiDialogVariant } from '@/utils/ui/dialog'
@@ -55,7 +55,7 @@ const availableCredit = computed<number>(() => props.invoice.amounts.credit ?? 0
 
 /** The credit available, formatted for the caption under each box. */
 const availableText = computed<string>(() =>
-  t('billing.invoiceCreditTab.valueUsdAvailable', { value: availableCredit.value.toFixed(2) }),
+  t('billing.invoiceCreditTab.valueAvailable', { value: formatPlainAmount(availableCredit.value, props.invoice.currency) }),
 )
 
 /** True when "apply credit" has an amount to apply. */
@@ -176,7 +176,7 @@ const removeCredit = async (): Promise<void> => {
       :open="confirmingRemove"
       :variant="UiDialogVariant.Confirm"
       :title="t('billing.invoiceCreditTab.confirmRemoveCreditTitle')"
-      :message="t('billing.invoiceCreditTab.confirmRemoveCreditMessage', { amount: formatUsd(removeAmount), id: invoice.id })"
+      :message="t('billing.invoiceCreditTab.confirmRemoveCreditMessage', { amount: formatPlainAmount(removeAmount, invoice.currency), id: invoice.id })"
       :confirm-label="t('billing.invoiceCreditTab.removeCredit')"
       :loading="processing"
       :tone="UiTone.Danger"

@@ -3,20 +3,7 @@
  * is refused with.
  */
 import { describe, expect, it } from 'vitest'
-import type { ProfileUpdate } from '~/types/profileupdate'
-import { isBlank, isEmailAddress, validateEmailChange, validateProfile } from '~/utils/profileValidation'
-
-/**
- * Builds a draft that passes every check, with the given fields overridden.
- *
- * @param overrides - Fields to change.
- * @returns The draft.
- */
-const draft = (overrides: Partial<ProfileUpdate> = {}): ProfileUpdate => ({
-  firstName: 'Jane',
-  lastName: 'Doe',
-  ...overrides
-} as ProfileUpdate)
+import { isBlank, isEmailAddress, validateEmailChange } from '~/utils/profileValidation'
 
 describe('isBlank', () => {
   it('treats empty, whitespace and absent values as blank', () => {
@@ -38,19 +25,6 @@ describe('isEmailAddress', () => {
     expect(isEmailAddress('jane.example.com')).toBe(false)
     expect(isEmailAddress('jane@example')).toBe(false)
     expect(isEmailAddress('ja ne@example.com')).toBe(false)
-  })
-})
-
-describe('validateProfile', () => {
-  it('passes a complete draft', () => {
-    expect(validateProfile(draft())).toEqual({})
-  })
-
-  it('names every blank required field', () => {
-    expect(validateProfile(draft({ firstName: ' ', lastName: '' }))).toEqual({
-      firstName: 'client.profile.validation.firstNameRequired',
-      lastName: 'client.profile.validation.lastNameRequired'
-    })
   })
 })
 

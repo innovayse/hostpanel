@@ -9,7 +9,6 @@
  */
 
 import type { EmailChangeInput } from '~/types/emailchangeinput'
-import type { ProfileUpdate } from '~/types/profileupdate'
 
 /** Something before the `@`, a domain after it with at least one dot, and no whitespace anywhere. */
 const EMAIL_FORMAT = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -29,23 +28,6 @@ export const isBlank = (value: string | null | undefined): boolean => (value ?? 
  * @returns True when the trimmed value looks like `name@domain.tld`.
  */
 export const isEmailAddress = (value: string): boolean => EMAIL_FORMAT.test(value.trim())
-
-/**
- * Checks the required fields of a profile draft.
- *
- * @param profile - The draft about to be saved.
- * @returns Field name (as on the wire) to the i18n key of its reason; empty when the draft may be sent.
- */
-export const validateProfile = (profile: ProfileUpdate): Record<string, string> => {
-  const errors: Record<string, string> = {}
-  if (isBlank(profile.firstName)) {
-    errors.firstName = 'client.profile.validation.firstNameRequired'
-  }
-  if (isBlank(profile.lastName)) {
-    errors.lastName = 'client.profile.validation.lastNameRequired'
-  }
-  return errors
-}
 
 /**
  * Checks a sign-in address change: the shape of the new address and that a password was typed.

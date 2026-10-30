@@ -101,13 +101,6 @@ export const formatCurrencyWhole = (amount: number, code: string): string => {
   }
 }
 
-/**
- * Formats a dollar amount followed by the currency code, as the billing sums read.
- *
- * @param amount - Numeric value; a missing amount reads as zero.
- * @returns For example "$12.50 USD".
- */
-export const formatUsd = (amount: number | null | undefined = 0): string => `$${(amount ?? 0).toFixed(2)} USD`
 
 /**
  * Formats an amount followed by the currency code and no symbol, as the billing tables read.

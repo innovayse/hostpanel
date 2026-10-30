@@ -46,7 +46,8 @@ export const mayPerform = (
   person: Pick<ClientUser, 'permissions' | 'actsForAccount'> | null | undefined,
   required: number
 ): boolean => {
-  // `=== false`: a record that does not say (an older answer) counts as acting for an account,
-  // the side that shows less.
+  // The portal account route already turns an unknown account into `false` (unknown means offer,
+  // the server decides). `=== false` only lets through that explicit answer: a record with no
+  // `actsForAccount` at all, such as an old cached answer, still counts as acting for an account.
   return !person || person.actsForAccount === false || holdsPermission(person.permissions, required)
 }

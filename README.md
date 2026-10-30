@@ -228,7 +228,7 @@ its own PostgreSQL through Testcontainers, so Docker must be running). Run `yarn
 | Messaging | RabbitMQ with the Wolverine outbox | Reliable events between modules |
 | Client portal `client/` | Nuxt 4, Vue 3, TypeScript, Tailwind, Pinia | Server-rendered storefront; pages own data and SEO, `templates/` hold the switchable designs |
 | Admin panel `admin/` | Vite, Vue 3, TypeScript, Tailwind | Single-page app served by nginx |
-| Plugins | `Innovayse.SDK` and `Innovayse.Providers.*` | Payment, registrar and provisioning providers behind small interfaces |
+| Plugins | `Innovayse.SDK` and `Innovayse.Providers.*` | Six plugin types behind small interfaces, all loaded at run time: payment, registrar and provisioning providers, plus fulfilment (`IFulfilmentPlugin`: deliver digital products after payment, advise on refunds), identity (`IClientResolver`: decide which client a signed-in user acts for) and hosted (`IHostedPlugin`: a background worker). The core names no deployment-specific plugin namespace; an architecture test enforces it |
 | Auth | ASP.NET Core Identity, JWT in an httpOnly cookie | `local` mode by default |
 
 Each app owns its Dockerfile (`backend/Dockerfile`, `client/Dockerfile`, `admin/Dockerfile`). A new payment gateway, registrar

@@ -7,7 +7,7 @@
 
 import { randomBytes } from 'node:crypto'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { decryptSession, encryptSession, readSessionKey } from '~/server/utils/session-crypto'
+import { decryptSession, deriveKey, encryptSession, openText, readSessionKey, sealText } from '~/server/utils/session-crypto'
 
 /** A valid key. */
 const key = randomBytes(32)
@@ -40,6 +40,47 @@ describe('encryptSession and decryptSession', () => {
     expect(decryptSession(tampered, key)).toBeNull()
     expect(decryptSession('{"accessToken":"at"}', key)).toBeNull()
     expect(decryptSession('v1.short', key)).toBeNull()
+  })
+})
+
+describe('sealText and openText', () => {
+  it('round-trips a text under the same additional data and never stores the plain text', () => {
+    const stored = sealText('{"state":"s"}', key, 'cookie-name')
+
+    expect(stored).toMatch(/^v1./)
+    expect(stored).not.toContain('state')
+    expect(openText(stored, key, 'cookie-name')).toBe('{"state":"s"}')
+  })
+
+  it('rejects a tampered value', () => {
+    const stored = sealText('secret', key, 'aad')
+    const bytes = Buffer.from(stored.slice(3), 'base64url')
+    bytes[bytes.length - 1] = (bytes[bytes.length - 1] ?? 0) ^ 1
+
+    expect(openText(`v1.${bytes.toString('base64url')}`, key, 'aad')).toBeNull()
+  })
+
+  it('rejects a value opened under other additional data, or none', () => {
+    const stored = sealText('secret', key, 'cookie-a')
+
+    expect(openText(stored, key, 'cookie-b')).toBeNull()
+    expect(openText(stored, key)).toBeNull()
+  })
+
+  it('keeps the session form: a session sealed with no additional data opens through the generic helper', () => {
+    expect(openText(encryptSession('session', key), key)).toBe('session')
+    expect(decryptSession(sealText('session', key), key)).toBe('session')
+  })
+})
+
+describe('deriveKey', () => {
+  it('derives a stable 32-byte key per purpose that differs from the source and from other purposes', () => {
+    const derived = deriveKey(key, 'one')
+
+    expect(derived).toHaveLength(32)
+    expect(derived.equals(deriveKey(key, 'one'))).toBe(true)
+    expect(derived.equals(deriveKey(key, 'two'))).toBe(false)
+    expect(derived.equals(key)).toBe(false)
   })
 })
 

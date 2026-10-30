@@ -97,11 +97,11 @@ const installAutoImports = (): void => {
 
   /**
    * `useAsyncData` stand-in: runs the handler once, exposes the result as refs, and re-runs the
-   * handler when a source named in `options.watch` changes, which is how a page refetches in a
-   * new currency or language under Nuxt.
+   * handler when a source named in `options.watch` changes or a getter key does, which is how a
+   * page refetches in a new currency or language under Nuxt.
    */
   define('useAsyncData', async (
-    _key: string,
+    key: string | (() => string),
     handler: () => Promise<unknown>,
     options: { watch?: unknown[] } = {},
   ) => {
@@ -117,8 +117,9 @@ const installAutoImports = (): void => {
       }
     }
     await run()
-    if (options.watch) {
-      vue.watch(options.watch as Parameters<typeof vue.watch>[0], () => {
+    const sources = [...(options.watch ?? []), ...(typeof key === 'function' ? [key] : [])]
+    if (sources.length > 0) {
+      vue.watch(sources as Parameters<typeof vue.watch>[0], () => {
         void run()
       })
     }

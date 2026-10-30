@@ -104,6 +104,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Accounts that staff link to a client (creating the client for an existing account, adding a user, transferring ownership) are now granted the Client role; before, the portal answered 403 to them and showed nothing. A one-time migration (`GrantClientRoleToLinkedUsers`) grants the role to accounts already linked to a client that lack it. It only adds rows, skips staff accounts (Admin, Reseller), and is not reversed on rollback.
 - Client portal, Account, Payment Methods no longer answers 500 on an install without card gateway keys (the demo, bank transfer only): the list is empty, and setting a default or removing a card answers 409 `PAYMENT_METHOD_UNAVAILABLE` (#606).
 - A signed-in client whose currency differs from the base currency saw the storefront's prices (domain search, domain table, hosting plans, trials) in the base currency after a full page load: the server render, which does not know the client, was kept in the browser. Those reads are now keyed by the payer's currency, so the browser reads them again in the client's own (#662).
 - SSH key agent 1.2.2: jails also get `rsync`, `tar`, `gzip` and `unzip`, so a CI job can deploy a site over SSH.

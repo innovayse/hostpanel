@@ -1,5 +1,7 @@
 using Innovayse.Hostpanel.Infrastructure.Integrations.GitHub;
 using Innovayse.Hostpanel.Integration.Tests.Fixtures;
+using Innovayse.Hostpanel.Shared.Settings;
+using Microsoft.Extensions.Options;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.GitHub;
 
@@ -31,7 +33,8 @@ public sealed class GitHubReleasesClientTests : IAsyncLifetime
     private GitHubReleasesClient BuildClient()
     {
         var http = new HttpClient { BaseAddress = _github.BaseAddress };
-        return new GitHubReleasesClient(http);
+        var options = Options.Create(new ReleaseOptions());
+        return new GitHubReleasesClient(http, options);
     }
 
     /// <summary>A published release with a standard tag returns a populated <see cref="ReleaseInfo"/>.</summary>

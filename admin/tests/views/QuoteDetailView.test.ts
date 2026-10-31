@@ -128,4 +128,12 @@ describe('QuoteDetailView', () => {
 
     expect(wrapper.get('[data-testid="billing-quote-error"]').text()).toContain('Client ID is required.')
   })
+
+  it('prices the lines in the currency the stored quote carries', async () => {
+    stubRoutes({ 'GET /api/quotes/3': () => json({ ...quote, currency: 'AMD' }) })
+    const { wrapper } = await mountRouted(QuoteDetailView, '/billing/quotes/:id', '/billing/quotes/3')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="billing-quote-total"]').text()).toBe('20.00 AMD')
+  })
 })

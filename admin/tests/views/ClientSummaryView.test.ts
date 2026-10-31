@@ -8,6 +8,7 @@ import ClientSummaryView from '@/views/ClientSummaryView.vue'
 import { useClientsStore } from '@/stores/clients'
 import { mountClientView } from '../helpers/clientViews'
 import { callOf, json, problem } from '../helpers/fetch'
+import { quoteRowFixture } from '../helpers/billingFixtures'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import type { ClientSummaryData } from '@/types/client'
@@ -17,9 +18,10 @@ import type { ClientExternalAccount } from '@/types/clientexternalaccount'
  * Client 7 as the detail endpoint returns it.
  *
  * @param externalAccount - The link the client holds, null for none.
+ * @param currency - The client's billing currency, null for none.
  * @returns The response.
  */
-const client = (externalAccount: ClientExternalAccount | null = null) =>
+const client = (externalAccount: ClientExternalAccount | null = null, currency: string | null = null) =>
   json({
     externalAccount,
     id: 7,
@@ -30,7 +32,7 @@ const client = (externalAccount: ClientExternalAccount | null = null) =>
     createdAt: '2026-01-01T00:00:00Z',
     contacts: [],
     address: {},
-    preferences: { adminNotes: '' },
+    preferences: { adminNotes: '', currency },
     notifications: { general: true, invoice: true, support: true, product: true, domain: true, affiliate: true },
     settings: {
       overdueNotices: true,
@@ -268,5 +270,34 @@ describe('ClientSummaryView', () => {
     expect((wrapper.get('[data-testid="client-external-account-provider"]').element as HTMLInputElement).value).toBe('')
     expect(wrapper.find('[data-testid="client-external-account-clear"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="client-external-account-status"]').text()).toBe('External account link cleared.')
+  })
+
+  it('prints the credit, invoice and income figures in the billing currency of the client', async () => {
+    stubRoutes({
+      ...summaryRoutes(
+        () => new Response(null, { status: 204 }),
+        undefined,
+        () => client(null, 'AMD'),
+      ),
+      'GET /api/clients/7/summary': () => json({ ...summary, creditBalance: 5000 }),
+    })
+    const wrapper = await mountSummary()
+
+    const billing = wrapper.get('[data-testid="client-summary-billing"]').text()
+    expect(billing).toContain('5000.00 AMD')
+    expect(billing).toContain('40.00 AMD')
+    expect(billing).not.toContain('$')
+  })
+
+  it('prints a quote total in the currency of the quote', async () => {
+    stubRoutes({
+      'GET /api/billing/quotes/client/7': () =>
+        json({ items: [quoteRowFixture({ total: 24000, currency: 'AMD' })], pageNumber: 1, pageSize: 5, totalCount: 1, totalPages: 1 }),
+      ...summaryRoutes(() => new Response(null, { status: 204 })),
+    })
+    const wrapper = await mountSummary()
+
+    expect(wrapper.text()).toContain('24000.00 AMD')
+    expect(wrapper.text()).not.toContain('$24000.00')
   })
 })

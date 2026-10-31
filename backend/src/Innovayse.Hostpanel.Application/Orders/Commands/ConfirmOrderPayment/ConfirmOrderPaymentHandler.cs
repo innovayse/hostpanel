@@ -90,6 +90,11 @@ public sealed class ConfirmOrderPaymentHandler
             return Result.FailureCode(HostpanelErrorCodes.PAYMENT_GATEWAY_SERVICE_UNAVAILABLE);
         }
 
+        if (intent.Failure == CardGatewayFailure.NotConfigured)
+        {
+            return Result.FailureCode(HostpanelErrorCodes.PAYMENT_METHOD_UNAVAILABLE);
+        }
+
         if (!intent.Succeeded)
         {
             return Result.FailureCode(HostpanelErrorCodes.GATEWAY_CHARGE_UPSTREAM_FAILED);

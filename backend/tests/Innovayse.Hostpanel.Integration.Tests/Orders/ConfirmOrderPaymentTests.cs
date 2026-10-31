@@ -126,6 +126,46 @@ public sealed class ConfirmOrderPaymentTests(IntegrationTestFactory factory) : I
         (await context.Orders.AsNoTracking().SingleAsync(o => o.Id == orderId)).Status.Should().NotBe(OrderStatus.Active);
     }
 
+    /// <summary>
+    /// With no card gateway key a wrong payment token is still <c>ORDER_NOT_FOUND</c>: the order checks
+    /// run before the gateway check.
+    /// </summary>
+    [Fact]
+    public async Task CardGatewayNotConfigured_WrongTokenStillRefusesNotFound()
+    {
+        var cardGateway = new FakeCardPaymentGateway { IsConfigured = false };
+        var host = BuildHost(cardGateway);
+        var (orderId, _, _) = await OrdersTestSeeds.SeedOrderWithInvoiceAsync(factory);
+
+        var response = await host.CreateClient().PostAsJsonAsync(
+            $"/api/orders/{orderId}/confirm-payment", new { paymentIntentId = "pi_x", paymentToken = "wrong" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        await OrdersTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.ORDER_NOT_FOUND);
+        cardGateway.VerifyCalls.Should().Be(0);
+    }
+
+    /// <summary>
+    /// A verify that reports the gateway as not configured (the guard having been passed) is answered
+    /// with <c>PAYMENT_METHOD_UNAVAILABLE</c>, not as a gateway failure.
+    /// </summary>
+    [Fact]
+    public async Task VerifyReportingNotConfigured_RefusesPaymentMethodUnavailable()
+    {
+        var host = BuildHost(new FakeCardPaymentGateway
+        {
+            IsConfigured = true,
+            Verification = new(false, null, 0, string.Empty, null, null, CardGatewayFailure.NotConfigured),
+        });
+        var (orderId, paymentToken, _) = await OrdersTestSeeds.SeedOrderWithInvoiceAsync(factory);
+
+        var response = await host.CreateClient().PostAsJsonAsync(
+            $"/api/orders/{orderId}/confirm-payment", new { paymentIntentId = "pi_x", paymentToken });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        await OrdersTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PAYMENT_METHOD_UNAVAILABLE);
+    }
+
     /// <summary>A confirmed payment marks the invoice paid and fulfils the order, moving it to Active.</summary>
     [Fact]
     public async Task ConfirmedPaymentFulfilsTheOrder()

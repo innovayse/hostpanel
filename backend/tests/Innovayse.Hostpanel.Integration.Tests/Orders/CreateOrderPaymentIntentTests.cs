@@ -210,6 +210,25 @@ public sealed class CreateOrderPaymentIntentTests(IntegrationTestFactory factory
         cardGateway.LastIntentInstruction.Should().BeNull();
     }
 
+    /// <summary>
+    /// With no card gateway key a wrong payment token is still <c>ORDER_NOT_FOUND</c>: the order checks
+    /// run before the gateway check, so the missing key does not reveal anything about an order.
+    /// </summary>
+    [Fact]
+    public async Task CardGatewayNotConfigured_WrongTokenStillRefusesNotFound()
+    {
+        var cardGateway = new FakeCardPaymentGateway { IsConfigured = false };
+        var host = BuildHost(cardGateway);
+        var (orderId, _, _) = await OrdersTestSeeds.SeedOrderWithInvoiceAsync(factory);
+
+        var response = await host.CreateClient().PostAsJsonAsync(
+            $"/api/orders/{orderId}/create-payment-intent", new { paymentToken = "wrong" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        await OrdersTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.ORDER_NOT_FOUND);
+        cardGateway.LastIntentInstruction.Should().BeNull();
+    }
+
     /// <summary>An order of an account with card processing disabled opens no intent: 403 and the gateway is never asked.</summary>
     [Fact]
     public async Task AccountWithCardProcessingDisabledIsRefused()

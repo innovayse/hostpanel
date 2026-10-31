@@ -181,8 +181,8 @@ public static class HostpanelErrorCodes
     public const string PAYMENT_METHOD_NOT_OWNED = "PAYMENT_METHOD_NOT_OWNED";
 
     /// <summary>
-    /// The deployment has no card gateway configured, so saved payment methods cannot be charged, set as
-    /// the default or removed, and no card payment can be opened, confirmed or settled (409).
+    /// The deployment has no card gateway configured, so no card payment can be taken, refunded, opened or
+    /// confirmed and no saved payment method can be charged, set as the default or removed (409).
     /// </summary>
     public const string PAYMENT_METHOD_UNAVAILABLE = "PAYMENT_METHOD_UNAVAILABLE";
 

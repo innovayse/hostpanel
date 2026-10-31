@@ -102,6 +102,7 @@ public sealed class FakeCardPaymentGateway : ICardPaymentGateway
     /// <inheritdoc/>
     public Task<CardPaymentIntentResult> CreatePaymentIntentAsync(CardPaymentIntentInstruction instruction, CancellationToken ct)
     {
+        ThrowIfNotConfigured();
         LastIntentInstruction = instruction;
         return Task.FromResult(IntentFailure is { } failure
             ? new CardPaymentIntentResult(null, failure)
@@ -114,6 +115,7 @@ public sealed class FakeCardPaymentGateway : ICardPaymentGateway
     /// <inheritdoc/>
     public Task<CardPaymentIntentStatus> VerifyPaymentIntentAsync(CardPaymentVerifyInstruction instruction, CancellationToken ct)
     {
+        ThrowIfNotConfigured();
         VerifyCalls++;
         return Task.FromResult(Verification);
     }
@@ -134,6 +136,7 @@ public sealed class FakeCardPaymentGateway : ICardPaymentGateway
     /// <inheritdoc/>
     public async Task<CardChargeResult> ChargeSavedPaymentMethodAsync(CardChargeInstruction instruction, CancellationToken ct)
     {
+        ThrowIfNotConfigured();
         if (ChargeRendezvous is { } rendezvous)
         {
             await rendezvous.ArriveAsync(ct);
@@ -163,6 +166,7 @@ public sealed class FakeCardPaymentGateway : ICardPaymentGateway
     /// <remarks>Answers with the settled charge taken under the key, never charging; a decline or an unseen key is nothing found.</remarks>
     public Task<CardChargeLookupResult> FindChargeAsync(CardChargeLookupInstruction instruction, CancellationToken ct)
     {
+        ThrowIfNotConfigured();
         lock (ChargesByKey)
         {
             ChargeLookups++;
@@ -184,6 +188,8 @@ public sealed class FakeCardPaymentGateway : ICardPaymentGateway
     /// <inheritdoc/>
     public async Task<CardRefundResult> RefundAsync(CardRefundInstruction instruction, CancellationToken ct)
     {
+        ThrowIfNotConfigured();
+
         // Concurrent requests call this at once, so the shared lists are only touched under the lock.
         int callNumber;
         lock (_refundLock)

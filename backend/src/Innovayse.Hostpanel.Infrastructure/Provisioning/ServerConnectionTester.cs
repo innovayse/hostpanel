@@ -125,9 +125,10 @@ public sealed class ServerConnectionTester : IServerConnectionTester
             var info = await client.GetServerInfoAsync(connection, ct);
             return ServerConnectionTestResult.Succeeded(info.CustomerCount, info.Version);
         }
-        catch (InvalidOperationException ex)
+        catch (Exception ex)
         {
-            // The client already logged the refusal code; the panel's text never reaches the caller.
+            // Whatever failed (a refusal, a timeout, an address that is not a URL), the panel's own
+            // text never reaches the caller; it is logged for whoever has to chase the failure up.
             _logger.LogWarning(ex, "Plesk connection test failed for server {ServerId} ({Hostname})", server.Id, server.Hostname);
             return ServerConnectionTestResult.Failed(HostpanelErrorCodes.SERVER_CONNECTION_UNREACHABLE);
         }

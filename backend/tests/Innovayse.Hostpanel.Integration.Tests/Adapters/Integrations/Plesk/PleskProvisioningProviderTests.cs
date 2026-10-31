@@ -59,6 +59,10 @@ public sealed class PleskProvisioningProviderTests : IAsyncLifetime
     private const string WrongKey =
         """<?xml version="1.0"?><packet version="1.6.9.1"><system><status>error</status><errcode>11003</errcode><errtext>key is not found</errtext></system></packet>""";
 
+    /// <summary>The server's addresses as Plesk lists them: a private shared one and an exclusive one.</summary>
+    private const string IpList =
+        """<packet><ip><get><result><status>ok</status><addresses><ip_info><ip_address>10.0.0.5</ip_address><type>exclusive</type></ip_info><ip_info><ip_address>10.0.0.6</ip_address><type>shared</type></ip_info></addresses></result></get></ip></packet>""";
+
     /// <summary>The order every provision test sends.</summary>
     private static readonly ProvisionAccountOrder Order = new(7, "example.com", "testuser", "pass<123>&", "Default Domain");
 
@@ -101,17 +105,17 @@ public sealed class PleskProvisioningProviderTests : IAsyncLifetime
     [Fact]
     public async Task Provision_CreatesTheCustomerThenTheSubscriptionAsync()
     {
-        var provider = BuildProvider(new CapturingLogger<PleskProvisioningProvider>(), "203.0.113.10", CustomerOk, SubscriptionOk);
+        var provider = BuildProvider(new CapturingLogger<PleskProvisioningProvider>(), "10.0.0.5", IpList, CustomerOk, SubscriptionOk);
 
         var result = await provider.ProvisionAsync(Order, CancellationToken.None);
 
         result.Outcome.Should().Be(ProvisioningOutcome.Created);
         result.ProvisioningRef.Should().Be("testuser");
-        plesk.Requests.Should().HaveCount(2).And.OnlyContain(r => r.Method == "POST" && r.PathAndQuery == "/enterprise/control/agent.php");
-        plesk.Requests[0].Body.Should().Contain("<customer><add>").And.Contain("<login>testuser</login>");
-        plesk.Requests[1].Body.Should().Contain("<webspace><add>")
+        plesk.Requests.Should().HaveCount(3).And.OnlyContain(r => r.Method == "POST" && r.PathAndQuery == "/enterprise/control/agent.php");
+        plesk.Requests[1].Body.Should().Contain("<customer><add>").And.Contain("<login>testuser</login>");
+        plesk.Requests[2].Body.Should().Contain("<webspace><add>")
             .And.Contain("<owner-login>testuser</owner-login>")
-            .And.Contain("<ip_address>203.0.113.10</ip_address>")
+            .And.Contain("<ip_address>10.0.0.5</ip_address>")
             .And.Contain("<plan-name>Default Domain</plan-name>");
     }
 
@@ -120,21 +124,25 @@ public sealed class PleskProvisioningProviderTests : IAsyncLifetime
     [Fact]
     public async Task Provision_EscapesXmlCharactersInThePasswordAsync()
     {
-        var provider = BuildProvider(new CapturingLogger<PleskProvisioningProvider>(), "203.0.113.10", CustomerOk, SubscriptionOk);
+        var provider = BuildProvider(new CapturingLogger<PleskProvisioningProvider>(), null, IpList, CustomerOk, SubscriptionOk);
 
         await provider.ProvisionAsync(Order, CancellationToken.None);
 
-        plesk.Requests[0].Body.Should().Contain("<passwd>pass&lt;123&gt;&amp;</passwd>");
+        plesk.Requests[1].Body.Should().Contain("<passwd>pass&lt;123&gt;&amp;</passwd>");
     }
 
-    /// <summary>With no address on the server row, the first shared IP Plesk lists hosts the subscription.</summary>
+    /// <summary>
+    /// An address staff entered that Plesk does not hold (a public address in front of NAT) is not
+    /// used; the first shared address Plesk lists hosts the subscription instead.
+    /// </summary>
+    /// <param name="serverIp">The address on the server row.</param>
     /// <returns>A task that completes when the assertions have run.</returns>
-    [Fact]
-    public async Task Provision_UsesTheFirstSharedIp_WhenTheServerHasNoAddressAsync()
+    [Theory]
+    [InlineData(null)]
+    [InlineData("203.0.113.10")]
+    public async Task Provision_UsesTheFirstSharedIp_WhenPleskDoesNotHoldTheServersAddressAsync(string? serverIp)
     {
-        const string ips =
-            """<packet><ip><get><result><status>ok</status><addresses><ip_info><ip_address>10.0.0.5</ip_address><type>exclusive</type></ip_info><ip_info><ip_address>10.0.0.6</ip_address><type>shared</type></ip_info></addresses></result></get></ip></packet>""";
-        var provider = BuildProvider(new CapturingLogger<PleskProvisioningProvider>(), null, ips, CustomerOk, SubscriptionOk);
+        var provider = BuildProvider(new CapturingLogger<PleskProvisioningProvider>(), serverIp, IpList, CustomerOk, SubscriptionOk);
 
         var result = await provider.ProvisionAsync(Order, CancellationToken.None);
 
@@ -142,31 +150,36 @@ public sealed class PleskProvisioningProviderTests : IAsyncLifetime
         plesk.Requests[2].Body.Should().Contain("<ip_address>10.0.0.6</ip_address>");
     }
 
-    /// <summary>A retry that meets a complete account adopts it, with the subscription's domain.</summary>
+    /// <summary>A retry that meets a complete account reports it with its subscription's domain, for the caller to adopt or refuse.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
     public async Task Provision_ReportsAlreadyExists_WhenTheAccountIsAlreadyCompleteAsync()
     {
-        var provider = BuildProvider(new CapturingLogger<PleskProvisioningProvider>(), "203.0.113.10", AlreadyExists, ActiveCustomer, ExistingSubscription);
+        var provider = BuildProvider(new CapturingLogger<PleskProvisioningProvider>(), null, IpList, AlreadyExists, ActiveCustomer, ExistingSubscription);
 
         var result = await provider.ProvisionAsync(Order, CancellationToken.None);
 
         result.Outcome.Should().Be(ProvisioningOutcome.AlreadyExists);
         result.ExistingAccountDomain.Should().Be("example.com");
-        plesk.Requests.Should().HaveCount(3);
+        plesk.Requests.Should().HaveCount(4);
     }
 
-    /// <summary>A retry that meets a customer with no subscription finishes the account instead of failing.</summary>
+    /// <summary>
+    /// A customer that already holds the username but has no subscription is reported with no
+    /// domain, and nothing is added to it: it may be a stranger's, and building on it would hand
+    /// them the client's site.
+    /// </summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
-    public async Task Provision_FinishesAHalfMadeAccountAsync()
+    public async Task Provision_NeverBuildsOnAnExistingCustomerAsync()
     {
-        var provider = BuildProvider(new CapturingLogger<PleskProvisioningProvider>(), "203.0.113.10", AlreadyExists, ActiveCustomer, NoSubscription, SubscriptionOk);
+        var provider = BuildProvider(new CapturingLogger<PleskProvisioningProvider>(), null, IpList, AlreadyExists, ActiveCustomer, NoSubscription);
 
         var result = await provider.ProvisionAsync(Order, CancellationToken.None);
 
-        result.Outcome.Should().Be(ProvisioningOutcome.Created);
-        plesk.Requests[3].Body.Should().Contain("<webspace><add>");
+        result.Outcome.Should().Be(ProvisioningOutcome.AlreadyExists);
+        result.ExistingAccountDomain.Should().BeNull();
+        plesk.Requests.Should().NotContain(r => r.Body.Contains("<webspace><add>") || r.Body.Contains("<del>"));
     }
 
     /// <summary>A refused customer that does not exist afterwards is a refusal, not an adoption.</summary>
@@ -174,7 +187,7 @@ public sealed class PleskProvisioningProviderTests : IAsyncLifetime
     [Fact]
     public async Task Provision_IsRefused_WhenTheCustomerCannotBeCreatedAsync()
     {
-        var provider = BuildProvider(new CapturingLogger<PleskProvisioningProvider>(), "203.0.113.10", AlreadyExists, NoSuchCustomer);
+        var provider = BuildProvider(new CapturingLogger<PleskProvisioningProvider>(), null, IpList, AlreadyExists, NoSuchCustomer);
 
         var result = await provider.ProvisionAsync(Order, CancellationToken.None);
 
@@ -183,27 +196,30 @@ public sealed class PleskProvisioningProviderTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A refused subscription removes the customer this call made, so nothing is left on the panel,
-    /// and Plesk's "exists" code for a prohibited domain is not read as an existing account.
+    /// A positively refused subscription removes the customer this call made, so nothing is left on
+    /// the panel, and Plesk's "exists" code for a prohibited domain is not read as an existing account.
     /// </summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
     public async Task Provision_RemovesTheNewCustomer_WhenTheSubscriptionIsRefusedAsync()
     {
-        var provider = BuildProvider(new CapturingLogger<PleskProvisioningProvider>(), "203.0.113.10", CustomerOk, ProhibitedDomain, NoSubscription, CustomerOk);
+        var provider = BuildProvider(new CapturingLogger<PleskProvisioningProvider>(), null, IpList, CustomerOk, ProhibitedDomain, NoSubscription, CustomerOk);
 
         var result = await provider.ProvisionAsync(Order, CancellationToken.None);
 
         result.Outcome.Should().Be(ProvisioningOutcome.Refused);
-        plesk.Requests[3].Body.Should().Contain("<customer><del>").And.Contain("<login>testuser</login>");
+        plesk.Requests[4].Body.Should().Contain("<customer><del>").And.Contain("<login>testuser</login>");
     }
 
-    /// <summary>A customer that existed before the call is kept when its subscription is refused.</summary>
+    /// <summary>
+    /// A subscription whose answer was lost is not a refusal: the customer is kept, since the
+    /// subscription may well exist, and the retry finds it.
+    /// </summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
-    public async Task Provision_KeepsAnEarlierCustomer_WhenTheSubscriptionIsRefusedAsync()
+    public async Task Provision_KeepsTheNewCustomer_WhenTheSubscriptionAnswerIsLostAsync()
     {
-        var provider = BuildProvider(new CapturingLogger<PleskProvisioningProvider>(), "203.0.113.10", AlreadyExists, ActiveCustomer, NoSubscription, ProhibitedDomain, NoSubscription);
+        var provider = BuildProvider(new CapturingLogger<PleskProvisioningProvider>(), null, IpList, CustomerOk, "<html>Bad Gateway</html>", "<html>Bad Gateway</html>");
 
         var result = await provider.ProvisionAsync(Order, CancellationToken.None);
 
@@ -310,6 +326,22 @@ public sealed class PleskProvisioningProviderTests : IAsyncLifetime
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
+    /// <summary>Changing the password changes it for the panel customer and for the subscription's system user.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task ChangePassword_ChangesThePanelAndTheSystemUserAsync()
+    {
+        var provider = BuildProvider(new CapturingLogger<PleskProvisioningProvider>(), null, CustomerOk, SubscriptionOk);
+
+        await provider.ChangePasswordAsync("testuser", "N3w&pass", CancellationToken.None);
+
+        plesk.Requests.Should().HaveCount(2);
+        plesk.Requests[0].Body.Should().Contain("<customer><set>").And.Contain("<passwd>N3w&amp;pass</passwd>");
+        plesk.Requests[1].Body.Should().Contain("<webspace><set>")
+            .And.Contain("<owner-login>testuser</owner-login>")
+            .And.Contain("<name>ftp_password</name><value>N3w&amp;pass</value>");
+    }
+
     /// <summary>Changing the package looks the plan up by name and switches the subscription to its guid.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
@@ -391,7 +423,7 @@ public sealed class PleskProvisioningProviderTests : IAsyncLifetime
     public async Task Logs_NeverCarryThePanelTextOrTheDomainAsync()
     {
         var logger = new CapturingLogger<PleskProvisioningProvider>();
-        var provider = BuildProvider(logger, "203.0.113.10", CustomerOk, ProhibitedDomain, NoSubscription, CustomerOk);
+        var provider = BuildProvider(logger, null, IpList, CustomerOk, ProhibitedDomain, NoSubscription, CustomerOk);
 
         await provider.ProvisionAsync(Order, CancellationToken.None);
 

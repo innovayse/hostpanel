@@ -114,6 +114,15 @@ describe('ClientDashboardServicesCard', () => {
     expect(wrapper.find('[data-testid="dashboard-service-cpanel-1"]').exists()).toBe(false)
   })
 
+  it('shows the control panel button when single sign-on is granted', async () => {
+    const wrapper = mountClient(ServicesCard)
+    await grantPermissions(Permission.ViewProductsServices | Permission.AllowSingleSignOn)
+    useClientStore().services = [ACTIVE]
+    await nextTick()
+
+    expect(wrapper.find('[data-testid="dashboard-service-cpanel-1"]').exists()).toBe(true)
+  })
+
   it('asks the store to open the control panel of the clicked service with its host', async () => {
     openControlPanel.mockResolvedValue(undefined)
     const wrapper = mountClient(ServicesCard)

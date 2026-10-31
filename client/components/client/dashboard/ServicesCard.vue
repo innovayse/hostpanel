@@ -31,7 +31,7 @@
         </UiStack>
         <UiStack direction="row" align="center" gap="sm">
           <UiIconButton
-            v-if="service.server && service.status === ServiceStatus.Active && store.mayDo(Permission.AllowSingleSignOn)"
+            v-if="canSignIn(service)"
             :icon="ssoLoading === service.id ? Loader : Monitor"
             :label="$t('client.services.actionLoginCpanel')"
             :title="$t('client.services.actionLoginCpanel')"
@@ -61,10 +61,19 @@ import { useClientStore } from '~/stores/client'
 import { serviceAwaitsSetup } from '~/utils/serviceSetup'
 import { useServiceManagementStore } from '~/stores/servicemanagement'
 import type { ClientService } from '~/types/clientservice'
-import { ServiceStatus } from '~/types/servicestatus'
+import { canSignInToControlPanel } from '~/utils/controlPanel'
 
 /** Client store: the signed-in person and their services, invoices, domains and tickets. */
 const store = useClientStore()
+
+/**
+ * Whether the control-panel shortcut is offered for a service.
+ *
+ * @param service - The listed service.
+ * @returns True for an active service on a known host when the person may sign in with single sign-on.
+ */
+const canSignIn = (service: ClientService): boolean =>
+  canSignInToControlPanel(service, store.mayDo(Permission.AllowSingleSignOn))
 
 /** Id of the service whose control-panel sign-in is under way, or null. */
 const ssoLoading = ref<number | null>(null)

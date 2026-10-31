@@ -62,59 +62,91 @@ public sealed class PleskProvisioningProvider : IProvisioningProvider
     /// <param name="req">The service's domain, username, password and package (the Plesk service plan name).</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// Created with the username as the reference; AlreadyExists with the subscription's domain when
-    /// the account is already complete; Refused otherwise.
+    /// Created with the username as the reference; AlreadyExists when a customer with the username
+    /// is already there, with its subscription's domain (or none) for the caller to judge; Refused
+    /// otherwise.
     /// </returns>
+    /// <remarks>
+    /// <para>
+    /// An existing customer is never built on. Plesk cannot say who made it, so a customer that
+    /// already holds the username is reported, with the domain of its subscription, and the caller
+    /// adopts it only when that domain is the service's own. A customer with no subscription is
+    /// reported with no domain, which the caller treats as a conflict for staff: adding this
+    /// service's subscription to a stranger's customer would hand them the client's site, and a
+    /// later terminate would delete the stranger's account.
+    /// </para>
+    /// <para>
+    /// The customer this call made is removed again only when Plesk positively refused the
+    /// subscription and positively holds none. A lost answer is not a refusal: the subscription may
+    /// well exist, so it is left for the retry to find.
+    /// </para>
+    /// </remarks>
     public async Task<ProvisioningResult> ProvisionAsync(ProvisionAccountOrder req, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(req);
-        var ip = _serverIp ?? await _client.FindSharedIpAsync(_connection, ct);
+        var ip = await _client.FindHostingIpAsync(_connection, _serverIp, ct);
         if (string.IsNullOrWhiteSpace(ip))
         {
             _logger.LogWarning("Plesk provisioning for service {ServiceId} found no shared IP address.", req.ServiceId);
             return ProvisioningResult.Refused(NoIpReason);
         }
 
-        var createdCustomer = (await _client.AddCustomerAsync(_connection, req.Username, req.Password, ct)).IsSuccess;
-        if (!createdCustomer)
+        if (!(await _client.AddCustomerAsync(_connection, req.Username, req.Password, ct)).IsSuccess)
         {
-            // Either a retry meeting the customer an earlier attempt made, or a real refusal.
-            var customer = await _client.FindCustomerAsync(_connection, req.Username, ct);
-            if (customer.Outcome is not PleskLookupOutcome.Found)
-            {
-                _logger.LogWarning("Plesk refused to create the customer for service {ServiceId}.", req.ServiceId);
-                return ProvisioningResult.Refused(CreateFailedReason);
-            }
-
-            if (await FindSubscriptionAsync(req.Username, ct) is { } existing)
-            {
-                _logger.LogInformation("Plesk account for service {ServiceId} already exists.", req.ServiceId);
-                return ProvisioningResult.AlreadyExists(req.Username, existing.Domain);
-            }
+            return await ReportExistingCustomerAsync(req, ct);
         }
 
         var subscription = new PleskNewSubscription(req.Username, req.DomainName, ip, req.Package, req.Username, req.Password);
-        if ((await _client.AddSubscriptionAsync(_connection, subscription, ct)).IsSuccess)
+        var added = await _client.AddSubscriptionAsync(_connection, subscription, ct);
+        if (added.IsSuccess)
         {
             _logger.LogInformation("Plesk account created for service {ServiceId}.", req.ServiceId);
             return ProvisioningResult.Created(req.Username);
         }
 
-        if (await FindSubscriptionAsync(req.Username, ct) is { } made)
+        var lookup = await _client.FindSubscriptionAsync(_connection, req.Username, ct);
+        if (lookup.Value is { } made)
         {
-            _logger.LogInformation("Plesk subscription for service {ServiceId} already exists.", req.ServiceId);
+            _logger.LogInformation("Plesk subscription for service {ServiceId} was made despite the lost answer.", req.ServiceId);
             return ProvisioningResult.AlreadyExists(req.Username, made.Domain);
         }
 
-        // A customer this call made is removed again, so a refused order (a prohibited domain, an
-        // unknown plan) leaves nothing behind on the panel and does not hold a licence slot.
-        if (createdCustomer)
+        if (added.ErrorCode is not null && lookup.Outcome is PleskLookupOutcome.NotFound)
         {
+            // A refused order (a prohibited domain, an unknown plan) leaves nothing behind on the
+            // panel and holds no licence slot.
             await _client.DeleteCustomerAsync(_connection, req.Username, ct);
         }
 
         _logger.LogWarning("Plesk refused to create the subscription for service {ServiceId}.", req.ServiceId);
         return ProvisioningResult.Refused(CreateFailedReason);
+    }
+
+    /// <summary>Reports a customer that already holds the username, without touching it.</summary>
+    /// <param name="req">The order whose customer could not be created.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// AlreadyExists with its subscription's domain, or with none when it has no subscription;
+    /// Refused when no such customer exists or its state cannot be read.
+    /// </returns>
+    private async Task<ProvisioningResult> ReportExistingCustomerAsync(ProvisionAccountOrder req, CancellationToken ct)
+    {
+        var customer = await _client.FindCustomerAsync(_connection, req.Username, ct);
+        if (customer.Outcome is not PleskLookupOutcome.Found)
+        {
+            _logger.LogWarning("Plesk refused to create the customer for service {ServiceId}.", req.ServiceId);
+            return ProvisioningResult.Refused(CreateFailedReason);
+        }
+
+        var subscription = await _client.FindSubscriptionAsync(_connection, req.Username, ct);
+        if (subscription.Outcome is PleskLookupOutcome.Unknown)
+        {
+            _logger.LogWarning("Plesk customer for service {ServiceId} exists but its subscription could not be read.", req.ServiceId);
+            return ProvisioningResult.Refused(CreateFailedReason);
+        }
+
+        _logger.LogInformation("Plesk customer for service {ServiceId} already exists.", req.ServiceId);
+        return ProvisioningResult.AlreadyExists(req.Username, subscription.Value?.Domain);
     }
 
     /// <summary>Disables the service's customer, and with it the subscription.</summary>
@@ -190,16 +222,25 @@ public sealed class PleskProvisioningProvider : IProvisioningProvider
     public Task<string> GetCPanelSsoUrlAsync(string provisioningRef, CancellationToken ct) =>
         throw new NotSupportedException("Plesk single sign-on needs the browser's IP address, which this call does not carry.");
 
-    /// <summary>Changes the panel password of the service's customer.</summary>
+    /// <summary>Changes the service's password on the panel and for its system (FTP/SSH) user.</summary>
     /// <param name="provisioningRef">The customer's login.</param>
     /// <param name="newPassword">The new password.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <exception cref="InvalidOperationException">Thrown when Plesk refuses the change.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when Plesk refuses either change.</exception>
+    /// <remarks>
+    /// The account is created with one password for both, so both change together; otherwise FTP and
+    /// SSH would keep a password the client can no longer see anywhere.
+    /// </remarks>
     public async Task ChangePasswordAsync(string provisioningRef, string newPassword, CancellationToken ct)
     {
         if (!(await _client.SetCustomerPasswordAsync(_connection, provisioningRef, newPassword, ct)).IsSuccess)
         {
             throw new InvalidOperationException("Plesk password change failed.");
+        }
+
+        if (!(await _client.SetSystemUserPasswordAsync(_connection, provisioningRef, newPassword, ct)).IsSuccess)
+        {
+            throw new InvalidOperationException("Plesk system user password change failed.");
         }
 
         _logger.LogInformation("Plesk password changed for {User}.", provisioningRef);

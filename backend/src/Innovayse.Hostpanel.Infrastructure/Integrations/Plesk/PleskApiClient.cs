@@ -3,6 +3,7 @@ using System.Text;
 using System.Xml.Linq;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Plesk.Models;
 using Microsoft.Extensions.Logging;
+using Polly.Timeout;
 
 namespace Innovayse.Hostpanel.Infrastructure.Integrations.Plesk;
 
@@ -238,19 +239,53 @@ public sealed class PleskApiClient
                 new XElement("plan-guid", planGuid))),
             ct);
 
-    /// <summary>Finds an IP address every subscription on the server may share.</summary>
+    /// <summary>Picks the address a new subscription is hosted on, from the addresses Plesk itself knows.</summary>
     /// <param name="connection">The server to ask.</param>
+    /// <param name="preferred">The server's address as staff entered it, or null.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The first shared address, or null when the server lists none or cannot be read.</returns>
-    public async Task<string?> FindSharedIpAsync(PleskConnection connection, CancellationToken ct)
+    /// <returns>
+    /// <paramref name="preferred"/> when Plesk lists it, otherwise the first shared address Plesk
+    /// lists; null when it lists none or cannot be read.
+    /// </returns>
+    /// <remarks>
+    /// Staff usually enter the public address, while a Plesk node behind NAT knows only its private
+    /// one and refuses a subscription on any address it does not hold. The entered address is
+    /// therefore used only when Plesk confirms it.
+    /// </remarks>
+    public async Task<string?> FindHostingIpAsync(PleskConnection connection, string? preferred, CancellationToken ct)
     {
         var reply = await SendAsync(connection, new XElement("ip", new XElement("get")), ct);
-        return reply.Result?
+        var addresses = reply.Result?
             .Descendants()
-            .FirstOrDefault(e => e.Element("ip_address") is not null
-                && string.Equals(e.Element("type")?.Value, SharedIpType, StringComparison.OrdinalIgnoreCase))?
-            .Element("ip_address")?.Value;
+            .Select(e => (Address: e.Element("ip_address")?.Value, Type: e.Element("type")?.Value))
+            .Where(a => a.Address is not null)
+            .ToList() ?? [];
+
+        if (preferred is not null && addresses.Exists(a => string.Equals(a.Address, preferred, StringComparison.Ordinal)))
+        {
+            return preferred;
+        }
+
+        return addresses
+            .Where(a => string.Equals(a.Type, SharedIpType, StringComparison.OrdinalIgnoreCase))
+            .Select(a => a.Address)
+            .FirstOrDefault();
     }
+
+    /// <summary>Changes the password of the system (FTP/SSH) user of a customer's subscription.</summary>
+    /// <param name="connection">The server the customer is on.</param>
+    /// <param name="ownerLogin">The customer's login.</param>
+    /// <param name="password">The new password; never logged.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The reply.</returns>
+    public Task<PleskReply> SetSystemUserPasswordAsync(PleskConnection connection, string ownerLogin, string password, CancellationToken ct) =>
+        SendAsync(
+            connection,
+            new XElement("webspace", new XElement("set",
+                new XElement("filter", new XElement("owner-login", ownerLogin)),
+                new XElement("values", new XElement("hosting", new XElement(VirtualHostingType,
+                    Property("ftp_password", password)))))),
+            ct);
 
     /// <summary>Changes one customer setting.</summary>
     /// <param name="connection">The server the customer is on.</param>
@@ -287,7 +322,7 @@ public sealed class PleskApiClient
 
             body = await response.Content.ReadAsStringAsync(ct);
         }
-        catch (Exception ex) when ((ex is HttpRequestException or TaskCanceledException) && !ct.IsCancellationRequested)
+        catch (Exception ex) when ((ex is HttpRequestException or TaskCanceledException or TimeoutRejectedException) && !ct.IsCancellationRequested)
         {
             _logger.LogWarning(ex, "Plesk {Operation} could not be sent.", OperationName(operation));
             return PleskReply.Unreadable;

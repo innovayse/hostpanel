@@ -43,7 +43,7 @@ public sealed class GetMyPaymentMethodsTests(IntegrationTestFactory factory) : I
             SavedPaymentMethods = [new CardPaymentMethodDto("pm_1", SavedPaymentMethodType.Card, "visa", "4242", 12, 2030, true)],
         }, configured: false);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "list-not-configured");
-        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, "cus_1");
+        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, $"cus_{Guid.NewGuid():N}"[..24]);
 
         var response = await client.GetAsync("/api/me/payment-methods");
 
@@ -66,6 +66,39 @@ public sealed class GetMyPaymentMethodsTests(IntegrationTestFactory factory) : I
         body.Should().BeEmpty();
     }
 
+    /// <summary>Only the card the client agreed to have charged automatically is flagged; a card saved some other way is not.</summary>
+    [Fact]
+    public async Task GetMine_FlagsOnlyTheCardWithAnActiveAgreement()
+    {
+        var cardGateway = new FakeCardPaymentGateway
+        {
+            SavedPaymentMethods =
+            [
+                new CardPaymentMethodDto("pm_agreed", SavedPaymentMethodType.Card, "visa", "4242", 12, 2030, true),
+                new CardPaymentMethodDto("pm_plain", SavedPaymentMethodType.Card, "visa", "1881", 11, 2031, false),
+            ],
+        };
+        var host = BuildHost(cardGateway);
+        var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "list-auto-charge");
+        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, $"cus_{Guid.NewGuid():N}"[..24]);
+        using (var scope = host.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            var consent = Domain.Billing.CardChargeConsent.Request(
+                clientId, $"seti_{Guid.NewGuid():N}", Domain.Billing.Enums.CardConsentSource.AddCard, null, null, DateTimeOffset.UtcNow);
+            consent.Activate("pm_agreed", DateTimeOffset.UtcNow);
+            context.CardChargeConsents.Add(consent);
+            await context.SaveChangesAsync(CancellationToken.None);
+        }
+
+        var response = await client.GetAsync("/api/me/payment-methods");
+
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        bool AutoChargeOf(string id) => body.EnumerateArray().Single(m => m.GetProperty("id").GetString() == id).GetProperty("autoCharge").GetBoolean();
+        AutoChargeOf("pm_agreed").Should().BeTrue();
+        AutoChargeOf("pm_plain").Should().BeFalse();
+    }
+
     /// <summary>A client whose card payment gateway customer has a saved card sees it listed.</summary>
     [Fact]
     public async Task GetMine_WithASavedCard_ListsIt()
@@ -76,7 +109,7 @@ public sealed class GetMyPaymentMethodsTests(IntegrationTestFactory factory) : I
         };
         var host = BuildHost(cardGateway);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "one-card");
-        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, "cus_1");
+        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, $"cus_{Guid.NewGuid():N}"[..24]);
 
         var response = await client.GetAsync("/api/me/payment-methods");
 
@@ -99,7 +132,7 @@ public sealed class GetMyPaymentMethodsTests(IntegrationTestFactory factory) : I
     {
         var host = BuildHost(new FakeCardPaymentGateway { ListFailure = CardGatewayFailure.Unavailable });
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "list-unavailable");
-        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, "cus_1");
+        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, $"cus_{Guid.NewGuid():N}"[..24]);
 
         var response = await client.GetAsync("/api/me/payment-methods");
 
@@ -115,7 +148,7 @@ public sealed class GetMyPaymentMethodsTests(IntegrationTestFactory factory) : I
     {
         var host = BuildHost(new FakeCardPaymentGateway { ListFailure = CardGatewayFailure.Refused });
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "list-refused");
-        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, "cus_1");
+        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, $"cus_{Guid.NewGuid():N}"[..24]);
 
         var response = await client.GetAsync("/api/me/payment-methods");
 

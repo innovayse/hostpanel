@@ -4,7 +4,9 @@ using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Models;
+using Microsoft.EntityFrameworkCore;
 using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Billing.Commands.RemovePaymentMethod;
@@ -20,13 +22,23 @@ public sealed class RemovePaymentMethodHandler
     /// <summary>Card payment gateway, for detaching the payment method.</summary>
     private readonly ICardPaymentGateway _cardGateway;
 
+    /// <summary>The module's data context, for withdrawing the agreement the removed card was charged under.</summary>
+    private readonly IHostpanelDbContext _context;
+
+    /// <summary>The clock the withdrawal's moment is read from.</summary>
+    private readonly IClock _clock;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="bus">The Wolverine bus, for the Clients module's card gateway customer query.</param>
     /// <param name="cardGateway">Card payment gateway, for detaching the payment method.</param>
-    public RemovePaymentMethodHandler(IMessageBus bus, ICardPaymentGateway cardGateway)
+    /// <param name="context">The module's data context, for withdrawing the agreement the removed card was charged under.</param>
+    /// <param name="clock">The clock the withdrawal's moment is read from.</param>
+    public RemovePaymentMethodHandler(IMessageBus bus, ICardPaymentGateway cardGateway, IHostpanelDbContext context, IClock clock)
     {
         _bus = bus;
         _cardGateway = cardGateway;
+        _context = context;
+        _clock = clock;
     }
 
     /// <summary>
@@ -84,6 +96,20 @@ public sealed class RemovePaymentMethodHandler
         if (detached.Failure is { } detachFailure)
         {
             return Result.FailureCode(detachFailure.ToPaymentMethodErrorCode());
+        }
+
+        // A card that is gone is never charged: the agreement made for it ends with it.
+        var agreements = await _context.CardChargeConsents
+            .Where(c => c.ClientId == customer.Value!.ClientId && c.GatewayPaymentMethodId == cmd.PaymentMethodId && c.Status != CardConsentStatus.Revoked)
+            .ToListAsync(ct);
+        foreach (var agreement in agreements)
+        {
+            agreement.Revoke("The card was removed", _clock.UtcNow);
+        }
+
+        if (agreements.Count > 0)
+        {
+            await _context.SaveChangesAsync(ct);
         }
 
         return Result.Success();

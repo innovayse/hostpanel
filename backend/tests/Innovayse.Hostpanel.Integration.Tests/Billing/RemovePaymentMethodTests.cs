@@ -1,5 +1,4 @@
 using System.Net;
-using System.Text.Json;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
@@ -35,7 +34,7 @@ public sealed class RemovePaymentMethodTests(IntegrationTestFactory factory) : I
     {
         var host = BuildHost(new FakeCardPaymentGateway(), configured: false);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "remove-not-configured");
-        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, "cus_1");
+        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, $"cus_{Guid.NewGuid():N}"[..24]);
 
         var response = await client.DeleteAsync("/api/me/payment-methods/pm_1");
 
@@ -71,7 +70,7 @@ public sealed class RemovePaymentMethodTests(IntegrationTestFactory factory) : I
         };
         var host = BuildHost(cardGateway);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "remove-owned");
-        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, "cus_1");
+        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, $"cus_{Guid.NewGuid():N}"[..24]);
 
         var response = await client.DeleteAsync("/api/me/payment-methods/pm_1");
 
@@ -102,7 +101,7 @@ public sealed class RemovePaymentMethodTests(IntegrationTestFactory factory) : I
         };
         var host = BuildHost(cardGateway);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "remove-unowned");
-        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, "cus_1");
+        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, $"cus_{Guid.NewGuid():N}"[..24]);
 
         var response = await client.DeleteAsync("/api/me/payment-methods/pm_someone_elses");
 
@@ -121,7 +120,7 @@ public sealed class RemovePaymentMethodTests(IntegrationTestFactory factory) : I
         };
         var host = BuildHost(cardGateway);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "remove-unavailable");
-        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, "cus_1");
+        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, $"cus_{Guid.NewGuid():N}"[..24]);
 
         var response = await client.DeleteAsync("/api/me/payment-methods/pm_1");
 
@@ -142,7 +141,7 @@ public sealed class RemovePaymentMethodTests(IntegrationTestFactory factory) : I
         };
         var host = BuildHost(cardGateway);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "remove-refused");
-        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, "cus_1");
+        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, $"cus_{Guid.NewGuid():N}"[..24]);
 
         var response = await client.DeleteAsync("/api/me/payment-methods/pm_1");
 

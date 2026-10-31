@@ -261,7 +261,7 @@ export const INVOICE = {
 /** The saved card the pay page preselects, in the camelCase shape the backend sends. */
 export const SAVED_CARD = {
   id: 'pm_e2e',
-  type: 'card',
+  type: 'Card',
   brand: 'visa',
   last4: '4242',
   expiryMonth: 12,

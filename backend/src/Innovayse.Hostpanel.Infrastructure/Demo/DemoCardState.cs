@@ -22,6 +22,51 @@ public sealed class DemoCardState
     /// <summary>The saved-method charges the demo gateway took, by idempotency key.</summary>
     private readonly ConcurrentDictionary<string, CardChargeLookupResult> _charges = new();
 
+    /// <summary>The cards visitors added beside the three sample methods, by customer id.</summary>
+    private readonly ConcurrentDictionary<string, List<CardPaymentMethodDto>> _added = new();
+
+    /// <summary>The setup intents the demo gateway opened, by setup intent id.</summary>
+    private readonly ConcurrentDictionary<string, CardSetupIntentStatus> _setupIntents = new();
+
+    /// <summary>Remembers a card a visitor added.</summary>
+    /// <param name="customerId">The customer the card was saved against.</param>
+    /// <param name="method">The saved card, in the shape a real gateway reports it.</param>
+    public void AddMethod(string customerId, CardPaymentMethodDto method)
+    {
+        var list = _added.GetOrAdd(customerId, _ => []);
+        lock (list)
+        {
+            list.Add(method);
+        }
+    }
+
+    /// <summary>Reads the cards visitors added for a customer.</summary>
+    /// <param name="customerId">The customer.</param>
+    /// <returns>The added cards, oldest first; empty when none.</returns>
+    public IReadOnlyList<CardPaymentMethodDto> AddedMethods(string customerId)
+    {
+        if (!_added.TryGetValue(customerId, out var list))
+        {
+            return [];
+        }
+
+        lock (list)
+        {
+            return [.. list];
+        }
+    }
+
+    /// <summary>Remembers a setup intent the demo gateway opened.</summary>
+    /// <param name="setupIntentId">The setup intent id.</param>
+    /// <param name="status">What the setup intent saved, reported as succeeded.</param>
+    public void OpenSetupIntent(string setupIntentId, CardSetupIntentStatus status) => _setupIntents[setupIntentId] = status;
+
+    /// <summary>Reads back a setup intent the demo gateway opened.</summary>
+    /// <param name="setupIntentId">The setup intent id.</param>
+    /// <returns>The setup intent, or <see langword="null"/> when the demo never opened it.</returns>
+    public CardSetupIntentStatus? FindSetupIntent(string setupIntentId) =>
+        _setupIntents.TryGetValue(setupIntentId, out var status) ? status : null;
+
     /// <summary>Remembers a saved-method charge the demo gateway took.</summary>
     /// <param name="idempotencyKey">The key the charge was sent with.</param>
     /// <param name="charge">What the charge took.</param>
@@ -76,5 +121,7 @@ public sealed class DemoCardState
         _removed.Clear();
         _intents.Clear();
         _charges.Clear();
+        _added.Clear();
+        _setupIntents.Clear();
     }
 }

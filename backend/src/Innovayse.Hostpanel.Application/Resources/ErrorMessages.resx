@@ -928,4 +928,16 @@
   <data name="FULFILMENT_ADVICE_UNAVAILABLE" xml:space="preserve">
     <value>The refund could not be checked right now, so nothing was refunded. Try again later.</value>
   </data>
+  <data name="CARD_GATEWAY_CUSTOMER_ALREADY_LINKED" xml:space="preserve">
+    <value>That card gateway customer is already linked to another account.</value>
+  </data>
+  <data name="PAYMENT_IN_PROGRESS" xml:space="preserve">
+    <value>Another payment for this invoice is being processed. Wait a moment and check the invoice before paying again.</value>
+  </data>
+  <data name="CARD_SETUP_NOT_COMPLETED" xml:space="preserve">
+    <value>The card was not saved. Try adding it again.</value>
+  </data>
+  <data name="CARD_SETUP_NOT_FOUND" xml:space="preserve">
+    <value>No card setup with that id was found on this account.</value>
+  </data>
 </root>

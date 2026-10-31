@@ -459,6 +459,12 @@ export const useAccountStore = defineStore('account', () => {
   /** Id of the method being removed, or null. */
   const removingId = ref<string | null>(null)
 
+  /** Whether a card is being added (setup intent open, card being confirmed). */
+  const addingCard = ref(false)
+
+  /** Whether automatic charges are being turned off. */
+  const turningOffAutoCharge = ref(false)
+
   /**
    * Makes a saved method the default.
    *
@@ -476,6 +482,55 @@ export const useAccountStore = defineStore('account', () => {
       return ActionOutcome.Failed
     } finally {
       settingDefaultId.value = null
+    }
+  }
+
+  /**
+   * Saves a new card for later charges. The payer's agreement goes first, so the backend can refuse a
+   * card nobody agreed to; the card is confirmed with the payment provider in this browser; the backend then
+   * reads the result back from the provider before it counts the card as saved.
+   *
+   * @param consentAccepted - Whether the payer ticked the agreement to automatic renewal charges.
+   * @param confirmSetup - Confirms the setup intent with the mounted card element.
+   * @returns How it ended; on `Failed`, {@link paymentActionError} holds the sentence.
+   */
+  const addPaymentMethod = async (
+    consentAccepted: boolean,
+    confirmSetup: (clientSecret: string) => Promise<{ id: string }>
+  ): Promise<ActionOutcome> => {
+    addingCard.value = true
+    paymentActionError.value = ''
+    try {
+      const { setupIntentId, clientSecret } = await billingApi.createSetupIntent(consentAccepted)
+      await confirmSetup(clientSecret)
+      await billingApi.confirmSetupIntent(setupIntentId)
+      return ActionOutcome.Succeeded
+    } catch (e: unknown) {
+      // An API refusal carries `data`; anything else is the card element's own sentence from the payment provider.
+      const isApiRefusal = typeof e === 'object' && e !== null && 'data' in e
+      paymentActionError.value = !isApiRefusal && e instanceof Error && e.message ? e.message : apiErrorMessage(e)
+      return ActionOutcome.Failed
+    } finally {
+      addingCard.value = false
+    }
+  }
+
+  /**
+   * Turns off automatic card charges; the saved cards stay.
+   *
+   * @returns How it ended; on `Failed`, {@link paymentActionError} holds the sentence.
+   */
+  const turnOffAutoCharge = async (): Promise<ActionOutcome> => {
+    turningOffAutoCharge.value = true
+    paymentActionError.value = ''
+    try {
+      await billingApi.turnOffAutoCharge()
+      return ActionOutcome.Succeeded
+    } catch (e: unknown) {
+      paymentActionError.value = apiErrorMessage(e)
+      return ActionOutcome.Failed
+    } finally {
+      turningOffAutoCharge.value = false
     }
   }
 
@@ -560,6 +615,10 @@ export const useAccountStore = defineStore('account', () => {
     removingId,
     setDefaultPaymentMethod,
     removePaymentMethod,
+    addPaymentMethod,
+    turnOffAutoCharge,
+    addingCard,
+    turningOffAutoCharge,
     clearModalErrors
   }
 })

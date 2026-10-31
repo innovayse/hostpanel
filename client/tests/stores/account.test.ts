@@ -34,6 +34,9 @@ const clientApi = {
 const billingApi = {
   setDefaultPaymentMethod: vi.fn(),
   removePaymentMethod: vi.fn(),
+  createSetupIntent: vi.fn(),
+  confirmSetupIntent: vi.fn(),
+  turnOffAutoCharge: vi.fn(),
   fetchPaymentMethods: vi.fn(),
   fetchGatewayMethods: vi.fn()
 }
@@ -391,6 +394,54 @@ describe('useAccountStore payment methods', () => {
     expect(await store.removePaymentMethod('1')).toBe(ActionOutcome.Failed)
     expect(store.paymentActionError).toBe('Refused.')
     expect(store.removingId).toBeNull()
+  })
+
+  it('saves a card: opens the setup with the agreement, confirms it in the browser, then asks the backend to finish', async () => {
+    billingApi.createSetupIntent.mockResolvedValue({ setupIntentId: 'seti_1', clientSecret: 'sec' })
+    billingApi.confirmSetupIntent.mockResolvedValue({})
+    const confirmSetup = vi.fn().mockResolvedValue({ id: 'seti_1' })
+    const store = useAccountStore()
+
+    expect(await store.addPaymentMethod(true, confirmSetup)).toBe(ActionOutcome.Succeeded)
+
+    expect(billingApi.createSetupIntent).toHaveBeenCalledWith(true)
+    expect(confirmSetup).toHaveBeenCalledWith('sec')
+    expect(billingApi.confirmSetupIntent).toHaveBeenCalledWith('seti_1')
+    expect(store.addingCard).toBe(false)
+  })
+
+  it('shows the API sentence and does not finish when the backend refuses the setup', async () => {
+    billingApi.confirmSetupIntent.mockClear()
+    billingApi.createSetupIntent.mockRejectedValue(refused)
+    const confirmSetup = vi.fn()
+    const store = useAccountStore()
+
+    expect(await store.addPaymentMethod(false, confirmSetup)).toBe(ActionOutcome.Failed)
+
+    expect(store.paymentActionError).toBe('Refused.')
+    expect(confirmSetup).not.toHaveBeenCalled()
+    expect(billingApi.confirmSetupIntent).not.toHaveBeenCalled()
+  })
+
+  it('shows the payment provider sentence when the card is refused, and tells the backend nothing', async () => {
+    billingApi.confirmSetupIntent.mockClear()
+    billingApi.createSetupIntent.mockResolvedValue({ setupIntentId: 'seti_1', clientSecret: 'sec' })
+    const store = useAccountStore()
+
+    expect(await store.addPaymentMethod(true, vi.fn().mockRejectedValue(new Error('Your card was declined.')))).toBe(ActionOutcome.Failed)
+
+    expect(store.paymentActionError).toBe('Your card was declined.')
+    expect(billingApi.confirmSetupIntent).not.toHaveBeenCalled()
+  })
+
+  it('turns automatic charges off, and keeps the sentence when it is refused', async () => {
+    billingApi.turnOffAutoCharge.mockResolvedValueOnce({}).mockRejectedValueOnce(refused)
+    const store = useAccountStore()
+
+    expect(await store.turnOffAutoCharge()).toBe(ActionOutcome.Succeeded)
+    expect(await store.turnOffAutoCharge()).toBe(ActionOutcome.Failed)
+    expect(store.paymentActionError).toBe('Refused.')
+    expect(store.turningOffAutoCharge).toBe(false)
   })
 
   it('clears every modal error on request', async () => {

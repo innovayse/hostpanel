@@ -32,6 +32,8 @@ export interface PaymentMethodWire {
   expiryYear?: number | null
   /** Whether this is the client's default method */
   isDefault: boolean
+  /** Whether the client agreed that renewals may be charged to this card without them */
+  autoCharge?: boolean
 }
 
 /** One saved method as the client renders it. */
@@ -54,4 +56,6 @@ export interface PaymentMethod {
   bankName?: string | null
   /** Whether this is the client's default method */
   isDefault?: boolean
+  /** Whether renewals are charged to this card automatically, by the client's agreement */
+  autoCharge?: boolean
 }

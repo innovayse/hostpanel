@@ -66,6 +66,7 @@ export const toPaymentMethod = (wire: PaymentMethodWire): PaymentMethod => {
     cardExpiry: formatSavedExpiry(wire.expiryMonth, wire.expiryYear),
     cardType: isBank ? null : (wire.brand ?? null),
     bankName: isBank ? (wire.brand ?? null) : null,
-    isDefault: wire.isDefault
+    isDefault: wire.isDefault,
+    autoCharge: wire.autoCharge === true
   }
 }

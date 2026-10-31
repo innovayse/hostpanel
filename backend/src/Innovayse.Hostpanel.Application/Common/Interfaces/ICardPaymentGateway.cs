@@ -60,6 +60,55 @@ public interface ICardPaymentGateway
     Task<CardChargeLookupResult> FindChargeAsync(CardChargeLookupInstruction instruction, CancellationToken ct);
 
     /// <summary>
+    /// Opens a customer for a client at the card gateway, the object cards are saved against.
+    /// </summary>
+    /// <remarks>
+    /// The customer carries the client's id on it and the request an idempotency key, so two requests
+    /// made at the same moment for one client answer with one customer.
+    /// </remarks>
+    /// <param name="instruction">The client, its name and e-mail, and the idempotency key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The customer's id, or the failure kind when the gateway refused or could not be reached; a gateway failure never throws.</returns>
+    Task<CardCustomerResult> CreateCustomerAsync(CardCreateCustomerInstruction instruction, CancellationToken ct);
+
+    /// <summary>
+    /// Finds the customer the gateway holds for a client by the client id kept on it, without creating one.
+    /// </summary>
+    /// <remarks>
+    /// Recovers a customer that was opened but never stored (a crash between the two steps), so it is
+    /// adopted instead of duplicated.
+    /// </remarks>
+    /// <param name="instruction">The client whose customer is looked for.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The customer's id, <see cref="CardCustomerResult.None"/>, or the failure kind; a gateway failure never throws.</returns>
+    Task<CardCustomerResult> FindCustomerAsync(CardFindCustomerInstruction instruction, CancellationToken ct);
+
+    /// <summary>
+    /// Deletes a customer the gateway opened, used only to drop one that lost a race to another
+    /// customer already stored for the same client.
+    /// </summary>
+    /// <param name="instruction">The customer to delete.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Success, or the failure kind; a gateway failure never throws.</returns>
+    Task<CardGatewayOperationResult> DeleteCustomerAsync(CardCustomerInstruction instruction, CancellationToken ct);
+
+    /// <summary>
+    /// Opens a setup intent so the client can save a card without paying anything.
+    /// </summary>
+    /// <param name="instruction">The customer the card is saved against, the client, and the idempotency key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The setup intent with the secret the browser confirms it with, or the failure kind; a gateway failure never throws.</returns>
+    Task<CardSetupIntentResult> CreateSetupIntentAsync(CardSetupIntentInstruction instruction, CancellationToken ct);
+
+    /// <summary>
+    /// Reads back a setup intent: whether the card was saved, against which customer and as which payment method.
+    /// </summary>
+    /// <param name="instruction">The setup intent to check.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The setup intent's outcome as the gateway records it; a gateway failure never throws.</returns>
+    Task<CardSetupIntentStatus> VerifySetupIntentAsync(CardSetupIntentVerifyInstruction instruction, CancellationToken ct);
+
+    /// <summary>
     /// Refunds an amount of a previously completed payment.
     /// </summary>
     /// <param name="instruction">The charge ID (<c>ch_xxx</c>) or PaymentIntent ID (<c>pi_xxx</c>) to refund, and the amount and currency.</param>

@@ -1,3 +1,5 @@
+using Innovayse.Hostpanel.Application.Billing.Common;
+
 namespace Innovayse.Hostpanel.Application.Orders.Commands.CreateOrderPaymentIntent;
 
 /// <summary>
@@ -16,4 +18,12 @@ namespace Innovayse.Hostpanel.Application.Orders.Commands.CreateOrderPaymentInte
 /// <see cref="Innovayse.Hostpanel.Domain.Orders.Order.PaymentToken"/> for why an order id alone is not
 /// enough.
 /// </param>
-public sealed record CreateOrderPaymentIntentCommand(int OrderId, string? PaymentToken);
+/// <param name="SaveCard">
+/// Whether the payer ticked the box offering to keep the card for automatic renewal charges. Off unless the
+/// payer says so; when on, the card is saved on the client's gateway customer and the agreement is recorded.
+/// </param>
+/// <param name="Origin">
+/// Where the request came from, kept with the agreement as proof. Set by the endpoint from the request itself,
+/// never taken from the body.
+/// </param>
+public sealed record CreateOrderPaymentIntentCommand(int OrderId, string? PaymentToken, bool SaveCard = false, CardConsentOrigin? Origin = null);

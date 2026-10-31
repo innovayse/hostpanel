@@ -185,6 +185,105 @@ public sealed class FakeCardPaymentGateway : ICardPaymentGateway
         }
     }
 
+    /// <summary>Guards the customer maps below, which concurrent requests write.</summary>
+    private readonly object _customerLock = new();
+
+    /// <summary>The customers the gateway holds, by the key their creation carried. A key it has seen answers with its first customer, as a real gateway replays it.</summary>
+    public Dictionary<string, string> CustomersByKey { get; } = [];
+
+    /// <summary>How many customers the gateway really created (a replayed key does not count).</summary>
+    public int CustomersCreated => CustomersByKey.Count;
+
+    /// <summary>The customers deleted at the gateway, in order.</summary>
+    public List<string> DeletedCustomers { get; } = [];
+
+    /// <summary>The customer <see cref="FindCustomerAsync"/> finds for a client, by client id; a test adds one to stand for a customer created but never stored.</summary>
+    public Dictionary<int, string> OrphanCustomers { get; } = [];
+
+    /// <summary>The failure <see cref="CreateCustomerAsync"/> answers with instead of a customer; null to create.</summary>
+    public CardGatewayFailure? CustomerFailure { get; set; }
+
+    /// <summary>
+    /// Runs after a customer is created and before the gateway answers; null for none. A test throws from it
+    /// to lose the answer of a customer that does exist, or holds the request there while another one goes by.
+    /// </summary>
+    public Func<CardCreateCustomerInstruction, Task>? AfterCustomerCreated { get; set; }
+
+    /// <inheritdoc/>
+    public async Task<CardCustomerResult> CreateCustomerAsync(CardCreateCustomerInstruction instruction, CancellationToken ct)
+    {
+        ThrowIfNotConfigured();
+        if (CustomerFailure is { } failure)
+        {
+            return CardCustomerResult.Failed(failure);
+        }
+
+        string customerId;
+        lock (_customerLock)
+        {
+            if (!CustomersByKey.TryGetValue(instruction.IdempotencyKey, out customerId!))
+            {
+                customerId = $"cus_fake_{Guid.NewGuid():N}"[..24];
+                CustomersByKey[instruction.IdempotencyKey] = customerId;
+            }
+        }
+
+        if (AfterCustomerCreated is not null)
+        {
+            await AfterCustomerCreated(instruction);
+        }
+
+        return new CardCustomerResult(customerId);
+    }
+
+    /// <inheritdoc/>
+    public Task<CardCustomerResult> FindCustomerAsync(CardFindCustomerInstruction instruction, CancellationToken ct)
+    {
+        ThrowIfNotConfigured();
+        lock (_customerLock)
+        {
+            return Task.FromResult(OrphanCustomers.TryGetValue(instruction.ClientId, out var found)
+                ? new CardCustomerResult(found)
+                : CardCustomerResult.None);
+        }
+    }
+
+    /// <inheritdoc/>
+    public Task<CardGatewayOperationResult> DeleteCustomerAsync(CardCustomerInstruction instruction, CancellationToken ct)
+    {
+        ThrowIfNotConfigured();
+        lock (_customerLock)
+        {
+            DeletedCustomers.Add(instruction.CustomerId);
+        }
+
+        return Task.FromResult(CardGatewayOperationResult.Succeeded);
+    }
+
+    /// <summary>The setup intent <see cref="CreateSetupIntentAsync"/> answers with.</summary>
+    public CardSetupIntentResult SetupIntent { get; set; } = new("seti_test_1", "seti_test_1_secret");
+
+    /// <summary>What <see cref="VerifySetupIntentAsync"/> answers with; a test sets the customer and card it expects.</summary>
+    public CardSetupIntentStatus SetupVerification { get; set; } = new(true, null, "pm_saved_1");
+
+    /// <summary>The instruction the last <see cref="CreateSetupIntentAsync"/> call carried, or <see langword="null"/>.</summary>
+    public CardSetupIntentInstruction? LastSetupInstruction { get; private set; }
+
+    /// <inheritdoc/>
+    public Task<CardSetupIntentResult> CreateSetupIntentAsync(CardSetupIntentInstruction instruction, CancellationToken ct)
+    {
+        ThrowIfNotConfigured();
+        LastSetupInstruction = instruction;
+        return Task.FromResult(SetupIntent);
+    }
+
+    /// <inheritdoc/>
+    public Task<CardSetupIntentStatus> VerifySetupIntentAsync(CardSetupIntentVerifyInstruction instruction, CancellationToken ct)
+    {
+        ThrowIfNotConfigured();
+        return Task.FromResult(SetupVerification);
+    }
+
     /// <inheritdoc/>
     public async Task<CardRefundResult> RefundAsync(CardRefundInstruction instruction, CancellationToken ct)
     {

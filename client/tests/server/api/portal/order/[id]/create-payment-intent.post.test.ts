@@ -36,6 +36,24 @@ describe('POST /api/portal/order/:id/create-payment-intent', () => {
     expect(backend.requests[0]?.headers['authorization']).toBe('Bearer jwt')
   })
 
+  it('forwards the payment token and the choice to save the card, and nothing else from the body', async () => {
+    const event = makeEvent({
+      params: { id: '7' },
+      body: { paymentToken: 'tok', saveCard: true, origin: { ipAddress: '9.9.9.9' } },
+      cookies: await signedIn('jwt')
+    })
+
+    await route.default(event)
+
+    expect(JSON.parse(backend.requests[0]?.body ?? '{}')).toEqual({ paymentToken: 'tok', saveCard: true })
+  })
+
+  it('does not save the card unless the body says so exactly', async () => {
+    await route.default(makeEvent({ params: { id: '7' }, body: { paymentToken: 'tok', saveCard: 'yes' }, cookies: await signedIn('jwt') }))
+
+    expect(JSON.parse(backend.requests[0]?.body ?? '{}')).toEqual({ paymentToken: 'tok', saveCard: false })
+  })
+
   it('forwards the reader language to the backend', async () => {
     const event = makeEvent({ params: { id: '7' }, headers: { 'x-language': 'hy' }, cookies: await signedIn('jwt') })
 

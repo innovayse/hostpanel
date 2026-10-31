@@ -54,14 +54,20 @@ public sealed class DemoCardPaymentGateway : ICardPaymentGateway
     {
         var currency = instruction.Currency.ToLowerInvariant();
         var intentId = $"demo-intent-{instruction.InvoiceId}-{currency}";
+
+        // A payment that agreed to keep the card leaves a new card on the customer, like the real gateway does.
+        var savedMethodId = instruction.SaveCard && instruction.CustomerId is { } customerId
+            ? SaveNewCard(customerId)
+            : null;
         _state.OpenIntent(intentId, new CardPaymentIntentStatus(
             true,
             $"demo-txn-{intentId}",
             CurrencyCode.ToMinorUnits(instruction.Amount, instruction.Currency),
             currency,
             instruction.OrderId,
-            instruction.InvoiceId));
-        return Task.FromResult(new CardPaymentIntentResult(intentId));
+            instruction.InvoiceId,
+            PaymentMethodId: savedMethodId));
+        return Task.FromResult(new CardPaymentIntentResult(intentId, IntentId: intentId));
     }
 
     /// <inheritdoc/>
@@ -90,6 +96,53 @@ public sealed class DemoCardPaymentGateway : ICardPaymentGateway
         Task.FromResult(_state.FindCharge(instruction.IdempotencyKey) ?? CardChargeLookupResult.None);
 
     /// <inheritdoc/>
+    /// <remarks>The customer id is derived from the client, so the same client always gets the same one.</remarks>
+    public Task<CardCustomerResult> CreateCustomerAsync(CardCreateCustomerInstruction instruction, CancellationToken ct) =>
+        Task.FromResult(new CardCustomerResult($"demo-customer-{instruction.ClientId}"));
+
+    /// <inheritdoc/>
+    /// <remarks>The demo opens a customer only when asked, so there is never an orphan to find.</remarks>
+    public Task<CardCustomerResult> FindCustomerAsync(CardFindCustomerInstruction instruction, CancellationToken ct) =>
+        Task.FromResult(CardCustomerResult.None);
+
+    /// <inheritdoc/>
+    public Task<CardGatewayOperationResult> DeleteCustomerAsync(CardCustomerInstruction instruction, CancellationToken ct) =>
+        Task.FromResult(CardGatewayOperationResult.Succeeded);
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// The demo has no card form to fill in, so opening a setup intent already saves a test card and the
+    /// intent reads back as succeeded. The same idempotency key answers with the same intent and the same card.
+    /// </remarks>
+    public Task<CardSetupIntentResult> CreateSetupIntentAsync(CardSetupIntentInstruction instruction, CancellationToken ct)
+    {
+        var setupIntentId = $"demo-seti-{instruction.IdempotencyKey}";
+        if (_state.FindSetupIntent(setupIntentId) is null)
+        {
+            var methodId = SaveNewCard(instruction.CustomerId);
+            _state.OpenSetupIntent(setupIntentId, new CardSetupIntentStatus(true, instruction.CustomerId, methodId));
+        }
+
+        return Task.FromResult(new CardSetupIntentResult(setupIntentId, $"{setupIntentId}_secret"));
+    }
+
+    /// <inheritdoc/>
+    public Task<CardSetupIntentStatus> VerifySetupIntentAsync(CardSetupIntentVerifyInstruction instruction, CancellationToken ct) =>
+        Task.FromResult(_state.FindSetupIntent(instruction.SetupIntentId) ?? new CardSetupIntentStatus(false, null, null));
+
+    /// <summary>Saves a test card against a customer, as a real gateway would after a card was entered.</summary>
+    /// <param name="customerId">The customer the card is saved against.</param>
+    /// <returns>The id of the new payment method.</returns>
+    private string SaveNewCard(string customerId)
+    {
+        var number = _state.AddedMethods(customerId).Count + 1;
+        var id = $"demo-card-added-{number}:{customerId}";
+        _state.AddMethod(customerId, new CardPaymentMethodDto(
+            id, SavedPaymentMethodType.Card, "visa", "4242", 12, _clock.UtcNow.Year + VisaExpiryYearsAhead, false));
+        return id;
+    }
+
+    /// <inheritdoc/>
     public Task<CardRefundResult> RefundAsync(CardRefundInstruction instruction, CancellationToken ct) =>
         Task.FromResult(new CardRefundResult(true, $"demo-refund-{instruction.TransactionId}"));
 
@@ -105,7 +158,10 @@ public sealed class DemoCardPaymentGateway : ICardPaymentGateway
             ($"{BankAccountId}{customerId}", SavedPaymentMethodType.BankAccount, "Demo Bank", "6789", null, null),
         ];
 
-        var remaining = samples.Where(s => !_state.IsRemoved(s.Id)).ToList();
+        // The cards visitors added come after the three samples, in the order they were added.
+        var added = _state.AddedMethods(customerId)
+            .Select(m => (m.Id, m.Type, Brand: m.Brand ?? string.Empty, Last4: m.Last4 ?? string.Empty, Month: m.ExpiryMonth, Year: m.ExpiryYear));
+        var remaining = samples.Concat(added).Where(s => !_state.IsRemoved(s.Id)).ToList();
 
         // The chosen default wins while it still exists; otherwise the first remaining method is the default.
         var defaultId = _state.TryGetDefault(customerId, out var chosen) && remaining.Any(s => s.Id == chosen)

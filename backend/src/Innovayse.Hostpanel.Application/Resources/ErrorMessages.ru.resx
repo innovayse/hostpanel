@@ -928,4 +928,16 @@
   <data name="FULFILMENT_ADVICE_UNAVAILABLE" xml:space="preserve">
     <value>Сейчас не удалось проверить возврат, поэтому средства не возвращены. Повторите попытку позже.</value>
   </data>
+  <data name="CARD_GATEWAY_CUSTOMER_ALREADY_LINKED" xml:space="preserve">
+    <value>Этот клиент платёжного шлюза уже привязан к другому аккаунту.</value>
+  </data>
+  <data name="PAYMENT_IN_PROGRESS" xml:space="preserve">
+    <value>Другой платёж по этому счёту сейчас обрабатывается. Подождите немного и проверьте счёт, прежде чем платить снова.</value>
+  </data>
+  <data name="CARD_SETUP_NOT_COMPLETED" xml:space="preserve">
+    <value>Карта не была сохранена. Попробуйте добавить её ещё раз.</value>
+  </data>
+  <data name="CARD_SETUP_NOT_FOUND" xml:space="preserve">
+    <value>Настройка карты с таким идентификатором на этом аккаунте не найдена.</value>
+  </data>
 </root>

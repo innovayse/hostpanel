@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
@@ -36,7 +35,7 @@ public sealed class SetDefaultPaymentMethodTests(IntegrationTestFactory factory)
     {
         var host = BuildHost(new FakeCardPaymentGateway(), configured: false);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "set-default-not-configured");
-        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, "cus_1");
+        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, $"cus_{Guid.NewGuid():N}"[..24]);
 
         var response = await client.PutAsJsonAsync("/api/me/payment-methods/pm_1", new { setAsDefault = true });
 
@@ -72,7 +71,7 @@ public sealed class SetDefaultPaymentMethodTests(IntegrationTestFactory factory)
         };
         var host = BuildHost(cardGateway);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "set-default-owned");
-        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, "cus_1");
+        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, $"cus_{Guid.NewGuid():N}"[..24]);
 
         var response = await client.PutAsJsonAsync("/api/me/payment-methods/pm_1", new { setAsDefault = true });
 
@@ -103,7 +102,7 @@ public sealed class SetDefaultPaymentMethodTests(IntegrationTestFactory factory)
         };
         var host = BuildHost(cardGateway);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "set-default-unowned");
-        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, "cus_1");
+        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, $"cus_{Guid.NewGuid():N}"[..24]);
 
         var response = await client.PutAsJsonAsync("/api/me/payment-methods/pm_someone_elses", new { setAsDefault = true });
 
@@ -122,7 +121,7 @@ public sealed class SetDefaultPaymentMethodTests(IntegrationTestFactory factory)
         };
         var host = BuildHost(cardGateway);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "set-default-unavailable");
-        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, "cus_1");
+        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, $"cus_{Guid.NewGuid():N}"[..24]);
 
         var response = await client.PutAsJsonAsync("/api/me/payment-methods/pm_1", new { setAsDefault = true });
 
@@ -139,7 +138,7 @@ public sealed class SetDefaultPaymentMethodTests(IntegrationTestFactory factory)
         var cardGateway = new FakeCardPaymentGateway { ListFailure = CardGatewayFailure.Refused };
         var host = BuildHost(cardGateway);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "set-default-refused");
-        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, "cus_1");
+        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, $"cus_{Guid.NewGuid():N}"[..24]);
 
         var response = await client.PutAsJsonAsync("/api/me/payment-methods/pm_1", new { setAsDefault = true });
 

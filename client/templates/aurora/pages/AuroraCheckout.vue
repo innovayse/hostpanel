@@ -206,6 +206,13 @@
 
                 <UiStack v-if="mayPlaceOrders && selectedMethod === PaymentModule.Stripe" gap="none" class="mt-6 overflow-hidden">
                   <CheckoutStripeCardForm ref="stripeCardFormRef" />
+                  <UiCheckbox
+                    v-model="saveCard"
+                    :label="$t('checkout.saveCard')"
+                    :description="$t('checkout.saveCardHint')"
+                    class="mt-4"
+                    testid="checkout-save-card"
+                  />
                 </UiStack>
               </UiCard>
             </UiStack>
@@ -360,6 +367,7 @@ const {
   handleLogout,
   form,
   stripeCardFormRef,
+  saveCard,
   submitOrder
 } = await useCheckoutPage()
 </script>

@@ -101,6 +101,12 @@ public interface IHostpanelDbContext
     /// <summary>Gets the fulfilment records: one plugin told one thing about one invoice, and how far it got.</summary>
     public DbSet<FulfilmentRecord> FulfilmentRecords { get; }
 
+    /// <summary>Gets the clients' agreements that a saved card may be charged without them, and their withdrawals.</summary>
+    public DbSet<CardChargeConsent> CardChargeConsents { get; }
+
+    /// <summary>Gets the exclusive rights to charge an invoice's card, one unfinished claim per invoice.</summary>
+    public DbSet<InvoicePaymentClaim> InvoicePaymentClaims { get; }
+
     /// <summary>Gets the transactions table.</summary>
     public DbSet<Transaction> Transactions { get; }
 

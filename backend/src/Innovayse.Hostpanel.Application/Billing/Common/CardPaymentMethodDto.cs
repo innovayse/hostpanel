@@ -10,6 +10,7 @@ namespace Innovayse.Hostpanel.Application.Billing.Common;
 /// <param name="ExpiryMonth">Card expiry month, or <see langword="null"/> for a bank account.</param>
 /// <param name="ExpiryYear">Card expiry year (4-digit), or <see langword="null"/> for a bank account.</param>
 /// <param name="IsDefault">Whether this is the customer's default payment method.</param>
+/// <param name="AutoCharge">Whether the client has agreed that renewals may be charged to this card without them. Filled in from the agreements on file, never by the gateway.</param>
 public sealed record CardPaymentMethodDto(
     string Id,
     SavedPaymentMethodType Type,
@@ -17,4 +18,5 @@ public sealed record CardPaymentMethodDto(
     string? Last4,
     int? ExpiryMonth,
     int? ExpiryYear,
-    bool IsDefault);
+    bool IsDefault,
+    bool AutoCharge = false);

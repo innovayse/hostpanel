@@ -26,6 +26,7 @@ const cardElement = {
 const stripe = {
   elements: vi.fn(() => ({ create: vi.fn(() => cardElement) })),
   confirmCardPayment: vi.fn(),
+  confirmCardSetup: vi.fn(),
 }
 
 /** The page's colour mode, flipped by tests. */
@@ -62,6 +63,7 @@ describe('StripeCardForm', () => {
     cardElement.update.mockClear()
     cardElement.destroy.mockClear()
     stripe.confirmCardPayment.mockReset()
+    stripe.confirmCardSetup.mockReset()
     vi.stubGlobal('useAppColorMode', () => ({ isDark }))
   })
 
@@ -84,6 +86,19 @@ describe('StripeCardForm', () => {
     const wrapper = await mountForm(false)
 
     expect(cardElement.mount).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('checkout.card.unavailable')
+    wrapper.unmount()
+  })
+
+  it('tells its parent whether the card field is ready', async () => {
+    const wrapper = await mountForm()
+    const ready = () => (wrapper.vm as unknown as { ready: boolean }).ready
+    expect(ready()).toBe(false)
+
+    handlers.ready?.()
+    await flushPromises()
+
+    expect(ready()).toBe(true)
     wrapper.unmount()
   })
 
@@ -127,6 +142,25 @@ describe('StripeCardForm', () => {
     wrapper.unmount()
 
     expect(cardElement.destroy).toHaveBeenCalledTimes(1)
+  })
+
+  it('confirms saving the card with the setup secret and returns the setup intent id', async () => {
+    stripe.confirmCardSetup.mockResolvedValue({ setupIntent: { id: 'seti_1' } })
+    const wrapper = await mountForm()
+    const confirmSetup = (wrapper.vm as unknown as { confirmSetup: (secret: string) => Promise<{ id: string }> }).confirmSetup
+
+    await expect(confirmSetup('seti_secret')).resolves.toEqual({ id: 'seti_1' })
+    expect(stripe.confirmCardSetup).toHaveBeenCalledWith('seti_secret', { payment_method: { card: cardElement } })
+    wrapper.unmount()
+  })
+
+  it('throws the provider sentence when the card is refused while saving', async () => {
+    stripe.confirmCardSetup.mockResolvedValue({ error: { message: 'Your card was declined.' } })
+    const wrapper = await mountForm()
+    const confirmSetup = (wrapper.vm as unknown as { confirmSetup: (secret: string) => Promise<{ id: string }> }).confirmSetup
+
+    await expect(confirmSetup('seti_secret')).rejects.toThrow('Your card was declined.')
+    wrapper.unmount()
   })
 
   it('confirms the payment with the client secret and returns the intent id', async () => {

@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Billing.Commands.ActivateCardChargeConsent;
 using Innovayse.Hostpanel.Application.Billing.Commands.SettleInvoiceCardPayment;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Common.Enums;
@@ -125,6 +126,13 @@ public sealed class ConfirmOrderPaymentHandler
         if (settled.IsFailure)
         {
             return settled;
+        }
+
+        // A card the payer agreed to keep is now on the customer, as the gateway's own record says: only
+        // then does the pending agreement become active. A payment that saved no card changes nothing.
+        if (intent.PaymentMethodId is { } savedMethodId)
+        {
+            await _bus.InvokeAsync<Result>(new ActivateCardChargeConsentCommand(order.ClientId, cmd.PaymentIntentId, savedMethodId), ct);
         }
 
         return await _bus.InvokeAsync<Result>(new FulfillPaidOrderCommand(order.Id), ct);

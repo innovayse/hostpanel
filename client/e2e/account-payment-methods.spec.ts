@@ -2,9 +2,9 @@
  * Flow: the account's saved payment methods.
  *
  * The tab lists the saved card; making it the default and removing it each reach the backend (the
- * removal only after a confirmation) and the list is read again. A card cannot be added here: the
- * add action opens a separate billing portal that this deployment does not run, so the tab offers
- * no add button. A member of the account without the permission to view and pay invoices finds the
+ * removal only after a confirmation) and the list is read again. "Add card" opens a dialog whose card
+ * field is the payment provider's own; a card is never saved without the payer ticking the agreement to
+ * automatic renewal charges, and the save button stays off while the provider's field is missing (the provider itself is not reachable from this suite). A member of the account without the permission to view and pay invoices finds the
  * tab saying why it offers nothing, and the portal does not ask for the list.
  */
 import { expect, test } from './support/test'
@@ -21,9 +21,20 @@ test.beforeEach(async ({ page, context, request, baseURL }) => {
   await expect(page.getByTestId('account-payment-tab')).toBeVisible()
 })
 
-test('the saved card is listed with its last digits and no add button is offered', async ({ page }) => {
+test('the saved card is listed with its last digits and an add button is offered', async ({ page }) => {
   await expect(page.getByTestId(`account-payment-${SAVED_CARD.id}`)).toContainText(SAVED_CARD.last4)
-  await expect(page.getByTestId('account-payment-add')).toHaveCount(0)
+  await expect(page.getByTestId('account-payment-add')).toBeVisible()
+})
+
+test('without the payment provider the save button stays off and nothing is sent', async ({ page, request }) => {
+  await page.getByTestId('account-payment-add').click()
+  await expect(page.getByTestId('account-payment-add-form')).toBeVisible()
+
+  // The suite has no provider key, so the card field cannot appear: the dialog says so and cannot save.
+  await expect(page.getByTestId('stripe-card-field')).toContainText('Card payments are not set up')
+  await expect(page.getByTestId('account-payment-add-submit')).toBeDisabled()
+  const sent = (await stubRequests(request)).find(r => r.path === '/api/me/payment-methods/setup-intent')
+  expect(sent).toBeUndefined()
 })
 
 test('making the card the default reaches the backend and confirms', async ({ page, request }) => {

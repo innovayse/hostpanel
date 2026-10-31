@@ -163,6 +163,76 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("BillableItems");
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Billing.CardChargeConsent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset?>("ActivatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("GatewayIntentId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("GatewayPaymentMethodId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("RequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RevokedReason")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("TextVersion")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GatewayIntentId")
+                        .IsUnique();
+
+                    b.HasIndex("ClientId", "GatewayPaymentMethodId")
+                        .IsUnique()
+                        .HasFilter("\"Status\" = 'Active'");
+
+                    b.HasIndex("ClientId", "Status");
+
+                    b.ToTable("CardChargeConsents");
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Billing.Currency", b =>
                 {
                     b.Property<int>("Id")
@@ -462,6 +532,51 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.HasIndex("RegisteredDomainId", "RenewalPeriodStart");
 
                     b.ToTable("InvoiceItems");
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Billing.InvoicePaymentClaim", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("GatewayIdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("InvoiceId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("Outcome")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GatewayIdempotencyKey");
+
+                    b.HasIndex("InvoiceId")
+                        .IsUnique()
+                        .HasFilter("\"Outcome\" IS NULL");
+
+                    b.ToTable("InvoicePaymentClaims");
                 });
 
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Billing.InvoiceReminder", b =>
@@ -868,6 +983,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasColumnName("xmin");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CardGatewayCustomerId")
+                        .IsUnique()
+                        .HasFilter("\"CardGatewayCustomerId\" IS NOT NULL");
 
                     b.HasIndex("UserId")
                         .IsUnique();
@@ -4098,6 +4217,15 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Billing.CardChargeConsent", b =>
+                {
+                    b.HasOne("Innovayse.Hostpanel.Domain.Clients.Client", null)
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Billing.FulfilmentRecord", b =>
                 {
                     b.HasOne("Innovayse.Hostpanel.Domain.Billing.Invoice", null)
@@ -4165,6 +4293,15 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         });
 
                     b.Navigation("ProductSnapshot");
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Billing.InvoicePaymentClaim", b =>
+                {
+                    b.HasOne("Innovayse.Hostpanel.Domain.Billing.Invoice", null)
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Billing.InvoiceReminder", b =>

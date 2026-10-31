@@ -77,11 +77,72 @@ describe('PaymentMethodsTab', () => {
     expect(wrapper.find('[data-testid="ui-empty-state"]').exists()).toBe(false)
   })
 
-  it('offers no add action, since the API has no way to add a card', () => {
+  it('opens the add-card dialog with the agreement unticked', async () => {
     const wrapper = mountAccount(PaymentMethodsTab)
 
-    expect(wrapper.find('[data-testid="account-payment-add"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="payment-methods-add"]').exists()).toBe(false)
+    await wrapper.find('[data-testid="account-payment-add"]').trigger('click')
+
+    expect(wrapper.find('[data-testid="account-payment-add-form"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="account-payment-consent-input"]').element).toHaveProperty('checked', false)
+  })
+
+  it('keeps the save button disabled while the provider card field is not ready', async () => {
+    const wrapper = mountAccount(PaymentMethodsTab)
+    await wrapper.find('[data-testid="account-payment-add"]').trigger('click')
+
+    expect(wrapper.find('[data-testid="account-payment-add-submit"]').attributes('disabled')).toBeDefined()
+  })
+
+  it('does not save a card nobody agreed to', async () => {
+    const wrapper = mountAccount(PaymentMethodsTab)
+    const add = vi.spyOn(useAccountStore(), 'addPaymentMethod')
+    await wrapper.find('[data-testid="account-payment-add"]').trigger('click')
+
+    await wrapper.find('[data-testid="account-payment-add-form"]').trigger('submit')
+    await wrapper.vm.$nextTick()
+
+    expect(add).not.toHaveBeenCalled()
+    expect(wrapper.find('[data-testid="account-payment-consent-required"]').exists()).toBe(true)
+  })
+
+  it('withdraws the missing-agreement warning once the agreement is ticked', async () => {
+    const wrapper = mountAccount(PaymentMethodsTab)
+    await wrapper.find('[data-testid="account-payment-add"]').trigger('click')
+    await wrapper.find('[data-testid="account-payment-add-form"]').trigger('submit')
+    expect(wrapper.find('[data-testid="account-payment-consent-required"]').exists()).toBe(true)
+
+    await wrapper.find('[data-testid="account-payment-consent"]').trigger('click')
+
+    expect(wrapper.find('[data-testid="account-payment-consent-required"]').exists()).toBe(false)
+  })
+
+  it('marks a card charged automatically and offers to turn that off, only after confirmation', async () => {
+    const wrapper = mountAccount(PaymentMethodsTab)
+    const store = useAccountStore()
+    store.paymentMethods = [{ ...method, autoCharge: true }]
+    const turnOff = vi.spyOn(store, 'turnOffAutoCharge').mockResolvedValue(ActionOutcome.Succeeded)
+    vi.spyOn(store, 'loadPaymentMethods').mockResolvedValue()
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-testid="account-payment-auto-badge"]').exists()).toBe(true)
+    await wrapper.find('[data-testid="account-payment-auto-off"]').trigger('click')
+    expect(turnOff).not.toHaveBeenCalled()
+
+    await wrapper.find('[data-testid="ui-confirm-confirm"]').trigger('click')
+    await Promise.resolve()
+    await wrapper.vm.$nextTick()
+
+    expect(turnOff).toHaveBeenCalledTimes(1)
+    expect(wrapper.find('[data-testid="account-payment-success"]').text()).toBe('client.payment.turnOffDone')
+  })
+
+  it('offers no turn-off button when no card is charged automatically', async () => {
+    const wrapper = mountAccount(PaymentMethodsTab)
+    useAccountStore().paymentMethods = [method]
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-testid="account-payment-auto-off"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="account-payment-auto-badge"]').exists()).toBe(false)
   })
 
   it('makes a method the default and reports it', async () => {

@@ -174,7 +174,7 @@ public sealed class SettleInvoiceCardPaymentHandler
     private async Task<Invoice?> LoadInvoiceAsync(int invoiceId, CancellationToken ct)
     {
         return await _context.Invoices
-            .TagWith("settle-invoice-load")
+            .TagWith(SettlementQueryTags.InvoiceLoad)
             .Include(i => i.Transactions)
             .FirstOrDefaultAsync(i => i.Id == invoiceId, ct);
     }
@@ -288,6 +288,10 @@ public sealed class SettleInvoiceCardPaymentHandler
         // The ledger was read before the invoice was loaded, and another request may have recorded
         // this very payment in between (two clicks of one charge). Whatever refused this request, the
         // money it would hand back is then recorded, and refunding it would refund a settled payment.
+        // One committed read here is enough, with no lock: a request records the payment in the same
+        // save that marks the invoice Paid, so a refusal caused by that settlement means its row is
+        // already committed and this read sees it, and an invoice that is no longer payable cannot
+        // take this payment afterwards.
         var replay = await ReplayAsync(cmd, ct);
         if (replay is not null)
         {

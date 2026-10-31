@@ -3,12 +3,15 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Billing.Commands.CompleteGatewayPayment;
+using Innovayse.Hostpanel.Application.Billing.Extensions;
+using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Billing.Events;
 using Innovayse.Hostpanel.Domain.Clients;
+using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
@@ -581,6 +584,131 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         var published = await CompleteTrackedAsync(invoiceId, PaidResolver($"ref-{Guid.NewGuid():N}"));
 
         published.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// A gateway that reports paid with an empty reference names no payment, so nothing can be recorded
+    /// under it: the ledger check answers "not recorded" without a query or an exception, and the
+    /// completion of an invoice another path settled still answers Paid instead of failing.
+    /// </summary>
+    [Fact]
+    public async Task EmptyGatewayReference_IsTreatedAsNotRecordedAndDoesNotThrow()
+    {
+        var invoiceId = await SeedInvoiceWithSessionDirectlyAsync();
+        await RecordManualPaymentAsync(invoiceId, 10m);
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", new FakePaymentPlugin
+        {
+            StatusResult = new(GatewayPaymentState.Paid, string.Empty, "orderStatus:2", AmountMinor: 1000),
+        });
+        using var scope = factory.Services.CreateScope();
+
+        var result = await HandlerFor(scope, resolver).HandleAsync(new CompleteGatewayPaymentCommand(invoiceId), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.State.Should().Be(GatewayCompletionState.Paid);
+        (await scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>().IsRecordedAsync(string.Empty, CancellationToken.None))
+            .Should().BeFalse();
+    }
+
+    /// <summary>
+    /// The conflict path (the invoice was cancelled between the read and the save) hands the gateway's
+    /// money back through the balance and publishes the credited alert exactly once, after the save.
+    /// </summary>
+    [Fact]
+    public async Task ConcurrentCancel_PublishesTheCreditedAlertExactlyOnce()
+    {
+        var invoiceId = await SeedInvoiceWithSessionDirectlyAsync();
+        var reference = $"ref-{Guid.NewGuid():N}";
+        using var readerScope = factory.Services.CreateScope();
+        var readerContext = readerScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var handler = HandlerFor(readerScope, PaidResolver(reference));
+
+        // The handler's context holds the pre-cancel row, so its settle save conflicts.
+        _ = await readerContext.Invoices.FirstAsync(i => i.Id == invoiceId);
+        await CancelAsync(invoiceId);
+
+        var published = await PublishedDuringAsync(factory.Services, async () =>
+        {
+            var result = await handler.HandleAsync(new CompleteGatewayPaymentCommand(invoiceId), CancellationToken.None);
+            result.ErrorCode.Should().Be(HostpanelErrorCodes.INVOICE_NOT_PAYABLE);
+        });
+
+        var alert = published.Should().ContainSingle().Which;
+        alert.InvoiceId.Should().Be(invoiceId);
+        alert.Reference.Should().Be(reference);
+        alert.Amount.Should().Be(10m);
+        alert.Credited.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// When the hand-back's own save is lost (the client's balance moved underneath it), nothing is
+    /// published: no ledger row, no credit and no alert, because the event follows the save.
+    /// </summary>
+    [Fact]
+    public async Task ConcurrentCancel_WhenTheHandBackSaveIsLost_PublishesNothing()
+    {
+        var invoiceId = await SeedInvoiceWithSessionDirectlyAsync();
+        var reference = $"ref-{Guid.NewGuid():N}";
+        int clientId;
+        using (var seed = factory.Services.CreateScope())
+        {
+            clientId = (await seed.ServiceProvider.GetRequiredService<IHostpanelDbContext>().Invoices
+                .AsNoTracking().SingleAsync(i => i.Id == invoiceId)).ClientId;
+        }
+
+        // Fires as the hand-back saves its credit: another writer moves the client's balance first.
+        var hook = new CreditSaveHookInterceptor(async () =>
+        {
+            using var other = factory.Services.CreateScope();
+            (await other.ServiceProvider.GetRequiredService<IClientCredit>()
+                .AddAndSaveAsync(new ClientCreditChange(clientId, 1m), CancellationToken.None)).IsSuccess.Should().BeTrue();
+        });
+        var host = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services =>
+                services.ConfigureDbContext<AppDbContext>(options => options.AddInterceptors(hook))));
+        using var readerScope = host.Services.CreateScope();
+        var readerContext = readerScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var handler = HandlerFor(readerScope, PaidResolver(reference));
+        _ = await readerContext.Invoices.FirstAsync(i => i.Id == invoiceId);
+        await CancelAsync(invoiceId);
+
+        var published = await PublishedDuringAsync(host.Services, async () =>
+        {
+            var act = () => handler.HandleAsync(new CompleteGatewayPaymentCommand(invoiceId), CancellationToken.None);
+            await act.Should().ThrowAsync<ConcurrencyConflictException>();
+        });
+
+        hook.Fired.Should().BeTrue("the balance must have moved while the hand-back was saving");
+        published.Should().BeEmpty();
+        using var checkScope = factory.Services.CreateScope();
+        var check = checkScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await check.Transactions.AsNoTracking().AnyAsync(t => t.TransactionId == reference)).Should().BeFalse();
+        (await BillingTestSeeds.CreditBalanceOfAsync(factory, clientId)).Should().Be(1m);
+    }
+
+    /// <summary>Cancels an invoice from a scope of its own, as an administrator would.</summary>
+    /// <param name="invoiceId">The invoice.</param>
+    /// <returns>A task that completes once saved.</returns>
+    private async Task CancelAsync(int invoiceId)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await context.Invoices.FirstAsync(i => i.Id == invoiceId)).Cancel();
+        await context.SaveChangesAsync(CancellationToken.None);
+    }
+
+    /// <summary>Runs an action and waits until the bus has handled everything it published.</summary>
+    /// <param name="services">The services of the host whose bus the action publishes through.</param>
+    /// <param name="action">What to run.</param>
+    /// <returns>The credited-payment alerts published meanwhile.</returns>
+    private static async Task<IReadOnlyList<GatewayPaymentCreditedEvent>> PublishedDuringAsync(
+        IServiceProvider services, Func<Task> action)
+    {
+        var session = await services.GetRequiredService<IHost>().TrackActivity()
+            .Timeout(TimeSpan.FromSeconds(60))
+            .ExecuteAndWaitAsync((Func<IMessageContext, Task>)(_ => action()));
+        return session.Executed.MessagesOf<GatewayPaymentCreditedEvent>().ToList();
     }
 
     /// <summary>A resolver whose bank gateway reports the full 10.00 paid under a reference.</summary>

@@ -388,12 +388,15 @@ public sealed class SettleInvoiceCardPaymentTests(IntegrationTestFactory factory
     {
         var invoiceId = await SeedUnpaidInvoiceAsync(await BillingTestSeeds.SeedClientAsync(factory));
         var transactionId = $"pi_{Guid.NewGuid():N}";
-        _host = BuildHost(new InvoiceLoadHookInterceptor(async () =>
-            (await InvokeAsync(Payment(invoiceId, transactionId))).IsSuccess.Should().BeTrue()));
+        var hook = new InvoiceLoadHookInterceptor(async () =>
+            (await InvokeAsync(Payment(invoiceId, transactionId))).IsSuccess.Should().BeTrue());
+        _host = BuildHost(hook);
 
         var result = await InvokeAsync(Payment(invoiceId, transactionId));
 
         result.IsSuccess.Should().BeTrue();
+        hook.Fired.Should().BeTrue("the other request must have settled between the ledger read and the invoice load");
+        hook.LedgerReadsBeforeFire.Should().Be(1);
         _cardGateway.RefundInstructions.Should().BeEmpty();
         (await LedgerRowAsync(transactionId)).InvoiceId.Should().Be(invoiceId);
         using var scope = factory.Services.CreateScope();
@@ -402,38 +405,13 @@ public sealed class SettleInvoiceCardPaymentTests(IntegrationTestFactory factory
     }
 
     /// <summary>
-    /// Another request records this very transaction as a part payment of the invoice between this
-    /// settlement's ledger read and its invoice load: the invoice is still open but now owes less than
-    /// this payment, so it is refused with <c>PAYMENT_INTENT_MISMATCH</c>. The payment is recorded on
-    /// the invoice, so this is a replay: success, one ledger row, nothing refunded.
-    /// </summary>
-    [Fact]
-    public async Task HandleAsync_RecordedInlineWithTheSameTransactionAtTheLoad_AnswersSuccessWithoutRefundAsync()
-    {
-        var invoiceId = await SeedUnpaidInvoiceAsync(await BillingTestSeeds.SeedClientAsync(factory));
-        var transactionId = $"pi_{Guid.NewGuid():N}";
-        _host = BuildHost(new InvoiceLoadHookInterceptor(async () =>
-        {
-            using var other = factory.Services.CreateScope();
-            var context = other.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            var invoice = await context.Invoices.Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
-            context.Transactions.Add(invoice.AddPayment(
-                DateTimeOffset.UtcNow, PaymentMethodNames.Card, transactionId, 5m, 0m, null));
-            await context.SaveChangesAsync(CancellationToken.None);
-        }));
-
-        var result = await InvokeAsync(Payment(invoiceId, transactionId));
-
-        result.IsSuccess.Should().BeTrue();
-        _cardGateway.RefundInstructions.Should().BeEmpty();
-        (await LedgerRowAsync(transactionId)).InvoiceId.Should().Be(invoiceId);
-    }
-
-    /// <summary>
     /// Another request records the transaction for a different invoice between this settlement's
     /// ledger read and its invoice load, and this settlement is then refused (the amount is not what is
     /// due). Handing the payment back would refund money the ledger holds, so the refusal answers
-    /// <c>PAYMENT_INTENT_ALREADY_USED</c> and the gateway is not asked to refund.
+    /// <c>PAYMENT_INTENT_ALREADY_USED</c> and the gateway is not asked to refund. This is also the
+    /// realistic cover of a <c>PAYMENT_INTENT_MISMATCH</c> refusal reached with the money already
+    /// recorded: no other setup reaches it, because a settlement records only what is still due and a
+    /// card row for part of an invoice cannot be produced by the domain.
     /// </summary>
     [Fact]
     public async Task ReturnPayment_WhenTheTransactionIsRecordedForAnotherInvoice_AnswersAlreadyUsedWithoutRefundAsync()
@@ -442,17 +420,112 @@ public sealed class SettleInvoiceCardPaymentTests(IntegrationTestFactory factory
         var invoiceId = await SeedUnpaidInvoiceAsync(clientId);
         var otherInvoiceId = await SeedUnpaidInvoiceAsync(clientId);
         var transactionId = $"pi_{Guid.NewGuid():N}";
-        _host = BuildHost(new InvoiceLoadHookInterceptor(async () =>
-            (await InvokeAsync(Payment(otherInvoiceId, transactionId))).IsSuccess.Should().BeTrue()));
+        var hook = new InvoiceLoadHookInterceptor(async () =>
+            (await InvokeAsync(Payment(otherInvoiceId, transactionId))).IsSuccess.Should().BeTrue());
+        _host = BuildHost(hook);
 
         var result = await InvokeAsync(new SettleInvoiceCardPaymentCommand(invoiceId, transactionId, 25m, "USD"));
 
         result.ErrorCode.Should().Be(HostpanelErrorCodes.PAYMENT_INTENT_ALREADY_USED);
+        hook.Fired.Should().BeTrue("the other request must have recorded the transaction between the ledger read and the invoice load");
+        hook.LedgerReadsBeforeFire.Should().Be(1);
         _cardGateway.RefundInstructions.Should().BeEmpty();
         (await LedgerRowAsync(transactionId)).InvoiceId.Should().Be(otherInvoiceId);
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         (await context.Invoices.AsNoTracking().SingleAsync(i => i.Id == invoiceId)).Status.Should().Be(InvoiceStatus.Unpaid);
+    }
+
+    /// <summary>
+    /// A save that conflicts because another writer changed the invoice, while that writer's request also
+    /// recorded this transaction for another invoice, is answered on the reload as <c>PAYMENT_INTENT_ALREADY_USED</c>:
+    /// the money is on the ledger, so the gateway is not asked to refund it.
+    /// </summary>
+    [Fact]
+    public async Task ReloadAfterConflict_WhenTheTransactionIsRecordedForAnotherInvoice_AnswersAlreadyUsedWithoutRefundAsync()
+    {
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
+        var invoiceId = await SeedUnpaidInvoiceAsync(clientId);
+        var otherInvoiceId = await SeedUnpaidInvoiceAsync(clientId);
+        var transactionId = $"pi_{Guid.NewGuid():N}";
+
+        var (result, hook) = await SettleAfterCompetingWriteAsync(
+            invoiceId, transactionId, () => InvokeAsync(Payment(otherInvoiceId, transactionId)));
+
+        result.ErrorCode.Should().Be(HostpanelErrorCodes.PAYMENT_INTENT_ALREADY_USED);
+        hook.Fired.Should().BeTrue();
+        _cardGateway.RefundInstructions.Should().BeEmpty();
+        (await LedgerRowAsync(transactionId)).InvoiceId.Should().Be(otherInvoiceId);
+    }
+
+    /// <summary>
+    /// The same conflict where the transaction was meanwhile written as a returned payment (a row on no
+    /// invoice, as a refund leaves): the reload answers <c>PAYMENT_INTENT_ALREADY_USED</c> and nothing is refunded.
+    /// </summary>
+    [Fact]
+    public async Task ReloadAfterConflict_WhenTheTransactionIsRecordedAsAReturnRow_AnswersAlreadyUsedWithoutRefundAsync()
+    {
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
+        var invoiceId = await SeedUnpaidInvoiceAsync(clientId);
+        var transactionId = $"pi_{Guid.NewGuid():N}";
+
+        var (result, hook) = await SettleAfterCompetingWriteAsync(
+            invoiceId,
+            transactionId,
+            async () =>
+            {
+                using var other = factory.Services.CreateScope();
+                var context = other.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+                context.Transactions.Add(Transaction.Create(
+                    clientId, DateTimeOffset.UtcNow, "Card payment refunded", transactionId, null,
+                    PaymentMethodNames.Card, InvoiceTotal, InvoiceTotal, 0m, addedToCredit: false, "USD"));
+                await context.SaveChangesAsync(CancellationToken.None);
+            });
+
+        result.ErrorCode.Should().Be(HostpanelErrorCodes.PAYMENT_INTENT_ALREADY_USED);
+        hook.Fired.Should().BeTrue();
+        _cardGateway.RefundInstructions.Should().BeEmpty();
+        (await LedgerRowAsync(transactionId)).InvoiceId.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Runs the settlement of an invoice whose save is made to conflict, with <paramref name="record"/>
+    /// executed by the hook right after the settlement read the ledger empty: the handler's context
+    /// already holds the invoice, the hook records the transaction and edits the invoice, so the save
+    /// conflicts and the reload finds the transaction on the ledger.
+    /// </summary>
+    /// <param name="invoiceId">The invoice being settled.</param>
+    /// <param name="transactionId">The card transaction of the payment.</param>
+    /// <param name="record">What the competing writer does with the transaction.</param>
+    /// <returns>The handler's result and the hook, whose <see cref="InvoiceLoadHookInterceptor.Fired"/> proves the race happened.</returns>
+    private async Task<(Result Result, InvoiceLoadHookInterceptor Hook)> SettleAfterCompetingWriteAsync(
+        int invoiceId, string transactionId, Func<Task> record)
+    {
+        var hook = new InvoiceLoadHookInterceptor(async () =>
+        {
+            await record();
+            using var other = factory.Services.CreateScope();
+            var otherContext = other.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            (await otherContext.Invoices.FirstAsync(i => i.Id == invoiceId)).UpdateNotes("Edited by staff");
+            await otherContext.SaveChangesAsync(CancellationToken.None);
+        });
+        _host = BuildHost(hook);
+        using var scope = _host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var handler = new SettleInvoiceCardPaymentHandler(
+            context,
+            scope.ServiceProvider.GetRequiredService<IActivityLogger>(),
+            scope.ServiceProvider.GetRequiredService<IClock>(),
+            _cardGateway,
+            scope.ServiceProvider.GetRequiredService<IClientCredit>(),
+            scope.ServiceProvider.GetRequiredService<IMessageBus>(),
+            NullLogger<SettleInvoiceCardPaymentHandler>.Instance);
+
+        // The handler's context holds the pre-conflict invoice, so its own load moments later hands
+        // back this tracked version and its save conflicts once the hook has edited the row.
+        _ = await context.Invoices.Include(i => i.Transactions).FirstAsync(i => i.Id == invoiceId);
+        var result = await handler.HandleAsync(Payment(invoiceId, transactionId), CancellationToken.None);
+        return (result, hook);
     }
 
     /// <summary>Reads the one ledger row written under a payment reference.</summary>

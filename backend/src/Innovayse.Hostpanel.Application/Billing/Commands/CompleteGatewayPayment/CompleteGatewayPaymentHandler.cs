@@ -72,8 +72,8 @@ public sealed class CompleteGatewayPaymentHandler
     /// <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c>, or <c>GATEWAY_PAYMENT_MISMATCH</c> when the gateway
     /// reports a paid amount below what the invoice owes, or another currency (the invoice stays
     /// unpaid). A paid amount above what is owed (a payment recorded while the session was open)
-    /// settles the invoice and puts the rest on the client's credit balance, and staff are alerted once
-    /// after the save that credited it. A paid status without
+    /// settles the invoice and puts the rest on the client's credit balance, and staff are alerted after the
+    /// save that credited it, never twice. A paid status without
     /// an amount is a mismatch. When another path settled or closed the invoice while the session
     /// was open, whatever the session took that the ledger does not hold goes to the client's
     /// balance (<c>INVOICE_NOT_PAYABLE</c> when the invoice was closed unpaid).
@@ -179,7 +179,7 @@ public sealed class CompleteGatewayPaymentHandler
 
         // Published only after the save, like the reconciler's stalled alert: a save that lost to a
         // conflict above publishes nothing, and a replay finds the ledger row and publishes nothing,
-        // so staff are told once.
+        // so the alert is never sent twice.
         if (paidMinor > dueMinor)
         {
             await _bus.PublishAsync(new GatewayPaymentCreditedEvent(
@@ -273,7 +273,7 @@ public sealed class CompleteGatewayPaymentHandler
     /// could not record it (another path settled it, or it was closed), the same rule as the part
     /// above what is due on a settlement. The money is written to the ledger under the gateway's
     /// reference in the same save, so a replay finds it there and never credits it twice, and staff are
-    /// told once, after that save, through <see cref="GatewayPaymentCreditedEvent"/>. Money in
+    /// told after that save and never twice, through <see cref="GatewayPaymentCreditedEvent"/>. Money in
     /// another currency than the client's billing currency, or that the gateway reports without an
     /// amount, is not credited: it is written as held and raised as a critical log line for an operator.
     /// </summary>

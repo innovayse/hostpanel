@@ -1,4 +1,5 @@
 using System.Data.Common;
+using Innovayse.Hostpanel.Application.Billing.Common;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
@@ -14,7 +15,7 @@ internal sealed class SettlementWindowLoadInterceptor(SettlementWindowGate gate)
         InterceptionResult<DbDataReader> result,
         CancellationToken cancellationToken = default)
     {
-        if (command.CommandText.Contains(SettlementWindowGate.InvoiceLoadTag, StringComparison.Ordinal))
+        if (command.CommandText.Contains(SettlementQueryTags.InvoiceLoad, StringComparison.Ordinal))
         {
             await gate.AtInvoiceLoadAsync(eventData.Context, cancellationToken);
         }

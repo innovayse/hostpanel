@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,16 +19,26 @@ public static class CardPaymentLedgerExtensions
     /// <param name="context">The module's data context.</param>
     /// <param name="transactionId">The gateway's reference of the payment.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>One entry per ledger row of the transaction; empty when the transaction is not recorded.</returns>
+    /// <returns>
+    /// One entry per ledger row of the transaction; empty when the transaction is not recorded. An
+    /// empty reference names no payment and is never recorded, so it answers empty without a query.
+    /// </returns>
     public static async Task<IReadOnlyList<int?>> RecordedInvoiceIdsAsync(
         this IHostpanelDbContext context, string transactionId, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(context);
-        ArgumentException.ThrowIfNullOrEmpty(transactionId);
+
+        // A gateway may report no reference at all (the caller then falls back to its own session id,
+        // which can be empty too). That names no payment, so nothing is recorded under it: it is
+        // answered, not refused, so the payment path behaves as it did before this check existed.
+        if (string.IsNullOrEmpty(transactionId))
+        {
+            return [];
+        }
 
         // Read as the database holds it: a row seen here was saved together with the Paid mark it belongs to.
         return await context.Transactions
-            .TagWith("settle-ledger-read")
+            .TagWith(SettlementQueryTags.LedgerRead)
             .AsNoTracking()
             .Where(t => t.TransactionId == transactionId)
             .Select(t => t.InvoiceId)

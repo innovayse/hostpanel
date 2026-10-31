@@ -17,9 +17,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 /// </remarks>
 internal sealed class SettlementWindowGate
 {
-    /// <summary>The query tag the settlement handler puts on its invoice load, which the gate keys on.</summary>
-    public const string InvoiceLoadTag = "settle-invoice-load";
-
     /// <summary>The longest a request waits for the other before the test fails instead of hanging.</summary>
     private static readonly TimeSpan Patience = TimeSpan.FromSeconds(30);
 

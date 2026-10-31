@@ -11,6 +11,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 /// </summary>
 public sealed class FakeCardPaymentGateway : ICardPaymentGateway
 {
+    /// <summary>Guards <see cref="RefundInstructions"/> and <see cref="RefundsByKey"/>, which concurrent requests write.</summary>
+    private readonly object _refundLock = new();
+
     /// <inheritdoc/>
     public bool IsConfigured { get; set; }
 
@@ -62,9 +65,6 @@ public sealed class FakeCardPaymentGateway : ICardPaymentGateway
     /// times out or faults part way through a refund would; null when no call throws.
     /// </summary>
     public int? ThrowsOnRefundCall { get; set; }
-
-    /// <summary>Guards <see cref="RefundInstructions"/> and <see cref="RefundsByKey"/>, which concurrent requests write.</summary>
-    private readonly object _refundLock = new();
 
     /// <summary>Every instruction <see cref="RefundAsync"/> was called with, in order.</summary>
     public List<CardRefundInstruction> RefundInstructions { get; } = [];

@@ -13,7 +13,7 @@ import { useResultBanner } from '@/composables/useResultBanner'
 import { formatPlainAmount } from '@/lib/money'
 import AddBillableItemModal from '@/components/clients/AddBillableItemModal.vue'
 import AddTimeBillingModal from '@/components/clients/AddTimeBillingModal.vue'
-import type { ClientBillableItem } from '@/types/billableitem'
+import type { ClientBillableItem, CurrencyAmount } from '@/types/billableitem'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
@@ -87,14 +87,18 @@ const uninvoicedItems = ref<ClientBillableItem[]>([])
 /** Invoiced billable items for this client (current page). */
 const invoicedItems = ref<ClientBillableItem[]>([])
 
-/** Sum of all uninvoiced item amounts. */
-const uninvoicedTotal = ref(0)
+/** Sums of the uninvoiced item amounts, one per currency. */
+const uninvoicedTotal = ref<CurrencyAmount[]>([])
 
 /**
- * The uninvoiced total with the currency the items carry. The API sums the amounts without
- * converting, so the total is written in the currency of the first item (a client bills in one).
+ * The uninvoiced totals, one entry per currency the items are in, written with
+ * `formatPlainAmount` and joined with commas. Amounts of different currencies are never added; with
+ * no items the total reads as zero.
  */
-const uninvoicedTotalLabel = computed(() => formatPlainAmount(uninvoicedTotal.value, uninvoicedItems.value[0]?.currency))
+const uninvoicedTotalLabel = computed(() =>
+  uninvoicedTotal.value.length === 0
+    ? formatPlainAmount(0)
+    : uninvoicedTotal.value.map((entry) => formatPlainAmount(entry.amount, entry.currency)).join(', '))
 
 /** Current invoiced items page (1-based). */
 const invoicedPage = ref(1)

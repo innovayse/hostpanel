@@ -27,11 +27,7 @@ public sealed class UpsertCurrencyValidator : LocalizedValidator<UpsertCurrencyC
     public UpsertCurrencyValidator(IStringLocalizer<ApplicationValidationMessages> localizer)
         : base(localizer)
     {
-        RuleFor(x => x.Code)
-            .NotEmpty()
-            .Length(CodeLength)
-            .Must(code => code!.All(char.IsAsciiLetter))
-            .WithMessage(L["CurrencyCodeInvalid"]);
+        RuleFor(x => x.Code).MustBeCurrencyCode(L["CurrencyCodeInvalid"]);
 
         RuleFor(x => x.Numeric)
             .NotEmpty()

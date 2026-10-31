@@ -12,9 +12,6 @@ namespace Innovayse.Hostpanel.Application.Products.Commands.UpdateProductPrices;
 /// </summary>
 public sealed class UpdateProductPricesValidator : LocalizedValidator<UpdateProductPricesCommand>
 {
-    /// <summary>Length of an ISO 4217 alpha code.</summary>
-    private const int CodeLength = 3;
-
     /// <summary>
     ///     Initializes validator with localization service.
     /// </summary>
@@ -26,11 +23,7 @@ public sealed class UpdateProductPricesValidator : LocalizedValidator<UpdateProd
             .NotEmpty()
             .WithMessage(L["CurrenciesRequired"]);
 
-        RuleForEach(x => x.Currencies)
-            .NotEmpty()
-            .Length(CodeLength)
-            .Must(code => code.All(char.IsAsciiLetter))
-            .WithMessage(L["CurrencyCodeInvalid"]);
+        RuleForEach(x => x.Currencies).MustBeCurrencyCode(L["CurrencyCodeInvalid"]);
 
         // "usd" and "USD" name one currency; listing it twice would convert and write it twice.
         RuleFor(x => x.Currencies)

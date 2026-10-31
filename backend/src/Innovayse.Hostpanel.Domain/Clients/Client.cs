@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Clients.Events;
 using Innovayse.Hostpanel.SharedKernel.Domain;
@@ -13,9 +14,6 @@ namespace Innovayse.Hostpanel.Domain.Clients;
 /// </summary>
 public sealed class Client : BaseEntity, IAggregateRoot
 {
-    /// <summary>Length of an ISO 4217 alpha code, the only shape <see cref="Currency"/> is stored in.</summary>
-    private const int CurrencyCodeLength = 3;
-
     /// <summary>Longest first or last name the stored column holds.</summary>
     private const int NameMaxLength = 100;
 
@@ -298,18 +296,17 @@ public sealed class Client : BaseEntity, IAggregateRoot
     /// <c>Invoice</c> stores it: three letters, upper case.
     /// </remarks>
     /// <param name="code">ISO 4217 alpha code, normalised to upper case.</param>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="code"/> is not three characters.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="code"/> is not three ASCII letters once trimmed.</exception>
     /// <exception cref="DomainRuleException">
     /// Thrown with <c>CLIENT_CURRENCY_LOCKED_BY_CREDIT</c> when an existing currency would change to another while the credit balance is not zero.
     /// </exception>
     public void SetCurrency(string code)
     {
-        if (string.IsNullOrWhiteSpace(code) || code.Length != CurrencyCodeLength)
+        if (!CurrencyCode.TryNormalise(code, out var normalised))
         {
             throw new ArgumentException("A client's currency is a three-letter ISO 4217 code.", nameof(code));
         }
 
-        var normalised = code.ToUpperInvariant();
         if (CreditBalance != 0m && Currency is not null && !string.Equals(normalised, Currency, StringComparison.Ordinal))
         {
             throw new DomainRuleException(

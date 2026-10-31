@@ -20,11 +20,73 @@ public sealed class CurrencyCodeTests
     [InlineData("   ")]
     [InlineData("US")]
     [InlineData("USDD")]
+    [InlineData("123")]
+    [InlineData("12!")]
+    [InlineData("U$D")]
+    [InlineData("US1")]
+    [InlineData("E R")]
+    [InlineData("€UR")]
+    [InlineData("ЕUR")]
+    [InlineData(" eu")]
+    [InlineData("eu ")]
     public void Normalise_RefusesAnythingButThreeLetters(string currency)
     {
         var act = () => CurrencyCode.Normalise(currency);
 
         act.Should().Throw<ArgumentException>();
+    }
+
+    /// <summary>A missing code is refused as an argument error rather than a null reference.</summary>
+    [Fact]
+    public void Normalise_RefusesNull()
+    {
+        var act = () => CurrencyCode.Normalise(null!);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    /// <summary>Padding around a three-letter code is trimmed first, so the code is stored clean and upper case.</summary>
+    /// <param name="currency">A padded code.</param>
+    [Theory]
+    [InlineData(" eur")]
+    [InlineData("eur ")]
+    [InlineData("  EUR  ")]
+    [InlineData("\teur\n")]
+    public void Normalise_TrimsPaddingBeforeChecking(string currency)
+    {
+        CurrencyCode.Normalise(currency).Should().Be("EUR");
+    }
+
+    /// <summary>The shape check accepts only three ASCII letters of either case, with no padding.</summary>
+    /// <param name="currency">The value to inspect.</param>
+    /// <param name="expected">Whether it is a valid shape.</param>
+    [Theory]
+    [InlineData("USD", true)]
+    [InlineData("usd", true)]
+    [InlineData("uSd", true)]
+    [InlineData(" USD", false)]
+    [InlineData("USD ", false)]
+    [InlineData("12!", false)]
+    [InlineData("123", false)]
+    [InlineData("US", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void IsValid_AcceptsOnlyThreeAsciiLetters(string? currency, bool expected)
+    {
+        CurrencyCode.IsValid(currency).Should().Be(expected);
+    }
+
+    /// <summary>The non-throwing form trims and upper-cases a good code and reports a bad one.</summary>
+    [Fact]
+    public void TryNormalise_TrimsAndUpperCasesAGoodCodeAndRefusesABadOne()
+    {
+        CurrencyCode.TryNormalise(" eur ", out var good).Should().BeTrue();
+        good.Should().Be("EUR");
+
+        CurrencyCode.TryNormalise("12!", out var bad).Should().BeFalse();
+        bad.Should().BeEmpty();
+
+        CurrencyCode.TryNormalise(null, out _).Should().BeFalse();
     }
 
     /// <summary>The exponent is the ISO 4217 one, whatever the code's case.</summary>

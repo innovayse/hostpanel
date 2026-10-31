@@ -6,6 +6,7 @@ using Innovayse.Hostpanel.Application.Migration.Importers.Enums;
 using Innovayse.Hostpanel.Application.Migration.Importers.Records;
 using Innovayse.Hostpanel.Application.Migration.Importers.SourceValues;
 using Innovayse.Hostpanel.Domain.Auth.Enums;
+using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Migration;
 using Innovayse.Hostpanel.Domain.Migration.Enums;
@@ -158,11 +159,13 @@ public sealed class ClientsImporter : IMigrationEntityImporter
                 country: rec.Address.Country ?? string.Empty);
         }
 
-        if (!string.IsNullOrWhiteSpace(rec.Billing.Currency))
+        // Recorded as the source had it once trimmed; whether the code is one this panel offers is
+        // the operator's to sort out after the pull, the same as every other field imported here.
+        // A value that is not a three-letter code is left out rather than failing the client: the
+        // currency is optional, and losing the client and everything filed under it for it is worse.
+        if (CurrencyCode.TryNormalise(rec.Billing.Currency, out var billingCurrency))
         {
-            // Recorded as the source had it; whether the code is one this panel offers is the
-            // operator's to sort out after the pull, the same as every other field imported here.
-            clientEntity.SetCurrency(rec.Billing.Currency);
+            clientEntity.SetCurrency(billingCurrency);
         }
 
         if (rec.Billing.TaxExempt)

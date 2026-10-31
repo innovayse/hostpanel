@@ -16,7 +16,7 @@ public sealed class GetProductCyclePricesValidator : LocalizedValidator<GetProdu
         RuleForEach(x => x.Lookups).ChildRules(lookup =>
         {
             lookup.RuleFor(l => l.ProductId).GreaterThan(0).WithMessage(L["ProductIdInvalid"]);
-            lookup.RuleFor(l => l.CurrencyCode).NotEmpty().WithMessage(L["ProductPriceCurrencyInvalid"]);
+            lookup.RuleFor(l => l.CurrencyCode).MustBeCurrencyCode(L["ProductPriceCurrencyInvalid"]);
             lookup.RuleFor(l => l.Cycle).IsInEnum().WithMessage(L["ServiceBillingCycleInvalid"]);
         });
     }

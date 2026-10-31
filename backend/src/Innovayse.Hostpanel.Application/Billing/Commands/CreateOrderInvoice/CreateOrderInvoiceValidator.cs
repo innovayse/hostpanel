@@ -8,9 +8,6 @@ namespace Innovayse.Hostpanel.Application.Billing.Commands.CreateOrderInvoice;
 /// <summary>Validates <see cref="CreateOrderInvoiceCommand"/>.</summary>
 public sealed class CreateOrderInvoiceValidator : LocalizedValidator<CreateOrderInvoiceCommand>
 {
-    /// <summary>Length of an ISO 4217 alpha code.</summary>
-    private const int CurrencyCodeLength = 3;
-
     /// <summary>Longest line description an invoice stores.</summary>
     private const int DescriptionMaxLength = 500;
 
@@ -20,7 +17,7 @@ public sealed class CreateOrderInvoiceValidator : LocalizedValidator<CreateOrder
         : base(localizer)
     {
         RuleFor(x => x.ClientId).MustBePositiveId(L["InvoiceClientIdInvalid"]);
-        RuleFor(x => x.Currency).NotEmpty().Length(CurrencyCodeLength).WithMessage(L["CurrencyCodeInvalid"]);
+        RuleFor(x => x.Currency).MustBeCurrencyCode(L["CurrencyCodeInvalid"]);
         RuleFor(x => x.Items).NotEmpty().WithMessage(L["InvoiceItemsRequired"]);
         RuleForEach(x => x.Items).ChildRules(item =>
         {

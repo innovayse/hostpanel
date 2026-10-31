@@ -17,9 +17,6 @@ namespace Innovayse.Hostpanel.Application.Orders.Commands.PlaceOrder;
 /// </remarks>
 public sealed class PlaceOrderValidator : LocalizedValidator<PlaceOrderCommand>
 {
-    /// <summary>Length of an ISO 4217 alpha code, the only shape a currency may arrive in.</summary>
-    private const int CurrencyCodeLength = 3;
-
     /// <summary>Longest domain name, the order line column's limit.</summary>
     private const int DomainNameMaxLength = 253;
 
@@ -53,9 +50,8 @@ public sealed class PlaceOrderValidator : LocalizedValidator<PlaceOrderCommand>
         // and no validator here reads the database; the handler asks it and refuses with the
         // matching error code.
         RuleFor(x => x.Currency)
-            .Length(CurrencyCodeLength)
-            .When(x => x.Currency is not null)
-            .WithMessage(L["CurrencyCodeInvalid"]);
+            .MustBeCurrencyCode(L["CurrencyCodeInvalid"])
+            .When(x => x.Currency is not null);
 
         RuleForEach(x => x.Items).ChildRules(item =>
         {

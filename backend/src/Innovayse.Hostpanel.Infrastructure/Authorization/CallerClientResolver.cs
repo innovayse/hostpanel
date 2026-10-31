@@ -55,15 +55,22 @@ public sealed class CallerClientResolver : ICallerClientResolver
     /// <inheritdoc/>
     public async Task<CallerClientAccess> ResolveAsync(CancellationToken ct)
     {
-        // A request is one caller, and the policy, the permission filter and the use case all ask.
-        if (_memo.TryGet(out var kept))
+        // Nobody identified, nothing to keep: the answer is None and no memo is touched.
+        if (_caller.UserId is not { Length: > 0 } userId)
+        {
+            return CallerClientAccess.None;
+        }
+
+        // A request is one caller, and the policy, the permission filter and the use case all ask. The memo
+        // hands the answer back only to the subject it was resolved for.
+        if (_memo.TryGet(userId, out var kept))
         {
             return kept;
         }
 
         // A cancelled resolution throws before the answer is kept, so nothing half-read is remembered.
         var access = await ResolveFreshAsync(ct);
-        _memo.Set(access);
+        _memo.Set(userId, access);
 
         return access;
     }
@@ -96,7 +103,7 @@ public sealed class CallerClientResolver : ICallerClientResolver
         catch (IdentityPluginConflictException conflict)
         {
             // Fail closed: choosing one of the plugins would move people onto another account.
-            _logger.LogError(
+            _logger.LogWarning(
                 "Identity plugins {PluginIds} are all enabled; callers are refused until at most one stays enabled.",
                 string.Join(", ", conflict.PluginIds));
             return CallerClientAccess.Unavailable;
@@ -104,7 +111,7 @@ public sealed class CallerClientResolver : ICallerClientResolver
         catch (Exception ex) when (!ct.IsCancellationRequested)
         {
             // Activating the plugin failed (its settings, its assembly): same refusal, type only in the log.
-            _logger.LogError(
+            _logger.LogWarning(
                 "Activating the identity plugin failed with {ExceptionType}; callers are refused until it activates.",
                 ex.GetType().Name);
             return CallerClientAccess.Unavailable;
@@ -174,7 +181,7 @@ public sealed class CallerClientResolver : ICallerClientResolver
         {
             // A timeout, a transport fault or a plugin bug: nobody knows who this person is, so nobody is
             // let in. The message and the stack stay out of the log, a plugin may put its secrets in them.
-            _logger.LogError(
+            _logger.LogWarning(
                 "Identity plugin {Plugin} failed with {ExceptionType} ({Reason}); the caller is refused until it answers.",
                 plugin.GetType().Name,
                 ex.GetType().Name,

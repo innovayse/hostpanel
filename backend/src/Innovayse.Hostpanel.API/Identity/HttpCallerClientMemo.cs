@@ -6,7 +6,8 @@ namespace Innovayse.Hostpanel.API.Identity;
 
 /// <summary>
 /// Keeps the caller's resolved client account in <see cref="HttpContext.Items"/>, which every scope of the same
-/// request shares and which ends with the request.
+/// request shares and which ends with the request. The subject is stored beside the answer and compared on every
+/// read.
 /// </summary>
 public sealed class HttpCallerClientMemo : ICallerClientMemo
 {
@@ -24,11 +25,13 @@ public sealed class HttpCallerClientMemo : ICallerClientMemo
     }
 
     /// <inheritdoc/>
-    public bool TryGet(out CallerClientAccess access)
+    public bool TryGet(string userId, out CallerClientAccess access)
     {
-        if (_httpContextAccessor.HttpContext?.Items.TryGetValue(ItemKey, out var kept) == true && kept is CallerClientAccess found)
+        if (_httpContextAccessor.HttpContext?.Items.TryGetValue(ItemKey, out var kept) == true
+            && kept is Kept { } entry
+            && string.Equals(entry.UserId, userId, StringComparison.Ordinal))
         {
-            access = found;
+            access = entry.Access;
             return true;
         }
 
@@ -37,11 +40,11 @@ public sealed class HttpCallerClientMemo : ICallerClientMemo
     }
 
     /// <inheritdoc/>
-    public void Set(CallerClientAccess access)
+    public void Set(string userId, CallerClientAccess access)
     {
         if (_httpContextAccessor.HttpContext is { } context)
         {
-            context.Items[ItemKey] = access;
+            context.Items[ItemKey] = new Kept(userId, access);
         }
     }
 
@@ -50,4 +53,9 @@ public sealed class HttpCallerClientMemo : ICallerClientMemo
     {
         _httpContextAccessor.HttpContext?.Items.Remove(ItemKey);
     }
+
+    /// <summary>An answer together with the subject it was resolved for.</summary>
+    /// <param name="UserId">The subject the answer was resolved for.</param>
+    /// <param name="Access">The answer.</param>
+    private sealed record Kept(string UserId, CallerClientAccess Access);
 }

@@ -131,6 +131,9 @@ public static class DependencyInjection
                 // referenced as a string anywhere, so nothing depends on the trimmed form.
                 opts.SuppressAsyncSuffixInActionNames = false;
 
+                // Every client portal action can answer 503 IDENTITY_PLUGIN_UNAVAILABLE; declared once here.
+                opts.Conventions.Add(new Authorization.IdentityPluginUnavailableConvention());
+
                 // Required-ness is the validators' business, where every message is localized. Without this MVC
                 // makes a non-nullable string an implicit [Required] with a fixed English message, so a body
                 // that leaves out a route-supplied id (`command with { MemberUserId = userId }`) is a 400
@@ -176,6 +179,8 @@ public static class DependencyInjection
         services.ConfigureProblemDetailsAuthEvents();
         services.PostConfigure<JwtBearerOptions>(LocalJwtScheme.Name, o => o.UseProblemDetailsResponses());
         services.AddProblemDetailsAuthorizationResponses();
+        // Replaces the decorator above: the same 401 and 403 bodies, plus 503 when only the identity plugin failed.
+        services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationMiddlewareResultHandler, Authorization.IdentityPluginUnavailableResultHandler>();
         services.AddHostpanelSwagger();
 
         // The two cron startups below each hand Wolverine a message to deliver hours from now. Wolverine

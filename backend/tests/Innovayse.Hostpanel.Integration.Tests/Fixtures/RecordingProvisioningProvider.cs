@@ -19,6 +19,9 @@ public sealed class RecordingProvisioningProvider : IProvisioningProvider
     /// <summary>Every <see cref="TerminateAsync"/> call this fake was asked to make, in order.</summary>
     private readonly List<TerminateAccountOrder> _terminated = [];
 
+    /// <summary>The caller addresses recorded by <see cref="GetCPanelSsoUrlAsync"/>.</summary>
+    private readonly List<string?> _ssoCallerIps = [];
+
     /// <summary>Every <see cref="SuspendAsync"/> call this fake was asked to make, in order.</summary>
     public IReadOnlyList<SuspendAccountOrder> Suspended => _suspended;
 
@@ -58,9 +61,15 @@ public sealed class RecordingProvisioningProvider : IProvisioningProvider
         Task.FromResult(new ServiceCredentials(
             "recording-user", "recording-pass", "recording.example.test", "10.0.0.1", "http://panel.recording.example.test"));
 
+    /// <summary>The caller addresses every sign-in link was asked for, in order.</summary>
+    public IReadOnlyList<string?> SsoCallerIps => _ssoCallerIps;
+
     /// <inheritdoc/>
-    public Task<string> GetCPanelSsoUrlAsync(string provisioningRef, string? callerIp, CancellationToken ct) =>
-        Task.FromResult("https://recording-panel.example.test/sso");
+    public Task<string> GetCPanelSsoUrlAsync(string provisioningRef, string? callerIp, CancellationToken ct)
+    {
+        _ssoCallerIps.Add(callerIp);
+        return Task.FromResult("https://recording-panel.example.test/sso");
+    }
 
     /// <inheritdoc/>
     public Task ChangePasswordAsync(string provisioningRef, string newPassword, CancellationToken ct) =>

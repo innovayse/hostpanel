@@ -389,12 +389,18 @@ public sealed class PleskProvisioningProviderTests : IAsyncLifetime
             .And.Contain($"<user_ip>{Convert.ToBase64String("203.0.113.50"u8.ToArray())}</user_ip>");
     }
 
-    /// <summary>Without the caller's address no link is issued and the panel is not called, since it could not work.</summary>
+    /// <summary>
+    /// Without a browser's address (none, not an address, or loopback: an unresolved proxy) no link is
+    /// issued and the panel is not called, since the session could not be opened.
+    /// </summary>
     /// <param name="callerIp">The missing address.</param>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Theory]
     [InlineData(null)]
     [InlineData(" ")]
+    [InlineData("not-an-address")]
+    [InlineData("127.0.0.1")]
+    [InlineData("::1")]
     public async Task GetSsoUrl_Throws_WhenTheCallersAddressIsUnknownAsync(string? callerIp)
     {
         var provider = BuildProvider(new CapturingLogger<PleskProvisioningProvider>(), null);
@@ -415,6 +421,35 @@ public sealed class PleskProvisioningProviderTests : IAsyncLifetime
         var act = () => provider.GetCPanelSsoUrlAsync("testuser", "203.0.113.50", CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
+        plesk.Requests.Should().ContainSingle().Which.Body.Should().Contain("<create_session>");
+    }
+
+    /// <summary>An accepted session with no id is a failure, never a link with an empty session.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task GetSsoUrl_Throws_WhenPleskAnswersWithoutASessionIdAsync()
+    {
+        const string noId = """<packet><server><create_session><result><status>ok</status><id/></result></create_session></server></packet>""";
+        var provider = BuildProvider(new CapturingLogger<PleskProvisioningProvider>(), null, noId);
+
+        var act = () => provider.GetCPanelSsoUrlAsync("testuser", "203.0.113.50", CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        plesk.Requests.Should().ContainSingle();
+    }
+
+    /// <summary>An IPv4 caller seen through a dual-stack listener (::ffff:a.b.c.d) is bound as the IPv4 address Plesk will see.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task GetSsoUrl_BindsAnIpv4MappedAddressAsIpv4Async()
+    {
+        const string session = """<packet><server><create_session><result><status>ok</status><id>abc</id></result></create_session></server></packet>""";
+        var provider = BuildProvider(new CapturingLogger<PleskProvisioningProvider>(), null, session);
+
+        await provider.GetCPanelSsoUrlAsync("testuser", "::ffff:203.0.113.50", CancellationToken.None);
+
+        plesk.Requests.Should().ContainSingle().Which.Body.Should()
+            .Contain($"<user_ip>{Convert.ToBase64String("203.0.113.50"u8.ToArray())}</user_ip>");
     }
 
     /// <summary>No log line repeats the panel's error text or the order's domain.</summary>

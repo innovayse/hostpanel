@@ -26,7 +26,7 @@ import type { ClientInvoice } from '~/types/clientinvoice'
 import type { ClientDomain } from '~/types/clientdomain'
 import type { ClientTicket } from '~/types/clientticket'
 import { ServiceStatus } from '~/types/servicestatus'
-import { TicketStatus } from '~/types/ticketstatus'
+import { isTicketOpen } from '~/utils/ticketOpen'
 
 /**
  * True when the API answered that the signed-in identity has no client profile at all.
@@ -180,9 +180,9 @@ export const useClientStore = defineStore('client', {
     activeServiceCount: (state): number =>
       state.services.filter(s => s.status === ServiceStatus.Active).length,
 
-    /** Count of open tickets */
+    /** Count of open tickets, by the same rule as the Open tab of the tickets page */
     openTicketCount: (state): number =>
-      state.tickets.filter(t => t.status === TicketStatus.Open).length
+      state.tickets.filter(isTicketOpen).length
   },
 
   actions: {

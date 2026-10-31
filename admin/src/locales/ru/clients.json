@@ -253,6 +253,10 @@
     "bulkActionDone": "Выполнено для выбранных счетов.",
     "invoiceDeleted": "Счёт удалён."
   },
+  "clientNav": {
+    "rail": "Разделы клиента",
+    "strip": "Вкладки разделов клиента"
+  },
   "clientLayout": {
     "loadingClient": "Загрузка клиента…",
     "exportData": "Экспорт данных"

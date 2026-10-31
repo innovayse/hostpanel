@@ -15,6 +15,8 @@ const props = defineProps<{
   items: UiTabItem[]
   /** Value of the selected tab (two-way bound with `v-model`). */
   modelValue: string
+  /** Accessible name of the tab list, for a screen that has more than one. */
+  ariaLabel?: string
 }>()
 
 const emit = defineEmits<{
@@ -46,7 +48,7 @@ const onKeydown = (event: KeyboardEvent, index: number): void => {
 
 <template>
   <div>
-    <div role="tablist" class="flex gap-1 border-b border-border overflow-x-auto overflow-y-hidden">
+    <div role="tablist" :aria-label="ariaLabel" class="flex gap-1 border-b border-border overflow-x-auto overflow-y-hidden">
       <button
         v-for="(item, index) in items"
         :key="item.value"

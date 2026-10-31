@@ -213,16 +213,18 @@ onMounted(() => {
     <!-- Right: theme + language + notifications + account -->
     <UiStack direction="row" align="center" gap="sm">
       <!-- The theme picker and the Settings link do not fit a phone's top bar: Settings is in the menu drawer and the theme follows the system there. -->
-      <UiSelect
-        :model-value="theme.choice"
-        :options="themeOptions"
-        :placeholder="t('layout.theme.label')"
-        :aria-label="t('layout.theme.label')"
-        compact
-        class="w-28 max-sm:!hidden"
-        data-testid="topbar-theme"
-        @update:model-value="chooseTheme"
-      />
+      <div class="hidden sm:block">
+        <UiSelect
+          :model-value="theme.choice"
+          :options="themeOptions"
+          :placeholder="t('layout.theme.label')"
+          :aria-label="t('layout.theme.label')"
+          compact
+          class="w-28"
+          data-testid="topbar-theme"
+          @update:model-value="chooseTheme"
+        />
+      </div>
       <UiSelect
         :model-value="locale"
         :options="localeOptions"
@@ -248,24 +250,24 @@ onMounted(() => {
             class="pointer-events-none absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full bg-primary-500 ring-2 ring-surface-panel sm:hidden"
             data-testid="topbar-notification-dot"
           />
-          <UiBadge
-            tone="primary"
-            small
+          <span
             aria-hidden="true"
-            class="pointer-events-none absolute -right-2 -top-2 h-[1.0625rem] min-w-[1.0625rem] justify-center !px-1 !py-0 text-[0.625rem] leading-none ring-2 ring-surface-panel max-sm:hidden"
+            class="pointer-events-none absolute -right-2 -top-2 hidden h-[1.0625rem] min-w-[1.0625rem] items-center justify-center rounded-full bg-primary-500 px-1 text-[0.625rem] font-semibold leading-none text-on-primary ring-2 ring-surface-panel sm:flex"
             data-testid="topbar-notification-count"
           >
             {{ notificationBadge }}
-          </UiBadge>
+          </span>
         </template>
       </UiStack>
 
       <UiText tone="secondary" size="md" class="hidden max-w-[12rem] truncate font-medium sm:block" data-testid="topbar-account">
         {{ accountLabel }}
       </UiText>
-      <UiLink :to="AppRoute.Settings" variant="ghost" size="sm" class="max-sm:!hidden" data-testid="topbar-settings">
-        {{ t('nav.settings') }}
-      </UiLink>
+      <div class="hidden sm:block">
+        <UiLink :to="AppRoute.Settings" variant="ghost" size="sm" data-testid="topbar-settings">
+          {{ t('nav.settings') }}
+        </UiLink>
+      </div>
       <UiButton type="button" variant="danger" size="sm" class="whitespace-nowrap" data-testid="topbar-sign-out" @click="signOut">
         {{ t('common.signOut') }}
       </UiButton>

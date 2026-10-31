@@ -472,8 +472,8 @@ onMounted(() => {
               <UiStack v-for="row in invoiceRows" :key="row.label" direction="row" :justify="UiJustify.Between" gap="sm">
                 <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ row.label }}</UiText>
                 <UiStack direction="row" gap="md">
-                  <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md" class="w-6 text-right tabular-nums">{{ row.count }}</UiText>
-                  <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md" class="min-w-[5.5rem] text-right tabular-nums">{{ formatPlainAmount(row.total, billingCurrency) }}</UiText>
+                  <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md" class="w-6 text-right tabular-nums" data-testid="client-summary-billing-count">{{ row.count }}</UiText>
+                  <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md" class="min-w-[5.5rem] text-right tabular-nums" data-testid="client-summary-billing-amount">{{ formatPlainAmount(row.total, billingCurrency) }}</UiText>
                 </UiStack>
               </UiStack>
             </UiStack>

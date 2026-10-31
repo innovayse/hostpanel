@@ -69,7 +69,7 @@ describe('AppTopbar', () => {
     const dot = wrapper.get('[data-testid="topbar-notification-dot"]')
     expect(dot.attributes('aria-hidden')).toBe('true')
     expect(dot.classes()).toEqual(expect.arrayContaining(['absolute', 'rounded-full', 'sm:hidden']))
-    expect(wrapper.get('[data-testid="topbar-notification-count"]').classes()).toContain('max-sm:hidden')
+    expect(wrapper.get('[data-testid="topbar-notification-count"]').classes()).toEqual(expect.arrayContaining(['hidden', 'sm:flex']))
   })
 
   it('shows the empty message for an empty feed and hides the badge', async () => {

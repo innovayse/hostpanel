@@ -37,12 +37,20 @@ const emit = defineEmits<{
   'update:modelValue': [value: T]
 }>()
 
-/** Trigger padding, type size and radius: the default field look, or a small button's when compact. */
+/**
+ * Trigger padding, type size and radius: the default field look, or a small button's when compact.
+ *
+ * @returns The trigger's size and shape classes.
+ */
 const triggerSizeClasses = computed<string>(() =>
   props.compact ? 'px-2.5 py-1 text-[0.75rem] rounded-lg' : 'px-3 py-2 text-[0.82rem] rounded-[10px]',
 )
 
-/** The list's frame: the default, or a softer inset one when compact. */
+/**
+ * The list's frame: the default, or a softer inset one when compact.
+ *
+ * @returns The panel's position, border, surface and width classes.
+ */
 const panelClasses = computed<string>(() => {
   const width = props.wide ? 'min-w-[18rem]' : 'w-full'
   return props.compact
@@ -50,7 +58,11 @@ const panelClasses = computed<string>(() => {
     : `absolute z-50 mt-1.5 overflow-hidden rounded-[10px] border border-border bg-surface-card shadow-xl ${width}`
 })
 
-/** The fade the list opens and closes with: quick by default, slower and gentler when compact. */
+/**
+ * The fade the list opens and closes with: quick by default, slower and gentler when compact.
+ *
+ * @returns The transition classes for each stage of the open and close animation.
+ */
 const fade = computed(() => props.compact
   ? {
       enterActive: 'transition duration-200 ease-out',

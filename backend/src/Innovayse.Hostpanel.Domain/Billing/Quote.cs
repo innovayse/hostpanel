@@ -42,7 +42,12 @@ public sealed class Quote : BaseEntity, IAggregateRoot
     /// <summary>Gets the ISO 4217 alpha code every amount on this quote is in. Set at creation, never changed.</summary>
     public string Currency { get; private set; } = string.Empty;
 
-    /// <summary>Gets the total of all line items, each rounded to the quote's currency, so it equals the invoice total made from the quote.</summary>
+    /// <summary>
+    /// Gets the total of all line items after their discounts: the unrounded line amounts are summed and the sum is
+    /// rounded once to the quote currency's minor unit, the order <see cref="Invoice"/> uses for its sub-total. It equals the
+    /// invoice total made from the quote only when no line carries a discount and the invoice has no tax or credit, because
+    /// the conversion bills each line at its full price and drops the line discounts.
+    /// </summary>
     public decimal Total { get; private set; }
 
     /// <summary>Gets the UTC timestamp when the quote was created.</summary>
@@ -268,6 +273,6 @@ public sealed class Quote : BaseEntity, IAggregateRoot
     public IReadOnlyList<QuoteInvoiceLine> GetInvoiceItemData()
         => _items.Select(i => new QuoteInvoiceLine(i.Description, i.UnitPrice, i.Quantity)).ToList();
 
-    /// <summary>Sets <see cref="Total"/> to the sum of the line amounts, each rounded to the quote's currency.</summary>
-    private void RecalculateTotal() => Total = _items.Sum(i => i.AmountIn(Currency));
+    /// <summary>Sets <see cref="Total"/> to the sum of the unrounded line amounts, rounded once to the quote's currency like an invoice.</summary>
+    private void RecalculateTotal() => Total = CurrencyCode.RoundToMinorUnits(_items.Sum(i => i.Amount), Currency);
 }

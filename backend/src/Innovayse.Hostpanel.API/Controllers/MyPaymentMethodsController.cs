@@ -1,9 +1,13 @@
 using Innovayse.Hostpanel.API.Authorization;
-using Innovayse.Hostpanel.Domain.Clients.Enums;
+using Innovayse.Hostpanel.API.Extensions;
+using Innovayse.Hostpanel.Application.Billing.Commands.ConfirmMySetupIntent;
+using Innovayse.Hostpanel.Application.Billing.Commands.CreateMySetupIntent;
 using Innovayse.Hostpanel.Application.Billing.Commands.RemovePaymentMethod;
+using Innovayse.Hostpanel.Application.Billing.Commands.RevokeMyCardConsents;
 using Innovayse.Hostpanel.Application.Billing.Commands.SetDefaultPaymentMethod;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Queries.GetMyPaymentMethods;
+using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Shared.Authorization;
 using Innovayse.Hostpanel.Shared.Controllers;
 using Innovayse.Hostpanel.Shared.Models;
@@ -18,9 +22,9 @@ namespace Innovayse.Hostpanel.API.Controllers;
 /// </summary>
 /// <remarks>
 /// Whose account is always the caller's, taken from the credential: there is deliberately no
-/// route that names a client. Adding a card is not here: the card gateway requires collecting card details
-/// through its own client-side Elements form (this API never sees a card number), so the portal
-/// starts that flow itself rather than through a JSON endpoint.
+/// route that names a client. This API never sees a card number: adding a card opens a setup intent here,
+/// the portal confirms it in the card gateway's own client-side form, and the confirmation is read back
+/// from the gateway before the card counts as saved.
 /// </remarks>
 [Route("api/me/payment-methods")]
 [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status429TooManyRequests)]
@@ -119,6 +123,83 @@ public sealed class MyPaymentMethodsController : BaseApiController
     public async Task<IActionResult> RemoveMyPaymentMethodAsync(string id, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result>(new RemovePaymentMethodCommand(id), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// Starts saving a card without a payment: opens a setup intent and records the caller's agreement that the
+    /// card may be charged for renewals without them.
+    /// </summary>
+    /// <param name="command">Must set <see cref="CreateMySetupIntentCommand.ConsentAccepted"/>; the origin is taken from the request, not the body.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the setup intent (id and client secret); 400 with <c>VALIDATION_ERROR</c> when the agreement is not accepted;
+    /// 401 without a session; 403 with <c>CLIENT_PERMISSION_DENIED</c>, <c>CLIENT_SUSPENDED</c>, <c>CLIENT_CLOSED</c> or
+    /// <c>CLIENT_CARD_PAYMENT_DISABLED</c>; 404 with <c>CLIENT_PROFILE_NOT_FOUND</c>; 409 with <c>PAYMENT_METHOD_UNAVAILABLE</c>
+    /// when the card gateway has no keys; 502 with <c>PAYMENT_METHOD_UPSTREAM_FAILED</c>; 503 with
+    /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c>; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPost("setup-intent")]
+    [Authorize(Policy = Policies.Client)]
+    [RequiresClientPermission(ClientPermission.ViewPayInvoices)]
+    [ProducesResponseType(typeof(CardSetupIntentDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> CreateMySetupIntentAsync([FromBody] CreateMySetupIntentCommand command, CancellationToken ct)
+    {
+        // The origin is what the server saw, whatever the body says.
+        var outcome = await _bus.InvokeAsync<Result<CardSetupIntentDto>>(command with { Origin = Request.ConsentOrigin() }, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Finishes saving a card: the gateway's own record of the setup intent decides whether it counts.</summary>
+    /// <param name="command">The setup intent the previous call answered with.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 when the card is saved and the agreement active; 400 with <c>VALIDATION_ERROR</c> or <c>PAYMENT_METHOD_NOT_OWNED</c>;
+    /// 401 without a session; 403 with <c>CLIENT_PERMISSION_DENIED</c>; 404 with <c>CLIENT_PROFILE_NOT_FOUND</c> or
+    /// <c>CARD_SETUP_NOT_FOUND</c>; 409 with <c>CARD_SETUP_NOT_COMPLETED</c> when the gateway did not save the card, or
+    /// <c>PAYMENT_METHOD_UNAVAILABLE</c>; 502 with <c>PAYMENT_METHOD_UPSTREAM_FAILED</c>; 503 with
+    /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c>; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPost("confirm-setup")]
+    [Authorize(Policy = Policies.Client)]
+    [RequiresClientPermission(ClientPermission.ViewPayInvoices)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> ConfirmMySetupIntentAsync([FromBody] ConfirmMySetupIntentCommand command, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(command, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Turns off automatic card charges: no saved card of the account is charged without the client afterwards.</summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 whether or not an agreement was on; 401 without a session; 403 with <c>CLIENT_PERMISSION_DENIED</c>;
+    /// 404 with <c>CLIENT_PROFILE_NOT_FOUND</c>; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpDelete("auto-charge")]
+    [Authorize(Policy = Policies.Client)]
+    [RequiresClientPermission(ClientPermission.ViewPayInvoices)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> TurnOffMyAutoChargeAsync(CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(new RevokeMyCardConsentsCommand(), ct);
         return HandleResult(outcome);
     }
 }

@@ -132,6 +132,9 @@ export const useCheckoutPage = async () => {
   /** The card form below the method list; asked to confirm the payment once the order exists. */
   const stripeCardFormRef = ref<CardFormHandle | null>(null)
 
+  /** Whether the payer ticked "save the card for automatic renewals"; off until they choose it. */
+  const saveCard = ref(false)
+
   /**
    * Places the order through the checkout store and goes where it says.
    *
@@ -145,6 +148,7 @@ export const useCheckoutPage = async () => {
     }
     const destination = await checkout.placeOrder({
       guest: { ...form },
+      saveCard: saveCard.value,
       confirmCard: (clientSecret) => {
         if (!stripeCardFormRef.value) {
           return Promise.reject(new Error(t('checkout.errors.generic')))
@@ -190,6 +194,7 @@ export const useCheckoutPage = async () => {
     handleLogout,
     form,
     stripeCardFormRef,
+    saveCard,
     submitOrder
   }
 }

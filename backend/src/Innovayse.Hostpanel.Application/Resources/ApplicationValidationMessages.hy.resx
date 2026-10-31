@@ -1340,4 +1340,13 @@
   <data name="ClientExternalAccountIdInvalid" xml:space="preserve">
     <value>Արտաքին հաշվի ID-ն պարտադիր է և ոչ ավելի քան 256 նիշ։</value>
   </data>
+  <data name="CardGatewayCustomerIdInvalid" xml:space="preserve">
+    <value>Վճարային դարպասի հաճախորդի նույնացուցիչը պարտադիր է և ոչ ավելի քան 50 նիշ։</value>
+  </data>
+  <data name="CardConsentRequired" xml:space="preserve">
+    <value>Քարտը պահպանելու համար պետք է համաձայնել ավտոմատ գանձումներին։</value>
+  </data>
+  <data name="SetupIntentIdInvalid" xml:space="preserve">
+    <value>Քարտի կարգավորման նույնացուցիչը պարտադիր է և ոչ ավելի քան 255 նիշ։</value>
+  </data>
 </root>

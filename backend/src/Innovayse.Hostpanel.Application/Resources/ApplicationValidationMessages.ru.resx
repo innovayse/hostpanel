@@ -1340,4 +1340,13 @@
   <data name="ClientExternalAccountIdInvalid" xml:space="preserve">
     <value>Идентификатор внешнего аккаунта обязателен и не длиннее 256 символов.</value>
   </data>
+  <data name="CardGatewayCustomerIdInvalid" xml:space="preserve">
+    <value>Идентификатор клиента платёжного шлюза обязателен и не длиннее 50 символов.</value>
+  </data>
+  <data name="CardConsentRequired" xml:space="preserve">
+    <value>Чтобы сохранить карту, нужно согласиться на автоматические списания.</value>
+  </data>
+  <data name="SetupIntentIdInvalid" xml:space="preserve">
+    <value>Идентификатор настройки карты обязателен и не длиннее 255 символов.</value>
+  </data>
 </root>

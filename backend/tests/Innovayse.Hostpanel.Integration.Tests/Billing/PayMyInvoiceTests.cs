@@ -28,8 +28,8 @@ public sealed class PayMyInvoiceTests(IntegrationTestFactory factory) : IClassFi
     /// <summary>The saved payment method every seeded customer owns in these tests.</summary>
     private const string SavedMethodId = "pm_saved_1";
 
-    /// <summary>The card gateway customer id stamped on the paying client.</summary>
-    private const string CustomerId = "cus_pay_1";
+    /// <summary>The card gateway customer id stamped on the paying client, unique per test since a customer belongs to one client only.</summary>
+    private readonly string _customerId = $"cus_pay_{Guid.NewGuid():N}"[..24];
 
     /// <summary>Builds a configured fake card gateway that lists <see cref="SavedMethodId"/> for the customer.</summary>
     /// <returns>The fake gateway.</returns>
@@ -68,7 +68,7 @@ public sealed class PayMyInvoiceTests(IntegrationTestFactory factory) : IClassFi
         WebApplicationFactory<Program> host, string label)
     {
         var (owner, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, label);
-        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, CustomerId);
+        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, _customerId);
         var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
         return new(owner, admin, invoiceId);
@@ -129,7 +129,7 @@ public sealed class PayMyInvoiceTests(IntegrationTestFactory factory) : IClassFi
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
         cardGateway.LastChargeInstruction.Should().NotBeNull();
-        cardGateway.LastChargeInstruction!.CustomerId.Should().Be(CustomerId);
+        cardGateway.LastChargeInstruction!.CustomerId.Should().Be(_customerId);
         cardGateway.LastChargeInstruction.PaymentMethodId.Should().Be(SavedMethodId);
         cardGateway.LastChargeInstruction.Amount.Should().Be(10m);
         cardGateway.LastChargeInstruction.InvoiceId.Should().Be(invoiceId);
@@ -322,7 +322,7 @@ public sealed class PayMyInvoiceTests(IntegrationTestFactory factory) : IClassFi
         (await BillingTestSeeds.CodeOfAsync(foreign)).Should().Be(HostpanelErrorCodes.PAYMENT_METHOD_NOT_OWNED);
         (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.Unpaid));
 
-        var response = await PayAsync(owner, invoiceId, $"demo-card-visa:{CustomerId}");
+        var response = await PayAsync(owner, invoiceId, $"demo-card-visa:{_customerId}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
         (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.Paid));
@@ -401,31 +401,31 @@ public sealed class PayMyInvoiceTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>
-    /// A double click of one pay action, held in the window that used to refund the payment: both
-    /// requests carry the same attempt, both read the invoice unpaid and reach the gateway, which
-    /// answers both with the one charge (same idempotency key, same transaction). Both then read the
-    /// ledger empty, one records the payment, and only then does the other load the invoice, find it
-    /// paid and refuse. That refusal is a replay of a payment the ledger now holds, so it answers
-    /// success and hands nothing back: both responses are 204, the invoice is paid once with one ledger
-    /// row, the gateway is charged once and no refund is asked for. The rendezvous and the gate make
-    /// the window deterministic whichever request arrives first, and the test asserts the window was
-    /// reached.
+    /// A double click sends the same pay action twice at once. The invoice's payment claim lets one request reach
+    /// the gateway; the other is told <c>PAYMENT_IN_PROGRESS</c> instead of charging too, so the invoice is paid
+    /// once with one ledger row, the gateway is charged once and no refund is asked for. Sending the same action
+    /// again once it finished answers success.
     /// </summary>
     [Fact]
     public async Task Pay_DoubleClick_RecordsOnePaymentAndRefundsNothing()
     {
         var cardGateway = ConfiguredGateway();
-        cardGateway.ChargeRendezvous = new ChargeRendezvous(parties: 2);
-        var gate = new SettlementWindowGate();
-        var host = BuildHost(cardGateway, new SettlementWindowLoadInterceptor(gate), new SettlementWindowCommitInterceptor(gate));
+        var host = BuildHost(cardGateway);
         var (owner, admin, invoiceId) = await SeedAsync(host, "owner-double-click");
         var attemptId = Guid.NewGuid();
 
         var responses = await Task.WhenAll(
-            PayAsync(owner, invoiceId, SavedMethodId, attemptId), PayAsync(owner, invoiceId, SavedMethodId, attemptId));
+            Task.Run(() => PayAsync(owner, invoiceId, SavedMethodId, attemptId)),
+            Task.Run(() => PayAsync(owner, invoiceId, SavedMethodId, attemptId)));
 
-        responses.Should().OnlyContain(r => r.StatusCode == HttpStatusCode.NoContent);
-        gate.WindowExercised.Should().BeTrue("the second click must have loaded the invoice only after the first recorded the payment");
+        responses.Should().OnlyContain(r => r.StatusCode == HttpStatusCode.NoContent || r.StatusCode == HttpStatusCode.Conflict);
+        responses.Should().Contain(r => r.StatusCode == HttpStatusCode.NoContent);
+        foreach (var refused in responses.Where(r => r.StatusCode == HttpStatusCode.Conflict))
+        {
+            (await BillingTestSeeds.CodeOfAsync(refused)).Should().Contain(HostpanelErrorCodes.PAYMENT_IN_PROGRESS);
+        }
+
+        (await PayAsync(owner, invoiceId, SavedMethodId, attemptId)).StatusCode.Should().Be(HttpStatusCode.NoContent);
         (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.Paid));
         (await LedgerRowsAsync(host, invoiceId)).Should().Be(1);
         cardGateway.RefundInstructions.Should().BeEmpty();

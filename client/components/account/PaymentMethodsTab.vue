@@ -12,7 +12,12 @@
 
     <UiStack v-else gap="md">
       <UiCard>
-        <UiCardHeader :title="$t('client.payment.title')" />
+        <UiCardHeader :title="$t('client.payment.title')">
+          <UiButton size="sm" data-testid="account-payment-add" @click="openAddCard">
+            <Plus :size="14" :stroke-width="2" class="mr-1" />
+            {{ $t('client.payment.addCard') }}
+          </UiButton>
+        </UiCardHeader>
 
         <!-- A failed read is checked before the empty state, which it is otherwise
              indistinguishable from: the list is empty either way. -->
@@ -42,6 +47,19 @@
             />
           </UiListItem>
         </UiList>
+
+        <!-- Shown only while some card is charged by the client's agreement; turning it off keeps the cards. -->
+        <UiStack v-if="hasAutoCharge" direction="row" justify="end" class="mt-3">
+          <UiButton
+            size="sm"
+            variant="outline"
+            :loading="turningOffAutoCharge"
+            data-testid="account-payment-auto-off"
+            @click="onTurnOffAutoCharge"
+          >
+            {{ $t('client.payment.turnOffAutoCharge') }}
+          </UiButton>
+        </UiStack>
       </UiCard>
 
       <UiAlert v-if="paymentActionError" variant="error" data-testid="account-payment-action-error">
@@ -49,6 +67,39 @@
       </UiAlert>
       <UiAlert v-if="success" variant="success" data-testid="account-payment-success">{{ success }}</UiAlert>
     </UiStack>
+
+    <UiDialog v-model="addCardOpen" :title="$t('client.payment.addCardTitle')" size="md">
+      <UiForm id="add-card-form" data-testid="account-payment-add-form" spacing="sm" @submit="onAddCard">
+        <UiText size="sm" tone="muted">{{ $t('client.payment.addCardDesc') }}</UiText>
+        <CheckoutStripeCardForm ref="cardFormRef" />
+        <UiCheckbox
+          v-model="consentAccepted"
+          :label="$t('client.payment.consent')"
+          testid="account-payment-consent"
+        />
+        <UiAlert v-if="consentMissing" variant="warning" data-testid="account-payment-consent-required">
+          {{ $t('client.payment.consentRequired') }}
+        </UiAlert>
+        <UiAlert v-if="paymentActionError" variant="error" data-testid="account-payment-add-error">
+          {{ paymentActionError }}
+        </UiAlert>
+      </UiForm>
+      <template #footer>
+        <UiButton type="submit" form="add-card-form" :loading="addingCard" :disabled="!cardFieldReady" data-testid="account-payment-add-submit">
+          {{ $t('client.payment.saveCard') }}
+        </UiButton>
+      </template>
+    </UiDialog>
+
+    <UiConfirmDialog
+      :open="pendingAutoChargeOff"
+      :title="$t('client.payment.turnOffConfirm')"
+      :description="$t('client.payment.turnOffConfirmDesc')"
+      :confirm-label="$t('client.payment.turnOffAutoCharge')"
+      :loading="turningOffAutoCharge"
+      @confirm="onConfirmAutoChargeOff"
+      @cancel="pendingAutoChargeOff = false"
+    />
 
     <UiConfirmDialog
       :open="pendingRemovalId !== null"
@@ -67,15 +118,16 @@
 /**
  * PaymentMethodsTab - the "Payment Methods" tab: the saved methods, set-default and remove.
  *
- * The API has no way to add a card here, so the tab offers no add action: a customer without a
- * saved card is told to pay an invoice through the hosted gateway and is linked to the invoices.
- * Every refusal is the store's sentence. A member of the account without the permission to view and
+ * "Add card" saves a card without a payment: the payer must tick the agreement to automatic renewal
+ * charges, the card is confirmed by the payment provider's own form, and the backend counts it as saved only
+ * after reading the result back from the provider. A card charged automatically is marked, and one button
+ * turns automatic charges off without removing the cards. Every refusal is the store's sentence. A member of the account without the permission to view and
  * pay invoices (the flag the payment-method actions need) sees the tab disabled with the reason.
  *
  * @module components/account/PaymentMethodsTab
  */
 
-import { CreditCard } from 'lucide-vue-next'
+import { CreditCard, Plus } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { CLIENT_INVOICES_PATH } from '~/constants/clientRoutes'
 import { Permission } from '~/composables/usePermissions'
@@ -100,8 +152,45 @@ const maySeePaymentMethods = computed(() => client.mayDo(Permission.ViewPayInvoi
 
 /** The methods, their loading and error state, and the per-action progress and refusal. */
 const {
-  paymentMethods, paymentLoading, paymentLoadError, paymentActionError, settingDefaultId, removingId
+  paymentMethods, paymentLoading, paymentLoadError, paymentActionError, settingDefaultId, removingId,
+  addingCard, turningOffAutoCharge
 } = storeToRefs(account)
+
+/** Whether any saved card is charged for renewals by the client's agreement. */
+const hasAutoCharge = computed(() => paymentMethods.value.some(method => method.autoCharge === true))
+
+/** What the card form exposes: it confirms the setup intent with the mounted card element. */
+interface CardFormHandle {
+  /** Confirms saving the card with the setup intent's client secret. */
+  confirmSetup: (clientSecret: string) => Promise<{ id: string }>
+  /** Whether the provider's card field is mounted and ready for input. */
+  ready: boolean
+}
+
+/** The card form in the add-card dialog. */
+const cardFormRef = ref<CardFormHandle | null>(null)
+
+/** Whether the card field is ready; without it (no provider key, still loading) there is nothing to save. */
+const cardFieldReady = computed(() => cardFormRef.value?.ready === true)
+
+/** Whether the add-card dialog is open. */
+const addCardOpen = ref(false)
+
+/** Whether the payer ticked the agreement to automatic renewal charges; off each time the dialog opens. */
+const consentAccepted = ref(false)
+
+/** Whether the payer tried to save without the agreement, which the dialog then says. */
+const consentMissing = ref(false)
+
+/** Ticking the agreement withdraws the warning that it was missing. */
+watch(consentAccepted, (ticked) => {
+  if (ticked) {
+    consentMissing.value = false
+  }
+})
+
+/** Whether the confirmation to turn automatic charges off is open. */
+const pendingAutoChargeOff = ref(false)
 
 /** Success sentence after a change; empty otherwise. */
 const success = ref('')
@@ -120,6 +209,44 @@ const onSetDefault = async (id: string): Promise<void> => {
     success.value = t('client.payment.defaultSet')
     await account.loadPaymentMethods()
   }
+}
+
+/** Opens the add-card dialog with the agreement unticked. */
+const openAddCard = (): void => {
+  success.value = ''
+  account.paymentActionError = ''
+  consentAccepted.value = false
+  consentMissing.value = false
+  addCardOpen.value = true
+}
+
+/** Saves the card typed into the dialog; without the agreement nothing is sent. */
+const onAddCard = async (): Promise<void> => {
+  consentMissing.value = !consentAccepted.value
+  if (consentMissing.value || !cardFieldReady.value || !cardFormRef.value) {
+    return
+  }
+  const confirmSetup = cardFormRef.value.confirmSetup
+  if (await account.addPaymentMethod(true, confirmSetup) === ActionOutcome.Succeeded) {
+    addCardOpen.value = false
+    success.value = t('client.payment.cardSaved')
+    await account.loadPaymentMethods()
+  }
+}
+
+/** Turns off automatic charges once the payer confirmed, and reads the list again when it worked. */
+const onConfirmAutoChargeOff = async (): Promise<void> => {
+  success.value = ''
+  if (await account.turnOffAutoCharge() === ActionOutcome.Succeeded) {
+    success.value = t('client.payment.turnOffDone')
+    await account.loadPaymentMethods()
+  }
+  pendingAutoChargeOff.value = false
+}
+
+/** Asks for confirmation before turning automatic charges off. */
+const onTurnOffAutoCharge = (): void => {
+  pendingAutoChargeOff.value = true
 }
 
 /** Removes the confirmed method and reads the list again when it worked. */

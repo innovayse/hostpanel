@@ -9,6 +9,9 @@
           <UiBadge v-if="method.isDefault" variant="primary" size="sm" rounded data-testid="account-payment-default-badge">
             {{ $t('client.payment.defaultBadge') }}
           </UiBadge>
+          <UiBadge v-if="method.autoCharge" variant="info" size="sm" rounded data-testid="account-payment-auto-badge">
+            {{ $t('client.payment.autoChargeBadge') }}
+          </UiBadge>
         </UiStack>
         <UiText size="xs" tone="subtle">
           <span data-testid="account-payment-type">{{ typeLabel }}</span>

@@ -228,6 +228,18 @@ public static class HostpanelErrorCodes
     /// <summary>The caller has no row in the clients table, so there is no account to act on (404).</summary>
     public const string CLIENT_PROFILE_NOT_FOUND = "CLIENT_PROFILE_NOT_FOUND";
 
+    /// <summary>The card gateway customer is already linked to another client (409).</summary>
+    public const string CARD_GATEWAY_CUSTOMER_ALREADY_LINKED = "CARD_GATEWAY_CUSTOMER_ALREADY_LINKED";
+
+    /// <summary>Another payment attempt holds this invoice right now, so none may start until it ends (409).</summary>
+    public const string PAYMENT_IN_PROGRESS = "PAYMENT_IN_PROGRESS";
+
+    /// <summary>The card was not saved at the gateway: the setup was cancelled, failed or is not finished (409).</summary>
+    public const string CARD_SETUP_NOT_COMPLETED = "CARD_SETUP_NOT_COMPLETED";
+
+    /// <summary>No card setup of this account has that id (404).</summary>
+    public const string CARD_SETUP_NOT_FOUND = "CARD_SETUP_NOT_FOUND";
+
     // Clients
 
     /// <summary>The token names no invitation (404).</summary>

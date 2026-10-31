@@ -53,6 +53,21 @@ public sealed class StripeService : ICardPaymentGateway
     /// <summary>The error type Stripe reports for a card that was declined.</summary>
     private const string CardErrorType = "card_error";
 
+    /// <summary>The error code Stripe reports when an off-session charge needs the cardholder to authenticate.</summary>
+    private const string AuthenticationRequiredCode = "authentication_required";
+
+    /// <summary>The payment-intent status Stripe reports when the cardholder must still act (for example 3-D Secure).</summary>
+    private const string RequiresActionStatus = "requires_action";
+
+    /// <summary>The value of <c>setup_future_usage</c> and setup intent <c>usage</c> that lets the card be charged without the cardholder.</summary>
+    private const string OffSessionUsage = "off_session";
+
+    /// <summary>The metadata key that ties a Stripe customer back to its client.</summary>
+    private const string CustomerClientIdMetadataKey = "hostpanelClientId";
+
+    /// <summary>The Stripe type of a setup intent that saved the card.</summary>
+    private const string SetupSucceededStatus = "succeeded";
+
     /// <summary>The payment method type Stripe reports for a card.</summary>
     private const string CardMethodType = "card";
 
@@ -88,11 +103,21 @@ public sealed class StripeService : ICardPaymentGateway
             return new CardPaymentIntentResult(null, CardGatewayFailure.NotConfigured);
         }
 
+        // A card can only be kept for later charges on a customer: refuse before calling Stripe rather than
+        // opening an intent that would be paid without saving the card the client agreed to save.
+        if (instruction.SaveCard && string.IsNullOrEmpty(instruction.CustomerId))
+        {
+            _logger.LogError("A payment intent for invoice {InvoiceId} asked to save the card but named no customer", instruction.InvoiceId);
+            return new CardPaymentIntentResult(null, CardGatewayFailure.Refused);
+        }
+
         var service = new PaymentIntentService(_client.Value);
         var createOptions = new PaymentIntentCreateOptions
         {
             Amount = StripeAmount.ToStripe(instruction.Amount, instruction.Currency),
             Currency = instruction.Currency.ToLowerInvariant(),
+            Customer = string.IsNullOrEmpty(instruction.CustomerId) ? null : instruction.CustomerId,
+            SetupFutureUsage = instruction.SaveCard ? OffSessionUsage : null,
             Metadata = new Dictionary<string, string>
             {
                 [OrderIdMetadataKey] = instruction.OrderId.ToString(CultureInfo.InvariantCulture),
@@ -122,7 +147,7 @@ public sealed class StripeService : ICardPaymentGateway
             "Created Stripe PaymentIntent {PaymentIntentId} for {Amount} {Currency}",
             intent.Id, instruction.Amount, instruction.Currency);
 
-        return new CardPaymentIntentResult(intent.ClientSecret);
+        return new CardPaymentIntentResult(intent.ClientSecret, IntentId: intent.Id);
     }
 
     /// <inheritdoc />
@@ -164,13 +189,19 @@ public sealed class StripeService : ICardPaymentGateway
                 paymentIntentId, intent.Status);
         }
 
+        // The card is only on the customer for later charges when the intent asked for that and was paid.
+        var savedMethodId = succeeded && intent.SetupFutureUsage == OffSessionUsage && !string.IsNullOrEmpty(intent.CustomerId)
+            ? intent.PaymentMethodId
+            : null;
+
         return new CardPaymentIntentStatus(
             succeeded,
             succeeded ? intent.LatestChargeId ?? intent.Id : null,
             StripeAmount.ToMinorUnits(intent.Amount, intent.Currency),
             intent.Currency,
             ReadMetadataId(intent.Metadata, OrderIdMetadataKey),
-            ReadMetadataId(intent.Metadata, InvoiceIdMetadataKey));
+            ReadMetadataId(intent.Metadata, InvoiceIdMetadataKey),
+            PaymentMethodId: savedMethodId);
     }
 
     /// <inheritdoc />
@@ -211,14 +242,21 @@ public sealed class StripeService : ICardPaymentGateway
             _logger.LogWarning(
                 "Off-session PaymentIntent {PaymentIntentId} has status {Status}, expected succeeded",
                 intent.Id, intent.Status);
-            return new CardChargeResult(false, null);
+
+            // The card is fine but the cardholder must authenticate: told apart from a decline so the
+            // client is asked to pay with the card in hand instead of being told the card failed.
+            return intent.Status == RequiresActionStatus
+                ? new CardChargeResult(false, null, CardGatewayFailure.AuthenticationRequired)
+                : new CardChargeResult(false, null);
         }
         catch (StripeException ex) when (ex.StripeError?.Type == CardErrorType)
         {
             _logger.LogWarning(
                 "Stripe declined an off-session charge for customer {CustomerId}: {Code}",
                 instruction.CustomerId, ex.StripeError.Code);
-            return new CardChargeResult(false, null);
+            return ex.StripeError.Code == AuthenticationRequiredCode
+                ? new CardChargeResult(false, null, CardGatewayFailure.AuthenticationRequired)
+                : new CardChargeResult(false, null);
         }
         catch (Exception ex) when (IsGatewayFailure(ex, ct))
         {
@@ -269,6 +307,153 @@ public sealed class StripeService : ICardPaymentGateway
         }
 
         return CardChargeLookupResult.None;
+    }
+
+    /// <inheritdoc />
+    public async Task<CardCustomerResult> CreateCustomerAsync(CardCreateCustomerInstruction instruction, CancellationToken ct)
+    {
+        if (!IsConfigured)
+        {
+            return CardCustomerResult.Failed(CardGatewayFailure.NotConfigured);
+        }
+
+        var service = new CustomerService(_client.Value);
+        try
+        {
+            // The client id rides on the customer so it can be found again, and the idempotency key makes two
+            // parallel requests for one client answer with the same customer.
+            var customer = await service.CreateAsync(
+                new CustomerCreateOptions
+                {
+                    Name = string.IsNullOrWhiteSpace(instruction.Name) ? null : instruction.Name,
+                    Email = string.IsNullOrWhiteSpace(instruction.Email) ? null : instruction.Email,
+                    Metadata = new Dictionary<string, string>
+                    {
+                        [CustomerClientIdMetadataKey] = instruction.ClientId.ToString(CultureInfo.InvariantCulture),
+                    },
+                },
+                new RequestOptions { IdempotencyKey = instruction.IdempotencyKey },
+                ct);
+            _logger.LogInformation("Created Stripe customer {CustomerId} for client {ClientId}", customer.Id, instruction.ClientId);
+            return new CardCustomerResult(customer.Id);
+        }
+        catch (Exception ex) when (IsGatewayFailure(ex, ct))
+        {
+            var failure = ToFailure(ex);
+            _logger.LogWarning(ex, "Stripe could not create a customer for client {ClientId}: {Failure}", instruction.ClientId, failure);
+            return CardCustomerResult.Failed(failure);
+        }
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Uses Stripe's customer search on the client id kept in the metadata. The search index lags a
+    /// created customer by up to about a minute, which is why a creation also carries an idempotency key
+    /// (24 hours): the two together cover a crash between creating a customer and storing it.
+    /// </remarks>
+    public async Task<CardCustomerResult> FindCustomerAsync(CardFindCustomerInstruction instruction, CancellationToken ct)
+    {
+        if (!IsConfigured)
+        {
+            return CardCustomerResult.Failed(CardGatewayFailure.NotConfigured);
+        }
+
+        var service = new CustomerService(_client.Value);
+        var clientId = instruction.ClientId.ToString(CultureInfo.InvariantCulture);
+        try
+        {
+            var found = await service.SearchAsync(
+                new CustomerSearchOptions { Query = $"metadata['{CustomerClientIdMetadataKey}']:'{clientId}'", Limit = 1 },
+                cancellationToken: ct);
+            var customer = found.Data.FirstOrDefault();
+            return customer is null ? CardCustomerResult.None : new CardCustomerResult(customer.Id);
+        }
+        catch (Exception ex) when (IsGatewayFailure(ex, ct))
+        {
+            var failure = ToFailure(ex);
+            _logger.LogWarning(ex, "Stripe could not search the customer of client {ClientId}: {Failure}", instruction.ClientId, failure);
+            return CardCustomerResult.Failed(failure);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<CardGatewayOperationResult> DeleteCustomerAsync(CardCustomerInstruction instruction, CancellationToken ct)
+    {
+        if (!IsConfigured)
+        {
+            return new CardGatewayOperationResult(CardGatewayFailure.NotConfigured);
+        }
+
+        var service = new CustomerService(_client.Value);
+        try
+        {
+            await service.DeleteAsync(instruction.CustomerId, cancellationToken: ct);
+            return CardGatewayOperationResult.Succeeded;
+        }
+        catch (Exception ex) when (IsGatewayFailure(ex, ct))
+        {
+            var failure = ToFailure(ex);
+            _logger.LogWarning(ex, "Stripe could not delete customer {CustomerId}: {Failure}", instruction.CustomerId, failure);
+            return new CardGatewayOperationResult(failure);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<CardSetupIntentResult> CreateSetupIntentAsync(CardSetupIntentInstruction instruction, CancellationToken ct)
+    {
+        if (!IsConfigured)
+        {
+            return CardSetupIntentResult.Failed(CardGatewayFailure.NotConfigured);
+        }
+
+        var service = new SetupIntentService(_client.Value);
+        try
+        {
+            var intent = await service.CreateAsync(
+                new SetupIntentCreateOptions
+                {
+                    Customer = instruction.CustomerId,
+                    PaymentMethodTypes = [CardMethodType],
+                    Usage = OffSessionUsage,
+                    Metadata = new Dictionary<string, string>
+                    {
+                        [ClientIdMetadataKey] = instruction.ClientId.ToString(CultureInfo.InvariantCulture),
+                    },
+                },
+                new RequestOptions { IdempotencyKey = instruction.IdempotencyKey },
+                ct);
+            _logger.LogInformation("Created Stripe SetupIntent {SetupIntentId} for customer {CustomerId}", intent.Id, instruction.CustomerId);
+            return new CardSetupIntentResult(intent.Id, intent.ClientSecret);
+        }
+        catch (Exception ex) when (IsGatewayFailure(ex, ct))
+        {
+            var failure = ToFailure(ex);
+            _logger.LogWarning(ex, "Stripe could not open a SetupIntent for customer {CustomerId}: {Failure}", instruction.CustomerId, failure);
+            return CardSetupIntentResult.Failed(failure);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<CardSetupIntentStatus> VerifySetupIntentAsync(CardSetupIntentVerifyInstruction instruction, CancellationToken ct)
+    {
+        if (!IsConfigured)
+        {
+            return CardSetupIntentStatus.Failed(CardGatewayFailure.NotConfigured);
+        }
+
+        var service = new SetupIntentService(_client.Value);
+        try
+        {
+            var intent = await service.GetAsync(instruction.SetupIntentId, cancellationToken: ct);
+            var saved = intent.Status == SetupSucceededStatus && !string.IsNullOrEmpty(intent.PaymentMethodId);
+            return new CardSetupIntentStatus(saved, intent.CustomerId, saved ? intent.PaymentMethodId : null);
+        }
+        catch (Exception ex) when (IsGatewayFailure(ex, ct))
+        {
+            var failure = ToFailure(ex);
+            _logger.LogWarning(ex, "Stripe could not read SetupIntent {SetupIntentId}: {Failure}", instruction.SetupIntentId, failure);
+            return CardSetupIntentStatus.Failed(failure);
+        }
     }
 
     /// <inheritdoc />

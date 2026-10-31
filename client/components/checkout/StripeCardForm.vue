@@ -13,8 +13,9 @@
 /**
  * Card input form component.
  *
- * Mounts the payment provider's card element and exposes a {@link confirmPayment}
- * method for parent components to trigger payment confirmation with a client secret.
+ * Mounts the payment provider's card element and exposes {@link confirmPayment} and
+ * {@link confirmSetup} for parent components to confirm a payment, or only the saving of the card,
+ * with a client secret.
  */
 import type { Stripe, StripeCardElement } from '@stripe/stripe-js'
 import { buildStripeCardStyle } from '~/utils/stripeCardStyle'
@@ -55,8 +56,14 @@ onMounted(async () => {
   const { getStripe } = useStripe()
   stripeInstance = await getStripe()
 
+  if (!stripeInstance) {
+    // No publishable key: the card field cannot appear, so say so instead of showing an empty box.
+    cardError.value = t('checkout.card.unavailable')
+    return
+  }
+
   const mountPoint = frameRef.value?.el
-  if (!stripeInstance || !mountPoint) {
+  if (!mountPoint) {
     return
   }
 
@@ -116,5 +123,32 @@ const confirmPayment = async (clientSecret: string): Promise<{ id: string }> => 
   return { id: paymentIntent.id }
 }
 
-defineExpose({ confirmPayment })
+/**
+ * Confirms saving the card with the provided setup intent secret, without a payment.
+ *
+ * @param clientSecret - The Stripe SetupIntent client secret from the backend.
+ * @returns The confirmed SetupIntent object with at least its id.
+ * @throws Error if the payment provider is not initialized or if the card is refused.
+ */
+const confirmSetup = async (clientSecret: string): Promise<{ id: string }> => {
+  if (!stripeInstance || !cardElement) {
+    throw new Error(t('checkout.card.notInitialized'))
+  }
+
+  const { error, setupIntent } = await stripeInstance.confirmCardSetup(clientSecret, {
+    payment_method: { card: cardElement },
+  })
+
+  if (error) {
+    throw new Error(error.message ?? t('checkout.card.setupFailed'))
+  }
+
+  if (!setupIntent) {
+    throw new Error(t('checkout.card.noIntent'))
+  }
+
+  return { id: setupIntent.id }
+}
+
+defineExpose({ confirmPayment, confirmSetup, ready: cardReady })
 </script>

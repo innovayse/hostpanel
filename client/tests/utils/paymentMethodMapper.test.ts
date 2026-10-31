@@ -16,6 +16,14 @@ describe('toPaymentMethod', () => {
     })
   })
 
+  it('carries the agreement to automatic charges, and reads a missing flag as off', () => {
+    const agreed = toPaymentMethod({ id: 'pm_3', type: PaymentMethodType.Card, brand: 'visa', last4: '4242', isDefault: true, autoCharge: true })
+    const plain = toPaymentMethod({ id: 'pm_4', type: PaymentMethodType.Card, brand: 'visa', last4: '1881', isDefault: false })
+
+    expect(agreed.autoCharge).toBe(true)
+    expect(plain.autoCharge).toBe(false)
+  })
+
   it('reads a bank account brand as the bank name', () => {
     const method = toPaymentMethod({ id: 'pm_2', type: PaymentMethodType.BankAccount, brand: 'First Bank', last4: '6789', isDefault: false })
 

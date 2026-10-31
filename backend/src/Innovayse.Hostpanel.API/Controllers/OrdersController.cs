@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.API.Extensions;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Orders.Commands.AcceptOrder;
 using Innovayse.Hostpanel.Application.Orders.Commands.CancelOrder;
@@ -227,7 +228,8 @@ public sealed class OrdersController : BaseApiController
     public async Task<IActionResult> CreatePaymentIntentAsync(
         int id, [FromBody] CreateOrderPaymentIntentCommand command, CancellationToken ct)
     {
-        var outcome = await _bus.InvokeAsync<Result<PaymentIntentDto>>(command with { OrderId = id }, ct);
+        // The origin is what the server saw, whatever the body says.
+        var outcome = await _bus.InvokeAsync<Result<PaymentIntentDto>>(command with { OrderId = id, Origin = Request.ConsentOrigin() }, ct);
         return HandleResult(outcome);
     }
 

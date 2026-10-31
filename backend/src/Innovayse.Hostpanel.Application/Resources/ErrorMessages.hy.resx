@@ -922,4 +922,16 @@
   <data name="FULFILMENT_ADVICE_UNAVAILABLE" xml:space="preserve">
     <value>Վերադարձը հիմա հնարավոր չեղավ ստուգել, ուստի գումար չի վերադարձվել։ Փորձեք ավելի ուշ։</value>
   </data>
+  <data name="CARD_GATEWAY_CUSTOMER_ALREADY_LINKED" xml:space="preserve">
+    <value>Վճարային դարպասի այս հաճախորդն արդեն կապված է մեկ այլ հաշվի հետ։</value>
+  </data>
+  <data name="PAYMENT_IN_PROGRESS" xml:space="preserve">
+    <value>Այս հաշվի մեկ այլ վճարում հիմա մշակվում է։ Սպասեք մի փոքր և ստուգեք հաշիվը՝ նախքան նորից վճարելը։</value>
+  </data>
+  <data name="CARD_SETUP_NOT_COMPLETED" xml:space="preserve">
+    <value>Քարտը չպահպանվեց։ Փորձեք այն նորից ավելացնել։</value>
+  </data>
+  <data name="CARD_SETUP_NOT_FOUND" xml:space="preserve">
+    <value>Այս հաշվում նման նույնացուցիչով քարտի կարգավորում չի գտնվել։</value>
+  </data>
 </root>

@@ -2,7 +2,9 @@ using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Models;
+using Microsoft.EntityFrameworkCore;
 using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Billing.Queries.GetMyPaymentMethods;
@@ -18,13 +20,18 @@ public sealed class GetMyPaymentMethodsHandler
     /// <summary>Card payment gateway, for reading saved payment methods.</summary>
     private readonly ICardPaymentGateway _cardGateway;
 
+    /// <summary>Data context, for the agreements that let a card be charged without the client.</summary>
+    private readonly IHostpanelDbContext _context;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="bus">The Wolverine bus, for the Clients module's card gateway customer query.</param>
     /// <param name="cardGateway">Card payment gateway, for reading saved payment methods.</param>
-    public GetMyPaymentMethodsHandler(IMessageBus bus, ICardPaymentGateway cardGateway)
+    /// <param name="context">Data context, for the agreements that let a card be charged without the client.</param>
+    public GetMyPaymentMethodsHandler(IMessageBus bus, ICardPaymentGateway cardGateway, IHostpanelDbContext context)
     {
         _bus = bus;
         _cardGateway = cardGateway;
+        _context = context;
     }
 
     /// <summary>
@@ -68,6 +75,12 @@ public sealed class GetMyPaymentMethodsHandler
             return Result<IReadOnlyList<CardPaymentMethodDto>>.FailureCode(failure.ToPaymentMethodErrorCode());
         }
 
-        return Result.Success(methods.Methods);
+        var agreed = await _context.CardChargeConsents
+            .Where(c => c.ClientId == customer.Value.ClientId && c.Status == CardConsentStatus.Active)
+            .Select(c => c.GatewayPaymentMethodId)
+            .ToListAsync(ct);
+
+        return Result.Success<IReadOnlyList<CardPaymentMethodDto>>(
+            [.. methods.Methods.Select(m => m with { AutoCharge = agreed.Contains(m.Id) })]);
     }
 }

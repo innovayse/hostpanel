@@ -145,6 +145,12 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// <summary>Gets the fulfilment records: one plugin told one thing about one invoice, and how far it got.</summary>
     public DbSet<FulfilmentRecord> FulfilmentRecords => Set<FulfilmentRecord>();
 
+    /// <summary>Gets the clients' agreements that a saved card may be charged without them, and their withdrawals.</summary>
+    public DbSet<CardChargeConsent> CardChargeConsents => Set<CardChargeConsent>();
+
+    /// <summary>Gets the exclusive rights to charge an invoice's card, one unfinished claim per invoice.</summary>
+    public DbSet<InvoicePaymentClaim> InvoicePaymentClaims => Set<InvoicePaymentClaim>();
+
     /// <summary>Gets the transactions table.</summary>
     public DbSet<Transaction> Transactions => Set<Transaction>();
 

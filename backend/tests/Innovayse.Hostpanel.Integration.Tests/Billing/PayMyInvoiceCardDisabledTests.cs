@@ -6,7 +6,6 @@ using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -34,7 +33,7 @@ public sealed class PayMyInvoiceCardDisabledTests(IntegrationTestFactory factory
         var host = factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services => services.AddSingleton<ICardPaymentGateway>(cardGateway)));
         var (owner, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "pay-cc-disabled");
-        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, "cus_cc_disabled_1");
+        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, $"cus_cc_{Guid.NewGuid():N}"[..24]);
         var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
         await ClientSettingsSeeds.SetAsync(factory, clientId, disableCcProcessing: true);

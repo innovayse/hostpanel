@@ -41,6 +41,9 @@ public static class DependencyInjection
         // Asks the enabled fulfilment plugins to cap a refund before any money moves.
         services.AddScoped<RefundAdviser>();
 
+        // Hands out the exclusive right to charge an invoice's card (one automatic or manual attempt at a time).
+        services.AddScoped<InvoicePaymentClaimGate>();
+
         return services;
     }
 }

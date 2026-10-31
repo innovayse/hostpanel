@@ -114,17 +114,55 @@ export const useBillingApi = () => {
    *
    * @param orderId - Order to charge.
    * @param paymentToken - The order's payment token, returned when it was placed.
+   * @param saveCard - Whether the payer ticked "save the card for automatic renewals".
    * @returns The client secret Stripe.js needs to confirm the card.
    * @throws Whatever `apiFetch` throws.
    */
   const createOrderPaymentIntent = (
     orderId: string | number,
-    paymentToken: string
+    paymentToken: string,
+    saveCard = false
   ): Promise<{ clientSecret: string }> =>
     apiFetch<{ clientSecret: string }>(`/api/portal/order/${orderId}/create-payment-intent`, {
       method: HttpMethod.Post,
-      body: { paymentToken }
+      body: { paymentToken, saveCard }
     })
+
+  /**
+   * Starts saving a card without a payment. The payer's agreement to automatic renewal charges is sent
+   * with it; the backend records it as pending until the payment provider confirms the card.
+   *
+   * @param consentAccepted - Whether the payer ticked the agreement.
+   * @returns The setup intent to confirm with the card element, and its client secret.
+   * @throws Whatever `apiFetch` throws.
+   */
+  const createSetupIntent = (consentAccepted: boolean): Promise<{ setupIntentId: string, clientSecret: string }> =>
+    apiFetch<{ setupIntentId: string, clientSecret: string }>('/api/portal/client/payment-methods/setup-intent', {
+      method: HttpMethod.Post,
+      body: { consentAccepted }
+    })
+
+  /**
+   * Finishes saving a card once the card element confirmed the setup intent.
+   *
+   * @param setupIntentId - The setup intent {@link createSetupIntent} opened.
+   * @returns Whatever the endpoint answers with.
+   * @throws Whatever `apiFetch` throws.
+   */
+  const confirmSetupIntent = (setupIntentId: string): Promise<unknown> =>
+    apiFetch('/api/portal/client/payment-methods/confirm-setup', {
+      method: HttpMethod.Post,
+      body: { setupIntentId }
+    })
+
+  /**
+   * Turns off automatic card charges for the account; saved cards stay on file.
+   *
+   * @returns Whatever the endpoint answers with.
+   * @throws Whatever `apiFetch` throws.
+   */
+  const turnOffAutoCharge = (): Promise<unknown> =>
+    apiFetch('/api/portal/client/payment-methods/auto-charge', { method: HttpMethod.Delete })
 
   /**
    * Registers a hosted-gateway payment for an order and asks where to send the payer.
@@ -232,6 +270,9 @@ export const useBillingApi = () => {
     fetchGatewayMethods,
     createOrder,
     createOrderPaymentIntent,
+    createSetupIntent,
+    confirmSetupIntent,
+    turnOffAutoCharge,
     startOrderGatewayPayment,
     startInvoiceGatewayPayment,
     completeGatewayPayment,

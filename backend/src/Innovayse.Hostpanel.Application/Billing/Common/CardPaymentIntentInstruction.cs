@@ -14,10 +14,20 @@ namespace Innovayse.Hostpanel.Application.Billing.Common;
 /// The key the gateway deduplicates the intent by: a repeated request for the same invoice attempt
 /// answers with the first intent instead of opening a second one that could be paid as well.
 /// </param>
+/// <param name="CustomerId">
+/// The card gateway customer the payment belongs to, or <see langword="null"/> for a payment that
+/// is not tied to a saved customer. Required when <paramref name="SaveCard"/> is set.
+/// </param>
+/// <param name="SaveCard">
+/// Whether the card used is kept on the customer for later off-session charges. Set only when the
+/// client ticked the consent box; the gateway then also records the cardholder's agreement.
+/// </param>
 public sealed record CardPaymentIntentInstruction(
     decimal Amount,
     string Currency,
     int OrderId,
     int InvoiceId,
     int ClientId,
-    string IdempotencyKey);
+    string IdempotencyKey,
+    string? CustomerId = null,
+    bool SaveCard = false);

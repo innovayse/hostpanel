@@ -241,7 +241,7 @@ describe('useCheckoutStore.placeOrder', () => {
 
     const destination = await store.placeOrder(input(confirmCard))
 
-    expect(billing.createOrderPaymentIntent).toHaveBeenCalledWith(42, 'tok')
+    expect(billing.createOrderPaymentIntent).toHaveBeenCalledWith(42, 'tok', false)
     expect(confirmCard).toHaveBeenCalledWith('sec')
     expect(billing.confirmOrderPayment).toHaveBeenCalledWith(42, { paymentIntentId: 'pi_9' }, 'tok')
     expect(destination).toEqual({
@@ -251,6 +251,16 @@ describe('useCheckoutStore.placeOrder', () => {
     expect(useCartStore().items).toEqual([])
     // The page is leaving: the button stays disabled so a second click cannot place another order.
     expect(store.submitting).toBe(true)
+  })
+
+  it('asks to keep the card for later charges only when the payer chose it', async () => {
+    billing.createOrderPaymentIntent.mockResolvedValue({ clientSecret: 'sec' })
+    const confirmCard = vi.fn().mockResolvedValue({ id: 'pi_9' })
+    const store = arrange('stripe', [domainItem])
+
+    await store.placeOrder({ ...input(confirmCard), saveCard: true })
+
+    expect(billing.createOrderPaymentIntent).toHaveBeenCalledWith(42, 'tok', true)
   })
 
   it('hands a hosted gateway the localised return address, remembers the token and leaves the site', async () => {

@@ -1,4 +1,6 @@
+using Innovayse.Hostpanel.Application.Billing.Commands.ChargeRenewalInvoice;
 using Innovayse.Hostpanel.Application.Billing.Common;
+using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
@@ -116,6 +118,16 @@ public sealed class RaiseClientRenewalInvoicesHandler
             return Result<int>.FailureCode(mayBill.ErrorCode!);
         }
 
+        // Renewal invoices raised earlier that are still unpaid and were not charged yet (the gateway was
+        // unreachable, another attempt held them) get their turn first; the charge skips what was tried.
+        foreach (var openInvoiceId in await _context.Invoices
+                     .Where(i => i.ClientId == client.Id && i.Status == InvoiceStatus.Unpaid && i.Items.Any(l => l.RenewalPeriodStart != null))
+                     .Select(i => i.Id)
+                     .ToListAsync(ct))
+        {
+            await ChargeAsync(openInvoiceId, ct);
+        }
+
         var settings = await _settings.ReadAsync(ct);
         var now = _clock.UtcNow;
         var horizon = now.AddDays(settings.InvoiceDaysBefore);
@@ -171,11 +183,40 @@ public sealed class RaiseClientRenewalInvoicesHandler
 
             raised++;
 
+            // What credit left owing is charged to the client's saved card when they agreed to that; a card
+            // that cannot be charged leaves the invoice unpaid for the client, never failing the raising.
+            if (invoice.Total > 0)
+            {
+                await ChargeAsync(invoice.Id, ct);
+            }
+
             _logger.LogInformation(
                 "Raised renewal invoice {InvoiceId} for client {ClientId} with {Count} lines.", invoice.Id, client.Id, group.Length);
         }
 
         return Result.Success(raised);
+    }
+
+    /// <summary>Asks for the automatic charge of one renewal invoice; whatever comes of it is logged and never fails the run.</summary>
+    /// <param name="invoiceId">The invoice.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes once the charge was attempted or skipped.</returns>
+    private async Task ChargeAsync(int invoiceId, CancellationToken ct)
+    {
+        try
+        {
+            var charged = await _bus.InvokeAsync<Result<RenewalChargeOutcome>>(new ChargeRenewalInvoiceCommand(invoiceId), ct);
+            if (charged.IsFailure)
+            {
+                _logger.LogError("The automatic charge of renewal invoice {InvoiceId} failed: {Code}", invoiceId, charged.ErrorCode);
+            }
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // The invoice stays unpaid and the client can pay it; a charge that took money and lost the answer
+            // is found again by its key before any other attempt, so swallowing it here loses nothing.
+            _logger.LogError(ex, "The automatic charge of renewal invoice {InvoiceId} threw; the invoice stays unpaid.", invoiceId);
+        }
     }
 
     /// <summary>

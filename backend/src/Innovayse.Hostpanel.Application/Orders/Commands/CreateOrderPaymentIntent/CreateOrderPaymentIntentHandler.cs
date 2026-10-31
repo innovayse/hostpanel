@@ -1,4 +1,6 @@
 using System.Globalization;
+using Innovayse.Hostpanel.Application.Billing.Commands.EnsureCardGatewayCustomer;
+using Innovayse.Hostpanel.Application.Billing.Commands.RequestCardChargeConsent;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Billing.Queries.GetInvoiceBrief;
@@ -102,12 +104,33 @@ public sealed class CreateOrderPaymentIntentHandler
             return Result<PaymentIntentDto>.FailureCode(configured.ErrorCode!);
         }
 
+        // A card is only kept when the payer asked for it, and then on the client's own gateway customer.
+        string? customerId = null;
+        if (cmd.SaveCard)
+        {
+            var customer = await _bus.InvokeAsync<Result<string>>(new EnsureCardGatewayCustomerCommand(order.ClientId), ct);
+            if (customer.IsFailure)
+            {
+                return Result<PaymentIntentDto>.FailureCode(customer.ErrorCode!);
+            }
+
+            customerId = customer.Value;
+        }
+
         // The ids travel with the intent so the gateway's own dashboard and reconciliation name the same rows
         // this database does; a payment that arrives with no way back to an order is a manual reconciliation.
         // The intent is opened in the invoice's own currency for what is still due, the amount the
         // settlement records; payments already on the invoice are not charged again.
         var intent = await _cardGateway.CreatePaymentIntentAsync(
-            new CardPaymentIntentInstruction(invoice.AmountDue, invoice.Currency, order.Id, invoice.Id, order.ClientId, IdempotencyKey(invoice)), ct);
+            new CardPaymentIntentInstruction(
+                invoice.AmountDue, invoice.Currency, order.Id, invoice.Id, order.ClientId, IdempotencyKey(invoice, cmd.SaveCard), customerId, cmd.SaveCard), ct);
+        if (intent.Failure is null && cmd.SaveCard)
+        {
+            // The agreement waits as Pending until the gateway confirms the paid intent saved the card.
+            await _bus.InvokeAsync<Result>(
+                new RequestCardChargeConsentCommand(order.ClientId, intent.IntentId!, CardConsentSource.PaymentCheckbox, cmd.Origin ?? new CardConsentOrigin(null, null)), ct);
+        }
+
         return intent.Failure switch
         {
             null => Result.Success(new PaymentIntentDto(intent.ClientSecret!)),
@@ -123,9 +146,10 @@ public sealed class CreateOrderPaymentIntentHandler
     /// payment landed in between) opens a new one.
     /// </summary>
     /// <param name="invoice">The invoice the intent is opened for.</param>
+    /// <param name="saveCard">Whether the intent keeps the card; the gateway refuses one key used for two different requests, so it is part of the key.</param>
     /// <returns>The key the intent is opened with.</returns>
-    private static string IdempotencyKey(InvoiceBriefDto invoice) =>
+    private static string IdempotencyKey(InvoiceBriefDto invoice, bool saveCard) =>
         string.Create(
             CultureInfo.InvariantCulture,
-            $"invoice-{invoice.Id}-intent-{CurrencyCode.ToMinorUnits(invoice.AmountDue, invoice.Currency)}-{invoice.Currency.ToUpperInvariant()}");
+            $"invoice-{invoice.Id}-intent-{CurrencyCode.ToMinorUnits(invoice.AmountDue, invoice.Currency)}-{invoice.Currency.ToUpperInvariant()}{(saveCard ? "-save" : string.Empty)}");
 }

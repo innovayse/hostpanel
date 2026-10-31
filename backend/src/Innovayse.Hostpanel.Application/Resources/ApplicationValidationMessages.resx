@@ -1340,4 +1340,13 @@
   <data name="ClientExternalAccountIdInvalid" xml:space="preserve">
     <value>The external account id is required and at most 256 characters.</value>
   </data>
+  <data name="CardGatewayCustomerIdInvalid" xml:space="preserve">
+    <value>The card gateway customer id is required and at most 50 characters.</value>
+  </data>
+  <data name="CardConsentRequired" xml:space="preserve">
+    <value>You must agree to automatic charges to save a card.</value>
+  </data>
+  <data name="SetupIntentIdInvalid" xml:space="preserve">
+    <value>The card setup id is required and at most 255 characters.</value>
+  </data>
 </root>

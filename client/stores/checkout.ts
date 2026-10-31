@@ -363,7 +363,7 @@ export const useCheckoutStore = defineStore('checkout', () => {
         // The card is confirmed once. If the backend call below fails after the provider took the
         // payment, the id stays in pendingPaymentIntentId and a retry repeats only that call.
         if (pendingPaymentIntentId.value === null) {
-          const { clientSecret } = await billing.createOrderPaymentIntent(result.orderId, result.paymentToken)
+          const { clientSecret } = await billing.createOrderPaymentIntent(result.orderId, result.paymentToken, input.saveCard === true)
           const paymentIntent = await input.confirmCard(clientSecret)
           pendingPaymentIntentId.value = paymentIntent.id
         }

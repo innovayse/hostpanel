@@ -73,6 +73,9 @@ public static class StatusMapping
             // Exact row: the deployment has no card gateway, a state of the system rather than a
             // malformed request, and the name carries no CONFLICT / ALREADY token for the generic arms.
             "PAYMENT_METHOD_UNAVAILABLE" => new(409, "Conflict"),
+            // Exact rows: another payment attempt holds the invoice, and the card was not saved at the
+            // gateway: state conflicts whose names carry no CONFLICT / ALREADY token for the generic arms.
+            "PAYMENT_IN_PROGRESS" or "CARD_SETUP_NOT_COMPLETED" => new(409, "Conflict"),
             // Exact row: the card gateway or the hosted gateway refused or failed the refund, an
             // upstream refusal rather than a malformed request, and neither name carries the
             // _UPSTREAM_FAILED suffix.

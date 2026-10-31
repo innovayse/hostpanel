@@ -40,7 +40,17 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<Client>
         builder.Property(x => x.Address2).HasMaxLength(200);
         builder.Property(x => x.Currency).HasMaxLength(3);
         builder.Property(x => x.PaymentMethod).HasMaxLength(50);
-        builder.Property(x => x.CardGatewayCustomerId).HasMaxLength(50);
+
+        // A concurrency token: the UPDATE that stores the customer carries the value read (empty) in its
+        // WHERE, so of two requests storing a customer for one client only one save wins and the other
+        // gets DbUpdateConcurrencyException. A token is not schema, so no column changes.
+        builder.Property(x => x.CardGatewayCustomerId).HasMaxLength(50).IsConcurrencyToken();
+
+        // One card gateway customer belongs to one client only, whatever the application did: the last
+        // guard against two clients (or two racing requests for one client) sharing a customer.
+        builder.HasIndex(x => x.CardGatewayCustomerId)
+            .IsUnique()
+            .HasFilter("\"CardGatewayCustomerId\" IS NOT NULL");
 
         // The link to an account in another system is whole or absent, which the domain keeps and the
         // check enforces for every writer. One external account belongs to one client only, so the pair is

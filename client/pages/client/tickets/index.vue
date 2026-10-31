@@ -42,7 +42,7 @@ import { CLIENT_TICKET_NEW_PATH } from '~/constants/clientRoutes'
 import { MessageSquare, Plus } from 'lucide-vue-next'
 import { useClientStore } from '~/stores/client'
 import { ListFilter } from '~/types/listfilter'
-import { TicketStatus } from '~/types/ticketstatus'
+import { isTicketOpen } from '~/utils/ticketOpen'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
@@ -52,7 +52,7 @@ const { t } = useI18n()
 /** The client store that owns the ticket list and its loading and failure state. */
 const store = useClientStore()
 
-await useAsyncData('client-tickets', () => store.fetchTickets())
+await useAsyncData('client-tickets', () => store.fetchTickets(true))
 
 /** The active filter tab, a `ListFilter` value (a string so the tab bar can v-model it). */
 const activeTab = ref<string>(ListFilter.All)
@@ -67,10 +67,10 @@ const tabs = computed(() => [
 /** The tickets the active tab shows: open means anything not closed. */
 const filteredTickets = computed(() => {
   if (activeTab.value === ListFilter.Current) {
-    return store.tickets.filter((ticket) => ticket.status !== TicketStatus.Closed)
+    return store.tickets.filter(isTicketOpen)
   }
   if (activeTab.value === ListFilter.Finished) {
-    return store.tickets.filter((ticket) => ticket.status === TicketStatus.Closed)
+    return store.tickets.filter((ticket) => !isTicketOpen(ticket))
   }
   return store.tickets
 })

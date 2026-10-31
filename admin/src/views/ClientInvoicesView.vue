@@ -13,8 +13,7 @@ import { useResultBanner } from '@/composables/useResultBanner'
 import { INVOICE_STATUS_OPTIONS } from '@/lib/constants'
 import { invoiceStatusTone } from '@/lib/tones'
 import { formatDate } from '@/lib/format'
-import { formatSymbolPrice } from '@/lib/money'
-import { CurrencyCode } from '@/types/currency'
+import { formatPlainAmount } from '@/lib/money'
 import { InvoiceBulkAction, InvoiceOpenAction } from '@/types/invoice'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -587,7 +586,7 @@ onMounted(() => fetchInvoices())
               <UiTableCell muted>{{ formatDate(invoice.invoiceDate) }}</UiTableCell>
               <UiTableCell muted>{{ formatDate(invoice.dueDate) }}</UiTableCell>
               <UiTableCell muted>{{ invoice.paidAt ? formatDate(invoice.paidAt) : '-' }}</UiTableCell>
-              <UiTableCell>{{ formatSymbolPrice(invoice.total, invoice.currency ?? CurrencyCode.Usd) }}</UiTableCell>
+              <UiTableCell>{{ formatPlainAmount(invoice.total, invoice.currency) }}</UiTableCell>
               <UiTableCell muted>{{ invoice.paymentMethod || '-' }}</UiTableCell>
               <UiTableCell>
                 <UiBadge :tone="invoiceStatusTone(invoice.status)" small>{{ invoice.status }}</UiBadge>

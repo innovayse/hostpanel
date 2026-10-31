@@ -70,7 +70,8 @@ public sealed class OrdersController : BaseApiController
     /// 404 with <c>PRODUCT_NOT_FOUND</c>, or <c>DOMAIN_NOT_FOUND</c> when a renewal names a domain
     /// the client does not hold; 409 with <c>ACCOUNT_EMAIL_EXISTS</c> when a guest's address already
     /// has an account; 429 when the rate limit is hit; 500 on an unexpected fault (the invoice of an
-    /// order that failed to save is cancelled); 503 with <c>ORDER_NUMBER_RANGE_EXHAUSTED</c>.
+    /// order that failed to save is cancelled); 503 with <c>ORDER_NUMBER_RANGE_EXHAUSTED</c>, or with
+    /// <c>IDENTITY_PLUGIN_UNAVAILABLE</c> (and <c>Retry-After</c>) when the identity plugin cannot say who the caller is.
     /// </returns>
     [HttpPost]
     [AllowAnonymous]
@@ -209,7 +210,8 @@ public sealed class OrdersController : BaseApiController
     /// <c>ORDER_NOT_INVOICED</c> when the order was never billed, or <c>INVOICE_NOT_PAYABLE</c> when
     /// its invoice is not open or owes nothing; 404 with <c>ORDER_NOT_FOUND</c> when the id and token
     /// do not match an order, or with <c>INVOICE_NOT_FOUND</c>; 403 with <c>CLIENT_SUSPENDED</c>, <c>CLIENT_CLOSED</c> or
-    /// <c>CLIENT_CARD_PAYMENT_DISABLED</c> when the order's account may not pay by card; 429 when the rate limit is hit; 502
+    /// <c>CLIENT_CARD_PAYMENT_DISABLED</c> when the order's account may not pay by card; 409 with
+    /// <c>PAYMENT_METHOD_UNAVAILABLE</c> when the deployment has no card gateway; 429 when the rate limit is hit; 502
     /// with <c>GATEWAY_CHARGE_UPSTREAM_FAILED</c> when the card gateway refuses to open the intent;
     /// 503 with <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when the card gateway cannot be reached.
     /// </returns>
@@ -220,6 +222,7 @@ public sealed class OrdersController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> CreatePaymentIntentAsync(
@@ -241,7 +244,8 @@ public sealed class OrdersController : BaseApiController
     /// <c>ORDER_NOT_INVOICED</c>; 404 with <c>ORDER_NOT_FOUND</c> when the id and token do not match an
     /// order, or with <c>INVOICE_NOT_FOUND</c>; 400 with <c>PAYMENT_INTENT_MISMATCH</c> when the intent
     /// does not pay this order's invoice; 409 with <c>PAYMENT_INTENT_ALREADY_USED</c> when its payment is
-    /// already recorded; 502 with <c>GATEWAY_CHARGE_UPSTREAM_FAILED</c> or
+    /// already recorded, or with <c>PAYMENT_METHOD_UNAVAILABLE</c> when the deployment has no card gateway;
+    /// 502 with <c>GATEWAY_CHARGE_UPSTREAM_FAILED</c> or
     /// <c>GATEWAY_TRANSACTION_MISSING_UPSTREAM_FAILED</c> when the gateway refuses; 503 with
     /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when the gateway cannot be reached; 429 when the rate limit is hit.
     /// </returns>

@@ -260,6 +260,43 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>
+    /// A gateway refund of a card payment on a deployment with no card gateway key answers 409
+    /// <c>PAYMENT_METHOD_UNAVAILABLE</c>, never a 500, and the card gateway is never called.
+    /// </summary>
+    [Fact]
+    public async Task GatewayRefundOfACardPaymentWithoutCardGatewayKeyAnswersConflict()
+    {
+        var cardGateway = new FakeCardPaymentGateway { IsConfigured = false };
+        var host = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services => services.AddSingleton<ICardPaymentGateway>(cardGateway)));
+        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var clientId = await BillingTestSeeds.SeedClientAsync(host);
+
+        int invoiceId;
+        using (var scope = host.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+            invoice.AddItem("Hosting", 10m, 1);
+            context.Invoices.Add(invoice);
+            await context.SaveChangesAsync(CancellationToken.None);
+            context.Transactions.Add(invoice.Settle(PaymentMethodNames.Card, $"ch_{Guid.NewGuid():N}", DateTimeOffset.UtcNow)!);
+            await context.SaveChangesAsync(CancellationToken.None);
+            invoiceId = invoice.Id;
+        }
+
+        var response = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/refund", new
+        {
+            amount = 4m,
+            refundType = nameof(RefundType.Gateway),
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.PAYMENT_METHOD_UNAVAILABLE);
+        cardGateway.RefundInstructions.Should().BeEmpty();
+    }
+
+    /// <summary>
     /// A card payment that settled an invoice whose hosted session was still open is refunded to the
     /// card: the kept session took none of the money, so the hosted gateway is never asked.
     /// </summary>

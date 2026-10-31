@@ -18,6 +18,8 @@ export interface InvoiceItem {
   quantity: number
   /** Line total (unitPrice x quantity). */
   amount: number
+  /** SKU of the product the line was sold from, from its product snapshot; `null` for a line without one (a domain, a manual line). */
+  sku: string | null
 }
 
 /** Payment, refund, or credit transaction recorded against an invoice. */

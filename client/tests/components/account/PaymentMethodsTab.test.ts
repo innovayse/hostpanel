@@ -13,7 +13,10 @@ import { PaymentMethodType } from '~/types/payment'
 import type { PaymentMethod } from '~/types/payment'
 
 vi.mock('~/composables/apis/useClientApi', () => ({ useClientApi: () => ({}) }))
-vi.mock('~/composables/apis/useBillingApi', () => ({ useBillingApi: () => ({}) }))
+/** The billing API the store reads saved methods through; a test sets what the read answers. */
+const billing = vi.hoisted(() => ({ fetchPaymentMethods: vi.fn() }))
+
+vi.mock('~/composables/apis/useBillingApi', () => ({ useBillingApi: () => billing }))
 vi.mock('~/composables/apis/useAuthApi', () => ({ useAuthApi: () => ({}) }))
 vi.mock('qrcode', () => ({ default: { toDataURL: async (): Promise<string> => '' } }))
 
@@ -43,6 +46,20 @@ describe('PaymentMethodsTab', () => {
     expect(wrapper.find('[data-testid="ui-empty-state"]').text()).toContain('client.payment.empty')
     expect(wrapper.find('[data-testid="ui-empty-state"]').text()).toContain('client.payment.emptyDesc')
     expect(wrapper.find('[data-testid="account-payment-load-error"]').exists()).toBe(false)
+  })
+
+  it('shows the empty state, not a failure, when the API answers an empty list because the deployment has no card gateway key', async () => {
+    billing.fetchPaymentMethods.mockResolvedValue([])
+    const wrapper = mountAccount(PaymentMethodsTab)
+    const store = useAccountStore()
+
+    await store.loadPaymentMethods()
+    await wrapper.vm.$nextTick()
+
+    expect(billing.fetchPaymentMethods).toHaveBeenCalledTimes(1)
+    expect(wrapper.find('[data-testid="ui-empty-state"]').text()).toContain('client.payment.empty')
+    expect(wrapper.find('[data-testid="account-payment-load-error"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="account-payment-loading"]').exists()).toBe(false)
   })
 
   it('links a customer without a saved card to the invoices, where the hosted gateway takes the payment', () => {

@@ -130,7 +130,7 @@
     <value>Այդ վճարման եղանակը այս հաշվինը չէ։</value>
   </data>
 <data name="PAYMENT_METHOD_UNAVAILABLE" xml:space="preserve">
-    <value>Այս պահպանված վճարման եղանակից գումար հանել հնարավոր չէ, քանի որ այս տեղակայման մեջ քարտային վճարային դարպասը կարգավորված չէ։</value>
+    <value>Քարտային վճարումները հասանելի չեն, քանի որ քարտային վճարային դարպասը կարգավորված չէ։</value>
   </data>
 <data name="NO_SAVED_PAYMENT_METHODS" xml:space="preserve">
     <value>Այս հաշիվը պահպանված վճարման եղանակներ չունի։</value>
@@ -143,6 +143,9 @@
   </data>
   <data name="PAYMENT_GATEWAY_SERVICE_UNAVAILABLE" xml:space="preserve">
     <value>Վճարային համակարգը ժամանակավորապես անհասանելի է։ Խնդրում ենք փորձել մի փոքր ուշ։</value>
+  </data>
+  <data name="IDENTITY_PLUGIN_UNAVAILABLE" xml:space="preserve">
+    <value>Ձեր հաշիվը հաճախորդի պրոֆիլին կապող ծառայությունը ժամանակավորապես անհասանելի է։ Խնդրում ենք փորձել մի փոքր ուշ։</value>
   </data>
   <data name="PAYMENT_METHOD_UPSTREAM_FAILED" xml:space="preserve">
     <value>Վճարային համակարգը չկարողացավ մշակել ձեր պահպանված վճարման եղանակների հարցումը։ Խնդրում ենք փորձել ավելի ուշ կամ դիմել աջակցությանը։</value>
@@ -182,6 +185,9 @@
   </data>
 <data name="CLIENT_CURRENCY_ALREADY_INVOICED" xml:space="preserve">
     <value>Այս հաճախորդին արդեն ինվոյս է ուղարկվել, ուստի նրա արժույթը հնարավոր չէ փոխել։</value>
+  </data>
+  <data name="CLIENT_CURRENCY_LOCKED_BY_CREDIT" xml:space="preserve">
+    <value>Այս հաճախորդն ունի վարկային մնացորդ, ուստի արժույթը հնարավոր չէ փոխել։ Նախ օգտագործեք կամ վերադարձրեք մնացորդը, ապա փոխեք արժույթը։</value>
   </data>
 <data name="EMAIL_LOG_NOT_FOUND" xml:space="preserve">
     <value>Այդպիսի նամակ չկա։</value>
@@ -852,6 +858,9 @@
   </data>
   <data name="PRODUCT_PACKAGE_MISSING" xml:space="preserve">
     <value>Ապրանքի համար հոսթինգի փաթեթ նշված չէ։ Նախ ընտրեք այն ապրանքի կարգավորումներում։</value>
+  </data>
+  <data name="PRODUCT_SERVER_GROUP_REQUIRED" xml:space="preserve">
+    <value>Ապրանքը սերվերների խումբ չունի, իսկ ձեր սերվերները աշխատում են տարբեր կառավարման վահանակներով։ Նշանակեք ապրանքին սերվերների խումբ, որ փաթեթը հասնի ճիշտ վահանակին։</value>
   </data>
   <data name="INVOICE_PAYMENT_EXCEEDS_DUE" xml:space="preserve">
     <value>Վճարումը գերազանցում է հաշիվ-ապրանքագրի դեռ վճարելիք գումարը։</value>

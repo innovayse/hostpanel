@@ -67,7 +67,7 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     }
 
     /// <inheritdoc/>
-    public Task<string> GetCPanelSsoUrlAsync(string provisioningRef, CancellationToken ct)
+    public Task<string> GetCPanelSsoUrlAsync(string provisioningRef, string? callerIp, CancellationToken ct)
     {
         ThrowIfShouldFail();
         return Task.FromResult("https://fake-panel.example.com/sso");

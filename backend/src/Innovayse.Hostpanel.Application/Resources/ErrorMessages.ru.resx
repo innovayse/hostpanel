@@ -130,7 +130,7 @@
     <value>Этот способ оплаты не принадлежит этому аккаунту.</value>
   </data>
 <data name="PAYMENT_METHOD_UNAVAILABLE" xml:space="preserve">
-    <value>Этот сохранённый способ оплаты нельзя списать: в этом развёртывании не настроен платёжный шлюз для карт.</value>
+    <value>Оплата картой недоступна, так как платёжный шлюз для карт не настроен.</value>
   </data>
 <data name="NO_SAVED_PAYMENT_METHODS" xml:space="preserve">
     <value>У этого аккаунта нет сохранённых способов оплаты.</value>
@@ -143,6 +143,9 @@
   </data>
   <data name="PAYMENT_GATEWAY_SERVICE_UNAVAILABLE" xml:space="preserve">
     <value>Платёжный шлюз временно недоступен. Повторите попытку чуть позже.</value>
+  </data>
+  <data name="IDENTITY_PLUGIN_UNAVAILABLE" xml:space="preserve">
+    <value>Сервис, связывающий вашу учётную запись с профилем клиента, временно недоступен. Повторите попытку чуть позже.</value>
   </data>
   <data name="PAYMENT_METHOD_UPSTREAM_FAILED" xml:space="preserve">
     <value>Платёжный шлюз не смог обработать запрос по вашим сохранённым способам оплаты. Повторите попытку позже или обратитесь в поддержку.</value>
@@ -182,6 +185,9 @@
   </data>
 <data name="CLIENT_CURRENCY_ALREADY_INVOICED" xml:space="preserve">
     <value>Этому клиенту уже выставлялись счета, поэтому его валюту нельзя изменить.</value>
+  </data>
+  <data name="CLIENT_CURRENCY_LOCKED_BY_CREDIT" xml:space="preserve">
+    <value>У этого клиента есть кредитный баланс, поэтому валюту нельзя изменить. Сначала используйте или верните баланс, затем смените валюту.</value>
   </data>
 <data name="EMAIL_LOG_NOT_FOUND" xml:space="preserve">
     <value>Такое письмо не найдено.</value>
@@ -852,6 +858,9 @@
   </data>
   <data name="PRODUCT_PACKAGE_MISSING" xml:space="preserve">
     <value>У продукта не указан хостинг-пакет. Сначала выберите его в настройках продукта.</value>
+  </data>
+  <data name="PRODUCT_SERVER_GROUP_REQUIRED" xml:space="preserve">
+    <value>У продукта нет группы серверов, а ваши серверы работают на разных панелях управления. Назначьте продукту группу серверов, чтобы пакет попал на нужную панель.</value>
   </data>
   <data name="INVOICE_PAYMENT_EXCEEDS_DUE" xml:space="preserve">
     <value>Платёж превышает сумму, которую ещё нужно оплатить по счёту.</value>

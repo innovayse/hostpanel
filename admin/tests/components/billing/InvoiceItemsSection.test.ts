@@ -30,7 +30,7 @@ describe('InvoiceItemsSection', () => {
         invoice: invoiceFixture({
           currency: 'AMD',
           amounts: { ...invoiceFixture().amounts, total: 24000, subTotal: 24000 },
-          items: [{ id: 11, description: 'Managed hosting', unitPrice: 24000, quantity: 1, amount: 24000 }],
+          items: [{ id: 11, description: 'Managed hosting', unitPrice: 24000, quantity: 1, amount: 24000, sku: null }],
         }),
         readonly: true,
       },
@@ -85,8 +85,8 @@ describe('InvoiceItemsSection', () => {
     })
     const invoice = invoiceFixture({
       items: [
-        { id: 11, description: 'Hosting', unitPrice: 10, quantity: 3, amount: 30 },
-        { id: 12, description: 'Setup', unitPrice: 5, quantity: 1, amount: 5 },
+        { id: 11, description: 'Hosting', unitPrice: 10, quantity: 3, amount: 30, sku: null },
+        { id: 12, description: 'Setup', unitPrice: 5, quantity: 1, amount: 5, sku: null },
       ],
     })
     const wrapper = mountWithApp(InvoiceItemsSection, { props: { invoice } })
@@ -120,7 +120,7 @@ describe('InvoiceItemsSection', () => {
     const wrapper = mountWithApp(InvoiceItemsSection, { props: { invoice: invoiceFixture() } })
 
     await wrapper.setProps({
-      invoice: invoiceFixture({ items: [{ id: 11, description: 'Renamed', unitPrice: 100, quantity: 1, amount: 100 }] }),
+      invoice: invoiceFixture({ items: [{ id: 11, description: 'Renamed', unitPrice: 100, quantity: 1, amount: 100, sku: null }] }),
     })
 
     expect((wrapper.get('[data-testid="billing-invoice-item-description-0"]').element as HTMLTextAreaElement).value)
@@ -145,5 +145,25 @@ describe('InvoiceItemsSection', () => {
     await flushPromises()
 
     expect(wrapper.get('[data-testid="billing-invoice-items-feedback"]').text()).toBe('A paid invoice cannot be changed.')
+  })
+
+  it('shows the editable line total in the invoice currency and follows the typed price', async () => {
+    const wrapper = mountWithApp(InvoiceItemsSection, {
+      props: {
+        invoice: invoiceFixture({
+          currency: 'AMD',
+          items: [{ id: 11, description: 'Managed hosting', unitPrice: 24000, quantity: 2, amount: 48000, sku: null }],
+        }),
+      },
+    })
+
+    await flushPromises()
+    expect(wrapper.get('[data-testid="billing-invoice-items-editor"]').text()).toContain('48000.00 AMD')
+
+    await wrapper.get('[data-testid="billing-invoice-item-price-0"] input').setValue('1000')
+
+    const table = wrapper.get('[data-testid="billing-invoice-items-editor"]').text()
+    expect(table).toContain('2000.00 AMD')
+    expect(table).not.toContain('$')
   })
 })

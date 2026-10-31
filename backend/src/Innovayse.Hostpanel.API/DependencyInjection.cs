@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Innovayse.Hostpanel.API.Authorization;
 using Innovayse.Hostpanel.API.Extensions;
 using Innovayse.Hostpanel.API.Identity;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
@@ -10,8 +11,10 @@ using Innovayse.Hostpanel.Shared.Filters;
 using Innovayse.Hostpanel.Shared.MultiTenancy;
 using Innovayse.Hostpanel.Shared.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using CorsPolicyOptions = Microsoft.AspNetCore.Cors.Infrastructure.CorsOptions;
 
@@ -114,6 +117,7 @@ public static class DependencyInjection
         // Wolverine's generated handler code builds it as a constructor call like any other adapter.
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, HttpCurrentUserService>();
+        services.AddScoped<ICallerClientMemo, HttpCallerClientMemo>();
 
         // The caller's own bearer token, for an adapter that acts as the person against an outside service.
         services.AddScoped<ICallerAccessToken, HttpCallerAccessToken>();
@@ -129,6 +133,9 @@ public static class DependencyInjection
                 // a duplicate. Setting it here covers every controller at once. No action name is
                 // referenced as a string anywhere, so nothing depends on the trimmed form.
                 opts.SuppressAsyncSuffixInActionNames = false;
+
+                // Every client portal action can answer 503 IDENTITY_PLUGIN_UNAVAILABLE; declared once here.
+                opts.Conventions.Add(new IdentityPluginUnavailableConvention());
 
                 // Required-ness is the validators' business, where every message is localized. Without this MVC
                 // makes a non-nullable string an implicit [Required] with a fixed English message, so a body
@@ -175,6 +182,8 @@ public static class DependencyInjection
         services.ConfigureProblemDetailsAuthEvents();
         services.PostConfigure<JwtBearerOptions>(LocalJwtScheme.Name, o => o.UseProblemDetailsResponses());
         services.AddProblemDetailsAuthorizationResponses();
+        // Replaces the decorator above: the same 401 and 403 bodies, plus 503 when only the identity plugin failed.
+        services.Replace(ServiceDescriptor.Singleton<IAuthorizationMiddlewareResultHandler, IdentityPluginUnavailableResponder>());
         services.AddHostpanelSwagger();
 
         // The two cron startups below each hand Wolverine a message to deliver hours from now. Wolverine

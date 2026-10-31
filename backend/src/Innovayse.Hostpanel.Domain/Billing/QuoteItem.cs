@@ -27,8 +27,13 @@ public sealed class QuoteItem
     /// <summary>Gets a value indicating whether this item is taxed.</summary>
     public bool Taxed { get; private set; }
 
-    /// <summary>Gets the calculated total for this line item after discount.</summary>
+    /// <summary>Gets the calculated total for this line item after discount, unrounded: use <see cref="AmountIn"/> for an amount a payer can be charged.</summary>
     public decimal Amount => UnitPrice * Quantity * (1 - DiscountPercent / 100);
+
+    /// <summary>Returns the line total after discount rounded to the minor unit of <paramref name="currency"/>, the same way an invoice rounds its amounts.</summary>
+    /// <param name="currency">ISO 4217 alpha code the quote's amounts are in.</param>
+    /// <returns>The discounted line total in major units, with no more decimals than the currency allows.</returns>
+    public decimal AmountIn(string currency) => CurrencyCode.RoundToMinorUnits(Amount, currency);
 
     /// <summary>EF Core parameterless constructor: do not call directly.</summary>
     private QuoteItem() { }

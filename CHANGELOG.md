@@ -104,6 +104,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A quote total is the sum of the discounted lines rounded once to the currency minor unit, the same order an invoice uses, so two lines of 0.004 total 0.01. A migration recalculates the totals of quotes saved before.
 - Accounts that staff link to a client (creating the client for an existing account, adding a user, transferring ownership) are now granted the Client role; before, the portal answered 403 to them and showed nothing. A one-time migration (`GrantClientRoleToLinkedUsers`) grants the role to accounts already linked to a client that lack it. It only adds rows, skips staff accounts (Admin, Reseller), and is not reversed on rollback.
 - Client portal, Account, Payment Methods no longer answers 500 on an install without card gateway keys (the demo, bank transfer only): the list is empty, and setting a default or removing a card answers 409 `PAYMENT_METHOD_UNAVAILABLE` (#606).
 - An install without card gateway keys no longer answers 500 when an order's card payment is opened or confirmed, or when an invoice paid by card is settled: they answer 409 `PAYMENT_METHOD_UNAVAILABLE`, and the card gateway adapter itself refuses cleanly when it has no key. The `PAYMENT_METHOD_UNAVAILABLE` sentence now covers charging, setting a default and removing a saved method (#701).

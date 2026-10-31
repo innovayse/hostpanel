@@ -39,6 +39,45 @@ public sealed class UpdateQuoteTests(IntegrationTestFactory factory) : IClassFix
         body.RootElement.GetProperty("stage").GetString().Should().Be("Delivered");
     }
 
+    /// <summary>Editing a line's values writes the new total, the discounted sum rounded once to the currency.</summary>
+    [Fact]
+    public async Task UpdateWithChangedLineValuesWritesTheNewTotal()
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
+        var created = await admin.PostAsJsonAsync("/api/billing/quotes", new
+        {
+            clientId,
+            subject = "Totals",
+            expiryDate = DateTimeOffset.UtcNow.AddDays(30),
+            notes = (string?)null,
+            items = new[]
+            {
+                new { description = "A", unitPrice = 10m, quantity = 3, discountPercent = 33.33m },
+                new { description = "B", unitPrice = 0.004m, quantity = 1, discountPercent = 0m },
+            },
+        });
+        var quoteId = await created.Content.ReadFromJsonAsync<int>();
+        using var before = JsonDocument.Parse(await admin.GetStringAsync($"/api/billing/quotes/{quoteId}"));
+        var lineId = before.RootElement.GetProperty("items")[0].GetProperty("id").GetInt32();
+
+        var response = await admin.PutAsJsonAsync($"/api/billing/quotes/{quoteId}", new
+        {
+            subject = "Totals",
+            stage = "Draft",
+            validUntil = DateTimeOffset.UtcNow.AddDays(30),
+            notes = (string?)null,
+            proposalText = (string?)null,
+            customerNotes = (string?)null,
+            adminNotes = (string?)null,
+            items = new[] { new { id = (int?)lineId, description = "A", unitPrice = 5m, quantity = 2, discountPercent = 10m, isDeleted = false } },
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        using var after = JsonDocument.Parse(await admin.GetStringAsync($"/api/billing/quotes/{quoteId}"));
+        after.RootElement.GetProperty("total").GetDecimal().Should().Be(9.00m);
+    }
+
     /// <summary>Updating an id that names no quote answers 404, not 400.</summary>
     [Fact]
     public async Task UpdateUnknownQuoteRefusesNotFound()

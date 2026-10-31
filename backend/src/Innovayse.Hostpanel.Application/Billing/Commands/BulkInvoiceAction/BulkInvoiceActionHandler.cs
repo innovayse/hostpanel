@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -86,7 +87,7 @@ public sealed class BulkInvoiceActionHandler
         foreach (var invoice in invoices.Where(i => i.IsPayable))
         {
             var ledgerRow = invoice.Settle(
-                BulkPaymentMethod, $"bulk-{invoice.Id}-{now.Ticks}", now);
+                BulkPaymentMethod, $"bulk-{invoice.Id}-{now.Ticks}", now, TransactionSource.Manual);
             if (ledgerRow is not null)
             {
                 _context.Transactions.Add(ledgerRow);

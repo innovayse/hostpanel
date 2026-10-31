@@ -99,7 +99,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         refunded.StatusCode.Should().Be(HttpStatusCode.NoContent);
         (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.PartiallyRefunded));
         (await RefundRowsAsync(invoiceId)).Should().ContainSingle()
-            .Which.Should().Match<Transaction>(t => t.TransactionId == reference && t.AmountOut == 5m);
+            .Which.Should().Match<Transaction>(t => t.TransactionId == reference && t.AmountOut == 5m && t.Source == TransactionSource.Manual);
     }
 
     /// <summary>Reads the client ledger rows that took money out for an invoice, oldest first.</summary>
@@ -257,6 +257,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         refundRow.TransactionId.Should().Be("re_card_1");
         refundRow.PaymentMethod.Should().Be(PaymentMethodNames.Card);
         refundRow.AmountOut.Should().Be(4m);
+        refundRow.Source.Should().Be(TransactionSource.GatewayRefund);
     }
 
     /// <summary>

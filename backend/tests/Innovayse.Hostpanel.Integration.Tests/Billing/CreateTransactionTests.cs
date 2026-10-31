@@ -2,7 +2,11 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 
@@ -42,6 +46,10 @@ public sealed class CreateTransactionTests(IntegrationTestFactory factory) : ICl
         using var body = JsonDocument.Parse(await fetched.Content.ReadAsStringAsync());
         body.RootElement.GetProperty("id").GetInt32().Should().Be(transactionId);
         body.RootElement.GetProperty("amountIn").GetDecimal().Should().Be(25.00m);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await db.Transactions.AsNoTracking().SingleAsync(t => t.Id == transactionId)).Source
+            .Should().Be(TransactionSource.Manual);
     }
 
     /// <summary>Creating a transaction is not for anonymous callers.</summary>

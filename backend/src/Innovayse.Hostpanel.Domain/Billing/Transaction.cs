@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.SharedKernel.Domain;
 using Innovayse.Hostpanel.SharedKernel.Domain.Interfaces;
 
@@ -43,6 +44,12 @@ public sealed class Transaction : BaseEntity
     /// <summary>Gets the ISO 4217 currency code the transaction's amounts are in (e.g. "USD"). Set at creation, never changed.</summary>
     public string Currency { get; private set; } = string.Empty;
 
+    /// <summary>
+    /// Gets where the row came from. Set at creation, never changed: a gateway payment's payment method and
+    /// reference are unique among the rows of this source, a manual entry's or an import's are not.
+    /// </summary>
+    public TransactionSource Source { get; private set; }
+
     /// <summary>EF Core parameterless constructor: do not call directly.</summary>
     private Transaction() { }
 
@@ -60,9 +67,11 @@ public sealed class Transaction : BaseEntity
     /// <param name="fees">Transaction fees (≥ 0).</param>
     /// <param name="addedToCredit">Whether this affects the client's credit balance.</param>
     /// <param name="currency">ISO 4217 currency code the amounts are in (e.g. "USD"); the related invoice's currency when there is one.</param>
+    /// <param name="source">Where the row came from.</param>
     /// <returns>A new <see cref="Transaction"/>.</returns>
     /// <exception cref="DomainRuleException">Neither <paramref name="amountIn"/> nor <paramref name="amountOut"/> is positive.</exception>
     /// <exception cref="ArgumentException">The currency is not a three-letter code.</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="source"/> is not a defined value.</exception>
     public static Transaction Create(
         int clientId,
         DateTimeOffset date,
@@ -74,9 +83,15 @@ public sealed class Transaction : BaseEntity
         decimal amountOut,
         decimal fees,
         bool addedToCredit,
-        string currency)
+        string currency,
+        TransactionSource source)
     {
         EnsureMovesMoney(amountIn, amountOut);
+
+        if (!Enum.IsDefined(source))
+        {
+            throw new ArgumentOutOfRangeException(nameof(source), source, "The transaction source is not a defined value.");
+        }
 
         return new Transaction
         {
@@ -91,6 +106,7 @@ public sealed class Transaction : BaseEntity
             Fees = fees,
             AddedToCredit = addedToCredit,
             Currency = CurrencyCode.Normalise(currency),
+            Source = source,
         };
     }
 
@@ -106,8 +122,10 @@ public sealed class Transaction : BaseEntity
     /// <param name="transactionId">External transaction reference.</param>
     /// <param name="amount">Amount received (greater than 0).</param>
     /// <param name="fees">Transaction fees (≥ 0).</param>
+    /// <param name="source"><see cref="TransactionSource.GatewayPayment"/> for money a gateway took, otherwise <see cref="TransactionSource.Manual"/>.</param>
     /// <returns>A new payment <see cref="Transaction"/> in the invoice's currency.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="invoice"/> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="source"/> is neither a gateway payment nor a manual entry.</exception>
     /// <exception cref="DomainRuleException"><paramref name="amount"/> is not positive.</exception>
     public static Transaction CreateInvoicePayment(
         Invoice invoice,
@@ -115,9 +133,11 @@ public sealed class Transaction : BaseEntity
         string gateway,
         string transactionId,
         decimal amount,
-        decimal fees)
+        decimal fees,
+        TransactionSource source)
     {
         ArgumentNullException.ThrowIfNull(invoice);
+        EnsureSource(source, TransactionSource.GatewayPayment);
 
         return Create(
             invoice.ClientId,
@@ -130,7 +150,8 @@ public sealed class Transaction : BaseEntity
             0m,
             fees,
             addedToCredit: false,
-            invoice.Currency);
+            invoice.Currency,
+            source);
     }
 
     /// <summary>
@@ -143,8 +164,10 @@ public sealed class Transaction : BaseEntity
     /// <param name="transactionId">Reference of the refund.</param>
     /// <param name="amount">Amount refunded (greater than 0).</param>
     /// <param name="addedToCredit">Whether the refund went to the client's credit balance.</param>
+    /// <param name="source"><see cref="TransactionSource.GatewayRefund"/> for money a gateway returned, otherwise <see cref="TransactionSource.Manual"/>.</param>
     /// <returns>A new refund <see cref="Transaction"/> in the invoice's currency.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="invoice"/> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="source"/> is neither a gateway refund nor a manual entry.</exception>
     /// <exception cref="DomainRuleException"><paramref name="amount"/> is not positive.</exception>
     public static Transaction CreateInvoiceRefund(
         Invoice invoice,
@@ -152,9 +175,11 @@ public sealed class Transaction : BaseEntity
         string gateway,
         string transactionId,
         decimal amount,
-        bool addedToCredit)
+        bool addedToCredit,
+        TransactionSource source)
     {
         ArgumentNullException.ThrowIfNull(invoice);
+        EnsureSource(source, TransactionSource.GatewayRefund);
 
         return Create(
             invoice.ClientId,
@@ -167,7 +192,8 @@ public sealed class Transaction : BaseEntity
             amount,
             0m,
             addedToCredit,
-            invoice.Currency);
+            invoice.Currency,
+            source);
     }
 
     /// <summary>
@@ -208,6 +234,21 @@ public sealed class Transaction : BaseEntity
         AmountIn = amountIn;
         AmountOut = amountOut;
         Fees = fees;
+    }
+
+    /// <summary>
+    /// Refuses a source an invoice payment or refund cannot have: it is the gateway one of its direction
+    /// or a manual entry, never the other direction's gateway source and never an import.
+    /// </summary>
+    /// <param name="source">The source given.</param>
+    /// <param name="gatewaySource">The gateway source that fits the row's direction.</param>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="source"/> is neither <paramref name="gatewaySource"/> nor Manual.</exception>
+    private static void EnsureSource(TransactionSource source, TransactionSource gatewaySource)
+    {
+        if (source != gatewaySource && source != TransactionSource.Manual)
+        {
+            throw new ArgumentOutOfRangeException(nameof(source), source, "An invoice payment or refund is a gateway entry of its direction or a manual one.");
+        }
     }
 
     /// <summary>The one invariant every transaction keeps: it moves money in at least one direction.</summary>

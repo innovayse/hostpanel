@@ -6,6 +6,7 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Orders.Commands.FulfillInvoicedOrder;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Billing.Events;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
@@ -151,7 +152,7 @@ public sealed class CompleteGatewayPaymentHandler
         // makes "ledger row exists" and "invoice is Paid" one atomic fact.
         var module = invoice.GatewayModule;
         var ledgerRow = invoice.Settle(
-            module, gatewayTransactionId, _clock.UtcNow);
+            module, gatewayTransactionId, _clock.UtcNow, TransactionSource.GatewayPayment);
         if (ledgerRow is not null)
         {
             _context.Transactions.Add(ledgerRow);
@@ -350,8 +351,29 @@ public sealed class CompleteGatewayPaymentHandler
             0m,
             0m,
             addedToCredit: credit,
-            invoice.Currency));
-        await _context.SaveChangesAsync(ct);
+            invoice.Currency,
+            TransactionSource.GatewayPayment));
+        try
+        {
+            await _context.SaveChangesAsync(ct);
+        }
+        catch (ConcurrencyConflictException)
+        {
+            // The ledger refuses a second gateway payment under one reference, and answers that the same
+            // way as any lost save. Only when the payment is on the ledger now was it a concurrent request
+            // that recorded it: the money is accounted for, so this replay stands down without recording
+            // or alerting a second time. Any other lost save (the client's balance moved) is the caller's.
+            _context.DetachAll();
+            if (!await _context.IsRecordedAsync(reference, ct))
+            {
+                throw;
+            }
+
+            _logger.LogInformation(
+                "Gateway payment {Reference} through {Module} was recorded by a concurrent request; nothing is recorded again.",
+                reference, module);
+            return;
+        }
 
         // After the save, so a failed save repeats the whole hand-back instead of alerting about money
         // that was not recorded; once saved, the next pass finds the ledger row and returns above, so

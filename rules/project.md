@@ -605,6 +605,14 @@ backend on the shared network, and Docker's DNS round-robins between the two.
   (the local `AspNetUsers.Id` or the external identity provider's subject), run before and after switching
   `AUTH_MODE`. Defaults to the `hostpanel-db` container; on a remote host pipe it as
   `ssh <host> 'sh -s' < scripts/check-client-owner-ids.sh`.
+- `scripts/check-duplicate-gateway-payments.sh [container]` — read-only list of the ledger rows that would stop the
+  unique gateway payment reference. Every `Transactions` row has a `Source` (`GatewayPayment`, `GatewayRefund`,
+  `Manual`, `Import`; `TransactionSource` in Domain, set by the creating path and never changed), and a filtered
+  unique index on `PaymentMethod` and `TransactionId` covers the `GatewayPayment` rows only, so manual entries
+  and imports may repeat a reference. The `AddTransactionSource` migration backfills `Source` from the rows
+  themselves and stops, naming the rows, when two gateway payments share a reference; run this script before
+  that deploy. A second gateway payment saved under one reference surfaces as `ConcurrencyConflictException`
+  (`AppDbContext` translates the violation), which the settlement handlers already answer as a replay.
 - `scripts/pack-cwp-plugin.sh` — publishes `Innovayse.Providers.CWP` (Release, net8.0) on the host, strips
   PDB/XML and framework DLLs, adds `plugin.json` and writes `dist/innovayse-cwp.zip`.
 - `scripts/check-empty-plugins.sh <test project> ...` — fails when `plugins/` or `plugins-installed/` in a

@@ -369,7 +369,8 @@ public sealed class DevDataSeeder
                     var tx = Transaction.Create(
                         client.Id, date, "Monthly hosting payment",
                         "txn_" + Rng.Next(100000, 999999), null, PaymentMethodNames.Card,
-                        amount, 0m, Math.Round(amount * 0.029m, 2), false, SeedInvoiceCurrency);
+                        amount, 0m, Math.Round(amount * 0.029m, 2), false, SeedInvoiceCurrency,
+                        TransactionSource.Manual);
                     _db.Transactions.Add(tx);
                 }
             }

@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Application.Migration.Common;
 using Innovayse.Hostpanel.Application.Migration.Importers;
 using Innovayse.Hostpanel.Application.Migration.Pull;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Migration.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,6 +38,7 @@ public sealed class TransactionsImporterTests(IntegrationTestFactory factory) : 
         var transaction = await context.Transactions.AsNoTracking().FirstOrDefaultAsync(t => t.TransactionId == transactionId);
         Assert.NotNull(transaction);
         Assert.Null(transaction.InvoiceId);
+        Assert.Equal(TransactionSource.Import, transaction.Source);
 
         // Idempotent re-import: a transaction matched by its id is skipped the second time.
         var job2 = await MigrationTestSeeds.SeedJobSelectingOnlyAsync(context, MigrationEntityType.Transactions);

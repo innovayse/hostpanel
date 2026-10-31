@@ -83,7 +83,9 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     [Fact]
     public async Task GatewaySaysPaidMarksPaidWithGatewayTransaction()
     {
-        var plugin = new FakePaymentPlugin { StatusResult = new(GatewayPaymentState.Paid, "ref-9", "orderStatus:2", AmountMinor: 1000) };
+        // A gateway reports one payment under one reference, and the ledger refuses a second, so each test names its own.
+        var reference = $"ref-{Guid.NewGuid():N}";
+        var plugin = new FakePaymentPlugin { StatusResult = new(GatewayPaymentState.Paid, reference, "orderStatus:2", AmountMinor: 1000) };
         var resolver = new FakePaymentPluginResolver();
         resolver.Register("bank-gateway", plugin);
         var host = BuildHost(resolver);
@@ -100,7 +102,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         var fetched = await admin.GetAsync($"/api/billing/{invoiceId}");
         using var fetchedBody = JsonDocument.Parse(await fetched.Content.ReadAsStringAsync());
         fetchedBody.RootElement.GetProperty("status").GetString().Should().Be(nameof(InvoiceStatus.Paid));
-        fetchedBody.RootElement.GetProperty("payment").GetProperty("gatewayTransactionId").GetString().Should().Be("ref-9");
+        fetchedBody.RootElement.GetProperty("payment").GetProperty("gatewayTransactionId").GetString().Should().Be(reference);
 
         // The client ledger row is written inline by the handler, once; no event handler repeats it.
         using var scope = host.Services.CreateScope();
@@ -109,9 +111,10 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
             .Where(t => t.InvoiceId == invoiceId)
             .ToListAsync();
         ledger.Should().ContainSingle();
-        ledger[0].TransactionId.Should().Be("ref-9");
+        ledger[0].TransactionId.Should().Be(reference);
         ledger[0].PaymentMethod.Should().Be("bank-gateway");
         ledger[0].AmountIn.Should().Be(10m);
+        ledger[0].Source.Should().Be(TransactionSource.GatewayPayment);
     }
 
     /// <summary>
@@ -145,9 +148,11 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     [Fact]
     public async Task GatewayReportingTheOwedAmountMarksPaid()
     {
+        // A gateway reports one payment under one reference, and the ledger refuses a second, so each test names its own.
+        var reference = $"ref-{Guid.NewGuid():N}";
         var plugin = new FakePaymentPlugin
         {
-            StatusResult = new(GatewayPaymentState.Paid, "ref-9", "orderStatus:2", AmountMinor: 1000),
+            StatusResult = new(GatewayPaymentState.Paid, reference, "orderStatus:2", AmountMinor: 1000),
         };
         var resolver = new FakePaymentPluginResolver();
         resolver.Register("bank-gateway", plugin);
@@ -166,7 +171,9 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     [Fact]
     public async Task AlreadyPaidIsIdempotentWithoutASecondGatewayCall()
     {
-        var plugin = new FakePaymentPlugin { StatusResult = new(GatewayPaymentState.Paid, "ref-9", "orderStatus:2", AmountMinor: 1000) };
+        // A gateway reports one payment under one reference, and the ledger refuses a second, so each test names its own.
+        var reference = $"ref-{Guid.NewGuid():N}";
+        var plugin = new FakePaymentPlugin { StatusResult = new(GatewayPaymentState.Paid, reference, "orderStatus:2", AmountMinor: 1000) };
         var resolver = new FakePaymentPluginResolver();
         resolver.Register("bank-gateway", plugin);
         var host = BuildHost(resolver);
@@ -307,6 +314,42 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>
+    /// A gateway payment whose reference the ledger already holds for another payment is answered as a
+    /// conflict (409), never as a server error: the unique index refuses the second row and nothing is
+    /// recorded twice.
+    /// </summary>
+    [Fact]
+    public async Task GatewayReferenceAlreadyOnTheLedgerForAnotherPayment_IsAConflictAndNothingIsRecordedTwice()
+    {
+        var invoiceId = await SeedInvoiceWithSessionDirectlyAsync("gw-dup-session");
+        var reference = $"dup-{Guid.NewGuid():N}";
+        using (var seedScope = factory.Services.CreateScope())
+        {
+            var seed = seedScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            var clientId = await seed.Invoices.AsNoTracking().Where(i => i.Id == invoiceId).Select(i => i.ClientId).SingleAsync();
+            seed.Transactions.Add(Transaction.Create(
+                clientId, DateTimeOffset.UtcNow, "Earlier payment", reference, null, "bank-gateway", 10m, 0m, 0m, false, "USD",
+                TransactionSource.GatewayPayment));
+            await seed.SaveChangesAsync(CancellationToken.None);
+        }
+
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", new FakePaymentPlugin
+        {
+            StatusResult = new(GatewayPaymentState.Paid, reference, "orderStatus:2", AmountMinor: 1000),
+        });
+        using var scope = factory.Services.CreateScope();
+
+        var act = () => HandlerFor(scope, resolver).HandleAsync(new CompleteGatewayPaymentCommand(invoiceId), CancellationToken.None);
+
+        await act.Should().ThrowAsync<ConcurrencyConflictException>();
+        using var check = factory.Services.CreateScope();
+        var context = check.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await context.Transactions.AsNoTracking().CountAsync(t => t.TransactionId == reference)).Should().Be(1);
+        (await context.Invoices.AsNoTracking().SingleAsync(i => i.Id == invoiceId)).Status.Should().NotBe(InvoiceStatus.Paid);
+    }
+
+    /// <summary>
     /// A payment an administrator records while the gateway session is open lowers what is due, so
     /// the gateway then takes more than the invoice still owes: the invoice settles on what is due
     /// and the rest goes to the client's credit balance instead of the payment being refused.
@@ -423,6 +466,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         row.AddedToCredit.Should().BeTrue();
         row.AmountIn.Should().Be(10m);
         row.InvoiceId.Should().BeNull();
+        row.Source.Should().Be(TransactionSource.GatewayPayment);
     }
 
     /// <summary>

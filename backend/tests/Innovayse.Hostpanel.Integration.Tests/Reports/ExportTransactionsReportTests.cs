@@ -1,5 +1,6 @@
 using System.Net;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -23,7 +24,7 @@ public sealed class ExportTransactionsReportTests(IntegrationTestFactory factory
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var tx = Transaction.Create(
                 clientId, DateTimeOffset.UtcNow, "Export test", $"tx-{Guid.NewGuid():N}",
-                invoiceId: null, paymentMethod: "manual", amountIn: 12m, amountOut: 0m, fees: 0m, addedToCredit: false, currency: "USD");
+                invoiceId: null, paymentMethod: "manual", amountIn: 12m, amountOut: 0m, fees: 0m, addedToCredit: false, currency: "USD", TransactionSource.Manual);
             db.Transactions.Add(tx);
             await db.SaveChangesAsync();
         }
@@ -56,7 +57,7 @@ public sealed class ExportTransactionsReportTests(IntegrationTestFactory factory
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Transactions.Add(Transaction.Create(
                 clientId, DateTimeOffset.UtcNow, "=HYPERLINK(\"x\")", reference,
-                invoiceId: invoiceId, paymentMethod: "manual", amountIn: 9m, amountOut: 0m, fees: 0m, addedToCredit: false, currency: "EUR"));
+                invoiceId: invoiceId, paymentMethod: "manual", amountIn: 9m, amountOut: 0m, fees: 0m, addedToCredit: false, currency: "EUR", TransactionSource.Manual));
             await db.SaveChangesAsync();
         }
 

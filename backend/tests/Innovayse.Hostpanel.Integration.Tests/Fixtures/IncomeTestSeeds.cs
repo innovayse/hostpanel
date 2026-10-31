@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Domain.Products;
@@ -108,7 +109,7 @@ public static class IncomeTestSeeds
 
         // Money added to the balance is the client's own, not income: it is only ever a ledger row.
         context.Transactions.Add(Transaction.Create(
-            baseClient.Id, At(year, 2, 20), "Credit top-up", Reference(), null, Gateway, 1_000m, 0m, 0m, addedToCredit: true, code));
+            baseClient.Id, At(year, 2, 20), "Credit top-up", Reference(), null, Gateway, 1_000m, 0m, 0m, addedToCredit: true, code, TransactionSource.Manual));
 
         var pending = NewOrder(baseClient.Id, code, product, 30m, At(year, 5, 3));
         var accepted = NewOrder(foreignClient.Id, ForeignCurrency, product, 8_000m, At(year, 5, 20));

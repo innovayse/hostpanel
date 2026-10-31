@@ -46,7 +46,8 @@ public sealed class SettleInvoiceCardPaymentTests(IntegrationTestFactory factory
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         (await context.Invoices.AsNoTracking().SingleAsync(i => i.Id == invoiceId)).Status.Should().Be(InvoiceStatus.Paid);
-        (await context.Transactions.AsNoTracking().AnyAsync(t => t.TransactionId == transactionId)).Should().BeTrue();
+        (await context.Transactions.AsNoTracking().SingleAsync(t => t.TransactionId == transactionId)).Source
+            .Should().Be(TransactionSource.GatewayPayment);
         _cardGateway.RefundInstructions.Should().BeEmpty();
     }
 
@@ -526,7 +527,7 @@ public sealed class SettleInvoiceCardPaymentTests(IntegrationTestFactory factory
                 var context = other.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
                 context.Transactions.Add(Transaction.Create(
                     clientId, DateTimeOffset.UtcNow, "Card payment refunded", transactionId, null,
-                    PaymentMethodNames.Card, InvoiceTotal, InvoiceTotal, 0m, addedToCredit: false, "USD"));
+                    PaymentMethodNames.Card, InvoiceTotal, InvoiceTotal, 0m, addedToCredit: false, "USD", TransactionSource.Manual));
                 await context.SaveChangesAsync(CancellationToken.None);
             });
 

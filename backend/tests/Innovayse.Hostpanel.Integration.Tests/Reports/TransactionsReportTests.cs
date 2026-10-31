@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -24,7 +25,7 @@ public sealed class TransactionsReportTests(IntegrationTestFactory factory) : IC
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var tx = Transaction.Create(
                 clientId, DateTimeOffset.UtcNow, "Hosting payment", $"tx-{Guid.NewGuid():N}",
-                invoiceId: null, paymentMethod: "manual", amountIn: 30m, amountOut: 0m, fees: 1m, addedToCredit: false, currency: "USD");
+                invoiceId: null, paymentMethod: "manual", amountIn: 30m, amountOut: 0m, fees: 1m, addedToCredit: false, currency: "USD", TransactionSource.Manual);
             db.Transactions.Add(tx);
             await db.SaveChangesAsync();
         }
@@ -51,7 +52,7 @@ public sealed class TransactionsReportTests(IntegrationTestFactory factory) : IC
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Transactions.Add(Transaction.Create(
                 clientId, DateTimeOffset.UtcNow, "Invoice payment", $"tx-{Guid.NewGuid():N}",
-                invoiceId: invoiceId, paymentMethod: "manual", amountIn: 20m, amountOut: 0m, fees: 0m, addedToCredit: false, currency: "AMD"));
+                invoiceId: invoiceId, paymentMethod: "manual", amountIn: 20m, amountOut: 0m, fees: 0m, addedToCredit: false, currency: "AMD", TransactionSource.Manual));
             await db.SaveChangesAsync();
         }
 
@@ -77,7 +78,7 @@ public sealed class TransactionsReportTests(IntegrationTestFactory factory) : IC
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Transactions.Add(Transaction.Create(
                 clientId, lastMoment, "Late payment", $"tx-{Guid.NewGuid():N}",
-                invoiceId: null, paymentMethod: "manual", amountIn: 7m, amountOut: 0m, fees: 0m, addedToCredit: false, currency: "USD"));
+                invoiceId: null, paymentMethod: "manual", amountIn: 7m, amountOut: 0m, fees: 0m, addedToCredit: false, currency: "USD", TransactionSource.Manual));
             await db.SaveChangesAsync();
         }
 

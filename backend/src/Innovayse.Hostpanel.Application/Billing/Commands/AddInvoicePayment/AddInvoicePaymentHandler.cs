@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -50,7 +51,8 @@ public sealed class AddInvoicePaymentHandler
         }
 
         _context.Transactions.Add(
-            invoice.AddPayment(cmd.Date, cmd.Gateway, cmd.TransactionId, cmd.Amount, cmd.Fees, cmd.Notes));
+            invoice.AddPayment(
+                cmd.Date, cmd.Gateway, cmd.TransactionId, cmd.Amount, cmd.Fees, cmd.Notes, TransactionSource.Manual));
 
         await _activity.RecordAsync(
             new ActivityLogEntry(invoice.ClientId, $"Added Invoice Payment - Invoice ID: {invoice.Id}"), ct);

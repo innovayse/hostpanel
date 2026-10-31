@@ -545,6 +545,7 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// <param name="amount">Amount paid, in the invoice currency.</param>
     /// <param name="fees">Gateway fees charged on the payment.</param>
     /// <param name="notes">Free-form note, or null.</param>
+    /// <param name="source">Where the payment came from: <see cref="TransactionSource.Manual"/> (the default, staff recorded it) or <see cref="TransactionSource.GatewayPayment"/>.</param>
     /// <returns>The client ledger row for this payment, to be saved with the invoice.</returns>
     /// <exception cref="DomainRuleException">
     /// The invoice is not open for payment, or <paramref name="amount"/> is more than <see cref="AmountDue"/>.
@@ -552,7 +553,14 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// directly. A gateway that took more than was due is not refused: its completion settles the
     /// invoice and credits the surplus to the client's balance.
     /// </exception>
-    public Transaction AddPayment(DateTimeOffset date, string gateway, string transactionId, decimal amount, decimal fees, string? notes)
+    public Transaction AddPayment(
+        DateTimeOffset date,
+        string gateway,
+        string transactionId,
+        decimal amount,
+        decimal fees,
+        string? notes,
+        TransactionSource source = TransactionSource.Manual)
     {
         EnsurePayable();
 
@@ -569,7 +577,7 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
             ApplyPaid(transactionId, date);
         }
 
-        return Transaction.CreateInvoicePayment(this, date, gateway, transactionId, amount, fees);
+        return Transaction.CreateInvoicePayment(this, date, gateway, transactionId, amount, fees, source);
     }
 
     /// <summary>
@@ -777,6 +785,7 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// <param name="paymentMethod">Payment method or gateway name recorded on the ledger row.</param>
     /// <param name="reference">Reference of the payment.</param>
     /// <param name="paidAt">When the payment was received (UTC).</param>
+    /// <param name="source">Where the payment came from: <see cref="TransactionSource.Manual"/> (the default, staff settled it) or <see cref="TransactionSource.GatewayPayment"/> for money a gateway took.</param>
     /// <remarks>
     /// A stored hosted-gateway session is kept whichever path settles the invoice. When the session
     /// took the money, refunds find that gateway through it; when another path paid first, a payment
@@ -786,7 +795,8 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// </remarks>
     /// <returns>The ledger row, or <see langword="null"/> when nothing was due (a zero total).</returns>
     /// <exception cref="DomainRuleException">The invoice is not Unpaid or Overdue.</exception>
-    public Transaction? Settle(string paymentMethod, string reference, DateTimeOffset paidAt)
+    public Transaction? Settle(
+        string paymentMethod, string reference, DateTimeOffset paidAt, TransactionSource source = TransactionSource.Manual)
     {
         EnsurePayable();
 
@@ -802,7 +812,7 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
         _transactions.Add(InvoiceTransaction.Create(
             Id, paidAt, paymentMethod, reference, taken, InvoiceTransactionType.Payment, 0m, null));
         ApplyPaid(reference, paidAt);
-        return Transaction.CreateInvoicePayment(this, paidAt, paymentMethod, reference, taken, 0m);
+        return Transaction.CreateInvoicePayment(this, paidAt, paymentMethod, reference, taken, 0m, source);
     }
 
     /// <summary>Clears the stored hosted-gateway session fields and the reconciliation bookkeeping of that session.</summary>
@@ -1007,6 +1017,7 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// <param name="fees">Gateway fees charged on the refund.</param>
     /// <param name="notes">Free-form note, or null.</param>
     /// <param name="addedToCredit">Whether the refund goes to the client's credit balance instead of back to the payer.</param>
+    /// <param name="source">Where the refund came from: <see cref="TransactionSource.Manual"/> (the default, no gateway money moved) or <see cref="TransactionSource.GatewayRefund"/>.</param>
     /// <returns>The client ledger row for this refund, to be saved with the invoice.</returns>
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="amount"/> is not positive.</exception>
     /// <exception cref="DomainRuleException">
@@ -1014,7 +1025,8 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// or another refund begun at a different moment is still in flight.
     /// </exception>
     public Transaction AddRefund(
-        DateTimeOffset date, string gateway, string transactionId, decimal amount, decimal fees, string? notes, bool addedToCredit = false)
+        DateTimeOffset date, string gateway, string transactionId, decimal amount, decimal fees, string? notes, bool addedToCredit = false,
+        TransactionSource source = TransactionSource.Manual)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
         EnsureRefundable();
@@ -1047,7 +1059,7 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
             Status = InvoiceStatus.PartiallyRefunded;
         }
 
-        return Transaction.CreateInvoiceRefund(this, date, gateway, transactionId, amount, addedToCredit);
+        return Transaction.CreateInvoiceRefund(this, date, gateway, transactionId, amount, addedToCredit, source);
     }
 
     /// <summary>

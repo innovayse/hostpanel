@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Migration.Importers.Enums;
 using Innovayse.Hostpanel.Application.Migration.Importers.Records;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Migration;
 using Innovayse.Hostpanel.Domain.Migration.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -109,7 +110,8 @@ public sealed class TransactionsImporter : IMigrationEntityImporter
             rec.AmountOut,
             rec.Fees,
             false,
-            currency);
+            currency,
+            TransactionSource.Import);
 
         _context.Transactions.Add(transaction);
         await _context.SaveChangesAsync(ct);

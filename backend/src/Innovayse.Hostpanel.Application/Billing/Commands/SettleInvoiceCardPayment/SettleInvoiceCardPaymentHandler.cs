@@ -6,6 +6,7 @@ using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -249,7 +250,7 @@ public sealed class SettleInvoiceCardPaymentHandler
     private async Task<bool> TrySettleAsync(SettleInvoiceCardPaymentCommand cmd, Invoice invoice, CancellationToken ct)
     {
         var ledgerRow = invoice.Settle(
-            PaymentMethodNames.Card, cmd.TransactionId, _clock.UtcNow);
+            PaymentMethodNames.Card, cmd.TransactionId, _clock.UtcNow, TransactionSource.GatewayPayment);
         if (ledgerRow is not null)
         {
             _context.Transactions.Add(ledgerRow);
@@ -408,7 +409,25 @@ public sealed class SettleInvoiceCardPaymentHandler
         }
 
         _context.Transactions.Add(ReturnRow(cmd, invoice, outcome));
-        await _context.SaveChangesAsync(ct);
+        try
+        {
+            await _context.SaveChangesAsync(ct);
+        }
+        catch (ConcurrencyConflictException)
+        {
+            // The ledger refuses a second gateway payment under one reference. When the payment is on
+            // the ledger now, a concurrent request recorded it first and the money is accounted for, so
+            // the row is dropped; any other lost save is the caller's.
+            _context.DetachAll();
+            if (!await _context.IsRecordedAsync(cmd.TransactionId, ct))
+            {
+                throw;
+            }
+
+            _logger.LogInformation(
+                "Card payment {TransactionId} was recorded by a concurrent request; its outcome is not written again.",
+                cmd.TransactionId);
+        }
     }
 
     /// <summary>
@@ -439,6 +458,7 @@ public sealed class SettleInvoiceCardPaymentHandler
             outcome == CardReturnOutcome.Refunded ? cmd.Amount : 0m,
             0m,
             addedToCredit: outcome == CardReturnOutcome.Credited,
-            cmd.Currency);
+            cmd.Currency,
+            TransactionSource.GatewayPayment);
     }
 }

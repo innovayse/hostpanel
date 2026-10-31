@@ -9,9 +9,6 @@ namespace Innovayse.Hostpanel.Application.Billing.Commands.CreateBillableItem;
 /// <summary>Validates <see cref="CreateBillableItemCommand"/> before it reaches the handler.</summary>
 public sealed class CreateBillableItemValidator : LocalizedValidator<CreateBillableItemCommand>
 {
-    /// <summary>Length of an ISO 4217 alpha currency code.</summary>
-    private const int CurrencyCodeLength = 3;
-
     /// <summary>Maximum length of a description.</summary>
     private const int DescriptionMaxLength = 500;
 
@@ -26,7 +23,7 @@ public sealed class CreateBillableItemValidator : LocalizedValidator<CreateBilla
             .MaximumLength(DescriptionMaxLength)
             .WithMessage(L["BillableItemDescriptionInvalid", DescriptionMaxLength]);
         RuleFor(x => x.Amount).GreaterThanOrEqualTo(0).WithMessage(L["BillableItemAmountInvalid"]);
-        RuleFor(x => x.Currency).NotEmpty().Length(CurrencyCodeLength).WithMessage(L["BillableItemCurrencyInvalid"]);
+        RuleFor(x => x.Currency).MustBeCurrencyCode(L["BillableItemCurrencyInvalid"]);
         RuleFor(x => x.Type).IsInEnum().WithMessage(L["BillableItemTypeInvalid"]);
         RuleFor(x => x.RecurringPeriod)
             .Must((cmd, period) => cmd.Type == BillableItemType.OneTime || !string.IsNullOrEmpty(period))

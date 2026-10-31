@@ -275,6 +275,10 @@ public class ClientTests
     [InlineData("   ")]
     [InlineData("US")]
     [InlineData("USDD")]
+    [InlineData("12!")]
+    [InlineData("123")]
+    [InlineData("U$D")]
+    [InlineData(" eu")]
     public void SetCurrency_RejectsACodeThatIsNotThreeLetters(string code)
     {
         var client = Client.Create("user-1", "Jane", "Doe", "jane@example.com", Now);

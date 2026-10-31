@@ -5,9 +5,13 @@ using Innovayse.Hostpanel.Application.Migration.Pull;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Migration.Enums;
 using Innovayse.Hostpanel.Infrastructure.Auth;
+using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Migration.Importers;
 
@@ -46,6 +50,73 @@ public sealed class ClientsImporterTests(IntegrationTestFactory factory) : IClas
 
         var clients = await context.Clients.AsNoTracking().Where(c => c.UserId == userId).ToListAsync();
         Assert.Single(clients);
+    }
+
+    /// <summary>
+    /// A malformed source currency does not lose the client: it is imported without a currency, and
+    /// the dropped value is logged as a warning naming the new client.
+    /// </summary>
+    [Fact]
+    public async Task RunAsync_ClientWithMalformedCurrency_IsImportedWithoutACurrencyAndWarnedAsync()
+    {
+        var source = NewSource();
+        var logger = new CapturingLogger<ClientsImporter>();
+        using var host = HostWithLogger(source, logger);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var job = await MigrationTestSeeds.SeedJobSelectingOnlyAsync(context, MigrationEntityType.Clients);
+        var email = $"migration-client-{Guid.NewGuid():N}@example.test";
+        source.SetDatasetJson("clients", ClientJson(email, "Active", taxExempt: false, signupDate: null, currency: "12!"));
+
+        var worker = scope.ServiceProvider.GetRequiredService<MigrationPullWorker>();
+        await worker.RunAsync(job.Id, CancellationToken.None);
+
+        var userId = await MigrationTestSeeds.UserIdForEmailAsync(scope.ServiceProvider, email);
+        var client = await context.Clients.AsNoTracking().SingleAsync(c => c.UserId == userId);
+        Assert.Null(client.Currency);
+        var warning = Assert.Single(logger.Entries, e => e.Level == LogLevel.Warning);
+        Assert.Contains($"Client {client.Id} imported without a currency", warning.Message, StringComparison.Ordinal);
+        Assert.Contains("12!", warning.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(email, warning.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>A client with no source currency at all is imported without a warning: nothing was dropped.</summary>
+    [Fact]
+    public async Task RunAsync_ClientWithoutCurrency_IsImportedWithoutAWarningAsync()
+    {
+        var source = NewSource();
+        var logger = new CapturingLogger<ClientsImporter>();
+        using var host = HostWithLogger(source, logger);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var job = await MigrationTestSeeds.SeedJobSelectingOnlyAsync(context, MigrationEntityType.Clients);
+        var email = $"migration-client-{Guid.NewGuid():N}@example.test";
+        source.SetDatasetJson("clients", ClientJson(email, "Active", taxExempt: false, signupDate: null));
+
+        var worker = scope.ServiceProvider.GetRequiredService<MigrationPullWorker>();
+        await worker.RunAsync(job.Id, CancellationToken.None);
+
+        Assert.DoesNotContain(logger.Entries, e => e.Level == LogLevel.Warning);
+    }
+
+    /// <summary>A padded, lower-case source currency is stored trimmed and upper-cased.</summary>
+    [Fact]
+    public async Task RunAsync_ClientWithPaddedCurrency_IsImportedNormalisedAsync()
+    {
+        var source = NewSource();
+        using var host = MigrationTestSeeds.HostWithFakeSource(factory, source);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var job = await MigrationTestSeeds.SeedJobSelectingOnlyAsync(context, MigrationEntityType.Clients);
+        var email = $"migration-client-{Guid.NewGuid():N}@example.test";
+        source.SetDatasetJson("clients", ClientJson(email, "Active", taxExempt: false, signupDate: null, currency: " eur "));
+
+        var worker = scope.ServiceProvider.GetRequiredService<MigrationPullWorker>();
+        await worker.RunAsync(job.Id, CancellationToken.None);
+
+        var userId = await MigrationTestSeeds.UserIdForEmailAsync(scope.ServiceProvider, email);
+        var client = await context.Clients.AsNoTracking().SingleAsync(c => c.UserId == userId);
+        Assert.Equal("EUR", client.Currency);
     }
 
     /// <summary>
@@ -142,6 +213,14 @@ public sealed class ClientsImporterTests(IntegrationTestFactory factory) : IClas
         Assert.Equal(string.Empty, await MigrationTestSeeds.UserIdForEmailAsync(scope.ServiceProvider, email));
     }
 
+    /// <summary>A host whose source is the fake one and whose clients importer logs into the given logger.</summary>
+    /// <param name="source">The fake source the importers page through.</param>
+    /// <param name="logger">The logger that stands in for the importer's own.</param>
+    /// <returns>The isolated host.</returns>
+    private WebApplicationFactory<Program> HostWithLogger(FakeMigrationPullSource source, CapturingLogger<ClientsImporter> logger) =>
+        MigrationTestSeeds.HostWithFakeSource(factory, source).WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services => services.AddSingleton<ILogger<ClientsImporter>>(logger)));
+
     /// <summary>A fake source whose totals announce one client.</summary>
     /// <returns>The fake source.</returns>
     private static FakeMigrationPullSource NewSource() =>
@@ -153,13 +232,15 @@ public sealed class ClientsImporterTests(IntegrationTestFactory factory) : IClas
     /// <param name="taxExempt">Whether the client is tax exempt.</param>
     /// <param name="signupDate">The signup moment as ISO 8601 text, or null when the source holds none.</param>
     /// <param name="firstName">The client's first name in the source.</param>
+    /// <param name="currency">The source currency text, or null when the source sends none.</param>
     /// <returns>The dataset JSON.</returns>
-    private static string ClientJson(string email, string status, bool taxExempt, string? signupDate, string firstName = "Jane")
+    private static string ClientJson(string email, string status, bool taxExempt, string? signupDate, string firstName = "Jane", string? currency = null)
     {
+        var currencyJson = currency is null ? "null" : $"\"{currency}\"";
         var signup = signupDate is null ? "null" : $"\"{signupDate}\"";
         var exempt = taxExempt ? "true" : "false";
         return $$"""
-            [{"Email":"{{email}}","FirstName":"{{firstName}}","LastName":"Doe","Company":null,"Phone":null,"Address":null,"City":null,"State":null,"PostCode":null,"Country":null,"Status":"{{status}}","Currency":null,"TaxExempt":{{exempt}},"CreditBalance":0,"SignupDate":{{signup}},"LastLogin":null}]
+            [{"Email":"{{email}}","FirstName":"{{firstName}}","LastName":"Doe","Company":null,"Phone":null,"Address":null,"City":null,"State":null,"PostCode":null,"Country":null,"Status":"{{status}}","Currency":{{currencyJson}},"TaxExempt":{{exempt}},"CreditBalance":0,"SignupDate":{{signup}},"LastLogin":null}]
             """;
     }
 }

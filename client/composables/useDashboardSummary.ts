@@ -11,6 +11,7 @@
 import { useClientStore } from '~/stores/client'
 import { EXPIRY_WARNING_DAYS, isExpiringWithin } from '~/utils/domainExpiry'
 import { isInvoiceOutstanding } from '~/utils/invoice'
+import { serviceAwaitsSetup } from '~/utils/serviceSetup'
 
 /**
  * Builds the dashboard's derived state.
@@ -39,8 +40,8 @@ export const useDashboardSummary = () => {
   const expiringDomains = computed(() =>
     store.domains.filter((domain) => isExpiringWithin(domain.expiresAt, EXPIRY_WARNING_DAYS, true)))
 
-  /** Services ordered but not yet set up: they have no control-panel username. */
-  const servicesNeedingSetup = computed(() => store.services.filter((service) => !service.username))
+  /** Hosting services ordered but not yet set up; a digital service has nothing to set up ({@link serviceAwaitsSetup}). */
+  const servicesNeedingSetup = computed(() => store.services.filter(serviceAwaitsSetup))
 
   /**
    * Invoices still awaiting payment.

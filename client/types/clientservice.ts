@@ -20,6 +20,10 @@ export interface ClientService {
   productId: number
   /** Name of the ordered product; every service has one, since its product cannot be deleted. */
   productName: string
+  /** SKU of the ordered product; null when the product has none. */
+  sku: string | null
+  /** True when the product is a digital one, delivered by a fulfilment plugin: there is nothing to set up on a server. */
+  isDigital: boolean
   /** Billing cycle the service renews on. */
   billingCycle: BillingCycle
   /** Current lifecycle status. */

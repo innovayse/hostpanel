@@ -21,8 +21,26 @@ namespace Innovayse.Hostpanel.Application.Clients.Common;
 /// <see langword="null"/> when no plugin is enabled or it refused the caller. A first order links the client it
 /// creates to it.
 /// </param>
-public sealed record CallerClientAccess(int? ClientId, bool IsOwner, ClientPermission Permissions, ExternalAccount? Account = null)
+/// <param name="IdentityRefused">
+/// <see langword="true"/> when an enabled identity plugin was asked about a signed-in caller and refused them.
+/// It differs from <see cref="None"/>, a caller who simply has no client yet: a refused caller must not be
+/// treated as a first time buyer.
+/// </param>
+/// <param name="IdentityUnavailable">
+/// <see langword="true"/> when the identity plugin could not decide: it threw, timed out, or two identity
+/// plugins are enabled. Nothing is known about the caller, so no account and no permission is granted, and
+/// the refusal is <c>IDENTITY_PLUGIN_UNAVAILABLE</c> (503), a retryable answer, not a permanent "no".
+/// </param>
+public sealed record CallerClientAccess(
+    int? ClientId, bool IsOwner, ClientPermission Permissions, ExternalAccount? Account = null, bool IdentityRefused = false,
+    bool IdentityUnavailable = false)
 {
     /// <summary>Gets the access of a caller who owns no account, is linked to none, or is not identified at all.</summary>
     public static CallerClientAccess None { get; } = new(null, false, ClientPermission.None);
+
+    /// <summary>Gets the access of a signed-in caller an enabled identity plugin refused: no account, no permission.</summary>
+    public static CallerClientAccess Refused { get; } = new(null, false, ClientPermission.None, null, true);
+
+    /// <summary>Gets the access of a caller whose identity plugin failed to answer: no account, no permission, a retryable refusal.</summary>
+    public static CallerClientAccess Unavailable { get; } = new(null, false, ClientPermission.None, null, false, true);
 }

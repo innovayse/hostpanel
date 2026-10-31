@@ -1,6 +1,7 @@
 /**
  * Tests for `GET /api/portal/auth/sso/authorize`: it starts the authorization-code flow with PKCE,
- * stores the verifier, state and return path in short-lived httpOnly cookies, and redirects to the SSO.
+ * seals the verifier, state, return path and kind of attempt into one short-lived httpOnly transaction
+ * cookie, and redirects to the SSO.
  *
  * @module tests/server/api/portal/auth/sso/authorize.get.test
  */
@@ -10,12 +11,27 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { makeEvent, setRuntimeConfig, startBackend, refusal } from '../../../../../helpers/bffHarness'
 import type { RouteModule } from '../../../../../helpers/bffHarness'
 import type { StubServer } from '../../../../../helpers/stubServer'
+import { writtenTransaction } from '../../../../../helpers/signonAttempt'
+import { SSO_FLOW_COOKIE_MAX_AGE } from '~/server/utils/auth-cookie'
+import { transactionCookieName } from '~/server/utils/signon-transaction'
+import { SignonTransactionKind } from '~/types/signontransactionkind'
 
 /** The stub standing in for the SSO (the route only redirects to it). */
 let backend: StubServer
 
 /** The route under test. */
 let route: RouteModule
+
+/**
+ * The return path the route sealed into its transaction.
+ *
+ * @param event - The event the route handled.
+ * @returns The sealed return path, or null when none was remembered.
+ */
+const returnToOf = (event: ReturnType<typeof makeEvent>): string | null => {
+  const state = new URL(event.redirectedTo ?? '').searchParams.get('state')
+  return writtenTransaction(event, state)?.returnTo ?? null
+}
 
 beforeEach(async () => {
   backend = await startBackend()
@@ -43,18 +59,37 @@ describe('GET /api/portal/auth/sso/authorize', () => {
     expect(target.searchParams.get('response_type')).toBe('code')
     expect(target.searchParams.get('redirect_uri')).toBe('https://portal.test/api/portal/auth/sso/callback')
     expect(target.searchParams.get('code_challenge_method')).toBe('S256')
-    expect(target.searchParams.get('state')).toBe(event.written['oauth_state']?.value)
-    const verifier = event.written['pkce_verifier']?.value ?? ''
-    expect(target.searchParams.get('code_challenge')).toBe(createHash('sha256').update(verifier).digest('base64url'))
-    expect(event.written['pkce_verifier']?.options).toMatchObject({ httpOnly: true, maxAge: 300 })
+    const state = target.searchParams.get('state')
+    const transaction = writtenTransaction(event, state)
+    expect(transaction?.state).toBe(state)
+    expect(target.searchParams.get('code_challenge')).toBe(createHash('sha256').update(transaction?.verifier ?? '').digest('base64url'))
+    expect(event.written[transactionCookieName(state ?? '')]?.options).toMatchObject({ httpOnly: true, maxAge: SSO_FLOW_COOKIE_MAX_AGE })
+    expect(Object.keys(event.written)).toHaveLength(1)
   })
 
   it('adds the prompt parameter when the query carries one', async () => {
-    const event = makeEvent({ query: { prompt: 'none' } })
+    const event = makeEvent({ query: { prompt: 'select_account' } })
 
     await route.default(event)
 
-    expect(new URL(event.redirectedTo ?? '').searchParams.get('prompt')).toBe('none')
+    expect(new URL(event.redirectedTo ?? '').searchParams.get('prompt')).toBe('select_account')
+  })
+
+  it('records a prompt=none request as a silent attempt, and anything else as an interactive one', async () => {
+    const silent = makeEvent({ query: { prompt: 'none', returnTo: '/pricing' } })
+    const interactive = makeEvent({ query: { prompt: 'select_account' } })
+    const plain = makeEvent()
+
+    await route.default(silent)
+    await route.default(interactive)
+    await route.default(plain)
+
+    const sealedBy = (event: ReturnType<typeof makeEvent>) =>
+      writtenTransaction(event, new URL(event.redirectedTo ?? '').searchParams.get('state'))
+    expect(new URL(silent.redirectedTo ?? '').searchParams.get('prompt')).toBe('none')
+    expect(sealedBy(silent)).toMatchObject({ kind: SignonTransactionKind.Silent, returnTo: '/pricing' })
+    expect(sealedBy(interactive)?.kind).toBe(SignonTransactionKind.Interactive)
+    expect(sealedBy(plain)?.kind).toBe(SignonTransactionKind.Interactive)
   })
 
   it('passes an authuser address on as login_hint', async () => {
@@ -81,7 +116,7 @@ describe('GET /api/portal/auth/sso/authorize', () => {
 
     await route.default(event)
 
-    expect(event.written['post_login_redirect']?.value).toBe('/client/invoices')
+    expect(returnToOf(event)).toBe('/client/invoices')
   })
 
   it('falls back to the referer path when no returnTo is given', async () => {
@@ -89,7 +124,7 @@ describe('GET /api/portal/auth/sso/authorize', () => {
 
     await route.default(event)
 
-    expect(event.written['post_login_redirect']?.value).toBe('/client/tickets')
+    expect(returnToOf(event)).toBe('/client/tickets')
   })
 
   it('refuses to remember an api path or an off-site address as the return path', async () => {
@@ -99,8 +134,8 @@ describe('GET /api/portal/auth/sso/authorize', () => {
     await route.default(api)
     await route.default(offSite)
 
-    expect(api.written['post_login_redirect']).toBeUndefined()
-    expect(offSite.written['post_login_redirect']).toBeUndefined()
+    expect(returnToOf(api)).toBeNull()
+    expect(returnToOf(offSite)).toBeNull()
   })
 })
 
@@ -120,17 +155,17 @@ describe('GET /api/portal/auth/sso/authorize with unsafe input', () => {
 
     await route.default(event)
 
-    expect(event.written['post_login_redirect']).toBeUndefined()
+    expect(returnToOf(event)).toBeNull()
   })
 
-  it('writes every flow cookie httpOnly, Secure outside development, SameSite=Lax', async () => {
+  it('writes the transaction cookie httpOnly, Secure outside development, SameSite=Lax', async () => {
     const event = makeEvent({ query: { returnTo: '/client' } })
 
     await route.default(event)
 
-    for (const name of ['pkce_verifier', 'oauth_state', 'post_login_redirect']) {
-      expect(event.written[name]?.options, name).toMatchObject({ httpOnly: true, secure: true, sameSite: 'lax', path: '/', maxAge: 300 })
-    }
+    const [name] = Object.keys(event.written)
+    expect(name).toMatch(/^__Host-sso_tx_[0-9a-f]{16}$/)
+    expect(event.written[name ?? '']?.options).toMatchObject({ httpOnly: true, secure: true, sameSite: 'lax', path: '/', maxAge: SSO_FLOW_COOKIE_MAX_AGE })
   })
 })
 

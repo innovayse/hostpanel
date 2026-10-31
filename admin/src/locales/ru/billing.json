@@ -151,6 +151,7 @@
     "tabSummary": "Сводка",
     "tabCredit": "Кредит",
     "tabRefund": "Возврат",
+    "tabFulfilment": "Выполнение заказов",
     "downloadPdf": "Скачать PDF"
   },
   "invoicesList": {
@@ -229,5 +230,25 @@
   "invoiceItems": {
     "removeItem": "Удалить строку",
     "tax": "Налог"
+  },
+  "invoiceFulfilmentTab": {
+    "title": "Выполнение заказов",
+    "plugin": "Плагин",
+    "kind": "Действие",
+    "attempts": "Попытки",
+    "lastError": "Последняя ошибка",
+    "when": "Завершено / следующая попытка",
+    "retry": "Повторить",
+    "empty": "Для этого счёта нет записей исполнения.",
+    "statusPending": "Ожидает",
+    "statusProcessing": "Выполняется",
+    "statusDone": "Готово",
+    "statusFailed": "Сбой",
+    "kindPaid": "Оплата",
+    "kindRefunded": "Возврат",
+    "kindLapsed": "Истечение срока",
+    "confirmRetryTitle": "Повторить исполнение",
+    "confirmRetryMessage": "Запустить плагин {plugin} для этого счёта ещё раз?",
+    "retried": "Повтор запрошен."
   }
 }

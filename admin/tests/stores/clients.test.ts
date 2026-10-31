@@ -358,4 +358,21 @@ describe('clientsStore actions', () => {
     expect(await store.exportClient(1, [])).toBeNull()
     expect(store.exportError).toBe('Export is disabled.')
   })
+
+  it('fetchClientCurrency reads the billing currency without opening the client or raising an error', async () => {
+    stubFetch(json({ id: 7, preferences: { currency: 'AMD' } }))
+    const store = useClientsStore()
+
+    expect(await store.fetchClientCurrency(7)).toBe('AMD')
+    expect(store.current).toBeNull()
+    expect(store.error).toBeNull()
+  })
+
+  it('fetchClientCurrency answers null when the read is refused', async () => {
+    stubFetch(problem('Forbidden.', 403))
+    const store = useClientsStore()
+
+    expect(await store.fetchClientCurrency(7)).toBeNull()
+    expect(store.error).toBeNull()
+  })
 })

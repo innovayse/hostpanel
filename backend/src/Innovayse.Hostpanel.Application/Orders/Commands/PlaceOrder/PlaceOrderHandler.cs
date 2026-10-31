@@ -145,8 +145,11 @@ public sealed class PlaceOrderHandler
     /// product has no price for the requested currency and cycle, <c>ORDER_DOMAIN_PRICING_INVALID</c>
     /// when a domain line cannot be priced (see the private pricing helpers below for the causes
     /// that one code covers), <c>DOMAIN_NOT_FOUND</c> when a renewal names a domain the client does
-    /// not hold, <c>CLIENT_SUSPENDED</c> or <c>CLIENT_CLOSED</c> when the signed-in caller's account may not order, or
-    /// <c>ORDER_NUMBER_RANGE_EXHAUSTED</c> when the order number would outgrow its column.
+    /// not hold, <c>CLIENT_SUSPENDED</c> or <c>CLIENT_CLOSED</c> when the signed-in caller's account may not order,
+    /// <c>ORDER_NUMBER_RANGE_EXHAUSTED</c> when the order number would outgrow its column,
+    /// <c>CLIENT_PERMISSION_DENIED</c> when the caller may not order (a sub-user or plugin member without the
+    /// ordering permission, or a principal the identity plugin refused), or
+    /// <c>IDENTITY_PLUGIN_UNAVAILABLE</c> when the identity plugin threw, timed out or two are enabled (nothing is created).
     /// </returns>
     public async Task<Result<PlaceOrderResultDto>> HandleAsync(PlaceOrderCommand cmd, CancellationToken ct)
     {
@@ -160,6 +163,19 @@ public sealed class PlaceOrderHandler
         // which the pricing query converts to it with the stored exchange rates.
         var now = _clock.UtcNow;
         var access = await _callerClient.ResolveAsync(ct);
+
+        // A plugin that could not answer says nothing about this caller: refuse before anything is created, so a
+        // caller the plugin would have refused is never taken for a first time buyer on the strength of an outage.
+        if (access.IdentityUnavailable)
+        {
+            return Result<PlaceOrderResultDto>.FailureCode(HostpanelErrorCodes.IDENTITY_PLUGIN_UNAVAILABLE);
+        }
+
+        // A signed-in caller the identity plugin refused is no first time buyer: nothing is created for them.
+        if (access.IdentityRefused)
+        {
+            return Result<PlaceOrderResultDto>.FailureCode(HostpanelErrorCodes.CLIENT_PERMISSION_DENIED);
+        }
 
         // A sub-user or plugin member orders only where the account grants it; the route is open to
         // guests, so the permission filter that guards the portal routes never runs here.
@@ -213,6 +229,10 @@ public sealed class PlaceOrderHandler
             {
                 return Result<PlaceOrderResultDto>.FailureCode(created.ErrorCode!);
             }
+
+            // The caller now has (or just lost the race to) a client row: the answer resolved above is stale, and
+            // this is the one place that changes it, so it is read again on the next ask.
+            _callerClient.Invalidate();
 
             if (created.Value is null)
             {

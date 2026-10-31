@@ -122,6 +122,7 @@ describe('ProductsView', () => {
     const mock = stubRouteTable({ ...routes, 'PUT /products/1': () => new Response(null, { status: 204 }) })
     const { wrapper } = await mountScreen(ProductsView)
 
+    await wrapper.get('[data-testid="product-row-1"]').get('[data-testid="row-actions-trigger"]').trigger('click')
     await wrapper.get('[data-testid="product-edit-1"]').trigger('click')
     expect((wrapper.get('[data-testid="product-form-name"]').element as HTMLInputElement).value).toBe('Starter')
     await wrapper.get('[data-testid="product-form"]').trigger('submit')
@@ -144,6 +145,7 @@ describe('ProductsView', () => {
     })
     const { wrapper } = await mountScreen(ProductsView)
 
+    await wrapper.get('[data-testid="product-row-1"]').get('[data-testid="row-actions-trigger"]').trigger('click')
     await wrapper.get('[data-testid="product-edit-1"]').trigger('click')
     await wrapper.get('[data-testid="product-form-sku"]').setValue(' bad sku ')
     await wrapper.get('[data-testid="product-form"]').trigger('submit')
@@ -178,6 +180,7 @@ describe('ProductsView', () => {
     stubRouteTable(routes)
     const { wrapper } = await mountScreen(ProductsView)
 
+    await wrapper.get('[data-testid="product-row-1"]').get('[data-testid="row-actions-trigger"]').trigger('click')
     await wrapper.get('[data-testid="product-spec-1"]').trigger('click')
 
     await vi.waitFor(() => {

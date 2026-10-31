@@ -10,6 +10,8 @@
 /** Closed set of icons, keyed by name. */
 export const Icon = {
   Check: '<polyline points="20 6 9 17 4 12"/>',
+  /** Three vertical dots, for "more actions". */
+  MoreVertical: '<circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>',
   Close: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
   Eye: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
   /** A bin, for "delete". */

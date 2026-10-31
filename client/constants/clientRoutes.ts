@@ -163,7 +163,7 @@ export const clientAccountTabPath = (tab: AccountTab): string => `${CLIENT_ACCOU
 /**
  * Path of the order-success page for an order; every query value is encoded.
  *
- * @param query - The order number and, when known, the invoice and the domain bought.
+ * @param query - The order number and, when known, the invoice, the domain bought and whether the order was only digital.
  * @returns `/client/order-success?order=<order>` plus the optional values.
  */
 export const clientOrderSuccessPath = (query: OrderSuccessQuery): string => {
@@ -176,6 +176,9 @@ export const clientOrderSuccessPath = (query: OrderSuccessQuery): string => {
   }
   if (query.action) {
     params.set('action', query.action)
+  }
+  if (query.digital) {
+    params.set('digital', '1')
   }
   return `${CLIENT_ORDER_SUCCESS_PATH}?${params.toString()}`
 }

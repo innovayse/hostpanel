@@ -130,7 +130,7 @@
     <value>That payment method does not belong to this account.</value>
   </data>
 <data name="PAYMENT_METHOD_UNAVAILABLE" xml:space="preserve">
-    <value>That saved payment method cannot be charged because this deployment has no card gateway configured.</value>
+    <value>Card payments are unavailable because no card gateway is configured.</value>
   </data>
 <data name="NO_SAVED_PAYMENT_METHODS" xml:space="preserve">
     <value>This account has no saved payment methods.</value>
@@ -143,6 +143,9 @@
   </data>
   <data name="PAYMENT_GATEWAY_SERVICE_UNAVAILABLE" xml:space="preserve">
     <value>The payment gateway is temporarily unavailable. Please try again shortly.</value>
+  </data>
+  <data name="IDENTITY_PLUGIN_UNAVAILABLE" xml:space="preserve">
+    <value>The service that links your account to a client profile is temporarily unavailable. Please try again shortly.</value>
   </data>
   <data name="PAYMENT_METHOD_UPSTREAM_FAILED" xml:space="preserve">
     <value>The payment gateway could not process the request for your saved payment methods. Please try again later or contact support.</value>
@@ -182,6 +185,9 @@
   </data>
 <data name="CLIENT_CURRENCY_ALREADY_INVOICED" xml:space="preserve">
     <value>This client has already been invoiced, so their currency cannot be changed.</value>
+  </data>
+  <data name="CLIENT_CURRENCY_LOCKED_BY_CREDIT" xml:space="preserve">
+    <value>This client holds a credit balance, so the currency cannot be changed. Use or refund the balance first, then change the currency.</value>
   </data>
 <data name="EMAIL_LOG_NOT_FOUND" xml:space="preserve">
     <value>No such email.</value>
@@ -852,6 +858,9 @@
   </data>
   <data name="PRODUCT_PACKAGE_MISSING" xml:space="preserve">
     <value>This product has no hosting package set. Choose one on the product first.</value>
+  </data>
+  <data name="PRODUCT_SERVER_GROUP_REQUIRED" xml:space="preserve">
+    <value>This product has no server group, and your servers run more than one control panel. Assign the product a server group so its package goes to the right panel.</value>
   </data>
   <data name="INVOICE_PAYMENT_EXCEEDS_DUE" xml:space="preserve">
     <value>The payment is more than the invoice still owes.</value>

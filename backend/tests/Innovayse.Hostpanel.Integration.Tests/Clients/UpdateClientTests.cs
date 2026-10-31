@@ -124,6 +124,63 @@ public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFi
         fetched.GetProperty("preferences").GetProperty("currency").GetString().Should().Be("AMD");
     }
 
+    /// <summary>With a zero credit balance and no invoices the currency changes.</summary>
+    [Fact]
+    public async Task UpdateChangesTheCurrencyWhenTheCreditBalanceIsZero()
+    {
+        var (clientId, _) = await ClientsTestSeeds.SeedClientAsync(factory);
+        await BillingTestSeeds.EnsureCurrencyAsync(factory, "AMD", "051", 0.0026m);
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+
+        var response = await admin.PutAsJsonAsync($"/api/clients/{clientId}", ClientsTestSeeds.UpdateBody(currency: "AMD"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var fetched = await admin.GetFromJsonAsync<JsonElement>($"/api/clients/{clientId}");
+        fetched.GetProperty("preferences").GetProperty("currency").GetString().Should().Be("AMD");
+    }
+
+    /// <summary>
+    /// A client holding credit cannot change currency: 409 <c>CLIENT_CURRENCY_LOCKED_BY_CREDIT</c>
+    /// with its localized sentence as the detail, the currency and the balance unchanged, and a save
+    /// that leaves the currency alone still goes through.
+    /// </summary>
+    [Fact]
+    public async Task UpdateRefusesACurrencyChangeWhileTheClientHoldsCredit()
+    {
+        var (clientId, _) = await ClientsTestSeeds.SeedClientAsync(factory);
+        await BillingTestSeeds.EnsureCurrencyAsync(factory, "AMD", "051", 0.0026m);
+        await BillingTestSeeds.EnsureCurrencyAsync(factory, "USD", "840", 1m);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var client = await db.Clients.SingleAsync(c => c.Id == clientId);
+            client.SetCurrency("USD");
+            client.AddCredit(10m);
+            await db.SaveChangesAsync();
+        }
+
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+
+        var changed = await admin.PutAsJsonAsync($"/api/clients/{clientId}", ClientsTestSeeds.UpdateBody(currency: "AMD"));
+
+        changed.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        await ClientsTestSeeds.AssertCodeAsync(changed, HostpanelErrorCodes.CLIENT_CURRENCY_LOCKED_BY_CREDIT);
+        var body = await changed.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("detail").GetString().Should().Be(
+            "This client holds a credit balance, so the currency cannot be changed. Use or refund the balance first, then change the currency.");
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var client = await db.Clients.AsNoTracking().SingleAsync(c => c.Id == clientId);
+            client.Currency.Should().Be("USD");
+            client.CreditBalance.Should().Be(10m);
+        }
+
+        var unchanged = await admin.PutAsJsonAsync($"/api/clients/{clientId}", ClientsTestSeeds.UpdateBody(firstName: "Margaret", currency: "USD"));
+        unchanged.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
     /// <summary>A currency this panel has not configured and enabled is refused as missing.</summary>
     [Fact]
     public async Task UpdateRefusesAnUnconfiguredCurrency()

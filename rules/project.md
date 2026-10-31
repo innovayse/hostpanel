@@ -149,8 +149,9 @@ docker/                              compose set (shared·dev·prod·platform), 
   `PortPlacementTests` fails on one anywhere else. Adapters sit in Infrastructure under a
   capability folder (`Storage/`, `Email/`, `Integrations/<Provider>/`, `Auth/`); EF configurations sit in `Persistence/Configurations/`.
   Two documented exceptions in `PortPlacementTests`. A request-scoped adapter lives under `API/` and
-  sits in the test's allow-list with what it reads (today `API/Identity/HttpCallerAccessToken`,
-  the `Authorization` header, behind `ICallerAccessToken`). `Innovayse.Providers.CWP7` implements
+  sits in the test's allow-list with what it reads (today `API/Identity/HttpCallerAccessToken`, the `Authorization`
+  header, behind `ICallerAccessToken`, and `API/Identity/HttpCallerClientMemo`, the request's `HttpContext.Items`, behind
+  `ICallerClientMemo`). `Innovayse.Providers.CWP7` implements
   `IProvisioningProvider` and is not scanned: it is not a plugin, Infrastructure links it and
   `ProvisioningProviderFactory` builds it per server, so it is an Infrastructure adapter in its
   own assembly. The SDK's `IProvisioningPlugin` is only a marker with no operations, so there is
@@ -205,7 +206,22 @@ docker/                              compose set (shared·dev·prod·platform), 
   notes, and a plugin that throws or times out refuses it too (`REFUND_ADVICE_UNAVAILABLE`, fail closed). With no
   fulfilment plugin enabled the refund is unchanged. *Identity* (`IClientResolver`): when one is enabled, every
   client-portal route asks `ResolveAsync(principal)` for the acting client instead of the default owner-subject rule;
-  `null` means no client profile. The host links the returned `ExternalAccount` (provider plus id) to a client row,
+  `null` means no client profile. `Policies.Client` is a `ClientPortalRequirement` (`ClientPortalAccessHandler`, scoped):
+  a user holding the stored client role passes without a plugin call, anyone else passes when the resolver reports an
+  external account, so a member the plugin vouches for reaches the portal without a role and nothing is stored (a plugin
+  that stops vouching applies on the next request); with no plugin a roleless user is refused. A signed-in principal the
+  plugin refuses resolves to `CallerClientAccess.Refused` (`IdentityRefused`), and `PlaceOrderHandler` answers
+  `CLIENT_PERMISSION_DENIED` for it instead of creating a client, while an unauthenticated caller stays
+  `CallerClientAccess.None`. The policy is not role-only: a staff member (admin or support, who hold no client role)
+  that an enabled plugin vouches for also passes `Policies.Client`, because the policy asks the resolver for anyone
+  without the client role. `CallerClientResolver` keeps its answer for the request (`ICallerClientMemo`, kept in `HttpContext.Items`, because the bus runs a use case in its own scope), so the policy, the
+  permission filter and the use case ask the plugin once; `ICallerClientResolver.Invalidate()` is used only by
+  `PlaceOrderHandler`, after it creates the caller's client row. A plugin that throws, times out, or two enabled
+  identity plugins (`IdentityPluginConflictException`) fail closed in that one resolver, logged by exception type
+  and plugin ids only: the answer is `CallerClientAccess.Unavailable` (`IdentityUnavailable`), the portal policy
+  refuses it, the permission filter, `IClientAccess.Require*` and `PlaceOrderHandler` answer 503
+  `IDENTITY_PLUGIN_UNAVAILABLE` with `Retry-After` and create nothing, and so does the portal policy itself, through `IdentityPluginUnavailableResponder` (it reads the request memo, which is stored per subject, and keeps every other refusal a plain 403); `IdentityPluginUnavailableConvention` declares the 503 once for every portal action; the account read (`GetMyAccount`) degrades to no client
+  instead, so sign-in is not blocked. The host links the returned `ExternalAccount` (provider plus id) to a client row,
   creating it on the first order, and `IdentityPluginPermissions` maps the rights to client permissions: every
   admitted principal gets the read-only flags (services, domains, open tickets, emails); `CanPurchase` adds
   `PlaceNewOrders` and `ViewPayInvoices`; `CanManagePaymentMethods` adds `ViewPayInvoices` (the payment method
@@ -287,9 +303,9 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   (`API/Authorization/`; `ClientPortalPermissionTests` fails otherwise). The filter asks `IClientAccess`, which reads the
   caller from `ICurrentUserService`: the owner of a client record holds every permission, a linked user holds the
   stored grant, anyone else holds none, and a refusal is 403 `CLIENT_PERMISSION_DENIED`. The action-to-permission
-  table is in the remarks of `RequiresClientPermissionAttribute`. The use cases behind the portal still resolve the
-  caller's own client record (`FindReadOnlyByUserIdAsync`), so a linked user with no record of their own passes the
-  gate and is then answered by the use case; letting them act on the account they are linked to is a separate change.
+  table is in the remarks of `RequiresClientPermissionAttribute`. The use cases behind the portal resolve the
+  account the caller acts for through `ICallerClientResolver` (owner, linked user or identity plugin member), so a
+  linked user with no record of their own acts on the account they are linked to.
 - **Architecture tests** (`Architecture.Tests`): `ControllerBase`, `ExplicitConstructor`,
   `NoRequestTypes`, `NoIdentityOnMessages`, `PortPlacement`, `EnumPlacement`, `NoVendorNames`, `PluginNeutralCore`,
   plus resource coverage, kernel purity, SDK contract and use-case shape. Application types carry

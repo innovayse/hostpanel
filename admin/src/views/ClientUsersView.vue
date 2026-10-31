@@ -20,6 +20,7 @@ import UserFormModal from '@/components/clients/UserFormModal.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
@@ -43,7 +44,6 @@ import UiText from '@/components/ui/UiText.vue'
 import { UiAlign } from '@/utils/ui/table'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
-import { UiSize } from '@/utils/ui/size'
 import { UiLabelVariant, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import type { UiTabItem } from '@/utils/ui/tabs'
@@ -409,6 +409,29 @@ onMounted(() => fetchUsers())
 onBeforeUnmount(() => {
   clearTimeout(successTimer)
 })
+
+/**
+ * Row actions for a client user.
+ *
+ * @param u - The user whose actions to build.
+ * @returns The action list passed to UiRowActions.
+ */
+const clientUserActions = (u: ClientUserItem): UiRowAction[] => {
+  /**
+   * Opens the manage dialog for this user.
+   * @returns Nothing.
+   */
+  const onManage = (): Promise<void> => openManageModal(u)
+  /**
+   * Removes this user from the client.
+   * @returns Nothing.
+   */
+  const onRemove = (): void => handleRemoveUser(u)
+  return [
+    { label: t('clients.clientUsers.manage'), testid: `client-users-manage-${u.userId}`, onSelect: onManage },
+    ...(!u.isOwner ? [{ label: t('clients.clientUsers.remove'), testid: `client-users-remove-${u.userId}`, onSelect: onRemove, danger: true }] : []),
+  ]
+}
 </script>
 
 <template>
@@ -564,25 +587,7 @@ onBeforeUnmount(() => {
               </UiTableCell>
               <UiTableCell muted>{{ formatDate(u.lastLoginAt) }}</UiTableCell>
               <UiTableCell :align="UiAlign.Right">
-                <UiStack direction="row" :justify="UiJustify.End" gap="sm">
-                  <UiButton
-                    :variant="UiButtonVariant.Secondary"
-                    :size="UiSize.Sm"
-                    :data-testid="`client-users-manage-${u.userId}`"
-                    @click="openManageModal(u)"
-                  >
-                    {{ t('clients.clientUsers.manage') }}
-                  </UiButton>
-                  <UiButton
-                    v-if="!u.isOwner"
-                    :variant="UiButtonVariant.Danger"
-                    :size="UiSize.Sm"
-                    :data-testid="`client-users-remove-${u.userId}`"
-                    @click="handleRemoveUser(u)"
-                  >
-                    {{ t('clients.clientUsers.remove') }}
-                  </UiButton>
-                </UiStack>
+                <UiRowActions :actions="clientUserActions(u)" />
               </UiTableCell>
             </UiTableRow>
           </UiTableBody>

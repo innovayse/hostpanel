@@ -18,6 +18,9 @@ namespace Innovayse.Hostpanel.API.Controllers;
 /// The equivalent admin routes live on <see cref="ClientsController"/> and take the client id in
 /// the path. Here it is resolved from the credential instead, so a client can only ever list,
 /// invite and remove people on their own account.
+/// Every action behind the client portal policy may also answer 503 with <c>IDENTITY_PLUGIN_UNAVAILABLE</c> (and <c>Retry-After</c>)
+/// when the enabled identity plugin cannot say which account the caller acts for; the convention
+/// <c>IdentityPluginUnavailableConvention</c> declares it once in the generated document.
 /// </remarks>
 [Route("api/me/users")]
 [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status429TooManyRequests)]

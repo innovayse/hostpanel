@@ -160,6 +160,17 @@ export const setPortalSetting = async (request: APIRequestContext, key: string, 
 }
 
 /**
+ * Overrides fields of the signed-in person's account until the next {@link resetStub}.
+ *
+ * @param request Playwright's API request context.
+ * @param fields The `GET /api/auth/me` fields to change, e.g. `{ clientPermissions: 0 }`.
+ * @returns Resolves once the stub has accepted the override.
+ */
+export const setAccount = async (request: APIRequestContext, fields: Record<string, unknown>): Promise<void> => {
+  await request.post(`${STUB_URL}/__e2e/account`, { data: fields })
+}
+
+/**
  * Switches the stub's demo mode on until the next {@link resetStub}; it is off by default.
  *
  * @param request Playwright's API request context.

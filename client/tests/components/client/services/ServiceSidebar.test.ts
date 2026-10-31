@@ -44,12 +44,25 @@ describe('ServiceSidebar', () => {
     expect(pending.find('[data-testid="service-nav-setup"]').attributes('href')).toBe('/client/services/4/setup')
   })
 
+  it('does not offer the setup of a pending digital service', () => {
+    const wrapper = mountSidebar({ service: service({ status: ServiceStatus.Pending, isDigital: true }) })
+
+    expect(wrapper.find('[data-testid="service-nav-setup"]').exists()).toBe(false)
+  })
+
   it('offers the quick links only with a known server', () => {
     const known = mountSidebar()
     const unknown = mountSidebar({ service: service({ server: null }) })
 
     expect(known.find('[data-testid="service-link-webmail"]').attributes('href')).toBe('https://srv1.example.net:2096')
     expect(unknown.find('[data-testid="service-link-cpanel"]').exists()).toBe(false)
+  })
+
+  it('does not offer the control panel on a terminated service', async () => {
+    await grantPermissions(Permission.AllowSingleSignOn)
+    const wrapper = mountSidebar({ service: service({ status: ServiceStatus.Terminated }) })
+
+    expect(wrapper.find('[data-testid="service-link-cpanel"]').exists()).toBe(false)
   })
 
   it('asks for the control panel and shows a sign-in failure', async () => {

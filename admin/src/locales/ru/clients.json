@@ -293,6 +293,7 @@
     "streetAddress": "Улица, дом",
     "suiteAptEtc": "Квартира, офис и т. д.",
     "billingPreferences": "Настройки оплаты",
+    "currencyLockedByCreditHint": "Валюту нельзя изменить, пока у клиента есть кредитный баланс. Сначала используйте или верните баланс.",
     "billingContactName": "Имя контакта по оплате",
     "contactsLength": "Контакты ({length})",
     "noContactsAddedYet": "Контакты пока не добавлены"

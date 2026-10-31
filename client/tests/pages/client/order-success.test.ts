@@ -102,6 +102,23 @@ describe('client order-success page', () => {
     expect(wrapper.find('[data-testid="order-success-invoices"]').attributes('href')).toBe('/client/invoices')
   })
 
+  it('offers the hosting setup after an order that held a hosting service', async () => {
+    stubAuthRuntime({ query: { order: '1' } })
+
+    const wrapper = await mountAuthPage(OrderSuccessPage)
+
+    expect(wrapper.find('[data-testid="order-success-setup-service"]').exists()).toBe(true)
+  })
+
+  it('offers no hosting setup after an order of digital goods only, but still links to the invoices', async () => {
+    stubAuthRuntime({ query: { order: '1', digital: '1' } })
+
+    const wrapper = await mountAuthPage(OrderSuccessPage)
+
+    expect(wrapper.find('[data-testid="order-success-setup-service"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="order-success-invoices"]').exists()).toBe(true)
+  })
+
   it('reloads the services before opening the services page', async () => {
     stubAuthRuntime()
     const wrapper = await mountAuthPage(OrderSuccessPage)

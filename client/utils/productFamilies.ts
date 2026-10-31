@@ -347,6 +347,7 @@ export const findProductDetail = (
     description: parseDescription(plan.description || '').summary,
     features: parseDescription(plan.description || '').features,
     isFeatured: plan.isFeatured === true,
+    type: plan.type,
   }))
 
   return {

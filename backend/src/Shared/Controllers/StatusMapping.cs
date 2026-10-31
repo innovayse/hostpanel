@@ -46,7 +46,7 @@ public static class StatusMapping
             "ORDER_NUMBER_RANGE_EXHAUSTED" => new(503, "Service Unavailable"),
             // Exact rows: the stored service or product is not ready to provision, a state conflict
             // rather than a malformed request, and neither name carries a CONFLICT token.
-            "SERVICE_HOSTING_DETAILS_MISSING" or "PRODUCT_PACKAGE_MISSING" => new(409, "Conflict"),
+            "SERVICE_HOSTING_DETAILS_MISSING" or "PRODUCT_PACKAGE_MISSING" or "PRODUCT_SERVER_GROUP_REQUIRED" => new(409, "Conflict"),
             // Exact row: only a terminated service has a termination date to correct, so the stored
             // status stands in the way (a state conflict), and the name carries no CONFLICT token.
             "SERVICE_NOT_TERMINATED" => new(409, "Conflict"),
@@ -69,7 +69,7 @@ public static class StatusMapping
                 => new(409, "Conflict"),
             // Exact row: an unpaid invoice stands in the way, a state conflict, and the name carries no
             // CONFLICT / ALREADY token for the generic arms to catch.
-            "RENEWAL_INVOICE_OPEN" or "CLIENT_TAX_EXEMPT" => new(409, "Conflict"),
+            "RENEWAL_INVOICE_OPEN" or "CLIENT_TAX_EXEMPT" or "CLIENT_CURRENCY_LOCKED_BY_CREDIT" => new(409, "Conflict"),
             // Exact row: the deployment has no card gateway, a state of the system rather than a
             // malformed request, and the name carries no CONFLICT / ALREADY token for the generic arms.
             "PAYMENT_METHOD_UNAVAILABLE" => new(409, "Conflict"),
@@ -122,6 +122,10 @@ public static class StatusMapping
             // wait, the server's capacity rather than the request (503 with Retry-After), and the name
             // carries no token for it.
             "INVOICE_PDF_RENDER_BUSY" => new(503, "Service Unavailable"),
+            // Exact row: the identity plugin that decides which client a caller acts for failed or timed
+            // out, or two are enabled; a dependency that did not answer (503 with Retry-After), and the
+            // name carries no token for it.
+            "IDENTITY_PLUGIN_UNAVAILABLE" => new(503, "Service Unavailable"),
             var code when code.Contains("UNAUTHORIZED", StringComparison.Ordinal) => new(401, "Unauthorized"),
             var code when code.Contains("FORBIDDEN", StringComparison.Ordinal) => new(403, "Forbidden"),
             var code when code.Contains("ACCESS_DENIED", StringComparison.Ordinal) => new(403, "Forbidden"),

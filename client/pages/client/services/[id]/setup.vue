@@ -73,5 +73,12 @@ const error = computed(() => mgmt.serviceError)
 /** Whether the service is active and already has a control-panel account and a domain. */
 const isAlreadySetUp = computed(() => service.value?.status === ServiceStatus.Active && Boolean(service.value.username) && Boolean(service.value.domain))
 
+// A digital service is delivered by its plugin and has no wizard: send it to its own page.
+watch(service, (current) => {
+  if (!pending.value && current?.isDigital) {
+    navigateTo(clientServicePath(serviceId), { replace: true })
+  }
+}, { immediate: true })
+
 useHead({ title: computed(() => `${t('client.setup.pageTitle')} — ${siteName.value}`) })
 </script>

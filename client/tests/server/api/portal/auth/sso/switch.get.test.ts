@@ -1,6 +1,6 @@
 /**
  * Tests for `GET /api/portal/auth/sso/switch`: switching account only starts the external sign-on
- * authorize flow (state and PKCE bound to the browser in httpOnly cookies) through the provider's
+ * authorize flow (state and PKCE sealed into a transaction cookie bound to the browser) through the provider's
  * switch-init page, which receives the account and a relative authorize address;
  * the local session is never touched here, only by the callback after verification.
  *
@@ -12,12 +12,27 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { makeEvent, setRuntimeConfig, startBackend, refusal } from '../../../../../helpers/bffHarness'
 import type { RouteModule } from '../../../../../helpers/bffHarness'
 import type { StubServer } from '../../../../../helpers/stubServer'
+import { writtenTransaction } from '../../../../../helpers/signonAttempt'
+import { SSO_FLOW_COOKIE_MAX_AGE } from '~/server/utils/auth-cookie'
+import { transactionCookieName } from '~/server/utils/signon-transaction'
 
 /** The stub standing in for the external sign-on (the route only redirects to it). */
 let backend: StubServer
 
 /** The route under test. */
 let route: RouteModule
+
+/**
+ * The return path the route sealed into its transaction.
+ *
+ * @param event - The event the route handled.
+ * @returns The sealed return path, or null when none was remembered.
+ */
+const returnToOf = (event: ReturnType<typeof makeEvent>): string | null => {
+  const returnUrl = new URL(event.redirectedTo ?? '').searchParams.get('returnUrl') ?? ''
+  const state = new URLSearchParams(returnUrl.slice(returnUrl.indexOf('?') + 1)).get('state')
+  return writtenTransaction(event, state)?.returnTo ?? null
+}
 
 beforeEach(async () => {
   backend = await startBackend()
@@ -53,20 +68,21 @@ describe('GET /api/portal/auth/sso/switch', () => {
     expect(authorize.get('code_challenge_method')).toBe('S256')
     expect(authorize.has('prompt')).toBe(false)
     expect(authorize.has('login_hint')).toBe(false)
-    expect(authorize.get('state')).toBe(event.written['oauth_state']?.value)
-    const verifier = event.written['pkce_verifier']?.value ?? ''
-    expect(authorize.get('code_challenge')).toBe(createHash('sha256').update(verifier).digest('base64url'))
-    expect(event.written['pkce_verifier']?.options).toMatchObject({ httpOnly: true, secure: true, sameSite: 'lax', maxAge: 300 })
-    expect(event.written['oauth_state']?.options).toMatchObject({ httpOnly: true, secure: true, sameSite: 'lax', maxAge: 300 })
-    expect(event.written['post_login_redirect']?.value).toBe('/client/domains')
+    const state = authorize.get('state')
+    const transaction = writtenTransaction(event, state)
+    expect(transaction?.state).toBe(state)
+    expect(authorize.get('code_challenge')).toBe(createHash('sha256').update(transaction?.verifier ?? '').digest('base64url'))
+    expect(event.written[transactionCookieName(state ?? '')]?.options).toMatchObject({ httpOnly: true, secure: true, sameSite: 'lax', maxAge: SSO_FLOW_COOKIE_MAX_AGE })
+    expect(transaction?.returnTo).toBe('/client/domains')
   })
 
-  it('does not touch the local session: it writes only the flow cookies and deletes none', async () => {
+  it('does not touch the local session: it writes only the transaction cookie and deletes none', async () => {
     const event = makeEvent({ query: { sub: 'u-2' }, cookies: { portal_session: 'current' } })
 
     await route.default(event)
 
-    expect(Object.keys(event.written).sort()).toEqual(['oauth_state', 'pkce_verifier', 'post_login_redirect'])
+    expect(Object.keys(event.written)).toHaveLength(1)
+    expect(Object.keys(event.written)[0]).toMatch(/^__Host-sso_tx_[0-9a-f]{16}$/)
     expect(event.deleted).toEqual([])
   })
 
@@ -75,7 +91,7 @@ describe('GET /api/portal/auth/sso/switch', () => {
 
     await route.default(event)
 
-    expect(event.written['post_login_redirect']?.value).toBe('/client')
+    expect(returnToOf(event)).toBe('/client')
   })
 
   it.each(['https://elsewhere.test/x', '//elsewhere.test', '/\\elsewhere.test', '/api/portal/x'])(
@@ -85,7 +101,7 @@ describe('GET /api/portal/auth/sso/switch', () => {
 
       await route.default(event)
 
-      expect(event.written['post_login_redirect']?.value).toBe('/client')
+      expect(returnToOf(event)).toBe('/client')
     },
   )
 

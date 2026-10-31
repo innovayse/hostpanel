@@ -17,7 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 /// <summary>
 /// <see cref="ICallerClientResolver"/> against Postgres: the owner, a sub-user and the members an identity plugin
 /// vouches for resolve through the one port, and a plugin member who may view but not buy is refused the
-/// ordering route with <c>CLIENT_PERMISSION_DENIED</c> like any user without the permission.
+/// ordering route with <c>CLIENT_PERMISSION_DENIED</c> like any user without the permission, and a principal the plugin refuses is marked refused.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class CallerClientResolverTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
@@ -158,7 +158,22 @@ public sealed class CallerClientResolverTests(IntegrationTestFactory factory) : 
 
         var access = await ResolveAsAsync(host, seeded.UserId);
 
+        access.Should().Be(CallerClientAccess.Refused);
+        access.IdentityRefused.Should().BeTrue();
+    }
+
+    /// <summary>A caller who is not identified at all is no refusal: the resolver answers <c>None</c> even with a plugin.</summary>
+    [Fact]
+    public async Task WithAPlugin_AnUnauthenticatedCallerIsNotMarkedRefusedAsync()
+    {
+        using var host = BuildHost(new StubClientResolver());
+        using var scope = host.Services.CreateScope();
+        scope.ServiceProvider.GetRequiredService<IHttpContextAccessor>().HttpContext = new DefaultHttpContext();
+
+        var access = await scope.ServiceProvider.GetRequiredService<ICallerClientResolver>().ResolveAsync(CancellationToken.None);
+
         access.Should().Be(CallerClientAccess.None);
+        access.IdentityRefused.Should().BeFalse();
     }
 
     /// <summary>An account no client is linked to yet keeps its mapped permissions and names no client.</summary>
@@ -196,5 +211,98 @@ public sealed class CallerClientResolverTests(IntegrationTestFactory factory) : 
         read.StatusCode.Should().Be(HttpStatusCode.OK);
         order.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         await ClientsTestSeeds.AssertCodeAsync(order, HostpanelErrorCodes.CLIENT_PERMISSION_DENIED);
+    }
+
+    /// <summary>The caller is resolved once per request: asking again does not ask the plugin again.</summary>
+    [Fact]
+    public async Task WithAPlugin_AskingTwiceInOneRequestCallsThePluginOnceAsync()
+    {
+        var subject = $"once-{Guid.NewGuid():N}";
+        var plugin = new StubClientResolver();
+        plugin.Grant(subject, Grant($"acct-{Guid.NewGuid():N}", canPurchase: true, canManagePaymentMethods: false));
+        using var host = BuildHost(plugin);
+        using var scope = ScopeAs(host, subject);
+        var resolver = scope.ServiceProvider.GetRequiredService<ICallerClientResolver>();
+
+        var first = await resolver.ResolveAsync(CancellationToken.None);
+        var second = await resolver.ResolveAsync(CancellationToken.None);
+
+        second.Should().BeSameAs(first);
+        plugin.Calls.Should().Be(1);
+    }
+
+    /// <summary>After <c>Invalidate</c> the next ask reads again, so a client created meanwhile is found.</summary>
+    [Fact]
+    public async Task Invalidate_MakesTheNextAskReadAgainAndFindTheClientCreatedMeanwhileAsync()
+    {
+        var accountId = $"acct-{Guid.NewGuid():N}";
+        var subject = $"refresh-{Guid.NewGuid():N}";
+        var plugin = new StubClientResolver();
+        plugin.Grant(subject, Grant(accountId, canPurchase: true, canManagePaymentMethods: false));
+        using var host = BuildHost(plugin);
+        using var scope = ScopeAs(host, subject);
+        var resolver = scope.ServiceProvider.GetRequiredService<ICallerClientResolver>();
+        (await resolver.ResolveAsync(CancellationToken.None)).ClientId.Should().BeNull();
+        var clientId = await SeedLinkedClientAsync(accountId);
+
+        (await resolver.ResolveAsync(CancellationToken.None)).ClientId.Should().BeNull("the answer is kept for the request");
+        resolver.Invalidate();
+        var refreshed = await resolver.ResolveAsync(CancellationToken.None);
+
+        refreshed.ClientId.Should().Be(clientId);
+        plugin.Calls.Should().Be(2);
+    }
+
+    /// <summary>A plugin that throws, times out or cancels itself gives the unavailable answer, never an exception.</summary>
+    /// <param name="kind">Which failure the plugin raises.</param>
+    [Theory]
+    [InlineData("fault")]
+    [InlineData("timeout")]
+    [InlineData("cancelled")]
+    public async Task WithAPlugin_ThatFails_TheCallerIsUnavailableNotAnExceptionAsync(string kind)
+    {
+        Exception failure = kind switch
+        {
+            "fault" => new InvalidOperationException("plugin secret token abc"),
+            "timeout" => new TimeoutException(),
+            _ => new TaskCanceledException(),
+        };
+        using var host = BuildHost(new FailingClientResolver(failure));
+
+        var access = await ResolveAsAsync(host, $"fails-{Guid.NewGuid():N}");
+
+        access.Should().Be(CallerClientAccess.Unavailable);
+        access.IdentityUnavailable.Should().BeTrue();
+        access.Permissions.Should().Be(ClientPermission.None);
+    }
+
+    /// <summary>Two enabled identity plugins give the unavailable answer, even for a user who owns a client record.</summary>
+    [Fact]
+    public async Task WithTwoPluginsEnabled_TheCallerIsUnavailableAsync()
+    {
+        var seeded = await ClientsTestSeeds.SeedClientAsync(factory);
+        using var host = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services =>
+                services.AddSingleton<IIdentityPluginResolver>(new ConflictingIdentityPluginResolver())));
+
+        var access = await ResolveAsAsync(host, seeded.UserId);
+
+        access.Should().Be(CallerClientAccess.Unavailable);
+    }
+
+    /// <summary>Opens a scope whose request is signed in as <paramref name="userId"/>.</summary>
+    /// <param name="host">The host to resolve in.</param>
+    /// <param name="userId">The subject the request carries.</param>
+    /// <returns>The scope, to dispose when the test ends.</returns>
+    private static IServiceScope ScopeAs(WebApplicationFactory<Program> host, string userId)
+    {
+        var scope = host.Services.CreateScope();
+        var accessor = scope.ServiceProvider.GetRequiredService<IHttpContextAccessor>();
+        accessor.HttpContext = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, userId)], authenticationType: "Test")),
+        };
+
+        return scope;
     }
 }

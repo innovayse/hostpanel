@@ -18,7 +18,7 @@ afterEach(() => {
 
 describe('AddQuoteView', () => {
   it('creates the quote for the client named in the query and opens it', async () => {
-    const mock = stubRoutes({ 'GET /api/clients': noClients, 'POST /api/billing/quotes': () => json(55) })
+    const mock = stubRoutes({ 'GET /api/clients/7': () => json({ id: 7, preferences: {} }), 'GET /api/clients': noClients, 'POST /api/billing/quotes': () => json(55) })
     const { wrapper, router } = await mountRouted(AddQuoteView, '/billing/quotes/add', '/billing/quotes/add?clientId=7')
     await flushPromises()
 
@@ -45,5 +45,13 @@ describe('AddQuoteView', () => {
     await flushPromises()
 
     expect(wrapper.get('[data-testid="billing-add-quote-error"]').text()).toContain('Subject is required.')
+  })
+
+  it('prices the lines in the billing currency of the client named in the query', async () => {
+    stubRoutes({ 'GET /api/clients/7': () => json({ id: 7, preferences: { currency: 'AMD' } }), 'GET /api/clients': noClients })
+    const { wrapper } = await mountRouted(AddQuoteView, '/billing/quotes/add', '/billing/quotes/add?clientId=7')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="billing-quote-total"]').text()).toBe('0.00 AMD')
   })
 })

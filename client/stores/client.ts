@@ -17,7 +17,7 @@ import { defineStore } from 'pinia'
 import { useClientApi } from '~/composables/apis/useClientApi'
 import { Permission } from '~/composables/usePermissions'
 import { PortalErrorCode, apiErrorCode, apiErrorMessage } from '~/lib/errorHandler'
-import { holdsPermission } from '~/utils/holdsPermission'
+import { mayPerform } from '~/utils/holdsPermission'
 import { isInvoiceOutstanding } from '~/utils/invoice'
 import type { ClientEmail } from '~/types/clientemail'
 import type { ClientUser } from '~/types/clientuser'
@@ -26,7 +26,7 @@ import type { ClientInvoice } from '~/types/clientinvoice'
 import type { ClientDomain } from '~/types/clientdomain'
 import type { ClientTicket } from '~/types/clientticket'
 import { ServiceStatus } from '~/types/servicestatus'
-import { TicketStatus } from '~/types/ticketstatus'
+import { isTicketOpen } from '~/utils/ticketOpen'
 
 /**
  * True when the API answered that the signed-in identity has no client profile at all.
@@ -152,10 +152,11 @@ export const useClientStore = defineStore('client', {
      * request the API is certain to refuse (a 403 per section, each one a console error).
      *
      * Answers true while the person is not loaded: with no identity there is nothing to hide
-     * behind, so the section still asks and the API, which enforces the same flags, decides.
+     * behind, so the section still asks and the API, which enforces the same flags, decides. It
+     * also answers true for a person who acts for no account yet (see {@link mayPerform}).
      */
     mayDo: (state) => (flag: number): boolean =>
-      !state.user || holdsPermission(state.user.permissions, flag),
+      mayPerform(state.user, flag),
 
     /** First letter of name for avatar */
     userInitial: (state): string => {
@@ -179,9 +180,9 @@ export const useClientStore = defineStore('client', {
     activeServiceCount: (state): number =>
       state.services.filter(s => s.status === ServiceStatus.Active).length,
 
-    /** Count of open tickets */
+    /** Count of open tickets, by the same rule as the Open tab of the tickets page */
     openTicketCount: (state): number =>
-      state.tickets.filter(t => t.status === TicketStatus.Open).length
+      state.tickets.filter(isTicketOpen).length
   },
 
   actions: {

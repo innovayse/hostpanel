@@ -289,11 +289,19 @@ public sealed class Client : BaseEntity, IAggregateRoot
     /// <summary>Sets the currency the client is billed in.</summary>
     /// <remarks>
     /// Whether this is allowed is not the client's to know: it depends on whether any invoice
-    /// exists, which lives elsewhere. The handler checks and refuses; this method only records,
-    /// in the same shape <c>Invoice</c> stores it: three letters, upper case.
+    /// exists, which lives elsewhere, so the handler checks that and refuses. What the aggregate
+    /// knows itself is the credit balance: it has no currency of its own, so moving it from one
+    /// currency to a different one would silently re-value money the client prepaid (10 would
+    /// stay 10). That change is refused while the balance is not zero; naming the current currency
+    /// again is a no-op. The first assignment, from no currency to one, is always allowed: there is
+    /// no previous currency whose value could change. Otherwise this records the code in the shape
+    /// <c>Invoice</c> stores it: three letters, upper case.
     /// </remarks>
     /// <param name="code">ISO 4217 alpha code, normalised to upper case.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="code"/> is not three characters.</exception>
+    /// <exception cref="DomainRuleException">
+    /// Thrown with <c>CLIENT_CURRENCY_LOCKED_BY_CREDIT</c> when an existing currency would change to another while the credit balance is not zero.
+    /// </exception>
     public void SetCurrency(string code)
     {
         if (string.IsNullOrWhiteSpace(code) || code.Length != CurrencyCodeLength)
@@ -301,7 +309,15 @@ public sealed class Client : BaseEntity, IAggregateRoot
             throw new ArgumentException("A client's currency is a three-letter ISO 4217 code.", nameof(code));
         }
 
-        Currency = code.ToUpperInvariant();
+        var normalised = code.ToUpperInvariant();
+        if (CreditBalance != 0m && Currency is not null && !string.Equals(normalised, Currency, StringComparison.Ordinal))
+        {
+            throw new DomainRuleException(
+                ClientsErrors.ClientCurrencyLockedByCredit,
+                $"Cannot change the currency while the credit balance is {CreditBalance}.");
+        }
+
+        Currency = normalised;
     }
 
     /// <summary>

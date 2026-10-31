@@ -42,6 +42,8 @@ describe('IntegrationCard', () => {
     [PluginType.Identity, 'Identity'],
     [PluginType.Hosted, 'Background worker'],
     [PluginType.Payment, 'Payment'],
+    [PluginType.Provisioning, 'Provisioning'],
+    [PluginType.Registrar, 'Registrar'],
   ])('labels a %s plugin with its type', (pluginType, label) => {
     const wrapper = mountWithApp(IntegrationCard, { props: { integration: integrationDto({ isPlugin: true, pluginType }) } })
 

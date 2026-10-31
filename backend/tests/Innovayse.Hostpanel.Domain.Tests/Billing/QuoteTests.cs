@@ -94,4 +94,44 @@ public sealed class QuoteTests
         quote.Subject.Should().Be("Test");
         quote.Stage.Should().Be(QuoteStage.Draft);
     }
+
+    /// <summary>A discount that leaves more decimals than a two decimal currency allows is rounded on the line and in the total.</summary>
+    [Fact]
+    public void AddItem_WithDiscountBeyondTheCurrencyDecimals_RoundsLineAndTotalToTwoDecimals()
+    {
+        var quote = Quote.Create(clientId: 1, subject: "Test", expiryDate: Now.AddDays(7), currency: "USD");
+
+        quote.AddItem("Hosting", 10m, 3, discountPercent: 33.33m);
+
+        quote.Items[0].AmountIn("USD").Should().Be(20.00m);
+        quote.Total.Should().Be(20.00m);
+    }
+
+    /// <summary>A zero decimal currency rounds the discounted line to whole units.</summary>
+    [Fact]
+    public void AddItem_WithDiscountInAZeroDecimalCurrency_RoundsToWholeUnits()
+    {
+        var quote = Quote.Create(clientId: 1, subject: "Test", expiryDate: Now.AddDays(7), currency: "JPY");
+
+        quote.AddItem("Hosting", 1000m, 3, discountPercent: 33.33m);
+
+        quote.Total.Should().Be(2000m);
+    }
+
+    /// <summary>The total is the sum of rounded lines and stays exact after an update and a removal.</summary>
+    [Fact]
+    public void UpdateItemAndRemoveItem_KeepTheTotalEqualToTheSumOfRoundedLines()
+    {
+        var quote = Quote.Create(clientId: 1, subject: "Test", expiryDate: Now.AddDays(7), currency: "USD");
+        quote.AddItem("A", 10m, 3, discountPercent: 33.33m);
+        quote.AddItem("B", 0.005m, 1);
+
+        quote.Total.Should().Be(20.01m);
+
+        quote.UpdateItem(0, "A", 10m, 3, discountPercent: 33.33m);
+        quote.Total.Should().Be(20.01m);
+
+        quote.RemoveItem(0);
+        quote.Total.Should().Be(0.01m);
+    }
 }

@@ -7,11 +7,9 @@
  * response body (`data.error`, `err.data.error`, `body.code`, `err.data.code` and the like).
  *
  * A read is allowed only on a line carrying the marker `legacy-gate: allow <reason>` (comment on
- * the same line or the line above). Two exist by design:
+ * the same line or the line above). One exists by design:
  *  - the BFF envelope's `data.code` in `lib/errorHandler.ts`: that `code` is our own field, set by
- *    `server/utils/api.ts`, not a backend field;
- *  - the SSO's OAuth `error` reply in `server/api/portal/auth/sso/callback.get.ts`: an RFC 6749
- *    identifier from another service.
+ *    `server/utils/api.ts`, not a backend field.
  *
  * Tests, scripts and generated folders are not scanned. Exits 1 with one line per hit.
  *

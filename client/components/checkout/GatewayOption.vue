@@ -6,6 +6,7 @@
     :label="method.displayName || method.module"
     :description="description"
     :icon="PAYMENT_GATEWAY_KIND_ICON[kind]"
+    :disabled="disabled"
     @update:model-value="emit('update:modelValue', String($event))"
   />
 </template>
@@ -30,10 +31,12 @@ interface Props {
   name: string
   /** Module name of the chosen gateway (v-model). */
   modelValue?: string | null
+  /** True when the row cannot be chosen, for instance because the person may not place orders. */
+  disabled?: boolean
 }
 
 /** The props of the component. */
-const props = withDefaults(defineProps<Props>(), { modelValue: undefined })
+const props = withDefaults(defineProps<Props>(), { modelValue: undefined, disabled: false })
 
 /** Emits the component raises. */
 const emit = defineEmits<{

@@ -37,6 +37,26 @@ public sealed class BillingCycleParserTests
         cycle.Should().Be(expected);
     }
 
+    /// <summary>
+    /// The words the source panel's export sends for the new cycles read as those cycles, in any casing and with
+    /// surrounding blanks, so a service on one of them is imported instead of skipped.
+    /// </summary>
+    /// <param name="raw">The word the export passes through.</param>
+    /// <param name="expected">The cycle it must read as.</param>
+    [Theory]
+    [InlineData("Semi-Annually", BillingCycle.SemiAnnual)]
+    [InlineData("semi-annually", BillingCycle.SemiAnnual)]
+    [InlineData("SEMIANNUALLY", BillingCycle.SemiAnnual)]
+    [InlineData(" Semi-Annually ", BillingCycle.SemiAnnual)]
+    [InlineData("Biennially", BillingCycle.Biennial)]
+    [InlineData("biennially", BillingCycle.Biennial)]
+    [InlineData("BIENNIALLY", BillingCycle.Biennial)]
+    public void TryParse_SourcePanelWords_ReadAsTheNewCycles(string raw, BillingCycle expected)
+    {
+        BillingCycleParser.TryParse(raw, out var cycle).Should().BeTrue();
+        cycle.Should().Be(expected);
+    }
+
     /// <summary>Every member's own name reads back as that member, so a stored row always round-trips.</summary>
     [Fact]
     public void TryParse_EveryMemberName_RoundTrips()
@@ -55,6 +75,9 @@ public sealed class BillingCycleParserTests
     [InlineData("")]
     [InlineData("weekly")]
     [InlineData("biannual")]
+    [InlineData("Triennially")]
+    [InlineData("One Time")]
+    [InlineData("Free Account")]
     public void TryParse_Unknown_ReturnsFalse(string? raw)
     {
         BillingCycleParser.TryParse(raw, out _).Should().BeFalse();

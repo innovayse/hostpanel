@@ -78,14 +78,6 @@ export const currencySymbol = (code: string): string => CURRENCY_SYMBOLS[code as
 export const currencyLabel = (code: CurrencyCode): string => `${code} (${CURRENCY_SYMBOLS[code]})`
 
 /**
- * Formats an amount in dollars with two decimals.
- *
- * @param amount - Numeric value.
- * @returns For example "$12.50".
- */
-export const formatMoney = (amount: number): string => `$${amount.toFixed(2)}`
-
-/**
  * Formats a large total in the currency the API names, with grouping and no decimals (dashboard tiles).
  *
  * @param amount - Amount in the given currency.

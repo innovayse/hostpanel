@@ -13,7 +13,6 @@ import {
   formatAffixed,
   formatCurrencyCode,
   formatCurrencyWhole,
-  formatMoney,
   formatPrice,
   formatReportAmount,
   formatPlainAmount,
@@ -22,11 +21,6 @@ import {
 import { CurrencyCode } from '@/types/currency'
 
 describe('money', () => {
-  it('formats dollars with two decimals', () => {
-    expect(formatMoney(12.5)).toBe('$12.50')
-    expect(formatMoney(0)).toBe('$0.00')
-  })
-
   it('formats a price with the currency symbol and code', () => {
     expect(formatPrice(4.99, 'USD')).toBe('$4.99 USD')
     expect(formatPrice(10, 'EUR')).toBe('€10.00 EUR')

@@ -49,6 +49,12 @@ public sealed class HttpResilienceOptionsValidator : IValidateOptions<HttpResili
                 failures.AddRange(results.Select(r => $"{prefix}: {r.ErrorMessage}"));
             }
 
+            var bounds = new ResilienceProfileOptionsValidator().Validate(null, profile);
+            if (bounds.Failed)
+            {
+                failures.AddRange(bounds.Failures!.Select(f => $"{prefix}: {f}"));
+            }
+
             if (profile.TotalTimeout < profile.AttemptTimeout)
             {
                 failures.Add(

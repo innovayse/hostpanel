@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -92,7 +93,7 @@ public sealed class GetCreditsReviewerTests(IntegrationTestFactory factory) : IC
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         db.Transactions.Add(Transaction.Create(
             clientId, date, "Credit added", $"tx-{Guid.NewGuid():N}",
-            invoiceId: null, paymentMethod: "manual", amountIn: amount, amountOut: 0m, fees: 0m, addedToCredit: true, currency: currency));
+            invoiceId: null, paymentMethod: "manual", amountIn: amount, amountOut: 0m, fees: 0m, addedToCredit: true, currency: currency, TransactionSource.Manual));
         await db.SaveChangesAsync();
     }
 }

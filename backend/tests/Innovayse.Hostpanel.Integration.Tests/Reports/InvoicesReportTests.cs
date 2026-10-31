@@ -49,10 +49,10 @@ public sealed class InvoicesReportTests(IntegrationTestFactory factory) : IClass
             invoice.AddItem("Hosting", 50m, 1);
             db.Invoices.Add(invoice);
             await db.SaveChangesAsync();
-            db.Transactions.Add(invoice.AddPayment(DateTimeOffset.UtcNow.AddDays(-2), "Manual", $"tx-{Guid.NewGuid():N}", 50m, 0m, null));
+            db.Transactions.Add(invoice.AddPayment(DateTimeOffset.UtcNow.AddDays(-2), "Manual", $"tx-{Guid.NewGuid():N}", 50m, 0m, null, TransactionSource.Manual));
             await db.SaveChangesAsync();
             db.Transactions.Add(invoice.AddRefund(
-                refundedAt, PaymentMethodNames.CreditBalance, $"rf-{Guid.NewGuid():N}", 20m, 0m, null, addedToCredit: true));
+                refundedAt, PaymentMethodNames.CreditBalance, $"rf-{Guid.NewGuid():N}", 20m, 0m, null, addedToCredit: true, source: TransactionSource.Manual));
             await db.SaveChangesAsync();
             refundedId = invoice.Id;
         }

@@ -32,7 +32,7 @@ public sealed class InvoicePartialPaymentTests
     {
         var invoice = OpenInvoice();
 
-        invoice.AddPayment(Today, "Bank", "tx1", 4m, 0m, null);
+        invoice.AddPayment(Today, "Bank", "tx1", 4m, 0m, null, TransactionSource.Manual);
 
         invoice.Status.Should().Be(InvoiceStatus.Unpaid);
         invoice.AmountDue.Should().Be(6m);
@@ -49,7 +49,7 @@ public sealed class InvoicePartialPaymentTests
     public void SettleIfCovered_AfterCreditCoversTheRest_SettlesTheInvoice()
     {
         var invoice = OpenInvoice();
-        invoice.AddPayment(Today, "Bank", "tx1", 4m, 0m, null);
+        invoice.AddPayment(Today, "Bank", "tx1", 4m, 0m, null, TransactionSource.Manual);
         invoice.ApplyCredit(6m);
 
         var settled = invoice.SettleIfCovered(Today.AddDays(1));
@@ -71,7 +71,7 @@ public sealed class InvoicePartialPaymentTests
         var invoice = Invoice.Create(1, Today.AddDays(7), "USD", Today);
         invoice.AddItem("Setup", 5m, 1);
         invoice.AddItem("Hosting", 10m, 1);
-        invoice.AddPayment(Today, "Bank", "tx1", 10m, 0m, null);
+        invoice.AddPayment(Today, "Bank", "tx1", 10m, 0m, null, TransactionSource.Manual);
         invoice.Status.Should().Be(InvoiceStatus.Unpaid, "10 of 15 is paid");
 
         invoice.RemoveItem(invoice.Items[0].Id);
@@ -85,7 +85,7 @@ public sealed class InvoicePartialPaymentTests
     public void SettleIfCovered_WhileMoneyIsStillDue_LeavesTheInvoiceOpen()
     {
         var invoice = OpenInvoice();
-        invoice.AddPayment(Today, "Bank", "tx1", 4m, 0m, null);
+        invoice.AddPayment(Today, "Bank", "tx1", 4m, 0m, null, TransactionSource.Manual);
 
         invoice.SettleIfCovered(Today).Should().BeFalse();
 
@@ -113,7 +113,7 @@ public sealed class InvoicePartialPaymentTests
     public void SettleIfCovered_OnAPaidInvoice_DoesNothing()
     {
         var invoice = OpenInvoice();
-        invoice.AddPayment(Today, "Bank", "tx1", 10m, 0m, null);
+        invoice.AddPayment(Today, "Bank", "tx1", 10m, 0m, null, TransactionSource.Manual);
         invoice.ClearDomainEvents();
 
         invoice.SettleIfCovered(Today.AddDays(1)).Should().BeFalse();
@@ -153,9 +153,9 @@ public sealed class InvoicePartialPaymentTests
     public void Payment_OnAPaidInvoice_ThrowsWithInvoiceNotPayable()
     {
         var invoice = OpenInvoice();
-        invoice.AddPayment(Today, "Bank", "tx1", 10m, 0m, null);
+        invoice.AddPayment(Today, "Bank", "tx1", 10m, 0m, null, TransactionSource.Manual);
 
-        var act = () => invoice.AddPayment(Today, "Bank", "tx2", 1m, 0m, null);
+        var act = () => invoice.AddPayment(Today, "Bank", "tx2", 1m, 0m, null, TransactionSource.Manual);
 
         act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.InvoiceNotPayable);
         invoice.AmountPaid.Should().Be(10m);

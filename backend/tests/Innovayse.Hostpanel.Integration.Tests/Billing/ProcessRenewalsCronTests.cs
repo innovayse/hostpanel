@@ -486,8 +486,8 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
         var secondContext = second.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var a = await firstContext.Invoices.Include(i => i.Transactions).FirstAsync(i => i.Id == invoiceId, CancellationToken.None);
         var b = await secondContext.Invoices.Include(i => i.Transactions).FirstAsync(i => i.Id == invoiceId, CancellationToken.None);
-        a.AddPayment(DateTimeOffset.UtcNow, "Manual", "half-1", 5m, 0m, null);
-        b.AddPayment(DateTimeOffset.UtcNow, "Manual", "half-2", 5m, 0m, null);
+        a.AddPayment(DateTimeOffset.UtcNow, "Manual", "half-1", 5m, 0m, null, TransactionSource.Manual);
+        b.AddPayment(DateTimeOffset.UtcNow, "Manual", "half-2", 5m, 0m, null, TransactionSource.Manual);
         await firstContext.SaveChangesAsync(CancellationToken.None);
         await secondContext.SaveChangesAsync(CancellationToken.None);
 

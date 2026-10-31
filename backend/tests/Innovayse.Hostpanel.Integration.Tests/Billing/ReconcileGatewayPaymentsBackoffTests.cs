@@ -76,7 +76,7 @@ public sealed class ReconcileGatewayPaymentsBackoffTests(IntegrationTestFactory 
 
         if (settled)
         {
-            db.Transactions.Add(invoice.Settle(PaymentMethodNames.Manual, $"manual-{Guid.NewGuid():N}", startedAt)!);
+            db.Transactions.Add(invoice.Settle(PaymentMethodNames.Manual, $"manual-{Guid.NewGuid():N}", startedAt, TransactionSource.Manual)!);
         }
 
         await db.SaveChangesAsync(CancellationToken.None);

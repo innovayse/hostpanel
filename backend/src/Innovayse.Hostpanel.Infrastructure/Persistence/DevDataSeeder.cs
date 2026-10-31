@@ -366,10 +366,12 @@ public sealed class DevDataSeeder
                 {
                     var date = MonthsAgo(_now, m * 2, Rng.Next(1, 28));
                     var amount = Math.Round((decimal)(Rng.NextDouble() * 200 + 50), 2);
+                    // A card payment is a gateway payment, like the demo seeder records it.
                     var tx = Transaction.Create(
                         client.Id, date, "Monthly hosting payment",
                         "txn_" + Rng.Next(100000, 999999), null, PaymentMethodNames.Card,
-                        amount, 0m, Math.Round(amount * 0.029m, 2), false, SeedInvoiceCurrency);
+                        amount, 0m, Math.Round(amount * 0.029m, 2), false, SeedInvoiceCurrency,
+                        TransactionSource.GatewayPayment);
                     _db.Transactions.Add(tx);
                 }
             }

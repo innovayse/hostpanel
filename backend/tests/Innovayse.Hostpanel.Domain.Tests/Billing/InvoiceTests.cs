@@ -433,7 +433,7 @@ public sealed class InvoiceTests
         var invoice = Invoice.Create(clientId: 1, dueDate: Now.AddDays(14), currency: "USD", issuedAt: Now);
         invoice.SetGatewaySession("bank-gateway", "gw-order-1", GatewayAttemptAt);
 
-        invoice.Settle("bank-gateway", "gw-order-1", Now);
+        invoice.Settle("bank-gateway", "gw-order-1", Now, TransactionSource.Manual);
 
         Assert.Equal("bank-gateway", invoice.GatewayModule);
         Assert.Equal("gw-order-1", invoice.GatewayOrderId);
@@ -447,10 +447,10 @@ public sealed class InvoiceTests
     {
         var invoice = Invoice.Create(clientId: 1, dueDate: Now.AddDays(14), currency: "USD", issuedAt: Now);
         invoice.SetGatewaySession("bank-gateway", "gw-order-1", GatewayAttemptAt);
-        invoice.Settle("bank-gateway", "gw-order-1", Now);
+        invoice.Settle("bank-gateway", "gw-order-1", Now, TransactionSource.Manual);
 
         var ex = Assert.Throws<DomainRuleException>(
-            () => invoice.Settle("bank-gateway", "gw-order-2", Now));
+            () => invoice.Settle("bank-gateway", "gw-order-2", Now, TransactionSource.Manual));
         Assert.Equal(BillingErrors.InvoiceNotPayable, ex.Code);
     }
 
@@ -464,7 +464,7 @@ public sealed class InvoiceTests
         // undoing the admin's reversal.
         var invoice = Invoice.Create(clientId: 1, dueDate: Now.AddDays(14), currency: "USD", issuedAt: Now);
         invoice.SetGatewaySession("bank-gateway", "gw-order-1", GatewayAttemptAt);
-        invoice.Settle("bank-gateway", "gw-order-1", Now);
+        invoice.Settle("bank-gateway", "gw-order-1", Now, TransactionSource.Manual);
 
         invoice.MarkUnpaid();
 
@@ -483,7 +483,7 @@ public sealed class InvoiceTests
         invoice.AddItem("Hosting Plan", unitPrice: 10m, quantity: 1);
         var paidOn = Now.AddMonths(-3);
 
-        invoice.AddPayment(paidOn, "card", "txn-1", 10m, 0m, null);
+        invoice.AddPayment(paidOn, "card", "txn-1", 10m, 0m, null, TransactionSource.Manual);
 
         invoice.Status.Should().Be(InvoiceStatus.Paid);
         invoice.PaidAt.Should().Be(paidOn);
@@ -585,9 +585,9 @@ public sealed class InvoiceTests
     public void Settle_ReturnsLedgerRowForTheAmountDue()
     {
         var invoice = UnpaidFor(10m);
-        invoice.AddPayment(Now, "Bank", "part", 4m, 0m, null);
+        invoice.AddPayment(Now, "Bank", "part", 4m, 0m, null, TransactionSource.Manual);
 
-        var row = invoice.Settle(PaymentMethodNames.Manual, "bulk-1", Now);
+        var row = invoice.Settle(PaymentMethodNames.Manual, "bulk-1", Now, TransactionSource.Manual);
 
         invoice.Status.Should().Be(InvoiceStatus.Paid);
         row.Should().NotBeNull();
@@ -604,16 +604,16 @@ public sealed class InvoiceTests
     public void Settle_AfterPartialPayment_RecordsTheRestSoAllOfItIsRefundable()
     {
         var invoice = UnpaidFor(100m);
-        invoice.AddPayment(Now, "Bank", "part", 30m, 0m, null);
+        invoice.AddPayment(Now, "Bank", "part", 30m, 0m, null, TransactionSource.Manual);
 
-        invoice.Settle(PaymentMethodNames.Card, "ch_rest", Now);
+        invoice.Settle(PaymentMethodNames.Card, "ch_rest", Now, TransactionSource.Manual);
 
         invoice.Transactions.Where(t => t.Type == InvoiceTransactionType.Payment).Select(t => t.Amount)
             .Should().Equal(30m, 70m);
         invoice.AmountPaid.Should().Be(invoice.Total);
         invoice.RefundableAmount.Should().Be(invoice.Total);
 
-        invoice.AddRefund(Now, "Bank", "refund-part", 30m, 0m, null);
+        invoice.AddRefund(Now, "Bank", "refund-part", 30m, 0m, null, false, TransactionSource.Manual);
 
         invoice.Status.Should().Be(InvoiceStatus.PartiallyRefunded);
         invoice.RefundableAmount.Should().Be(70m);
@@ -647,7 +647,7 @@ public sealed class InvoiceTests
     {
         var invoice = UnpaidFor(0m);
 
-        var row = invoice.Settle(PaymentMethodNames.Manual, "bulk-1", Now);
+        var row = invoice.Settle(PaymentMethodNames.Manual, "bulk-1", Now, TransactionSource.Manual);
 
         row.Should().BeNull();
         invoice.Status.Should().Be(InvoiceStatus.Paid);
@@ -663,7 +663,7 @@ public sealed class InvoiceTests
         var invoice = UnpaidFor(10m);
         invoice.SetGatewaySession("bank-gateway", "gw-order-1", GatewayAttemptAt);
 
-        invoice.Settle(PaymentMethodNames.Card, "ch_1", Now);
+        invoice.Settle(PaymentMethodNames.Card, "ch_1", Now, TransactionSource.Manual);
 
         invoice.GatewayModule.Should().Be("bank-gateway");
         invoice.GatewayOrderId.Should().Be("gw-order-1");
@@ -679,7 +679,7 @@ public sealed class InvoiceTests
         var invoice = UnpaidFor(10m);
         invoice.SetGatewaySession("bank-gateway", "gw-order-1", GatewayAttemptAt);
 
-        invoice.AddPayment(Now, PaymentMethodNames.Manual, "manual-1", 10m, 0m, null);
+        invoice.AddPayment(Now, PaymentMethodNames.Manual, "manual-1", 10m, 0m, null, TransactionSource.Manual);
 
         invoice.Status.Should().Be(InvoiceStatus.Paid);
         invoice.GatewayOrderId.Should().Be("gw-order-1");
@@ -701,8 +701,8 @@ public sealed class InvoiceTests
         throughSession.SetGatewaySession("bank-gateway", "gw-order-2", GatewayAttemptAt);
 
         var openBefore = filter(otherPath);
-        otherPath.Settle(PaymentMethodNames.Manual, "manual-1", Now);
-        throughSession.Settle("bank-gateway", "gw-order-2", Now);
+        otherPath.Settle(PaymentMethodNames.Manual, "manual-1", Now, TransactionSource.Manual);
+        throughSession.Settle("bank-gateway", "gw-order-2", Now, TransactionSource.Manual);
 
         openBefore.Should().BeFalse();
         filter(otherPath).Should().BeTrue();
@@ -716,7 +716,7 @@ public sealed class InvoiceTests
         var invoice = UnpaidFor(10m);
         invoice.SetGatewaySession("bank-gateway", "gw-order-1", GatewayAttemptAt);
 
-        invoice.Settle("bank-gateway", "gw-txn-1", Now);
+        invoice.Settle("bank-gateway", "gw-txn-1", Now, TransactionSource.Manual);
 
         invoice.WasPaidThrough("bank-gateway").Should().BeTrue();
         invoice.RefundableThrough("bank-gateway").Should().Be(10m);
@@ -728,14 +728,14 @@ public sealed class InvoiceTests
     {
         var invoice = UnpaidFor(10m);
 
-        var first = invoice.AddPayment(Now, "Bank", "tx1", 4m, 0m, null);
+        var first = invoice.AddPayment(Now, "Bank", "tx1", 4m, 0m, null, TransactionSource.Manual);
 
         invoice.Status.Should().Be(InvoiceStatus.Unpaid);
         invoice.AmountDue.Should().Be(6m);
         first.AmountIn.Should().Be(4m);
         invoice.DomainEvents.OfType<PaymentReceivedEvent>().Should().BeEmpty();
 
-        invoice.AddPayment(Now, "Bank", "tx2", 6m, 0m, null);
+        invoice.AddPayment(Now, "Bank", "tx2", 6m, 0m, null, TransactionSource.Manual);
 
         invoice.Status.Should().Be(InvoiceStatus.Paid);
         invoice.IsPaidInFull.Should().BeTrue();
@@ -749,7 +749,7 @@ public sealed class InvoiceTests
         var invoice = UnpaidFor(10m);
         invoice.MarkOverdue(Now.AddDays(8));
 
-        invoice.AddPayment(Now.AddDays(8), "Bank", "tx1", 4m, 0m, null);
+        invoice.AddPayment(Now.AddDays(8), "Bank", "tx1", 4m, 0m, null, TransactionSource.Manual);
 
         invoice.Status.Should().Be(InvoiceStatus.Overdue);
         invoice.AmountDue.Should().Be(6m);
@@ -763,7 +763,7 @@ public sealed class InvoiceTests
         var invoice = UnpaidFor(10m);
         invoice.RecordPaidHistory("ref", Now);
 
-        var act = () => invoice.AddPayment(Now, "Bank", "tx", 1m, 0m, null);
+        var act = () => invoice.AddPayment(Now, "Bank", "tx", 1m, 0m, null, TransactionSource.Manual);
 
         act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.InvoiceNotPayable);
     }
@@ -775,14 +775,14 @@ public sealed class InvoiceTests
         var invoice = UnpaidFor(10m);
         invoice.RecordPaidHistory("ref", Now);
 
-        var row = invoice.AddRefund(Now, "Manual", "r1", 3m, 0m, null, addedToCredit: true);
+        var row = invoice.AddRefund(Now, "Manual", "r1", 3m, 0m, null, addedToCredit: true, source: TransactionSource.Manual);
 
         invoice.Status.Should().Be(InvoiceStatus.PartiallyRefunded);
         invoice.RefundableAmount.Should().Be(7m);
         row.AmountOut.Should().Be(3m);
         row.AddedToCredit.Should().BeTrue();
 
-        invoice.AddRefund(Now, "Manual", "r2", 7m, 0m, null);
+        invoice.AddRefund(Now, "Manual", "r2", 7m, 0m, null, false, TransactionSource.Manual);
 
         invoice.Status.Should().Be(InvoiceStatus.Refunded);
     }
@@ -794,7 +794,7 @@ public sealed class InvoiceTests
         var invoice = UnpaidFor(10m);
         invoice.RecordPaidHistory("ref", Now);
 
-        var act = () => invoice.AddRefund(Now, "Manual", "r1", 11m, 0m, null);
+        var act = () => invoice.AddRefund(Now, "Manual", "r1", 11m, 0m, null, false, TransactionSource.Manual);
 
         act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.InvoiceRefundExceedsPaid);
         invoice.Transactions.Should().BeEmpty();
@@ -843,7 +843,7 @@ public sealed class InvoiceTests
     public void MarkPaid_AfterPartialPayment_ThrowsWithAmountStillDue()
     {
         var invoice = UnpaidFor(100m);
-        invoice.AddPayment(Now, "Bank", "tx1", 40m, 0m, null);
+        invoice.AddPayment(Now, "Bank", "tx1", 40m, 0m, null, TransactionSource.Manual);
 
         var act = () => invoice.MarkPaid("ref", Now);
 
@@ -856,9 +856,9 @@ public sealed class InvoiceTests
     public void Settle_AfterPartialPayment_IsPaidInFull()
     {
         var invoice = UnpaidFor(100m);
-        invoice.AddPayment(Now, "Bank", "tx1", 40m, 0m, null);
+        invoice.AddPayment(Now, "Bank", "tx1", 40m, 0m, null, TransactionSource.Manual);
 
-        var row = invoice.Settle("Bank", "tx2", Now);
+        var row = invoice.Settle("Bank", "tx2", Now, TransactionSource.Manual);
 
         row!.AmountIn.Should().Be(60m);
         invoice.IsPaidInFull.Should().BeTrue();
@@ -884,7 +884,7 @@ public sealed class InvoiceTests
     {
         var invoice = UnpaidFor(100m);
 
-        var act = () => invoice.AddPayment(Now, "Bank", "tx1", 150m, 0m, null);
+        var act = () => invoice.AddPayment(Now, "Bank", "tx1", 150m, 0m, null, TransactionSource.Manual);
 
         act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.InvoicePaymentExceedsDue);
         invoice.Transactions.Should().BeEmpty();
@@ -896,7 +896,7 @@ public sealed class InvoiceTests
     public void Cancel_WithRecordedPayment_ThrowsWithHasPayments()
     {
         var invoice = UnpaidFor(100m);
-        invoice.AddPayment(Now, "Bank", "tx1", 40m, 0m, null);
+        invoice.AddPayment(Now, "Bank", "tx1", 40m, 0m, null, TransactionSource.Manual);
 
         var act = () => invoice.Cancel();
 
@@ -966,7 +966,7 @@ public sealed class InvoiceTests
     public void MarkUnpaid_WithRecordedPayment_ThrowsWithHasPayments()
     {
         var invoice = UnpaidFor(10m);
-        invoice.AddPayment(Now, "Bank", "full", 10m, 0m, null);
+        invoice.AddPayment(Now, "Bank", "full", 10m, 0m, null, TransactionSource.Manual);
 
         var act = invoice.MarkUnpaid;
 
@@ -994,7 +994,7 @@ public sealed class InvoiceTests
     public void RecordPaidHistory_AfterPartialPayment_ThrowsWithHasPayments()
     {
         var invoice = UnpaidFor(10m);
-        invoice.AddPayment(Now, "Bank", "part", 4m, 0m, null);
+        invoice.AddPayment(Now, "Bank", "part", 4m, 0m, null, TransactionSource.Manual);
 
         var act = () => invoice.RecordPaidHistory("ref", Now);
 
@@ -1034,7 +1034,7 @@ public sealed class InvoiceTests
         var invoice = UnpaidFor(10m);
         invoice.RecordPaidHistory("ref", Now);
 
-        invoice.AddRefund(Now, "Manual", "r1", 10m, 0m, null);
+        invoice.AddRefund(Now, "Manual", "r1", 10m, 0m, null, false, TransactionSource.Manual);
 
         invoice.Status.Should().Be(InvoiceStatus.Refunded);
         invoice.PaidAt.Should().Be(Now);
@@ -1045,7 +1045,7 @@ public sealed class InvoiceTests
     public void RemoveItem_BelowPaymentsTaken_ThrowsWithTotalBelowPaid()
     {
         var invoice = UnpaidFor(10m);
-        invoice.AddPayment(Now, "Bank", "part", 4m, 0m, null);
+        invoice.AddPayment(Now, "Bank", "part", 4m, 0m, null, TransactionSource.Manual);
 
         var act = () => invoice.RemoveItem(invoice.Items[0].Id);
 
@@ -1059,7 +1059,7 @@ public sealed class InvoiceTests
     public void UpdateItem_BelowPaymentsTaken_ThrowsWithTotalBelowPaid()
     {
         var invoice = UnpaidFor(10m);
-        invoice.AddPayment(Now, "Bank", "part", 4m, 0m, null);
+        invoice.AddPayment(Now, "Bank", "part", 4m, 0m, null, TransactionSource.Manual);
         var itemId = invoice.Items[0].Id;
 
         var act = () => invoice.UpdateItem(itemId, "Cheaper", 3m, 1);
@@ -1075,7 +1075,7 @@ public sealed class InvoiceTests
     {
         var invoice = UnpaidFor(100m);
         invoice.UpdateOptions(Now, Now.AddDays(7), null, taxRate: 10m);
-        invoice.AddPayment(Now, "Bank", "part", 105m, 0m, null);
+        invoice.AddPayment(Now, "Bank", "part", 105m, 0m, null, TransactionSource.Manual);
 
         var act = () => invoice.UpdateOptions(Now, Now.AddDays(7), null, taxRate: 0m);
 
@@ -1104,7 +1104,7 @@ public sealed class InvoiceTests
     {
         var invoice = UnpaidFor(10m);
         invoice.ApplyCredit(5m);
-        invoice.AddPayment(Now, "Bank", "part", 2m, 0m, null);
+        invoice.AddPayment(Now, "Bank", "part", 2m, 0m, null, TransactionSource.Manual);
 
         invoice.UpdateItem(invoice.Items[0].Id, "Cheaper", 7m, 1);
 

@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
@@ -129,7 +130,7 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         context.Transactions.Add(Transaction.Create(
             clientId, DateTimeOffset.UtcNow, "Totals test", $"tx-{Guid.NewGuid():N}", null, "manual",
-            amountIn, 0m, fees, false, currency));
+            amountIn, 0m, fees, false, currency, TransactionSource.Manual));
         await context.SaveChangesAsync(CancellationToken.None);
     }
 

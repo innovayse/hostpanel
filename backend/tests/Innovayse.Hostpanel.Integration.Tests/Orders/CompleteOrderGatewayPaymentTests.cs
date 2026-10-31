@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 
@@ -130,7 +131,7 @@ public sealed class CompleteOrderGatewayPaymentTests(IntegrationTestFactory fact
             var order = await context.Orders.FindAsync(orderId);
             var invoice = await context.Invoices.Include(i => i.Transactions).SingleAsync(i => i.Id == order!.InvoiceId!.Value);
             invoice.SetGatewaySession("bank-gateway", "gw-order-2", now);
-            context.Transactions.Add(invoice.Settle("bank-gateway", "gw-txn-2", now)!);
+            context.Transactions.Add(invoice.Settle("bank-gateway", "gw-txn-2", now, TransactionSource.Manual)!);
             await context.SaveChangesAsync(CancellationToken.None);
         }
 

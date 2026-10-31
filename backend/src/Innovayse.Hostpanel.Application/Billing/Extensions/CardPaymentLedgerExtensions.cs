@@ -45,14 +45,32 @@ public static class CardPaymentLedgerExtensions
             .ToListAsync(ct);
     }
 
-    /// <summary>Whether the ledger already holds a row for a gateway transaction.</summary>
+    /// <summary>
+    /// Whether the ledger already holds a row for a gateway payment, under the same key the unique
+    /// index of gateway payments uses: the payment method and the reference together. The same
+    /// reference under another method is another payment.
+    /// </summary>
     /// <param name="context">The module's data context.</param>
+    /// <param name="paymentMethod">The payment method or gateway name the row is recorded under.</param>
     /// <param name="transactionId">The gateway's reference of the payment.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns><see langword="true"/> when at least one ledger row carries the reference.</returns>
+    /// <returns>
+    /// <see langword="true"/> when at least one ledger row carries the method and the reference; a blank
+    /// reference names no payment and answers <see langword="false"/> without a query.
+    /// </returns>
     public static async Task<bool> IsRecordedAsync(
-        this IHostpanelDbContext context, string transactionId, CancellationToken ct)
+        this IHostpanelDbContext context, string paymentMethod, string transactionId, CancellationToken ct)
     {
-        return (await context.RecordedInvoiceIdsAsync(transactionId, ct)).Count > 0;
+        ArgumentNullException.ThrowIfNull(context);
+
+        if (string.IsNullOrWhiteSpace(transactionId))
+        {
+            return false;
+        }
+
+        return await context.Transactions
+            .TagWith(SettlementQueryTags.LedgerRead)
+            .AsNoTracking()
+            .AnyAsync(t => t.PaymentMethod == paymentMethod && t.TransactionId == transactionId, ct);
     }
 }

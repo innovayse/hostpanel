@@ -7,6 +7,7 @@ using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Support;
 using Innovayse.Hostpanel.Domain.Support.Enums;
 using Microsoft.Extensions.DependencyInjection;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Admin;
 
@@ -136,7 +137,7 @@ public sealed class GetDashboardStatsTests(IntegrationTestFactory factory) : ICl
 
             var invoice = Invoice.Create(client.Id, DateTimeOffset.UtcNow.AddDays(14), "ZQD", DateTimeOffset.UtcNow);
             invoice.AddItem("Hosting", 100m, 1);
-            invoice.AddPayment(DateTimeOffset.UtcNow, "Card", $"tx-{Guid.NewGuid():N}", 100m, 0m, null);
+            invoice.AddPayment(DateTimeOffset.UtcNow, "Card", $"tx-{Guid.NewGuid():N}", 100m, 0m, null, TransactionSource.Manual);
             context.Invoices.Add(invoice);
             await context.SaveChangesAsync(CancellationToken.None);
         }

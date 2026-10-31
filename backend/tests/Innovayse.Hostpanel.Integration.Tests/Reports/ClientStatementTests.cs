@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Shared.Constants;
 using Microsoft.Extensions.DependencyInjection;
@@ -56,7 +57,7 @@ public sealed class ClientStatementTests(IntegrationTestFactory factory) : IClas
             db.Invoices.Add(invoice);
             await db.SaveChangesAsync();
             db.Transactions.Add(Transaction.Create(
-                clientId, DateTimeOffset.UtcNow, "Card payment", $"tx-{Guid.NewGuid():N}", null, "manual", 10m, 0m, 0m, false, "USD"));
+                clientId, DateTimeOffset.UtcNow, "Card payment", $"tx-{Guid.NewGuid():N}", null, "manual", 10m, 0m, 0m, false, "USD", TransactionSource.Manual));
             await db.SaveChangesAsync();
         }
 
@@ -141,10 +142,10 @@ public sealed class ClientStatementTests(IntegrationTestFactory factory) : IClas
             invoice.AddItem("Hosting", 100m, 1);
             db.Invoices.Add(invoice);
             await db.SaveChangesAsync();
-            db.Transactions.Add(invoice.AddPayment(DateTimeOffset.UtcNow, "Manual", $"tx-{Guid.NewGuid():N}", 100m, 0m, null));
+            db.Transactions.Add(invoice.AddPayment(DateTimeOffset.UtcNow, "Manual", $"tx-{Guid.NewGuid():N}", 100m, 0m, null, TransactionSource.Manual));
             await db.SaveChangesAsync();
             db.Transactions.Add(invoice.AddRefund(
-                DateTimeOffset.UtcNow, PaymentMethodNames.CreditBalance, $"rf-{Guid.NewGuid():N}", 100m, 0m, null, addedToCredit: true));
+                DateTimeOffset.UtcNow, PaymentMethodNames.CreditBalance, $"rf-{Guid.NewGuid():N}", 100m, 0m, null, addedToCredit: true, source: TransactionSource.Manual));
             await db.SaveChangesAsync();
         }
 
@@ -176,7 +177,7 @@ public sealed class ClientStatementTests(IntegrationTestFactory factory) : IClas
             db.Invoices.AddRange(usd, eur);
             await db.SaveChangesAsync();
             db.Transactions.Add(Transaction.Create(
-                clientId, DateTimeOffset.UtcNow, "Card payment", $"tx-{Guid.NewGuid():N}", null, "manual", 5m, 0m, 0m, false, "EUR"));
+                clientId, DateTimeOffset.UtcNow, "Card payment", $"tx-{Guid.NewGuid():N}", null, "manual", 5m, 0m, 0m, false, "EUR", TransactionSource.Manual));
             await db.SaveChangesAsync();
         }
 

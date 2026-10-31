@@ -70,9 +70,10 @@ public interface IProvisioningProvider
     /// Generates a single-sign-on URL for the client to access their control panel directly.
     /// </summary>
     /// <param name="provisioningRef">Provider-assigned reference for the account.</param>
+    /// <param name="callerIp">The address of the browser that will open the link, or <see langword="null"/> when unknown; only panels that bind a session to it read it.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A time-limited control-panel sign-in link string.</returns>
-    Task<string> GetCPanelSsoUrlAsync(string provisioningRef, CancellationToken ct);
+    Task<string> GetCPanelSsoUrlAsync(string provisioningRef, string? callerIp, CancellationToken ct);
 
     /// <summary>
     /// Changes the password of a provisioned hosting account.

@@ -35,7 +35,7 @@ public sealed class StubProvisioningProvider : IProvisioningProvider
             "http://panel.stub.com"));
 
     /// <inheritdoc/>
-    public Task<string> GetCPanelSsoUrlAsync(string provisioningRef, CancellationToken ct)
+    public Task<string> GetCPanelSsoUrlAsync(string provisioningRef, string? callerIp, CancellationToken ct)
         => Task.FromResult("https://stub-panel.example.com/sso");
 
     /// <inheritdoc/>

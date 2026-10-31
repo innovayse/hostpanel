@@ -3,6 +3,11 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Provisioning.Queries.GetControlPanelSsoUrl;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
+using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Provisioning;
 
@@ -77,6 +82,30 @@ public sealed class GetControlPanelSsoUrlTests(IntegrationTestFactory factory) :
 
         response.StatusCode.Should().Be(HttpStatusCode.BadGateway);
         (await ProvisioningTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.SERVICE_CPANEL_SSO_UPSTREAM_FAILED);
+    }
+
+    /// <summary>
+    /// The handler asks the provider for a link bound to the caller's resolved address: a panel that
+    /// binds its session to the browser (Plesk) depends on it.
+    /// </summary>
+    [Fact]
+    public async Task GetControlPanelSsoUrl_PassesTheCallersAddressToTheProviderAsync()
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var seeded = await ProvisioningTestSeeds.SeedActiveServiceAsync(context);
+        var provider = new RecordingProvisioningProvider();
+        var handler = new GetControlPanelSsoUrlHandler(
+            context,
+            scope.ServiceProvider.GetRequiredService<IMessageBus>(),
+            new RecordingProvisioningProviderFactory(provider),
+            new FixedAddressCaller("203.0.113.50"),
+            NullLogger<GetControlPanelSsoUrlHandler>.Instance);
+
+        var result = await handler.HandleAsync(new GetControlPanelSsoUrlQuery(seeded.ServiceId), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        provider.SsoCallerIps.Should().Equal("203.0.113.50");
     }
 
     /// <summary>

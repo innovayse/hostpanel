@@ -205,9 +205,10 @@ public sealed class Cwp7ProvisioningProvider : IProvisioningProvider
     /// Generates an auto-login URL for the given user.
     /// </summary>
     /// <param name="provisioningRef">Username to generate control-panel sign-in link for.</param>
+    /// <param name="callerIp">The address of the browser that will open the link, or <see langword="null"/> when unknown; only panels that bind a session to it read it.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The control-panel sign-in link string.</returns>
-    public async Task<string> GetCPanelSsoUrlAsync(string provisioningRef, CancellationToken ct)
+    public async Task<string> GetCPanelSsoUrlAsync(string provisioningRef, string? callerIp, CancellationToken ct)
     {
         var response = await _client.GetAutoLoginUrlAsync(_connection, provisioningRef, ct);
 

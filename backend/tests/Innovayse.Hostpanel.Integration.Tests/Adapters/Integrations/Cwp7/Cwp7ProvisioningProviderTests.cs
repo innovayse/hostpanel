@@ -252,7 +252,7 @@ public sealed class Cwp7ProvisioningProviderTests : IAsyncLifetime
     {
         var provider = BuildProvider(new CapturingLogger<Cwp7ProvisioningProvider>(), Refused);
 
-        var act = () => provider.GetCPanelSsoUrlAsync("testuser", CancellationToken.None);
+        var act = () => provider.GetCPanelSsoUrlAsync("testuser", "203.0.113.50", CancellationToken.None);
 
         (await act.Should().ThrowAsync<InvalidOperationException>()).Which.Message.Should().NotContain("Unauthorized");
     }

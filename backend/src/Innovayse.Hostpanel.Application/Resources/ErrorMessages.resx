@@ -183,6 +183,9 @@
 <data name="CLIENT_CURRENCY_ALREADY_INVOICED" xml:space="preserve">
     <value>This client has already been invoiced, so their currency cannot be changed.</value>
   </data>
+  <data name="CLIENT_CURRENCY_LOCKED_BY_CREDIT" xml:space="preserve">
+    <value>This client holds a credit balance, so the currency cannot be changed. Use or refund the balance first, then change the currency.</value>
+  </data>
 <data name="EMAIL_LOG_NOT_FOUND" xml:space="preserve">
     <value>No such email.</value>
   </data>

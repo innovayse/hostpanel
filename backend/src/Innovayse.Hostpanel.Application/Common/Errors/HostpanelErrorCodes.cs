@@ -1020,6 +1020,9 @@ public static class HostpanelErrorCodes
     /// </summary>
     public const string CLIENT_CREDIT_INSUFFICIENT = Domain.Clients.ClientsErrors.ClientCreditInsufficient;
 
+    /// <summary>The client holds a credit balance, so the billing currency cannot change (409): <see cref="Domain.Clients.Client.SetCurrency"/>.</summary>
+    public const string CLIENT_CURRENCY_LOCKED_BY_CREDIT = Domain.Clients.ClientsErrors.ClientCurrencyLockedByCredit;
+
     /// <summary>The account is not in a state that can be suspended (400): <see cref="Domain.Clients.Client.Suspend"/>.</summary>
     public const string CLIENT_SUSPEND_NOT_ALLOWED = Domain.Clients.ClientsErrors.ClientSuspendNotAllowed;
 

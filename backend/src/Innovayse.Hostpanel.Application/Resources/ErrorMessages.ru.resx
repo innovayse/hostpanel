@@ -183,6 +183,9 @@
 <data name="CLIENT_CURRENCY_ALREADY_INVOICED" xml:space="preserve">
     <value>Этому клиенту уже выставлялись счета, поэтому его валюту нельзя изменить.</value>
   </data>
+  <data name="CLIENT_CURRENCY_LOCKED_BY_CREDIT" xml:space="preserve">
+    <value>У этого клиента есть кредитный баланс, поэтому валюту нельзя изменить. Сначала используйте или верните баланс, затем смените валюту.</value>
+  </data>
 <data name="EMAIL_LOG_NOT_FOUND" xml:space="preserve">
     <value>Такое письмо не найдено.</value>
   </data>

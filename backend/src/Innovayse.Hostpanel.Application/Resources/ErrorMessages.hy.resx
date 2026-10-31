@@ -183,6 +183,9 @@
 <data name="CLIENT_CURRENCY_ALREADY_INVOICED" xml:space="preserve">
     <value>Այս հաճախորդին արդեն ինվոյս է ուղարկվել, ուստի նրա արժույթը հնարավոր չէ փոխել։</value>
   </data>
+  <data name="CLIENT_CURRENCY_LOCKED_BY_CREDIT" xml:space="preserve">
+    <value>Այս հաճախորդն ունի վարկային մնացորդ, ուստի արժույթը հնարավոր չէ փոխել։ Նախ օգտագործեք կամ վերադարձրեք մնացորդը, ապա փոխեք արժույթը։</value>
+  </data>
 <data name="EMAIL_LOG_NOT_FOUND" xml:space="preserve">
     <value>Այդպիսի նամակ չկա։</value>
   </data>

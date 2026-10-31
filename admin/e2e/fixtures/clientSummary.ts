@@ -4,7 +4,7 @@
 import type { ClientSummaryData } from '../../src/types/client'
 
 /** One invoice bucket with nothing in it. */
-const none = { count: 0, total: 0 }
+const none = { count: 0, totals: [] }
 
 /** A client with no invoices, services, tickets or emails: every rollup is zero. */
 export const emptyClientSummary: ClientSummaryData = {
@@ -18,12 +18,12 @@ export const emptyClientSummary: ClientSummaryData = {
     partiallyRefunded: none,
   },
   transactions: {
-    grossRevenue: 0,
-    clientExpenses: 0,
-    totalFees: 0,
-    netIncome: 0,
+    grossRevenue: [],
+    clientExpenses: [],
+    totalFees: [],
+    netIncome: [],
   },
-  creditBalance: 0,
+  creditBalance: { amount: 0, currency: 'USD' },
   counts: {
     activeServicesCount: 0,
     totalServicesCount: 0,

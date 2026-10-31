@@ -5,6 +5,7 @@
  * transaction settles one, and the count is what a screen renders above a list of them.
  */
 
+import type { CurrencyAmount } from '@/types/currency'
 
 /** Single line item on an invoice. */
 export interface InvoiceItem {
@@ -138,8 +139,8 @@ export interface Invoice {
 export interface InvoiceStatusCount {
   /** Number of invoices in this status. */
   count: number
-  /** Sum of totals for invoices in this status. */
-  total: number
+  /** Sum of totals for invoices in this status, one entry per currency; empty when there are none. */
+  totals: CurrencyAmount[]
 }
 
 /** Filters the invoice list endpoints accept; an empty value is left off the request. */

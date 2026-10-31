@@ -1,3 +1,5 @@
+using Innovayse.Hostpanel.Application.Billing.Currencies.Common;
+using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Notifications.Common;
@@ -51,17 +53,25 @@ public sealed class GetClientSummaryHandler
         var clientId = query.ClientId;
 
         // EF Core's DbContext is not thread-safe: the sections are read one after another.
-        var invoicesByStatus = await _context.Invoices.AsNoTracking()
+        var invoiceRows = await _context.Invoices.AsNoTracking()
             .Where(i => i.ClientId == clientId)
-            .GroupBy(i => i.Status)
-            .Select(g => new { Status = g.Key, Count = g.Count(), Total = g.Sum(i => i.Total) })
-            .ToDictionaryAsync(g => g.Status, g => new InvoiceStatusCountDto(g.Count, g.Total), ct);
+            .GroupBy(i => new { i.Status, i.Currency })
+            .Select(g => new { g.Key.Status, g.Key.Currency, Count = g.Count(), Total = g.Sum(i => i.Total) })
+            .ToListAsync(ct);
+        var invoicesByStatus = invoiceRows
+            .GroupBy(r => r.Status)
+            .ToDictionary(
+                g => g.Key,
+                g => new InvoiceStatusCountDto(
+                    g.Sum(r => r.Count),
+                    g.OrderBy(r => r.Currency, StringComparer.Ordinal).Select(r => new CurrencyAmountDto(r.Total, r.Currency)).ToList()));
 
-        var transactionTotals = await _context.Transactions.AsNoTracking()
+        var transactionRows = await _context.Transactions.AsNoTracking()
             .Where(t => t.ClientId == clientId)
-            .GroupBy(_ => 1)
-            .Select(g => new { TotalIn = g.Sum(t => t.AmountIn), TotalOut = g.Sum(t => t.AmountOut), TotalFees = g.Sum(t => t.Fees) })
-            .FirstOrDefaultAsync(ct);
+            .GroupBy(t => t.Currency)
+            .Select(g => new { Currency = g.Key, TotalIn = g.Sum(t => t.AmountIn), TotalOut = g.Sum(t => t.AmountOut), TotalFees = g.Sum(t => t.Fees) })
+            .ToListAsync(ct);
+        transactionRows.Sort((x, y) => string.CompareOrdinal(x.Currency, y.Currency));
 
         var client = await _context.Clients.AsNoTracking().FirstOrDefaultAsync(c => c.Id == clientId, ct);
 
@@ -92,9 +102,8 @@ public sealed class GetClientSummaryHandler
             recentEmails.AddRange(logs);
         }
 
-        var totalIn = transactionTotals?.TotalIn ?? 0m;
-        var totalOut = transactionTotals?.TotalOut ?? 0m;
-        var totalFees = transactionTotals?.TotalFees ?? 0m;
+        // The credit is held in the currency the rest of billing reads it in: the shared rule, not a second one.
+        var creditCurrency = await _context.GetCreditCurrencyAsync(client, ct);
 
         var summary = new ClientSummaryDto(
             Invoices: new ClientInvoiceStatusesDto(
@@ -106,11 +115,11 @@ public sealed class GetClientSummaryHandler
                 Refunded: GetStatusCount(invoicesByStatus, InvoiceStatus.Refunded),
                 PartiallyRefunded: GetStatusCount(invoicesByStatus, InvoiceStatus.PartiallyRefunded)),
             Transactions: new ClientTransactionTotalsDto(
-                GrossRevenue: totalIn,
-                ClientExpenses: totalOut,
-                TotalFees: totalFees,
-                NetIncome: totalIn - totalOut - totalFees),
-            CreditBalance: client?.CreditBalance ?? 0m,
+                GrossRevenue: transactionRows.Select(r => new CurrencyAmountDto(r.TotalIn, r.Currency)).ToList(),
+                ClientExpenses: transactionRows.Select(r => new CurrencyAmountDto(r.TotalOut, r.Currency)).ToList(),
+                TotalFees: transactionRows.Select(r => new CurrencyAmountDto(r.TotalFees, r.Currency)).ToList(),
+                NetIncome: transactionRows.Select(r => new CurrencyAmountDto(r.TotalIn - r.TotalOut - r.TotalFees, r.Currency)).ToList()),
+            CreditBalance: new CurrencyAmountDto(client?.CreditBalance ?? 0m, creditCurrency),
             Counts: new ClientRecordCountsDto(
                 ActiveServicesCount: activeServicesCount,
                 TotalServicesCount: totalServicesCount,
@@ -126,12 +135,12 @@ public sealed class GetClientSummaryHandler
 
     /// <summary>
     /// Retrieves the invoice count and total for a given status from the grouped dictionary.
-    /// Returns a zero-valued DTO when the status has no invoices.
+    /// Returns a zero-count DTO with no totals when the status has no invoices.
     /// </summary>
     /// <param name="grouped">Dictionary of invoice stats grouped by status.</param>
     /// <param name="status">The invoice status to look up.</param>
     /// <returns>Count and total for the requested status.</returns>
     private static InvoiceStatusCountDto GetStatusCount(
         Dictionary<InvoiceStatus, InvoiceStatusCountDto> grouped, InvoiceStatus status) =>
-        grouped.TryGetValue(status, out var dto) ? dto : new InvoiceStatusCountDto(0, 0m);
+        grouped.TryGetValue(status, out var dto) ? dto : new InvoiceStatusCountDto(0, []);
 }

@@ -73,7 +73,9 @@ const summary = computed(() => summaryStore.summary)
 
 /**
  * Billing currency of the client. The summary endpoint names no currency of its own; the credit
- * balance and the invoices are held in the client's billing currency, so it is the one shown.
+ * balance is held in the client's billing currency; the invoice and transaction sums are assumed
+ * to be too (tracked in issue #748). Until the client loads the figures render in the default
+ * currency.
  */
 const billingCurrency = computed<string | null>(() => client.value?.preferences.currency ?? null)
 

@@ -1,10 +1,12 @@
 /**
  * Mount tests for QuoteDetailView: an existing quote fills the form and saves through the store,
- * delete asks first, and a new quote without a client names the missing client.
+ * delete asks first, a new quote without a client names the missing client, and the lines are priced
+ * in the right currency (the stored quote's, or the new quote's client's, never a previous quote's).
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import QuoteDetailView from '@/views/QuoteDetailView.vue'
+import { CurrencyCode } from '@/types/currency'
 import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
@@ -130,10 +132,51 @@ describe('QuoteDetailView', () => {
   })
 
   it('prices the lines in the currency the stored quote carries', async () => {
-    stubRoutes({ 'GET /api/quotes/3': () => json({ ...quote, currency: 'AMD' }) })
+    stubRoutes({ 'GET /api/quotes/3': () => json({ ...quote, currency: CurrencyCode.Amd }) })
     const { wrapper } = await mountRouted(QuoteDetailView, '/billing/quotes/:id', '/billing/quotes/3')
     await flushPromises()
 
     expect(wrapper.get('[data-testid="billing-quote-total"]').text()).toBe('20.00 AMD')
+  })
+
+  it('prices a new quote in the currency of its client, not of the quote opened before', async () => {
+    stubRoutes({
+      'GET /api/quotes/3': () => json({ ...quote, currency: CurrencyCode.Amd }),
+      'GET /api/clients/8': () => json({ id: 8, preferences: { currency: CurrencyCode.Eur } }),
+    })
+    const { wrapper, router } = await mountRouted(QuoteDetailView, '/billing/quotes/:id(\\d+)', '/billing/quotes/3')
+    await flushPromises()
+    expect(wrapper.get('[data-testid="billing-quote-total"]').text()).toBe('20.00 AMD')
+
+    await router.push('/billing/quotes/new?clientId=8')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="billing-quote-total"]').text()).toContain('EUR')
+  })
+
+  it('does not show the previous quote currency while another stored quote loads', async () => {
+    /** Resolves the answer of quote 4 once the test lets it. */
+    let release: (response: Response) => void = () => {}
+    /** The answer of quote 4, held back. */
+    const slow = new Promise<Response>((resolve) => {
+      release = resolve
+    })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string) =>
+        url.includes('/quotes/4') ? slow : Promise.resolve(json({ ...quote, currency: CurrencyCode.Amd })),
+      ),
+    )
+    const { wrapper, router } = await mountRouted(QuoteDetailView, '/billing/quotes/:id', '/billing/quotes/3')
+    await flushPromises()
+    expect(wrapper.get('[data-testid="billing-quote-total"]').text()).toBe('20.00 AMD')
+
+    await router.push('/billing/quotes/4')
+    await flushPromises()
+    expect(wrapper.find('[data-testid="billing-quote-total"]').text()).not.toContain('AMD')
+
+    release(json({ ...quote, id: 4, currency: CurrencyCode.Eur }))
+    await flushPromises()
+    expect(wrapper.get('[data-testid="billing-quote-total"]').text()).toBe('20.00 EUR')
   })
 })

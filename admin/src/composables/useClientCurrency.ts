@@ -31,6 +31,7 @@ export const useClientCurrency = (clientId: Ref<number>): Ref<string | null> => 
       }
       const code = await store.fetchClientCurrency(id)
       // A later pick may have replaced this client while the read was in flight.
+      // A write after the owner unmounted only touches a ref nobody reads any more, so it is harmless.
       if (clientId.value === id) {
         currency.value = code
       }

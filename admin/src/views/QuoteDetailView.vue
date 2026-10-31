@@ -64,8 +64,18 @@ const queryClientId = computed<number>(() => Number(route.query.clientId ?? 0))
 /** Billing currency of the client a new quote is for; null for a stored quote, which carries its own. */
 const clientCurrency = useClientCurrency(computed(() => (isNew.value ? queryClientId.value : 0)))
 
-/** Currency the lines are priced in: the stored quote's, else the new quote's client's. */
-const quoteCurrency = computed<string | null>(() => store.currentQuote?.currency ?? clientCurrency.value)
+/**
+ * Currency the lines are priced in: a new quote's client's, otherwise the stored quote's, taken
+ * only when the loaded quote is the one in the route (the store keeps the previous quote until
+ * the next one arrives).
+ */
+const quoteCurrency = computed<string | null>(() => {
+  if (isNew.value) {
+    return clientCurrency.value
+  }
+  const quote = store.currentQuote
+  return quote !== null && quote.id === quoteId.value ? quote.currency : null
+})
 
 /** Quote subject. */
 const subject = ref('')

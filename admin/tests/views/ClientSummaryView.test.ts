@@ -11,6 +11,7 @@ import { callOf, json, problem } from '../helpers/fetch'
 import { quoteRowFixture } from '../helpers/billingFixtures'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
+import { CurrencyCode } from '@/types/currency'
 import type { ClientSummaryData } from '@/types/client'
 import type { ClientExternalAccount } from '@/types/clientexternalaccount'
 
@@ -277,7 +278,7 @@ describe('ClientSummaryView', () => {
       ...summaryRoutes(
         () => new Response(null, { status: 204 }),
         undefined,
-        () => client(null, 'AMD'),
+        () => client(null, CurrencyCode.Amd),
       ),
       'GET /api/clients/7/summary': () => json({ ...summary, creditBalance: 5000 }),
     })
@@ -292,7 +293,7 @@ describe('ClientSummaryView', () => {
   it('prints a quote total in the currency of the quote', async () => {
     stubRoutes({
       'GET /api/billing/quotes/client/7': () =>
-        json({ items: [quoteRowFixture({ total: 24000, currency: 'AMD' })], pageNumber: 1, pageSize: 5, totalCount: 1, totalPages: 1 }),
+        json({ items: [quoteRowFixture({ total: 24000, currency: CurrencyCode.Amd })], pageNumber: 1, pageSize: 5, totalCount: 1, totalPages: 1 }),
       ...summaryRoutes(() => new Response(null, { status: 204 })),
     })
     const wrapper = await mountSummary()

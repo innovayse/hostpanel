@@ -1,6 +1,6 @@
 using Innovayse.Hostpanel.Application.Billing.Currencies.Common;
-using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Billing.Extensions;
+using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Notifications.Common;
 using Innovayse.Hostpanel.Application.Notifications.Extensions;
@@ -102,8 +102,8 @@ public sealed class GetClientSummaryHandler
             recentEmails.AddRange(logs);
         }
 
-        // The credit is held in the client's billing currency; a client with none yet has no credit to place elsewhere.
-        var creditCurrency = client?.Currency ?? (await _context.GetBaseCurrencyAsync(ct)).Code;
+        // The credit is held in the currency the rest of billing reads it in: the shared rule, not a second one.
+        var creditCurrency = await _context.GetCreditCurrencyAsync(client, ct);
 
         var summary = new ClientSummaryDto(
             Invoices: new ClientInvoiceStatusesDto(

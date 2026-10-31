@@ -4,6 +4,7 @@
  * Kept together because none of them is meaningful alone: a line belongs to an invoice, a
  * transaction settles one, and the count is what a screen renders above a list of them.
  */
+
 import type { CurrencyAmount } from '@/types/currency'
 
 /** Single line item on an invoice. */

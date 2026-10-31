@@ -1,11 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Innovayse.Hostpanel.Domain.Billing.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 
@@ -66,7 +67,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
 
     /// <summary>
     /// A client with paid invoices in USD and in AMD gets a separate total per currency, never one
-    /// mixed sum, and the transaction figures split the same way.
+    /// mixed sum, and the transaction figures split the same way, including money going out and fees.
     /// </summary>
     [Fact]
     public async Task SummaryKeepsTheTotalsOfEachCurrencySeparate()
@@ -85,6 +86,13 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
                 context.Transactions.Add(invoice.AddPayment(now, PaymentMethodNames.Manual, $"pay-{Guid.NewGuid():N}", amount, 0m, null, TransactionSource.Manual));
                 await context.SaveChangesAsync(CancellationToken.None);
             }
+
+            // Money out and fees in two currencies, one of which (EUR) has no invoice at all.
+            context.Transactions.Add(Transaction.Create(
+                clientId, now, "Expense", $"out-{Guid.NewGuid():N}", null, PaymentMethodNames.Manual, 0m, 7m, 1m, false, "USD", TransactionSource.Manual));
+            context.Transactions.Add(Transaction.Create(
+                clientId, now, "Mixed", $"mix-{Guid.NewGuid():N}", null, PaymentMethodNames.Manual, 100m, 30m, 5m, false, "EUR", TransactionSource.Manual));
+            await context.SaveChangesAsync(CancellationToken.None);
         }
 
         var admin = await ClientsTestSeeds.AdminClientAsync(factory);
@@ -95,9 +103,10 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
         paid.GetProperty("count").GetInt32().Should().Be(3);
         AmountsByCurrency(paid.GetProperty("totals")).Should().BeEquivalentTo(new Dictionary<string, decimal> { ["AMD"] = 20000m, ["USD"] = 50m });
         var transactions = body.GetProperty("transactions");
-        AmountsByCurrency(transactions.GetProperty("grossRevenue")).Should().BeEquivalentTo(new Dictionary<string, decimal> { ["AMD"] = 20000m, ["USD"] = 50m });
-        AmountsByCurrency(transactions.GetProperty("netIncome")).Should().BeEquivalentTo(new Dictionary<string, decimal> { ["AMD"] = 20000m, ["USD"] = 50m });
-        AmountsByCurrency(transactions.GetProperty("clientExpenses")).Should().BeEquivalentTo(new Dictionary<string, decimal> { ["AMD"] = 0m, ["USD"] = 0m });
+        AmountsByCurrency(transactions.GetProperty("grossRevenue")).Should().BeEquivalentTo(new Dictionary<string, decimal> { ["AMD"] = 20000m, ["EUR"] = 100m, ["USD"] = 50m });
+        AmountsByCurrency(transactions.GetProperty("clientExpenses")).Should().BeEquivalentTo(new Dictionary<string, decimal> { ["AMD"] = 0m, ["EUR"] = 30m, ["USD"] = 7m });
+        AmountsByCurrency(transactions.GetProperty("totalFees")).Should().BeEquivalentTo(new Dictionary<string, decimal> { ["AMD"] = 0m, ["EUR"] = 5m, ["USD"] = 1m });
+        AmountsByCurrency(transactions.GetProperty("netIncome")).Should().BeEquivalentTo(new Dictionary<string, decimal> { ["AMD"] = 20000m, ["EUR"] = 65m, ["USD"] = 42m });
         body.GetProperty("invoices").GetProperty("unpaid").GetProperty("totals").GetArrayLength().Should().Be(0);
     }
 
@@ -121,6 +130,59 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
 
         credit.GetProperty("currency").GetString().Should().Be("AMD");
         credit.GetProperty("amount").GetDecimal().Should().Be(5000m);
+    }
+
+    /// <summary>
+    /// A client with no billing currency and no credit answers the base currency: there is no invoice and
+    /// no balance that could name another.
+    /// </summary>
+    [Fact]
+    public async Task SummaryForAClientWithoutACurrencyReportsTheBaseCurrency()
+    {
+        var (clientId, _) = await ClientsTestSeeds.SeedClientAsync(factory);
+        string baseCode;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            (await context.Clients.AsNoTracking().FirstAsync(c => c.Id == clientId)).Currency.Should().BeNull();
+            baseCode = (await context.GetBaseCurrencyAsync(CancellationToken.None)).Code;
+        }
+
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+
+        var credit = (await admin.GetFromJsonAsync<JsonElement>($"/api/clients/{clientId}/summary")).GetProperty("creditBalance");
+
+        credit.GetProperty("currency").GetString().Should().Be(baseCode);
+        credit.GetProperty("amount").GetDecimal().Should().Be(0m);
+    }
+
+    /// <summary>
+    /// A client with no billing currency who holds credit is answered in the currency of their invoice,
+    /// the same stand-in the rest of billing uses, not in the base currency.
+    /// </summary>
+    [Fact]
+    public async Task SummaryForAClientWithoutACurrencyButWithCreditUsesTheInvoiceCurrency()
+    {
+        var (clientId, _) = await ClientsTestSeeds.SeedClientAsync(factory);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            var now = DateTimeOffset.UtcNow;
+            var invoice = Invoice.Create(clientId, now.AddDays(7), "AMD", now);
+            invoice.AddItem("Hosting", 1000m, 1);
+            context.Invoices.Add(invoice);
+            var client = await context.Clients.FirstAsync(c => c.Id == clientId);
+            client.AddCredit(800m);
+            await context.SaveChangesAsync(CancellationToken.None);
+            client.Currency.Should().BeNull();
+        }
+
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+
+        var credit = (await admin.GetFromJsonAsync<JsonElement>($"/api/clients/{clientId}/summary")).GetProperty("creditBalance");
+
+        credit.GetProperty("currency").GetString().Should().Be("AMD");
+        credit.GetProperty("amount").GetDecimal().Should().Be(800m);
     }
 
     /// <summary>Reads a wire list of <c>{ amount, currency }</c> entries into a map keyed by currency.</summary>

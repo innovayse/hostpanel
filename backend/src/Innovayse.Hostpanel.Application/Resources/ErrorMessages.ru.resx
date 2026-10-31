@@ -130,7 +130,7 @@
     <value>Этот способ оплаты не принадлежит этому аккаунту.</value>
   </data>
 <data name="PAYMENT_METHOD_UNAVAILABLE" xml:space="preserve">
-    <value>Этот сохранённый способ оплаты нельзя списать: в этом развёртывании не настроен платёжный шлюз для карт.</value>
+    <value>Оплата картой недоступна, так как платёжный шлюз для карт не настроен.</value>
   </data>
 <data name="NO_SAVED_PAYMENT_METHODS" xml:space="preserve">
     <value>У этого аккаунта нет сохранённых способов оплаты.</value>

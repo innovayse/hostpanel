@@ -1,7 +1,10 @@
+using System.Net;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Provisioning;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Plesk.Models;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Plesk.Models.Enums;
+using Innovayse.Hostpanel.Infrastructure.Security;
+using Innovayse.Hostpanel.Infrastructure.Security.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace Innovayse.Hostpanel.Infrastructure.Integrations.Plesk;
@@ -32,6 +35,9 @@ public sealed class PleskProvisioningProvider : IProvisioningProvider
 
     /// <summary>The failure reason handed back when the server has no address to host the domain on.</summary>
     private const string NoIpReason = "The control panel has no shared IP address to host the account on.";
+
+    /// <summary>The panel page that enters a session opened over the API, followed by its id.</summary>
+    private const string SessionEntryPath = "/enterprise/rsession_init.php?PLESKSESSID=";
 
     /// <summary>The Plesk XML API client.</summary>
     private readonly PleskApiClient _client;
@@ -208,19 +214,51 @@ public sealed class PleskProvisioningProvider : IProvisioningProvider
             _connection.BaseUrl);
     }
 
-    /// <summary>Not supported yet: a Plesk sign-in session is bound to the browser's IP address.</summary>
+    /// <summary>Opens a Plesk session for the service's customer and returns the link that enters it.</summary>
     /// <param name="provisioningRef">The customer's login.</param>
+    /// <param name="callerIp">The address of the browser that will open the link; Plesk opens the session from this address only.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Never returns.</returns>
-    /// <exception cref="NotSupportedException">Always.</exception>
+    /// <returns>The panel's session entry link, e.g. <c>https://plesk.example.com:8443/enterprise/rsession_init.php?PLESKSESSID=…</c>.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the caller's address is unknown, loopback or unspecified, or Plesk refuses the session.
+    /// </exception>
     /// <remarks>
-    /// Plesk's <c>server.create_session</c> requires the address of the browser that will open the
-    /// session and refuses the session from any other address. This method receives no such
-    /// address, so a link it built would only work from the API's own host. The caller answers the
-    /// usual "SSO unavailable" refusal instead of a link that cannot work.
+    /// Plesk's <c>server.create_session</c> binds the session to the browser's address and refuses it
+    /// from any other, so a link issued without that address could not work and is never issued.
     /// </remarks>
-    public Task<string> GetCPanelSsoUrlAsync(string provisioningRef, CancellationToken ct) =>
-        throw new NotSupportedException("Plesk single sign-on needs the browser's IP address, which this call does not carry.");
+    public async Task<string> GetCPanelSsoUrlAsync(string provisioningRef, string? callerIp, CancellationToken ct)
+    {
+        if (!IPAddress.TryParse(callerIp, out var address))
+        {
+            throw new InvalidOperationException("Plesk single sign-on needs the browser's address, and none is known.");
+        }
+
+        // The address as the browser's own connection to Plesk will show it: an IPv4 browser behind a
+        // dual-stack listener arrives as ::ffff:a.b.c.d, which Plesk would never see.
+        if (address.IsIPv4MappedToIPv6)
+        {
+            address = address.MapToIPv4();
+        }
+
+        switch (OutboundAddressPolicy.Classify(address))
+        {
+            case OutboundAddressClass.Refused:
+                // Loopback or unspecified is never a browser: the trusted-proxy step did not resolve
+                // the visitor, and a session bound to it could not be opened.
+                _logger.LogWarning("Plesk SSO for {User} refused: the caller's address is loopback or unspecified; check the trusted proxies.", provisioningRef);
+                throw new InvalidOperationException("The caller's address is not a browser's address.");
+            case OutboundAddressClass.Private:
+                // Legitimate on a private network, but also what a proxy that was not trusted looks like.
+                _logger.LogWarning("Plesk SSO for {User} binds the session to a private address; if the link fails, check the trusted proxies.", provisioningRef);
+                break;
+        }
+
+        var sessionId = await _client.CreateSessionAsync(_connection, provisioningRef, address.ToString(), ct)
+            ?? throw new InvalidOperationException("Plesk refused to open a session.");
+
+        _logger.LogInformation("Plesk session opened for {User}.", provisioningRef);
+        return $"{_connection.BaseUrl.TrimEnd('/')}{SessionEntryPath}{Uri.EscapeDataString(sessionId)}";
+    }
 
     /// <summary>Changes the service's password on the panel and for its system (FTP/SSH) user.</summary>
     /// <param name="provisioningRef">The customer's login.</param>

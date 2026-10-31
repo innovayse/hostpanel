@@ -60,7 +60,7 @@ public sealed class NullCPanelProvisioningProvider : IProvisioningProvider
     }
 
     /// <inheritdoc/>
-    public Task<string> GetCPanelSsoUrlAsync(string provisioningRef, CancellationToken ct)
+    public Task<string> GetCPanelSsoUrlAsync(string provisioningRef, string? callerIp, CancellationToken ct)
     {
         return Task.FromResult($"https://cpanel.dev.example.com/sso?ref={provisioningRef}");
     }

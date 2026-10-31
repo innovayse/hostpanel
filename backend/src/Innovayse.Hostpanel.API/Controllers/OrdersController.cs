@@ -70,7 +70,8 @@ public sealed class OrdersController : BaseApiController
     /// 404 with <c>PRODUCT_NOT_FOUND</c>, or <c>DOMAIN_NOT_FOUND</c> when a renewal names a domain
     /// the client does not hold; 409 with <c>ACCOUNT_EMAIL_EXISTS</c> when a guest's address already
     /// has an account; 429 when the rate limit is hit; 500 on an unexpected fault (the invoice of an
-    /// order that failed to save is cancelled); 503 with <c>ORDER_NUMBER_RANGE_EXHAUSTED</c>.
+    /// order that failed to save is cancelled); 503 with <c>ORDER_NUMBER_RANGE_EXHAUSTED</c>, or with
+    /// <c>IDENTITY_PLUGIN_UNAVAILABLE</c> (and <c>Retry-After</c>) when the identity plugin cannot say who the caller is.
     /// </returns>
     [HttpPost]
     [AllowAnonymous]

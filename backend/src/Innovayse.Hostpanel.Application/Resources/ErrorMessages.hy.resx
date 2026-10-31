@@ -144,6 +144,9 @@
   <data name="PAYMENT_GATEWAY_SERVICE_UNAVAILABLE" xml:space="preserve">
     <value>Վճարային համակարգը ժամանակավորապես անհասանելի է։ Խնդրում ենք փորձել մի փոքր ուշ։</value>
   </data>
+  <data name="IDENTITY_PLUGIN_UNAVAILABLE" xml:space="preserve">
+    <value>Ձեր հաշիվը հաճախորդի պրոֆիլին կապող ծառայությունը ժամանակավորապես անհասանելի է։ Խնդրում ենք փորձել մի փոքր ուշ։</value>
+  </data>
   <data name="PAYMENT_METHOD_UPSTREAM_FAILED" xml:space="preserve">
     <value>Վճարային համակարգը չկարողացավ մշակել ձեր պահպանված վճարման եղանակների հարցումը։ Խնդրում ենք փորձել ավելի ուշ կամ դիմել աջակցությանը։</value>
   </data>

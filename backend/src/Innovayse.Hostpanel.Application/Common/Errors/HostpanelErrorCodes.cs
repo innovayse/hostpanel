@@ -195,6 +195,12 @@ public static class HostpanelErrorCodes
     /// </summary>
     public const string RETURN_URL_NOT_ALLOWED = "RETURN_URL_NOT_ALLOWED";
 
+    /// <summary>
+    /// The enabled identity plugin threw, timed out, or two identity plugins are enabled, so nobody can be told
+    /// which client account they act for; the request is refused and may be retried (503, with <c>Retry-After</c>).
+    /// </summary>
+    public const string IDENTITY_PLUGIN_UNAVAILABLE = "IDENTITY_PLUGIN_UNAVAILABLE";
+
     /// <summary>The payment gateway declined or otherwise failed to charge the client (502).</summary>
     public const string GATEWAY_CHARGE_UPSTREAM_FAILED = "GATEWAY_CHARGE_UPSTREAM_FAILED";
 

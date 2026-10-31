@@ -21,7 +21,7 @@ namespace Innovayse.Hostpanel.API.Authorization;
 /// outage would answer 503 from the permission filter and a bare 403 from the policy.
 /// Only a refusal that failed the <see cref="ClientPortalRequirement"/> is eligible, so another policy's 403 stays 403.
 /// </remarks>
-public sealed class IdentityPluginUnavailableResultHandler : IAuthorizationMiddlewareResultHandler
+public sealed class IdentityPluginUnavailableResponder : IAuthorizationMiddlewareResultHandler
 {
     /// <summary>The handler that writes every other 401 and 403.</summary>
     private readonly ProblemDetailsAuthorizationMiddlewareResultHandler _inner = new();

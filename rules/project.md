@@ -220,7 +220,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   identity plugins (`IdentityPluginConflictException`) fail closed in that one resolver, logged by exception type
   and plugin ids only: the answer is `CallerClientAccess.Unavailable` (`IdentityUnavailable`), the portal policy
   refuses it, the permission filter, `IClientAccess.Require*` and `PlaceOrderHandler` answer 503
-  `IDENTITY_PLUGIN_UNAVAILABLE` with `Retry-After` and create nothing, and so does the portal policy itself, through `IdentityPluginUnavailableResultHandler` (it reads the request memo, which is stored per subject, and keeps every other refusal a plain 403); `IdentityPluginUnavailableConvention` declares the 503 once for every portal action; the account read (`GetMyAccount`) degrades to no client
+  `IDENTITY_PLUGIN_UNAVAILABLE` with `Retry-After` and create nothing, and so does the portal policy itself, through `IdentityPluginUnavailableResponder` (it reads the request memo, which is stored per subject, and keeps every other refusal a plain 403); `IdentityPluginUnavailableConvention` declares the 503 once for every portal action; the account read (`GetMyAccount`) degrades to no client
   instead, so sign-in is not blocked. The host links the returned `ExternalAccount` (provider plus id) to a client row,
   creating it on the first order, and `IdentityPluginPermissions` maps the rights to client permissions: every
   admitted principal gets the read-only flags (services, domains, open tickets, emails); `CanPurchase` adds

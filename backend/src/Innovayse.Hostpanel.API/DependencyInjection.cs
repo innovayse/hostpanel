@@ -183,7 +183,7 @@ public static class DependencyInjection
         services.PostConfigure<JwtBearerOptions>(LocalJwtScheme.Name, o => o.UseProblemDetailsResponses());
         services.AddProblemDetailsAuthorizationResponses();
         // Replaces the decorator above: the same 401 and 403 bodies, plus 503 when only the identity plugin failed.
-        services.Replace(ServiceDescriptor.Singleton<IAuthorizationMiddlewareResultHandler, IdentityPluginUnavailableResultHandler>());
+        services.Replace(ServiceDescriptor.Singleton<IAuthorizationMiddlewareResultHandler, IdentityPluginUnavailableResponder>());
         services.AddHostpanelSwagger();
 
         // The two cron startups below each hand Wolverine a message to deliver hours from now. Wolverine

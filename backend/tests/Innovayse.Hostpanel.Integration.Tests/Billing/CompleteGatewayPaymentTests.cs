@@ -637,11 +637,11 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         var invoiceId = await SeedInvoiceWithSessionDirectlyAsync(sessionId);
         await RecordManualPaymentAsync(invoiceId, 10m);
         var clientId = await ClientOfAsync(invoiceId);
-        var resolver = PaidResolver(transactionId);
+        var resolver = PaidResolver(transactionId, "840");
         var rowsBefore = await LedgerRowCountAsync(clientId);
 
-        var first = await CompleteTrackedWithoutReferenceAsync(invoiceId, resolver);
-        var replay = await CompleteTrackedWithoutReferenceAsync(invoiceId, resolver);
+        var first = await CompleteTrackedWithAlertsAsync(invoiceId, resolver);
+        var replay = await CompleteTrackedWithAlertsAsync(invoiceId, resolver);
 
         first.ErrorCode.Should().BeNull();
         var alert = first.Alerts.Should().ContainSingle().Which;
@@ -673,10 +673,10 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     {
         var invoiceId = await SeedInvoiceWithSessionDirectlyAsync(sessionId);
         var clientId = await ClientOfAsync(invoiceId);
-        var resolver = PaidResolver(transactionId);
+        var resolver = PaidResolver(transactionId, "840");
 
-        var first = await CompleteTrackedWithoutReferenceAsync(invoiceId, resolver);
-        var replay = await CompleteTrackedWithoutReferenceAsync(invoiceId, resolver);
+        var first = await CompleteTrackedWithAlertsAsync(invoiceId, resolver);
+        var replay = await CompleteTrackedWithAlertsAsync(invoiceId, resolver);
 
         first.ErrorCode.Should().Be(HostpanelErrorCodes.GATEWAY_PAYMENT_MISMATCH);
         replay.ErrorCode.Should().Be(HostpanelErrorCodes.GATEWAY_PAYMENT_MISMATCH);
@@ -711,7 +711,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
             await context.SaveChangesAsync(CancellationToken.None);
         }
 
-        var first = await CompleteTrackedWithoutReferenceAsync(invoiceId, PaidResolver(null));
+        var first = await CompleteTrackedWithAlertsAsync(invoiceId, PaidResolver(null));
 
         first.Alerts.Should().ContainSingle();
     }
@@ -728,9 +728,9 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         var clientId = await ClientOfAsync(invoiceId);
         var resolver = PaidResolver(null);
 
-        var first = await CompleteTrackedWithoutReferenceAsync(invoiceId, resolver);
+        var first = await CompleteTrackedWithAlertsAsync(invoiceId, resolver);
         var rowsAfterFirst = await LedgerRowCountAsync(clientId);
-        var replay = await CompleteTrackedWithoutReferenceAsync(invoiceId, resolver);
+        var replay = await CompleteTrackedWithAlertsAsync(invoiceId, resolver);
 
         first.ErrorCode.Should().BeNull();
         replay.ErrorCode.Should().BeNull();
@@ -745,6 +745,83 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         (await BillingTestSeeds.CreditBalanceOfAsync(factory, clientId)).Should().Be(0m);
     }
 
+    /// <summary>
+    /// The amount in the alert is the gateway's own figure, so it is given only when the gateway
+    /// reports the invoice's currency: another currency, or none, leaves the amount out rather than
+    /// printing a wrong one.
+    /// </summary>
+    /// <param name="currencyNumeric">The numeric currency code the gateway reports, or null for none.</param>
+    [Theory]
+    [InlineData("978")]
+    [InlineData(null)]
+    public async Task NoReferenceOnASettledInvoice_WithAnotherOrUnknownGatewayCurrency_LeavesTheAmountOut(string? currencyNumeric)
+    {
+        var invoiceId = await SeedInvoiceWithSessionDirectlyAsync(string.Empty);
+        await RecordManualPaymentAsync(invoiceId, 10m);
+
+        var run = await CompleteTrackedWithAlertsAsync(invoiceId, PaidResolver(null, currencyNumeric));
+
+        var alert = run.Alerts.Should().ContainSingle().Which;
+        alert.Amount.Should().BeNull();
+        alert.Currency.Should().Be("USD");
+    }
+
+    /// <summary>The session id the invoice holds is trimmed too when it stands in for a missing transaction id.</summary>
+    [Fact]
+    public async Task OpenInvoice_WithAPaddedSessionIdAndNoTransactionId_SettlesUnderTheTrimmedSessionId()
+    {
+        var sessionId = $"gw-{Guid.NewGuid():N}";
+        var invoiceId = await SeedInvoiceWithSessionDirectlyAsync($"  {sessionId} ");
+
+        var run = await CompleteTrackedWithAlertsAsync(invoiceId, PaidResolver(null));
+
+        run.ErrorCode.Should().BeNull();
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await context.Transactions.AsNoTracking().CountAsync(t => t.TransactionId == sessionId)).Should().Be(1);
+    }
+
+    /// <summary>
+    /// When the save of the alert's mark loses to another writer nothing is published, the refusal is
+    /// still answered, and the next pass finds no mark and alerts staff exactly once.
+    /// </summary>
+    [Fact]
+    public async Task ConcurrentWriterDuringTheAlertMark_PublishesNothingAndTheNextPassAlertsOnce()
+    {
+        var invoiceId = await SeedInvoiceWithSessionDirectlyAsync(string.Empty);
+        var resolver = PaidResolver(null);
+        string? errorCode = null;
+
+        var conflicted = await factory.Services.GetRequiredService<IHost>().TrackActivity()
+            .Timeout(TimeSpan.FromSeconds(60))
+            .ExecuteAndWaitAsync((Func<IMessageContext, Task>)(async bus =>
+            {
+                using var readerScope = factory.Services.CreateScope();
+
+                // The handler's context holds the row before the competing write, so its save runs
+                // against the old row version and conflicts (the handler loads this same instance).
+                _ = await readerScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>().Invoices.FirstAsync(i => i.Id == invoiceId);
+                using (var otherScope = factory.Services.CreateScope())
+                {
+                    var otherContext = otherScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+                    var otherInvoice = await otherContext.Invoices.FirstAsync(i => i.Id == invoiceId);
+
+                    // A different, still blank, session id: writing the same values back is no change to EF.
+                    otherInvoice.SetGatewaySession("bank-gateway", "   ", otherScope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
+                    await otherContext.SaveChangesAsync(CancellationToken.None);
+                }
+
+                errorCode = (await HandlerFor(readerScope, resolver).HandleAsync(new CompleteGatewayPaymentCommand(invoiceId), CancellationToken.None)).ErrorCode;
+            }));
+
+        errorCode.Should().Be(HostpanelErrorCodes.GATEWAY_PAYMENT_MISMATCH);
+        conflicted.Executed.MessagesOf<GatewayPaymentWithoutReferenceEvent>().Should().BeEmpty();
+        var next = await CompleteTrackedWithAlertsAsync(invoiceId, resolver);
+        var after = await CompleteTrackedWithAlertsAsync(invoiceId, resolver);
+        next.Alerts.Should().ContainSingle();
+        after.Alerts.Should().BeEmpty();
+    }
+
     /// <summary>A reference with surrounding whitespace is stored trimmed, so a replay looks up what was stored.</summary>
     [Fact]
     public async Task ReferenceWithSurroundingWhitespace_IsStoredTrimmed()
@@ -752,7 +829,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         var reference = $"ref-{Guid.NewGuid():N}";
         var invoiceId = await SeedInvoiceWithSessionDirectlyAsync();
 
-        await CompleteTrackedWithoutReferenceAsync(invoiceId, PaidResolver($"  {reference} "));
+        await CompleteTrackedWithAlertsAsync(invoiceId, PaidResolver($"  {reference} "));
 
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
@@ -886,7 +963,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// <param name="invoiceId">The invoice.</param>
     /// <param name="resolver">The fake plugin resolver.</param>
     /// <returns>The error code the completion answered (null on success) and the alerts it published.</returns>
-    private async Task<(string? ErrorCode, IReadOnlyList<GatewayPaymentWithoutReferenceEvent> Alerts, IReadOnlyList<GatewayPaymentCreditedEvent> Credited)> CompleteTrackedWithoutReferenceAsync(
+    private async Task<(string? ErrorCode, IReadOnlyList<GatewayPaymentWithoutReferenceEvent> Alerts, IReadOnlyList<GatewayPaymentCreditedEvent> Credited)> CompleteTrackedWithAlertsAsync(
         int invoiceId, FakePaymentPluginResolver resolver)
     {
         string? errorCode = null;
@@ -906,13 +983,14 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
 
     /// <summary>A resolver whose bank gateway reports the full 10.00 paid under a reference.</summary>
     /// <param name="reference">The gateway's reference of the payment.</param>
+    /// <param name="currencyNumeric">The numeric currency code the gateway reports, or <see langword="null"/> when it reports none.</param>
     /// <returns>The resolver.</returns>
-    private static FakePaymentPluginResolver PaidResolver(string? reference)
+    private static FakePaymentPluginResolver PaidResolver(string? reference, string? currencyNumeric = null)
     {
         var resolver = new FakePaymentPluginResolver();
         resolver.Register("bank-gateway", new FakePaymentPlugin
         {
-            StatusResult = new(GatewayPaymentState.Paid, reference, "orderStatus:2", AmountMinor: 1000),
+            StatusResult = new(GatewayPaymentState.Paid, reference, "orderStatus:2", AmountMinor: 1000, CurrencyNumeric: currencyNumeric),
         });
         return resolver;
     }

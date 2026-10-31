@@ -11,7 +11,7 @@ namespace Innovayse.Hostpanel.Domain.Billing.Events;
 /// <param name="InvoiceId">The invoice the session was opened for.</param>
 /// <param name="ClientId">The client the invoice belongs to.</param>
 /// <param name="Module">The payment plugin id that took the money.</param>
-/// <param name="Amount">The amount the gateway reports as taken, in <paramref name="Currency"/>; <see langword="null"/> when it reports none.</param>
+/// <param name="Amount">The amount the gateway reports as taken, in <paramref name="Currency"/>; <see langword="null"/> when it reports none, or does not report the invoice's currency.</param>
 /// <param name="Currency">ISO 4217 code of the invoice.</param>
 public sealed record GatewayPaymentWithoutReferenceEvent(
     int InvoiceId, int ClientId, string Module, decimal? Amount, string Currency) : IDomainEvent

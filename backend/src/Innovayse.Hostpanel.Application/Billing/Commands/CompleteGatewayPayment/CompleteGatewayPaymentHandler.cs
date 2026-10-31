@@ -400,9 +400,16 @@ public sealed class CompleteGatewayPaymentHandler
             return;
         }
 
-        var amount = status.AmountMinor is { } minor
-            ? CurrencyCode.FromMinorUnits(minor, invoice.Currency)
-            : (decimal?)null;
+        // The gateway's figure is in the gateway's own currency, so it is printed only when that currency
+        // is reported and is the invoice's; otherwise a wrong amount would reach staff, and none is given.
+        decimal? amount = null;
+        if (status.AmountMinor is { } minor
+            && status.CurrencyNumeric is not null
+            && await MatchesCurrencyAsync(invoice, status, ct))
+        {
+            amount = CurrencyCode.FromMinorUnits(minor, invoice.Currency);
+        }
+
         await _bus.PublishAsync(new GatewayPaymentWithoutReferenceEvent(
             invoice.Id, invoice.ClientId, module, amount, invoice.Currency)
         {

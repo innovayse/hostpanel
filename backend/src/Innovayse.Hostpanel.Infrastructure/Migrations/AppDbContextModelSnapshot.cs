@@ -331,6 +331,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<DateTimeOffset?>("GatewayUnreferencedNotifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<bool>("HasDigitalItems")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")

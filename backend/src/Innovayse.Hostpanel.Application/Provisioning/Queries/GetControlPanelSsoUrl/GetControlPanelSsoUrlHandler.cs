@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Provisioning.Common;
 using Innovayse.Hostpanel.Application.Provisioning.Extensions;
+using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -51,6 +52,7 @@ public sealed class GetControlPanelSsoUrlHandler
     /// <returns>
     /// A time-limited control-panel sign-in link, or <c>SERVICE_NOT_FOUND</c> when the id names no service,
     /// <c>SERVICE_NOT_PROVISIONED</c> when the service has never been provisioned,
+    /// <c>SERVICE_NOT_ACTIVE</c> when the service is terminated and its account removed,
     /// <c>SERVICE_NO_SERVER_ASSIGNED</c> when it has no usable server, or
     /// <c>SERVICE_CPANEL_SSO_UPSTREAM_FAILED</c> when the provider cannot issue one.
     /// </returns>
@@ -65,6 +67,13 @@ public sealed class GetControlPanelSsoUrlHandler
         if (service.ProvisioningRef is null)
         {
             return Result<ControlPanelSsoDto>.FailureCode(HostpanelErrorCodes.SERVICE_NOT_PROVISIONED);
+        }
+
+        // A terminated service's reference outlives its account: the panel no longer holds it, so
+        // asking would only come back as an upstream failure that reads like an outage.
+        if (service.Status == ServiceStatus.Terminated)
+        {
+            return Result<ControlPanelSsoDto>.FailureCode(HostpanelErrorCodes.SERVICE_NOT_ACTIVE);
         }
 
         var server = await _bus.FindServerAsync(service, ct);

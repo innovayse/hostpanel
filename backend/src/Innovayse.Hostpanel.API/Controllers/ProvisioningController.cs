@@ -204,7 +204,7 @@ public sealed class ProvisioningController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the control-panel sign-in link; 400 with <c>VALIDATION_ERROR</c>,
-    /// <c>SERVICE_NOT_PROVISIONED</c> or <c>SERVICE_NO_SERVER_ASSIGNED</c>; 401 without a session; 403 for a caller who is not staff; 404 with <c>SERVICE_NOT_FOUND</c> when the id
+    /// <c>SERVICE_NOT_PROVISIONED</c>, <c>SERVICE_NO_SERVER_ASSIGNED</c> or, for a terminated service, <c>SERVICE_NOT_ACTIVE</c>; 401 without a session; 403 for a caller who is not staff; 404 with <c>SERVICE_NOT_FOUND</c> when the id
     /// names no service; 502 with <c>SERVICE_CPANEL_SSO_UPSTREAM_FAILED</c> when the provider cannot
     /// issue one;
     /// 429 when the rate limit is hit.

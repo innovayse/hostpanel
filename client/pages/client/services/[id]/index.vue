@@ -51,6 +51,7 @@
             <ClientServicesServiceServerCard :service="service" :hosting-info="hostingInfo" />
             <ClientServicesServiceQuickActions
               :has-server="Boolean(service.server)"
+              :is-active="service.status === ServiceStatus.Active"
               :sso-loading="ssoLoading"
               @cpanel="loginToCpanel"
               @invoices="loadInvoices"

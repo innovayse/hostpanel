@@ -126,6 +126,13 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     public DateTimeOffset? GatewayStalledNotifiedAt { get; private set; }
 
     /// <summary>
+    /// Gets the UTC moment staff were told the latest session reported a payment as paid with no
+    /// reference to record it under; null when they were not, so they are told once per session. It is
+    /// kept apart from <see cref="GatewayStalledNotifiedAt"/> because a session can stall and later report paid.
+    /// </summary>
+    public DateTimeOffset? GatewayUnreferencedNotifiedAt { get; private set; }
+
+    /// <summary>
     /// Gets when the latest refund began (UTC), or null when none has or an unanswered one was
     /// released. Every refund writes it, so two refunds racing on the same invoice always change the
     /// same row and the later save fails the invoice's concurrency check; a refund that is still
@@ -814,6 +821,7 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
         GatewayCheckCount = 0;
         GatewayConcludedAt = null;
         GatewayStalledNotifiedAt = null;
+        GatewayUnreferencedNotifiedAt = null;
     }
 
     /// <summary>
@@ -838,6 +846,13 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     public void MarkGatewayStalledNotified(DateTimeOffset notifiedAt)
     {
         GatewayStalledNotifiedAt = notifiedAt;
+    }
+
+    /// <summary>Records that staff were told the latest session reported a payment as paid with no reference to record it under.</summary>
+    /// <param name="notifiedAt">When staff were told, UTC.</param>
+    public void MarkGatewayUnreferencedNotified(DateTimeOffset notifiedAt)
+    {
+        GatewayUnreferencedNotifiedAt = notifiedAt;
     }
 
     /// <summary>

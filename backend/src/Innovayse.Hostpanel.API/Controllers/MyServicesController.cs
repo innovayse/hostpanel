@@ -118,7 +118,8 @@ public sealed class MyServicesController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the control-panel sign-in link; 400 with <c>VALIDATION_ERROR</c> for a non-positive id,
-    /// <c>SERVICE_NOT_PROVISIONED</c> or <c>SERVICE_NO_SERVER_ASSIGNED</c>; 401 without a session; 403 with
+    /// <c>SERVICE_NOT_PROVISIONED</c>, <c>SERVICE_NO_SERVER_ASSIGNED</c> or, for a terminated service,
+    /// <c>SERVICE_NOT_ACTIVE</c>; 401 without a session; 403 with
     /// <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>AllowSingleSignOn</c>, or <c>CLIENT_SSO_DISABLED</c> when the
     /// account does not allow single sign-on; 404 with
     /// <c>SERVICE_NOT_FOUND</c> when the service is not the caller's; 502 with

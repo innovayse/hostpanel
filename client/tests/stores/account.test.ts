@@ -11,6 +11,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { ref } from 'vue'
 import { makeContactInput } from '~/tests/helpers/accountContact'
+import { Permission } from '~/composables/usePermissions'
 import { InvitePermissionMode } from '~/types/invitepermissionmode'
 import type { InviteUserPayload } from '~/types/inviteuserpayload'
 
@@ -496,6 +497,7 @@ describe('useAccountStore reads without the permission', () => {
 
     await store.loadPaymentMethods()
 
+    expect(mayDo).toHaveBeenCalledWith(Permission.ViewPayInvoices)
     expect(billingApi.fetchPaymentMethods).not.toHaveBeenCalled()
     expect(store.paymentMethods).toEqual([])
     expect(store.paymentLoadError).toBeNull()

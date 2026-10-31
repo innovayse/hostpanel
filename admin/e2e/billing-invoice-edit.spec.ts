@@ -14,8 +14,8 @@ test('saving the edited lines sends the edits and the screen shows the stored re
   const stored: InvoiceDetail = {
     ...unpaidInvoiceDetail,
     items: [
-      { id: 1, description: 'Hosting', unitPrice: 120, quantity: 1, amount: 120 },
-      { id: 2, description: 'Setup', unitPrice: 30, quantity: 1, amount: 30 },
+      { id: 1, description: 'Hosting', unitPrice: 120, quantity: 1, amount: 120, sku: null },
+      { id: 2, description: 'Setup', unitPrice: 30, quantity: 1, amount: 30, sku: null },
     ],
   }
 

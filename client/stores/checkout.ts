@@ -236,6 +236,7 @@ export const useCheckoutStore = defineStore('checkout', () => {
           invoice: result.invoiceId,
           domain: domainItem?.domain,
           action: domainItem?.domainAction,
+          digital: cart.onlyDigital(currencyStore.payerCode),
         })
       )
     }

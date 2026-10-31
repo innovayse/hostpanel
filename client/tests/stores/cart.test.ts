@@ -17,6 +17,7 @@ import { CartItemType } from '~/types/cartitemtype'
 import { DomainOrderAction } from '~/types/domainorderaction'
 import type { PortalProduct } from '~/types/portalproduct'
 import { PricingCycle } from '~/types/pricingcycle'
+import { ProductType } from '~/types/producttype'
 
 /**
  * Builds a minimal hosting cart item priced in the given currency.
@@ -97,6 +98,7 @@ describe('useCartStore', () => {
 
     it('removes a domain line by name and action, keeping another domain on the same product', () => {
       const cart = useCartStore()
+      /** Builds a domain registration line for the given name on the same product. */
       const domain = (name: string) => hostingItem({
         pid: 9, amount: 10, currency: 'USD', billingcycle: PricingCycle.Annual,
         itemType: CartItemType.Domain, domain: name, domainAction: DomainOrderAction.Register,
@@ -151,9 +153,78 @@ describe('useCartStore', () => {
     })
   })
 
+  describe('onlyDigital', () => {
+    it('is true when every line in the payer currency is a digital good', () => {
+      const cart = useCartStore()
+      cart.items = [
+        hostingItem({ pid: 1, amount: 10, currency: 'USD', productType: ProductType.Digital }),
+        hostingItem({ pid: 2, amount: 5, currency: 'USD', productType: ProductType.Digital }),
+      ]
+
+      expect(cart.onlyDigital('USD')).toBe(true)
+    })
+
+    it('is false as soon as one line is hosting, or has no known type', () => {
+      const cart = useCartStore()
+      cart.items = [
+        hostingItem({ pid: 1, amount: 10, currency: 'USD', productType: ProductType.Digital }),
+        hostingItem({ pid: 2, amount: 5, currency: 'USD', productType: ProductType.SharedHosting }),
+      ]
+      expect(cart.onlyDigital('USD')).toBe(false)
+
+      cart.items = [hostingItem({ pid: 3, amount: 5, currency: 'USD' })]
+      expect(cart.onlyDigital('USD')).toBe(false)
+    })
+
+    it('ignores lines left in another currency, which the order does not carry', () => {
+      const cart = useCartStore()
+      cart.items = [
+        hostingItem({ pid: 1, amount: 10, currency: 'USD', productType: ProductType.Digital }),
+        hostingItem({ pid: 2, amount: 1200, currency: 'AMD', productType: ProductType.SharedHosting }),
+      ]
+
+      expect(cart.onlyDigital('USD')).toBe(true)
+    })
+
+    it('is false for an empty cart', () => {
+      expect(useCartStore().onlyDigital('USD')).toBe(false)
+    })
+  })
+
   describe('init', () => {
     beforeEach(() => {
       localStorage.clear()
+    })
+
+    it('loads a saved line with its product type', () => {
+      const saved = [hostingItem({ pid: 1, amount: 10, currency: 'USD', productType: ProductType.Digital })]
+      localStorage.setItem('innovayse_cart', JSON.stringify(saved))
+      const cart = useCartStore()
+
+      cart.init()
+
+      expect(cart.items).toEqual(saved)
+    })
+
+    it('still loads a line saved before the product type existed', () => {
+      const saved = [hostingItem({ pid: 1, amount: 10, currency: 'USD' })]
+      localStorage.setItem('innovayse_cart', JSON.stringify(saved))
+      const cart = useCartStore()
+
+      cart.init()
+
+      expect(cart.items).toEqual(saved)
+      expect(cart.items[0]?.productType).toBeUndefined()
+    })
+
+    it('drops a saved line whose product type is not one the catalogue knows', () => {
+      const valid = hostingItem({ pid: 1, amount: 12, currency: 'USD' })
+      localStorage.setItem('innovayse_cart', JSON.stringify([valid, { ...hostingItem({ pid: 2, amount: 5, currency: 'USD' }), productType: 'Mystery' }]))
+      const cart = useCartStore()
+
+      cart.init()
+
+      expect(cart.items).toEqual([valid])
     })
 
     it('loads a valid saved cart unchanged', () => {

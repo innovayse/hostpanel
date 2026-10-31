@@ -14,7 +14,7 @@ import { ClientStatus } from '@/types/client'
 import { ContactType } from '@/types/contact'
 import { DomainStatus } from '@/types/domain'
 import { GatewayLogResult } from '@/types/gatewaylog'
-import { InvoiceStatus, InvoiceTransactionType } from '@/types/invoice'
+import { FulfilmentStatus, InvoiceStatus, InvoiceTransactionType } from '@/types/invoice'
 import { MigrationLogAction, MigrationStatus } from '@/types/migration'
 import type { MigrationJob, MigrationLogEntry } from '@/types/migration'
 import { NetworkIssuePriority, NetworkIssueStatus } from '@/types/networkissue'
@@ -110,6 +110,14 @@ const TRANSACTION_TYPE_TONES: Record<InvoiceTransactionType, UiTone> = {
   [InvoiceTransactionType.Payment]: UiTone.Success,
   [InvoiceTransactionType.Refund]: UiTone.Danger,
   [InvoiceTransactionType.Credit]: UiTone.Warning,
+}
+
+/** Badge tone of each fulfilment record status. */
+const FULFILMENT_STATUS_TONES: Record<FulfilmentStatus, UiTone> = {
+  [FulfilmentStatus.Pending]: UiTone.Warning,
+  [FulfilmentStatus.Processing]: UiTone.Info,
+  [FulfilmentStatus.Done]: UiTone.Success,
+  [FulfilmentStatus.Failed]: UiTone.Danger,
 }
 
 /** Badge tone of the gateway log outcomes that are drawn in colour; the rest read neutral. */
@@ -215,6 +223,14 @@ export const quoteStageTone = (stage: string): UiTone => toneOf(QUOTE_STAGE_TONE
  * @returns The tone; neutral for a type this panel does not know.
  */
 export const transactionTypeTone = (type: string): UiTone => toneOf(TRANSACTION_TYPE_TONES, type)
+
+/**
+ * Tone of a fulfilment record status badge.
+ *
+ * @param status - The status string the API sent.
+ * @returns The tone; neutral for a status this panel does not know.
+ */
+export const fulfilmentStatusTone = (status: string): UiTone => toneOf(FULFILMENT_STATUS_TONES, status)
 
 /**
  * Tone of a gateway log outcome badge.

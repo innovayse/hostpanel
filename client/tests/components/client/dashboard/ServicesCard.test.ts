@@ -66,6 +66,17 @@ describe('ClientDashboardServicesCard', () => {
     expect(wrapper.find('[data-testid="dashboard-service-2"]').attributes('href')).toBe('/client/services/2/setup')
   })
 
+  it('links a digital service to its page and shows its status, not the setup badge', async () => {
+    const wrapper = mountClient(ServicesCard)
+    useClientStore().services = [{ ...PENDING, id: 5, isDigital: true }]
+    await nextTick()
+
+    const row = wrapper.find('[data-testid="dashboard-service-5"]')
+    expect(row.attributes('href')).toBe('/client/services/5')
+    expect(row.text()).not.toContain('client.dashboard.needsSetup')
+    expect(row.find('[data-testid="status-badge"]').exists()).toBe(true)
+  })
+
   it('shows the setup badge instead of a status for an unprovisioned service', async () => {
     const wrapper = mountClient(ServicesCard)
     useClientStore().services = [PENDING]

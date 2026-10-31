@@ -46,6 +46,15 @@ describe('service list page', () => {
     expect(wrapper.findAll('[data-testid="service-needs-setup"]')).toHaveLength(2)
   })
 
+  it('does not count a digital service among those that need setup', async () => {
+    clientApi.fetchServices.mockResolvedValue([service(1), makeClientService({ id: 2, username: null, isDigital: true })])
+
+    const wrapper = await mountPage(ServicesPage)
+
+    expect(wrapper.find('[data-testid="services-setup-alert"]').exists()).toBe(false)
+    expect(wrapper.findAll('[data-testid="service-needs-setup"]')).toHaveLength(0)
+  })
+
   it('shows the empty state with a link to the hosting plans', async () => {
     clientApi.fetchServices.mockResolvedValue([])
 

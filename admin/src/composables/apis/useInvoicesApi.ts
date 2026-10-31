@@ -11,6 +11,7 @@ import type { DownloadedFile } from '@/types/download'
 import type {
   CreatedId,
   CreateInvoicePayload,
+  FulfilmentRecord,
   Invoice,
   InvoiceDetail,
   InvoiceFilters,
@@ -197,6 +198,25 @@ export const useInvoicesApi = () => {
    */
   const pdf = (id: number): Promise<DownloadedFile> => download(`${ApiPath.Billing}/${id}/pdf`)
 
+  /**
+   * Lists the fulfilment records of an invoice, oldest first.
+   *
+   * @param id - The invoice id.
+   * @returns The records.
+   */
+  const listFulfilment = (id: number): Promise<FulfilmentRecord[]> =>
+    request<FulfilmentRecord[]>(`${ApiPath.Billing}/${id}/fulfilment`)
+
+  /**
+   * Asks for another attempt of a failed fulfilment record.
+   *
+   * @param id - The invoice id.
+   * @param recordId - The fulfilment record id.
+   * @returns Nothing.
+   */
+  const retryFulfilment = (id: number, recordId: number): Promise<void> =>
+    request<void>(`${ApiPath.Billing}/${id}/fulfilment/${recordId}/retry`, { method: HttpMethod.Post })
+
   return {
     list,
     listByClient,
@@ -215,5 +235,7 @@ export const useInvoicesApi = () => {
     duplicate,
     remove,
     bulk,
+    listFulfilment,
+    retryFulfilment,
   }
 }

@@ -233,6 +233,8 @@ public sealed class UpdateClientHandler
     /// posts the field on every save, and a client who has been invoiced must still be able to
     /// save their phone number. Changing the code would re-label every existing invoice without
     /// converting an amount, $100 would read as ֏100, so once billed, the currency is fixed.
+    /// The credit balance rule is the aggregate's own: <see cref="Client.SetCurrency"/> throws
+    /// <c>CLIENT_CURRENCY_LOCKED_BY_CREDIT</c>, which the exception middleware answers with 409.
     /// </remarks>
     /// <param name="client">The client under edit.</param>
     /// <param name="requested">The currency the form posted, or <see langword="null"/> to leave it alone.</param>

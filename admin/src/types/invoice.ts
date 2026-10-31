@@ -18,6 +18,8 @@ export interface InvoiceItem {
   quantity: number
   /** Line total (unitPrice x quantity). */
   amount: number
+  /** SKU of the product the line was sold from, from its product snapshot; `null` for a line without one (a domain, a manual line). */
+  sku: string | null
 }
 
 /** Payment, refund, or credit transaction recorded against an invoice. */
@@ -287,4 +289,53 @@ export enum InvoiceTab {
   Credit = 'credit',
   Refund = 'refund',
   Notes = 'notes',
+  Fulfilment = 'fulfilment',
+}
+
+/** What a fulfilment record does for the invoice. */
+export enum FulfilmentKind {
+  /** Provision the purchase after the invoice was paid. */
+  Paid = 'Paid',
+  /** Undo the purchase after a refund. */
+  Refunded = 'Refunded',
+  /** Lapse the purchase after the invoice stopped being paid. */
+  Lapsed = 'Lapsed',
+}
+
+/** Where a fulfilment record is in its run. */
+export enum FulfilmentStatus {
+  /** Waiting for its turn. */
+  Pending = 'Pending',
+  /** The plugin is working on it. */
+  Processing = 'Processing',
+  /** Finished successfully. */
+  Done = 'Done',
+  /** Gave up after an error; final until staff retry it. */
+  Failed = 'Failed',
+}
+
+/** One run of a fulfilment plugin for an invoice, as `GET /billing/{id}/fulfilment` lists it. */
+export interface FulfilmentRecord {
+  /** Record id. */
+  id: number
+  /** Invoice the record belongs to. */
+  invoiceId: number
+  /** Plugin that does the work. */
+  pluginId: string
+  /** What the record does. */
+  kind: FulfilmentKind
+  /** Where the record is in its run. */
+  status: FulfilmentStatus
+  /** How many times the plugin was tried. */
+  attempts: number
+  /** When the next attempt is due (ISO 8601); the API always sends it. */
+  nextAttemptAt: string
+  /** Error of the last attempt, for staff; null when it did not fail. */
+  lastError: string | null
+  /** When the record finished (ISO 8601); null while it has not. */
+  completedAt: string | null
+  /** When the record was created (ISO 8601). */
+  createdAt: string
+  /** True when the API accepts a manual retry of the record. */
+  canRetry: boolean
 }

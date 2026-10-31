@@ -12,6 +12,7 @@ import {
   clientStatusTone,
   contactTypeTone,
   domainStatusTone,
+  fulfilmentStatusTone,
   gatewayLogResultTone,
   invoiceStatusTone,
   migrationActionTone,
@@ -32,7 +33,7 @@ import { ClientStatus } from '@/types/client'
 import { ContactType } from '@/types/contact'
 import { DomainStatus } from '@/types/domain'
 import { GatewayLogResult } from '@/types/gatewaylog'
-import { InvoiceStatus, InvoiceTransactionType } from '@/types/invoice'
+import { FulfilmentStatus, InvoiceStatus, InvoiceTransactionType } from '@/types/invoice'
 import { MigrationLogAction, MigrationStatus } from '@/types/migration'
 import { NetworkIssuePriority, NetworkIssueStatus } from '@/types/networkissue'
 import { OrderItemStatus, OrderStatus } from '@/types/order'
@@ -122,6 +123,14 @@ describe('billing tones', () => {
   it('maps transaction types to tones', () => {
     expect(transactionTypeTone(InvoiceTransactionType.Payment)).toBe(UiTone.Success)
     expect(transactionTypeTone(InvoiceTransactionType.Refund)).toBe(UiTone.Danger)
+  })
+
+  it('maps fulfilment statuses to tones', () => {
+    expect(fulfilmentStatusTone(FulfilmentStatus.Pending)).toBe(UiTone.Warning)
+    expect(fulfilmentStatusTone(FulfilmentStatus.Processing)).toBe(UiTone.Info)
+    expect(fulfilmentStatusTone(FulfilmentStatus.Done)).toBe(UiTone.Success)
+    expect(fulfilmentStatusTone(FulfilmentStatus.Failed)).toBe(UiTone.Danger)
+    expect(fulfilmentStatusTone('Mystery')).toBe(UiTone.Neutral)
   })
 
   it('maps gateway log outcomes to tones', () => {

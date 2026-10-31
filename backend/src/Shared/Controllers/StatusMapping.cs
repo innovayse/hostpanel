@@ -69,7 +69,7 @@ public static class StatusMapping
                 => new(409, "Conflict"),
             // Exact row: an unpaid invoice stands in the way, a state conflict, and the name carries no
             // CONFLICT / ALREADY token for the generic arms to catch.
-            "RENEWAL_INVOICE_OPEN" or "CLIENT_TAX_EXEMPT" => new(409, "Conflict"),
+            "RENEWAL_INVOICE_OPEN" or "CLIENT_TAX_EXEMPT" or "CLIENT_CURRENCY_LOCKED_BY_CREDIT" => new(409, "Conflict"),
             // Exact row: the deployment has no card gateway, a state of the system rather than a
             // malformed request, and the name carries no CONFLICT / ALREADY token for the generic arms.
             "PAYMENT_METHOD_UNAVAILABLE" => new(409, "Conflict"),

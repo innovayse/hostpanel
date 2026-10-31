@@ -9,7 +9,7 @@
 import type { ClientUser } from '~/types/clientuser'
 
 /**
- * Builds an account with a client record, no address, no optional details and no permissions.
+ * Builds an account with a client record, no address, no optional details and no permissions, acting for its account (so the missing permissions bite).
  *
  * @param overrides - Fields to set on top of the defaults.
  * @returns The account.
@@ -30,5 +30,6 @@ export const makeClientUser = (overrides: Partial<ClientUser> = {}): ClientUser 
   contacts: [],
   hasClientProfile: true,
   permissions: 0,
+  actsForAccount: true,
   ...overrides
 })

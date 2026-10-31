@@ -13,12 +13,12 @@
       </UiNavItem>
     </UiNavGroup>
 
-    <UiNavGroup v-if="canTicket || (service.status === ServiceStatus.Pending && canOrder)" :title="$t('client.services.sectionActions')" :icon="Zap">
+    <UiNavGroup v-if="canTicket || canSetUp" :title="$t('client.services.sectionActions')" :icon="Zap">
       <UiNavItem v-if="canTicket" :to="CLIENT_TICKET_NEW_PATH" :icon="MessageSquare" testid="service-open-ticket">
         {{ $t('client.services.actionOpenTicket') }}
       </UiNavItem>
       <UiNavItem
-        v-if="service.status === ServiceStatus.Pending && canOrder"
+        v-if="canSetUp"
         :to="clientServiceSetupPath(serviceId)"
         :icon="Zap"
         tone="warning"
@@ -56,6 +56,7 @@ import type { ClientService } from '~/types/clientservice'
 import { ServiceStatus } from '~/types/servicestatus'
 import { ServiceTab } from '~/types/servicetab'
 import { webmailUrl as buildWebmailUrl } from '~/utils/controlPanel'
+import { serviceSetupPending } from '~/utils/serviceSetup'
 
 /** Translates a key into the active locale. */
 const { t } = useI18n()
@@ -94,8 +95,12 @@ const canTicket = computed(() => store.mayDo(Permission.ViewOpenSupportTickets))
 /** Whether the person may complete an order's setup, and cancel a service: both place orders. */
 const canOrder = computed(() => store.mayDo(Permission.PlaceNewOrders))
 
+/** Whether the setup action is offered: a pending hosting service (a digital one has none) the person may order for. */
+const canSetUp = computed(() => serviceSetupPending(props.service) && canOrder.value)
+
 /** Whether the person may sign in to the control panel from here. */
-const canSignIn = computed(() => store.mayDo(Permission.AllowSingleSignOn))
+const canSignIn = computed(() =>
+  props.service.status === ServiceStatus.Active && store.mayDo(Permission.AllowSingleSignOn))
 
 /** Whether the person may change the service's control-panel password. */
 const canChangePassword = computed(() => store.mayDo(Permission.ViewModifyPasswords))

@@ -582,6 +582,7 @@
     },
     "payment": {
       "title": "Payment Methods",
+      "permissionDenied": "Your account is not allowed to view or manage payment methods. Ask the account owner to grant you the permission to view and pay invoices.",
       "empty": "No payment methods saved",
       "emptyDesc": "You have no saved cards. To pay, open an unpaid invoice and choose Pay by card: you finish the payment on the payment provider's secure page.",
       "viewInvoices": "View invoices",

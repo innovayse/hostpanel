@@ -106,6 +106,19 @@ public sealed class CurrencyCodeValidatorTests
         AssertOutcome(result, "Currency", bad: true);
     }
 
+    /// <summary>An order invoice accepts a well-formed currency in any case.</summary>
+    /// <param name="code">A well-formed code.</param>
+    [Theory]
+    [InlineData("usd")]
+    [InlineData("EUR")]
+    public void CreateOrderInvoice_GoodCurrency_IsAccepted(string code)
+    {
+        var result = new CreateOrderInvoiceValidator(Localizer)
+            .Validate(new CreateOrderInvoiceCommand(1, code, []));
+
+        AssertOutcome(result, "Currency", bad: false);
+    }
+
     /// <summary>The orderable-products query refuses a malformed currency.</summary>
     /// <param name="code">A malformed code.</param>
     [Theory]
@@ -116,6 +129,19 @@ public sealed class CurrencyCodeValidatorTests
             .Validate(new GetOrderableProductsQuery([1], code));
 
         AssertOutcome(result, "Currency", bad: true);
+    }
+
+    /// <summary>The orderable-products query accepts a well-formed currency in any case.</summary>
+    /// <param name="code">A well-formed code.</param>
+    [Theory]
+    [InlineData("usd")]
+    [InlineData("EUR")]
+    public void GetOrderableProducts_GoodCurrency_IsAccepted(string code)
+    {
+        var result = new GetOrderableProductsValidator(Localizer)
+            .Validate(new GetOrderableProductsQuery([1], code));
+
+        AssertOutcome(result, "Currency", bad: false);
     }
 
     /// <summary>The cycle-price lookup refuses a malformed currency.</summary>
@@ -130,6 +156,19 @@ public sealed class CurrencyCodeValidatorTests
         AssertOutcome(result, "Lookups", bad: true);
     }
 
+    /// <summary>The cycle-price lookup accepts a well-formed currency in any case.</summary>
+    /// <param name="code">A well-formed code.</param>
+    [Theory]
+    [InlineData("usd")]
+    [InlineData("EUR")]
+    public void GetProductCyclePrices_GoodCurrency_IsAccepted(string code)
+    {
+        var result = new GetProductCyclePricesValidator(Localizer)
+            .Validate(new GetProductCyclePricesQuery([new ProductCyclePriceLookup(1, code, BillingCycle.Monthly)]));
+
+        AssertOutcome(result, "Lookups", bad: false);
+    }
+
     /// <summary>A product price row refuses a malformed currency.</summary>
     /// <param name="code">A malformed code.</param>
     [Theory]
@@ -140,6 +179,19 @@ public sealed class CurrencyCodeValidatorTests
             .Validate(new ProductPriceDto(code, 1m, null, null, null, null));
 
         AssertOutcome(result, "CurrencyCode", bad: true);
+    }
+
+    /// <summary>A product price row accepts a well-formed currency in any case.</summary>
+    /// <param name="code">A well-formed code.</param>
+    [Theory]
+    [InlineData("usd")]
+    [InlineData("EUR")]
+    public void ProductPrice_GoodCurrency_IsAccepted(string code)
+    {
+        var result = new ProductPriceDtoValidator(Localizer)
+            .Validate(new ProductPriceDto(code, 1m, null, null, null, null));
+
+        AssertOutcome(result, "CurrencyCode", bad: false);
     }
 
     /// <summary>The product price recompute refuses a malformed code in the list.</summary>
@@ -224,6 +276,18 @@ public sealed class CurrencyCodeValidatorTests
         AssertOutcome(result, "Code", bad: true);
     }
 
+    /// <summary>Setting the base currency accepts a well-formed code in any case.</summary>
+    /// <param name="code">A well-formed code.</param>
+    [Theory]
+    [InlineData("usd")]
+    [InlineData("EUR")]
+    public void SetBaseCurrency_GoodCode_IsAccepted(string code)
+    {
+        var result = new SetBaseCurrencyValidator(Localizer).Validate(new SetBaseCurrencyCommand(code));
+
+        AssertOutcome(result, "Code", bad: false);
+    }
+
     /// <summary>Setting the base currency refuses a missing code.</summary>
     [Fact]
     public void SetBaseCurrency_NullCode_IsRefused()
@@ -245,6 +309,19 @@ public sealed class CurrencyCodeValidatorTests
         AssertOutcome(result, "Code", bad: true);
     }
 
+    /// <summary>Saving a currency accepts a well-formed code in any case.</summary>
+    /// <param name="code">A well-formed code.</param>
+    [Theory]
+    [InlineData("usd")]
+    [InlineData("EUR")]
+    public void UpsertCurrency_GoodCode_IsAccepted(string code)
+    {
+        var result = new UpsertCurrencyValidator(Localizer)
+            .Validate(new UpsertCurrencyCommand(code, "978", "", "", 2, 1m, true));
+
+        AssertOutcome(result, "Code", bad: false);
+    }
+
     /// <summary>Updating a client refuses a malformed preferred currency.</summary>
     /// <param name="code">A malformed code.</param>
     [Theory]
@@ -262,26 +339,70 @@ public sealed class CurrencyCodeValidatorTests
         AssertOutcome(result, "Preferences.Currency", bad: true);
     }
 
-    /// <summary>Creating a client refuses a malformed preferred currency but accepts none.</summary>
+    /// <summary>Updating a client accepts a well-formed preferred currency in any case.</summary>
+    /// <param name="code">A well-formed code.</param>
+    [Theory]
+    [InlineData("usd")]
+    [InlineData("EUR")]
+    public void UpdateClient_GoodCurrency_IsAccepted(string code)
+    {
+        var result = new UpdateClientValidator(Localizer).Validate(new UpdateClientCommand(
+            1, null, "Ada", "Lovelace", null, null,
+            new PostalAddress(null, null, null, null, null, null),
+            new ClientPreferencesDto(null, code, null, null, null),
+            new ContactNotifications(true, true, true, true, true, true),
+            new ClientSettingsDto(true, false, false, false, false, false, false),
+            null));
+
+        AssertOutcome(result, "Preferences.Currency", bad: false);
+    }
+
+    /// <summary>Creating a client refuses a malformed preferred currency.</summary>
     /// <param name="code">A malformed code.</param>
     [Theory]
     [MemberData(nameof(BadCodes))]
     public void AdminCreateClient_BadCurrency_IsRefused(string code)
     {
+        // An empty value means "no preference" on create, so AdminCreateClient_EmptyCurrency_IsAccepted pins it.
         if (string.IsNullOrEmpty(code))
         {
-            // An empty value means "no preference" on create, the same as a missing one.
             return;
         }
 
-        var result = new AdminCreateClientValidator(Localizer).Validate(new AdminCreateClientCommand(
-            CreateNewUser: false, ExistingUserId: "user-1", Email: null,
-            Password: null, FirstName: "Ada", LastName: "Lovelace", CompanyName: null, Phone: null,
-            Address: new PostalAddress(null, null, null, null, null, null),
-            Preferences: new ClientPreferencesDto(null, code, null, null, null), Status: null));
+        var result = new AdminCreateClientValidator(Localizer).Validate(CreateClient(code));
 
         AssertOutcome(result, "Preferences.Currency", bad: true);
     }
+
+    /// <summary>Creating a client accepts a well-formed preferred currency in any case.</summary>
+    /// <param name="code">A well-formed code.</param>
+    [Theory]
+    [InlineData("usd")]
+    [InlineData("EUR")]
+    public void AdminCreateClient_GoodCurrency_IsAccepted(string code)
+    {
+        var result = new AdminCreateClientValidator(Localizer).Validate(CreateClient(code));
+
+        AssertOutcome(result, "Preferences.Currency", bad: false);
+    }
+
+    /// <summary>Creating a client with an empty preferred currency raises no currency error: empty means no preference.</summary>
+    [Fact]
+    public void AdminCreateClient_EmptyCurrency_IsAccepted()
+    {
+        var result = new AdminCreateClientValidator(Localizer).Validate(CreateClient(string.Empty));
+
+        AssertOutcome(result, "Preferences.Currency", bad: false);
+    }
+
+    /// <summary>Builds a create-client command for an existing user carrying the given preferred currency.</summary>
+    /// <param name="currency">The preferred currency to put on the command.</param>
+    /// <returns>The command.</returns>
+    private static AdminCreateClientCommand CreateClient(string currency) => new(
+        CreateNewUser: false, ExistingUserId: "user-1", Email: null,
+        Password: null, FirstName: "Ada", LastName: "Lovelace", CompanyName: null, Phone: null,
+        Address: new PostalAddress(null, null, null, null, null, null),
+        Preferences: new ClientPreferencesDto(null, currency, null, null, null), Status: null);
 
     /// <summary>Builds an order command carrying the given currency.</summary>
     /// <param name="currency">The currency to put on the command, or <see langword="null"/>.</param>

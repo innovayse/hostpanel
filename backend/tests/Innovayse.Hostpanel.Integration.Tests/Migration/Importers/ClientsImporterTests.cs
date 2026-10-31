@@ -5,9 +5,13 @@ using Innovayse.Hostpanel.Application.Migration.Pull;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Migration.Enums;
 using Innovayse.Hostpanel.Infrastructure.Auth;
+using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Migration.Importers;
 
@@ -48,12 +52,16 @@ public sealed class ClientsImporterTests(IntegrationTestFactory factory) : IClas
         Assert.Single(clients);
     }
 
-    /// <summary>A malformed source currency does not lose the client: it is imported without a currency.</summary>
+    /// <summary>
+    /// A malformed source currency does not lose the client: it is imported without a currency, and
+    /// the dropped value is logged as a warning naming the new client.
+    /// </summary>
     [Fact]
-    public async Task RunAsync_ClientWithMalformedCurrency_IsImportedWithoutACurrencyAsync()
+    public async Task RunAsync_ClientWithMalformedCurrency_IsImportedWithoutACurrencyAndWarnedAsync()
     {
         var source = NewSource();
-        using var host = MigrationTestSeeds.HostWithFakeSource(factory, source);
+        var logger = new CapturingLogger<ClientsImporter>();
+        using var host = HostWithLogger(source, logger);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var job = await MigrationTestSeeds.SeedJobSelectingOnlyAsync(context, MigrationEntityType.Clients);
@@ -66,6 +74,29 @@ public sealed class ClientsImporterTests(IntegrationTestFactory factory) : IClas
         var userId = await MigrationTestSeeds.UserIdForEmailAsync(scope.ServiceProvider, email);
         var client = await context.Clients.AsNoTracking().SingleAsync(c => c.UserId == userId);
         Assert.Null(client.Currency);
+        var warning = Assert.Single(logger.Entries, e => e.Level == LogLevel.Warning);
+        Assert.Contains($"Client {client.Id} imported without a currency", warning.Message, StringComparison.Ordinal);
+        Assert.Contains("12!", warning.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(email, warning.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>A client with no source currency at all is imported without a warning: nothing was dropped.</summary>
+    [Fact]
+    public async Task RunAsync_ClientWithoutCurrency_IsImportedWithoutAWarningAsync()
+    {
+        var source = NewSource();
+        var logger = new CapturingLogger<ClientsImporter>();
+        using var host = HostWithLogger(source, logger);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var job = await MigrationTestSeeds.SeedJobSelectingOnlyAsync(context, MigrationEntityType.Clients);
+        var email = $"migration-client-{Guid.NewGuid():N}@example.test";
+        source.SetDatasetJson("clients", ClientJson(email, "Active", taxExempt: false, signupDate: null));
+
+        var worker = scope.ServiceProvider.GetRequiredService<MigrationPullWorker>();
+        await worker.RunAsync(job.Id, CancellationToken.None);
+
+        Assert.DoesNotContain(logger.Entries, e => e.Level == LogLevel.Warning);
     }
 
     /// <summary>A padded, lower-case source currency is stored trimmed and upper-cased.</summary>
@@ -181,6 +212,14 @@ public sealed class ClientsImporterTests(IntegrationTestFactory factory) : IClas
         Assert.Equal(MigrationSkipReason.NameMissing, log.SkipReason);
         Assert.Equal(string.Empty, await MigrationTestSeeds.UserIdForEmailAsync(scope.ServiceProvider, email));
     }
+
+    /// <summary>A host whose source is the fake one and whose clients importer logs into the given logger.</summary>
+    /// <param name="source">The fake source the importers page through.</param>
+    /// <param name="logger">The logger that stands in for the importer's own.</param>
+    /// <returns>The isolated host.</returns>
+    private WebApplicationFactory<Program> HostWithLogger(FakeMigrationPullSource source, CapturingLogger<ClientsImporter> logger) =>
+        MigrationTestSeeds.HostWithFakeSource(factory, source).WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services => services.AddSingleton<ILogger<ClientsImporter>>(logger)));
 
     /// <summary>A fake source whose totals announce one client.</summary>
     /// <returns>The fake source.</returns>

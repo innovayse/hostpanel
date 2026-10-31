@@ -11,6 +11,7 @@ using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Migration;
 using Innovayse.Hostpanel.Domain.Migration.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Innovayse.Hostpanel.Application.Migration.Importers;
 
@@ -54,6 +55,9 @@ public sealed class ClientsImporter : IMigrationEntityImporter
     /// <summary>Reads the moment each client is imported.</summary>
     private readonly IClock _clock;
 
+    /// <summary>Logs a source value that was left out of an imported client.</summary>
+    private readonly ILogger<ClientsImporter> _logger;
+
     /// <summary>Initializes a new instance of the <see cref="ClientsImporter"/> class.</summary>
     /// <param name="identity">Resolves whether a plugin email already has a local account.</param>
     /// <param name="provisioning">Creates the new account for a client this platform has not seen.</param>
@@ -61,13 +65,15 @@ public sealed class ClientsImporter : IMigrationEntityImporter
     /// <param name="context">The module's data context.</param>
     /// <param name="runner">Pages through the source plugin's <c>clients</c> dataset and records each record's outcome.</param>
     /// <param name="clock">Reads the moment each client is imported.</param>
+    /// <param name="logger">Logs a source value that was left out of an imported client.</param>
     public ClientsImporter(
         IIdentityProvider identity,
         IUserProvisioning provisioning,
         ISubjectRoleStore roles,
         IHostpanelDbContext context,
         MigrationRecordRunner runner,
-        IClock clock)
+        IClock clock,
+        ILogger<ClientsImporter> logger)
     {
         _identity = identity;
         _provisioning = provisioning;
@@ -75,6 +81,7 @@ public sealed class ClientsImporter : IMigrationEntityImporter
         _context = context;
         _runner = runner;
         _clock = clock;
+        _logger = logger;
     }
 
     /// <inheritdoc/>
@@ -163,9 +170,14 @@ public sealed class ClientsImporter : IMigrationEntityImporter
         // the operator's to sort out after the pull, the same as every other field imported here.
         // A value that is not a three-letter code is left out rather than failing the client: the
         // currency is optional, and losing the client and everything filed under it for it is worse.
+        var currencyDropped = false;
         if (CurrencyCode.TryNormalise(rec.Billing.Currency, out var billingCurrency))
         {
             clientEntity.SetCurrency(billingCurrency);
+        }
+        else
+        {
+            currencyDropped = !string.IsNullOrWhiteSpace(rec.Billing.Currency);
         }
 
         if (rec.Billing.TaxExempt)
@@ -190,6 +202,17 @@ public sealed class ClientsImporter : IMigrationEntityImporter
 
         _context.Clients.Add(clientEntity);
         await _context.SaveChangesAsync(ct);
+
+        if (currencyDropped)
+        {
+            // The migration log holds skips only, so the dropped value is a warning naming the new
+            // client by its local id (the source record carries no id of its own, and its email is
+            // personal data) for the operator to set the currency by hand.
+            _logger.LogWarning(
+                "Client {ClientId} imported without a currency: the source value {SourceCurrency} is not a three-letter code",
+                clientEntity.Id, rec.Billing.Currency);
+        }
+
         return RecordImportResult.Imported;
     }
 

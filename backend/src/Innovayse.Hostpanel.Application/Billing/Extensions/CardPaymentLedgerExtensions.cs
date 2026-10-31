@@ -21,7 +21,7 @@ public static class CardPaymentLedgerExtensions
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// One entry per ledger row of the transaction; empty when the transaction is not recorded. An
-    /// empty reference names no payment and is never recorded, so it answers empty without a query.
+    /// empty or blank reference names no payment and is never recorded, so it answers empty without a query.
     /// </returns>
     public static async Task<IReadOnlyList<int?>> RecordedInvoiceIdsAsync(
         this IHostpanelDbContext context, string transactionId, CancellationToken ct)
@@ -31,7 +31,7 @@ public static class CardPaymentLedgerExtensions
         // Last safe layer only: an empty reference names no payment, so it is answered as not recorded
         // without a query. That answer must never lead to a credit, so callers must not credit or
         // record money without a usable reference; they hold it for an operator instead.
-        if (string.IsNullOrEmpty(transactionId))
+        if (string.IsNullOrWhiteSpace(transactionId))
         {
             return [];
         }

@@ -72,11 +72,14 @@ public sealed class CompleteGatewayPaymentHandler
     /// <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c>, or <c>GATEWAY_PAYMENT_MISMATCH</c> when the gateway
     /// reports a paid amount below what the invoice owes, or another currency (the invoice stays
     /// unpaid). A paid amount above what is owed (a payment recorded while the session was open)
-    /// settles the invoice and puts the rest on the client's credit balance, and staff are alerted after the
-    /// save that credited it; a replay finds the ledger row and does not alert again. A paid status without
-    /// an amount, or with no payment reference at all, is a mismatch and is held for an operator. When another path settled or closed the invoice while the session
-    /// was open, whatever the session took that the ledger does not hold goes to the client's
-    /// balance (<c>INVOICE_NOT_PAYABLE</c> when the invoice was closed unpaid).
+    /// settles the invoice and puts the rest on the client's credit balance, and staff are alerted
+    /// after the save that credited it; a replay finds the ledger row and does not alert again. A paid
+    /// status without an amount is a mismatch. A paid status with no payment reference at all (neither
+    /// the gateway's transaction id nor the invoice's session id) is a mismatch too: nothing is
+    /// recorded or credited, and staff are alerted once per session through
+    /// <see cref="GatewayPaymentWithoutReferenceEvent"/>. When another path settled or closed the
+    /// invoice while the session was open, whatever the session took that the ledger does not hold
+    /// goes to the client's balance (<c>INVOICE_NOT_PAYABLE</c> when the invoice was closed unpaid).
     /// </returns>
     public async Task<Result<GatewayCompletionDto>> HandleAsync(
         CompleteGatewayPaymentCommand cmd, CancellationToken ct)
@@ -140,6 +143,7 @@ public sealed class CompleteGatewayPaymentHandler
             _logger.LogCritical(
                 "Invoice {InvoiceId} gateway session through {Module} reports paid but neither the gateway nor the invoice carries a payment reference; held for an operator, nothing recorded or credited.",
                 invoice.Id, invoice.GatewayModule);
+            await AlertWithoutReferenceAsync(invoice, invoice.GatewayModule, status, ct);
             return Result<GatewayCompletionDto>.FailureCode(HostpanelErrorCodes.GATEWAY_PAYMENT_MISMATCH);
         }
 
@@ -231,6 +235,7 @@ public sealed class CompleteGatewayPaymentHandler
                         _logger.LogCritical(
                             "Invoice {InvoiceId} gateway session through {Module} reports paid but carries no payment reference while the invoice could not record it; held for an operator, nothing recorded or credited.",
                             invoice.Id, module);
+                        await AlertWithoutReferenceAsync(invoice, module, status, ct);
                     }
                     else
                     {
@@ -359,21 +364,69 @@ public sealed class CompleteGatewayPaymentHandler
     }
 
     /// <summary>
+    /// Tells staff, once per session, that the gateway reported a payment as paid with no reference to
+    /// record it under. The mark is saved first and the alert published after, like the reconciler's
+    /// stalled alert: a failed save repeats the whole step on the next pass instead of alerting about an
+    /// unsaved mark, and once saved a replay finds the mark and sends nothing. A crash between the save
+    /// and the publish loses the alert; it is never sent a second time. Nothing but the mark is written.
+    /// </summary>
+    /// <param name="invoice">The invoice the session was opened for (tracked), open or already settled.</param>
+    /// <param name="module">The plugin id of the session that reported the payment.</param>
+    /// <param name="status">The gateway's paid status.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes once the mark is saved and the alert published, or skipped.</returns>
+    private async Task AlertWithoutReferenceAsync(
+        Invoice invoice, string module, GatewayPaymentStatus status, CancellationToken ct)
+    {
+        if (invoice.GatewayUnreferencedNotifiedAt is not null)
+        {
+            return;
+        }
+
+        var now = _clock.UtcNow;
+        invoice.MarkGatewayUnreferencedNotified(now);
+        try
+        {
+            await _context.SaveChangesAsync(ct);
+        }
+        catch (ConcurrencyConflictException)
+        {
+            // Another writer changed the invoice first. The mark was not saved, so the next pass for
+            // this session tells staff; the refusal this call belongs to is unaffected.
+            _context.DetachAll();
+            _logger.LogWarning(
+                "Invoice {InvoiceId} changed while staff were being told about a payment without a reference; they are told on the next pass.",
+                invoice.Id);
+            return;
+        }
+
+        var amount = status.AmountMinor is { } minor
+            ? CurrencyCode.FromMinorUnits(minor, invoice.Currency)
+            : (decimal?)null;
+        await _bus.PublishAsync(new GatewayPaymentWithoutReferenceEvent(
+            invoice.Id, invoice.ClientId, module, amount, invoice.Currency)
+        {
+            OccurredAt = now,
+        });
+    }
+
+    /// <summary>
     /// Picks the reference a payment is recorded and recognised by: the gateway's transaction id when
     /// it has one, else the session id the invoice holds. An empty or blank value is no reference,
     /// because <c>??</c> would keep it and every replay would then look for a row it cannot match.
+    /// The reference is trimmed, so the value stored is the value a replay looks up.
     /// </summary>
     /// <param name="status">The gateway's paid status.</param>
     /// <param name="orderId">The gateway session id stored on the invoice.</param>
-    /// <returns>The reference, or <see langword="null"/> when neither source holds a usable one.</returns>
+    /// <returns>The trimmed reference, or <see langword="null"/> when neither source holds a usable one.</returns>
     private static string? PickReference(GatewayPaymentStatus status, string? orderId)
     {
         if (!string.IsNullOrWhiteSpace(status.TransactionId))
         {
-            return status.TransactionId;
+            return status.TransactionId.Trim();
         }
 
-        return string.IsNullOrWhiteSpace(orderId) ? null : orderId;
+        return string.IsNullOrWhiteSpace(orderId) ? null : orderId.Trim();
     }
 
     /// <summary>

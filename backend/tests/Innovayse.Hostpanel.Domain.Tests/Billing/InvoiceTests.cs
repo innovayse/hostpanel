@@ -370,6 +370,7 @@ public sealed class InvoiceTests
         invoice.SetGatewaySession("bank-gateway", "first-attempt", GatewayAttemptAt);
         invoice.RecordGatewayCheck(GatewayAttemptAt.AddMinutes(30), concluded: true);
         invoice.MarkGatewayStalledNotified(GatewayAttemptAt.AddHours(25));
+        invoice.MarkGatewayUnreferencedNotified(GatewayAttemptAt.AddHours(26));
 
         invoice.SetGatewaySession("bank-gateway", "second-attempt", GatewayAttemptAt.AddDays(2));
 
@@ -377,6 +378,19 @@ public sealed class InvoiceTests
         Assert.Null(invoice.GatewayCheckedAt);
         Assert.Null(invoice.GatewayConcludedAt);
         Assert.Null(invoice.GatewayStalledNotifiedAt);
+        Assert.Null(invoice.GatewayUnreferencedNotifiedAt);
+    }
+
+    /// <summary>Marking the unreferenced-payment alert as sent stores the moment, and a fresh invoice has none.</summary>
+    [Fact]
+    public void MarkGatewayUnreferencedNotified_StoresTheMoment()
+    {
+        var invoice = Invoice.Create(clientId: 1, dueDate: Now.AddDays(14), currency: "USD", issuedAt: Now);
+        Assert.Null(invoice.GatewayUnreferencedNotifiedAt);
+
+        invoice.MarkGatewayUnreferencedNotified(GatewayAttemptAt.AddHours(2));
+
+        Assert.Equal(GatewayAttemptAt.AddHours(2), invoice.GatewayUnreferencedNotifiedAt);
     }
 
     /// <summary>Set gateway session, on paid invoice, throws.</summary>

@@ -245,8 +245,14 @@ export enum ServiceStatus {
 export enum BillingCycle {
   /** Every month. */
   Monthly = 'Monthly',
+  /** Every three months. */
+  Quarterly = 'Quarterly',
+  /** Every six months. */
+  SemiAnnual = 'SemiAnnual',
   /** Every year. */
   Annual = 'Annual',
+  /** Every two years. */
+  Biennial = 'Biennial',
 }
 
 /** How a cancellation request ends the service, exactly as the API sends it. */

@@ -32,7 +32,10 @@
       "popular": "⭐ Самый популярный",
       "period": {
         "monthly": "/мес",
-        "annually": "/год"
+        "quarterly": "/кв.",
+        "semiannually": "/6 мес",
+        "annually": "/год",
+        "biennially": "/2 года"
       },
       "save": "Экономия {percent}%",
       "more": "+{count} ещё",

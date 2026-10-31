@@ -32,7 +32,10 @@
       "popular": "⭐ Most Popular",
       "period": {
         "monthly": "/mo",
-        "annually": "/yr"
+        "quarterly": "/qtr",
+        "semiannually": "/6 mo",
+        "annually": "/yr",
+        "biennially": "/2 yr"
       },
       "save": "Save {percent}%",
       "more": "+{count} more",

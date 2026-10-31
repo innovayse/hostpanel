@@ -9,8 +9,8 @@ import { useI18n } from 'vue-i18n'
 import { useClientSummaryStore } from '@/stores/clientSummary'
 import { useClientsStore } from '@/stores/clients'
 import { useResultBanner } from '@/composables/useResultBanner'
-import { QUOTE_STAGE_OPTIONS, SERVICE_STATUS_OPTIONS } from '@/lib/constants'
-import { capitalize, formatDate } from '@/lib/format'
+import { BILLING_CYCLE_OPTIONS, QUOTE_STAGE_OPTIONS, SERVICE_STATUS_OPTIONS } from '@/lib/constants'
+import { formatDate } from '@/lib/format'
 import { formatPlainAmount, formatPrice } from '@/lib/money'
 import { domainStatusTone, serviceStatusTone, statusLabel, clientStatusTone, contactTypeTone, quoteStageTone } from '@/lib/tones'
 import ClientExternalAccountCard from '@/components/clients/ClientExternalAccountCard.vue'
@@ -616,7 +616,7 @@ onMounted(() => {
                 <UiTableCell>{{ service.productName }}</UiTableCell>
                 <UiTableCell muted>{{ service.domain ?? DASH }}</UiTableCell>
                 <UiTableCell muted>{{ formatPrice(service.price, service.priceCurrency) }}</UiTableCell>
-                <UiTableCell muted>{{ capitalize(service.billingCycle) }}</UiTableCell>
+                <UiTableCell muted>{{ statusLabel(BILLING_CYCLE_OPTIONS, service.billingCycle) }}</UiTableCell>
                 <UiTableCell muted>{{ formatDate(service.nextDueDate) }}</UiTableCell>
                 <UiTableCell>
                   <UiBadge :tone="serviceStatusTone(service.status)" small>{{ statusLabel(SERVICE_STATUS_OPTIONS, service.status) }}</UiBadge>

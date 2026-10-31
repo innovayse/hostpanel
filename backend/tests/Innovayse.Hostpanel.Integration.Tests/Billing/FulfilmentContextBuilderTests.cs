@@ -55,6 +55,26 @@ public sealed class FulfilmentContextBuilderTests
         line.Currency.Should().Be("USD");
     }
 
+    /// <summary>
+    /// A plugin written when only monthly and annual existed keeps receiving those exact strings, and
+    /// the cycles added later are handed over by their lower-cased names, never as a number or null.
+    /// </summary>
+    /// <param name="cycle">The cycle on the product snapshot.</param>
+    /// <param name="expected">The text the plugin contract carries.</param>
+    [Theory]
+    [InlineData(BillingCycle.Monthly, "monthly")]
+    [InlineData(BillingCycle.Annual, "annual")]
+    [InlineData(BillingCycle.Quarterly, "quarterly")]
+    [InlineData(BillingCycle.SemiAnnual, "semiannual")]
+    [InlineData(BillingCycle.Biennial, "biennial")]
+    public void Lines_EveryCycle_IsHandedOverByItsLowerCasedName(BillingCycle cycle, string expected)
+    {
+        var invoice = OpenInvoice();
+        invoice.AddItem("Hosting", 3m, 1, null, new ProductSnapshot(9, cycle, true, null, null));
+
+        FulfilmentContextBuilder.Lines(invoice).Single().BillingCycle.Should().Be(expected);
+    }
+
     /// <summary>The paid context carries the invoice, the client, the account, the payment reference and time.</summary>
     [Fact]
     public void Paid_CarriesThePaymentOfTheInvoice()

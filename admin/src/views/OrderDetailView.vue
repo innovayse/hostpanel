@@ -33,8 +33,8 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { Icon } from '@/lib/icons'
-import { INVOICE_STATUS_OPTIONS, ORDER_STATUS_OPTIONS } from '@/lib/constants'
-import { capitalize, formatDateTime } from '@/lib/format'
+import { BILLING_CYCLE_OPTIONS, INVOICE_STATUS_OPTIONS, ORDER_STATUS_OPTIONS } from '@/lib/constants'
+import { formatDateTime } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
 import { invoiceStatusTone, orderItemStatusTone, orderStatusTone, statusLabel } from '@/lib/tones'
 import { OrderStatus } from '@/types/order'
@@ -320,7 +320,7 @@ onMounted(async () => {
               :data-testid="`order-item-${item.id}`"
             >
               <UiTableCell>{{ item.productName }}</UiTableCell>
-              <UiTableCell>{{ capitalize(item.billingCycle) }}</UiTableCell>
+              <UiTableCell>{{ statusLabel(BILLING_CYCLE_OPTIONS, item.billingCycle) }}</UiTableCell>
               <UiTableCell>{{ item.domain ?? item.hostname ?? '—' }}</UiTableCell>
               <UiTableCell>{{ formatPlainAmount(item.firstPaymentAmount, store.currentOrder.currency) }}</UiTableCell>
               <UiTableCell>{{ formatPlainAmount(item.recurringAmount, store.currentOrder.currency) }}</UiTableCell>

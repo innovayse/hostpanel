@@ -66,6 +66,18 @@ describe('option lists', () => {
     expect(valuesOf(GATEWAY_OPTIONS)).toEqual(membersOf(PaymentGateway))
   })
 
+  it('name every billing cycle with its own label, the newer cycles included', () => {
+    const labels = Object.fromEntries(BILLING_CYCLE_OPTIONS.map((option) => [option.value, option.label]))
+
+    expect(labels).toEqual({
+      Monthly: 'Monthly',
+      Quarterly: 'Quarterly',
+      SemiAnnual: 'Semi-annual',
+      Annual: 'Annual',
+      Biennial: 'Biennial',
+    })
+  })
+
   it('offer the partially refunded invoices in the status filter, under a translated label', () => {
     const option = INVOICE_STATUS_OPTIONS.find((entry) => entry.value === InvoiceStatus.PartiallyRefunded)
 

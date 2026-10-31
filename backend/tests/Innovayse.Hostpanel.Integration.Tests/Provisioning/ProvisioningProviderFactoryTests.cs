@@ -129,11 +129,16 @@ public sealed class ProvisioningProviderFactoryTests : IAsyncLifetime
     /// Every module the factory reports as supported is one it builds a provider for, so a product
     /// with no server group is never sent to a server the factory would then refuse.
     /// </summary>
-    [Fact]
-    public void SupportedModules_AreExactlyTheModulesTheFactoryBuilds()
+    /// <param name="useFakeProvider">Whether the development fake provider is on.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SupportedModules_AreExactlyTheModulesTheFactoryBuilds(bool useFakeProvider)
     {
-        var factory = BuildFactory(new StubHttpClientFactory(cwp7), new ProvisioningOptions());
+        var factory = BuildFactory(new StubHttpClientFactory(cwp7), new ProvisioningOptions { UseFakeProvider = useFakeProvider });
 
+        // A module the factory refuses throws NotSupportedException; any other failure (a builder
+        // that dislikes the stand-in credentials) still means the factory knows the module.
         var built = Enum.GetValues<ServerModule>().Where(module =>
         {
             try
@@ -145,9 +150,14 @@ public sealed class ProvisioningProviderFactoryTests : IAsyncLifetime
             {
                 return false;
             }
+            catch (InvalidOperationException)
+            {
+                return true;
+            }
         });
 
         factory.SupportedModules.Should().BeEquivalentTo(built);
+    }
 
     /// <summary>A Plesk server gets the Plesk provider, calling the XML API on the default Plesk port.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>

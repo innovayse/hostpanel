@@ -665,6 +665,12 @@ public static class HostpanelErrorCodes
     /// <summary>The service's product names no hosting package to create the account on (409).</summary>
     public const string PRODUCT_PACKAGE_MISSING = "PRODUCT_PACKAGE_MISSING";
 
+    /// <summary>
+    /// The product has no server group and the servers run more than one supported panel, so which
+    /// panel its package belongs to is ambiguous (409).
+    /// </summary>
+    public const string PRODUCT_SERVER_GROUP_REQUIRED = "PRODUCT_SERVER_GROUP_REQUIRED";
+
     // Provisioning
 
     /// <summary>

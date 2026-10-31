@@ -46,13 +46,27 @@ public sealed class ServerSelector : IServerSelector
         return Choose(servers);
     }
 
+    /// <summary>Lists which of the given modules have at least one enabled server.</summary>
+    /// <param name="modules">The modules to look for.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The modules, among <paramref name="modules"/>, that some enabled server is on.</returns>
+    public async Task<IReadOnlyCollection<ServerModule>> ModulesInUseAsync(IReadOnlyCollection<ServerModule> modules, CancellationToken ct) =>
+        await _context.Servers
+            .AsNoTracking()
+            .Where(s => !s.IsDisabled && modules.Contains(s.Module))
+            .Select(s => s.Module)
+            .Distinct()
+            .ToListAsync(ct);
+
     /// <summary>
-    /// Selects the best available server from a specific server group.
+    /// Selects the best available server from a specific server group, among its servers on any of
+    /// the given modules.
     /// </summary>
     /// <param name="groupId">The server group identifier.</param>
+    /// <param name="modules">The server modules a server may be on; a group member on any other is skipped.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>How to reach the selected server, or null if none are eligible.</returns>
-    public async Task<ServerConnectionDto?> SelectFromGroupAsync(int groupId, CancellationToken ct)
+    public async Task<ServerConnectionDto?> SelectFromGroupAsync(int groupId, IReadOnlyCollection<ServerModule> modules, CancellationToken ct)
     {
         var group = await _context.ServerGroups
             .AsNoTracking()
@@ -65,7 +79,7 @@ public sealed class ServerSelector : IServerSelector
             return null;
         }
 
-        return Choose(group.Servers);
+        return Choose(group.Servers.Where(s => modules.Contains(s.Module)));
     }
 
     /// <summary>

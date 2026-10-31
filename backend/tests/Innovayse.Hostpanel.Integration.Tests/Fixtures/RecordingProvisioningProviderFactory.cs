@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Servers.Enums;
+using Innovayse.Hostpanel.Infrastructure.Provisioning;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
@@ -14,7 +15,7 @@ public sealed class RecordingProvisioningProviderFactory(RecordingProvisioningPr
     : IProvisioningProviderFactory
 {
     /// <summary>The production factory's modules, so a test provisions onto the same servers production would.</summary>
-    public IReadOnlyCollection<ServerModule> SupportedModules { get; } = [ServerModule.Cwp7];
+    public IReadOnlyCollection<ServerModule> SupportedModules => ProvisioningProviderFactory.BuiltModules;
 
     /// <inheritdoc/>
     public IProvisioningProvider CreateFor(ServerConnectionDto server) => provider;

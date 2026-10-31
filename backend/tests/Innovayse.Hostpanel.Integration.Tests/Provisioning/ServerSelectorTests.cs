@@ -8,7 +8,8 @@ namespace Innovayse.Hostpanel.Integration.Tests.Provisioning;
 /// <summary>
 /// Tests for <see cref="IServerSelector.SelectAsync"/> over several modules, the choice a product
 /// with no server group is provisioned by. The shared database holds other tests' servers, so these
-/// use modules no other test seeds.
+/// use modules no other test seeds; each test here keeps to its own (HyperVm is never seeded, so it
+/// stands for a module with no server).
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class ServerSelectorTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
@@ -42,11 +43,48 @@ public sealed class ServerSelectorTests(IntegrationTestFactory factory) : IClass
         chosen.Should().BeNull();
     }
 
+    /// <summary>Only modules that some enabled server is on are reported as in use.</summary>
+    [Fact]
+    public async Task ModulesInUseAsync_ListsOnlyModulesWithAnEnabledServer()
+    {
+        using var scope = factory.Services.CreateScope();
+        await SeedServerAsync(scope, ServerModule.Virtualmin);
+        var selector = scope.ServiceProvider.GetRequiredService<IServerSelector>();
+
+        var inUse = await selector.ModulesInUseAsync([ServerModule.HyperVm, ServerModule.Virtualmin], CancellationToken.None);
+
+        inUse.Should().Equal(ServerModule.Virtualmin);
+    }
+
+    /// <summary>A group member on a module that was not asked for is skipped, even when it is the emptier one.</summary>
+    [Fact]
+    public async Task SelectFromGroupAsync_SkipsAMemberOnAnotherModule()
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var group = ServerGroup.Create($"grp-{Guid.NewGuid():N}", ServerFillType.LeastFull);
+        context.ServerGroups.Add(group);
+        await context.SaveChangesAsync(CancellationToken.None);
+        var supported = await SeedServerAsync(scope, ServerModule.Virtualmin, maxAccounts: 10, accounts: 9);
+        var unsupported = await SeedServerAsync(scope, ServerModule.Lukittu);
+        supported.AssignToGroup(group.Id);
+        unsupported.AssignToGroup(group.Id);
+        await context.SaveChangesAsync(CancellationToken.None);
+        var selector = scope.ServiceProvider.GetRequiredService<IServerSelector>();
+
+        var chosen = await selector.SelectFromGroupAsync(group.Id, [ServerModule.Virtualmin], CancellationToken.None);
+
+        chosen.Should().NotBeNull();
+        chosen!.Id.Should().Be(supported.Id);
+    }
+
     /// <summary>Seeds an enabled server with room on the given module.</summary>
     /// <param name="scope">The scope whose data context seeds it.</param>
     /// <param name="module">The server's module.</param>
+    /// <param name="maxAccounts">Its capacity, or null for unlimited.</param>
+    /// <param name="accounts">How many accounts it already holds, or null when never counted.</param>
     /// <returns>The saved server.</returns>
-    private static async Task<Server> SeedServerAsync(IServiceScope scope, ServerModule module)
+    private static async Task<Server> SeedServerAsync(IServiceScope scope, ServerModule module, int? maxAccounts = null, int? accounts = null)
     {
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var server = Server.Create(new ServerDetails(
@@ -58,13 +96,14 @@ public sealed class ServerSelectorTests(IntegrationTestFactory factory) : IClass
             Username: "api",
             Credentials: new ServerCredentials("secret", null, "hash"),
             UseSSL: true,
-            MaxAccounts: null,
+            MaxAccounts: maxAccounts,
             IsDefault: false,
             IsDisabled: false,
             MonthlyCost: 0m,
             Datacenter: null,
             ServerStatusAddress: null,
             NameServers: ServerNameServers.None), DateTimeOffset.UtcNow);
+        server.RecordConnectionTest(true, accounts, DateTimeOffset.UtcNow);
         context.Servers.Add(server);
         await context.SaveChangesAsync(CancellationToken.None);
         return server;

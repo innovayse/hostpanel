@@ -132,4 +132,16 @@ describe('InvoiceSummaryTab', () => {
 
     expect(wrapper.get('[data-testid="billing-invoice-summary-feedback"]').text()).toContain('Cannot cancel.')
   })
+
+  it('names the outstanding balance in the invoice currency in the mark paid prompt of an AMD invoice', async () => {
+    stubRoutes({ 'GET /api/billing/1': () => json(invoiceFixture()) })
+    const wrapper = mountWithApp(InvoiceSummaryTab, { props: { invoice: invoiceFixture({ currency: 'AMD', amounts: { ...invoiceFixture().amounts, total: 24000, credit: 0 }, amountDue: 24000 }) } })
+
+    await wrapper.get('[data-testid="billing-invoice-mark-paid"]').trigger('click')
+    await flushPromises()
+
+    const body = wrapper.get('[data-testid="dialog-body"]').text()
+    expect(body).toContain('24000.00 AMD')
+    expect(body).not.toContain('$')
+  })
 })

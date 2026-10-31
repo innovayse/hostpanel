@@ -1,0 +1,9 @@
+:root {
+  --vp-c-brand-1: #5E8EF3;
+  --vp-c-brand-2: #4a7de8;
+  --vp-c-brand-3: #3a6dd0;
+  --vp-c-brand-soft: rgba(94, 142, 243, 0.14);
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(120deg, #5E8EF3 30%, #a78bfa);
+  --vp-home-hero-image-background-image: linear-gradient(140deg, #5E8EF320 0%, #a78bfa20 100%);
+}

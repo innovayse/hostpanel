@@ -27,9 +27,12 @@ client/.vite/
 CLAUDE.md
 client/CLAUDE.md
 
-# Docs / plans -- except the brand kit, which the README and the avatars are taken from
-docs/*
-!docs/brand/
+# Docs: VitePress build output and local cache are ignored; everything else is tracked.
+# docs/superpowers/ holds local plans and specs that should never be committed.
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+docs/node_modules/
+docs/superpowers/
 
 # Playwright MCP logs
 .playwright-mcp/
@@ -65,8 +68,8 @@ admin/.env.production
 !client/public/*.jpg
 !admin/public/*.png
 !client/public/images/**
-# The brand kit: mark sizes and the GitHub / Docker Hub avatars, listed in docs/brand/README.md.
-!docs/brand/*.png
+# Screenshots committed under docs/ are tracked assets, not local dev dumps.
+!docs/**/*.png
 
 # IDEs
 .idea/

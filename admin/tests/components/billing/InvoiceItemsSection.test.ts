@@ -146,4 +146,24 @@ describe('InvoiceItemsSection', () => {
 
     expect(wrapper.get('[data-testid="billing-invoice-items-feedback"]').text()).toBe('A paid invoice cannot be changed.')
   })
+
+  it('shows the editable line total in the invoice currency and follows the typed price', async () => {
+    const wrapper = mountWithApp(InvoiceItemsSection, {
+      props: {
+        invoice: invoiceFixture({
+          currency: 'AMD',
+          items: [{ id: 11, description: 'Managed hosting', unitPrice: 24000, quantity: 2, amount: 48000, sku: null }],
+        }),
+      },
+    })
+
+    await flushPromises()
+    expect(wrapper.get('[data-testid="billing-invoice-items-editor"]').text()).toContain('48000.00 AMD')
+
+    await wrapper.get('[data-testid="billing-invoice-item-price-0"] input').setValue('1000')
+
+    const table = wrapper.get('[data-testid="billing-invoice-items-editor"]').text()
+    expect(table).toContain('2000.00 AMD')
+    expect(table).not.toContain('$')
+  })
 })

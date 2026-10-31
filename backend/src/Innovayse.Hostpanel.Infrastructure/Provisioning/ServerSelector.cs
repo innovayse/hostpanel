@@ -30,17 +30,17 @@ public sealed class ServerSelector : IServerSelector
     }
 
     /// <summary>
-    /// Selects the best available server from all servers of the given module type.
+    /// Selects the best available server from all servers on any of the given modules.
     /// </summary>
-    /// <param name="module">The server module to filter by.</param>
+    /// <param name="modules">The server modules a server may be on.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>How to reach the selected server, or null if none are eligible.</returns>
-    public async Task<ServerConnectionDto?> SelectAsync(ServerModule module, CancellationToken ct)
+    public async Task<ServerConnectionDto?> SelectAsync(IReadOnlyCollection<ServerModule> modules, CancellationToken ct)
     {
         // Ordered by name because the policy keeps the given order when two servers tie on fill and capacity.
         var servers = await _context.Servers
             .AsNoTracking()
-            .Where(s => s.Module == module)
+            .Where(s => modules.Contains(s.Module))
             .OrderBy(s => s.Name)
             .ToListAsync(ct);
         return Choose(servers);

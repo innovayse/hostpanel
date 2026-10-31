@@ -5,7 +5,6 @@ using Innovayse.Hostpanel.Application.Products.Common;
 using Innovayse.Hostpanel.Application.Products.Queries.GetProductsByIds;
 using Innovayse.Hostpanel.Domain.Provisioning;
 using Innovayse.Hostpanel.Domain.Provisioning.Enums;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -28,12 +27,6 @@ namespace Innovayse.Hostpanel.Application.Provisioning.Commands.ProvisionService
 /// </remarks>
 public sealed class ProvisionServiceHandler
 {
-    /// <summary>
-    /// The module a server is selected from when the product names no server group: the one panel
-    /// this platform ships a provisioning provider for.
-    /// </summary>
-    private const ServerModule DefaultHostingModule = ServerModule.Cwp7;
-
     /// <summary>Length, in bytes, of the random password generated for a new hosting account.</summary>
     private const int GeneratedPasswordByteLength = 12;
 
@@ -125,7 +118,9 @@ public sealed class ProvisionServiceHandler
 
         var server = product.ServerGroupId is { } groupId
             ? await _serverSelector.SelectFromGroupAsync(groupId, ct)
-            : await _serverSelector.SelectAsync(DefaultHostingModule, ct);
+            // With no group, any server a provider exists for will do; a server whose panel the
+            // factory cannot drive is never chosen, since the order would then fail at the panel.
+            : await _serverSelector.SelectAsync(_providerFactory.SupportedModules, ct);
         if (server is null)
         {
             return Result.FailureCode(HostpanelErrorCodes.NO_ELIGIBLE_SERVER);

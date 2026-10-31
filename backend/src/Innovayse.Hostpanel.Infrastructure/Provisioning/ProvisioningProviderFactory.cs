@@ -18,6 +18,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Provisioning;
 /// </summary>
 public sealed class ProvisioningProviderFactory : IProvisioningProviderFactory
 {
+    /// <summary>The modules <see cref="CreateFor"/> builds a provider for; extend it with the switch there.</summary>
+    private static readonly ServerModule[] Modules = [ServerModule.Cwp7];
+
     /// <summary>Factory for creating HTTP clients for provider API calls.</summary>
     private readonly IHttpClientFactory _httpClientFactory;
 
@@ -37,6 +40,9 @@ public sealed class ProvisioningProviderFactory : IProvisioningProviderFactory
         _loggerFactory = loggerFactory;
         _options = options;
     }
+
+    /// <inheritdoc/>
+    public IReadOnlyCollection<ServerModule> SupportedModules => Modules;
 
     /// <summary>
     /// Creates a provisioning provider configured with the credentials of the given server.

@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Servers.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
@@ -19,6 +20,9 @@ public sealed class StubProvisioningProviderFactory : IProvisioningProviderFacto
 {
     /// <summary>The single stub handed out for every server.</summary>
     private readonly StubProvisioningProvider _provider = new();
+
+    /// <summary>The production factory's modules, so a test provisions onto the same servers production would.</summary>
+    public IReadOnlyCollection<ServerModule> SupportedModules { get; } = [ServerModule.Cwp7];
 
     /// <inheritdoc/>
     public IProvisioningProvider CreateFor(ServerConnectionDto server) => _provider;

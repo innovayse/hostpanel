@@ -124,6 +124,31 @@ public sealed class ProvisioningProviderFactoryTests : IAsyncLifetime
         act.Should().Throw<NotSupportedException>();
     }
 
+    /// <summary>
+    /// Every module the factory reports as supported is one it builds a provider for, so a product
+    /// with no server group is never sent to a server the factory would then refuse.
+    /// </summary>
+    [Fact]
+    public void SupportedModules_AreExactlyTheModulesTheFactoryBuilds()
+    {
+        var factory = BuildFactory(new StubHttpClientFactory(cwp7), new ProvisioningOptions());
+
+        var built = Enum.GetValues<ServerModule>().Where(module =>
+        {
+            try
+            {
+                factory.CreateFor(ServerRow("hash", module));
+                return true;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+        });
+
+        factory.SupportedModules.Should().BeEquivalentTo(built);
+    }
+
     /// <summary>The development switch returns the in-process provider and never builds a panel client.</summary>
     [Fact]
     public void CreateFor_ReturnsTheNullProvider_WhenTheFakeProviderIsOn()

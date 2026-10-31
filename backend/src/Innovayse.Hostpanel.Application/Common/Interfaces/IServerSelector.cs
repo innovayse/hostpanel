@@ -11,12 +11,12 @@ namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 public interface IServerSelector
 {
     /// <summary>
-    /// Selects the best available server from the given module type.
+    /// Selects the best available server among those on any of the given modules.
     /// </summary>
-    /// <param name="module">The server module to filter by (e.g. a hosting panel version).</param>
+    /// <param name="modules">The server modules a server may be on, e.g. every module a provider exists for.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>How to reach the selected server, or null if no eligible server is available.</returns>
-    Task<ServerConnectionDto?> SelectAsync(ServerModule module, CancellationToken ct);
+    Task<ServerConnectionDto?> SelectAsync(IReadOnlyCollection<ServerModule> modules, CancellationToken ct);
 
     /// <summary>
     /// Selects the best available server from a specific server group.

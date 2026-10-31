@@ -3,7 +3,7 @@
     <UiHeading :level="3" size="subsection" class="!text-sm mb-3">{{ $t('client.services.whatToday') }}</UiHeading>
     <UiStack gap="xs" align="start">
       <UiButton
-        v-if="hasServer && isActive && store.mayDo(Permission.AllowSingleSignOn)"
+        v-if="canSignIn"
         variant="ghost"
         size="sm"
         :loading="ssoLoading"
@@ -45,21 +45,25 @@
 import { ChevronRight } from 'lucide-vue-next'
 import { Permission } from '~/composables/usePermissions'
 import { useClientStore } from '~/stores/client'
+import type { ClientService } from '~/types/clientservice'
+import { canSignInToControlPanel } from '~/utils/controlPanelSignIn'
 
 /** The client store, which knows what the signed-in person may do. */
 const store = useClientStore()
 
 /** Props of ServiceQuickActions. */
 interface Props {
-  /** Whether the service sits on a known server (the control-panel shortcut needs one). */
-  hasServer: boolean
-  /** Whether the service is active; the portal offers a client the panel sign-in on an active service only. */
-  isActive: boolean
+  /** The service the shortcuts act on; the panel sign-in needs it active and on a known server. */
+  service: ClientService
   /** Whether the control-panel sign-in is in flight. */
   ssoLoading: boolean
 }
 
-defineProps<Props>()
+/** The props of the component. */
+const props = defineProps<Props>()
+
+/** Whether the control-panel shortcut is offered: an active service on a known server, to a person allowed single sign-on. */
+const canSignIn = computed(() => canSignInToControlPanel(props.service, store.mayDo(Permission.AllowSingleSignOn)))
 
 /** Events the component raises. */
 const emit = defineEmits<{

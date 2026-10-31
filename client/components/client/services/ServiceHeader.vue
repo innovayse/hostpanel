@@ -34,7 +34,7 @@ import { Monitor, Server } from 'lucide-vue-next'
 import type { ClientService } from '~/types/clientservice'
 import { Permission } from '~/composables/usePermissions'
 import { useClientStore } from '~/stores/client'
-import { ServiceStatus } from '~/types/servicestatus'
+import { canSignInToControlPanel } from '~/utils/controlPanelSignIn'
 
 /** Props of ServiceHeader. */
 interface Props {
@@ -57,8 +57,5 @@ const emit = defineEmits<{
 const store = useClientStore()
 
 /** Whether the control-panel button is offered: an active service on a known server, to a person allowed single sign-on. */
-const canLogin = computed(() =>
-  Boolean(props.service.server)
-  && props.service.status === ServiceStatus.Active
-  && store.mayDo(Permission.AllowSingleSignOn))
+const canLogin = computed(() => canSignInToControlPanel(props.service, store.mayDo(Permission.AllowSingleSignOn)))
 </script>

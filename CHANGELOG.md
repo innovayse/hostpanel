@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Quarterly, semi-annual and biennial billing cycles beside monthly and annual: product prices per cycle in the admin form and list, the cycle choice on the storefront plan pages and at checkout, and renewal periods of 3, 6 and 24 months. Existing monthly and annual services, orders and plugin contracts are unchanged (#478).
 - Client portal SSH keys: a "Deploy automatically from GitHub or GitLab" guide with a ready GitHub Actions workflow and GitLab CI job, filled in with the account's host, port and username (en, ru, hy).
 - SSH key agent 1.2.0: optional jailed SSH enrolment (`jail_enrol`). The first key HostPanel adds jails the account (jailkit tree, home bind-mounted by a systemd unit, `sftp-ssh` group, bash) and removing the last managed key withdraws it; off by default.
 - `PanelNetwork:HostAddresses` (`PANEL_HOST_ADDRESSES`): reach a control panel's API over a VPN address while requests and TLS keep its hostname, so customer links and certificate checks are unchanged.

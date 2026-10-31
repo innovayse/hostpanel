@@ -107,7 +107,7 @@ public sealed class ProductPriceTests
         p.SetPrice("USD", BillingCycle.Annual, 30m);
         p.SetPrice("EUR", BillingCycle.Monthly, 2m);
 
-        p.ReplacePrices([new ProductCurrencyPrices("usd", 4m, null)], replaceAllCurrencies: true);
+        p.ReplacePrices([new ProductCurrencyPrices("usd", 4m, null, null, null, null)], replaceAllCurrencies: true);
 
         Assert.Equal(4m, p.PriceFor("USD", BillingCycle.Monthly));
         Assert.Null(p.PriceFor("USD", BillingCycle.Annual));
@@ -122,10 +122,77 @@ public sealed class ProductPriceTests
         p.SetPrice("USD", BillingCycle.Monthly, 3m);
         p.SetPrice("EUR", BillingCycle.Monthly, 2m);
 
-        p.ReplacePrices([new ProductCurrencyPrices("USD", 5m, 50m)], replaceAllCurrencies: false);
+        p.ReplacePrices([new ProductCurrencyPrices("USD", 5m, 50m, null, null, null)], replaceAllCurrencies: false);
 
         Assert.Equal(5m, p.PriceFor("USD", BillingCycle.Monthly));
         Assert.Equal(50m, p.PriceFor("USD", BillingCycle.Annual));
         Assert.Equal(2m, p.PriceFor("EUR", BillingCycle.Monthly));
+    }
+
+    /// <summary>A price can be set and read back for each of the five cycles, independently.</summary>
+    /// <param name="cycle">The billing cycle.</param>
+    [Theory]
+    [InlineData(BillingCycle.Monthly)]
+    [InlineData(BillingCycle.Annual)]
+    [InlineData(BillingCycle.Quarterly)]
+    [InlineData(BillingCycle.SemiAnnual)]
+    [InlineData(BillingCycle.Biennial)]
+    public void SetPrice_EachCycle_IsReadBackForThatCycleOnly(BillingCycle cycle)
+    {
+        var p = NewProduct();
+        p.SetPrice("EUR", cycle, 7m);
+
+        Assert.Equal(7m, p.PriceFor("EUR", cycle));
+        Assert.Equal(1, p.Prices.Count(price => price.CurrencyCode == "EUR"));
+    }
+
+    /// <summary>Replacing prices writes all five cycles and drops a cycle left null.</summary>
+    [Fact]
+    public void ReplacePrices_AllFiveCycles_WritesEachAndDropsNull()
+    {
+        var p = NewProduct();
+        p.SetPrice("USD", BillingCycle.Quarterly, 99m);
+
+        p.ReplacePrices([new ProductCurrencyPrices("USD", 1m, 12m, null, 6m, 22m)], replaceAllCurrencies: false);
+
+        Assert.Equal(1m, p.PriceFor("USD", BillingCycle.Monthly));
+        Assert.Equal(12m, p.PriceFor("USD", BillingCycle.Annual));
+        Assert.Null(p.PriceFor("USD", BillingCycle.Quarterly));
+        Assert.Equal(6m, p.PriceFor("USD", BillingCycle.SemiAnnual));
+        Assert.Equal(22m, p.PriceFor("USD", BillingCycle.Biennial));
+    }
+
+    /// <summary>A product that only has the two original cycles lists exactly those, and the new cycles stay unpriced.</summary>
+    [Fact]
+    public void Priced_OnlyOriginalCycles_ListsThemAndLeavesTheNewOnesOut()
+    {
+        var prices = new ProductCurrencyPrices("USD", 3m, 30m, null, null, null);
+
+        Assert.Equal([(BillingCycle.Monthly, 3m), (BillingCycle.Annual, 30m)], prices.Priced());
+    }
+
+    /// <summary>The factory asks for every cycle, so none can be forgotten.</summary>
+    [Fact]
+    public void Of_AsksForEveryCycle()
+    {
+        var asked = new List<BillingCycle>();
+
+        var prices = ProductCurrencyPrices.Of("USD", cycle =>
+        {
+            asked.Add(cycle);
+            return (decimal)(int)cycle + 1;
+        });
+
+        Assert.Equal(Enum.GetValues<BillingCycle>().OrderBy(c => c), asked.OrderBy(c => c));
+        Assert.Equal(new ProductCurrencyPrices("USD", 1m, 2m, 3m, 4m, 5m), prices);
+    }
+
+    /// <summary>A negative amount is refused for a new cycle as for the old ones.</summary>
+    [Fact]
+    public void SetPrice_NegativeAmountForNewCycle_Throws()
+    {
+        var p = NewProduct();
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => p.SetPrice("USD", BillingCycle.Biennial, -1m));
     }
 }

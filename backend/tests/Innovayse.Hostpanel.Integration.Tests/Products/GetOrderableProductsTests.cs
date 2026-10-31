@@ -44,6 +44,41 @@ public sealed class GetOrderableProductsTests(IntegrationTestFactory factory) : 
         orderable.Price.CurrencyCode.Should().Be("AMD");
         orderable.Price.Monthly.Should().Be(4000m);
         orderable.Price.Annual.Should().BeNull("the product has no annual price in AMD");
+        orderable.Price.Quarterly.Should().BeNull("a cycle that was never priced stays unsold");
+        orderable.Price.SemiAnnual.Should().BeNull("a cycle that was never priced stays unsold");
+        orderable.Price.Biennial.Should().BeNull("a cycle that was never priced stays unsold");
+    }
+
+    /// <summary>A product priced for the three newer cycles comes back with each amount under its own cycle.</summary>
+    [Fact]
+    public async Task HandleAsync_ProductPricedForTheNewCycles_ReturnsEachAmountUnderItsCycleAsync()
+    {
+        Product product;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            var group = ProductGroup.Create($"orderable-cycles-{Guid.NewGuid():N}", null);
+            context.ProductGroups.Add(group);
+            await context.SaveChangesAsync(CancellationToken.None);
+
+            product = Product.Create(group.Id, "Cycle Hosting", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+            product.SetPrice("USD", BillingCycle.Monthly, 3m);
+            product.SetPrice("USD", BillingCycle.Quarterly, 8m);
+            product.SetPrice("USD", BillingCycle.SemiAnnual, 15m);
+            product.SetPrice("USD", BillingCycle.Biennial, 60m);
+            context.Products.Add(product);
+            await context.SaveChangesAsync(CancellationToken.None);
+        }
+
+        var result = await InvokeAsync(new GetOrderableProductsQuery([product.Id], "USD"));
+
+        var price = result.Value!.Should().ContainSingle().Subject.Price;
+        price.Monthly.Should().Be(3m);
+        price.Annual.Should().BeNull();
+        price.Quarterly.Should().Be(8m);
+        price.SemiAnnual.Should().Be(15m);
+        price.Biennial.Should().Be(60m);
+        price.For(BillingCycle.Biennial).Should().Be(60m);
     }
 
     /// <summary>No ids answer an empty list.</summary>

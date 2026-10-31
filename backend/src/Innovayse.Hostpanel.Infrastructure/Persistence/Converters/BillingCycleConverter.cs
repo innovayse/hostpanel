@@ -11,8 +11,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Persistence.Converters;
 /// <remarks>
 /// Rows written before the cycle was an enum hold "monthly", "annual" or "annually" in any casing.
 /// They all read back as the matching member; the data step of the release rewrites them to the
-/// member name, which is also what every new row gets. A text that names no cycle is a data fault and fails the read loudly: guessing a
-/// cycle would bill the client for the wrong amount of time.
+/// member name, which is also what every new row gets. The members added since (quarterly, semi-annual
+/// and biennial) are stored and read by their name too. A text that names no cycle is a data fault and
+/// fails the read loudly: guessing a cycle would bill the client for the wrong amount of time.
 /// </remarks>
 public sealed class BillingCycleConverter : ValueConverter<BillingCycle, string>
 {

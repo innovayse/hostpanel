@@ -5,6 +5,7 @@
       :plan="currentPlan"
       :summary="planSummary"
       :price="planPrice"
+      :period="planPeriod"
       :in-cart="inCart"
       @order="addToCart"
     />
@@ -115,6 +116,16 @@ const planPrice = computed(() => {
   const plan = currentPlan.value
   const amount = plan ? (cycleAmount(plan.pricing, selectedCycle.value) ?? cycleAmount(plan.pricing, PricingCycle.Monthly)) : null
   return amount === null ? t('hosting.custom') : formatMoney(amount, payerCurrency.value)
+})
+
+/**
+ * The unit the headline price is per. It follows the cycle the price is of: the selected one when the
+ * plan is priced for it, the monthly one when the headline fell back to that.
+ */
+const planPeriod = computed(() => {
+  const plan = currentPlan.value
+  const cycle = plan && cycleAmount(plan.pricing, selectedCycle.value) !== null ? selectedCycle.value : PricingCycle.Monthly
+  return t(`products.pricing.period.${PRICING_CYCLE_I18N_KEY[cycle]}`)
 })
 
 /** Whether the current plan is free (zero monthly price, as in the catalogue store). */

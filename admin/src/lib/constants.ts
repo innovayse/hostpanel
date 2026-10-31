@@ -105,7 +105,10 @@ export const DNS_RECORD_TYPE_OPTIONS: SelectOption[] = [
 /** Billing cycle options for service dropdowns. */
 export const BILLING_CYCLE_OPTIONS: SelectOption[] = [
   { value: BillingCycle.Monthly, get label() { return translate('settings.productForm.monthly') } },
+  { value: BillingCycle.Quarterly, get label() { return translate('settings.productForm.quarterly') } },
+  { value: BillingCycle.SemiAnnual, get label() { return translate('settings.productForm.semiAnnual') } },
   { value: BillingCycle.Annual, get label() { return translate('settings.productForm.annual') } },
+  { value: BillingCycle.Biennial, get label() { return translate('settings.productForm.biennial') } },
 ]
 
 /** Billable item type options: a one time charge or a recurring one. */

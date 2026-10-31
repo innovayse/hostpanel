@@ -39,7 +39,8 @@ public sealed record ResolvedPrices(
 
     /// <summary>Gets the list in the shape <see cref="Product.ReplacePrices"/> takes.</summary>
     public IReadOnlyCollection<ProductCurrencyPrices> CurrencyPrices =>
-        Prices.Select(p => new ProductCurrencyPrices(p.CurrencyCode, p.Monthly, p.Annual)).ToList();
+        Prices.Select(p => new ProductCurrencyPrices(
+            p.CurrencyCode, p.Monthly, p.Annual, p.Quarterly, p.SemiAnnual, p.Biennial)).ToList();
 
     /// <summary>Gets the list entry for the base currency, if the admin priced it.</summary>
     private ProductPriceDto? BaseEntry =>

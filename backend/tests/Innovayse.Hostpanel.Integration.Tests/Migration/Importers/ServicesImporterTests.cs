@@ -167,15 +167,40 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A record naming a cycle this version cannot bill is skipped, not stored on a guessed cycle.</summary>
-    [Fact]
-    public async Task RunAsync_Services_SkipsARecordWithAnUnsupportedBillingCycleAsync()
+    /// <param name="cycleWord">The cycle word the source sends.</param>
+    [Theory]
+    [InlineData("Triennially")]
+    [InlineData("One Time")]
+    public async Task RunAsync_Services_SkipsARecordWithAnUnsupportedBillingCycleAsync(string cycleWord)
     {
         var tag = Guid.NewGuid().ToString("N")[..12];
         var services = await ImportRecordAsync(
-            tag, $$"""{"ClientEmail":"{email}","ProductName":"{product}","BillingCycle":"Quarterly","Status":"Active","Domain":null,"Username":"u{{tag}}","NextDueDate":null,"TerminatedAt":null,"SubscriptionId":null,"AdminNotes":null,"RecurringAmount":9.99,"FirstPaymentAmount":9.99,"PaymentMethod":null,"RegisteredAt":null}""",
+            tag, $$"""{"ClientEmail":"{email}","ProductName":"{product}","BillingCycle":"{{cycleWord}}","Status":"Active","Domain":null,"Username":"u{{tag}}","NextDueDate":null,"TerminatedAt":null,"SubscriptionId":null,"AdminNotes":null,"RecurringAmount":9.99,"FirstPaymentAmount":9.99,"PaymentMethod":null,"RegisteredAt":null}""",
             runs: 1);
 
         Assert.Empty(services);
+    }
+
+    /// <summary>
+    /// A service on a quarterly, semi-annual or biennial cycle comes in on that cycle, whichever way the source
+    /// panel spells the word, instead of being skipped.
+    /// </summary>
+    /// <param name="cycleWord">The cycle word the source sends.</param>
+    /// <param name="expected">The cycle the imported service must hold.</param>
+    [Theory]
+    [InlineData("Quarterly", BillingCycle.Quarterly)]
+    [InlineData("Semi-Annually", BillingCycle.SemiAnnual)]
+    [InlineData("SemiAnnual", BillingCycle.SemiAnnual)]
+    [InlineData("Biennially", BillingCycle.Biennial)]
+    [InlineData("Biennial", BillingCycle.Biennial)]
+    public async Task RunAsync_Services_ImportsTheNewCyclesAsync(string cycleWord, BillingCycle expected)
+    {
+        var tag = Guid.NewGuid().ToString("N")[..12];
+        var services = await ImportRecordAsync(
+            tag, $$"""{"ClientEmail":"{email}","ProductName":"{product}","BillingCycle":"{{cycleWord}}","Status":"Active","Domain":null,"Username":"u{{tag}}","NextDueDate":null,"TerminatedAt":null,"SubscriptionId":null,"AdminNotes":null,"RecurringAmount":9.99,"FirstPaymentAmount":9.99,"PaymentMethod":null,"RegisteredAt":null}""",
+            runs: 1);
+
+        Assert.Equal(expected, Assert.Single(services).BillingCycle);
     }
 
     /// <summary>The source's "Annually" spelling is imported as the annual cycle.</summary>

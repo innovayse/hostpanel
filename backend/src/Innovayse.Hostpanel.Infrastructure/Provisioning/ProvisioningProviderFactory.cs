@@ -2,6 +2,8 @@ using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel;
+using Innovayse.Hostpanel.Infrastructure.Integrations.Plesk;
+using Innovayse.Hostpanel.Infrastructure.Integrations.Plesk.Models;
 using Innovayse.Hostpanel.Infrastructure.Provisioning.Settings;
 using Innovayse.Hostpanel.Infrastructure.Resilience;
 using Innovayse.Providers.CWP7;
@@ -61,8 +63,33 @@ public sealed class ProvisioningProviderFactory : IProvisioningProviderFactory
         return server.Module switch
         {
             ServerModule.Cwp7 => CreateCwp7Provider(server),
-            _ => throw new NotSupportedException($"No provisioning provider for module '{server.Module}'. Only CWP7 is currently supported via the factory."),
+            ServerModule.Plesk => CreatePleskProvider(server),
+            _ => throw new NotSupportedException($"No provisioning provider for module '{server.Module}'. Only CWP7 and Plesk are currently supported via the factory."),
         };
+    }
+
+    /// <summary>Creates a Plesk provider for the given server.</summary>
+    /// <param name="server">The Plesk server; its access hash holds the Plesk API key.</param>
+    /// <returns>A configured <see cref="PleskProvisioningProvider"/>.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the server has no usable API key: null, empty or whitespace.
+    /// </exception>
+    private PleskProvisioningProvider CreatePleskProvider(ServerConnectionDto server)
+    {
+        var apiKey = server.AccessHash;
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            throw new InvalidOperationException($"Server '{server.Name}' (id={server.Id}) has no access hash configured.");
+        }
+
+        var connection = new PleskConnection(HostingPanelAddress.BaseUrl(server.Hostname, _options.Value.PleskPort), apiKey);
+        var client = new PleskApiClient(
+            _httpClientFactory.CreateClient(HttpClientNames.Plesk),
+            _loggerFactory.CreateLogger<PleskApiClient>());
+
+        return new PleskProvisioningProvider(
+            connection, server.IpAddress, client,
+            _loggerFactory.CreateLogger<PleskProvisioningProvider>());
     }
 
     /// <summary>

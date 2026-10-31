@@ -19,9 +19,12 @@ withDefaults(defineProps<{
   activeKey?: string
   /** Prefix of each entry's `data-testid` (`<prefix>-<key>`). */
   testid?: string
+  /** Accessible name of the navigation, for a screen that has more than one. */
+  ariaLabel?: string
 }>(), {
   activeKey: undefined,
   testid: 'sidebar',
+  ariaLabel: undefined,
 })
 
 /** Whether the sidebar is expanded. */
@@ -37,7 +40,7 @@ const expanded = ref(false)
     @focusin="expanded = true"
     @focusout="expanded = false"
   >
-    <nav class="flex flex-col gap-0.5 pt-2 pb-4">
+    <nav :aria-label="ariaLabel" class="flex flex-col gap-0.5 pt-2 pb-4">
       <RouterLink
         v-for="item in items"
         :key="item.key"

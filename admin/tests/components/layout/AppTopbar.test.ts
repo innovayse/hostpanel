@@ -52,21 +52,31 @@ describe('AppTopbar', () => {
     expect(wrapper.get('[data-testid="notifications-drawer"]').text()).toContain('example.com expires')
   })
 
-  it('overlays the count on the bell, names it with the count and caps it at 9+', async () => {
+  it('hangs the count off the bell corner, names the button with the count and caps it at 9+', async () => {
     const many = Array.from({ length: 12 }, (_, i) => ({ type: 'ClientRegistered', message: `Client ${i}`, occurredAt: '2026-10-14T08:00:00Z', entityId: i }))
     const wrapper = await mountBar('/dashboard', many)
 
     const badge = wrapper.get('[data-testid="topbar-notification-count"]')
     expect(badge.text()).toBe('9+')
-    expect(badge.classes()).toContain('absolute')
+    expect(badge.classes()).toEqual(expect.arrayContaining(['absolute', '-right-2', '-top-2']))
     expect(badge.element.parentElement?.classList.contains('relative')).toBe(true)
     expect(wrapper.get('[data-testid="topbar-notifications"]').attributes('aria-label')).toBe('Notifications, 12 new')
+  })
+
+  it('draws a dot instead of the number on a phone, for as long as there is something new', async () => {
+    const wrapper = await mountBar('/dashboard')
+
+    const dot = wrapper.get('[data-testid="topbar-notification-dot"]')
+    expect(dot.attributes('aria-hidden')).toBe('true')
+    expect(dot.classes()).toEqual(expect.arrayContaining(['absolute', 'rounded-full', 'sm:hidden']))
+    expect(wrapper.get('[data-testid="topbar-notification-count"]').classes()).toEqual(expect.arrayContaining(['hidden', 'sm:flex']))
   })
 
   it('shows the empty message for an empty feed and hides the badge', async () => {
     const wrapper = await mountBar('/dashboard', [])
 
     expect(wrapper.find('[data-testid="topbar-notification-count"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="topbar-notification-dot"]').exists()).toBe(false)
     await wrapper.get('[data-testid="topbar-notifications"]').trigger('click')
     await flushPromises()
 

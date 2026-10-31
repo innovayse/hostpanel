@@ -1,13 +1,18 @@
 <script setup lang="ts">
 /**
- * Collapsible inner sidebar for client detail sub-pages.
- * Shows icons only by default and expands to show labels on hover (the kit's `UiSidebar`).
+ * Section navigation of the client detail pages.
+ *
+ * From the medium breakpoint up it is the collapsible icon rail (the kit's `UiSidebar`: icons only,
+ * captions on hover). Below it the rail would take a column of a phone's width, so the same entries
+ * are a horizontal, scrollable tab strip (the kit's `UiTabs`) that the layout puts above the content.
  */
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import UiSidebar from '@/components/ui/UiSidebar.vue'
+import UiTabs from '@/components/ui/UiTabs.vue'
 import type { UiSidebarItem } from '@/utils/ui/sidebar'
+import type { UiTabItem } from '@/utils/ui/tabs'
 import { ClientSection, clientSectionPath } from '@/lib/routes'
 
 const { t } = useI18n()
@@ -20,6 +25,9 @@ const props = defineProps<{
 
 /** Current route, used to mark the active entry. */
 const route = useRoute()
+
+/** Router, used to open the section a tab names. */
+const router = useRouter()
 
 /** Keys of the sidebar entries; also the suffix of each entry's `data-testid`. */
 const ClientNavKey = {
@@ -108,8 +116,55 @@ const activeKey = computed<string | undefined>(() => {
   const active = navItems.value.find(item => route.path.startsWith(String(item.to)))
   return active?.key
 })
+
+/** The same entries as tabs for the strip shown on small screens. */
+const tabItems = computed<UiTabItem[]>(() =>
+  navItems.value.map(item => ({ value: item.key, label: item.label, testid: `client-tab-${item.key}` })),
+)
+
+/** The tab strip; its element is searched for the selected tab so the strip can bring it into view. */
+const strip = ref<{ $el: HTMLElement } | null>(null)
+
+/**
+ * Scrolls the strip so the selected tab is visible: a section far to the right is out of sight on load and
+ * after a route change otherwise. Only the strip scrolls (`inline`), never the page (`block: 'nearest'`).
+ *
+ * @returns Resolves once the strip has been updated and scrolled.
+ */
+const revealActiveTab = async (): Promise<void> => {
+  await nextTick()
+  const tab = strip.value?.$el.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')
+  tab?.scrollIntoView?.({ inline: 'center', block: 'nearest' })
+}
+
+onMounted(revealActiveTab)
+watch(activeKey, revealActiveTab)
+
+/**
+ * Opens the section of the tab the visitor picked.
+ *
+ * @param key - Key of the picked entry.
+ * @returns Resolves when the navigation is over.
+ */
+const openSection = async (key: string): Promise<void> => {
+  const target = navItems.value.find(item => item.key === key)
+  if (target) {
+    await router.push(String(target.to))
+  }
+}
 </script>
 
 <template>
-  <UiSidebar :items="navItems" :active-key="activeKey" testid="client-nav" />
+  <UiTabs
+    ref="strip"
+    class="min-w-0 md:hidden"
+    :items="tabItems"
+    :model-value="activeKey ?? ''"
+    :aria-label="t('clients.clientNav.strip')"
+    data-testid="client-nav-strip"
+    @update:model-value="openSection"
+  />
+  <div class="hidden shrink-0 md:flex" data-testid="client-nav-rail">
+    <UiSidebar :items="navItems" :active-key="activeKey" :aria-label="t('clients.clientNav.rail')" testid="client-nav" />
+  </div>
 </template>

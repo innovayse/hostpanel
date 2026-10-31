@@ -472,15 +472,15 @@ onMounted(() => {
               <UiStack v-for="row in invoiceRows" :key="row.label" direction="row" :justify="UiJustify.Between" gap="sm">
                 <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ row.label }}</UiText>
                 <UiStack direction="row" gap="md">
-                  <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md">{{ row.count }}</UiText>
-                  <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ formatPlainAmount(row.total, billingCurrency) }}</UiText>
+                  <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md" class="w-6 text-right tabular-nums" data-testid="client-summary-billing-count">{{ row.count }}</UiText>
+                  <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md" class="min-w-[5.5rem] text-right tabular-nums" data-testid="client-summary-billing-amount">{{ formatPlainAmount(row.total, billingCurrency) }}</UiText>
                 </UiStack>
               </UiStack>
             </UiStack>
             <UiStack gap="sm">
               <UiStack v-for="row in incomeRows" :key="row.label" direction="row" :justify="UiJustify.Between" gap="sm">
                 <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ row.label }}</UiText>
-                <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ row.value }}</UiText>
+                <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md" class="min-w-[5.5rem] text-right tabular-nums">{{ row.value }}</UiText>
               </UiStack>
             </UiStack>
             <UiStack direction="row" wrap>
@@ -585,7 +585,7 @@ onMounted(() => {
             {{ t('clients.clientSummary.viewAll') }}
           </UiLink>
         </UiStack>
-        <UiCard>
+        <UiCard class="overflow-x-auto">
           <UiTable
             density="comfortable"
             :empty="summaryStore.services.length === 0"
@@ -647,7 +647,7 @@ onMounted(() => {
             {{ t('clients.clientSummary.viewAll') }}
           </UiLink>
         </UiStack>
-        <UiCard>
+        <UiCard class="overflow-x-auto">
           <UiTable
             density="comfortable"
             :empty="summaryStore.domains.length === 0"
@@ -711,7 +711,7 @@ onMounted(() => {
             {{ t('clients.clientSummary.viewAll') }}
           </UiLink>
         </UiStack>
-        <UiCard>
+        <UiCard class="overflow-x-auto">
           <UiTable
             density="comfortable"
             :empty="summaryStore.quotes.length === 0"

@@ -21,7 +21,7 @@ import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UiAlignItems } from '@/utils/ui/layout'
+import { UiAlignItems, UiDirection } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
@@ -91,27 +91,35 @@ onMounted(() => {
     </UiAlert>
 
     <template v-else-if="store.current">
-      <UiStack direction="row" :align="UiAlignItems.Center" data-testid="client-layout-header">
-        <UiIconButton :label="t('shared.back')" data-testid="client-layout-back" @click="goBack">
-          <UiIcon :markup="BACK_ICON" />
-        </UiIconButton>
-        <UiBadge :tone="UiTone.Primary">
-          {{ store.current.firstName.charAt(0) }}{{ store.current.lastName.charAt(0) }}
-        </UiBadge>
-        <UiStack gap="xs" class="flex-1">
-          <UiHeading :level="1" variant="section" data-testid="client-header-name">
-            {{ store.current.firstName }} {{ store.current.lastName }}
-          </UiHeading>
-          <UiStack direction="row" :align="UiAlignItems.Center" gap="sm">
-            <UiBadge :tone="clientStatusTone(store.current.status)" small>{{ store.current.status }}</UiBadge>
-            <UiText v-if="store.current.companyName" :tone="UiTextTone.Secondary" :size="UiTextSize.Sm">
-              {{ store.current.companyName }}
-            </UiText>
+      <!--
+        From md up: back, initials, the name block (name over status) and export in one row. On a phone the
+        first three stay in a line, the name block reading as a line itself (the name with the status badge right
+        after it, wrapping if the name is long), and export drops to a row of its own at the end.
+      -->
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" gap="md" reflow-below-md data-testid="client-layout-header">
+        <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" gap="md" class="min-w-0 flex-1">
+          <UiIconButton :label="t('shared.back')" data-testid="client-layout-back" @click="goBack">
+            <UiIcon :markup="BACK_ICON" />
+          </UiIconButton>
+          <UiBadge :tone="UiTone.Primary">
+            {{ store.current.firstName.charAt(0) }}{{ store.current.lastName.charAt(0) }}
+          </UiBadge>
+          <UiStack gap="xs" reflow-below-md class="min-w-0 flex-1">
+            <UiHeading :level="1" variant="section" class="min-w-0 break-words" data-testid="client-header-name">
+              {{ store.current.firstName }} {{ store.current.lastName }}
+            </UiHeading>
+            <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" gap="sm">
+              <UiBadge :tone="clientStatusTone(store.current.status)" small>{{ store.current.status }}</UiBadge>
+              <UiText v-if="store.current.companyName" :tone="UiTextTone.Secondary" :size="UiTextSize.Sm">
+                {{ store.current.companyName }}
+              </UiText>
+            </UiStack>
           </UiStack>
         </UiStack>
         <UiButton
           :variant="UiButtonVariant.Secondary"
           :size="UiSize.Sm"
+          class="self-end md:self-auto"
           data-testid="client-layout-export"
           @click="showExportModal = true"
         >
@@ -127,9 +135,10 @@ onMounted(() => {
         @close="showExportModal = false"
       />
 
-      <UiStack direction="row" gap="none" class="flex-1 min-h-0">
+      <!-- A column on phones, where the section tabs are a strip above the content; a row from md up, where they are the icon rail. -->
+      <UiStack :direction="UiDirection.Row" gap="none" reflow-below-md class="flex-1 min-h-0">
         <ClientInnerSidebar :client-id="String(route.params.id)" />
-        <UiStack gap="none" class="flex-1 min-w-0 overflow-y-auto">
+        <UiStack gap="none" class="flex-1 min-w-0 overflow-y-auto md:pl-6">
           <RoutedView />
         </UiStack>
       </UiStack>

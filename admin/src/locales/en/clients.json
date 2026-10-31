@@ -253,6 +253,10 @@
     "bulkActionDone": "Done for the selected invoices.",
     "invoiceDeleted": "Invoice deleted."
   },
+  "clientNav": {
+    "rail": "Client sections",
+    "strip": "Client section tabs"
+  },
   "clientLayout": {
     "loadingClient": "Loading client…",
     "exportData": "Export Data"

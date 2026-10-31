@@ -13,6 +13,7 @@ import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { CurrencyCode } from '@/types/currency'
 import type { ClientSummaryData } from '@/types/client'
+import type { InvoiceStatusCount } from '@/types/invoice'
 import type { ClientExternalAccount } from '@/types/clientexternalaccount'
 
 /**
@@ -47,21 +48,26 @@ const client = (externalAccount: ClientExternalAccount | null = null, currency: 
   })
 
 /** No invoices of a status: the count and the sum. */
-const none = { count: 0, total: 0 }
+const none: InvoiceStatusCount = { count: 0, totals: [] }
 
 /** The summary figures of client 7 as `GET /api/clients/7/summary` returns them. */
 const summary: ClientSummaryData = {
   invoices: {
     draft: none,
     unpaid: none,
-    paid: { count: 2, total: 40 },
+    paid: { count: 2, totals: [{ amount: 40, currency: 'USD' }] },
     overdue: none,
     cancelled: none,
     refunded: none,
-    partiallyRefunded: { count: 1, total: 15 },
+    partiallyRefunded: { count: 1, totals: [{ amount: 15, currency: 'USD' }] },
   },
-  transactions: { grossRevenue: 40, clientExpenses: 0, totalFees: 0, netIncome: 40 },
-  creditBalance: 0,
+  transactions: {
+    grossRevenue: [{ amount: 40, currency: 'USD' }],
+    clientExpenses: [],
+    totalFees: [],
+    netIncome: [{ amount: 40, currency: 'USD' }],
+  },
+  creditBalance: { amount: 0, currency: 'USD' },
   counts: {
     activeServicesCount: 1,
     totalServicesCount: 1,
@@ -273,21 +279,68 @@ describe('ClientSummaryView', () => {
     expect(wrapper.get('[data-testid="client-external-account-status"]').text()).toBe('External account link cleared.')
   })
 
-  it('prints the credit, invoice and income figures in the billing currency of the client', async () => {
+  it('prints each figure in the currency the summary names for it, never in an assumed one', async () => {
     stubRoutes({
       ...summaryRoutes(
         () => new Response(null, { status: 204 }),
         undefined,
         () => client(null, CurrencyCode.Amd),
       ),
-      'GET /api/clients/7/summary': () => json({ ...summary, creditBalance: 5000 }),
+      'GET /api/clients/7/summary': () => json({ ...summary, creditBalance: { amount: 5000, currency: 'AMD' } }),
     })
     const wrapper = await mountSummary()
 
     const billing = wrapper.get('[data-testid="client-summary-billing"]').text()
     expect(billing).toContain('5000.00 AMD')
-    expect(billing).toContain('40.00 AMD')
+    expect(billing).toContain('40.00 USD')
+    expect(billing).not.toContain('40.00 AMD')
     expect(billing).not.toContain('$')
+  })
+
+  it('prints one amount per currency when the client has records in several', async () => {
+    const mixed: ClientSummaryData = {
+      ...summary,
+      invoices: {
+        ...summary.invoices,
+        paid: {
+          count: 3,
+          totals: [
+            { amount: 20000, currency: 'AMD' },
+            { amount: 50, currency: 'USD' },
+          ],
+        },
+      },
+      transactions: {
+        grossRevenue: [
+          { amount: 20000, currency: 'AMD' },
+          { amount: 50, currency: 'USD' },
+        ],
+        clientExpenses: [],
+        totalFees: [],
+        netIncome: [
+          { amount: 19000, currency: 'AMD' },
+          { amount: 50, currency: 'USD' },
+        ],
+      },
+    }
+    stubRoutes({
+      ...summaryRoutes(() => new Response(null, { status: 204 }), undefined, () => client(null, CurrencyCode.Amd)),
+      'GET /api/clients/7/summary': () => json(mixed),
+    })
+    const wrapper = await mountSummary()
+
+    const billing = wrapper.get('[data-testid="client-summary-billing"]').text()
+    expect(billing).toContain('20000.00 AMD')
+    expect(billing).toContain('50.00 USD')
+    expect(billing).toContain('19000.00 AMD')
+    expect(billing).not.toContain('20050')
+  })
+
+  it('prints a zero in the billing currency for a figure without records', async () => {
+    stubRoutes(summaryRoutes(() => new Response(null, { status: 204 }), undefined, () => client(null, CurrencyCode.Amd)))
+    const wrapper = await mountSummary()
+
+    expect(wrapper.get('[data-testid="client-summary-billing"]').text()).toMatch(/Client Expenses\s*0\.00 AMD/)
   })
 
   it('prints a quote total in the currency of the quote', async () => {

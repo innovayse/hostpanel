@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 
@@ -22,9 +23,9 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
         var body = await admin.GetFromJsonAsync<JsonElement>($"/api/clients/{clientId}/summary");
 
         body.GetProperty("invoices").GetProperty("unpaid").GetProperty("count").GetInt32().Should().Be(0);
-        body.GetProperty("transactions").GetProperty("netIncome").GetDecimal().Should().Be(0m);
+        body.GetProperty("transactions").GetProperty("netIncome").GetArrayLength().Should().Be(0);
         body.GetProperty("counts").GetProperty("totalServicesCount").GetInt32().Should().Be(0);
-        body.GetProperty("creditBalance").GetDecimal().Should().Be(0m);
+        body.GetProperty("creditBalance").GetProperty("amount").GetDecimal().Should().Be(0m);
         body.GetProperty("recentEmails").GetArrayLength().Should().Be(0);
     }
 
@@ -55,10 +56,78 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
         var invoices = (await admin.GetFromJsonAsync<JsonElement>($"/api/clients/{clientId}/summary")).GetProperty("invoices");
 
         invoices.GetProperty("partiallyRefunded").GetProperty("count").GetInt32().Should().Be(1);
-        invoices.GetProperty("partiallyRefunded").GetProperty("total").GetDecimal().Should().Be(40m);
+        var totals = invoices.GetProperty("partiallyRefunded").GetProperty("totals");
+        totals.GetArrayLength().Should().Be(1);
+        totals[0].GetProperty("currency").GetString().Should().Be("USD");
+        totals[0].GetProperty("amount").GetDecimal().Should().Be(40m);
         invoices.GetProperty("paid").GetProperty("count").GetInt32().Should().Be(0);
         invoices.GetProperty("refunded").GetProperty("count").GetInt32().Should().Be(0);
     }
+
+    /// <summary>
+    /// A client with paid invoices in USD and in AMD gets a separate total per currency, never one
+    /// mixed sum, and the transaction figures split the same way.
+    /// </summary>
+    [Fact]
+    public async Task SummaryKeepsTheTotalsOfEachCurrencySeparate()
+    {
+        var (clientId, _) = await ClientsTestSeeds.SeedClientAsync(factory);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            var now = DateTimeOffset.UtcNow;
+            foreach (var (currency, amount) in new[] { ("USD", 40m), ("AMD", 20000m), ("USD", 10m) })
+            {
+                var invoice = Invoice.Create(clientId, now.AddDays(7), currency, now);
+                invoice.AddItem("Hosting", amount, 1);
+                context.Invoices.Add(invoice);
+                await context.SaveChangesAsync(CancellationToken.None);
+                context.Transactions.Add(invoice.AddPayment(now, PaymentMethodNames.Manual, $"pay-{Guid.NewGuid():N}", amount, 0m, null, TransactionSource.Manual));
+                await context.SaveChangesAsync(CancellationToken.None);
+            }
+        }
+
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+
+        var body = await admin.GetFromJsonAsync<JsonElement>($"/api/clients/{clientId}/summary");
+
+        var paid = body.GetProperty("invoices").GetProperty("paid");
+        paid.GetProperty("count").GetInt32().Should().Be(3);
+        AmountsByCurrency(paid.GetProperty("totals")).Should().BeEquivalentTo(new Dictionary<string, decimal> { ["AMD"] = 20000m, ["USD"] = 50m });
+        var transactions = body.GetProperty("transactions");
+        AmountsByCurrency(transactions.GetProperty("grossRevenue")).Should().BeEquivalentTo(new Dictionary<string, decimal> { ["AMD"] = 20000m, ["USD"] = 50m });
+        AmountsByCurrency(transactions.GetProperty("netIncome")).Should().BeEquivalentTo(new Dictionary<string, decimal> { ["AMD"] = 20000m, ["USD"] = 50m });
+        AmountsByCurrency(transactions.GetProperty("clientExpenses")).Should().BeEquivalentTo(new Dictionary<string, decimal> { ["AMD"] = 0m, ["USD"] = 0m });
+        body.GetProperty("invoices").GetProperty("unpaid").GetProperty("totals").GetArrayLength().Should().Be(0);
+    }
+
+    /// <summary>The credit balance is answered in the client's billing currency.</summary>
+    [Fact]
+    public async Task SummaryReportsTheCreditBalanceInTheBillingCurrency()
+    {
+        var (clientId, _) = await ClientsTestSeeds.SeedClientAsync(factory);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            var client = await context.Clients.FirstAsync(c => c.Id == clientId);
+            client.SetCurrency("AMD");
+            client.AddCredit(5000m);
+            await context.SaveChangesAsync(CancellationToken.None);
+        }
+
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+
+        var credit = (await admin.GetFromJsonAsync<JsonElement>($"/api/clients/{clientId}/summary")).GetProperty("creditBalance");
+
+        credit.GetProperty("currency").GetString().Should().Be("AMD");
+        credit.GetProperty("amount").GetDecimal().Should().Be(5000m);
+    }
+
+    /// <summary>Reads a wire list of <c>{ amount, currency }</c> entries into a map keyed by currency.</summary>
+    /// <param name="list">The JSON array.</param>
+    /// <returns>The amount of each currency.</returns>
+    private static Dictionary<string, decimal> AmountsByCurrency(JsonElement list) =>
+        list.EnumerateArray().ToDictionary(e => e.GetProperty("currency").GetString()!, e => e.GetProperty("amount").GetDecimal());
 
     /// <summary>The summary for a real client answers 200.</summary>
     [Fact]

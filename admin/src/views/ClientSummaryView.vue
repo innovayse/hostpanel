@@ -34,6 +34,7 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
+import type { CurrencyAmount } from '@/types/currency'
 import type { SetClientExternalAccountPayload } from '@/types/clientexternalaccount'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
@@ -72,12 +73,21 @@ const client = computed(() => clientsStore.current)
 const summary = computed(() => summaryStore.summary)
 
 /**
- * Billing currency of the client. The summary endpoint names no currency of its own; the credit
- * balance is held in the client's billing currency; the invoice and transaction sums are assumed
- * to be too (tracked in issue #748). Until the client loads the figures render in the default
- * currency.
+ * Billing currency of the client, used only to print a zero for a figure the client has no records
+ * behind; every other amount carries the currency the summary endpoint names for it.
  */
 const billingCurrency = computed<string | null>(() => client.value?.preferences.currency ?? null)
+
+/**
+ * Formats the per-currency amounts of one figure, one text per currency the client has records in.
+ *
+ * @param amounts - The amounts the summary endpoint returned for the figure.
+ * @returns One "12.50 USD" text per currency, or a single zero in the billing currency when there are none.
+ */
+const amountTexts = (amounts: CurrencyAmount[]): string[] =>
+  amounts.length > 0
+    ? amounts.map((a) => formatPlainAmount(a.amount, a.currency))
+    : [formatPlainAmount(0, billingCurrency.value)]
 
 /** Local admin notes for the textarea. */
 const adminNotes = ref('')
@@ -192,8 +202,16 @@ interface InvoiceRow {
   label: string
   /** Number of invoices. */
   count: number
-  /** Sum of the invoices. */
-  total: number
+  /** Sum of the invoices, one text per currency. */
+  totals: string[]
+}
+
+/** One caption/amounts line of the income block: a text per currency. */
+interface AmountRow {
+  /** Translated caption. */
+  label: string
+  /** Amount texts, one per currency. */
+  values: string[]
 }
 
 /** Invoice status lines of the billing card. */
@@ -203,27 +221,27 @@ const invoiceRows = computed<InvoiceRow[]>(() => {
     return []
   }
   return [
-    { label: t('clients.clientSummary.paid'), count: s.invoices.paid.count, total: s.invoices.paid.total },
-    { label: t('clients.clientSummary.draft'), count: s.invoices.draft.count, total: s.invoices.draft.total },
-    { label: t('clients.clientSummary.unpaidDue'), count: s.invoices.unpaid.count, total: s.invoices.unpaid.total },
-    { label: t('clients.clientSummary.overdue'), count: s.invoices.overdue.count, total: s.invoices.overdue.total },
-    { label: t('clients.clientSummary.cancelled'), count: s.invoices.cancelled.count, total: s.invoices.cancelled.total },
-    { label: t('clients.clientSummary.partiallyRefunded'), count: s.invoices.partiallyRefunded.count, total: s.invoices.partiallyRefunded.total },
-    { label: t('clients.clientSummary.refunded'), count: s.invoices.refunded.count, total: s.invoices.refunded.total },
+    { label: t('clients.clientSummary.paid'), count: s.invoices.paid.count, totals: amountTexts(s.invoices.paid.totals) },
+    { label: t('clients.clientSummary.draft'), count: s.invoices.draft.count, totals: amountTexts(s.invoices.draft.totals) },
+    { label: t('clients.clientSummary.unpaidDue'), count: s.invoices.unpaid.count, totals: amountTexts(s.invoices.unpaid.totals) },
+    { label: t('clients.clientSummary.overdue'), count: s.invoices.overdue.count, totals: amountTexts(s.invoices.overdue.totals) },
+    { label: t('clients.clientSummary.cancelled'), count: s.invoices.cancelled.count, totals: amountTexts(s.invoices.cancelled.totals) },
+    { label: t('clients.clientSummary.partiallyRefunded'), count: s.invoices.partiallyRefunded.count, totals: amountTexts(s.invoices.partiallyRefunded.totals) },
+    { label: t('clients.clientSummary.refunded'), count: s.invoices.refunded.count, totals: amountTexts(s.invoices.refunded.totals) },
   ]
 })
 
 /** Income lines of the billing card. */
-const incomeRows = computed<InfoRow[]>(() => {
+const incomeRows = computed<AmountRow[]>(() => {
   const s = summary.value
   if (!s) {
     return []
   }
   return [
-    { label: t('clients.clientSummary.grossRevenue'), value: formatPlainAmount(s.transactions.grossRevenue, billingCurrency.value) },
-    { label: t('clients.clientSummary.clientExpenses'), value: formatPlainAmount(s.transactions.clientExpenses, billingCurrency.value) },
-    { label: t('clients.clientSummary.netIncome'), value: formatPlainAmount(s.transactions.netIncome, billingCurrency.value) },
-    { label: t('clients.clientSummary.creditBalance'), value: formatPlainAmount(s.creditBalance, billingCurrency.value) },
+    { label: t('clients.clientSummary.grossRevenue'), values: amountTexts(s.transactions.grossRevenue) },
+    { label: t('clients.clientSummary.clientExpenses'), values: amountTexts(s.transactions.clientExpenses) },
+    { label: t('clients.clientSummary.netIncome'), values: amountTexts(s.transactions.netIncome) },
+    { label: t('clients.clientSummary.creditBalance'), values: amountTexts([s.creditBalance]) },
   ]
 })
 
@@ -473,14 +491,18 @@ onMounted(() => {
                 <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ row.label }}</UiText>
                 <UiStack direction="row" gap="md">
                   <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md">{{ row.count }}</UiText>
-                  <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ formatPlainAmount(row.total, billingCurrency) }}</UiText>
+                  <UiStack align="end" gap="xs">
+                    <UiText v-for="text in row.totals" :key="text" :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ text }}</UiText>
+                  </UiStack>
                 </UiStack>
               </UiStack>
             </UiStack>
             <UiStack gap="sm">
               <UiStack v-for="row in incomeRows" :key="row.label" direction="row" :justify="UiJustify.Between" gap="sm">
                 <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ row.label }}</UiText>
-                <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ row.value }}</UiText>
+                <UiStack align="end" gap="xs">
+                  <UiText v-for="text in row.values" :key="text" :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ text }}</UiText>
+                </UiStack>
               </UiStack>
             </UiStack>
             <UiStack direction="row" wrap>

@@ -3,6 +3,14 @@
  * currencies page sends back to `/api/admin/currencies`.
  */
 
+/** An amount of money together with the currency it is held in. */
+export interface CurrencyAmount {
+  /** The amount, in `currency`. */
+  amount: number
+  /** ISO 4217 alpha code of the currency. */
+  currency: string
+}
+
 /** A configured currency as the admin currencies page sees it, rate included. */
 export interface CurrencyDto {
   /** ISO 4217 alpha code, upper case. */

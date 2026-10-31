@@ -293,6 +293,7 @@
     "streetAddress": "Փողոց, շենք",
     "suiteAptEtc": "Բնակարան, գրասենյակ և այլն",
     "billingPreferences": "Վճարման նախապատվություններ",
+    "currencyLockedByCreditHint": "Արժույթը հնարավոր չէ փոխել, քանի դեռ հաճախորդն ունի վարկային մնացորդ։ Նախ օգտագործեք կամ վերադարձրեք մնացորդը։",
     "billingContactName": "Վճարումների կոնտակտի անուն",
     "contactsLength": "Կոնտակտներ ({length})",
     "noContactsAddedYet": "Կոնտակտներ դեռ չեն ավելացվել"

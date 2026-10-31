@@ -83,6 +83,8 @@ export interface ClientDetail extends ClientListItem {
   contacts: Contact[]
   /** The account in another system the client is linked to; null or absent when there is no link. */
   externalAccount?: ClientExternalAccount | null
+  /** Credit held on the account in its billing currency; while it is not zero the currency cannot be changed. */
+  creditBalance?: number
 }
 
 /** Invoice count and total per status for one client. */

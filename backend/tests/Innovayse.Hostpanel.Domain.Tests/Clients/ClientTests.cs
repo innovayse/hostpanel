@@ -283,6 +283,63 @@ public class ClientTests
         Assert.Null(client.Currency);
     }
 
+    /// <summary>With no credit balance the currency moves freely to another one.</summary>
+    [Fact]
+    public void SetCurrency_WithZeroCreditBalance_ChangesTheCurrency()
+    {
+        var client = Client.Create("user-1", "Jane", "Doe", "jane@example.com", Now);
+        client.SetCurrency("USD");
+
+        client.SetCurrency("AMD");
+
+        Assert.Equal("AMD", client.Currency);
+    }
+
+    /// <summary>
+    /// A credit balance has no currency of its own, so a change to another currency is refused with
+    /// <c>CLIENT_CURRENCY_LOCKED_BY_CREDIT</c> and leaves the currency and the balance as they were.
+    /// </summary>
+    [Fact]
+    public void SetCurrency_WithCreditBalance_ThrowsWithClientCurrencyLockedByCredit()
+    {
+        var client = Client.Create("user-1", "Jane", "Doe", "jane@example.com", Now);
+        client.SetCurrency("USD");
+        client.AddCredit(10m);
+
+        var ex = Assert.Throws<DomainRuleException>(() => client.SetCurrency("AMD"));
+
+        Assert.Equal(ClientsErrors.ClientCurrencyLockedByCredit, ex.Code);
+        Assert.Equal("USD", client.Currency);
+        Assert.Equal(10m, client.CreditBalance);
+    }
+
+    /// <summary>Naming the currency the client already has is not a change, so a balance does not refuse it.</summary>
+    [Fact]
+    public void SetCurrency_WithCreditBalance_AcceptsTheSameCurrency()
+    {
+        var client = Client.Create("user-1", "Jane", "Doe", "jane@example.com", Now);
+        client.SetCurrency("USD");
+        client.AddCredit(10m);
+
+        client.SetCurrency("usd");
+
+        Assert.Equal("USD", client.Currency);
+    }
+
+    /// <summary>Once the balance is used up to zero the currency can change again.</summary>
+    [Fact]
+    public void SetCurrency_AfterTheBalanceIsUsed_ChangesTheCurrency()
+    {
+        var client = Client.Create("user-1", "Jane", "Doe", "jane@example.com", Now);
+        client.SetCurrency("USD");
+        client.AddCredit(10m);
+        client.DeductCredit(10m);
+
+        client.SetCurrency("AMD");
+
+        Assert.Equal("AMD", client.Currency);
+    }
+
     /// <summary>The other preferences no longer carry the currency, so writing them leaves it alone.</summary>
     [Fact]
     public void UpdatePreferences_DoesNotTouchTheCurrency()

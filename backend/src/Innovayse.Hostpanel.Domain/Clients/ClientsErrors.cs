@@ -56,6 +56,12 @@ public static class ClientsErrors
     /// </summary>
     public const string ClientPermissionDenied = "CLIENT_PERMISSION_DENIED";
 
+    /// <summary>
+    /// The client holds a credit balance, so the billing currency cannot change (409): <see cref="Client.SetCurrency"/>.
+    /// The balance has no currency of its own, so a change would silently re-value money the client prepaid.
+    /// </summary>
+    public const string ClientCurrencyLockedByCredit = "CLIENT_CURRENCY_LOCKED_BY_CREDIT";
+
     /// <summary>The account is not in a state that can be suspended (400): <see cref="Client.Suspend"/>.</summary>
     public const string ClientSuspendNotAllowed = "CLIENT_SUSPEND_NOT_ALLOWED";
 

@@ -183,7 +183,7 @@ describe('ClientProfileView', () => {
     expect(withoutCredit.text()).not.toContain(hint)
   })
 
-  it('shows the API refusal of a currency change next to the currency field', async () => {
+  it('shows the API refusal of a currency change in the form level message', async () => {
     const refusal = 'This client holds a credit balance, so the currency cannot be changed.'
     const held: ClientDetail = { ...detail, preferences: { ...detail.preferences, currency: 'USD' }, creditBalance: 10 }
     const { wrapper } = await mountProfile(held, () => stubRouteTable({
@@ -192,13 +192,12 @@ describe('ClientProfileView', () => {
         title: 'Conflict',
         status: 409,
         detail: refusal,
-        errors: { 'preferences.Currency': [refusal] },
       }, 409),
     }))
 
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="client-profile-currency-error"]').text()).toBe(refusal)
+    expect(wrapper.get('[data-testid="client-profile-error"]').text()).toBe(refusal)
   })
 })

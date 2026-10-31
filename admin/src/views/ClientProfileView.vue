@@ -116,7 +116,8 @@ const currency = ref('')
 
 /**
  * Explains the currency lock under the field while the client holds credit; empty otherwise.
- * Only the hint is written here: the refusal sentence itself comes from the API.
+ * Only the hint is written here: the refusal sentence itself comes from the API and shows in the
+ * form level message, like the invoice lock.
  */
 const currencyHint = computed(() => ((store.current?.creditBalance ?? 0) !== 0 ? t('clients.clientProfile.currencyLockedByCreditHint') : undefined))
 
@@ -271,7 +272,6 @@ const populateForm = (): void => {
 const handleCancel = (): void => {
   populateForm()
   store.saveError = null
-  store.fieldErrors = {}
   saveSuccess.value = false
 }
 
@@ -535,7 +535,7 @@ onBeforeUnmount(() => {
           <UiStack>
             <UiHeading :level="2" variant="card">{{ t('clients.clientProfile.billingPreferences') }}</UiHeading>
             <UiGrid :columns="2" gap="sm">
-              <UiField :label="t('shared.currency')" :hint="currencyHint" :error="store.fieldErrors['preferences.currency']" error-testid="client-profile-currency-error">
+              <UiField :label="t('shared.currency')" :hint="currencyHint">
                 <UiSelect data-testid="client-profile-currency" v-model="currency" :options="currencyOptions" :placeholder="t('shared.selectCurrency')" />
               </UiField>
               <UiField :label="t('shared.paymentMethod')">

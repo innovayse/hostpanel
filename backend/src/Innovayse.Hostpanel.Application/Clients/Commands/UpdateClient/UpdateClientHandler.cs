@@ -6,11 +6,9 @@ using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
-using Innovayse.Hostpanel.Shared.Contracts.Interfaces;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Wolverine;
@@ -50,9 +48,6 @@ public sealed class UpdateClientHandler
     /// <summary>Records the activity log lines for this action, saved with the change they describe.</summary>
     private readonly IActivityLogger _activity;
 
-    /// <summary>Writes the sentence of a currency refusal, which is bound to the currency field of the form.</summary>
-    private readonly IErrorMessageResolver _messages;
-
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="provisioning">Writes the account-side fields where this deployment owns the account.</param>
@@ -61,7 +56,6 @@ public sealed class UpdateClientHandler
     /// <param name="bus">Wolverine bus, used to ask the Billing module about the client's invoices and the offered currencies.</param>
     /// <param name="clock">The clock a status change is stamped with.</param>
     /// <param name="activity">Records the activity log lines for this action, saved with the change they describe.</param>
-    /// <param name="messages">Writes the sentence of a currency refusal, which is bound to the currency field of the form.</param>
     public UpdateClientHandler(
         IHostpanelDbContext context,
         IUserProvisioning provisioning,
@@ -69,10 +63,8 @@ public sealed class UpdateClientHandler
         IDemoAccountGuard demoAccounts,
         IMessageBus bus,
         IClock clock,
-        IActivityLogger activity,
-        IErrorMessageResolver messages)
+        IActivityLogger activity)
     {
-        _messages = messages;
         _activity = activity;
         _demoAccounts = demoAccounts;
         _context = context;
@@ -90,8 +82,7 @@ public sealed class UpdateClientHandler
     /// <returns>
     /// Success, or <c>CLIENT_NOT_FOUND</c> when the id names no client,
     /// <c>CLIENT_CURRENCY_ALREADY_INVOICED</c> when the currency is changed on a client who has
-    /// already been invoiced, <c>CLIENT_CURRENCY_LOCKED_BY_CREDIT</c> when it is changed on a client
-    /// who holds a credit balance, <c>CURRENCY_NOT_FOUND</c> when the requested currency is not one
+    /// already been invoiced, <c>CURRENCY_NOT_FOUND</c> when the requested currency is not one
     /// this panel offers, <c>USER_PROVISIONING_NOT_ALLOWED_CHANGE_EMAIL</c> when the
     /// account's sign-in address is changed where an external sign-on provider owns the accounts, or
     /// <c>DEMO_ACTION_DISABLED</c> when the address of a published demo account is changed on a demo deployment, or
@@ -242,15 +233,15 @@ public sealed class UpdateClientHandler
     /// posts the field on every save, and a client who has been invoiced must still be able to
     /// save their phone number. Changing the code would re-label every existing invoice without
     /// converting an amount, $100 would read as ֏100, so once billed, the currency is fixed.
+    /// The credit balance rule is the aggregate's own: <see cref="Client.SetCurrency"/> throws
+    /// <c>CLIENT_CURRENCY_LOCKED_BY_CREDIT</c>, which the exception middleware answers with 409.
     /// </remarks>
     /// <param name="client">The client under edit.</param>
     /// <param name="requested">The currency the form posted, or <see langword="null"/> to leave it alone.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// Success, or <c>CLIENT_CURRENCY_ALREADY_INVOICED</c> when the client has an invoice that is
-    /// not cancelled, <c>CLIENT_CURRENCY_LOCKED_BY_CREDIT</c> when the client holds a credit balance
-    /// (the aggregate's rule, see <see cref="Client.SetCurrency"/>), or <c>CURRENCY_NOT_FOUND</c> when the
-    /// currency is not configured and enabled. The two lock refusals name the currency field.
+    /// not cancelled, or <c>CURRENCY_NOT_FOUND</c> when the currency is not configured and enabled.
     /// </returns>
     private async Task<Result> ApplyCurrencyAsync(Client client, string? requested, CancellationToken ct)
     {
@@ -269,7 +260,7 @@ public sealed class UpdateClientHandler
             || all.TotalCount > gone.TotalCount;
         if (alreadyInvoiced)
         {
-            return CurrencyRefusal(HostpanelErrorCodes.CLIENT_CURRENCY_ALREADY_INVOICED);
+            return Result.FailureCode(HostpanelErrorCodes.CLIENT_CURRENCY_ALREADY_INVOICED);
         }
 
         var code = requested.ToUpperInvariant();
@@ -279,25 +270,7 @@ public sealed class UpdateClientHandler
             return Result.FailureCode(HostpanelErrorCodes.CURRENCY_NOT_FOUND);
         }
 
-        try
-        {
-            client.SetCurrency(code);
-        }
-        catch (DomainRuleException refusal) when (refusal.Code == HostpanelErrorCodes.CLIENT_CURRENCY_LOCKED_BY_CREDIT)
-        {
-            // The credit rule lives on the aggregate alone; it is turned into a result here so the
-            // refusal reaches the form next to the currency field like the invoice lock does.
-            return CurrencyRefusal(refusal.Code);
-        }
-
+        client.SetCurrency(code);
         return Result.Success();
-    }
-
-    /// <summary>Builds a refusal that carries its code and the sentence on the currency field.</summary>
-    /// <param name="code">The refusal's error code.</param>
-    /// <returns>A failed result whose field errors name <c>Preferences.Currency</c>.</returns>
-    private Result CurrencyRefusal(string code)
-    {
-        return Result.Failure(_messages.Resolve(code), code, "Preferences.Currency");
     }
 }

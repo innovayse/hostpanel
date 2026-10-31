@@ -290,16 +290,17 @@ public sealed class Client : BaseEntity, IAggregateRoot
     /// <remarks>
     /// Whether this is allowed is not the client's to know: it depends on whether any invoice
     /// exists, which lives elsewhere, so the handler checks that and refuses. What the aggregate
-    /// knows itself is the credit balance: it has no currency of its own, so moving it to another
-    /// currency would silently re-value money the client prepaid (10 would stay 10). A change to
-    /// a different currency is refused while the balance is not zero; naming the current currency
-    /// again is a no-op. Otherwise this records the code in the shape <c>Invoice</c> stores it:
-    /// three letters, upper case.
+    /// knows itself is the credit balance: it has no currency of its own, so moving it from one
+    /// currency to a different one would silently re-value money the client prepaid (10 would
+    /// stay 10). That change is refused while the balance is not zero; naming the current currency
+    /// again is a no-op. The first assignment, from no currency to one, is always allowed: there is
+    /// no previous currency whose value could change. Otherwise this records the code in the shape
+    /// <c>Invoice</c> stores it: three letters, upper case.
     /// </remarks>
     /// <param name="code">ISO 4217 alpha code, normalised to upper case.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="code"/> is not three characters.</exception>
     /// <exception cref="DomainRuleException">
-    /// Thrown with <c>CLIENT_CURRENCY_LOCKED_BY_CREDIT</c> when the currency would change while the credit balance is not zero.
+    /// Thrown with <c>CLIENT_CURRENCY_LOCKED_BY_CREDIT</c> when an existing currency would change to another while the credit balance is not zero.
     /// </exception>
     public void SetCurrency(string code)
     {
@@ -309,7 +310,7 @@ public sealed class Client : BaseEntity, IAggregateRoot
         }
 
         var normalised = code.ToUpperInvariant();
-        if (CreditBalance != 0m && !string.Equals(normalised, Currency, StringComparison.Ordinal))
+        if (CreditBalance != 0m && Currency is not null && !string.Equals(normalised, Currency, StringComparison.Ordinal))
         {
             throw new DomainRuleException(
                 ClientsErrors.ClientCurrencyLockedByCredit,

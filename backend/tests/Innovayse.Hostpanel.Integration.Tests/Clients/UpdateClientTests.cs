@@ -141,7 +141,7 @@ public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFi
 
     /// <summary>
     /// A client holding credit cannot change currency: 409 <c>CLIENT_CURRENCY_LOCKED_BY_CREDIT</c>
-    /// with the sentence on the currency field, the currency and the balance unchanged, and a save
+    /// with its localized sentence as the detail, the currency and the balance unchanged, and a save
     /// that leaves the currency alone still goes through.
     /// </summary>
     [Fact]
@@ -166,7 +166,8 @@ public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFi
         changed.StatusCode.Should().Be(HttpStatusCode.Conflict);
         await ClientsTestSeeds.AssertCodeAsync(changed, HostpanelErrorCodes.CLIENT_CURRENCY_LOCKED_BY_CREDIT);
         var body = await changed.Content.ReadFromJsonAsync<JsonElement>();
-        body.GetProperty("errors").GetProperty("preferences.Currency")[0].GetString().Should().NotBeNullOrWhiteSpace();
+        body.GetProperty("detail").GetString().Should().Be(
+            "This client holds a credit balance, so the currency cannot be changed. Use or refund the balance first, then change the currency.");
 
         using (var scope = factory.Services.CreateScope())
         {

@@ -326,6 +326,22 @@ public class ClientTests
         Assert.Equal("USD", client.Currency);
     }
 
+    /// <summary>
+    /// A client with a balance and no currency yet may be given its first currency: there is no
+    /// previous currency whose value would change.
+    /// </summary>
+    [Fact]
+    public void SetCurrency_FirstAssignmentWithCreditBalance_SetsTheCurrency()
+    {
+        var client = Client.Create("user-1", "Jane", "Doe", "jane@example.com", Now);
+        client.AddCredit(10m);
+
+        client.SetCurrency("usd");
+
+        Assert.Equal("USD", client.Currency);
+        Assert.Equal(10m, client.CreditBalance);
+    }
+
     /// <summary>Once the balance is used up to zero the currency can change again.</summary>
     [Fact]
     public void SetCurrency_AfterTheBalanceIsUsed_ChangesTheCurrency()

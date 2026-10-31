@@ -70,6 +70,9 @@ export const useBillingStore = defineStore('billing', () => {
   /** Counts fulfilment loads, so the answer of an earlier load never overwrites a later one. */
   let fulfilmentLoadCount = 0
 
+  /** The invoice the latest fulfilment load asked for, i.e. the invoice staff have open; null before any load. */
+  let fulfilmentInvoiceId: number | null = null
+
   /**
    * Runs one request with the loading flag and the error state around it.
    *
@@ -318,9 +321,12 @@ export const useBillingStore = defineStore('billing', () => {
    */
   const fetchFulfilment = async (id: number): Promise<void> => {
     fulfilmentLoadCount += 1
+    fulfilmentInvoiceId = id
     /** Number of this load; a later load makes it stale. */
     const loadId = fulfilmentLoadCount
     fulfilmentLoading.value = true
+    // The previous invoice's failure must not show above this invoice's records.
+    fulfilmentError.value = null
     /** Sentence of this load's refusal, kept apart from the page-level `error`; null when it succeeds. */
     const failure = ref<string | null>(null)
     const result = await runAction(failure, () => api.listFulfilment(id))
@@ -336,7 +342,8 @@ export const useBillingStore = defineStore('billing', () => {
 
   /**
    * Asks for another attempt of a fulfilment record, then reloads the list so the tab shows the
-   * record as it now stands.
+   * record as it now stands. The reload happens only while that invoice is still the open one, so
+   * a slow retry never replaces (or makes stale) the records of the invoice opened since.
    *
    * @param invoiceId - The invoice id.
    * @param recordId - The fulfilment record id.
@@ -345,7 +352,7 @@ export const useBillingStore = defineStore('billing', () => {
    */
   const retryFulfilment = async (invoiceId: number, recordId: number): Promise<boolean> => {
     const result = await runAction(fulfilmentRetryError, () => api.retryFulfilment(invoiceId, recordId))
-    if (result.ok) {
+    if (result.ok && (fulfilmentInvoiceId === null || fulfilmentInvoiceId === invoiceId)) {
       await fetchFulfilment(invoiceId)
     }
     return result.ok

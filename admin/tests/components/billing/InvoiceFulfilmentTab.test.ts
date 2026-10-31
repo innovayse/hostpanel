@@ -200,4 +200,52 @@ describe('InvoiceFulfilmentTab', () => {
     expect(wrapper.find('[data-testid="billing-invoice-fulfilment-retry-41"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="billing-invoice-fulfilment-retry-31"]').exists()).toBe(false)
   })
+
+  it('keeps the records of the new invoice when a retry of the previous one finishes after its load', async () => {
+    /** Lets the test finish the retry of invoice 1 on demand. */
+    let finishRetry: () => void = () => undefined
+    /** The pending answer of the retry POST of invoice 1. */
+    const retryAnswer = new Promise<Response>((resolve) => {
+      finishRetry = () => resolve(new Response(null, { status: 204 }))
+    })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string, init?: RequestInit) => {
+        if (init?.method === 'POST') {
+          return retryAnswer
+        }
+        return Promise.resolve(
+          url === '/api/billing/2/fulfilment'
+            ? json([fulfilmentFixture({ id: 41, invoiceId: 2 })])
+            : json([fulfilmentFixture()]),
+        )
+      }),
+    )
+    const wrapper = await mountTab()
+    await wrapper.get('[data-testid="billing-invoice-fulfilment-retry-31"]').trigger('click')
+    await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
+
+    await wrapper.setProps({ invoice: invoiceFixture({ id: 2 }) })
+    await flushPromises()
+    finishRetry()
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="billing-invoice-fulfilment-retry-41"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="billing-invoice-fulfilment-retry-31"]').exists()).toBe(false)
+  })
+
+  it('drops the load error of the previous invoice when the next invoice loads', async () => {
+    stubRoutes({
+      'GET /api/billing/1/fulfilment': () => problem('Fulfilment is unavailable.', 500),
+      'GET /api/billing/2/fulfilment': () => json([fulfilmentFixture({ id: 41, invoiceId: 2 })]),
+    })
+    const wrapper = await mountTab()
+    expect(wrapper.find('[data-testid="billing-invoice-fulfilment-error"]').exists()).toBe(true)
+
+    await wrapper.setProps({ invoice: invoiceFixture({ id: 2 }) })
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="billing-invoice-fulfilment-error"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="billing-invoice-fulfilment-retry-41"]').exists()).toBe(true)
+  })
 })

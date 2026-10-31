@@ -140,11 +140,7 @@ public static class DependencyInjection
         // HttpResilienceOptions, and an operator only names one to move it. It is validated on
         // start rather than at first use, because the first use of the cPanel profile is a
         // customer's provisioning run.
-        services.AddOptions<HttpResilienceOptions>()
-            .Bind(configuration.GetSection(HttpResilienceOptions.SectionName))
-            .ValidateOnStart();
-        services.AddSingleton<
-            IValidateOptions<HttpResilienceOptions>, HttpResilienceOptionsValidator>();
+        services.AddHttpResilienceOptions(configuration);
 
         // EF Core
         // Domain events are delivered by an interceptor on the context, per scope: the gate lets a
@@ -879,6 +875,23 @@ public static class DependencyInjection
         // on the configured relay so a demo can show real mail in a catcher.
         var demo = configuration.GetSection(DemoOptions.SectionName).Get<DemoOptions>() ?? new DemoOptions();
         services.AddDemoMode(demo, ownsItsUsers);
+
+        return services;
+    }
+
+    /// <summary>
+    /// Binds the <c>HttpResilience</c> section and validates it on start, so a bad profile stops the
+    /// host from starting instead of surfacing on the first call to the affected client.
+    /// </summary>
+    /// <param name="services">The service collection to add to.</param>
+    /// <param name="configuration">Application configuration holding the section.</param>
+    /// <returns>The same <paramref name="services"/> for chaining.</returns>
+    internal static IServiceCollection AddHttpResilienceOptions(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<HttpResilienceOptions>()
+            .Bind(configuration.GetSection(HttpResilienceOptions.SectionName))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<HttpResilienceOptions>, HttpResilienceOptionsValidator>();
 
         return services;
     }

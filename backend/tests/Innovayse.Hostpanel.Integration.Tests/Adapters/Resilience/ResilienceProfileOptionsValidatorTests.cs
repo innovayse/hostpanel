@@ -1,11 +1,15 @@
+using Innovayse.Hostpanel.Infrastructure;
 using Innovayse.Hostpanel.Infrastructure.Resilience.Settings;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Resilience;
 
 /// <summary>
 /// <see cref="ResilienceProfileOptionsValidator"/> and the <see cref="HttpResilienceOptionsValidator"/> that
-/// calls it: every <see cref="TimeSpan"/> bound is enforced, and validation is deterministic when many
-/// threads validate fresh options at once (the failure the lazily converted range attribute produced).
+/// calls it: every <see cref="TimeSpan"/> bound is enforced, a total timeout below the attempt timeout is refused,
+/// and a bad configured profile stops the startup validation.
 /// </summary>
 public sealed class ResilienceProfileOptionsValidatorTests
 {
@@ -117,9 +121,54 @@ public sealed class ResilienceProfileOptionsValidatorTests
         result.Failures.Should().ContainSingle().Which.Should().Contain("HttpResilience:Plesk").And.Contain("RetryDelay");
     }
 
+    /// <summary>A total timeout below the attempt timeout is refused and the message names the profile.</summary>
+    [Fact]
+    public void TotalTimeoutBelowAttemptTimeout_IsRefused()
+    {
+        var options = new HttpResilienceOptions();
+        options.Plesk.AttemptTimeout = TimeSpan.FromSeconds(20);
+        options.Plesk.TotalTimeout = TimeSpan.FromSeconds(10);
+
+        var result = new HttpResilienceOptionsValidator().Validate(null, options);
+
+        result.Failures.Should().ContainSingle().Which.Should().Contain("HttpResilience:Plesk").And.Contain("TotalTimeout");
+    }
+
+    /// <summary>The real registration fails fast: startup validation throws on a bad configured profile.</summary>
+    [Fact]
+    public void Startup_WithBadAttemptTimeout_ThrowsOptionsValidationException()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                [$"{HttpResilienceOptions.SectionName}:Plesk:AttemptTimeout"] = "00:00:00.001",
+            })
+            .Build();
+        using var provider = new ServiceCollection()
+            .AddHttpResilienceOptions(configuration)
+            .BuildServiceProvider();
+
+        var act = () => provider.GetRequiredService<IStartupValidator>().Validate();
+
+        act.Should().Throw<OptionsValidationException>().Which.Message.Should().Contain("HttpResilience:Plesk").And.Contain("AttemptTimeout");
+    }
+
+    /// <summary>The real registration accepts a configuration without the section.</summary>
+    [Fact]
+    public void Startup_WithoutTheSection_Succeeds()
+    {
+        using var provider = new ServiceCollection()
+            .AddHttpResilienceOptions(new ConfigurationBuilder().Build())
+            .BuildServiceProvider();
+
+        var act = () => provider.GetRequiredService<IStartupValidator>().Validate();
+
+        act.Should().NotThrow();
+    }
+
     /// <summary>
-    /// Many threads validating fresh options at the same time never throw: no lazily built shared state is
-    /// involved, so every call gives the same answer.
+    /// Validation is a pure function of its input: many threads validating fresh options at the same time
+    /// all get the same answer and none throws. This does not reproduce the old race, it only pins the property.
     /// </summary>
     [Fact]
     public void ValidatingFromManyThreads_NeverThrows_AndIsDeterministic()

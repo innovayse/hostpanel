@@ -33,6 +33,7 @@ public sealed class ResilienceProfileOptions
     /// fixed here: a stalled third party otherwise holds a request thread for a minute and a
     /// half before anybody is told.
     /// </summary>
+    /// <remarks>Bounded by <see cref="ResilienceProfileOptionsValidator.MinTimeout"/> and <see cref="ResilienceProfileOptionsValidator.MaxTimeout"/>. The check is in <see cref="ResilienceProfileOptionsValidator"/>.</remarks>
     public TimeSpan AttemptTimeout { get; set; } = TimeSpan.FromSeconds(10);
 
     /// <summary>
@@ -42,6 +43,7 @@ public sealed class ResilienceProfileOptions
     /// <see cref="HttpClient"/>'s own <see cref="HttpClient.Timeout"/>, which remains the
     /// outermost backstop.
     /// </summary>
+    /// <remarks>Bounded by <see cref="ResilienceProfileOptionsValidator.MinTimeout"/> and <see cref="ResilienceProfileOptionsValidator.MaxTimeout"/>. The check is in <see cref="ResilienceProfileOptionsValidator"/>.</remarks>
     public TimeSpan TotalTimeout { get; set; } = TimeSpan.FromSeconds(30);
 
     /// <summary>
@@ -57,6 +59,7 @@ public sealed class ResilienceProfileOptions
     /// recovering third party is knocked over by the synchronised wave rather than by the
     /// original load.
     /// </summary>
+    /// <remarks>Between zero and <see cref="ResilienceProfileOptionsValidator.MaxRetryDelay"/>. The check is in <see cref="ResilienceProfileOptionsValidator"/>.</remarks>
     public TimeSpan RetryDelay { get; set; } = TimeSpan.FromSeconds(1);
 
     /// <summary>
@@ -86,11 +89,13 @@ public sealed class ResilienceProfileOptions
     public int MinimumThroughput { get; set; } = 10;
 
     /// <summary>The window the failure ratio is measured over.</summary>
+    /// <remarks>Bounded by <see cref="ResilienceProfileOptionsValidator.MinWindow"/> and <see cref="ResilienceProfileOptionsValidator.MaxTimeout"/>. The check is in <see cref="ResilienceProfileOptionsValidator"/>.</remarks>
     public TimeSpan SamplingDuration { get; set; } = TimeSpan.FromSeconds(60);
 
     /// <summary>
     /// How long the breaker stays open before it lets a probe through. Short breaks favour
     /// recovering quickly over shedding load for long.
     /// </summary>
+    /// <remarks>Bounded by <see cref="ResilienceProfileOptionsValidator.MinWindow"/> and <see cref="ResilienceProfileOptionsValidator.MaxTimeout"/>. The check is in <see cref="ResilienceProfileOptionsValidator"/>.</remarks>
     public TimeSpan BreakDuration { get; set; } = TimeSpan.FromSeconds(30);
 }

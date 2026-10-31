@@ -6,12 +6,18 @@ namespace Innovayse.Hostpanel.Infrastructure.Resilience.Settings;
 /// Checks the <see cref="TimeSpan"/> bounds of one <see cref="ResilienceProfileOptions"/>.
 /// </summary>
 /// <remarks>
+/// <para>
 /// These bounds used to be <c>[Range(typeof(TimeSpan), ...)]</c>. <see cref="System.ComponentModel.DataAnnotations.RangeAttribute"/>
 /// parses such string bounds lazily on first use and that set-up is not thread-safe, so several hosts
 /// validating at once could throw <see cref="InvalidCastException"/>. Plain comparisons against
 /// constants share no lazily built state and are deterministic.
+/// </para>
+/// <para>
+/// Not registered in the container on its own: <see cref="HttpResilienceOptionsValidator"/> runs it for every
+/// profile, because the profiles are nested and the options system only validates the section object.
+/// </para>
 /// </remarks>
-public sealed class ResilienceProfileOptionsValidator : IValidateOptions<ResilienceProfileOptions>
+internal sealed class ResilienceProfileOptionsValidator : IValidateOptions<ResilienceProfileOptions>
 {
     /// <summary>The smallest accepted per-attempt or overall timeout.</summary>
     public static readonly TimeSpan MinTimeout = TimeSpan.FromMilliseconds(100);

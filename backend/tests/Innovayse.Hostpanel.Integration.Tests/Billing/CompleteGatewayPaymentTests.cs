@@ -587,28 +587,83 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>
-    /// A gateway that reports paid with an empty reference names no payment, so nothing can be recorded
-    /// under it: the ledger check answers "not recorded" without a query or an exception, and the
-    /// completion of an invoice another path settled still answers Paid instead of failing.
+    /// A gateway that reports paid with an empty or blank transaction id falls back to the session id
+    /// the invoice holds: the hand-back is recorded under it, so a replay finds the row and credits
+    /// nothing more and staff are alerted once.
+    /// </summary>
+    /// <param name="blankReference">The unusable transaction id the gateway reports.</param>
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task BlankGatewayTransactionId_FallsBackToTheSessionIdAndAReplayCreditsNothingMore(string blankReference)
+    {
+        var sessionId = $"gw-{Guid.NewGuid():N}";
+        var invoiceId = await SeedInvoiceWithSessionDirectlyAsync(sessionId);
+        await RecordManualPaymentAsync(invoiceId, 10m);
+        var clientId = await ClientOfAsync(invoiceId);
+        var resolver = PaidResolver(blankReference);
+
+        var first = await CompleteTrackedAsync(invoiceId, resolver);
+        var balanceAfterFirst = await BillingTestSeeds.CreditBalanceOfAsync(factory, clientId);
+        var rowsAfterFirst = await LedgerRowCountAsync(clientId);
+        var replay = await CompleteTrackedAsync(invoiceId, resolver);
+
+        first.Should().ContainSingle().Which.Reference.Should().Be(sessionId);
+        replay.Should().BeEmpty();
+        balanceAfterFirst.Should().Be(10m);
+        (await BillingTestSeeds.CreditBalanceOfAsync(factory, clientId)).Should().Be(balanceAfterFirst);
+        (await LedgerRowCountAsync(clientId)).Should().Be(rowsAfterFirst);
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await context.Transactions.AsNoTracking().CountAsync(t => t.TransactionId == sessionId)).Should().Be(1);
+    }
+
+    /// <summary>
+    /// A paid report with no usable reference anywhere (the gateway sends none and the invoice's
+    /// session id is empty) is never credited: on an invoice another path settled the money is held
+    /// for an operator, no ledger row is written, and a replay changes nothing.
     /// </summary>
     [Fact]
-    public async Task EmptyGatewayReference_IsTreatedAsNotRecordedAndDoesNotThrow()
+    public async Task NoReferenceAnywhereOnASettledInvoice_HoldsTheMoneyAndWritesNothingOnFirstRunAndReplay()
     {
-        var invoiceId = await SeedInvoiceWithSessionDirectlyAsync();
+        var invoiceId = await SeedInvoiceWithSessionDirectlyAsync(string.Empty);
         await RecordManualPaymentAsync(invoiceId, 10m);
-        var resolver = new FakePaymentPluginResolver();
-        resolver.Register("bank-gateway", new FakePaymentPlugin
+        var clientId = await ClientOfAsync(invoiceId);
+        var resolver = PaidResolver(string.Empty);
+        var rowsBefore = await LedgerRowCountAsync(clientId);
+
+        var first = await CompleteTrackedAsync(invoiceId, resolver);
+        var replay = await CompleteTrackedAsync(invoiceId, resolver);
+
+        first.Should().BeEmpty();
+        replay.Should().BeEmpty();
+        (await BillingTestSeeds.CreditBalanceOfAsync(factory, clientId)).Should().Be(0m);
+        (await LedgerRowCountAsync(clientId)).Should().Be(rowsBefore);
+    }
+
+    /// <summary>
+    /// The same on an invoice that is still open: with no reference the payment is not settled or
+    /// credited, the completion is refused as a mismatch, and nothing is written, on first run and replay.
+    /// </summary>
+    [Fact]
+    public async Task NoReferenceAnywhereOnAnOpenInvoice_IsRefusedAndWritesNothingOnFirstRunAndReplay()
+    {
+        var invoiceId = await SeedInvoiceWithSessionDirectlyAsync(string.Empty);
+        var clientId = await ClientOfAsync(invoiceId);
+        var resolver = PaidResolver(string.Empty);
+
+        for (var run = 0; run < 2; run++)
         {
-            StatusResult = new(GatewayPaymentState.Paid, string.Empty, "orderStatus:2", AmountMinor: 1000),
-        });
-        using var scope = factory.Services.CreateScope();
+            using var scope = factory.Services.CreateScope();
+            var result = await HandlerFor(scope, resolver).HandleAsync(new CompleteGatewayPaymentCommand(invoiceId), CancellationToken.None);
+            result.ErrorCode.Should().Be(HostpanelErrorCodes.GATEWAY_PAYMENT_MISMATCH);
+        }
 
-        var result = await HandlerFor(scope, resolver).HandleAsync(new CompleteGatewayPaymentCommand(invoiceId), CancellationToken.None);
-
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.State.Should().Be(GatewayCompletionState.Paid);
-        (await scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>().IsRecordedAsync(string.Empty, CancellationToken.None))
-            .Should().BeFalse();
+        using var check = factory.Services.CreateScope();
+        var context = check.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await context.Invoices.AsNoTracking().SingleAsync(i => i.Id == invoiceId)).Status.Should().Be(InvoiceStatus.Unpaid);
+        (await LedgerRowCountAsync(clientId)).Should().Be(0);
+        (await BillingTestSeeds.CreditBalanceOfAsync(factory, clientId)).Should().Be(0m);
     }
 
     /// <summary>
@@ -664,7 +719,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
             (await other.ServiceProvider.GetRequiredService<IClientCredit>()
                 .AddAndSaveAsync(new ClientCreditChange(clientId, 1m), CancellationToken.None)).IsSuccess.Should().BeTrue();
         });
-        var host = factory.WithWebHostBuilder(builder =>
+        await using var host = factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services =>
                 services.ConfigureDbContext<AppDbContext>(options => options.AddInterceptors(hook))));
         using var readerScope = host.Services.CreateScope();
@@ -685,6 +740,26 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         var check = checkScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         (await check.Transactions.AsNoTracking().AnyAsync(t => t.TransactionId == reference)).Should().BeFalse();
         (await BillingTestSeeds.CreditBalanceOfAsync(factory, clientId)).Should().Be(1m);
+    }
+
+    /// <summary>The id of the client an invoice belongs to.</summary>
+    /// <param name="invoiceId">The invoice.</param>
+    /// <returns>The client id.</returns>
+    private async Task<int> ClientOfAsync(int invoiceId)
+    {
+        using var scope = factory.Services.CreateScope();
+        return (await scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>().Invoices
+            .AsNoTracking().SingleAsync(i => i.Id == invoiceId)).ClientId;
+    }
+
+    /// <summary>The number of ledger rows a client has.</summary>
+    /// <param name="clientId">The client.</param>
+    /// <returns>The row count.</returns>
+    private async Task<int> LedgerRowCountAsync(int clientId)
+    {
+        using var scope = factory.Services.CreateScope();
+        return await scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>().Transactions
+            .AsNoTracking().CountAsync(t => t.ClientId == clientId);
     }
 
     /// <summary>Cancels an invoice from a scope of its own, as an administrator would.</summary>
@@ -748,15 +823,12 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     private async Task<IReadOnlyList<GatewayPaymentCreditedEvent>> CompleteTrackedAsync(
         int invoiceId, FakePaymentPluginResolver resolver)
     {
-        var session = await factory.Services.GetRequiredService<IHost>().TrackActivity()
-            .Timeout(TimeSpan.FromSeconds(60))
-            .ExecuteAndWaitAsync((Func<IMessageContext, Task>)(async _ =>
-            {
-                using var scope = factory.Services.CreateScope();
-                var result = await HandlerFor(scope, resolver).HandleAsync(new CompleteGatewayPaymentCommand(invoiceId), CancellationToken.None);
-                result.IsSuccess.Should().BeTrue();
-            }));
-        return session.Executed.MessagesOf<GatewayPaymentCreditedEvent>().ToList();
+        return await PublishedDuringAsync(factory.Services, async () =>
+        {
+            using var scope = factory.Services.CreateScope();
+            var result = await HandlerFor(scope, resolver).HandleAsync(new CompleteGatewayPaymentCommand(invoiceId), CancellationToken.None);
+            result.IsSuccess.Should().BeTrue();
+        });
     }
 
     /// <summary>Builds the handler on a scope's own context, with plugins from <paramref name="resolver"/>.</summary>
@@ -776,8 +848,9 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// Seeds a client and an invoice with a live gateway session directly against the database,
     /// bypassing HTTP, for the DI-scope tests that only need a row to race over.
     /// </summary>
+    /// <param name="sessionId">The gateway session id stored on the invoice; unique per test when the ledger is asserted on.</param>
     /// <returns>The seeded invoice's primary key.</returns>
-    private async Task<int> SeedInvoiceWithSessionDirectlyAsync()
+    private async Task<int> SeedInvoiceWithSessionDirectlyAsync(string sessionId = "gw-1")
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
@@ -789,7 +862,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
 
         var invoice = Invoice.Create(client.Id, DateTimeOffset.UtcNow.AddDays(14), "USD", DateTimeOffset.UtcNow);
         invoice.AddItem("Hosting", 10m, 1);
-        invoice.SetGatewaySession("bank-gateway", "gw-1", scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
+        invoice.SetGatewaySession("bank-gateway", sessionId, scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
 

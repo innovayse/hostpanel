@@ -28,9 +28,9 @@ public static class CardPaymentLedgerExtensions
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        // A gateway may report no reference at all (the caller then falls back to its own session id,
-        // which can be empty too). That names no payment, so nothing is recorded under it: it is
-        // answered, not refused, so the payment path behaves as it did before this check existed.
+        // Last safe layer only: an empty reference names no payment, so it is answered as not recorded
+        // without a query. That answer must never lead to a credit, so callers must not credit or
+        // record money without a usable reference; they hold it for an operator instead.
         if (string.IsNullOrEmpty(transactionId))
         {
             return [];

@@ -454,6 +454,7 @@ public sealed class SettleInvoiceCardPaymentTests(IntegrationTestFactory factory
 
         result.ErrorCode.Should().Be(HostpanelErrorCodes.PAYMENT_INTENT_ALREADY_USED);
         hook.Fired.Should().BeTrue();
+        hook.LedgerReadsBeforeFire.Should().Be(1);
         _cardGateway.RefundInstructions.Should().BeEmpty();
         (await LedgerRowAsync(transactionId)).InvoiceId.Should().Be(otherInvoiceId);
     }
@@ -484,6 +485,7 @@ public sealed class SettleInvoiceCardPaymentTests(IntegrationTestFactory factory
 
         result.ErrorCode.Should().Be(HostpanelErrorCodes.PAYMENT_INTENT_ALREADY_USED);
         hook.Fired.Should().BeTrue();
+        hook.LedgerReadsBeforeFire.Should().Be(1);
         _cardGateway.RefundInstructions.Should().BeEmpty();
         (await LedgerRowAsync(transactionId)).InvoiceId.Should().BeNull();
     }

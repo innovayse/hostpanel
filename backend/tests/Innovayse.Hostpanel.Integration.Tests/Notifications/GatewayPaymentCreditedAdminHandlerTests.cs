@@ -99,12 +99,25 @@ public sealed class GatewayPaymentCreditedAdminHandlerTests(IntegrationTestFacto
 
         foreach (var text in new[] { credited, held })
         {
-            text.Should().Contain("616161").And.Contain("77").And.Contain("bank-gateway")
-                .And.Contain("ref-seeded-1").And.Contain("12").And.Contain("USD");
+            text.Should().Contain("616161").And.Contain("770077").And.Contain("bank-gateway")
+                .And.Contain("ref-seeded-1").And.Contain("1234.56").And.Contain("USD");
             text.Should().NotContain("{{").And.NotContain("{%");
         }
 
         credited.Should().NotBe(held);
+
+        // The ru and hy versions are really translated, not a copy of the English text.
+        if (language == "ru")
+        {
+            credited.Should().MatchRegex("[\u0400-\u04FF]");
+            held.Should().MatchRegex("[\u0400-\u04FF]");
+        }
+
+        if (language == "hy")
+        {
+            credited.Should().MatchRegex("[\u0530-\u058F]");
+            held.Should().MatchRegex("[\u0530-\u058F]");
+        }
     }
 
     /// <summary>Publishes the event on the host's bus and waits until the bus has handled it and everything it sent.</summary>
@@ -130,7 +143,7 @@ public sealed class GatewayPaymentCreditedAdminHandlerTests(IntegrationTestFacto
         var template = await context.EmailTemplates.AsNoTracking()
             .FirstAsync(t => t.Slug == StaffAlertTemplatesSeeder.GatewayPaymentCreditedSlug && t.Language == language, CancellationToken.None);
         var model = new GatewayPaymentCreditedAdminTemplateModel(
-            new InvoiceRefTemplateData(616161), new ClientRefTemplateData(77), "bank-gateway", "ref-seeded-1", 12m, "USD", credited);
+            new InvoiceRefTemplateData(616161), new ClientRefTemplateData(770077), "bank-gateway", "ref-seeded-1", 1234.56m, "USD", credited);
         var subject = await renderer.RenderTextAsync(template.Subject, model, CancellationToken.None);
         var body = await renderer.RenderHtmlAsync(template.Body, model, CancellationToken.None);
         return $"{subject}\n{body}";

@@ -6,7 +6,8 @@ namespace Innovayse.Hostpanel.Domain.Billing.Events;
 /// A hosted gateway payment took money its invoice could not record: the part above what was still
 /// due, or the whole payment when another path had already settled or closed the invoice. The money
 /// is on the ledger under the gateway's reference and either went to the client's credit balance or
-/// is held for an operator; staff are never told twice, because the event is published after the save and the ledger row makes a replay find it.
+/// is held for an operator. The event is published after the save and the ledger row makes a replay
+/// find it, so a replay does not alert again.
 /// </summary>
 /// <param name="InvoiceId">The invoice the session was opened for.</param>
 /// <param name="ClientId">The client the invoice belongs to.</param>

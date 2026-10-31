@@ -134,6 +134,33 @@ public sealed class IdentityPluginFailureTests(IntegrationTestFactory factory) :
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
+    /// <summary>An anonymous call to a portal route stays 401 with no Retry-After while the plugin is down.</summary>
+    [Fact]
+    public async Task AnonymousPortalRead_StaysUnauthorizedWithoutRetryAfterAsync()
+    {
+        using var host = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services =>
+                services.AddSingleton<IIdentityPluginResolver>(ResolverFor("fault"))));
+        using var http = host.CreateClient();
+
+        var response = await http.GetAsync("/api/me/services");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.Headers.Contains("Retry-After").Should().BeFalse();
+    }
+
+    /// <summary>A staff-only route refused to a client stays 403 while the plugin is down: only the portal policy turns into 503.</summary>
+    [Fact]
+    public async Task StaffOnlyRoute_CalledByClientWhilePluginIsDown_StaysForbiddenAsync()
+    {
+        using var member = await PluginMemberSeeds.SignInClientThroughAsync(factory, "fail-staff-route", ResolverFor("fault"));
+
+        var response = await member.Client.GetAsync("/api/clients");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        response.Headers.Contains("Retry-After").Should().BeFalse();
+    }
+
     /// <summary>The account read degrades instead of failing: 200 with no client while the plugin cannot answer.</summary>
     /// <param name="kind">The failure mode.</param>
     [Theory]

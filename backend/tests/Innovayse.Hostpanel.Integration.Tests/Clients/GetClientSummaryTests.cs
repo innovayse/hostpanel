@@ -4,6 +4,7 @@ using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Microsoft.Extensions.DependencyInjection;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 
@@ -43,9 +44,9 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
             invoice.AddItem("Hosting", 40m, 1);
             context.Invoices.Add(invoice);
             await context.SaveChangesAsync(CancellationToken.None);
-            context.Transactions.Add(invoice.AddPayment(now, PaymentMethodNames.Manual, $"pay-{Guid.NewGuid():N}", 40m, 0m, null));
+            context.Transactions.Add(invoice.AddPayment(now, PaymentMethodNames.Manual, $"pay-{Guid.NewGuid():N}", 40m, 0m, null, TransactionSource.Manual));
             await context.SaveChangesAsync(CancellationToken.None);
-            context.Transactions.Add(invoice.AddRefund(now, PaymentMethodNames.Manual, $"rf-{Guid.NewGuid():N}", 15m, 0m, null));
+            context.Transactions.Add(invoice.AddRefund(now, PaymentMethodNames.Manual, $"rf-{Guid.NewGuid():N}", 15m, 0m, null, false, TransactionSource.Manual));
             await context.SaveChangesAsync(CancellationToken.None);
         }
 

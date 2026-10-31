@@ -95,17 +95,17 @@ public static class IncomeTestSeeds
         await context.SaveChangesAsync(CancellationToken.None);
 
         var lastSecondOfJanuary = At(year, 2, 1).AddSeconds(-1);
-        context.Transactions.Add(paidInJanuary.AddPayment(lastSecondOfJanuary, Gateway, Reference(), 100m, 0m, null));
+        context.Transactions.Add(paidInJanuary.AddPayment(lastSecondOfJanuary, Gateway, Reference(), 100m, 0m, null, TransactionSource.Manual));
 
-        context.Transactions.Add(partlyRefunded.AddPayment(At(year, 2, 1), Gateway, Reference(), 200m, 0m, null));
-        context.Transactions.Add(partlyRefunded.AddRefund(At(year, 3, 10), Gateway, Reference(), 50m, 0m, null));
+        context.Transactions.Add(partlyRefunded.AddPayment(At(year, 2, 1), Gateway, Reference(), 200m, 0m, null, TransactionSource.Manual));
+        context.Transactions.Add(partlyRefunded.AddRefund(At(year, 3, 10), Gateway, Reference(), 50m, 0m, null, false, TransactionSource.Manual));
 
         paidWithCredit.ApplyCredit(80m);
         paidWithCredit.MarkPaid(Reference(), At(year, 2, 15));
 
         importedHistory.RecordPaidHistory(Reference(), At(year, 4, 5));
 
-        context.Transactions.Add(foreignInvoice.AddPayment(At(year, 2, 10), Gateway, Reference(), 40_000m, 0m, null));
+        context.Transactions.Add(foreignInvoice.AddPayment(At(year, 2, 10), Gateway, Reference(), 40_000m, 0m, null, TransactionSource.Manual));
 
         // Money added to the balance is the client's own, not income: it is only ever a ledger row.
         context.Transactions.Add(Transaction.Create(

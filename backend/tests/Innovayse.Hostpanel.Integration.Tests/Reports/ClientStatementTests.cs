@@ -142,10 +142,10 @@ public sealed class ClientStatementTests(IntegrationTestFactory factory) : IClas
             invoice.AddItem("Hosting", 100m, 1);
             db.Invoices.Add(invoice);
             await db.SaveChangesAsync();
-            db.Transactions.Add(invoice.AddPayment(DateTimeOffset.UtcNow, "Manual", $"tx-{Guid.NewGuid():N}", 100m, 0m, null));
+            db.Transactions.Add(invoice.AddPayment(DateTimeOffset.UtcNow, "Manual", $"tx-{Guid.NewGuid():N}", 100m, 0m, null, TransactionSource.Manual));
             await db.SaveChangesAsync();
             db.Transactions.Add(invoice.AddRefund(
-                DateTimeOffset.UtcNow, PaymentMethodNames.CreditBalance, $"rf-{Guid.NewGuid():N}", 100m, 0m, null, addedToCredit: true));
+                DateTimeOffset.UtcNow, PaymentMethodNames.CreditBalance, $"rf-{Guid.NewGuid():N}", 100m, 0m, null, addedToCredit: true, source: TransactionSource.Manual));
             await db.SaveChangesAsync();
         }
 

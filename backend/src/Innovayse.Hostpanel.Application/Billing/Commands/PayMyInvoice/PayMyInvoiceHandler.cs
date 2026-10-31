@@ -154,7 +154,7 @@ public sealed class PayMyInvoiceHandler
             invoice.Settle(
                 covering?.Gateway ?? PaymentMethodNames.Card,
                 covering?.TransactionId ?? $"no-charge-{invoice.Id}-{now.Ticks}",
-                now);
+                now, TransactionSource.Manual);
             await _activity.RecordAsync(
                 new ActivityLogEntry(invoice.ClientId, $"Invoice Marked Paid - Invoice ID: {invoice.Id}"), ct);
             await _context.SaveChangesAsync(ct);

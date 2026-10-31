@@ -225,7 +225,7 @@ internal sealed class DemoBillingSeeder
         if (refund)
         {
             invoice.AddRefund(paidAt.AddDays(5), gateway, $"demo_refund_{client.Id}_{monthsBack}", invoice.Total, 0m, "Refunded at the customer's request.",
-                source: byCard ? TransactionSource.GatewayRefund : TransactionSource.Manual);
+                addedToCredit: false, source: byCard ? TransactionSource.GatewayRefund : TransactionSource.Manual);
         }
     }
 

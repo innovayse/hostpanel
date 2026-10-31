@@ -610,8 +610,10 @@ backend on the shared network, and Docker's DNS round-robins between the two.
   `Manual`, `Import`; `TransactionSource` in Domain, set by the creating path and never changed), and a filtered
   unique index on `PaymentMethod` and `TransactionId` covers the `GatewayPayment` rows only, so manual entries
   and imports may repeat a reference. The `AddTransactionSource` migration backfills `Source` from the rows
-  themselves and stops, naming the rows, when two gateway payments share a reference; run this script before
-  that deploy. A second gateway payment saved under one reference surfaces as `ConcurrencyConflictException`
+  themselves and stops, naming the rows, when two gateway payments share a reference, so this script must be run
+  before every production deploy that carries the migration, and any row it lists resolved first. The backfill reads
+  only the rows: a staff entry typed under a name that is also a gateway (with a reference and a description a gateway
+  path writes) is classified as a gateway row, and counts toward a duplicate. A second gateway payment saved under one reference surfaces as `ConcurrencyConflictException`
   (`AppDbContext` translates the violation), which the settlement handlers already answer as a replay.
 - `scripts/pack-cwp-plugin.sh` — publishes `Innovayse.Providers.CWP` (Release, net8.0) on the host, strips
   PDB/XML and framework DLLs, adds `plugin.json` and writes `dist/innovayse-cwp.zip`.

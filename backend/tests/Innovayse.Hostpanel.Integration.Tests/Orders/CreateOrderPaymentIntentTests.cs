@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 
 /// <summary>
@@ -68,7 +69,7 @@ public sealed class CreateOrderPaymentIntentTests(IntegrationTestFactory factory
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var invoice = await context.Invoices.Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
             context.Transactions.Add(invoice.AddPayment(
-                DateTimeOffset.UtcNow, PaymentMethodNames.Manual, $"full-{Guid.NewGuid():N}", 25m, 0m, null));
+                DateTimeOffset.UtcNow, PaymentMethodNames.Manual, $"full-{Guid.NewGuid():N}", 25m, 0m, null, TransactionSource.Manual));
             await context.SaveChangesAsync(CancellationToken.None);
         }
 
@@ -137,7 +138,7 @@ public sealed class CreateOrderPaymentIntentTests(IntegrationTestFactory factory
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var invoice = await context.Invoices.Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
             context.Transactions.Add(invoice.AddPayment(
-                DateTimeOffset.UtcNow, PaymentMethodNames.Manual, $"part-{Guid.NewGuid():N}", 10m, 0m, null));
+                DateTimeOffset.UtcNow, PaymentMethodNames.Manual, $"part-{Guid.NewGuid():N}", 10m, 0m, null, TransactionSource.Manual));
             await context.SaveChangesAsync(CancellationToken.None);
         }
 

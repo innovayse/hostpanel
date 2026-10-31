@@ -12,6 +12,7 @@ using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Billing.Events;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
+using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
@@ -257,7 +258,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         {
             var winnerContext = winnerScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var winnerInvoice = await winnerContext.Invoices.FirstAsync(i => i.Id == invoiceId);
-            winnerInvoice.Settle("bank-gateway", "ref-9", DateTimeOffset.UtcNow);
+            winnerInvoice.Settle("bank-gateway", "ref-9", DateTimeOffset.UtcNow, TransactionSource.Manual);
             await winnerContext.SaveChangesAsync(CancellationToken.None);
         }
 
@@ -364,7 +365,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
             var adminContext = adminScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var invoice = await adminContext.Invoices.Include(i => i.Transactions).FirstAsync(i => i.Id == invoiceId);
             adminContext.Transactions.Add(invoice.AddPayment(
-                DateTimeOffset.UtcNow, PaymentMethodNames.Manual, $"manual-{Guid.NewGuid():N}", 4m, 0m, null));
+                DateTimeOffset.UtcNow, PaymentMethodNames.Manual, $"manual-{Guid.NewGuid():N}", 4m, 0m, null, TransactionSource.Manual));
             await adminContext.SaveChangesAsync(CancellationToken.None);
             clientId = invoice.ClientId;
         }
@@ -435,7 +436,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
             var adminContext = adminScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var invoice = await adminContext.Invoices.Include(i => i.Transactions).FirstAsync(i => i.Id == invoiceId);
             adminContext.Transactions.Add(invoice.Settle(
-                PaymentMethodNames.Manual, $"manual-{Guid.NewGuid():N}", DateTimeOffset.UtcNow)!);
+                PaymentMethodNames.Manual, $"manual-{Guid.NewGuid():N}", DateTimeOffset.UtcNow, TransactionSource.Manual)!);
             await adminContext.SaveChangesAsync(CancellationToken.None);
             clientId = invoice.ClientId;
         }
@@ -956,6 +957,174 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         (await BillingTestSeeds.CreditBalanceOfAsync(factory, clientId)).Should().Be(1m);
     }
 
+    /// <summary>
+    /// The payment hand-back of a settled or closed invoice is saved while another request records the
+    /// same gateway payment: the unique gateway payment index refuses the second row, and the hand-back
+    /// stands down. The ledger keeps the one row the other request wrote, nothing is credited twice and
+    /// staff are not alerted a second time.
+    /// </summary>
+    [Fact]
+    public async Task HandBackUnrecorded_WhenTheLedgerHoldsThePaymentAfterTheSaveIsRefused_StandsDownQuietly()
+    {
+        var invoiceId = await SeedInvoiceWithSessionDirectlyAsync("gw-standdown-session");
+        var clientId = await ClientOfAsync(invoiceId);
+        var reference = $"ref-{Guid.NewGuid():N}";
+
+        // The other request records the same gateway payment right before this hand-back saves its row.
+        var hook = new LedgerRowSaveHookInterceptor(
+            row => row.TransactionId == reference && row.InvoiceId is null,
+            async () =>
+            {
+                using var other = factory.Services.CreateScope();
+                var otherContext = other.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+                otherContext.Transactions.Add(Transaction.Create(
+                    clientId, DateTimeOffset.UtcNow, "Gateway payment held for operator review", reference, null, "bank-gateway",
+                    10m, 0m, 0m, false, "USD", TransactionSource.GatewayPayment));
+                await otherContext.SaveChangesAsync(CancellationToken.None);
+            });
+        await using var host = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services =>
+                services.ConfigureDbContext<AppDbContext>(options => options.AddInterceptors(hook))));
+        using var readerScope = host.Services.CreateScope();
+        var readerContext = readerScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var handler = HandlerFor(readerScope, PaidResolver(reference));
+
+        // The handler's context holds the pre-cancel row, so its settle save conflicts and the hand-back runs.
+        _ = await readerContext.Invoices.FirstAsync(i => i.Id == invoiceId);
+        await CancelAsync(invoiceId);
+
+        var published = await PublishedDuringAsync(host.Services, async () =>
+        {
+            var result = await handler.HandleAsync(new CompleteGatewayPaymentCommand(invoiceId), CancellationToken.None);
+            result.ErrorCode.Should().Be(HostpanelErrorCodes.INVOICE_NOT_PAYABLE);
+        });
+
+        hook.Fired.Should().BeTrue("the other request must have recorded the payment while the hand-back was saving");
+        published.Should().BeEmpty();
+        using var checkScope = factory.Services.CreateScope();
+        var check = checkScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var row = await check.Transactions.AsNoTracking().SingleAsync(t => t.TransactionId == reference);
+        row.Description.Should().Be("Gateway payment held for operator review");
+        (await BillingTestSeeds.CreditBalanceOfAsync(factory, clientId)).Should().Be(0m);
+    }
+
+    /// <summary>
+    /// A hand-back whose save is refused for a reason other than the payment being on the ledger (here
+    /// the client's balance moved) is not a stand-down: the ledger holds no row for the payment, so the
+    /// conflict reaches the caller and nothing is recorded or alerted.
+    /// </summary>
+    [Fact]
+    public async Task HandBackUnrecorded_WhenTheSaveIsRefusedAndNoRowIsOnTheLedger_TheConflictPropagatesAndNothingIsRecorded()
+    {
+        var invoiceId = await SeedInvoiceWithSessionDirectlyAsync("gw-nostanddown-session");
+        var clientId = await ClientOfAsync(invoiceId);
+        var reference = $"ref-{Guid.NewGuid():N}";
+        var hook = new LedgerRowSaveHookInterceptor(
+            row => row.TransactionId == reference && row.InvoiceId is null,
+            async () =>
+            {
+                using var other = factory.Services.CreateScope();
+                (await other.ServiceProvider.GetRequiredService<IClientCredit>()
+                    .AddAndSaveAsync(new ClientCreditChange(clientId, 1m), CancellationToken.None)).IsSuccess.Should().BeTrue();
+            });
+        await using var host = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services =>
+                services.ConfigureDbContext<AppDbContext>(options => options.AddInterceptors(hook))));
+        using var readerScope = host.Services.CreateScope();
+        var readerContext = readerScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var handler = HandlerFor(readerScope, PaidResolver(reference));
+        _ = await readerContext.Invoices.FirstAsync(i => i.Id == invoiceId);
+        await CancelAsync(invoiceId);
+
+        var published = await PublishedDuringAsync(host.Services, async () =>
+        {
+            var act = () => handler.HandleAsync(new CompleteGatewayPaymentCommand(invoiceId), CancellationToken.None);
+            await act.Should().ThrowAsync<ConcurrencyConflictException>();
+        });
+
+        hook.Fired.Should().BeTrue();
+        published.Should().BeEmpty();
+        using var checkScope = factory.Services.CreateScope();
+        var check = checkScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await check.Transactions.AsNoTracking().AnyAsync(t => t.TransactionId == reference)).Should().BeFalse();
+    }
+
+    /// <summary>
+    /// A completion that loses the race to a request which already recorded the very same gateway
+    /// payment (the invoice settled, its ledger row written) answers <see cref="GatewayCompletionState.Paid"/>
+    /// and records nothing a second time.
+    /// </summary>
+    [Fact]
+    public async Task ConcurrentCompletion_WhenTheWinnerRecordedThePaymentOnTheLedger_TheLoserAnswersPaidAndRecordsNothingMore()
+    {
+        var invoiceId = await SeedInvoiceWithSessionDirectlyAsync("gw-winner-session");
+        var reference = $"ref-{Guid.NewGuid():N}";
+        using var loserScope = factory.Services.CreateScope();
+        var loserContext = loserScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var loser = HandlerFor(loserScope, PaidResolver(reference));
+
+        // The loser's context holds the open invoice, so its own save conflicts once the winner has committed.
+        _ = await loserContext.Invoices.Include(i => i.Transactions).FirstAsync(i => i.Id == invoiceId);
+        using (var winnerScope = factory.Services.CreateScope())
+        {
+            var winnerContext = winnerScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            var winnerInvoice = await winnerContext.Invoices.Include(i => i.Transactions).FirstAsync(i => i.Id == invoiceId);
+            winnerContext.Transactions.Add(winnerInvoice.Settle(
+                "bank-gateway", reference, DateTimeOffset.UtcNow, TransactionSource.GatewayPayment)!);
+            await winnerContext.SaveChangesAsync(CancellationToken.None);
+        }
+
+        var published = await PublishedDuringAsync(factory.Services, async () =>
+        {
+            var result = await loser.HandleAsync(new CompleteGatewayPaymentCommand(invoiceId), CancellationToken.None);
+            result.IsSuccess.Should().BeTrue();
+            result.Value!.State.Should().Be(GatewayCompletionState.Paid);
+        });
+
+        published.Should().BeEmpty();
+        using var checkScope = factory.Services.CreateScope();
+        var check = checkScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await check.Transactions.AsNoTracking().CountAsync(t => t.TransactionId == reference)).Should().Be(1);
+        (await check.Invoices.AsNoTracking().SingleAsync(i => i.Id == invoiceId)).Status.Should().Be(InvoiceStatus.Paid);
+    }
+
+    /// <summary>
+    /// A gateway reference that the ledger already holds for another payment answers 409 with the
+    /// standard problem body over HTTP, not a server error, and the payment is not recorded twice.
+    /// </summary>
+    [Fact]
+    public async Task GatewayReferenceAlreadyOnTheLedgerForAnotherPayment_AnswersConflictWithTheStandardErrorBody()
+    {
+        var reference = $"ref-{Guid.NewGuid():N}";
+        var plugin = new FakePaymentPlugin { StatusResult = new(GatewayPaymentState.Paid, reference, "orderStatus:2", AmountMinor: 1000) };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver);
+        var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-complete-dup-reference");
+        var invoiceId = await CreateInvoiceWithSessionAsync(host, client, clientId, plugin);
+        using (var seedScope = host.Services.CreateScope())
+        {
+            var seed = seedScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            seed.Transactions.Add(Transaction.Create(
+                clientId, DateTimeOffset.UtcNow, "Earlier payment", reference, null, "bank-gateway", 10m, 0m, 0m, false, "USD",
+                TransactionSource.GatewayPayment));
+            await seed.SaveChangesAsync(CancellationToken.None);
+        }
+
+        var response = await CompleteAsync(client, invoiceId);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        response.Content.Headers.ContentType!.MediaType.Should().Be("application/problem+json");
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("type").GetString().Should().Be(SharedErrorCodes.Conflict);
+        body.GetProperty("status").GetInt32().Should().Be(409);
+        body.GetProperty("detail").GetString().Should().NotBeNullOrWhiteSpace();
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await context.Transactions.AsNoTracking().CountAsync(t => t.TransactionId == reference)).Should().Be(1);
+        (await context.Invoices.AsNoTracking().SingleAsync(i => i.Id == invoiceId)).Status.Should().NotBe(InvoiceStatus.Paid);
+    }
+
     /// <summary>The id of the client an invoice belongs to.</summary>
     /// <param name="invoiceId">The invoice.</param>
     /// <returns>The client id.</returns>
@@ -1049,7 +1218,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var invoice = await context.Invoices.Include(i => i.Transactions).FirstAsync(i => i.Id == invoiceId);
         context.Transactions.Add(invoice.AddPayment(
-            DateTimeOffset.UtcNow, PaymentMethodNames.Manual, $"manual-{Guid.NewGuid():N}", amount, 0m, null));
+            DateTimeOffset.UtcNow, PaymentMethodNames.Manual, $"manual-{Guid.NewGuid():N}", amount, 0m, null, TransactionSource.Manual));
         await context.SaveChangesAsync(CancellationToken.None);
     }
 

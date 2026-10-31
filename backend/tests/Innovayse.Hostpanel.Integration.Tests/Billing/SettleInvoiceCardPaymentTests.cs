@@ -124,7 +124,7 @@ public sealed class SettleInvoiceCardPaymentTests(IntegrationTestFactory factory
             var context = seed.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var invoice = await context.Invoices.Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
             context.Transactions.Add(invoice.AddPayment(
-                DateTimeOffset.UtcNow, PaymentMethodNames.Manual, $"part-{Guid.NewGuid():N}", 5m, 0m, null));
+                DateTimeOffset.UtcNow, PaymentMethodNames.Manual, $"part-{Guid.NewGuid():N}", 5m, 0m, null, TransactionSource.Manual));
             await context.SaveChangesAsync(CancellationToken.None);
         }
 
@@ -536,6 +536,41 @@ public sealed class SettleInvoiceCardPaymentTests(IntegrationTestFactory factory
         hook.LedgerReadsBeforeFire.Should().Be(1);
         _cardGateway.RefundInstructions.Should().BeEmpty();
         (await LedgerRowAsync(transactionId)).InvoiceId.Should().BeNull();
+    }
+
+    /// <summary>
+    /// The row that records a returned payment is saved while another request settles another invoice
+    /// with the same card transaction: the unique gateway payment index refuses the returned-payment row
+    /// and the handler stands down. The ledger keeps the one row the other request wrote, and a repeat of
+    /// the payment is a success for the invoice it settled and <c>PAYMENT_INTENT_ALREADY_USED</c> for any other.
+    /// </summary>
+    [Fact]
+    public async Task RecordReturn_WhenTheTransactionIsOnTheLedgerAfterTheSaveIsRefused_StandsDownAndReplaysAnswerFromTheLedgerAsync()
+    {
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
+        var invoiceId = await SeedUnpaidInvoiceAsync(clientId);
+        var otherInvoiceId = await SeedUnpaidInvoiceAsync(clientId);
+        var transactionId = $"pi_{Guid.NewGuid():N}";
+        var hook = new LedgerRowSaveHookInterceptor(
+            row => row.TransactionId == transactionId && row.InvoiceId is null,
+            async () => (await InvokeAsync(Payment(otherInvoiceId, transactionId))).IsSuccess.Should().BeTrue());
+        _host = BuildHost(hook);
+
+        // The amount is not what is due, so the payment is handed back and the returned-payment row is saved.
+        var result = await InvokeAsync(new SettleInvoiceCardPaymentCommand(invoiceId, transactionId, 25m, "USD"));
+        var sameInvoice = await InvokeAsync(Payment(otherInvoiceId, transactionId));
+        var anotherInvoice = await InvokeAsync(Payment(invoiceId, transactionId));
+
+        hook.Fired.Should().BeTrue("the other request must have settled the payment while the returned-payment row was saving");
+        result.ErrorCode.Should().Be(HostpanelErrorCodes.PAYMENT_INTENT_MISMATCH);
+        sameInvoice.IsSuccess.Should().BeTrue();
+        anotherInvoice.ErrorCode.Should().Be(HostpanelErrorCodes.PAYMENT_INTENT_ALREADY_USED);
+        var row = await LedgerRowAsync(transactionId);
+        row.InvoiceId.Should().Be(otherInvoiceId);
+        row.Source.Should().Be(TransactionSource.GatewayPayment);
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await context.Invoices.AsNoTracking().SingleAsync(i => i.Id == invoiceId)).Status.Should().Be(InvoiceStatus.Unpaid);
     }
 
     /// <summary>

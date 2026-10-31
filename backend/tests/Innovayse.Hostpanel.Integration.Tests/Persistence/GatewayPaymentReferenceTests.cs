@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
+using Innovayse.Hostpanel.Domain.Support;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -92,6 +93,35 @@ public sealed class GatewayPaymentReferenceTests(IntegrationTestFactory factory)
         await AddAsync(clientId, "other-gateway", reference, TransactionSource.GatewayPayment);
 
         (await CountAsync(reference)).Should().Be(2);
+    }
+
+    /// <summary>
+    /// Another unique violation is not a lost race on the ledger: the translation covers only the gateway
+    /// payment index, so a duplicate department name stays the database error it is.
+    /// </summary>
+    [Fact]
+    public async Task AnotherUniqueViolation_IsNotTranslatedIntoAConflict()
+    {
+        var name = $"Billing {Guid.NewGuid():N}";
+        await AddDepartmentAsync(name);
+
+        var act = () => AddDepartmentAsync(name);
+
+        var thrown = await act.Should().ThrowAsync<DbUpdateException>();
+        thrown.Which.Should().NotBeOfType<ConcurrencyConflictException>();
+        thrown.Which.InnerException.Should().BeOfType<Npgsql.PostgresException>()
+            .Which.SqlState.Should().Be(Npgsql.PostgresErrorCodes.UniqueViolation);
+    }
+
+    /// <summary>Saves one department in a scope of its own.</summary>
+    /// <param name="name">The department name, which is unique.</param>
+    /// <returns>A task that completes once the department is saved.</returns>
+    private async Task AddDepartmentAsync(string name)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        context.Departments.Add(Department.Create(name, "billing@example.com"));
+        await context.SaveChangesAsync(CancellationToken.None);
     }
 
     /// <summary>Saves one ledger row in a scope of its own, so each save is a separate writer.</summary>

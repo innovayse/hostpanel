@@ -91,6 +91,21 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                 END $$;
                 """);
 
+            // The column was added with an empty default only so the existing rows could be filled. Every
+            // row now has its source, so the default is dropped: a writer that forgets to name the source
+            // must fail, not record an empty one. This is the statement the model produces for a column
+            // with no default value.
+            migrationBuilder.AlterColumn<string>(
+                name: "Source",
+                table: "Transactions",
+                type: "character varying(20)",
+                maxLength: 20,
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "character varying(20)",
+                oldMaxLength: 20,
+                oldDefaultValue: "");
+
             migrationBuilder.CreateIndex(
                 name: "IX_Transactions_PaymentMethod_TransactionId_GatewayPayment",
                 table: "Transactions",

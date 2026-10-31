@@ -6,6 +6,7 @@ using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Clients;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 
@@ -106,7 +107,7 @@ public sealed class AnnualIncomeTests(IntegrationTestFactory factory) : IClassFi
         await context.SaveChangesAsync(CancellationToken.None);
 
         invoice.RecordPaidHistory($"tx-{Guid.NewGuid():N}", IncomeTestSeeds.At(year, 2, 5));
-        context.Transactions.Add(invoice.AddRefund(IncomeTestSeeds.At(year, 2, 10), "Card", $"tx-{Guid.NewGuid():N}", 40m, 0m, null));
+        context.Transactions.Add(invoice.AddRefund(IncomeTestSeeds.At(year, 2, 10), "Card", $"tx-{Guid.NewGuid():N}", 40m, 0m, null, false, TransactionSource.Manual));
         await context.SaveChangesAsync(CancellationToken.None);
     }
 }

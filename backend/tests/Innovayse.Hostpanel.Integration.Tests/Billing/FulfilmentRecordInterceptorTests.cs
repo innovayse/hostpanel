@@ -35,7 +35,7 @@ public sealed class FulfilmentRecordInterceptorTests(IntegrationTestFactory fact
         using var host = HostWith(first, second);
         var invoiceId = await SeedUnpaidAsync(host, digital: true);
 
-        await MutateAsync(host, invoiceId, i => i.Settle("manual", Reference, DateTimeOffset.UtcNow));
+        await MutateAsync(host, invoiceId, i => i.Settle("manual", Reference, DateTimeOffset.UtcNow, TransactionSource.Manual));
 
         var records = await RecordsAsync(host, invoiceId);
         records.Select(r => (r.PluginId, r.Kind)).Should().BeEquivalentTo(
@@ -53,10 +53,10 @@ public sealed class FulfilmentRecordInterceptorTests(IntegrationTestFactory fact
         var now = DateTimeOffset.UtcNow;
         await MutateAsync(host, invoiceId, i => i.MarkOverdue(now));
         await MutateAsync(host, invoiceId, i => i.MarkLapsed(now));
-        await MutateAsync(host, invoiceId, i => i.Settle("manual", Reference, now));
+        await MutateAsync(host, invoiceId, i => i.Settle("manual", Reference, now, TransactionSource.Manual));
 
-        await MutateAsync(host, invoiceId, i => i.AddRefund(now, "manual", "r-1", 1m, 0m, null));
-        await MutateAsync(host, invoiceId, i => i.AddRefund(now, "manual", "r-2", 1m, 0m, null));
+        await MutateAsync(host, invoiceId, i => i.AddRefund(now, "manual", "r-1", 1m, 0m, null, false, TransactionSource.Manual));
+        await MutateAsync(host, invoiceId, i => i.AddRefund(now, "manual", "r-2", 1m, 0m, null, false, TransactionSource.Manual));
 
         var records = await RecordsAsync(host, invoiceId);
         records.Select(r => r.Kind).Should().BeEquivalentTo(
@@ -76,7 +76,7 @@ public sealed class FulfilmentRecordInterceptorTests(IntegrationTestFactory fact
         var stale = await loserDb.Invoices.Include(i => i.Items).Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
         await MutateAsync(host, invoiceId, i => i.UpdateNotes("changed first"));
 
-        stale.Settle("manual", Reference, DateTimeOffset.UtcNow);
+        stale.Settle("manual", Reference, DateTimeOffset.UtcNow, TransactionSource.Manual);
         var save = () => loserDb.SaveChangesAsync(CancellationToken.None);
 
         await save.Should().ThrowAsync<ConcurrencyConflictException>();
@@ -98,7 +98,7 @@ public sealed class FulfilmentRecordInterceptorTests(IntegrationTestFactory fact
             await db.SaveChangesAsync(CancellationToken.None);
         }
 
-        await MutateAsync(host, invoiceId, i => i.Settle("manual", Reference, DateTimeOffset.UtcNow));
+        await MutateAsync(host, invoiceId, i => i.Settle("manual", Reference, DateTimeOffset.UtcNow, TransactionSource.Manual));
 
         (await RecordsAsync(host, invoiceId)).Should().ContainSingle();
     }
@@ -111,7 +111,7 @@ public sealed class FulfilmentRecordInterceptorTests(IntegrationTestFactory fact
         using var host = HostWith();
         var invoiceId = await SeedUnpaidAsync(host, digital: true);
 
-        await MutateAsync(host, invoiceId, i => i.Settle("manual", Reference, DateTimeOffset.UtcNow));
+        await MutateAsync(host, invoiceId, i => i.Settle("manual", Reference, DateTimeOffset.UtcNow, TransactionSource.Manual));
 
         (await RecordsAsync(host, invoiceId)).Should().BeEmpty();
     }
@@ -124,7 +124,7 @@ public sealed class FulfilmentRecordInterceptorTests(IntegrationTestFactory fact
         using var host = HostWith($"stub-{Guid.NewGuid():N}");
         var invoiceId = await SeedUnpaidAsync(host, digital: false);
 
-        await MutateAsync(host, invoiceId, i => i.Settle("manual", Reference, DateTimeOffset.UtcNow));
+        await MutateAsync(host, invoiceId, i => i.Settle("manual", Reference, DateTimeOffset.UtcNow, TransactionSource.Manual));
 
         (await RecordsAsync(host, invoiceId)).Should().BeEmpty();
     }
@@ -142,7 +142,7 @@ public sealed class FulfilmentRecordInterceptorTests(IntegrationTestFactory fact
             using var suppression = scope.ServiceProvider.GetRequiredService<IDomainEventGate>().Suppress();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var invoice = await db.Invoices.Include(i => i.Items).Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
-            invoice.Settle("manual", Reference, DateTimeOffset.UtcNow);
+            invoice.Settle("manual", Reference, DateTimeOffset.UtcNow, TransactionSource.Manual);
             await db.SaveChangesAsync(CancellationToken.None);
         }
 

@@ -184,7 +184,7 @@ public sealed class LapseOverdueInvoiceTests(IntegrationTestFactory factory) : I
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var invoice = await db.Invoices.Include(i => i.Items).Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
-            invoice.Settle("manual", "lapse-paid", now);
+            invoice.Settle("manual", "lapse-paid", now, TransactionSource.Manual);
             await db.SaveChangesAsync(CancellationToken.None);
         }
 

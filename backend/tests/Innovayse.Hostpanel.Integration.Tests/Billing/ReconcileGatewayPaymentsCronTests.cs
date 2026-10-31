@@ -237,7 +237,7 @@ public sealed class ReconcileGatewayPaymentsCronTests(IntegrationTestFactory fac
             await db.SaveChangesAsync(CancellationToken.None);
 
             // The administrator settles it while the session is still open.
-            db.Transactions.Add(invoice.Settle(PaymentMethodNames.Manual, $"manual-{Guid.NewGuid():N}", now)!);
+            db.Transactions.Add(invoice.Settle(PaymentMethodNames.Manual, $"manual-{Guid.NewGuid():N}", now, TransactionSource.Manual)!);
             await db.SaveChangesAsync(CancellationToken.None);
             invoiceId = invoice.Id;
             clientId = client.Id;

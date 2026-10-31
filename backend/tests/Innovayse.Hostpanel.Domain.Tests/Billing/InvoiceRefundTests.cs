@@ -34,7 +34,7 @@ public sealed class InvoiceRefundTests
     {
         var invoice = PaidFor(100m);
 
-        invoice.AddRefund(Now, PaymentMethodNames.Manual, "r1", 60m, 0m, null);
+        invoice.AddRefund(Now, PaymentMethodNames.Manual, "r1", 60m, 0m, null, false, TransactionSource.Manual);
 
         invoice.RefundStartedAt.Should().Be(Now);
         invoice.Status.Should().Be(InvoiceStatus.PartiallyRefunded);
@@ -46,9 +46,9 @@ public sealed class InvoiceRefundTests
     public void AddRefund_SecondPartialAboveWhatIsLeft_ThrowsRefundExceedsPaid()
     {
         var invoice = PaidFor(100m);
-        invoice.AddRefund(Now, PaymentMethodNames.Manual, "r1", 60m, 0m, null);
+        invoice.AddRefund(Now, PaymentMethodNames.Manual, "r1", 60m, 0m, null, false, TransactionSource.Manual);
 
-        var act = () => invoice.AddRefund(Now.AddSeconds(1), PaymentMethodNames.Manual, "r2", 60m, 0m, null);
+        var act = () => invoice.AddRefund(Now.AddSeconds(1), PaymentMethodNames.Manual, "r2", 60m, 0m, null, false, TransactionSource.Manual);
 
         act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.InvoiceRefundExceedsPaid);
     }
@@ -62,15 +62,15 @@ public sealed class InvoiceRefundTests
     {
         var invoice = PaidFor(100m);
 
-        invoice.AddRefund(Now, PaymentMethodNames.Manual, "r1", 30m, 0m, null);
+        invoice.AddRefund(Now, PaymentMethodNames.Manual, "r1", 30m, 0m, null, false, TransactionSource.Manual);
         invoice.Status.Should().Be(InvoiceStatus.PartiallyRefunded);
         invoice.RefundableAmount.Should().Be(70m);
 
-        invoice.AddRefund(Now.AddSeconds(1), PaymentMethodNames.Manual, "r2", 45m, 0m, null);
+        invoice.AddRefund(Now.AddSeconds(1), PaymentMethodNames.Manual, "r2", 45m, 0m, null, false, TransactionSource.Manual);
         invoice.Status.Should().Be(InvoiceStatus.PartiallyRefunded);
         invoice.RefundableAmount.Should().Be(25m);
 
-        invoice.AddRefund(Now.AddSeconds(2), PaymentMethodNames.Manual, "r3", 25m, 0m, null);
+        invoice.AddRefund(Now.AddSeconds(2), PaymentMethodNames.Manual, "r3", 25m, 0m, null, false, TransactionSource.Manual);
         invoice.Status.Should().Be(InvoiceStatus.Refunded);
         invoice.RefundableAmount.Should().Be(0m);
         invoice.AmountRefunded.Should().Be(100m);
@@ -84,15 +84,15 @@ public sealed class InvoiceRefundTests
     public void AddRefund_AfterAPartial_IsCappedAtPaidLessEarlierRefunds()
     {
         var invoice = PaidFor(50m);
-        invoice.AddRefund(Now, PaymentMethodNames.Manual, "r1", 20m, 0m, null);
+        invoice.AddRefund(Now, PaymentMethodNames.Manual, "r1", 20m, 0m, null, false, TransactionSource.Manual);
 
-        var tooMuch = () => invoice.AddRefund(Now.AddSeconds(1), PaymentMethodNames.Manual, "r2", 30.01m, 0m, null);
+        var tooMuch = () => invoice.AddRefund(Now.AddSeconds(1), PaymentMethodNames.Manual, "r2", 30.01m, 0m, null, false, TransactionSource.Manual);
 
         tooMuch.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.InvoiceRefundExceedsPaid);
         invoice.Status.Should().Be(InvoiceStatus.PartiallyRefunded);
         invoice.AmountRefunded.Should().Be(20m);
 
-        invoice.AddRefund(Now.AddSeconds(2), PaymentMethodNames.Manual, "r3", 30m, 0m, null);
+        invoice.AddRefund(Now.AddSeconds(2), PaymentMethodNames.Manual, "r3", 30m, 0m, null, false, TransactionSource.Manual);
         invoice.Status.Should().Be(InvoiceStatus.Refunded);
     }
 
@@ -102,7 +102,7 @@ public sealed class InvoiceRefundTests
     {
         var invoice = PaidFor(80m);
 
-        invoice.AddRefund(Now, PaymentMethodNames.Manual, "r1", 80m, 0m, null);
+        invoice.AddRefund(Now, PaymentMethodNames.Manual, "r1", 80m, 0m, null, false, TransactionSource.Manual);
 
         invoice.Status.Should().Be(InvoiceStatus.Refunded);
     }
@@ -115,7 +115,7 @@ public sealed class InvoiceRefundTests
     public void PartiallyRefunded_IsStillPaidAndSettled()
     {
         var invoice = PaidFor(100m);
-        invoice.AddRefund(Now, PaymentMethodNames.Manual, "r1", 10m, 0m, null);
+        invoice.AddRefund(Now, PaymentMethodNames.Manual, "r1", 10m, 0m, null, false, TransactionSource.Manual);
 
         invoice.IsPaid.Should().BeTrue();
         invoice.IsSettled.Should().BeTrue();
@@ -135,9 +135,9 @@ public sealed class InvoiceRefundTests
     public void Refunded_RefusesAnotherRefund()
     {
         var invoice = PaidFor(10m);
-        invoice.AddRefund(Now, PaymentMethodNames.Manual, "r1", 10m, 0m, null);
+        invoice.AddRefund(Now, PaymentMethodNames.Manual, "r1", 10m, 0m, null, false, TransactionSource.Manual);
 
-        var addRefund = () => invoice.AddRefund(Now.AddSeconds(1), PaymentMethodNames.Manual, "r2", 1m, 0m, null);
+        var addRefund = () => invoice.AddRefund(Now.AddSeconds(1), PaymentMethodNames.Manual, "r2", 1m, 0m, null, false, TransactionSource.Manual);
         var beginRefund = () => invoice.BeginRefund(Now.AddSeconds(1));
 
         addRefund.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.InvoiceNotPaid);
@@ -172,11 +172,11 @@ public sealed class InvoiceRefundTests
         var invoice = PaidFor(100m);
         invoice.BeginRefund(Now);
 
-        var other = () => invoice.AddRefund(Now.AddSeconds(1), PaymentMethodNames.Manual, "r-other", 10m, 0m, null);
+        var other = () => invoice.AddRefund(Now.AddSeconds(1), PaymentMethodNames.Manual, "r-other", 10m, 0m, null, false, TransactionSource.Manual);
         other.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.InvoiceRefundConflict);
 
-        invoice.AddRefund(Now, PaymentMethodNames.Card, "re-1", 30m, 0m, null);
-        invoice.AddRefund(Now, PaymentMethodNames.Card, "re-2", 20m, 0m, null);
+        invoice.AddRefund(Now, PaymentMethodNames.Card, "re-1", 30m, 0m, null, false, TransactionSource.Manual);
+        invoice.AddRefund(Now, PaymentMethodNames.Card, "re-2", 20m, 0m, null, false, TransactionSource.Manual);
 
         invoice.AmountRefunded.Should().Be(50m);
         invoice.IsRefundInFlight(Now.AddSeconds(1)).Should().BeFalse();
@@ -229,13 +229,13 @@ public sealed class InvoiceRefundTests
     {
         var invoice = Invoice.Create(clientId: 1, dueDate: Now.AddDays(7), currency: "USD", issuedAt: Now);
         invoice.AddItem("Hosting Plan", unitPrice: 100m, quantity: 1);
-        invoice.AddPayment(Now.AddMinutes(-5), PaymentMethodNames.Manual, "pay-manual", 30m, 0m, null);
-        invoice.Settle(HostedGateway, "gw-ref", Now);
+        invoice.AddPayment(Now.AddMinutes(-5), PaymentMethodNames.Manual, "pay-manual", 30m, 0m, null, TransactionSource.Manual);
+        invoice.Settle(HostedGateway, "gw-ref", Now, TransactionSource.Manual);
 
         invoice.RefundableThrough(HostedGateway).Should().Be(70m);
         invoice.RefundableThrough(PaymentMethodNames.Manual).Should().Be(30m);
 
-        invoice.AddRefund(Now, HostedGateway, "gw-refund", 20m, 0m, null);
+        invoice.AddRefund(Now, HostedGateway, "gw-refund", 20m, 0m, null, false, TransactionSource.Manual);
 
         invoice.RefundableThrough(HostedGateway).Should().Be(50m);
         invoice.RefundableAmount.Should().Be(80m);

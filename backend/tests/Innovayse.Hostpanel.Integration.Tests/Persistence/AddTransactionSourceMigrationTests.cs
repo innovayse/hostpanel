@@ -58,6 +58,11 @@ public sealed class AddTransactionSourceMigrationTests
             (await ScalarAsync(connectionString, "SELECT count(*) FROM pg_indexes WHERE indexname = 'IX_Transactions_PaymentMethod_TransactionId_GatewayPayment'"))
                 .Should().Be(1L);
 
+            // The empty default that let the column be added to a filled table is gone: a writer that
+            // does not name the source fails instead of recording an empty one.
+            (await ScalarAsync(connectionString, "SELECT column_default FROM information_schema.columns WHERE table_name = 'Transactions' AND column_name = 'Source'"))
+                .Should().BeOfType<DBNull>();
+
             await MigrateAsync(options, PreviousMigration);
 
             (await ScalarAsync(connectionString, "SELECT count(*) FROM \"Transactions\"")).Should().Be(8L, "Down keeps every row");

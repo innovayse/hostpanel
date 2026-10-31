@@ -419,7 +419,7 @@ public sealed class SettleInvoiceCardPaymentHandler
             // the ledger now, a concurrent request recorded it first and the money is accounted for, so
             // the row is dropped; any other lost save is the caller's.
             _context.DetachAll();
-            if (!await _context.IsRecordedAsync(cmd.TransactionId, ct))
+            if (!await _context.IsRecordedAsync(PaymentMethodNames.Card, cmd.TransactionId, ct))
             {
                 throw;
             }

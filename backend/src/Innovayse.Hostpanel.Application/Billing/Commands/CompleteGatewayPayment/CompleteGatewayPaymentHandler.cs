@@ -276,7 +276,7 @@ public sealed class CompleteGatewayPaymentHandler
             return null;
         }
 
-        if (current.Transactions.Any(t => t.TransactionId == reference) || await _context.IsRecordedAsync(reference, ct))
+        if (current.Transactions.Any(t => t.TransactionId == reference) || await _context.IsRecordedAsync(module, reference, ct))
         {
             _logger.LogInformation("Invoice {InvoiceId} was already marked paid by a concurrent completion.", invoiceId);
         }
@@ -313,7 +313,7 @@ public sealed class CompleteGatewayPaymentHandler
         Invoice invoice, string module, string reference, GatewayPaymentStatus status, CancellationToken ct)
     {
         // Recorded on the invoice's own payment history or on the ledger: the money is accounted for.
-        if (invoice.Transactions.Any(t => t.TransactionId == reference) || await _context.IsRecordedAsync(reference, ct))
+        if (invoice.Transactions.Any(t => t.TransactionId == reference) || await _context.IsRecordedAsync(module, reference, ct))
         {
             return;
         }
@@ -364,7 +364,7 @@ public sealed class CompleteGatewayPaymentHandler
             // that recorded it: the money is accounted for, so this replay stands down without recording
             // or alerting a second time. Any other lost save (the client's balance moved) is the caller's.
             _context.DetachAll();
-            if (!await _context.IsRecordedAsync(reference, ct))
+            if (!await _context.IsRecordedAsync(module, reference, ct))
             {
                 throw;
             }

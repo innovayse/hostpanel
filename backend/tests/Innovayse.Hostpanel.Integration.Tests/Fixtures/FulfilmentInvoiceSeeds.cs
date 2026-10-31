@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
@@ -42,8 +43,8 @@ internal static class FulfilmentInvoiceSeeds
         invoice.AddItem("Setup fee", 5m, 1);
         invoice.MarkOverdue(now);
         invoice.MarkLapsed(now);
-        invoice.Settle("manual", PaymentReference, now);
-        invoice.AddRefund(now, "manual", RefundReference, RefundedAmount, 0m, null);
+        invoice.Settle("manual", PaymentReference, now, TransactionSource.Manual);
+        invoice.AddRefund(now, "manual", RefundReference, RefundedAmount, 0m, null, false, TransactionSource.Manual);
         return invoice;
     }
 

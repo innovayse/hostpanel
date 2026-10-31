@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Wolverine;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 
@@ -246,7 +247,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         var service = await SeedActiveServiceAsync(context, start);
         var before = (await ReloadServiceAsync(context, service.Id)).NextRenewalAt;
         var invoice = await SeedServiceRenewalInvoiceAsync(context, service, start);
-        invoice.AddPayment(DateTimeOffset.UtcNow, "Manual", $"part-{Guid.NewGuid():N}", 1m, 0m, null);
+        invoice.AddPayment(DateTimeOffset.UtcNow, "Manual", $"part-{Guid.NewGuid():N}", 1m, 0m, null, TransactionSource.Manual);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await bus.InvokeAsync<Result>(new ApplyPaidRenewalsCommand(invoice.Id), CancellationToken.None);
@@ -267,10 +268,10 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         var start = DateTimeOffset.UtcNow.AddDays(5);
         var service = await SeedActiveServiceAsync(context, start);
         var invoice = await SeedServiceRenewalInvoiceAsync(context, service, start);
-        invoice.AddPayment(DateTimeOffset.UtcNow, "Manual", $"part-{Guid.NewGuid():N}", 1m, 0m, null);
+        invoice.AddPayment(DateTimeOffset.UtcNow, "Manual", $"part-{Guid.NewGuid():N}", 1m, 0m, null, TransactionSource.Manual);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        invoice.AddPayment(DateTimeOffset.UtcNow, "Manual", $"rest-{Guid.NewGuid():N}", invoice.AmountDue, 0m, null);
+        invoice.AddPayment(DateTimeOffset.UtcNow, "Manual", $"rest-{Guid.NewGuid():N}", invoice.AmountDue, 0m, null, TransactionSource.Manual);
         await context.SaveChangesAsync(CancellationToken.None);
         var result = await bus.InvokeAsync<Result>(new ApplyPaidRenewalsCommand(invoice.Id), CancellationToken.None);
 

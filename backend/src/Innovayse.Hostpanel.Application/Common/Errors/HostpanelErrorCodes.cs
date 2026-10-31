@@ -181,7 +181,8 @@ public static class HostpanelErrorCodes
     public const string PAYMENT_METHOD_NOT_OWNED = "PAYMENT_METHOD_NOT_OWNED";
 
     /// <summary>
-    /// The deployment cannot charge a saved payment method because it has no card gateway configured (409).
+    /// The deployment has no card gateway configured, so no card payment can be taken, refunded, opened or
+    /// confirmed and no saved payment method can be charged, set as the default or removed (409).
     /// </summary>
     public const string PAYMENT_METHOD_UNAVAILABLE = "PAYMENT_METHOD_UNAVAILABLE";
 
@@ -1018,6 +1019,9 @@ public static class HostpanelErrorCodes
     /// The deduction exceeds the client's credit balance (400): <see cref="Domain.Clients.Client.DeductCredit"/>.
     /// </summary>
     public const string CLIENT_CREDIT_INSUFFICIENT = Domain.Clients.ClientsErrors.ClientCreditInsufficient;
+
+    /// <summary>The client holds a credit balance, so the billing currency cannot change (409): <see cref="Domain.Clients.Client.SetCurrency"/>.</summary>
+    public const string CLIENT_CURRENCY_LOCKED_BY_CREDIT = Domain.Clients.ClientsErrors.ClientCurrencyLockedByCredit;
 
     /// <summary>The account is not in a state that can be suspended (400): <see cref="Domain.Clients.Client.Suspend"/>.</summary>
     public const string CLIENT_SUSPEND_NOT_ALLOWED = Domain.Clients.ClientsErrors.ClientSuspendNotAllowed;

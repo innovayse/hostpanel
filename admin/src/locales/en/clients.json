@@ -293,6 +293,7 @@
     "streetAddress": "Street address",
     "suiteAptEtc": "Suite, apt, etc.",
     "billingPreferences": "Billing Preferences",
+    "currencyLockedByCreditHint": "The currency cannot be changed while the client holds a credit balance. Use or refund the balance first.",
     "billingContactName": "Billing contact name",
     "contactsLength": "Contacts ({length})",
     "noContactsAddedYet": "No contacts added yet"

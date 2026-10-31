@@ -6,6 +6,7 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Orders.Commands.FulfillInvoicedOrder;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Events;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
 using Innovayse.SDK.Plugins;
@@ -71,8 +72,9 @@ public sealed class CompleteGatewayPaymentHandler
     /// <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c>, or <c>GATEWAY_PAYMENT_MISMATCH</c> when the gateway
     /// reports a paid amount below what the invoice owes, or another currency (the invoice stays
     /// unpaid). A paid amount above what is owed (a payment recorded while the session was open)
-    /// settles the invoice and puts the rest on the client's credit balance. A paid status without
-    /// an amount is a mismatch. When another path settled or closed the invoice while the session
+    /// settles the invoice and puts the rest on the client's credit balance, and staff are alerted after the
+    /// save that credited it; a replay finds the ledger row and does not alert again. A paid status without
+    /// an amount, or with no payment reference at all, is a mismatch and is held for an operator. When another path settled or closed the invoice while the session
     /// was open, whatever the session took that the ledger does not hold goes to the client's
     /// balance (<c>INVOICE_NOT_PAYABLE</c> when the invoice was closed unpaid).
     /// </returns>
@@ -130,7 +132,16 @@ public sealed class CompleteGatewayPaymentHandler
             return Result<GatewayCompletionDto>.FailureCode(HostpanelErrorCodes.GATEWAY_PAYMENT_MISMATCH);
         }
 
-        var gatewayTransactionId = status.TransactionId ?? invoice.GatewayOrderId;
+        // Without any reference the payment cannot be told apart from another on the ledger, so a
+        // replay could not recognise it: nothing is settled or credited, and an operator is told.
+        var gatewayTransactionId = PickReference(status, invoice.GatewayOrderId);
+        if (gatewayTransactionId is null)
+        {
+            _logger.LogCritical(
+                "Invoice {InvoiceId} gateway session through {Module} reports paid but neither the gateway nor the invoice carries a payment reference; held for an operator, nothing recorded or credited.",
+                invoice.Id, invoice.GatewayModule);
+            return Result<GatewayCompletionDto>.FailureCode(HostpanelErrorCodes.GATEWAY_PAYMENT_MISMATCH);
+        }
 
         // The ledger row is saved with the Paid mark; the concurrent-completion guard below then
         // makes "ledger row exists" and "invoice is Paid" one atomic fact.
@@ -145,10 +156,10 @@ public sealed class CompleteGatewayPaymentHandler
         // The session was opened for the amount due then; a payment recorded while it was open
         // lowered what is due now, so the gateway took more than the settlement records. The rest
         // belongs to the client and is kept on their balance, in the same save.
+        var surplus = CurrencyCode.FromMinorUnits(Math.Max(paidMinor - dueMinor, 0L), invoice.Currency);
         if (paidMinor > dueMinor)
         {
-            var credited = await _clientCredit.AddAsync(
-                new ClientCreditChange(invoice.ClientId, CurrencyCode.FromMinorUnits(paidMinor - dueMinor, invoice.Currency)), ct);
+            var credited = await _clientCredit.AddAsync(new ClientCreditChange(invoice.ClientId, surplus), ct);
             if (credited.IsFailure)
             {
                 return Result<GatewayCompletionDto>.FailureCode(credited.ErrorCode!);
@@ -173,6 +184,18 @@ public sealed class CompleteGatewayPaymentHandler
             }
 
             return outcome;
+        }
+
+        // Published only after the save, like the reconciler's stalled alert: a save that lost to a
+        // conflict above publishes nothing, and a replay finds the ledger row and publishes nothing.
+        // A crash between the save and the publish loses the alert; it is never sent a second time.
+        if (paidMinor > dueMinor)
+        {
+            await _bus.PublishAsync(new GatewayPaymentCreditedEvent(
+                invoice.Id, invoice.ClientId, module, gatewayTransactionId, surplus, invoice.Currency, Credited: true)
+            {
+                OccurredAt = _clock.UtcNow,
+            });
         }
 
         await _bus.InvokeAsync(new FulfillInvoicedOrderCommand(invoice.Id), ct);
@@ -201,7 +224,18 @@ public sealed class CompleteGatewayPaymentHandler
                 var status = await plugin.GetStatusAsync(orderId, ct);
                 if (status.State == GatewayPaymentState.Paid)
                 {
-                    await HandBackUnrecordedAsync(invoice, module, status.TransactionId ?? orderId, status, ct);
+                    var reference = PickReference(status, orderId);
+                    if (reference is null)
+                    {
+                        // No reference means a replay could not recognise the payment, so it is never credited.
+                        _logger.LogCritical(
+                            "Invoice {InvoiceId} gateway session through {Module} reports paid but carries no payment reference while the invoice could not record it; held for an operator, nothing recorded or credited.",
+                            invoice.Id, module);
+                    }
+                    else
+                    {
+                        await HandBackUnrecordedAsync(invoice, module, reference, status, ct);
+                    }
                 }
             }
         }
@@ -236,7 +270,7 @@ public sealed class CompleteGatewayPaymentHandler
             return null;
         }
 
-        if (current.Transactions.Any(t => t.TransactionId == reference) || await IsOnLedgerAsync(reference, ct))
+        if (current.Transactions.Any(t => t.TransactionId == reference) || await _context.IsRecordedAsync(reference, ct))
         {
             _logger.LogInformation("Invoice {InvoiceId} was already marked paid by a concurrent completion.", invoiceId);
         }
@@ -254,26 +288,18 @@ public sealed class CompleteGatewayPaymentHandler
         return Result<GatewayCompletionDto>.Success(new GatewayCompletionDto(GatewayCompletionState.Paid));
     }
 
-    /// <summary>Whether a payment reference is already on the ledger.</summary>
-    /// <param name="reference">The gateway's reference of the payment.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns><see langword="true"/> when a ledger row carries it.</returns>
-    private async Task<bool> IsOnLedgerAsync(string reference, CancellationToken ct)
-    {
-        return await _context.Transactions.AsNoTracking().AnyAsync(t => t.TransactionId == reference, ct);
-    }
-
     /// <summary>
     /// Puts the whole amount a gateway session took on the client's credit balance when the invoice
     /// could not record it (another path settled it, or it was closed), the same rule as the part
     /// above what is due on a settlement. The money is written to the ledger under the gateway's
-    /// reference in the same save, so a replay finds it there and never credits it twice. Money in
+    /// reference in the same save, so a replay finds it there and never credits it twice, and staff are
+    /// told after that save, once, through <see cref="GatewayPaymentCreditedEvent"/>. Money in
     /// another currency than the client's billing currency, or that the gateway reports without an
     /// amount, is not credited: it is written as held and raised as a critical log line for an operator.
     /// </summary>
     /// <param name="invoice">The invoice the session was opened for (tracked).</param>
     /// <param name="module">The plugin id of the session that took the money.</param>
-    /// <param name="reference">The gateway's reference of the payment.</param>
+    /// <param name="reference">The gateway's reference of the payment (never empty).</param>
     /// <param name="status">The gateway's paid status.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes once the outcome is saved.</returns>
@@ -281,7 +307,7 @@ public sealed class CompleteGatewayPaymentHandler
         Invoice invoice, string module, string reference, GatewayPaymentStatus status, CancellationToken ct)
     {
         // Recorded on the invoice's own payment history or on the ledger: the money is accounted for.
-        if (invoice.Transactions.Any(t => t.TransactionId == reference) || await IsOnLedgerAsync(reference, ct))
+        if (invoice.Transactions.Any(t => t.TransactionId == reference) || await _context.IsRecordedAsync(reference, ct))
         {
             return;
         }
@@ -321,6 +347,33 @@ public sealed class CompleteGatewayPaymentHandler
             addedToCredit: credit,
             invoice.Currency));
         await _context.SaveChangesAsync(ct);
+
+        // After the save, so a failed save repeats the whole hand-back instead of alerting about money
+        // that was not recorded; once saved, the next pass finds the ledger row and returns above, so
+        // staff are not told again (a crash right here loses the alert, it never repeats it).
+        await _bus.PublishAsync(new GatewayPaymentCreditedEvent(
+            invoice.Id, invoice.ClientId, module, reference, amount, invoice.Currency, credit)
+        {
+            OccurredAt = _clock.UtcNow,
+        });
+    }
+
+    /// <summary>
+    /// Picks the reference a payment is recorded and recognised by: the gateway's transaction id when
+    /// it has one, else the session id the invoice holds. An empty or blank value is no reference,
+    /// because <c>??</c> would keep it and every replay would then look for a row it cannot match.
+    /// </summary>
+    /// <param name="status">The gateway's paid status.</param>
+    /// <param name="orderId">The gateway session id stored on the invoice.</param>
+    /// <returns>The reference, or <see langword="null"/> when neither source holds a usable one.</returns>
+    private static string? PickReference(GatewayPaymentStatus status, string? orderId)
+    {
+        if (!string.IsNullOrWhiteSpace(status.TransactionId))
+        {
+            return status.TransactionId;
+        }
+
+        return string.IsNullOrWhiteSpace(orderId) ? null : orderId;
     }
 
     /// <summary>

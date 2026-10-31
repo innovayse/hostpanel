@@ -227,6 +227,26 @@ public sealed class HttpResilienceOptions
     };
 
     /// <summary>
+    /// Plesk control panels, the "Plesk" named client the provisioning factory and the connection
+    /// tester resolve per server. Registered with no retry stage and no breaker.
+    /// </summary>
+    /// <remarks>
+    /// The same reasons as <see cref="Cwp7"/>: every XML API call is a POST to one path, so the
+    /// pipeline cannot tell a read from a create and a retry could create an account twice, and
+    /// the server is a per-call argument, so a breaker would be shared across every Plesk node.
+    /// Creating a subscription sets up its web space and system user and can take a minute on a
+    /// busy node, hence the same long budget.
+    /// </remarks>
+    public ResilienceProfileOptions Plesk { get; set; } = new()
+    {
+        AttemptTimeout = TimeSpan.FromSeconds(100),
+        TotalTimeout = TimeSpan.FromSeconds(115),
+        MaxRetryAttempts = 0,
+        RetryDelay = TimeSpan.Zero,
+        CircuitBreakerEnabled = false,
+    };
+
+    /// <summary>
     /// The "migration" client, which pulls records out of a foreign install. Every request may
     /// be repeated.
     /// </summary>
@@ -461,6 +481,7 @@ public sealed class HttpResilienceOptions
         yield return new NamedResilienceProfile(nameof(Telegram), Telegram);
         yield return new NamedResilienceProfile(nameof(Cwp), Cwp);
         yield return new NamedResilienceProfile(nameof(Cwp7), Cwp7);
+        yield return new NamedResilienceProfile(nameof(Plesk), Plesk);
         yield return new NamedResilienceProfile(nameof(Migration), Migration);
         yield return new NamedResilienceProfile(nameof(NameAm), NameAm);
         yield return new NamedResilienceProfile(nameof(Namecheap), Namecheap);

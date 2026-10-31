@@ -105,6 +105,7 @@ public sealed class GetMyServicesHandler
                     svc.Id,
                     svc.ProductId,
                     products[svc.ProductId].Name,
+                    products[svc.ProductId].Sku,
                     products[svc.ProductId].Fulfilment.IsDigital,
                     svc.BillingCycle,
                     svc.Status,

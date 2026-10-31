@@ -130,7 +130,7 @@
     <value>Этот способ оплаты не принадлежит этому аккаунту.</value>
   </data>
 <data name="PAYMENT_METHOD_UNAVAILABLE" xml:space="preserve">
-    <value>Этот сохранённый способ оплаты нельзя списать: в этом развёртывании не настроен платёжный шлюз для карт.</value>
+    <value>Оплата картой недоступна, так как платёжный шлюз для карт не настроен.</value>
   </data>
 <data name="NO_SAVED_PAYMENT_METHODS" xml:space="preserve">
     <value>У этого аккаунта нет сохранённых способов оплаты.</value>
@@ -182,6 +182,9 @@
   </data>
 <data name="CLIENT_CURRENCY_ALREADY_INVOICED" xml:space="preserve">
     <value>Этому клиенту уже выставлялись счета, поэтому его валюту нельзя изменить.</value>
+  </data>
+  <data name="CLIENT_CURRENCY_LOCKED_BY_CREDIT" xml:space="preserve">
+    <value>У этого клиента есть кредитный баланс, поэтому валюту нельзя изменить. Сначала используйте или верните баланс, затем смените валюту.</value>
   </data>
 <data name="EMAIL_LOG_NOT_FOUND" xml:space="preserve">
     <value>Такое письмо не найдено.</value>

@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Shared.Models;
 using Wolverine;
@@ -59,9 +60,10 @@ public sealed class RemovePaymentMethodHandler
 
         // Without the gateway's keys there is no card to change, and the gateway would throw on its
         // empty key rather than answer (#606).
-        if (!_cardGateway.IsConfigured)
+        var configured = _cardGateway.RequireConfigured();
+        if (configured.IsFailure)
         {
-            return Result.FailureCode(HostpanelErrorCodes.PAYMENT_METHOD_UNAVAILABLE);
+            return configured;
         }
 
         // Detach takes a bare payment method ID with no customer scoping, so without this

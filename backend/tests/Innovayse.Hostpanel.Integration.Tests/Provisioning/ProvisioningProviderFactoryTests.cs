@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Domain.Provisioning;
 using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel;
+using Innovayse.Hostpanel.Infrastructure.Integrations.Plesk;
 using Innovayse.Hostpanel.Infrastructure.Provisioning;
 using Innovayse.Hostpanel.Infrastructure.Provisioning.Settings;
 using Innovayse.SDK.Plugins;
@@ -122,6 +123,33 @@ public sealed class ProvisioningProviderFactoryTests : IAsyncLifetime
         var act = () => factory.CreateFor(ServerRow("hash", ServerModule.CPanel));
 
         act.Should().Throw<NotSupportedException>();
+    }
+
+    /// <summary>A Plesk server gets the Plesk provider, calling the XML API on the default Plesk port.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task CreateFor_BuildsThePleskProvider_OnTheDefaultPleskPortAsync()
+    {
+        var http = new StubHttpClientFactory(cwp7);
+        cwp7.Enqueue(System.Net.HttpStatusCode.OK, "<packet><customer><set><result><status>ok</status></result></set></customer></packet>", "text/xml");
+        var provider = BuildFactory(http, new ProvisioningOptions()).CreateFor(ServerRow("plesk-key", ServerModule.Plesk));
+
+        await provider.UnsuspendAsync("testuser", CancellationToken.None);
+
+        provider.Should().BeOfType<PleskProvisioningProvider>();
+        http.RequestedUris.Should().ContainSingle().Which.ToString()
+            .Should().Be($"https://panel.example.test:{ProvisioningOptions.DefaultPleskPort}/enterprise/control/agent.php");
+    }
+
+    /// <summary>A Plesk server with a blank API key is refused when the provider is built.</summary>
+    [Fact]
+    public void CreateFor_Throws_WhenAPleskServerHasNoApiKey()
+    {
+        var factory = BuildFactory(new StubHttpClientFactory(cwp7), new ProvisioningOptions());
+
+        var act = () => factory.CreateFor(ServerRow(" ", ServerModule.Plesk));
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*no access hash*");
     }
 
     /// <summary>The development switch returns the in-process provider and never builds a panel client.</summary>

@@ -106,7 +106,9 @@ public sealed class GetControlPanelSsoUrlTests(IntegrationTestFactory factory) :
 
         result.IsSuccess.Should().BeTrue();
         provider.SsoCallerIps.Should().Equal("203.0.113.50");
+    }
 
+    /// <summary>
     /// A terminated service keeps its reference but no longer has an account, so a sign-in link is
     /// refused with 400 <c>SERVICE_NOT_ACTIVE</c> instead of asking the panel.
     /// </summary>

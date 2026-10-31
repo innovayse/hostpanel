@@ -19,6 +19,7 @@ export const makeClientService = (overrides: Partial<ClientService> = {}): Clien
   id: 4,
   productId: 2,
   productName: 'Starter',
+  sku: null,
   isDigital: false,
   billingCycle: BillingCycle.Monthly,
   status: ServiceStatus.Active,

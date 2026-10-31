@@ -6,9 +6,11 @@ using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
+using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
@@ -41,8 +43,22 @@ public sealed class PayMyInvoiceTests(IntegrationTestFactory factory) : IClassFi
     /// <param name="cardGateway">The fake card gateway to serve every call through.</param>
     /// <returns>The test host.</returns>
     private WebApplicationFactory<Program> BuildHost(FakeCardPaymentGateway cardGateway) =>
+        BuildHost(cardGateway, []);
+
+    /// <summary>Builds a host whose card gateway is <paramref name="cardGateway"/> and whose data context carries <paramref name="interceptors"/>.</summary>
+    /// <param name="cardGateway">The fake card gateway to serve every call through.</param>
+    /// <param name="interceptors">Interceptors every data context of the host is built with, to hold a request at a chosen point.</param>
+    /// <returns>The test host.</returns>
+    private WebApplicationFactory<Program> BuildHost(FakeCardPaymentGateway cardGateway, params IInterceptor[] interceptors) =>
         factory.WithWebHostBuilder(builder =>
-            builder.ConfigureTestServices(services => services.AddSingleton<ICardPaymentGateway>(cardGateway)));
+            builder.ConfigureTestServices(services =>
+            {
+                services.AddSingleton<ICardPaymentGateway>(cardGateway);
+                if (interceptors.Length > 0)
+                {
+                    services.ConfigureDbContext<AppDbContext>(options => options.AddInterceptors(interceptors));
+                }
+            }));
 
     /// <summary>Registers a client with a card customer on file and raises an unpaid invoice for them.</summary>
     /// <param name="host">The test host.</param>
@@ -385,34 +401,35 @@ public sealed class PayMyInvoiceTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>
-    /// A double click of one pay action: both requests carry the same attempt and reach the gateway,
-    /// which answers the second with the first charge (same idempotency key, same transaction). The
-    /// invoice is paid once, with one ledger row, and nothing is refunded; neither request fails with
-    /// an unhandled conflict.
+    /// A double click of one pay action, held in the window that used to refund the payment: both
+    /// requests carry the same attempt, both read the invoice unpaid and reach the gateway, which
+    /// answers both with the one charge (same idempotency key, same transaction). Both then read the
+    /// ledger empty, one records the payment, and only then does the other load the invoice, find it
+    /// paid and refuse. That refusal is a replay of a payment the ledger now holds, so it answers
+    /// success and hands nothing back: both responses are 204, the invoice is paid once with one ledger
+    /// row, the gateway is charged once and no refund is asked for. The rendezvous and the gate make
+    /// the window deterministic whichever request arrives first, and the test asserts the window was
+    /// reached.
     /// </summary>
     [Fact]
     public async Task Pay_DoubleClick_RecordsOnePaymentAndRefundsNothing()
     {
         var cardGateway = ConfiguredGateway();
-        var host = BuildHost(cardGateway);
+        cardGateway.ChargeRendezvous = new ChargeRendezvous(parties: 2);
+        var gate = new SettlementWindowGate();
+        var host = BuildHost(cardGateway, new SettlementWindowLoadInterceptor(gate), new SettlementWindowCommitInterceptor(gate));
         var (owner, admin, invoiceId) = await SeedAsync(host, "owner-double-click");
         var attemptId = Guid.NewGuid();
 
         var responses = await Task.WhenAll(
             PayAsync(owner, invoiceId, SavedMethodId, attemptId), PayAsync(owner, invoiceId, SavedMethodId, attemptId));
 
-        responses.Should().Contain(r => r.StatusCode == HttpStatusCode.NoContent);
-        foreach (var response in responses.Where(r => r.StatusCode != HttpStatusCode.NoContent))
-        {
-            // The slower click read the invoice after the faster one saved, so it was refused
-            // before any charge.
-            (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.INVOICE_NOT_PAYABLE);
-        }
-
+        responses.Should().OnlyContain(r => r.StatusCode == HttpStatusCode.NoContent);
+        gate.WindowExercised.Should().BeTrue("the second click must have loaded the invoice only after the first recorded the payment");
         (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.Paid));
         (await LedgerRowsAsync(host, invoiceId)).Should().Be(1);
         cardGateway.RefundInstructions.Should().BeEmpty();
-        cardGateway.ChargesByKey.Should().HaveCountLessThanOrEqualTo(1);
+        cardGateway.ChargesByKey.Should().ContainSingle();
     }
 
     /// <summary>

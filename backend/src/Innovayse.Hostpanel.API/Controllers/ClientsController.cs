@@ -95,7 +95,7 @@ public sealed class ClientsController : BaseApiController
     /// <param name="command">The complete client record.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 204 when written; 404 with <c>CLIENT_NOT_FOUND</c> or <c>CURRENCY_NOT_FOUND</c>; 409 with <c>CLIENT_CURRENCY_ALREADY_INVOICED</c>, <c>EMAIL_ALREADY_IN_USE</c> or <c>CONFLICT</c>; 400 when the body, query or route fails validation; 401 without a session; 403 for a caller who is not staff, or with <c>DEMO_ACTION_DISABLED</c> for a published demo account;
+    /// 204 when written; 404 with <c>CLIENT_NOT_FOUND</c> or <c>CURRENCY_NOT_FOUND</c>; 409 with <c>CLIENT_CURRENCY_ALREADY_INVOICED</c>, <c>CLIENT_CURRENCY_LOCKED_BY_CREDIT</c> (the client holds a credit balance), <c>EMAIL_ALREADY_IN_USE</c> or <c>CONFLICT</c>; 400 when the body, query or route fails validation; 401 without a session; 403 for a caller who is not staff, or with <c>DEMO_ACTION_DISABLED</c> for a published demo account;
     /// 429 when the rate limit is hit.
     /// </returns>
     [HttpPut("{id:int}")]

@@ -130,7 +130,7 @@
     <value>That payment method does not belong to this account.</value>
   </data>
 <data name="PAYMENT_METHOD_UNAVAILABLE" xml:space="preserve">
-    <value>That saved payment method cannot be charged because this deployment has no card gateway configured.</value>
+    <value>Card payments are unavailable because no card gateway is configured.</value>
   </data>
 <data name="NO_SAVED_PAYMENT_METHODS" xml:space="preserve">
     <value>This account has no saved payment methods.</value>
@@ -182,6 +182,9 @@
   </data>
 <data name="CLIENT_CURRENCY_ALREADY_INVOICED" xml:space="preserve">
     <value>This client has already been invoiced, so their currency cannot be changed.</value>
+  </data>
+  <data name="CLIENT_CURRENCY_LOCKED_BY_CREDIT" xml:space="preserve">
+    <value>This client holds a credit balance, so the currency cannot be changed. Use or refund the balance first, then change the currency.</value>
   </data>
 <data name="EMAIL_LOG_NOT_FOUND" xml:space="preserve">
     <value>No such email.</value>

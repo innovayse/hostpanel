@@ -55,6 +55,34 @@ public sealed class ListClientBillableItemsTests(IntegrationTestFactory factory)
         totals.Should().Equal((Currency: "AMD", Amount: 5000m), (Currency: "USD", Amount: 15m));
     }
 
+    /// <summary>Items created as <c>usd</c> and <c>USD</c> are one currency and give one total.</summary>
+    [Fact]
+    public async Task ListGivesOneTotalForTheSameCurrencyInAnyCase()
+    {
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        foreach (var (amount, currency) in new[] { (10m, "usd"), (5m, "USD") })
+        {
+            var created = await admin.PostAsJsonAsync($"/api/clients/{clientId}/billable-items", new
+            {
+                description = "Charge",
+                amount,
+                currency,
+                type = nameof(BillableItemType.OneTime),
+            });
+            created.StatusCode.Should().Be(HttpStatusCode.Created);
+        }
+
+        var response = await admin.GetAsync($"/api/clients/{clientId}/billable-items");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var totals = body.RootElement.GetProperty("uninvoicedTotal").EnumerateArray()
+            .Select(t => (Currency: t.GetProperty("currency").GetString(), Amount: t.GetProperty("amount").GetDecimal()))
+            .ToList();
+        totals.Should().Equal((Currency: "USD", Amount: 15m));
+    }
+
     /// <summary>Listing a client's billable items is not for anonymous callers.</summary>
     [Fact]
     public async Task ListRefusesAnonymous()

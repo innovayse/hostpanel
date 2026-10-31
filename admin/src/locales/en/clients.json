@@ -141,6 +141,7 @@
     "addTimeBillingEntries": "Add Time Billing Entries",
     "addBillableItem": "+ Add Billable Item",
     "loadingBillableItems": "Loading billable items...",
+    "uninvoicedItemsLength": "Uninvoiced Items ({length})",
     "uninvoicedItemsAmountLength": "Uninvoiced Items — {amount} ({length})",
     "invoiceSelectedItems": "Invoice Selected Items",
     "noUninvoicedBillableItems": "No uninvoiced billable items.",

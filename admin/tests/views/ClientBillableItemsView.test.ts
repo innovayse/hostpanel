@@ -99,7 +99,7 @@ describe('ClientBillableItemsView', () => {
     expect(wrapper.text()).toContain('12.00 USD, 5000.00 AMD')
   })
 
-  it('shows a zero total when there are no uninvoiced items', async () => {
+  it('shows the count without an amount when there are no uninvoiced items', async () => {
     stubRoutes({
       'GET /api/clients/7/billable-items': () => json({
         uninvoicedItems: [],
@@ -109,7 +109,8 @@ describe('ClientBillableItemsView', () => {
     })
     const wrapper = await mountItems()
 
-    expect(wrapper.text()).toContain('Uninvoiced Items — 0.00 USD (0)')
+    expect(wrapper.text()).toContain('Uninvoiced Items (0)')
+    expect(wrapper.text()).not.toContain('0.00')
   })
 
   it('reports a deleted item next to the lists', async () => {

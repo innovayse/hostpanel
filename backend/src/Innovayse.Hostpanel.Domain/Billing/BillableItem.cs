@@ -53,7 +53,7 @@ public sealed class BillableItem : BaseEntity, IAggregateRoot
     /// <param name="clientId">FK to the client.</param>
     /// <param name="description">Human-readable description.</param>
     /// <param name="amount">Unit price.</param>
-    /// <param name="currency">Currency code.</param>
+    /// <param name="currency">Currency code, stored upper-cased.</param>
     /// <param name="type">OneTime or Recurring.</param>
     /// <param name="recurringPeriod">Recurring period (null for one-time).</param>
     /// <param name="nextDueDate">
@@ -61,6 +61,7 @@ public sealed class BillableItem : BaseEntity, IAggregateRoot
     /// null to invoice it by hand.
     /// </param>
     /// <returns>A new billable item aggregate.</returns>
+    /// <exception cref="ArgumentException">The currency is not three letters.</exception>
     public static BillableItem Create(
         int clientId,
         string description,
@@ -75,7 +76,7 @@ public sealed class BillableItem : BaseEntity, IAggregateRoot
             ClientId = clientId,
             Description = description,
             Amount = amount,
-            Currency = currency,
+            Currency = CurrencyCode.Normalise(currency),
             Type = type,
             RecurringPeriod = recurringPeriod,
             NextDueDate = nextDueDate,

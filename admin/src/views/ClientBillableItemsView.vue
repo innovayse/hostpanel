@@ -93,12 +93,10 @@ const uninvoicedTotal = ref<CurrencyAmount[]>([])
 /**
  * The uninvoiced totals, one entry per currency the items are in, written with
  * `formatPlainAmount` and joined with commas. Amounts of different currencies are never added; with
- * no items the total reads as zero.
+ * no items the label is empty, because no currency is known and none is made up.
  */
 const uninvoicedTotalLabel = computed(() =>
-  uninvoicedTotal.value.length === 0
-    ? formatPlainAmount(0)
-    : uninvoicedTotal.value.map((entry) => formatPlainAmount(entry.amount, entry.currency)).join(', '))
+  uninvoicedTotal.value.map((entry) => formatPlainAmount(entry.amount, entry.currency)).join(', '))
 
 /** Current invoiced items page (1-based). */
 const invoicedPage = ref(1)
@@ -344,7 +342,9 @@ onMounted(() => fetchBillableItems())
     <template v-else>
       <UiStack>
         <UiHeading :level="2" variant="card">
-          {{ t('clients.clientBillableItems.uninvoicedItemsAmountLength', { amount: uninvoicedTotalLabel, length: uninvoicedItems.length }) }}
+          {{ uninvoicedTotalLabel
+            ? t('clients.clientBillableItems.uninvoicedItemsAmountLength', { amount: uninvoicedTotalLabel, length: uninvoicedItems.length })
+            : t('clients.clientBillableItems.uninvoicedItemsLength', { length: uninvoicedItems.length }) }}
         </UiHeading>
 
         <UiCard v-if="uninvoicedItems.length > 0">

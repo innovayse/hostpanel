@@ -856,6 +856,9 @@
   <data name="PRODUCT_PACKAGE_MISSING" xml:space="preserve">
     <value>Ապրանքի համար հոսթինգի փաթեթ նշված չէ։ Նախ ընտրեք այն ապրանքի կարգավորումներում։</value>
   </data>
+  <data name="PRODUCT_SERVER_GROUP_REQUIRED" xml:space="preserve">
+    <value>Ապրանքը սերվերների խումբ չունի, իսկ ձեր սերվերները աշխատում են տարբեր կառավարման վահանակներով։ Նշանակեք ապրանքին սերվերների խումբ, որ փաթեթը հասնի ճիշտ վահանակին։</value>
+  </data>
   <data name="INVOICE_PAYMENT_EXCEEDS_DUE" xml:space="preserve">
     <value>Վճարումը գերազանցում է հաշիվ-ապրանքագրի դեռ վճարելիք գումարը։</value>
   </data>

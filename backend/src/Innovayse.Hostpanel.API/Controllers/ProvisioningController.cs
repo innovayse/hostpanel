@@ -42,7 +42,7 @@ public sealed class ProvisioningController : BaseApiController
     /// <returns>
     /// 204 on success; 400 with <c>VALIDATION_ERROR</c> for a non-positive id, or with
     /// <c>SERVICE_NOT_PENDING</c>; 401 without a session; 403 for a caller who is not staff; 404 with <c>SERVICE_NOT_FOUND</c> when the id names no service; 409 with
-    /// <c>SERVICE_HOSTING_DETAILS_MISSING</c> or <c>PRODUCT_PACKAGE_MISSING</c> when the service or its
+    /// <c>SERVICE_HOSTING_DETAILS_MISSING</c>, <c>PRODUCT_PACKAGE_MISSING</c> or <c>PRODUCT_SERVER_GROUP_REQUIRED</c> when the service or its
     /// product is not ready to provision, or <c>PROVISIONING_ACCOUNT_CONFLICT</c> when the panel holds
     /// another account under the service's username; 502 with <c>PROVISIONING_UPSTREAM_FAILED</c> when the provider
     /// rejects the request; 503 with <c>NO_ELIGIBLE_SERVER</c> when no server has room;

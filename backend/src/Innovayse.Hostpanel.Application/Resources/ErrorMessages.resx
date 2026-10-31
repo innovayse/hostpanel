@@ -856,6 +856,9 @@
   <data name="PRODUCT_PACKAGE_MISSING" xml:space="preserve">
     <value>This product has no hosting package set. Choose one on the product first.</value>
   </data>
+  <data name="PRODUCT_SERVER_GROUP_REQUIRED" xml:space="preserve">
+    <value>This product has no server group, and your servers run more than one control panel. Assign the product a server group so its package goes to the right panel.</value>
+  </data>
   <data name="INVOICE_PAYMENT_EXCEEDS_DUE" xml:space="preserve">
     <value>The payment is more than the invoice still owes.</value>
   </data>

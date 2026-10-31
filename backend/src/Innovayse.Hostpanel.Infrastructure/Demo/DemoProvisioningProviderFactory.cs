@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Servers.Enums;
 
 namespace Innovayse.Hostpanel.Infrastructure.Demo;
 
@@ -15,6 +16,9 @@ public sealed class DemoProvisioningProviderFactory : IProvisioningProviderFacto
     {
         _provider = provider;
     }
+
+    /// <summary>The demo's fake provider stands in for every panel, so a server on any module will do.</summary>
+    public IReadOnlyCollection<ServerModule> SupportedModules { get; } = Enum.GetValues<ServerModule>();
 
     /// <inheritdoc/>
     public IProvisioningProvider CreateFor(ServerConnectionDto server) => _provider;

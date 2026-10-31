@@ -20,6 +20,16 @@ namespace Innovayse.Hostpanel.Infrastructure.Provisioning;
 /// </summary>
 public sealed class ProvisioningProviderFactory : IProvisioningProviderFactory
 {
+    /// <summary>
+    /// The modules <see cref="CreateFor"/> builds a real provider for; extend it with the switch there.
+    /// Read-only, so no caller can change the process-wide list; test doubles reference it rather
+    /// than copy it.
+    /// </summary>
+    public static IReadOnlyList<ServerModule> BuiltModules { get; } = Array.AsReadOnly<ServerModule>([ServerModule.Cwp7, ServerModule.Plesk]);
+
+    /// <summary>Every module, which the development fake provider stands in for.</summary>
+    private static readonly IReadOnlyList<ServerModule> AllModules = Array.AsReadOnly(Enum.GetValues<ServerModule>());
+
     /// <summary>Factory for creating HTTP clients for provider API calls.</summary>
     private readonly IHttpClientFactory _httpClientFactory;
 
@@ -39,6 +49,10 @@ public sealed class ProvisioningProviderFactory : IProvisioningProviderFactory
         _loggerFactory = loggerFactory;
         _options = options;
     }
+
+    /// <inheritdoc/>
+    /// <remarks>With the development fake provider on, every module: that provider answers for any server.</remarks>
+    public IReadOnlyCollection<ServerModule> SupportedModules => _options.Value.UseFakeProvider ? AllModules : BuiltModules;
 
     /// <summary>
     /// Creates a provisioning provider configured with the credentials of the given server.

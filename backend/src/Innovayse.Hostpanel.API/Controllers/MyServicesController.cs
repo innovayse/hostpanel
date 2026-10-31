@@ -184,7 +184,8 @@ public sealed class MyServicesController : BaseApiController
     /// <c>SERVICE_NOT_PENDING</c>; 401 without a session; 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user lacks
     /// <c>PlaceNewOrders</c>; 402 with <c>SERVICE_FIRST_INVOICE_UNPAID</c> when the first invoice is not paid in full;
     /// 404 with <c>SERVICE_NOT_FOUND</c> when the service is not the caller's;
-    /// 409 with <c>PRODUCT_PACKAGE_MISSING</c> when the product names no hosting package, or
+    /// 409 with <c>PRODUCT_PACKAGE_MISSING</c> when the product names no hosting package,
+    /// <c>PRODUCT_SERVER_GROUP_REQUIRED</c> when it has no server group and servers run several panels, or
     /// <c>PROVISIONING_ACCOUNT_CONFLICT</c> when the panel holds another account under the username;
     /// 502 with <c>PROVISIONING_UPSTREAM_FAILED</c> when the provider rejects the request; 503 with
     /// <c>NO_ELIGIBLE_SERVER</c> when no server has room;

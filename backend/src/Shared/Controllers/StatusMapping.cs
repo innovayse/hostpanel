@@ -46,7 +46,7 @@ public static class StatusMapping
             "ORDER_NUMBER_RANGE_EXHAUSTED" => new(503, "Service Unavailable"),
             // Exact rows: the stored service or product is not ready to provision, a state conflict
             // rather than a malformed request, and neither name carries a CONFLICT token.
-            "SERVICE_HOSTING_DETAILS_MISSING" or "PRODUCT_PACKAGE_MISSING" => new(409, "Conflict"),
+            "SERVICE_HOSTING_DETAILS_MISSING" or "PRODUCT_PACKAGE_MISSING" or "PRODUCT_SERVER_GROUP_REQUIRED" => new(409, "Conflict"),
             // Exact row: only a terminated service has a termination date to correct, so the stored
             // status stands in the way (a state conflict), and the name carries no CONFLICT token.
             "SERVICE_NOT_TERMINATED" => new(409, "Conflict"),

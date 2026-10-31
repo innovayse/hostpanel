@@ -28,9 +28,11 @@ CLAUDE.md
 client/CLAUDE.md
 
 # Docs: VitePress build output and local cache are ignored; everything else is tracked.
+# docs/superpowers/ holds local plans and specs that should never be committed.
 docs/.vitepress/dist/
 docs/.vitepress/cache/
 docs/node_modules/
+docs/superpowers/
 
 # Playwright MCP logs
 .playwright-mcp/

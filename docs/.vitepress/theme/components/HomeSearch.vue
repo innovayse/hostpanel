@@ -5,15 +5,13 @@
  * dialog (the same one bound to Ctrl K / Cmd K in the navigation bar).
  */
 
-/** Opens the VitePress local search overlay programmatically. */
+/**
+ * Opens the VitePress local search dialog by dispatching the standard Ctrl+K
+ * keyboard shortcut that VitePress itself listens for. This avoids touching the
+ * DOM directly and works regardless of how VitePress mounts the search button.
+ */
 const openSearch = (): void => {
-  const btn = document.querySelector<HTMLButtonElement>('.VPLocalSearchBox, button[aria-label*="Search"]')
-  if (btn) {
-    btn.click()
-    return
-  }
-  // Fallback: dispatch the keyboard shortcut.
-  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, ctrlKey: true, bubbles: true }))
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true, cancelable: true }))
 }
 </script>
 

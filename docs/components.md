@@ -78,32 +78,49 @@ A numbered steps list with styled circular counters. Place standard `<li>` eleme
 
 ---
 
-## Tabs
+## Code group
 
-VitePress ships with a built-in `<Tabs>` / `<Tab>` component pair. No custom component needed.
+VitePress has a built-in `code-group` container for showing the same command in multiple package managers or environments. No custom component needed.
 
 **Usage:**
 
-```
-<Tabs>
-  <Tab label="npm">
+````md
+::: code-group
 
-    ```bash
-    npm install
-    ```
-
-  &#x3C;/Tab>
-  <Tab label="pnpm">
-
-    ```bash
-    pnpm install
-    ```
-
-  &#x3C;/Tab>
-&#x3C;/Tabs>
+```bash [npm]
+npm install
 ```
 
-See the [VitePress docs on tabs](https://vitepress.dev/guide/markdown#custom-containers) for full details.
+```bash [pnpm]
+pnpm install
+```
+
+```bash [yarn]
+yarn install
+```
+
+:::
+````
+
+**Preview:**
+
+::: code-group
+
+```bash [npm]
+npm install
+```
+
+```bash [pnpm]
+pnpm install
+```
+
+```bash [yarn]
+yarn install
+```
+
+:::
+
+See the [VitePress docs on code groups](https://vitepress.dev/guide/markdown#code-groups) for full details.
 
 ---
 

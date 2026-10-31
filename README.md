@@ -174,7 +174,7 @@ Copy `docker/.env.example` to `docker/.env`; the file documents every variable. 
 | `POSTGRES_PASSWORD`, `RABBITMQ_PASSWORD` | Database and broker passwords |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_ENCRYPTION`, `SMTP_FROM` | Outgoing mail; `SMTP_ENCRYPTION` is `tls`, `ssl` or `none` and is never guessed from the port |
 | `IMAGE_TAG`, `DOCKERHUB_NAMESPACE` | Which published images `docker-compose.hub.yml` runs |
-| `NUXT_PUBLIC_PORTAL_*` | Storefront template, name, logo and colours (the name falls back to `Hostpanel`; no operator brand is built in), see [guides/storefront.md](guides/storefront.md) |
+| `NUXT_PUBLIC_PORTAL_*` | Storefront template, name, logo and colours (the name falls back to `Hostpanel`; no operator brand is built in), see [docs/operators/storefront.md](docs/operators/storefront.md) |
 
 ## Run from source
 

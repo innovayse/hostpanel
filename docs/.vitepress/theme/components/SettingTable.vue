@@ -6,13 +6,20 @@
 
 /** A single row in the settings table. */
 export interface Setting {
+  /** Setting key, shown as `<code>` in the first column. */
   name: string
+  /** Value type (e.g. `string`, `boolean`), shown with a brand badge. */
   type: string
+  /** Default value; use `"—"` or `""` to render an em-dash placeholder. */
   default: string
+  /** Human-readable description of what the setting does. */
   description: string
 }
 
-defineProps<{ settings: Setting[] }>()
+defineProps<{
+  /** Rows to render; one object per setting. */
+  settings: Setting[]
+}>()
 </script>
 
 <template>

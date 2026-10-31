@@ -9,7 +9,9 @@ type LabelType = 'admin' | 'new' | 'local' | 'sso'
 
 withDefaults(
   defineProps<{
+    /** Visual variant controlling colour and default text. */
     type: LabelType
+    /** When `type` is `"new"`, renders "New in <version>" instead of plain "New". */
     version?: string
   }>(),
   { version: undefined },

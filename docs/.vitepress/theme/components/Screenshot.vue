@@ -1,3 +1,8 @@
+<!--
+  Screenshot — renders a thumbnail that opens a full-size lightbox overlay on
+  click or Enter/Space. The overlay is Teleported to <body> after mount to avoid
+  a hydration mismatch during SSR.
+-->
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 
@@ -32,7 +37,10 @@ const closeLightbox = (): void => {
   open.value = false
 }
 
-/** Closes the overlay when the user presses Escape. */
+/**
+ * Closes the overlay when the user presses Escape.
+ * @param e - The keyboard event fired on the window.
+ */
 const handleKeydown = (e: KeyboardEvent): void => {
   if (e.key === 'Escape') { closeLightbox() }
 }

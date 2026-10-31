@@ -54,8 +54,7 @@ import { Permission } from '~/composables/usePermissions'
 import { useClientStore } from '~/stores/client'
 import type { ClientService } from '~/types/clientservice'
 import { ServiceTab } from '~/types/servicetab'
-import { webmailUrl as buildWebmailUrl } from '~/utils/controlPanel'
-import { canSignInToControlPanel } from '~/utils/controlPanelSignIn'
+import { canSignInToControlPanel, webmailUrl as buildWebmailUrl } from '~/utils/controlPanel'
 import { serviceSetupPending } from '~/utils/serviceSetup'
 
 /** Translates a key into the active locale. */

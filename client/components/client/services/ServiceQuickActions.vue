@@ -46,7 +46,7 @@ import { ChevronRight } from 'lucide-vue-next'
 import { Permission } from '~/composables/usePermissions'
 import { useClientStore } from '~/stores/client'
 import type { ClientService } from '~/types/clientservice'
-import { canSignInToControlPanel } from '~/utils/controlPanelSignIn'
+import { canSignInToControlPanel } from '~/utils/controlPanel'
 
 /** The client store, which knows what the signed-in person may do. */
 const store = useClientStore()

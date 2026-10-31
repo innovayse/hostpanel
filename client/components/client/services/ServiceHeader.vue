@@ -34,7 +34,7 @@ import { Monitor, Server } from 'lucide-vue-next'
 import type { ClientService } from '~/types/clientservice'
 import { Permission } from '~/composables/usePermissions'
 import { useClientStore } from '~/stores/client'
-import { canSignInToControlPanel } from '~/utils/controlPanelSignIn'
+import { canSignInToControlPanel } from '~/utils/controlPanel'
 
 /** Props of ServiceHeader. */
 interface Props {

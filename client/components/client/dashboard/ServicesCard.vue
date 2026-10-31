@@ -61,7 +61,7 @@ import { useClientStore } from '~/stores/client'
 import { serviceAwaitsSetup } from '~/utils/serviceSetup'
 import { useServiceManagementStore } from '~/stores/servicemanagement'
 import type { ClientService } from '~/types/clientservice'
-import { canSignInToControlPanel } from '~/utils/controlPanelSignIn'
+import { canSignInToControlPanel } from '~/utils/controlPanel'
 
 /** Client store: the signed-in person and their services, invoices, domains and tickets. */
 const store = useClientStore()

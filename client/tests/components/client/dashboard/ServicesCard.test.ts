@@ -8,7 +8,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { nextTick } from 'vue'
+import { Permission } from '~/composables/usePermissions'
 import { makeClientService } from '~/tests/helpers/clientServiceFixture'
+import { grantPermissions } from '~/tests/helpers/grantPermissions'
 import { mountClient } from '~/tests/helpers/mountClient'
 import { ServiceStatus } from '~/types/servicestatus'
 
@@ -102,6 +104,14 @@ describe('ClientDashboardServicesCard', () => {
 
     expect(wrapper.find('[data-testid="dashboard-service-cpanel-1"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="dashboard-service-cpanel-3"]').exists()).toBe(false)
+  })
+
+  it('hides the control panel from a user without the single sign-on permission', async () => {
+    const wrapper = mountClient(ServicesCard)
+    await grantPermissions(Permission.ViewProductsServices)
+    useClientStore().services = [ACTIVE]
+    await nextTick()
+    expect(wrapper.find('[data-testid="dashboard-service-cpanel-1"]').exists()).toBe(false)
   })
 
   it('asks the store to open the control panel of the clicked service with its host', async () => {

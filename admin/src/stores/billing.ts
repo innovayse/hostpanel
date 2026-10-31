@@ -327,6 +327,8 @@ export const useBillingStore = defineStore('billing', () => {
     fulfilmentLoading.value = true
     // The previous invoice's failure must not show above this invoice's records.
     fulfilmentError.value = null
+    // A refused retry of the previous invoice must not show on this one either.
+    fulfilmentRetryError.value = null
     /** Sentence of this load's refusal, kept apart from the page-level `error`; null when it succeeds. */
     const failure = ref<string | null>(null)
     const result = await runAction(failure, () => api.listFulfilment(id))
@@ -343,7 +345,8 @@ export const useBillingStore = defineStore('billing', () => {
   /**
    * Asks for another attempt of a fulfilment record, then reloads the list so the tab shows the
    * record as it now stands. The reload happens only while that invoice is still the open one, so
-   * a slow retry never replaces (or makes stale) the records of the invoice opened since.
+   * a slow retry never replaces (or makes stale) the records of the invoice opened since. A
+   * refusal is written to `fulfilmentRetryError` under the same condition.
    *
    * @param invoiceId - The invoice id.
    * @param recordId - The fulfilment record id.
@@ -351,8 +354,16 @@ export const useBillingStore = defineStore('billing', () => {
    * never the page-level `error`).
    */
   const retryFulfilment = async (invoiceId: number, recordId: number): Promise<boolean> => {
-    const result = await runAction(fulfilmentRetryError, () => api.retryFulfilment(invoiceId, recordId))
-    if (result.ok && (fulfilmentInvoiceId === null || fulfilmentInvoiceId === invoiceId)) {
+    fulfilmentRetryError.value = null
+    /** Sentence of this retry's refusal, held apart until its invoice is known to still be open. */
+    const failure = ref<string | null>(null)
+    const result = await runAction(failure, () => api.retryFulfilment(invoiceId, recordId))
+    /** True while the retried invoice is still the one staff have open. */
+    const stillOpen = fulfilmentInvoiceId === null || fulfilmentInvoiceId === invoiceId
+    if (!result.ok && stillOpen) {
+      fulfilmentRetryError.value = failure.value
+    }
+    if (result.ok && stillOpen) {
       await fetchFulfilment(invoiceId)
     }
     return result.ok

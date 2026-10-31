@@ -4,8 +4,9 @@
  * the invoice, oldest first. Each row names the plugin, what it does, where it stands, how often
  * it was tried, the last error (for staff) and the next attempt or completion time. A record the
  * API allows to retry carries a Retry button (hidden while the invoice is read-only), confirmed
- * first; the outcome (success, or the API's own sentence) shows in the tab. The list loads when the tab opens and when the invoice changes;
- * a failed load shows the API's sentence with Retry instead of an empty list.
+ * first; the outcome (success, or the API's own sentence) shows in the tab. The list loads when
+ * the tab opens and when the invoice changes; a failed load shows the API's sentence with Retry
+ * instead of an empty list.
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -148,10 +149,16 @@ const retry = async (): Promise<void> => {
   }
   feedback.clear()
   retrying.value = true
+  /** The invoice the retry was asked for. */
+  const invoiceId = props.invoice.id
   /** True when the API accepted the retry. */
-  const ok = await store.retryFulfilment(props.invoice.id, record.id)
+  const ok = await store.retryFulfilment(invoiceId, record.id)
   retrying.value = false
   pending.value = null
+  // The outcome belongs to the invoice it was asked for; another one is open now.
+  if (props.invoice.id !== invoiceId) {
+    return
+  }
   if (!ok) {
     feedback.show(retryError.value ?? t('errors.noAnswer'), true)
     return

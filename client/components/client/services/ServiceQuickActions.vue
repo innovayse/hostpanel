@@ -53,7 +53,7 @@ const store = useClientStore()
 interface Props {
   /** Whether the service sits on a known server (the control-panel shortcut needs one). */
   hasServer: boolean
-  /** Whether the service is active; a suspended or terminated account has no panel to sign in to. */
+  /** Whether the service is active; the portal offers a client the panel sign-in on an active service only. */
   isActive: boolean
   /** Whether the control-panel sign-in is in flight. */
   ssoLoading: boolean

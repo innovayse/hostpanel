@@ -177,12 +177,14 @@ describe('ClientServiceDetailView', () => {
     expect(wrapper.get('[data-testid="client-service-notes-form"]').attributes('aria-busy')).toBe('false')
   })
 
-  it('offers the control panel sign-in only on an active service', async () => {
+  it('offers staff the control panel sign-in on every service but a terminated one', async () => {
     const { wrapper: terminated } = await mountLoaded(detail)
     const { wrapper: active } = await mountLoaded({ ...detail, status: ServiceStatus.Active })
+    const { wrapper: suspended } = await mountLoaded({ ...detail, status: ServiceStatus.Suspended })
 
     expect(terminated.find('[data-testid="client-service-panel"]').exists()).toBe(false)
     expect(active.find('[data-testid="client-service-panel"]').exists()).toBe(true)
+    expect(suspended.find('[data-testid="client-service-panel"]').exists()).toBe(true)
   })
 
   it('confirms a terminal status with the danger prompt before sending it', async () => {

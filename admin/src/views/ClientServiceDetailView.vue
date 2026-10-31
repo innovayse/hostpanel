@@ -783,7 +783,7 @@ onMounted(() => {
           <UiStack direction="row" :align="UiAlignItems.Center" gap="sm">
             <UiStatusMessage :message="panelError" :tone="UiTone.Danger" data-testid="client-service-panel-error" />
             <UiButton
-              v-if="service.status === ServiceStatus.Active"
+              v-if="service.status !== ServiceStatus.Terminated"
               type="button"
               :variant="UiButtonVariant.Secondary"
               :disabled="ssoLoading || !service.account.provisioningRef"

@@ -234,6 +234,57 @@ describe('InvoiceFulfilmentTab', () => {
     expect(wrapper.find('[data-testid="billing-invoice-fulfilment-retry-31"]').exists()).toBe(false)
   })
 
+  it('does not show on the new invoice a retry of the previous one that is refused after the switch', async () => {
+    /** Lets the test refuse the retry of invoice 1 on demand. */
+    let refuseRetry: () => void = () => undefined
+    /** The pending answer of the retry POST of invoice 1. */
+    const retryAnswer = new Promise<Response>((resolve) => {
+      refuseRetry = () => resolve(problem('This record cannot be retried.', 409))
+    })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string, init?: RequestInit) => {
+        if (init?.method === 'POST') {
+          return retryAnswer
+        }
+        return Promise.resolve(
+          url === '/api/billing/2/fulfilment'
+            ? json([fulfilmentFixture({ id: 41, invoiceId: 2 })])
+            : json([fulfilmentFixture()]),
+        )
+      }),
+    )
+    const wrapper = await mountTab()
+    await wrapper.get('[data-testid="billing-invoice-fulfilment-retry-31"]').trigger('click')
+    await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
+
+    await wrapper.setProps({ invoice: invoiceFixture({ id: 2 }) })
+    await flushPromises()
+    refuseRetry()
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="billing-invoice-fulfilment-feedback"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="billing-invoice-fulfilment-retry-41"]').exists()).toBe(true)
+  })
+
+  it('clears the retry error of the previous invoice when the next invoice loads', async () => {
+    stubRoutes({
+      'POST /api/billing/1/fulfilment/31/retry': () => problem('This record cannot be retried.', 409),
+      'GET /api/billing/1/fulfilment': () => json([fulfilmentFixture()]),
+      'GET /api/billing/2/fulfilment': () => json([fulfilmentFixture({ id: 41, invoiceId: 2 })]),
+    })
+    const wrapper = await mountTab()
+    await wrapper.get('[data-testid="billing-invoice-fulfilment-retry-31"]').trigger('click')
+    await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('[data-testid="billing-invoice-fulfilment-feedback"]').text()).toBe('This record cannot be retried.')
+
+    await wrapper.setProps({ invoice: invoiceFixture({ id: 2 }) })
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="billing-invoice-fulfilment-feedback"]').exists()).toBe(false)
+  })
+
   it('drops the load error of the previous invoice when the next invoice loads', async () => {
     stubRoutes({
       'GET /api/billing/1/fulfilment': () => problem('Fulfilment is unavailable.', 500),

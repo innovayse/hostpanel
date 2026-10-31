@@ -246,6 +246,62 @@ describe('billingStore fulfilment', () => {
     expect(mock).toHaveBeenCalledTimes(1)
   })
 
+  it('retryFulfilment refused after another invoice was opened does not write the retry error', async () => {
+    stubRoutes({
+      'POST /api/billing/5/fulfilment/31/retry': () => problem('This record cannot be retried.', 409),
+      'GET /api/billing/6/fulfilment': () => json([{ id: 41, invoiceId: 6 }]),
+    })
+    const store = useBillingStore()
+    const retry = store.retryFulfilment(5, 31)
+    await store.fetchFulfilment(6)
+
+    expect(await retry).toBe(false)
+
+    expect(store.fulfilmentRetryError).toBeNull()
+    expect(store.error).toBeNull()
+  })
+
+  it('retryFulfilment refused after the invoice was left and reopened writes the retry error', async () => {
+    /** Refuses the pending retry of invoice 5 on demand. */
+    let refuseRetry: () => void = () => undefined
+    /** The pending answer of the retry POST of invoice 5. */
+    const retryAnswer = new Promise<Response>((resolve) => {
+      refuseRetry = () => resolve(problem('This record cannot be retried.', 409))
+    })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string, init?: RequestInit) => {
+        if (init?.method === 'POST') {
+          return retryAnswer
+        }
+        return Promise.resolve(
+          url === '/api/billing/6/fulfilment' ? json([{ id: 41, invoiceId: 6 }]) : json([{ id: 31, invoiceId: 5 }]),
+        )
+      }),
+    )
+    const store = useBillingStore()
+    await store.fetchFulfilment(5)
+    const retry = store.retryFulfilment(5, 31)
+    await store.fetchFulfilment(6)
+    await store.fetchFulfilment(5)
+    refuseRetry()
+
+    expect(await retry).toBe(false)
+
+    expect(store.fulfilmentRetryError).toBe('This record cannot be retried.')
+  })
+
+  it('fetchFulfilment clears the retry error of the previous invoice', async () => {
+    stubFetch(problem('This record cannot be retried.', 409), json([{ id: 41, invoiceId: 6 }]))
+    const store = useBillingStore()
+    await store.retryFulfilment(5, 31)
+    expect(store.fulfilmentRetryError).toBe('This record cannot be retried.')
+
+    await store.fetchFulfilment(6)
+
+    expect(store.fulfilmentRetryError).toBeNull()
+  })
+
   it('retryFulfilment that succeeds while the reload fails still reports success and shows the load failure', async () => {
     stubFetch(new Response(null, { status: 204 }), problem('Fulfilment is unavailable.', 500))
     const store = useBillingStore()

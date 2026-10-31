@@ -214,7 +214,7 @@ public sealed class ReconcileGatewayPaymentsCronHandler
                 invoice.MarkGatewayStalledNotified(now);
             }
 
-            // Saved before staff are told, so a failed save repeats the ask and the alert is never sent twice.
+            // Saved before staff are told, so a failed save repeats the ask instead of alerting about an unsaved result.
             await _context.SaveChangesAsync(ct);
 
             if (stalled)

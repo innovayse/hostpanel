@@ -28,6 +28,14 @@ namespace Innovayse.Hostpanel.Application.Billing.Commands.SettleInvoiceCardPaym
 /// keeps the money on the books. A replay of a payment this invoice already recorded (a double click,
 /// a retried request) answers success without touching anything.
 /// <para>
+/// Whether the transaction is already on the ledger is asked again before any money is handed back
+/// (the refund and the balance credit both live in <c>ReturnPaymentAsync</c>): two requests for one
+/// charge can both read the ledger empty, one then records the payment, and the other, loading the
+/// invoice afterwards, is refused because it is already paid. Handing that second request's payment
+/// back would refund the money the first request just recorded, so the ledger is read once more,
+/// committed, before any refund and the repeat is answered as the replay it is.
+/// </para>
+/// <para>
 /// What happens to money handed back is written to the ledger under the card transaction's own
 /// reference, so a replay finds it there and never refunds or credits a second time: a refund is a
 /// row taking the amount in and out again, a credit is a row adding it to the balance, and a return
@@ -96,31 +104,25 @@ public sealed class SettleInvoiceCardPaymentHandler
     /// the transaction is already on the ledger for another payment; <c>INVOICE_NOT_PAYABLE</c> when
     /// the invoice is not open for payment, or another writer changed it first; or
     /// <c>PAYMENT_INTENT_MISMATCH</c> when the amount or currency taken is not what the invoice owes.
-    /// Every refusal but <c>PAYMENT_INTENT_ALREADY_USED</c> hands the money back first.
+    /// Every refusal but <c>PAYMENT_INTENT_ALREADY_USED</c> hands the money back first, unless the
+    /// ledger shows the transaction was recorded meanwhile: then it answers as the replay it is
+    /// (success for this invoice, <c>PAYMENT_INTENT_ALREADY_USED</c> otherwise) and refunds nothing.
     /// </returns>
     public async Task<Result> HandleAsync(SettleInvoiceCardPaymentCommand cmd, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(cmd);
 
-        // The ledger is read before the invoice: the row and the Paid mark are saved together, so an
-        // invoice read after a row was seen is never older than that row.
-        var recordedFor = await _context.Transactions
-            .AsNoTracking()
-            .Where(t => t.TransactionId == cmd.TransactionId)
-            .Select(t => t.InvoiceId)
-            .ToListAsync(ct);
+        // The money may already be on the ledger (settled, or handed back): a replay, a double click,
+        // a retry. Asked before the invoice is loaded, so a replay costs one read. A request that
+        // passes here can still lose to one that records the payment a moment later; that is caught
+        // where the money would be handed back (ReturnPaymentAsync), not here.
+        var replay = await ReplayAsync(cmd, ct);
+        if (replay is not null)
+        {
+            return replay;
+        }
 
         var invoice = await LoadInvoiceAsync(cmd.InvoiceId, ct);
-
-        if (recordedFor.Count > 0)
-        {
-            // The money is already on the ledger (settled, or handed back), so nothing is handed
-            // back again. When it settled this very invoice the request is a replay and its outcome
-            // is the first one's.
-            return invoice is { IsSettled: true } && recordedFor.Contains(invoice.Id)
-                ? Result.Success()
-                : Result.FailureCode(HostpanelErrorCodes.PAYMENT_INTENT_ALREADY_USED);
-        }
 
         if (invoice is null)
         {
@@ -143,9 +145,9 @@ public sealed class SettleInvoiceCardPaymentHandler
         // An unrelated edit leaves the invoice open for this payment, so the settlement is tried
         // once more on the fresh row before the money is handed back.
         var current = await ReloadAfterConflictAsync(cmd, ct);
-        if (current.Settled)
+        if (current.Replay is not null)
         {
-            return Result.Success();
+            return current.Replay;
         }
 
         if (current.Invoice is not null && Refusal(cmd, current.Invoice) is null)
@@ -156,9 +158,9 @@ public sealed class SettleInvoiceCardPaymentHandler
             }
 
             current = await ReloadAfterConflictAsync(cmd, ct);
-            if (current.Settled)
+            if (current.Replay is not null)
             {
-                return Result.Success();
+                return current.Replay;
             }
         }
 
@@ -172,8 +174,33 @@ public sealed class SettleInvoiceCardPaymentHandler
     private async Task<Invoice?> LoadInvoiceAsync(int invoiceId, CancellationToken ct)
     {
         return await _context.Invoices
+            .TagWith(SettlementQueryTags.InvoiceLoad)
             .Include(i => i.Transactions)
             .FirstOrDefaultAsync(i => i.Id == invoiceId, ct);
+    }
+
+    /// <summary>
+    /// Answers a payment the ledger already holds, so it is neither settled nor handed back a second time.
+    /// </summary>
+    /// <param name="cmd">The payment.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// Success when the transaction is on the ledger for this invoice (this payment already settled
+    /// it, so the repeat has the first one's outcome); <c>PAYMENT_INTENT_ALREADY_USED</c> when it is
+    /// there for another invoice or was handed back; <see langword="null"/> when it is not recorded.
+    /// Either answer leaves the money alone: it is accounted for.
+    /// </returns>
+    private async Task<Result?> ReplayAsync(SettleInvoiceCardPaymentCommand cmd, CancellationToken ct)
+    {
+        var recordedFor = await _context.RecordedInvoiceIdsAsync(cmd.TransactionId, ct);
+        if (recordedFor.Count == 0)
+        {
+            return null;
+        }
+
+        return recordedFor.Contains(cmd.InvoiceId)
+            ? Result.Success()
+            : Result.FailureCode(HostpanelErrorCodes.PAYMENT_INTENT_ALREADY_USED);
     }
 
     /// <summary>
@@ -181,13 +208,12 @@ public sealed class SettleInvoiceCardPaymentHandler
     /// </summary>
     /// <param name="cmd">The payment.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Whether a concurrent request already settled the invoice with this payment, and the fresh invoice.</returns>
+    /// <returns>The answer for a payment a concurrent request already recorded, or else the fresh invoice.</returns>
     private async Task<SettleReload> ReloadAfterConflictAsync(SettleInvoiceCardPaymentCommand cmd, CancellationToken ct)
     {
         _context.DetachAll();
-        var settled = await _context.Transactions.AsNoTracking()
-            .AnyAsync(t => t.TransactionId == cmd.TransactionId && t.InvoiceId == cmd.InvoiceId, ct);
-        return new SettleReload(settled, settled ? null : await LoadInvoiceAsync(cmd.InvoiceId, ct));
+        var replay = await ReplayAsync(cmd, ct);
+        return new SettleReload(replay, replay is null ? await LoadInvoiceAsync(cmd.InvoiceId, ct) : null);
     }
 
     /// <summary>Why the invoice cannot record this payment, if it cannot.</summary>
@@ -252,10 +278,26 @@ public sealed class SettleInvoiceCardPaymentHandler
     /// <param name="invoice">The invoice, or <see langword="null"/> when it does not exist.</param>
     /// <param name="errorCode">Why the payment could not be recorded.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The refusal carrying <paramref name="errorCode"/>.</returns>
+    /// <returns>
+    /// The refusal carrying <paramref name="errorCode"/>; or, when the transaction turns out to be on
+    /// the ledger already, the replay's answer with nothing handed back.
+    /// </returns>
     private async Task<Result> ReturnPaymentAsync(
         SettleInvoiceCardPaymentCommand cmd, Invoice? invoice, string errorCode, CancellationToken ct)
     {
+        // The ledger was read before the invoice was loaded, and another request may have recorded
+        // this very payment in between (two clicks of one charge). Whatever refused this request, the
+        // money it would hand back is then recorded, and refunding it would refund a settled payment.
+        // One committed read here is enough, with no lock: a request records the payment in the same
+        // save that marks the invoice Paid, so a refusal caused by that settlement means its row is
+        // already committed and this read sees it, and an invoice that is no longer payable cannot
+        // take this payment afterwards.
+        var replay = await ReplayAsync(cmd, ct);
+        if (replay is not null)
+        {
+            return replay;
+        }
+
         CardRefundResult refund;
         try
         {

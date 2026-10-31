@@ -9,9 +9,14 @@ namespace Innovayse.Hostpanel.Application.Billing.Extensions;
 
 /// <summary>
 /// Answers whether money in a given currency can go on an invoiced client's credit balance at its
-/// face value. The balance carries no currency of its own; it is kept in the client's billing
-/// currency, so money in any other currency would be credited at the wrong value.
+/// face value, and which currency a client's credit balance is held in. The balance carries no currency
+/// of its own; it is kept in the client's billing currency, so money in any other currency would be
+/// credited at the wrong value.
 /// </summary>
+/// <remarks>
+/// For a client with no billing currency the most recent invoice's currency is only a stand in: credit
+/// carries no currency of its own, so the latest invoice is the best available evidence of what it is in.
+/// </remarks>
 public static class ClientBillingCurrencyExtensions
 {
     /// <summary>Whether <paramref name="currency"/> is the billing currency of the invoice's client.</summary>

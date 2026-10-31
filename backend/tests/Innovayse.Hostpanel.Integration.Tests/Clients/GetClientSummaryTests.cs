@@ -157,32 +157,76 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>
-    /// A client with no billing currency who holds credit is answered in the currency of their invoice,
-    /// the same stand-in the rest of billing uses, not in the base currency.
+    /// A client with no billing currency who holds credit is answered in the currency of their most recent
+    /// invoice, the same stand-in the rest of billing uses, not in the base currency and not in an older
+    /// invoice's currency. The two invoices are saved apart, so the later one has the higher id.
     /// </summary>
     [Fact]
-    public async Task SummaryForAClientWithoutACurrencyButWithCreditUsesTheInvoiceCurrency()
+    public async Task SummaryForAClientWithoutACurrencyButWithCreditUsesTheLatestInvoiceCurrency()
     {
         var (clientId, _) = await ClientsTestSeeds.SeedClientAsync(factory);
+        string lateCode;
         using (var scope = factory.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            var baseCode = (await context.GetBaseCurrencyAsync(CancellationToken.None)).Code;
+            var codes = new[] { "AMD", "EUR", "GBP" }.Where(c => !string.Equals(c, baseCode, StringComparison.OrdinalIgnoreCase)).ToArray();
+            var (earlier, later) = (codes[0], codes[1]);
             var now = DateTimeOffset.UtcNow;
-            var invoice = Invoice.Create(clientId, now.AddDays(7), "AMD", now);
-            invoice.AddItem("Hosting", 1000m, 1);
-            context.Invoices.Add(invoice);
+
+            var first = Invoice.Create(clientId, now.AddDays(7), earlier, now);
+            first.AddItem("Hosting", 1000m, 1);
+            context.Invoices.Add(first);
+            await context.SaveChangesAsync(CancellationToken.None);
+
+            var second = Invoice.Create(clientId, now.AddDays(7), later, now);
+            second.AddItem("Hosting", 1000m, 1);
+            context.Invoices.Add(second);
+            await context.SaveChangesAsync(CancellationToken.None);
+
             var client = await context.Clients.FirstAsync(c => c.Id == clientId);
             client.AddCredit(800m);
             await context.SaveChangesAsync(CancellationToken.None);
             client.Currency.Should().BeNull();
+            lateCode = later;
         }
 
         var admin = await ClientsTestSeeds.AdminClientAsync(factory);
 
         var credit = (await admin.GetFromJsonAsync<JsonElement>($"/api/clients/{clientId}/summary")).GetProperty("creditBalance");
 
-        credit.GetProperty("currency").GetString().Should().Be("AMD");
+        credit.GetProperty("currency").GetString().Should().Be(lateCode);
         credit.GetProperty("amount").GetDecimal().Should().Be(800m);
+    }
+
+    /// <summary>
+    /// A client with no billing currency and an invoice but no credit has nothing to place, so the base
+    /// currency is answered, not the invoice's.
+    /// </summary>
+    [Fact]
+    public async Task SummaryForAClientWithoutACurrencyWithAnInvoiceButNoCreditReportsTheBaseCurrency()
+    {
+        var (clientId, _) = await ClientsTestSeeds.SeedClientAsync(factory);
+        string baseCode;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            baseCode = (await context.GetBaseCurrencyAsync(CancellationToken.None)).Code;
+            var invoiceCode = string.Equals(baseCode, "AMD", StringComparison.OrdinalIgnoreCase) ? "EUR" : "AMD";
+            var now = DateTimeOffset.UtcNow;
+            var invoice = Invoice.Create(clientId, now.AddDays(7), invoiceCode, now);
+            invoice.AddItem("Hosting", 1000m, 1);
+            context.Invoices.Add(invoice);
+            await context.SaveChangesAsync(CancellationToken.None);
+            (await context.Clients.AsNoTracking().FirstAsync(c => c.Id == clientId)).Currency.Should().BeNull();
+        }
+
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+
+        var credit = (await admin.GetFromJsonAsync<JsonElement>($"/api/clients/{clientId}/summary")).GetProperty("creditBalance");
+
+        credit.GetProperty("currency").GetString().Should().Be(baseCode);
+        credit.GetProperty("amount").GetDecimal().Should().Be(0m);
     }
 
     /// <summary>Reads a wire list of <c>{ amount, currency }</c> entries into a map keyed by currency.</summary>

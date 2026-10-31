@@ -16,6 +16,7 @@ import { SERVICE_STATUS_OPTIONS, BILLING_CYCLE_OPTIONS } from '@/lib/constants'
 import { BillingCycle, ServiceChangeReason, ServiceSection, ServiceStatus } from '@/types/service'
 import { formatDate, toDateInputValue } from '@/lib/format'
 import type { ServiceListItem } from '@/types/service'
+import PluginSlot from '@/components/plugins/PluginSlot.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -37,6 +38,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
+import { PluginSlotId } from '@/types/pluginslot'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
@@ -1232,6 +1234,8 @@ onMounted(() => {
           </UiForm>
         </UiCard>
       </UiStack>
+
+      <PluginSlot :key="service.id" :slot-id="PluginSlotId.AdminServicePanels" :context="{ serviceId: service.id }" />
 
       <UiDialog
         v-if="showChangePasswordModal"

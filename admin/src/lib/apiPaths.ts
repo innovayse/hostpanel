@@ -31,6 +31,8 @@ export enum ApiPath {
   AdminPartners = '/admin/partners',
   /** `/admin/plugins` collection and its members. */
   AdminPlugins = '/admin/plugins',
+  /** `/admin/plugins/slots` collection and its members. */
+  AdminPluginSlots = '/admin/plugins/slots',
   /** `/admin/projects` collection and its members. */
   AdminProjects = '/admin/projects',
   /** `/admin/server-groups` collection and its members. */

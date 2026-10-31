@@ -546,7 +546,7 @@ onMounted(() => fetchInvoices())
         </UiStack>
       </UiCard>
 
-      <UiCard>
+      <UiCard class="overflow-x-auto">
         <UiTable
           density="comfortable"
           :empty="store.clientInvoices.length === 0"

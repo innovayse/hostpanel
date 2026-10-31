@@ -561,7 +561,7 @@ const clientUserActions = (u: ClientUserItem): UiRowAction[] => {
         </UiStack>
       </UiCard>
 
-      <UiCard v-if="users.length > 0">
+      <UiCard v-if="users.length > 0" class="overflow-x-auto">
         <UiTable density="comfortable" data-testid="client-users-table">
           <UiTableHead>
             <UiTableRow>

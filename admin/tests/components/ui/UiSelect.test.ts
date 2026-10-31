@@ -1,5 +1,5 @@
 /**
- * Unit tests for UiSelect: trigger label, opening, picking, searching and closing.
+ * Unit tests for UiSelect: trigger label, opening, picking, searching and closing, and the compact look for toolbars.
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
@@ -18,7 +18,7 @@ const options = [
  * @param props - Props for the select.
  * @returns The wrapper.
  */
-const mountSelect = (props: { modelValue: string; placeholder?: string; disabled?: boolean; searchable?: boolean }) =>
+const mountSelect = (props: { modelValue: string; placeholder?: string; disabled?: boolean; searchable?: boolean; compact?: boolean }) =>
   mount(UiSelect, { props: { options, ...props }, global: { plugins: [createTestI18n()] } })
 
 describe('UiSelect', () => {
@@ -119,5 +119,43 @@ describe('UiSelect', () => {
 
     expect(wrapper.attributes('data-testid')).toBe('probe')
     expect(wrapper.get('[role="listbox"]').classes()).toContain('min-w-[18rem]')
+  })
+
+  it('keeps the field look and the solid selection when it is not compact', async () => {
+    const wrapper = mountSelect({ modelValue: 'a' })
+
+    expect(wrapper.get('button').classes()).toEqual(expect.arrayContaining(['px-3', 'py-2', 'rounded-[10px]']))
+    await wrapper.get('button').trigger('click')
+    expect(wrapper.get('[role="listbox"]').classes()).not.toContain('rounded-xl')
+  })
+
+  it('draws a small trigger like a small button when compact', () => {
+    const wrapper = mountSelect({ modelValue: 'a', compact: true })
+
+    expect(wrapper.get('button').classes()).toEqual(expect.arrayContaining(['py-1', 'text-[0.75rem]', 'rounded-lg']))
+    expect(wrapper.get('button').classes()).not.toContain('py-2')
+  })
+
+  it('opens a soft list when compact: inset rounded rows and a tinted, not solid, selection', async () => {
+    const wrapper = mountSelect({ modelValue: 'a', compact: true })
+
+    await wrapper.get('button').trigger('click')
+    const items = wrapper.findAll('[role="option"]')
+
+    expect(wrapper.get('[role="listbox"]').classes()).toEqual(expect.arrayContaining(['rounded-xl', 'p-1']))
+    expect(items[0]?.classes()).toEqual(expect.arrayContaining(['rounded-lg', 'bg-primary-500/10']))
+    expect(items[0]?.classes()).not.toContain('bg-primary-600')
+    expect(items[0]?.classes()).not.toContain('text-white')
+    expect(items[1]?.classes()).toContain('hover:bg-surface-hover')
+  })
+
+  it('still picks and closes when compact', async () => {
+    const wrapper = mountSelect({ modelValue: 'a', compact: true })
+
+    await wrapper.get('button').trigger('click')
+    await wrapper.findAll('[role="option"]')[1]?.trigger('mousedown')
+
+    expect(wrapper.emitted('update:modelValue')).toEqual([['b']])
+    expect(wrapper.find('[role="listbox"]').exists()).toBe(false)
   })
 })

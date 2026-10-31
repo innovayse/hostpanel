@@ -91,15 +91,20 @@ onMounted(() => {
     </UiAlert>
 
     <template v-else-if="store.current">
-      <UiStack direction="row" :align="UiAlignItems.Center" data-testid="client-layout-header">
+      <!--
+        One grid for both widths. From md up: back, initials, the name block (name over status), export in a
+        row. On a phone the name block turns into a line (the name with the status badge right after it,
+        wrapping if the name is long) beside the back arrow and the initials, and export drops to a row of its own.
+      -->
+      <div class="grid grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 md:grid-cols-[auto_auto_minmax(0,1fr)_auto] md:gap-4" data-testid="client-layout-header">
         <UiIconButton :label="t('shared.back')" data-testid="client-layout-back" @click="goBack">
           <UiIcon :markup="BACK_ICON" />
         </UiIconButton>
         <UiBadge :tone="UiTone.Primary">
           {{ store.current.firstName.charAt(0) }}{{ store.current.lastName.charAt(0) }}
         </UiBadge>
-        <UiStack gap="xs" class="flex-1">
-          <UiHeading :level="1" variant="section" data-testid="client-header-name">
+        <UiStack gap="xs" class="min-w-0 max-md:!flex-row max-md:!flex-wrap max-md:!items-center max-md:!gap-x-2">
+          <UiHeading :level="1" variant="section" class="min-w-0 break-words" data-testid="client-header-name">
             {{ store.current.firstName }} {{ store.current.lastName }}
           </UiHeading>
           <UiStack direction="row" :align="UiAlignItems.Center" gap="sm">
@@ -112,13 +117,14 @@ onMounted(() => {
         <UiButton
           :variant="UiButtonVariant.Secondary"
           :size="UiSize.Sm"
+          class="max-md:col-span-3 max-md:justify-self-end"
           data-testid="client-layout-export"
           @click="showExportModal = true"
         >
           <UiIcon :markup="EXPORT_ICON" :size="UiSize.Sm" />
           {{ t('clients.clientLayout.exportData') }}
         </UiButton>
-      </UiStack>
+      </div>
 
       <ClientExportModal
         v-if="showExportModal"
@@ -127,9 +133,10 @@ onMounted(() => {
         @close="showExportModal = false"
       />
 
-      <UiStack direction="row" gap="none" class="flex-1 min-h-0">
+      <!-- A column on phones, where the section tabs are a strip above the content; a row from md up, where they are the icon rail. -->
+      <UiStack gap="none" class="flex-1 min-h-0 md:flex-row">
         <ClientInnerSidebar :client-id="String(route.params.id)" />
-        <UiStack gap="none" class="flex-1 min-w-0 overflow-y-auto">
+        <UiStack gap="none" class="flex-1 min-w-0 overflow-y-auto md:pl-6">
           <RoutedView />
         </UiStack>
       </UiStack>

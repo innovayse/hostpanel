@@ -211,7 +211,7 @@ onMounted(load)
       <UiText :tone="UiTextTone.Secondary">{{ t('clients.clientLog.loadingActivityLog') }}</UiText>
     </UiStack>
 
-    <UiCard v-else>
+    <UiCard v-else class="overflow-x-auto">
       <UiTable
         density="comfortable"
         :empty="store.logs.length === 0"

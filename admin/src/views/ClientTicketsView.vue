@@ -162,7 +162,7 @@ onBeforeUnmount(() => {
         />
       </UiStack>
 
-      <UiCard>
+      <UiCard class="overflow-x-auto">
         <UiTable
           density="comfortable"
           :empty="store.tickets.length === 0"

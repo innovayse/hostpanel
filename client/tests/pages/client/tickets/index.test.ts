@@ -1,6 +1,7 @@
 /**
  * Tests for `pages/client/tickets/index.vue`: the states of the list and the filter tabs.
  */
+import { createPinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountPage, stubClientRuntime } from '~/tests/helpers/mountClient'
 import TicketsPage from '~/pages/client/tickets/index.vue'
@@ -40,6 +41,14 @@ describe('tickets list page', () => {
 
     expect(clientApi.fetchTickets).toHaveBeenCalled()
     expect(wrapper.findAll('[data-testid^="ticket-row-"]')).toHaveLength(2)
+  })
+
+  it('reads the tickets again when the list was loaded on an earlier visit', async () => {
+    clientApi.fetchTickets.mockResolvedValue([])
+    const pinia = createPinia()
+    useClientStore(pinia).ticketsLoaded = true
+    await mountPage(TicketsPage, { pinia })
+    expect(clientApi.fetchTickets).toHaveBeenCalled()
   })
 
   it('filters to the open tickets and to the closed ones', async () => {

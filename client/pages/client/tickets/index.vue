@@ -52,7 +52,7 @@ const { t } = useI18n()
 /** The client store that owns the ticket list and its loading and failure state. */
 const store = useClientStore()
 
-await useAsyncData('client-tickets', () => store.fetchTickets())
+await useAsyncData('client-tickets', () => store.fetchTickets(true))
 
 /** The active filter tab, a `ListFilter` value (a string so the tab bar can v-model it). */
 const activeTab = ref<string>(ListFilter.All)

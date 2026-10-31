@@ -10,15 +10,15 @@ import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 
-/** The items of client 7, in the API's `ClientBillableItemDto` shape: one uninvoiced charge, nothing invoiced. */
-const items = () =>
+/** The items of client 7, in the API's `ClientBillableItemDto` shape: one uninvoiced charge and optionally invoiced ones, in the given currency. */
+const items = (currency = 'USD', invoiced: object[] = []) =>
   json({
     uninvoicedItems: [{
       id: 5,
       clientId: 7,
       description: 'Domain renewal',
       amount: 12,
-      currency: 'USD',
+      currency,
       type: 'OneTime',
       recurringPeriod: null,
       isInvoiced: false,
@@ -27,7 +27,7 @@ const items = () =>
       createdAt: '2026-10-01T00:00:00Z',
     }],
     uninvoicedTotal: 12,
-    invoicedItems: { items: [], pageNumber: 1, pageSize: 25, totalCount: 0, totalPages: 0 },
+    invoicedItems: { items: invoiced, pageNumber: 1, pageSize: 25, totalCount: invoiced.length, totalPages: 1 },
   })
 
 /**
@@ -72,6 +72,18 @@ describe('ClientBillableItemsView', () => {
     const headers = table.findAll('th').map((th) => th.text())
     expect(headers).toEqual(['', 'ID', 'Description', 'Amount', 'Actions'])
     expect(table.text()).toContain('Domain renewal')
+  })
+
+  it('writes amounts in the currency the items carry, not in dollars', async () => {
+    const invoiced = { id: 6, clientId: 7, description: 'Hosting', amount: 5000, currency: 'AMD', type: 'OneTime', recurringPeriod: null, isInvoiced: true, invoiceId: 9, nextDueDate: null, createdAt: '2026-09-01T00:00:00Z' }
+    stubRoutes({ 'GET /api/clients/7/billable-items': () => items('AMD', [invoiced]) })
+    const wrapper = await mountItems()
+
+    expect(wrapper.get('[data-testid="client-billable-uninvoiced-table"]').text()).toContain('12.00 AMD')
+    expect(wrapper.get('[data-testid="client-billable-invoiced-table"]').text()).toContain('5000.00 AMD')
+    expect(wrapper.text()).toContain('Uninvoiced Items — 12.00 AMD (1)')
+    expect(wrapper.text()).not.toContain('$')
+    expect(wrapper.text()).not.toContain('USD')
   })
 
   it('reports a deleted item next to the lists', async () => {

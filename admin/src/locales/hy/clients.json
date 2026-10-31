@@ -141,7 +141,7 @@
     "addTimeBillingEntries": "Ավելացնել ժամանակի հաշվառման գրառումներ",
     "addBillableItem": "+ Ավելացնել վճարվող դիրք",
     "loadingBillableItems": "Վճարվող դիրքերը բեռնվում են...",
-    "uninvoicedItemsValueUsdLength": "Չհաշվարկված դիրքեր — ${value} USD ({length})",
+    "uninvoicedItemsAmountLength": "Չհաշվարկված դիրքեր — {amount} ({length})",
     "invoiceSelectedItems": "Հաշիվ դուրս գրել ընտրված դիրքերի համար",
     "noUninvoicedBillableItems": "Չհաշվարկված վճարվող դիրքեր չկան։",
     "invoicedItems": "Հաշվարկված դիրքեր",

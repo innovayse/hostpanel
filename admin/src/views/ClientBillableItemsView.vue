@@ -10,7 +10,7 @@ import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useClientBillableItemsStore } from '@/stores/clientBillableItems'
 import { useResultBanner } from '@/composables/useResultBanner'
-import { formatMoney } from '@/lib/money'
+import { formatPlainAmount } from '@/lib/money'
 import AddBillableItemModal from '@/components/clients/AddBillableItemModal.vue'
 import AddTimeBillingModal from '@/components/clients/AddTimeBillingModal.vue'
 import type { ClientBillableItem } from '@/types/billableitem'
@@ -89,6 +89,12 @@ const invoicedItems = ref<ClientBillableItem[]>([])
 
 /** Sum of all uninvoiced item amounts. */
 const uninvoicedTotal = ref(0)
+
+/**
+ * The uninvoiced total with the currency the items carry. The API sums the amounts without
+ * converting, so the total is written in the currency of the first item (a client bills in one).
+ */
+const uninvoicedTotalLabel = computed(() => formatPlainAmount(uninvoicedTotal.value, uninvoicedItems.value[0]?.currency))
 
 /** Current invoiced items page (1-based). */
 const invoicedPage = ref(1)
@@ -334,7 +340,7 @@ onMounted(() => fetchBillableItems())
     <template v-else>
       <UiStack>
         <UiHeading :level="2" variant="card">
-          {{ t('clients.clientBillableItems.uninvoicedItemsValueUsdLength', { value: uninvoicedTotal.toFixed(2), length: uninvoicedItems.length }) }}
+          {{ t('clients.clientBillableItems.uninvoicedItemsAmountLength', { amount: uninvoicedTotalLabel, length: uninvoicedItems.length }) }}
         </UiHeading>
 
         <UiCard v-if="uninvoicedItems.length > 0">
@@ -367,7 +373,7 @@ onMounted(() => fetchBillableItems())
                 </UiTableCell>
                 <UiTableCell muted>{{ item.id }}</UiTableCell>
                 <UiTableCell>{{ item.description }}</UiTableCell>
-                <UiTableCell muted>{{ formatMoney(item.amount) }}</UiTableCell>
+                <UiTableCell muted>{{ formatPlainAmount(item.amount, item.currency) }}</UiTableCell>
                 <UiTableCell>
                   <UiIconButton
                     :label="t('shared.delete')"
@@ -429,7 +435,7 @@ onMounted(() => fetchBillableItems())
               <UiTableRow v-for="item in invoicedItems" :key="item.id" hoverable>
                 <UiTableCell muted>{{ item.id }}</UiTableCell>
                 <UiTableCell>{{ item.description }}</UiTableCell>
-                <UiTableCell muted>{{ formatMoney(item.amount) }}</UiTableCell>
+                <UiTableCell muted>{{ formatPlainAmount(item.amount, item.currency) }}</UiTableCell>
                 <UiTableCell>
                   <template v-if="item.invoiceId">#{{ item.invoiceId }}</template>
                   <template v-else>&mdash;</template>

@@ -51,6 +51,19 @@ public sealed class QuoteTests
         act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.QuoteItemNotFound);
     }
 
+    /// <summary>The lines handed to an invoice keep each line's discount, so the invoice totals what the quote does.</summary>
+    [Fact]
+    public void GetInvoiceItemData_KeepsTheLineDiscount()
+    {
+        var quote = Quote.Create(clientId: 1, subject: "Test", expiryDate: Now.AddDays(7), currency: "USD");
+        quote.AddItem("Hosting", 100m, 2, discountPercent: 25m);
+
+        var line = quote.GetInvoiceItemData().Should().ContainSingle().Which;
+        line.UnitPrice.Should().Be(75m);
+        line.Quantity.Should().Be(2);
+        (line.UnitPrice * line.Quantity).Should().Be(quote.Total).And.Be(150m);
+    }
+
     /// <summary>The currency given at creation is what the quote reports, upper-cased.</summary>
     [Fact]
     public void Create_StampsTheCurrency()

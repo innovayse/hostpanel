@@ -176,6 +176,12 @@ describe('ProductFormModal', () => {
     const product = { ...stored, prices: [{ currencyCode: 'USD', monthly: 10, annual: null, quarterly: 27, semiAnnual: 50, biennial: null }] }
     const { wrapper } = await mountScreen(ProductFormModal, { product, groups, saving: false })
 
+    /**
+     * Reads the USD price input of one billing cycle.
+     *
+     * @param cycle - The cycle key of the price field.
+     * @returns The input's current value.
+     */
     const valueOf = (cycle: string): string =>
       (wrapper.get(`[data-testid="product-form-price-USD-${cycle}"] input`).element as HTMLInputElement).value
     expect(valueOf('quarterly')).toBe('27')

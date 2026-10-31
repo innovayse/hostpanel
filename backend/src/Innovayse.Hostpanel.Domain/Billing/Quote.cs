@@ -44,9 +44,8 @@ public sealed class Quote : BaseEntity, IAggregateRoot
 
     /// <summary>
     /// Gets the total of all line items after their discounts: the unrounded line amounts are summed and the sum is
-    /// rounded once to the quote currency's minor unit, the order <see cref="Invoice"/> uses for its sub-total. It equals the
-    /// invoice total made from the quote only when no line carries a discount and the invoice has no tax or credit, because
-    /// the conversion bills each line at its full price and drops the line discounts.
+    /// rounded once to the quote currency's minor unit, the order <see cref="Invoice"/> uses for its sub-total. The invoice
+    /// made from the quote bills each line at its discounted unit price, so it carries the same sub-total before tax and credit.
     /// </summary>
     public decimal Total { get; private set; }
 
@@ -269,9 +268,9 @@ public sealed class Quote : BaseEntity, IAggregateRoot
     /// <summary>
     /// Returns the line item data needed to generate an invoice.
     /// </summary>
-    /// <returns>Read-only list of the lines to bill.</returns>
+    /// <returns>Read-only list of the lines to bill, each at its unit price after the line discount.</returns>
     public IReadOnlyList<QuoteInvoiceLine> GetInvoiceItemData()
-        => _items.Select(i => new QuoteInvoiceLine(i.Description, i.UnitPrice, i.Quantity)).ToList();
+        => _items.Select(i => new QuoteInvoiceLine(i.Description, i.UnitPrice * (1 - i.DiscountPercent / 100), i.Quantity)).ToList();
 
     /// <summary>Sets <see cref="Total"/> to the sum of the unrounded line amounts, rounded once to the quote's currency like an invoice.</summary>
     private void RecalculateTotal() => Total = CurrencyCode.RoundToMinorUnits(_items.Sum(i => i.Amount), Currency);

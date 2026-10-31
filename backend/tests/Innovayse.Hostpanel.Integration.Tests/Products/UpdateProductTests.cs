@@ -71,6 +71,106 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
         prices[0].GetProperty("monthly").GetDecimal().Should().Be(3.49m);
     }
 
+    /// <summary>
+    /// The three newer cycles are stored and read back under their own names, and a list written in the
+    /// two-cycle shape (no keys for them) still saves and leaves them unpriced.
+    /// </summary>
+    [Fact]
+    public async Task UpdateProduct_PriceList_StoresTheNewCyclesAndAcceptsTheTwoCycleShape()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var groupId = await ProductsTestSeeds.CreateGroupAsync(client);
+        var created = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId,
+            name = "All cycles",
+            type = ProductType.SharedHosting,
+            prices = new[] { new { currencyCode = "USD", monthly = (decimal?)3m, annual = (decimal?)30m, quarterly = (decimal?)8m, semiAnnual = (decimal?)15m, biennial = (decimal?)55m } },
+        });
+        var id = await created.Content.ReadFromJsonAsync<int>();
+
+        var dto = await ProductsTestSeeds.GetProductAsync(client, id);
+        var usd = dto.GetProperty("prices").EnumerateArray().Single();
+        usd.GetProperty("monthly").GetDecimal().Should().Be(3m);
+        usd.GetProperty("annual").GetDecimal().Should().Be(30m);
+        usd.GetProperty("quarterly").GetDecimal().Should().Be(8m);
+        usd.GetProperty("semiAnnual").GetDecimal().Should().Be(15m);
+        usd.GetProperty("biennial").GetDecimal().Should().Be(55m);
+
+        var rewritten = await client.PutAsJsonAsync($"/api/products/{id}", new
+        {
+            name = "All cycles",
+            prices = new[] { new { currencyCode = "USD", monthly = (decimal?)4m, annual = (decimal?)40m } },
+        });
+        rewritten.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var after = (await ProductsTestSeeds.GetProductAsync(client, id)).GetProperty("prices").EnumerateArray().Single();
+        after.GetProperty("monthly").GetDecimal().Should().Be(4m);
+        after.GetProperty("quarterly").ValueKind.Should().Be(JsonValueKind.Null);
+        after.GetProperty("semiAnnual").ValueKind.Should().Be(JsonValueKind.Null);
+        after.GetProperty("biennial").ValueKind.Should().Be(JsonValueKind.Null);
+    }
+
+    /// <summary>
+    /// A save from the legacy two-figure form speaks only for the base currency's monthly and annual prices:
+    /// the quarterly, semi-annual and biennial prices the product already has there survive it.
+    /// </summary>
+    [Fact]
+    public async Task UpdateProduct_LegacyPair_KeepsTheBaseCurrencyNewCycles()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var groupId = await ProductsTestSeeds.CreateGroupAsync(client);
+        var created = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId,
+            name = "Legacy save",
+            type = ProductType.SharedHosting,
+            prices = new[] { new { currencyCode = "USD", monthly = (decimal?)3m, annual = (decimal?)30m, quarterly = (decimal?)8m, semiAnnual = (decimal?)15m, biennial = (decimal?)55m } },
+        });
+        var id = await created.Content.ReadFromJsonAsync<int>();
+
+        var updated = await client.PutAsJsonAsync($"/api/products/{id}", new
+        {
+            name = "Legacy save",
+            monthlyPrice = 3.5m,
+            annualPrice = 35m,
+        });
+        updated.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var usd = (await ProductsTestSeeds.GetProductAsync(client, id)).GetProperty("prices").EnumerateArray().Single();
+        usd.GetProperty("monthly").GetDecimal().Should().Be(3.5m);
+        usd.GetProperty("annual").GetDecimal().Should().Be(35m);
+        usd.GetProperty("quarterly").GetDecimal().Should().Be(8m);
+        usd.GetProperty("semiAnnual").GetDecimal().Should().Be(15m);
+        usd.GetProperty("biennial").GetDecimal().Should().Be(55m);
+    }
+
+    /// <summary>A negative amount for a newer cycle is refused as a 400, like one for monthly.</summary>
+    /// <param name="cycle">The JSON name of the cycle given the negative amount.</param>
+    [Theory]
+    [InlineData("quarterly")]
+    [InlineData("semiAnnual")]
+    [InlineData("biennial")]
+    public async Task UpdateProduct_NegativeAmountForANewCycle_IsRefused(string cycle)
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var groupId = await ProductsTestSeeds.CreateGroupAsync(client);
+        var created = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId,
+            name = "Negative",
+            type = ProductType.SharedHosting,
+            monthlyPrice = 1m,
+            annualPrice = 10m,
+        });
+        var id = await created.Content.ReadFromJsonAsync<int>();
+
+        var price = new Dictionary<string, object?> { ["currencyCode"] = "USD", ["monthly"] = 1m, [cycle] = -1m };
+        var updated = await client.PutAsJsonAsync($"/api/products/{id}", new { name = "Negative", prices = new[] { price } });
+
+        updated.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
     /// <summary>An empty price list on update clears every price, and the product becomes unsellable.</summary>
     [Fact]
     public async Task UpdateProduct_EmptyPriceList_MakesTheProductUnsellable()

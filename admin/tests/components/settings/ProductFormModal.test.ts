@@ -35,8 +35,8 @@ const stored: Product = {
   packageName: 'pro',
   type: 'Vps',
   status: 'Inactive',
-  pricing: { monthly: 10, annual: null },
-  prices: [{ currencyCode: 'USD', monthly: 10, annual: null }],
+  pricing: { monthly: 10, annual: null, quarterly: null, semiAnnual: null, biennial: null },
+  prices: [{ currencyCode: 'USD', monthly: 10, annual: null, quarterly: null, semiAnnual: null, biennial: null }],
   serverGroupId: null,
   isFeatured: true,
   sortOrder: 4,
@@ -132,7 +132,7 @@ describe('ProductFormModal', () => {
       slug: 'plan',
       packageName: null,
       type: 'Vps',
-      prices: [{ currencyCode: 'USD', monthly: null, annual: null }],
+      prices: [{ currencyCode: 'USD', monthly: null, annual: null, quarterly: null, semiAnnual: null, biennial: null }],
       serverGroupId: null,
       isFeatured: false,
       sortOrder: 0,
@@ -140,6 +140,52 @@ describe('ProductFormModal', () => {
       metadata: '',
       gracePeriodDays: 7,
     }]])
+  })
+
+  it('draws a price input for each of the five billing cycles in every currency row', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: null, groups, saving: false })
+
+    for (const cycle of ['monthly', 'quarterly', 'semiAnnual', 'annual', 'biennial']) {
+      expect(wrapper.find(`[data-testid="product-form-price-USD-${cycle}"] input`).exists()).toBe(true)
+      expect(wrapper.find(`[data-testid="product-form-price-EUR-${cycle}"] input`).exists()).toBe(true)
+    }
+    expect(wrapper.get('[data-testid="product-form-prices"]').text()).toContain('Quarterly')
+    expect(wrapper.get('[data-testid="product-form-prices"]').text()).toContain('Semi-annual')
+    expect(wrapper.get('[data-testid="product-form-prices"]').text()).toContain('Biennial')
+  })
+
+  it('emits the prices of the cycles the operator filled and null for the rest', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: null, groups, saving: false })
+
+    await wrapper.get('[data-testid="product-form-type-Vps"]').trigger('click')
+    await wrapper.get('[data-testid="product-form-name"]').setValue('Plan')
+    await wrapper.get('[data-testid="product-form-price-USD-quarterly"] input').setValue('8.5')
+    await wrapper.get('[data-testid="product-form-price-USD-biennial"] input').setValue('60')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    const payload = (wrapper.emitted('save')?.[0]?.[0] ?? {}) as { prices: unknown[] }
+    expect(payload.prices).toEqual([
+      { currencyCode: 'USD', monthly: null, annual: null, quarterly: 8.5, semiAnnual: null, biennial: 60 },
+    ])
+  })
+
+  it('opens a product with the prices it already has on the new cycles', async () => {
+    stubRouteTable(lists)
+    const product = { ...stored, prices: [{ currencyCode: 'USD', monthly: 10, annual: null, quarterly: 27, semiAnnual: 50, biennial: null }] }
+    const { wrapper } = await mountScreen(ProductFormModal, { product, groups, saving: false })
+
+    /**
+     * Reads the USD price input of one billing cycle.
+     *
+     * @param cycle - The cycle key of the price field.
+     * @returns The input's current value.
+     */
+    const valueOf = (cycle: string): string =>
+      (wrapper.get(`[data-testid="product-form-price-USD-${cycle}"] input`).element as HTMLInputElement).value
+    expect(valueOf('quarterly')).toBe('27')
+    expect(valueOf('semiAnnual')).toBe('50')
   })
 
   it('emits the recommended flag and the sort order the operator set', async () => {

@@ -23,8 +23,8 @@ export interface Product {
   type: string
   /** Current status (Active, Inactive). */
   status: string
-  /** Monthly and annual pricing in the caller's currency; null when the product has no price for that cycle. */
-  pricing: { monthly: number | null; annual: number | null }
+  /** Pricing in the caller's currency, one entry per cycle; null when the product has no price for that cycle. */
+  pricing: ProductPriceAmounts
   /** Every stored price, one entry per currency the product sells in. */
   prices: ProductPrice[]
   /** Optional FK to the server group for provisioning. */
@@ -41,14 +41,22 @@ export interface Product {
   gracePeriodDays: number
 }
 
+/**
+ * The billing cycles a product is priced for, as the keys of its price objects, in the order they
+ * are shown. The names are the API's camelCase property names, one per `BillingCycle` member.
+ */
+export const PRODUCT_PRICE_CYCLES = ['monthly', 'quarterly', 'semiAnnual', 'annual', 'biennial'] as const
+
+/** One of the {@link PRODUCT_PRICE_CYCLES} keys. */
+export type ProductPriceCycle = (typeof PRODUCT_PRICE_CYCLES)[number]
+
+/** An amount per billing cycle; null when the product is not sold for that cycle. */
+export type ProductPriceAmounts = Record<ProductPriceCycle, number | null>
+
 /** A product's stored prices in one currency. */
-export interface ProductPrice {
+export interface ProductPrice extends ProductPriceAmounts {
   /** ISO 4217 alpha code. */
   currencyCode: string
-  /** Monthly price, or null when the product does not bill monthly in this currency. */
-  monthly: number | null
-  /** Annual price, or null when the product does not bill annually in this currency. */
-  annual: number | null
 }
 
 /** Represents a product group. */

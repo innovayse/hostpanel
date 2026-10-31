@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Quarterly, semi-annual and biennial billing cycles beside monthly and annual: product prices per cycle in the admin form and list, the cycle choice on the storefront plan pages and at checkout, and renewal periods of 3, 6 and 24 months. Existing monthly and annual services, orders and plugin contracts are unchanged (#478).
 - Client portal SSH keys: a "Deploy automatically from GitHub or GitLab" guide with a ready GitHub Actions workflow and GitLab CI job, filled in with the account's host, port and username (en, ru, hy).
 - SSH key agent 1.2.0: optional jailed SSH enrolment (`jail_enrol`). The first key HostPanel adds jails the account (jailkit tree, home bind-mounted by a systemd unit, `sftp-ssh` group, bash) and removing the last managed key withdraws it; off by default.
 - `PanelNetwork:HostAddresses` (`PANEL_HOST_ADDRESSES`): reach a control panel's API over a VPN address while requests and TLS keep its hostname, so customer links and certificate checks are unchanged.
@@ -104,8 +105,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A quote total is the sum of the discounted lines rounded once to the currency minor unit, the same order an invoice uses, so two lines of 0.004 total 0.01. A migration recalculates the totals of quotes saved before.
 - Accounts that staff link to a client (creating the client for an existing account, adding a user, transferring ownership) are now granted the Client role; before, the portal answered 403 to them and showed nothing. A one-time migration (`GrantClientRoleToLinkedUsers`) grants the role to accounts already linked to a client that lack it. It only adds rows, skips staff accounts (Admin, Reseller), and is not reversed on rollback.
 - Client portal, Account, Payment Methods no longer answers 500 on an install without card gateway keys (the demo, bank transfer only): the list is empty, and setting a default or removing a card answers 409 `PAYMENT_METHOD_UNAVAILABLE` (#606).
+- An install without card gateway keys no longer answers 500 when an order's card payment is opened or confirmed, or when an invoice paid by card is settled: they answer 409 `PAYMENT_METHOD_UNAVAILABLE`, and the card gateway adapter itself refuses cleanly when it has no key. The `PAYMENT_METHOD_UNAVAILABLE` sentence now covers charging, setting a default and removing a saved method (#701).
 - A signed-in client whose currency differs from the base currency saw the storefront's prices (domain search, domain table, hosting plans, trials) in the base currency after a full page load: the server render, which does not know the client, was kept in the browser. Those reads are now keyed by the payer's currency, so the browser reads them again in the client's own (#662).
 - SSH key agent 1.2.2: jails also get `rsync`, `tar`, `gzip` and `unzip`, so a CI job can deploy a site over SSH.
 - SSH key agent 1.2.1: jails get `uname`, `id`, `hostname`, `dircolors`, `/etc/bashrc` and `/etc/profile.d/colorls.sh` (`jail_extras`), so customer logins no longer print `/usr/bin/uname: No such file or directory` and `ll` works; existing jails get them on the next key.

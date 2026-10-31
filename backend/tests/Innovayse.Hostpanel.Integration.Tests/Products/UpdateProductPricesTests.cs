@@ -106,6 +106,50 @@ public sealed class UpdateProductPricesTests(IntegrationTestFactory factory) : I
         loaded.PriceFor("AMD", BillingCycle.Annual).Should().BeNull();
     }
 
+    /// <summary>
+    /// Recomputing converts every cycle the base prices, the newer ones included, and keeps each
+    /// converted amount under its own cycle even when a cycle in between is not priced: the
+    /// monthly and biennial amounts must not swap places or be left behind.
+    /// </summary>
+    [Fact]
+    public async Task UpdateProductPricesConvertsEveryPricedCycleUnderItsOwnCycle()
+    {
+        int productId;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            var group = ProductGroup.Create($"currencies-{Guid.NewGuid():N}", null);
+            db.ProductGroups.Add(group);
+            await db.SaveChangesAsync();
+
+            var product = Product.Create(group.Id, "Five cycles", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+            product.SetPrice("USD", BillingCycle.Monthly, 2.99m);
+            product.SetPrice("USD", BillingCycle.Quarterly, 10m);
+            product.SetPrice("USD", BillingCycle.Biennial, 20m);
+            db.Products.Add(product);
+            await db.SaveChangesAsync();
+            productId = product.Id;
+        }
+
+        var client = await AdminClientAsync();
+        var response = await client.PostAsJsonAsync("/api/admin/currencies/update-product-prices",
+            new { currencies = new[] { "AMD" } });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        using var read = factory.Services.CreateScope();
+        var readDb = read.ServiceProvider.GetRequiredService<AppDbContext>();
+        var loaded = await readDb.Products
+            .Include(p => p.Prices)
+            .FirstAsync(p => p.Id == productId);
+        loaded.PriceFor("AMD", BillingCycle.Monthly).Should().Be(ExpectedAmdMonthly);
+        loaded.PriceFor("AMD", BillingCycle.Quarterly).Should().Be(3900m);
+        loaded.PriceFor("AMD", BillingCycle.Biennial).Should().Be(7800m);
+        loaded.PriceFor("AMD", BillingCycle.Annual).Should().BeNull();
+        loaded.PriceFor("AMD", BillingCycle.SemiAnnual).Should().BeNull();
+        loaded.PriceFor("USD", BillingCycle.Quarterly).Should().Be(10m);
+    }
+
     /// <summary>Recomputing the base's own prices is refused.</summary>
     [Fact]
     public async Task UpdateProductPricesRefusesTheBase()

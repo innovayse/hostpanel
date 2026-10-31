@@ -40,7 +40,8 @@ public static class ClientMappingExtensions
             // The two halves are set and cleared together, so one being present means both are.
             client.ExternalAccountProvider is null || client.ExternalAccountId is null
                 ? null
-                : new ExternalAccountDto(client.ExternalAccountProvider, client.ExternalAccountId));
+                : new ExternalAccountDto(client.ExternalAccountProvider, client.ExternalAccountId),
+            client.CreditBalance);
 
     /// <summary>
     /// Maps a <see cref="Client"/> aggregate, with its contacts loaded, to the client's own

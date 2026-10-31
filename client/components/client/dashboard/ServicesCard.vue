@@ -31,7 +31,7 @@
         </UiStack>
         <UiStack direction="row" align="center" gap="sm">
           <UiIconButton
-            v-if="service.server && service.status === ServiceStatus.Active"
+            v-if="service.server && service.status === ServiceStatus.Active && store.mayDo(Permission.AllowSingleSignOn)"
             :icon="ssoLoading === service.id ? Loader : Monitor"
             :label="$t('client.services.actionLoginCpanel')"
             :title="$t('client.services.actionLoginCpanel')"
@@ -56,6 +56,7 @@
  */
 import { CLIENT_SERVICES_PATH, clientServicePath, clientServiceSetupPath } from '~/constants/clientRoutes'
 import { ArrowRight, Loader, Monitor, Server } from 'lucide-vue-next'
+import { Permission } from '~/composables/usePermissions'
 import { useClientStore } from '~/stores/client'
 import { serviceAwaitsSetup } from '~/utils/serviceSetup'
 import { useServiceManagementStore } from '~/stores/servicemanagement'

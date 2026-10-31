@@ -102,7 +102,9 @@ public static class FulfilmentContextBuilder
                 item.Amount,
                 invoice.Currency,
 
-                // The plugin contract names the cycles "monthly" and "annual", the lower-cased enum names.
+                // The plugin contract names a cycle by its lower-cased enum name: "monthly" and "annual" as
+                // ever, and "quarterly", "semiannual" and "biennial" for the cycles added later. A plugin
+                // written for the first two keeps receiving exactly those strings.
                 item.ProductSnapshot.BillingCycle.ToString().ToLowerInvariant()))
             .ToList();
     }

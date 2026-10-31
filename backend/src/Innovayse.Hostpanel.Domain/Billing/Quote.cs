@@ -42,7 +42,11 @@ public sealed class Quote : BaseEntity, IAggregateRoot
     /// <summary>Gets the ISO 4217 alpha code every amount on this quote is in. Set at creation, never changed.</summary>
     public string Currency { get; private set; } = string.Empty;
 
-    /// <summary>Gets the running total of all line items.</summary>
+    /// <summary>
+    /// Gets the total of all line items after their discounts: the unrounded line amounts are summed and the sum is
+    /// rounded once to the quote currency's minor unit, the order <see cref="Invoice"/> uses for its sub-total. The invoice
+    /// made from the quote bills each line at its discounted unit price, so it carries the same sub-total before tax and credit.
+    /// </summary>
     public decimal Total { get; private set; }
 
     /// <summary>Gets the UTC timestamp when the quote was created.</summary>
@@ -103,7 +107,7 @@ public sealed class Quote : BaseEntity, IAggregateRoot
 
         var item = QuoteItem.Create(description, unitPrice, quantity, discountPercent, taxed);
         _items.Add(item);
-        Total += item.Amount;
+        RecalculateTotal();
     }
 
     /// <summary>
@@ -226,8 +230,8 @@ public sealed class Quote : BaseEntity, IAggregateRoot
     {
         var item = _items.FirstOrDefault(i => i.Id == itemId)
             ?? throw new DomainRuleException(BillingErrors.QuoteItemNotFound, $"Quote item {itemId} not found.");
-        Total -= item.Amount;
         _items.Remove(item);
+        RecalculateTotal();
     }
 
     /// <summary>
@@ -243,9 +247,8 @@ public sealed class Quote : BaseEntity, IAggregateRoot
     {
         var item = _items.FirstOrDefault(i => i.Id == itemId)
             ?? throw new DomainRuleException(BillingErrors.QuoteItemNotFound, $"Quote item {itemId} not found.");
-        Total -= item.Amount;
         item.Update(description, unitPrice, quantity, discountPercent, taxed);
-        Total += item.Amount;
+        RecalculateTotal();
     }
 
     /// <summary>
@@ -265,7 +268,10 @@ public sealed class Quote : BaseEntity, IAggregateRoot
     /// <summary>
     /// Returns the line item data needed to generate an invoice.
     /// </summary>
-    /// <returns>Read-only list of the lines to bill.</returns>
+    /// <returns>Read-only list of the lines to bill, each at its unit price after the line discount.</returns>
     public IReadOnlyList<QuoteInvoiceLine> GetInvoiceItemData()
         => _items.Select(i => new QuoteInvoiceLine(i.Description, i.UnitPrice * (1 - i.DiscountPercent / 100), i.Quantity)).ToList();
+
+    /// <summary>Sets <see cref="Total"/> to the sum of the unrounded line amounts, rounded once to the quote's currency like an invoice.</summary>
+    private void RecalculateTotal() => Total = CurrencyCode.RoundToMinorUnits(_items.Sum(i => i.Amount), Currency);
 }

@@ -16,6 +16,9 @@ namespace Innovayse.Hostpanel.API.Controllers;
 
 /// <summary>
 /// Client self-service endpoints for managing their own support tickets.
+/// Every action behind the client portal policy may also answer 503 with <c>IDENTITY_PLUGIN_UNAVAILABLE</c> (and <c>Retry-After</c>)
+/// when the enabled identity plugin cannot say which account the caller acts for; the convention
+/// <c>IdentityPluginUnavailableConvention</c> declares it once in the generated document.
 /// </summary>
 /// <remarks>
 /// No route here names a client and no action reads a claim: each handler resolves the caller from

@@ -2,6 +2,8 @@ using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel;
+using Innovayse.Hostpanel.Infrastructure.Integrations.Plesk;
+using Innovayse.Hostpanel.Infrastructure.Integrations.Plesk.Models;
 using Innovayse.Hostpanel.Infrastructure.Provisioning.Settings;
 using Innovayse.Hostpanel.Infrastructure.Resilience;
 using Innovayse.Providers.CWP7;
@@ -18,6 +20,16 @@ namespace Innovayse.Hostpanel.Infrastructure.Provisioning;
 /// </summary>
 public sealed class ProvisioningProviderFactory : IProvisioningProviderFactory
 {
+    /// <summary>
+    /// The modules <see cref="CreateFor"/> builds a real provider for; extend it with the switch there.
+    /// Read-only, so no caller can change the process-wide list; test doubles reference it rather
+    /// than copy it.
+    /// </summary>
+    public static IReadOnlyList<ServerModule> BuiltModules { get; } = Array.AsReadOnly<ServerModule>([ServerModule.Cwp7, ServerModule.Plesk]);
+
+    /// <summary>Every module, which the development fake provider stands in for.</summary>
+    private static readonly IReadOnlyList<ServerModule> AllModules = Array.AsReadOnly(Enum.GetValues<ServerModule>());
+
     /// <summary>Factory for creating HTTP clients for provider API calls.</summary>
     private readonly IHttpClientFactory _httpClientFactory;
 
@@ -37,6 +49,10 @@ public sealed class ProvisioningProviderFactory : IProvisioningProviderFactory
         _loggerFactory = loggerFactory;
         _options = options;
     }
+
+    /// <inheritdoc/>
+    /// <remarks>With the development fake provider on, every module: that provider answers for any server.</remarks>
+    public IReadOnlyCollection<ServerModule> SupportedModules => _options.Value.UseFakeProvider ? AllModules : BuiltModules;
 
     /// <summary>
     /// Creates a provisioning provider configured with the credentials of the given server.
@@ -61,8 +77,33 @@ public sealed class ProvisioningProviderFactory : IProvisioningProviderFactory
         return server.Module switch
         {
             ServerModule.Cwp7 => CreateCwp7Provider(server),
-            _ => throw new NotSupportedException($"No provisioning provider for module '{server.Module}'. Only CWP7 is currently supported via the factory."),
+            ServerModule.Plesk => CreatePleskProvider(server),
+            _ => throw new NotSupportedException($"No provisioning provider for module '{server.Module}'. Only CWP7 and Plesk are currently supported via the factory."),
         };
+    }
+
+    /// <summary>Creates a Plesk provider for the given server.</summary>
+    /// <param name="server">The Plesk server; its access hash holds the Plesk API key.</param>
+    /// <returns>A configured <see cref="PleskProvisioningProvider"/>.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the server has no usable API key: null, empty or whitespace.
+    /// </exception>
+    private PleskProvisioningProvider CreatePleskProvider(ServerConnectionDto server)
+    {
+        var apiKey = server.AccessHash;
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            throw new InvalidOperationException($"Server '{server.Name}' (id={server.Id}) has no access hash configured.");
+        }
+
+        var connection = new PleskConnection(HostingPanelAddress.BaseUrl(server.Hostname, _options.Value.PleskPort), apiKey);
+        var client = new PleskApiClient(
+            _httpClientFactory.CreateClient(HttpClientNames.Plesk),
+            _loggerFactory.CreateLogger<PleskApiClient>());
+
+        return new PleskProvisioningProvider(
+            connection, server.IpAddress, client,
+            _loggerFactory.CreateLogger<PleskProvisioningProvider>());
     }
 
     /// <summary>

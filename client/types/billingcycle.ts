@@ -11,6 +11,12 @@
 export enum BillingCycle {
   /** Billed every month. */
   Monthly = 'Monthly',
+  /** Billed every three months. */
+  Quarterly = 'Quarterly',
+  /** Billed every six months. */
+  SemiAnnual = 'SemiAnnual',
   /** Billed once a year. */
-  Annual = 'Annual'
+  Annual = 'Annual',
+  /** Billed every two years. */
+  Biennial = 'Biennial'
 }

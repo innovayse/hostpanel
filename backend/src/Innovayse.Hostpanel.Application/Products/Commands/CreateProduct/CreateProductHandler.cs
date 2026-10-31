@@ -58,7 +58,7 @@ public sealed class CreateProductHandler
         }
 
         var prices = await _payerCurrency.ResolveProductPricesAsync(
-            cmd.Prices, cmd.MonthlyPrice, cmd.AnnualPrice, ct);
+            cmd.Prices, cmd.MonthlyPrice, cmd.AnnualPrice, existing: null, ct);
 
         // The legacy single-currency columns are kept one release so a rollback and the admin
         // services grid still read real numbers: they mirror the base-currency prices.

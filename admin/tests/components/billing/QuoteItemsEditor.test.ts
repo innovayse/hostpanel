@@ -62,4 +62,15 @@ describe('QuoteItemsEditor', () => {
 
     expect(onUpdate).toHaveBeenCalledWith([expect.objectContaining({ description: 'Second' })])
   })
+
+  it('writes the line, sub total and total in the currency of the quote', () => {
+    const wrapper = mountWithApp(QuoteItemsEditor, {
+      props: { modelValue: [line({ unitPrice: 24000, quantity: 1, discountPercent: 0 })], currency: 'AMD' },
+    })
+
+    expect(wrapper.text()).toContain('24000.00 AMD')
+    expect(wrapper.get('[data-testid="billing-quote-subtotal"]').text()).toBe('24000.00 AMD')
+    expect(wrapper.get('[data-testid="billing-quote-total"]').text()).toBe('24000.00 AMD')
+    expect(wrapper.text()).not.toContain('USD')
+  })
 })

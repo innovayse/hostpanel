@@ -93,4 +93,16 @@ describe('ClientInvoicesView', () => {
 
     expect(wrapper.find('[data-testid="client-invoices-error"]').exists()).toBe(false)
   })
+
+  it('prints each invoice total with the code of the currency the invoice is in, like the main list', async () => {
+    stubRoutes({
+      'GET /api/billing/client/7': () =>
+        json({ items: [invoiceRowFixture({ total: 24000, currency: 'AMD' })], pageNumber: 1, pageSize: 25, totalCount: 1, totalPages: 1 }),
+    })
+    const wrapper = await mountInvoices()
+
+    const text = wrapper.text()
+    expect(text).toContain('24000.00 AMD')
+    expect(text).not.toContain('$')
+  })
 })

@@ -44,6 +44,7 @@ public sealed class StatusMappingTests
     [InlineData(HostpanelErrorCodes.PREDEFINED_REPLY_CATEGORY_IN_USE, 409)]
     [InlineData(HostpanelErrorCodes.USER_NOT_FOUND, 404)]
     [InlineData(HostpanelErrorCodes.EXCHANGE_RATE_SOURCE_UNAVAILABLE, 503)]
+    [InlineData(HostpanelErrorCodes.IDENTITY_PLUGIN_UNAVAILABLE, 503)]
     [InlineData(HostpanelErrorCodes.EXCHANGE_RATE_BASE_NOT_QUOTED, 409)]
     [InlineData(HostpanelErrorCodes.SSH_AGENT_NOT_VERIFIED, 409)]
     [InlineData(HostpanelErrorCodes.SSH_AGENT_ENDPOINT_IN_USE, 409)]

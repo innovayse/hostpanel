@@ -18,7 +18,6 @@ import {
   formatReportAmount,
   formatPlainAmount,
   formatSymbolPrice,
-  formatUsdPlain,
 } from '@/lib/money'
 import { CurrencyCode } from '@/types/currency'
 
@@ -41,17 +40,6 @@ describe('money', () => {
   it('formats a price-book cell with the symbol only', () => {
     expect(formatSymbolPrice(12, 'USD')).toBe('$12.00')
     expect(formatSymbolPrice(7.5, 'EUR')).toBe('€7.50')
-  })
-})
-
-describe('billing sums', () => {
-  it('writes the amount and the USD code', () => {
-    expect(formatUsdPlain(12.5)).toBe('12.50 USD')
-  })
-
-  it('reads a missing amount as zero', () => {
-    expect(formatUsdPlain(null)).toBe('0.00 USD')
-    expect(formatUsdPlain()).toBe('0.00 USD')
   })
 })
 

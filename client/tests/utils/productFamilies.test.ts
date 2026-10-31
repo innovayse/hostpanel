@@ -10,7 +10,7 @@ import { familyColor } from '~/utils/catalogGroups'
 import type { ProductFamily } from '~/types/productfamily'
 import type { ProductFeature } from '~/types/productfeature'
 import type { ProductPlan } from '~/types/productplan'
-import { buildPricingRows, buildProductFamilies, cycleAmount, familyBullets, familyCardBullets, familyProductType, findProductDetail, firstOfferedPrice, recommendedPlanId, representativePlan, specificationBullets } from '~/utils/productFamilies'
+import { buildPricingRows, buildProductFamilies, comparePlans, cycleAmount, familyBullets, familyCardBullets, familyProductType, findProductDetail, firstOfferedPrice, orderingPrice, recommendedPlanId, representativePlan, specificationBullets } from '~/utils/productFamilies'
 import { ProductType } from '~/types/producttype'
 
 /**
@@ -361,6 +361,19 @@ describe('cycleAmount', () => {
     expect(cycleAmount({ monthly: 5, annual: 50 }, PricingCycle.Annual)).toBe(50)
   })
 
+  it('reads the price of each cycle added after monthly and annual', () => {
+    const pricing = { monthly: 5, annual: 50, quarterly: 14, semiAnnual: 27, biennial: 90 }
+
+    expect(cycleAmount(pricing, PricingCycle.Quarterly)).toBe(14)
+    expect(cycleAmount(pricing, PricingCycle.SemiAnnual)).toBe(27)
+    expect(cycleAmount(pricing, PricingCycle.Biennial)).toBe(90)
+  })
+
+  it('is null for a cycle an older API never sent', () => {
+    expect(cycleAmount({ monthly: 5, annual: 50 }, PricingCycle.Quarterly)).toBeNull()
+    expect(cycleAmount({ monthly: 5, annual: 50, quarterly: null }, PricingCycle.Quarterly)).toBeNull()
+  })
+
   it('is null when the plan has no price for the cycle or no prices at all', () => {
     expect(cycleAmount({ monthly: 5, annual: null }, PricingCycle.Annual)).toBeNull()
     expect(cycleAmount(null, PricingCycle.Monthly)).toBeNull()
@@ -408,5 +421,43 @@ describe('family cover data', () => {
 
     expect(withImage[0]).toMatchObject({ type: ProductType.Vps, image: '/uploads/a.webp', featured: true })
     expect(without[0]).toMatchObject({ type: ProductType.Vps, image: null, featured: false })
+  })
+})
+
+describe('orderingPrice and comparePlans with the newer cycles', () => {
+  /**
+   * Builds a product with the given prices.
+   *
+   * @param id The product id.
+   * @param pricing Its prices.
+   * @returns The product.
+   */
+  const product = (id: number, pricing: PortalProduct['pricing']): PortalProduct => ({ id, groupId: 1, name: `P${id}`, description: '', pricing })
+
+  it('prices a plan per month from the first cycle it is sold on', () => {
+    expect(orderingPrice(product(1, { monthly: 5, annual: 50 }))).toBe(5)
+    expect(orderingPrice(product(2, { monthly: null, annual: 60 }))).toBe(5)
+    expect(orderingPrice(product(3, { monthly: null, annual: null, quarterly: 12 }))).toBe(4)
+    expect(orderingPrice(product(4, { monthly: null, annual: null, semiAnnual: 18 }))).toBe(3)
+    expect(orderingPrice(product(5, { monthly: null, annual: null, biennial: 48 }))).toBe(2)
+  })
+
+  it('sorts a plan with no price last', () => {
+    expect(orderingPrice(product(6, { monthly: null, annual: null }))).toBe(Number.POSITIVE_INFINITY)
+    expect(orderingPrice(product(7, null))).toBe(Number.POSITIVE_INFINITY)
+  })
+
+  it('orders plans by their per-month price whichever cycle they are sold on', () => {
+    const plans = [
+      product(1, { monthly: 5, annual: 50 }),
+      product(2, { monthly: null, annual: null, biennial: 48 }),
+      product(3, { monthly: null, annual: null, quarterly: 12 }),
+    ]
+
+    expect([...plans].sort(comparePlans).map((plan) => plan.id)).toEqual([2, 3, 1])
+  })
+
+  it('offers the first of the cycles a plan is sold on', () => {
+    expect(firstOfferedPrice({ monthly: null, annual: null, semiAnnual: 18, biennial: 48 })).toEqual({ cycle: PricingCycle.SemiAnnual, amount: 18 })
   })
 })

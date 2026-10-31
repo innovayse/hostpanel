@@ -1,11 +1,11 @@
 using System.Security.Cryptography;
+using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Products.Common;
 using Innovayse.Hostpanel.Application.Products.Queries.GetProductsByIds;
 using Innovayse.Hostpanel.Domain.Provisioning;
 using Innovayse.Hostpanel.Domain.Provisioning.Enums;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -28,12 +28,6 @@ namespace Innovayse.Hostpanel.Application.Provisioning.Commands.ProvisionService
 /// </remarks>
 public sealed class ProvisionServiceHandler
 {
-    /// <summary>
-    /// The module a server is selected from when the product names no server group: the one panel
-    /// this platform ships a provisioning provider for.
-    /// </summary>
-    private const ServerModule DefaultHostingModule = ServerModule.Cwp7;
-
     /// <summary>Length, in bytes, of the random password generated for a new hosting account.</summary>
     private const int GeneratedPasswordByteLength = 12;
 
@@ -90,7 +84,8 @@ public sealed class ProvisionServiceHandler
     /// Success, or <c>SERVICE_NOT_FOUND</c> when the id names no service, <c>SERVICE_NOT_PENDING</c>
     /// when the service is not Pending, <c>SERVICE_HOSTING_DETAILS_MISSING</c> when it has no
     /// domain or username yet, <c>PRODUCT_PACKAGE_MISSING</c> when its product names no hosting
-    /// package, <c>NO_ELIGIBLE_SERVER</c> when no server has room, <c>PROVISIONING_ACCOUNT_CONFLICT</c>
+    /// package, <c>PRODUCT_SERVER_GROUP_REQUIRED</c> when the product has no server group and servers
+    /// run more than one supported panel, <c>NO_ELIGIBLE_SERVER</c> when no server has room, <c>PROVISIONING_ACCOUNT_CONFLICT</c>
     /// when the panel holds an account under the username that is not this service's, or
     /// <c>PROVISIONING_UPSTREAM_FAILED</c> when the provider rejects the request or answers a
     /// success without an account reference.
@@ -123,9 +118,27 @@ public sealed class ProvisionServiceHandler
             return Result.FailureCode(HostpanelErrorCodes.PRODUCT_PACKAGE_MISSING);
         }
 
-        var server = product.ServerGroupId is { } groupId
-            ? await _serverSelector.SelectFromGroupAsync(groupId, ct)
-            : await _serverSelector.SelectAsync(DefaultHostingModule, ct);
+        // Only a server whose panel the factory can drive is ever chosen, in a group or not: any
+        // other would only fail the order at the panel.
+        var supported = _providerFactory.SupportedModules;
+        ServerConnectionDto? server;
+        if (product.ServerGroupId is { } groupId)
+        {
+            server = await _serverSelector.SelectFromGroupAsync(groupId, supported, ct);
+        }
+        else
+        {
+            // A package names a plan on one panel, so with no group the panel must be unambiguous:
+            // servers on one supported panel decide it; servers on several leave it to staff.
+            var inUse = await _serverSelector.ModulesInUseAsync(supported, ct);
+            if (inUse.Count > 1)
+            {
+                return Result.FailureCode(HostpanelErrorCodes.PRODUCT_SERVER_GROUP_REQUIRED);
+            }
+
+            server = await _serverSelector.SelectAsync(inUse, ct);
+        }
+
         if (server is null)
         {
             return Result.FailureCode(HostpanelErrorCodes.NO_ELIGIBLE_SERVER);

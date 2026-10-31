@@ -181,7 +181,8 @@ public static class HostpanelErrorCodes
     public const string PAYMENT_METHOD_NOT_OWNED = "PAYMENT_METHOD_NOT_OWNED";
 
     /// <summary>
-    /// The deployment cannot charge a saved payment method because it has no card gateway configured (409).
+    /// The deployment has no card gateway configured, so no card payment can be taken, refunded, opened or
+    /// confirmed and no saved payment method can be charged, set as the default or removed (409).
     /// </summary>
     public const string PAYMENT_METHOD_UNAVAILABLE = "PAYMENT_METHOD_UNAVAILABLE";
 
@@ -193,6 +194,12 @@ public static class HostpanelErrorCodes
     /// is configured to hand a payer back to (400).
     /// </summary>
     public const string RETURN_URL_NOT_ALLOWED = "RETURN_URL_NOT_ALLOWED";
+
+    /// <summary>
+    /// The enabled identity plugin threw, timed out, or two identity plugins are enabled, so nobody can be told
+    /// which client account they act for; the request is refused and may be retried (503, with <c>Retry-After</c>).
+    /// </summary>
+    public const string IDENTITY_PLUGIN_UNAVAILABLE = "IDENTITY_PLUGIN_UNAVAILABLE";
 
     /// <summary>The payment gateway declined or otherwise failed to charge the client (502).</summary>
     public const string GATEWAY_CHARGE_UPSTREAM_FAILED = "GATEWAY_CHARGE_UPSTREAM_FAILED";
@@ -664,6 +671,12 @@ public static class HostpanelErrorCodes
     /// <summary>The service's product names no hosting package to create the account on (409).</summary>
     public const string PRODUCT_PACKAGE_MISSING = "PRODUCT_PACKAGE_MISSING";
 
+    /// <summary>
+    /// The product has no server group and the servers run more than one supported panel, so which
+    /// panel its package belongs to is ambiguous (409).
+    /// </summary>
+    public const string PRODUCT_SERVER_GROUP_REQUIRED = "PRODUCT_SERVER_GROUP_REQUIRED";
+
     // Provisioning
 
     /// <summary>
@@ -1018,6 +1031,9 @@ public static class HostpanelErrorCodes
     /// The deduction exceeds the client's credit balance (400): <see cref="Domain.Clients.Client.DeductCredit"/>.
     /// </summary>
     public const string CLIENT_CREDIT_INSUFFICIENT = Domain.Clients.ClientsErrors.ClientCreditInsufficient;
+
+    /// <summary>The client holds a credit balance, so the billing currency cannot change (409): <see cref="Domain.Clients.Client.SetCurrency"/>.</summary>
+    public const string CLIENT_CURRENCY_LOCKED_BY_CREDIT = Domain.Clients.ClientsErrors.ClientCurrencyLockedByCredit;
 
     /// <summary>The account is not in a state that can be suspended (400): <see cref="Domain.Clients.Client.Suspend"/>.</summary>
     public const string CLIENT_SUSPEND_NOT_ALLOWED = Domain.Clients.ClientsErrors.ClientSuspendNotAllowed;

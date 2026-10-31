@@ -22,6 +22,9 @@ public sealed class ProvisioningOptions
     /// <summary>The port a CWP7 server's user-facing panel answers on when none is configured.</summary>
     public const int DefaultCwp7UserPanelPort = 2083;
 
+    /// <summary>The port a Plesk server answers both its XML API and its panel on when none is configured.</summary>
+    public const int DefaultPleskPort = 8443;
+
     /// <summary>
     /// When <see langword="true"/>, the provider factory returns an in-process provider that
     /// reports success without contacting any external control panel. Development and testing
@@ -41,4 +44,10 @@ public sealed class ProvisioningOptions
     /// account owner is built from it.
     /// </summary>
     public int Cwp7UserPanelPort { get; set; } = DefaultCwp7UserPanelPort;
+
+    /// <summary>
+    /// The port every Plesk server answers on. Plesk serves the XML API and the panel a customer
+    /// signs in to on the same HTTPS port, so one value builds both addresses.
+    /// </summary>
+    public int PleskPort { get; set; } = DefaultPleskPort;
 }

@@ -1,9 +1,9 @@
-<!--
-  Screenshot — renders a thumbnail that opens a full-size lightbox overlay on
-  click or Enter/Space. The overlay is Teleported to <body> after mount to avoid
-  a hydration mismatch during SSR.
--->
 <script setup lang="ts">
+/**
+ * Screenshot — renders a thumbnail that opens a full-size lightbox overlay on
+ * click or Enter/Space. The overlay is Teleported to `<body>` after mount to
+ * avoid a hydration mismatch during SSR.
+ */
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 
 /** Props accepted by the Screenshot component. */

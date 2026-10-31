@@ -114,6 +114,7 @@ public static class DependencyInjection
         // Wolverine's generated handler code builds it as a constructor call like any other adapter.
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, HttpCurrentUserService>();
+        services.AddScoped<ICallerClientMemo, HttpCallerClientMemo>();
 
         // The caller's own bearer token, for an adapter that acts as the person against an outside service.
         services.AddScoped<ICallerAccessToken, HttpCallerAccessToken>();

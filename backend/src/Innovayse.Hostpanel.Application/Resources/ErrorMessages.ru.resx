@@ -144,6 +144,9 @@
   <data name="PAYMENT_GATEWAY_SERVICE_UNAVAILABLE" xml:space="preserve">
     <value>Платёжный шлюз временно недоступен. Повторите попытку чуть позже.</value>
   </data>
+  <data name="IDENTITY_PLUGIN_UNAVAILABLE" xml:space="preserve">
+    <value>Сервис, связывающий вашу учётную запись с профилем клиента, временно недоступен. Повторите попытку чуть позже.</value>
+  </data>
   <data name="PAYMENT_METHOD_UPSTREAM_FAILED" xml:space="preserve">
     <value>Платёжный шлюз не смог обработать запрос по вашим сохранённым способам оплаты. Повторите попытку позже или обратитесь в поддержку.</value>
   </data>

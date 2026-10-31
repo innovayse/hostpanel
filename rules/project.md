@@ -211,7 +211,16 @@ docker/                              compose set (shared·dev·prod·platform), 
   that stops vouching applies on the next request); with no plugin a roleless user is refused. A signed-in principal the
   plugin refuses resolves to `CallerClientAccess.Refused` (`IdentityRefused`), and `PlaceOrderHandler` answers
   `CLIENT_PERMISSION_DENIED` for it instead of creating a client, while an unauthenticated caller stays
-  `CallerClientAccess.None`. The host links the returned `ExternalAccount` (provider plus id) to a client row,
+  `CallerClientAccess.None`. The policy is not role-only: a staff member (admin or support, who hold no client role)
+  that an enabled plugin vouches for also passes `Policies.Client`, because the policy asks the resolver for anyone
+  without the client role. `CallerClientResolver` keeps its answer for the request (`ICallerClientMemo`, kept in `HttpContext.Items`, because the bus runs a use case in its own scope), so the policy, the
+  permission filter and the use case ask the plugin once; `ICallerClientResolver.Invalidate()` is used only by
+  `PlaceOrderHandler`, after it creates the caller's client row. A plugin that throws, times out, or two enabled
+  identity plugins (`IdentityPluginConflictException`) fail closed in that one resolver, logged by exception type
+  and plugin ids only: the answer is `CallerClientAccess.Unavailable` (`IdentityUnavailable`), the portal policy
+  refuses it, the permission filter, `IClientAccess.Require*` and `PlaceOrderHandler` answer 503
+  `IDENTITY_PLUGIN_UNAVAILABLE` with `Retry-After` and create nothing; the account read (`GetMyAccount`) degrades to no client
+  instead, so sign-in is not blocked. The host links the returned `ExternalAccount` (provider plus id) to a client row,
   creating it on the first order, and `IdentityPluginPermissions` maps the rights to client permissions: every
   admitted principal gets the read-only flags (services, domains, open tickets, emails); `CanPurchase` adds
   `PlaceNewOrders` and `ViewPayInvoices`; `CanManagePaymentMethods` adds `ViewPayInvoices` (the payment method

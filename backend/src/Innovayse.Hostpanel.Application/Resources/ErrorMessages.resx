@@ -144,6 +144,9 @@
   <data name="PAYMENT_GATEWAY_SERVICE_UNAVAILABLE" xml:space="preserve">
     <value>The payment gateway is temporarily unavailable. Please try again shortly.</value>
   </data>
+  <data name="IDENTITY_PLUGIN_UNAVAILABLE" xml:space="preserve">
+    <value>The service that links your account to a client profile is temporarily unavailable. Please try again shortly.</value>
+  </data>
   <data name="PAYMENT_METHOD_UPSTREAM_FAILED" xml:space="preserve">
     <value>The payment gateway could not process the request for your saved payment methods. Please try again later or contact support.</value>
   </data>

@@ -141,6 +141,7 @@
     "addTimeBillingEntries": "Добавить записи учёта времени",
     "addBillableItem": "+ Добавить оплачиваемую позицию",
     "loadingBillableItems": "Загрузка оплачиваемых позиций...",
+    "uninvoicedItemsLength": "Невыставленные позиции ({length})",
     "uninvoicedItemsAmountLength": "Невыставленные позиции — {amount} ({length})",
     "invoiceSelectedItems": "Выставить счёт по выбранным позициям",
     "noUninvoicedBillableItems": "Нет невыставленных оплачиваемых позиций.",

@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Billing.Common;
+using Innovayse.Hostpanel.Application.Billing.Currencies.Common;
 using System.Linq.Expressions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
@@ -25,7 +26,7 @@ public sealed class ListClientBillableItemsHandler
     /// <param name="qry">The list billable items query.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// Success with uninvoiced items, their total, and paginated invoiced items. Never refuses.
+    /// Success with uninvoiced items, their totals per currency, and paginated invoiced items. Never refuses.
     /// </returns>
     public async Task<Result<ClientBillableItemsResultDto>> HandleAsync(
         ListClientBillableItemsQuery qry, CancellationToken ct)
@@ -38,7 +39,12 @@ public sealed class ListClientBillableItemsHandler
             .OrderByDescending(x => x.CreatedAt)
             .Select(MapProjection())
             .ToListAsync(ct);
-        var uninvoicedTotal = uninvoicedDtos.Sum(x => x.Amount);
+        // Amounts in different currencies are never added together: one total per currency.
+        var uninvoicedTotal = uninvoicedDtos
+            .GroupBy(x => x.Currency)
+            .OrderBy(g => g.Key, StringComparer.Ordinal)
+            .Select(g => new CurrencyAmountDto(g.Sum(x => x.Amount), g.Key))
+            .ToList();
 
         var invoicedQuery = _context.BillableItems
             .AsNoTracking()

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 
@@ -23,6 +24,63 @@ public sealed class ListClientBillableItemsTests(IntegrationTestFactory factory)
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         body.RootElement.GetProperty("uninvoicedItems").GetArrayLength().Should().Be(0);
+        body.RootElement.GetProperty("uninvoicedTotal").GetArrayLength().Should().Be(0);
+    }
+
+    /// <summary>Uninvoiced items in two currencies give one total per currency, never one mixed sum.</summary>
+    [Fact]
+    public async Task ListTotalsUninvoicedItemsPerCurrency()
+    {
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        foreach (var (amount, currency) in new[] { (10m, "USD"), (5m, "USD"), (5000m, "AMD") })
+        {
+            var created = await admin.PostAsJsonAsync($"/api/clients/{clientId}/billable-items", new
+            {
+                description = "Charge",
+                amount,
+                currency,
+                type = nameof(BillableItemType.OneTime),
+            });
+            created.StatusCode.Should().Be(HttpStatusCode.Created);
+        }
+
+        var response = await admin.GetAsync($"/api/clients/{clientId}/billable-items");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var totals = body.RootElement.GetProperty("uninvoicedTotal").EnumerateArray()
+            .Select(t => (Currency: t.GetProperty("currency").GetString(), Amount: t.GetProperty("amount").GetDecimal()))
+            .ToList();
+        totals.Should().Equal((Currency: "AMD", Amount: 5000m), (Currency: "USD", Amount: 15m));
+    }
+
+    /// <summary>Items created as <c>usd</c> and <c>USD</c> are one currency and give one total.</summary>
+    [Fact]
+    public async Task ListGivesOneTotalForTheSameCurrencyInAnyCase()
+    {
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        foreach (var (amount, currency) in new[] { (10m, "usd"), (5m, "USD") })
+        {
+            var created = await admin.PostAsJsonAsync($"/api/clients/{clientId}/billable-items", new
+            {
+                description = "Charge",
+                amount,
+                currency,
+                type = nameof(BillableItemType.OneTime),
+            });
+            created.StatusCode.Should().Be(HttpStatusCode.Created);
+        }
+
+        var response = await admin.GetAsync($"/api/clients/{clientId}/billable-items");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var totals = body.RootElement.GetProperty("uninvoicedTotal").EnumerateArray()
+            .Select(t => (Currency: t.GetProperty("currency").GetString(), Amount: t.GetProperty("amount").GetDecimal()))
+            .ToList();
+        totals.Should().Equal((Currency: "USD", Amount: 15m));
     }
 
     /// <summary>Listing a client's billable items is not for anonymous callers.</summary>

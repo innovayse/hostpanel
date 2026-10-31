@@ -26,7 +26,7 @@ const items = (currency = 'USD', invoiced: object[] = []) =>
       nextDueDate: null,
       createdAt: '2026-10-01T00:00:00Z',
     }],
-    uninvoicedTotal: 12,
+    uninvoicedTotal: [{ amount: 12, currency }],
     invoicedItems: { items: invoiced, pageNumber: 1, pageSize: 25, totalCount: invoiced.length, totalPages: 1 },
   })
 
@@ -84,6 +84,33 @@ describe('ClientBillableItemsView', () => {
     expect(wrapper.text()).toContain('Uninvoiced Items — 12.00 AMD (1)')
     expect(wrapper.text()).not.toContain('$')
     expect(wrapper.text()).not.toContain('USD')
+  })
+
+  it('shows one total per currency when the items are in two currencies', async () => {
+    stubRoutes({
+      'GET /api/clients/7/billable-items': () => json({
+        uninvoicedItems: [],
+        uninvoicedTotal: [{ amount: 12, currency: 'USD' }, { amount: 5000, currency: 'AMD' }],
+        invoicedItems: { items: [], pageNumber: 1, pageSize: 25, totalCount: 0, totalPages: 1 },
+      }),
+    })
+    const wrapper = await mountItems()
+
+    expect(wrapper.text()).toContain('12.00 USD, 5000.00 AMD')
+  })
+
+  it('shows the count without an amount when there are no uninvoiced items', async () => {
+    stubRoutes({
+      'GET /api/clients/7/billable-items': () => json({
+        uninvoicedItems: [],
+        uninvoicedTotal: [],
+        invoicedItems: { items: [], pageNumber: 1, pageSize: 25, totalCount: 0, totalPages: 1 },
+      }),
+    })
+    const wrapper = await mountItems()
+
+    expect(wrapper.text()).toContain('Uninvoiced Items (0)')
+    expect(wrapper.text()).not.toContain('0.00')
   })
 
   it('reports a deleted item next to the lists', async () => {

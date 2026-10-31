@@ -44,12 +44,20 @@ export interface BillableItem extends ClientBillableItem {
   clientName: string
 }
 
+/** An amount with the currency it is in, as the API's `CurrencyAmountDto`. */
+export interface CurrencyAmount {
+  /** The amount. */
+  amount: number
+  /** ISO 4217 code of the currency the amount is in. */
+  currency: string
+}
+
 /** Response from the client-scoped billable items endpoint. */
 export interface BillableItemsResult {
   /** All uninvoiced items for the client. */
   uninvoicedItems: ClientBillableItem[]
-  /** Sum of all uninvoiced item amounts. */
-  uninvoicedTotal: number
+  /** Sum of the uninvoiced item amounts, one entry per currency (empty when there are none). */
+  uninvoicedTotal: CurrencyAmount[]
   /** Paginated invoiced items. */
   invoicedItems: PaginatedList<ClientBillableItem>
 }

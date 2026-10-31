@@ -50,6 +50,53 @@ public sealed class SettleInvoiceCardPaymentTests(IntegrationTestFactory factory
         _cardGateway.RefundInstructions.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Recording a charge already taken needs no gateway: with no card gateway key a payable invoice
+    /// still settles, with its ledger row, and nothing is refunded.
+    /// </summary>
+    [Fact]
+    public async Task HandleAsync_CardGatewayNotConfigured_StillSettlesAPayableInvoiceAsync()
+    {
+        _cardGateway.IsConfigured = false;
+        var invoiceId = await SeedUnpaidInvoiceAsync(await BillingTestSeeds.SeedClientAsync(factory));
+        var transactionId = $"pi_{Guid.NewGuid():N}";
+
+        var result = await InvokeAsync(Payment(invoiceId, transactionId));
+
+        result.IsSuccess.Should().BeTrue();
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await context.Invoices.AsNoTracking().SingleAsync(i => i.Id == invoiceId)).Status.Should().Be(InvoiceStatus.Paid);
+        (await context.Transactions.AsNoTracking().AnyAsync(t => t.TransactionId == transactionId)).Should().BeTrue();
+        _cardGateway.RefundInstructions.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// A settlement that has to be refused with no card gateway key does not call the gateway (and does
+    /// not throw): the refusal code is answered, the money is held on the ledger for an operator and
+    /// not credited, and the replay neither refunds nor credits.
+    /// </summary>
+    [Fact]
+    public async Task HandleAsync_CardGatewayNotConfigured_RefusedSettlementHoldsThePaymentWithoutRefundAsync()
+    {
+        _cardGateway.IsConfigured = false;
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
+        var invoiceId = await SeedUnpaidInvoiceAsync(clientId);
+        (await InvokeAsync(Payment(invoiceId, $"pi_{Guid.NewGuid():N}"))).IsSuccess.Should().BeTrue();
+        var second = $"pi_{Guid.NewGuid():N}";
+
+        var result = await InvokeAsync(Payment(invoiceId, second));
+        var replay = await InvokeAsync(Payment(invoiceId, second));
+
+        result.ErrorCode.Should().Be(HostpanelErrorCodes.INVOICE_NOT_PAYABLE);
+        replay.ErrorCode.Should().Be(HostpanelErrorCodes.PAYMENT_INTENT_ALREADY_USED);
+        _cardGateway.RefundInstructions.Should().BeEmpty();
+        (await BillingTestSeeds.CreditBalanceOfAsync(factory, clientId)).Should().Be(0m);
+        var row = await LedgerRowAsync(second);
+        row.AddedToCredit.Should().BeFalse();
+        row.AmountOut.Should().Be(0m);
+    }
+
     /// <summary>The settlement writes the invoice's activity log line in the same save.</summary>
     [Fact]
     public async Task HandleAsync_UnpaidInvoice_RecordsTheMarkedPaidActivityAsync()

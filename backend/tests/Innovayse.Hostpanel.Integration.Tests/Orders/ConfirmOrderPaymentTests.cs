@@ -103,6 +103,29 @@ public sealed class ConfirmOrderPaymentTests(IntegrationTestFactory factory) : I
         await OrdersTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PAYMENT_GATEWAY_SERVICE_UNAVAILABLE);
     }
 
+    /// <summary>
+    /// A deployment with no card gateway key refuses with 409 and <c>PAYMENT_METHOD_UNAVAILABLE</c>, never
+    /// a 500; the gateway is never asked to verify an intent and the order stays unfulfilled.
+    /// </summary>
+    [Fact]
+    public async Task CardGatewayNotConfigured_RefusesPaymentMethodUnavailableAndVerifiesNothing()
+    {
+        var cardGateway = new FakeCardPaymentGateway { IsConfigured = false };
+        var host = BuildHost(cardGateway);
+        var (orderId, paymentToken, invoiceId) = await OrdersTestSeeds.SeedOrderWithInvoiceAsync(factory);
+        cardGateway.Verification = MatchingIntent(orderId, invoiceId, $"txn-{Guid.NewGuid():N}");
+
+        var response = await host.CreateClient().PostAsJsonAsync(
+            $"/api/orders/{orderId}/confirm-payment", new { paymentIntentId = "pi_x", paymentToken });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        await OrdersTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PAYMENT_METHOD_UNAVAILABLE);
+        cardGateway.VerifyCalls.Should().Be(0);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await context.Orders.AsNoTracking().SingleAsync(o => o.Id == orderId)).Status.Should().NotBe(OrderStatus.Active);
+    }
+
     /// <summary>A confirmed payment marks the invoice paid and fulfils the order, moving it to Active.</summary>
     [Fact]
     public async Task ConfirmedPaymentFulfilsTheOrder()

@@ -108,9 +108,15 @@ public sealed class FakeCardPaymentGateway : ICardPaymentGateway
             : new CardPaymentIntentResult(IntentClientSecret));
     }
 
+    /// <summary>How many times <see cref="VerifyPaymentIntentAsync"/> was called.</summary>
+    public int VerifyCalls { get; private set; }
+
     /// <inheritdoc/>
-    public Task<CardPaymentIntentStatus> VerifyPaymentIntentAsync(CardPaymentVerifyInstruction instruction, CancellationToken ct) =>
-        Task.FromResult(Verification);
+    public Task<CardPaymentIntentStatus> VerifyPaymentIntentAsync(CardPaymentVerifyInstruction instruction, CancellationToken ct)
+    {
+        VerifyCalls++;
+        return Task.FromResult(Verification);
+    }
 
     /// <summary>
     /// The outcome of every charge the gateway took, by idempotency key. A key it has seen answers
@@ -253,8 +259,9 @@ public sealed class FakeCardPaymentGateway : ICardPaymentGateway
     }
 
     /// <summary>
-    /// Throws as the Stripe adapter does when it has no secret key: its client is built on first
-    /// use and the Stripe library refuses an empty API key with an <see cref="ArgumentException"/>.
+    /// Throws when there is no secret key, which is stricter than the real adapter (it answers
+    /// <see cref="CardGatewayFailure.NotConfigured"/>): a handler that reaches the gateway without
+    /// checking <see cref="IsConfigured"/> first fails its test instead of passing by luck.
     /// </summary>
     /// <exception cref="ArgumentException">When <see cref="IsConfigured"/> is false.</exception>
     private void ThrowIfNotConfigured()

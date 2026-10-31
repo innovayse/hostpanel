@@ -191,6 +191,25 @@ public sealed class CreateOrderPaymentIntentTests(IntegrationTestFactory factory
         cardGateway.LastIntentInstruction!.IdempotencyKey.Should().Be(firstKey);
     }
 
+    /// <summary>
+    /// A deployment with no card gateway key refuses with 409 and <c>PAYMENT_METHOD_UNAVAILABLE</c>, never
+    /// a 500, and the gateway is never asked for an intent.
+    /// </summary>
+    [Fact]
+    public async Task CardGatewayNotConfigured_RefusesPaymentMethodUnavailableAndOpensNoIntent()
+    {
+        var cardGateway = new FakeCardPaymentGateway { IsConfigured = false };
+        var host = BuildHost(cardGateway);
+        var (orderId, paymentToken, _) = await OrdersTestSeeds.SeedOrderWithInvoiceAsync(factory);
+
+        var response = await host.CreateClient().PostAsJsonAsync(
+            $"/api/orders/{orderId}/create-payment-intent", new { paymentToken });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        await OrdersTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PAYMENT_METHOD_UNAVAILABLE);
+        cardGateway.LastIntentInstruction.Should().BeNull();
+    }
+
     /// <summary>An order of an account with card processing disabled opens no intent: 403 and the gateway is never asked.</summary>
     [Fact]
     public async Task AccountWithCardProcessingDisabledIsRefused()

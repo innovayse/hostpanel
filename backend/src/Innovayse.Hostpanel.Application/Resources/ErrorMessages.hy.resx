@@ -130,7 +130,7 @@
     <value>Այդ վճարման եղանակը այս հաշվինը չէ։</value>
   </data>
 <data name="PAYMENT_METHOD_UNAVAILABLE" xml:space="preserve">
-    <value>Այս պահպանված վճարման եղանակից գումար հանել հնարավոր չէ, քանի որ այս տեղակայման մեջ քարտային վճարային դարպասը կարգավորված չէ։</value>
+    <value>Պահպանված վճարման եղանակները հասանելի չեն, քանի որ քարտային վճարային դարպասը կարգավորված չէ։</value>
   </data>
 <data name="NO_SAVED_PAYMENT_METHODS" xml:space="preserve">
     <value>Այս հաշիվը պահպանված վճարման եղանակներ չունի։</value>

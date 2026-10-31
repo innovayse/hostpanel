@@ -298,6 +298,18 @@ public sealed class SettleInvoiceCardPaymentHandler
             return replay;
         }
 
+        // Recording a charge already taken needs no gateway, so a deployment whose key was removed
+        // still settles. Only the refund needs it: without a key it is not attempted (the adapter would
+        // refuse anyway), and the money is held for an operator, never credited blind.
+        if (!_cardGateway.IsConfigured)
+        {
+            _logger.LogCritical(
+                "Card payment {TransactionId} of {Amount} {Currency} for invoice {InvoiceId} could not be recorded ({Reason}) and the card gateway has no key to refund it; held for an operator.",
+                cmd.TransactionId, cmd.Amount, cmd.Currency, cmd.InvoiceId, errorCode);
+            await RecordReturnAsync(cmd, invoice, CardReturnOutcome.HeldForOperator, ct);
+            return Result.FailureCode(errorCode);
+        }
+
         CardRefundResult refund;
         try
         {

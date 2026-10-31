@@ -130,7 +130,7 @@
     <value>That payment method does not belong to this account.</value>
   </data>
 <data name="PAYMENT_METHOD_UNAVAILABLE" xml:space="preserve">
-    <value>That saved payment method cannot be charged because this deployment has no card gateway configured.</value>
+    <value>Saved payment methods are unavailable because no card gateway is configured.</value>
   </data>
 <data name="NO_SAVED_PAYMENT_METHODS" xml:space="preserve">
     <value>This account has no saved payment methods.</value>

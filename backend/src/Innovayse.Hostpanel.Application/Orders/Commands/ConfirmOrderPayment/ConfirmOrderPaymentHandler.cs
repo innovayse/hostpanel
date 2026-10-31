@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Billing.Queries.GetInvoiceBrief;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Orders.Commands.FulfillPaidOrder;
 using Innovayse.Hostpanel.Application.Orders.Extensions;
@@ -46,7 +47,8 @@ public sealed class ConfirmOrderPaymentHandler
     /// Success once the payment is confirmed and fulfillment is dispatched, or
     /// <c>ORDER_NOT_FOUND</c> when no such order exists or the payment token does not match it,
     /// <c>ORDER_NOT_INVOICED</c> when the order was never billed, <c>INVOICE_NOT_FOUND</c> when
-    /// its invoice has gone missing, <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when the card gateway
+    /// its invoice has gone missing, <c>PAYMENT_METHOD_UNAVAILABLE</c> when the deployment has no card
+    /// gateway, <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when the card gateway
     /// cannot be reached, <c>GATEWAY_CHARGE_UPSTREAM_FAILED</c> when the card gateway cannot
     /// verify the PaymentIntent, <c>GATEWAY_TRANSACTION_MISSING_UPSTREAM_FAILED</c> when it
     /// reports success without a transaction id, <c>PAYMENT_INTENT_MISMATCH</c> when the intent's
@@ -74,6 +76,13 @@ public sealed class ConfirmOrderPaymentHandler
         }
 
         var invoice = found.Value!;
+
+        // Without a card gateway key there is no intent to verify; refused before the gateway is asked.
+        var configured = _cardGateway.RequireConfigured();
+        if (configured.IsFailure)
+        {
+            return configured;
+        }
 
         var intent = await _cardGateway.VerifyPaymentIntentAsync(new CardPaymentVerifyInstruction(cmd.PaymentIntentId), ct);
         if (intent.Failure == CardGatewayFailure.Unavailable)

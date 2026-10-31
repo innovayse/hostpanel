@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
@@ -250,9 +251,10 @@ public sealed class RefundInvoicePaymentHandler
             return Result.FailureCode(HostpanelErrorCodes.INVOICE_NOT_GATEWAY_PAID);
         }
 
-        if (!_cardGateway.IsConfigured)
+        var configured = _cardGateway.RequireConfigured();
+        if (configured.IsFailure)
         {
-            return Result.FailureCode(HostpanelErrorCodes.PAYMENT_METHOD_UNAVAILABLE);
+            return configured;
         }
 
         var plan = PlanCardRefunds(invoice.Id, charges, cardRows.Sum(t => t.AmountOut), amount, invoice.Currency);

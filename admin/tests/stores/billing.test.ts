@@ -8,6 +8,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { useBillingStore } from '@/stores/billing'
 import { InvoiceRefundType } from '@/types/invoice'
 import { json, problem, stubFetch, stubOffline, callOf } from '../helpers/fetch'
+import { stubRoutes } from '../helpers/routes'
 
 /** Sentence the client writes when nothing answered. */
 const NO_ANSWER = 'Could not reach the server. Check your connection and try again.'
@@ -204,6 +205,34 @@ describe('billingStore fulfilment', () => {
     expect(callOf(mock, 0)).toMatchObject({ url: '/api/billing/5/fulfilment/31/retry', method: 'POST' })
     expect(callOf(mock, 1)).toMatchObject({ url: '/api/billing/5/fulfilment', method: 'GET' })
     expect(store.fulfilment).toEqual([{ id: 31, invoiceId: 5 }])
+  })
+
+  it('fetchFulfilment clears the previous load error as soon as the next load starts', async () => {
+    stubFetch(problem('Fulfilment is unavailable.', 500), json([{ id: 41, invoiceId: 6 }]))
+    const store = useBillingStore()
+    await store.fetchFulfilment(5)
+    expect(store.fulfilmentError).toBe('Fulfilment is unavailable.')
+
+    const next = store.fetchFulfilment(6)
+    expect(store.fulfilmentError).toBeNull()
+    await next
+
+    expect(store.fulfilment).toEqual([{ id: 41, invoiceId: 6 }])
+  })
+
+  it('retryFulfilment does not reload an invoice that is no longer the open one', async () => {
+    const mock = stubRoutes({
+      'POST /api/billing/5/fulfilment/31/retry': () => new Response(null, { status: 204 }),
+      'GET /api/billing/6/fulfilment': () => json([{ id: 41, invoiceId: 6 }]),
+    })
+    const store = useBillingStore()
+    const retry = store.retryFulfilment(5, 31)
+    await store.fetchFulfilment(6)
+
+    expect(await retry).toBe(true)
+
+    expect(mock.mock.calls.filter(([url]) => String(url) === '/api/billing/5/fulfilment')).toHaveLength(0)
+    expect(store.fulfilment).toEqual([{ id: 41, invoiceId: 6 }])
   })
 
   it('retryFulfilment keeps the API sentence on refusal and does not reload', async () => {

@@ -3,8 +3,8 @@
  * Fulfilment tab of the invoice screen: what the fulfilment plugins did, or still have to do, for
  * the invoice, oldest first. Each row names the plugin, what it does, where it stands, how often
  * it was tried, the last error (for staff) and the next attempt or completion time. A record the
- * API allows to retry carries a Retry button (hidden while the invoice is read-only), confirmed first; the outcome (success, or the API's
- * own sentence) shows in the tab. The list loads when the tab opens and when the invoice changes;
+ * API allows to retry carries a Retry button (hidden while the invoice is read-only), confirmed
+ * first; the outcome (success, or the API's own sentence) shows in the tab. The list loads when the tab opens and when the invoice changes;
  * a failed load shows the API's sentence with Retry instead of an empty list.
  */
 import { computed, onMounted, ref, watch } from 'vue'
@@ -114,7 +114,7 @@ const whenOf = (record: FulfilmentRecord): string => {
     case FulfilmentStatus.Pending:
     case FulfilmentStatus.Processing:
       return formatDateTime(record.nextAttemptAt)
-    default:
+    case FulfilmentStatus.Failed:
       return formatDateTime(null)
   }
 }

@@ -267,5 +267,5 @@ public sealed class Quote : BaseEntity, IAggregateRoot
     /// </summary>
     /// <returns>Read-only list of the lines to bill.</returns>
     public IReadOnlyList<QuoteInvoiceLine> GetInvoiceItemData()
-        => _items.Select(i => new QuoteInvoiceLine(i.Description, i.UnitPrice, i.Quantity)).ToList();
+        => _items.Select(i => new QuoteInvoiceLine(i.Description, i.UnitPrice * (1 - i.DiscountPercent / 100), i.Quantity)).ToList();
 }

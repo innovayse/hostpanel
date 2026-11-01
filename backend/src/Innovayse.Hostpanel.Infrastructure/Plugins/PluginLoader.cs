@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Plugins;
+using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
 using Innovayse.SDK.Plugins.Endpoints;
 using Innovayse.SDK.Plugins.Enums;
 using Innovayse.SDK.Plugins.Fulfilment;
@@ -34,12 +35,21 @@ public static class PluginLoader
     /// and a singleton <see cref="PluginIntegrationRegistry"/> for plugins that expose themselves
     /// as admin integrations.
     /// </summary>
+    /// <remarks>
+    /// An uploaded plugin is signature-checked before any of its assemblies is loaded, because loading an assembly
+    /// can already run its code. A plugin shipped with the host (<see cref="PluginOrigin.BuiltIn"/>) is not: it is
+    /// part of the host. A refused plugin is skipped alone and logged with its id and the rule it breaks.
+    /// </remarks>
     /// <param name="services">The application service collection.</param>
-    /// <param name="pluginRoots">Absolute plugin folders, built-in first.</param>
+    /// <param name="pluginRoots">Absolute plugin folders with their origin, built-in first.</param>
+    /// <param name="verifier">Checks the signature of an uploaded plugin and applies the host's policy.</param>
+    /// <param name="allowUnsigned">Whether the admin setting "allow unsigned plugins" is on.</param>
     /// <param name="loggerFactory">Logger factory used during startup loading.</param>
     public static void DiscoverAndRegister(
         IServiceCollection services,
-        IReadOnlyList<string> pluginRoots,
+        IReadOnlyList<PluginRoot> pluginRoots,
+        PluginSignatureVerifier verifier,
+        bool allowUnsigned,
         ILoggerFactory loggerFactory)
     {
         var logger = loggerFactory.CreateLogger(nameof(PluginLoader));
@@ -49,20 +59,20 @@ public static class PluginLoader
         var integrationRegistry = new PluginIntegrationRegistry();
 
         var claimedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var pluginDirs = new List<string>();
+        var pluginDirs = new List<(string Dir, PluginOrigin Origin)>();
         foreach (var root in pluginRoots)
         {
-            if (Directory.Exists(root))
+            if (Directory.Exists(root.Path))
             {
-                pluginDirs.AddRange(Directory.GetDirectories(root));
+                pluginDirs.AddRange(Directory.GetDirectories(root.Path).Select(dir => (dir, root.Origin)));
             }
             else
             {
-                logger.LogInformation("Plugins directory not found at {Path}", root);
+                logger.LogInformation("Plugins directory not found at {Path}", root.Path);
             }
         }
 
-        foreach (var pluginDir in pluginDirs)
+        foreach (var (pluginDir, origin) in pluginDirs)
         {
             if (!PluginIdentifier.IsValid(Path.GetFileName(pluginDir)))
             {
@@ -81,6 +91,15 @@ public static class PluginLoader
             if (!claimedIds.Add(manifest.Id))
             {
                 logger.LogWarning("Plugin {Id} in {Dir} is already declared by an earlier folder — skipping", manifest.Id, pluginDir);
+                continue;
+            }
+
+            var refusal = verifier.Check(pluginDir, manifest.Id, origin, allowUnsigned, logger);
+            if (refusal is not null)
+            {
+                logger.LogWarning(
+                    "Plugin {Id} refused by signature rule {Rule}: {Detail}. Skipping it; the other plugins still load.",
+                    manifest.Id, refusal.Rule, refusal.Detail);
                 continue;
             }
 

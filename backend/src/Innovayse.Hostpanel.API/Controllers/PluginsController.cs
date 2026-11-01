@@ -67,7 +67,9 @@ public sealed class PluginsController : BaseApiController
     /// 200 with <c>requiresRestart: true</c> on success; 400 with <c>VALIDATION_ERROR</c> (no file),
     /// <c>PLUGIN_MANIFEST_INVALID</c>, <c>PLUGIN_SDK_VERSION_UNSUPPORTED</c>,
     /// <c>PLUGIN_ID_INVALID</c>, <c>PLUGIN_ARCHIVE_UNSAFE</c>, <c>PLUGIN_HOST_ASSEMBLY_REFUSED</c> or
-    /// <c>PLUGIN_NOT_TRUSTED</c>; 401 without a session; 403 for a caller who is not an
+    /// <c>PLUGIN_NOT_TRUSTED</c>, or one of <c>PLUGIN_UNSIGNED</c>, <c>PLUGIN_SIGNATURE_MALFORMED</c>,
+    /// <c>PLUGIN_SIGNATURE_KEY_UNKNOWN</c> and <c>PLUGIN_SIGNATURE_INVALID</c> when the host enforces signatures and the
+    /// package fails that check while "allow unsigned plugins" is off; 401 without a session; 403 for a caller who is not an
     /// administrator; 409 with <c>PLUGIN_BUILT_IN</c> when the id belongs to a plugin shipped with
     /// the build; 413 when the upload is over the request limit or with
     /// <c>PLUGIN_ARCHIVE_TOO_LARGE</c>; 429 when the rate limit is hit.

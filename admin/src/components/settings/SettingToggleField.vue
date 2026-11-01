@@ -6,8 +6,9 @@
  * the usual warning, because the panel cannot create settings. Used by the home sections card and
  * by the hosting details card, so a boolean setting saves the same way everywhere.
  */
-import { computed, toRef } from 'vue'
+import { toRef } from 'vue'
 import { useSettingDraft } from '@/composables/useSettingDraft'
+import { useSettingSwitch } from '@/composables/useSettingSwitch'
 import SettingNotSeeded from '@/components/settings/SettingNotSeeded.vue'
 import SettingOutcome from '@/components/settings/SettingOutcome.vue'
 import SettingSaveButton from '@/components/settings/SettingSaveButton.vue'
@@ -42,22 +43,7 @@ const settings = toRef(props, 'settings')
 const draft = useSettingDraft(settings, props.settingKey, props.defaultOn ? SettingToggle.On : SettingToggle.Off)
 
 /** The switch's view of the row: only the literal `true` is on. */
-const enabled = computed<boolean>({
-  /**
-   * Whether the switch shows as on.
-   *
-   * @returns True only for the literal `true`.
-   */
-  get: () => draft.value.value === SettingToggle.On,
-  /**
-   * Writes the switch back as the string the API stores.
-   *
-   * @param on - Whether the switch is now on.
-   */
-  set: (on: boolean) => {
-    draft.value.value = on ? SettingToggle.On : SettingToggle.Off
-  },
-})
+const enabled = useSettingSwitch(draft)
 </script>
 
 <template>

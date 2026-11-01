@@ -62,7 +62,7 @@ try
     builder.Services.AddApplication();
 
     using var bootstrapLoggerFactory = LoggerFactory.Create(b => b.AddConsole());
-    builder.Services.AddInfrastructure(builder.Configuration, bootstrapLoggerFactory);
+    builder.Services.AddInfrastructure(builder.Configuration, bootstrapLoggerFactory, builder.Environment);
 
     builder.AddHostpanelWolverine();
 

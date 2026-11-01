@@ -20,6 +20,7 @@
     <PackageReference Include="DnsClient" />
     <PackageReference Include="SSH.NET" />
     <PackageReference Include="FluentValidation" />
+    <PackageReference Include="BouncyCastle.Cryptography" />
     <PackageReference Include="MailKit" />
     <PackageReference Include="Mapster" />
     <!-- Auth: the Data Protection key ring is persisted through AppDbContext; see DependencyInjection.cs. -->

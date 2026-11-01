@@ -156,6 +156,15 @@ export const SettingKey = {
 /** One of the {@link SettingKey} values. */
 export type SettingKey = (typeof SettingKey)[keyof typeof SettingKey]
 
+/** Keys of the plugin system's settings; the strings are the rows' `key` values. */
+export const PluginSettingKey = {
+  /** Whether a production server still installs and loads plugins whose signature is missing or invalid. */
+  AllowUnsigned: 'plugins.allow_unsigned',
+} as const
+
+/** One of the {@link PluginSettingKey} values. */
+export type PluginSettingKey = (typeof PluginSettingKey)[keyof typeof PluginSettingKey]
+
 /** Prefix of the environment variable a portal setting falls back to until its row exists. */
 const SETTING_ENV_PREFIX = 'NUXT_PUBLIC_PORTAL_'
 

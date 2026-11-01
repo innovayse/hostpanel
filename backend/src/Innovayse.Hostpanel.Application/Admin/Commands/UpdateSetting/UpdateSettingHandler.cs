@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Admin.Common;
 using Innovayse.Hostpanel.Application.Admin.Common.Enums;
+using Innovayse.Hostpanel.Application.Audit.Common;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
@@ -40,6 +41,9 @@ public sealed class UpdateSettingHandler
     /// <summary>The acting admin, named in the audit line of a secret change.</summary>
     private readonly ICurrentUserService _currentUser;
 
+    /// <summary>Stages the activity log line of a change to a setting that weakens a security control.</summary>
+    private readonly IActivityLogger _activityLogger;
+
     /// <summary>Receives the audit line of a secret change (key only, never the value).</summary>
     private readonly ILogger<UpdateSettingHandler> _logger;
 
@@ -49,6 +53,7 @@ public sealed class UpdateSettingHandler
     /// <param name="plugins">Loaded plugins, whose manifests declare which of their fields are secret.</param>
     /// <param name="branding">Removes the branding upload a replaced image setting pointed at.</param>
     /// <param name="currentUser">The acting admin, named in the audit line of a secret change.</param>
+    /// <param name="activityLogger">Stages the activity log line of a change to a setting that weakens a security control.</param>
     /// <param name="logger">Receives the audit line of a secret change.</param>
     public UpdateSettingHandler(
         IHostpanelDbContext context,
@@ -56,6 +61,7 @@ public sealed class UpdateSettingHandler
         IPluginRegistry plugins,
         IBrandingStorage branding,
         ICurrentUserService currentUser,
+        IActivityLogger activityLogger,
         ILogger<UpdateSettingHandler> logger)
     {
         _context = context;
@@ -63,6 +69,7 @@ public sealed class UpdateSettingHandler
         _plugins = plugins;
         _branding = branding;
         _currentUser = currentUser;
+        _activityLogger = activityLogger;
         _logger = logger;
     }
 
@@ -120,7 +127,8 @@ public sealed class UpdateSettingHandler
                 value = canonical;
             }
             else if (PortalSettingKeys.Patterns.TryGetValue(setting.Key, out var pattern)
-                || BillingSettingKeys.Patterns.TryGetValue(setting.Key, out pattern))
+                || BillingSettingKeys.Patterns.TryGetValue(setting.Key, out pattern)
+                || PluginSettingKeys.Patterns.TryGetValue(setting.Key, out pattern))
             {
                 // Stored in the canonical spelling so the storefront and the e-mail renderer
                 // can compare and concatenate without normalising again.
@@ -137,6 +145,15 @@ public sealed class UpdateSettingHandler
 
         var previous = setting.Value;
         setting.UpdateValue(value);
+
+        // A setting that weakens a security control is audited on every change, in the same save as the
+        // change itself, so the line and the new value commit or fail together.
+        if (PluginSettingKeys.IsAudited(setting.Key) && !string.Equals(previous, value, StringComparison.Ordinal))
+        {
+            await _activityLogger.RecordAsync(
+                new ActivityLogEntry(null, $"Changed Setting - Setting: {setting.Key} - From: {previous} - To: {value}"), ct);
+        }
+
         await _context.SaveChangesAsync(ct);
 
         // A replaced branding image leaves its old upload referenced by nothing; it is removed once

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Signed plugin packages: an uploaded plugin carries a detached Ed25519 signature (`plugin.sig`), checked at install and at every start against the maintainers' keys and the keys an operator adds under `PluginSigning:OperatorKeys`. A production server refuses an unsigned, changed or unknown-key package unless an administrator turns on "Allow unsigned plugins" on the Plugins page (off by default, audited); Development still loads unsigned packages, and plugins shipped inside the server image are not affected. `backend/tools/Innovayse.Hostpanel.PluginSigner` signs a package (#638).
 - Quarterly, semi-annual and biennial billing cycles beside monthly and annual: product prices per cycle in the admin form and list, the cycle choice on the storefront plan pages and at checkout, and renewal periods of 3, 6 and 24 months. Existing monthly and annual services, orders and plugin contracts are unchanged (#478).
 - Client portal SSH keys: a "Deploy automatically from GitHub or GitLab" guide with a ready GitHub Actions workflow and GitLab CI job, filled in with the account's host, port and username (en, ru, hy).
 - SSH key agent 1.2.0: optional jailed SSH enrolment (`jail_enrol`). The first key HostPanel adds jails the account (jailkit tree, home bind-mounted by a systemd unit, `sftp-ssh` group, bash) and removing the last managed key withdraws it; off by default.
@@ -26,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Before upgrading a production server that has uploaded plugins: plugins in the upload folder carry no signature yet, so after this release they are skipped at start (the log names each one) until the plugin is replaced by a signed package, or an administrator switches on "Allow unsigned plugins" on the Plugins page and the server is restarted. Plugins shipped inside the server image keep loading (#638).
 - Ledger transactions record where they came from (gateway payment, gateway refund, manual entry or import), and a gateway payment can be recorded only once per payment method and reference. Manual entries and imports may still share a reference. Before upgrading, `scripts/check-duplicate-gateway-payments.sh` lists existing gateway payment rows that share a reference; the upgrade stops and names them if any are left.
 - The plugin SDK (`Innovayse.SDK`) is MIT licensed, so a plugin may be free or paid, open or closed source; the rest of the repository stays AGPL-3.0-or-later. The package ships with its license text and readme inside, and its readme shows how to pin a version and write a minimal plugin.
 - The plugin SDK moved to its own repository, [innovayse/hostpanel-sdk](https://github.com/innovayse/hostpanel-sdk), with its history, and is included here as a git submodule at the same path (`backend/src/Innovayse.SDK`). Clone with `git clone --recurse-submodules`, or run `git submodule update --init` after a plain clone. The SDK package is now built and published from that repository; this repository no longer publishes it.

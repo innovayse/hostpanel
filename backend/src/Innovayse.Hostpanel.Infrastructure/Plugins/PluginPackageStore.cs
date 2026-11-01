@@ -5,6 +5,7 @@ using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Plugins;
+using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
 using Innovayse.SDK.Plugins.Manifest;
 using Microsoft.Extensions.Logging;
@@ -14,7 +15,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 
 /// <summary>
 /// File system implementation of <see cref="IPluginPackageStore"/>. An upload is streamed to a
-/// private staging folder, checked in full (size, entry count, manifest, id, paths, assembly names,
+/// private staging folder, checked in full (size, entry count, manifest, id, paths, assembly names, signature,
 /// trusted digests), unpacked there, and only then moved into place with a single folder rename, so
 /// a refused or failed install leaves nothing behind and a half-written plugin is never visible.
 /// </summary>
@@ -44,12 +45,17 @@ public sealed class PluginPackageStore : IPluginPackageStore
     /// <summary>Records why an upload was refused; the response carries only a code.</summary>
     private readonly ILogger<PluginPackageStore> _logger;
 
+    /// <summary>Checks the detached signature of an unpacked upload and applies the host's policy for unsigned packages.</summary>
+    private readonly PluginSignatureVerifier _signatures;
+
     /// <summary>Initializes the store.</summary>
     /// <param name="options">Upload folder, limits and the trusted-package list.</param>
+    /// <param name="signatures">Checks the detached signature of an unpacked upload and applies the host's policy for unsigned packages.</param>
     /// <param name="logger">Records why an upload was refused; the response carries only a code.</param>
-    public PluginPackageStore(IOptions<PluginOptions> options, ILogger<PluginPackageStore> logger)
+    public PluginPackageStore(IOptions<PluginOptions> options, PluginSignatureVerifier signatures, ILogger<PluginPackageStore> logger)
     {
         _options = options.Value;
+        _signatures = signatures;
         _logger = logger;
     }
 
@@ -81,7 +87,7 @@ public sealed class PluginPackageStore : IPluginPackageStore
 
             try
             {
-                return await UnpackAndCommitAsync(archivePath, work, installRoot, sha256, ct);
+                return await UnpackAndCommitAsync(archivePath, work, installRoot, sha256, upload.AllowUnsigned, ct);
             }
             catch (InvalidDataException ex)
             {
@@ -267,11 +273,12 @@ public sealed class PluginPackageStore : IPluginPackageStore
     /// <param name="work">This install's private staging folder.</param>
     /// <param name="installRoot">The upload folder.</param>
     /// <param name="sha256">The archive's digest, carried into the result for the audit line.</param>
+    /// <param name="allowUnsigned">Whether the admin setting "allow unsigned plugins" is on.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The outcome.</returns>
     /// <exception cref="InvalidDataException">The archive is not a readable ZIP file.</exception>
     private async Task<PluginPackageResult> UnpackAndCommitAsync(
-        string archivePath, string work, string installRoot, string sha256, CancellationToken ct)
+        string archivePath, string work, string installRoot, string sha256, bool allowUnsigned, CancellationToken ct)
     {
         using var archive = ZipFile.OpenRead(archivePath);
 
@@ -360,6 +367,15 @@ public sealed class PluginPackageStore : IPluginPackageStore
         if (violation is not null)
         {
             return RuleBroken(id, sha256, violation);
+        }
+
+        // The signature covers the unpacked files, so it is checked here, after the archive is unpacked and before the move into place.
+        var signature = _signatures.Check(contentDir, id, PluginOrigin.Uploaded, allowUnsigned, _logger);
+        if (signature is not null)
+        {
+            _logger.LogWarning(
+                "Plugin install refused: {PluginId} fails signature rule {Rule}: {Detail}.", id, signature.Rule, signature.Detail);
+            return new PluginPackageResult(PluginPackageOutcome.SignatureRefused, id, sha256, SignatureRule: signature.Rule);
         }
 
         await CommitAsync(contentDir, targetDir, work, ct);

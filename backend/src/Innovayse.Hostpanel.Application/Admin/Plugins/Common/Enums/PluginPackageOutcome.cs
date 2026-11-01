@@ -36,6 +36,12 @@ public enum PluginPackageOutcome
     /// <summary>A trusted-package list is configured and the archive's SHA-256 is not on it.</summary>
     NotTrusted,
 
+    /// <summary>
+    /// The package fails the signature check (see <see cref="PluginSignatureRule"/>, which the result names) and the host
+    /// does not admit unsigned packages.
+    /// </summary>
+    SignatureRefused,
+
     /// <summary>The id belongs to a plugin shipped with the build, which cannot be replaced or removed.</summary>
     BuiltIn,
 

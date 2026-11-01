@@ -555,6 +555,18 @@
 <data name="PLUGIN_NOT_TRUSTED" xml:space="preserve">
     <value>Այդ արխիվը սերվերի վստահելի հավելագրիչների փաթեթների ցանկում չէ։</value>
   </data>
+<data name="PLUGIN_UNSIGNED" xml:space="preserve">
+    <value>Այս հավելագրիչի փաթեթը ստորագրված չէ, իսկ սերվերն ընդունում է միայն ստորագրված հավելագրիչներ։</value>
+  </data>
+<data name="PLUGIN_SIGNATURE_MALFORMED" xml:space="preserve">
+    <value>Այս հավելագրիչի փաթեթի ստորագրության ֆայլը հնարավոր չէ կարդալ։</value>
+  </data>
+<data name="PLUGIN_SIGNATURE_KEY_UNKNOWN" xml:space="preserve">
+    <value>Այս հավելագրիչի փաթեթը ստորագրված է բանալիով, որին սերվերը չի վստահում։</value>
+  </data>
+<data name="PLUGIN_SIGNATURE_INVALID" xml:space="preserve">
+    <value>Այս հավելագրիչի փաթեթի ստորագրությունը չի համապատասխանում նրա ֆայլերին. այն փոփոխվել է ստորագրելուց հետո։</value>
+  </data>
 <data name="PLUGIN_BUILT_IN" xml:space="preserve">
     <value>Այս հավելագրիչը սերվերի կազմում է և չի կարող հեռացվել կամ փոխարինվել։</value>
   </data>

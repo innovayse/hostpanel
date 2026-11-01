@@ -21,7 +21,8 @@ public static class AllowUnsignedSettingReader
     /// <param name="logger">Records why the setting could not be read.</param>
     /// <returns>
     /// <see langword="true"/> only when the row exists and is on. A database that cannot be reached, a table that
-    /// does not exist yet (the first start, before migrations) or a row that does not exist read as off: refusing is
+    /// does not exist yet (the first start, before migrations), a connection string that cannot be parsed, any other
+    /// failure, or a row that does not exist read as off: refusing is
     /// the safe answer to "may unsigned plugins load".
     /// </returns>
     public static bool Read(string? connectionString, ILogger logger)
@@ -47,10 +48,14 @@ public static class AllowUnsignedSettingReader
             command.Parameters.AddWithValue("key", PluginSettingKeys.AllowUnsigned);
             return PluginSettingKeys.IsOn(command.ExecuteScalar() as string);
         }
-        catch (Exception ex) when (ex is NpgsqlException or InvalidOperationException or ArgumentException or TimeoutException)
+        catch (Exception ex)
         {
+            // Any failure reads as off. Only the setting name and the exception type are logged: the exception text and
+            // stack can carry the connection string or the database host.
             logger.LogWarning(
-                ex, "Could not read the {Setting} setting at startup; unsigned plugins are not allowed to load.", PluginSettingKeys.AllowUnsigned);
+                "Could not read the {Setting} setting at startup ({ExceptionType}); unsigned plugins are not allowed to load.",
+                PluginSettingKeys.AllowUnsigned,
+                ex.GetType().Name);
             return false;
         }
     }

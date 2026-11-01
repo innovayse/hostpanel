@@ -340,7 +340,8 @@ docker/                              compose set (shared·dev·prod·platform), 
     package root with forward slashes, sorted by path with ordinal comparison. Every file under the root is listed
     (sub-folders too) except `plugin.sig` at the root; folders are not listed. The key id is inside the payload, so a
     signature cannot be presented under another id. A key id is `[a-z0-9][a-z0-9._-]{0,63}` (`TrustedKeyId`). A path
-    holding a control character cannot be signed (it would let one file stand for two lines) and is `Malformed`.
+    holding a control character or a lone surrogate (no UTF-8 form; the payload is encoded strictly), and any file or
+    folder that is a link (symlink or junction, never followed), cannot be signed and is `Malformed`.
     `PluginSignaturePayload.Header` carries the version, so a change of format is a new header, not a silent clash.
   - **Trusted keys** are public keys only (`PluginSigningOptions`, sealed, `SectionName = "PluginSigning"`, validated
     at startup by `PluginSigningOptionsValidator`): `MaintainerKeys` ships in `appsettings.json` (empty until the
@@ -363,8 +364,13 @@ docker/                              compose set (shared·dev·prod·platform), 
   - **When the setting is read.** At install `InstallPluginHandler` reads the row for each upload, so a change applies to
     the next upload at once. At startup the loader needs it before the container exists, so
     `AllowUnsignedSettingReader` reads that one row with a plain Npgsql query in `AddInfrastructure`; a database that
-    cannot be reached, a missing table (the first start) or a missing row reads as off, the safe answer. Plugins
+    cannot be reached, a missing table (the first start), a missing row or any other failure reads as off, the safe
+    answer; the warning logs the setting name and the exception type only, never the connection string or host. Plugins
     already installed therefore follow a change of the setting at the next restart.
+  - **Known limitation: no downgrade protection.** The signature proves who published the files and that they are
+    unchanged, not that they are the newest. An older signed version of a plugin can be installed again, and nothing in
+    the signature stops it, so a version with a known flaw stays installable for as long as its key is trusted. Removing a
+    trusted key is the only revocation today; a signed version floor or a revocation list is not built.
   - **Signing** (`backend/tools/Innovayse.Hostpanel.PluginSigner`, outside `src/` and the solution, so the image does not
     build it): `dotnet run --project backend/tools/Innovayse.Hostpanel.PluginSigner -- keygen <private-key-file>`
     creates a key (the file holds the base64 of the 32-byte private key) and prints the public key;

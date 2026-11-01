@@ -64,6 +64,36 @@ public sealed class AllowUnsignedSettingReaderTests(IntegrationTestFactory facto
         logs.Entries.Should().ContainSingle(e => e.Level == LogLevel.Warning);
     }
 
+    /// <summary>
+    /// A connection string the driver rejects with a non Npgsql exception still reads as off, and the warning carries
+    /// only the setting name and the exception type, never the connection string, its password or its host.
+    /// </summary>
+    [Fact]
+    public void AnUnparsableConnectionString_ReadsAsOffWithoutLeakingIt()
+    {
+        var logs = new RecordingLoggerProvider();
+
+        AllowUnsignedSettingReader.Read("Host=secret-host.internal;Password=hunter2;Port=not-a-number", logs.CreateLogger("t"))
+            .Should().BeFalse();
+
+        var entry = logs.Entries.Should().ContainSingle(e => e.Level == LogLevel.Warning).Subject;
+        entry.Message.Should().Contain(PluginSettingKeys.AllowUnsigned).And.Contain("Exception");
+        entry.Message.Should().NotContain("hunter2").And.NotContain("secret-host");
+    }
+
+    /// <summary>A failure while reaching an unreachable host does not log the host or the password either.</summary>
+    [Fact]
+    public void AnUnreachableDatabase_DoesNotLogTheHostOrPassword()
+    {
+        var unreachable = new NpgsqlConnectionStringBuilder(ConnectionString()) { Host = "127.0.0.1", Port = 1, Password = "hunter2" }.ConnectionString;
+        var logs = new RecordingLoggerProvider();
+
+        AllowUnsignedSettingReader.Read(unreachable, logs.CreateLogger("t")).Should().BeFalse();
+
+        var entry = logs.Entries.Should().ContainSingle(e => e.Level == LogLevel.Warning).Subject;
+        entry.Message.Should().NotContain("127.0.0.1").And.NotContain("hunter2");
+    }
+
     /// <summary>No connection string at all reads as off.</summary>
     /// <param name="connectionString">A missing or blank connection string.</param>
     [Theory]

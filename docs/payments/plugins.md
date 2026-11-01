@@ -62,4 +62,9 @@ dotnet run --project backend/tools/Innovayse.Hostpanel.PluginSigner -- keygen /s
 dotnet run --project backend/tools/Innovayse.Hostpanel.PluginSigner -- sign ./my-plugin /secure/place/plugin-signing.key my-company-2026
 ```
 
-Sign after the last change: adding, removing or changing any file afterwards makes the signature invalid.
+Sign after the last change: adding, removing or changing any file afterwards makes the signature invalid. A package
+that contains a symbolic link or junction cannot be signed; ship real files.
+
+Known limitation: the signature does not protect against downgrades. It shows that the files come from a trusted key
+and are unchanged, not that they are the latest release, so an older signed version can be installed again. Install only
+releases you have chosen, and remove a key from `PluginSigning` if everything it signed should stop being trusted.

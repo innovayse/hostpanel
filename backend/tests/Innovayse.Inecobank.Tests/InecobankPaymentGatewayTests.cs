@@ -1,7 +1,7 @@
 using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Innovayse.Providers.Inecobank;
-using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
+using Innovayse.SDK.Plugins.Payment;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -70,7 +70,7 @@ public class InecobankPaymentGatewayTests : IAsyncLifetime
         _http.Enqueue("""{"orderId":"gw-1","formUrl":"https://testpg.example.am/pay?mdOrder=gw-1"}""");
 
         var session = await gateway.CreatePaymentAsync(
-            new PaymentRequest("INV7-1755850000", 120000, "https://portal/result?invoice=7", "Invoice #7", null),
+            new PaymentInstruction("INV7-1755850000", 120000, "https://portal/result?invoice=7", "Invoice #7", null),
             CancellationToken.None);
 
         session.Should().Be(new PaymentSession("gw-1", "https://testpg.example.am/pay?mdOrder=gw-1"));
@@ -102,7 +102,7 @@ public class InecobankPaymentGatewayTests : IAsyncLifetime
         var gateway = CreateGateway(new() { ["integration:inecobank:username"] = null });
 
         var act = () => gateway.CreatePaymentAsync(
-            new PaymentRequest("INV1-1", 100, "https://portal/r", null, null), CancellationToken.None);
+            new PaymentInstruction("INV1-1", 100, "https://portal/r", null, null), CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }

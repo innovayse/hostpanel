@@ -1,4 +1,4 @@
-using Innovayse.SDK.Plugins;
+using Innovayse.SDK.Plugins.Payment;
 using Microsoft.Extensions.Configuration;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
@@ -17,7 +17,7 @@ internal sealed class ConfigurationCapturingPaymentPlugin : IPaymentPlugin
     public string CurrencyCode => "840";
 
     /// <inheritdoc/>
-    public Task<PaymentSession> CreatePaymentAsync(PaymentRequest request, CancellationToken ct)
+    public Task<PaymentSession> CreatePaymentAsync(PaymentInstruction instruction, CancellationToken ct)
         => throw new NotSupportedException();
 
     /// <inheritdoc/>

@@ -67,7 +67,7 @@ repositories. The departures are short:
   are named for what they carry (`DomainRegistrationOrder`, `DomainRenewalOrder`,
   `DomainTransferOrder`, `ProvisionAccountOrder`, `SuspendAccountOrder`, `TerminateAccountOrder`);
   `NoRequestTypesTests` covers all three layers (the `CancellationRequest` entity is exempt). The wire models inside
-  `Innovayse.Providers.*` and the SDK's `PaymentRequest` are third-party-facing contracts and keep their names.
+  `Innovayse.Providers.*` are third-party-facing contracts and keep their names.
 - **Recurring jobs and background handlers return `Task`, not `Result`.** The crons
   (`CheckOverdueInvoicesCron`, `ProcessBillableItemsCron`, `ProcessRenewalsCron`,
   `ReconcileGatewayPaymentsCron`, `SendRenewalRemindersCron`, `SuspendOverdueServicesCron`,
@@ -93,7 +93,7 @@ repositories. The departures are short:
   an interval job under half its interval, or the 30-second job would run every second beat.
 - **Our own API contracts carry no `[JsonPropertyName]`**: the wire name is the property name in camelCase.
   A route id is overlaid on the bound command with `with { ... }`; there are no `*Body` types. The SDK ports are
-  vendor-free too (`IHostingPanelApiClient`, `IHostingPanelV7ApiClient`; `NoVendorNamesTests` covers the SDK).
+  vendor-free too (`IHostingPanelApiClient`, `IHostingPanelV7ApiClient`; `NoVendorNamesTests` covers the SDK: its type names, and the text of its comments and strings, which also name no host-internal type).
 - **Errors are one `ErrorResponse` body, `application/problem+json`**
   (`Type`/`Title`/`Status`/`Detail`/`Errors`, camelCase on the wire), written by one serializer,
   `Shared/Infrastructure/ErrorBody.cs`, for every surface: `BaseApiController`,
@@ -179,9 +179,17 @@ docker/                              compose set (shared·dev·prod·platform), 
   `Assembly.LoadFrom` over it would give the process two distinct `IPaymentPlugin` types with the
   same name, after which every cast in `PluginActivator` fails. The CWP providers are
   deliberately **not** staged, so they cannot activate at runtime by accident.
-- **Six plugin types, one activator.** The loader registers each plugin under the SDK contract of the
+- **The SDK is grouped by area (SDK 2.0.0).** Every SDK type lives in `Plugins/<Area>/` and its
+  namespace equals the folder: `Payment`, `Provisioning`, `Registrar`, `HostingPanel`, `Hosting`,
+  `Fulfilment`, `Identity`, `StoredCredentials`, `Manifest`, `Endpoints`, `Host`, `Store`,
+  `Lifecycle`, `Slots`, `Enums`. Each interface sits next to the records it uses; there is no
+  `Interfaces/` folder (file-layout allows one only in Domain, `Application/Common/Interfaces/` and
+  Shared) and nothing at the `Plugins/` root. Enums are in `Plugins/Enums/` with explicit values,
+  new ones from 1. Inputs are `*Instruction` or `*Context`, outputs `*Result`, `*Status`,
+  `*Lookup` or `*Session`; never `*Request`. `SdkContractTests` pins every namespace.
+- **Seven plugin types, one activator.** The loader registers each plugin under the SDK contract of the
   type its manifest declares: provisioning, payment, registrar, identity (`IClientResolver`),
-  fulfilment (`IFulfilmentPlugin`) and hosted (`IHostedPlugin`). Every plugin becomes an instance in
+  fulfilment (`IFulfilmentPlugin`), hosted (`IHostedPlugin`) and app (`IPluginEndpoints`). Every plugin becomes an instance in
   one place, `Infrastructure/Plugins/PluginActivator`: it checks the loaded type really implements the
   contract, that `integration:{id}:is_enabled` is `true` and that every required manifest setting
   (`manifest.GetSettings()`, which falls back to the legacy `fields`) is stored, then builds the plugin with its own configuration. The resolvers only choose:

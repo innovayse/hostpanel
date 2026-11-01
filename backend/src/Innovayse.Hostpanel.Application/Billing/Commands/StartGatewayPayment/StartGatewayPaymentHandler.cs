@@ -6,8 +6,8 @@ using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
 using Innovayse.Hostpanel.Shared.Settings;
-using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
+using Innovayse.SDK.Plugins.Payment;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -145,7 +145,7 @@ public sealed class StartGatewayPaymentHandler
         try
         {
             session = await plugin.CreatePaymentAsync(
-                new PaymentRequest(orderNumber, amountMinor, cmd.ReturnUrl, $"Invoice #{invoice.Id}", null),
+                new PaymentInstruction(orderNumber, amountMinor, cmd.ReturnUrl, $"Invoice #{invoice.Id}", null),
                 ct);
         }
         catch (Exception ex) when (JobFailure.IsFailure(ex, ct))

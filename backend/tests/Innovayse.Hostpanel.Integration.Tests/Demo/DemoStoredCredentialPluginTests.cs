@@ -1,7 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Demo;
 using Innovayse.Hostpanel.Infrastructure.Time;
-using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
 using Innovayse.SDK.Plugins.StoredCredentials;
 using Microsoft.Extensions.DependencyInjection;
@@ -372,8 +371,8 @@ public sealed class DemoStoredCredentialPluginTests(IntegrationTestFactory facto
     {
         var plugin = NewPlugin();
 
-        var customer = await plugin.EnsureCustomerAsync(new CredentialCustomerDetails("client-7", null, "https://shop.test/return"), CancellationToken.None);
-        var again = await plugin.EnsureCustomerAsync(new CredentialCustomerDetails("client-7", null, "https://shop.test/return"), CancellationToken.None);
+        var customer = await plugin.EnsureCustomerAsync(new CredentialCustomerContext("client-7", null, "https://shop.test/return"), CancellationToken.None);
+        var again = await plugin.EnsureCustomerAsync(new CredentialCustomerContext("client-7", null, "https://shop.test/return"), CancellationToken.None);
         var first = await plugin.BeginSaveMethodAsync(new SaveMethodContext(customer.CustomerRef, "https://shop.test/return"), CancellationToken.None);
         var saved = await plugin.CompleteSaveMethodAsync(first.SessionId, CancellationToken.None);
         var second = await plugin.BeginSaveMethodAsync(new SaveMethodContext(customer.CustomerRef, "https://shop.test/return"), CancellationToken.None);

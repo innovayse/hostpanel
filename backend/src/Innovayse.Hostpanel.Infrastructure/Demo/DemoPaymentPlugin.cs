@@ -1,6 +1,6 @@
 using System.Globalization;
-using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
+using Innovayse.SDK.Plugins.Payment;
 using Innovayse.SDK.Plugins.StoredCredentials;
 
 namespace Innovayse.Hostpanel.Infrastructure.Demo;
@@ -70,12 +70,12 @@ internal sealed class DemoPaymentPlugin : IPaymentPlugin, IStoredCredentialPlugi
     public bool AcceptsCurrency(string currencyNumeric) => _numericCodes.Contains(currencyNumeric);
 
     /// <inheritdoc/>
-    public Task<PaymentSession> CreatePaymentAsync(PaymentRequest request, CancellationToken ct)
+    public Task<PaymentSession> CreatePaymentAsync(PaymentInstruction instruction, CancellationToken ct)
     {
-        var separator = request.ReturnUrl.Contains('?', StringComparison.Ordinal) ? '&' : '?';
-        var gatewayOrderId = string.Create(CultureInfo.InvariantCulture, $"demo-{request.OrderNumber}-{request.AmountMinor}");
+        var separator = instruction.ReturnUrl.Contains('?', StringComparison.Ordinal) ? '&' : '?';
+        var gatewayOrderId = string.Create(CultureInfo.InvariantCulture, $"demo-{instruction.OrderNumber}-{instruction.AmountMinor}");
 
-        return Task.FromResult(new PaymentSession(gatewayOrderId, $"{request.ReturnUrl}{separator}demo=1"));
+        return Task.FromResult(new PaymentSession(gatewayOrderId, $"{instruction.ReturnUrl}{separator}demo=1"));
     }
 
     /// <inheritdoc/>
@@ -97,10 +97,10 @@ internal sealed class DemoPaymentPlugin : IPaymentPlugin, IStoredCredentialPlugi
         Task.FromResult($"demo-refund-{gatewayOrderId}");
 
     /// <inheritdoc/>
-    public Task<CredentialCustomerResult> EnsureCustomerAsync(CredentialCustomerDetails details, CancellationToken ct)
+    public Task<CredentialCustomerResult> EnsureCustomerAsync(CredentialCustomerContext context, CancellationToken ct)
     {
-        ArgumentNullException.ThrowIfNull(details);
-        return Task.FromResult(new CredentialCustomerResult($"demo-cus-{details.ClientReference}"));
+        ArgumentNullException.ThrowIfNull(context);
+        return Task.FromResult(new CredentialCustomerResult($"demo-cus-{context.ClientReference}"));
     }
 
     /// <inheritdoc/>

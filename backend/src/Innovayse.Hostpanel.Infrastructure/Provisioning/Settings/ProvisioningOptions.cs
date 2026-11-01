@@ -1,4 +1,5 @@
-using Innovayse.SDK.Plugins;
+using Innovayse.SDK.Plugins.HostingPanel;
+
 
 namespace Innovayse.Hostpanel.Infrastructure.Provisioning.Settings;
 

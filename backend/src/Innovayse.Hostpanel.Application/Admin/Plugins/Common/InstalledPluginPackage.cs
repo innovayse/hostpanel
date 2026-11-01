@@ -1,4 +1,4 @@
-using Innovayse.SDK.Plugins;
+using Innovayse.SDK.Plugins.Manifest;
 
 namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 

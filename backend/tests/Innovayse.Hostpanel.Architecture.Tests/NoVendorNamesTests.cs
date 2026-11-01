@@ -56,4 +56,54 @@ public sealed partial class NoVendorNamesTests
 
         offenders.Should().BeEmpty("demo seed text names no outside product; use the capability name");
     }
+
+    /// <summary>
+    /// Matches a host-internal type or layer name: the SDK is a public package read by people who have never seen
+    /// this repository, so its text names no class of the host, no layer of its architecture and no repository.
+    /// </summary>
+    /// <returns>The compiled expression.</returns>
+    [GeneratedRegex(@"ProvisioningProviderFactory|ServerConnectionTester|GetHostingPanelServerInfoHandler|CwpApiClient|Cwp7ApiClient|PluginActivator|PluginLoader|PluginRegistry|HostedPluginRunner|PluginManifestReader|Innovayse\.Hostpanel|(Application|Infrastructure|Domain|API) layer|this repository", RegexOptions.IgnoreCase)]
+    private static partial Regex HostInternalName();
+
+    /// <summary>
+    /// No SDK source file names a vendor or a host-internal type in a comment or a string literal (regular, verbatim,
+    /// interpolated and raw strings; <c>//</c>, <c>///</c> and block comments), so the public package documents the
+    /// contract in generic terms only.
+    /// </summary>
+    [Fact]
+    public void SdkSources_CarryNoVendorOrHostInternalName()
+    {
+        var backendRoot = UseCaseShapeTests.FindBackendRoot(AppContext.BaseDirectory);
+        var sdkRoot = Path.Combine(backendRoot, "src", "Innovayse.SDK");
+        var separators = new[] { Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar, Path.DirectorySeparatorChar + "bin" + Path.DirectorySeparatorChar };
+
+        var offenders = Directory
+            .EnumerateFiles(sdkRoot, "*.cs", SearchOption.AllDirectories)
+            .Where(path => !separators.Any(separator => path.Contains(separator, StringComparison.Ordinal)))
+            .SelectMany(path => ReadableText()
+                .Matches(File.ReadAllText(path))
+                .Where(match => match.Groups["text"].Success)
+                .Where(match => VendorName().IsMatch(match.Groups["text"].Value) || HostInternalName().IsMatch(match.Groups["text"].Value))
+                .Select(_ => Path.GetRelativePath(backendRoot, path).Replace('\\', '/')))
+            .Distinct()
+            .ToList();
+
+        offenders.Should().BeEmpty("SDK comments and strings name the capability, never a vendor or a class of the host");
+    }
+
+    /// <summary>The scan has teeth: the host-internal expression matches the names the old comment used and nothing generic.</summary>
+    [Fact]
+    public void HostInternalName_MatchesHostNamesOnly()
+    {
+        HostInternalName().IsMatch("see CwpApiClient and ProvisioningProviderFactory").Should().BeTrue();
+        HostInternalName().IsMatch("the Application layer applies the fallback").Should().BeTrue();
+        HostInternalName().IsMatch("every other consumer in this repository").Should().BeTrue();
+        HostInternalName().IsMatch("the host applies the fallback to a hosting panel client").Should().BeFalse();
+
+        // The scan reads comments, so a name planted in a doc comment is found by it.
+        ReadableText()
+            .Matches("/// <c>CwpApiClient</c>\npublic sealed class Planted;")
+            .Any(match => match.Groups["text"].Success && HostInternalName().IsMatch(match.Groups["text"].Value))
+            .Should().BeTrue();
+    }
 }

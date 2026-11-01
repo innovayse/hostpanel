@@ -1,5 +1,6 @@
 using Innovayse.SDK.Plugins.Identity;
 
+
 namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 
 /// <summary>

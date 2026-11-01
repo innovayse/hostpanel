@@ -2,7 +2,6 @@ using Innovayse.Hostpanel.Application.Admin.Common;
 using Innovayse.Hostpanel.Application.Admin.Extensions;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
-using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
 using Innovayse.SDK.Plugins.Manifest;
 

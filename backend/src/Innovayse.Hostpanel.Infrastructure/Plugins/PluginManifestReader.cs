@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Innovayse.SDK.Plugins;
+using Innovayse.SDK.Plugins.Manifest;
 using Microsoft.Extensions.Logging;
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;

@@ -1,7 +1,8 @@
 using Innovayse.Providers.CWP.Models;
 using Innovayse.Providers.CWP.Models.Enums;
 using Innovayse.SDK.Base;
-using Innovayse.SDK.Plugins;
+using Innovayse.SDK.Plugins.HostingPanel;
+using Innovayse.SDK.Plugins.Provisioning;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 

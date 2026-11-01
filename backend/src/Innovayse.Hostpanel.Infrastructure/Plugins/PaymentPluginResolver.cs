@@ -1,7 +1,7 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
-using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
+using Innovayse.SDK.Plugins.Payment;
 using Microsoft.Extensions.Logging;
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;

@@ -7,8 +7,8 @@ using Innovayse.Hostpanel.Domain.Provisioning;
 using Innovayse.Hostpanel.Domain.Provisioning.Enums;
 using Innovayse.Hostpanel.Infrastructure.Demo;
 using Innovayse.Hostpanel.Infrastructure.Time;
-using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
+using Innovayse.SDK.Plugins.Payment;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Demo;
 
@@ -121,7 +121,7 @@ public sealed class DemoAdaptersTests
         var plugin = new DemoPaymentPlugin("840", ["840", "978"], new DemoStoredCredentialState(new SystemClock(TimeProvider.System)));
 
         var session = await plugin.CreatePaymentAsync(
-            new PaymentRequest("INV9-1", 1000, "https://shop.example/return", null, null), CancellationToken.None);
+            new PaymentInstruction("INV9-1", 1000, "https://shop.example/return", null, null), CancellationToken.None);
         var status = await plugin.GetStatusAsync(session.GatewayOrderId, CancellationToken.None);
 
         session.RedirectUrl.Should().StartWith("https://shop.example/return?");

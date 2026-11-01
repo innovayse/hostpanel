@@ -1,6 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
-using Innovayse.SDK.Plugins;
+using Innovayse.SDK.Plugins.Payment;
 using Microsoft.EntityFrameworkCore;
 
 namespace Innovayse.Hostpanel.Infrastructure.Demo;

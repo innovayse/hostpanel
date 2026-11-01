@@ -10,8 +10,8 @@ using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Billing.Events;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
-using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
+using Innovayse.SDK.Plugins.Payment;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wolverine;
@@ -132,7 +132,7 @@ public sealed class CompleteGatewayPaymentHandler
         {
             _logger.LogWarning(
                 "Invoice {InvoiceId} gateway session {GatewayOrderId} reports {Amount} in {Currency}, which is not what the invoice owes; not marked paid.",
-                invoice.Id, invoice.GatewayOrderId, status.AmountMinor, status.CurrencyNumeric);
+                invoice.Id, invoice.GatewayOrderId, status.AmountMinor, status.Currency);
             return Result<GatewayCompletionDto>.FailureCode(HostpanelErrorCodes.GATEWAY_PAYMENT_MISMATCH);
         }
 
@@ -426,7 +426,7 @@ public sealed class CompleteGatewayPaymentHandler
         // is reported and is the invoice's; otherwise a wrong amount would reach staff, and none is given.
         decimal? amount = null;
         if (status.AmountMinor is { } minor
-            && status.CurrencyNumeric is not null
+            && status.Currency is not null
             && await MatchesCurrencyAsync(invoice, status, ct))
         {
             amount = CurrencyCode.FromMinorUnits(minor, invoice.Currency);
@@ -468,7 +468,7 @@ public sealed class CompleteGatewayPaymentHandler
     /// <returns><see langword="true"/> when the reported currency does not contradict the invoice.</returns>
     private async Task<bool> MatchesCurrencyAsync(Invoice invoice, GatewayPaymentStatus status, CancellationToken ct)
     {
-        if (status.CurrencyNumeric is null)
+        if (status.Currency is null)
         {
             return true;
         }
@@ -480,7 +480,7 @@ public sealed class CompleteGatewayPaymentHandler
             .FirstOrDefaultAsync(ct);
         return numeric is not null
             && int.TryParse(numeric, out var expected)
-            && int.TryParse(status.CurrencyNumeric, out var reported)
+            && int.TryParse(status.Currency, out var reported)
             && expected == reported;
     }
 }

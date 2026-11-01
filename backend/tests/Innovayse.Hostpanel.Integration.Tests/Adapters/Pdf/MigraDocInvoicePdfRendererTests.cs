@@ -231,6 +231,109 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// Letters no bundled font has (Arabic, Hebrew, CJK) print as one placeholder each rather than as
+    /// blanks, so the reader can see a name or a description is there, and the rest of the invoice is
+    /// unchanged.
+    /// </summary>
+    [Fact]
+    public async Task Render_PrintsUncoveredLettersAsPlaceholders()
+    {
+        var model = SampleModel() with
+        {
+            BillTo = new InvoicePdfParty("أحمد Ali", ["דוד Cohen"]),
+            Lines = [new InvoicePdfLine("Hosting 王小明 plan", 1, 12.50m, 12.50m)],
+        };
+
+        using var document = await RenderAsync(model);
+
+        var text = CompactText(document);
+        text.Should().Contain("����Ali");
+        text.Should().Contain("���Cohen");
+        text.Should().Contain("Hosting���plan");
+        text.Count(c => c == PdfFonts.Placeholder).Should().Be(10);
+        text.Should().Contain("FairhavenHosting");
+        text.Should().Contain("$15.00");
+    }
+
+    /// <summary>
+    /// Invisible characters no font has (a byte-order mark, an Arabic letter mark, an ideographic
+    /// space) print no missing-glyph box: PdfPig reads such a box back as U+0000.
+    /// </summary>
+    [Fact]
+    public async Task Render_PrintsNoBoxForInvisibleCharactersNoFontHas()
+    {
+        var model = SampleModel() with
+        {
+            BillTo = new InvoicePdfParty("\uFEFFAli \u0623\u061C\u062D", ["\u5C71\u7530\u3000\u592A\u90CE"]),
+        };
+
+        using var document = await RenderAsync(model);
+
+        document.GetPage(1).Letters.Should().NotContain(l => l.Value == "\u0000");
+        var text = CompactText(document);
+        text.Should().Contain("Ali��");
+        text.Should().Contain("����");
+    }
+
+    /// <summary>
+    /// A zero-width space typed between letters no font has survives into the PDF as a break
+    /// opportunity. MigraDoc draws no glyph for it, so it is proven by where the line breaks: the
+    /// description wraps at it, leaving the first ten placeholders on the line with the Latin words
+    /// and the other ten on the next, where without it all twenty would move down together.
+    /// </summary>
+    [Fact]
+    public async Task Render_BreaksALineAtAZeroWidthSpaceBetweenUncoveredLetters()
+    {
+        var uncovered = new string('\u738B', 10);
+        var model = SampleModel() with
+        {
+            Lines = [new InvoicePdfLine($"Shared hosting plan for {uncovered}\u200B{uncovered}", 1, 12.50m, 12.50m)],
+        };
+
+        using var document = await RenderAsync(model);
+
+        var letters = document.GetPage(1).Letters.ToList();
+        letters.Should().NotContain(l => l.Value == "\u0000");
+        var forBaseline = document.GetPage(1).GetWords().Single(w => w.Text == "for").Letters[0].StartBaseLine.Y;
+        var lines = letters.Where(l => l.Value == PdfFonts.Placeholder.ToString())
+            .GroupBy(l => Math.Round(l.StartBaseLine.Y, 1))
+            .OrderByDescending(g => g.Key)
+            .ToList();
+        lines.Select(g => g.Count()).Should().Equal(10, 10);
+        lines[0].Key.Should().BeApproximately(forBaseline, 0.1);
+    }
+
+    /// <summary>
+    /// A line separator other than a line feed (the Unicode line and paragraph separators, a
+    /// vertical tab from PowerPoint, a form feed, a next-line control) starts a new line in the PDF
+    /// rather than running the words either side together.
+    /// </summary>
+    /// <param name="separator">The separator between the two words.</param>
+    [Theory]
+    [InlineData("\u2028")]
+    [InlineData("\u2029")]
+    [InlineData("\v")]
+    [InlineData("\f")]
+    [InlineData("\u0085")]
+    public async Task Render_StartsANewLineAtALineSeparator(string separator)
+    {
+        var model = SampleModel() with
+        {
+            Lines = [new InvoicePdfLine($"Alpha{separator}Bravo", 1, 12.50m, 12.50m)],
+        };
+
+        using var document = await RenderAsync(model);
+
+        var words = document.GetPage(1).GetWords().ToList();
+        words.Should().NotContain(w => w.Text.Contains("AlphaBravo"));
+        var alpha = words.Single(w => w.Text == "Alpha").Letters[0].StartBaseLine;
+        var bravo = words.Single(w => w.Text == "Bravo").Letters[0].StartBaseLine;
+        bravo.Y.Should().BeLessThan(alpha.Y);
+        bravo.X.Should().BeApproximately(alpha.X, 0.1);
+        document.GetPage(1).Letters.Should().NotContain(l => l.Value == "\u0000");
+    }
+
     /// <summary>The header, the seller, the totals and the dates are all on the page.</summary>
     [Fact]
     public async Task Render_PrintsHeaderTotalsAndDates()
@@ -319,6 +422,34 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
         var pieces = document.GetPage(1).GetWords().Where(w => w.Text.All(c => c == 'W') && w.Text.Length > 0).ToList();
         pieces.Sum(w => w.Text.Length).Should().Be(300);
         pieces.Should().OnlyContain(w => w.BoundingBox.Right <= descriptionRight);
+    }
+
+    /// <summary>
+    /// An unbroken word of letters no font has is broken inside its column as placeholders, one per
+    /// letter, and an unbroken Latin word on the next line gains none.
+    /// </summary>
+    [Fact]
+    public async Task Render_HardBreaksAnUnbrokenUncoveredWord()
+    {
+        var model = SampleModel() with
+        {
+            Lines =
+            [
+                new InvoicePdfLine(new string('王', 300), 1, 12.50m, 12.50m),
+                new InvoicePdfLine(new string('W', 300), 1, 12.50m, 12.50m),
+            ],
+        };
+
+        using var document = await RenderAsync(model);
+
+        // The description column's text ends at margin + column width - gap: 40 + 285 - 8.
+        const double descriptionRight = 317;
+        var words = document.GetPage(1).GetWords().ToList();
+        var placeholders = words.Where(w => w.Text.Length > 0 && w.Text.All(c => c == PdfFonts.Placeholder)).ToList();
+        placeholders.Sum(w => w.Text.Length).Should().Be(300);
+        placeholders.Should().OnlyContain(w => w.BoundingBox.Right <= descriptionRight);
+        words.Where(w => w.Text.Length > 0 && w.Text.All(c => c == 'W')).Sum(w => w.Text.Length).Should().Be(300);
+        CompactText(document).Count(c => c == PdfFonts.Placeholder).Should().Be(300);
     }
 
     /// <summary>Amounts follow the currency's prefix, suffix and decimal places, grouped the invariant way.</summary>

@@ -18,8 +18,9 @@ cut down to keep the assembly small: the full faces are about 1.5 MB, the subset
 Client names and addresses are not limited to the panel's languages (en, ru, hy), so the subsets
 keep Latin (including the Vietnamese letters and modifier letters such as the Ukrainian
 apostrophe), Greek, Cyrillic, Armenian and Georgian, plus general punctuation and currency signs.
-A character outside them prints as a blank, so `Render_PrintsNamesBeyondThePanelLanguages` checks
-a name in each of the added scripts.
+`Render_PrintsNamesBeyondThePanelLanguages` checks a name in each of the added scripts. A character
+outside them (Arabic, Hebrew, CJK, emoji) prints as the replacement character `�` (U+FFFD), one per
+character, instead of a blank: see `PdfFonts.ReplaceUncovered`. Keep U+FFFD in `U` below.
 
 To regenerate them, use fontTools (`pip install fonttools`):
 

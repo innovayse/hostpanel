@@ -304,6 +304,36 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
         lines[0].Key.Should().BeApproximately(forBaseline, 0.1);
     }
 
+    /// <summary>
+    /// A line separator other than a line feed (the Unicode line and paragraph separators, a
+    /// vertical tab from PowerPoint, a form feed, a next-line control) starts a new line in the PDF
+    /// rather than running the words either side together.
+    /// </summary>
+    /// <param name="separator">The separator between the two words.</param>
+    [Theory]
+    [InlineData("\u2028")]
+    [InlineData("\u2029")]
+    [InlineData("\v")]
+    [InlineData("\f")]
+    [InlineData("\u0085")]
+    public async Task Render_StartsANewLineAtALineSeparator(string separator)
+    {
+        var model = SampleModel() with
+        {
+            Lines = [new InvoicePdfLine($"Alpha{separator}Bravo", 1, 12.50m, 12.50m)],
+        };
+
+        using var document = await RenderAsync(model);
+
+        var words = document.GetPage(1).GetWords().ToList();
+        words.Should().NotContain(w => w.Text.Contains("AlphaBravo"));
+        var alpha = words.Single(w => w.Text == "Alpha").Letters[0].StartBaseLine;
+        var bravo = words.Single(w => w.Text == "Bravo").Letters[0].StartBaseLine;
+        bravo.Y.Should().BeLessThan(alpha.Y);
+        bravo.X.Should().BeApproximately(alpha.X, 0.1);
+        document.GetPage(1).Letters.Should().NotContain(l => l.Value == "\u0000");
+    }
+
     /// <summary>The header, the seller, the totals and the dates are all on the page.</summary>
     [Fact]
     public async Task Render_PrintsHeaderTotalsAndDates()

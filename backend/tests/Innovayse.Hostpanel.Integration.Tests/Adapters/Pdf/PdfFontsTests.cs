@@ -117,7 +117,6 @@ public sealed class PdfFontsTests
     [InlineData("a\u200Bb")]
     [InlineData("a\u200Db")]
     [InlineData("a\u200Eb\u200F")]
-    [InlineData("a\u2028b\u2029c")]
     [InlineData("a\u00ADb")]
     [InlineData("6\u00A0000")]
     [InlineData("a\tb")]
@@ -126,6 +125,78 @@ public sealed class PdfFontsTests
     public void ReplaceUncovered_KeepsInvisibleCharactersThatPrintAsNothing(string text)
     {
         PdfFonts.ReplaceUncovered(text, bold: false).Should().Be(text);
+    }
+
+    /// <summary>
+    /// A line separator other than a line feed or a carriage return (the Unicode line and paragraph
+    /// separators, the vertical tab PowerPoint writes for a soft line break, a form feed, a next-line
+    /// control) becomes a line feed. MigraDoc breaks a line only at a line feed, so otherwise the
+    /// words either side of it would print run together.
+    /// </summary>
+    /// <param name="text">Text with a line separator in it.</param>
+    [Theory]
+    [InlineData("Line one\u2028Line two")]
+    [InlineData("Line one\u2029Line two")]
+    [InlineData("Line one\vLine two")]
+    [InlineData("Line one\fLine two")]
+    [InlineData("Line one\u0085Line two")]
+    public void ReplaceUncovered_TurnsLineSeparatorsIntoLineFeeds(string text)
+    {
+        PdfFonts.ReplaceUncovered(text, bold: false).Should().Be("Line one\nLine two");
+        PdfFonts.ReplaceUncovered(text, bold: true).Should().Be("Line one\nLine two");
+    }
+
+    /// <summary>
+    /// A space followed by a mark or modifier no font has is kept, and only the mark becomes a
+    /// placeholder: the mark joins the space into one character, and replacing that whole would
+    /// run the words either side together.
+    /// </summary>
+    /// <param name="text">Text with a space carrying a mark no font has.</param>
+    /// <param name="expected">The text as it should print.</param>
+    [Theory]
+    [InlineData("Ali \u064B Hasan", "Ali � Hasan")]
+    [InlineData("Thanks \U0001F44D \U0001F3FD ok", "Thanks � � ok")]
+    [InlineData("\u5C71\u3000\u064B", "� �")]
+    [InlineData("6\u00A0\u0610", "6\u00A0�")]
+    public void ReplaceUncovered_KeepsASpaceThatCarriesAnUncoveredMark(string text, string expected)
+    {
+        PdfFonts.ReplaceUncovered(text, bold: false).Should().Be(expected);
+        PdfFonts.ReplaceUncovered(text, bold: true).Should().Be(expected);
+    }
+
+    /// <summary>
+    /// A sign no font has that is written before the digits it spans (the Arabic number, year and
+    /// end-of-ayah signs) becomes a placeholder of its own, and the digits after it print: the sign
+    /// joins the first digit into one character, and replacing that whole would lose the digit.
+    /// </summary>
+    /// <param name="text">Text with such a sign before digits.</param>
+    /// <param name="expected">The text as it should print.</param>
+    [Theory]
+    [InlineData("\u0600123", "�123")]
+    [InlineData("No. \u06DD12", "No. �12")]
+    [InlineData("\u0601\u06022026", "��2026")]
+    [InlineData("\u0600", "�")]
+    public void ReplaceUncovered_KeepsTheDigitsAfterAnUncoveredNumberSign(string text, string expected)
+    {
+        PdfFonts.ReplaceUncovered(text, bold: false).Should().Be(expected);
+        PdfFonts.ReplaceUncovered(text, bold: true).Should().Be(expected);
+    }
+
+    /// <summary>
+    /// A variation selector with no character before it (at the start of the text or of a line, left
+    /// behind when an emoji was deleted) is dropped: it selects a look for nothing, so there is
+    /// nothing for a placeholder to stand in for.
+    /// </summary>
+    /// <param name="text">Text with a variation selector on its own.</param>
+    /// <param name="expected">The text as it should print.</param>
+    [Theory]
+    [InlineData("\uFE0FAcme", "Acme")]
+    [InlineData("Line\n\uFE0FNext", "Line\nNext")]
+    [InlineData("\uFE0E\uFE0F", "")]
+    public void ReplaceUncovered_DropsAVariationSelectorOnItsOwn(string text, string expected)
+    {
+        PdfFonts.ReplaceUncovered(text, bold: false).Should().Be(expected);
+        PdfFonts.ReplaceUncovered(text, bold: true).Should().Be(expected);
     }
 
     /// <summary>

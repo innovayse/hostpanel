@@ -95,7 +95,14 @@ internal static class PdfFonts
     /// <para>
     /// No font has the variation selectors (U+FE0E, U+FE0F and the rest), which only ask for a text
     /// or an emoji look. A character that prints once its selectors are dropped, such as a trademark
-    /// sign typed on a phone, prints without them rather than as a placeholder.
+    /// sign typed on a phone, prints without them rather than as a placeholder, and a selector with no
+    /// character before it is dropped.
+    /// </para>
+    /// <para>
+    /// A space carrying a mark no font has, and a number sign joined to the digit after it (the
+    /// Arabic number sign, say), are split: the space or the digit prints, and only the rest
+    /// becomes a placeholder. A line separator MigraDoc does not break at (U+2028, U+2029, a
+    /// vertical tab, a form feed, U+0085) becomes a line feed.
     /// </para>
     /// <para>
     /// Text every character of which prints as written comes back as the same instance, with
@@ -116,34 +123,7 @@ internal static class PdfFonts
         {
             var character = rest[..StringInfo.GetNextTextElementLength(rest)];
             rest = rest[character.Length..];
-            if (PrintsAsWritten(character, faces))
-            {
-                result.Append(character);
-                continue;
-            }
-
-            if (WithoutVariationSelectors(character) is { Length: > 0 } bare && PrintsAsWritten(bare, faces))
-            {
-                result.Append(bare);
-                continue;
-            }
-
-            var invisible = true;
-            var space = false;
-            foreach (var rune in character.EnumerateRunes())
-            {
-                invisible &= IsInvisible(rune);
-                space |= Rune.GetUnicodeCategory(rune) is UnicodeCategory.SpaceSeparator;
-            }
-
-            if (!invisible)
-            {
-                result.Append(Placeholder);
-            }
-            else if (space)
-            {
-                result.Append(' ');
-            }
+            AppendPrintable(result, character, faces);
         }
 
         return result.ToString();
@@ -181,6 +161,61 @@ internal static class PdfFonts
         }
     }
 
+    /// <summary>Appends what one character prints as: itself, part of it, a line feed, a placeholder or nothing.</summary>
+    /// <param name="result">Where the printable text goes.</param>
+    /// <param name="character">One character, as a grapheme cluster, or the part of one left to print.</param>
+    /// <param name="faces">The faces it is set in.</param>
+    private static void AppendPrintable(StringBuilder result, ReadOnlySpan<char> character, Faces faces)
+    {
+        if (PrintsAsWritten(character, faces))
+        {
+            result.Append(character);
+            return;
+        }
+
+        Rune.DecodeFromUtf16(character, out var first, out var firstLength);
+        if (IsLineSeparator(first))
+        {
+            // A line separator is a character of its own, never joined to what follows it.
+            result.Append('\n');
+            return;
+        }
+
+        var bare = WithoutVariationSelectors(character);
+        if (bare.Length == 0 || PrintsAsWritten(bare, faces))
+        {
+            result.Append(bare);
+            return;
+        }
+
+        // A space joins a mark after it into one character, and a number sign joins the digit after
+        // it; replacing either whole would lose the space or the digit, so each part prints apart.
+        if (firstLength < character.Length
+            && (Rune.GetUnicodeCategory(first) is UnicodeCategory.SpaceSeparator || IsNumberSign(first)))
+        {
+            AppendPrintable(result, character[..firstLength], faces);
+            AppendPrintable(result, character[firstLength..], faces);
+            return;
+        }
+
+        var invisible = true;
+        var space = false;
+        foreach (var rune in character.EnumerateRunes())
+        {
+            invisible &= IsInvisible(rune);
+            space |= Rune.GetUnicodeCategory(rune) is UnicodeCategory.SpaceSeparator;
+        }
+
+        if (!invisible)
+        {
+            result.Append(Placeholder);
+        }
+        else if (space)
+        {
+            result.Append(' ');
+        }
+    }
+
     /// <summary>The coverage of the faces text is set in, in one weight.</summary>
     /// <param name="bold">Whether the text is bold.</param>
     /// <returns>The coverage of both families in that weight.</returns>
@@ -197,7 +232,8 @@ internal static class PdfFonts
 
     /// <summary>
     /// Whether every character of some text prints as written: each has a glyph in one of the
-    /// families or is a tab or line break, and none is a lone surrogate.
+    /// families or is a tab or line break, and none is a lone surrogate or a line separator MigraDoc
+    /// would not break at.
     /// </summary>
     /// <param name="text">The text.</param>
     /// <param name="faces">The faces it is set in.</param>
@@ -207,6 +243,7 @@ internal static class PdfFonts
         while (!text.IsEmpty)
         {
             if (Rune.DecodeFromUtf16(text, out var rune, out var length) != OperationStatus.Done
+                || IsLineSeparator(rune)
                 || !(IsLaidOut(rune) || faces.Primary.Has(rune) || faces.Fallback.Has(rune)))
             {
                 return false;
@@ -245,10 +282,32 @@ internal static class PdfFonts
     /// <returns>True when it needs no glyph.</returns>
     private static bool IsLaidOut(Rune rune) => rune.Value is '\t' or '\n' or '\r';
 
-    /// <summary>Whether a character prints nothing visible: a control, a format character or a separator.</summary>
+    /// <summary>
+    /// Whether a character ends a line but is not one MigraDoc breaks at: the Unicode line and
+    /// paragraph separators, a vertical tab (PowerPoint's soft line break), a form feed or a
+    /// next-line control.
+    /// </summary>
+    /// <param name="rune">The character.</param>
+    /// <returns>True when it should print as a line feed.</returns>
+    private static bool IsLineSeparator(Rune rune) => rune.Value is '\v' or '\f' or '\u0085' or '\u2028' or '\u2029';
+
+    /// <summary>
+    /// Whether a character is a sign written before the digits it spans, such as the Arabic number
+    /// sign: a format character by category, but a visible mark, and one that joins the digit after
+    /// it into a single character.
+    /// </summary>
+    /// <param name="rune">The character.</param>
+    /// <returns>True for U+0600 to U+0605, U+06DD, U+070F, U+0890, U+0891, U+08E2, U+110BD and U+110CD.</returns>
+    private static bool IsNumberSign(Rune rune) => rune.Value is (>= 0x0600 and <= 0x0605)
+        or 0x06DD or 0x070F or 0x0890 or 0x0891 or 0x08E2 or 0x110BD or 0x110CD;
+
+    /// <summary>
+    /// Whether a character prints nothing visible: a control, a format character other than a
+    /// number sign, or a separator.
+    /// </summary>
     /// <param name="rune">The character.</param>
     /// <returns>True when no placeholder should ever stand in for it.</returns>
-    private static bool IsInvisible(Rune rune) => Rune.GetUnicodeCategory(rune) is UnicodeCategory.Control
+    private static bool IsInvisible(Rune rune) => !IsNumberSign(rune) && Rune.GetUnicodeCategory(rune) is UnicodeCategory.Control
         or UnicodeCategory.Format
         or UnicodeCategory.SpaceSeparator
         or UnicodeCategory.LineSeparator

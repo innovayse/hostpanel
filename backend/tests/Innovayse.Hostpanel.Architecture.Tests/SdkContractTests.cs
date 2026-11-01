@@ -1,9 +1,12 @@
 using System.Security.Claims;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
 using Innovayse.SDK.Plugins.Fulfilment;
 using Innovayse.SDK.Plugins.Hosting;
 using Innovayse.SDK.Plugins.Identity;
+using Innovayse.SDK.Plugins.StoredCredentials;
 
 namespace Innovayse.Hostpanel.Architecture.Tests;
 
@@ -61,6 +64,77 @@ public sealed class SdkContractTests
 
         names.Should().Contain(["InvoiceId", "ClientId", "Account", "Lines"]);
         context.GetProperty("Lines")!.PropertyType.Should().Be(typeof(IReadOnlyList<FulfilmentLine>));
+    }
+
+    /// <summary>The stored credential capability has exactly the eight operations of the contract, all asynchronous.</summary>
+    [Fact]
+    public void IStoredCredentialPlugin_HasTheEightOperations()
+    {
+        typeof(IStoredCredentialPlugin).GetMethods().Select(m => m.Name).Should().BeEquivalentTo(
+            "EnsureCustomerAsync", "BeginSaveMethodAsync", "CompleteSaveMethodAsync", "ChargeAsync",
+            "FindChargeAsync", "ListMethodsAsync", "SetDefaultMethodAsync", "RemoveMethodAsync");
+        typeof(IStoredCredentialPlugin).GetMethod("ChargeAsync")!.ReturnType.Should().Be(typeof(Task<StoredChargeResult>));
+        typeof(IStoredCredentialPlugin).GetMethod("FindChargeAsync")!.ReturnType.Should().Be(typeof(Task<StoredChargeLookup>));
+        typeof(IStoredCredentialPlugin).GetMethod("ListMethodsAsync")!.ReturnType.Should().Be(typeof(Task<IReadOnlyList<SavedMethod>>));
+        typeof(IStoredCredentialPlugin).GetMethods().Should().OnlyContain(m => m.GetParameters().Last().ParameterType == typeof(CancellationToken));
+    }
+
+    /// <summary>The capability is optional: the payment contract does not inherit it and keeps its three operations.</summary>
+    [Fact]
+    public void IPaymentPlugin_DoesNotInheritTheStoredCredentialCapability()
+    {
+        typeof(IStoredCredentialPlugin).IsAssignableFrom(typeof(IPaymentPlugin)).Should().BeFalse();
+        typeof(IPaymentPlugin).GetMethods().Select(m => m.Name).Should().BeEquivalentTo(
+            "CreatePaymentAsync", "GetStatusAsync", "RefundAsync", "AcceptsCurrency", "get_CurrencyCode");
+    }
+
+    /// <summary>The records and enums of the capability keep the members the host and the plugins compile against.</summary>
+    [Fact]
+    public void StoredCredentialRecordsAndEnums_KeepTheirShape()
+    {
+        Enum.GetNames<StoredChargeOutcome>().Should().Equal("Succeeded", "Declined", "ActionRequired", "Pending");
+        ((int)StoredChargeOutcome.Succeeded).Should().Be(1);
+        ((int)StoredChargeOutcome.Declined).Should().Be(2);
+        ((int)StoredChargeOutcome.ActionRequired).Should().Be(3);
+        ((int)StoredChargeOutcome.Pending).Should().Be(4);
+        ((int)SaveMethodMode.EmbeddedToken).Should().Be(1);
+        ((int)SaveMethodMode.Redirect).Should().Be(2);
+        Enum.IsDefined((StoredChargeOutcome)0).Should().BeFalse();
+        Enum.IsDefined((SaveMethodMode)0).Should().BeFalse();
+        Enum.GetNames<SaveMethodMode>().Should().Equal("EmbeddedToken", "Redirect");
+        typeof(StoredChargeInstruction).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
+            "CustomerRef", "MethodRef", "AmountMinor", "Currency", "InvoiceReference", "IdempotencyKey", "ReturnUrl");
+        typeof(StoredChargeResult).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
+            "Outcome", "TransactionId", "AmountMinor", "Currency", "ActionUrl");
+        typeof(StoredChargeLookup).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
+            "Found", "Outcome", "TransactionId", "AmountMinor", "Currency", "ActionUrl");
+        typeof(SaveMethodContext).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("CustomerRef", "ReturnUrl");
+        typeof(SaveMethodSession).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
+            "SessionId", "Mode", "ClientToken", "RedirectUrl");
+        typeof(SavedMethod).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
+            "MethodRef", "Brand", "Last4", "ExpiryMonth", "ExpiryYear", "IsDefault");
+        typeof(SavedMethodResult).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Saved", "Method");
+        typeof(CredentialCustomerDetails).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
+            "ClientReference", "Email", "Name");
+        typeof(CredentialCustomerResult).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("CustomerRef");
+    }
+
+    /// <summary>The manifest's capabilities list is optional, empty by default, and reads from <c>capabilities</c> in the JSON.</summary>
+    [Fact]
+    public void PluginManifest_CapabilitiesAreOptionalAndNamed()
+    {
+        PluginCapabilities.StoredCredentials.Should().Be("storedCredentials");
+        var without = new PluginManifest
+        {
+            Id = "p", Name = "P", Version = "1.0.0", Author = "A", Description = "D", Type = PluginType.Payment,
+            Category = "Payment", EntryPoint = "P.Plugin", SdkVersion = "1.0",
+        };
+        without.Capabilities.Should().BeEmpty();
+
+        var parsed = JsonSerializer.Deserialize<PluginManifest>(
+            """{"id":"p","name":"P","version":"1.0.0","author":"A","description":"D","type":"Payment","category":"Payment","entryPoint":"P.Plugin","sdkVersion":"1.0","capabilities":["storedCredentials"]}""",
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true, Converters = { new JsonStringEnumConverter() } });
+        parsed!.Capabilities.Should().Equal(PluginCapabilities.StoredCredentials);
     }
 
     /// <summary>A hosted plugin is started and stopped by the host and nothing else.</summary>

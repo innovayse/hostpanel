@@ -17,11 +17,16 @@ public sealed class DemoPaymentPluginResolver : IPaymentPluginResolver
     /// <summary>The store the currencies are read from.</summary>
     private readonly AppDbContext _db;
 
+    /// <summary>The stored methods and charges every plugin this resolver builds shares.</summary>
+    private readonly DemoStoredCredentialState _state;
+
     /// <summary>Creates the resolver.</summary>
     /// <param name="db">The store holding the seeded currencies.</param>
-    public DemoPaymentPluginResolver(AppDbContext db)
+    /// <param name="state">The stored methods and charges every plugin this resolver builds shares.</param>
+    public DemoPaymentPluginResolver(AppDbContext db, DemoStoredCredentialState state)
     {
         _db = db;
+        _state = state;
     }
 
     /// <inheritdoc/>
@@ -33,6 +38,6 @@ public sealed class DemoPaymentPluginResolver : IPaymentPluginResolver
             .Select(c => c.Numeric)
             .ToListAsync(ct);
 
-        return new DemoPaymentPlugin(currencies.FirstOrDefault() ?? FallbackNumericCode, currencies);
+        return new DemoPaymentPlugin(currencies.FirstOrDefault() ?? FallbackNumericCode, currencies, _state);
     }
 }

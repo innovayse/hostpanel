@@ -566,6 +566,7 @@ public static class DependencyInjection
             .AddInecobankResilience();
 
         services.AddScoped<IPaymentPluginResolver, PaymentPluginResolver>();
+        services.AddScoped<IStoredCredentialPluginResolver, StoredCredentialPluginResolver>();
 
         // The chat notifier, the operator's channel for public contact-form enquiries.
         // Optional in the same way the card gateway and the default registrar are: an unset section is a deployment that

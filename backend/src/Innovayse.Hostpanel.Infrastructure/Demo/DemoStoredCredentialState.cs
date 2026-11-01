@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.SDK.Plugins.StoredCredentials;
 
 namespace Innovayse.Hostpanel.Infrastructure.Demo;
@@ -21,8 +22,18 @@ public sealed class DemoStoredCredentialState
     /// <summary>Charges by customer reference and idempotency key.</summary>
     private readonly Dictionary<(string Customer, string Key), StoredChargeResult> _charges = new();
 
+    /// <summary>The source of the current moment, used for the stored card's expiry year.</summary>
+    private readonly IClock _clock;
+
     /// <summary>Source of the numbers that make session ids unique.</summary>
     private int _sessionCounter;
+
+    /// <summary>Creates an empty book.</summary>
+    /// <param name="clock">The source of the current moment.</param>
+    public DemoStoredCredentialState(IClock clock)
+    {
+        _clock = clock;
+    }
 
     /// <summary>Gets how many charges actually took effect, that is, how many keys were first seen; a repeated key does not add to it.</summary>
     public int ChargeCount
@@ -67,7 +78,7 @@ public sealed class DemoStoredCredentialState
                 _methods[customerRef] = methods;
             }
 
-            var method = new SavedMethod($"demo-pm-{sessionId}", "visa", "4242", 12, DateTime.UtcNow.Year + 3, methods.Count == 0);
+            var method = new SavedMethod($"demo-pm-{sessionId}", "visa", "4242", 12, _clock.UtcNow.Year + 3, methods.Count == 0);
             methods.Add(method);
             return method;
         }
@@ -149,6 +160,18 @@ public sealed class DemoStoredCredentialState
         lock (_gate)
         {
             return _charges.TryGetValue((customerRef, idempotencyKey), out var result) ? result : null;
+        }
+    }
+
+    /// <summary>Forgets every stored method, open save session and charge; the demo reset calls it so the book starts empty again.</summary>
+    public void Clear()
+    {
+        lock (_gate)
+        {
+            _sessions.Clear();
+            _methods.Clear();
+            _charges.Clear();
+            _sessionCounter = 0;
         }
     }
 }

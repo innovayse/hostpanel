@@ -118,7 +118,7 @@ public sealed class DemoAdaptersTests
     [Fact]
     public async Task PaymentPlugin_ReturnsToTheShopAndReportsPaidAsync()
     {
-        var plugin = new DemoPaymentPlugin("840", ["840", "978"]);
+        var plugin = new DemoPaymentPlugin("840", ["840", "978"], new DemoStoredCredentialState(new SystemClock(TimeProvider.System)));
 
         var session = await plugin.CreatePaymentAsync(
             new PaymentRequest("INV9-1", 1000, "https://shop.example/return", null, null), CancellationToken.None);

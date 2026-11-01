@@ -1,6 +1,10 @@
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Demo;
+using Innovayse.Hostpanel.Infrastructure.Time;
+using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
 using Innovayse.SDK.Plugins.StoredCredentials;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Demo;
 
@@ -8,17 +12,25 @@ namespace Innovayse.Hostpanel.Integration.Tests.Demo;
 /// The demo payment plugin's in-memory stored credential capability: the test amounts pick the outcome, a repeated
 /// idempotency key never charges twice, and the key lookup answers for every path including an unknown outcome.
 /// </summary>
-public sealed class DemoStoredCredentialPluginTests
+public sealed class DemoStoredCredentialPluginTests(IntegrationTestFactory factory)
+    : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>ISO 4217 numeric code of USD, used as the charge currency.</summary>
     private const string Usd = "840";
+
+    /// <summary>Builds an empty book over the system clock.</summary>
+    /// <returns>The book.</returns>
+    private static DemoStoredCredentialState NewState()
+    {
+        return new DemoStoredCredentialState(new SystemClock(TimeProvider.System));
+    }
 
     /// <summary>Builds a plugin over its own private book of methods and charges.</summary>
     /// <param name="state">The book to share between plugins, or null for a fresh one.</param>
     /// <returns>The plugin.</returns>
     private static DemoPaymentPlugin NewPlugin(DemoStoredCredentialState? state = null)
     {
-        return new DemoPaymentPlugin(Usd, [Usd], state ?? new DemoStoredCredentialState());
+        return new DemoPaymentPlugin(Usd, [Usd], state ?? NewState());
     }
 
     /// <summary>Builds a charge for the given amount and idempotency key.</summary>
@@ -119,7 +131,7 @@ public sealed class DemoStoredCredentialPluginTests
     [Fact]
     public async Task Charge_AmountEndingInSix_ThrowsWithoutChargingAndTheLookupFindsNothing()
     {
-        var state = new DemoStoredCredentialState();
+        var state = NewState();
         var plugin = NewPlugin(state);
 
         var act = () => plugin.ChargeAsync(Charge(1006, "key-never-charged"), CancellationToken.None);
@@ -135,7 +147,7 @@ public sealed class DemoStoredCredentialPluginTests
     [Fact]
     public async Task Charge_RepeatedWithTheSameKey_DoesNotChargeTwice()
     {
-        var state = new DemoStoredCredentialState();
+        var state = NewState();
         var plugin = NewPlugin(state);
 
         var first = await plugin.ChargeAsync(Charge(1000, "key-once"), CancellationToken.None);
@@ -150,7 +162,7 @@ public sealed class DemoStoredCredentialPluginTests
     [Fact]
     public async Task Charge_RepeatedWithTheSameKeyButAnotherAmount_AnswersTheFirstResult()
     {
-        var state = new DemoStoredCredentialState();
+        var state = NewState();
         var plugin = NewPlugin(state);
 
         var first = await plugin.ChargeAsync(Charge(1002, "key-final"), CancellationToken.None);
@@ -166,7 +178,7 @@ public sealed class DemoStoredCredentialPluginTests
     [Fact]
     public async Task Charge_WithANewKey_ChargesAgain()
     {
-        var state = new DemoStoredCredentialState();
+        var state = NewState();
         var plugin = NewPlugin(state);
 
         await plugin.ChargeAsync(Charge(1000, "key-a"), CancellationToken.None);
@@ -180,7 +192,7 @@ public sealed class DemoStoredCredentialPluginTests
     [Fact]
     public async Task Charge_RepeatedThroughAnotherInstanceOverTheSameBook_DoesNotChargeTwice()
     {
-        var state = new DemoStoredCredentialState();
+        var state = NewState();
 
         await NewPlugin(state).ChargeAsync(Charge(1000, "key-shared"), CancellationToken.None);
         var lookup = await NewPlugin(state).FindChargeAsync("demo-cus-1", "key-shared", CancellationToken.None);
@@ -188,6 +200,106 @@ public sealed class DemoStoredCredentialPluginTests
 
         lookup.Found.Should().BeTrue();
         state.ChargeCount.Should().Be(1);
+    }
+
+    /// <summary>Many charges racing on one key take the money once and every caller gets the same result.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Charge_ConcurrentWithOneKey_ChargesOnceAndEveryResultIsEqual()
+    {
+        var state = NewState();
+        var plugin = NewPlugin(state);
+
+        var results = await Task.WhenAll(Enumerable.Range(0, 32)
+            .Select(_ => Task.Run(() => plugin.ChargeAsync(Charge(1000, "key-race"), CancellationToken.None))));
+
+        state.ChargeCount.Should().Be(1);
+        results.Should().OnlyContain(r => r == results[0]);
+        results[0].Outcome.Should().Be(StoredChargeOutcome.Succeeded);
+    }
+
+    /// <summary>Repeating a 05 key after its timeout answers the recorded success and does not throw.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Charge_RepeatedAfterTheAfterChargeTimeout_ReturnsSucceededWithoutThrowing()
+    {
+        var plugin = NewPlugin();
+        var first = () => plugin.ChargeAsync(Charge(1005, "key-retry-five"), CancellationToken.None);
+        await first.Should().ThrowAsync<TimeoutException>();
+
+        var repeated = await plugin.ChargeAsync(Charge(1005, "key-retry-five"), CancellationToken.None);
+
+        repeated.Outcome.Should().Be(StoredChargeOutcome.Succeeded);
+        repeated.TransactionId.Should().Be("demo-charge-key-retry-five");
+    }
+
+    /// <summary>Repeating a 06 key throws again, because nothing was ever recorded for it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Charge_RepeatedAfterTheBeforeChargeTimeout_ThrowsAgain()
+    {
+        var plugin = NewPlugin();
+        var first = () => plugin.ChargeAsync(Charge(1006, "key-retry-six"), CancellationToken.None);
+        await first.Should().ThrowAsync<TimeoutException>();
+
+        var second = () => plugin.ChargeAsync(Charge(1006, "key-retry-six"), CancellationToken.None);
+
+        await second.Should().ThrowAsync<TimeoutException>();
+    }
+
+    /// <summary>Clear forgets the charges, the open sessions and the stored methods.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Clear_ForgetsChargesSessionsAndMethods()
+    {
+        var state = NewState();
+        var plugin = NewPlugin(state);
+        await plugin.ChargeAsync(Charge(1000, "key-clear"), CancellationToken.None);
+        var saved = await plugin.BeginSaveMethodAsync(new SaveMethodContext("demo-cus-1", "https://shop.test/return"), CancellationToken.None);
+        await plugin.CompleteSaveMethodAsync(saved.SessionId, CancellationToken.None);
+        var open = await plugin.BeginSaveMethodAsync(new SaveMethodContext("demo-cus-1", "https://shop.test/return"), CancellationToken.None);
+
+        state.Clear();
+
+        state.ChargeCount.Should().Be(0);
+        state.Methods("demo-cus-1").Should().BeEmpty();
+        state.CompleteSession(open.SessionId).Should().BeNull();
+        state.Find("demo-cus-1", "key-clear").Should().BeNull();
+    }
+
+    /// <summary>With the demo enabled the resolver returns the demo plugin, and every scope shares one book.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Resolver_WithTheDemoEnabled_ReturnsTheDemoPluginSharingStateAcrossScopes()
+    {
+        var host = DemoTestHost.Enabled(factory);
+        using var firstScope = host.Services.CreateScope();
+        using var secondScope = host.Services.CreateScope();
+
+        var first = await firstScope.ServiceProvider.GetRequiredService<IPaymentPluginResolver>().ResolveAsync("any", CancellationToken.None);
+        var second = await secondScope.ServiceProvider.GetRequiredService<IPaymentPluginResolver>().ResolveAsync("any", CancellationToken.None);
+        await ((IStoredCredentialPlugin)first!).ChargeAsync(Charge(1000, "key-di"), CancellationToken.None);
+        var lookup = await ((IStoredCredentialPlugin)second!).FindChargeAsync("demo-cus-1", "key-di", CancellationToken.None);
+
+        first.Should().BeOfType<DemoPaymentPlugin>();
+        second.Should().BeOfType<DemoPaymentPlugin>();
+        lookup.Found.Should().BeTrue();
+        host.Services.GetRequiredService<DemoStoredCredentialState>().ChargeCount.Should().Be(1);
+    }
+
+    /// <summary>The demo reset clears the stored credential book.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Reset_ClearsTheStoredCredentialState()
+    {
+        var host = DemoTestHost.Enabled(factory);
+        using var scope = host.Services.CreateScope();
+        var state = host.Services.GetRequiredService<DemoStoredCredentialState>();
+        await NewPlugin(state).ChargeAsync(Charge(1000, "key-reset"), CancellationToken.None);
+
+        await scope.ServiceProvider.GetRequiredService<IDemoDataManager>().ResetAsync(CancellationToken.None);
+
+        state.ChargeCount.Should().Be(0);
     }
 
     /// <summary>A key that never charged is reported as not found.</summary>

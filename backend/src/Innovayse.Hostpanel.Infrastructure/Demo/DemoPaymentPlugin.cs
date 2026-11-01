@@ -55,12 +55,12 @@ internal sealed class DemoPaymentPlugin : IPaymentPlugin, IStoredCredentialPlugi
     /// <summary>Creates the gateway for the currencies the shop sells in.</summary>
     /// <param name="baseNumericCode">Numeric code reported as the gateway's own currency (the shop's base currency).</param>
     /// <param name="numericCodes">Numeric codes of every currency the gateway accepts; read from the seeded currencies.</param>
-    /// <param name="state">The stored methods and charges to share; a private book when null, so a lone instance still works.</param>
-    public DemoPaymentPlugin(string baseNumericCode, IEnumerable<string> numericCodes, DemoStoredCredentialState? state = null)
+    /// <param name="state">The stored methods and charges to share.</param>
+    public DemoPaymentPlugin(string baseNumericCode, IEnumerable<string> numericCodes, DemoStoredCredentialState state)
     {
         CurrencyCode = baseNumericCode;
         _numericCodes = new HashSet<string>(numericCodes, StringComparer.Ordinal) { baseNumericCode };
-        _state = state ?? new DemoStoredCredentialState();
+        _state = state;
     }
 
     /// <inheritdoc/>

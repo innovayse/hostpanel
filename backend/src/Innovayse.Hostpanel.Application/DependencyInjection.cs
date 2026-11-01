@@ -2,6 +2,7 @@ using FluentValidation;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Clients.Commands.AcceptInvitation;
 using Innovayse.Hostpanel.Application.Common;
+using Innovayse.Hostpanel.Application.Plugins.Common;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Application;
@@ -40,6 +41,9 @@ public static class DependencyInjection
 
         // Asks the enabled fulfilment plugins to cap a refund before any money moves.
         services.AddScoped<RefundAdviser>();
+
+        // The part of a plugin call the client and admin areas share: route matching, body cap, audit, reply mapping.
+        services.AddScoped<PluginCallRunner>();
 
         return services;
     }

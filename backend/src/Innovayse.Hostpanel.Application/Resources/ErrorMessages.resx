@@ -570,6 +570,21 @@
 <data name="PLUGIN_BUILT_IN" xml:space="preserve">
     <value>This plugin ships with the server and cannot be removed or replaced.</value>
   </data>
+<data name="PLUGIN_ROUTE_NOT_FOUND" xml:space="preserve">
+    <value>Nothing is served at this address.</value>
+  </data>
+<data name="PLUGIN_FAILED" xml:space="preserve">
+    <value>The plugin could not complete the request. Please try again later.</value>
+  </data>
+<data name="PLUGIN_REQUEST_TOO_LARGE" xml:space="preserve">
+    <value>The request is too large for this plugin.</value>
+  </data>
+<data name="PLUGIN_STREAMING_NOT_SUPPORTED" xml:space="preserve">
+    <value>This server cannot stream the reply of this plugin route yet.</value>
+  </data>
+<data name="PLUGIN_REPORTED_PROBLEM" xml:space="preserve">
+    <value>The plugin reported a problem with the request.</value>
+  </data>
 <data name="INTEGRATION_NOT_FOUND" xml:space="preserve">
     <value>No such integration.</value>
   </data>

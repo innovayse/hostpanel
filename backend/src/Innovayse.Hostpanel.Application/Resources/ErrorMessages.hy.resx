@@ -570,6 +570,21 @@
 <data name="PLUGIN_BUILT_IN" xml:space="preserve">
     <value>Այս հավելագրիչը սերվերի կազմում է և չի կարող հեռացվել կամ փոխարինվել։</value>
   </data>
+<data name="PLUGIN_ROUTE_NOT_FOUND" xml:space="preserve">
+    <value>Այս հասցեով ոչինչ չկա։</value>
+  </data>
+<data name="PLUGIN_FAILED" xml:space="preserve">
+    <value>Հավելագրիչը չկարողացավ կատարել հարցումը։ Խնդրում ենք փորձել ավելի ուշ։</value>
+  </data>
+<data name="PLUGIN_REQUEST_TOO_LARGE" xml:space="preserve">
+    <value>Հարցումը չափազանց մեծ է այս հավելագրիչի համար։</value>
+  </data>
+<data name="PLUGIN_STREAMING_NOT_SUPPORTED" xml:space="preserve">
+    <value>Այս սերվերը դեռ չի կարող հոսքով փոխանցել այս հավելագրիչի երթուղու պատասխանը։</value>
+  </data>
+<data name="PLUGIN_REPORTED_PROBLEM" xml:space="preserve">
+    <value>Հավելագրիչը հայտնել է հարցման հետ կապված խնդրի մասին։</value>
+  </data>
 <data name="INTEGRATION_NOT_FOUND" xml:space="preserve">
     <value>Այդպիսի ինտեգրում չի գտնվել։</value>
   </data>

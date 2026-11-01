@@ -1,8 +1,4 @@
-using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Infrastructure;
-using Innovayse.Hostpanel.Shared.Models;
-using Innovayse.Hostpanel.Shared.Resources;
-using Microsoft.Extensions.Localization;
 
 namespace Innovayse.Hostpanel.API.Auth;
 
@@ -29,32 +25,13 @@ namespace Innovayse.Hostpanel.API.Auth;
 /// blanket header requirement would silently stop settling invoices.
 /// </para>
 /// <para>
-/// Registered only in <c>Program.cs</c>'s local branch. The external sign-on branch does not run it.
+/// The rule itself (which methods change state, what counts as a bearer, which header) is <see cref="CsrfRule"/>,
+/// shared with <see cref="RequireRequestedWithAttribute"/>. Registered only in <c>Program.cs</c>'s local branch.
+/// The external sign-on branch does not run it.
 /// </para>
 /// </remarks>
 public sealed class LocalSessionCsrfMiddleware
 {
-    /// <summary>
-    /// Header a cross-site page cannot set without a CORS preflight this API does not grant.
-    /// The admin SPA's fetch wrapper sends it on every request.
-    /// </summary>
-    private const string RequestedWithHeader = "X-Requested-With";
-
-    /// <summary>Value the admin SPA sends in <see cref="RequestedWithHeader"/>.</summary>
-    private const string RequestedWithValue = "XMLHttpRequest";
-
-    /// <summary>Resource key of the sentence a refused caller reads.</summary>
-    private const string DetailKey = "CsrfHeaderMissingDetail";
-
-    /// <summary>Title of the refusal body.</summary>
-    private const string Title = "Forbidden";
-
-    /// <summary>
-    /// Methods that cannot change state, and are therefore never refused.
-    /// </summary>
-    private static readonly HashSet<string> SafeMethods =
-        new(StringComparer.OrdinalIgnoreCase) { HttpMethods.Get, HttpMethods.Head, HttpMethods.Options, HttpMethods.Trace };
-
     /// <summary>The next middleware in the pipeline.</summary>
     private readonly RequestDelegate _next;
 
@@ -70,16 +47,13 @@ public sealed class LocalSessionCsrfMiddleware
     /// <returns>A task that completes when the request has been handled or refused.</returns>
     public async Task InvokeAsync(HttpContext context)
     {
-        if (RequiresHeader(context.Request) && !HasHeader(context.Request))
+        if (RequiresHeader(context.Request) && !CsrfRule.HasRequestedWith(context.Request))
         {
             // Written here rather than thrown, because ExceptionHandlingMiddleware sits above
             // this in the pipeline and a refusal that has to travel back up through it just to be
             // written out is indirection with no reader. The body is the one ErrorResponse, with
             // the sentence in the caller's X-Language like every other refusal.
-            var localizer = context.RequestServices.GetRequiredService<IStringLocalizer<ValidationMessages>>();
-            var body = new ErrorResponse(
-                SharedErrorCodes.CsrfHeaderMissing, Title, StatusCodes.Status403Forbidden, localizer[DetailKey]);
-            await ErrorBody.WriteAsync(context, body, context.RequestAborted);
+            await ErrorBody.WriteAsync(context, CsrfRule.Refusal(context.RequestServices), context.RequestAborted);
             return;
         }
 
@@ -97,16 +71,7 @@ public sealed class LocalSessionCsrfMiddleware
     /// the request rides on and it still needs the header.
     /// </remarks>
     private static bool RequiresHeader(HttpRequest request) =>
-        !SafeMethods.Contains(request.Method)
+        CsrfRule.ChangesState(request)
         && request.Cookies.ContainsKey(LocalSessionCookie.Name)
-        && !BearerHeader.TryRead(request, out _);
-
-    /// <summary>
-    /// Whether the request carries the expected header.
-    /// </summary>
-    /// <param name="request">The incoming request.</param>
-    /// <returns>True when the header is present with the expected value.</returns>
-    private static bool HasHeader(HttpRequest request) =>
-        request.Headers.TryGetValue(RequestedWithHeader, out var values)
-        && values.Any(v => string.Equals(v, RequestedWithValue, StringComparison.OrdinalIgnoreCase));
+        && !CsrfRule.HasBearer(request);
 }

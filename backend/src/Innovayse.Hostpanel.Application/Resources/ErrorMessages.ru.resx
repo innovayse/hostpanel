@@ -570,6 +570,21 @@
 <data name="PLUGIN_BUILT_IN" xml:space="preserve">
     <value>Этот плагин входит в поставку сервера, его нельзя удалить или заменить.</value>
   </data>
+<data name="PLUGIN_ROUTE_NOT_FOUND" xml:space="preserve">
+    <value>По этому адресу ничего нет.</value>
+  </data>
+<data name="PLUGIN_FAILED" xml:space="preserve">
+    <value>Плагин не смог выполнить запрос. Повторите попытку позже.</value>
+  </data>
+<data name="PLUGIN_REQUEST_TOO_LARGE" xml:space="preserve">
+    <value>Запрос слишком большой для этого плагина.</value>
+  </data>
+<data name="PLUGIN_STREAMING_NOT_SUPPORTED" xml:space="preserve">
+    <value>Этот сервер пока не может передавать потоком ответ этого маршрута плагина.</value>
+  </data>
+<data name="PLUGIN_REPORTED_PROBLEM" xml:space="preserve">
+    <value>Плагин сообщил о проблеме с запросом.</value>
+  </data>
 <data name="INTEGRATION_NOT_FOUND" xml:space="preserve">
     <value>Такая интеграция не найдена.</value>
   </data>

@@ -52,6 +52,10 @@ public static class StatusMapping
             "SERVICE_NOT_TERMINATED" => new(409, "Conflict"),
             // A plugin shipped with the build: the request is well-formed, the target's state refuses it.
             "PLUGIN_BUILT_IN" => new(409, "Conflict"),
+            // Exact rows: a plugin's own code failed the call (a gateway between us and code we do not own, 502),
+            // and a streamed reply is asked of a host that cannot stream yet (501). Neither name carries a token.
+            "PLUGIN_FAILED" => new(502, "Bad Gateway"),
+            "PLUGIN_STREAMING_NOT_SUPPORTED" => new(501, "Not Implemented"),
             // Exact row: the user is not on the caller's account, which reads as absent (404), not as a
             // malformed request; the name carries no NOT_FOUND token for the generic arm to catch.
             "CLIENT_USER_NOT_LINKED" => new(404, "Not Found"),

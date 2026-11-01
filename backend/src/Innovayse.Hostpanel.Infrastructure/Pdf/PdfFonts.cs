@@ -51,11 +51,14 @@ internal static class PdfFonts
     /// <summary>The size the faces are opened at to ask which glyphs they have; any size answers alike.</summary>
     private const double ProbeSize = 10;
 
-    /// <summary>The regular faces' coverage, read the first time it is needed.</summary>
-    private static readonly Lazy<Faces> RegularFaces = new(() => ReadFaces(XFontStyleEx.Regular));
+    /// <summary>
+    /// The regular faces' coverage, read the first time it is needed. A read that throws is not
+    /// cached, so the next render tries again; two renders racing to read it both build the same table.
+    /// </summary>
+    private static readonly Lazy<Faces> RegularFaces = new(() => ReadFaces(XFontStyleEx.Regular), LazyThreadSafetyMode.PublicationOnly);
 
-    /// <summary>The bold faces' coverage, read the first time it is needed.</summary>
-    private static readonly Lazy<Faces> BoldFaces = new(() => ReadFaces(XFontStyleEx.Bold));
+    /// <summary>The bold faces' coverage, read the way <see cref="RegularFaces"/> is.</summary>
+    private static readonly Lazy<Faces> BoldFaces = new(() => ReadFaces(XFontStyleEx.Bold), LazyThreadSafetyMode.PublicationOnly);
 
     /// <summary>Sets PDFsharp up the first time it is read; the value itself means nothing.</summary>
     private static readonly Lazy<bool> Initialized = new(() =>
@@ -90,6 +93,11 @@ internal static class PdfFonts
     /// invisible joiner inside an uncovered character goes with it.
     /// </para>
     /// <para>
+    /// No font has the variation selectors (U+FE0E, U+FE0F and the rest), which only ask for a text
+    /// or an emoji look. A character that prints once its selectors are dropped, such as a trademark
+    /// sign typed on a phone, prints without them rather than as a placeholder.
+    /// </para>
+    /// <para>
     /// Text every character of which prints as written comes back as the same instance, with
     /// nothing allocated. A lone surrogate is not a character, so it is replaced too.
     /// </para>
@@ -111,6 +119,12 @@ internal static class PdfFonts
             if (PrintsAsWritten(character, faces))
             {
                 result.Append(character);
+                continue;
+            }
+
+            if (WithoutVariationSelectors(character) is { Length: > 0 } bare && PrintsAsWritten(bare, faces))
+            {
+                result.Append(bare);
                 continue;
             }
 
@@ -203,6 +217,28 @@ internal static class PdfFonts
 
         return true;
     }
+
+    /// <summary>The text with every variation selector taken out.</summary>
+    /// <param name="text">One character, as a grapheme cluster.</param>
+    /// <returns>The text without its variation selectors; empty when it had nothing else.</returns>
+    private static string WithoutVariationSelectors(ReadOnlySpan<char> text)
+    {
+        var result = new StringBuilder(text.Length);
+        foreach (var rune in text.EnumerateRunes())
+        {
+            if (!IsVariationSelector(rune))
+            {
+                result.Append(rune.ToString());
+            }
+        }
+
+        return result.ToString();
+    }
+
+    /// <summary>Whether a character is a variation selector: U+FE00 to U+FE0F, or U+E0100 to U+E01EF.</summary>
+    /// <param name="rune">The character.</param>
+    /// <returns>True when it only selects a look for the character before it.</returns>
+    private static bool IsVariationSelector(Rune rune) => rune.Value is (>= 0xFE00 and <= 0xFE0F) or (>= 0xE0100 and <= 0xE01EF);
 
     /// <summary>Whether MigraDoc lays a character out itself instead of drawing a glyph: a tab or a line break.</summary>
     /// <param name="rune">The character.</param>

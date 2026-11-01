@@ -276,6 +276,34 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
         text.Should().Contain("����");
     }
 
+    /// <summary>
+    /// A zero-width space typed between letters no font has survives into the PDF as a break
+    /// opportunity. MigraDoc draws no glyph for it, so it is proven by where the line breaks: the
+    /// description wraps at it, leaving the first ten placeholders on the line with the Latin words
+    /// and the other ten on the next, where without it all twenty would move down together.
+    /// </summary>
+    [Fact]
+    public async Task Render_BreaksALineAtAZeroWidthSpaceBetweenUncoveredLetters()
+    {
+        var uncovered = new string('\u738B', 10);
+        var model = SampleModel() with
+        {
+            Lines = [new InvoicePdfLine($"Shared hosting plan for {uncovered}\u200B{uncovered}", 1, 12.50m, 12.50m)],
+        };
+
+        using var document = await RenderAsync(model);
+
+        var letters = document.GetPage(1).Letters.ToList();
+        letters.Should().NotContain(l => l.Value == "\u0000");
+        var forBaseline = document.GetPage(1).GetWords().Single(w => w.Text == "for").Letters[0].StartBaseLine.Y;
+        var lines = letters.Where(l => l.Value == PdfFonts.Placeholder.ToString())
+            .GroupBy(l => Math.Round(l.StartBaseLine.Y, 1))
+            .OrderByDescending(g => g.Key)
+            .ToList();
+        lines.Select(g => g.Count()).Should().Equal(10, 10);
+        lines[0].Key.Should().BeApproximately(forBaseline, 0.1);
+    }
+
     /// <summary>The header, the seller, the totals and the dates are all on the page.</summary>
     [Fact]
     public async Task Render_PrintsHeaderTotalsAndDates()

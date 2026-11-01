@@ -72,6 +72,42 @@ public sealed class PdfFontsTests
     }
 
     /// <summary>
+    /// A flag (two regional indicators) and a keycap (a digit or sign, a variation selector and the
+    /// enclosing keycap) are each one character, so each prints as a single placeholder.
+    /// </summary>
+    /// <param name="text">Text containing a flag or a keycap sequence.</param>
+    /// <param name="expected">The text as it should print.</param>
+    [Theory]
+    [InlineData("Yerevan \U0001F1E6\U0001F1F2", "Yerevan �")]
+    [InlineData("\U0001F1FA\U0001F1E6\U0001F1EC\U0001F1EA", "��")]
+    [InlineData("Plan 1\uFE0F\u20E3", "Plan �")]
+    [InlineData("#\uFE0F\u20E3 tag", "� tag")]
+    public void ReplaceUncovered_PrintsOnePlaceholderPerFlagOrKeycap(string text, string expected)
+    {
+        PdfFonts.ReplaceUncovered(text, bold: false).Should().Be(expected);
+        PdfFonts.ReplaceUncovered(text, bold: true).Should().Be(expected);
+    }
+
+    /// <summary>
+    /// A covered character followed by a variation selector (a trademark sign typed on a phone
+    /// carries U+FE0F) prints as the character: no font has the selector, and the character printed
+    /// before placeholders were added, so the selector is dropped rather than the whole character
+    /// becoming a placeholder.
+    /// </summary>
+    /// <param name="text">Text with a covered character and a variation selector after it.</param>
+    /// <param name="expected">The text as it should print.</param>
+    [Theory]
+    [InlineData("Acme\u2122\uFE0F Hosting", "Acme\u2122 Hosting")]
+    [InlineData("Acme\u2122\uFE0E", "Acme\u2122")]
+    [InlineData("\u00A9\uFE0F 2026", "\u00A9 2026")]
+    [InlineData("\u2122\uFE0F\u738B", "\u2122�")]
+    public void ReplaceUncovered_DropsVariationSelectorsAfterCoveredCharacters(string text, string expected)
+    {
+        PdfFonts.ReplaceUncovered(text, bold: false).Should().Be(expected);
+        PdfFonts.ReplaceUncovered(text, bold: true).Should().Be(expected);
+    }
+
+    /// <summary>
     /// Invisible characters a font maps, and the tabs and line breaks MigraDoc lays out itself, are
     /// kept: the renderer adds zero-width spaces to break long words, and a placeholder there would
     /// print a mark the client never typed.

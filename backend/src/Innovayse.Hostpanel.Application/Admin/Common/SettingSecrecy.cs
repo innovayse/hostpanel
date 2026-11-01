@@ -1,12 +1,14 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
+using Innovayse.SDK.Plugins.Enums;
 
 namespace Innovayse.Hostpanel.Application.Admin.Common;
 
 /// <summary>
 /// Classifies setting keys as secret for every settings read and write: the keys
-/// <see cref="SecretSettingKeys"/> names, plus every field a loaded plugin's manifest declares with
-/// a secret input type. It is the one question every handler asks, so no handler decides on its own.
+/// <see cref="SecretSettingKeys"/> names, plus every setting a loaded plugin's manifest declares with
+/// the secret input type (a legacy field of type secret or password counts). It is the one question
+/// every handler asks, so no handler decides on its own.
 /// </summary>
 public sealed class SettingSecrecy
 {
@@ -28,9 +30,9 @@ public sealed class SettingSecrecy
         ArgumentNullException.ThrowIfNull(plugins);
 
         var keys = plugins.GetLoadedManifests()
-            .SelectMany(m => m.Fields
-                .Where(f => SecretSettingKeys.IsSecretFieldType(IntegrationFieldTypes.FromManifest(f.Type)))
-                .Select(f => IntegrationSettingKeys.FieldKey(m.Id, f.Key)))
+            .SelectMany(m => m.GetSettings()
+                .Where(s => s.Type == PluginSettingType.Secret)
+                .Select(s => IntegrationSettingKeys.FieldKey(m.Id, s.Key)))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         return new SettingSecrecy(keys);

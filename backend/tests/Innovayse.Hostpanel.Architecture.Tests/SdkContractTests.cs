@@ -6,6 +6,7 @@ using Innovayse.SDK.Plugins.Enums;
 using Innovayse.SDK.Plugins.Fulfilment;
 using Innovayse.SDK.Plugins.Hosting;
 using Innovayse.SDK.Plugins.Identity;
+using Innovayse.SDK.Plugins.Manifest;
 using Innovayse.SDK.Plugins.StoredCredentials;
 
 namespace Innovayse.Hostpanel.Architecture.Tests;
@@ -135,6 +136,78 @@ public sealed class SdkContractTests
             """{"id":"p","name":"P","version":"1.0.0","author":"A","description":"D","type":"Payment","category":"Payment","entryPoint":"P.Plugin","sdkVersion":"1.0","capabilities":["storedCredentials"]}""",
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true, Converters = { new JsonStringEnumConverter() } });
         parsed!.Capabilities.Should().Equal(PluginCapabilities.StoredCredentials);
+    }
+
+    /// <summary>The manifest v2 enums keep their names and explicit values; 0 is never a kind or a method.</summary>
+    [Fact]
+    public void ManifestV2Enums_KeepTheirValuesAndStartAtOne()
+    {
+        Enum.GetNames<PluginSettingType>().Should().Equal(
+            "Text", "Url", "Select", "Secret", "Number", "Boolean", "Textarea");
+        ((int)PluginSettingType.Text).Should().Be(1);
+        ((int)PluginSettingType.Url).Should().Be(2);
+        ((int)PluginSettingType.Select).Should().Be(3);
+        ((int)PluginSettingType.Secret).Should().Be(4);
+        ((int)PluginSettingType.Number).Should().Be(5);
+        ((int)PluginSettingType.Boolean).Should().Be(6);
+        ((int)PluginSettingType.Textarea).Should().Be(7);
+        Enum.IsDefined((PluginSettingType)0).Should().BeFalse();
+        Enum.GetNames<PluginRouteMethod>().Should().Equal("Get", "Post", "Put", "Patch", "Delete");
+        ((int)PluginRouteMethod.Get).Should().Be(1);
+        ((int)PluginRouteMethod.Post).Should().Be(2);
+        ((int)PluginRouteMethod.Put).Should().Be(3);
+        ((int)PluginRouteMethod.Patch).Should().Be(4);
+        ((int)PluginRouteMethod.Delete).Should().Be(5);
+        Enum.IsDefined((PluginRouteMethod)0).Should().BeFalse();
+        Enum.GetNames<PluginRateLimitPolicy>().Should().Equal("Default", "Strict", "Heavy");
+        ((int)PluginRateLimitPolicy.Default).Should().Be(1);
+        ((int)PluginRateLimitPolicy.Strict).Should().Be(2);
+        ((int)PluginRateLimitPolicy.Heavy).Should().Be(3);
+        Enum.IsDefined((PluginRateLimitPolicy)0).Should().BeFalse();
+    }
+
+    /// <summary>The manifest v2 types keep the members the host and the plugins compile against.</summary>
+    [Fact]
+    public void ManifestV2Types_KeepTheirShape()
+    {
+        typeof(PluginManifest).GetProperties().Select(p => p.Name).Should().Contain(
+            ["ManifestVersion", "Locales", "Settings", "Api", "Ui", "ExternalOrigins", "Fields"]);
+        typeof(PluginManifest).GetMethod(nameof(PluginManifest.GetSettings))!.ReturnType
+            .Should().Be(typeof(IReadOnlyList<PluginSetting>));
+        typeof(PluginSetting).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
+            "Key", "Label", "Type", "Required", "Options", "Description", "Default", "Placeholder", "Min", "Max");
+        typeof(PluginSettingOption).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Value", "Label");
+        typeof(PluginApi).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Client", "Admin");
+        typeof(PluginRoute).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Method", "Path", "Permission", "RateLimit", "Streaming");
+        typeof(PluginUi).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Client", "Admin", "Slots");
+        typeof(PluginUiArea).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Menus", "Pages");
+        typeof(PluginMenuItem).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Id", "Label", "Page", "Icon", "Order");
+        typeof(PluginPage).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
+            "Id", "Path", "Title", "View", "Permission");
+        typeof(PluginSlotEntry).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
+            "Id", "Slot", "View", "Title", "Order", "Permission", "ProductIds", "ContextKeys");
+    }
+
+    /// <summary>A manifest built in code, as a version 1 plugin author would, is version 1 with every new block empty.</summary>
+    [Fact]
+    public void PluginManifest_WithoutManifestVersion_IsVersion1WithNothingAdded()
+    {
+        var manifest = new PluginManifest
+        {
+            Id = "p", Name = "P", Version = "1.0.0", Author = "A", Description = "D", Type = PluginType.Payment,
+            Category = "Payment", EntryPoint = "P.Plugin", SdkVersion = "1.0",
+        };
+
+        manifest.ManifestVersion.Should().Be(1);
+        manifest.Settings.Should().BeEmpty();
+        manifest.Locales.Should().BeEmpty();
+        manifest.Api.Client.Should().BeEmpty();
+        manifest.Api.Admin.Should().BeEmpty();
+        manifest.Ui.Client.Pages.Should().BeEmpty();
+        manifest.Ui.Admin.Menus.Should().BeEmpty();
+        manifest.Ui.Slots.Should().BeEmpty();
+        manifest.ExternalOrigins.Should().BeEmpty();
+        manifest.GetSettings().Should().BeEmpty();
     }
 
     /// <summary>A hosted plugin is started and stopped by the host and nothing else.</summary>

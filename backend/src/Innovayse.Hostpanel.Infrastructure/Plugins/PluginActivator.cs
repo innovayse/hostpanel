@@ -110,7 +110,7 @@ public sealed class PluginActivator
             return new PluginActivation<TContract>(id, PluginActivationOutcome.Disabled, null);
         }
 
-        foreach (var field in plugin.Manifest.Fields)
+        foreach (var field in plugin.Manifest.GetSettings())
         {
             if (!field.Required)
             {

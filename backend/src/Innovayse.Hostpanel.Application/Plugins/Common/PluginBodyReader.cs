@@ -32,7 +32,7 @@ public static class PluginBodyReader
         // A declared length is only a claim until the bytes arrive, so it never sizes the buffer beyond a small start:
         // a caller who declares the whole cap and sends nothing must not be able to make the host allocate it. The
         // buffer grows (doubling) with what is really read.
-        var initial = (int)Math.Min(input.ContentLength ?? 0, InitialBufferBytes);
+        var initial = (int)Math.Min(Math.Max(0L, input.ContentLength ?? 0L), InitialBufferBytes);
         using var buffer = new MemoryStream(initial);
         var chunk = new byte[PluginApiOptions.ReadChunkBytes];
         int read;

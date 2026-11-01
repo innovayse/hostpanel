@@ -18,6 +18,9 @@ public sealed class PluginFormBodyTests : IClassFixture<AppPluginFixture>
     /// <summary>The multipart boundary the tests send.</summary>
     private const string Boundary = "b";
 
+    /// <summary>The size of the smallest multipart form this test builds: the part head, one byte of value and the closing boundary.</summary>
+    private const int SmallestMultipartBytes = 60;
+
     /// <summary>The host, the database and the plugins.</summary>
     private readonly AppPluginFixture _fixture;
 
@@ -85,13 +88,13 @@ public sealed class PluginFormBodyTests : IClassFixture<AppPluginFixture>
         _fixture.Probe.Calls.Should().BeEmpty();
     }
 
-    /// <summary>A form under the cap reaches the plugin byte for byte, with its media type, and is not consumed by the host.</summary>
+    /// <summary>A form of exactly the cap reaches the plugin byte for byte, with its media type, and is not consumed by the host.</summary>
     /// <param name="mediaType">The form's media type.</param>
     /// <param name="chunked">Whether the body is sent without a declared length.</param>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Theory]
     [MemberData(nameof(Forms))]
-    public async Task ASmallForm_ReachesThePluginByteForByte(string mediaType, bool chunked)
+    public async Task AFormAtTheCap_ReachesThePluginByteForByte(string mediaType, bool chunked)
     {
         var bytes = FormOfSize(mediaType, AppPluginFixture.MaxBodyBytes);
 
@@ -101,5 +104,21 @@ public sealed class PluginFormBodyTests : IClassFixture<AppPluginFixture>
         _fixture.Probe.Calls.Should().ContainSingle().Which.Body.ToArray().Should().Equal(bytes);
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         document.RootElement.GetProperty("contentType").GetString().Should().StartWith(mediaType.Split(';')[0]);
+    }
+
+    /// <summary>A form far under the cap (the smallest this test builds) reaches the plugin byte for byte.</summary>
+    /// <param name="mediaType">The form's media type.</param>
+    /// <param name="chunked">Whether the body is sent without a declared length.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Theory]
+    [MemberData(nameof(Forms))]
+    public async Task ATinyForm_ReachesThePluginByteForByte(string mediaType, bool chunked)
+    {
+        var bytes = FormOfSize(mediaType, mediaType.StartsWith("multipart", StringComparison.Ordinal) ? SmallestMultipartBytes : 4);
+
+        var response = await PostAsync(mediaType, bytes, chunked);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        _fixture.Probe.Calls.Should().ContainSingle().Which.Body.ToArray().Should().Equal(bytes);
     }
 }

@@ -31,7 +31,7 @@ public sealed class PluginApiOptions
     /// covers chunks down to 512 bytes. Below that a body near the cap meets the server's bare 413 first, which is still a
     /// refusal and still bounded. The reader stops one chunk past the cap, so it answers its own 413 before this limit.
     /// </summary>
-    public long ServerBodyLimit => MaxBodyBytes + ReadChunkBytes + (MaxBodyBytes / 64);
+    public long ServerBodyLimit => (long)MaxBodyBytes + ReadChunkBytes + (MaxBodyBytes / 64L);
 
     /// <summary>Whether the values can bound a body: at least one byte and no more than <see cref="MaxBodyBytesCeiling"/>.</summary>
     public bool IsValid => MaxBodyBytes is >= 1 and <= MaxBodyBytesCeiling;

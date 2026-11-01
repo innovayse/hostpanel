@@ -19,8 +19,11 @@ public sealed class PluginKestrelBodyTests : IClassFixture<KestrelBodyHost>
     /// <summary>40 MiB: above the server's default limit (about 28.6 MiB), below the 64 MiB cap.</summary>
     private const long AboveServerDefault = 40L * 1024 * 1024;
 
-    /// <summary>The slack allowed on top of the server's limit for what the sender had already put in socket buffers.</summary>
-    private const long SocketSlack = 32L * 1024 * 1024;
+    /// <summary>The web server's default per request body limit, in bytes (30,000,000).</summary>
+    private const long ServerDefaultLimit = 30_000_000;
+
+    /// <summary>The slack allowed around a limit for what the sender had already put in socket buffers.</summary>
+    private const long SocketSlack = 12L * 1024 * 1024;
 
     /// <summary>The host on a real socket.</summary>
     private readonly KestrelBodyHost _host;
@@ -63,6 +66,26 @@ public sealed class PluginKestrelBodyTests : IClassFixture<KestrelBodyHost>
         response!.StatusCode.Should().Be(HttpStatusCode.RequestEntityTooLarge);
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         body.RootElement.GetProperty("code").GetString().Should().Be(HostpanelErrorCodes.PLUGIN_REQUEST_TOO_LARGE);
+    }
+
+    /// <summary>Asserts that a route which never reads the body answered 404, or that the connection was closed once the server had enough.</summary>
+    /// <param name="response">The response, or <see langword="null"/> when the connection was closed.</param>
+    private static void AssertNotFoundOrClosed(HttpResponseMessage? response)
+    {
+        if (response is not null)
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        }
+    }
+
+    /// <summary>Asserts that the body was refused: by the host's own 413, or by the web server (a closed connection or its bare 413).</summary>
+    /// <param name="response">The response, or <see langword="null"/> when the connection was closed.</param>
+    private static void AssertRefused(HttpResponseMessage? response)
+    {
+        if (response is not null)
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.RequestEntityTooLarge);
+        }
     }
 
     /// <summary>Asserts that the web server itself refused the body: it closed the connection, or answered a 413 that is not the host's.</summary>
@@ -148,23 +171,45 @@ public sealed class PluginKestrelBodyTests : IClassFixture<KestrelBodyHost>
     }
 
     /// <summary>
-    /// A huge body sent to a route that never reads it (an undeclared route, a caller turned away) is bounded by the
-    /// server at the cap plus one chunk: it stops draining instead of taking all of it.
+    /// A huge body sent to a route that never reads it (an undeclared route, a caller turned away) is bounded by
+    /// <see cref="PluginApiOptions.ServerBodyLimit"/>, not by the server's default: the sender gets past the default
+    /// (which the control route without the limit filter stops at) and stops near the limit, which is above it.
     /// </summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
-    public async Task AnOversizeBodyToARouteThatNeverReadsIt_IsBoundedByTheServer()
+    public async Task AnOversizeBodyToARouteThatNeverReadsIt_IsBoundedByTheServerBodyLimit()
     {
-        var content = new GeneratedContent(300L * 1024 * 1024, declareLength: false);
+        var limit = new PluginApiOptions { MaxBodyBytes = PluginApiOptions.MaxBodyBytesCeiling }.ServerBodyLimit;
+        var control = new GeneratedContent(300L * 1024 * 1024, declareLength: false);
+        var guarded = new GeneratedContent(300L * 1024 * 1024, declareLength: false);
 
-        var response = await SendAsync("guarded", "refuse/x", content, "application/octet-stream");
+        var controlResponse = await SendAsync("unguarded", "refuse/x", control, "application/octet-stream");
+        var guardedResponse = await SendAsync("guarded", "refuse/x", guarded, "application/octet-stream");
 
-        if (response is not null)
-        {
-            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        }
+        AssertNotFoundOrClosed(controlResponse);
+        AssertNotFoundOrClosed(guardedResponse);
+        control.Written.Should().BeLessThan(ServerDefaultLimit + SocketSlack, "the control route is bounded by the server's default limit");
+        guarded.Written.Should().BeLessThan(limit + SocketSlack, "the guarded route is bounded by the server body limit");
+        guarded.Written.Should().BeGreaterThan(ServerDefaultLimit + SocketSlack, "the sender got past what the server's default would have allowed");
+        guarded.Written.Should().BeGreaterThan(limit - SocketSlack, "the bound is the server body limit, not the lower default");
+        guarded.Written.Should().BeGreaterThan(control.Written + (limit - ServerDefaultLimit) / 2);
+    }
 
-        content.Written.Should().BeLessThan(PluginApiOptions.MaxBodyBytesCeiling + SocketSlack);
+    /// <summary>
+    /// A chunked body of many small chunks (256 bytes each, so the framing the server counts is a larger share of it) one
+    /// byte over the cap is refused, by the host's own 413 or by the server, and the sender is stopped near the limit.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task AChunkedBodyOfSmallChunksOverTheCap_IsRefusedAndBounded()
+    {
+        var limit = new PluginApiOptions { MaxBodyBytes = PluginApiOptions.MaxBodyBytesCeiling }.ServerBodyLimit;
+        var content = new GeneratedContent(PluginApiOptions.MaxBodyBytesCeiling + 1L, declareLength: false, blockBytes: 256);
+
+        var response = await SendAsync("guarded", "x/echo", content, "application/octet-stream");
+
+        AssertRefused(response);
+        content.Written.Should().BeLessThan(limit + SocketSlack);
     }
 
     /// <summary>A urlencoded body above the server's default limit but within the cap is read by the reader alone, whole.</summary>
@@ -185,9 +230,14 @@ public sealed class PluginKestrelBodyTests : IClassFixture<KestrelBodyHost>
     [Fact]
     public async Task WithoutTheFormGuard_AUrlencodedBodyIsNotReadWhole()
     {
-        var response = await SendAsync(
-            "limit-only", "x/echo", new GeneratedContent(AboveServerDefault, declareLength: false), "application/x-www-form-urlencoded");
+        var content = new GeneratedContent(AboveServerDefault, declareLength: false);
 
+        var response = await SendAsync("limit-only", "x/echo", content, "application/x-www-form-urlencoded");
+
+        // MVC's form reader gives up on the body part way (the server then closes the connection, so there is no
+        // response to read), which is what leaves the plugin an empty body: the outcome is that the sender is stopped
+        // well before the end, and that no 200 came back.
+        content.Written.Should().BeLessThan(AboveServerDefault - SocketSlack, "the form reader refused the body part way");
         if (response is not null)
         {
             response.StatusCode.Should().NotBe(HttpStatusCode.OK);

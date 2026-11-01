@@ -438,7 +438,10 @@ docker/                              compose set (shared·dev·prod·platform), 
     `[PluginBodyLimit]`, `[NoFormBinding]` and the policy on both controllers; `PluginKestrelBodyTests` proves the limits on
     a real Kestrel socket (`KestrelBodyHost`: the same guards, `PluginHttpInputReader` and `PluginBodyReader` behind probe
     controllers), since the in-memory test server has no limit and the API's own entry point cannot be put on a socket by the
-    test factory (the JasperFx run command disposes the host once a real server starts).
+    test factory (the JasperFx run command disposes the host once a real server starts). **Those tests prove the two
+    filters and the reader, not the whole pipeline through `PluginCallRunner`**: the probe controllers stand in for the
+    doors, so the order of the runner's steps is covered by the in-memory call tests, and the reader and
+    `PluginApiOptions.ServerBodyLimit` also have direct unit tests (`PluginBodyReaderTests`, `PluginApiOptionsTests`).
   - **Audit.** A call that is not a GET writes one activity log line before the plugin runs, through `IActivityLogger`:
     `Called Plugin Route - Plugin ID: {id} - Area: {Client|Admin} - Route: {METHOD} {declared template}`, the client for a
     client call and none for an admin call, stamped with the caller by the logger. Never the body, never the concrete

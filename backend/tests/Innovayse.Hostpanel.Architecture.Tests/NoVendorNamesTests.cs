@@ -66,7 +66,7 @@ public sealed partial class NoVendorNamesTests
     private static partial Regex HostInternalName();
 
     /// <summary>
-    /// No SDK source file names a vendor or a host-internal type in a comment or a string literal (regular, verbatim,
+    /// No SDK source file or markdown document (README, CHANGELOG, CONTRIBUTING) names a vendor or a host-internal type in a comment or a string literal (regular, verbatim,
     /// interpolated and raw strings; <c>//</c>, <c>///</c> and block comments), so the public package documents the
     /// contract in generic terms only.
     /// </summary>
@@ -77,18 +77,43 @@ public sealed partial class NoVendorNamesTests
         var sdkRoot = Path.Combine(backendRoot, "src", "Innovayse.SDK");
         var separators = new[] { Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar, Path.DirectorySeparatorChar + "bin" + Path.DirectorySeparatorChar };
 
-        var offenders = Directory
+        var sources = Directory
             .EnumerateFiles(sdkRoot, "*.cs", SearchOption.AllDirectories)
             .Where(path => !separators.Any(separator => path.Contains(separator, StringComparison.Ordinal)))
+            .ToList();
+        var documents = new[] { "README.md", "CHANGELOG.md", "CONTRIBUTING.md" }
+            .Select(name => Path.Combine(sdkRoot, name))
+            .Where(File.Exists)
+            .ToList();
+
+        sources.Should().NotBeEmpty("the scan must find the SDK sources, or it passes without reading anything");
+        documents.Should().NotBeEmpty("the scan must find the SDK documents, or it passes without reading anything");
+
+        var offenders = sources
             .SelectMany(path => ReadableText()
                 .Matches(File.ReadAllText(path))
                 .Where(match => match.Groups["text"].Success)
                 .Where(match => VendorName().IsMatch(match.Groups["text"].Value) || HostInternalName().IsMatch(match.Groups["text"].Value))
                 .Select(_ => Path.GetRelativePath(backendRoot, path).Replace('\\', '/')))
+            .Concat(documents
+                .Where(path => NamesOutsideProduct(File.ReadAllText(path)))
+                .Select(path => Path.GetRelativePath(backendRoot, path).Replace('\\', '/')))
             .Distinct()
             .ToList();
 
         offenders.Should().BeEmpty("SDK comments and strings name the capability, never a vendor or a class of the host");
+    }
+
+    /// <summary>
+    /// Whether SDK prose names a vendor or a host-internal type. The SDK documents live in the SDK's own repository,
+    /// so "this repository" there means that repository and is not a leak; every other host name still is.
+    /// </summary>
+    /// <param name="text">The markdown document text.</param>
+    /// <returns><see langword="true"/> when the text names a vendor or a host-internal type.</returns>
+    private static bool NamesOutsideProduct(string text)
+    {
+        var prose = text.Replace("this repository", string.Empty, StringComparison.OrdinalIgnoreCase);
+        return VendorName().IsMatch(prose) || HostInternalName().IsMatch(prose);
     }
 
     /// <summary>The scan has teeth: the host-internal expression matches the names the old comment used and nothing generic.</summary>

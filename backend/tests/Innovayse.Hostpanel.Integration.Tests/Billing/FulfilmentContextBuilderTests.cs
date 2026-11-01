@@ -75,6 +75,18 @@ public sealed class FulfilmentContextBuilderTests
         FulfilmentContextBuilder.Lines(invoice).Single().BillingCycle.Should().Be(expected);
     }
 
+    /// <summary>A cycle the host does not define is refused, never handed over as a number the plugin contract cannot read.</summary>
+    [Fact]
+    public void Lines_AnUndefinedCycle_Throws()
+    {
+        var invoice = OpenInvoice();
+        invoice.AddItem("Hosting", 3m, 1, null, new ProductSnapshot(9, (BillingCycle)999, true, null, null));
+
+        var build = () => FulfilmentContextBuilder.Lines(invoice);
+
+        build.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
     /// <summary>The paid context carries the invoice, the client, the account, the payment reference and time.</summary>
     [Fact]
     public void Paid_CarriesThePaymentOfTheInvoice()

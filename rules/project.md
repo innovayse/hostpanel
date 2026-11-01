@@ -184,8 +184,9 @@ docker/                              compose set (shared·dev·prod·platform), 
   `Fulfilment`, `Identity`, `StoredCredentials`, `Manifest`, `Endpoints`, `Host`, `Store`,
   `Lifecycle`, `Slots`, `Enums`. Each interface sits next to the records it uses; there is no
   `Interfaces/` folder (file-layout allows one only in Domain, `Application/Common/Interfaces/` and
-  Shared) and nothing at the `Plugins/` root. Enums are in `Plugins/Enums/` with explicit values,
-  new ones from 1. Inputs are `*Instruction` or `*Context`, outputs `*Result`, `*Status`,
+  Shared) and nothing at the `Plugins/` root. Enums are in `Plugins/Enums/` with explicit values:
+  `PluginType` keeps its released values starting at 0, every other enum starts at 1. The abstract base
+  classes a plugin derives from live in the `Innovayse.SDK.Base` namespace (`Base/`), not in an area. Inputs are `*Instruction` or `*Context`, outputs `*Result`, `*Status`,
   `*Lookup` or `*Session`; never `*Request`. `SdkContractTests` pins every namespace.
 - **Seven plugin types, one activator.** The loader registers each plugin under the SDK contract of the
   type its manifest declares: provisioning, payment, registrar, identity (`IClientResolver`),

@@ -179,7 +179,6 @@ docker/                              compose set (shared·dev·prod·platform), 
   `Assembly.LoadFrom` over it would give the process two distinct `IPaymentPlugin` types with the
   same name, after which every cast in `PluginActivator` fails. The CWP providers are
   deliberately **not** staged, so they cannot activate at runtime by accident.
-- **Stored credentials are an optional payment capability.** `IStoredCredentialPlugin` (SDK) is implemented by a payment plugin on top of `IPaymentPlugin`; `IStoredCredentialPluginResolver` resolves it on top of `IPaymentPluginResolver` and answers nothing when the chosen plugin does not implement it. It is not a seventh plugin type and has no manifest type of its own.
 - **Six plugin types, one activator.** The loader registers each plugin under the SDK contract of the
   type its manifest declares: provisioning, payment, registrar, identity (`IClientResolver`),
   fulfilment (`IFulfilmentPlugin`) and hosted (`IHostedPlugin`). Every plugin becomes an instance in
@@ -195,6 +194,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   stop that throws is logged with the plugin id and never stops the host or the other plugins. A plugin
   is enabled from the admin Integrations page, where it is listed (with its type) when its manifest sets
   `showInIntegrations`.
+- **Stored credentials are an optional payment capability.** `IStoredCredentialPlugin` (SDK) is implemented by a payment plugin on top of `IPaymentPlugin`; `IStoredCredentialPluginResolver` resolves it on top of `IPaymentPluginResolver` and answers nothing when the chosen plugin does not implement it. It is not a seventh plugin type and has no manifest type of its own.
 - **What the three newer plugin types promise.** *Fulfilment* (`IFulfilmentPlugin`): the host writes a
   `FulfilmentRecords` row in the payment's own transaction and `DispatchFulfilmentCron` delivers it, so delivery is
   **at least once** with back-off; every method must be idempotent on `InvoiceId` (the same paid invoice can arrive

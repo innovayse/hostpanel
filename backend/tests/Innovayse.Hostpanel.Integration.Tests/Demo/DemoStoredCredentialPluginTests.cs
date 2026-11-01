@@ -202,20 +202,37 @@ public sealed class DemoStoredCredentialPluginTests(IntegrationTestFactory facto
         state.ChargeCount.Should().Be(1);
     }
 
-    /// <summary>Many charges racing on one key take the money once and every caller gets the same result.</summary>
+    /// <summary>
+    /// Many threads released together on a barrier each record a different result for one key; the first recorded
+    /// result wins, so every caller is handed that one and only one charge exists.
+    /// </summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task Charge_ConcurrentWithOneKey_ChargesOnceAndEveryResultIsEqual()
+    public async Task Record_ConcurrentWithOneKeyAndDifferentResults_EveryCallerGetsTheFirstRecordedResult()
     {
+        const int threads = 32;
         var state = NewState();
-        var plugin = NewPlugin(state);
+        using var barrier = new Barrier(threads);
 
-        var results = await Task.WhenAll(Enumerable.Range(0, 32)
-            .Select(_ => Task.Run(() => plugin.ChargeAsync(Charge(1000, "key-race"), CancellationToken.None))));
+        var tasks = Enumerable.Range(0, threads)
+            .Select(i => Task.Factory.StartNew(
+                () =>
+                {
+                    barrier.SignalAndWait();
+                    return state.Record(
+                        "demo-cus-1",
+                        "key-race",
+                        new StoredChargeResult(StoredChargeOutcome.Succeeded, $"demo-charge-race-{i}", 1000, Usd, null));
+                },
+                CancellationToken.None,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default))
+            .ToArray();
+        var results = await Task.WhenAll(tasks);
 
-        state.ChargeCount.Should().Be(1);
         results.Should().OnlyContain(r => r == results[0]);
-        results[0].Outcome.Should().Be(StoredChargeOutcome.Succeeded);
+        state.Find("demo-cus-1", "key-race").Should().Be(results[0]);
+        state.ChargeCount.Should().Be(1);
     }
 
     /// <summary>Repeating a 05 key after its timeout answers the recorded success and does not throw.</summary>
@@ -300,6 +317,25 @@ public sealed class DemoStoredCredentialPluginTests(IntegrationTestFactory facto
         await scope.ServiceProvider.GetRequiredService<IDemoDataManager>().ResetAsync(CancellationToken.None);
 
         state.ChargeCount.Should().Be(0);
+    }
+
+    /// <summary>A reset that fails before it commits leaves the stored credential book as the visitors left it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Reset_Failing_KeepsTheStoredCredentialState()
+    {
+        var host = DemoTestHost.Enabled(factory);
+        using var scope = host.Services.CreateScope();
+        var state = host.Services.GetRequiredService<DemoStoredCredentialState>();
+        await NewPlugin(state).ChargeAsync(Charge(1000, "key-reset-fails"), CancellationToken.None);
+        using var cancelled = new CancellationTokenSource();
+        await cancelled.CancelAsync();
+
+        var act = () => scope.ServiceProvider.GetRequiredService<IDemoDataManager>().ResetAsync(cancelled.Token);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+        state.ChargeCount.Should().Be(1);
+        state.Find("demo-cus-1", "key-reset-fails").Should().NotBeNull();
     }
 
     /// <summary>A key that never charged is reported as not found.</summary>

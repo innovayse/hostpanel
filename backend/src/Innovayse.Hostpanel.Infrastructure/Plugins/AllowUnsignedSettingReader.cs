@@ -23,7 +23,8 @@ public static class AllowUnsignedSettingReader
     /// <see langword="true"/> only when the row exists and is on. A database that cannot be reached, a table that
     /// does not exist yet (the first start, before migrations), a connection string that cannot be parsed, any other
     /// failure, or a row that does not exist read as off: refusing is
-    /// the safe answer to "may unsigned plugins load".
+    /// the safe answer to "may unsigned plugins load". A missing table logs at Information (it is expected before the
+    /// first migration); every other failure logs at Error, a database error with its SQL state (never its message).
     /// </returns>
     public static bool Read(string? connectionString, ILogger logger)
     {
@@ -48,11 +49,29 @@ public static class AllowUnsignedSettingReader
             command.Parameters.AddWithValue("key", PluginSettingKeys.AllowUnsigned);
             return PluginSettingKeys.IsOn(command.ExecuteScalar() as string);
         }
+        catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.UndefinedTable)
+        {
+            // Expected on the first start: the migrations have not created the table yet, so there is no row to read.
+            logger.LogInformation(
+                "The {Setting} setting could not be read because the settings table does not exist yet (SQL state {SqlState}); unsigned plugins are not allowed to load.",
+                PluginSettingKeys.AllowUnsigned,
+                ex.SqlState);
+            return false;
+        }
+        catch (PostgresException ex)
+        {
+            // The SQL state is a five character code, never a secret; the message and detail are not logged.
+            logger.LogError(
+                "Could not read the {Setting} setting at startup (SQL state {SqlState}); unsigned plugins are not allowed to load.",
+                PluginSettingKeys.AllowUnsigned,
+                ex.SqlState);
+            return false;
+        }
         catch (Exception ex)
         {
             // Any failure reads as off. Only the setting name and the exception type are logged: the exception text and
             // stack can carry the connection string or the database host.
-            logger.LogWarning(
+            logger.LogError(
                 "Could not read the {Setting} setting at startup ({ExceptionType}); unsigned plugins are not allowed to load.",
                 PluginSettingKeys.AllowUnsigned,
                 ex.GetType().Name);

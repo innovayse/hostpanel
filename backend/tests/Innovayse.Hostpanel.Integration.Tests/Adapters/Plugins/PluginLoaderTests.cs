@@ -103,7 +103,7 @@ public sealed class PluginLoaderTests
     }
 
     /// <summary>
-    /// A Production host skips an uploaded plugin that is unsigned, tampered with or signed by an unknown key: the
+    /// A Production host skips an uploaded plugin that is unsigned, tampered with, signed by an unknown key or holds a link: the
     /// warning names the plugin id and the rule, the plugin's assembly is never loaded, and the signed plugin beside
     /// it still loads.
     /// </summary>
@@ -113,16 +113,18 @@ public sealed class PluginLoaderTests
     [InlineData(PluginPackageFlaw.Unsigned, PluginSignatureRule.Unsigned)]
     [InlineData(PluginPackageFlaw.Tampered, PluginSignatureRule.Invalid)]
     [InlineData(PluginPackageFlaw.UnknownKey, PluginSignatureRule.UnknownKey)]
+    [InlineData(PluginPackageFlaw.Linked, PluginSignatureRule.Malformed)]
     public void DiscoverAndRegister_Production_SkipsOnlyTheUploadedPluginThatFailsTheSignature(
         PluginPackageFlaw flaw, PluginSignatureRule rule)
     {
         var root = PluginSigningTestSeeds.NewFolder("loader-signed");
+        var linkTarget = root + "-linktarget";
         try
         {
             var good = WriteAppPlugin(root, "signed-plugin");
             PluginSigningTestSeeds.Sign(good.Folder);
             var bad = WriteAppPlugin(root, "flawed-plugin");
-            Flaw(bad.Folder, flaw);
+            Flaw(bad.Folder, flaw, linkTarget);
 
             var (registry, logs) = Discover(
                 [new PluginRoot(root, PluginOrigin.Uploaded)], PluginSigningTestSeeds.Verifier(enforced: true), allowUnsigned: false);
@@ -138,6 +140,10 @@ public sealed class PluginLoaderTests
         finally
         {
             Directory.Delete(root, recursive: true);
+            if (Directory.Exists(linkTarget))
+            {
+                Directory.Delete(linkTarget, recursive: true);
+            }
         }
     }
 
@@ -250,13 +256,19 @@ public sealed class PluginLoaderTests
         return (folder, assemblyName);
     }
 
-    /// <summary>Gives a plugin folder one flaw: nothing, a change after signing, or a signature by an unknown key.</summary>
+    /// <summary>Gives a plugin folder one flaw: nothing, a change after signing, a signature by an unknown key, or a link.</summary>
     /// <param name="folder">The plugin folder.</param>
     /// <param name="flaw">The flaw.</param>
-    private static void Flaw(string folder, PluginPackageFlaw flaw)
+    /// <param name="linkTarget">Where a <see cref="PluginPackageFlaw.Linked"/> folder points; created here, outside the plugin root, and deleted by the caller.</param>
+    private static void Flaw(string folder, PluginPackageFlaw flaw, string? linkTarget = null)
     {
         switch (flaw)
         {
+            case PluginPackageFlaw.Linked:
+                PluginSigningTestSeeds.Sign(folder);
+                PluginSigningTestSeeds.Verifier(enforced: true).Inspect(folder).Should().BeNull("the link must be the only flaw");
+                PluginLinkTestSeeds.CreateDirectoryLink(Path.Combine(folder, "linked"), Directory.CreateDirectory(linkTarget!).FullName);
+                break;
             case PluginPackageFlaw.Tampered:
                 PluginSigningTestSeeds.Sign(folder);
                 File.AppendAllText(Path.Combine(folder, "plugin.json"), " ");

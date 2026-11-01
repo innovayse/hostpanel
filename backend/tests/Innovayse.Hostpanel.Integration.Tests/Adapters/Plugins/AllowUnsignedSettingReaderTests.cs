@@ -13,7 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 /// <summary>
 /// <see cref="AllowUnsignedSettingReader"/> reads the admin setting straight from the database while the container is
 /// still being built: <c>true</c> in the row reads as on, anything else, a missing table (a first start before
-/// migrations) and a database that cannot be reached read as off with a logged warning.
+/// migrations) and a database that cannot be reached read as off with a log entry: Information for the missing table, Error for the rest.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host, whose database holds the seeded row.</param>
 public sealed class AllowUnsignedSettingReaderTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
@@ -40,7 +40,7 @@ public sealed class AllowUnsignedSettingReaderTests(IntegrationTestFactory facto
         AllowUnsignedSettingReader.Read(connectionString, logger).Should().BeFalse();
     }
 
-    /// <summary>A database without the <c>Settings</c> table (a first start) reads as off, with a warning.</summary>
+    /// <summary>A database without the <c>Settings</c> table (a first start) reads as off, logged at Information with its SQL state.</summary>
     [Fact]
     public void ADatabaseWithoutTheTable_ReadsAsOff()
     {
@@ -49,10 +49,32 @@ public sealed class AllowUnsignedSettingReaderTests(IntegrationTestFactory facto
 
         AllowUnsignedSettingReader.Read(emptyDatabase, logs.CreateLogger("t")).Should().BeFalse();
 
-        logs.Entries.Should().ContainSingle(e => e.Level == LogLevel.Warning && e.Message.Contains(PluginSettingKeys.AllowUnsigned));
+        logs.Entries.Should().ContainSingle(e => e.Level == LogLevel.Information
+            && e.Message.Contains(PluginSettingKeys.AllowUnsigned)
+            && e.Message.Contains("42P01"));
     }
 
-    /// <summary>A database that cannot be reached reads as off, with a warning, instead of stopping the start.</summary>
+    /// <summary>
+    /// A database error other than the missing table (here a database that does not exist, SQL state 3D000) reads as
+    /// off and is logged at Error with its SQL state, and without the database name.
+    /// </summary>
+    [Fact]
+    public void AnotherDatabaseError_IsLoggedAtErrorWithItsSqlState()
+    {
+        var missingDatabase = new NpgsqlConnectionStringBuilder(ConnectionString())
+        {
+            Database = "no_such_database_for_the_reader_test",
+        }.ConnectionString;
+        var logs = new RecordingLoggerProvider();
+
+        AllowUnsignedSettingReader.Read(missingDatabase, logs.CreateLogger("t")).Should().BeFalse();
+
+        var entry = logs.Entries.Should().ContainSingle().Subject;
+        entry.Level.Should().Be(LogLevel.Error);
+        entry.Message.Should().Contain("3D000").And.NotContain("no_such_database_for_the_reader_test");
+    }
+
+    /// <summary>A database that cannot be reached reads as off, logged at Error, instead of stopping the start.</summary>
     [Fact]
     public void AnUnreachableDatabase_ReadsAsOff()
     {
@@ -61,11 +83,11 @@ public sealed class AllowUnsignedSettingReaderTests(IntegrationTestFactory facto
 
         AllowUnsignedSettingReader.Read(unreachable, logs.CreateLogger("t")).Should().BeFalse();
 
-        logs.Entries.Should().ContainSingle(e => e.Level == LogLevel.Warning);
+        logs.Entries.Should().ContainSingle(e => e.Level == LogLevel.Error);
     }
 
     /// <summary>
-    /// A connection string the driver rejects with a non Npgsql exception still reads as off, and the warning carries
+    /// A connection string the driver rejects with a non Npgsql exception still reads as off, and the error entry carries
     /// only the setting name and the exception type, never the connection string, its password or its host.
     /// </summary>
     [Fact]
@@ -76,7 +98,7 @@ public sealed class AllowUnsignedSettingReaderTests(IntegrationTestFactory facto
         AllowUnsignedSettingReader.Read("Host=secret-host.internal;Password=hunter2;Port=not-a-number", logs.CreateLogger("t"))
             .Should().BeFalse();
 
-        var entry = logs.Entries.Should().ContainSingle(e => e.Level == LogLevel.Warning).Subject;
+        var entry = logs.Entries.Should().ContainSingle(e => e.Level == LogLevel.Error).Subject;
         entry.Message.Should().Contain(PluginSettingKeys.AllowUnsigned).And.Contain("Exception");
         entry.Message.Should().NotContain("hunter2").And.NotContain("secret-host");
     }
@@ -90,7 +112,7 @@ public sealed class AllowUnsignedSettingReaderTests(IntegrationTestFactory facto
 
         AllowUnsignedSettingReader.Read(unreachable, logs.CreateLogger("t")).Should().BeFalse();
 
-        var entry = logs.Entries.Should().ContainSingle(e => e.Level == LogLevel.Warning).Subject;
+        var entry = logs.Entries.Should().ContainSingle(e => e.Level == LogLevel.Error).Subject;
         entry.Message.Should().NotContain("127.0.0.1").And.NotContain("hunter2");
     }
 

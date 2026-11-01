@@ -139,6 +139,12 @@ public static class PluginSignaturePayload
     /// <returns>The lower-case hex SHA-256.</returns>
     private static string HashOf(string path)
     {
+        // The walk has already refused every link, and a path swapped for a link between that check and this open
+        // would be followed (the runtime offers no open option that refuses links on every platform). That swap needs
+        // write access to the package folder. When the host verifies, it owns that folder: the package root is created by the host (a
+        // staging folder it extracts the archive into, or an install folder only its own process writes), and a zip
+        // entry is written as a regular file, never as a link. (The signing tool runs on the publisher's own folder.) Anyone who could swap a path there could already change
+        // the files themselves, so a handle check would add nothing the folder's ownership does not already give.
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, BufferSize);
         return Convert.ToHexStringLower(SHA256.HashData(stream));
     }

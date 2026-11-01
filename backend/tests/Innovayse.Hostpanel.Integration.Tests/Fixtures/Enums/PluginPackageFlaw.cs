@@ -11,4 +11,7 @@ public enum PluginPackageFlaw
 
     /// <summary>Signed by a key the verifier does not know.</summary>
     UnknownKey,
+
+    /// <summary>Signed by the trusted key, then a linked folder added (a symbolic link or junction).</summary>
+    Linked,
 }

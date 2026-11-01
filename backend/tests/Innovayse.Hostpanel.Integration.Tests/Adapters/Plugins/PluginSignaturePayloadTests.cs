@@ -12,7 +12,11 @@ namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 /// </summary>
 public sealed class PluginSignaturePayloadTests
 {
-    /// <summary>A file that is a symbolic link makes the package unsignable and malformed.</summary>
+    /// <summary>
+    /// A file that is a symbolic link makes the package unsignable and malformed. Where the account may not create a
+    /// file symbolic link (a local Windows account without developer mode) the test cannot run and returns; CI fails
+    /// instead, and the directory tests below cover the link rule on every machine.
+    /// </summary>
     [Fact]
     public void Build_SymlinkedFile_IsMalformed()
     {
@@ -22,9 +26,8 @@ public sealed class PluginSignaturePayloadTests
         {
             var target = Path.Combine(outside, "target.txt");
             File.WriteAllText(target, "outside the package");
-            if (!TryLink(() => File.CreateSymbolicLink(Path.Combine(folder, "link.txt"), target)))
+            if (!PluginLinkTestSeeds.TryCreateFileLink(Path.Combine(folder, "link.txt"), target))
             {
-                // This OS account cannot create symbolic links (Windows without developer mode); the Linux test container can.
                 return;
             }
 
@@ -37,7 +40,7 @@ public sealed class PluginSignaturePayloadTests
         }
     }
 
-    /// <summary>A folder that is a symbolic link makes the package unsignable and malformed, and is not walked into.</summary>
+    /// <summary>A folder that is a symbolic link (a junction on Windows) makes the package unsignable and malformed.</summary>
     [Fact]
     public void Build_SymlinkedDirectory_IsMalformed()
     {
@@ -46,11 +49,7 @@ public sealed class PluginSignaturePayloadTests
         try
         {
             File.WriteAllText(Path.Combine(outside, "inner.txt"), "outside the package");
-            if (!TryLink(() => Directory.CreateSymbolicLink(Path.Combine(folder, "linked"), outside)))
-            {
-                // This OS account cannot create symbolic links (Windows without developer mode); the Linux test container can.
-                return;
-            }
+            PluginLinkTestSeeds.CreateDirectoryLink(Path.Combine(folder, "linked"), outside);
 
             AssertRefused(folder);
         }
@@ -58,6 +57,78 @@ public sealed class PluginSignaturePayloadTests
         {
             Directory.Delete(folder, recursive: true);
             Directory.Delete(outside, recursive: true);
+        }
+    }
+
+    /// <summary>A directory junction is refused the same way; on Windows it needs no privilege, so this runs everywhere.</summary>
+    [Fact]
+    public void Build_JunctionedDirectory_IsMalformed()
+    {
+        var folder = SignedFolder("payload-junction");
+        var outside = PluginSigningTestSeeds.NewFolder("payload-junction-target");
+        try
+        {
+            File.WriteAllText(Path.Combine(outside, "inner.txt"), "outside the package");
+            var junction = Path.Combine(folder, "junction");
+            PluginLinkTestSeeds.CreateDirectoryLink(junction, outside);
+            new DirectoryInfo(junction).Attributes.HasFlag(FileAttributes.ReparsePoint).Should().BeTrue("the junction must exist before it is judged");
+
+            AssertRefused(folder);
+            File.Exists(Path.Combine(outside, "inner.txt")).Should().BeTrue("the target of a link is never touched");
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+            Directory.Delete(outside, recursive: true);
+        }
+    }
+
+    /// <summary>
+    /// Hidden files, dotfiles and a file two folders deep are all covered by the signature: each one is named in the
+    /// payload, and changing any one of them makes the package invalid.
+    /// </summary>
+    [Fact]
+    public void Inspect_HiddenDotAndNestedFiles_AreCovered()
+    {
+        string[] paths = [".hidden", ".config/.secret", "a/b/deep.txt"];
+        var folder = PluginSigningTestSeeds.NewFolder("payload-hidden");
+        try
+        {
+            PluginSigningTestSeeds.WritePackage(folder, "hidden-plugin", paths.ToDictionary(p => p, _ => "original"));
+            if (OperatingSystem.IsWindows())
+            {
+                // On Unix a leading dot is what hides a file; on Windows the attribute does.
+                File.SetAttributes(Path.Combine(folder, ".hidden"), FileAttributes.Hidden);
+            }
+
+            PluginSigningTestSeeds.Sign(folder);
+            PluginSigningTestSeeds.Verifier(enforced: true).Inspect(folder).Should().BeNull();
+            var payload = Encoding.UTF8.GetString(PluginSignaturePayload.Build(folder, PluginSigningTestSeeds.TrustedKeyId));
+            foreach (var path in paths)
+            {
+                payload.Should().Contain(" " + path + "\n");
+            }
+
+            foreach (var path in paths)
+            {
+                var file = Path.Combine(folder, path);
+                var attributes = File.GetAttributes(file);
+                File.SetAttributes(file, FileAttributes.Normal);
+                File.WriteAllText(file, "changed");
+                File.SetAttributes(file, attributes);
+
+                PluginSigningTestSeeds.Verifier(enforced: true).Inspect(folder)!.Rule
+                    .Should().Be(PluginSignatureRule.Invalid, "changing '{0}' must break the signature", path);
+
+                File.SetAttributes(file, FileAttributes.Normal);
+                File.WriteAllText(file, "original");
+                File.SetAttributes(file, attributes);
+                PluginSigningTestSeeds.Verifier(enforced: true).Inspect(folder).Should().BeNull();
+            }
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
         }
     }
 
@@ -192,7 +263,7 @@ public sealed class PluginSignaturePayloadTests
         sign.Should().Throw<InvalidDataException>();
     }
 
-    /// <summary>Builds a signed package folder that is still unchanged.</summary>
+    /// <summary>Builds a signed package folder that is still unchanged, and proves it verifies, so a later Malformed is caused by what the test adds.</summary>
     /// <param name="label">A short label for the folder name.</param>
     /// <returns>The folder; the caller deletes it.</returns>
     private static string SignedFolder(string label)
@@ -200,22 +271,7 @@ public sealed class PluginSignaturePayloadTests
         var folder = PluginSigningTestSeeds.NewFolder(label);
         PluginSigningTestSeeds.WritePackage(folder, "linked-plugin");
         PluginSigningTestSeeds.Sign(folder);
+        PluginSigningTestSeeds.Verifier(enforced: true).Inspect(folder).Should().BeNull("the package is signed and clean before a link is added");
         return folder;
-    }
-
-    /// <summary>Tries to create a link, reporting whether this OS account is allowed to.</summary>
-    /// <param name="create">Creates the link.</param>
-    /// <returns><see langword="true"/> when the link exists now.</returns>
-    private static bool TryLink(Action create)
-    {
-        try
-        {
-            create();
-            return true;
-        }
-        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or PlatformNotSupportedException)
-        {
-            return false;
-        }
     }
 }

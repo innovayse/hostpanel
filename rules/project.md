@@ -341,7 +341,11 @@ docker/                              compose set (shared·dev·prod·platform), 
     (sub-folders too) except `plugin.sig` at the root; folders are not listed. The key id is inside the payload, so a
     signature cannot be presented under another id. A key id is `[a-z0-9][a-z0-9._-]{0,63}` (`TrustedKeyId`). A path
     holding a control character or a lone surrogate (no UTF-8 form; the payload is encoded strictly), and any file or
-    folder that is a link (symlink or junction, never followed), cannot be signed and is `Malformed`.
+    folder that is a link (symlink or junction, never followed), cannot be signed and is `Malformed`. The check is on the
+    path, not on the opened handle, so a path swapped for a link between the check and the open would be followed; this is
+    accepted because the package root is created by the host (a staging folder it extracts the archive into, or an install
+    folder only its own process writes, and a zip entry is never written as a link), so no one else can write there. The
+    signing tool runs on the publisher's own folder and has no such guarantee.
     `PluginSignaturePayload.Header` carries the version, so a change of format is a new header, not a silent clash.
   - **Trusted keys** are public keys only (`PluginSigningOptions`, sealed, `SectionName = "PluginSigning"`, validated
     at startup by `PluginSigningOptionsValidator`): `MaintainerKeys` ships in `appsettings.json` (empty until the

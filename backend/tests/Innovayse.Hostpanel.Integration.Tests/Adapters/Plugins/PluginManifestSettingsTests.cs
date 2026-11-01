@@ -31,7 +31,7 @@ public sealed class PluginManifestSettingsTests
               {"key":"c","label":"C","type":"password"},
               {"key":"d","label":"D","type":"select"},
               {"key":"e","label":"E","type":"textarea"},
-              {"key":"f","label":"F","type":"somethingElse"}
+              {"key":"f","label":"F","type":"Text"}
             ]
             """));
 
@@ -90,6 +90,60 @@ public sealed class PluginManifestSettingsTests
             ",\"settings\":[{\"key\":\"k\",\"label\":\"K\"}]"));
 
         act.Should().Throw<JsonException>();
+    }
+
+    /// <summary>A <c>null</c> settings list reads as empty, as the SDK reads it, and the legacy fields still apply.</summary>
+    [Fact]
+    public void Deserialize_NullSettings_ReadsAsEmpty()
+    {
+        var manifest = PluginManifestReader.Deserialize(Manifest(
+            ",\"settings\":null,\"fields\":[{\"key\":\"a\",\"label\":\"A\",\"type\":\"secret\"}]"));
+
+        manifest!.Settings.Should().BeEmpty();
+        manifest.GetSettings().Select(s => s.Key).Should().Equal("a");
+    }
+
+    /// <summary>A <c>null</c> entry in the settings list is refused with a JSON error, not a null reference.</summary>
+    [Fact]
+    public void Deserialize_NullSettingEntry_Throws()
+    {
+        var act = () => PluginManifestReader.Deserialize(Manifest(",\"settings\":[null]"));
+
+        act.Should().Throw<JsonException>();
+    }
+
+    /// <summary>A legacy field of a type the SDK does not recognise is refused: its secrecy is unknown, so it never reads as text.</summary>
+    /// <param name="fieldJson">The legacy field entry as written in the manifest.</param>
+    [Theory]
+    [InlineData("{\"key\":\"k\",\"label\":\"K\",\"type\":\"apiToken\"}")]
+    [InlineData("{\"key\":\"k\",\"label\":\"K\"}")]
+    [InlineData("null")]
+    public void Deserialize_UnknownLegacyFieldType_Throws(string fieldJson)
+    {
+        var act = () => PluginManifestReader.Deserialize(Manifest(",\"fields\":[" + fieldJson + "]"));
+
+        act.Should().Throw<JsonException>();
+    }
+
+    /// <summary>Every type name the SDK recognises for a legacy field still loads.</summary>
+    /// <param name="type">The legacy field type.</param>
+    [Theory]
+    [InlineData("text")]
+    [InlineData("TEXT")]
+    [InlineData("secret")]
+    [InlineData("password")]
+    [InlineData("select")]
+    [InlineData("textarea")]
+    [InlineData("url")]
+    [InlineData("number")]
+    [InlineData("boolean")]
+    [InlineData("toggle")]
+    public void Deserialize_KnownLegacyFieldType_Loads(string type)
+    {
+        var manifest = PluginManifestReader.Deserialize(Manifest(
+            ",\"fields\":[{\"key\":\"k\",\"label\":\"K\",\"type\":\"" + type + "\"}]"));
+
+        manifest!.Fields.Should().ContainSingle();
     }
 
     /// <summary>The file reader leaves a plugin with an unknown setting type out: it does not load.</summary>

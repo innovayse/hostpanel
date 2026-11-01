@@ -1,6 +1,9 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
+using Innovayse.Hostpanel.Application.Admin.Integrations.Extensions;
 using Innovayse.Hostpanel.Domain.Settings;
+using Innovayse.SDK.Plugins.Manifest;
 
 namespace Innovayse.Hostpanel.Architecture.Tests;
 
@@ -12,6 +15,13 @@ namespace Innovayse.Hostpanel.Architecture.Tests;
 /// </summary>
 public sealed class SecretSettingClassificationTests
 {
+    /// <summary>JSON options matching how the host reads <c>plugin.json</c>.</summary>
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+    };
+
     /// <summary>A catalogue field is a password field exactly when the registry classifies it as secret.</summary>
     [Fact]
     public void Catalogue_PasswordFields_MatchTheRegistry()
@@ -30,9 +40,12 @@ public sealed class SecretSettingClassificationTests
         }
     }
 
-    /// <summary>Every field a shipped plugin manifest declares as secret is in the registry too.</summary>
+    /// <summary>
+    /// Every setting a shipped plugin manifest declares as secret, in <c>settings</c> or in the legacy <c>fields</c>,
+    /// is in the registry too, and no plain setting is. A settings-only plugin is covered like a fields-only one.
+    /// </summary>
     [Fact]
-    public void ShippedPluginManifests_SecretFields_AreInTheRegistry()
+    public void ShippedPluginManifests_SecretSettings_AreInTheRegistry()
     {
         var manifests = Directory.GetFiles(SourceRoot(), "plugin.json", SearchOption.AllDirectories)
             .Where(p => !p.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
@@ -42,17 +55,20 @@ public sealed class SecretSettingClassificationTests
         manifests.Should().NotBeEmpty();
         foreach (var path in manifests)
         {
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
-            foreach (var field in document.RootElement.GetProperty("fields").EnumerateArray())
+            var manifest = JsonSerializer.Deserialize<PluginManifest>(File.ReadAllText(path), JsonOptions)!;
+
+            // Same union the runtime classifier reads: GetSettings() hides the legacy fields once settings exist.
+            var settings = manifest.GetSettings().Concat(manifest.Fields.Select(PluginSetting.FromField)).ToList();
+
+            settings.Should().NotBeEmpty("{0} declares no settings", path);
+            foreach (var setting in settings)
             {
-                var name = field.GetProperty("key").GetString()!;
-                var type = field.GetProperty("type").GetString();
-                SecretSettingKeys.IntegrationSecretFields.Contains(name).Should().Be(
-                    SecretSettingKeys.IsSecretFieldType(IntegrationFieldTypes.FromManifest(type)),
+                SecretSettingKeys.IntegrationSecretFields.Contains(setting.Key).Should().Be(
+                    setting.IsSecret(),
                     "{0} declares '{1}' as '{2}'",
                     path,
-                    name,
-                    type);
+                    setting.Key,
+                    setting.Type);
             }
         }
     }

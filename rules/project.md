@@ -266,8 +266,11 @@ docker/                              compose set (shared·dev·prod·platform), 
   every settings read and write asks: it takes the union of `GetSettings()` and the legacy fields, so a
   secret declared in either list is secret even in a manifest that mixes the two and omits it from `settings`.
   A secret is never returned in clear (`isSecret` and `hasValue` only) and is encrypted on save. A `settings`
-  entry with a `type` the host does not define is refused when the manifest is read (the plugin does not load),
-  and anywhere one still reaches the classifier it counts as secret: it never reads as plain text. The wire
+  entry with a `type` the host does not define, and a legacy `fields` entry with a `type` the SDK does not
+  recognise (the SDK would read it as plain text), are refused when the manifest is read
+  (`PluginManifestReader.Deserialize`, the plugin does not load), and anywhere an undefined settings kind still
+  reaches the classifier it counts as secret: an unknown type never reads as plain text. A `null` `settings`
+  or `fields` list reads as empty, as in the SDK. The wire
   shape of a field definition (`FieldDefinitionDto`) is unchanged; a select carries the values of its options.
 - **Two plugin folders: built-in and uploaded (`PluginOptions`, section `Plugins`).** The build's own
   `plugins/` folder (`PluginOptions.BuiltInRoot`) holds the plugins shipped with the build; they load

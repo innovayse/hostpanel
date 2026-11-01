@@ -555,6 +555,18 @@
 <data name="PLUGIN_NOT_TRUSTED" xml:space="preserve">
     <value>Этого архива нет в списке доверенных пакетов плагинов на сервере.</value>
   </data>
+<data name="PLUGIN_UNSIGNED" xml:space="preserve">
+    <value>Этот пакет плагина не подписан, а сервер принимает только подписанные плагины.</value>
+  </data>
+<data name="PLUGIN_SIGNATURE_MALFORMED" xml:space="preserve">
+    <value>Файл подписи этого пакета плагина не удаётся прочитать.</value>
+  </data>
+<data name="PLUGIN_SIGNATURE_KEY_UNKNOWN" xml:space="preserve">
+    <value>Этот пакет плагина подписан ключом, которому сервер не доверяет.</value>
+  </data>
+<data name="PLUGIN_SIGNATURE_INVALID" xml:space="preserve">
+    <value>Подпись этого пакета плагина не совпадает с его файлами: пакет был изменён после подписания.</value>
+  </data>
 <data name="PLUGIN_BUILT_IN" xml:space="preserve">
     <value>Этот плагин входит в поставку сервера, его нельзя удалить или заменить.</value>
   </data>

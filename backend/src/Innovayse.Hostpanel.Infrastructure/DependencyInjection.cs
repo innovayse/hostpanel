@@ -35,6 +35,7 @@ using Innovayse.Hostpanel.Infrastructure.Pdf.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Persistence.Settings;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
+using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
 using Innovayse.Hostpanel.Infrastructure.Provisioning;
 using Innovayse.Hostpanel.Infrastructure.Provisioning.Settings;
@@ -59,6 +60,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;
@@ -84,11 +86,13 @@ public static class DependencyInjection
     /// <param name="services">The service collection to configure.</param>
     /// <param name="configuration">Application configuration.</param>
     /// <param name="loggerFactory">Logger factory used during plugin discovery at startup.</param>
+    /// <param name="environment">The host environment, which decides whether plugin signatures are enforced.</param>
     /// <returns>The same <paramref name="services"/> for chaining.</returns>
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
         IConfiguration configuration,
-        ILoggerFactory loggerFactory)
+        ILoggerFactory loggerFactory,
+        IHostEnvironment environment)
     {
         // Encryption.
         //
@@ -858,7 +862,26 @@ public static class DependencyInjection
             .ValidateOnStart();
         services.AddScoped<IPluginPackageStore, PluginPackageStore>();
         var pluginOptions = configuration.GetSection(PluginOptions.SectionName).Get<PluginOptions>() ?? new PluginOptions();
-        PluginLoader.DiscoverAndRegister(services, [PluginOptions.BuiltInRoot, pluginOptions.InstallRoot], loggerFactory);
+
+        // Uploaded plugins must prove who made them: a signature by one of the trusted keys (the maintainers' shipped
+        // ones plus the operator's own), unless the host is Development or the admin allows unsigned plugins. Plugins
+        // shipped inside the image are the host's own files and are not checked; see PluginSignatureVerifier. The
+        // setting lives in the database, which the container does not exist to read yet, so the loader is handed it here.
+        services.AddSingleton<IValidateOptions<PluginSigningOptions>, PluginSigningOptionsValidator>();
+        services.AddOptions<PluginSigningOptions>()
+            .Bind(configuration.GetSection(PluginSigningOptions.SectionName))
+            .ValidateOnStart();
+        var signingOptions = configuration.GetSection(PluginSigningOptions.SectionName).Get<PluginSigningOptions>() ?? new PluginSigningOptions();
+        var signatureVerifier = PluginSignatureVerifier.Create(signingOptions, environment);
+        services.AddSingleton(signatureVerifier);
+        var allowUnsigned = signatureVerifier.Enforced
+            && AllowUnsignedSettingReader.Read(configuration.GetConnectionString("DefaultConnection"), loggerFactory.CreateLogger(nameof(PluginLoader)));
+        PluginLoader.DiscoverAndRegister(
+            services,
+            [new PluginRoot(PluginOptions.BuiltInRoot, PluginOrigin.BuiltIn), new PluginRoot(pluginOptions.InstallRoot, PluginOrigin.Uploaded)],
+            signatureVerifier,
+            allowUnsigned,
+            loggerFactory);
 
         // Every plugin is turned into an instance by the one activator (its settings gate and configuration),
         // whichever resolver or runner asks for it. Scoped: it reads the settings through the request's context.

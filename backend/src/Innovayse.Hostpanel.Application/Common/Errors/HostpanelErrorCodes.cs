@@ -807,6 +807,18 @@ public static class HostpanelErrorCodes
     /// <summary>A trusted-package list is configured and the archive is not on it (400).</summary>
     public const string PLUGIN_NOT_TRUSTED = "PLUGIN_NOT_TRUSTED";
 
+    /// <summary>The plugin package carries no <c>plugin.sig</c> and the host does not admit unsigned packages (400).</summary>
+    public const string PLUGIN_UNSIGNED = "PLUGIN_UNSIGNED";
+
+    /// <summary>The plugin package's <c>plugin.sig</c> cannot be read as a signature (400).</summary>
+    public const string PLUGIN_SIGNATURE_MALFORMED = "PLUGIN_SIGNATURE_MALFORMED";
+
+    /// <summary>The plugin package is signed with a key that this host does not trust (400).</summary>
+    public const string PLUGIN_SIGNATURE_KEY_UNKNOWN = "PLUGIN_SIGNATURE_KEY_UNKNOWN";
+
+    /// <summary>The plugin package's signature does not match its files, so it was changed after signing (400).</summary>
+    public const string PLUGIN_SIGNATURE_INVALID = "PLUGIN_SIGNATURE_INVALID";
+
     /// <summary>The plugin ships with this build and cannot be removed or replaced by an upload (409).</summary>
     public const string PLUGIN_BUILT_IN = "PLUGIN_BUILT_IN";
 

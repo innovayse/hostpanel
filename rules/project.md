@@ -322,6 +322,67 @@ docker/                              compose set (shared·dev·prod·platform), 
   nothing is left behind. The manifest-level `sdkVersion` check (`PLUGIN_SDK_VERSION_UNSUPPORTED`) is separate
   and unchanged. Rules for view documents (`view` files) arrive with the view document schema and are not
   checked yet.
+- **Signed plugin packages (`Infrastructure/Plugins/PluginSignatureVerifier`, section `PluginSigning`).** An uploaded
+  package carries a detached Ed25519 signature, `plugin.sig` at its root, checked in one place by both paths, like the
+  manifest validator: at install (`PluginPackageStore`, on the unpacked files, before the move into place) and at load
+  (`PluginLoader`, **before any assembly of the plugin is loaded**, because loading can already run its code). A refusal
+  is a `PluginSignatureRule` (Application `Admin/Plugins/Common/Enums`, a sibling of `PluginManifestRule`), which is also
+  its error code (`PluginPackageErrors.CodeFor`, en/ru/hy, 400): `Unsigned` (`PLUGIN_UNSIGNED`, no `plugin.sig`),
+  `Malformed` (`PLUGIN_SIGNATURE_MALFORMED`, the file is not a signature, is over 4 KB, or a file name holds a control
+  character), `UnknownKey` (`PLUGIN_SIGNATURE_KEY_UNKNOWN`, the key id is not trusted), `Invalid`
+  (`PLUGIN_SIGNATURE_INVALID`, a file was changed, added or removed after signing). At install the response is the rule's
+  localised error and nothing is left behind (`PluginPackageOutcome.SignatureRefused`); at load only that plugin is
+  skipped and one warning carries its id and the rule.
+  - **The format** (`PluginSignatureFile`, `PluginSignaturePayload`; both the signing tool and the host use this code).
+    `plugin.sig` is `{"keyId":"...","signature":"<base64 of the 64-byte Ed25519 signature>"}`. The signature covers
+    this UTF-8 text (no byte order mark, every line ends in `\n`): the line `innovayse-plugin-signature-v1`, the
+    line `key <keyId>`, then one line per file, `<lower-case hex SHA-256> <path>`, where `<path>` is relative to the
+    package root with forward slashes, sorted by path with ordinal comparison. Every file under the root is listed
+    (sub-folders too) except `plugin.sig` at the root; folders are not listed. The key id is inside the payload, so a
+    signature cannot be presented under another id. A key id is `[a-z0-9][a-z0-9._-]{0,63}` (`TrustedKeyId`). A path
+    holding a control character or a lone surrogate (no UTF-8 form; the payload is encoded strictly), and any file or
+    folder that is a link (symlink or junction, never followed), cannot be signed and is `Malformed`. The check is on the
+    path, not on the opened handle, so a path swapped for a link between the check and the open would be followed; this is
+    accepted because the package root is created by the host (a staging folder it extracts the archive into, or an install
+    folder only its own process writes, and a zip entry is never written as a link), so no one else can write there. The
+    signing tool runs on the publisher's own folder and has no such guarantee.
+    `PluginSignaturePayload.Header` carries the version, so a change of format is a new header, not a silent clash.
+  - **Trusted keys** are public keys only (`PluginSigningOptions`, sealed, `SectionName = "PluginSigning"`, validated
+    at startup by `PluginSigningOptionsValidator`): `MaintainerKeys` ships in `appsettings.json` (empty until the
+    maintainers publish a key; nothing placeholder is shipped, tests generate their own keys per run) and `OperatorKeys`
+    is the operator's own (`PluginSigning__OperatorKeys__0__KeyId` and `__PublicKey`, the base64 of the 32-byte raw
+    key). Two lists because configuration arrays merge by index: one list would let an operator's first entry replace
+    the maintainers' first. The trusted set is both lists; a key id may appear once. A private key is never in the
+    repository, in configuration or on the host.
+  - **The policy** (`PluginSignatureVerifier.Check`). A plugin staged inside the image (`PluginOrigin.BuiltIn`, the
+    build's `plugins/` folder, such as the payment provider) is part of the host and **is never signature-checked**: it
+    is exactly as trustworthy as the image it shipped in, and the existing `Plugins:TrustedPackageSha256` pin stays
+    what it was, an archive digest allow-list for uploads. An uploaded plugin (`PluginOrigin.Uploaded`) is checked
+    wherever signatures are enforced, which is every environment except Development and Testing
+    (`PluginSignatureVerifier.Create`, the same environment test `DeployedSecretsValidator` uses); in Development an
+    unsigned package loads. Where enforced, an unsigned, tampered or unknown-key package is refused unless the admin
+    setting `plugins.allow_unsigned` (`PluginSettingKeys`, a `plugins.*` row seeded `false` by `PortalSettingsSeeder`,
+    validated by `UpdateSettingHandler`) is on; then it is admitted with a warning naming the plugin and the rule.
+    Turning it on is audited: `UpdateSettingHandler` writes a system-wide activity log line `Changed Setting - Setting:
+    plugins.allow_unsigned - From: false - To: true` in the same save (`PluginSettingKeys.IsAudited`).
+  - **When the setting is read.** At install `InstallPluginHandler` reads the row for each upload, so a change applies to
+    the next upload at once. At startup the loader needs it before the container exists, so
+    `AllowUnsignedSettingReader` reads that one row with a plain Npgsql query in `AddInfrastructure`; a database that
+    cannot be reached, a missing table (the first start), a missing row or any other failure reads as off, the safe
+    answer; the warning logs the setting name and the exception type only, never the connection string or host. Plugins
+    already installed therefore follow a change of the setting at the next restart.
+  - **Known limitation: no downgrade protection.** The signature proves who published the files and that they are
+    unchanged, not that they are the newest. An older signed version of a plugin can be installed again, and nothing in
+    the signature stops it, so a version with a known flaw stays installable for as long as its key is trusted. Removing a
+    trusted key is the only revocation today; a signed version floor or a revocation list is not built.
+  - **Signing** (`backend/tools/Innovayse.Hostpanel.PluginSigner`, outside `src/` and the solution, so the image does not
+    build it): `dotnet run --project backend/tools/Innovayse.Hostpanel.PluginSigner -- keygen <private-key-file>`
+    creates a key (the file holds the base64 of the 32-byte private key) and prints the public key;
+    `... -- sign <package-dir> <private-key-file> <key-id>` writes `plugin.sig`; `... -- public-key <private-key-file>`
+    prints the public key again. The tool refuses a key file inside a git working tree. Sign the folder that will be
+    zipped, after its last change. The future plugin repositories (#780) sign in their release pipeline with the same tool.
+  - **Admin.** The plugins page shows the `plugins.allow_unsigned` switch (`PluginSigningCard`) with a visible warning,
+    saved through the settings store like every other settings row.
 
 ## CQRS — Wolverine, conforming
 

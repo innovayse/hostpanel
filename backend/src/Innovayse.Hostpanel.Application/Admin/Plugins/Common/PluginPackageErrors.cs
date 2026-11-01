@@ -9,7 +9,7 @@ public static class PluginPackageErrors
     /// <summary>The error code for a refused result.</summary>
     /// <param name="result">A refusal; a success has no code.</param>
     /// <returns>The matching <see cref="HostpanelErrorCodes"/> constant.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">The result is a success, or a broken manifest rule is not named.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">The result is a success, or a broken manifest rule or a refused signature is not named.</exception>
     public static string CodeFor(PluginPackageResult result)
     {
         ArgumentNullException.ThrowIfNull(result);
@@ -28,6 +28,8 @@ public static class PluginPackageErrors
             PluginPackageOutcome.ArchiveTooLarge => HostpanelErrorCodes.PLUGIN_ARCHIVE_TOO_LARGE,
             PluginPackageOutcome.HostAssemblyRefused => HostpanelErrorCodes.PLUGIN_HOST_ASSEMBLY_REFUSED,
             PluginPackageOutcome.NotTrusted => HostpanelErrorCodes.PLUGIN_NOT_TRUSTED,
+            PluginPackageOutcome.SignatureRefused => CodeFor(
+                result.SignatureRule ?? throw new ArgumentOutOfRangeException(nameof(result), result, "A refused signature must be named.")),
             PluginPackageOutcome.BuiltIn => HostpanelErrorCodes.PLUGIN_BUILT_IN,
             PluginPackageOutcome.NotFound => HostpanelErrorCodes.PLUGIN_NOT_FOUND,
             _ => throw new ArgumentOutOfRangeException(nameof(result), result, "A success outcome has no error code."),
@@ -53,6 +55,22 @@ public static class PluginPackageErrors
             PluginManifestRule.SlotContextKeyNotOffered => HostpanelErrorCodes.PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED,
             PluginManifestRule.AssemblyUnreadable => HostpanelErrorCodes.PLUGIN_ASSEMBLY_UNREADABLE,
             _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, "Not a manifest rule."),
+        };
+    }
+
+    /// <summary>The error code for a failed signature check.</summary>
+    /// <param name="rule">The check the package failed.</param>
+    /// <returns>The matching <see cref="HostpanelErrorCodes"/> constant.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">The rule is not a defined one.</exception>
+    public static string CodeFor(PluginSignatureRule rule)
+    {
+        return rule switch
+        {
+            PluginSignatureRule.Unsigned => HostpanelErrorCodes.PLUGIN_UNSIGNED,
+            PluginSignatureRule.Malformed => HostpanelErrorCodes.PLUGIN_SIGNATURE_MALFORMED,
+            PluginSignatureRule.UnknownKey => HostpanelErrorCodes.PLUGIN_SIGNATURE_KEY_UNKNOWN,
+            PluginSignatureRule.Invalid => HostpanelErrorCodes.PLUGIN_SIGNATURE_INVALID,
+            _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, "Not a signature rule."),
         };
     }
 }

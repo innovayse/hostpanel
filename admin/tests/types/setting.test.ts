@@ -1,9 +1,9 @@
 /**
- * Unit tests for the setting keys: every key has an environment fallback name, and the toggle
+ * Unit tests for the setting keys: every key has an environment fallback name, the plugin signing key stays apart, and the toggle
  * strings are the ones the API stores.
  */
 import { describe, expect, it } from 'vitest'
-import { SettingEnv, SettingKey, SettingToggle } from '@/types/setting'
+import { PluginSettingKey, SettingEnv, SettingKey, SettingToggle } from '@/types/setting'
 
 describe('SettingKey', () => {
   it('prefixes every key with portal', () => {
@@ -16,6 +16,13 @@ describe('SettingKey', () => {
     const keys = Object.values(SettingKey)
 
     expect(new Set(keys).size).toBe(keys.length)
+  })
+})
+
+describe('PluginSettingKey', () => {
+  it('names the row the server seeds for the signing switch, apart from the portal keys', () => {
+    expect(PluginSettingKey.AllowUnsigned).toBe('plugins.allow_unsigned')
+    expect(Object.values(SettingKey)).not.toContain(PluginSettingKey.AllowUnsigned)
   })
 })
 

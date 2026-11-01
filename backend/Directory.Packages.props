@@ -130,6 +130,12 @@
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.2.0" />
     <PackageVersion Include="Fluid.Core" Version="2.40.0" />
     <PackageVersion Include="MailKit" Version="4.18.1" />
+    <!--
+      Ed25519, which .NET 9 does not ship: it checks the detached signature of a plugin package
+      (Infrastructure/Plugins/PluginSignatureVerifier). Already in the closure through MailKit, so this pins the
+      version the host resolves anyway, and it is a managed library with no native part.
+    -->
+    <PackageVersion Include="BouncyCastle.Cryptography" Version="2.7.0" />
     <PackageVersion Include="Mapster" Version="7.4.0" />
     <PackageVersion Include="Otp.NET" Version="1.4.1" />
     <PackageVersion Include="Serilog.AspNetCore" Version="8.0.3" />

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Innovayse.Hostpanel.Application.Admin.Seeding;
 
 /// <summary>
-/// Seeds the storefront's <c>portal.*</c> settings, and the billing engine's <c>billing.renewal.*</c> settings, on a fresh install.
+/// Seeds the storefront's <c>portal.*</c> settings, the billing engine's <c>billing.renewal.*</c> settings and the plugin system's <c>plugins.*</c> settings, on a fresh install.
 /// <para>
 /// The portal reads these to decide which template to render, which colour mode to
 /// start in, which logo to show and which contact channels to offer, falling back to
@@ -46,8 +46,8 @@ public static class PortalSettingsSeeder
     {
         var created = 0;
 
-        // Billing keys ride the same seeder so both startup and the demo reset (the two callers) seed them.
-        var defaults = PortalSettingKeys.Defaults.Concat(BillingSettingKeys.Defaults).ToList();
+        // Billing and plugin keys ride the same seeder so both startup and the demo reset (the two callers) seed them.
+        var defaults = PortalSettingKeys.Defaults.Concat(BillingSettingKeys.Defaults).Concat(PluginSettingKeys.Defaults).ToList();
         foreach (var (key, value, description) in defaults)
         {
             // Tracked, not AsNoTracking: a newly created

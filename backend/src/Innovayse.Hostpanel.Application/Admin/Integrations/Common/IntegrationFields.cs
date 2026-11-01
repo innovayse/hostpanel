@@ -10,7 +10,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 /// </summary>
 public static class IntegrationFields
 {
-    /// <summary>Resolves the name and declared fields of an integration.</summary>
+    /// <summary>Resolves the name and declared fields of an integration; a plugin's come from its manifest settings (<c>GetSettings()</c>).</summary>
     /// <param name="slug">The integration slug or plugin id.</param>
     /// <param name="plugins">The registry of loaded plugins.</param>
     /// <returns>The integration's definition, or <c>null</c> when the slug names neither a built-in integration nor a loaded plugin.</returns>
@@ -29,6 +29,6 @@ public static class IntegrationFields
             return null;
         }
 
-        return new IntegrationDefinition(manifest.Name, manifest.Fields.Select(f => f.ToFieldDefinition()).ToList());
+        return new IntegrationDefinition(manifest.Name, manifest.GetSettings().Select(s => s.ToFieldDefinition()).ToList());
     }
 }

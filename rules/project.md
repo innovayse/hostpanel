@@ -183,8 +183,8 @@ docker/                              compose set (shared·dev·prod·platform), 
   type its manifest declares: provisioning, payment, registrar, identity (`IClientResolver`),
   fulfilment (`IFulfilmentPlugin`) and hosted (`IHostedPlugin`). Every plugin becomes an instance in
   one place, `Infrastructure/Plugins/PluginActivator`: it checks the loaded type really implements the
-  contract, that `integration:{id}:is_enabled` is `true` and that every required manifest field is
-  stored, then builds the plugin with its own configuration. The resolvers only choose:
+  contract, that `integration:{id}:is_enabled` is `true` and that every required manifest setting
+  (`manifest.GetSettings()`, which falls back to the legacy `fields`) is stored, then builds the plugin with its own configuration. The resolvers only choose:
   `PaymentPluginResolver` (`IPaymentPluginResolver`, one plugin by module id),
   `FulfilmentPluginResolver` (`IFulfilmentPluginResolver`, every enabled fulfilment plugin in id order) and
   `IdentityPluginResolver` (`IIdentityPluginResolver`, the one enabled identity plugin; two or more
@@ -244,9 +244,22 @@ docker/                              compose set (shared·dev·prod·platform), 
   (the rows are filtered by prefix in SQL, never the whole `Settings` table). Connection strings,
   signing keys and other integrations never reach a plugin. The keys keep their full path because
   the SDK base classes read `integration:{id}:{key}`; a relative `IConfigurationSection` would make
-  every such read miss. This is the public plugin contract; typed plugin settings are planned for a
-  later SDK version, and until then this is the one type below the composition root allowed to hold
+  every such read miss. This is the public plugin contract: a plugin still reads its settings through `IConfiguration`
+  even though the manifest now declares them typed (see the manifest v2 note below), and this is the one type below the composition root allowed to hold
   `IConfiguration` (allow-listed in `ConfigurationTests`). Nothing else may follow it.
+- **Manifest v2 (SDK 1.4.0): `settings` supersede `fields`.** A `plugin.json` may declare typed `settings`
+  (text, url, select, secret, number, boolean, textarea); the legacy `fields` list is still read. The host
+  reads a manifest's settings in one place only, `PluginManifest.GetSettings()` (the `settings` when it lists
+  any, otherwise each legacy field converted): the activator's required check, the integration detail and
+  save (`IntegrationFields`), the loader's integration entry and the field mapping
+  (`PluginSettingMappingExtensions`) all go through it, and no host code reads `manifest.Fields` directly.
+  The one exception is secret classification, `Application/Admin/Common/SettingSecrecy`, the only question
+  every settings read and write asks: it takes the union of `GetSettings()` and the legacy fields, so a
+  secret declared in either list is secret even in a manifest that mixes the two and omits it from `settings`.
+  A secret is never returned in clear (`isSecret` and `hasValue` only) and is encrypted on save. A `settings`
+  entry with a `type` the host does not define is refused when the manifest is read (the plugin does not load),
+  and anywhere one still reaches the classifier it counts as secret: it never reads as plain text. The wire
+  shape of a field definition (`FieldDefinitionDto`) is unchanged; a select carries the values of its options.
 - **Two plugin folders: built-in and uploaded (`PluginOptions`, section `Plugins`).** The build's own
   `plugins/` folder (`PluginOptions.BuiltInRoot`) holds the plugins shipped with the build; they load
   first, are listed with `isBuiltIn: true`, and cannot be removed or replaced from the admin panel

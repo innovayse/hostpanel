@@ -124,8 +124,8 @@ public static class PluginLoader
                     Category: manifest.IntegrationsCategory ?? manifest.Category,
                     Type: manifest.Type,
                     Color: manifest.Color,
-                    FieldDefinitions: manifest.Fields
-                        .Select(f => f.ToFieldDefinition())
+                    FieldDefinitions: manifest.GetSettings()
+                        .Select(s => s.ToFieldDefinition())
                         .ToList()));
 
                 logger.LogInformation(

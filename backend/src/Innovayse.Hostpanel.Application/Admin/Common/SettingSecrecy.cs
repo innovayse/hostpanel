@@ -1,22 +1,24 @@
+using Innovayse.Hostpanel.Application.Admin.Integrations.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
-using Innovayse.SDK.Plugins.Enums;
+using Innovayse.SDK.Plugins.Manifest;
 
 namespace Innovayse.Hostpanel.Application.Admin.Common;
 
 /// <summary>
 /// Classifies setting keys as secret for every settings read and write: the keys
 /// <see cref="SecretSettingKeys"/> names, plus every setting a loaded plugin's manifest declares with
-/// the secret input type (a legacy field of type secret or password counts). It is the one question
-/// every handler asks, so no handler decides on its own.
+/// the secret kind or a kind this release does not define. The manifest's settings and its legacy fields are
+/// both read, so a manifest that mixes the two keeps a secret field secret even when its settings omit it.
+/// It is the one question every handler asks, so no handler decides on its own.
 /// </summary>
 public sealed class SettingSecrecy
 {
-    /// <summary>Full setting keys of the plugin fields declared as secret, compared case-insensitively.</summary>
+    /// <summary>Full setting keys of the plugin settings declared as secret, compared case-insensitively.</summary>
     private readonly HashSet<string> _pluginSecretKeys;
 
     /// <summary>Initializes the classifier over the plugin-declared secret keys.</summary>
-    /// <param name="pluginSecretKeys">Full setting keys of the plugin fields declared as secret.</param>
+    /// <param name="pluginSecretKeys">Full setting keys of the plugin settings declared as secret.</param>
     private SettingSecrecy(HashSet<string> pluginSecretKeys)
     {
         _pluginSecretKeys = pluginSecretKeys;
@@ -29,9 +31,12 @@ public sealed class SettingSecrecy
     {
         ArgumentNullException.ThrowIfNull(plugins);
 
+        // GetSettings() hides the legacy fields once a manifest lists settings. Secrecy must not depend on
+        // which list a secret was declared in, so the legacy fields are read as settings too and the union wins.
         var keys = plugins.GetLoadedManifests()
             .SelectMany(m => m.GetSettings()
-                .Where(s => s.Type == PluginSettingType.Secret)
+                .Concat(m.Fields.Select(PluginSetting.FromField))
+                .Where(s => s.IsSecret())
                 .Select(s => IntegrationSettingKeys.FieldKey(m.Id, s.Key)))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 

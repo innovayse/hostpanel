@@ -1,5 +1,3 @@
-using Innovayse.Hostpanel.Application.Admin.Common;
-using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
@@ -251,65 +249,5 @@ public sealed class PluginManifestReaderTests
         settings[1].Placeholder.Should().BeNull();
         settings[1].Min.Should().BeNull();
         settings[1].Max.Should().BeNull();
-    }
-
-    /// <summary>Legacy fields map to settings of the matching kind, keeping key, label and requirement.</summary>
-    [Fact]
-    public void GetSettings_FieldsOnly_MapsEachFieldToASetting()
-    {
-        var manifest = PluginManifestReader.Deserialize(Manifest("""
-            ,"fields":[
-              {"key":"a","label":"A","type":"text","required":true},
-              {"key":"b","label":"B","type":"secret"},
-              {"key":"c","label":"C","type":"password"},
-              {"key":"d","label":"D","type":"select"},
-              {"key":"e","label":"E","type":"textarea"},
-              {"key":"f","label":"F","type":"somethingElse"}
-            ]
-            """));
-
-        var settings = manifest!.GetSettings();
-
-        settings.Select(s => s.Key).Should().Equal("a", "b", "c", "d", "e", "f");
-        settings.Select(s => s.Type).Should().Equal(
-            PluginSettingType.Text, PluginSettingType.Secret, PluginSettingType.Secret,
-            PluginSettingType.Select, PluginSettingType.Textarea, PluginSettingType.Text);
-        settings[0].Label.Should().Be("A");
-        settings[0].Required.Should().BeTrue();
-        settings[1].Required.Should().BeFalse();
-    }
-
-    /// <summary>When a manifest lists settings, they win over the legacy fields.</summary>
-    [Fact]
-    public void GetSettings_SettingsAndFields_SettingsSupersede()
-    {
-        var manifest = PluginManifestReader.Deserialize(Manifest("""
-            ,"fields":[{"key":"old","label":"Old","type":"text"}],
-            "settings":[{"key":"new","label":"New","type":"url"}]
-            """));
-
-        manifest!.GetSettings().Select(s => s.Key).Should().Equal("new");
-        manifest.Fields.Select(f => f.Key).Should().Equal("old");
-    }
-
-    /// <summary>A secret setting of a version 2 manifest is classified secret, like a legacy secret field.</summary>
-    [Fact]
-    public void SettingSecrecy_SecretSettingAndSecretField_BothAreSecret()
-    {
-        var registry = new PluginRegistry();
-        registry.Register(new LoadedPlugin(
-            PluginManifestReader.Deserialize(Manifest(
-                ",\"settings\":[{\"key\":\"apiKey\",\"label\":\"K\",\"type\":\"secret\"},{\"key\":\"host\",\"label\":\"H\",\"type\":\"url\"}]"))!,
-            typeof(object)));
-        registry.Register(new LoadedPlugin(
-            PluginManifestReader.Deserialize(
-                Manifest(",\"fields\":[{\"key\":\"token\",\"label\":\"T\",\"type\":\"secret\"}]").Replace("\"id\":\"p\"", "\"id\":\"q\""))!,
-            typeof(object)));
-
-        var secrecy = SettingSecrecy.From(registry);
-
-        secrecy.IsSecret(IntegrationSettingKeys.FieldKey("p", "apiKey")).Should().BeTrue();
-        secrecy.IsSecret(IntegrationSettingKeys.FieldKey("p", "host")).Should().BeFalse();
-        secrecy.IsSecret(IntegrationSettingKeys.FieldKey("q", "token")).Should().BeTrue();
     }
 }

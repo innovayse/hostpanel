@@ -27,6 +27,7 @@ namespace Innovayse.Hostpanel.API.Controllers;
 [Authorize(Policy = Policies.Admin)]
 [RequireRequestedWith]
 [PluginBodyLimit]
+[NoFormBinding]
 [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status429TooManyRequests)]
 public sealed class AdminPluginCallsController : BaseApiController
 {

@@ -421,12 +421,24 @@ docker/                              compose set (shared·dev·prod·platform), 
   - **Body cap (`PluginApiOptions`, section `PluginApi`, `MaxBodyBytes`, default 1 MiB, 1 to 64 MiB, validated on start).**
     A declared `Content-Length` over the cap is refused without reading; a body without one is read in chunks and refused
     the moment it passes the cap: 413 `PLUGIN_REQUEST_TOO_LARGE` before the plugin is called. The plugin sees the whole
-    body or none of it. The body is read once into one buffer sized from the declared length when there is one, and the
-    plugin is handed a slice of that buffer (no second copy). Because the cap may be larger than the web server's own
-    per request limit (about 28.6 MiB), both plugin controllers carry `[PluginBodyLimit]`, which lifts the server's limit
-    for those routes alone and after authorisation; `PluginCallRunner` is then the only limit, so an oversize chunked
-    body above both still answers 413 `PLUGIN_REQUEST_TOO_LARGE` rather than a bare server 413. Architecture tests pin
-    `[RequireRequestedWith]`, `[PluginBodyLimit]` and the policy on both controllers.
+    body or none of it. **Memory cost:** the body is read once by `PluginBodyReader` into one buffer and the plugin is handed a slice of it (no
+    second copy), so a call holds up to `MaxBodyBytes` (up to 64 MiB) for as long as it runs. The buffer is never sized
+    from a declared length beyond 64 KiB, because a declared length is only a claim (a caller who declares the whole cap and
+    sends nothing must not make the host allocate it); it grows by doubling as bytes really arrive, so a chunked or large
+    body briefly holds the old and the new array at once (up to about 3 times the body at the last growth step). Size
+    `MaxBodyBytes` for the number of concurrent plugin calls a deployment expects, not only for the largest body.
+    **Two guards keep the runner the only reader.** `[PluginBodyLimit]` sets the web server's per request body limit
+    (default about 28.6 MiB, which may be below the cap) to `PluginApiOptions.ServerBodyLimit` (the cap, one read chunk of 8 KiB and 1/64 of the cap for chunk framing, which the
+    server counts) on both plugin controllers, after authorisation: the runner stops at the first read that passes the cap, which
+    is never more than one chunk beyond it, so it still answers its own 413 `PLUGIN_REQUEST_TOO_LARGE` first, while a
+    request the runner never reads (unknown plugin, undeclared route, refused caller, 501) is bounded by the server at
+    that same size instead of being drained without limit. `[NoFormBinding]` removes every MVC value provider except the
+    route's and the query string's, because MVC otherwise reads and buffers a urlencoded or multipart body before the
+    action, past the cap, and leaves the plugin an empty body. Architecture tests pin `[RequireRequestedWith]`,
+    `[PluginBodyLimit]`, `[NoFormBinding]` and the policy on both controllers; `PluginKestrelBodyTests` proves the limits on
+    a real Kestrel socket (`KestrelBodyHost`: the same guards, `PluginHttpInputReader` and `PluginBodyReader` behind probe
+    controllers), since the in-memory test server has no limit and the API's own entry point cannot be put on a socket by the
+    test factory (the JasperFx run command disposes the host once a real server starts).
   - **Audit.** A call that is not a GET writes one activity log line before the plugin runs, through `IActivityLogger`:
     `Called Plugin Route - Plugin ID: {id} - Area: {Client|Admin} - Route: {METHOD} {declared template}`, the client for a
     client call and none for an admin call, stamped with the caller by the logger. Never the body, never the concrete

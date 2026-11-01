@@ -1,42 +1,27 @@
-using Microsoft.AspNetCore.Http.Features;
-using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Innovayse.Hostpanel.API.Plugins;
 
 /// <summary>
-/// Hands the size of a plugin route's request body to the plugin call alone: it lifts the web server's own per request
-/// body limit for these routes, because <c>PluginApi:MaxBodyBytes</c> (up to 64 MiB) is the limit and the server's default
-/// (about 28.6 MiB) is lower than the ceiling a deployment may configure.
+/// Hands the size of a plugin route's request body to the plugin call: it sets the web server's own per request body
+/// limit for these routes to <c>PluginApi:MaxBodyBytes</c> plus a small allowance, because the cap (up to 64 MiB) may be
+/// above the server's default (about 28.6 MiB) and the server's limit must never be the one that answers first.
 /// </summary>
 /// <remarks>
-/// Without it a chunked body that passes the server's limit but not the configured cap would be cut off by the server
-/// with its own bare 413, and a body between the two would answer differently from one above both. With it, the one
-/// reader of the body, <c>PluginCallRunner</c>, is the only limit: it refuses a declared length over the cap without
-/// reading and stops reading the moment a body passes it, so every oversize request answers 413
-/// <c>PLUGIN_REQUEST_TOO_LARGE</c>. The body is read only after authorisation, and never past the cap plus one chunk.
+/// The work is <see cref="PluginBodyLimitFilter"/>, built per request with the configured cap injected; this attribute is
+/// only the mark a controller carries. The limit is the cap plus one read chunk and the chunk framing (see
+/// <see cref="Innovayse.Hostpanel.Application.Common.Settings.PluginApiOptions.ServerBodyLimit"/>), not none:
+/// <c>PluginBodyReader</c>, the one reader of the body, stops at the first read that passes the cap, which is never more
+/// than one chunk beyond it, so the runner answers its own 413 <c>PLUGIN_REQUEST_TOO_LARGE</c> before the server's limit
+/// is reached. A request the runner never reads (an unknown plugin, an undeclared route, a refused caller) is bounded by
+/// the same limit, so an unread body of any size cannot make the server drain gigabytes.
 /// </remarks>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
-public sealed class PluginBodyLimitAttribute : Attribute, IResourceFilter
+public sealed class PluginBodyLimitAttribute : TypeFilterAttribute
 {
-    /// <summary>Lifts the server's body limit for this request, before anything reads the body.</summary>
-    /// <param name="context">The request being routed to the action.</param>
-    public void OnResourceExecuting(ResourceExecutingContext context)
-    {
-        ArgumentNullException.ThrowIfNull(context);
-
-        var feature = context.HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>();
-
-        // A server that does not expose the feature (an in-memory test server) has no limit to lift; one that has it
-        // read-only has already started reading the body, and its limit then stands.
-        if (feature is { IsReadOnly: false })
-        {
-            feature.MaxRequestBodySize = null;
-        }
-    }
-
-    /// <summary>Does nothing after the action.</summary>
-    /// <param name="context">The finished request.</param>
-    public void OnResourceExecuted(ResourceExecutedContext context)
+    /// <summary>Marks a controller; the filter that does the work is <see cref="PluginBodyLimitFilter"/>.</summary>
+    public PluginBodyLimitAttribute()
+        : base(typeof(PluginBodyLimitFilter))
     {
     }
 }

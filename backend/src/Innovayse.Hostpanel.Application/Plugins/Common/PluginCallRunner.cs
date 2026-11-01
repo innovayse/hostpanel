@@ -49,9 +49,6 @@ public sealed class PluginCallRunner
     /// <summary>The longest activity log description the table stores.</summary>
     private const int AuditMaxLength = 1000;
 
-    /// <summary>The size of one read of the request body.</summary>
-    private const int ReadChunkBytes = 8192;
-
     /// <summary>
     /// A plugin's own problem code: 1 to 64 letters, digits, underscore, dot or hyphen, starting with a letter or digit.
     /// Anchored with <c>\A</c> and <c>\z</c>, never <c>$</c>, which also matches before a trailing newline.
@@ -162,7 +159,7 @@ public sealed class PluginCallRunner
             return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_STREAMING_NOT_SUPPORTED);
         }
 
-        var read = await ReadBodyAsync(input, ct);
+        var read = await PluginBodyReader.ReadAsync(input, _options.Value.MaxBodyBytes, ct);
         if (read is not { } body)
         {
             return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_REQUEST_TOO_LARGE);
@@ -250,6 +247,9 @@ public sealed class PluginCallRunner
             PluginReplyKind.Json => reply.Status is >= 200 and <= 203 && reply.Body is not null,
             PluginReplyKind.NoContent => reply.Status == 204,
             PluginReplyKind.Problem => reply.Status is >= 400 and <= 599 and not (401 or 407),
+
+            // A stream (refused later, by Map) and a kind this host does not know carry no status rule here. An unknown
+            // kind must not pass as valid: Map's default arm answers it PLUGIN_FAILED, so this method does not decide it.
             _ => true,
         };
     }
@@ -272,39 +272,6 @@ public sealed class PluginCallRunner
 
         return Result<PluginReplyDto>.Success(
             new PluginReplyDto(reply.Status, null, $"{CodePrefix}.{pluginId}.{reply.Code}", detail));
-    }
-
-    /// <summary>Reads the request body, within the cap.</summary>
-    /// <param name="input">The request.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>
-    /// The body bytes (a slice of the one buffer read), empty when there is none; <see langword="null"/> when the request declares more than the cap or
-    /// sends more than it, in which case no more than the cap and one chunk was read.
-    /// </returns>
-    private async Task<ReadOnlyMemory<byte>?> ReadBodyAsync(PluginHttpInput input, CancellationToken ct)
-    {
-        var cap = _options.Value.MaxBodyBytes;
-        if (input.ContentLength > cap)
-        {
-            return null;
-        }
-
-        // The one copy of the body: a declared length sizes the buffer once (it is within the cap, checked above), and
-        // the plugin is handed a slice of that same buffer, never a second array made with ToArray.
-        using var buffer = input.ContentLength is { } declared ? new MemoryStream((int)declared) : new MemoryStream();
-        var chunk = new byte[ReadChunkBytes];
-        int read;
-        while ((read = await input.Body.ReadAsync(chunk, ct)) > 0)
-        {
-            if (buffer.Length + read > cap)
-            {
-                return null;
-            }
-
-            buffer.Write(chunk, 0, read);
-        }
-
-        return buffer.GetBuffer().AsMemory(0, (int)buffer.Length);
     }
 
     /// <summary>The audit line of a call: the plugin, the area and the declared route, never the body or the concrete path.</summary>

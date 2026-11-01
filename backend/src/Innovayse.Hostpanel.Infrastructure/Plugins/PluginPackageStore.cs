@@ -167,6 +167,18 @@ public sealed class PluginPackageStore : IPluginPackageStore
         return new PluginPackageResult(outcome, null, null);
     }
 
+    /// <summary>A refusal because the manifest or the plugin assemblies break a manifest rule.</summary>
+    /// <param name="pluginId">The plugin id from the manifest.</param>
+    /// <param name="sha256">The archive's digest, when it has been computed.</param>
+    /// <param name="violation">The rule that is broken.</param>
+    /// <returns>The result carrying the rule, so the handler picks its error code.</returns>
+    private PluginPackageResult RuleBroken(string pluginId, string? sha256, PluginManifestViolation violation)
+    {
+        _logger.LogWarning(
+            "Plugin install refused: {PluginId} breaks manifest rule {Rule}: {Detail}.", pluginId, violation.Rule, violation.Detail);
+        return new PluginPackageResult(PluginPackageOutcome.ManifestRuleBroken, pluginId, sha256, violation.Rule);
+    }
+
     /// <summary>Whether a plugin with this id ships with the build.</summary>
     /// <param name="id">A plugin id that already meets the plugin id rule.</param>
     /// <returns><see langword="true"/> when the build output's plugin folder holds it.</returns>
@@ -330,11 +342,24 @@ public sealed class PluginPackageStore : IPluginPackageStore
             return new PluginPackageResult(PluginPackageOutcome.HostAssemblyRefused, id, sha256);
         }
 
+        var violation = PluginManifestValidator.Validate(manifest);
+        if (violation is not null)
+        {
+            return RuleBroken(id, sha256, violation);
+        }
+
         var contentDir = Path.Combine(work, "content");
         var unpacked = await UnpackAsync(archive, contentDir, id, ct);
         if (unpacked != PluginPackageOutcome.Installed)
         {
             return new PluginPackageResult(unpacked, id, sha256);
+        }
+
+        // The assemblies can only be read once unpacked; the staging folder is thrown away when the check refuses.
+        violation = PluginManifestValidator.ValidateSdkReference(contentDir);
+        if (violation is not null)
+        {
+            return RuleBroken(id, sha256, violation);
         }
 
         await CommitAsync(contentDir, targetDir, work, ct);

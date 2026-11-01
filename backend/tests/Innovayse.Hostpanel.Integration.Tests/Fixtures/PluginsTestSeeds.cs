@@ -67,8 +67,9 @@ internal static class PluginsTestSeeds
 
     /// <summary>The <c>plugin.json</c> text of a well-formed test plugin.</summary>
     /// <param name="pluginId">The plugin id to declare.</param>
+    /// <param name="extraMembers">Further JSON members to append, each starting with a comma, for example <c>,"manifestVersion":2</c>; empty for none.</param>
     /// <returns>The manifest text.</returns>
-    public static string ManifestJson(string pluginId)
+    public static string ManifestJson(string pluginId, string extraMembers = "")
     {
         return $$"""
             {
@@ -80,7 +81,7 @@ internal static class PluginsTestSeeds
               "type": "Provisioning",
               "category": "Test",
               "entryPoint": "Test.Plugin",
-              "sdkVersion": "1.0"
+              "sdkVersion": "1.0"{{extraMembers}}
             }
             """;
     }
@@ -98,6 +99,24 @@ internal static class PluginsTestSeeds
                 var entry = archive.CreateEntry(name);
                 using var writer = new StreamWriter(entry.Open());
                 writer.Write(text);
+            }
+        }
+
+        return ms.ToArray();
+    }
+
+    /// <summary>Builds a ZIP holding exactly the given binary entries, in order.</summary>
+    /// <param name="entries">Entry name to raw content.</param>
+    /// <returns>The ZIP archive's raw bytes.</returns>
+    public static byte[] BuildZip(IReadOnlyDictionary<string, byte[]> entries)
+    {
+        using var ms = new MemoryStream();
+        using (var archive = new ZipArchive(ms, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            foreach (var (name, content) in entries)
+            {
+                using var stream = archive.CreateEntry(name).Open();
+                stream.Write(content);
             }
         }
 

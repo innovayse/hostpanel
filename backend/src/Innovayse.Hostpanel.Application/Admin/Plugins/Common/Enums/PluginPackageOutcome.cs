@@ -15,6 +15,12 @@ public enum PluginPackageOutcome
     /// <summary>The plugin targets an SDK version this host does not support.</summary>
     SdkVersionUnsupported,
 
+    /// <summary>
+    /// The manifest breaks one of the manifest rules (see <see cref="PluginManifestRule"/>), which the result names,
+    /// or the plugin was built against an older SDK major version than this host's.
+    /// </summary>
+    ManifestRuleBroken,
+
     /// <summary>The plugin id does not meet the plugin id rule or would resolve outside the plugins folder.</summary>
     IdInvalid,
 

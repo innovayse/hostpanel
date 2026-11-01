@@ -81,12 +81,14 @@ internal sealed class PluginManifestReader
     }
 
     /// <summary>
-    /// Attempts to read and validate a <c>plugin.json</c> file.
+    /// Attempts to read and validate a <c>plugin.json</c> file, and the plugin assemblies beside it, against the
+    /// manifest rules of <see cref="PluginManifestValidator"/>. A refused plugin is logged with its id and the rule it
+    /// breaks, and only that plugin is left out: the caller goes on with the others.
     /// </summary>
     /// <param name="manifestPath">Absolute path to the <c>plugin.json</c> file.</param>
     /// <returns>
     /// A <see cref="PluginManifest"/> when the file is valid;
-    /// <see langword="null"/> when the file is missing, malformed, or incompatible.
+    /// <see langword="null"/> when the file is missing, malformed, incompatible, or breaks a manifest rule.
     /// </returns>
     public PluginManifest? TryRead(string manifestPath)
     {
@@ -112,6 +114,16 @@ internal sealed class PluginManifestReader
                 _logger.LogWarning(
                     "Plugin {Id} requires SDK version {Required}, supported is {Supported} — skipping",
                     manifest.Id, manifest.SdkVersion, SupportedSdkVersion);
+                return null;
+            }
+
+            var violation = PluginManifestValidator.Validate(manifest)
+                ?? PluginManifestValidator.ValidateSdkReference(Path.GetDirectoryName(Path.GetFullPath(manifestPath))!);
+            if (violation is not null)
+            {
+                _logger.LogWarning(
+                    "Plugin {Id} refused by manifest rule {Rule}: {Detail}. Skipping it; the other plugins still load.",
+                    manifest.Id, violation.Rule, violation.Detail);
                 return null;
             }
 

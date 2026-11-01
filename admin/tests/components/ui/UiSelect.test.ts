@@ -32,14 +32,14 @@ describe('UiSelect', () => {
     const wrapper = mountSelect({ modelValue: '', placeholder: 'Pick one' })
 
     expect(wrapper.get('button').text()).toBe('Pick one')
-    expect(wrapper.get('button span').classes()).toContain('text-text-muted')
+    expect(wrapper.get('[data-testid="ui-select-label"]').classes()).toContain('text-text-muted')
   })
 
   it('draws a chosen label in the primary colour even when it equals the placeholder', () => {
     const wrapper = mountSelect({ modelValue: 'a', placeholder: 'Alpha' })
 
-    expect(wrapper.get('button span').classes()).toContain('text-text-primary')
-    expect(wrapper.get('button span').classes()).not.toContain('text-text-muted')
+    expect(wrapper.get('[data-testid="ui-select-label"]').classes()).toContain('text-text-primary')
+    expect(wrapper.get('[data-testid="ui-select-label"]').classes()).not.toContain('text-text-muted')
   })
 
   it('opens the list on click and marks the selected option', async () => {
@@ -119,5 +119,41 @@ describe('UiSelect', () => {
 
     expect(wrapper.attributes('data-testid')).toBe('probe')
     expect(wrapper.get('[role="listbox"]').classes()).toContain('min-w-[18rem]')
+  })
+
+  it('lets the list grow to its widest label, aligned to the right edge, on `fit`', async () => {
+    const wrapper = mount(UiSelect, {
+      props: { modelValue: 'a', options, fit: true },
+      global: { plugins: [createTestI18n()] },
+    })
+
+    await wrapper.get('button').trigger('click')
+
+    const classes = wrapper.get('[role="listbox"]').classes()
+    expect(classes).toContain('w-max')
+    expect(classes).toContain('min-w-full')
+    expect(classes).toContain('right-0')
+    expect(classes).not.toContain('w-full')
+  })
+
+  it('shows an icon or an image per option and only those when `iconOnly`', async () => {
+    const wrapper = mount(UiSelect, {
+      props: {
+        modelValue: 'a',
+        iconOnly: true,
+        options: [
+          { value: 'a', label: 'Alpha', icon: '<circle cx="12" cy="12" r="4"/>' },
+          { value: 'b', label: 'Beta', image: '/flags/am.svg' },
+        ],
+      },
+      global: { plugins: [createTestI18n()] },
+    })
+
+    expect(wrapper.find('button svg').exists()).toBe(true)
+    expect(wrapper.get('button span.sr-only').text()).toBe('Alpha')
+    await wrapper.get('button').trigger('click')
+
+    expect(wrapper.get('img').attributes('src')).toBe('/flags/am.svg')
+    expect(wrapper.findAll('[role="option"]')[1]?.attributes('title')).toBe('Beta')
   })
 })

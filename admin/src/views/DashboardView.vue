@@ -147,10 +147,11 @@ onMounted(() => {
     <UiGrid v-if="store.stats" :columns="2" data-testid="dashboard-panels">
       <UiCard v-if="activity.events.length > 0" padding="md" data-testid="dashboard-activity">
         <UiStack gap="sm">
-          <UiStack direction="row" align="center" justify="between">
+          <!-- The link sits under the heading, so a long translated title never squeezes it. -->
+          <UiStack gap="xs" align="start">
             <UiHeading :level="2" variant="section">{{ t('dashboard.recentActivity') }}</UiHeading>
             <UiLink :to="AppRoute.Notifications" variant="link" data-testid="dashboard-activity-all">
-              {{ t('common.viewAllNotifications') }}
+              {{ t('common.viewAll') }}
             </UiLink>
           </UiStack>
           <UiLink
@@ -169,10 +170,11 @@ onMounted(() => {
         </UiStack>
       </UiCard>
 
-      <UiCard padding="md" data-testid="dashboard-quick-links">
+      <UiCard padding="md" class="@container" data-testid="dashboard-quick-links">
         <UiStack gap="sm">
           <UiHeading :level="2" variant="section">{{ t('dashboard.quickLinks') }}</UiHeading>
-          <UiGrid :columns="2" gap="sm">
+          <!-- Two columns only when the card is wide enough for the longest label; otherwise one column. -->
+          <UiGrid :columns="1" gap="sm" class="@md:grid-cols-2">
             <UiLink
               v-for="link in quickLinks"
               :key="link.to"

@@ -34,7 +34,7 @@ import { GatewayLogResult } from '@/types/gatewaylog'
 import type { GatewayLogFilters } from '@/types/gatewaylog'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const store = useGatewayLogStore()
 
@@ -125,7 +125,7 @@ onMounted(() => load(1))
     </UiPageHeader>
 
     <UiFilterCard v-if="filtersOpen">
-      <UiGrid :columns="2">
+      <UiGrid :columns="2" container class="items-end">
         <UiField :label="t('shared.dateRange')">
           <UiDateRangePicker v-model="dateRange" :placeholder="t('shared.selectDateRange')" />
         </UiField>
@@ -197,7 +197,7 @@ onMounted(() => load(1))
         </UiTableHead>
         <UiTableBody divided>
           <UiTableRow v-for="entry in store.entries" :key="entry.id" hoverable>
-            <UiTableCell muted>{{ new Date(entry.dateTime).toLocaleString() }}</UiTableCell>
+            <UiTableCell muted>{{ new Date(entry.dateTime).toLocaleString(locale) }}</UiTableCell>
             <UiTableCell>{{ entry.gateway }}</UiTableCell>
             <UiTableCell>
               <UiText tone="secondary" size="sm" class="whitespace-pre-wrap break-words font-mono">{{ entry.debugData }}</UiText>

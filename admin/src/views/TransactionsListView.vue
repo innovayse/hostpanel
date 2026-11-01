@@ -205,7 +205,7 @@ onMounted(() => load(1))
     </UiPageHeader>
 
     <UiFilterCard v-if="filtersOpen">
-      <UiGrid :columns="3">
+      <UiGrid :columns="3" container class="items-end">
         <UiField :label="t('billing.transactionsList.show')">
           <UiSelect v-model="filterDirection" :options="directionOptions" :placeholder="t('billing.transactionsList.show')" />
         </UiField>

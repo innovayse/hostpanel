@@ -176,7 +176,7 @@ onMounted(() => store.fetchAll())
 
     <UiFilterCard>
       <template #fields>
-        <UiGrid :columns="4" gap="sm">
+        <UiGrid :columns="4" gap="sm" container class="items-end">
           <UiField :label="t('clients.clientsList.clientCompanyName')">
             <template #default="{ id }">
               <UiInput

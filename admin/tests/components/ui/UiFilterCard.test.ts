@@ -23,4 +23,8 @@ describe('UiFilterCard', () => {
     expect(wrapper.classes()).toEqual(expect.arrayContaining(['border', 'bg-surface-card', 'mt-2']))
     expect(wrapper.attributes('data-testid')).toBe('filters')
   })
+
+  it('is a size container so a grid inside follows the card width', () => {
+    expect(mount(UiFilterCard).classes()).toContain('@container')
+  })
 })

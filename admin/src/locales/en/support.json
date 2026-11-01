@@ -159,7 +159,6 @@
     "clientReplies": "Client Replies",
     "staffReplies": "Staff Replies",
     "ticketsWithoutReply": "Tickets Without Reply",
-    "averageFirstResponse": "Average First Response",
     "selectPeriod": "Select period"
   },
   "supportTicketDetail": {

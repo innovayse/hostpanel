@@ -23,4 +23,11 @@ describe('UiGrid', () => {
   it('applies the chosen gap', () => {
     expect(mount(UiGrid, { props: { gap: 'xl' } }).classes()).toContain('gap-8')
   })
+
+  it('follows the container width instead of the viewport when asked', () => {
+    const classes = mount(UiGrid, { props: { columns: 4, container: true } }).classes()
+
+    expect(classes).toEqual(expect.arrayContaining(['grid-cols-1', '@md:grid-cols-2', '@4xl:grid-cols-4']))
+    expect(classes).not.toContain('lg:grid-cols-4')
+  })
 })

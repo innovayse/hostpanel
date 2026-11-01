@@ -291,15 +291,17 @@ const manageUserActions = (user: UserListItem): UiRowAction[] => {
     <!-- Search bar -->
     <UiFilterCard>
       <UiStack direction="row" align="end" gap="sm" wrap>
-        <UiInput
-          v-model="search"
-          type="text"
-          :label="t('shared.search2')"
-          :placeholder="t('clients.manageUsers.searchByNameOrEmail')"
-          class="min-w-0 flex-1"
-          data-testid="users-search"
-          @keydown.enter="applySearch"
-        />
+        <!-- The label makes the input sit in a wrapper, so the growing classes belong on this box. -->
+        <div class="min-w-0 flex-1 basis-64">
+          <UiInput
+            v-model="search"
+            type="text"
+            :label="t('shared.search2')"
+            :placeholder="t('clients.manageUsers.searchByNameOrEmail')"
+            data-testid="users-search"
+            @keydown.enter="applySearch"
+          />
+        </div>
         <UiButton variant="primary" data-testid="users-search-submit" @click="applySearch">
           {{ t('shared.search2') }}
         </UiButton>

@@ -24,7 +24,7 @@ const props = withDefaults(defineProps<{
 /** Density shared by the parent table (plain when used outside one). */
 const context = inject(UI_TABLE_CONTEXT, { density: UiTableDensity.Plain })
 
-/** Padding, alignment and tone classes. */
+/** Padding, alignment and tone classes (the table scrolls sideways, so a cell keeps a readable minimum width). */
 const classes = computed<string[]>(() => [
   cellDensityClasses[context.density],
   props.align === undefined ? '' : alignClasses[props.align],
@@ -33,5 +33,5 @@ const classes = computed<string[]>(() => [
 </script>
 
 <template>
-  <td :class="classes"><slot /></td>
+  <td class="[:where(&)]:min-w-24" :class="classes"><slot /></td>
 </template>

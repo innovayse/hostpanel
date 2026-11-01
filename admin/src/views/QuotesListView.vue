@@ -139,7 +139,7 @@ onMounted(() => {
     </UiPageHeader>
 
     <UiFilterCard v-if="filtersOpen">
-      <UiGrid :columns="2">
+      <UiGrid :columns="2" container class="items-end">
         <UiField :label="t('shared.subject')">
           <template #default="{ id }">
             <UiInput

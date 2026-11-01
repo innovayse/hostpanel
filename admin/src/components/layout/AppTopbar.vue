@@ -19,13 +19,13 @@ import { useThemeStore } from '@/stores/theme'
 import { AdminTheme } from '@/types/admintheme'
 import type { ActivityEvent } from '@/types/activityevent'
 import UiBadge from '@/components/ui/UiBadge.vue'
+import AppAccountMenu from '@/components/layout/AppAccountMenu.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiDrawer from '@/components/ui/UiDrawer.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
-import UiLink from '@/components/ui/UiLink.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
@@ -56,12 +56,24 @@ const activity = useActivityStore()
 /** Theme store: the operator's light/dark/system choice. */
 const theme = useThemeStore()
 
-/** Options of the theme select, one per {@link AdminTheme}. */
+/** Sun glyph of the light theme. */
+const SUN_MARKUP = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>'
+
+/** Moon glyph of the dark theme. */
+const MOON_MARKUP = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>'
+
+/** Monitor glyph of the system theme. */
+const MONITOR_MARKUP = '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>'
+
+/** Options of the theme select, one per {@link AdminTheme}, each with its glyph. */
 const themeOptions = computed(() => [
-  { value: AdminTheme.Light, label: t('layout.theme.light') },
-  { value: AdminTheme.Dark, label: t('layout.theme.dark') },
-  { value: AdminTheme.System, label: t('layout.theme.system') },
+  { value: AdminTheme.Light, label: t('layout.theme.light'), icon: SUN_MARKUP },
+  { value: AdminTheme.Dark, label: t('layout.theme.dark'), icon: MOON_MARKUP },
+  { value: AdminTheme.System, label: t('layout.theme.system'), icon: MONITOR_MARKUP },
 ])
+
+/** Country whose flag stands for each interface language (the flag files are named by country code). */
+const FLAG_COUNTRY: Record<SupportedLocale, string> = { en: 'us', hy: 'am', ru: 'ru' }
 
 /**
  * Applies the theme the operator picked, when it is one the panel knows.
@@ -116,7 +128,7 @@ const pageTitle = computed<string>(() => {
 
 /** Options of the language select. */
 const localeOptions = computed(() =>
-  SUPPORTED_LOCALES.map(code => ({ value: code, label: localeLabels.value[code] })),
+  SUPPORTED_LOCALES.map(code => ({ value: code, label: localeLabels.value[code], image: `/flags/${FLAG_COUNTRY[code]}.svg` })),
 )
 
 /** Number of events in the feed, shown as the badge and header count. */
@@ -217,7 +229,9 @@ onMounted(() => {
         :options="themeOptions"
         :placeholder="t('layout.theme.label')"
         :aria-label="t('layout.theme.label')"
-        class="w-28"
+        fit
+        icon-only
+        class="w-16"
         data-testid="topbar-theme"
         @update:model-value="chooseTheme"
       />
@@ -225,7 +239,8 @@ onMounted(() => {
         :model-value="locale"
         :options="localeOptions"
         :placeholder="localeLabels.en"
-        class="w-20"
+        fit
+        class="w-24"
         data-testid="topbar-locale"
         @update:model-value="chooseLocale"
       />
@@ -247,15 +262,7 @@ onMounted(() => {
         </UiBadge>
       </UiStack>
 
-      <UiText tone="secondary" size="md" class="hidden max-w-[12rem] truncate font-medium sm:block" data-testid="topbar-account">
-        {{ accountLabel }}
-      </UiText>
-      <UiLink :to="AppRoute.Settings" variant="ghost" size="sm" data-testid="topbar-settings">
-        {{ t('nav.settings') }}
-      </UiLink>
-      <UiButton type="button" variant="danger" size="sm" data-testid="topbar-sign-out" @click="signOut">
-        {{ t('common.signOut') }}
-      </UiButton>
+      <AppAccountMenu :email="accountLabel" @sign-out="signOut" />
     </UiStack>
 
     <!-- Notification feed -->

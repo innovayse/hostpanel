@@ -10,6 +10,7 @@
  */
 import { computed, nextTick, onMounted, onUnmounted, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import UiPanelTransition from '@/components/ui/UiPanelTransition.vue'
 import { useGeoOptions } from '@/composables/useGeoOptions'
 
 /** Props for UiPhoneInput. */
@@ -343,75 +344,77 @@ onUnmounted(() => document.removeEventListener('mousedown', onOutsideClick))
     >
 
     <!-- Country list: search field and listbox, anchored to the whole row -->
-    <div v-if="isOpen" :class="panelClasses" data-testid="phone-country-panel">
-      <div class="p-1.5 border-b border-border">
-        <input
-          ref="searchRef"
-          v-model="query"
-          type="text"
-          role="combobox"
-          autocomplete="off"
-          :placeholder="t('ui.phoneInput.searchCountry')"
-          :aria-label="t('ui.phoneInput.searchCountry')"
-          aria-expanded="true"
-          :aria-controls="listId"
-          :aria-activedescendant="activeOptionId"
-          data-testid="phone-country-search"
-          class="w-full bg-surface-field border border-border rounded-lg px-2.5 py-1.5 text-[0.82rem] text-text-primary placeholder:text-text-muted outline-none focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20 transition-colors"
-          @keydown.arrow-down.prevent="move(1)"
-          @keydown.arrow-up.prevent="move(-1)"
-          @keydown.enter.prevent="chooseActive"
-          @keydown.escape.prevent.stop="closeAndFocus"
-          @keydown.tab="close"
-        >
-      </div>
-
-      <div
-        :id="listId"
-        ref="listRef"
-        role="listbox"
-        :aria-label="t('ui.phoneInput.countryCode')"
-        class="max-h-56 overflow-y-auto overscroll-contain py-1"
-      >
-        <div
-          v-for="(country, index) in visibleCountries"
-          :id="`${listId}-${country.value}`"
-          :key="country.value"
-          role="option"
-          :aria-selected="selectedCountryCode === country.value"
-          :data-testid="`phone-country-${country.value}`"
-          :class="rowClasses(country.value, index)"
-          @click="selectCountry(country.value)"
-          @mousemove="activeIndex = index"
-        >
-          <span class="w-5 text-center shrink-0" aria-hidden="true">{{ country.flag }}</span>
-          <span class="min-w-0 flex-1 truncate">
-            <span class="text-text-primary">{{ country.label }}</span>
-            <span v-if="country.native" class="ml-2 text-text-muted">{{ country.native }}</span>
-          </span>
-          <span class="shrink-0 text-text-secondary tabular-nums">{{ country.code }}</span>
-          <span class="w-3.5 h-3.5 shrink-0">
-            <svg
-              v-if="selectedCountryCode === country.value"
-              class="w-3.5 h-3.5 text-primary-500"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              aria-hidden="true"
-            >
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          </span>
+    <UiPanelTransition>
+      <div v-if="isOpen" :class="panelClasses" data-testid="phone-country-panel">
+        <div class="p-1.5 border-b border-border">
+          <input
+            ref="searchRef"
+            v-model="query"
+            type="text"
+            role="combobox"
+            autocomplete="off"
+            :placeholder="t('ui.phoneInput.searchCountry')"
+            :aria-label="t('ui.phoneInput.searchCountry')"
+            aria-expanded="true"
+            :aria-controls="listId"
+            :aria-activedescendant="activeOptionId"
+            data-testid="phone-country-search"
+            class="w-full bg-surface-field border border-border rounded-lg px-2.5 py-1.5 text-[0.82rem] text-text-primary placeholder:text-text-muted outline-none focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20 transition-colors"
+            @keydown.arrow-down.prevent="move(1)"
+            @keydown.arrow-up.prevent="move(-1)"
+            @keydown.enter.prevent="chooseActive"
+            @keydown.escape.prevent.stop="closeAndFocus"
+            @keydown.tab="close"
+          >
         </div>
-        <p
-          v-if="visibleCountries.length === 0"
-          class="px-3 py-2 text-[0.82rem] text-text-secondary text-center"
-          data-testid="phone-country-empty"
+
+        <div
+          :id="listId"
+          ref="listRef"
+          role="listbox"
+          :aria-label="t('ui.phoneInput.countryCode')"
+          class="max-h-56 overflow-y-auto overscroll-contain py-1"
         >
-          {{ t('ui.uiSelect.noResults') }}
-        </p>
+          <div
+            v-for="(country, index) in visibleCountries"
+            :id="`${listId}-${country.value}`"
+            :key="country.value"
+            role="option"
+            :aria-selected="selectedCountryCode === country.value"
+            :data-testid="`phone-country-${country.value}`"
+            :class="rowClasses(country.value, index)"
+            @click="selectCountry(country.value)"
+            @mousemove="activeIndex = index"
+          >
+            <span class="w-5 text-center shrink-0" aria-hidden="true">{{ country.flag }}</span>
+            <span class="min-w-0 flex-1 truncate">
+              <span class="text-text-primary">{{ country.label }}</span>
+              <span v-if="country.native" class="ml-2 text-text-muted">{{ country.native }}</span>
+            </span>
+            <span class="shrink-0 text-text-secondary tabular-nums">{{ country.code }}</span>
+            <span class="w-3.5 h-3.5 shrink-0">
+              <svg
+                v-if="selectedCountryCode === country.value"
+                class="w-3.5 h-3.5 text-primary-500"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                aria-hidden="true"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </span>
+          </div>
+          <p
+            v-if="visibleCountries.length === 0"
+            class="px-3 py-2 text-[0.82rem] text-text-secondary text-center"
+            data-testid="phone-country-empty"
+          >
+            {{ t('ui.uiSelect.noResults') }}
+          </p>
+        </div>
       </div>
-    </div>
+    </UiPanelTransition>
   </div>
 </template>

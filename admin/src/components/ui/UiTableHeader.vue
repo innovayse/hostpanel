@@ -54,7 +54,7 @@ const arrow = computed<string>(() => {
 <template>
   <th
     :aria-sort="sortable ? direction : undefined"
-    class="[:where(&)]:text-[0.68rem] [:where(&)]:font-semibold [:where(&)]:uppercase [:where(&)]:tracking-[0.08em] [:where(&)]:text-text-secondary"
+    class="[:where(&)]:text-[0.68rem] [:where(&)]:font-semibold [:where(&)]:uppercase [:where(&)]:tracking-[0.08em] [:where(&)]:min-w-28 [:where(&)]:text-text-secondary"
     :class="classes"
   >
     <button

@@ -247,7 +247,7 @@ onMounted(() => load(1))
     </UiPageHeader>
 
     <UiFilterCard v-if="filtersOpen">
-      <UiGrid :columns="2">
+      <UiGrid :columns="2" container class="items-end">
         <UiField :label="t('shared.status')">
           <UiSelect
             v-model="filterStatus"

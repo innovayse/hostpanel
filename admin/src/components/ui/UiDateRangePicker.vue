@@ -10,6 +10,7 @@
  */
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import UiPanelTransition from '@/components/ui/UiPanelTransition.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import { splitIsoDate } from '@/lib/format'
 import { translate } from '@/lib/translate'
@@ -496,91 +497,93 @@ onUnmounted(() => {
     >
 
     <Teleport to="body">
-      <div
-        v-if="isOpen"
-        ref="popupRef"
-        :class="datePopupClasses"
-        class="fixed z-[9999] p-0 w-[900px] max-w-[calc(100vw-32px)] top-[var(--dp-top)] left-[var(--dp-left)]"
-      >
-        <div class="flex h-[400px]">
-          <div class="w-[150px] border-r border-border p-4 flex flex-col gap-2">
-            <button
-              v-for="item in dateRangePresets"
-              :key="item.preset"
-              type="button"
-              :data-testid="`date-range-preset-${item.preset}`"
-              :class="datePresetIdleClasses"
-              class="text-left px-3 py-2 rounded text-sm transition-colors"
-              @click="selectPreset(item.preset)"
-            >
-              {{ t(item.labelKey) }}
-            </button>
-            <div class="text-left px-3 py-2 text-primary-600 light:text-primary-700 font-semibold rounded text-sm bg-primary-500/10">{{ t('shared.custom') }}</div>
-          </div>
+      <UiPanelTransition>
+        <div
+          v-if="isOpen"
+          ref="popupRef"
+          :class="datePopupClasses"
+          class="fixed z-[9999] p-0 w-[900px] max-w-[calc(100vw-32px)] top-[var(--dp-top)] left-[var(--dp-left)]"
+        >
+          <div class="flex h-[400px]">
+            <div class="w-[150px] border-r border-border p-4 flex flex-col gap-2">
+              <button
+                v-for="item in dateRangePresets"
+                :key="item.preset"
+                type="button"
+                :data-testid="`date-range-preset-${item.preset}`"
+                :class="datePresetIdleClasses"
+                class="text-left px-3 py-2 rounded text-sm transition-colors"
+                @click="selectPreset(item.preset)"
+              >
+                {{ t(item.labelKey) }}
+              </button>
+              <div class="text-left px-3 py-2 text-primary-600 light:text-primary-700 font-semibold rounded text-sm bg-primary-500/10">{{ t('shared.custom') }}</div>
+            </div>
 
-          <div class="flex-1 p-4">
-            <div class="flex items-center justify-between mb-4">
-              <button type="button" data-testid="date-range-prev" :class="dateArrowClasses" @click="prevMonth">‹</button>
+            <div class="flex-1 p-4">
+              <div class="flex items-center justify-between mb-4">
+                <button type="button" data-testid="date-range-prev" :class="dateArrowClasses" @click="prevMonth">‹</button>
+                <div class="flex gap-8">
+                  <div class="flex items-center gap-2">
+                    <div class="w-[140px]">
+                      <UiSelect v-model="currentMonthValue" :options="monthOptions" :placeholder="t('ui.uiDatePicker.month')" />
+                    </div>
+                    <div class="w-[100px]">
+                      <UiSelect v-model="currentYearValue" :options="yearOptions" :placeholder="t('ui.uiDatePicker.year')" />
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <div class="w-[140px]">
+                      <UiSelect v-model="nextMonthValue" :options="monthOptions" :placeholder="t('ui.uiDatePicker.month')" />
+                    </div>
+                    <div class="w-[100px]">
+                      <UiSelect v-model="nextYearValue" :options="yearOptions" :placeholder="t('ui.uiDatePicker.year')" />
+                    </div>
+                  </div>
+                </div>
+                <button type="button" data-testid="date-range-next" :class="dateArrowClasses" @click="nextMonth">›</button>
+              </div>
+
               <div class="flex gap-8">
-                <div class="flex items-center gap-2">
-                  <div class="w-[140px]">
-                    <UiSelect v-model="currentMonthValue" :options="monthOptions" :placeholder="t('ui.uiDatePicker.month')" />
+                <div v-for="(month, idx) in months" :key="idx" class="flex-1">
+                  <div class="grid grid-cols-7 gap-1 mb-2">
+                    <div v-for="name in dayNames" :key="name" class="text-center text-xs font-semibold text-text-secondary">{{ name }}</div>
                   </div>
-                  <div class="w-[100px]">
-                    <UiSelect v-model="currentYearValue" :options="yearOptions" :placeholder="t('ui.uiDatePicker.year')" />
+                  <div class="grid grid-cols-7 gap-1">
+                    <button
+                      v-for="(day, i) in monthCells[idx]"
+                      :key="i"
+                      type="button"
+                      :data-testid="`date-range-day-${idx}-${i}`"
+                      :disabled="day === null"
+                      :class="dayClasses(day, month)"
+                      @click="selectDay(day, month)"
+                    >
+                      {{ day }}
+                    </button>
                   </div>
-                </div>
-                <div class="flex items-center gap-2">
-                  <div class="w-[140px]">
-                    <UiSelect v-model="nextMonthValue" :options="monthOptions" :placeholder="t('ui.uiDatePicker.month')" />
-                  </div>
-                  <div class="w-[100px]">
-                    <UiSelect v-model="nextYearValue" :options="yearOptions" :placeholder="t('ui.uiDatePicker.year')" />
-                  </div>
-                </div>
-              </div>
-              <button type="button" data-testid="date-range-next" :class="dateArrowClasses" @click="nextMonth">›</button>
-            </div>
-
-            <div class="flex gap-8">
-              <div v-for="(month, idx) in months" :key="idx" class="flex-1">
-                <div class="grid grid-cols-7 gap-1 mb-2">
-                  <div v-for="name in dayNames" :key="name" class="text-center text-xs font-semibold text-text-secondary">{{ name }}</div>
-                </div>
-                <div class="grid grid-cols-7 gap-1">
-                  <button
-                    v-for="(day, i) in monthCells[idx]"
-                    :key="i"
-                    type="button"
-                    :data-testid="`date-range-day-${idx}-${i}`"
-                    :disabled="day === null"
-                    :class="dayClasses(day, month)"
-                    @click="selectDay(day, month)"
-                  >
-                    {{ day }}
-                  </button>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div class="flex items-center justify-between border-t border-border p-4 bg-surface-hover rounded-b-[10px]">
-          <span v-if="pickedLabel" class="text-sm text-text-secondary">{{ pickedLabel }}</span>
-          <span v-else class="text-sm text-text-secondary">{{ t('ui.uiDateRangePicker.selectDateRange') }}</span>
-          <div class="flex gap-2">
-            <button type="button" data-testid="date-range-clear" :class="dateActionClasses" class="px-4 py-2" @click="clearRange">{{ t('shared.clear') }}</button>
-            <button
-              type="button"
-              data-testid="date-range-apply"
-              class="px-4 py-2 text-sm gradient-brand text-white rounded-[9px] outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary-500/50 font-semibold"
-              @click="applyRange"
-            >
-              {{ t('shared.apply') }}
-            </button>
+          <div class="flex items-center justify-between border-t border-border p-4 bg-surface-hover rounded-b-[10px]">
+            <span v-if="pickedLabel" class="text-sm text-text-secondary">{{ pickedLabel }}</span>
+            <span v-else class="text-sm text-text-secondary">{{ t('ui.uiDateRangePicker.selectDateRange') }}</span>
+            <div class="flex gap-2">
+              <button type="button" data-testid="date-range-clear" :class="dateActionClasses" class="px-4 py-2" @click="clearRange">{{ t('shared.clear') }}</button>
+              <button
+                type="button"
+                data-testid="date-range-apply"
+                class="px-4 py-2 text-sm gradient-brand text-white rounded-[9px] outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary-500/50 font-semibold"
+                @click="applyRange"
+              >
+                {{ t('shared.apply') }}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      </UiPanelTransition>
     </Teleport>
   </div>
 </template>

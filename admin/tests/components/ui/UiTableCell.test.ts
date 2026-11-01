@@ -27,6 +27,12 @@ describe('UiTableCell', () => {
   })
 
   it('adds no padding outside a table', () => {
-    expect(mount(UiTableCell).classes()).toEqual([])
+    expect(mount(UiTableCell).classes()).toEqual(['[:where(&)]:min-w-24'])
+  })
+
+  it('keeps a readable minimum width that a caller can override', () => {
+    const wrapper = mount(UiTableCell)
+
+    expect(wrapper.classes()).toContain('[:where(&)]:min-w-24')
   })
 })

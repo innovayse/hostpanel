@@ -2,7 +2,7 @@
  * Unit tests for UiSidebar: entries as links with icons drawn without v-html, active marker and
  * hover expansion.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mount, RouterLinkStub } from '@vue/test-utils'
 import UiSidebar from '@/components/ui/UiSidebar.vue'
 
@@ -48,19 +48,42 @@ describe('UiSidebar', () => {
     expect(wrapper.get('[data-testid="int-payments"]').attributes('aria-current')).toBeUndefined()
   })
 
-  it('is narrow until hovered or focused, then shows the captions', async () => {
+  it('keeps its narrow slot and floats the expanded panel over the content', async () => {
+    vi.useFakeTimers()
     const wrapper = mountSidebar()
+    const panel = wrapper.get('[data-testid="ui-sidebar-panel"]')
 
     expect(wrapper.classes()).toContain('w-[48px]')
+    expect(panel.classes()).toContain('absolute')
+    expect(panel.classes()).toContain('w-[48px]')
 
-    await wrapper.trigger('mouseenter')
-    expect(wrapper.classes()).toContain('w-[230px]')
-
-    await wrapper.trigger('mouseleave')
+    await panel.trigger('mouseenter')
+    await vi.advanceTimersByTimeAsync(130)
+    expect(panel.classes()).toContain('w-[260px]')
     expect(wrapper.classes()).toContain('w-[48px]')
 
-    await wrapper.trigger('focusin')
-    expect(wrapper.classes()).toContain('w-[230px]')
+    await panel.trigger('mouseleave')
+    await vi.advanceTimersByTimeAsync(260)
+    expect(panel.classes()).toContain('w-[48px]')
+
+    await panel.trigger('focusin')
+    expect(panel.classes()).toContain('w-[260px]')
+    vi.useRealTimers()
+  })
+
+  it('does not restart the animation when the pointer leaves and returns quickly', async () => {
+    vi.useFakeTimers()
+    const panel = mountSidebar().get('[data-testid="ui-sidebar-panel"]')
+
+    await panel.trigger('mouseenter')
+    await vi.advanceTimersByTimeAsync(130)
+    await panel.trigger('mouseleave')
+    await vi.advanceTimersByTimeAsync(100)
+    await panel.trigger('mouseenter')
+    await vi.advanceTimersByTimeAsync(400)
+
+    expect(panel.classes()).toContain('w-[260px]')
+    vi.useRealTimers()
   })
 
   it('colours the active entry with the primary accent and idle entries with secondary text', () => {
@@ -68,5 +91,12 @@ describe('UiSidebar', () => {
 
     expect(wrapper.get('[data-testid="int-email"]').classes()).toContain('text-primary-500')
     expect(wrapper.get('[data-testid="int-payments"]').classes()).toContain('text-text-secondary')
+  })
+
+  it('gives captions a fixed width so they never re-wrap while the panel grows', () => {
+    const label = mountSidebar().get('a span:not(.absolute)')
+
+    expect(label.classes()).toContain('w-[204px]')
+    expect(label.classes()).toContain('shrink-0')
   })
 })

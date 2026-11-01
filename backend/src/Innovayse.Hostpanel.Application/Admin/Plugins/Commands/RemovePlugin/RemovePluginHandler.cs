@@ -47,7 +47,7 @@ public sealed class RemovePluginHandler
         var outcome = await _store.RemoveAsync(new PluginPackageRemoval(command.Id), ct);
         if (outcome.Outcome != PluginPackageOutcome.Removed)
         {
-            return Result<PluginActionResultDto>.FailureCode(PluginPackageErrors.CodeFor(outcome.Outcome));
+            return Result<PluginActionResultDto>.FailureCode(PluginPackageErrors.CodeFor(outcome));
         }
 
         await _activityLogger.RecordAsync(

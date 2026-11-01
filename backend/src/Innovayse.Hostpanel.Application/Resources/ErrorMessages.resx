@@ -507,6 +507,33 @@
 <data name="PLUGIN_SDK_VERSION_UNSUPPORTED" xml:space="preserve">
     <value>This plugin was built for a different SDK version and cannot be installed here.</value>
   </data>
+<data name="PLUGIN_MANIFEST_VERSION_UNKNOWN" xml:space="preserve">
+    <value>This plugin's manifest declares a manifest version this server does not know.</value>
+  </data>
+<data name="PLUGIN_SDK_ASSEMBLY_OUTDATED" xml:space="preserve">
+    <value>This plugin was built against an older SDK and has to be rebuilt against the current one.</value>
+  </data>
+<data name="PLUGIN_PERMISSION_UNKNOWN" xml:space="preserve">
+    <value>This plugin asks for a permission that does not exist. Use a client permission name or Any.</value>
+  </data>
+<data name="PLUGIN_ADMIN_PERMISSION_DECLARED" xml:space="preserve">
+    <value>This plugin declares a permission on an admin route, page or slot, and the admin area takes none.</value>
+  </data>
+<data name="PLUGIN_ROUTE_PATH_INVALID" xml:space="preserve">
+    <value>This plugin declares a route path that is not valid. Use lowercase segments and parameters in curly brackets, with no empty segment and no dot segment.</value>
+  </data>
+<data name="PLUGIN_ROUTE_DUPLICATE" xml:space="preserve">
+    <value>This plugin declares the same route twice for one method in one panel.</value>
+  </data>
+<data name="PLUGIN_LABEL_KEY_MISSING" xml:space="preserve">
+    <value>This plugin uses a text key that its English texts do not define.</value>
+  </data>
+<data name="PLUGIN_SLOT_UNKNOWN" xml:space="preserve">
+    <value>This plugin puts content into a slot that the server does not offer.</value>
+  </data>
+<data name="PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED" xml:space="preserve">
+    <value>This plugin asks a slot for context that the slot does not offer.</value>
+  </data>
 <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>That archive contains an entry that would write outside the plugin's own folder and was rejected.</value>
   </data>

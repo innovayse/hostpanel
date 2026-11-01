@@ -749,6 +749,33 @@ public static class HostpanelErrorCodes
     /// <summary>The plugin was built against an SDK version this deployment does not support (400).</summary>
     public const string PLUGIN_SDK_VERSION_UNSUPPORTED = "PLUGIN_SDK_VERSION_UNSUPPORTED";
 
+    /// <summary>The manifest declares a <c>manifestVersion</c> this host does not know (400).</summary>
+    public const string PLUGIN_MANIFEST_VERSION_UNKNOWN = "PLUGIN_MANIFEST_VERSION_UNKNOWN";
+
+    /// <summary>The plugin was built against an older SDK major version than the host's and has to be rebuilt (400).</summary>
+    public const string PLUGIN_SDK_ASSEMBLY_OUTDATED = "PLUGIN_SDK_ASSEMBLY_OUTDATED";
+
+    /// <summary>A route, page or slot entry names a permission that is neither a client permission nor <c>Any</c> (400).</summary>
+    public const string PLUGIN_PERMISSION_UNKNOWN = "PLUGIN_PERMISSION_UNKNOWN";
+
+    /// <summary>An admin route, page or slot entry declares a permission, which the admin area does not take (400).</summary>
+    public const string PLUGIN_ADMIN_PERMISSION_DECLARED = "PLUGIN_ADMIN_PERMISSION_DECLARED";
+
+    /// <summary>A route path is not made of lowercase segments and parameters, or has an empty segment or a dot segment (400).</summary>
+    public const string PLUGIN_ROUTE_PATH_INVALID = "PLUGIN_ROUTE_PATH_INVALID";
+
+    /// <summary>The same method and path template is declared twice in one area (400).</summary>
+    public const string PLUGIN_ROUTE_DUPLICATE = "PLUGIN_ROUTE_DUPLICATE";
+
+    /// <summary>A text key used by a menu, page, setting or slot is missing from the plugin's English texts (400).</summary>
+    public const string PLUGIN_LABEL_KEY_MISSING = "PLUGIN_LABEL_KEY_MISSING";
+
+    /// <summary>A slot entry names a slot the host does not offer (400).</summary>
+    public const string PLUGIN_SLOT_UNKNOWN = "PLUGIN_SLOT_UNKNOWN";
+
+    /// <summary>A slot entry asks for a context key its slot does not offer (400).</summary>
+    public const string PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED = "PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED";
+
     /// <summary>
     /// One of the archive's entries would write outside the plugin's own directory (400). The
     /// zip-slip guard's refusal, named for what a caller can act on rather than the attack it

@@ -1,4 +1,8 @@
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
+using Innovayse.Hostpanel.Integration.Tests.Fixtures;
+using Innovayse.Hostpanel.Integration.Tests.Shared;
 using Innovayse.SDK.Plugins.Endpoints;
 using Innovayse.SDK.Plugins.Enums;
 using Innovayse.SDK.Plugins.Fulfilment;
@@ -6,6 +10,7 @@ using Innovayse.SDK.Plugins.Hosting;
 using Innovayse.SDK.Plugins.Identity;
 using Innovayse.SDK.Plugins.Payment;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
@@ -40,5 +45,53 @@ public sealed class PluginLoaderTests
         descriptor.ServiceType.Should().Be(contract);
         descriptor.KeyedImplementationType.Should().Be(implementation);
         descriptor.Lifetime.Should().Be(ServiceLifetime.Scoped);
+    }
+
+    /// <summary>
+    /// A plugin whose manifest breaks a rule is skipped with a logged reason naming its id and the rule, and the
+    /// plugin beside it still loads: one bad plugin never stops the others.
+    /// </summary>
+    [Fact]
+    public void DiscoverAndRegister_RefusedPlugin_SkipsOnlyThatPlugin()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"loader-rules-{Guid.NewGuid():N}");
+        try
+        {
+            foreach (var (id, extra) in new[]
+            {
+                ("good-plugin", string.Empty),
+                ("bad-plugin", ",\"manifestVersion\":2,\"ui\":{\"slots\":[{\"id\":\"s\",\"slot\":\"client.nowhere\",\"view\":\"v.json\"}]}"),
+            })
+            {
+                var folder = Directory.CreateDirectory(Path.Combine(root, id)).FullName;
+                File.WriteAllText(
+                    Path.Combine(folder, "plugin.json"),
+                    PluginsTestSeeds.ManifestJson(id, extra)
+                        .Replace("\"Provisioning\"", "\"App\"", StringComparison.Ordinal)
+                        .Replace("Test.Plugin", "Fixture.AppPlugin", StringComparison.Ordinal));
+
+                // A fresh assembly per plugin: the loader loads into the default context, which holds one assembly per name.
+                File.WriteAllBytes(
+                    Path.Combine(folder, "Fixture.Loaded." + id + ".dll"),
+                    PluginAssemblyFixtures.AppPlugin("Fixture.Loaded." + id + Guid.NewGuid().ToString("N"), "Fixture.AppPlugin"));
+            }
+
+            var logs = new RecordingLoggerProvider();
+            using var loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(logs));
+            var services = new ServiceCollection();
+
+            PluginLoader.DiscoverAndRegister(services, [root], loggerFactory);
+
+            var registry = services.BuildServiceProvider().GetRequiredService<IPluginRegistry>();
+            registry.IsLoaded("good-plugin").Should().BeTrue();
+            registry.IsLoaded("bad-plugin").Should().BeFalse();
+            logs.Entries.Should().ContainSingle(e => e.Level == LogLevel.Warning
+                && e.Message.Contains("bad-plugin")
+                && e.Message.Contains(nameof(PluginManifestRule.SlotUnknown)));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
     }
 }

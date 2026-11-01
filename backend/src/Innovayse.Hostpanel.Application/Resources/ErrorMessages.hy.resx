@@ -507,6 +507,33 @@
 <data name="PLUGIN_SDK_VERSION_UNSUPPORTED" xml:space="preserve">
     <value>Այս հավելագրիչը կառուցված է SDK-ի այլ տարբերակի համար և չի կարող տեղադրվել այստեղ։</value>
   </data>
+<data name="PLUGIN_MANIFEST_VERSION_UNKNOWN" xml:space="preserve">
+    <value>Այս հավելագրիչի մանիֆեստում նշված է մանիֆեստի տարբերակ, որը սերվերին անծանոթ է։</value>
+  </data>
+<data name="PLUGIN_SDK_ASSEMBLY_OUTDATED" xml:space="preserve">
+    <value>Այս հավելագրիչը կառուցված է SDK-ի ավելի հին տարբերակով։ Այն պետք է վերակառուցել ընթացիկ տարբերակով։</value>
+  </data>
+<data name="PLUGIN_PERMISSION_UNKNOWN" xml:space="preserve">
+    <value>Այս հավելագրիչը պահանջում է գոյություն չունեցող թույլտվություն։ Օգտագործեք հաճախորդի թույլտվության անունը կամ Any։</value>
+  </data>
+<data name="PLUGIN_ADMIN_PERMISSION_DECLARED" xml:space="preserve">
+    <value>Այս հավելագրիչը թույլտվություն է նշել ադմինի վահանակի երթուղու, էջի կամ սլոտի համար, իսկ այնտեղ թույլտվություն չի նշվում։</value>
+  </data>
+<data name="PLUGIN_ROUTE_PATH_INVALID" xml:space="preserve">
+    <value>Այս հավելագրիչը նշել է անվավեր երթուղու ուղի։ Օգտագործեք փոքրատառ հատվածներ և պարամետրեր գանգուր փակագծերում՝ առանց դատարկ և կետերից բաղկացած հատվածների։</value>
+  </data>
+<data name="PLUGIN_ROUTE_DUPLICATE" xml:space="preserve">
+    <value>Այս հավելագրիչը նույն երթուղին երկու անգամ է նշել մեկ մեթոդի և մեկ վահանակի համար։</value>
+  </data>
+<data name="PLUGIN_LABEL_KEY_MISSING" xml:space="preserve">
+    <value>Այս հավելագրիչը օգտագործում է տեքստի բանալի, որը բացակայում է իր անգլերեն տեքստերում։</value>
+  </data>
+<data name="PLUGIN_SLOT_UNKNOWN" xml:space="preserve">
+    <value>Այս հավելագրիչը բովանդակություն է դնում սլոտում, որը սերվերը չի տրամադրում։</value>
+  </data>
+<data name="PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED" xml:space="preserve">
+    <value>Այս հավելագրիչը սլոտից պահանջում է համատեքստ, որը սլոտը չի տրամադրում։</value>
+  </data>
 <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>Այդ արխիվը պարունակում է գրառում, որը կգրեր հավելագրիչի սեփական թղթապանակից դուրս, և մերժվեց։</value>
   </data>

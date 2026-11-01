@@ -10,6 +10,7 @@
  */
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import UiButton from '@/components/ui/UiButton.vue'
 import UiPanelTransition from '@/components/ui/UiPanelTransition.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { AppRoute } from '@/lib/routes'
@@ -34,7 +35,7 @@ const open = ref(false)
 const root = ref<HTMLElement | null>(null)
 
 /** The avatar button; focus returns here when the menu closes by keyboard. */
-const triggerRef = ref<HTMLButtonElement | null>(null)
+const triggerRef = ref<InstanceType<typeof UiButton> | null>(null)
 
 /** The panel, for focus management. */
 const menuRef = ref<HTMLElement | null>(null)
@@ -45,7 +46,8 @@ const initial = computed<string>(() => props.email.trim().charAt(0).toUpperCase(
 /** Closes the menu and returns focus to the button. */
 const closeToTrigger = (): void => {
   open.value = false
-  triggerRef.value?.focus()
+  const trigger = triggerRef.value?.$el as HTMLElement | undefined
+  trigger?.focus()
 }
 
 /** Chooses "Sign out": closes the menu and tells the bar. */
@@ -109,7 +111,7 @@ const itemClasses = 'flex w-full items-center rounded-lg px-3 py-2 text-left tex
 
 <template>
   <div ref="root" class="relative">
-    <button
+    <UiButton
       ref="triggerRef"
       type="button"
       :aria-label="t('layout.account.menu')"
@@ -120,7 +122,7 @@ const itemClasses = 'flex w-full items-center rounded-lg px-3 py-2 text-left tex
       @click="open = !open"
     >
       {{ initial }}
-    </button>
+    </UiButton>
 
     <UiPanelTransition>
       <div
@@ -142,7 +144,7 @@ const itemClasses = 'flex w-full items-center rounded-lg px-3 py-2 text-left tex
         >
           {{ t('nav.settings') }}
         </RouterLink>
-        <button
+        <UiButton
           type="button"
           role="menuitem"
           :class="[itemClasses, 'cursor-pointer text-danger-600 dark:text-danger-400']"
@@ -150,7 +152,7 @@ const itemClasses = 'flex w-full items-center rounded-lg px-3 py-2 text-left tex
           @click="signOut"
         >
           {{ t('common.signOut') }}
-        </button>
+        </UiButton>
       </div>
     </UiPanelTransition>
   </div>

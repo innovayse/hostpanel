@@ -118,7 +118,7 @@ describe('UiSelect', () => {
     await wrapper.get('button').trigger('click')
 
     expect(wrapper.attributes('data-testid')).toBe('probe')
-    expect(wrapper.get('[role="listbox"]').classes()).toContain('min-w-[18rem]')
+    expect(wrapper.get('[role="listbox"]').classes()).toEqual(expect.arrayContaining(['min-w-[18rem]', 'max-w-[calc(100vw-4rem)]']))
   })
 
   it('keeps the field look and the solid selection when it is not compact', async () => {

@@ -142,7 +142,7 @@ onMounted(() => fetchServices())
       @retry="fetchServices()"
     />
 
-    <UiCard v-else-if="services.length > 0">
+    <UiCard v-else-if="services.length > 0" class="overflow-x-auto">
       <UiTable density="comfortable" data-testid="client-services-table">
         <UiTableHead>
           <UiTableRow>

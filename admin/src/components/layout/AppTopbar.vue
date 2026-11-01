@@ -207,7 +207,10 @@ onMounted(() => {
         <UiIcon :markup="MENU_MARKUP" />
       </UiIconButton>
 
-      <UiHeading :level="2" variant="card" data-testid="topbar-title">{{ pageTitle }}</UiHeading>
+      <!-- The page title is left out on a narrow phone: a long word (Armenian and Russian titles are long) pushes the controls on the right off the screen. -->
+      <div class="hidden min-w-0 sm:block">
+        <UiHeading :level="2" variant="card" data-testid="topbar-title">{{ pageTitle }}</UiHeading>
+      </div>
     </UiStack>
 
     <!-- Right: theme + language + notifications + account -->

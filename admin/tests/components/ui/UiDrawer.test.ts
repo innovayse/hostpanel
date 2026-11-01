@@ -44,6 +44,22 @@ describe('UiDrawer', () => {
     expect(mountDrawer({ open: true, title: 'x', side: 'left' }).get('aside').classes()).toContain('left-0')
   })
 
+  it('pads its body unless it is flush, and is as wide as a form unless it is narrow', () => {
+    const plain = mountDrawer({ open: true, title: 'x' })
+    expect(plain.get('[data-testid="drawer-body"]').classes()).toContain('p-6')
+    expect(plain.get('aside').classes()).toContain('max-w-md')
+
+    const menu = mountDrawer({ open: true, title: 'x', flush: true, narrow: true })
+    expect(menu.get('[data-testid="drawer-body"]').classes()).not.toContain('p-6')
+    expect(menu.get('aside').classes()).toContain('max-w-xs')
+    expect(menu.get('aside').classes()).not.toContain('max-w-md')
+  })
+
+  it('keeps the close button out of sight until the panel has finished sliding in', () => {
+    // The test transition is a stub that never finishes, which is the state "still sliding".
+    expect(mountDrawer({ open: true, title: 'x' }).get('[data-testid="drawer-close"]').classes()).toContain('invisible')
+  })
+
   it('renders the footer slot only when given', () => {
     expect(mountDrawer({ open: true, title: 'x' }).find('.border-t').exists()).toBe(false)
     expect(mountDrawer({ open: true, title: 'x' }, { footer: '<b data-testid="f" />' }).find('[data-testid="f"]').exists()).toBe(true)

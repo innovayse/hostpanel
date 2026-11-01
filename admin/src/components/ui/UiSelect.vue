@@ -52,7 +52,8 @@ const triggerSizeClasses = computed<string>(() =>
  * @returns The panel's position, border, surface and width classes.
  */
 const panelClasses = computed<string>(() => {
-  const width = props.wide ? 'min-w-[18rem]' : 'w-full'
+  // A wide list is at least 18rem, but never wider than the screen less a margin, so on a phone it cannot reach past the page edge and widen the page.
+  const width = props.wide ? 'min-w-[18rem] max-w-[calc(100vw-4rem)]' : 'w-full'
   return props.compact
     ? `absolute z-50 mt-1 min-w-[5.5rem] origin-top overflow-hidden rounded-xl border border-border bg-surface-card p-1 shadow-lg shadow-black/20 ${width}`
     : `absolute z-50 mt-1.5 overflow-hidden rounded-[10px] border border-border bg-surface-card shadow-xl ${width}`

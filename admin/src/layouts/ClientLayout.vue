@@ -135,10 +135,10 @@ onMounted(() => {
         @close="showExportModal = false"
       />
 
-      <!-- A column on phones, where the section tabs are a strip above the content; a row from md up, where they are the icon rail. -->
+      <!-- A column on phones, where the section tabs are a strip above the content (the content starts a step below it); a row from md up, where they are the icon rail. -->
       <UiStack :direction="UiDirection.Row" gap="none" reflow-below-md class="flex-1 min-h-0">
         <ClientInnerSidebar :client-id="String(route.params.id)" />
-        <UiStack gap="none" class="flex-1 min-w-0 overflow-y-auto md:pl-6">
+        <UiStack gap="none" class="flex-1 min-w-0 overflow-y-auto pt-4 md:pl-6 md:pt-0">
           <RoutedView />
         </UiStack>
       </UiStack>

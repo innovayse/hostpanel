@@ -114,6 +114,37 @@ test('the top bar fits a phone: the sign-out button is on screen and the control
   await expect(page.getByTestId('topbar-settings')).toBeHidden()
 })
 
+test('the contacts table on the profile page scrolls inside its card and does not widen the page', async ({ page }) => {
+  const contact = {
+    firstName: 'Anna', lastName: 'Petrosyan', email: 'anna.petrosyan.billing@example.test', phone: '+37410111222',
+    address: { street: null, address2: null, city: null, state: null, postCode: null, country: null },
+    notifications: { general: true, invoice: true, support: false, product: false, domain: false, affiliate: false },
+    createdAt: '2026-01-15T10:00:00Z',
+  }
+  await stubApi(page, {
+    signedIn: true,
+    routes: [
+      json(HttpMethod.Get, '/api/clients/7', { ...adaDetail, contacts: [{ ...contact, id: 1, type: 'Billing' }, { ...contact, id: 2, type: 'Technical' }] }),
+    ],
+  })
+
+  await page.goto('/clients/7/profile')
+  const table = page.getByTestId('client-profile-contacts')
+  await expect(table).toBeVisible()
+
+  const scrolling = await table.evaluate((el) => {
+    let node: HTMLElement | null = el.parentElement
+    while (node !== null && !['auto', 'scroll'].includes(getComputedStyle(node).overflowX)) {
+      node = node.parentElement
+    }
+    return node === null ? null : { scrollWidth: node.scrollWidth, clientWidth: node.clientWidth, isContentScroller: node.classList.contains('overflow-y-auto') }
+  })
+  // The scroller must be the card, not the content column itself (which scrolls sideways, cutting the page, when the card does not).
+  expect(scrolling?.isContentScroller).toBe(false)
+  expect(scrolling?.scrollWidth).toBeGreaterThan(scrolling?.clientWidth ?? Infinity)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+})
+
 test('a tab on the phone strip opens its section', async ({ page }) => {
   await stubApi(page, {
     signedIn: true,
@@ -198,9 +229,10 @@ test('the billing card lines its counts and amounts up in columns, and the summa
     while (node !== null && !['auto', 'scroll'].includes(getComputedStyle(node).overflowX)) {
       node = node.parentElement
     }
-    return node === null ? null : { scrollWidth: node.scrollWidth, clientWidth: node.clientWidth, isMain: node.tagName === 'MAIN' }
+    return node === null ? null : { scrollWidth: node.scrollWidth, clientWidth: node.clientWidth, isContentScroller: node.classList.contains('overflow-y-auto') }
   })
   expect(scrolling).not.toBeNull()
-  expect(scrolling?.isMain).toBe(false)
+  // The scroller must be the card, not the content column itself (which scrolls sideways, cutting the page, when the card does not).
+  expect(scrolling?.isContentScroller).toBe(false)
   expect(scrolling?.scrollWidth).toBeGreaterThan(scrolling?.clientWidth ?? Infinity)
 })

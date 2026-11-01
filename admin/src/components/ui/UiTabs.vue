@@ -10,14 +10,22 @@ import type { UiTabItem } from '@/utils/ui/tabs'
 import { Key } from '@/utils/ui/keys'
 
 /** Props for UiTabs. */
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   /** Tabs in order. */
   items: UiTabItem[]
   /** Value of the selected tab (two-way bound with `v-model`). */
   modelValue: string
   /** Accessible name of the tab list, for a screen that has more than one. */
   ariaLabel?: string
-}>()
+  /**
+   * Hides the scrollbar of a strip that overflows. The selected tab's own underline sits at the bottom edge, and
+   * a scrollbar drawn there runs into it; the strip still scrolls by touch, wheel and the arrow keys.
+   */
+  hideScrollbar?: boolean
+}>(), {
+  ariaLabel: undefined,
+  hideScrollbar: false,
+})
 
 const emit = defineEmits<{
   /** Emitted with the value of the tab the user selected. */
@@ -48,7 +56,12 @@ const onKeydown = (event: KeyboardEvent, index: number): void => {
 
 <template>
   <div>
-    <div role="tablist" :aria-label="ariaLabel" class="flex gap-1 border-b border-border overflow-x-auto overflow-y-hidden">
+    <div
+      role="tablist"
+      :aria-label="ariaLabel"
+      class="flex gap-1 border-b border-border overflow-x-auto overflow-y-hidden"
+      :class="hideScrollbar ? '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : ''"
+    >
       <button
         v-for="(item, index) in items"
         :key="item.value"

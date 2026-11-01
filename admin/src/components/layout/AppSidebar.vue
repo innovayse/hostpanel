@@ -43,6 +43,14 @@ interface NavItem {
   children?: NavChild[]
 }
 
+/** Props of the sidebar. */
+withDefaults(defineProps<{
+  /** Shown inside the menu drawer: the full width of the panel, no frame and no logo (the drawer has a title). */
+  embedded?: boolean
+}>(), {
+  embedded: false,
+})
+
 /** Emitted when a nav link is clicked (used to close mobile drawer). */
 const emit = defineEmits<{
   /** Emitted after any navigation link is clicked. */
@@ -273,19 +281,23 @@ const isExpanded = (item: NavItem): boolean => {
 </script>
 
 <template>
-  <aside class="flex h-full min-h-0 w-[220px] shrink-0 flex-col border-r border-border bg-surface-panel" data-testid="app-sidebar">
-    <!-- Logo -->
-    <UiStack direction="row" align="center" gap="none" class="border-b border-border px-5 py-[18px]">
+  <aside
+    class="flex h-full min-h-0 flex-col"
+    :class="embedded ? 'w-full bg-surface-card' : 'w-[220px] shrink-0 border-r border-border bg-surface-panel'"
+    data-testid="app-sidebar"
+  >
+    <!-- Logo: the drawer already has its own title, so the embedded menu leaves it out. -->
+    <UiStack v-if="!embedded" direction="row" align="center" gap="none" class="border-b border-border px-5 py-[18px]">
       <!-- The wordmark for the active theme; the operator's upload when there is one. -->
       <BrandLogo img-class="h-7 w-auto" />
     </UiStack>
 
     <!-- Nav links -->
-    <nav class="flex-1 overflow-y-auto px-2.5 pb-2 pt-3" :aria-label="t('layout.navigation')">
+    <nav class="scroll-subtle flex-1 overflow-y-auto px-2.5 pb-2 pt-3" :aria-label="t('layout.navigation')">
       <UiStack gap="xs">
         <template v-for="item in navItems" :key="item.to">
-          <!-- Item WITH children: toggle button, then the sub-menu -->
-          <template v-if="item.children">
+          <!-- Item WITH children: toggle button, then the sub-menu (one block, so the list's gap does not add a gap for a closed sub-menu) -->
+          <div v-if="item.children">
             <UiButton
               type="button"
               variant="plain"
@@ -299,26 +311,42 @@ const isExpanded = (item: NavItem): boolean => {
             >
               <UiIcon :markup="iconMarkup(item.icon)" size="sm" :class="isActive(item) ? 'text-primary-400' : 'opacity-60'" />
               <span class="flex-1">{{ t(item.labelKey) }}</span>
-              <UiIcon :markup="CHEVRON_MARKUP" size="sm" class="text-text-muted transition-transform duration-200" :class="isExpanded(item) ? 'rotate-90' : ''" />
+              <UiIcon :markup="CHEVRON_MARKUP" size="sm" class="text-text-muted transition-transform duration-300" :class="isExpanded(item) ? 'rotate-90' : ''" />
             </UiButton>
 
-            <UiStack v-show="isExpanded(item)" gap="xs" class="mb-0.5 mt-0.5 pl-[1.65rem]">
-              <UiLink
-                v-for="child in item.children"
-                :key="child.to"
-                :to="child.to"
-                variant="plain"
-                class="flex items-center gap-2 rounded-[7px] px-3 py-[5px] text-[0.78rem] font-medium no-underline transition-all duration-150"
-                :class="isChildActive(child.to)
-                  ? 'bg-primary-500/10 text-primary-400'
-                  : 'text-text-muted hover:bg-surface-hover hover:text-text-secondary'"
-                :data-testid="testidOf(child.to)"
-                @click="emit('navigate')"
-              >
-                {{ t(child.labelKey) }}
-              </UiLink>
-            </UiStack>
-          </template>
+            <!--
+              The sub-menu is drawn as a tree: each link has a short branch (`after`) to a trunk (`before`) that
+              runs up the left to the parent's icon, and the trunk of the last link stops at its branch.
+              The sub-menu opens and closes over 300 ms: the row grows from zero height (the grid rows go from 0fr to
+              1fr, which needs no measured height) while its links fade. A closed sub-menu is `inert`, so its links
+              are out of the tab order and unreadable to a screen reader, as `display: none` would make them.
+            -->
+            <div
+              class="grid transition-[grid-template-rows,opacity] duration-300 ease-in-out motion-reduce:transition-none"
+              :class="isExpanded(item) ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
+              :inert="!isExpanded(item)"
+              :data-testid="`${testidOf(item.to)}-submenu`"
+            >
+              <div class="min-h-0 overflow-hidden">
+              <UiStack gap="xs" class="py-1 pl-9">
+                <UiLink
+                  v-for="child in item.children"
+                  :key="child.to"
+                  :to="child.to"
+                  variant="plain"
+                  class="relative flex items-center gap-2 rounded-[7px] px-3 py-[5px] text-[0.78rem] font-medium no-underline transition-all duration-150 before:absolute before:-left-4 before:-top-1 before:w-px before:bg-border-strong before:content-[''] before:h-[calc(100%+0.25rem)] first:before:-top-1.5 first:before:h-[calc(100%+0.5rem)] last:before:h-[calc(50%+0.25rem)] first:last:before:h-[calc(50%+0.5rem)] after:absolute after:-left-4 after:top-1/2 after:h-px after:w-3 after:transition-colors after:duration-300 after:content-['']"
+                  :class="isChildActive(child.to)
+                    ? 'bg-primary-500/10 text-primary-400 after:bg-primary-400'
+                    : 'text-text-muted after:bg-border-strong hover:bg-surface-hover hover:text-text-secondary hover:after:bg-text-muted'"
+                  :data-testid="testidOf(child.to)"
+                  @click="emit('navigate')"
+                >
+                  {{ t(child.labelKey) }}
+                </UiLink>
+              </UiStack>
+              </div>
+            </div>
+          </div>
 
           <!-- Item WITHOUT children: direct link -->
           <UiLink

@@ -9,7 +9,7 @@ import type { RouteLocationNormalized } from 'vue-router'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import { useNavigationStore } from '@/stores/navigation'
 import { stubRoutes } from '../../helpers/routes'
-import { mountView } from '../../helpers/mount'
+import { mountScreen, mountView } from '../../helpers/mount'
 
 /**
  * Mounts the sidebar at a path.
@@ -36,6 +36,18 @@ describe('AppSidebar', () => {
     expect(wrapper.get('[data-testid="nav-clients"]').element.tagName).toBe('BUTTON')
   })
 
+  it('shows the logo and a fixed width on the desktop, and neither inside the menu drawer', async () => {
+    stubRoutes({})
+    const desktop = await mountView(AppSidebar, { path: '/dashboard' })
+    expect(desktop.get('[data-testid="app-sidebar"]').classes()).toContain('w-[220px]')
+    expect(desktop.find('[data-testid="app-sidebar"] img, [data-testid="app-sidebar"] svg').exists()).toBe(true)
+
+    const { wrapper: embedded } = await mountScreen(AppSidebar, { embedded: true }, '/dashboard')
+    expect(embedded.get('[data-testid="app-sidebar"]').classes()).toEqual(expect.arrayContaining(['w-full']))
+    expect(embedded.get('[data-testid="app-sidebar"]').classes()).not.toContain('w-[220px]')
+    expect(embedded.find('[data-testid="app-sidebar"] > div.border-b').exists()).toBe(false)
+  })
+
   it('opens the sub-menu of the current section and marks the current child', async () => {
     const wrapper = await mountSidebar('/clients/users')
 
@@ -53,6 +65,25 @@ describe('AppSidebar', () => {
     expect(wrapper.get('[data-testid="nav-storefront-projects"]').attributes('href')).toBe('/storefront/projects')
     expect(wrapper.get('[data-testid="nav-storefront-faqs"]').classes()).toContain('text-primary-400')
     expect(wrapper.get('[data-testid="nav-storefront-locations"]').attributes('href')).toBe('/storefront/locations')
+  })
+
+  it('keeps a closed sub-menu out of reach and opens it over a transition, not by switching it on', async () => {
+    const wrapper = await mountSidebar('/dashboard')
+    const submenu = wrapper.get('[data-testid="nav-billing-submenu"]')
+
+    expect(submenu.attributes('inert')).toBeDefined()
+    expect(submenu.classes()).toEqual(expect.arrayContaining(['grid-rows-[0fr]', 'opacity-0', 'duration-300']))
+
+    await wrapper.get('[data-testid="nav-billing"]').trigger('click')
+
+    expect(submenu.attributes('inert')).toBeUndefined()
+    expect(submenu.classes()).toEqual(expect.arrayContaining(['grid-rows-[1fr]', 'opacity-100']))
+  })
+
+  it('gives the list a quiet scrollbar that shows on hover', async () => {
+    const wrapper = await mountSidebar('/dashboard')
+
+    expect(wrapper.get('nav').classes()).toContain('scroll-subtle')
   })
 
   it('opens a closed sub-menu when its toggle is clicked', async () => {

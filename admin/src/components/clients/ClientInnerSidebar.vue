@@ -161,6 +161,7 @@ const openSection = async (key: string): Promise<void> => {
     :items="tabItems"
     :model-value="activeKey ?? ''"
     :aria-label="t('clients.clientNav.strip')"
+    hide-scrollbar
     data-testid="client-nav-strip"
     @update:model-value="openSection"
   />

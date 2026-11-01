@@ -12,6 +12,17 @@ const items = [
   { value: 'c', label: 'Gamma', testid: 'tab-c' },
 ]
 
+describe('UiTabs scrollbar', () => {
+  it('keeps its scrollbar unless asked to hide it, so it cannot run into the selected tab\'s underline', () => {
+    const items = [{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }]
+    const shown = mount(UiTabs, { props: { items, modelValue: 'a' } })
+    const hidden = mount(UiTabs, { props: { items, modelValue: 'a', hideScrollbar: true } })
+
+    expect(shown.get('[role="tablist"]').classes().join(' ')).not.toContain('scrollbar-width')
+    expect(hidden.get('[role="tablist"]').classes().join(' ')).toContain('scrollbar-width:none')
+  })
+})
+
 describe('UiTabs', () => {
   it('renders a tablist with the selected tab marked', () => {
     const wrapper = mount(UiTabs, { props: { items, modelValue: 'a' } })

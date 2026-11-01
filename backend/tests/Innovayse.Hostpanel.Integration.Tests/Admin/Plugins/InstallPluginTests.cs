@@ -120,17 +120,19 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
 
     /// <summary>
     /// A plugin built against an older SDK major version is refused with <c>PLUGIN_SDK_ASSEMBLY_OUTDATED</c> and
-    /// the English text asks for a rebuild; nothing is left in the upload folder.
+    /// the English text asks for a rebuild; nothing is left in the upload folder, and no staging folder keeps the
+    /// unpacked assembly (checked by its file name, which is unique to this test, so a parallel install cannot disturb it).
     /// </summary>
     [Fact]
     public async Task APluginBuiltAgainstAnOlderSdk_RefusesAndLeavesNothingAsync()
     {
         var client = await PluginsTestSeeds.AdminClientAsync(factory);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
+        var oldDll = $"Old.{pluginId}.dll";
         var zip = PluginsTestSeeds.BuildZip(new Dictionary<string, byte[]>
         {
             ["plugin.json"] = System.Text.Encoding.UTF8.GetBytes(PluginsTestSeeds.ManifestJson(pluginId)),
-            ["Old.Plugin.dll"] = PluginAssemblyFixtures.BuiltAgainstSdk(new Version(1, 4, 0, 0)),
+            [oldDll] = PluginAssemblyFixtures.BuiltAgainstSdk(new Version(1, 4, 0, 0)),
         });
 
         var response = await PluginsTestSeeds.InstallAsync(client, zip);
@@ -140,6 +142,9 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
         body.RootElement.GetProperty("type").GetString().Should().Be(HostpanelErrorCodes.PLUGIN_SDK_ASSEMBLY_OUTDATED);
         body.RootElement.GetProperty("detail").GetString().Should().Contain("rebuilt");
         Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+
+        var staging = Path.Combine(new PluginOptions().InstallRoot, ".staging");
+        (Directory.Exists(staging) ? Directory.EnumerateFiles(staging, oldDll, SearchOption.AllDirectories) : []).Should().BeEmpty();
     }
 
     /// <summary>An empty file is not a plugin: refused with <c>PLUGIN_MANIFEST_INVALID</c>.</summary>

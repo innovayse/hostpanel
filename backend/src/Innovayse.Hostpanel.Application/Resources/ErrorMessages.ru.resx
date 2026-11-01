@@ -534,6 +534,9 @@
 <data name="PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED" xml:space="preserve">
     <value>Этот плагин запрашивает у слота контекст, который слот не предоставляет.</value>
   </data>
+<data name="PLUGIN_ASSEMBLY_UNREADABLE" xml:space="preserve">
+    <value>Не удалось прочитать один из файлов этого плагина, поэтому плагин нельзя проверить. Загрузите его ещё раз.</value>
+  </data>
 <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>Этот архив содержит запись, которая записала бы файл вне папки плагина, и был отклонён.</value>
   </data>

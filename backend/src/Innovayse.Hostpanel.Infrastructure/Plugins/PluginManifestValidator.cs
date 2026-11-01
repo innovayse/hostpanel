@@ -39,17 +39,18 @@ internal static partial class PluginManifestValidator
 
     /// <summary>
     /// Matches a text key as the SDK documents it for <c>label</c> and <c>title</c> members: dot separated words
-    /// such as <c>menu.reports</c>, with no spaces. Anything else is plain text that is shown as written.
+    /// such as <c>menu.reports</c>, with no spaces. Anything else is plain text that is shown as written. The end
+    /// is <c>\z</c>, not <c>$</c>, because <c>$</c> also matches before a trailing newline.
     /// </summary>
-    [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9_-]*(\.[A-Za-z0-9_-]+)+$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"\A[A-Za-z][A-Za-z0-9_-]*(\.[A-Za-z0-9_-]+)+\z", RegexOptions.CultureInvariant)]
     private static partial Regex TextKeyPattern();
 
-    /// <summary>Matches one literal route segment: lowercase letters, digits, hyphen and underscore.</summary>
-    [GeneratedRegex(@"^[a-z0-9][a-z0-9_-]*$", RegexOptions.CultureInvariant)]
+    /// <summary>Matches one literal route segment: lowercase letters, digits, hyphen and underscore, with nothing after it, not even a newline.</summary>
+    [GeneratedRegex(@"\A[a-z0-9][a-z0-9_-]*\z", RegexOptions.CultureInvariant)]
     private static partial Regex LiteralSegmentPattern();
 
-    /// <summary>Matches one route parameter segment such as <c>{id}</c>.</summary>
-    [GeneratedRegex(@"^\{[A-Za-z][A-Za-z0-9]*\}$", RegexOptions.CultureInvariant)]
+    /// <summary>Matches one route parameter segment such as <c>{id}</c>, with nothing after it, not even a newline.</summary>
+    [GeneratedRegex(@"\A\{[A-Za-z][A-Za-z0-9]*\}\z", RegexOptions.CultureInvariant)]
     private static partial Regex ParameterSegmentPattern();
 
     /// <summary>
@@ -83,14 +84,25 @@ internal static partial class PluginManifestValidator
     /// assembly metadata is read without loading it, so the plugin never reaches the default load context.
     /// </summary>
     /// <param name="pluginDirectory">The folder holding the plugin's assemblies.</param>
-    /// <returns>The violation naming the first outdated assembly, or <see langword="null"/> when none is.</returns>
+    /// <returns>The violation naming the first outdated or unreadable assembly, or <see langword="null"/> when none is.</returns>
     internal static PluginManifestViolation? ValidateSdkReference(string pluginDirectory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(pluginDirectory);
 
         foreach (var assemblyPath in Directory.EnumerateFiles(pluginDirectory, "*.dll", SearchOption.TopDirectoryOnly))
         {
-            var referenced = ReadSdkReferenceVersion(assemblyPath);
+            Version? referenced;
+            try
+            {
+                referenced = ReadSdkReferenceVersion(assemblyPath);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // A file the host cannot read is a refusal of this plugin, not a fault of the request; only the exception type is kept.
+                return new PluginManifestViolation(
+                    PluginManifestRule.AssemblyUnreadable, $"{Path.GetFileName(assemblyPath)} could not be read ({ex.GetType().Name})");
+            }
+
             if (referenced is not null && referenced.Major < HostSdkMajorVersion)
             {
                 return new PluginManifestViolation(
@@ -106,6 +118,8 @@ internal static partial class PluginManifestValidator
     /// <summary>Reads the version of the SDK that a managed assembly references, from its metadata only.</summary>
     /// <param name="assemblyPath">The assembly file.</param>
     /// <returns>The referenced SDK version, or <see langword="null"/> when the file is not a managed assembly or does not reference the SDK.</returns>
+    /// <exception cref="IOException">The file cannot be opened or read.</exception>
+    /// <exception cref="UnauthorizedAccessException">The host may not read the file.</exception>
     private static Version? ReadSdkReferenceVersion(string assemblyPath)
     {
         try
@@ -154,9 +168,7 @@ internal static partial class PluginManifestValidator
 
             if (!TryNormalizePath(route.Path, out var template))
             {
-                return new PluginManifestViolation(
-                    PluginManifestRule.RoutePathInvalid,
-                    $"{where}: a path is lowercase segments and {{parameters}} below a leading slash, with no empty segment and no '..'");
+                return PathViolation(where);
             }
 
             if (!seen.Add((route.Method, template)))
@@ -169,7 +181,17 @@ internal static partial class PluginManifestValidator
         return null;
     }
 
-    /// <summary>Checks the pages of one area for a permission the area does not take or does not know.</summary>
+    /// <summary>The violation for a path that breaks the path rule.</summary>
+    /// <param name="where">Where the path is declared, for the log.</param>
+    /// <returns>The <see cref="PluginManifestRule.RoutePathInvalid"/> violation.</returns>
+    private static PluginManifestViolation PathViolation(string where)
+    {
+        return new PluginManifestViolation(
+            PluginManifestRule.RoutePathInvalid,
+            $"{where}: a path is lowercase segments and {{parameters}} below a leading slash, with no empty segment and no '..'");
+    }
+
+    /// <summary>Checks the pages of one area: a permission the area does not take or does not know, and the path rule of routes.</summary>
     /// <param name="area">The panel the pages belong to.</param>
     /// <param name="ui">The menus and pages of the area.</param>
     /// <returns>The first violation, or <see langword="null"/>.</returns>
@@ -177,10 +199,17 @@ internal static partial class PluginManifestValidator
     {
         foreach (var page in ui.Pages)
         {
-            var violation = CheckPermission(area, page.Permission, $"ui.{AreaMember(area)}.pages '{page.Id}'");
+            var where = $"ui.{AreaMember(area)}.pages '{page.Id}' path '{page.Path}'";
+            var violation = CheckPermission(area, page.Permission, where);
             if (violation is not null)
             {
                 return violation;
+            }
+
+            // A page path sits below the plugin's own prefix like a route path does, so the same rule holds.
+            if (!TryNormalizePath(page.Path, out _))
+            {
+                return PathViolation(where);
             }
         }
 
@@ -250,8 +279,12 @@ internal static partial class PluginManifestValidator
     }
 
     /// <summary>
-    /// Checks that every text key the menus, pages, settings and slots use is defined in the English texts. A value
-    /// shaped like a key (see <see cref="TextKeyPattern"/>) is a key; any other value is plain text and needs no entry.
+    /// Checks that every text key the menus, pages, settings and slots use is defined in the English texts. Two kinds
+    /// of member are told apart. A menu or setting <c>label</c> and a page or slot <c>title</c> is a key when its value is
+    /// shaped like one (see <see cref="TextKeyPattern"/>); any other value is plain text and needs no entry. A setting
+    /// <c>description</c> and <c>placeholder</c> is usually literal help text or an example such as
+    /// <c>api.example.org</c>, which has the shape of a key, so it counts as a key only when some locale defines that
+    /// exact value; it must then be defined in English too.
     /// </summary>
     /// <param name="manifest">The manifest.</param>
     /// <returns>The first violation, or <see langword="null"/>.</returns>
@@ -260,9 +293,17 @@ internal static partial class PluginManifestValidator
         var english = manifest.Locales
             .FirstOrDefault(pair => string.Equals(pair.Key, EnglishLocale, StringComparison.OrdinalIgnoreCase)).Value;
 
-        foreach (var (where, value) in TextValues(manifest))
+        foreach (var (where, value, isHelpText) in TextValues(manifest))
         {
-            if (value is not null && TextKeyPattern().IsMatch(value) && (english is null || !english.ContainsKey(value)))
+            if (value is null)
+            {
+                continue;
+            }
+
+            var isKey = isHelpText
+                ? manifest.Locales.Values.Any(texts => texts.ContainsKey(value))
+                : TextKeyPattern().IsMatch(value);
+            if (isKey && (english is null || !english.ContainsKey(value)))
             {
                 return new PluginManifestViolation(
                     PluginManifestRule.LabelKeyMissing, $"{where} uses the text key '{value}', which the '{EnglishLocale}' texts do not define");
@@ -274,33 +315,36 @@ internal static partial class PluginManifestValidator
 
     /// <summary>Lists every text member a manifest can fill with a key: menu labels, page and slot titles, setting texts.</summary>
     /// <param name="manifest">The manifest.</param>
-    /// <returns>Each member's location for the log and its value, which may be <see langword="null"/>.</returns>
-    private static IEnumerable<(string Where, string? Value)> TextValues(PluginManifest manifest)
+    /// <returns>
+    /// Each member's location for the log, its value (which may be <see langword="null"/>), and whether it is help text
+    /// (a setting description or placeholder) that is a key only when a locale defines it.
+    /// </returns>
+    private static IEnumerable<(string Where, string? Value, bool IsHelpText)> TextValues(PluginManifest manifest)
     {
         (PluginArea Area, PluginUiArea Ui)[] areas = [(PluginArea.Client, manifest.Ui.Client), (PluginArea.Admin, manifest.Ui.Admin)];
         foreach (var (area, ui) in areas)
         {
             foreach (var menu in ui.Menus)
             {
-                yield return ($"ui.{AreaMember(area)}.menus '{menu.Id}' label", menu.Label);
+                yield return ($"ui.{AreaMember(area)}.menus '{menu.Id}' label", menu.Label, false);
             }
 
             foreach (var page in ui.Pages)
             {
-                yield return ($"ui.{AreaMember(area)}.pages '{page.Id}' title", page.Title);
+                yield return ($"ui.{AreaMember(area)}.pages '{page.Id}' title", page.Title, false);
             }
         }
 
         foreach (var entry in manifest.Ui.Slots)
         {
-            yield return ($"ui.slots '{entry.Id}' title", entry.Title);
+            yield return ($"ui.slots '{entry.Id}' title", entry.Title, false);
         }
 
         foreach (var setting in manifest.Settings)
         {
-            yield return ($"settings '{setting.Key}' label", setting.Label);
-            yield return ($"settings '{setting.Key}' description", setting.Description);
-            yield return ($"settings '{setting.Key}' placeholder", setting.Placeholder);
+            yield return ($"settings '{setting.Key}' label", setting.Label, false);
+            yield return ($"settings '{setting.Key}' description", setting.Description, true);
+            yield return ($"settings '{setting.Key}' placeholder", setting.Placeholder, true);
         }
     }
 

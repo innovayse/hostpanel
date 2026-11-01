@@ -534,6 +534,9 @@
 <data name="PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED" xml:space="preserve">
     <value>This plugin asks a slot for context that the slot does not offer.</value>
   </data>
+<data name="PLUGIN_ASSEMBLY_UNREADABLE" xml:space="preserve">
+    <value>A file in this plugin could not be read, so the plugin cannot be checked. Upload it again.</value>
+  </data>
 <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>That archive contains an entry that would write outside the plugin's own folder and was rejected.</value>
   </data>

@@ -130,7 +130,12 @@ public sealed class PluginManifestValidatorTests : IDisposable
             ""","locales":{"ru":{"menu.reports":"R"}},"ui":{"client":{"menus":[{"id":"m","label":"menu.reports","page":"p"}]}}"""), PluginManifestRule.LabelKeyMissing);
         AssertBreaks(Manifest(""","ui":{"admin":{"pages":[{"id":"p","path":"/p","title":"page.title","view":"v.json"}]}}"""), PluginManifestRule.LabelKeyMissing);
         AssertBreaks(Manifest(""","settings":[{"key":"k","label":"setting.k","type":"text"}]"""), PluginManifestRule.LabelKeyMissing);
-        AssertBreaks(Manifest(""","settings":[{"key":"k","label":"Key","type":"text","description":"setting.k.help"}]"""), PluginManifestRule.LabelKeyMissing);
+        AssertBreaks(
+            Manifest(""","locales":{"ru":{"setting.k.help":"H"}},"settings":[{"key":"k","label":"Key","type":"text","description":"setting.k.help"}]"""),
+            PluginManifestRule.LabelKeyMissing);
+        AssertBreaks(
+            Manifest(""","locales":{"ru":{"setting.k.hint":"H"}},"settings":[{"key":"k","label":"Key","type":"text","placeholder":"setting.k.hint"}]"""),
+            PluginManifestRule.LabelKeyMissing);
         AssertBreaks(Manifest(""","ui":{"slots":[{"id":"s","slot":"client.dashboard.cards","view":"v.json","title":"card.title"}]}"""), PluginManifestRule.LabelKeyMissing);
 
         PluginManifestValidator.Validate(Manifest("""
@@ -138,6 +143,92 @@ public sealed class PluginManifestValidatorTests : IDisposable
             "settings":[{"key":"k","label":"setting.k","type":"text"}],
             "ui":{"client":{"menus":[{"id":"m","label":"menu.reports","page":"p"},{"id":"n","label":"Plain text","page":"p"}]},
                   "slots":[{"id":"s","slot":"client.dashboard.cards","view":"v.json","title":"card.title"}]}
+            """)).Should().BeNull();
+    }
+
+    /// <summary>
+    /// A setting description or placeholder shaped like a key but defined in no locale is literal text (a host name, a
+    /// version), not a missing key; a real key of the manifest's texts in one of them is checked like a label.
+    /// </summary>
+    /// <param name="value">The description or placeholder.</param>
+    [Theory]
+    [InlineData("example.com")]
+    [InlineData("api.example.org")]
+    [InlineData("v1.0")]
+    [InlineData("https://pg.example.am/v1")]
+    public void Validate_HelpTextShapedLikeAKeyButDefinedNowhere_Passes(string value)
+    {
+        PluginManifestValidator.Validate(Manifest(
+            $$""","settings":[{"key":"k","label":"Key","type":"text","description":"{{value}}","placeholder":"{{value}}"}]""")).Should().BeNull();
+        PluginManifestValidator.Validate(Manifest(
+            $$$""","locales":{"en":{"other.key":"O"}},"settings":[{"key":"k","label":"Key","type":"text","placeholder":"{{{value}}}"}]""")).Should().BeNull();
+    }
+
+    /// <summary>A description or placeholder that is a defined key passes once English defines it too.</summary>
+    [Fact]
+    public void Validate_HelpTextThatIsADefinedKey_PassesWhenEnglishDefinesIt()
+    {
+        PluginManifestValidator.Validate(Manifest("""
+            ,"locales":{"en":{"setting.k.help":"Help"},"ru":{"setting.k.help":"Pomosh"}},
+            "settings":[{"key":"k","label":"Key","type":"text","description":"setting.k.help"}]
+            """)).Should().BeNull();
+    }
+
+    /// <summary>
+    /// A trailing newline never passes a text key or path rule: a label "menu.reports" followed by a newline is
+    /// plain text (not a key), and a path with a newline is invalid.
+    /// </summary>
+    [Fact]
+    public void Validate_TrailingNewline_IsNotPartOfAKeyOrAPath()
+    {
+        // The newline makes it plain text, so no English entry is needed; the key without it still is.
+        PluginManifestValidator.Validate(Manifest(""","ui":{"client":{"menus":[{"id":"m","label":"menu.reports\n","page":"p"}]}}""")).Should().BeNull();
+        AssertBreaks(Manifest(""","ui":{"client":{"menus":[{"id":"m","label":"menu.reports","page":"p"}]}}"""), PluginManifestRule.LabelKeyMissing);
+    }
+
+    /// <summary>A route path that ends in a newline is invalid, literal or parameter segment alike.</summary>
+    /// <param name="path">The path as written in the manifest JSON, with <c>\n</c> as a JSON escape.</param>
+    [Theory]
+    [InlineData("/a\\n")]
+    [InlineData("/a/{id}\\n")]
+    [InlineData("/a\\n/b")]
+    public void Validate_RoutePathWithTrailingNewline_BreaksRoutePathInvalid(string path)
+    {
+        AssertBreaks(Manifest($$""","api":{"client":[{"method":"get","path":"{{path}}"}]}"""), PluginManifestRule.RoutePathInvalid);
+    }
+
+    /// <summary>A path with a trailing newline is not silently a distinct route next to the same path without it: the rule refuses it.</summary>
+    [Fact]
+    public void Validate_RouteAndTheSameRouteWithTrailingNewline_BreaksRoutePathInvalid()
+    {
+        AssertBreaks(Manifest(""","api":{"client":[{"method":"get","path":"/a"},{"method":"get","path":"/a\n"}]}"""), PluginManifestRule.RoutePathInvalid);
+        AssertBreaks(Manifest(""","api":{"client":[{"method":"get","path":"/a\n"},{"method":"get","path":"/a"}]}"""), PluginManifestRule.RoutePathInvalid);
+    }
+
+    /// <summary>A page path follows the route path rule in both areas.</summary>
+    /// <param name="path">The page path as written in the manifest JSON.</param>
+    [Theory]
+    [InlineData("/Upper")]
+    [InlineData("/a/../b")]
+    [InlineData("/a//b")]
+    [InlineData("a")]
+    [InlineData("/")]
+    [InlineData("/a\\n")]
+    public void Validate_BadPagePath_BreaksRoutePathInvalid(string path)
+    {
+        AssertBreaks(
+            Manifest($$$""","ui":{"client":{"pages":[{"id":"p","path":"{{{path}}}","title":"P","view":"v.json"}]}}"""), PluginManifestRule.RoutePathInvalid);
+        AssertBreaks(
+            Manifest($$$""","ui":{"admin":{"pages":[{"id":"p","path":"{{{path}}}","title":"P","view":"v.json"}]}}"""), PluginManifestRule.RoutePathInvalid);
+    }
+
+    /// <summary>Lowercase literals and {parameters} are valid page paths.</summary>
+    [Fact]
+    public void Validate_GoodPagePaths_Pass()
+    {
+        PluginManifestValidator.Validate(Manifest("""
+            ,"ui":{"client":{"pages":[{"id":"p","path":"/reports/{id}","title":"P","view":"v.json"}]},
+                  "admin":{"pages":[{"id":"q","path":"/a-b_c","title":"Q","view":"v.json"}]}}
             """)).Should().BeNull();
     }
 
@@ -184,6 +275,22 @@ public sealed class PluginManifestValidatorTests : IDisposable
         violation.Should().NotBeNull();
         violation!.Rule.Should().Be(PluginManifestRule.SdkAssemblyOutdated);
         violation.Detail.Should().Contain("Old.Plugin.dll").And.Contain("1.4").And.Contain("rebuild");
+    }
+
+    /// <summary>An assembly the host cannot read is refused with its own rule, not an exception that would become a server error.</summary>
+    [Fact]
+    public void ValidateSdkReference_UnreadableAssembly_BreaksAssemblyUnreadable()
+    {
+        var path = Path.Combine(_folder, "Locked.Plugin.dll");
+        File.WriteAllBytes(path, PluginAssemblyFixtures.BuiltAgainstSdk(new Version(1, 4, 0, 0)));
+
+        // An exclusive handle makes the host's own open fail with an IOException, as a file held by another process would.
+        using var exclusive = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None);
+        var violation = PluginManifestValidator.ValidateSdkReference(_folder);
+
+        violation.Should().NotBeNull();
+        violation!.Rule.Should().Be(PluginManifestRule.AssemblyUnreadable);
+        violation.Detail.Should().Contain("Locked.Plugin.dll").And.Contain(nameof(IOException));
     }
 
     /// <summary>The host's own SDK major, a newer minor, native files and an empty folder all pass.</summary>

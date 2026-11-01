@@ -776,6 +776,9 @@ public static class HostpanelErrorCodes
     /// <summary>A slot entry asks for a context key its slot does not offer (400).</summary>
     public const string PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED = "PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED";
 
+    /// <summary>A file in the uploaded plugin could not be read, so the plugin cannot be checked (400).</summary>
+    public const string PLUGIN_ASSEMBLY_UNREADABLE = "PLUGIN_ASSEMBLY_UNREADABLE";
+
     /// <summary>
     /// One of the archive's entries would write outside the plugin's own directory (400). The
     /// zip-slip guard's refusal, named for what a caller can act on rather than the attack it

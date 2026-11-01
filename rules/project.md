@@ -298,16 +298,24 @@ docker/                              compose set (shared·dev·prod·platform), 
   (Application `Admin/Plugins/Common/Enums`), which is also its error code (`PluginPackageErrors.CodeFor`,
   `ErrorMessages` en/ru/hy, default 400): `manifestVersion` must be 1 or 2 (`PLUGIN_MANIFEST_VERSION_UNKNOWN`);
   a client route, page or slot `permission` is `PluginPermissions.Any` or a defined `ClientPermission` name,
-  one name, exact case, not `None` (`PLUGIN_PERMISSION_UNKNOWN`); an admin route, page or slot (a slot whose
-  `PluginSlot.Area` is admin) takes none (`PLUGIN_ADMIN_PERMISSION_DECLARED`); a route `path` starts with `/`
+  one name, exact case, not `None` (`PLUGIN_PERMISSION_UNKNOWN`; `ClientPermission.All`, the combined flag, is a
+  defined name and is accepted); an admin route, page or slot (a slot whose
+  `PluginSlot.Area` is admin) takes none (`PLUGIN_ADMIN_PERMISSION_DECLARED`); a route `path` and a page `path`
+  (both sit below the plugin's own prefix, so one rule) start with `/`
   and every segment is a lowercase literal (`a-z0-9_-`) or a `{parameter}`, so no `..`, no empty segment, not
-  `/` alone (`PLUGIN_ROUTE_PATH_INVALID`); a method and path template is unique within an area, parameter names
-  ignored (`PLUGIN_ROUTE_DUPLICATE`); a `slot` is in `PluginSlots` (`PLUGIN_SLOT_UNKNOWN`) and each `contextKeys`
-  entry satisfies `PluginSlot.Offers` (`PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED`); a menu `label`, page and slot
-  `title`, and setting `label`, `description` and `placeholder` shaped like a text key (dot separated words, no
-  spaces, such as `menu.reports`) must exist in the `en` locale, any other value is plain text
-  (`PLUGIN_LABEL_KEY_MISSING`); and an assembly in the plugin folder whose metadata references the SDK at a
-  lower major version than the host's is refused with a rebuild message (`PLUGIN_SDK_ASSEMBLY_OUTDATED`),
+  `/` alone (`PLUGIN_ROUTE_PATH_INVALID`); the segment patterns are anchored with `\A` and `\z`, never `$`, which
+  would let a trailing newline through; a method and path template is unique within an area, parameter names
+  ignored (`PLUGIN_ROUTE_DUPLICATE`; page paths are not checked for duplicates); a `slot` is in `PluginSlots` (`PLUGIN_SLOT_UNKNOWN`) and each `contextKeys`
+  entry satisfies `PluginSlot.Offers` (`PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED`); a menu and setting `label`, and a
+  page and slot `title`, shaped like a text key (dot separated words, no spaces, such as `menu.reports`) must
+  exist in the `en` locale, any other value is plain text; a setting `description` and `placeholder` is usually
+  help text or an example (`api.example.org`, `v1.0`) that has the shape of a key, so it counts as a key only
+  when some locale defines that exact value, and must then be defined in `en` too
+  (`PLUGIN_LABEL_KEY_MISSING`); an assembly in the plugin folder whose metadata references the SDK at a
+  lower major version than the host's is refused with a rebuild message (`PLUGIN_SDK_ASSEMBLY_OUTDATED`; only an
+  older major is refused, a newer minor or a newer major is not checked here), and one the host cannot read
+  (`IOException`, `UnauthorizedAccessException`) is refused with `PLUGIN_ASSEMBLY_UNREADABLE` instead of a server
+  error,
   read with `System.Reflection.Metadata` so the plugin is never loaded into the default context. A version 1
   manifest has none of these blocks and passes. At load a refused manifest skips only that plugin and logs
   one warning with the plugin id and the rule; at install the response is the rule's localised error and

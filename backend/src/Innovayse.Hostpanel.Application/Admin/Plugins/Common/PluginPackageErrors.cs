@@ -51,6 +51,7 @@ public static class PluginPackageErrors
             PluginManifestRule.LabelKeyMissing => HostpanelErrorCodes.PLUGIN_LABEL_KEY_MISSING,
             PluginManifestRule.SlotUnknown => HostpanelErrorCodes.PLUGIN_SLOT_UNKNOWN,
             PluginManifestRule.SlotContextKeyNotOffered => HostpanelErrorCodes.PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED,
+            PluginManifestRule.AssemblyUnreadable => HostpanelErrorCodes.PLUGIN_ASSEMBLY_UNREADABLE,
             _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, "Not a manifest rule."),
         };
     }

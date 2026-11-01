@@ -534,6 +534,9 @@
 <data name="PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED" xml:space="preserve">
     <value>Այս հավելագրիչը սլոտից պահանջում է համատեքստ, որը սլոտը չի տրամադրում։</value>
   </data>
+<data name="PLUGIN_ASSEMBLY_UNREADABLE" xml:space="preserve">
+    <value>Այս հավելագրիչի ֆայլերից մեկը հնարավոր չեղավ կարդալ, ուստի հավելագրիչը հնարավոր չէ ստուգել։ Վերբեռնեք այն նորից։</value>
+  </data>
 <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>Այդ արխիվը պարունակում է գրառում, որը կգրեր հավելագրիչի սեփական թղթապանակից դուրս, և մերժվեց։</value>
   </data>

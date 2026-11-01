@@ -33,4 +33,7 @@ public enum PluginManifestRule
 
     /// <summary>A slot entry asks for a context key its slot does not offer.</summary>
     SlotContextKeyNotOffered = 9,
+
+    /// <summary>A file in the plugin folder could not be read, so its SDK reference could not be checked.</summary>
+    AssemblyUnreadable = 10,
 }

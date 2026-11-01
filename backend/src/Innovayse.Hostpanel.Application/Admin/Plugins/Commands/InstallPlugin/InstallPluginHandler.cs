@@ -44,7 +44,7 @@ public sealed class InstallPluginHandler
     /// one of the manifest rule codes (<c>PLUGIN_MANIFEST_VERSION_UNKNOWN</c>, <c>PLUGIN_SDK_ASSEMBLY_OUTDATED</c>,
     /// <c>PLUGIN_PERMISSION_UNKNOWN</c>, <c>PLUGIN_ADMIN_PERMISSION_DECLARED</c>, <c>PLUGIN_ROUTE_PATH_INVALID</c>,
     /// <c>PLUGIN_ROUTE_DUPLICATE</c>, <c>PLUGIN_LABEL_KEY_MISSING</c>, <c>PLUGIN_SLOT_UNKNOWN</c>,
-    /// <c>PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED</c>) when the manifest breaks that rule;
+    /// <c>PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED</c>, <c>PLUGIN_ASSEMBLY_UNREADABLE</c>) when the manifest breaks that rule;
     /// <c>PLUGIN_ID_INVALID</c> when the manifest's id breaks the plugin id rule;
     /// <c>PLUGIN_ARCHIVE_UNSAFE</c> when an entry would write outside the plugin's own folder;
     /// <c>PLUGIN_ARCHIVE_TOO_LARGE</c> when the archive exceeds the configured limits;

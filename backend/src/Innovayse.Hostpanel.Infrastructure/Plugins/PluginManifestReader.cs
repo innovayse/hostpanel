@@ -33,10 +33,21 @@ internal sealed class PluginManifestReader
     /// <summary>Parses the text of a <c>plugin.json</c> file, without checking the SDK version.</summary>
     /// <param name="json">The manifest text.</param>
     /// <returns>The manifest, or <see langword="null"/> when the text is the JSON literal <c>null</c>.</returns>
-    /// <exception cref="JsonException">The text is not a well-formed manifest.</exception>
+    /// <exception cref="JsonException">
+    /// The text is not a well-formed manifest, or a <c>settings</c> entry has a <c>type</c> this release does not
+    /// define (a number outside the kinds, which the string converter would otherwise accept and read as plain
+    /// text). A manifest is refused rather than loaded with a setting whose secrecy is unknown.
+    /// </exception>
     internal static PluginManifest? Deserialize(string json)
     {
-        return JsonSerializer.Deserialize<PluginManifest>(json, JsonOptions);
+        var manifest = JsonSerializer.Deserialize<PluginManifest>(json, JsonOptions);
+        var unknown = manifest?.Settings.FirstOrDefault(s => !Enum.IsDefined(s.Type));
+        if (unknown is not null)
+        {
+            throw new JsonException($"Setting '{unknown.Key}' has an unknown type.");
+        }
+
+        return manifest;
     }
 
     /// <summary>

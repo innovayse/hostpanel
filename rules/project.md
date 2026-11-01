@@ -421,7 +421,12 @@ docker/                              compose set (shared·dev·prod·platform), 
   - **Body cap (`PluginApiOptions`, section `PluginApi`, `MaxBodyBytes`, default 1 MiB, 1 to 64 MiB, validated on start).**
     A declared `Content-Length` over the cap is refused without reading; a body without one is read in chunks and refused
     the moment it passes the cap: 413 `PLUGIN_REQUEST_TOO_LARGE` before the plugin is called. The plugin sees the whole
-    body or none of it.
+    body or none of it. The body is read once into one buffer sized from the declared length when there is one, and the
+    plugin is handed a slice of that buffer (no second copy). Because the cap may be larger than the web server's own
+    per request limit (about 28.6 MiB), both plugin controllers carry `[PluginBodyLimit]`, which lifts the server's limit
+    for those routes alone and after authorisation; `PluginCallRunner` is then the only limit, so an oversize chunked
+    body above both still answers 413 `PLUGIN_REQUEST_TOO_LARGE` rather than a bare server 413. Architecture tests pin
+    `[RequireRequestedWith]`, `[PluginBodyLimit]` and the policy on both controllers.
   - **Audit.** A call that is not a GET writes one activity log line before the plugin runs, through `IActivityLogger`:
     `Called Plugin Route - Plugin ID: {id} - Area: {Client|Admin} - Route: {METHOD} {declared template}`, the client for a
     client call and none for an admin call, stamped with the caller by the logger. Never the body, never the concrete
@@ -437,6 +442,25 @@ docker/                              compose set (shared·dev·prod·platform), 
     caller's own cancellation propagates. **`Stream` is out of scope until #641**: a route marked `streaming`, or a streamed
     reply from a route that is not, answers 501 `PLUGIN_STREAMING_NOT_SUPPORTED` (the plugin is not called for the
     first, and the stream is never enumerated for the second).
+    **The status is checked again by the host**, not trusted to the SDK factories: a `Json` reply must be 200 to 203 with a
+    body, `NoContent` 204, a `Problem` 400 to 599 except 401 and 407; anything else (a reply built by reflection or by a
+    plugin compiled against another SDK) answers 502 `PLUGIN_FAILED`, logged with the plugin id. **A plugin problem
+    sentence is the plugin's own text**: the host cuts it to 500 characters but does not localise it, so it may be in any
+    language, and only the host's own sentences (title, `PLUGIN_REPORTED_PROBLEM`, every other code) are in en, ru and hy.
+  - **Route values are untrusted input.** The path is matched segment by segment against the declared templates after the
+    server has decoded it once. A `..` or `.` segment is never resolved into another route (an undeclared shape is 404), an
+    empty segment matches no parameter, and a parameter takes one segment whose text reaches the plugin unchanged: `..`,
+    `%2e%2e` (still the literal text), `a%2Fb` (the server leaves `%2F` encoded, so it arrives as those five characters, not
+    as a `/`), a backslash or a NUL character are all just text in `RouteValues`. A plugin must never use one as a file
+    name, a path, an address or a query fragment without its own validation. The method is the real method: `HEAD` and
+    `OPTIONS` are not mapped (404 or 405, no plugin code) and a method override header is ignored.
+  - **Signals that remain, and why they are accepted.** The 404 that hides whether a plugin exists is the same body for
+    unknown, disabled, another type and undeclared, but a caller can still tell the 404 from a 403 `CLIENT_PERMISSION_DENIED`
+    or 413 and so learn that an enabled plugin declares that route; and the time to answer differs slightly between a
+    refusal and a call that reaches plugin code. Both are accepted: the route list of an enabled plugin is not a secret (it is in
+    the plugin manifest the administrator installed), the 403 is only given to a caller who is already signed in as a client,
+    the permission must be answered before plugin code runs, and hiding the difference would mean running plugin code or adding
+    sleeps for no one's benefit. A per call timeout is not there yet (#792).
   - **Opaque references (`IPluginReferences`, `Infrastructure/Plugins/PluginReferences`).** `PluginCaller.ClientRef` and
     `UserRef` are the URL-safe Base64 of an HMAC-SHA256 over `kind`, the plugin id and the host id, under a key derived
     (HKDF-SHA256, purpose label `innovayse-hostpanel-plugin-references-v1`) from the encryption key the host already
@@ -451,9 +475,9 @@ docker/                              compose set (shared·dev·prod·platform), 
     every member throws `NotSupportedException`, which is answered as `PLUGIN_FAILED` and logged. An empty profile or a
     store that forgets would be a lie a plugin could act on. #642 replaces that one registration.
   - **Status codes.** `PLUGIN_ROUTE_NOT_FOUND` 404, `PLUGIN_REQUEST_TOO_LARGE` 413 (the `_TOO_LARGE` suffix),
-    `PLUGIN_FAILED` 502 and `PLUGIN_STREAMING_NOT_SUPPORTED` 501 (exact `StatusMapping` rows); each has its sentence in
+    `PLUGIN_FAILED` 502 and `PLUGIN_STREAMING_NOT_SUPPORTED` 501 (exact `StatusMapping` rows; **the 501 is temporary and goes when #641 ships streaming**); each has its sentence in
     en/ru/hy. Left for later issues: rate limit policies per plugin and client (#640), streaming and its nginx settings
-    (#641), the host API and the store (#642), a call timeout.
+    (#641), the host API and the store (#642), a call timeout (#792).
 
 ## CQRS — Wolverine, conforming
 

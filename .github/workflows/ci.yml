@@ -112,7 +112,7 @@ jobs:
               FullyQualifiedName~Integration.Tests.Billing.L|FullyQualifiedName~Integration.Tests.Billing.M|FullyQualifiedName~Integration.Tests.Billing.N|FullyQualifiedName~Integration.Tests.Billing.O|FullyQualifiedName~Integration.Tests.Billing.P|FullyQualifiedName~Integration.Tests.Billing.Q|FullyQualifiedName~Integration.Tests.Billing.R|FullyQualifiedName~Integration.Tests.Billing.S|FullyQualifiedName~Integration.Tests.Billing.T|FullyQualifiedName~Integration.Tests.Billing.U|FullyQualifiedName~Integration.Tests.Billing.V|FullyQualifiedName~Integration.Tests.Billing.W|FullyQualifiedName~Integration.Tests.Billing.X|FullyQualifiedName~Integration.Tests.Billing.Y|FullyQualifiedName~Integration.Tests.Billing.Z|FullyQualifiedName~Integration.Tests.Reports.|FullyQualifiedName~Integration.Tests.Slides.|FullyQualifiedName~Integration.Tests.Faqs.|FullyQualifiedName~Integration.Tests.Partners.|FullyQualifiedName~Integration.Tests.Locations.|FullyQualifiedName~Integration.Tests.Projects.|FullyQualifiedName~Integration.Tests.Testimonials.
           - shard: 4 of 5
             filter: >-
-              FullyQualifiedName~Integration.Tests.Domains.|FullyQualifiedName~Integration.Tests.Support.
+              FullyQualifiedName~Integration.Tests.Domains.|FullyQualifiedName~Integration.Tests.Plugins.|FullyQualifiedName~Integration.Tests.Support.
           - shard: 5 of 5
             filter: >-
               FullyQualifiedName~Integration.Tests.Migration.|FullyQualifiedName~Integration.Tests.Notifications.|FullyQualifiedName~Integration.Tests.Orders.|FullyQualifiedName~Integration.Tests.Persistence.|FullyQualifiedName~Integration.Tests.Products.|FullyQualifiedName~Integration.Tests.Provisioning.|FullyQualifiedName~Integration.Tests.Services.

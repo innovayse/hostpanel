@@ -36,6 +36,7 @@ namespace Innovayse.Hostpanel.API.Controllers;
 [Authorize(Policy = Policies.Client)]
 [AvailableToEveryClientUser]
 [RequireRequestedWith]
+[PluginBodyLimit]
 [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status429TooManyRequests)]
 public sealed class ClientPluginCallsController : BaseApiController
 {

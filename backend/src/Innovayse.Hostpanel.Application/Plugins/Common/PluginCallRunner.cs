@@ -162,8 +162,8 @@ public sealed class PluginCallRunner
             return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_STREAMING_NOT_SUPPORTED);
         }
 
-        var body = await ReadBodyAsync(input, ct);
-        if (body is null)
+        var read = await ReadBodyAsync(input, ct);
+        if (read is not { } body)
         {
             return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_REQUEST_TOO_LARGE);
         }
@@ -214,6 +214,15 @@ public sealed class PluginCallRunner
     /// <returns>The reply, or the failure for a reply the host cannot forward.</returns>
     private Result<PluginReplyDto> Map(string pluginId, PluginReply? reply)
     {
+        // The SDK factories refuse a status outside the contract, but the host does not rely on that: a reply built another
+        // way (a reflected or subclassed type, a plugin compiled against a different SDK) is checked again here, because
+        // this status is the one thing a plugin chooses that reaches the wire unchanged.
+        if (reply is not null && !HasContractStatus(reply))
+        {
+            _logger.LogError("Plugin {PluginId} returned a {Kind} reply with status {Status}, which the contract does not allow.", pluginId, reply.Kind, reply.Status);
+            return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_FAILED);
+        }
+
         switch (reply?.Kind)
         {
             case PluginReplyKind.Json:
@@ -229,6 +238,20 @@ public sealed class PluginCallRunner
                 _logger.LogError("Plugin {PluginId} returned {Reply}, which is not a reply.", pluginId, reply?.Kind.ToString() ?? "no reply");
                 return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_FAILED);
         }
+    }
+
+    /// <summary>Whether a reply carries a status its kind may have: 200 to 203 with a body, 204 with none, 400 to 599 except 401 and 407 for a problem.</summary>
+    /// <param name="reply">The plugin's reply.</param>
+    /// <returns><see langword="true"/> when the status is one the contract allows for the reply's kind; a stream carries no status of its own.</returns>
+    private static bool HasContractStatus(PluginReply reply)
+    {
+        return reply.Kind switch
+        {
+            PluginReplyKind.Json => reply.Status is >= 200 and <= 203 && reply.Body is not null,
+            PluginReplyKind.NoContent => reply.Status == 204,
+            PluginReplyKind.Problem => reply.Status is >= 400 and <= 599 and not (401 or 407),
+            _ => true,
+        };
     }
 
     /// <summary>Turns a plugin's problem into the standard error body's parts, with the code namespaced.</summary>
@@ -255,10 +278,10 @@ public sealed class PluginCallRunner
     /// <param name="input">The request.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// The body bytes, empty when there is none; <see langword="null"/> when the request declares more than the cap or
+    /// The body bytes (a slice of the one buffer read), empty when there is none; <see langword="null"/> when the request declares more than the cap or
     /// sends more than it, in which case no more than the cap and one chunk was read.
     /// </returns>
-    private async Task<byte[]?> ReadBodyAsync(PluginHttpInput input, CancellationToken ct)
+    private async Task<ReadOnlyMemory<byte>?> ReadBodyAsync(PluginHttpInput input, CancellationToken ct)
     {
         var cap = _options.Value.MaxBodyBytes;
         if (input.ContentLength > cap)
@@ -266,7 +289,9 @@ public sealed class PluginCallRunner
             return null;
         }
 
-        using var buffer = new MemoryStream();
+        // The one copy of the body: a declared length sizes the buffer once (it is within the cap, checked above), and
+        // the plugin is handed a slice of that same buffer, never a second array made with ToArray.
+        using var buffer = input.ContentLength is { } declared ? new MemoryStream((int)declared) : new MemoryStream();
         var chunk = new byte[ReadChunkBytes];
         int read;
         while ((read = await input.Body.ReadAsync(chunk, ct)) > 0)
@@ -279,7 +304,7 @@ public sealed class PluginCallRunner
             buffer.Write(chunk, 0, read);
         }
 
-        return buffer.ToArray();
+        return buffer.GetBuffer().AsMemory(0, (int)buffer.Length);
     }
 
     /// <summary>The audit line of a call: the plugin, the area and the declared route, never the body or the concrete path.</summary>

@@ -6,7 +6,6 @@ using Innovayse.Hostpanel.Domain.Settings.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 using Innovayse.Hostpanel.Shared.MultiTenancy;
-using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
 using Innovayse.SDK.Plugins.Manifest;
 using Microsoft.EntityFrameworkCore;

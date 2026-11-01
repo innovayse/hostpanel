@@ -1,6 +1,6 @@
 using Innovayse.Hostpanel.Infrastructure.Plugins;
-using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
+using Innovayse.SDK.Plugins.Manifest;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
@@ -98,11 +98,11 @@ public sealed class PluginManifestReaderTests
         manifest.Settings[1].Options[1].Label.Should().Be("Test");
         manifest.Settings[0].Options.Should().BeEmpty();
         manifest.Api.Client.Select(r => (r.Method, r.Path, r.Permission)).Should().Equal(
-            (PluginRouteMethod.Get, "/invoices/{id}", "Any"), (PluginRouteMethod.Post, "/sync", null));
+            (PluginRouteMethod.Get, "/invoices/{id}", PluginPermissions.Any), (PluginRouteMethod.Post, "/sync", null));
         manifest.Ui.Client.Menus.Should().ContainSingle().Which.Icon.Should().Be("chart");
         manifest.Ui.Client.Menus[0].Page.Should().Be("reports");
         manifest.Ui.Client.Pages.Should().ContainSingle().Which.View.Should().Be("views/reports.json");
-        manifest.Ui.Client.Pages[0].Permission.Should().Be("Any");
+        manifest.Ui.Client.Pages[0].Permission.Should().Be(PluginPermissions.Any);
         manifest.Ui.Admin.Pages.Should().ContainSingle().Which.Permission.Should().BeNull();
         manifest.Ui.Admin.Menus.Should().ContainSingle().Which.Icon.Should().BeNull();
         manifest.Ui.Slots.Should().ContainSingle().Which.Slot.Should().Be("client.dashboard.cards");
@@ -203,7 +203,7 @@ public sealed class PluginManifestReaderTests
         var slots = manifest!.Ui.Slots;
         slots[0].Id.Should().Be("usage");
         slots[0].Order.Should().Be(5);
-        slots[0].Permission.Should().Be("Any");
+        slots[0].Permission.Should().Be(PluginPermissions.Any);
         slots[0].ProductIds.Should().Equal(3, 7);
         slots[0].ContextKeys.Should().Equal("serviceId");
         slots[1].Order.Should().Be(0);

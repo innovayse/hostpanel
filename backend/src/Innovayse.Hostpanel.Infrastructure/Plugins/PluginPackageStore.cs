@@ -6,7 +6,7 @@ using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Plugins;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
-using Innovayse.SDK.Plugins;
+using Innovayse.SDK.Plugins.Manifest;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 

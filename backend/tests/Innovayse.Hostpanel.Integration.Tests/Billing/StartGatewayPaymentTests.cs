@@ -4,7 +4,6 @@ using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
-using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -77,10 +76,10 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
         body.GetProperty("redirectUrl").GetString().Should().Be(plugin.CreatePaymentResult.RedirectUrl);
-        plugin.LastCreatePaymentRequest.Should().NotBeNull();
-        plugin.LastCreatePaymentRequest!.AmountMinor.Should().Be(2550); // 25.50 major -> 2550 minor units
-        plugin.LastCreatePaymentRequest.OrderNumber.Should().StartWith($"INV{invoiceId}-");
-        plugin.LastCreatePaymentRequest.OrderNumber.Length.Should().BeLessOrEqualTo(25);
+        plugin.LastCreatePaymentInstruction.Should().NotBeNull();
+        plugin.LastCreatePaymentInstruction!.AmountMinor.Should().Be(2550); // 25.50 major -> 2550 minor units
+        plugin.LastCreatePaymentInstruction.OrderNumber.Should().StartWith($"INV{invoiceId}-");
+        plugin.LastCreatePaymentInstruction.OrderNumber.Length.Should().BeLessOrEqualTo(25);
     }
 
     /// <summary>An AMD invoice against a plugin configured for AMD registers normally.</summary>
@@ -286,6 +285,6 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
         var response = await StartAsync(client, invoiceId);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        plugin.LastCreatePaymentRequest!.AmountMinor.Should().Be(1550); // 25.50 - 10.00 due
+        plugin.LastCreatePaymentInstruction!.AmountMinor.Should().Be(1550); // 25.50 - 10.00 due
     }
 }

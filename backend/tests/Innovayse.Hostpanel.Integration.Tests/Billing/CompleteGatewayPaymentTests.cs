@@ -14,7 +14,6 @@ using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Infrastructure;
-using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -1203,7 +1202,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         var resolver = new FakePaymentPluginResolver();
         resolver.Register("bank-gateway", new FakePaymentPlugin
         {
-            StatusResult = new(GatewayPaymentState.Paid, reference, "orderStatus:2", AmountMinor: 1000, CurrencyNumeric: currencyNumeric),
+            StatusResult = new(GatewayPaymentState.Paid, reference, "orderStatus:2", AmountMinor: 1000, Currency: currencyNumeric),
         });
         return resolver;
     }

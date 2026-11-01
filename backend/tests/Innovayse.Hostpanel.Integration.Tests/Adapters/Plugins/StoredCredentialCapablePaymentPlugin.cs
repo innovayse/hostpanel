@@ -1,4 +1,4 @@
-using Innovayse.SDK.Plugins;
+using Innovayse.SDK.Plugins.Payment;
 using Innovayse.SDK.Plugins.StoredCredentials;
 using Microsoft.Extensions.Configuration;
 
@@ -24,7 +24,7 @@ internal sealed class StoredCredentialCapablePaymentPlugin : IPaymentPlugin, ISt
     public string CurrencyCode => "840";
 
     /// <inheritdoc/>
-    public Task<PaymentSession> CreatePaymentAsync(PaymentRequest request, CancellationToken ct)
+    public Task<PaymentSession> CreatePaymentAsync(PaymentInstruction instruction, CancellationToken ct)
         => throw new NotSupportedException();
 
     /// <inheritdoc/>
@@ -36,7 +36,7 @@ internal sealed class StoredCredentialCapablePaymentPlugin : IPaymentPlugin, ISt
         => throw new NotSupportedException();
 
     /// <inheritdoc/>
-    public Task<CredentialCustomerResult> EnsureCustomerAsync(CredentialCustomerDetails details, CancellationToken ct)
+    public Task<CredentialCustomerResult> EnsureCustomerAsync(CredentialCustomerContext context, CancellationToken ct)
         => throw new NotSupportedException();
 
     /// <inheritdoc/>

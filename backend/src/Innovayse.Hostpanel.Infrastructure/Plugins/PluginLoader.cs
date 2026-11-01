@@ -1,15 +1,19 @@
 using System.Reflection;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Extensions;
-using Innovayse.SDK.Plugins;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Plugins;
+using Innovayse.SDK.Plugins.Endpoints;
 using Innovayse.SDK.Plugins.Enums;
 using Innovayse.SDK.Plugins.Fulfilment;
 using Innovayse.SDK.Plugins.Hosting;
 using Innovayse.SDK.Plugins.Identity;
+using Innovayse.SDK.Plugins.Manifest;
+using Innovayse.SDK.Plugins.Payment;
+using Innovayse.SDK.Plugins.Provisioning;
+using Innovayse.SDK.Plugins.Registrar;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Plugins;
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 
@@ -175,6 +179,9 @@ public static class PluginLoader
                 break;
             case PluginType.Hosted:
                 services.AddKeyedScoped(typeof(IHostedPlugin), manifest.Id, pluginType);
+                break;
+            case PluginType.App:
+                services.AddKeyedScoped(typeof(IPluginEndpoints), manifest.Id, pluginType);
                 break;
             default:
                 logger.LogWarning("Unknown plugin type {Type} for plugin {Id} — skipping DI registration",

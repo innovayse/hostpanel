@@ -1,8 +1,8 @@
 using System.Net;
 using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Innovayse.Providers.Inecobank;
-using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
+using Innovayse.SDK.Plugins.Payment;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -122,7 +122,7 @@ public class InecobankLiveResponseShapeTests : IAsyncLifetime
             """{"message":"Merchant is blocked","code":"9001"}""");
 
         var act = async () => await gateway.CreatePaymentAsync(
-            new PaymentRequest("INV1-1755850000", 1000, "https://portal/result?invoice=1", "Invoice #1", null),
+            new PaymentInstruction("INV1-1755850000", 1000, "https://portal/result?invoice=1", "Invoice #1", null),
             CancellationToken.None);
 
         var ex = (await act.Should().ThrowAsync<InecobankApiException>()).Which;

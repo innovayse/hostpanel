@@ -1,7 +1,7 @@
 using Innovayse.Providers.Inecobank.Enums;
 using Innovayse.SDK.Base;
-using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
+using Innovayse.SDK.Plugins.Payment;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -77,17 +77,17 @@ public sealed class InecobankPaymentGateway : PaymentGatewayBase, IPaymentPlugin
     public string CurrencyCode => Currency();
 
     /// <inheritdoc/>
-    public async Task<PaymentSession> CreatePaymentAsync(PaymentRequest request, CancellationToken ct)
+    public async Task<PaymentSession> CreatePaymentAsync(PaymentInstruction instruction, CancellationToken ct)
     {
         var client = CreateClient();
         var result = await client.RegisterOrderAsync(
             new InecobankRegisterRequest(
-                request.OrderNumber,
-                request.AmountMinor,
+                instruction.OrderNumber,
+                instruction.AmountMinor,
                 Currency(),
-                request.ReturnUrl,
-                request.Description,
-                request.Language ?? Language()),
+                instruction.ReturnUrl,
+                instruction.Description,
+                instruction.Language ?? Language()),
             ct);
         return new PaymentSession(result.OrderId, result.FormUrl);
     }

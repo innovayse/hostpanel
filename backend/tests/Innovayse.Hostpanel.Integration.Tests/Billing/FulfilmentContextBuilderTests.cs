@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Integration.Tests.Fixtures;
+using Innovayse.SDK.Plugins.Enums;
 using Innovayse.SDK.Plugins.Identity;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
@@ -37,7 +38,7 @@ public sealed class FulfilmentContextBuilderTests
         line.Quantity.Should().Be(2);
         line.Amount.Should().Be(20m);
         line.Currency.Should().Be(FulfilmentInvoiceSeeds.Currency);
-        line.BillingCycle.Should().Be("annual");
+        line.BillingCycle.Should().Be(PluginBillingCycle.Annual);
     }
 
     /// <summary>The snapshot decides the line: a monthly snapshot is handed over as monthly, with no SKU when it had none.</summary>
@@ -49,30 +50,41 @@ public sealed class FulfilmentContextBuilderTests
 
         var line = FulfilmentContextBuilder.Lines(invoice).Single();
 
-        line.BillingCycle.Should().Be("monthly");
+        line.BillingCycle.Should().Be(PluginBillingCycle.Monthly);
         line.Sku.Should().BeNull();
         line.Metadata.Should().BeNull();
         line.Currency.Should().Be("USD");
     }
 
     /// <summary>
-    /// A plugin written when only monthly and annual existed keeps receiving those exact strings, and
-    /// the cycles added later are handed over by their lower-cased names, never as a number or null.
+    /// Every host cycle is handed over as the plugin contract's own cycle of the same name, never as a number or null.
     /// </summary>
     /// <param name="cycle">The cycle on the product snapshot.</param>
-    /// <param name="expected">The text the plugin contract carries.</param>
+    /// <param name="expected">The cycle the plugin contract carries.</param>
     [Theory]
-    [InlineData(BillingCycle.Monthly, "monthly")]
-    [InlineData(BillingCycle.Annual, "annual")]
-    [InlineData(BillingCycle.Quarterly, "quarterly")]
-    [InlineData(BillingCycle.SemiAnnual, "semiannual")]
-    [InlineData(BillingCycle.Biennial, "biennial")]
-    public void Lines_EveryCycle_IsHandedOverByItsLowerCasedName(BillingCycle cycle, string expected)
+    [InlineData(BillingCycle.Monthly, PluginBillingCycle.Monthly)]
+    [InlineData(BillingCycle.Annual, PluginBillingCycle.Annual)]
+    [InlineData(BillingCycle.Quarterly, PluginBillingCycle.Quarterly)]
+    [InlineData(BillingCycle.SemiAnnual, PluginBillingCycle.SemiAnnual)]
+    [InlineData(BillingCycle.Biennial, PluginBillingCycle.Biennial)]
+    public void Lines_EveryCycle_IsHandedOverAsThePluginCycleOfTheSameName(BillingCycle cycle, PluginBillingCycle expected)
     {
         var invoice = OpenInvoice();
         invoice.AddItem("Hosting", 3m, 1, null, new ProductSnapshot(9, cycle, true, null, null));
 
         FulfilmentContextBuilder.Lines(invoice).Single().BillingCycle.Should().Be(expected);
+    }
+
+    /// <summary>A cycle the host does not define is refused, never handed over as a number the plugin contract cannot read.</summary>
+    [Fact]
+    public void Lines_AnUndefinedCycle_Throws()
+    {
+        var invoice = OpenInvoice();
+        invoice.AddItem("Hosting", 3m, 1, null, new ProductSnapshot(9, (BillingCycle)999, true, null, null));
+
+        var build = () => FulfilmentContextBuilder.Lines(invoice);
+
+        build.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     /// <summary>The paid context carries the invoice, the client, the account, the payment reference and time.</summary>

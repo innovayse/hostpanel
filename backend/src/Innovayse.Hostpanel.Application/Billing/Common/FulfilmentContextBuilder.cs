@@ -1,5 +1,7 @@
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
+using Innovayse.Hostpanel.Domain.Products.Enums;
+using Innovayse.SDK.Plugins.Enums;
 using Innovayse.SDK.Plugins.Fulfilment;
 using Innovayse.SDK.Plugins.Identity;
 
@@ -101,11 +103,26 @@ public static class FulfilmentContextBuilder
                 item.Quantity,
                 item.Amount,
                 invoice.Currency,
-
-                // The plugin contract names a cycle by its lower-cased enum name: "monthly" and "annual" as
-                // ever, and "quarterly", "semiannual" and "biennial" for the cycles added later. A plugin
-                // written for the first two keeps receiving exactly those strings.
-                item.ProductSnapshot.BillingCycle.ToString().ToLowerInvariant()))
+                PluginCycleOf(item.ProductSnapshot.BillingCycle)))
             .ToList();
+    }
+
+    /// <summary>Maps the host's billing cycle to the cycle the plugin contract names.</summary>
+    /// <param name="cycle">The cycle the product was sold on.</param>
+    /// <returns>The plugin contract's cycle.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="cycle"/> is not a defined cycle.</exception>
+    private static PluginBillingCycle PluginCycleOf(BillingCycle cycle)
+    {
+        // An explicit arm per cycle, no cast: the two enums number their members differently, and a cycle
+        // added to the host must be mapped here on purpose, not leak through as a number.
+        return cycle switch
+        {
+            BillingCycle.Monthly => PluginBillingCycle.Monthly,
+            BillingCycle.Annual => PluginBillingCycle.Annual,
+            BillingCycle.Quarterly => PluginBillingCycle.Quarterly,
+            BillingCycle.SemiAnnual => PluginBillingCycle.SemiAnnual,
+            BillingCycle.Biennial => PluginBillingCycle.Biennial,
+            _ => throw new ArgumentOutOfRangeException(nameof(cycle), cycle, "The billing cycle has no plugin counterpart."),
+        };
     }
 }

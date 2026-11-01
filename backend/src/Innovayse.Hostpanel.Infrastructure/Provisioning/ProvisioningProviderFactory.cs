@@ -8,7 +8,7 @@ using Innovayse.Hostpanel.Infrastructure.Provisioning.Settings;
 using Innovayse.Hostpanel.Infrastructure.Resilience;
 using Innovayse.Providers.CWP7;
 using Innovayse.Providers.CWP7.Models;
-using Innovayse.SDK.Plugins;
+using Innovayse.SDK.Plugins.HostingPanel;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 

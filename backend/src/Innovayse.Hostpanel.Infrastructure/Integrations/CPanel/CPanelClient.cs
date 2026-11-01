@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Innovayse.SDK.Plugins;
+using Innovayse.SDK.Plugins.HostingPanel;
 using Microsoft.Extensions.Logging;
 
 namespace Innovayse.Hostpanel.Infrastructure.Integrations.CPanel;

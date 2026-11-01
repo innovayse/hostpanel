@@ -1,5 +1,5 @@
-using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
+using Innovayse.SDK.Plugins.Payment;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 

@@ -159,7 +159,6 @@
     "clientReplies": "Ответы клиентов",
     "staffReplies": "Ответы сотрудников",
     "ticketsWithoutReply": "Тикеты без ответа",
-    "averageFirstResponse": "Среднее время первого ответа",
     "selectPeriod": "Выберите период"
   },
   "supportTicketDetail": {

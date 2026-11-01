@@ -38,7 +38,7 @@ import { UiTone } from '@/utils/ui/tone'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { AppRoute, createPath, editPath } from '@/lib/routes'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 /** Router, used to open the create and edit pages. */
 const router = useRouter()
@@ -201,7 +201,7 @@ const onDragEnd = async (): Promise<void> => {
  * @param iso - ISO 8601 date string.
  * @returns The day as text.
  */
-const formatDay = (iso: string): string => new Date(iso).toLocaleDateString()
+const formatDay = (iso: string): string => new Date(iso).toLocaleDateString(locale.value)
 
 /**
  * Formats a date range for display.

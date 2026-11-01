@@ -10,9 +10,14 @@
  * - Enter / click on the trigger opens the menu and moves focus to the first enabled item.
  * - ArrowDown / ArrowUp cycle focus through the enabled items.
  * - Escape closes the menu and returns focus to the trigger button.
+ *
+ * The panel is teleported to `<body>` and placed with `position: fixed` next to the trigger, so a
+ * table's horizontal scroller (or any `overflow` ancestor) can neither clip it nor grow a scrollbar
+ * when a menu opens under the last row. It closes on scroll and resize instead of following.
  */
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import UiPanelTransition from '@/components/ui/UiPanelTransition.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import { Icon } from '@/lib/icons'
 
@@ -66,6 +71,25 @@ const toggle = (): void => {
   open.value = !open.value
 }
 
+/** Gap between the trigger and the panel, in pixels. */
+const PANEL_GAP = 4
+
+/** Places the fixed panel against the trigger: right edges aligned, below it or above when flipped. */
+const placeMenu = (): void => {
+  const trigger = triggerRef.value
+  const menu = menuRef.value
+  if (!trigger || !menu) { return }
+  const rect = trigger.getBoundingClientRect()
+  menu.style.setProperty('--ra-right', `${window.innerWidth - rect.right}px`)
+  menu.style.setProperty('--ra-top', `${rect.bottom + PANEL_GAP}px`)
+  menu.style.setProperty('--ra-bottom', `${window.innerHeight - rect.top + PANEL_GAP}px`)
+}
+
+/** Closes the menu when the page scrolls or resizes, since the fixed panel would drift from its trigger. */
+const closeOnViewportChange = (): void => {
+  open.value = false
+}
+
 /**
  * Activates an action and closes the menu.
  *
@@ -84,7 +108,8 @@ const select = (action: UiRowAction): void => {
  * @param e - The mouse event.
  */
 const onOutsideClick = (e: MouseEvent): void => {
-  if (root.value && !root.value.contains(e.target as Node)) {
+  const target = e.target as Node
+  if (root.value && !root.value.contains(target) && !menuRef.value?.contains(target)) {
     open.value = false
   }
 }
@@ -124,6 +149,7 @@ const onKeydown = (e: KeyboardEvent): void => {
 watch(open, async (val) => {
   if (!val) { return }
   await nextTick()
+  placeMenu()
   const first = menuRef.value?.querySelector<HTMLButtonElement>('button:not([disabled])')
   first?.focus()
 })
@@ -131,11 +157,15 @@ watch(open, async (val) => {
 onMounted(() => {
   document.addEventListener('mousedown', onOutsideClick)
   document.addEventListener('keydown', onKeydown)
+  window.addEventListener('scroll', closeOnViewportChange, true)
+  window.addEventListener('resize', closeOnViewportChange)
 })
 
 onUnmounted(() => {
   document.removeEventListener('mousedown', onOutsideClick)
   document.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('scroll', closeOnViewportChange, true)
+  window.removeEventListener('resize', closeOnViewportChange)
 })
 </script>
 
@@ -156,29 +186,33 @@ onUnmounted(() => {
     </button>
 
     <!-- Dropdown -->
-    <div
-      v-if="open"
-      ref="menuRef"
-      role="menu"
-      :class="[
-        'absolute right-0 z-20 min-w-[10rem] rounded-[9px] border border-border bg-surface-base py-1 shadow-lg',
-        flipUp ? 'bottom-full mb-1' : 'top-full mt-1',
-      ]"
-      data-testid="row-actions-menu"
-    >
-      <button
-        v-for="action in props.actions"
-        :key="action.testid ?? action.label"
-        type="button"
-        role="menuitem"
-        :data-testid="action.testid"
-        :disabled="action.disabled"
-        class="flex w-full items-center px-3 py-1.5 text-left text-sm transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-40"
-        :class="action.danger ? 'text-danger-600 dark:text-danger-400' : 'text-text-primary'"
-        @click="select(action)"
-      >
-        {{ action.label }}
-      </button>
-    </div>
+    <Teleport to="body">
+      <UiPanelTransition>
+        <div
+          v-if="open"
+          ref="menuRef"
+          role="menu"
+          :class="[
+            'fixed right-[var(--ra-right)] z-50 min-w-[10rem] rounded-[9px] border border-border-strong bg-surface-card p-1 shadow-xl',
+            flipUp ? 'bottom-[var(--ra-bottom)]' : 'top-[var(--ra-top)]',
+          ]"
+          data-testid="row-actions-menu"
+        >
+          <button
+            v-for="action in props.actions"
+            :key="action.testid ?? action.label"
+            type="button"
+            role="menuitem"
+            :data-testid="action.testid"
+            :disabled="action.disabled"
+            class="flex w-full cursor-pointer items-center rounded-md px-3 py-1.5 text-left text-sm transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+            :class="action.danger ? 'text-danger-600 dark:text-danger-400' : 'text-text-primary'"
+            @click="select(action)"
+          >
+            {{ action.label }}
+          </button>
+        </div>
+      </UiPanelTransition>
+    </Teleport>
   </div>
 </template>

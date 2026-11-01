@@ -8,6 +8,8 @@
  */
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
+import UiIcon from '@/components/ui/UiIcon.vue'
+import UiPanelTransition from '@/components/ui/UiPanelTransition.vue'
 
 const { t } = useI18n()
 
@@ -15,8 +17,11 @@ const { t } = useI18n()
 const props = defineProps<{
   /** Currently selected value. */
   modelValue: T
-  /** Options to display. Each option may include a displayLabel for the dropdown. */
-  options: { value: T; label: string; displayLabel?: string }[]
+  /**
+   * Options to display. Each option may include a displayLabel for the dropdown, and a leading
+   * visual: `icon` (SVG inner markup, for `UiIcon`) or `image` (an image address, e.g. a flag).
+   */
+  options: { value: T; label: string; displayLabel?: string; icon?: string; image?: string }[]
   /** Text shown in the trigger while nothing is selected. */
   placeholder?: string
   /** Disables the select. */
@@ -25,7 +30,19 @@ const props = defineProps<{
   searchable?: boolean
   /** Gives the dropdown panel a wider minimum width, for long labels (country and phone lists). */
   wide?: boolean
+  /** Lets the dropdown panel grow to its widest label, aligned to the trigger's right edge; for narrow triggers near the viewport edge. */
+  fit?: boolean
+  /** Shows only the options' icons or images; the labels stay as the accessible names and tooltips. */
+  iconOnly?: boolean
 }>()
+
+/** Width classes of the dropdown panel: the trigger's width, or wider for `wide` and `fit`. */
+const panelWidthClass = computed<string>(() => {
+  if (props.fit) {
+    return 'right-0 w-max min-w-full max-w-[calc(100vw-2rem)]'
+  }
+  return props.wide ? 'min-w-[18rem]' : 'w-full'
+})
 
 const emit = defineEmits<{
   /** Emitted when the user picks an option. */
@@ -43,6 +60,9 @@ const searchInput = ref<HTMLInputElement | null>(null)
 
 /** Search term for filtering options. */
 const search = ref('')
+
+/** The option matching the current value, if any. */
+const selectedOption = computed(() => props.options.find(o => o.value === props.modelValue))
 
 /** The label of the currently selected option (short form for the trigger). */
 const selectedLabel = computed<string>(
@@ -124,8 +144,18 @@ onUnmounted(() => document.removeEventListener('mousedown', onOutsideClick))
       :class="open ? 'border-primary-500/50 ring-2 ring-primary-500/20' : ''"
       @click="toggle"
     >
-      <span class="truncate" :class="showingPlaceholder ? 'text-text-muted' : 'text-text-primary'">
-        {{ selectedLabel }}
+      <span class="flex min-w-0 items-center gap-2">
+        <UiIcon v-if="selectedOption?.icon" :markup="selectedOption.icon" size="sm" class="shrink-0" />
+        <img v-else-if="selectedOption?.image" :src="selectedOption.image" alt="" class="h-4 w-4 shrink-0 rounded-full object-cover">
+        <span
+          data-testid="ui-select-label"
+          :class="[
+            iconOnly && selectedOption ? 'sr-only' : 'truncate',
+            showingPlaceholder ? 'text-text-muted' : 'text-text-primary',
+          ]"
+        >
+          {{ selectedLabel }}
+        </span>
       </span>
       <svg
         class="w-4 h-4 text-text-secondary shrink-0 transition-transform duration-150"
@@ -141,19 +171,12 @@ onUnmounted(() => document.removeEventListener('mousedown', onOutsideClick))
     </button>
 
     <!-- Dropdown panel -->
-    <Transition
-      enter-active-class="transition duration-100 ease-out"
-      enter-from-class="opacity-0 scale-95 -translate-y-1"
-      enter-to-class="opacity-100 scale-100 translate-y-0"
-      leave-active-class="transition duration-75 ease-in"
-      leave-from-class="opacity-100 scale-100 translate-y-0"
-      leave-to-class="opacity-0 scale-95 -translate-y-1"
-    >
+    <UiPanelTransition>
       <div
         v-if="open"
         role="listbox"
         class="absolute z-50 mt-1.5 bg-surface-card border border-border rounded-[10px] shadow-xl overflow-hidden"
-        :class="wide ? 'min-w-[18rem]' : 'w-full'"
+        :class="panelWidthClass"
       >
         <!-- Search input -->
         <div v-if="props.searchable" class="p-1.5 border-b border-border">
@@ -175,13 +198,18 @@ onUnmounted(() => document.removeEventListener('mousedown', onOutsideClick))
             role="option"
             data-testid="ui-select-option"
             :aria-selected="opt.value === props.modelValue"
+            :title="iconOnly ? opt.label : undefined"
             class="w-full flex items-center justify-between px-3 py-1.5 text-[0.82rem] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500/40"
             :class="opt.value === props.modelValue
               ? 'bg-primary-600 light:bg-primary-700 text-white font-medium'
               : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover focus-visible:text-text-primary focus-visible:bg-surface-hover'"
             @mousedown.prevent.stop="select(opt.value)"
           >
-            <span class="truncate">{{ opt.displayLabel ?? opt.label }}</span>
+            <span class="flex min-w-0 items-center gap-2">
+              <UiIcon v-if="opt.icon" :markup="opt.icon" size="sm" class="shrink-0" />
+              <img v-else-if="opt.image" :src="opt.image" alt="" class="h-4 w-4 shrink-0 rounded-full object-cover">
+              <span :class="iconOnly ? 'sr-only' : 'truncate'">{{ opt.displayLabel ?? opt.label }}</span>
+            </span>
             <svg
               v-if="opt.value === props.modelValue"
               class="w-3.5 h-3.5 text-white shrink-0 ml-2"
@@ -199,6 +227,6 @@ onUnmounted(() => document.removeEventListener('mousedown', onOutsideClick))
           </p>
         </div>
       </div>
-    </Transition>
+    </UiPanelTransition>
   </div>
 </template>

@@ -155,4 +155,14 @@ describe('UiDialog', () => {
     expect(wrapper.find('[data-testid="dialog-confirm"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="save"]').exists()).toBe(true)
   })
+
+  it('fades and scales in, and honours reduced motion', () => {
+    const wrapper = mountDialog({ title: 'Edit client' })
+    const transition = wrapper.findComponent({ name: 'Transition' })
+
+    expect(transition.props('appear')).toBe(true)
+    expect(transition.props('enterActiveClass')).toContain('duration-200')
+    expect(transition.props('enterActiveClass')).toContain('motion-reduce:transition-none')
+    expect(transition.props('leaveActiveClass')).toContain('motion-reduce:transition-none')
+  })
 })

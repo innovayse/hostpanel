@@ -7,6 +7,7 @@
  */
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import UiPanelTransition from '@/components/ui/UiPanelTransition.vue'
 
 const { t } = useI18n()
 
@@ -149,33 +150,35 @@ onUnmounted(() => {
     >
 
     <!-- Dropdown list -->
-    <div
-      v-if="isOpen"
-      class="absolute z-50 top-full left-0 right-0 mt-2 bg-surface-card border border-border rounded-[9px] shadow-lg overflow-hidden"
-    >
-      <div class="max-h-64 overflow-y-auto">
-        <div v-if="filteredClients.length === 0" class="p-4 text-center text-text-secondary text-[0.82rem]">
-          {{ t('ui.uiClientSelect.noClientsFound') }}
-        </div>
-        <div
-          v-for="client in filteredClients"
-          :key="client.id"
-          :data-testid="`client-select-option-${client.id}`"
-          class="px-4 py-3 cursor-pointer transition-colors border-b border-border last:border-0 hover:bg-surface-hover"
-          :class="String(modelValue) === String(client.id) ? 'bg-primary-500/10 border-l-2 border-l-primary-500' : ''"
-          @click="selectClient(client)"
-        >
-          <div v-if="client.status" class="text-[0.68rem] font-semibold text-text-secondary mb-1">
-            {{ client.status }}
+    <UiPanelTransition>
+      <div
+        v-if="isOpen"
+        class="absolute z-50 top-full left-0 right-0 mt-2 bg-surface-card border border-border rounded-[9px] shadow-lg overflow-hidden"
+      >
+        <div class="max-h-64 overflow-y-auto">
+          <div v-if="filteredClients.length === 0" class="p-4 text-center text-text-secondary text-[0.82rem]">
+            {{ t('ui.uiClientSelect.noClientsFound') }}
           </div>
-          <div class="text-[0.82rem] font-medium text-text-primary">
-            {{ client.name }} - #{{ client.id }}
-          </div>
-          <div v-if="client.email" class="text-[0.75rem] text-text-secondary mt-0.5">
-            {{ client.email }}
+          <div
+            v-for="client in filteredClients"
+            :key="client.id"
+            :data-testid="`client-select-option-${client.id}`"
+            class="px-4 py-3 cursor-pointer transition-colors border-b border-border last:border-0 hover:bg-surface-hover"
+            :class="String(modelValue) === String(client.id) ? 'bg-primary-500/10 border-l-2 border-l-primary-500' : ''"
+            @click="selectClient(client)"
+          >
+            <div v-if="client.status" class="text-[0.68rem] font-semibold text-text-secondary mb-1">
+              {{ client.status }}
+            </div>
+            <div class="text-[0.82rem] font-medium text-text-primary">
+              {{ client.name }} - #{{ client.id }}
+            </div>
+            <div v-if="client.email" class="text-[0.75rem] text-text-secondary mt-0.5">
+              {{ client.email }}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </UiPanelTransition>
   </div>
 </template>

@@ -81,12 +81,22 @@ describe('AppTopbar', () => {
     expect(wrapper.emitted('toggle-sidebar')).toHaveLength(1)
   })
 
-  it('offers the language select, settings and sign-out', async () => {
+  it('offers the language select and the account menu', async () => {
     const wrapper = await mountBar('/dashboard')
 
     expect(wrapper.find('[data-testid="topbar-locale"]').exists()).toBe(true)
-    expect(wrapper.get('[data-testid="topbar-settings"]').attributes('href')).toBe('/settings')
-    expect(wrapper.find('[data-testid="topbar-sign-out"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="topbar-account"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="topbar-settings"]').exists()).toBe(false)
+  })
+
+  it('signs out from the account menu', async () => {
+    const wrapper = await mountBar('/dashboard')
+
+    await wrapper.get('[data-testid="topbar-account"]').trigger('click')
+    await wrapper.get('[data-testid="topbar-sign-out"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="topbar-account-menu"]').exists()).toBe(false)
   })
 
   it('switches the theme from the theme select and remembers it', async () => {

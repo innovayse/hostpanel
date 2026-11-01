@@ -121,15 +121,17 @@ const TEXT_FIELDS = [
         <template v-for="field in TEXT_FIELDS" :key="field.key">
           <SettingNotSeeded v-if="!field.draft.setting.value" :setting-key="field.key" :env-name="SettingEnv[field.key]" />
           <UiStack v-else direction="row" align="end">
-            <UiInput
-              v-model="field.draft.value.value"
-              :label="t(field.labelKey)"
-              :placeholder="t(field.hintKey)"
-              :maxlength="CHAT_SETTING_MAX_LENGTH"
-              :data-testid="`tracking-chat-${field.testid}`"
-              class="min-w-0 flex-1"
-              @keyup.enter="field.draft.submit(save)"
-            />
+            <!-- The label makes the input sit in a wrapper, so the growing classes belong on this box. -->
+            <div class="min-w-0 flex-1">
+              <UiInput
+                v-model="field.draft.value.value"
+                :label="t(field.labelKey)"
+                :placeholder="t(field.hintKey)"
+                :maxlength="CHAT_SETTING_MAX_LENGTH"
+                :data-testid="`tracking-chat-${field.testid}`"
+                @keyup.enter="field.draft.submit(save)"
+              />
+            </div>
             <SettingSaveButton
               :dirty="field.draft.dirty.value"
               :saving="field.draft.saving.value"

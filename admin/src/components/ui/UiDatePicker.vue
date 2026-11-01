@@ -10,6 +10,7 @@
  */
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import UiPanelTransition from '@/components/ui/UiPanelTransition.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import { splitIsoDate } from '@/lib/format'
 import { translate } from '@/lib/translate'
@@ -371,62 +372,64 @@ onUnmounted(() => {
       @input="handleInput"
     >
 
-    <div
-      v-if="isOpen"
-      :class="[datePopupClasses, openAbove ? 'bottom-full mb-2' : 'top-full mt-2']"
-      class="absolute left-0 z-50 overflow-hidden"
-    >
-      <div class="flex">
-        <div :class="quickPanelWidthClass" class="bg-surface-hover border-r border-border p-3 flex flex-col gap-1">
-          <button
-            v-for="choice in quickDateOrder"
-            :key="choice"
-            type="button"
-            :data-testid="`date-picker-quick-${choice}`"
-            :class="quickClasses(choice)"
-            @click="selectQuick(choice)"
-          >
-            {{ t(quickDateLabelKeys[direction][choice]) }}
-          </button>
-        </div>
-
-        <div class="p-4 w-80">
-          <div class="flex items-center justify-between mb-4">
-            <button type="button" data-testid="date-picker-prev" :class="dateArrowClasses" @click="prevMonth">‹</button>
-            <div class="flex items-center gap-2">
-              <div class="w-[140px]">
-                <UiSelect v-model="currentMonthValue" :options="monthOptions" :placeholder="t('ui.uiDatePicker.month')" />
-              </div>
-              <div class="w-[100px]">
-                <UiSelect v-model="currentYearValue" :options="yearOptions" :placeholder="t('ui.uiDatePicker.year')" />
-              </div>
-            </div>
-            <button type="button" data-testid="date-picker-next" :class="dateArrowClasses" @click="nextMonth">›</button>
-          </div>
-
-          <div class="grid grid-cols-7 gap-1 mb-2">
-            <div v-for="name in dayNames" :key="name" class="text-center text-xs font-semibold text-text-secondary">{{ name }}</div>
-          </div>
-          <div class="grid grid-cols-7 gap-1">
+    <UiPanelTransition>
+      <div
+        v-if="isOpen"
+        :class="[datePopupClasses, openAbove ? 'bottom-full mb-2' : 'top-full mt-2']"
+        class="absolute left-0 z-50 overflow-hidden"
+      >
+        <div class="flex">
+          <div :class="quickPanelWidthClass" class="bg-surface-hover border-r border-border p-3 flex flex-col gap-1">
             <button
-              v-for="(day, i) in monthDays"
-              :key="i"
+              v-for="choice in quickDateOrder"
+              :key="choice"
               type="button"
-              :data-testid="`date-picker-day-${i}`"
-              :disabled="day === null"
-              :class="dayClasses(day)"
-              @click="selectDay(day)"
+              :data-testid="`date-picker-quick-${choice}`"
+              :class="quickClasses(choice)"
+              @click="selectQuick(choice)"
             >
-              {{ day }}
+              {{ t(quickDateLabelKeys[direction][choice]) }}
             </button>
           </div>
 
-          <div class="flex items-center justify-between border-t border-border mt-4 pt-4">
-            <button type="button" data-testid="date-picker-clear" :class="dateActionClasses" @click="clearDate">{{ t('shared.clear') }}</button>
-            <button type="button" data-testid="date-picker-close" :class="dateActionClasses" @click="closePopup">{{ t('shared.close') }}</button>
+          <div class="p-4 w-80">
+            <div class="flex items-center justify-between mb-4">
+              <button type="button" data-testid="date-picker-prev" :class="dateArrowClasses" @click="prevMonth">‹</button>
+              <div class="flex items-center gap-2">
+                <div class="w-[140px]">
+                  <UiSelect v-model="currentMonthValue" :options="monthOptions" :placeholder="t('ui.uiDatePicker.month')" />
+                </div>
+                <div class="w-[100px]">
+                  <UiSelect v-model="currentYearValue" :options="yearOptions" :placeholder="t('ui.uiDatePicker.year')" />
+                </div>
+              </div>
+              <button type="button" data-testid="date-picker-next" :class="dateArrowClasses" @click="nextMonth">›</button>
+            </div>
+
+            <div class="grid grid-cols-7 gap-1 mb-2">
+              <div v-for="name in dayNames" :key="name" class="text-center text-xs font-semibold text-text-secondary">{{ name }}</div>
+            </div>
+            <div class="grid grid-cols-7 gap-1">
+              <button
+                v-for="(day, i) in monthDays"
+                :key="i"
+                type="button"
+                :data-testid="`date-picker-day-${i}`"
+                :disabled="day === null"
+                :class="dayClasses(day)"
+                @click="selectDay(day)"
+              >
+                {{ day }}
+              </button>
+            </div>
+
+            <div class="flex items-center justify-between border-t border-border mt-4 pt-4">
+              <button type="button" data-testid="date-picker-clear" :class="dateActionClasses" @click="clearDate">{{ t('shared.clear') }}</button>
+              <button type="button" data-testid="date-picker-close" :class="dateActionClasses" @click="closePopup">{{ t('shared.close') }}</button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </UiPanelTransition>
   </div>
 </template>

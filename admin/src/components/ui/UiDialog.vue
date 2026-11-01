@@ -112,63 +112,72 @@ const onBackdrop = (): void => {
 
 <template>
   <Teleport to="body">
-    <div
-      v-if="open"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-      @click.self="onBackdrop"
+    <Transition
+      appear
+      :duration="200"
+      enter-active-class="transition-opacity duration-200 ease-out motion-reduce:transition-none [&>[role=dialog]]:transition-transform [&>[role=dialog]]:duration-200 [&>[role=dialog]]:ease-out motion-reduce:[&>[role=dialog]]:transition-none"
+      enter-from-class="opacity-0 [&>[role=dialog]]:scale-95"
+      leave-active-class="transition-opacity duration-150 ease-in motion-reduce:transition-none [&>[role=dialog]]:transition-transform [&>[role=dialog]]:duration-150 [&>[role=dialog]]:ease-in motion-reduce:[&>[role=dialog]]:transition-none"
+      leave-to-class="opacity-0 [&>[role=dialog]]:scale-95"
     >
       <div
-        v-bind="$attrs"
-        ref="panel"
-        role="dialog"
-        aria-modal="true"
-        :aria-labelledby="title ? titleId : undefined"
-        tabindex="-1"
-        class="bg-surface-card border border-border-strong rounded-xl shadow-2xl w-full max-h-[calc(100dvh-2rem)] overflow-hidden flex flex-col outline-none"
-        :class="sizeClasses[size]"
-        @keydown="onKeydown"
+        v-if="open"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        @click.self="onBackdrop"
       >
-        <div v-if="title" class="flex items-center justify-between gap-3 px-6 pt-6 pb-4 shrink-0">
-          <UiHeading :id="titleId" :level="2" variant="card">
-            {{ title }}
-          </UiHeading>
-          <UiIconButton
-            :label="t('ui.dialog.close')"
-            size="sm"
-            data-testid="dialog-close"
-            @click="close"
-          >
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </UiIconButton>
-        </div>
-        <div class="flex-1 min-h-0 overflow-y-auto px-6 py-2 flex flex-col gap-4" data-testid="dialog-body">
-          <UiText v-if="variant === UiDialogVariant.Confirm && message" tone="secondary" size="md">
-            {{ message }}
-          </UiText>
-          <slot />
-        </div>
-        <div v-if="variant === UiDialogVariant.Confirm" class="flex justify-end gap-2 px-6 pt-4 pb-6 shrink-0">
-          <UiButton variant="secondary" data-testid="dialog-cancel" @click="close">
-            {{ t('shared.cancel') }}
-          </UiButton>
-          <UiButton
-            variant="plain"
-            :disabled="loading"
-            data-testid="dialog-confirm"
-            class="px-4 py-2 text-[0.82rem] font-medium rounded-lg transition cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60 disabled:opacity-50 disabled:cursor-not-allowed"
-            :class="confirmClasses"
-            @click="emit('confirm')"
-          >
-            {{ confirmText }}
-          </UiButton>
-        </div>
-        <div v-else-if="$slots.footer" class="flex justify-end gap-2 px-6 pt-4 pb-6 shrink-0">
-          <slot name="footer" />
+        <div
+          v-bind="$attrs"
+          ref="panel"
+          role="dialog"
+          aria-modal="true"
+          :aria-labelledby="title ? titleId : undefined"
+          tabindex="-1"
+          class="bg-surface-card border border-border-strong rounded-xl shadow-2xl w-full max-h-[calc(100dvh-2rem)] overflow-hidden flex flex-col outline-none"
+          :class="sizeClasses[size]"
+          @keydown="onKeydown"
+        >
+          <div v-if="title" class="flex items-center justify-between gap-3 px-6 pt-6 pb-4 shrink-0">
+            <UiHeading :id="titleId" :level="2" variant="card">
+              {{ title }}
+            </UiHeading>
+            <UiIconButton
+              :label="t('ui.dialog.close')"
+              size="sm"
+              data-testid="dialog-close"
+              @click="close"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </UiIconButton>
+          </div>
+          <div class="flex-1 min-h-0 overflow-y-auto px-6 py-2 flex flex-col gap-4" data-testid="dialog-body">
+            <UiText v-if="variant === UiDialogVariant.Confirm && message" tone="secondary" size="md">
+              {{ message }}
+            </UiText>
+            <slot />
+          </div>
+          <div v-if="variant === UiDialogVariant.Confirm" class="flex justify-end gap-2 px-6 pt-4 pb-6 shrink-0">
+            <UiButton variant="secondary" data-testid="dialog-cancel" @click="close">
+              {{ t('shared.cancel') }}
+            </UiButton>
+            <UiButton
+              variant="plain"
+              :disabled="loading"
+              data-testid="dialog-confirm"
+              class="px-4 py-2 text-[0.82rem] font-medium rounded-lg transition cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60 disabled:opacity-50 disabled:cursor-not-allowed"
+              :class="confirmClasses"
+              @click="emit('confirm')"
+            >
+              {{ confirmText }}
+            </UiButton>
+          </div>
+          <div v-else-if="$slots.footer" class="flex justify-end gap-2 px-6 pt-4 pb-6 shrink-0">
+            <slot name="footer" />
+          </div>
         </div>
       </div>
-    </div>
+    </Transition>
   </Teleport>
 </template>

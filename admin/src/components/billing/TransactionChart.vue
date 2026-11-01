@@ -10,7 +10,7 @@ import { toIsoDay } from '@/lib/format'
 import type { Transaction } from '@/types/transaction'
 import type { UiChartSeries } from '@/utils/ui/chart'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 /** How many days back the chart reaches, today included. */
 const DAYS = 30
@@ -44,9 +44,9 @@ const days = computed<string[]>(() => {
   })
 })
 
-/** X-axis captions: the month and day of each ISO day. */
+/** X-axis captions: the month and day of each ISO day, written in the interface language. */
 const labels = computed<string[]>(() =>
-  days.value.map((day) => new Date(day).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })),
+  days.value.map((day) => new Date(day).toLocaleDateString(locale.value, { month: 'short', day: 'numeric' })),
 )
 
 /** The one series: net revenue per day. */

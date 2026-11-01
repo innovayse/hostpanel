@@ -47,7 +47,6 @@ const statTiles = computed(() => [
   { key: 'client-replies', label: t('support.supportOverview.clientReplies'), value: store.overviewStats?.clientReplies ?? 0, tone: UiTone.Info },
   { key: 'staff-replies', label: t('support.supportOverview.staffReplies'), value: store.overviewStats?.staffReplies ?? 0, tone: UiTone.Success },
   { key: 'without-reply', label: t('support.supportOverview.ticketsWithoutReply'), value: store.overviewStats?.ticketsWithoutReply ?? 0, tone: UiTone.Warning },
-  { key: 'average-first-response', label: t('support.supportOverview.averageFirstResponse'), value: averageFirstResponse.value, tone: UiTone.Neutral },
 ])
 
 /** Hour labels 00-23 for the distribution chart. */

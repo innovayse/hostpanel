@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 import {
   alignItemsClasses,
   gapClasses,
+  containerGridColumnClasses,
   gridColumnClasses,
   justifyClasses,
   splitRatioClasses,
@@ -43,5 +44,10 @@ describe('layout maps', () => {
     for (const ratio of Object.values(UiSplitRatio)) {
       expect(splitRatioClasses[ratio]).toMatch(/^grid-cols-1 lg:/)
     }
+  })
+
+  it('offers container-based columns for every grid size', () => {
+    expect(Object.keys(containerGridColumnClasses)).toEqual(Object.keys(gridColumnClasses))
+    expect(containerGridColumnClasses[4]).toContain('@4xl:grid-cols-4')
   })
 })

@@ -60,4 +60,8 @@ describe('UiTableHeader', () => {
 
     expect(wrapper.get('button').classes()).toContain('focus-visible:outline-primary-500')
   })
+
+  it('keeps a readable minimum width that a caller can override', () => {
+    expect(mount(UiTableHeader).classes()).toContain('[:where(&)]:min-w-28')
+  })
 })

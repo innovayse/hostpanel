@@ -19,15 +19,24 @@ describe('UiTable', () => {
   it('renders the native table with its slot', () => {
     const wrapper = mount(UiTable, { slots: { default: '<tbody><tr><td>content</td></tr></tbody>' }, global: global() })
 
-    expect(wrapper.element.tagName).toBe('TABLE')
+    expect(wrapper.find('table').exists()).toBe(true)
     expect(wrapper.text()).toBe('content')
+  })
+
+  it('scrolls a table wider than its container inside its own wrapper', () => {
+    const wrapper = mount(UiTable, { global: global() })
+
+    expect(wrapper.element.tagName).toBe('DIV')
+    expect(wrapper.classes()).toContain('overflow-x-auto')
+    expect(wrapper.classes()).toContain('max-w-full')
+    expect(wrapper.get('table').element.parentElement).toBe(wrapper.element)
   })
 
   it('passes classes and data attributes through', () => {
     const wrapper = mount(UiTable, { attrs: { class: 'x-class', 'data-testid': 'probe' }, global: global() })
 
-    expect(wrapper.classes()).toContain('x-class')
-    expect(wrapper.attributes('data-testid')).toBe('probe')
+    expect(wrapper.get('table').classes()).toContain('x-class')
+    expect(wrapper.get('table').attributes('data-testid')).toBe('probe')
   })
 
   it('shows the empty message in a full-width row', () => {
@@ -72,5 +81,21 @@ describe('UiTable', () => {
 
     expect(wrapper.get('th').classes()).toContain('px-3')
     expect(wrapper.get('td').classes()).toEqual(expect.arrayContaining(['px-3', 'py-2']))
+  })
+
+  it('pads its cells by default so a table never renders without spacing', () => {
+    const Harness = defineComponent({
+      render: () => h(UiTable, null, {
+        default: () => [
+          h(UiTableHead, null, { default: () => h(UiTableRow, null, { default: () => h(UiTableHeader, null, { default: () => 'A' }) }) }),
+          h(UiTableBody, null, { default: () => h(UiTableRow, null, { default: () => h(UiTableCell, null, { default: () => '1' }) }) }),
+        ],
+      }),
+    })
+
+    const wrapper = mount(Harness, { global: global() })
+
+    expect(wrapper.get('th').classes()).toEqual(expect.arrayContaining(['px-4', 'py-3']))
+    expect(wrapper.get('td').classes()).toEqual(expect.arrayContaining(['px-4', 'py-3']))
   })
 })

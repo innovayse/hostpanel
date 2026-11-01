@@ -33,4 +33,11 @@ describe('TransactionChart', () => {
     const [series] = wrapper.findComponent(UiChart).props('series') as { data: number[] }[]
     expect(series?.data.every((value) => value === 0)).toBe(true)
   })
+
+  it('writes the day captions in the interface language, not the browser language', () => {
+    const wrapper = mountWithApp(TransactionChart, { props: { transactions: [] }, stubs: { UiChart: true } })
+
+    const labels = wrapper.findComponent(UiChart).props('labels') as string[]
+    expect(labels.every((label) => /^[A-Za-z]{3} \d{1,2}$/.test(label))).toBe(true)
+  })
 })

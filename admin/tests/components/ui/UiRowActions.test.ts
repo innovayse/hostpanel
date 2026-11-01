@@ -5,6 +5,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { nextTick } from 'vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import { createTestI18n } from '../../helpers/i18n'
 
@@ -21,7 +22,7 @@ afterEach(() => {
 const mountIt = () =>
   mount(UiRowActions, {
     props: { actions },
-    global: { plugins: [createTestI18n()] },
+    global: { plugins: [createTestI18n()], stubs: { teleport: true } },
     attachTo: document.body,
   })
 
@@ -80,6 +81,18 @@ describe('UiRowActions', () => {
     await document.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
     await wrapper.vm.$nextTick()
     expect(wrapper.find('[data-testid="row-actions-menu"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('places the menu as a fixed panel so a table scroller cannot clip it', async () => {
+    const wrapper = mountIt()
+
+    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+    await nextTick()
+
+    const classes = wrapper.get('[data-testid="row-actions-menu"]').classes()
+    expect(classes).toContain('fixed')
+    expect(classes).not.toContain('absolute')
     wrapper.unmount()
   })
 })

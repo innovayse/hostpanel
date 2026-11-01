@@ -85,6 +85,19 @@ export const gridColumnClasses: Record<UiGridColumns, string> = {
   6: 'grid-cols-2 md:grid-cols-3 lg:grid-cols-6',
 }
 
+/**
+ * Responsive column classes that follow the width of the nearest `@container` ancestor instead of
+ * the viewport, for grids inside a card beside a sidebar: the viewport is wide while the card is
+ * not. Same counts as {@link gridColumnClasses}.
+ */
+export const containerGridColumnClasses: Record<UiGridColumns, string> = {
+  1: 'grid-cols-1',
+  2: 'grid-cols-1 @md:grid-cols-2',
+  3: 'grid-cols-1 @md:grid-cols-2 @3xl:grid-cols-3',
+  4: 'grid-cols-1 @md:grid-cols-2 @4xl:grid-cols-4',
+  6: 'grid-cols-2 @md:grid-cols-3 @5xl:grid-cols-6',
+}
+
 /** Closed set of split ratios (main : aside). */
 export const UiSplitRatio = {
   Half: 'half',

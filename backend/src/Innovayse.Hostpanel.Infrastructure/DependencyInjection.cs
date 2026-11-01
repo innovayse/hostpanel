@@ -889,6 +889,13 @@ public static class DependencyInjection
         services.AddScoped<IFulfilmentPluginResolver, FulfilmentPluginResolver>();
         services.AddScoped<IIdentityPluginResolver, IdentityPluginResolver>();
 
+        // The door to the plugin API routes: the app plugin of a route, the opaque references it sees (a keyed hash
+        // under a key derived from the encryption key, so nothing is stored) and, until the host shares client facts
+        // and keeps plugin data, the call-bound services that say so.
+        services.AddScoped<IPluginEndpointResolver, PluginEndpointResolver>();
+        services.AddSingleton<IPluginReferences>(new PluginReferences(encryptionKey));
+        services.AddScoped<IPluginCallServices, UnavailablePluginCallServices>();
+
         // Hosted plugins start once the host is up and stop as it begins to stop, each failure kept to its plugin.
         // Registered in every environment: with no hosted plugin loaded it opens nothing and reads nothing.
         services.AddHostedService<HostedPluginRunner>();

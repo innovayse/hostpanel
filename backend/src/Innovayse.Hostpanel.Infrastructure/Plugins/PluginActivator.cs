@@ -87,6 +87,25 @@ public sealed class PluginActivator
     public async Task<PluginActivation<TContract>> ActivateAsync<TContract>(LoadedPlugin plugin, CancellationToken ct)
         where TContract : class
     {
+        var prepared = await PrepareAsync<TContract>(plugin, ct);
+        return new PluginActivation<TContract>(prepared.PluginId, prepared.Outcome, prepared.Create?.Invoke());
+    }
+
+    /// <summary>
+    /// Runs every gate <see cref="ActivateAsync{TContract}"/> runs, up to but not including building the plugin, so
+    /// a caller can decide whether the plugin may be used before any plugin code, its constructor included, runs.
+    /// </summary>
+    /// <typeparam name="TContract">The SDK contract the caller is going to call the plugin through.</typeparam>
+    /// <param name="plugin">The loaded plugin, as the plugin loader registered it.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// The outcome and, when it is <see cref="PluginActivationOutcome.Activated"/>, the function that builds the
+    /// plugin from the configuration read here. Gates are logged exactly as <see cref="ActivateAsync{TContract}"/>
+    /// logs them.
+    /// </returns>
+    public async Task<PreparedPluginActivation<TContract>> PrepareAsync<TContract>(LoadedPlugin plugin, CancellationToken ct)
+        where TContract : class
+    {
         var id = plugin.Manifest.Id;
 
         // Manifest.Type is only a JSON claim the plugin author made; it says nothing about the CLR type
@@ -99,7 +118,7 @@ public sealed class PluginActivator
                 "Plugin '{Module}' declares Type={ManifestType} but its implementation type '{ImplementationType}' "
                     + "does not implement {InterfaceType}.",
                 id, plugin.Manifest.Type, plugin.ImplementationType, typeof(TContract).Name);
-            return new PluginActivation<TContract>(id, PluginActivationOutcome.ContractNotImplemented, null);
+            return new PreparedPluginActivation<TContract>(id, PluginActivationOutcome.ContractNotImplemented, null);
         }
 
         var values = await ReadConfigurationAsync(id, ct);
@@ -107,7 +126,7 @@ public sealed class PluginActivator
         if (!values.TryGetValue(IntegrationSettingKeys.EnabledKey(id), out var isEnabled)
             || !string.Equals(isEnabled, "true", StringComparison.OrdinalIgnoreCase))
         {
-            return new PluginActivation<TContract>(id, PluginActivationOutcome.Disabled, null);
+            return new PreparedPluginActivation<TContract>(id, PluginActivationOutcome.Disabled, null);
         }
 
         foreach (var field in plugin.Manifest.GetSettings())
@@ -121,7 +140,7 @@ public sealed class PluginActivator
                 || string.IsNullOrWhiteSpace(fieldValue))
             {
                 _logger.LogWarning("Plugin '{Module}' is missing required setting '{Field}'.", id, field.Key);
-                return new PluginActivation<TContract>(id, PluginActivationOutcome.RequiredSettingMissing, null);
+                return new PreparedPluginActivation<TContract>(id, PluginActivationOutcome.RequiredSettingMissing, null);
             }
         }
 
@@ -129,10 +148,13 @@ public sealed class PluginActivator
             .AddInMemoryCollection(values)
             .Build();
 
-        var instance = (TContract)ActivatorUtilities.CreateInstance(
-            _serviceProvider, plugin.ImplementationType, (IConfiguration)composed);
-
-        return new PluginActivation<TContract>(id, PluginActivationOutcome.Activated, instance);
+        // Deferred: the plugin's constructor is its own code, and a caller that has not yet authorised the request
+        // must be able to learn "enabled and configured" without running it.
+        return new PreparedPluginActivation<TContract>(
+            id,
+            PluginActivationOutcome.Activated,
+            () => (TContract)ActivatorUtilities.CreateInstance(
+                _serviceProvider, plugin.ImplementationType, (IConfiguration)composed));
     }
 
     /// <summary>

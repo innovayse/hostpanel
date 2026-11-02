@@ -13,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 
@@ -113,6 +114,11 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
                 return;
             }
 
+            // Releases the listening agents of the host when its container is disposed (see the type); registered
+            // last of the composition root's services, so it is disposed before the Wolverine runtime it releases
+            // the listeners of.
+            services.AddSingleton<IHostedService, WolverineListenerRelease>();
+
             // Replace the real registrar provider with a no-op stub so tests never hit the network.
             services.RemoveAll<IRegistrarProvider>();
             services.AddScoped<IRegistrarProvider, StubRegistrarProvider>();
@@ -179,6 +185,7 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
     public async Task InitializeAsync()
     {
         _connectionString = await SharedPostgresServer.CreateDatabaseAsync(_databaseName);
+        await OpenPoolWithoutTheHostContextAsync(_connectionString);
 
         // Apply EF Core migrations to test database
         using var scope = Services.CreateScope();
@@ -235,11 +242,42 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
         // Starting the host made Wolverine compile its handler code with Roslyn, which keeps the metadata
         // of every loaded assembly in native memory behind small managed wrappers. The collector only
         // counts managed bytes, so without this pass that memory outlives the host by minutes and piles
-        // up across classes (issue 373). One collection per released host, not per test, is enough.
+        // up across classes (issue 373). One collection per released host, not per test, is enough. The
+        // finalizers free the native blocks, and the trim then returns what glibc kept in its heap (issue 793).
         GC.Collect();
         GC.WaitForPendingFinalizers();
+        NativeHeap.Trim();
 
         GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Opens the connection pool of this factory's database before the host exists, on a thread that carries
+    /// none of the caller's execution context. Npgsql keeps one pool per connection string in a static table
+    /// and never removes it, and the pool's pruning timer captures the execution context of whoever created it.
+    /// A pool created by the host's own first query therefore captures the context of the test, which
+    /// <c>WebApplicationFactory</c> fills with a listener that refers to the factory, and so the whole host
+    /// stayed reachable from that static table after its class was done: 64 Wolverine runtimes, test servers and
+    /// service providers alive after 20 classes, and a managed heap (after a full collection) of 3.9 GB at the
+    /// 65th (issue 793). The pool itself is small and stays; the host it used to drag along is released.
+    /// </summary>
+    /// <param name="connectionString">The connection string of this factory's database; the host uses the same one, so it finds this pool.</param>
+    /// <returns>A task that completes when the pool has served one connection.</returns>
+    private static async Task OpenPoolWithoutTheHostContextAsync(string connectionString)
+    {
+        Task opening;
+
+        // The flow is only suppressed while the task starts; awaiting inside the block would end it on another thread.
+        using (ExecutionContext.SuppressFlow())
+        {
+            opening = Task.Run(async () =>
+            {
+                await using var connection = new NpgsqlConnection(connectionString);
+                await connection.OpenAsync();
+            });
+        }
+
+        await opening;
     }
 
     /// <summary>Disposes through the <see cref="IAsyncDisposable"/> path; xUnit calls this one.</summary>

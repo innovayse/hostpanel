@@ -11,6 +11,12 @@
  * that is still in progress is left alone. That is what keeps a stray or forged callback from
  * ending someone else's sign-in, and a callback that this browser did not start from being accepted.
  *
+ * When the attempt is simply gone (expired, or an address replayed with the Back button after the
+ * sign-in finished) and the browser already holds a live portal session, the person is sent on to
+ * the dashboard without a word: a sign-in prompt would only confuse someone who is signed in. That
+ * path exchanges nothing, writes nothing and deletes nothing. A transaction cookie that fails
+ * authentication is never treated that way: it is refused with a warning like any forgery.
+ *
  * Once a transaction is found it is deleted (single use) before anything else is decided. When the
  * identity provider answers with an error instead of a code (a silent `prompt=none` probe that found
  * no session answers `login_required`), when the code is missing and when the code exchange fails,
@@ -29,7 +35,7 @@ import type { H3Event } from 'h3'
 import { CLIENT_DASHBOARD_PATH } from '~/constants/clientRoutes'
 import { SessionCookie } from '~/constants/sessionCookie'
 import { cookieOptions } from '~/server/utils/auth-cookie'
-import { startSession } from '~/server/utils/portal-session'
+import { readSession, startSession } from '~/server/utils/portal-session'
 import type { SessionTokens } from '~/server/utils/portal-session'
 import { readQueryString } from '~/server/utils/readQueryString'
 import { requireSsoSetting } from '~/server/utils/requireSsoSetting'
@@ -112,6 +118,18 @@ const endSignInAttempt = (event: H3Event, reason: SignonFailureReason, returnTo:
   return sendRedirect(event, withSignInPrompt(safeReturnPath(returnTo) ?? HOME_PATH), 302)
 }
 
+/**
+ * Sends a visitor who is already signed in on to the dashboard when their callback matches no
+ * attempt. Nothing is exchanged, written or deleted: the session they hold is left exactly as it is.
+ *
+ * @param event - The callback request.
+ * @returns The redirect to a safe local page.
+ */
+const passSignedInVisitor = (event: H3Event) => {
+  console.info(`[sso] sign-in callback skipped: ${SignonFailureReason.AlreadySignedIn}`)
+  return sendRedirect(event, safeReturnPath(CLIENT_DASHBOARD_PATH) ?? HOME_PATH, 302)
+}
+
 export default defineEventHandler(async (event) => {
   // The address carries a one-time code: never cache the answer, never leak the address as a referrer.
   setResponseHeaders(event, { 'Referrer-Policy': 'no-referrer', 'Cache-Control': 'no-store' })
@@ -130,6 +148,10 @@ export default defineEventHandler(async (event) => {
   // accepted and, since it proves nothing, it deletes nothing either.
   const lookup = openTransaction(event, returnedState)
   if (lookup.status !== SignonTransactionStatus.Found) {
+    // An attempt that is merely gone is not an attack: a person who is already signed in goes on.
+    if (lookup.status !== SignonTransactionStatus.Tampered && (await readSession(event)) !== null) {
+      return passSignedInVisitor(event)
+    }
     return endSignInAttempt(event, reasonForLookup(lookup.status), null)
   }
   const { transaction } = lookup

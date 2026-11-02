@@ -4,7 +4,8 @@
  * the tokens stay in the server-side session store and the visitor is redirected back. Several
  * attempts started side by side each complete. An answer that cannot be matched to an attempt, an
  * error answer, a missing code and a failed exchange all end in a redirect to the sign-in prompt:
- * never a JSON body, never a session, and a callback that matches no attempt deletes nothing.
+ * never a JSON body, never a session, and a callback that matches no attempt deletes nothing. A
+ * browser that is already signed in is passed on to the dashboard instead, again touching nothing.
  *
  * @module tests/server/api/portal/auth/sso/callback.get.test
  */
@@ -347,6 +348,98 @@ describe('GET /api/portal/auth/sso/callback when no attempt matches the state', 
     expect(logged).toContain('unknown_state')
     expect(logged).not.toContain('secret-code-123')
     expect(logged).not.toContain('secret-state-456')
+  })
+})
+
+describe('GET /api/portal/auth/sso/callback when no attempt matches but the browser is signed in', () => {
+  /**
+   * Asserts that a signed-in visitor was passed on quietly: sent to the dashboard, nothing exchanged,
+   * written or deleted, and the session they held is still stored.
+   *
+   * @param event - The request the route handled.
+   * @param held - The cookies that name the visitor's session.
+   */
+  const expectPassedOn = async (event: ReturnType<typeof makeEvent>, held: Record<string, string>): Promise<void> => {
+    expect(event.redirectedTo).toBe('/client/dashboard')
+    expect(event.written).toEqual({})
+    expect(event.deleted).toEqual([])
+    expect(backend.requests).toHaveLength(0)
+    expect(await storedSession(held)).not.toBeNull()
+  }
+
+  it('sends a signed-in person on to the dashboard when the state is unknown', async () => {
+    const held = await signedIn('at-held')
+    const live = startAttempt(held)
+
+    const event = await returnFrom(live, { code: 'c1', state: 'never-started' }, live.cookies)
+
+    await expectPassedOn(event, held)
+  })
+
+  it('sends a signed-in person on when the callback is replayed with no state at all', async () => {
+    const held = await signedIn('at-held')
+
+    const event = await returnFrom(startAttempt(), { code: 'c1' }, held)
+
+    await expectPassedOn(event, held)
+  })
+
+  it('sends a signed-in person on when the attempt expired, and logs only a fixed reason', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    const held = await signedIn('at-held')
+    const attempt = startAttempt(held)
+    vi.setSystemTime(Date.now() + SSO_FLOW_COOKIE_MAX_AGE * 1000 + 1000)
+
+    const event = await returnFrom(attempt, { code: 'secret-code-123', state: attempt.state }, attempt.cookies)
+
+    await expectPassedOn(event, held)
+    expect(JSON.stringify(info.mock.calls)).toContain('already_signed_in')
+    expect(JSON.stringify(info.mock.calls)).not.toContain('secret-code-123')
+  })
+
+  it('replays after Back once the sign-in finished: the consumed attempt is gone and the person is passed on', async () => {
+    backend.respondWith(goodTokens)
+    const attempt = startAttempt()
+    const first = await returnFrom(attempt)
+    const held = { portal_session: first.written['portal_session']?.value ?? '' }
+    backend.requests.length = 0
+
+    const replay = makeEvent({ query: { code: 'c1', state: attempt.state }, cookies: held })
+    await route.default(replay)
+
+    await expectPassedOn(replay, held)
+  })
+
+  it('does not treat a tampered transaction cookie as a way past the check, even when signed in', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const held = await signedIn('at-held')
+    const attempt = startAttempt(held)
+    const value = attempt.cookies[attempt.cookieName] ?? ''
+    const cookies = { ...held, [attempt.cookieName]: `${value.slice(0, -2)}${value.endsWith('AA') ? 'BB' : 'AA'}` }
+
+    const event = await returnFrom(attempt, { code: 'c1', state: attempt.state }, cookies)
+
+    expectEndedAttempt(event, '/?signin=required')
+    expect(event.deleted).toEqual([])
+    expect(warn).toHaveBeenCalledTimes(1)
+  })
+
+  it('still sends a visitor whose session cookie names nothing in the store to the sign-in prompt', async () => {
+    const event = await returnFrom(startAttempt(), { code: 'c1', state: 'never-started' }, { portal_session: 'no-such-session' })
+
+    expectEndedAttempt(event, '/?signin=required')
+    expect(event.deleted).toEqual([])
+  })
+
+  it('exchanges nothing and signs nobody in through the pass-through', async () => {
+    const held = await signedIn('at-held')
+
+    const event = await returnFrom(startAttempt(), { code: 'c1', state: 'forged' }, held)
+
+    expect(event.written['portal_session']).toBeUndefined()
+    expect(event.written['authed']).toBeUndefined()
+    expect(await storedSession(held)).toMatchObject({ accessToken: 'at-held' })
   })
 })
 

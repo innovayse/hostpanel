@@ -16,5 +16,7 @@ export enum SignonFailureReason {
   /** The callback carried no code. */
   MissingCode = 'missing_code',
   /** The provider refused the code exchange, or could not be reached. */
-  ExchangeFailed = 'exchange_failed'
+  ExchangeFailed = 'exchange_failed',
+  /** The callback matched no attempt, but the browser already holds a live session, so the visitor was passed on. */
+  AlreadySignedIn = 'already_signed_in'
 }

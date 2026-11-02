@@ -107,7 +107,8 @@ public sealed class UpdateSettingHandler
         // Empty means "unset" for a key that seeds empty, the storefront then uses its
         // built-in default, and skips both checks below. A key that seeds with a value never
         // had an empty state and goes through them, where the empty string is refused.
-        var allowsEmpty = PortalSettingKeys.AllowsEmpty(setting.Key) || BillingSettingKeys.AllowsEmpty(setting.Key);
+        var allowsEmpty = PortalSettingKeys.AllowsEmpty(setting.Key) || BillingSettingKeys.AllowsEmpty(setting.Key)
+            || PluginSettingKeys.AllowsEmpty(setting.Key);
         if (value.Length > 0 || !allowsEmpty)
         {
             if (PortalSettingKeys.AllowedValues.TryGetValue(setting.Key, out var allowed))

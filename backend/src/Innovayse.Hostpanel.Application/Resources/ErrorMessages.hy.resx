@@ -537,6 +537,15 @@
 <data name="PLUGIN_ASSEMBLY_UNREADABLE" xml:space="preserve">
     <value>Այս հավելագրիչի ֆայլերից մեկը հնարավոր չեղավ կարդալ, ուստի հավելագրիչը հնարավոր չէ ստուգել։ Վերբեռնեք այն նորից։</value>
   </data>
+<data name="PLUGIN_SLOT_WIDGET_ID_INVALID" xml:space="preserve">
+    <value>Այս հավելագրիչի վիջեթի նույնացուցիչը անվավեր է․ օգտագործեք փոքրատառ տառեր, թվեր, գծիկներ և ընդգծումներ՝ սկսելով տառով կամ թվով։</value>
+  </data>
+<data name="PLUGIN_SLOT_WIDGET_DUPLICATE" xml:space="preserve">
+    <value>Այս հավելագրիչը նույն սլոտի համար երկու անգամ է հայտարարում վիջեթի նույն նույնացուցիչը։</value>
+  </data>
+<data name="PLUGIN_MANIFEST_ID_INVALID" xml:space="preserve">
+    <value>Մանիֆեստում հավելագրիչի նույնացուցիչը անվավեր է․ օգտագործեք փոքրատառ տառեր և թվեր, բառերի միջև՝ մեկ գծիկ։</value>
+  </data>
 <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>Այդ արխիվը պարունակում է գրառում, որը կգրեր հավելագրիչի սեփական թղթապանակից դուրս, և մերժվեց։</value>
   </data>
@@ -572,6 +581,12 @@
   </data>
 <data name="PLUGIN_ROUTE_NOT_FOUND" xml:space="preserve">
     <value>Այս հասցեով ոչինչ չկա։</value>
+  </data>
+<data name="PLUGIN_SLOT_NOT_FOUND" xml:space="preserve">
+    <value>Էջի այդ հատվածը հասանելի չէ։</value>
+  </data>
+<data name="PLUGIN_SLOT_CONTEXT_REQUIRED" xml:space="preserve">
+    <value>Էջի այս հատվածի համար անհրաժեշտ է համատեքստ։</value>
   </data>
 <data name="PLUGIN_FAILED" xml:space="preserve">
     <value>Հավելագրիչը չկարողացավ կատարել հարցումը։ Խնդրում ենք փորձել ավելի ուշ։</value>

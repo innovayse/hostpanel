@@ -51,7 +51,7 @@ Orders__NumberPrefix (override)   → Orders__NumberPrefix (no rename)
 | `docker-compose.shared.yml` + `docker-compose.dev.yml` | Local development | dev |
 | `docker-compose.prod.yml` | Deployment built from source | prod |
 | `docker-compose.demo.yml` | Demo stack | demo |
-| `docker-compose.platform.yml` | Joining an existing network | — |
+| `docker-compose.platform.yml` | Joining an existing network | n/a |
 
 ## Required secrets
 
@@ -170,7 +170,7 @@ Unset or misspelled SMTP_ENCRYPTION stops the API on startup and names this key 
   { name: 'SMTP_PORT', type: 'string', default: '1025', description: 'SMTP port. Usually 587 (STARTTLS) or 465 (implicit TLS). Tiers: all.' },
   { name: 'SMTP_USERNAME', type: 'string', default: '', description: 'Relay username. Tiers: all.' },
   { name: 'SMTP_PASSWORD', type: 'secret', default: '', description: 'Relay password. Tiers: all.' },
-  { name: 'SMTP_ENCRYPTION', type: 'string', default: 'none', description: 'tls (STARTTLS), ssl (implicit TLS) or none (local catcher only). Required and validated on startup. Required. Tiers: all.' },
+  { name: 'SMTP_ENCRYPTION', type: 'string', default: 'none', description: 'tls (STARTTLS), ssl (implicit TLS) or none (local catcher only). Required and validated on startup. Tiers: all.' },
   { name: 'SMTP_FROM', type: 'string', default: 'noreply@example.com', description: 'Sender address. Tiers: all.' },
   { name: 'SMTP_FROM_NAME', type: 'string', default: 'Hostpanel', description: 'Sender display name. Tiers: all.' },
   { name: 'EMAIL_TO', type: 'string', default: 'contact@yourdomain.com', description: 'Contact form delivery address. Unset form answers 503 CONTACT_NOT_CONFIGURED. Tiers: all.' },
@@ -179,7 +179,7 @@ Unset or misspelled SMTP_ENCRYPTION stops the API on startup and names this key 
   { name: 'DEPARTMENT_SALES_EMAIL', type: 'string', default: 'sales@example.com', description: 'Sales department email on first install. Tiers: all.' },
   { name: 'DEPARTMENT_GENERAL_EMAIL', type: 'string', default: 'hello@example.com', description: 'General department email on first install. Tiers: all.' },
   { name: 'TELEGRAM_BOT_TOKEN', type: 'secret', default: '', description: 'Telegram bot token for contact form notifications. Both or neither: half a pair refuses startup. Tiers: all.' },
-  { name: 'TELEGRAM_CHAT_ID', type: 'string', default: '', description: 'Telegram chat ID, optional pair — set both or neither. Tiers: all.' },
+  { name: 'TELEGRAM_CHAT_ID', type: 'string', default: '', description: 'Telegram chat ID, optional pair. Set both or neither. Tiers: all.' },
 ]" />
 
 ## Reverse proxy and trusted proxies
@@ -337,13 +337,13 @@ Plugin settings are not in .env. Set them on the API service in a compose overri
 
 | Setting | Default | Description |
 |---|---|---|
-| `Plugins__InstallPath` | *(empty — falls back to `plugins-installed` beside the app)* | Directory where the API installs plugin packages. |
+| `Plugins__InstallPath` | *(empty, falls back to `plugins-installed` beside the app)* | Directory where the API installs plugin packages. |
 | `Plugins__MaxEntryCount` | `1000` | Maximum number of files in a plugin zip archive. |
 | `Plugins__MaxUncompressedBytes` | `209715200` | Maximum total uncompressed size of a plugin archive in bytes (200 MiB). |
-| `Plugins__TrustedPackageSha256__0`, `__1`, … | — | SHA-256 hashes of plugin packages to trust unconditionally. Each hash is a separate indexed key. |
-| `PluginSigning__MaintainerKeys__0__KeyId`, `__PublicKey`, … | *(shipped in the image)* | Ed25519 signing key entries for the official plugin maintainers. Shipped in the image; operators do not set these. |
-| `PluginSigning__OperatorKeys__0__KeyId` | — | Key ID of an operator-trusted plugin signer. Each entry is a pair of `__KeyId` and `__PublicKey` under the same index. |
-| `PluginSigning__OperatorKeys__0__PublicKey` | — | Ed25519 public key of the operator-trusted signer at index 0. Add more signers as `__1__KeyId` / `__1__PublicKey`, and so on. |
+| `Plugins__TrustedPackageSha256__0`, `__1`, ... | n/a | SHA-256 hashes of plugin packages to trust unconditionally. Each hash is a separate indexed key. |
+| `PluginSigning__MaintainerKeys__0__KeyId`, `__PublicKey`, ... | *(shipped in the image)* | Ed25519 signing key entries for the official plugin maintainers. Shipped in the image; operators do not set these. |
+| `PluginSigning__OperatorKeys__0__KeyId` | n/a | Key ID of an operator-trusted plugin signer. Each entry is a pair of `__KeyId` and `__PublicKey` under the same index. |
+| `PluginSigning__OperatorKeys__0__PublicKey` | n/a | Ed25519 public key of the operator-trusted signer at index 0. Add more signers as `__1__KeyId` / `__1__PublicKey`, and so on. |
 
 ## Development-only settings
 

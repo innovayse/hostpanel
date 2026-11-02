@@ -138,7 +138,7 @@ Credit is applied automatically to renewal invoices when the <code>billing.renew
 
 ## Refund
 
-Open the **Refund** tab on a paid invoice.
+Open the **Refund** tab on a paid or partially refunded invoice.
 
 <Steps>
 <li>

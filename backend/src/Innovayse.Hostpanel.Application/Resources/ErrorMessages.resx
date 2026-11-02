@@ -594,6 +594,9 @@
 <data name="PLUGIN_FAILED" xml:space="preserve">
     <value>The plugin could not complete the request. Please try again later.</value>
   </data>
+<data name="PLUGIN_STORE_KEY_LIMIT_REACHED" xml:space="preserve">
+    <value>The plugin has stored as many values as the host allows. Please contact support.</value>
+  </data>
 <data name="PLUGIN_STORE_KEY_INVALID" xml:space="preserve">
     <value>The plugin used its storage incorrectly. Please try again later.</value>
   </data>

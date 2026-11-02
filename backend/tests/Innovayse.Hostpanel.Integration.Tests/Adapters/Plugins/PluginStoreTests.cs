@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Domain;
 using Innovayse.Hostpanel.Domain.Plugins;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
@@ -10,11 +11,14 @@ namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 /// <summary>
 /// <see cref="PluginStore"/> against Postgres: values are separate per plugin, per client reference and plugin wide,
 /// a key is one row however often and however concurrently it is written, keys and values outside the rules are refused
-/// without a write or a leak, and a write saves through the request's context so another context sees it.
+/// without a write or a leak, a scope is capped at its key limit (counted per plugin and client reference, replaced keys exempt), and a write saves through the request's context so another context sees it.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class PluginStoreTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>A small key cap for the tests that fill a scope, so a full scope costs a few writes and not a thousand.</summary>
+    private const int SmallCap = 3;
+
     /// <summary>The keys the store refuses, as the domain rule lists them.</summary>
     /// <returns>The keys that are refused.</returns>
     public static TheoryData<string?> InvalidKeys() => new()
@@ -43,10 +47,24 @@ public sealed class PluginStoreTests(IntegrationTestFactory factory) : IClassFix
     /// <param name="db">The context.</param>
     /// <param name="pluginId">The plugin.</param>
     /// <param name="clientRef">The client reference, or <see langword="null"/> for plugin wide.</param>
+    /// <param name="maxKeys">The most keys the scope may hold; the host's default unless a test sets a small cap.</param>
     /// <returns>The store.</returns>
-    private static PluginStore StoreOf(AppDbContext db, string pluginId, string? clientRef)
+    private static PluginStore StoreOf(
+        AppDbContext db, string pluginId, string? clientRef, int maxKeys = PluginApiOptions.DefaultMaxStoreKeysPerScope)
     {
-        return new PluginStore(pluginId, clientRef, db);
+        return new PluginStore(pluginId, clientRef, db, maxKeys);
+    }
+
+    /// <summary>Writes <paramref name="count"/> distinct keys, <c>key-0</c> upwards, through a store.</summary>
+    /// <param name="store">The store to fill.</param>
+    /// <param name="count">How many keys to write.</param>
+    /// <returns>A task that completes when every key is written.</returns>
+    private static async Task FillAsync(PluginStore store, int count)
+    {
+        for (var i = 0; i < count; i++)
+        {
+            await store.SetAsync($"key-{i}", $"value-{i}", CancellationToken.None);
+        }
     }
 
     /// <summary>Reads the rows of a plugin straight from the table.</summary>
@@ -291,6 +309,119 @@ public sealed class PluginStoreTests(IntegrationTestFactory factory) : IClassFix
         using var reading = factory.Services.CreateScope();
         var other = reading.ServiceProvider.GetRequiredService<AppDbContext>();
         (await StoreOf(other, plugin, clientRef).GetAsync("k", CancellationToken.None)).Should().BeNull();
+    }
+
+    /// <summary>A scope filled to exactly the cap accepts every write and holds that many rows.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task FillingAScopeToTheCap_Succeeds()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var plugin = NewPlugin();
+        var store = StoreOf(db, plugin, NewRef(), SmallCap);
+
+        await FillAsync(store, SmallCap);
+
+        (await RowsAsync(plugin)).Should().HaveCount(SmallCap);
+        (await store.GetAsync($"key-{SmallCap - 1}", CancellationToken.None)).Should().Be($"value-{SmallCap - 1}");
+    }
+
+    /// <summary>A new key past the cap is refused with PLUGIN_STORE_KEY_LIMIT_REACHED and writes nothing.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task ANewKeyPastTheCap_IsRefusedAndWritesNothing()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var plugin = NewPlugin();
+        var store = StoreOf(db, plugin, NewRef(), SmallCap);
+        await FillAsync(store, SmallCap);
+
+        var refused = (await FluentActions.Awaiting(() => store.SetAsync("one-too-many", "v", CancellationToken.None))
+            .Should().ThrowAsync<DomainRuleException>()).Which;
+
+        refused.Code.Should().Be(PluginStoreErrors.KeyLimitReached);
+        (await RowsAsync(plugin)).Should().HaveCount(SmallCap).And.NotContain(row => row.Key == "one-too-many");
+        (await store.GetAsync("one-too-many", CancellationToken.None)).Should().BeNull();
+    }
+
+    /// <summary>Replacing an existing key in a full scope succeeds and changes the value without adding a row.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task ReplacingAKeyInAFullScope_Succeeds()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var plugin = NewPlugin();
+        var store = StoreOf(db, plugin, NewRef(), SmallCap);
+        await FillAsync(store, SmallCap);
+
+        await store.SetAsync("key-0", "replaced", CancellationToken.None);
+
+        (await store.GetAsync("key-0", CancellationToken.None)).Should().Be("replaced");
+        (await RowsAsync(plugin)).Should().HaveCount(SmallCap);
+    }
+
+    /// <summary>A removed key frees room, so a full scope accepts a new key after one is removed.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task RemovingAKeyFromAFullScope_FreesRoomForANewKey()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var plugin = NewPlugin();
+        var store = StoreOf(db, plugin, NewRef(), SmallCap);
+        await FillAsync(store, SmallCap);
+
+        (await store.RemoveAsync("key-0", CancellationToken.None)).Should().BeTrue();
+        await store.SetAsync("fresh", "v", CancellationToken.None);
+
+        (await store.GetAsync("fresh", CancellationToken.None)).Should().Be("v");
+        (await RowsAsync(plugin)).Should().HaveCount(SmallCap);
+    }
+
+    /// <summary>The plugin-wide scope and a client scope of one plugin are counted separately: filling one leaves the other open.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task PluginWideAndClientScopes_AreCountedSeparately()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var (plugin, clientRef) = (NewPlugin(), NewRef());
+        var wide = StoreOf(db, plugin, null, SmallCap);
+        var perClient = StoreOf(db, plugin, clientRef, SmallCap);
+
+        await FillAsync(wide, SmallCap);
+        await FluentActions.Awaiting(() => wide.SetAsync("extra", "v", CancellationToken.None)).Should().ThrowAsync<DomainRuleException>();
+        await perClient.SetAsync("extra", "of-client", CancellationToken.None);
+        await FillAsync(perClient, SmallCap - 1);
+
+        (await perClient.GetAsync("extra", CancellationToken.None)).Should().Be("of-client");
+        await FluentActions.Awaiting(() => perClient.SetAsync("another", "v", CancellationToken.None)).Should().ThrowAsync<DomainRuleException>();
+        (await wide.GetAsync("extra", CancellationToken.None)).Should().BeNull();
+        (await RowsAsync(plugin)).Should().HaveCount(SmallCap * 2);
+    }
+
+    /// <summary>Two client references of one plugin are counted separately: filling one leaves the other open.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task TwoClientScopes_AreCountedSeparately()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var (plugin, x, y) = (NewPlugin(), NewRef(), NewRef());
+        var storeX = StoreOf(db, plugin, x, SmallCap);
+        var storeY = StoreOf(db, plugin, y, SmallCap);
+
+        await FillAsync(storeX, SmallCap);
+        var refused = (await FluentActions.Awaiting(() => storeX.SetAsync("extra", "v", CancellationToken.None))
+            .Should().ThrowAsync<DomainRuleException>()).Which;
+        await storeY.SetAsync("extra", "of-y", CancellationToken.None);
+
+        refused.Code.Should().Be(PluginStoreErrors.KeyLimitReached);
+        (await storeY.GetAsync("extra", CancellationToken.None)).Should().Be("of-y");
+        (await storeX.GetAsync("extra", CancellationToken.None)).Should().BeNull();
     }
 
     /// <summary>Sets one key twice, a minute apart on a clock the test moves, and checks the row.</summary>

@@ -3,10 +3,12 @@ using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.RemovePlugin;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Plugins;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Shared.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Admin.Plugins;
 
@@ -15,7 +17,8 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Plugins;
 /// list and writes the removal to the activity log, removing one never installed is refused
 /// <c>PLUGIN_NOT_FOUND</c>, a plugin shipped with the build is refused <c>PLUGIN_BUILT_IN</c> and
 /// kept, an id breaking the plugin id rule is refused by the validator over HTTP and with
-/// <c>PLUGIN_ID_INVALID</c> by the handler itself, a caller with only the Client role is refused,
+/// <c>PLUGIN_ID_INVALID</c> by the handler itself, a removal deletes the plugin's stored data in every
+/// scope and no other plugin's, a refused removal leaves the stored data alone, a caller with only the Client role is refused,
 /// and the route is closed to a caller with no credential.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
@@ -81,6 +84,93 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
         }
     }
 
+    /// <summary>
+    /// Removing an uploaded plugin deletes its plugin store rows in every scope (plugin wide and per
+    /// client) and leaves the rows of another plugin untouched.
+    /// </summary>
+    [Fact]
+    public async Task Remove_DeletesThePluginsStoredDataInEveryScopeAndKeepsOthersAsync()
+    {
+        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var pluginId = $"test-plugin-{Guid.NewGuid():N}";
+        var otherPluginId = $"test-plugin-{Guid.NewGuid():N}";
+        var install = await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildValidPluginZip(pluginId));
+        install.StatusCode.Should().Be(HttpStatusCode.OK);
+        await SeedStoreRowsAsync(pluginId, otherPluginId);
+
+        var remove = await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
+
+        remove.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await StoredRowCountAsync(pluginId)).Should().Be(0, "every scope of the removed plugin is purged");
+        (await StoredRowCountAsync(otherPluginId)).Should().Be(2, "another plugin's data is not touched");
+    }
+
+    /// <summary>A removal refused because the plugin ships with the build leaves its stored data untouched.</summary>
+    [Fact]
+    public async Task ABuiltInPlugin_KeepsItsStoredDataAsync()
+    {
+        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var pluginId = $"test-builtin-{Guid.NewGuid():N}";
+        var builtIn = PluginsTestSeeds.StageBuiltInPlugin(pluginId);
+
+        try
+        {
+            await SeedStoreRowsAsync(pluginId);
+
+            var response = await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
+
+            response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+            (await StoredRowCountAsync(pluginId)).Should().Be(2);
+        }
+        finally
+        {
+            Directory.Delete(builtIn, recursive: true);
+        }
+    }
+
+    /// <summary>A removal refused because no uploaded plugin has that id leaves stored rows under that id untouched.</summary>
+    [Fact]
+    public async Task UnknownId_KeepsItsStoredDataAsync()
+    {
+        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var pluginId = $"never-installed-{Guid.NewGuid():N}";
+        await SeedStoreRowsAsync(pluginId);
+
+        var response = await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        (await StoredRowCountAsync(pluginId)).Should().Be(2);
+    }
+
+    /// <summary>
+    /// Writes two plugin store rows for each given plugin: one plugin wide (no client reference) and one
+    /// in a client scope.
+    /// </summary>
+    /// <param name="pluginIds">The plugins to seed rows for.</param>
+    /// <returns>A task that completes when the rows are saved.</returns>
+    private async Task SeedStoreRowsAsync(params string[] pluginIds)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        foreach (var pluginId in pluginIds)
+        {
+            db.PluginDataEntries.Add(PluginDataEntry.Create(pluginId, null, "wide-key", "wide"));
+            db.PluginDataEntries.Add(PluginDataEntry.Create(pluginId, "client-ref-1", "client-key", "client"));
+        }
+
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>Counts the plugin store rows kept for one plugin across all scopes.</summary>
+    /// <param name="pluginId">The plugin whose rows are counted.</param>
+    /// <returns>The number of rows stored under that plugin id.</returns>
+    private async Task<int> StoredRowCountAsync(string pluginId)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        return await db.PluginDataEntries.AsNoTracking().CountAsync(row => row.PluginId == pluginId);
+    }
+
     /// <summary>An id breaking the plugin id rule is refused by the validator with <c>VALIDATION_ERROR</c>.</summary>
     [Fact]
     public async Task AnIdBreakingTheRule_RefusesOverHttpAsync()
@@ -107,7 +197,8 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
         var handler = new RemovePluginHandler(
             services.GetRequiredService<IPluginPackageStore>(),
             services.GetRequiredService<IActivityLogger>(),
-            services.GetRequiredService<IHostpanelDbContext>());
+            services.GetRequiredService<IHostpanelDbContext>(),
+            services.GetRequiredService<IMessageBus>());
 
         var result = await handler.HandleAsync(new RemovePluginCommand("../outside"), CancellationToken.None);
 

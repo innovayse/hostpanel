@@ -12,6 +12,11 @@ using Microsoft.EntityFrameworkCore;
  * nothing else is staged on the context while plugin code runs. Two first writes of one key race on the unique index,
  * which AppDbContext translates to ConcurrencyConflictException like every other lost race; the loser takes the
  * winner's row and writes over it once.
+ *
+ * A scope holds at most the configured number of keys (PluginApiOptions.MaxStoreKeysPerScope), so a plugin cannot grow
+ * the table without bound. The count is taken only when a write would add a new key; updating an existing key never
+ * checks it. The count and the insert are not one atomic step, so two concurrent new keys may each pass the count and
+ * leave the scope one or two over the cap. That is accepted: the cap bounds growth, it is not a quota.
  */
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
@@ -21,7 +26,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 /// reference of the call's client: per client on every client area call (and on an admin call once it carries a
 /// verified client), plugin wide (no reference) on an admin call that is not about a client. Every query filters on
 /// both and no method takes a scope, so a plugin reads and writes only its own keys of the client its call is bound to.
-/// A key or value that breaks the contract throws <see cref="DomainRuleException"/> from <see cref="PluginDataEntry"/>, which
+/// A scope holds at most <c>maxKeys</c> keys: a write that would add a key beyond that is refused, an update of an
+/// existing key never is, and concurrent first writes may leave the scope one or two over (the cap bounds growth, it is
+/// not a quota). A key or value that breaks the contract, or a write over the cap, throws <see cref="DomainRuleException"/> from <see cref="PluginDataEntry"/>, which
 /// the call runner answers as a plugin failure.
 /// </summary>
 internal sealed class PluginStore : IPluginStore
@@ -35,15 +42,20 @@ internal sealed class PluginStore : IPluginStore
     /// <summary>The request's data context; the store's writes are saved through it.</summary>
     private readonly AppDbContext _context;
 
+    /// <summary>The most keys the plugin may keep in this store's scope; a write that adds a key beyond it is refused.</summary>
+    private readonly int _maxKeys;
+
     /// <summary>Initializes the store of one call.</summary>
     /// <param name="pluginId">The plugin whose values these are.</param>
     /// <param name="clientRef">The plugin's opaque reference of the call's client, or <see langword="null"/> for plugin-wide values.</param>
     /// <param name="context">The request's data context; the store's writes are saved through it.</param>
-    public PluginStore(string pluginId, string? clientRef, AppDbContext context)
+    /// <param name="maxKeys">The most keys the plugin may keep in this store's scope; a write that adds a key beyond it is refused.</param>
+    public PluginStore(string pluginId, string? clientRef, AppDbContext context, int maxKeys)
     {
         _pluginId = pluginId;
         _clientRef = clientRef;
         _context = context;
+        _maxKeys = maxKeys;
     }
 
     /// <inheritdoc/>
@@ -64,6 +76,9 @@ internal sealed class PluginStore : IPluginStore
             await _context.SaveChangesAsync(ct);
             return;
         }
+
+        var keysInScope = await Scope().AsNoTracking().CountAsync(ct);
+        PluginDataEntry.EnsureRoomForNewKey(keysInScope, _maxKeys);
 
         var candidate = PluginDataEntry.Create(_pluginId, _clientRef, key, value);
         _context.PluginDataEntries.Add(candidate);
@@ -97,9 +112,13 @@ internal sealed class PluginStore : IPluginStore
         return true;
     }
 
+    /// <summary>Every row in this store's plugin and client scope, whatever its key.</summary>
+    /// <returns>The query; tracked unless the caller asks otherwise.</returns>
+    private IQueryable<PluginDataEntry> Scope() => _context.PluginDataEntries
+        .Where(row => row.PluginId == _pluginId && row.ClientRef == _clientRef);
+
     /// <summary>The row of one key in this store's plugin and client scope.</summary>
     /// <param name="key">The key.</param>
     /// <returns>The query; tracked unless the caller asks otherwise.</returns>
-    private IQueryable<PluginDataEntry> Scoped(string key) => _context.PluginDataEntries
-        .Where(row => row.PluginId == _pluginId && row.ClientRef == _clientRef && row.Key == key);
+    private IQueryable<PluginDataEntry> Scoped(string key) => Scope().Where(row => row.Key == key);
 }

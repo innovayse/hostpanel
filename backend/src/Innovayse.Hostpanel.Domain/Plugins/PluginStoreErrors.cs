@@ -16,4 +16,7 @@ public static class PluginStoreErrors
 
     /// <summary>A store value is missing or longer than <see cref="PluginDataEntry.MaxValueLength"/> characters.</summary>
     public const string ValueInvalid = "PLUGIN_STORE_VALUE_INVALID";
+
+    /// <summary>A new key would take a store scope past its configured number of keys.</summary>
+    public const string KeyLimitReached = "PLUGIN_STORE_KEY_LIMIT_REACHED";
 }

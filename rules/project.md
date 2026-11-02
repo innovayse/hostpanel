@@ -296,7 +296,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   `Plugins:TrustedPackageSha256` lists any digest, the archive's SHA-256 must be one of them
   (`PLUGIN_NOT_TRUSTED`; an empty list, the default, accepts any archive that passes the other
   checks). Every install and removal writes an activity log line with no client (`ActivityLog.ClientId`
-  is nullable for system-wide actions), carrying the plugin id and, for an install, the digest.
+  is nullable for system-wide actions), carrying the plugin id and, for an install, the digest. A removal also purges the plugin's stored data (`PurgePluginDataCommand`, see the plugin store under "Plugin routes").
 - **One manifest validator for load and install (`Infrastructure/Plugins/PluginManifestValidator`).** A plugin
   is checked against the manifest rules in one place, asked by `PluginManifestReader.TryRead` (startup load,
   `plugins/` and the upload folder) and by `PluginPackageStore` (install); no rule is written twice. `Validate`
@@ -525,8 +525,22 @@ docker/                              compose set (shared·dev·prod·platform), 
     payment reference, and the loser detaches its candidate and writes over the winner's row once. A contract breach throws `DomainRuleException` with
     `PLUGIN_STORE_KEY_INVALID` or `PLUGIN_STORE_VALUE_INVALID` (`Domain/Plugins/PluginStoreErrors`, en/ru/hy, 502 in
     `StatusMapping`); the runner answers it like any plugin throw, 502 `PLUGIN_FAILED`, and logs it, so the code itself
-    never reaches a caller. Known limits: no cap on the number of keys per scope, and rows outlive an
-    uninstalled plugin or a deleted client (the reference is a keyed hash, not a foreign key); nothing purges them yet.
+    never reaches a caller.
+    - Key cap: `PluginApi:MaxStoreKeysPerScope` (`PluginApiOptions`, default 1000, 1 to 100,000, validated on start) per scope
+      (one plugin and one client ref, or the plugin-wide scope; counted separately). A write that adds a new key to a full
+      scope throws `DomainRuleException` `PLUGIN_STORE_KEY_LIMIT_REACHED` (en/ru/hy, 502 row, answered as `PLUGIN_FAILED`);
+      replacing an existing key is always allowed. Two concurrent new keys can each pass the count, so a scope may end one or
+      two over; the cap bounds growth, it is not a quota. With the 64 Ki character value cap a scope holds about 64 Mi
+      characters by default.
+    - Purge on uninstall: `RemovePluginHandler` (Admin) dispatches `PurgePluginDataCommand` (Plugins module,
+      `Application/Plugins/Commands/PurgePluginData`) after a successful removal; it loads the plugin's rows in batches of 500
+      and removes them through the context (no bulk delete); idempotent. `PluginDataEntries` is on `IHostpanelDbContext` and
+      only the Plugins module touches it.
+    - No purge for clients: a client is never deleted, only closed (`ClientClosedEvent`), and a closed client keeps reading
+      their history, so a plugin's per-client rows are kept like the rest of that history. The only path that removes clients
+      is the demo reset, which truncates every model table, `PluginDataEntries` included. Rows are keyed by the opaque
+      `ClientRef` (no client id column), so a future client erase would compute `IPluginReferences.ForClient` per plugin that
+      has rows.
   - **Status codes.** `PLUGIN_ROUTE_NOT_FOUND` 404, `PLUGIN_REQUEST_TOO_LARGE` 413 (the `_TOO_LARGE` suffix),
     and `PLUGIN_FAILED` 502 (exact `StatusMapping` rows); each has its sentence in
     en/ru/hy. `PLUGIN_STREAMING_NOT_SUPPORTED` went with #641.

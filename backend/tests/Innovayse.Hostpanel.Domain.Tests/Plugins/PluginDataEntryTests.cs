@@ -179,4 +179,32 @@ public sealed class PluginDataEntryTests
 
         act.Should().NotThrow();
     }
+
+    /// <summary>EnsureRoomForNewKey lets a scope below the cap take one more key, down to the last free place.</summary>
+    /// <param name="keysInScope">How many keys the scope already holds.</param>
+    /// <param name="maxKeys">The cap.</param>
+    [Theory]
+    [InlineData(0, 1)]
+    [InlineData(998, 1000)]
+    [InlineData(999, 1000)]
+    public void EnsureRoomForNewKey_BelowTheCap_DoesNotThrow(int keysInScope, int maxKeys)
+    {
+        var act = () => PluginDataEntry.EnsureRoomForNewKey(keysInScope, maxKeys);
+
+        act.Should().NotThrow();
+    }
+
+    /// <summary>EnsureRoomForNewKey refuses a new key in a scope that is at the cap or over it, with PLUGIN_STORE_KEY_LIMIT_REACHED.</summary>
+    /// <param name="keysInScope">How many keys the scope already holds.</param>
+    /// <param name="maxKeys">The cap.</param>
+    [Theory]
+    [InlineData(1, 1)]
+    [InlineData(1000, 1000)]
+    [InlineData(1001, 1000)]
+    public void EnsureRoomForNewKey_AtOrAboveTheCap_Throws(int keysInScope, int maxKeys)
+    {
+        var act = () => PluginDataEntry.EnsureRoomForNewKey(keysInScope, maxKeys);
+
+        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(PluginStoreErrors.KeyLimitReached);
+    }
 }

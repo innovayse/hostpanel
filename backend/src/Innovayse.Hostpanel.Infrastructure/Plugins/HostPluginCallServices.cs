@@ -1,6 +1,8 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
+using Microsoft.Extensions.Options;
 
 /*
  * One binding builds both services, so the host facts and the store cannot be bound to two different clients: the
@@ -31,21 +33,27 @@ public sealed class HostPluginCallServices : IPluginCallServices
     /// <summary>Derives the plugin's opaque reference of the client, the store's client scope.</summary>
     private readonly IPluginReferences _references;
 
+    /// <summary>The plugin API limits; the store's key cap per scope is read from it.</summary>
+    private readonly IOptions<PluginApiOptions> _options;
+
     /// <summary>Initializes the factory.</summary>
     /// <param name="context">The request's data context, read by the host API and written by the store.</param>
     /// <param name="identity">Reads the email address and language of the client's owner.</param>
     /// <param name="payerCurrency">Resolves the currency the client is billed in.</param>
     /// <param name="references">Derives the plugin's opaque reference of the client, the store's client scope.</param>
+    /// <param name="options">The plugin API limits; the store's key cap per scope is read from it.</param>
     public HostPluginCallServices(
         AppDbContext context,
         IIdentityProvider identity,
         IPayerCurrencyResolver payerCurrency,
-        IPluginReferences references)
+        IPluginReferences references,
+        IOptions<PluginApiOptions> options)
     {
         _context = context;
         _identity = identity;
         _payerCurrency = payerCurrency;
         _references = references;
+        _options = options;
     }
 
     /// <inheritdoc/>
@@ -56,6 +64,6 @@ public sealed class HostPluginCallServices : IPluginCallServices
         var clientRef = binding.ClientId is { } clientId ? _references.ForClient(binding.PluginId, clientId) : null;
         return new PluginCallServices(
             new PluginHostApi(binding.ClientId, _context, _identity, _payerCurrency),
-            new PluginStore(binding.PluginId, clientRef, _context));
+            new PluginStore(binding.PluginId, clientRef, _context, _options.Value.MaxStoreKeysPerScope));
     }
 }

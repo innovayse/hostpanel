@@ -103,6 +103,22 @@ public sealed partial class PluginDataEntry : BaseEntity, IAggregateRoot
         }
     }
 
+    /// <summary>
+    /// Refuses a new key in a scope that already holds <paramref name="maxKeys"/> keys. Replacing an existing key never
+    /// asks this, so a full scope can still be updated.
+    /// </summary>
+    /// <param name="keysInScope">How many keys the plugin already keeps in this plugin and client scope.</param>
+    /// <param name="maxKeys">The most keys one scope may hold, from the host's configuration.</param>
+    /// <exception cref="DomainRuleException">Thrown when the scope is full.</exception>
+    public static void EnsureRoomForNewKey(int keysInScope, int maxKeys)
+    {
+        if (keysInScope >= maxKeys)
+        {
+            throw new DomainRuleException(
+                PluginStoreErrors.KeyLimitReached, "A plugin store scope holds no more keys than the host allows.");
+        }
+    }
+
     /// <summary>Replaces the stored text. The moment of the change is stamped on save.</summary>
     /// <param name="value">The new text, as <see cref="IsValidValue"/> accepts it.</param>
     /// <exception cref="DomainRuleException">Thrown when the value breaks the SDK's contract.</exception>

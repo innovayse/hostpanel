@@ -651,6 +651,7 @@ public static class DependencyInjection
             .ValidateOnStart();
         services.AddOptions<NotificationOptions>()
             .Bind(configuration.GetSection(NotificationOptions.SectionName))
+            .ValidateDataAnnotations()
             .ValidateOnStart();
         services.AddScoped<IEmailSender, SmtpEmailSender>();
         services.AddScoped<TemplateRenderer>();

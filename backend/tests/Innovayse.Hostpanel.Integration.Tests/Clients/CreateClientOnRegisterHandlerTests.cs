@@ -2,7 +2,6 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.IntegrationEvents.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 
@@ -20,9 +19,8 @@ public sealed class CreateClientOnRegisterHandlerTests(IntegrationTestFactory fa
     {
         var subject = await ClientsTestSeeds.CreateUnlinkedSubjectAsync(factory, "on-register");
         using var scope = factory.Services.CreateScope();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
-        await bus.InvokeAsync(new ClientRegisteredIntegrationEvent(
+        await scope.ServiceProvider.PublishAndWaitAsync(new ClientRegisteredIntegrationEvent(
             subject.UserId, subject.Email, "Grace", "Hopper",
             IpAddress: "203.0.113.7", UserAgent: "TestAgent/1.0",
             DeviceType: "Desktop", OperatingSystem: "Linux", Browser: "Firefox"));
@@ -44,13 +42,28 @@ public sealed class CreateClientOnRegisterHandlerTests(IntegrationTestFactory fa
     {
         var subject = await ClientsTestSeeds.CreateUnlinkedSubjectAsync(factory, "on-register-twice");
         using var scope = factory.Services.CreateScope();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
-        await bus.InvokeAsync(new ClientRegisteredIntegrationEvent(subject.UserId, subject.Email, "First", "Delivery"));
-        await bus.InvokeAsync(new ClientRegisteredIntegrationEvent(subject.UserId, subject.Email, "Second", "Delivery"));
+        await scope.ServiceProvider.PublishAndWaitAsync(new ClientRegisteredIntegrationEvent(subject.UserId, subject.Email, "First", "Delivery"));
+        await scope.ServiceProvider.PublishAndWaitAsync(new ClientRegisteredIntegrationEvent(subject.UserId, subject.Email, "Second", "Delivery"));
 
         var db = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var clients = await db.Clients.AsNoTracking().Where(c => c.UserId == subject.UserId).ToListAsync();
         clients.Should().ContainSingle().Which.FirstName.Should().Be("First");
+    }
+
+    /// <summary>
+    /// A delivery for an account that no longer exists (the demo reset truncated it after the event was
+    /// queued) creates no client row pointing at nobody.
+    /// </summary>
+    [Fact]
+    public async Task ClientRegistered_ForAnAccountThatNoLongerExists_CreatesNoClientAsync()
+    {
+        var userId = Guid.NewGuid().ToString();
+        using var scope = factory.Services.CreateScope();
+
+        await scope.ServiceProvider.PublishAndWaitAsync(new ClientRegisteredIntegrationEvent(userId, $"gone-{Guid.NewGuid():N}@example.test", "Gone", "Account"));
+
+        var db = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await db.Clients.AsNoTracking().AnyAsync(c => c.UserId == userId)).Should().BeFalse();
     }
 }

@@ -88,6 +88,8 @@ public sealed class ConfirmMyEmailChangeHandler
         // unnoticed by the one inbox they still control. The address is encoded because the
         // template is HTML and the address is text the caller typed.
         await EmailChangedNoticeTemplateSeeder.EnsureSeededAsync(_context, ct);
+        // No idempotency key: this runs inside the caller's request and is never replayed by a queue, and a
+        // repeated request is a deliberate new change that must be mailed again.
         await _bus.InvokeAsync(new SendEmailCommand(
             account.Email,
             account.Language,

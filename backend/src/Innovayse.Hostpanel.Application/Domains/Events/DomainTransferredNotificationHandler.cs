@@ -53,6 +53,22 @@ public sealed class DomainTransferredNotificationHandler
     {
         try
         {
+            var domain = await _context.Domains
+                .IncludeChildren()
+                .FirstOrDefaultAsync(x => x.Id == evt.DomainId, ct);
+
+            // The event arrives through a durable queue, so it can arrive after the demo reset truncated
+            // the tables and reused the ids: a domain that is gone or now belongs to someone else is not
+            // the one this mail is about, and the client the event names may be a different account now.
+            if (domain is null || domain.ClientId != evt.ClientId)
+            {
+                _logger.LogInformation(
+                    "Domain {DomainId} of client {ClientId} no longer exists; no domain-transferred notification is sent.",
+                    evt.DomainId,
+                    evt.ClientId);
+                return;
+            }
+
             var client = await _bus.FindClientBriefAsync(evt.ClientId, withEmail: true, ct);
             if (client is null)
             {
@@ -73,17 +89,21 @@ public sealed class DomainTransferredNotificationHandler
                 return;
             }
 
-            var domain = await _context.Domains
-                .IncludeChildren()
-                .FirstOrDefaultAsync(x => x.Id == evt.DomainId, ct);
-
             var data = new DomainTransferredTemplateModel(new RegisteredDomainTemplateData(
                 evt.DomainId,
                 evt.Name,
-                domain?.Registrar,
-                domain?.ExpiresAt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
+                domain.Registrar,
+                domain.ExpiresAt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
 
-            await _bus.InvokeAsync(new SendEmailCommand(email, client.Language, "domain-transferred", data, new ContactCopy(evt.ClientId, ContactNotification.Domain)), ct);
+            await _bus.InvokeAsync(
+                new SendEmailCommand(
+                    email,
+                    client.Language,
+                    "domain-transferred",
+                    data,
+                    new ContactCopy(evt.ClientId, ContactNotification.Domain),
+                    IdempotencyKey: EmailIdempotencyKey.ForMessage(evt, "domain-transferred")),
+                ct);
 
             _logger.LogInformation(
                 "Sent domain-transferred notification for domain {DomainName} (ID {DomainId}) to {Email}.",

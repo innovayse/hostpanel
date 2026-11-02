@@ -66,12 +66,10 @@ public sealed class GatewayPaymentWithoutReferenceAdminHandlerTests(IntegrationT
     {
         var sender = new FakeEmailSender();
         var host = EventHandlerTestHost.WithFakeRelay(factory, sender);
-        using var scope = host.Services.CreateScope();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
-        await bus.InvokeAsync(
-            new GatewayPaymentWithoutReferenceEvent(1, 1, "bank-gateway", 1m, "USD") { OccurredAt = DateTimeOffset.UtcNow },
-            CancellationToken.None);
+        await PublishAndWaitAsync(
+            host,
+            new GatewayPaymentWithoutReferenceEvent(1, 1, "bank-gateway", 1m, "USD") { OccurredAt = DateTimeOffset.UtcNow });
 
         sender.Sent.Should().BeEmpty();
     }

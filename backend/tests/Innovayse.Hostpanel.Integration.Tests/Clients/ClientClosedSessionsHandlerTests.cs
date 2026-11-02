@@ -3,7 +3,6 @@ using Innovayse.Hostpanel.Domain.Clients.Events;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 
@@ -27,9 +26,8 @@ public sealed class ClientClosedSessionsHandlerTests(IntegrationTestFactory fact
             services.AddSingleton<ISessionRevoker>(portal);
         }));
         using var scope = host.Services.CreateScope();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
-        await bus.InvokeAsync(new ClientClosedEvent(1, "subject-closed", DateTimeOffset.UtcNow), CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new ClientClosedEvent(1, "subject-closed", DateTimeOffset.UtcNow));
 
         panel.Revoked.Should().Equal("subject-closed");
         portal.Revoked.Should().Equal("subject-closed");
@@ -46,9 +44,8 @@ public sealed class ClientClosedSessionsHandlerTests(IntegrationTestFactory fact
             services.AddSingleton<ISessionRevoker>(revoker);
         }));
         using var scope = host.Services.CreateScope();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
-        await bus.InvokeAsync(new ClientClosedEvent(1, string.Empty, DateTimeOffset.UtcNow), CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new ClientClosedEvent(1, string.Empty, DateTimeOffset.UtcNow));
 
         revoker.Revoked.Should().BeEmpty();
     }

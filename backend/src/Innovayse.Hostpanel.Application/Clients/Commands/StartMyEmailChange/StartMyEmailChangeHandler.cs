@@ -102,6 +102,8 @@ public sealed class StartMyEmailChangeHandler
             + $"?token={Uri.EscapeDataString(token.Value!)}&email={Uri.EscapeDataString(cmd.NewEmail)}";
 
         var account = await _identity.FindBySubjectAsync(subject, ct);
+        // No idempotency key: this runs inside the caller's request and is never replayed by a queue, and a
+        // repeated request is a deliberate new confirmation link that must be mailed again.
         await _bus.InvokeAsync(new SendEmailCommand(
             cmd.NewEmail,
             account?.Language,

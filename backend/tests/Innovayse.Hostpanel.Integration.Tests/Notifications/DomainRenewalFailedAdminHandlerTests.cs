@@ -100,9 +100,8 @@ public sealed class DomainRenewalFailedAdminHandlerTests(IntegrationTestFactory 
         var sender = new FakeEmailSender();
         var host = EventHandlerTestHost.WithFakeRelay(factory, sender);
         using var scope = host.Services.CreateScope();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
-        await bus.InvokeAsync(new DomainRenewalFailedEvent(42, 7, $"{Guid.NewGuid():N}.test", 99, "x") { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainRenewalFailedEvent(42, 7, $"{Guid.NewGuid():N}.test", 99, "x") { OccurredAt = DateTimeOffset.UtcNow });
 
         sender.Sent.Should().BeEmpty();
     }

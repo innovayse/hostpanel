@@ -64,6 +64,14 @@ public sealed class ServiceTerminationFailedAdminHandler
         await StaffAlertTemplatesSeeder.EnsureSeededAsync(_context, ct);
         var data = new ServiceTerminationFailedAdminTemplateModel(new ServiceRefTemplateData(evt.ServiceId), evt.Reason);
         await _bus.InvokeAsync(
-            new SendEmailCommand(to, null, StaffAlertTemplatesSeeder.ServiceTerminationFailedSlug, data), ct);
+            new SendEmailCommand(
+                to,
+                null,
+                StaffAlertTemplatesSeeder.ServiceTerminationFailedSlug,
+                data,
+                IdempotencyKey: EmailIdempotencyKey.ForMessage(
+                    evt,
+                    StaffAlertTemplatesSeeder.ServiceTerminationFailedSlug)),
+            ct);
     }
 }

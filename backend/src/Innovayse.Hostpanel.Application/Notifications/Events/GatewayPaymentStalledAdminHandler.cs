@@ -68,6 +68,14 @@ public sealed class GatewayPaymentStalledAdminHandler
             evt.Module,
             evt.PendingHours);
         await _bus.InvokeAsync(
-            new SendEmailCommand(to, null, StaffAlertTemplatesSeeder.GatewayPaymentStalledSlug, data), ct);
+            new SendEmailCommand(
+                to,
+                null,
+                StaffAlertTemplatesSeeder.GatewayPaymentStalledSlug,
+                data,
+                IdempotencyKey: EmailIdempotencyKey.ForMessage(
+                    evt,
+                    StaffAlertTemplatesSeeder.GatewayPaymentStalledSlug)),
+            ct);
     }
 }

@@ -4,7 +4,6 @@ using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Clients.Events;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 
@@ -66,8 +65,7 @@ public sealed class ClientClosedInvoicesHandlerTests(IntegrationTestFactory fact
         var ordinary = await SeedInvoiceAsync(context, closing.ClientId, renewal: false);
         var othersRenewal = await SeedInvoiceAsync(context, other.ClientId, renewal: true);
 
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        await bus.InvokeAsync(new ClientClosedEvent(closing.ClientId, closing.UserId, DateTimeOffset.UtcNow), CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new ClientClosedEvent(closing.ClientId, closing.UserId, DateTimeOffset.UtcNow));
 
         (await StatusOfAsync(context, unpaidRenewal)).Should().Be(InvoiceStatus.Cancelled);
         (await StatusOfAsync(context, overdueRenewal)).Should().Be(InvoiceStatus.Overdue);
@@ -80,10 +78,9 @@ public sealed class ClientClosedInvoicesHandlerTests(IntegrationTestFactory fact
     public async Task ClientClosed_WithNoInvoices_DoesNotThrowAsync()
     {
         using var scope = factory.Services.CreateScope();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var closing = await ClientsTestSeeds.SeedClientAsync(factory);
 
-        var act = () => bus.InvokeAsync(new ClientClosedEvent(closing.ClientId, closing.UserId, DateTimeOffset.UtcNow), CancellationToken.None);
+        var act = () => scope.ServiceProvider.PublishAndWaitAsync(new ClientClosedEvent(closing.ClientId, closing.UserId, DateTimeOffset.UtcNow));
 
         await act.Should().NotThrowAsync();
     }

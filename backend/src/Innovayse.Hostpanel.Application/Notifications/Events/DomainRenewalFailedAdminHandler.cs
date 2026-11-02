@@ -67,6 +67,13 @@ public sealed class DomainRenewalFailedAdminHandler
             new ClientRefTemplateData(evt.ClientId),
             new InvoiceRefTemplateData(evt.InvoiceId),
             evt.Reason);
-        await _bus.InvokeAsync(new SendEmailCommand(to, null, RenewalTemplatesSeeder.DomainFailedAdminSlug, data), ct);
+        await _bus.InvokeAsync(
+            new SendEmailCommand(
+                to,
+                null,
+                RenewalTemplatesSeeder.DomainFailedAdminSlug,
+                data,
+                IdempotencyKey: EmailIdempotencyKey.ForMessage(evt, RenewalTemplatesSeeder.DomainFailedAdminSlug)),
+            ct);
     }
 }

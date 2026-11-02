@@ -7,6 +7,8 @@ using Innovayse.Hostpanel.Application.Notifications.Commands.SendEmail;
 using Innovayse.Hostpanel.Application.Notifications.Common;
 using Innovayse.Hostpanel.Application.Notifications.Common.TemplateModels;
 using Innovayse.Hostpanel.Application.Services.Commands.SuspendService;
+using Innovayse.Hostpanel.Domain.Domains;
+using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Innovayse.Hostpanel.Domain.Domains.Events;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Models;
@@ -58,40 +60,73 @@ public sealed class DomainExpiredHandler
             evt.DomainId,
             evt.ClientId);
 
-        if (evt.LinkedServiceId.HasValue)
-        {
-            try
-            {
-                var outcome = await _bus.InvokeAsync<Result>(
-                    new SuspendServiceCommand(evt.LinkedServiceId.Value, SuspensionSource.DomainExpired), ct);
+        var domain = await _context.Domains
+            .IncludeChildren()
+            .FirstOrDefaultAsync(x => x.Id == evt.DomainId, ct);
 
-                if (outcome.IsSuccess)
-                {
-                    _logger.LogInformation(
-                        "Suspended linked service {ServiceId} due to domain {DomainId} expiry.",
-                        evt.LinkedServiceId.Value,
-                        evt.DomainId);
-                }
-                else
-                {
-                    _logger.LogWarning(
-                        "Failed to suspend linked service {ServiceId} for expired domain {DomainId} ({Code}). The service may need manual suspension.",
-                        evt.LinkedServiceId.Value,
-                        evt.DomainId,
-                        outcome.ErrorCode);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(
-                    ex,
-                    "Failed to suspend linked service {ServiceId} for expired domain {DomainId}. The service may need manual suspension.",
-                    evt.LinkedServiceId.Value,
-                    evt.DomainId);
-            }
+        // The event arrives through a durable queue, so it can be redelivered after a crash, retried
+        // minutes later, or arrive after the demo reset truncated the tables and reused the ids. A
+        // domain that is gone or now belongs to someone else is not the one that expired, and a domain
+        // renewed since is no longer expired: suspending on a stale copy would take down a service the
+        // event never named.
+        if (domain is null || domain.ClientId != evt.ClientId)
+        {
+            _logger.LogInformation(
+                "Domain {DomainId} of client {ClientId} no longer exists; the expiry is not acted on.",
+                evt.DomainId,
+                evt.ClientId);
+            return;
         }
 
-        await SendNotificationAsync(evt, ct);
+        if (evt.LinkedServiceId.HasValue
+            && domain.LinkedServiceId == evt.LinkedServiceId
+            && domain.Status is DomainStatus.Expired or DomainStatus.Redemption)
+        {
+            await SuspendLinkedServiceAsync(evt.DomainId, evt.LinkedServiceId.Value, ct);
+        }
+
+        await SendNotificationAsync(evt, domain, ct);
+    }
+
+    /// <summary>
+    /// Suspends the expired domain's linked hosting service. A replay is harmless: the services module
+    /// refuses to suspend a service that is already suspended, and the refusal is only logged.
+    /// </summary>
+    /// <param name="domainId">The expired domain ID.</param>
+    /// <param name="linkedServiceId">The linked hosting service ID.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    private async Task SuspendLinkedServiceAsync(int domainId, int linkedServiceId, CancellationToken ct)
+    {
+        try
+        {
+            var outcome = await _bus.InvokeAsync<Result>(
+                new SuspendServiceCommand(linkedServiceId, SuspensionSource.DomainExpired), ct);
+
+            if (outcome.IsSuccess)
+            {
+                _logger.LogInformation(
+                    "Suspended linked service {ServiceId} due to domain {DomainId} expiry.",
+                    linkedServiceId,
+                    domainId);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "Failed to suspend linked service {ServiceId} for expired domain {DomainId} ({Code}). The service may need manual suspension.",
+                    linkedServiceId,
+                    domainId,
+                    outcome.ErrorCode);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Failed to suspend linked service {ServiceId} for expired domain {DomainId}. The service may need manual suspension.",
+                linkedServiceId,
+                domainId);
+        }
     }
 
     /// <summary>
@@ -99,9 +134,10 @@ public sealed class DomainExpiredHandler
     /// Failures are logged as warnings and do not propagate.
     /// </summary>
     /// <param name="evt">The domain expired event.</param>
+    /// <param name="domain">The expired domain, already checked to belong to the event's client.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task representing the asynchronous send operation.</returns>
-    private async Task SendNotificationAsync(DomainExpiredEvent evt, CancellationToken ct)
+    private async Task SendNotificationAsync(DomainExpiredEvent evt, RegisteredDomain domain, CancellationToken ct)
     {
         try
         {
@@ -117,14 +153,18 @@ public sealed class DomainExpiredHandler
                 return;
             }
 
-            var domain = await _context.Domains
-                .IncludeChildren()
-                .FirstOrDefaultAsync(x => x.Id == evt.DomainId, ct);
-
             var data = new DomainExpiredTemplateModel(
-                new ExpiredDomainTemplateData(evt.DomainId, domain?.Name, evt.LinkedServiceId));
+                new ExpiredDomainTemplateData(evt.DomainId, domain.Name, evt.LinkedServiceId));
 
-            await _bus.InvokeAsync(new SendEmailCommand(email, client.Language, "domain-expired", data, new ContactCopy(evt.ClientId, ContactNotification.Domain)), ct);
+            await _bus.InvokeAsync(
+                new SendEmailCommand(
+                    email,
+                    client.Language,
+                    "domain-expired",
+                    data,
+                    new ContactCopy(evt.ClientId, ContactNotification.Domain),
+                    IdempotencyKey: EmailIdempotencyKey.ForMessage(evt, "domain-expired")),
+                ct);
 
             _logger.LogInformation(
                 "Sent domain-expired notification for domain {DomainId} to {Email}.",

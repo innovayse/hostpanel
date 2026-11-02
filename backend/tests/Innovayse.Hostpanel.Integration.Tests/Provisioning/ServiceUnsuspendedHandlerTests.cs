@@ -4,7 +4,6 @@ using Innovayse.Hostpanel.Domain.Services.Events;
 using Innovayse.Hostpanel.Domain.Ssh.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Provisioning;
 
@@ -27,14 +26,40 @@ public sealed class ServiceUnsuspendedHandlerTests(IntegrationTestFactory factor
         var host = ProvisioningTestSeeds.WithRecordingProvider(factory, provider);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var (clientId, _, serviceId) = await ProvisioningTestSeeds.SeedActiveServiceAsync(context);
 
-        await bus.InvokeAsync(new ServiceUnsuspendedEvent(serviceId, clientId, DateTimeOffset.UtcNow), CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceUnsuspendedEvent(serviceId, clientId, DateTimeOffset.UtcNow));
 
         var reference = Assert.Single(provider.Unsuspended);
         Assert.Equal("provisioning-ref-1", reference);
+    }
+
+    /// <summary>
+    /// An unsuspension delivered late, after the service was suspended again (a redelivery after a restart,
+    /// or a retry behind the new suspension), leaves the panel alone: the account the platform shows as
+    /// suspended is not unlocked.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task ServiceUnsuspended_DeliveredAfterTheServiceIsSuspendedAgain_CallsNothingAsync()
+    {
+        var provider = new RecordingProvisioningProvider();
+        var host = ProvisioningTestSeeds.WithRecordingProvider(factory, provider);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+
+        var (clientId, _, serviceId) = await ProvisioningTestSeeds.SeedActiveServiceAsync(context);
+        using (scope.ServiceProvider.GetRequiredService<IDomainEventGate>().Suppress())
+        {
+            var service = await context.ClientServices.FindAsync([serviceId], CancellationToken.None);
+            service!.Suspend(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true);
+            await context.SaveChangesAsync(CancellationToken.None);
+        }
+
+        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceUnsuspendedEvent(serviceId, clientId, DateTimeOffset.UtcNow));
+
+        Assert.Empty(provider.Unsuspended);
     }
 
     /// <summary>
@@ -95,14 +120,13 @@ public sealed class ServiceUnsuspendedHandlerTests(IntegrationTestFactory factor
         await SshTestSeeds.ChangeServiceQuietlyAsync(factory, serviceId, s => s.Unsuspend(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true));
     }
 
-    /// <summary>Delivers an event through the real bus of the given host, in a fresh scope.</summary>
+    /// <summary>Publishes an event through the real bus of the given host and waits until it and every message it cascades to were handled.</summary>
     /// <param name="services">The host's root service provider.</param>
     /// <param name="evt">The event.</param>
-    /// <returns>A task that completes once it was handled.</returns>
+    /// <returns>A task that completes once every handler of the event has run.</returns>
     private static async Task PublishAsync(IServiceProvider services, object evt)
     {
-        using var scope = services.CreateScope();
-        await scope.ServiceProvider.GetRequiredService<IMessageBus>().InvokeAsync(evt, CancellationToken.None);
+        await services.PublishAndWaitAsync(evt);
     }
 
     /// <summary>The service's key states, oldest first.</summary>

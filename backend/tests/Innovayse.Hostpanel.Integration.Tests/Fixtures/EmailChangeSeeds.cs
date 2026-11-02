@@ -8,7 +8,6 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.IntegrationEvents.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
@@ -48,19 +47,12 @@ public static class EmailChangeSeeds
         registered.StatusCode.Should().Be(HttpStatusCode.OK);
         var userId = (await registered.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("userId").GetString()!;
 
-        // The client record is written by a queued handler; running the same handler inline makes
-        // it exist now. A copy that wins the race is refused by the unique index, which is fine.
+        // The client record is written by a queued handler; publishing the same event again and
+        // waiting for it makes the row exist now. The handler skips a client that already exists and
+        // treats a concurrent insert by the queued copy as done, so the second delivery is harmless.
         using (var scope = host.Services.CreateScope())
         {
-            try
-            {
-                await scope.ServiceProvider.GetRequiredService<IMessageBus>()
-                    .InvokeAsync(new ClientRegisteredIntegrationEvent(userId, email, "Address", "Change"));
-            }
-            catch (DbUpdateException)
-            {
-                // The queued copy inserted the row first.
-            }
+            await scope.ServiceProvider.PublishAndWaitAsync(new ClientRegisteredIntegrationEvent(userId, email, "Address", "Change"));
 
             (await scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>().Clients
                 .AnyAsync(c => c.UserId == userId)).Should().BeTrue();

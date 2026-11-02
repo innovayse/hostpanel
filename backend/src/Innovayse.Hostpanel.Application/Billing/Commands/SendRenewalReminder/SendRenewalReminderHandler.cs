@@ -122,12 +122,25 @@ public sealed class SendRenewalReminderHandler
                 invoice.DueDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 $"{_clientPortal.Value.BaseUrl.TrimEnd('/')}/client/invoices/{invoice.Id}"));
 
-            // Mail first, record second, so a crash between the two repeats the mail on the next run
-            // rather than recording a reminder that was never attempted. This is not at-least-once
-            // delivery: SendEmailHandler swallows a relay failure (it records it in EmailLogs and
-            // answers success), so a reminder the relay refused still spends its threshold here. The
-            // failed send is visible in the email log, and the next threshold mails again.
-            await _bus.InvokeAsync(new SendEmailCommand(email, client.Language, RenewalTemplatesSeeder.ReminderSlug, data, new ContactCopy(invoice.ClientId, ContactNotification.Invoice)), ct);
+            // Mail first, record second, so a crash between the two retries the mail on the next run
+            // rather than recording a reminder that was never attempted; the key (invoice and threshold,
+            // the same pair the InvoiceReminders row records) makes that retry skip an address the
+            // first run already reached. This is not at-least-once delivery: SendEmailHandler swallows
+            // a relay failure (it records it in EmailLogs and answers success), so a reminder the relay
+            // refused still spends its threshold here. The failed send is visible in the email log, and
+            // the next threshold mails again.
+            await _bus.InvokeAsync(
+                new SendEmailCommand(
+                    email,
+                    client.Language,
+                    RenewalTemplatesSeeder.ReminderSlug,
+                    data,
+                    new ContactCopy(invoice.ClientId, ContactNotification.Invoice),
+                    IdempotencyKey: EmailIdempotencyKey.ForParts(
+                        RenewalTemplatesSeeder.ReminderSlug,
+                        invoice.Id.ToString(CultureInfo.InvariantCulture),
+                        threshold.ToString(CultureInfo.InvariantCulture))),
+                ct);
         }
 
         // Recorded even when nobody was mailed (opted out of invoice mail or reminders, no address), so the threshold is spent.

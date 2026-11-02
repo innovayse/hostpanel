@@ -195,6 +195,9 @@
 <data name="EMAIL_TEMPLATE_NOT_FOUND" xml:space="preserve">
     <value>No such email template.</value>
   </data>
+  <data name="EMAIL_ALREADY_DELIVERED" xml:space="preserve">
+    <value>This email was already delivered.</value>
+  </data>
 <data name="EMAIL_TEMPLATE_ALREADY_EXISTS" xml:space="preserve">
     <value>This template already has a version in that language.</value>
   </data>

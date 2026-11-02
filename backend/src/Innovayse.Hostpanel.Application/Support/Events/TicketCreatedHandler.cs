@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Notifications.Commands.SendEmail;
+using Innovayse.Hostpanel.Application.Notifications.Common;
 using Innovayse.Hostpanel.Application.Notifications.Common.TemplateModels;
 using Innovayse.Hostpanel.Domain.Support.Events;
 using Microsoft.EntityFrameworkCore;
@@ -46,9 +47,12 @@ public sealed class TicketCreatedHandler
             return;
         }
 
+        // The event arrives through a durable queue, so it can arrive after the demo reset truncated the
+        // tables and reused the ids: a ticket that is gone or now belongs to another client is not the one
+        // that was opened, and the department is not mailed about it.
         var subject = await _context.Tickets
             .AsNoTracking()
-            .Where(t => t.Id == evt.TicketId)
+            .Where(t => t.Id == evt.TicketId && t.ClientId == evt.ClientId)
             .Select(t => t.Subject)
             .FirstOrDefaultAsync(ct);
         if (subject is null)
@@ -58,6 +62,13 @@ public sealed class TicketCreatedHandler
 
         var data = new TicketCreatedTemplateModel(new TicketTemplateData(evt.TicketId, subject));
 
-        await _bus.InvokeAsync(new SendEmailCommand(departmentEmail, null, "ticket-created", data), ct);
+        await _bus.InvokeAsync(
+            new SendEmailCommand(
+                departmentEmail,
+                null,
+                "ticket-created",
+                data,
+                IdempotencyKey: EmailIdempotencyKey.ForMessage(evt, "ticket-created")),
+            ct);
     }
 }

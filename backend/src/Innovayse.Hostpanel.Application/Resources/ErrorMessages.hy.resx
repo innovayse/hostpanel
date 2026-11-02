@@ -195,6 +195,9 @@
 <data name="EMAIL_TEMPLATE_NOT_FOUND" xml:space="preserve">
     <value>Այդպիսի նամակի ձևանմուշ չկա։</value>
   </data>
+  <data name="EMAIL_ALREADY_DELIVERED" xml:space="preserve">
+    <value>Այս նամակն արդեն առաքվել է։</value>
+  </data>
 <data name="EMAIL_TEMPLATE_ALREADY_EXISTS" xml:space="preserve">
     <value>Այս ձևանմուշն արդեն ունի տարբերակ այդ լեզվով։</value>
   </data>

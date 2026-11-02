@@ -3,7 +3,6 @@ using Innovayse.Hostpanel.Domain.Clients.Events;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Services;
 
@@ -34,8 +33,7 @@ public sealed class ClientClosedServicesHandlerTests(IntegrationTestFactory fact
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var closing = await context.ClientServices.AsNoTracking().FirstAsync(s => s.Id == closingServiceId, CancellationToken.None);
 
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        await bus.InvokeAsync(new ClientClosedEvent(closing.ClientId, "subject", DateTimeOffset.UtcNow), CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new ClientClosedEvent(closing.ClientId, "subject", DateTimeOffset.UtcNow));
 
         var (status, source) = await StateOfAsync(context, closingServiceId);
         status.Should().Be(ServiceStatus.Suspended);
@@ -51,9 +49,7 @@ public sealed class ClientClosedServicesHandlerTests(IntegrationTestFactory fact
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var service = await context.ClientServices.AsNoTracking().FirstAsync(s => s.Id == serviceId, CancellationToken.None);
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-
-        var act = () => bus.InvokeAsync(new ClientClosedEvent(service.ClientId, "subject", DateTimeOffset.UtcNow), CancellationToken.None);
+        var act = () => scope.ServiceProvider.PublishAndWaitAsync(new ClientClosedEvent(service.ClientId, "subject", DateTimeOffset.UtcNow));
 
         await act.Should().NotThrowAsync();
         (await StateOfAsync(context, serviceId)).Status.Should().Be(ServiceStatus.Terminated);

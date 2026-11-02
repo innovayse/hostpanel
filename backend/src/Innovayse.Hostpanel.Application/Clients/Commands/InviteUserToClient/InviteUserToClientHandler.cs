@@ -127,6 +127,8 @@ public sealed class InviteUserToClientHandler
 
         // A person who already has an account reads their own language; a newcomer has chosen none
         // yet, so they get the language of the client they are invited to.
+        // No idempotency key: this runs inside the caller's request and is never replayed by a queue, and a
+        // repeated request is a deliberate new invitation that must be mailed again.
         await _bus.InvokeAsync(new SendEmailCommand(
             cmd.Email,
             existing?.Language ?? owner.Language,

@@ -31,6 +31,12 @@ public abstract class BaseEntity : IEquatable<BaseEntity>
     /// <summary>The events raised since the last <see cref="ClearDomainEvents"/>.</summary>
     public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.Select(factory => factory()).ToList().AsReadOnly();
 
+    /// <summary>
+    /// Whether any event is waiting, answered without building one. Asked before the save, when a
+    /// deferred event that names the database-assigned <see cref="Id"/> could not be built correctly yet.
+    /// </summary>
+    public bool HasDomainEvents => _domainEvents.Count > 0;
+
     /// <summary>Whether two entities are the same row; two nulls are equal.</summary>
     /// <param name="left">The left operand.</param>
     /// <param name="right">The right operand.</param>

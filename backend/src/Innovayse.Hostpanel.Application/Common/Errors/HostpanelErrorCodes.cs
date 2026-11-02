@@ -297,6 +297,12 @@ public static class HostpanelErrorCodes
     public const string EMAIL_TEMPLATE_NOT_FOUND = "EMAIL_TEMPLATE_NOT_FOUND";
 
     /// <summary>
+    /// A mail log row already recorded as delivered was asked to be claimed again. The send handler asks
+    /// <c>EmailLog.MayResend</c> first, so this only surfaces when that check is skipped.
+    /// </summary>
+    public const string EMAIL_ALREADY_DELIVERED = Domain.Notifications.NotificationsErrors.EmailAlreadyDelivered;
+
+    /// <summary>
     /// The template already has a version in the requested language (409):
     /// <c>CreateEmailTemplateHandler</c>; each slug holds one version per language.
     /// </summary>

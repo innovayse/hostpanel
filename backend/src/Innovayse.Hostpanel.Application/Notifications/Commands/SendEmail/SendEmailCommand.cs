@@ -12,9 +12,15 @@ namespace Innovayse.Hostpanel.Application.Notifications.Commands.SendEmail;
 /// When set, the same message is also sent to the additional contacts of that client who switched the
 /// kind of email on; null sends it to <paramref name="To"/> only.
 /// </param>
+/// <param name="IdempotencyKey">
+/// 64 lower-case hex characters (<see cref="EmailIdempotencyKey"/>) naming this mail; a replayed command
+/// with the same key sends each recipient at most once. Null for a synchronous request whose caller
+/// waits for the answer and sends a fresh mail on every request.
+/// </param>
 public sealed record SendEmailCommand(
     string To,
     string? Language,
     string TemplateSlug,
     EmailTemplateModel TemplateData,
-    ContactCopy? Copy = null);
+    ContactCopy? Copy = null,
+    string? IdempotencyKey = null);

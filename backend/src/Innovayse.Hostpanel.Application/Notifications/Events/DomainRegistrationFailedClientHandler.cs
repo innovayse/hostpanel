@@ -41,6 +41,13 @@ public sealed class DomainRegistrationFailedClientHandler
             new InvoiceRefTemplateData(evt.InvoiceId));
 
         await _bus.InvokeAsync(
-            new SendEmailCommand(email, client.Language, "domain-registration-failed", data, new ContactCopy(evt.ClientId, ContactNotification.Domain)), ct);
+            new SendEmailCommand(
+                email,
+                client.Language,
+                "domain-registration-failed",
+                data,
+                new ContactCopy(evt.ClientId, ContactNotification.Domain),
+                IdempotencyKey: EmailIdempotencyKey.ForMessage(evt, "domain-registration-failed")),
+            ct);
     }
 }

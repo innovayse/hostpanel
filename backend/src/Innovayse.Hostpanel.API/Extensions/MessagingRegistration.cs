@@ -3,9 +3,11 @@ using Innovayse.Hostpanel.Infrastructure.Auth;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Shared.Constants;
+using Innovayse.Hostpanel.Shared.Contracts.Interfaces;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Middleware;
 using Innovayse.Hostpanel.Shared.Settings;
+using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Model;
 using Microsoft.AspNetCore.Builder;
@@ -14,16 +16,35 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Wolverine;
+using Wolverine.EntityFrameworkCore;
+using Wolverine.Postgresql;
 
 namespace Innovayse.Hostpanel.API.Extensions;
 
 /// <summary>
 /// Wires Wolverine as the process's only bus: handler discovery over the API and Application
-/// assemblies, the validation and logging policies every chain runs through, and the two
-/// middleware types those policies insert.
+/// assemblies, durable message storage in PostgreSQL, the validation, logging and retry policies
+/// every chain runs through, and the middleware types those policies insert.
 /// </summary>
 public static class MessagingRegistration
 {
+    /// <summary>
+    /// The connection string name Wolverine's message storage is read from: the application's own
+    /// database, so an outbox row and the state change it announces share one transaction.
+    /// </summary>
+    public const string ConnectionStringName = "DefaultConnection";
+
+    /// <summary>
+    /// The PostgreSQL schema Wolverine keeps its envelope, dead-letter and node tables in. Kept apart
+    /// from <c>public</c> so the framework's lower-case tables never mix with the PascalCase EF model.
+    /// </summary>
+    public const string MessageStorageSchema = "wolverine";
+
+    /// <summary>
+    /// The one in-memory local queue every recurring job (<see cref="IRecurringJob"/>) is routed to.
+    /// </summary>
+    public const string RecurringJobsQueue = "recurring-jobs";
+
     /// <summary>
     /// Chooses how Wolverine gets the code of its message handlers. Compiling a handler at runtime costs
     /// tens of megabytes that stay resident, for every handler on its first use, so a deployed host loads
@@ -54,8 +75,20 @@ public static class MessagingRegistration
     /// <summary>Adds Wolverine to the host.</summary>
     /// <param name="builder">The host builder, needed for both its container and <c>UseWolverine</c>.</param>
     /// <returns><paramref name="builder"/>, for chaining.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// <c>ConnectionStrings:DefaultConnection</c> is not set, so there is nowhere to store messages.
+    /// </exception>
     public static WebApplicationBuilder AddHostpanelWolverine(this WebApplicationBuilder builder)
     {
+        // Read from the builder's configuration because Wolverine is configured before the container
+        // exists. A missing value refuses startup by name rather than running without durability.
+        var connectionString = builder.Configuration.GetConnectionString(ConnectionStringName);
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException(
+                $"ConnectionStrings:{ConnectionStringName} is not set; Wolverine's durable message storage needs it.");
+        }
+
         // The two policies below insert these into every chain, and Wolverine's generated code
         // resolves them from the container, so they are registered here or every dispatch fails.
         builder.Services.AddTransient(typeof(ValidationMiddleware<>));
@@ -84,6 +117,55 @@ public static class MessagingRegistration
 
             opts.Discovery.IncludeAssembly(typeof(MessagingRegistration).Assembly);
             opts.Discovery.IncludeAssembly(typeof(Innovayse.Hostpanel.Application.Clients.Commands.AcceptInvitation.AcceptInvitationCommand).Assembly);
+
+            // An event with several handlers gets one chain and one local queue per handler instead of one
+            // chain running them all. Combined, a retry replays the whole chain, so a handler that failed
+            // once re-ran its siblings that had already succeeded (a second mail, a second command); now
+            // each handler is retried and dead-lettered on its own. A message with one handler keeps its
+            // single chain, so InvokeAsync on a command or query is unchanged. An event with several
+            // handlers can no longer be invoked, only published: its own chain has no handler left.
+            opts.MultipleHandlerBehavior = MultipleHandlerBehavior.Separated;
+
+            // Envelopes, scheduled retries and dead letters live in the application's database, in
+            // Wolverine's own schema. Wolverine creates and upgrades those tables itself at start (an
+            // additive, idempotent migration) rather than through an EF migration: the shape is the
+            // framework's and changes with its version, and an EF-owned copy would pull framework
+            // tables into the model diff baseline and the PascalCase naming guard.
+            opts.PersistMessagesWithPostgresql(connectionString, MessageStorageSchema);
+            opts.AutoBuildMessageStorageOnStartup = AutoCreate.CreateOrUpdate;
+
+            // Registers IDbContextOutbox, which DomainEventDispatchInterceptor uses to write a save's
+            // events in the save's own transaction. AutoApplyTransactions is deliberately not turned
+            // on: it would wrap every handler that takes the context in a second transaction and an
+            // extra SaveChangesAsync, changing the unit of work of handlers that already save
+            // themselves (several on purpose more than once, per item), and it would not cover saves
+            // made outside a handler (startup and hosted services, seeders), which the interceptor does.
+            opts.UseEntityFrameworkCoreTransactions();
+
+            // A local queue that carries published messages nobody waits on (events, commands sent for
+            // later) keeps them in the database inbox, so a message accepted before a crash or a deploy is
+            // still delivered afterwards. The queues of request/response use cases, which a controller
+            // invokes inline and which never carry a message, stay in memory: a durable receiver for each
+            // of them cost hundreds of idle inboxes and timers per host. See DurableQueuePolicy.
+            opts.Policies.ConfigureConventionalLocalRouting().Named(LocalQueueNames.For);
+            opts.Policies.Add<DurableQueuePolicy>();
+
+            // The exception: recurring jobs (ResetDemoDataCommand is one) run on one in-memory queue.
+            // Each pass schedules the next itself, and RecurringJobs.StartAsync and the demo startup
+            // re-create the chain on every start from JobRuns. A durably scheduled pass would survive
+            // the restart and be scheduled again, so every restart would add a chain. The queue's
+            // explicit BufferedInMemory is applied after the durable-queues policy, so it wins, and a
+            // scheduled message on a buffered queue stays in memory while
+            // AlwaysMakeScheduledMessagesDurable keeps its default, false; do not turn it on.
+            opts.Publish(publish =>
+            {
+                publish.MessagesImplementing<IRecurringJob>();
+                publish.ToLocalQueue(RecurringJobsQueue).BufferedInMemory();
+            });
+
+            // Retries and dead letters for queued, fire-and-forget chains only; request/response chains
+            // and recurring jobs are excluded, see the policy for why.
+            opts.Policies.Add<DurableDeliveryRetryPolicy>();
 
             // A recurring job's pass loops over every item the job owns and can outrun Wolverine's
             // one-minute handler timeout, which would cut it short and leave the rest for the next day.

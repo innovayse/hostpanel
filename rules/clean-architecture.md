@@ -158,9 +158,11 @@ public sealed class InvoicesController : BaseApiController
 - Events: `PublishAsync()`, handled asynchronously
 - Handlers are plain classes: no interface needed, convention-based
 - All event handlers that do I/O must be idempotent (safe to retry)
-- Domain events are collected on `BaseEntity.DomainEvents` and published by
-  `Infrastructure/Persistence/DomainEventDispatchInterceptor` after `SaveChanges`, then cleared;
-  `IDomainEventGate` suppresses dispatch for bulk writers (see `project.md`)
+- Domain events are collected on `BaseEntity.DomainEvents` and written by
+  `Infrastructure/Persistence/DomainEventDispatchInterceptor` to Wolverine's PostgreSQL outbox
+  (`IDbContextOutbox`) in the same transaction as the change, then cleared: a rollback drops them and a
+  publish failure fails the save. `IDomainEventGate` suppresses dispatch for bulk writers (see
+  "Domain events are dispatched" and "Durable messaging" in `project.md`)
 
 ## Pluggable Interface Rules
 

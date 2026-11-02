@@ -2043,8 +2043,15 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("Error");
 
+                    b.Property<string>("IdempotencyKey")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<DateTimeOffset>("SentAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Subject")
                         .IsRequired()
@@ -2059,9 +2066,19 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("To", "SentAt");
+
+                    b.HasIndex(new[] { "IdempotencyKey" }, "IX_EmailLogs_IdempotencyKey")
+                        .IsUnique()
+                        .HasFilter("\"IdempotencyKey\" IS NOT NULL");
 
                     b.ToTable("EmailLogs");
                 });

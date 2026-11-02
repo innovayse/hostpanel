@@ -824,6 +824,9 @@
   <data name="SendEmailTemplateSlugRequired" xml:space="preserve">
     <value>Նշեք ուղարկվող ձևանմուշը։</value>
   </data>
+  <data name="SendEmailIdempotencyKeyInvalid" xml:space="preserve">
+    <value>Իդեմպոտենտության բանալին պետք է բաղկացած լինի 64 փոքրատառ տասնվեցական նիշից։</value>
+  </data>
   <data name="ProductGroupIdInvalid" xml:space="preserve">
     <value>Նշեք ապրանքախմբի վավեր ID։</value>
   </data>

@@ -97,7 +97,11 @@ A service is terminated in three ways:
 - **Automatically at end of billing cycle** — tick **Auto-Terminate End of Cycle** on the service's Auto-Management tab and optionally set a **Termination Reason**.
 - **Automatically after long suspension** — the **Auto-Terminate Suspended** job terminates services that have been suspended for more than `billing.renewal.terminate_after_suspended_days` days.
 
-When a service is terminated, Hostpanel marks it Terminated first, then removes the hosting account from the panel asynchronously and revokes the SSH keys. If the panel refuses or does not answer, the service stays Terminated and staff receive the `service-termination-failed-admin` email. The next job run retries the panel removal automatically. Panel refusal from a manual terminate returns `SERVICE_TERMINATE_UPSTREAM_FAILED`. An attempt to terminate a service that is already in a terminal state returns `SERVICE_TERMINATE_NOT_ALLOWED`.
+When a service is terminated manually, Hostpanel contacts the panel first. If the panel refuses, it returns `SERVICE_TERMINATE_UPSTREAM_FAILED` and the service remains unchanged — no status change is written. If the panel accepts, the service is set to Terminated and the SSH keys are revoked.
+
+If the async removal of the hosting account fails after the service has been set to Terminated, the daily auto-terminate job retries automatically and staff receive the `service-termination-failed-admin` email.
+
+`SERVICE_TERMINATE_NOT_ALLOWED` is returned when attempting to terminate a service that is already Terminated.
 
 ## Auto-Management settings
 

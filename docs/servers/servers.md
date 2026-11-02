@@ -8,13 +8,13 @@ Go to **Servers** to manage provisioning servers and load-balancing groups. Subt
 
 ## The server list
 
-Servers are listed with the columns **Server Name**, **IP Address**, **Accounts**, **Status**, and **Actions**. When the connection is healthy the status reads "Online · _n_ accounts · _version_".
+Servers are grouped by module in one table per module. Each row shows **Server Name**, **IP Address**, **Accounts**, **Status**, and **Actions**. Click **Edit** on a row to open its settings. When the connection is healthy the status reads "Online · _n_ accounts · _version_".
 
 **Status badges:** Online, Offline, Not tested.
 
 **Row actions:** Test Connection, SSH, Edit, Delete.
 
-**DEFAULT** badge marks the default server for its module, used when a product has no server group and only one module is in use across all servers.
+**DEFAULT** badge marks the default server for its module. It has no effect on server selection today — the selector always picks by fill ratio regardless of this flag.
 
 <Callout type="note">
 Only <strong>CWP7</strong> and <strong>Plesk</strong> are fully supported provisioning modules at this time. The other entries in the Module list (cPanel, DirectAdmin, CentOS, Lukittu, Virtualmin, HyperVm) are stored but do not provision accounts automatically and cannot be tested.
@@ -36,7 +36,7 @@ Click **Add New Server**. The form has three tabs.
 | Datacenter / NOC | e.g. Hetzner, OVH |
 | Max Accounts | Leave blank for unlimited |
 | Server Status Address | Full path to a status page shown on the client portal status monitor |
-| Default server | Mark as the default for this module |
+| Default server | Mark as the default for this module. Has no effect on server selection today |
 | Disable this server | Prevents new accounts being assigned here |
 
 ### Nameservers tab
@@ -93,11 +93,11 @@ In the **Groups** section below the server list, click **Create Group**.
 
 | Fill Type | Label |
 |-----------|-------|
-| LeastFull | Add to the least full server |
-| FillUntilFull | Fill active server until full then switch |
+| LeastFull | Add to the least full server ([#814](https://github.com/innovayse/hostpanel/issues/814)) |
+| FillUntilFull | Fill active server until full then switch ([#814](https://github.com/innovayse/hostpanel/issues/814)) |
 
 <Callout type="warning">
-At the time of writing the server selector does not read the group's fill type. Both options behave as "least full".
+The server selector does not read the group's fill type (tracked in <a href="https://github.com/innovayse/hostpanel/issues/814">#814</a>). Both options currently behave as "least full".
 </Callout>
 
 **How a server is picked:** disabled servers and servers that have reached their account limit are skipped. Among the eligible servers, the one with the lowest fill ratio (accounts ÷ max accounts) wins. Servers with unlimited capacity or an unknown count have a fill ratio of 0. Ties go to the server with the higher account limit; further ties are broken by name.

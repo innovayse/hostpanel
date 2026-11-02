@@ -29,7 +29,7 @@ Go to **Servers**, click a server row, then open the **SSH** tab.
 
 | Field | Notes |
 |-------|-------|
-| SSH Hostname | Hostname clients use to connect (shown to the client) |
+| SSH hostname | Hostname clients use to connect (shown to the client) |
 | SSH Port | Default 22 |
 | Agent Host | Address Hostpanel dials to reach the agent (may differ from the SSH hostname) |
 | Agent SSH Port | Default 22 |
@@ -78,6 +78,13 @@ The installer never touches sshd, the firewall, any VPN, Jailkit, or customer ac
 
 **Pin the host key.** Click **Read Host Key**. Hostpanel connects to the agent without authenticating and reads the fingerprint the server presents. Compare it with what the installer printed; if identical, click **Use This Fingerprint** and save. All future connections that present any other fingerprint are refused.
 
+If **Read Host Key** fails:
+
+| Error code | Meaning |
+|------------|---------|
+| `SSH_AGENT_HOST_UNREACHABLE` | Agent host is wrong, the connection timed out, or the server is down |
+| `SSH_AGENT_PORT_REFUSED` | The agent port actively refused the connection |
+
 </li>
 <li>
 
@@ -89,12 +96,10 @@ The installer never touches sshd, the firewall, any VPN, Jailkit, or customer ac
 
 The agent version is shown as "Agent _version_" or "Agent _version_ (_provider_)". A successful test is required before the server can be enabled. Changing the agent host, port, user, key, or pinned fingerprint clears the test.
 
-If the test fails the reason is shown as "Last check failed: _reason_":
+If the test fails the reason is shown as "Last check failed: _reason_" (`servers.ssh.failures.*`):
 
 | Reason | Meaning |
 |--------|---------|
-| the server could not be reached | Agent host is wrong, the port is blocked, or the server is down (`SSH_AGENT_HOST_UNREACHABLE`) |
-| the agent timed out | Agent responded but took too long (`SSH_AGENT_PORT_REFUSED` / connection-level timeout) |
 | the agent was installed for a different server | Correct host but wrong binding — check the agent host or run this server's install command on it |
 | the agent version is not supported | Agent is too old for this Hostpanel version |
 | the agent failed internally | Agent-side error; check `/var/log/hostpanel-ssh-key-agent.log` |
@@ -106,7 +111,7 @@ If the test fails the reason is shown as "Last check failed: _reason_":
 </li>
 <li>
 
-**Enable.** Toggle **SSH Key Management** on. Enabling is refused if another already-enabled server uses the same agent host and port (`SSH_AGENT_ENDPOINT_IN_USE`). Changing the agent host, port, user, key, or pinned fingerprint clears the test and requires re-testing before re-enabling.
+**Enable.** Toggle **Customers on this server may manage SSH keys** on. Enabling is refused if another already-enabled server uses the same agent host and port (`SSH_AGENT_ENDPOINT_IN_USE`). Changing the agent host, port, user, key, or pinned fingerprint clears the test and requires re-testing before re-enabling.
 
 </li>
 </Steps>
@@ -119,18 +124,18 @@ For disaster recovery, **Advanced** lets you paste an existing private key inste
 
 ## Agent configuration (`/etc/hostpanel-ssh-key-agent/agent.conf`)
 
-The installer writes the base configuration. An administrator can edit it directly on the server.
+The installer writes the base configuration from the chosen profile. An administrator can edit it directly on the server. The defaults below are the profile values written by the installer; the agent's own built-in defaults differ (for example `max_keys` is 50 built-in, 20 in both profiles; `deny_accounts` and `account_check_command` are profile-specific).
 
 <SettingTable :settings="[
-  { name: 'provider', type: 'string', default: '', description: 'Agent profile name, e.g. cwp. Set by the installer; reported on ping.' },
-  { name: 'binding', type: 'string', default: '', description: 'Server record ID from Hostpanel. Set by the installer; checked on Test.' },
+  { name: 'provider', type: 'string', default: 'cwp / generic-linux', description: 'Agent profile name. Set by the installer; reported on ping.' },
+  { name: 'binding', type: 'string', default: '', description: 'UUID of the Hostpanel server record. Set by the installer; checked on Test Agent.' },
   { name: 'min_uid', type: 'number', default: '1000', description: 'Minimum numeric uid a customer account must have. System accounts below this value are always refused.' },
   { name: 'home_root', type: 'string', default: '/home', description: 'Expected parent of every customer home directory. An account whose passwd home is not directly under this path is refused.' },
-  { name: 'deny_accounts', type: 'string', default: 'root,admin,nobody,mysql,postfix,dovecot,named,apache,nginx,hpsshkeys', description: 'Comma-separated account names that are always refused regardless of uid or home.' },
-  { name: 'max_keys', type: 'number', default: '20', description: 'Maximum number of managed keys per account. Attempts to add beyond this return too_many_keys.' },
+  { name: 'deny_accounts', type: 'string', default: 'root,admin,nobody,mysql,postfix,dovecot,named,apache,nginx,hpsshkeys', description: 'Comma-separated account names that are always refused regardless of uid or home. Both profiles add hpsshkeys; the built-in default does not include it.' },
+  { name: 'max_keys', type: 'number', default: '20 (profiles); 50 (built-in)', description: 'Maximum number of managed keys per account. Attempts to add beyond this return too_many_keys.' },
   { name: 'audit_log', type: 'string', default: '/var/log/hostpanel-ssh-key-agent.log', description: 'Root-only file where every add and revoke is recorded with fingerprint (never key material).' },
   { name: 'lock_dir', type: 'string', default: '/run/hostpanel-ssh-key-agent', description: 'Directory for per-account lock files that serialise concurrent operations on the same account.' },
-  { name: 'account_check_command', type: 'string', default: '', description: 'Absolute path of a root-owned helper run as helper <account>. Exit 0 = panel account exists, 1 = not found, anything else = fault.' },
+  { name: 'account_check_command', type: 'string', default: 'set by cwp profile; empty in generic-linux', description: 'Absolute path of a root-owned helper run as helper <account>. Exit 0 = panel account exists, 1 = not found, anything else = fault.' },
   { name: 'check_shadow_lock', type: 'boolean', default: 'true', description: 'A locked password (usermod -L) makes the account account_suspended. !! or * alone is not treated as a lock.' },
   { name: 'ssh_group', type: 'string', default: '', description: 'If set, only members of this group may receive keys. Leave empty when jail_enrol is on.' },
   { name: 'eligible_list', type: 'string', default: '', description: 'Path to a root-owned file, one account per line, that acts as an SSH opt-in list. The file must not be group- or world-writable.' },
@@ -139,7 +144,7 @@ The installer writes the base configuration. An administrator can edit it direct
   { name: 'jail_group', type: 'string', default: 'sftp-ssh', description: 'Group that the customer sshd chroots (used in Match Group / ChrootDirectory). Leave ssh_group empty when jail_enrol is on.' },
   { name: 'jail_sections', type: 'string', default: 'basicshell,editors,extendedshell,netutils,terminfo', description: 'jk_init sections copied into a new jail.' },
   { name: 'jail_shell', type: 'string', default: '/bin/bash', description: 'Login shell set when a customer is enrolled into the jail.' },
-  { name: 'jail_extras', type: 'string', default: '/usr/bin/uname,/usr/bin/id,/usr/bin/hostname,/usr/bin/rsync,/usr/bin/tar,/usr/bin/gzip,/usr/bin/unzip', description: 'Extra paths copied into each jail with jk_cp on every enrolment. Missing paths are skipped. Lets CI/CD deploy sites over SSH.' },
+  { name: 'jail_extras', type: 'string', default: '/usr/bin/uname,/usr/bin/id,/usr/bin/hostname,/usr/bin/dircolors,/usr/bin/rsync,/usr/bin/tar,/usr/bin/gzip,/usr/bin/unzip,/etc/bashrc,/etc/profile.d/colorls.sh,/etc/DIR_COLORS', description: 'Extra paths copied into each jail with jk_cp on every enrolment. Missing paths are skipped. Includes dircolors and shell profile entries needed by bash login; rsync, tar, gzip and unzip let CI/CD deploy sites over SSH.' },
   { name: 'systemd_unit_dir', type: 'string', default: '/etc/systemd/system', description: 'Directory where the home bind-mount systemd unit is written for each enrolled account.' }
 ]" />
 
@@ -177,9 +182,9 @@ These codes come from the agent itself and appear in Hostpanel's error responses
 
 ## Uninstall
 
-Before uninstalling the agent, revoke all managed keys from Hostpanel so clients cannot continue logging in with orphaned keys:
+Before uninstalling the agent, revoke all managed keys so clients cannot continue logging in with orphaned keys. There is no button in the admin panel yet — use the admin API directly:
 
-1. In Hostpanel, call `POST /api/admin/servers/{id}/ssh-keys/revoke-all` or use the admin API directly. This removes all managed keys from the server.
+1. Call `POST /api/admin/servers/{id}/ssh-keys/revoke-all`. This removes all managed keys from the server.
 2. On the server, in the unpacked installer bundle, run:
 
 ```bash

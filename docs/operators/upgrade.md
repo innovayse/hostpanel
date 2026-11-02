@@ -27,23 +27,24 @@ ledger rows share the same payment method and reference the migration stops and
 the upgrade fails. Run the check script before upgrading — an empty result means
 the migration will run cleanly.
 
-The script ships with the release. Fetch it from the release tag (replace `v1.x.y`
-with the version you are upgrading to):
+The script is included starting from the release that adds the unique index
+(the first release after v0.3.1). Fetch it from that release tag (replace
+`v1.0.0` with the version you are upgrading to):
 
 ```bash
 curl -fsSL \
-  https://raw.githubusercontent.com/innovayse/hostpanel/v1.x.y/scripts/check-duplicate-gateway-payments.sh \
-  | sh
+  https://raw.githubusercontent.com/innovayse/hostpanel/v1.0.0/scripts/check-duplicate-gateway-payments.sh \
+  | sh -s -- hostpanel-db
 ```
 
-The script accepts an optional container name argument (default: `hostpanel-db`).
-If the database container has a different name pass it as the first argument.
+The first argument is the database container name (default: `hostpanel-db`).
+Pass a different name if your container is named otherwise.
 
 If the server has no outbound internet access, copy the script from the repository
 and run it over SSH:
 
 ```bash
-ssh user@your-server 'sh -s' < scripts/check-duplicate-gateway-payments.sh
+ssh user@your-server 'sh -s -- hostpanel-db' < scripts/check-duplicate-gateway-payments.sh
 ```
 
 If the script lists any rows, give each a distinct reference (or delete the

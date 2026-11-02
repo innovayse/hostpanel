@@ -47,14 +47,15 @@ docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
   sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' \
   > pre-rollback-$(date +%Y-%m-%d-%H%M%S).sql
 
-# Drop and recreate, then load the pre-upgrade dump:
+# Drop and recreate, then load the pre-upgrade dump
+# (replace the filename with the dated file from upgrade step 1):
 docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
   sh -c 'dropdb -U "$POSTGRES_USER" "$POSTGRES_DB" && \
          createdb -U "$POSTGRES_USER" "$POSTGRES_DB"'
 
 docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
   sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction \
-         -U "$POSTGRES_USER" "$POSTGRES_DB"' < pre-upgrade-dump.sql
+         -U "$POSTGRES_USER" "$POSTGRES_DB"' < pre-upgrade-2024-01-15-103000.sql
 ```
 
 **4. Pull the old images and restart the stack:**

@@ -111,13 +111,19 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
             if (_keepsProductionAdapters)
             {
                 services.AddSingleton(new ServiceRegistrationSnapshot(services.ToList()));
-                return;
             }
 
-            // Releases the listening agents of the host when its container is disposed (see the type); registered
-            // last of the composition root's services, so it is disposed before the Wolverine runtime it releases
-            // the listeners of.
+            // Releases the listening agents of the host when its container is disposed (see the type). The release
+            // takes the Wolverine runtime in its constructor, so the container constructs the runtime first and
+            // disposes the release first: the dependency, not the registration order, decides it. Registered after
+            // the snapshot, so the guards that judge production registrations never see it; the hosts that keep
+            // the production adapters start Wolverine as well and are released the same way.
             services.AddSingleton<IHostedService, WolverineListenerRelease>();
+
+            if (_keepsProductionAdapters)
+            {
+                return;
+            }
 
             // Replace the real registrar provider with a no-op stub so tests never hit the network.
             services.RemoveAll<IRegistrarProvider>();
@@ -261,13 +267,21 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
     /// service providers alive after 20 classes, and a managed heap (after a full collection) of 3.9 GB at the
     /// 65th (issue 793). The pool itself is small and stays; the host it used to drag along is released.
     /// </summary>
-    /// <param name="connectionString">The connection string of this factory's database; the host uses the same one, so it finds this pool.</param>
+    /// <param name="connectionString">
+    /// The connection string of this factory's database. The host reads exactly this string
+    /// (<c>ConnectionStrings:DefaultConnection</c>) and builds no <c>NpgsqlDataSource</c> of its own: EF Core's
+    /// <c>UseNpgsql(connectionString)</c> and the job lease both go through the static per-string pool, so the
+    /// host finds the pool opened here.
+    /// </param>
     /// <returns>A task that completes when the pool has served one connection.</returns>
     private static async Task OpenPoolWithoutTheHostContextAsync(string connectionString)
     {
         Task opening;
 
         // The flow is only suppressed while the task starts; awaiting inside the block would end it on another thread.
+        // Task.Run is not there to make the call asynchronous (OpenAsync already is): it hands the work to a
+        // thread-pool thread, so the connection and the pool's timer are created by a task that starts from the
+        // empty context the suppressed flow leaves, not from a continuation of the caller's.
         using (ExecutionContext.SuppressFlow())
         {
             opening = Task.Run(async () =>

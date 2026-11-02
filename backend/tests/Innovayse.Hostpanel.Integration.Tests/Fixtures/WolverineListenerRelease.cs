@@ -4,13 +4,17 @@ using Wolverine.Runtime;
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
 /// <summary>
-/// Disposes the Wolverine listening agents of a test host when its container is disposed. Every listening agent
-/// (the local queues included) starts a back pressure timer, a <c>System.Timers.Timer</c> that nothing stops
-/// when the host does; the timer queue is static, so each stopped host stayed reachable through its timers,
-/// firing every few seconds for the rest of the run, with its container, its Wolverine runtime and everything
-/// they hold: 38 runtimes alive after 70 hosts, and a process killed at 6 GiB before the shard finished
-/// (issue 793). Disposing the agent disposes its timer.
+/// Disposes the Wolverine listening agents of a test host when its container is disposed, so each listener
+/// (the local queues included) and the back pressure timer it owns are released with the host and not left to
+/// the runtime's own disposal.
 /// </summary>
+/// <remarks>
+/// Measured on the heavy integration shard (issue 793), shard 3 of the CI matrix: with this release it completes
+/// inside the 6 GiB cap, without it the test process reaches about 5.6 GB, throws <see cref="OutOfMemoryException"/>
+/// and 178 tests fail. A test that tracks three disposed hosts with weak references stays green without it, so
+/// that test does not prove this class is needed; the shard run does. The cause of that difference is not
+/// established here, and the type makes no claim about what keeps a stopped host reachable.
+/// </remarks>
 internal sealed class WolverineListenerRelease : IHostedService, IAsyncDisposable
 {
     /// <summary>The runtime whose listening agents are released.</summary>

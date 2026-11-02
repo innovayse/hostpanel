@@ -85,7 +85,10 @@ repositories. The departures are short:
   whose holder crashed expires. On startup `RecurringJobs.StartAsync` runs a job at once when its last success
   is older than its period, and otherwise schedules its next regular run. Every hour and interval lives in
   `ScheduledJobsOptions` (section `ScheduledJobs`), read by the startup services and the handlers alike; a
-  scheduled run is in memory, so a host that is stopping ends the chain and the next start catches up.
+  scheduled run is in memory, so a host that is stopping ends the chain and the next start catches up. It stays in
+  memory although every other local queue is durable (see "Durable messaging"): the chain re-schedules itself after
+  each pass and every start re-creates it from `JobRuns`, so a scheduled run that survived a restart would be
+  scheduled a second time and each restart would add a chain.
   `DispatchFulfilmentCron` runs every 30 seconds and delivers the due `FulfilmentRecords` to their plugins
   (`FulfilmentDispatcher`, claim with a lease, back-off, paid then refunded then lapsed per invoice and plugin);
   `DispatchFulfilmentNow` is one extra pass of the same job under the same lease, scheduling nothing, for the
@@ -569,6 +572,41 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   host that keeps the production container (`IntegrationTestFactory.WithProductionAdapters`, no test double), and
   walks the production registrations for a type, constructor or constructor parameter that is not public; the
   test host's public fakes would otherwise hide a production adapter that is not.
+- **Durable messaging.** Messages are persisted in PostgreSQL (`opts.PersistMessagesWithPostgresql`) in
+  Wolverine's own schema `wolverine` (incoming, outgoing, dead-letter and node tables, lower-case names that are
+  Wolverine's and exempt as framework-owned). The connection string is `ConnectionStrings:DefaultConnection`, read
+  while Wolverine is configured; a missing one refuses startup with the key's name. The schema is created and
+  updated by Wolverine at host start (`AutoBuildMessageStorageOnStartup = CreateOrUpdate`, set explicitly), in
+  every environment including `Testing`, and **not by an EF migration**: mapping Wolverine's tables into
+  `AppDbContext` would make the EF model own a framework schema whose shape changes with the Wolverine version and
+  put framework tables under `ModelDiffBaselineTests` and `DatabaseIdentifierNamingTests`. EF migrations run as
+  before. `opts.UseEntityFrameworkCoreTransactions()` registers the `IDbContextOutbox` the domain-event interceptor
+  uses, **without `Policies.AutoApplyTransactions()`**: that policy would add a second `SaveChangesAsync` and an
+  explicit transaction around every handler that takes the context, changing the unit of work of handlers that
+  already save themselves (some more than once on purpose), while the interceptor's outbox already covers every
+  save, inside a handler or not (startup and hosted services, seeders). `opts.Policies.UseDurableLocalQueues()`
+  makes every local queue durable, with one exception: `IRecurringJob` messages and `ResetDemoDataCommand` go to
+  the buffered in-memory queue `recurring-jobs`, because those chains re-schedule themselves and are re-created on
+  every start, so a durable scheduled run would add a chain per restart (scheduled messages on a buffered queue stay
+  in memory; `AlwaysMakeScheduledMessagesDurable` is left off). Failures on a queued chain follow
+  `DurableDeliveryRetryPolicy` (`Shared/Infrastructure`, beside `RecurringJobTimeoutPolicy`), which applies only to
+  chains delivered from a queue: not `IRecurringJob`, and a handler that returns no response. Request and response
+  chains reached by `InvokeAsync` are left out on purpose, because Wolverine would run the cooldown retries inline
+  there too and a controller's command must answer once. A `ValidationException` or `DomainException` goes straight
+  to the dead letters (a retry changes nothing); anything else is retried with cooldowns of 1 s, 5 s and 30 s, then
+  rescheduled durably after 5 min, 30 min and 2 h (this survives a restart), then dead-lettered in
+  `wolverine`'s dead-letter table. The values are documented constants on the policy, structure rather than
+  per-tier configuration. The durability mode is the default `Balanced`: a rolling deploy briefly runs two
+  containers on one database, and `Balanced` assigns inbox ownership per node where `Solo` would let both recover
+  the same envelopes. Every handler reached through a durable queue must be idempotent on its own, because a retry
+  replays the whole chain and all handlers of one event share one chain. The demo reset truncates the EF model's
+  tables only and leaves the `wolverine` schema alone: truncating the inbox under a running durability agent would
+  break its ownership bookkeeping, and a durable message about a truncated row finds nothing. The integration test
+  factory supplies the connection string with `UseSetting`, not `ConfigureAppConfiguration`, because Wolverine
+  reads it from the `WebApplicationBuilder` before `Build()`, and configuration added through
+  `ConfigureAppConfiguration` arrives only after it. Wolverine builds its schema in each factory's own database at
+  host start. A test change that adds a new top-level folder in `Integration.Tests/` still needs that folder added
+  to a shard (see "Tests").
 - **No identity on a message** (`NoIdentityOnMessagesTests`); handlers read it from
   `ICurrentUserService` (`Shared/MultiTenancy/`).
 - **Client portal permissions are enforced on the server, per action.** Every action behind `Policies.Client` carries
@@ -618,10 +656,21 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   many modules' tables directly, because they are a bulk import of legacy data across modules that runs as
   one job with its own log; the reason is written on `IMigrationEntityImporter` and the entry is marked
   `CrossModuleAccess.Writer` in `CrossModuleReadModels`. No other writer joins it without an owner decision.
-- **Domain events are dispatched.** `BaseEntity.DomainEvents` collects them and
-  `Infrastructure/Persistence/DomainEventDispatchInterceptor.cs` publishes them through Wolverine
-  after `SaveChanges` (inside an explicit transaction: on its commit, dropped on rollback), then clears them. `IDomainEventGate` suppresses dispatch for bulk writers
-  (`MigrationPullWorker`, `DevDataSeeder`; tests use `Fixtures/SuppressedDomainEventGate`).
+- **Domain events are dispatched through the outbox, in the same transaction as the change.** `BaseEntity.DomainEvents`
+  collects them and `Infrastructure/Persistence/DomainEventDispatchInterceptor.cs` writes them to Wolverine's
+  PostgreSQL outbox (`IDbContextOutbox`, enrolled on the context) on the context's current transaction, so an event
+  exists if and only if its state change committed. When a tracked entity has pending events
+  (`BaseEntity.HasDomainEvents`, so a deferred factory is not evaluated before the insert assigns ids) and no
+  transaction is open, the interceptor begins one and owns it: after the save it takes and clears the events,
+  publishes them, commits and then flushes them to the local durable queues (if the process dies between the commit
+  and the flush, the durability agent recovers them from the stored envelopes). Inside a caller's explicit transaction
+  the events are flushed when that transaction commits and dropped with it on a rollback. A failed save rolls back an
+  owned transaction and leaves the events on the entity, so a retried save still carries them. A publish failure
+  throws and fails the save instead of being logged afterwards: the write and its announcement are one unit.
+  Synchronous `SaveChanges` is not intercepted; nothing saves synchronously. `IDomainEventGate` is unchanged: it
+  suppresses dispatch for bulk writers (`MigrationPullWorker`, `DevDataSeeder`; tests use
+  `Fixtures/SuppressedDomainEventGate`), whose events are taken and discarded with no transaction opened and nothing
+  written.
   `DevDataSeeder` reads the passwords of the accounts it creates from `DevDataSeederOptions` (section `DevDataSeed`, both required, no default in code or `appsettings.json`). The dev compose file supplies them as `DevDataSeed__AdminPassword` / `DevDataSeed__ClientPassword` from `DEV_SEED_ADMIN_PASSWORD` / `DEV_SEED_CLIENT_PASSWORD` (documented dev defaults in `docker/.env.example`); no `appsettings.Development.json` is kept, it is git-ignored.
   `BaseEntity.AddDomainEvent(Func<IDomainEvent>)` defers building an event that needs the id
   until after the save. `ClientService.Suspend/Unsuspend/Terminate` take `hostingAlreadyUpdated`
@@ -802,7 +851,7 @@ feature does not exist is not kept. The decisions:
 
 ## Stack
 
-.NET 9 · Wolverine 5.41.0 · EF Core 9 + Npgsql 9 · PostgreSQL 17 · ASP.NET Identity (local
+.NET 9 · Wolverine 5.41.0 (WolverineFx.Postgresql, WolverineFx.EntityFrameworkCore) · EF Core 9 + Npgsql 9 · PostgreSQL 17 · ASP.NET Identity (local
 mode) + JWT bearer · `Innovayse.Auth` (cookie session for the admin SPA, sso builds only) · SkiaSharp (branding images) ·
 Serilog · Scalar + Swashbuckle · Mapster · Stripe.net · MailKit · Otp.NET · Fluid.Core ·
 DnsClient · Redis (sessions + data-protection key ring) · RabbitMQ · xUnit + FluentAssertions +
@@ -1377,8 +1426,9 @@ Never spread one of these, and never restructure as a side effect of a feature.
   `RegisterHandler` publishes four arguments and stops, so `IpAddress`,
   `UserAgent`, `DeviceType`, `OperatingSystem` and `Browser` arrive null and `Client.Create`
   writes five mapped, migrated columns from them. Finish it by capturing all five from the
-  request, not by trimming the record. Wolverine runs with discovery only — no broker — so the
-  event never leaves the process.
+  request, not by trimming the record. Wolverine runs with no broker, so the event never leaves
+  the process; it is persisted in the `wolverine` schema like every other queued message (see "Durable
+  messaging").
 - **Migration imports go through an importer registry.** `IMigrationEntityImporter` is the one
   contract: an importer names its `MigrationEntityType` in `EntityType` and imports that kind in
   `ImportAsync`. Every importer is registered in DI; adding an entity kind means adding an importer

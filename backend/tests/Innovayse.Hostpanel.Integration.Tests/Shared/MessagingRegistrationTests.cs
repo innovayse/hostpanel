@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.API.Extensions;
 using Innovayse.Hostpanel.Application.Billing.Commands.CompleteGatewayPayment;
 using Innovayse.Hostpanel.Application.Billing.Commands.ReconcileGatewayPaymentsCron;
+using Innovayse.Hostpanel.Domain.Clients.Events;
 using Innovayse.Hostpanel.Shared.Contracts.Interfaces;
 using Innovayse.Hostpanel.Shared.Settings;
 using JasperFx.CodeGeneration;
@@ -17,8 +18,8 @@ namespace Innovayse.Hostpanel.Integration.Tests.Shared;
 
 /// <summary>
 /// <see cref="MessagingRegistration"/>: how Wolverine gets its handler code in each environment, the
-/// execution timeout the chains of the recurring jobs get in place of the one-minute default, and the
-/// refusal of service location that every chain is built under.
+/// execution timeout the chains of the recurring jobs get in place of the one-minute default, the durable
+/// retry rules only queued chains get, and the refusal of service location that every chain is built under.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class MessagingRegistrationTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
@@ -71,6 +72,36 @@ public sealed class MessagingRegistrationTests(IntegrationTestFactory factory) :
 
         chains.Single(c => c.MessageType == typeof(CompleteGatewayPaymentCommand)).ExecutionTimeoutInSeconds
             .Should().NotBe((int)lease.TotalSeconds);
+    }
+
+    /// <summary>
+    /// A chain delivered from a queue, such as a domain event's, gets the durable retry rules, so a
+    /// handler that throws is retried and finally dead-lettered rather than lost.
+    /// </summary>
+    [Fact]
+    public void QueuedEventChain_HasTheDurableRetryRules()
+    {
+        var chains = factory.Services.GetRequiredService<HandlerGraph>().Chains;
+
+        chains.Single(c => c.MessageType == typeof(ClientCreatedEvent)).Failures
+            .Should().NotBeEmpty("an event chain is delivered from a durable queue and must be retried on failure");
+    }
+
+    /// <summary>
+    /// A command a caller invokes and waits on (its handler answers a <c>Result</c>) gets no retry rules,
+    /// because Wolverine would replay it inline and the caller must be answered once; nor does a recurring
+    /// job, whose next pass is its retry.
+    /// </summary>
+    /// <param name="messageType">The message whose chain is inspected.</param>
+    [Theory]
+    [InlineData(typeof(CompleteGatewayPaymentCommand))]
+    [InlineData(typeof(ReconcileGatewayPaymentsCronCommand))]
+    public void InvokedAndRecurringChains_HaveNoRetryRules(Type messageType)
+    {
+        var chains = factory.Services.GetRequiredService<HandlerGraph>().Chains;
+
+        chains.Single(c => c.MessageType == messageType).Failures
+            .Should().BeEmpty("{0} is answered to a waiting caller or re-run by its own schedule", messageType.Name);
     }
 
     /// <summary>

@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Application.Provisioning.Common;
 using Innovayse.Hostpanel.Application.Provisioning.Common.Enums;
 using Innovayse.Hostpanel.Application.Services.Commands.RestoreServiceSshKeys;
 using Innovayse.Hostpanel.Domain.Provisioning.Events;
+using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -17,6 +18,9 @@ namespace Innovayse.Hostpanel.Application.Provisioning.Events;
 /// <remarks>
 /// The keys are restored here a second time (the service's own unsuspension already asked) because
 /// an agent refuses keys for a locked account, and the two unsuspensions are not ordered.
+/// The event arrives through a durable queue, so it can be handled late: redelivered after a restart, or
+/// retried behind a later suspension of the same service. The panel is therefore asked only while the
+/// service is still active; a late unsuspension never unlocks an account the platform shows as suspended.
 /// </remarks>
 public sealed class ServiceUnsuspendedHandler
 {
@@ -55,7 +59,8 @@ public sealed class ServiceUnsuspendedHandler
     public async Task HandleAsync(ServiceUnsuspendedEvent evt, CancellationToken ct)
     {
         var service = await _context.ClientServices.AsNoTracking().FirstOrDefaultAsync(s => s.Id == evt.ServiceId, ct);
-        if (service is null)
+        // Gone (removed, or the demo reset truncated it) or no longer active: this delivery is stale.
+        if (service is null || service.Status is not ServiceStatus.Active)
         {
             return;
         }

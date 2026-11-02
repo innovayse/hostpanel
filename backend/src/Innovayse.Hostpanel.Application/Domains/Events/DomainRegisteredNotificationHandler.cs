@@ -53,6 +53,22 @@ public sealed class DomainRegisteredNotificationHandler
     {
         try
         {
+            var domain = await _context.Domains
+                .IncludeChildren()
+                .FirstOrDefaultAsync(x => x.Id == evt.DomainId, ct);
+
+            // The event arrives through a durable queue, so it can arrive after the demo reset truncated
+            // the tables and reused the ids: a domain that is gone or now belongs to someone else is not
+            // the one this mail is about, and the client the event names may be a different account now.
+            if (domain is null || domain.ClientId != evt.ClientId)
+            {
+                _logger.LogInformation(
+                    "Domain {DomainId} of client {ClientId} no longer exists; no domain-registered notification is sent.",
+                    evt.DomainId,
+                    evt.ClientId);
+                return;
+            }
+
             var client = await _bus.FindClientBriefAsync(evt.ClientId, withEmail: true, ct);
             if (client is null)
             {
@@ -73,15 +89,11 @@ public sealed class DomainRegisteredNotificationHandler
                 return;
             }
 
-            var domain = await _context.Domains
-                .IncludeChildren()
-                .FirstOrDefaultAsync(x => x.Id == evt.DomainId, ct);
-
             var data = new DomainRegisteredTemplateModel(new RegisteredDomainTemplateData(
                 evt.DomainId,
                 evt.Name,
-                domain?.Registrar,
-                domain?.ExpiresAt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
+                domain.Registrar,
+                domain.ExpiresAt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
 
             await _bus.InvokeAsync(new SendEmailCommand(email, client.Language, "domain-registered", data, new ContactCopy(evt.ClientId, ContactNotification.Domain)), ct);
 

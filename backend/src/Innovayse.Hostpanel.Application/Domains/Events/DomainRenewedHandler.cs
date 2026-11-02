@@ -64,7 +64,20 @@ public sealed class DomainRenewedHandler
             .IncludeChildren()
             .FirstOrDefaultAsync(x => x.Id == evt.DomainId, ct);
 
-        if (domain?.LinkedServiceId is { } linkedServiceId)
+        // The event arrives through a durable queue, so it can arrive after the demo reset truncated
+        // the tables and reused the ids: a domain that is gone or now belongs to someone else is not the
+        // one that was renewed, and lifting or mailing on its behalf would touch an unrelated account.
+        // A plain redelivery is harmless: the lift only clears an expiry suspension that is still there.
+        if (domain is null || domain.ClientId != evt.ClientId)
+        {
+            _logger.LogInformation(
+                "Domain {DomainId} of client {ClientId} no longer exists; the renewal is not acted on.",
+                evt.DomainId,
+                evt.ClientId);
+            return;
+        }
+
+        if (domain.LinkedServiceId is { } linkedServiceId)
         {
             await TryUnsuspendLinkedServiceAsync(evt.DomainId, linkedServiceId, ct);
         }
@@ -110,10 +123,10 @@ public sealed class DomainRenewedHandler
     /// Failures are logged as warnings and do not propagate.
     /// </summary>
     /// <param name="evt">The domain renewed event.</param>
-    /// <param name="domain">The domain entity, or <see langword="null"/> if not found.</param>
+    /// <param name="domain">The renewed domain, already checked to belong to the event's client.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task representing the asynchronous send operation.</returns>
-    private async Task SendNotificationAsync(DomainRenewedEvent evt, RegisteredDomain? domain, CancellationToken ct)
+    private async Task SendNotificationAsync(DomainRenewedEvent evt, RegisteredDomain domain, CancellationToken ct)
     {
         try
         {
@@ -131,7 +144,7 @@ public sealed class DomainRenewedHandler
 
             var data = new DomainRenewedTemplateModel(new RenewedDomainTemplateData(
                 evt.DomainId,
-                domain?.Name,
+                domain.Name,
                 evt.NewExpiresAt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
 
             await _bus.InvokeAsync(new SendEmailCommand(email, client.Language, "domain-renewed", data, new ContactCopy(evt.ClientId, ContactNotification.Domain)), ct);

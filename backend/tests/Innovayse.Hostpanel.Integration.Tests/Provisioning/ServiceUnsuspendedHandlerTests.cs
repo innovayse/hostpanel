@@ -38,6 +38,34 @@ public sealed class ServiceUnsuspendedHandlerTests(IntegrationTestFactory factor
     }
 
     /// <summary>
+    /// An unsuspension delivered late, after the service was suspended again (a redelivery after a restart,
+    /// or a retry behind the new suspension), leaves the panel alone: the account the platform shows as
+    /// suspended is not unlocked.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task ServiceUnsuspended_DeliveredAfterTheServiceIsSuspendedAgain_CallsNothingAsync()
+    {
+        var provider = new RecordingProvisioningProvider();
+        var host = ProvisioningTestSeeds.WithRecordingProvider(factory, provider);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+
+        var (clientId, _, serviceId) = await ProvisioningTestSeeds.SeedActiveServiceAsync(context);
+        using (scope.ServiceProvider.GetRequiredService<IDomainEventGate>().Suppress())
+        {
+            var service = await context.ClientServices.FindAsync([serviceId], CancellationToken.None);
+            service!.Suspend(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true);
+            await context.SaveChangesAsync(CancellationToken.None);
+        }
+
+        await bus.InvokeAsync(new ServiceUnsuspendedEvent(serviceId, clientId, DateTimeOffset.UtcNow), CancellationToken.None);
+
+        Assert.Empty(provider.Unsuspended);
+    }
+
+    /// <summary>
     /// When the panel answers <c>Updated</c>, the handler restores the service's suspended SSH keys on the
     /// server they were issued on, under the same ids.
     /// </summary>

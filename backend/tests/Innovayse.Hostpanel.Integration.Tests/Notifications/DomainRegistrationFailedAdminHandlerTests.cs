@@ -34,4 +34,49 @@ public sealed class DomainRegistrationFailedAdminHandlerTests(IntegrationTestFac
         var toAdmin = Assert.Single(emailSender.Sent, m => m.To == NotificationsTestSeeds.AdminEmail);
         Assert.NotNull(toAdmin);
     }
+
+    /// <summary>
+    /// With neither staff address configured the admin alert is skipped without throwing, so the chain the
+    /// client handler shares is not retried: the owning client is mailed exactly once and nothing else is sent.
+    /// </summary>
+    [Fact]
+    public async Task DomainRegistrationFailed_WithNoStaffAddress_MailsOnlyTheClientOnceAsync()
+    {
+        var emailSender = new FakeEmailSender();
+        var host = EventHandlerTestHost.WithFakeRelay(factory, emailSender);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+
+        var (client, email) = await EventHandlerTestHost.SeedIdentityClientAsync(scope.ServiceProvider, context, "notification-event");
+        await NotificationsTestSeeds.EnsureTemplateAsync(context, "domain-registration-failed-admin", "Domain registration failed");
+        await NotificationsTestSeeds.EnsureTemplateAsync(context, "domain-registration-failed", "Your domain registration failed");
+
+        await bus.InvokeAsync(
+            new DomainRegistrationFailedEvent(client.Id, "example.test", 1, "registrar rejected") { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+
+        var only = Assert.Single(emailSender.Sent);
+        Assert.Equal(email, only.To);
+    }
+
+    /// <summary>With only the contact inbox configured the admin alert falls back to it, once.</summary>
+    [Fact]
+    public async Task DomainRegistrationFailed_WithOnlyContactAddress_AlertsTheContactInboxOnceAsync()
+    {
+        const string contactEmail = "contact-fallback@example.test";
+        var emailSender = new FakeEmailSender();
+        var host = EventHandlerTestHost.WithFakeRelay(factory, emailSender, contactEmail: contactEmail);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+
+        var (client, _) = await EventHandlerTestHost.SeedIdentityClientAsync(scope.ServiceProvider, context, "notification-event");
+        await NotificationsTestSeeds.EnsureTemplateAsync(context, "domain-registration-failed-admin", "Domain registration failed");
+        await NotificationsTestSeeds.EnsureTemplateAsync(context, "domain-registration-failed", "Your domain registration failed");
+
+        await bus.InvokeAsync(
+            new DomainRegistrationFailedEvent(client.Id, "example.test", 1, "registrar rejected") { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+
+        Assert.Single(emailSender.Sent, m => m.To == contactEmail);
+    }
 }

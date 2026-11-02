@@ -81,4 +81,33 @@ public sealed class TicketClosedHandlerTests(IntegrationTestFactory factory) : I
 
         Assert.Empty(emailSender.Sent);
     }
+
+    /// <summary>
+    /// A late copy of the event naming a ticket that is gone or belongs to another client (the demo reset
+    /// reused the ids) does not mail the client the event names.
+    /// </summary>
+    [Fact]
+    public async Task TicketClosed_ForATicketThatIsNotTheClients_DoesNotSendAsync()
+    {
+        var emailSender = new FakeEmailSender();
+        var host = EventHandlerTestHost.WithFakeRelay(factory, emailSender);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+
+        var (client, _) = await EventHandlerTestHost.SeedIdentityClientAsync(scope.ServiceProvider, context, "ticket-notify", "Jane", "Doe");
+        var (stranger, _) = await EventHandlerTestHost.SeedIdentityClientAsync(scope.ServiceProvider, context, "ticket-notify-stranger");
+        var departmentId = await SupportTestSeeds.SeedDepartmentAsync(context);
+        var ticket = Ticket.Create(stranger.Id, "Help", "Something's broken", departmentId, TicketPriority.Medium, DateTimeOffset.UtcNow);
+        using (scope.ServiceProvider.GetRequiredService<IDomainEventGate>().Suppress())
+        {
+            context.Tickets.Add(ticket);
+            await context.SaveChangesAsync(CancellationToken.None);
+        }
+
+        await bus.InvokeAsync(new TicketClosedEvent(ticket.Id, client.Id) { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+        await bus.InvokeAsync(new TicketClosedEvent(int.MaxValue, client.Id) { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+
+        Assert.Empty(emailSender.Sent);
+    }
 }

@@ -25,6 +25,7 @@ public sealed class ServiceSuspendedHandlerTests(IntegrationTestFactory factory)
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var (clientId, _, serviceId) = await ProvisioningTestSeeds.SeedActiveServiceAsync(context);
+        await SuspendQuietlyAsync(scope.ServiceProvider, context, serviceId);
 
         await bus.InvokeAsync(new ServiceSuspendedEvent(serviceId, clientId, "non-payment", DateTimeOffset.UtcNow), CancellationToken.None);
 
@@ -52,5 +53,63 @@ public sealed class ServiceSuspendedHandlerTests(IntegrationTestFactory factory)
         await bus.InvokeAsync(new ServiceSuspendedEvent(serviceId, clientId, "non-payment", DateTimeOffset.UtcNow), CancellationToken.None);
 
         Assert.Empty(provider.Suspended);
+    }
+
+    /// <summary>
+    /// A suspension delivered late, after the service was unsuspended again (a redelivery after a restart,
+    /// or a retry behind the unsuspension), leaves the panel alone: the account the platform shows as
+    /// active is not locked.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task ServiceSuspended_DeliveredAfterTheServiceIsActiveAgain_CallsNothingAsync()
+    {
+        var provider = new RecordingProvisioningProvider();
+        var host = ProvisioningTestSeeds.WithRecordingProvider(factory, provider);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+
+        var (clientId, _, serviceId) = await ProvisioningTestSeeds.SeedActiveServiceAsync(context);
+
+        await bus.InvokeAsync(new ServiceSuspendedEvent(serviceId, clientId, "non-payment", DateTimeOffset.UtcNow), CancellationToken.None);
+
+        Assert.Empty(provider.Suspended);
+    }
+
+    /// <summary>
+    /// A suspension delivered after its service's row is gone, as after the demo reset truncated it,
+    /// ends quietly without calling the panel.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task ServiceSuspended_ForAServiceThatNoLongerExists_CallsNothingAsync()
+    {
+        var provider = new RecordingProvisioningProvider();
+        var host = ProvisioningTestSeeds.WithRecordingProvider(factory, provider);
+        using var scope = host.Services.CreateScope();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+
+        await bus.InvokeAsync(new ServiceSuspendedEvent(int.MaxValue, 1, "non-payment", DateTimeOffset.UtcNow), CancellationToken.None);
+
+        Assert.Empty(provider.Suspended);
+    }
+
+    /// <summary>
+    /// Moves the service to suspended without raising its events, as the suspension that published the
+    /// event under test already did.
+    /// </summary>
+    /// <param name="services">The test scope's services, for the event gate.</param>
+    /// <param name="context">The data context the service was seeded through.</param>
+    /// <param name="serviceId">The service to suspend.</param>
+    /// <returns>A task that completes once the suspension is saved.</returns>
+    private static async Task SuspendQuietlyAsync(IServiceProvider services, IHostpanelDbContext context, int serviceId)
+    {
+        using (services.GetRequiredService<IDomainEventGate>().Suppress())
+        {
+            var service = await context.ClientServices.FindAsync([serviceId], CancellationToken.None);
+            service!.Suspend(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true);
+            await context.SaveChangesAsync(CancellationToken.None);
+        }
     }
 }

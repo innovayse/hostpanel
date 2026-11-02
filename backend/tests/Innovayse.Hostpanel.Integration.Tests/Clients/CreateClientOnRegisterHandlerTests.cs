@@ -53,4 +53,21 @@ public sealed class CreateClientOnRegisterHandlerTests(IntegrationTestFactory fa
         var clients = await db.Clients.AsNoTracking().Where(c => c.UserId == subject.UserId).ToListAsync();
         clients.Should().ContainSingle().Which.FirstName.Should().Be("First");
     }
+
+    /// <summary>
+    /// A delivery for an account that no longer exists (the demo reset truncated it after the event was
+    /// queued) creates no client row pointing at nobody.
+    /// </summary>
+    [Fact]
+    public async Task ClientRegistered_ForAnAccountThatNoLongerExists_CreatesNoClientAsync()
+    {
+        var userId = Guid.NewGuid().ToString();
+        using var scope = factory.Services.CreateScope();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+
+        await bus.InvokeAsync(new ClientRegisteredIntegrationEvent(userId, $"gone-{Guid.NewGuid():N}@example.test", "Gone", "Account"));
+
+        var db = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await db.Clients.AsNoTracking().AnyAsync(c => c.UserId == userId)).Should().BeFalse();
+    }
 }

@@ -67,6 +67,8 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
     <PackageReference Include="WolverineFx" />
     <PackageReference Include="WolverineFx.Postgresql" />
+    <!-- Persistence/DomainEventDispatchInterceptor enrolls the context in IDbContextOutbox. -->
+    <PackageReference Include="WolverineFx.EntityFrameworkCore" />
   </ItemGroup>
   <ItemGroup>
     <!-- Invoice PDF fonts, read by Pdf/PdfFonts.cs. The production image has no system fonts. -->

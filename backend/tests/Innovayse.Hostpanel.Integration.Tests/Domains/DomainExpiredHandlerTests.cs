@@ -1,8 +1,8 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Domains.Events;
 using Innovayse.Hostpanel.Domain.Notifications;
 using Innovayse.Hostpanel.Domain.Products.Enums;
-using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -14,12 +14,17 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 /// <summary>
 /// Tests for <c>DomainExpiredHandler</c>: an expired domain suspends its linked service and notifies the client.
 /// Each test builds its own host from <see cref="IntegrationTestFactory"/> with the one port this platform
-/// does not own (the SMTP relay) replaced by <see cref="FakeEmailSender"/>, publishes the event exactly once
-/// through the real message bus and asserts the handler's one effect happened exactly once.
+/// does not own (the SMTP relay) replaced by <see cref="FakeEmailSender"/>, publishes the event through the
+/// real message bus and asserts the handler's effects. The event reaches the handler through a durable queue,
+/// so the replay cases (a second delivery, a domain renewed since, a domain the demo reset removed) are
+/// covered too.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class DomainExpiredHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The slug of the template the handler renders.</summary>
+    private const string TemplateSlug = "domain-expired";
+
     /// <summary>
     /// An expired domain with a linked, active hosting service suspends that service exactly once
     /// and notifies the owning client exactly once.
@@ -33,22 +38,9 @@ public sealed class DomainExpiredHandlerTests(IntegrationTestFactory factory) : 
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
-        var (client, email) = await EventHandlerTestHost.SeedIdentityClientAsync(scope.ServiceProvider, context, "domain-event");
-        var productId = await DomainsTestSeeds.SeedHostingProductAsync(context);
-        var service = ClientService.Create(client.Id, productId, BillingCycle.Monthly, DateTimeOffset.UtcNow);
-        // The seeded service's own activation is not news here: its events are discarded, so the
-        // only mail sent is the one from the handler under test.
-        using (scope.ServiceProvider.GetRequiredService<IDomainEventGate>().Suppress())
-        {
-            await ServicesTestSeeds.AddActivatedAsync(context, service, "provisioning-ref", DateTimeOffset.UtcNow);
-            await context.SaveChangesAsync(CancellationToken.None);
-        }
+        var (clientId, email, serviceId, domainId) = await SeedExpiredDomainAsync(scope.ServiceProvider, context, expire: true);
 
-        context.EmailTemplates.Add(
-            EmailTemplate.Create("domain-expired", "en", "Domain expired: {{ domain.name }}", "Sorry", null));
-        await context.SaveChangesAsync(CancellationToken.None);
-
-        await bus.InvokeAsync(new DomainExpiredEvent(1, client.Id, service.Id) { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+        await bus.InvokeAsync(new DomainExpiredEvent(domainId, clientId, serviceId) { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
 
         var message = Assert.Single(emailSender.Sent);
         Assert.Equal(email, message.To);
@@ -57,8 +49,126 @@ public sealed class DomainExpiredHandlerTests(IntegrationTestFactory factory) : 
         // test's own context already holds (added above, never mutated by it), masking whatever
         // the nested SuspendServiceCommand actually wrote through its own scope.
         var reloaded = await context.ClientServices.AsNoTracking()
-            .FirstAsync(s => s.Id == service.Id, CancellationToken.None);
+            .FirstAsync(s => s.Id == serviceId, CancellationToken.None);
         Assert.Equal(ServiceStatus.Suspended, reloaded.Status);
         Assert.Equal(SuspensionSource.DomainExpired, reloaded.SuspensionSource);
+    }
+
+    /// <summary>
+    /// A second delivery of the same event leaves the service suspended once with its source intact:
+    /// the services module refuses to suspend a suspended service, and the handler does not throw.
+    /// </summary>
+    [Fact]
+    public async Task DomainExpired_Redelivered_KeepsTheSingleSuspensionAsync()
+    {
+        var emailSender = new FakeEmailSender();
+        var host = EventHandlerTestHost.WithFakeRelay(factory, emailSender);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+
+        var (clientId, _, serviceId, domainId) = await SeedExpiredDomainAsync(scope.ServiceProvider, context, expire: true);
+        var evt = new DomainExpiredEvent(domainId, clientId, serviceId) { OccurredAt = DateTimeOffset.UtcNow };
+
+        await bus.InvokeAsync(evt, CancellationToken.None);
+        await bus.InvokeAsync(evt, CancellationToken.None);
+
+        var reloaded = await context.ClientServices.AsNoTracking()
+            .FirstAsync(s => s.Id == serviceId, CancellationToken.None);
+        Assert.Equal(ServiceStatus.Suspended, reloaded.Status);
+        Assert.Equal(SuspensionSource.DomainExpired, reloaded.SuspensionSource);
+    }
+
+    /// <summary>
+    /// A late copy of the event for a domain that is active again (renewed after it expired) does not
+    /// suspend the linked service.
+    /// </summary>
+    [Fact]
+    public async Task DomainExpired_ForADomainNoLongerExpired_LeavesTheServiceActiveAsync()
+    {
+        var emailSender = new FakeEmailSender();
+        var host = EventHandlerTestHost.WithFakeRelay(factory, emailSender);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+
+        var (clientId, _, serviceId, domainId) = await SeedExpiredDomainAsync(scope.ServiceProvider, context, expire: false);
+
+        await bus.InvokeAsync(new DomainExpiredEvent(domainId, clientId, serviceId) { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+
+        var reloaded = await context.ClientServices.AsNoTracking()
+            .FirstAsync(s => s.Id == serviceId, CancellationToken.None);
+        Assert.Equal(ServiceStatus.Active, reloaded.Status);
+    }
+
+    /// <summary>
+    /// An event whose domain no longer exists, or now belongs to another client (the demo reset reused the
+    /// id), neither suspends the service it names nor mails anyone.
+    /// </summary>
+    [Fact]
+    public async Task DomainExpired_ForADomainOfAnotherClient_DoesNothingAsync()
+    {
+        var emailSender = new FakeEmailSender();
+        var host = EventHandlerTestHost.WithFakeRelay(factory, emailSender);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+
+        var (clientId, _, serviceId, _) = await SeedExpiredDomainAsync(scope.ServiceProvider, context, expire: true);
+        int strangerDomainId;
+        using (scope.ServiceProvider.GetRequiredService<IDomainEventGate>().Suppress())
+        {
+            strangerDomainId = await DomainsTestSeeds.SeedActiveDomainAsync(context);
+        }
+
+        await bus.InvokeAsync(new DomainExpiredEvent(strangerDomainId, clientId, serviceId) { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+        await bus.InvokeAsync(new DomainExpiredEvent(int.MaxValue, clientId, serviceId) { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+
+        Assert.Empty(emailSender.Sent);
+        var reloaded = await context.ClientServices.AsNoTracking()
+            .FirstAsync(s => s.Id == serviceId, CancellationToken.None);
+        Assert.Equal(ServiceStatus.Active, reloaded.Status);
+    }
+
+    /// <summary>
+    /// Seeds a client with a sign-in address, an active hosting service and a domain linked to it, with the
+    /// seeding's own events discarded so the only effects observed are the handler's.
+    /// </summary>
+    /// <param name="services">The scope's services.</param>
+    /// <param name="context">The scope's data context.</param>
+    /// <param name="expire">Whether the domain is moved to Expired; otherwise it stays Active, as after a renewal.</param>
+    /// <returns>The client id, its sign-in address, the service id and the domain id.</returns>
+    private static async Task<(int ClientId, string Email, int ServiceId, int DomainId)> SeedExpiredDomainAsync(
+        IServiceProvider services, IHostpanelDbContext context, bool expire)
+    {
+        var (client, email) = await EventHandlerTestHost.SeedIdentityClientAsync(services, context, "domain-event");
+        var productId = await DomainsTestSeeds.SeedHostingProductAsync(context);
+        var service = ClientService.Create(client.Id, productId, BillingCycle.Monthly, DateTimeOffset.UtcNow);
+        var domain = RegisteredDomain.Register(
+            client.Id, $"expired-{Guid.NewGuid():N}.test", DateTimeOffset.UtcNow.AddYears(-1), DateTimeOffset.UtcNow,
+            autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+        using (services.GetRequiredService<IDomainEventGate>().Suppress())
+        {
+            await ServicesTestSeeds.AddActivatedAsync(context, service, "provisioning-ref", DateTimeOffset.UtcNow);
+            await context.SaveChangesAsync(CancellationToken.None);
+
+            await DomainsTestSeeds.AddActivatedAsync(context, domain, "registrar-ref", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
+            domain.LinkService(service.Id);
+            if (expire)
+            {
+                domain.MarkExpired(DateTimeOffset.UtcNow);
+            }
+
+            await context.SaveChangesAsync(CancellationToken.None);
+        }
+
+        // The slug is unique and the class shares one database, so a sibling test may have seeded it.
+        if (!await context.EmailTemplates.AnyAsync(t => t.Slug == TemplateSlug, CancellationToken.None))
+        {
+            context.EmailTemplates.Add(EmailTemplate.Create(TemplateSlug, "en", "Domain expired: {{ domain.name }}", "Sorry", null));
+            await context.SaveChangesAsync(CancellationToken.None);
+        }
+
+        return (client.Id, email, service.Id, domain.Id);
     }
 }

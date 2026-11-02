@@ -7,10 +7,11 @@
  * own discovery document declares, once that document has been validated (OpenID Connect Discovery
  * 1.0 section 4.3, RFC 8414 section 3.3): the document is fetched from the configured provider, and
  * its `issuer` must denote that same provider. The configured address is the public address of the
- * provider (`SSO_PUBLIC_URL`); it and the declared issuer are compared as URLs, with a missing
- * trailing slash on either side treated as equivalent and nothing looser (same scheme, host, port
- * and path, no query, no fragment). When `SSO_ISSUER` is set it replaces that comparison and must
- * equal the declared issuer exactly, or everything fails closed.
+ * provider (`SSO_PUBLIC_URL`); it and the declared issuer are compared as raw text, with one
+ * trailing slash on either side ignored and nothing looser (no case folding, no default port, no
+ * dot segments; a query, fragment, credentials or backslash refuses the issuer). When `SSO_ISSUER`
+ * is set it replaces that comparison and must equal the declared issuer exactly, or everything fails
+ * closed.
  *
  * Once validated, the declared issuer string is the expected issuer, and both the `iss` of the
  * authorization response and the `iss` of the ID token are compared to it exactly, character for
@@ -118,32 +119,47 @@ const providerSettings = (): ProviderSettings => {
 }
 
 /**
- * Reduces a provider URL to the parts that identify it, with a single trailing slash on the path
- * ignored. A URL with a query, a fragment or credentials identifies no provider and is refused.
+ * Whether a declared issuer is a well-formed provider URL: http or https, no query, no fragment, no
+ * credentials, no backslash and no dot segments. `new URL()` would silently rewrite a backslash and
+ * dot segments, so those are looked for in the raw text; the parser only judges scheme, query,
+ * fragment and credentials.
  *
- * @param value - The URL text.
- * @returns Scheme, host with port and path, or null when it is not a usable provider URL.
+ * @param value - The raw issuer text.
+ * @returns True when the text may be compared as an issuer.
  */
-const providerIdentity = (value: string): string | null => {
+const isWellFormedIssuer = (value: string): boolean => {
+  if (value.includes('\\') || value.includes('?') || value.includes('#')) {
+    return false
+  }
   let url: URL
   try {
     url = new URL(value)
   } catch {
-    return null
+    return false
   }
-  if (url.search !== '' || url.hash !== '' || url.username !== '' || url.password !== '') {
-    return null
+  if ((url.protocol !== 'https:' && url.protocol !== 'http:') || url.username !== '' || url.password !== '') {
+    return false
   }
-  const path = url.pathname.endsWith('/') ? url.pathname.slice(0, -1) : url.pathname
-  return `${url.protocol}//${url.host}${path}`
+  const rawPath = value.replace(/^[a-z][a-z0-9+.-]*:\/\/[^/]*/i, '')
+  return !rawPath.split('/').some((segment) => /^(\.|%2e){1,2}$/i.test(segment))
 }
+
+/**
+ * Removes at most one trailing slash, the only difference between two spellings of an issuer that
+ * RFC 8414 section 3.3 and OpenID Connect Discovery section 4.3 allow.
+ *
+ * @param value - The raw URL text.
+ * @returns The text without one trailing slash.
+ */
+const withoutOneTrailingSlash = (value: string): string => (value.endsWith('/') ? value.slice(0, -1) : value)
 
 /**
  * Whether the issuer a discovery document declares denotes the configured provider.
  *
  * With an explicit issuer it must equal the declared one exactly. Otherwise the declared issuer and
- * the configured public address must be the same URL: same scheme, host, port and path, a trailing
- * slash on either side not counting.
+ * the configured public address must be the same text, character for character, a single trailing
+ * slash on either side not counting. No URL normalisation applies: an upper case host, a written
+ * out default port, dot segments or a backslash make a different issuer.
  *
  * @param declared - The `issuer` of the discovery document.
  * @param settings - The configured provider settings.
@@ -156,9 +172,8 @@ const declaredIssuerIsAccepted = (declared: string, settings: ProviderSettings):
   if (settings.publicUrl === '') {
     return false
   }
-  const wanted = providerIdentity(settings.publicUrl)
-  const found = providerIdentity(declared)
-  return wanted !== null && found !== null && sameText(wanted, found)
+  return isWellFormedIssuer(declared)
+    && sameText(withoutOneTrailingSlash(settings.publicUrl), withoutOneTrailingSlash(declared))
 }
 
 /**

@@ -6,7 +6,7 @@ title: Email templates
 
 ## How templates work
 
-Each email template has a **slug** that identifies it in the code. One version is stored per language (English, Russian and Armenian are seeded on install). If a version does not exist for the client's language, the email is sent in English.
+Each email template has a **slug** that identifies it in the code. One version is stored per language (English, Russian and Armenian). Some templates are created at start-up; others are created on first use. If a version does not exist for the client's language, the email is sent in English.
 
 Creating a version for a slug and language that already exists returns `EMAIL_TEMPLATE_ALREADY_EXISTS`. A template that does not exist returns `EMAIL_TEMPLATE_NOT_FOUND`.
 
@@ -35,7 +35,7 @@ Select the language tab you want to edit. A tab marked as missing has no stored 
 </li>
 <li>
 
-Edit the **Subject** and **Body (HTML)**.
+Edit the **Subject**, **Description** and **Body (HTML)**.
 
 </li>
 <li>
@@ -74,7 +74,7 @@ Example using a condition and a loop:
 
 ### Account
 
-<SettingTable :rows="[
+<SettingTable :settings="[
   { name: 'welcome', type: 'string', default: '', description: 'Sent to a new client after account creation. Placeholders: client.email' },
   { name: 'user-invite', type: 'string', default: '', description: 'Sent when a user is invited to a client account. Placeholders: invite_link, client_name, first_name' },
   { name: 'user-email-verification', type: 'string', default: '', description: 'Local accounts only. Sent to verify a new email address. Placeholders: verification_link' },
@@ -85,23 +85,25 @@ Example using a condition and a loop:
 
 ### Billing
 
-<SettingTable :rows="[
+<SettingTable :settings="[
   { name: 'invoice-created', type: 'string', default: '', description: 'Sent to the client when an invoice is created. Placeholders: invoice.id, invoice.total, invoice.currency' },
   { name: 'payment-received', type: 'string', default: '', description: 'Sent to the client when a payment is recorded. Placeholders: invoice.id, invoice.total, invoice.transaction_id' },
   { name: 'invoice-renewal-reminder', type: 'string', default: '', description: 'Sent when a renewal reminder is due. Placeholders: invoice.id, invoice.total, invoice.currency, invoice.due_date, invoice.url' },
   { name: 'gateway-payment-stalled-admin', type: 'string', default: '', description: 'Sent to staff when a gateway payment has been pending too long. Placeholders: invoice.id, client.id, module, pending_hours' },
+  { name: 'gateway-payment-credited-admin', type: 'string', default: '', description: 'Sent to staff when a gateway payment took money the invoice could not record and the amount was added to the client credit balance or held for manual resolution. Placeholders: invoice.id, client.id, module, reference, amount, currency, credited' },
+  { name: 'gateway-payment-without-reference-admin', type: 'string', default: '', description: 'Sent to staff when a gateway reports a payment as paid but sends no payment reference. Nothing is recorded; the operator must find and record it by hand. Placeholders: invoice.id, client.id, module, amount, currency' },
 ]" />
 
 ### Services
 
-<SettingTable :rows="[
+<SettingTable :settings="[
   { name: 'service-provisioned', type: 'string', default: '', description: 'Sent to the client when a service is provisioned. Placeholders: service.id, service.provisioning_ref, service.domain, service.username' },
   { name: 'service-termination-failed-admin', type: 'string', default: '', description: 'Sent to staff when service termination fails. Placeholders: service.id, reason' },
 ]" />
 
 ### Support tickets
 
-<SettingTable :rows="[
+<SettingTable :settings="[
   { name: 'ticket-created', type: 'string', default: '', description: 'Sent to the department when a ticket is opened. Placeholders: ticket.id, ticket.subject' },
   { name: 'ticket-replied', type: 'string', default: '', description: 'Sent to the client (staff reply) or department (client reply). Placeholders: ticket.id, ticket.subject' },
   { name: 'ticket-closed', type: 'string', default: '', description: 'Sent to the client when a ticket is closed. Placeholders: ticket.id, ticket.subject' },
@@ -109,7 +111,7 @@ Example using a condition and a loop:
 
 ### Domains
 
-<SettingTable :rows="[
+<SettingTable :settings="[
   { name: 'domain-registered', type: 'string', default: '', description: 'Sent to the client when a domain is registered. Placeholders: domain.id, domain.name, domain.registrar, domain.expires_at' },
   { name: 'domain-transferred', type: 'string', default: '', description: 'Sent to the client when a domain transfer completes. Placeholders: domain.id, domain.name, domain.registrar, domain.expires_at' },
   { name: 'domain-renewed', type: 'string', default: '', description: 'Sent to the client when a domain is renewed. Placeholders: domain.id, domain.name, domain.new_expires_at' },
@@ -122,6 +124,6 @@ Example using a condition and a loop:
 
 ## Mail delivery
 
-Templates are sent through the SMTP settings configured in **Settings → Mail**. See [Configuration reference](/operators/configuration) for the full list of SMTP settings.
+Templates are sent through the SMTP settings configured in the [Configuration reference](/operators/configuration).
 
 Clients can see the emails sent to them in the **Emails** section of the client portal.

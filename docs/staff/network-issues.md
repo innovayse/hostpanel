@@ -30,16 +30,39 @@ Click **(+) Create New** and fill in the form:
 | Type | Server, Other |
 | Server | Server name (optional) |
 | Priority | Low, Medium, High, Critical |
-| Status | Reported, Investigating, Scheduled, Resolved |
-| Start Date | When the issue started or is scheduled to start |
-| End Date | When it ended or is expected to end |
+| Start Date | When the issue started |
 | Description | Details about the issue |
 
-Click **Create Issue** to save.
+New issues always start with status **Reported**. Click **Create Issue** to save.
+
+## Update an issue
+
+Click an issue to edit it. The edit form adds two fields:
+
+| Field | Notes |
+|-------|-------|
+| Status | Reported, Investigating, Scheduled, Resolved |
+| End Date | When it ended or is expected to end |
 
 ## Planned maintenance
 
-To schedule maintenance, create an issue with status **Scheduled** and set a start and end date. Once work is complete, edit the issue and set the status to **Resolved**.
+<Steps>
+<li>
+
+Click **(+) Create New** and fill in the Title, Type, Priority, Start Date and Description. Save as **Reported**.
+
+</li>
+<li>
+
+Open the issue and set **Status** to **Scheduled** and set the **End Date**.
+
+</li>
+<li>
+
+Once work is complete, edit the issue again and set **Status** to **Resolved**.
+
+</li>
+</Steps>
 
 ## What customers see
 

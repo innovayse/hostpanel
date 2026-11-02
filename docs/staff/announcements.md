@@ -14,10 +14,11 @@ Click **Add New Announcement** and fill in the form:
 
 | Field | Notes |
 |-------|-------|
-| Date | The announcement date |
 | Title | Announcement title |
 | Announcement | The announcement body |
 | Published | Tick to show this announcement in the client portal |
+
+The **Date** is set automatically and shown read-only when editing.
 
 Only published announcements appear in the client portal. An announcement that does not exist returns `ANNOUNCEMENT_NOT_FOUND`.
 

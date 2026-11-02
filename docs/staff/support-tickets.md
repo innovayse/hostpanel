@@ -8,12 +8,11 @@ title: Support tickets
 
 Four departments are created on a fresh install. Their contact addresses are read from these settings at first start:
 
-<SettingTable :rows="[
+<SettingTable :settings="[
   { name: 'DEPARTMENT_SUPPORT_EMAIL', type: 'string', default: 'support@example.com', description: 'Email address for the Technical Support department' },
   { name: 'DEPARTMENT_BILLING_EMAIL', type: 'string', default: 'billing@example.com', description: 'Email address for the Billing department' },
   { name: 'DEPARTMENT_SALES_EMAIL', type: 'string', default: 'sales@example.com', description: 'Email address for the Sales department' },
   { name: 'DEPARTMENT_GENERAL_EMAIL', type: 'string', default: 'hello@example.com', description: 'Email address for the General department' },
-  { name: 'EMAIL_TO', type: 'string', default: '', description: 'Email address the public contact form delivers to' },
 ]" />
 
 These settings are only read once, when the departments table is empty.
@@ -24,22 +23,16 @@ There is no admin screen to create or edit departments yet. The API has endpoint
 
 ## Ticket statuses and priorities
 
-| Status | Who sets it |
-|--------|-------------|
-| Open | Set when a ticket is created or when the client replies |
-| Awaiting Reply | Set automatically when a staff member replies |
-| Answered | Set manually by staff in Ticket Settings |
-| Closed | Set when staff close the ticket |
+| Status | What it means |
+|--------|---------------|
+| Open | Ticket is open, waiting for a staff response |
+| Awaiting Reply | Staff replied; waiting for the client |
+| Answered | Ticket has been answered |
+| Closed | Ticket is closed |
 
 **Priorities:** Low, Medium, High.
 
-<Callout type="note">
-The filter names on the ticket list do not match the status names one-to-one:
-<ul>
-<li><strong>Answered</strong> — shows tickets in <strong>Awaiting Reply</strong> status (staff replied, waiting on the client)</li>
-<li><strong>Customer-Reply</strong> — shows tickets in <strong>Answered</strong> status (client replied, waiting on staff)</li>
-</ul>
-</Callout>
+The filter names on the ticket list do not match the status names: the **Answered** filter shows tickets in **Awaiting Reply** status, and the **Customer-Reply** filter shows tickets in **Answered** status.
 
 ## The ticket list
 
@@ -107,11 +100,6 @@ Go to **Support → Open New Ticket**.
 <li>
 
 Search for a client by name, email or ID and select them. **Name** and **Email Address** are filled from the client record.
-
-</li>
-<li>
-
-**Send Email** — tick to send the `ticket-created` notification to the department.
 
 </li>
 <li>

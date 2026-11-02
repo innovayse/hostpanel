@@ -209,7 +209,7 @@ Each extra proxy in front of the bundled edge adds 1 to both counts. The shipped
 ### Rate-limit settings (compose override only)
 
 <Callout type="note">
-The following settings are set directly on the API service in a compose override file, not in `.env.example`. Use them to tune rate limiting per endpoint.
+The following settings are set directly on the API service in a compose override file, not in <code>.env.example</code>. Use them to tune rate limiting per endpoint.
 </Callout>
 
 | Setting | Default | Description |
@@ -273,7 +273,7 @@ The edge layer (Caddy on hub, nginx on prod) terminates TLS and routes to the AP
 ### Order numbering and invoice settings (compose override only)
 
 <Callout type="note">
-Order numbering and invoice settings are not in `.env`. Set them directly on the API service in a compose override.
+Order numbering and invoice settings are not in <code>.env</code>. Set them directly on the API service in a compose override.
 </Callout>
 
 | Setting | Default | Description |

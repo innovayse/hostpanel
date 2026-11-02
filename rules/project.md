@@ -491,8 +491,19 @@ docker/                              compose set (shared·dev·prod·platform), 
     store that forgets would be a lie a plugin could act on. #642 replaces that one registration.
   - **Status codes.** `PLUGIN_ROUTE_NOT_FOUND` 404, `PLUGIN_REQUEST_TOO_LARGE` 413 (the `_TOO_LARGE` suffix),
     `PLUGIN_FAILED` 502 and `PLUGIN_STREAMING_NOT_SUPPORTED` 501 (exact `StatusMapping` rows; **the 501 is temporary and goes when #641 ships streaming**); each has its sentence in
-    en/ru/hy. Left for later issues: rate limit policies per plugin and client (#640), streaming and its nginx settings
-    (#641), the host API and the store (#642), a call timeout (#792).
+    en/ru/hy.
+  - **Rate limits (#640).** `API/Plugins/PluginRateLimitFilter` is a resource filter on both doors, marked
+    `[PluginRateLimit(PluginArea)]`. It matches the route and measures the caller against `plugin-default`,
+    `plugin-strict` or `plugin-heavy` (the manifest route's `RateLimit`, default when none) with
+    `Shared/Infrastructure/PluginRateLimiter`, keyed by plugin and client account (client calls) or administrator
+    (admin calls). A streaming route also takes a `plugin-stream` concurrency lease, held until the response is
+    disposed. Budgets are `RateLimit:PluginDefault|PluginStrict|PluginHeavy|PluginStreamPermitLimit`. A refusal is the
+    middleware's own 429 (`RateLimitingExtensions.WriteRejectionAsync`). The limiter is a no-limiter in Testing, and
+    tests derive a host with an enabled `PluginRateLimiter`. The client account is resolved before the plugin budget
+    is checked, so a refused call still costs one lookup, which the global limiter bounds. A refused stream call has
+    already spent its tier permit.
+  - Left for later issues: streaming and its nginx settings (#641), the host API and the store (#642), a call
+    timeout (#792).
 
 ## CQRS — Wolverine, conforming
 

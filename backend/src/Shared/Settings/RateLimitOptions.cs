@@ -117,6 +117,39 @@ public sealed class RateLimitOptions
     public int ConcurrentPermitLimit { get; set; } = 5;
 
     /// <summary>
+    /// Gets or sets the tier for <see cref="Constants.RateLimitPolicies.PluginDefault"/>: a plugin route that declares no
+    /// tier. 120 requests a minute for one plugin and one caller.
+    /// </summary>
+    /// <remarks>
+    /// Counted per plugin and per caller (the client account on a client call, the administrator on an admin call), so one
+    /// plugin or one account cannot spend another's budget. Two a second is far above a person using a plugin's screens and
+    /// far below what a script manages, and the plugin's own work, not this server's, is what it protects.
+    /// </remarks>
+    public RateLimitTierOptions PluginDefault { get; set; } = new() { PermitLimit = 120, WindowSeconds = 60 };
+
+    /// <summary>
+    /// Gets or sets the tier for <see cref="Constants.RateLimitPolicies.PluginStrict"/>: a plugin route that is costly or
+    /// sensitive, such as one that sends messages. 20 requests a minute for one plugin and one caller.
+    /// </summary>
+    public RateLimitTierOptions PluginStrict { get; set; } = new() { PermitLimit = 20, WindowSeconds = 60 };
+
+    /// <summary>
+    /// Gets or sets the tier for <see cref="Constants.RateLimitPolicies.PluginHeavy"/>: a plugin route that does heavy work
+    /// and is called rarely, such as a report or an export. 6 requests a minute for one plugin and one caller.
+    /// </summary>
+    public RateLimitTierOptions PluginHeavy { get; set; } = new() { PermitLimit = 6, WindowSeconds = 60 };
+
+    /// <summary>
+    /// How many streaming plugin routes one caller may hold open at once, per plugin. Three.
+    /// </summary>
+    /// <remarks>
+    /// A concurrency limit like <see cref="ConcurrentPermitLimit"/>, because an open stream holds a connection and the
+    /// plugin's work for as long as it lasts: it is not a rate. Three rather than one, so a person with a few tabs open
+    /// on one plugin is not refused, and rather than five so that one account cannot hold a plugin's streams for everybody.
+    /// </remarks>
+    public int PluginStreamPermitLimit { get; set; } = 3;
+
+    /// <summary>
     /// How many trusted proxies in a row stand between a visitor's browser and this process. Zero
     /// by default, so no forwarded header is believed until the deployment says which proxies it has.
     /// </summary>

@@ -83,10 +83,12 @@ public static class RateLimitingExtensions
             .BindConfiguration(RateLimitOptions.SectionName)
             .Validate(
                 o => IsPositive(o.Global) && IsPositive(o.Auth) && IsPositive(o.Upstream)
-                    && IsPositive(o.Strict) && IsPositive(o.SshKeys) && o.ConcurrentPermitLimit > 0 && o.TrustedProxyCount >= 0,
+                    && IsPositive(o.Strict) && IsPositive(o.SshKeys) && IsPositive(o.PluginDefault)
+                    && IsPositive(o.PluginStrict) && IsPositive(o.PluginHeavy)
+                    && o.ConcurrentPermitLimit > 0 && o.PluginStreamPermitLimit > 0 && o.TrustedProxyCount >= 0,
                 $"Every {RateLimitOptions.SectionName} tier needs a positive PermitLimit and "
-                    + "WindowSeconds, ConcurrentPermitLimit must be positive, and TrustedProxyCount "
-                    + "must not be negative.")
+                    + "WindowSeconds, ConcurrentPermitLimit and PluginStreamPermitLimit must be positive, "
+                    + "and TrustedProxyCount must not be negative.")
 
             // The invariant the class documents. A tier raised above the global backstop would be
             // capped by it and appear to have been applied, which is the failure mode worth
@@ -95,10 +97,22 @@ public static class RateLimitingExtensions
                 o => o.Auth.PermitLimit <= o.Global.PermitLimit
                     && o.Upstream.PermitLimit <= o.Global.PermitLimit
                     && o.Strict.PermitLimit <= o.Global.PermitLimit
-                    && o.SshKeys.PermitLimit <= o.Global.PermitLimit,
+                    && o.SshKeys.PermitLimit <= o.Global.PermitLimit
+                    && o.PluginDefault.PermitLimit <= o.Global.PermitLimit
+                    && o.PluginStrict.PermitLimit <= o.Global.PermitLimit
+                    && o.PluginHeavy.PermitLimit <= o.Global.PermitLimit,
                 $"No {RateLimitOptions.SectionName} tier may allow more than Global, because the "
                     + "global budget applies to every request as well: the smaller of the two "
                     + "always binds, so a larger tier would silently have no effect.")
+
+            // The plugin tiers are a ladder: a heavy route is never allowed more than a strict one,
+            // nor a strict one more than the default. A swapped pair would let the route a manifest
+            // marks as costly out-run the ordinary ones, so the boot is refused instead.
+            .Validate(
+                o => o.PluginHeavy.PermitLimit <= o.PluginStrict.PermitLimit
+                    && o.PluginStrict.PermitLimit <= o.PluginDefault.PermitLimit,
+                $"The {RateLimitOptions.SectionName} plugin tiers must be ordered: PluginHeavy may not "
+                    + "allow more than PluginStrict, and PluginStrict may not allow more than PluginDefault.")
 
             // A proxy entry that does not parse would otherwise be dropped in silence, and the
             // proxy it meant would stop being believed with nothing to say why.
@@ -141,6 +155,12 @@ public static class RateLimitingExtensions
         // NoLimiter rather than a limit of int.MaxValue: there is no counter to keep and no
         // partition dictionary to grow, so the behaviour is "off" rather than "improbably large".
         var limitingDisabled = environment.IsEnvironment(EnvironmentNames.Testing);
+
+        // The plugin routes' budgets cannot be named policies: the tier is the one the matched route declares in its
+        // manifest, and the key is the plugin plus the client account, neither of which is known until the route has
+        // been matched. The plugin call filter acquires from this instead, with the same switch for Testing.
+        services.AddSingleton(provider =>
+            new PluginRateLimiter(provider.GetRequiredService<IOptions<RateLimitOptions>>().Value, limitingDisabled));
 
         services.AddRateLimiter(options =>
         {
@@ -210,17 +230,7 @@ public static class RateLimitingExtensions
 
                     return RateLimitPartition.GetConcurrencyLimiter(
                         $"{RateLimitPolicies.Concurrent}|{ResolvePartitionKey(context)}",
-                        _ => new ConcurrencyLimiterOptions
-                        {
-                            PermitLimit = limits.ConcurrentPermitLimit,
-
-                            // Nothing queues. A queued export holds its connection open while the
-                            // ones ahead of it hold table scans in memory, so waiting turns one
-                            // caller's burst into a slow request for everybody; refusing tells
-                            // them to come back instead.
-                            QueueLimit = 0,
-                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                        });
+                        _ => RateLimiterBudgets.Concurrency(limits.ConcurrentPermitLimit));
                 });
         });
 
@@ -239,6 +249,10 @@ public static class RateLimitingExtensions
         RateLimitPolicies.Strict => limits.Strict.PermitLimit,
         RateLimitPolicies.SshKeys => limits.SshKeys.PermitLimit,
         RateLimitPolicies.Concurrent => limits.ConcurrentPermitLimit,
+        RateLimitPolicies.PluginDefault => limits.PluginDefault.PermitLimit,
+        RateLimitPolicies.PluginStrict => limits.PluginStrict.PermitLimit,
+        RateLimitPolicies.PluginHeavy => limits.PluginHeavy.PermitLimit,
+        RateLimitPolicies.PluginStream => limits.PluginStreamPermitLimit,
         _ => null,
     };
 
@@ -267,21 +281,7 @@ public static class RateLimitingExtensions
         // so this is legibility rather than correctness.
         var key = $"{policyName}|{ResolvePartitionKey(context)}";
 
-        return RateLimitPartition.GetSlidingWindowLimiter(
-            key,
-            _ => new SlidingWindowRateLimiterOptions
-            {
-                PermitLimit = tier.PermitLimit,
-                Window = TimeSpan.FromSeconds(tier.WindowSeconds),
-                SegmentsPerWindow = RateLimitOptions.SegmentsPerWindow,
-
-                // Refused outright rather than held. A queue makes a rate limit into a latency
-                // limit: the caller still gets served, just later, so an abusive client keeps its
-                // throughput and merely occupies connections while doing it.
-                QueueLimit = 0,
-                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                AutoReplenishment = true,
-            });
+        return RateLimitPartition.GetSlidingWindowLimiter(key, _ => RateLimiterBudgets.SlidingWindow(tier));
     }
 
     /// <summary>
@@ -383,11 +383,35 @@ public static class RateLimitingExtensions
                 ? recordedName
                 : GlobalPolicyName;
 
+        await WriteRejectionAsync(httpContext, policy, context.Lease, ResolvePartitionKey(httpContext), cancellationToken);
+    }
+
+    /// <summary>
+    /// Writes the refusal of a request: the RFC 6585 headers, a warning naming what was spent, and the platform's own
+    /// error body. The one writer of a 429, shared by the middleware's rejection callback and by a limiter that is
+    /// asked from inside the pipeline (the plugin call filter), so the two can never answer differently.
+    /// </summary>
+    /// <param name="httpContext">The request being refused.</param>
+    /// <param name="policy">The policy that refused it, named in <c>X-RateLimit-Policy</c> and in the log line.</param>
+    /// <param name="lease">The lease that was refused, which carries the retry hint when the limiter has one.</param>
+    /// <param name="partitionKey">The bucket that was spent, written to the log line.</param>
+    /// <param name="cancellationToken">Cancellation token for writing the body.</param>
+    /// <returns>A task that completes once the response has been written.</returns>
+    public static async ValueTask WriteRejectionAsync(
+        HttpContext httpContext,
+        string policy,
+        RateLimitLease lease,
+        string partitionKey,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(httpContext);
+        ArgumentNullException.ThrowIfNull(lease);
+
         // The window limiters report how long is left; the concurrency limiter has nothing to
         // report, because what frees a permit is another request finishing rather than a clock.
         // One second is the honest answer there, come back shortly, rather than a made-up
         // window that would have the caller wait longer than necessary.
-        var retryAfterSeconds = context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter)
+        var retryAfterSeconds = lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter)
             ? Math.Max(1, (int)Math.Ceiling(retryAfter.TotalSeconds))
             : 1;
 
@@ -418,7 +442,7 @@ public static class RateLimitingExtensions
                 policy,
                 httpContext.Request.Method,
                 httpContext.Request.Path.Value,
-                ResolvePartitionKey(httpContext),
+                partitionKey,
                 retryAfterSeconds);
 
         await ErrorBody.WriteAsync(

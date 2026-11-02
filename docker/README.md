@@ -107,7 +107,9 @@ pipeline. A value has one name and one home:
 - **Rate limits**: optional API settings under `RateLimit`, each tier a `PermitLimit` per `WindowSeconds`:
   `RateLimit__Global__*` (default 1200 per 60 s, applies to every request), `RateLimit__Auth__*` (15),
   `RateLimit__Upstream__*` (60), `RateLimit__Strict__*` (5) and `RateLimit__SshKeys__*` (20), plus
-  `RateLimit__ConcurrentPermitLimit` (5) and `RateLimit__TrustedProxyCount` (0). A tier above the global limit,
+  `RateLimit__ConcurrentPermitLimit` (5), the plugin tiers `RateLimit__PluginDefault__*` (120),
+  `RateLimit__PluginStrict__*` (20) and `RateLimit__PluginHeavy__*` (6), `RateLimit__PluginStreamPermitLimit` (3) and
+  `RateLimit__TrustedProxyCount` (0). A tier above the global limit,
   or a value that is not positive, refuses startup. A refused request gets a 429 with the standard error body.
 - **Trusted proxies**: the API reads the caller's address from `X-Forwarded-For` only when the request comes from
   a proxy listed in `RateLimit__KnownProxies__N` (addresses) or `RateLimit__KnownNetworks__N` (CIDR ranges). The

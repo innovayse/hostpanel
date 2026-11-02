@@ -5,6 +5,7 @@ using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Shared.Authorization;
 using Innovayse.Hostpanel.Shared.Controllers;
 using Innovayse.Hostpanel.Shared.Models;
+using Innovayse.SDK.Plugins.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;
@@ -27,6 +28,7 @@ namespace Innovayse.Hostpanel.API.Controllers;
 [Authorize(Policy = Policies.Admin)]
 [RequireRequestedWith]
 [PluginBodyLimit]
+[PluginRateLimit(PluginArea.Admin)]
 [NoFormBinding]
 [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status429TooManyRequests)]
 public sealed class AdminPluginCallsController : BaseApiController
@@ -51,7 +53,7 @@ public sealed class AdminPluginCallsController : BaseApiController
     /// not an administrator, or with <c>CSRF_HEADER_MISSING</c> when a request that changes state has neither the header
     /// nor a bearer token; 404 with <c>PLUGIN_ROUTE_NOT_FOUND</c> when the plugin, the route or the plugin's switch is not
     /// there; 413 with <c>PLUGIN_REQUEST_TOO_LARGE</c> when the body is over <c>PluginApi:MaxBodyBytes</c>; 429 when the
-    /// rate limit is hit; 501 with <c>PLUGIN_STREAMING_NOT_SUPPORTED</c> for a streaming route; 502 with
+    /// plugin route's rate limit tier, or the caller's open streams, are spent; 501 with <c>PLUGIN_STREAMING_NOT_SUPPORTED</c> for a streaming route; 502 with
     /// <c>PLUGIN_FAILED</c> when the plugin threw; 503 when the plugin chooses it.
     /// </returns>
     [HttpGet("{id}/ext/{**path}")]

@@ -36,7 +36,7 @@ const LIFETIME_MS = SSO_FLOW_COOKIE_MAX_AGE * 1000
  */
 const start = (state: string, held: Record<string, string> = {}, kind: SignonTransactionKind = SignonTransactionKind.Interactive) => {
   const event = makeEvent({ cookies: held })
-  createTransaction(event, { state, verifier: `verifier-${state}`, returnTo: '/client/invoices', kind })
+  createTransaction(event, { state, verifier: `verifier-${state}`, nonce: `nonce-${state}`, returnTo: '/client/invoices', kind })
   const cookies = { ...held }
   for (const name of event.deleted) {
     Reflect.deleteProperty(cookies, name)
@@ -84,12 +84,14 @@ describe('createTransaction and openTransaction', () => {
     const name = transactionCookieName('state-1')
     expect(Object.keys(event.written)).toEqual([name])
     expect(event.written[name]?.value).not.toContain('verifier-state-1')
+    expect(event.written[name]?.value).not.toContain('nonce-state-1')
     const lookup = openTransaction(makeEvent({ cookies }), 'state-1')
     expect(lookup.status).toBe(SignonTransactionStatus.Found)
     expect(lookup.transaction).toMatchObject({
       v: 1,
       state: 'state-1',
       verifier: 'verifier-state-1',
+      nonce: 'nonce-state-1',
       returnTo: '/client/invoices',
       kind: SignonTransactionKind.Interactive,
       createdAt: START.getTime(),
@@ -117,7 +119,7 @@ describe('createTransaction and openTransaction', () => {
 
   it('remembers a silent attempt and a missing return path', () => {
     const event = makeEvent()
-    createTransaction(event, { state: 's', verifier: 'v', returnTo: null, kind: SignonTransactionKind.Silent })
+    createTransaction(event, { state: 's', verifier: 'v', nonce: 'n', returnTo: null, kind: SignonTransactionKind.Silent })
     const cookies = { [transactionCookieName('s')]: event.written[transactionCookieName('s')]?.value ?? '' }
 
     expect(openTransaction(makeEvent({ cookies }), 's').transaction).toMatchObject({ returnTo: null, kind: SignonTransactionKind.Silent })

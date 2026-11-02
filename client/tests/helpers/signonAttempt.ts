@@ -20,6 +20,8 @@ export interface StartedAttempt {
   state: string
   /** The PKCE challenge sent to the provider. */
   challenge: string
+  /** The `nonce` sent to the provider, which an ID token for this attempt must echo. */
+  nonce: string
   /** The browser's cookies after this start: the ones it held before plus this attempt's. */
   cookies: Record<string, string>
   /** The name of this attempt's transaction cookie. */
@@ -54,6 +56,7 @@ export const startAttempt = (
   return {
     state: params.get('state') ?? '',
     challenge: params.get('code_challenge') ?? '',
+    nonce: params.get('nonce') ?? '',
     cookies,
     cookieName,
     deleted: event.deleted,

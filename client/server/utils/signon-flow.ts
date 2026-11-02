@@ -2,7 +2,7 @@
  * The start of the external sign-on authorization-code flow, shared by every route that sends the
  * browser to the sign-on provider (`authorize.get.ts`, `switch.get.ts`).
  *
- * One place creates the PKCE pair and the `state`, binds them to this browser in one sealed,
+ * One place creates the PKCE pair, the `state` and the `nonce`, binds them to this browser in one sealed,
  * short-lived httpOnly transaction cookie of their own (`server/utils/signon-transaction.ts`), and
  * builds the authorize query. The callback later finds the transaction through the returned
  * `state` and checks the PKCE proof against it, so a route that only starts the flow never changes
@@ -34,7 +34,7 @@ export const MAX_RETURN_PATH_LENGTH = 1024
 export interface SignonFlow {
   /** The public address of the sign-on provider, never empty. */
   ssoPublicUrl: string
-  /** The authorize query: client, redirect address, scope, PKCE challenge and `state`. */
+  /** The authorize query: client, redirect address, scope, PKCE challenge, `state` and `nonce`. */
   params: URLSearchParams
 }
 
@@ -56,7 +56,7 @@ export const safeReturnPath = (candidate: unknown): string | null => {
  * Starts the sign-on flow for this browser.
  *
  * Fails closed with a coded 503 before any cookie is written when the sign-on addresses are not
- * configured. Otherwise seals the PKCE verifier, the `state`, the return path and the kind of attempt
+ * configured. Otherwise seals the PKCE verifier, the `state`, the `nonce`, the return path and the kind of attempt
  * into one transaction cookie, and returns the authorize query.
  *
  * @param event - The request being answered.
@@ -80,7 +80,9 @@ export const startSignonFlow = (
     .digest('base64url')
 
   const state = randomBytes(16).toString('hex')
-  createTransaction(event, { state, verifier: codeVerifier, returnTo, kind })
+  // Echoed back inside the signed ID token, so a token minted for another attempt is refused.
+  const nonce = randomBytes(16).toString('hex')
+  createTransaction(event, { state, verifier: codeVerifier, nonce, returnTo, kind })
 
   const params = new URLSearchParams({
     client_id: config.ssoClientId,
@@ -90,6 +92,7 @@ export const startSignonFlow = (
     code_challenge: codeChallenge,
     code_challenge_method: 'S256',
     state,
+    nonce,
   })
   return { ssoPublicUrl, params }
 }

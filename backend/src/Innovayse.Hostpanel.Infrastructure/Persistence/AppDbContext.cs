@@ -299,7 +299,8 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// <returns>The number of rows written.</returns>
     /// <exception cref="ConcurrencyConflictException">
     /// Another writer modified one of the saved aggregates concurrently, or another writer recorded the
-    /// same gateway payment first (the unique reference of a gateway payment row was violated).
+    /// same gateway payment first (the unique reference of a gateway payment row was violated), or another
+    /// delivery claimed the same email first (the unique delivery key of an email log row was violated).
     /// </exception>
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
@@ -326,6 +327,18 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
             // treating the payment as the replay it is, instead of failing the request with a 500.
             throw new ConcurrencyConflictException(
                 "Another writer recorded the same gateway payment concurrently.", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: EmailLogConfiguration.IdempotencyKeyIndex,
+        })
+        {
+            // A second claim of one delivery key means another delivery of the same message claimed it
+            // first. It is the same lost race as two reclaims of one row, so it takes the same path and
+            // the mail handler skips the send instead of mailing twice.
+            throw new ConcurrencyConflictException(
+                "Another delivery claimed the same email concurrently.", ex);
         }
     }
 

@@ -99,7 +99,15 @@ public sealed class DomainExpiringNotificationHandler
                 evt.ExpiresAt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 daysUntilExpiry));
 
-            await _bus.InvokeAsync(new SendEmailCommand(email, client.Language, "domain-expiring", data, new ContactCopy(evt.ClientId, ContactNotification.Domain)), ct);
+            await _bus.InvokeAsync(
+                new SendEmailCommand(
+                    email,
+                    client.Language,
+                    "domain-expiring",
+                    data,
+                    new ContactCopy(evt.ClientId, ContactNotification.Domain),
+                    IdempotencyKey: EmailIdempotencyKey.ForMessage(evt, "domain-expiring")),
+                ct);
 
             _logger.LogInformation(
                 "Sent domain-expiring notification for domain {DomainName} (ID {DomainId}, expires in {Days} days) to {Email}.",

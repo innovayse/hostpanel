@@ -49,9 +49,8 @@ public sealed class ServiceTerminationFailedAdminHandlerTests(IntegrationTestFac
         var sender = new FakeEmailSender();
         var host = EventHandlerTestHost.WithFakeRelay(factory, sender);
         using var scope = host.Services.CreateScope();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
-        await bus.InvokeAsync(new ServiceTerminationFailedEvent(1, "x") { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceTerminationFailedEvent(1, "x") { OccurredAt = DateTimeOffset.UtcNow });
 
         sender.Sent.Should().BeEmpty();
     }

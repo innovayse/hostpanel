@@ -7,7 +7,6 @@ using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 
@@ -36,11 +35,10 @@ public sealed class DomainExpiredHandlerTests(IntegrationTestFactory factory) : 
         var host = EventHandlerTestHost.WithFakeRelay(factory, emailSender);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var (clientId, email, serviceId, domainId) = await SeedExpiredDomainAsync(scope.ServiceProvider, context, expire: true);
 
-        await bus.InvokeAsync(new DomainExpiredEvent(domainId, clientId, serviceId) { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainExpiredEvent(domainId, clientId, serviceId) { OccurredAt = DateTimeOffset.UtcNow });
 
         var message = Assert.Single(emailSender.Sent);
         Assert.Equal(email, message.To);
@@ -65,13 +63,12 @@ public sealed class DomainExpiredHandlerTests(IntegrationTestFactory factory) : 
         var host = EventHandlerTestHost.WithFakeRelay(factory, emailSender);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var (clientId, _, serviceId, domainId) = await SeedExpiredDomainAsync(scope.ServiceProvider, context, expire: true);
         var evt = new DomainExpiredEvent(domainId, clientId, serviceId) { OccurredAt = DateTimeOffset.UtcNow };
 
-        await bus.InvokeAsync(evt, CancellationToken.None);
-        await bus.InvokeAsync(evt, CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(evt);
+        await scope.ServiceProvider.PublishAndWaitAsync(evt);
 
         var reloaded = await context.ClientServices.AsNoTracking()
             .FirstAsync(s => s.Id == serviceId, CancellationToken.None);
@@ -90,11 +87,10 @@ public sealed class DomainExpiredHandlerTests(IntegrationTestFactory factory) : 
         var host = EventHandlerTestHost.WithFakeRelay(factory, emailSender);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var (clientId, _, serviceId, domainId) = await SeedExpiredDomainAsync(scope.ServiceProvider, context, expire: false);
 
-        await bus.InvokeAsync(new DomainExpiredEvent(domainId, clientId, serviceId) { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainExpiredEvent(domainId, clientId, serviceId) { OccurredAt = DateTimeOffset.UtcNow });
 
         var reloaded = await context.ClientServices.AsNoTracking()
             .FirstAsync(s => s.Id == serviceId, CancellationToken.None);
@@ -112,7 +108,6 @@ public sealed class DomainExpiredHandlerTests(IntegrationTestFactory factory) : 
         var host = EventHandlerTestHost.WithFakeRelay(factory, emailSender);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var (clientId, _, serviceId, _) = await SeedExpiredDomainAsync(scope.ServiceProvider, context, expire: true);
         int strangerDomainId;
@@ -121,8 +116,8 @@ public sealed class DomainExpiredHandlerTests(IntegrationTestFactory factory) : 
             strangerDomainId = await DomainsTestSeeds.SeedActiveDomainAsync(context);
         }
 
-        await bus.InvokeAsync(new DomainExpiredEvent(strangerDomainId, clientId, serviceId) { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
-        await bus.InvokeAsync(new DomainExpiredEvent(int.MaxValue, clientId, serviceId) { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainExpiredEvent(strangerDomainId, clientId, serviceId) { OccurredAt = DateTimeOffset.UtcNow });
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainExpiredEvent(int.MaxValue, clientId, serviceId) { OccurredAt = DateTimeOffset.UtcNow });
 
         Assert.Empty(emailSender.Sent);
         var reloaded = await context.ClientServices.AsNoTracking()

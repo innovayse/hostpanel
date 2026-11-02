@@ -147,7 +147,15 @@ public sealed class DomainRenewedHandler
                 domain.Name,
                 evt.NewExpiresAt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
 
-            await _bus.InvokeAsync(new SendEmailCommand(email, client.Language, "domain-renewed", data, new ContactCopy(evt.ClientId, ContactNotification.Domain)), ct);
+            await _bus.InvokeAsync(
+                new SendEmailCommand(
+                    email,
+                    client.Language,
+                    "domain-renewed",
+                    data,
+                    new ContactCopy(evt.ClientId, ContactNotification.Domain),
+                    IdempotencyKey: EmailIdempotencyKey.ForMessage(evt, "domain-renewed")),
+                ct);
 
             _logger.LogInformation(
                 "Sent domain-renewed notification for domain {DomainId} to {Email}.",

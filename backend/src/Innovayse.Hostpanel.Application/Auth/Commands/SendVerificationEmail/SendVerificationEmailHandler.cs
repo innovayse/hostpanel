@@ -117,6 +117,8 @@ public sealed class SendVerificationEmailHandler
         var verificationLink =
             $"{landing}?token={Uri.EscapeDataString(tokenOutcome.Value)}&email={Uri.EscapeDataString(account.Email)}";
 
+        // No idempotency key: this runs inside the caller's request and is never replayed by a queue, and a
+        // repeated request is a deliberate new verification link that must be mailed again.
         await _bus.InvokeAsync(new SendEmailCommand(
             account.Email,
             account.Language,

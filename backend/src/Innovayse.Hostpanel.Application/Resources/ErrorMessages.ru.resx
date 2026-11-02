@@ -195,6 +195,9 @@
 <data name="EMAIL_TEMPLATE_NOT_FOUND" xml:space="preserve">
     <value>Такой шаблон письма не найден.</value>
   </data>
+  <data name="EMAIL_ALREADY_DELIVERED" xml:space="preserve">
+    <value>Это письмо уже доставлено.</value>
+  </data>
 <data name="EMAIL_TEMPLATE_ALREADY_EXISTS" xml:space="preserve">
     <value>У этого шаблона уже есть версия на этом языке.</value>
   </data>

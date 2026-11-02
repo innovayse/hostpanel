@@ -59,6 +59,14 @@ public sealed class TicketClosedHandler
 
         var data = new TicketClosedTemplateModel(new TicketTemplateData(evt.TicketId, subject));
 
-        await _bus.InvokeAsync(new SendEmailCommand(email, client.Language, "ticket-closed", data, new ContactCopy(evt.ClientId, ContactNotification.Support)), ct);
+        await _bus.InvokeAsync(
+            new SendEmailCommand(
+                email,
+                client.Language,
+                "ticket-closed",
+                data,
+                new ContactCopy(evt.ClientId, ContactNotification.Support),
+                IdempotencyKey: EmailIdempotencyKey.ForMessage(evt, "ticket-closed")),
+            ct);
     }
 }

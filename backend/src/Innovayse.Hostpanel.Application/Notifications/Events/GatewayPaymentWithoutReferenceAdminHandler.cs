@@ -69,6 +69,14 @@ public sealed class GatewayPaymentWithoutReferenceAdminHandler
             evt.Amount,
             evt.Currency);
         await _bus.InvokeAsync(
-            new SendEmailCommand(to, null, StaffAlertTemplatesSeeder.GatewayPaymentWithoutReferenceSlug, data), ct);
+            new SendEmailCommand(
+                to,
+                null,
+                StaffAlertTemplatesSeeder.GatewayPaymentWithoutReferenceSlug,
+                data,
+                IdempotencyKey: EmailIdempotencyKey.ForMessage(
+                    evt,
+                    StaffAlertTemplatesSeeder.GatewayPaymentWithoutReferenceSlug)),
+            ct);
     }
 }

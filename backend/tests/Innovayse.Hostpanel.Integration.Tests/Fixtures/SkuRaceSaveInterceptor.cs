@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Npgsql;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
@@ -36,16 +37,24 @@ internal sealed class SkuRaceSaveInterceptor(string sku) : SaveChangesIntercepto
             return result;
         }
 
-        // Written outside the handler's save, before EF opens its own transaction, so it is committed
-        // the way another request's product would be.
-        var type = ProductType.Digital.ToString();
-        var status = ProductStatus.Active.ToString();
-        await db.Database.ExecuteSqlAsync(
-            $"""
+        // Written on a connection of its own and committed there, the way another request's product would
+        // be. The context's own connection cannot be used: the domain event interceptor has already opened
+        // the save's transaction by now, so a write on it would be rolled back together with the loser.
+        await using var competitor = new NpgsqlConnection(db.Database.GetConnectionString());
+        await competitor.OpenAsync(cancellationToken);
+        await using var insert = new NpgsqlCommand(
+            """
             INSERT INTO "Products" ("GroupId", "Name", "Type", "Status", "MonthlyPrice", "AnnualPrice", "IsFeatured", "SortOrder", "CreatedAt", "Sku")
-            VALUES ({pending.Entity.GroupId}, {CompetitorName}, {type}, {status}, 0, 0, FALSE, 0, {DateTimeOffset.UtcNow}, {sku})
+            VALUES (@groupId, @name, @type, @status, 0, 0, FALSE, 0, @createdAt, @sku)
             """,
-            cancellationToken);
+            competitor);
+        insert.Parameters.AddWithValue("groupId", pending.Entity.GroupId);
+        insert.Parameters.AddWithValue("name", CompetitorName);
+        insert.Parameters.AddWithValue("type", ProductType.Digital.ToString());
+        insert.Parameters.AddWithValue("status", ProductStatus.Active.ToString());
+        insert.Parameters.AddWithValue("createdAt", DateTimeOffset.UtcNow);
+        insert.Parameters.AddWithValue("sku", sku);
+        await insert.ExecuteNonQueryAsync(cancellationToken);
         Fired = true;
         return result;
     }

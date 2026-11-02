@@ -121,4 +121,41 @@ public sealed class RunMigrationPullTests(IntegrationTestFactory factory) : ICla
         await pull.Should().NotThrowAsync();
         Assert.Equal(0, source.FetchCountFor("announcements"));
     }
+
+    /// <summary>
+    /// Two pulls of one queued job run at once: the second starts and completes the job while the first
+    /// is between reading the job and starting it. The first loses the start on the job's concurrency
+    /// token and returns quietly, so the job ends completed, not failed, and each record is imported once.
+    /// </summary>
+    /// <returns>A task.</returns>
+    [Fact]
+    public async Task ConcurrentPulls_LoserReturnsQuietly_JobCompletesAsync()
+    {
+        var source = new FakeMigrationPullSource { Totals = MigrationSourceTotals.Empty with { Content = new(Announcements: 1) } };
+        var marker = Guid.NewGuid().ToString("N");
+        source.SetDatasetJson("announcements", $$"""
+            [ {"Title":"{{marker}}","Content":"Body","Published":true} ]
+            """);
+        using var host = MigrationTestSeeds.HostWithFakeSource(factory, source);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var job = await MigrationTestSeeds.SeedJobSelectingOnlyAsync(context, MigrationEntityType.Announcements);
+        source.BeforeFirstTotals = async () =>
+        {
+            // The competing pull runs in its own scope, so it has its own context and its own read of the job.
+            using var competitor = host.Services.CreateScope();
+            await competitor.ServiceProvider.GetRequiredService<IMessageBus>().InvokeAsync(new RunMigrationPullCommand(job.Id));
+        };
+
+        var pull = () => scope.ServiceProvider.GetRequiredService<IMessageBus>().InvokeAsync(new RunMigrationPullCommand(job.Id));
+
+        await pull.Should().NotThrowAsync();
+        Assert.Null(source.BeforeFirstTotals);
+        var reloaded = await context.MigrationJobs.AsNoTracking().SingleAsync(j => j.Id == job.Id);
+        Assert.Equal(MigrationJobStatus.Completed, reloaded.Status);
+        Assert.Null(reloaded.Failure);
+        Assert.Equal(1, reloaded.AnnouncementsImported);
+        Assert.Equal(1, source.FetchCountFor("announcements"));
+        Assert.Equal(1, await context.Announcements.AsNoTracking().CountAsync(a => a.Title == marker));
+    }
 }

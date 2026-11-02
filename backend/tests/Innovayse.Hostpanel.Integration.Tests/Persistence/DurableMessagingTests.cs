@@ -17,12 +17,14 @@ namespace Innovayse.Hostpanel.Integration.Tests.Persistence;
 /// <summary>
 /// Wolverine's PostgreSQL message store as the host runs it: a domain event saved in a committed
 /// transaction is persisted as an envelope and handled, a rolled-back one leaves no envelope, a queued
-/// handler that fails is retried until it succeeds, and a recurring job's scheduled run stays in memory.
+/// handler that fails is retried until it succeeds (alone, when its event has other handlers), and a
+/// recurring job's scheduled run stays in memory.
 /// </summary>
 /// <remarks>
 /// The store is read through Wolverine's own admin API (<see cref="IMessageStoreAdmin"/>), never with SQL,
 /// so the tests do not depend on the layout of Wolverine's tables. Every host is derived from the shared
-/// factory with <see cref="FlakyProbeHandler"/> added to discovery and mail sent to a recording relay.
+/// factory with <see cref="FlakyProbeHandler"/> and the two <see cref="SplitProbeEvent"/> handlers added to
+/// discovery and mail sent to a recording relay.
 /// </remarks>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class DurableMessagingTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
@@ -48,6 +50,7 @@ public sealed class DurableMessagingTests(IntegrationTestFactory factory) : ICla
             {
                 services.AddSingleton<IEmailSender>(emailSender);
                 services.ConfigureWolverine(FlakyProbeHandler.IncludeIn);
+                services.ConfigureWolverine(SplitProbeFailingHandler.IncludeIn);
             }));
 
     /// <summary>Every envelope the host's message store holds, incoming (including scheduled and handled) and outgoing.</summary>
@@ -154,6 +157,32 @@ public sealed class DurableMessagingTests(IntegrationTestFactory factory) : ICla
 
         var counts = await host.Services.GetRequiredService<IWolverineRuntime>().Storage.Admin.FetchCountsAsync();
         counts.DeadLetter.Should().Be(0, "a message that succeeded on retry never reaches the dead letters");
+    }
+
+    /// <summary>
+    /// An event with two handlers runs each on its own chain: the handler whose first attempt throws is
+    /// retried until it succeeds, while its sibling, which succeeded at once, runs exactly once. Under one
+    /// combined chain the retry would have replayed the sibling too.
+    /// </summary>
+    /// <returns>A task that completes when the retry was observed and the sibling counted.</returns>
+    [Fact]
+    public async Task EventWithTwoHandlers_RetriesOnlyTheHandlerThatFailedAsync()
+    {
+        var host = ProbeHost(new FakeEmailSender());
+        var probeId = Guid.NewGuid();
+
+        using (var scope = host.Services.CreateScope())
+        {
+            await scope.ServiceProvider.GetRequiredService<IMessageBus>().PublishAsync(new SplitProbeEvent(probeId));
+        }
+
+        (await WaitUntilAsync(() => SplitProbeFailingHandler.HasSucceeded(probeId)))
+            .Should().BeTrue("the failing handler's first attempt threw a transient fault, so it must be retried");
+        (await WaitUntilAsync(() => SplitProbeSteadyHandler.RunsFor(probeId) > 0))
+            .Should().BeTrue("the sibling handler receives the event on its own chain");
+
+        SplitProbeFailingHandler.AttemptsFor(probeId).Should().Be(2, "one failed attempt, then one that succeeded");
+        SplitProbeSteadyHandler.RunsFor(probeId).Should().Be(1, "the sibling's chain was never retried, so it ran once");
     }
 
     /// <summary>

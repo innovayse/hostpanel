@@ -25,6 +25,13 @@ namespace Innovayse.Hostpanel.Shared.Infrastructure;
  *   request answered. A command answers once; the caller decides whether to try again.
  * - Recurring jobs (IRecurringJob). Each pass schedules the next one itself and logs its own failure;
  *   a retried pass would run the job twice and could start a second chain.
+ *
+ * Messages with several handlers run under MultipleHandlerBehavior.Separated: Wolverine keeps the
+ * message's own chain, now without handlers, and adds one chain per handler in HandlerChain.ByEndpoint,
+ * each on its own local queue. Wolverine hands a handler policy that whole exploded list (every chain and
+ * each of its ByEndpoint chains), so the per-handler chains get these rules here like any other, and a
+ * retry replays only the handler that failed. The emptied parent passes the filter too; it never runs,
+ * so the rules on it are inert.
  */
 
 /// <summary>

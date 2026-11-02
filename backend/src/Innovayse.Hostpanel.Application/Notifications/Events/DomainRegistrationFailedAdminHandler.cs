@@ -66,6 +66,12 @@ public sealed class DomainRegistrationFailedAdminHandler
             evt.Reason);
 
         await _bus.InvokeAsync(
-            new SendEmailCommand(to, null, "domain-registration-failed-admin", data), ct);
+            new SendEmailCommand(
+                to,
+                null,
+                "domain-registration-failed-admin",
+                data,
+                IdempotencyKey: EmailIdempotencyKey.ForMessage(evt, "domain-registration-failed-admin")),
+            ct);
     }
 }

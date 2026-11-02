@@ -95,7 +95,15 @@ public sealed class DomainRegisteredNotificationHandler
                 domain.Registrar,
                 domain.ExpiresAt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
 
-            await _bus.InvokeAsync(new SendEmailCommand(email, client.Language, "domain-registered", data, new ContactCopy(evt.ClientId, ContactNotification.Domain)), ct);
+            await _bus.InvokeAsync(
+                new SendEmailCommand(
+                    email,
+                    client.Language,
+                    "domain-registered",
+                    data,
+                    new ContactCopy(evt.ClientId, ContactNotification.Domain),
+                    IdempotencyKey: EmailIdempotencyKey.ForMessage(evt, "domain-registered")),
+                ct);
 
             _logger.LogInformation(
                 "Sent domain-registered notification for domain {DomainName} (ID {DomainId}) to {Email}.",

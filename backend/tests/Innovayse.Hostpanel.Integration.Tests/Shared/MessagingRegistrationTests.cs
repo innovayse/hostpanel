@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.API.Extensions;
 using Innovayse.Hostpanel.Application.Billing.Commands.CompleteGatewayPayment;
 using Innovayse.Hostpanel.Application.Billing.Commands.ReconcileGatewayPaymentsCron;
+using Innovayse.Hostpanel.Domain.Billing.Events;
 using Innovayse.Hostpanel.Domain.Clients.Events;
 using Innovayse.Hostpanel.Shared.Contracts.Interfaces;
 using Innovayse.Hostpanel.Shared.Settings;
@@ -11,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.Internal;
 using Microsoft.Extensions.Options;
+using Wolverine;
 using Wolverine.Runtime;
 using Wolverine.Runtime.Handlers;
 
@@ -19,7 +21,8 @@ namespace Innovayse.Hostpanel.Integration.Tests.Shared;
 /// <summary>
 /// <see cref="MessagingRegistration"/>: how Wolverine gets its handler code in each environment, the
 /// execution timeout the chains of the recurring jobs get in place of the one-minute default, the durable
-/// retry rules only queued chains get, and the refusal of service location that every chain is built under.
+/// retry rules only queued chains get (the per-handler chains of a separated event included), and the
+/// refusal of service location that every chain is built under.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class MessagingRegistrationTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
@@ -85,6 +88,38 @@ public sealed class MessagingRegistrationTests(IntegrationTestFactory factory) :
 
         chains.Single(c => c.MessageType == typeof(ClientCreatedEvent)).Failures
             .Should().NotBeEmpty("an event chain is delivered from a durable queue and must be retried on failure");
+    }
+
+    /// <summary>
+    /// The host separates the handlers of one message, so a retry of one handler never replays the others.
+    /// </summary>
+    [Fact]
+    public void MultipleHandlerBehavior_IsSeparated()
+    {
+        var runtime = factory.Services.GetRequiredService<IWolverineRuntime>();
+
+        runtime.Options.MultipleHandlerBehavior.Should().Be(MultipleHandlerBehavior.Separated);
+    }
+
+    /// <summary>
+    /// An event with several handlers keeps no handler on its own chain and runs each one on a chain of its
+    /// own, and every one of those chains carries the durable retry rules, so the policy reaches them.
+    /// </summary>
+    [Fact]
+    public void EventWithSeveralHandlers_RunsEachOnItsOwnChain_WithTheDurableRetryRules()
+    {
+        var chain = factory.Services.GetRequiredService<HandlerGraph>().Chains
+            .Single(c => c.MessageType == typeof(PaymentReceivedEvent));
+
+        chain.Handlers.Should().BeEmpty("a separated event's handlers move to their own chains");
+        chain.ByEndpoint.Should().HaveCountGreaterThanOrEqualTo(2, "PaymentReceivedEvent has more than one handler");
+        foreach (var separated in chain.ByEndpoint)
+        {
+            separated.Handlers.Should().ContainSingle("each separated chain runs one handler");
+            separated.Failures.Should().NotBeEmpty(
+                "the per-handler chain {0} is delivered from a durable queue and must be retried on failure",
+                separated.TypeName);
+        }
     }
 
     /// <summary>
@@ -268,7 +303,10 @@ public sealed class MessagingRegistrationTests(IntegrationTestFactory factory) :
     /// <returns>Its namespace-qualified name.</returns>
     private static string NameOf(Type type) => $"{type.Namespace}.{type.Name}";
 
-    /// <summary>Builds the handler of every chain the host discovered and names the ones that fail.</summary>
+    /// <summary>
+    /// Builds the handler of every chain the host discovered, each per-handler chain of a message with
+    /// several handlers included, and names the ones that fail.
+    /// </summary>
     /// <param name="host">The host whose chains are built.</param>
     /// <returns>One line per chain that could not be built: its message type and the first line of the reason.</returns>
     internal static List<string> ChainsThatFailToBuild(WebApplicationFactory<Program> host)
@@ -279,19 +317,38 @@ public sealed class MessagingRegistrationTests(IntegrationTestFactory factory) :
         graph.Chains.Should().NotBeEmpty("the handlers of the API and Application assemblies are discovered");
         foreach (var chain in graph.Chains)
         {
-            try
+            // Under MultipleHandlerBehavior.Separated a message with several handlers keeps none on its
+            // own chain, and asking for that chain's handler throws; its handlers are built per endpoint.
+            if (chain.Handlers.Count > 0)
             {
-                graph.HandlerFor(chain.MessageType);
+                TryBuild(offenders, chain.MessageType, () => graph.HandlerFor(chain.MessageType));
             }
-            catch (Exception exception)
+
+            foreach (var separated in chain.ByEndpoint)
             {
-                var reason = exception.Message
-                    .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                    .FirstOrDefault() ?? exception.GetType().Name;
-                offenders.Add($"{chain.MessageType.Name}: {exception.GetType().Name}: {reason}");
+                TryBuild(offenders, chain.MessageType, () => graph.HandlerFor(chain.MessageType, separated.Endpoints[0]));
             }
         }
 
         return offenders;
+    }
+
+    /// <summary>Builds one handler and records the reason when it cannot be built.</summary>
+    /// <param name="offenders">The offender lines collected so far; a failure adds one.</param>
+    /// <param name="messageType">The message whose handler is built, named in the offender line.</param>
+    /// <param name="build">Asks the handler graph for the handler, which compiles it on first use.</param>
+    private static void TryBuild(List<string> offenders, Type messageType, Action build)
+    {
+        try
+        {
+            build();
+        }
+        catch (Exception exception)
+        {
+            var reason = exception.Message
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .FirstOrDefault() ?? exception.GetType().Name;
+            offenders.Add($"{messageType.Name}: {exception.GetType().Name}: {reason}");
+        }
     }
 }

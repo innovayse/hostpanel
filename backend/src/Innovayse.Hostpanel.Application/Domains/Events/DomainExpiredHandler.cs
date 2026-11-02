@@ -156,7 +156,15 @@ public sealed class DomainExpiredHandler
             var data = new DomainExpiredTemplateModel(
                 new ExpiredDomainTemplateData(evt.DomainId, domain.Name, evt.LinkedServiceId));
 
-            await _bus.InvokeAsync(new SendEmailCommand(email, client.Language, "domain-expired", data, new ContactCopy(evt.ClientId, ContactNotification.Domain)), ct);
+            await _bus.InvokeAsync(
+                new SendEmailCommand(
+                    email,
+                    client.Language,
+                    "domain-expired",
+                    data,
+                    new ContactCopy(evt.ClientId, ContactNotification.Domain),
+                    IdempotencyKey: EmailIdempotencyKey.ForMessage(evt, "domain-expired")),
+                ct);
 
             _logger.LogInformation(
                 "Sent domain-expired notification for domain {DomainId} to {Email}.",

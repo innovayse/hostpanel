@@ -1,7 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Provisioning.Events;
 using Microsoft.Extensions.DependencyInjection;
-using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Provisioning;
 
@@ -22,12 +21,11 @@ public sealed class ServiceSuspendedHandlerTests(IntegrationTestFactory factory)
         var host = ProvisioningTestSeeds.WithRecordingProvider(factory, provider);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var (clientId, _, serviceId) = await ProvisioningTestSeeds.SeedActiveServiceAsync(context);
         await SuspendQuietlyAsync(scope.ServiceProvider, context, serviceId);
 
-        await bus.InvokeAsync(new ServiceSuspendedEvent(serviceId, clientId, "non-payment", DateTimeOffset.UtcNow), CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceSuspendedEvent(serviceId, clientId, "non-payment", DateTimeOffset.UtcNow));
 
         var call = Assert.Single(provider.Suspended);
         Assert.Equal(serviceId, call.ServiceId);
@@ -46,11 +44,10 @@ public sealed class ServiceSuspendedHandlerTests(IntegrationTestFactory factory)
         var host = ProvisioningTestSeeds.WithRecordingProvider(factory, provider);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var (clientId, serviceId) = await ProvisioningTestSeeds.SeedUnassignedServiceAsync(context);
 
-        await bus.InvokeAsync(new ServiceSuspendedEvent(serviceId, clientId, "non-payment", DateTimeOffset.UtcNow), CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceSuspendedEvent(serviceId, clientId, "non-payment", DateTimeOffset.UtcNow));
 
         Assert.Empty(provider.Suspended);
     }
@@ -68,11 +65,10 @@ public sealed class ServiceSuspendedHandlerTests(IntegrationTestFactory factory)
         var host = ProvisioningTestSeeds.WithRecordingProvider(factory, provider);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var (clientId, _, serviceId) = await ProvisioningTestSeeds.SeedActiveServiceAsync(context);
 
-        await bus.InvokeAsync(new ServiceSuspendedEvent(serviceId, clientId, "non-payment", DateTimeOffset.UtcNow), CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceSuspendedEvent(serviceId, clientId, "non-payment", DateTimeOffset.UtcNow));
 
         Assert.Empty(provider.Suspended);
     }
@@ -88,9 +84,8 @@ public sealed class ServiceSuspendedHandlerTests(IntegrationTestFactory factory)
         var provider = new RecordingProvisioningProvider();
         var host = ProvisioningTestSeeds.WithRecordingProvider(factory, provider);
         using var scope = host.Services.CreateScope();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
-        await bus.InvokeAsync(new ServiceSuspendedEvent(int.MaxValue, 1, "non-payment", DateTimeOffset.UtcNow), CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceSuspendedEvent(int.MaxValue, 1, "non-payment", DateTimeOffset.UtcNow));
 
         Assert.Empty(provider.Suspended);
     }

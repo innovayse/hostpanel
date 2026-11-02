@@ -4,7 +4,6 @@ using Innovayse.Hostpanel.Domain.Domains.Events;
 using Innovayse.Hostpanel.Domain.Notifications;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 
@@ -30,13 +29,12 @@ public sealed class DomainExpiringNotificationHandlerTests(IntegrationTestFactor
         var host = EventHandlerTestHost.WithFakeRelay(factory, emailSender);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var (client, email) = await EventHandlerTestHost.SeedIdentityClientAsync(scope.ServiceProvider, context, "domain-event");
         await EnsureTemplateAsync(context);
         var domainId = await SeedDomainAsync(scope.ServiceProvider, context, client.Id);
 
-        await bus.InvokeAsync(new DomainExpiringEvent(domainId, client.Id, "example.test", DateTimeOffset.UtcNow.AddDays(7)) { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainExpiringEvent(domainId, client.Id, "example.test", DateTimeOffset.UtcNow.AddDays(7)) { OccurredAt = DateTimeOffset.UtcNow });
 
         var message = Assert.Single(emailSender.Sent);
         Assert.Equal(email, message.To);
@@ -53,15 +51,14 @@ public sealed class DomainExpiringNotificationHandlerTests(IntegrationTestFactor
         var host = EventHandlerTestHost.WithFakeRelay(factory, emailSender);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var (client, _) = await EventHandlerTestHost.SeedIdentityClientAsync(scope.ServiceProvider, context, "domain-event");
         var (stranger, _) = await EventHandlerTestHost.SeedIdentityClientAsync(scope.ServiceProvider, context, "domain-event-stranger");
         await EnsureTemplateAsync(context);
         var strangerDomainId = await SeedDomainAsync(scope.ServiceProvider, context, stranger.Id);
 
-        await bus.InvokeAsync(new DomainExpiringEvent(strangerDomainId, client.Id, "example.test", DateTimeOffset.UtcNow.AddDays(7)) { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
-        await bus.InvokeAsync(new DomainExpiringEvent(int.MaxValue, client.Id, "example.test", DateTimeOffset.UtcNow.AddDays(7)) { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainExpiringEvent(strangerDomainId, client.Id, "example.test", DateTimeOffset.UtcNow.AddDays(7)) { OccurredAt = DateTimeOffset.UtcNow });
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainExpiringEvent(int.MaxValue, client.Id, "example.test", DateTimeOffset.UtcNow.AddDays(7)) { OccurredAt = DateTimeOffset.UtcNow });
 
         Assert.Empty(emailSender.Sent);
     }

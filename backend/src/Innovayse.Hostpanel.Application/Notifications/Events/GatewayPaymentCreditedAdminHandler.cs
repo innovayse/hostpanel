@@ -71,6 +71,14 @@ public sealed class GatewayPaymentCreditedAdminHandler
             evt.Currency,
             evt.Credited);
         await _bus.InvokeAsync(
-            new SendEmailCommand(to, null, StaffAlertTemplatesSeeder.GatewayPaymentCreditedSlug, data), ct);
+            new SendEmailCommand(
+                to,
+                null,
+                StaffAlertTemplatesSeeder.GatewayPaymentCreditedSlug,
+                data,
+                IdempotencyKey: EmailIdempotencyKey.ForMessage(
+                    evt,
+                    StaffAlertTemplatesSeeder.GatewayPaymentCreditedSlug)),
+            ct);
     }
 }

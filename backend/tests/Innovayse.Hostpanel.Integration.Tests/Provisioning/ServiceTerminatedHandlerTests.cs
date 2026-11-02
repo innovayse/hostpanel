@@ -1,7 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Provisioning.Events;
 using Microsoft.Extensions.DependencyInjection;
-using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Provisioning;
 
@@ -22,11 +21,10 @@ public sealed class ServiceTerminatedHandlerTests(IntegrationTestFactory factory
         var host = ProvisioningTestSeeds.WithRecordingProvider(factory, provider);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var (clientId, _, serviceId) = await ProvisioningTestSeeds.SeedActiveServiceAsync(context);
 
-        await bus.InvokeAsync(new ServiceTerminatedEvent(serviceId, clientId, "cancelled", DateTimeOffset.UtcNow), CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceTerminatedEvent(serviceId, clientId, "cancelled", DateTimeOffset.UtcNow));
 
         var call = Assert.Single(provider.Terminated);
         Assert.Equal(serviceId, call.ServiceId);

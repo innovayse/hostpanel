@@ -74,7 +74,9 @@ repositories. The departures are short:
   `AutoTerminateSuspendedCron`, `SyncServerAccountCountsCron`, `DispatchFulfilmentCron`) and `ResetDemoData`,
   `CheckDomainExpiries` and `SyncPendingDomainStatuses` are scheduled messages, not dispatched by a
   caller, so nothing would receive a `Result`. So are `RunMigrationPull` (published by
-  `MigrationPullQueue` once a job's queued state is saved; the job row records how the pull ended)
+  `MigrationPullQueue` once a job's queued state is saved; the job row records how the pull ended; when two
+  deliveries of one pull race, the save that starts the job (`job.Start`) loses with `ConcurrencyConflictException`
+  and the worker logs it at Information and returns without touching the job, which the winner runs)
   and `RecoverInterruptedMigrationJobs` (a recurring job: it fails queued or running pulls whose `MigrationJobs.LastHeartbeatAt` is older than `ScheduledJobs:MigrationStaleAfterMinutes`, so a pull another instance still runs is left alone). The crons run each pass through
   `Application/Common/RecurringJobs.RunAsync`, which takes the job's lease, logs a failed pass and schedules
   the next one from the end of the pass; the log line is the record of the failure. Wrapping them in a
@@ -580,7 +582,8 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   every environment including `Testing`, and **not by an EF migration**: mapping Wolverine's tables into
   `AppDbContext` would make the EF model own a framework schema whose shape changes with the Wolverine version and
   put framework tables under `ModelDiffBaselineTests` and `DatabaseIdentifierNamingTests`. EF migrations run as
-  before. `opts.UseEntityFrameworkCoreTransactions()` registers the `IDbContextOutbox` the domain-event interceptor
+  before. **The deploy database user needs `CREATE` on the database** (not only on `public`), because Wolverine
+  creates the `wolverine` schema itself at the first start; without it the host refuses to start on that first boot. `opts.UseEntityFrameworkCoreTransactions()` registers the `IDbContextOutbox` the domain-event interceptor
   uses, **without `Policies.AutoApplyTransactions()`**: that policy would add a second `SaveChangesAsync` and an
   explicit transaction around every handler that takes the context, changing the unit of work of handlers that
   already save themselves (some more than once on purpose), while the interceptor's outbox already covers every
@@ -598,8 +601,16 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   `wolverine`'s dead-letter table. The values are documented constants on the policy, structure rather than
   per-tier configuration. The durability mode is the default `Balanced`: a rolling deploy briefly runs two
   containers on one database, and `Balanced` assigns inbox ownership per node where `Solo` would let both recover
-  the same envelopes. Every handler reached through a durable queue must be idempotent on its own, because a retry
-  replays the whole chain and all handlers of one event share one chain. The demo reset truncates the EF model's
+  the same envelopes. **Handlers of one event are separated** (`opts.MultipleHandlerBehavior =
+  MultipleHandlerBehavior.Separated` in `MessagingRegistration`): each handler of an event gets its own durable local
+  queue and its own chain (`HandlerChain.ByEndpoint`, which `DurableDeliveryRetryPolicy` reaches too), so a failing
+  handler is retried and dead-lettered alone and never re-runs a sibling that already succeeded. Every handler
+  reached through a durable queue must still be idempotent on its own, because its own retry, a recovery after a
+  crash or a second delivery runs it again. Production code never `InvokeAsync`s an event: an event is published
+  (the outbox, or `PublishAsync`), since an inline invoke of a separated event would not reach its per-handler
+  queues. Tests publish an event through `Fixtures/MessageDispatch.PublishAndWaitAsync` (an extension on
+  `IServiceProvider`), which publishes with Wolverine's message tracking and waits until every handler's queue has
+  finished, ignoring the `recurring-jobs` schedule. The demo reset truncates the EF model's
   tables only and leaves the `wolverine` schema alone: truncating the inbox under a running durability agent would
   break its ownership bookkeeping, and a durable message about a truncated row finds nothing. The integration test
   factory supplies the connection string with `UseSetting`, not `ConfigureAppConfiguration`, because Wolverine
@@ -687,8 +698,8 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   `RestoreServiceSshKeysCommand` on `ClientServiceUnsuspendedEvent`, which puts them back. `Provisioning/Events/ServiceUnsuspendedHandler`
   dispatches the same `RestoreServiceSshKeysCommand` a second time, but only after the panel answered `Updated` for
   the unlock, because an agent refuses keys for a locked account and the two unsuspensions are not ordered. All three
-  only trigger idempotent commands, log a refusal or failure for staff and never throw, since Wolverine runs every
-  handler of one message in a single chain.
+  only trigger idempotent commands and log a refusal or failure for staff instead of throwing. Each runs on its own
+  queue (handlers are separated, see "Durable messaging"), so one of them failing never re-runs the others.
   The remaining three react to `ClientClosedEvent` and are described under "Client account status" below.
 
 - **`InvoiceItems.ClientServiceId` and `InvoiceItems.RegisteredDomainId` carry no foreign key, on purpose.** An
@@ -807,6 +818,23 @@ feature does not exist is not kept. The decisions:
   received and renewal reminders use `Invoice`; ticket replied and closed use `Support`; service
   provisioned uses `Product`; the domain mails use `Domain`. Mail to staff, verification and
   security mail are never copied. `General` and `Affiliate` have no sender yet.
+- **Mail sent from a message is sent once per recipient.** `SendEmailCommand` takes an optional `IdempotencyKey`.
+  Every handler that mails in reaction to a message passes `EmailIdempotencyKey.ForMessage(message, templateSlug)`
+  (SHA-256 over the message type, its JSON and the slug); `SendRenewalReminder` passes `ForParts(invoice id,
+  threshold)`. Per address (the main recipient and each contact copy) the handler keys the row with
+  `ForRecipient(key, address)` and stores it on `EmailLogs.IdempotencyKey` (64 lower-case hex, unique index
+  `IX_EmailLogs_IdempotencyKey` filtered on not null) beside `EmailLogs.State` (`EmailDeliveryState`: `Sending`,
+  `Sent`, `Failed`; `Success` always equals `State == Sent`). The order is **claim, send, outcome**: the row is
+  claimed in `Sending` and saved before the relay is called (`EmailLog.Claim`, or `Reclaim` of a row whose
+  `MayResend` allows it), then `MarkDelivered` or `MarkUndelivered` is saved. A `Sent` row is never sent again; a
+  `Failed` row is retried; a `Sending` row is trusted to be in flight for `Notifications:DeliveryClaimSeconds`
+  (30 to 3600, default 300) and only then reclaimed. Two deliveries racing for one row meet the unique index or the
+  row's concurrency token, `AppDbContext` raises `ConcurrencyConflictException`, and the loser skips that address.
+  What remains: a crash after the relay accepted the message and before the outcome is saved leaves the row in
+  `Sending`, and the next delivery resends it once after the lease. Synchronous mails sent inside a request (email
+  change, invitation, verification, password reset) pass no key and are not deduplicated: the person is waiting
+  for exactly that mail, a second request is meant to send a fresh one (often with a new token), and no queue
+  retries them.
 - **Client data export** lists the whole profile, contacts with address and `Notify*` flags, linked users
   with permissions, invitations (never the token), and mail to the account's and every contact's address,
   matched case-insensitively. The lists with no ceiling, `emails` and `activityLog`, carry the newest 500

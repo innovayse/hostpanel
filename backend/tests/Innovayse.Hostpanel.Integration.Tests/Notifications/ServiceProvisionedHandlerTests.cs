@@ -1,7 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Provisioning.Events;
 using Microsoft.Extensions.DependencyInjection;
-using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 
@@ -22,12 +21,11 @@ public sealed class ServiceProvisionedHandlerTests(IntegrationTestFactory factor
         var host = EventHandlerTestHost.WithFakeRelay(factory, emailSender, NotificationsTestSeeds.AdminEmail);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var (client, email) = await EventHandlerTestHost.SeedIdentityClientAsync(scope.ServiceProvider, context, "notification-event");
         var serviceId = await NotificationsTestSeeds.SeedClientServiceAsync(context, client.Id);
 
-        await bus.InvokeAsync(new ServiceProvisionedEvent(serviceId, client.Id, "provisioning-ref-1", DateTimeOffset.UtcNow), CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceProvisionedEvent(serviceId, client.Id, "provisioning-ref-1", DateTimeOffset.UtcNow));
 
         var message = Assert.Single(emailSender.Sent);
         Assert.Equal(email, message.To);

@@ -118,6 +118,14 @@ public static class MessagingRegistration
             opts.Discovery.IncludeAssembly(typeof(MessagingRegistration).Assembly);
             opts.Discovery.IncludeAssembly(typeof(Innovayse.Hostpanel.Application.Clients.Commands.AcceptInvitation.AcceptInvitationCommand).Assembly);
 
+            // An event with several handlers gets one chain and one local queue per handler instead of one
+            // chain running them all. Combined, a retry replays the whole chain, so a handler that failed
+            // once re-ran its siblings that had already succeeded (a second mail, a second command); now
+            // each handler is retried and dead-lettered on its own. A message with one handler keeps its
+            // single chain, so InvokeAsync on a command or query is unchanged. An event with several
+            // handlers can no longer be invoked, only published: its own chain has no handler left.
+            opts.MultipleHandlerBehavior = MultipleHandlerBehavior.Separated;
+
             // Envelopes, scheduled retries and dead letters live in the application's database, in
             // Wolverine's own schema. Wolverine creates and upgrades those tables itself at start (an
             // additive, idempotent migration) rather than through an EF migration: the shape is the

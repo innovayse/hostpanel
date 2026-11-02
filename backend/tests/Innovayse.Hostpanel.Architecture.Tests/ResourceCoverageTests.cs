@@ -24,6 +24,16 @@ public sealed partial class ResourceCoverageTests
     /// <summary>The failure statuses <c>rules/api.md</c> allows a code to answer with.</summary>
     private static readonly int[] AllowedFailureStatuses = [400, 401, 402, 403, 404, 409, 410, 413, 422, 423, 429, 500, 502, 503];
 
+    /// <summary>
+    /// The codes that answer a status <c>rules/api.md</c> does not list, each with that status and why. An entry is
+    /// temporary by construction: <see cref="EveryStatusException_IsStillNeeded"/> fails once the code stops answering it.
+    /// </summary>
+    private static readonly IReadOnlyDictionary<string, int> StatusExceptions = new Dictionary<string, int>
+    {
+        // A streaming plugin route cannot be forwarded until #641; 501 says exactly that, and #641 removes the code.
+        ["PLUGIN_STREAMING_NOT_SUPPORTED"] = 501,
+    };
+
     /// <summary>The codes the registry declares.</summary>
     private static readonly IReadOnlyList<string> Codes = typeof(HostpanelErrorCodes)
         .GetFields(BindingFlags.Public | BindingFlags.Static)
@@ -133,10 +143,24 @@ public sealed partial class ResourceCoverageTests
     public void EveryCode_MapsToAnAllowedFailureStatus()
     {
         var offenders = Codes
-            .Where(code => !AllowedFailureStatuses.Contains(StatusMapping.For(code).Status))
+            .Where(code => !AllowedFailureStatuses.Contains(StatusMapping.For(code).Status)
+                && !(StatusExceptions.TryGetValue(code, out var excepted) && excepted == StatusMapping.For(code).Status))
             .ToList();
 
         offenders.Should().BeEmpty("every error code answers with a status from rules/api.md");
+    }
+
+    /// <summary>An exception to the status list names a code that still exists and still answers that status, so none outlives its reason.</summary>
+    [Fact]
+    public void EveryStatusException_IsStillNeeded()
+    {
+        var stale = StatusExceptions
+            .Where(entry => !Codes.Contains(entry.Key) || StatusMapping.For(entry.Key).Status != entry.Value
+                || AllowedFailureStatuses.Contains(entry.Value))
+            .Select(entry => entry.Key)
+            .ToList();
+
+        stale.Should().BeEmpty("delete a status exception when its code goes or answers a listed status");
     }
 
     /// <summary>

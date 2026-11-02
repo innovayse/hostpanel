@@ -383,6 +383,116 @@ docker/                              compose set (shared·dev·prod·platform), 
     zipped, after its last change. The future plugin repositories (#780) sign in their release pipeline with the same tool.
   - **Admin.** The plugins page shows the `plugins.allow_unsigned` switch (`PluginSigningCard`) with a visible warning,
     saved through the settings store like every other settings row.
+- **Plugin routes: one safe door for every app plugin (#639).** An app plugin (`PluginType.App`, `IPluginEndpoints`)
+  answers HTTP-shaped calls the host forwards, never a request or a token. Two thin catch-all controllers bind the request
+  and dispatch once: `ClientPluginCallsController` (`/api/client/plugins/{id}/{**path}`, `Policies.Client`) and
+  `AdminPluginCallsController` (`/api/admin/plugins/{id}/ext/{**path}`, `Policies.Admin`; `ext` keeps it apart from the
+  administration routes `install`, `restart` and `DELETE {id}`). Each has one command, `CallClientPluginCommand` and
+  `CallAdminPluginCommand` (folders `Application/Plugins/Commands/`), carrying the plugin id and a `PluginHttpInput`
+  (method, path, query, the unread body stream, content type and length) that `API/Plugins/PluginHttpInputReader` builds, the
+  same way for both. The part both areas share is `PluginCallRunner` (`Application/Plugins/Common`); each handler adds
+  only its area's authorisation. Nothing about a plugin is trusted: the manifest was validated at load, and a route is
+  looked up in it, never guessed.
+  - **The order is the contract, and authorisation sits before plugin code.** (1) `PluginCallRunner.FindAsync`: the plugin
+    is loaded and is an app plugin, the manifest declares that method and path in that area (`PluginRouteMatcher`:
+    segments compare ignoring case, a parameter takes one non-empty segment, a literal beats a parameter, a trailing slash
+    matches nothing) and the plugin is switched on and configured. `IPluginEndpointResolver` does this in two steps,
+    `Find` (manifest) and `PrepareAsync` (the `PluginActivator` gates, now `PrepareAsync` with `ActivateAsync` built on
+    it, without constructing the plugin): **an unknown plugin, a plugin of another type, a disabled one, an
+    unconfigured one and an undeclared route all answer the same 404 `PLUGIN_ROUTE_NOT_FOUND`**, whoever asks and whatever
+    permission they lack. (2) The area's own check. (3) `RunAsync`: the streaming route refusal, the body, the audit
+    line, then the plugin is built and called. The permission refusal therefore also comes before the plugin's
+    constructor runs.
+  - **Client area.** The caller, the account and the permissions come from `ICallerClientResolver`, the single source of
+    truth the permission attribute uses (owner, sub-user, identity plugin member). `IdentityUnavailable` answers 503
+    `IDENTITY_PLUGIN_UNAVAILABLE`; a route permission not held answers 403 `CLIENT_PERMISSION_DENIED`; a caller who acts
+    for no single account answers 404 `CLIENT_PROFILE_NOT_FOUND`, because the SDK promises a client area plugin a client.
+    A route `permission` is a defined `ClientPermission` name (that flag is needed), `PluginPermissions.Any` (no
+    permission, but still a client) or **absent, which means `ClientPermission.All`: a route that does not say who may
+    call it is for the account holder alone**, like every portal action that must carry a decision.
+    The controller is `[AvailableToEveryClientUser]` because the permission is dynamic (the matched route's), so
+    `ClientPortalPermissionTests` is satisfied and the use case enforces it. `PluginCaller.Permissions` lists the single
+    flags held, never `None` or `All`. Admin area: `Policies.Admin` is the whole check; the plugin gets no client, no
+    permissions and an opaque user reference. An admin call carries no `PluginCall.Context` yet (slot context is a later
+    issue).
+  - **Unsafe methods need `X-Requested-With: XMLHttpRequest` or a bearer token.** The rule is one class, `API/Auth/CsrfRule`,
+    shared by `LocalSessionCsrfMiddleware` (cookie requests, local mode) and `[RequireRequestedWith]` on both plugin
+    controllers, which states it for these routes whatever credential the request carries (403 `CSRF_HEADER_MISSING`).
+  - **Body cap (`PluginApiOptions`, section `PluginApi`, `MaxBodyBytes`, default 1 MiB, 1 to 64 MiB, validated on start).**
+    A declared `Content-Length` over the cap is refused without reading; a body without one is read in chunks and refused
+    the moment it passes the cap: 413 `PLUGIN_REQUEST_TOO_LARGE` before the plugin is called. The plugin sees the whole
+    body or none of it. **Memory cost:** the body is read once by `PluginBodyReader` into one buffer and the plugin is handed a slice of it (no
+    second copy), so a call holds up to `MaxBodyBytes` (up to 64 MiB) for as long as it runs. The buffer is never sized
+    from a declared length beyond 64 KiB, because a declared length is only a claim (a caller who declares the whole cap and
+    sends nothing must not make the host allocate it); it grows by doubling as bytes really arrive, so a chunked or large
+    body briefly holds the old and the new array at once (up to about 3 times the body at the last growth step). Size
+    `MaxBodyBytes` for the number of concurrent plugin calls a deployment expects, not only for the largest body.
+    **Two guards keep the runner the only reader.** `[PluginBodyLimit]` sets the web server's per request body limit
+    (default about 28.6 MiB, which may be below the cap) to `PluginApiOptions.ServerBodyLimit` (the cap, one read chunk of 8 KiB and 1/64 of the cap for chunk framing, which the
+    server counts) on both plugin controllers, after authorisation: the runner stops at the first read that passes the cap, which
+    is never more than one chunk beyond it, so it still answers its own 413 `PLUGIN_REQUEST_TOO_LARGE` first, while a
+    request the runner never reads (unknown plugin, undeclared route, refused caller, 501) is bounded by the server at
+    that same size instead of being drained without limit. `[NoFormBinding]` removes every MVC value provider except the
+    route's and the query string's, because MVC otherwise reads and buffers a urlencoded or multipart body before the
+    action, past the cap, and leaves the plugin an empty body. Architecture tests pin `[RequireRequestedWith]`,
+    `[PluginBodyLimit]`, `[NoFormBinding]` and the policy on both controllers; `PluginKestrelBodyTests` proves the limits on
+    a real Kestrel socket (`KestrelBodyHost`: the same guards, `PluginHttpInputReader` and `PluginBodyReader` behind probe
+    controllers), since the in-memory test server has no limit and the API's own entry point cannot be put on a socket by the
+    test factory (the JasperFx run command disposes the host once a real server starts). **Those tests prove the two
+    filters and the reader, not the whole pipeline through `PluginCallRunner`**: the probe controllers stand in for the
+    doors, so the order of the runner's steps is covered by the in-memory call tests, and the reader and
+    `PluginApiOptions.ServerBodyLimit` also have direct unit tests (`PluginBodyReaderTests`, `PluginApiOptionsTests`).
+  - **Audit.** A call that is not a GET writes one activity log line before the plugin runs, through `IActivityLogger`:
+    `Called Plugin Route - Plugin ID: {id} - Area: {Client|Admin} - Route: {METHOD} {declared template}`, the client for a
+    client call and none for an admin call, stamped with the caller by the logger. Never the body, never the concrete
+    path. A call refused before the plugin (404, 403, 413, 501) writes nothing.
+  - **Replies** (`PluginReplyDto : IForwardedReply`, written by `BaseApiController.HandleForwarded`, the only place a
+    status the use case did not choose reaches the wire). `Json` and `NoContent` pass through with the plugin's status
+    (camelCase body). `Problem` becomes the standard `ErrorResponse` (`application/problem+json`) with the plugin's status,
+    the title of that status and its sentence (cut to 500 characters; the localised `PLUGIN_REPORTED_PROBLEM` when it gave
+    none). **The code is written `plugin.{pluginId}.{code}`**: host codes are SCREAMING_SNAKE with no dot, so a plugin can
+    never answer with a host code and a frontend that branches on one is never fooled; a code that is not 1 to 64 letters,
+    digits, `_`, `.` or `-` is a plugin fault. **A plugin that throws** (or whose constructor throws, or returns no reply
+    or a malformed problem) answers 502 `PLUGIN_FAILED` with no message and no stack, logged with the plugin id; only the
+    caller's own cancellation propagates. **`Stream` is out of scope until #641**: a route marked `streaming`, or a streamed
+    reply from a route that is not, answers 501 `PLUGIN_STREAMING_NOT_SUPPORTED` (the plugin is not called for the
+    first, and the stream is never enumerated for the second).
+    **The status is checked again by the host**, not trusted to the SDK factories: a `Json` reply must be 200 to 203 with a
+    body, `NoContent` 204, a `Problem` 400 to 599 except 401 and 407; anything else (a reply built by reflection or by a
+    plugin compiled against another SDK) answers 502 `PLUGIN_FAILED`, logged with the plugin id. **A plugin problem
+    sentence is the plugin's own text**: the host cuts it to 500 characters but does not localise it, so it may be in any
+    language, and only the host's own sentences (title, `PLUGIN_REPORTED_PROBLEM`, every other code) are in en, ru and hy.
+  - **Route values are untrusted input.** The path is matched segment by segment against the declared templates after the
+    server has decoded it once. A `..` or `.` segment is never resolved into another route (an undeclared shape is 404), an
+    empty segment matches no parameter, and a parameter takes one segment whose text reaches the plugin unchanged: `..`,
+    `%2e%2e` (still the literal text), `a%2Fb` (the server leaves `%2F` encoded, so it arrives as those five characters, not
+    as a `/`), a backslash or a NUL character are all just text in `RouteValues`. A plugin must never use one as a file
+    name, a path, an address or a query fragment without its own validation. The method is the real method: `HEAD` and
+    `OPTIONS` are not mapped (404 or 405, no plugin code) and a method override header is ignored.
+  - **Signals that remain, and why they are accepted.** The 404 that hides whether a plugin exists is the same body for
+    unknown, disabled, another type and undeclared, but a caller can still tell the 404 from a 403 `CLIENT_PERMISSION_DENIED`
+    or 413 and so learn that an enabled plugin declares that route; and the time to answer differs slightly between a
+    refusal and a call that reaches plugin code. Both are accepted: the route list of an enabled plugin is not a secret (it is in
+    the plugin manifest the administrator installed), the 403 is only given to a caller who is already signed in as a client,
+    the permission must be answered before plugin code runs, and hiding the difference would mean running plugin code or adding
+    sleeps for no one's benefit. A per call timeout is not there yet (#792).
+  - **Opaque references (`IPluginReferences`, `Infrastructure/Plugins/PluginReferences`).** `PluginCaller.ClientRef` and
+    `UserRef` are the URL-safe Base64 of an HMAC-SHA256 over `kind`, the plugin id and the host id, under a key derived
+    (HKDF-SHA256, purpose label `innovayse-hostpanel-plugin-references-v1`) from the encryption key the host already
+    requires. Stable for one plugin and one subject, different for every other plugin, never a host id, and not reversible
+    or computable by a plugin because it does not hold the key. A keyed hash was chosen over a stored mapping because it
+    needs no table, no migration and no write on the first call; the price is that references live as long as the
+    encryption key, and rotating it gives every plugin new references. The identity plugin member's `UserRef` is their
+    subject's, and their `ClientRef` is the account's client's, the same one the holder has.
+  - **`PluginCall.Host` and `.Store` are not available yet (#642).** The SDK requires both on every call; the host shares no
+    client facts and keeps no plugin data until #642. `IPluginCallServices` is the seam (`Create(PluginCallBinding(pluginId, clientId,
+    clientRef))`), and today's registration, `UnavailablePluginCallServices`, hands every call a host API and a store whose
+    every member throws `NotSupportedException`, which is answered as `PLUGIN_FAILED` and logged. An empty profile or a
+    store that forgets would be a lie a plugin could act on. #642 replaces that one registration.
+  - **Status codes.** `PLUGIN_ROUTE_NOT_FOUND` 404, `PLUGIN_REQUEST_TOO_LARGE` 413 (the `_TOO_LARGE` suffix),
+    `PLUGIN_FAILED` 502 and `PLUGIN_STREAMING_NOT_SUPPORTED` 501 (exact `StatusMapping` rows; **the 501 is temporary and goes when #641 ships streaming**); each has its sentence in
+    en/ru/hy. Left for later issues: rate limit policies per plugin and client (#640), streaming and its nginx settings
+    (#641), the host API and the store (#642), a call timeout (#792).
 
 ## CQRS — Wolverine, conforming
 

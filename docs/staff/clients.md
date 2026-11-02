@@ -66,7 +66,7 @@ Go to **Clients → Add New Client**.
 </li>
 <li>
 
-Click **Create Client**.
+Click **Save Changes**.
 
 </li>
 </Steps>
@@ -125,7 +125,7 @@ Go to **Clients → Manage Users** to see every user across all client accounts.
 | Action | Allowed when | Error if not allowed |
 |--------|-------------|----------------------|
 | Suspend | Active or Inactive | `CLIENT_SUSPEND_NOT_ALLOWED` |
-| Deactivate | Any status except Suspended and Closed (no-op on Inactive) | `CLIENT_DEACTIVATE_NOT_ALLOWED` |
+| Deactivate | Active only | `CLIENT_DEACTIVATE_NOT_ALLOWED` |
 | Activate | Inactive or Suspended | `CLIENT_ACTIVATE_NOT_ALLOWED` |
 | Close | Active, Inactive, or Suspended | `CLIENT_CLOSE_NOT_ALLOWED` |
 

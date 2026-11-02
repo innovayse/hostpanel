@@ -16,14 +16,13 @@ An invoice moves through these statuses during its life:
 | Unpaid | Published; payment is expected |
 | Overdue | Due date passed without full payment |
 | Paid | Payments cover the invoice total |
-| Partially Refunded | A partial refund has been applied; the remaining paid amount can still be refunded |
 | Refunded | Refunds cover everything that was paid |
 | Cancelled | Voided by staff |
 | Collections | Sent to a collections agency |
 | Payment Pending | An online payment is awaiting confirmation from the gateway |
 
 <Callout type="note">
-The invoice list status filter shows Draft, Unpaid, Overdue, Paid, Partially Refunded, Refunded, and Cancelled only. Collections and Payment Pending are not included in the filter dropdown.
+The invoice list status filter shows Draft, Unpaid, Overdue, Paid, Refunded, and Cancelled only. Collections and Payment Pending are not included in the filter dropdown.
 </Callout>
 
 ## The invoice list
@@ -116,10 +115,6 @@ The Add Payment tab is blocked when:
 Mark Paid does not record a payment transaction. Use Add Payment to keep an accurate payment record.
 </Callout>
 
-## Mark Unpaid
-
-**Mark Unpaid** reopens a Paid invoice. It is only available when the invoice is Paid and has no recorded payments (`INVOICE_HAS_PAYMENTS` if a payment is on record — remove the payment first).
-
 ## Credit
 
 The client's credit balance is shown on their Summary page.
@@ -138,7 +133,7 @@ Credit is applied automatically to renewal invoices when the <code>billing.renew
 
 ## Refund
 
-Open the **Refund** tab on a paid or partially refunded invoice.
+Open the **Refund** tab on a paid invoice.
 
 <Steps>
 <li>
@@ -166,7 +161,7 @@ Click **Refund**.
 </li>
 </Steps>
 
-A partial refund moves the invoice to **Partially Refunded**. A Partially Refunded invoice can be refunded again up to the remaining paid amount. The invoice moves to Refunded once refunds cover everything that was paid.
+A partial refund leaves the invoice in Paid status. The invoice moves to Refunded once refunds cover everything that was paid.
 
 Only one refund at a time per invoice. If another refund is still waiting on a gateway response, the panel shows `INVOICE_REFUND_CONFLICT`.
 
@@ -197,12 +192,8 @@ Click **Download PDF** or **Print** on the invoice page to generate a PDF.
 The Pdf Batch screen is not available yet and is not documented here.
 </Callout>
 
-## Fulfilment
-
-The **Fulfilment** tab on an invoice shows the fulfilment status of any digital product lines — whether the fulfilment plugin has delivered the product, is retrying, or has failed.
-
 ## Gateway payments
 
-When a client pays online, the payment appears automatically on the invoice once the gateway confirms it. To see the raw gateway events, go to **Billing → Gateway Log**.
+When a client pays online, the payment appears automatically on the invoice once the gateway confirms it. To see the raw gateway events, go to **Invoices → Gateway Transaction Log**.
 
 For details on configuring payment gateways, see [Payment gateways and plugins](/payments/gateways).

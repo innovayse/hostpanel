@@ -31,13 +31,15 @@ upgrading to (replace `v1.0.0` with the real tag — a 404 means the release
 does not contain the script yet and you can skip this step):
 
 ```bash
-curl -fsSL \
+curl -fsSL -o /tmp/check-dup-payments.sh \
   https://raw.githubusercontent.com/innovayse/hostpanel/v1.0.0/scripts/check-duplicate-gateway-payments.sh \
-  | sh -s -- hostpanel-db
+  && sh /tmp/check-dup-payments.sh hostpanel-db
 ```
 
-The first argument is the database container name (default: `hostpanel-db`).
-Pass a different name if your container is named otherwise.
+Downloading the script first means a 404 (script not in this release yet) fails the
+`curl` step and does not pipe an empty response into `sh`. The first argument is the
+database container name (default: `hostpanel-db`) — pass a different name if your
+container is named otherwise.
 
 If the server has no outbound internet access, copy the script from the repository
 and run it over SSH:
@@ -75,6 +77,11 @@ cp .env .env.bak
 ```
 
 Note the `IMAGE_TAG` value from `.env` — you will need it if you roll back.
+If `IMAGE_TAG` is `latest`, find the exact version the running containers use before pulling new images:
+
+```bash
+docker image ls --format '{{.Repository}}:{{.Tag}}' | grep hostpanel
+```
 
 **2. Run the installer with `--version`:**
 

@@ -73,36 +73,26 @@ docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
   > pre-restore-$(date +%Y-%m-%d-%H%M%S).sql
 ```
 
-**3. Verify the backup file is not empty:**
+**3. Verify the backup file, then drop and restore:**
+
+Replace `backup-2024-01-15-030000.sql` with the actual file name.
 
 ```bash
 if ! test -s backup-2024-01-15-030000.sql; then
   echo "Backup file is empty or missing, aborting."
-  exit 1
+else
+  docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
+    sh -c 'dropdb -U "$POSTGRES_USER" "$POSTGRES_DB" && \
+           createdb -U "$POSTGRES_USER" "$POSTGRES_DB"'
+  docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
+    sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction \
+           -U "$POSTGRES_USER" "$POSTGRES_DB"' < backup-2024-01-15-030000.sql
 fi
 ```
 
-Replace `backup-2024-01-15-030000.sql` with the actual file name.
+**4.** Make sure `.env` contains the same `ENCRYPTION_KEY` that was used when the dump was taken.
 
-**4. Drop and recreate the database:**
-
-```bash
-docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
-  sh -c 'dropdb -U "$POSTGRES_USER" "$POSTGRES_DB" && \
-         createdb -U "$POSTGRES_USER" "$POSTGRES_DB"'
-```
-
-**5. Load the dump:**
-
-```bash
-docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
-  sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction \
-         -U "$POSTGRES_USER" "$POSTGRES_DB"' < backup-2024-01-15-030000.sql
-```
-
-**6.** Make sure `.env` contains the same `ENCRYPTION_KEY` that was used when the dump was taken.
-
-**7. Restore the branding and plugins volumes:**
+**5. Restore the branding and plugins volumes:**
 
 ```bash
 # Restore branding files:
@@ -111,29 +101,26 @@ docker run --rm \
   -v /path/to/your/backups:/backup \
   alpine sh -c 'cd /data && tar xzf /backup/branding-2024-01-15.tar.gz'
 
-# Fix ownership so the API can read the files:
-docker run --rm \
-  -v hostpanel_hostpanel_branding:/data \
-  alpine chown -R 1000:1000 /data
-
 # Restore plugins:
 docker run --rm \
   -v hostpanel_hostpanel_plugins:/data \
   -v /path/to/your/backups:/backup \
   alpine sh -c 'cd /data && tar xzf /backup/plugins-2024-01-15.tar.gz'
 
-docker run --rm \
-  -v hostpanel_hostpanel_plugins:/data \
-  alpine chown -R 1000:1000 /data
+# Fix ownership so the API can read the restored files:
+cd /opt/hostpanel
+docker compose -f docker-compose.hub.yml run --rm --no-deps \
+  --user 0 --cap-add CHOWN --entrypoint sh hostpanel-api \
+  -c 'chown -R "$APP_UID" /app/wwwroot/uploads /app/plugins-installed'
 ```
 
-**8. Start the full stack:**
+**6. Start the full stack:**
 
 ```bash
 docker compose -f docker-compose.hub.yml up -d
 ```
 
-**9.** Check that `GET /health` returns `200` and that you can sign in.
+**7.** Check that `GET /health` returns `200` and that you can sign in.
 
 ## Schedule backups
 
@@ -165,15 +152,20 @@ fi
 chmod 600 "$DEST"
 
 # Branding and plugins volumes
+BRAND_ARCHIVE=/var/backups/hostpanel/branding-$(date +%Y-%m-%d).tar.gz
+PLUGIN_ARCHIVE=/var/backups/hostpanel/plugins-$(date +%Y-%m-%d).tar.gz
+
 docker run --rm \
   -v hostpanel_hostpanel_branding:/data \
   -v /var/backups/hostpanel:/backup \
   alpine tar czf /backup/branding-$(date +%Y-%m-%d).tar.gz -C /data .
+chmod 600 "$BRAND_ARCHIVE"
 
 docker run --rm \
   -v hostpanel_hostpanel_plugins:/data \
   -v /var/backups/hostpanel:/backup \
   alpine tar czf /backup/plugins-$(date +%Y-%m-%d).tar.gz -C /data .
+chmod 600 "$PLUGIN_ARCHIVE"
 
 # Remove backups older than 30 days
 find /var/backups/hostpanel -name 'db-*.sql' -mtime +30 -delete

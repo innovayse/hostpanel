@@ -120,7 +120,7 @@ You can also open a ticket from a client's own **Tickets** tab.
 
 Go to **Support → Predefined Replies**. Subtitle: "Manage predefined ticket reply templates."
 
-**Categories** — organise replies into groups. Click **Add Category** and enter a Category Name. A category that has replies or sub-categories cannot be deleted (`PREDEFINED_REPLY_CATEGORY_NOT_FOUND` / `PREDEFINED_REPLY_CATEGORY_IN_USE`). A predefined reply that does not exist returns `PREDEFINED_REPLY_NOT_FOUND`.
+**Categories** — organise replies into groups. Click **Add Category** and enter a Category Name. A category that has replies or sub-categories cannot be deleted (`PREDEFINED_REPLY_CATEGORY_IN_USE`). A predefined reply that does not exist returns `PREDEFINED_REPLY_NOT_FOUND`.
 
 **Replies** — click **Add Predefined Reply** and fill in Name, Category and Content.
 

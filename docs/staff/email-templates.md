@@ -11,7 +11,7 @@ Each email template has a **slug** that identifies it in the code. One version i
 Creating a version for a slug and language that already exists returns `EMAIL_TEMPLATE_ALREADY_EXISTS`. A template that does not exist returns `EMAIL_TEMPLATE_NOT_FOUND`.
 
 <Callout type="tip">
-Seeded templates are never overwritten once you edit them. Your changes are safe after every upgrade.
+Templates you have edited are never overwritten on upgrade. Your changes are safe.
 </Callout>
 
 ## The Email Templates screen

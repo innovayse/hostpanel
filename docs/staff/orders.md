@@ -38,10 +38,8 @@ Open the order and click **Accept**. If some lines could not be fulfilled automa
 
 ## Cancel and delete
 
-- **Cancel this order?** — cancels a Pending or Active order. Cancelling does not refund the invoice; handle the invoice separately.
+- **Cancel this order?** — cancels a Pending order only (`ORDER_NOT_PENDING` if the order is not Pending). Cancelling also cancels the linked invoice. If the invoice already has a recorded payment, the cancel is refused (`INVOICE_HAS_PAYMENTS`) — refund or delete the payment first.
 - **Delete Order** — available only for Pending or Cancelled orders (`ORDER_NOT_DELETABLE`). Deleting removes the order record permanently.
-
-An order that has no invoice yet cannot be invoiced manually (`ORDER_NOT_INVOICED`).
 
 ## Order numbers
 

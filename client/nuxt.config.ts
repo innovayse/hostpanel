@@ -146,6 +146,10 @@ export default defineNuxtConfig({
     apiUrl: process.env.API_URL || 'http://localhost:5000',
     ssoUrl: process.env.SSO_URL || 'http://sso-api:8080',
     ssoClientId: process.env.SSO_CLIENT_ID || 'hostpanel',
+    // The issuer identifier the sign-on provider declares in its openid-configuration, compared exactly
+    // with the `iss` of a callback and of an ID token. Empty uses SSO_PUBLIC_URL, which is the issuer of a
+    // provider that is served from one public address.
+    ssoIssuer: process.env.SSO_ISSUER || '',
     // Filled at runtime from NUXT_SSO_CLIENT_SECRET, which compose feeds from CLIENT_HOSTPANEL_SECRET:
     // the same credential the API reads, so it has one variable name.
     ssoClientSecret: '',

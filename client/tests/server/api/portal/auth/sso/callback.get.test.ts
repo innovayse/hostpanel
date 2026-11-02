@@ -4,7 +4,11 @@
  * the tokens stay in the server-side session store and the visitor is redirected back. Several
  * attempts started side by side each complete. An answer that cannot be matched to an attempt, an
  * error answer, a missing code and a failed exchange all end in a redirect to the sign-in prompt:
- * never a JSON body, never a session, and a callback that matches no attempt deletes nothing.
+ * never a JSON body, never a session, and a callback that matches no attempt deletes nothing. A
+ * browser that is already signed in is passed on to the dashboard instead, again touching nothing.
+ * A callback that names another issuer, and a token response whose ID token does not verify (wrong
+ * signature, issuer, audience, expiry or nonce, or keys that cannot be fetched), end the attempt the
+ * same way.
  *
  * @module tests/server/api/portal/auth/sso/callback.get.test
  */
@@ -13,11 +17,14 @@ import { createHash } from 'node:crypto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeEvent, refusal, setRuntimeConfig, signedIn, startBackend, storedSession } from '../../../../../helpers/bffHarness'
 import type { RouteModule } from '../../../../../helpers/bffHarness'
+import { TEST_ISSUER, countRequests, createSigner, providerReplies, signIdToken } from '../../../../../helpers/idToken'
+import type { TestSigner } from '../../../../../helpers/idToken'
 import { startAttempt } from '../../../../../helpers/signonAttempt'
 import type { StartedAttempt } from '../../../../../helpers/signonAttempt'
 import type { StubServer } from '../../../../../helpers/stubServer'
 import { createTransaction, transactionCookieName } from '~/server/utils/signon-transaction'
 import { SSO_FLOW_COOKIE_MAX_AGE } from '~/server/utils/auth-cookie'
+import { resetSigningKeyCache } from '~/server/utils/signon-oidc'
 import { SignonTransactionKind } from '~/types/signontransactionkind'
 
 /** The stub playing the SSO token endpoint. */
@@ -67,6 +74,7 @@ beforeEach(async () => {
     ssoCallbackUrl: 'https://portal.test/api/portal/auth/sso/callback',
     public: { ssoPublicUrl: 'https://sso.test' },
   })
+  resetSigningKeyCache()
   route = await import('~/server/api/portal/auth/sso/callback.get')
 })
 
@@ -175,7 +183,7 @@ describe('GET /api/portal/auth/sso/callback', () => {
   it('does not follow a sealed return path that is not a local one, and goes to the dashboard', async () => {
     backend.respondWith(goodTokens)
     const sealer = makeEvent()
-    createTransaction(sealer, { state: 'forged-target', verifier: 'v', returnTo: '//elsewhere.test/', kind: SignonTransactionKind.Interactive })
+    createTransaction(sealer, { state: 'forged-target', verifier: 'v', nonce: 'n', returnTo: '//elsewhere.test/', kind: SignonTransactionKind.Interactive })
     const cookies = { [transactionCookieName('forged-target')]: sealer.written[transactionCookieName('forged-target')]?.value ?? '' }
     const event = makeEvent({ query: { code: 'c1', state: 'forged-target' }, cookies })
 
@@ -350,6 +358,98 @@ describe('GET /api/portal/auth/sso/callback when no attempt matches the state', 
   })
 })
 
+describe('GET /api/portal/auth/sso/callback when no attempt matches but the browser is signed in', () => {
+  /**
+   * Asserts that a signed-in visitor was passed on quietly: sent to the dashboard, nothing exchanged,
+   * written or deleted, and the session they held is still stored.
+   *
+   * @param event - The request the route handled.
+   * @param held - The cookies that name the visitor's session.
+   */
+  const expectPassedOn = async (event: ReturnType<typeof makeEvent>, held: Record<string, string>): Promise<void> => {
+    expect(event.redirectedTo).toBe('/client/dashboard')
+    expect(event.written).toEqual({})
+    expect(event.deleted).toEqual([])
+    expect(backend.requests).toHaveLength(0)
+    expect(await storedSession(held)).not.toBeNull()
+  }
+
+  it('sends a signed-in person on to the dashboard when the state is unknown', async () => {
+    const held = await signedIn('at-held')
+    const live = startAttempt(held)
+
+    const event = await returnFrom(live, { code: 'c1', state: 'never-started' }, live.cookies)
+
+    await expectPassedOn(event, held)
+  })
+
+  it('sends a signed-in person on when the callback is replayed with no state at all', async () => {
+    const held = await signedIn('at-held')
+
+    const event = await returnFrom(startAttempt(), { code: 'c1' }, held)
+
+    await expectPassedOn(event, held)
+  })
+
+  it('sends a signed-in person on when the attempt expired, and logs only a fixed reason', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    const held = await signedIn('at-held')
+    const attempt = startAttempt(held)
+    vi.setSystemTime(Date.now() + SSO_FLOW_COOKIE_MAX_AGE * 1000 + 1000)
+
+    const event = await returnFrom(attempt, { code: 'secret-code-123', state: attempt.state }, attempt.cookies)
+
+    await expectPassedOn(event, held)
+    expect(JSON.stringify(info.mock.calls)).toContain('already_signed_in')
+    expect(JSON.stringify(info.mock.calls)).not.toContain('secret-code-123')
+  })
+
+  it('replays after Back once the sign-in finished: the consumed attempt is gone and the person is passed on', async () => {
+    backend.respondWith(goodTokens)
+    const attempt = startAttempt()
+    const first = await returnFrom(attempt)
+    const held = { portal_session: first.written['portal_session']?.value ?? '' }
+    backend.requests.length = 0
+
+    const replay = makeEvent({ query: { code: 'c1', state: attempt.state }, cookies: held })
+    await route.default(replay)
+
+    await expectPassedOn(replay, held)
+  })
+
+  it('does not treat a tampered transaction cookie as a way past the check, even when signed in', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const held = await signedIn('at-held')
+    const attempt = startAttempt(held)
+    const value = attempt.cookies[attempt.cookieName] ?? ''
+    const cookies = { ...held, [attempt.cookieName]: `${value.slice(0, -2)}${value.endsWith('AA') ? 'BB' : 'AA'}` }
+
+    const event = await returnFrom(attempt, { code: 'c1', state: attempt.state }, cookies)
+
+    expectEndedAttempt(event, '/?signin=required')
+    expect(event.deleted).toEqual([])
+    expect(warn).toHaveBeenCalledTimes(1)
+  })
+
+  it('still sends a visitor whose session cookie names nothing in the store to the sign-in prompt', async () => {
+    const event = await returnFrom(startAttempt(), { code: 'c1', state: 'never-started' }, { portal_session: 'no-such-session' })
+
+    expectEndedAttempt(event, '/?signin=required')
+    expect(event.deleted).toEqual([])
+  })
+
+  it('exchanges nothing and signs nobody in through the pass-through', async () => {
+    const held = await signedIn('at-held')
+
+    const event = await returnFrom(startAttempt(), { code: 'c1', state: 'forged' }, held)
+
+    expect(event.written['portal_session']).toBeUndefined()
+    expect(event.written['authed']).toBeUndefined()
+    expect(await storedSession(held)).toMatchObject({ accessToken: 'at-held' })
+  })
+})
+
 describe('GET /api/portal/auth/sso/callback for an attempt that finds no session', () => {
   it('returns a guest to the page they came from with the sign-in prompt when the SSO answers login_required', async () => {
     const attempt = startAttempt({}, '/pricing', SignonTransactionKind.Silent)
@@ -429,7 +529,7 @@ describe('GET /api/portal/auth/sso/callback when the code exchange fails', () =>
 })
 
 describe('GET /api/portal/auth/sso/callback with unsafe input', () => {
-  it.each(['code', 'state', 'error'])('refuses a repeated %s key with 400 and calls no token endpoint', async (key) => {
+  it.each(['code', 'state', 'error', 'iss'])('refuses a repeated %s key with 400 and calls no token endpoint', async (key) => {
     const attempt = startAttempt()
     const query = { code: 'c1', state: attempt.state, [key]: ['a', 'b'] as unknown as string }
 
@@ -452,5 +552,170 @@ describe('GET /api/portal/auth/sso/callback when the SSO address is not configur
     expect(event.redirectedTo).toBeUndefined()
     expect(event.deleted).toEqual([])
     expect(backend.requests).toHaveLength(0)
+  })
+})
+
+describe('GET /api/portal/auth/sso/callback issuer and ID token checks', () => {
+  /** The provider's signing key. */
+  let signer: TestSigner
+
+  /** The `id_token` the token endpoint hands out; the key is left out to send none. */
+  let issued: { id_token?: unknown }
+
+  /**
+   * Plays the provider: the token endpoint answers with the current `issued` token next to ordinary tokens.
+   *
+   * @param extra - Changes to how discovery and the key set answer.
+   * @param extra.keysStatus - The status the key set is served with.
+   */
+  const serveProvider = (extra: { keysStatus?: number } = {}): void => {
+    backend.respondWith(providerReplies({
+      keys: () => [signer.jwk],
+      token: () => ({ body: { access_token: 'at', refresh_token: 'rt', expires_in: 900, token_type: 'Bearer', ...issued } }),
+      ...extra,
+    }))
+  }
+
+  /**
+   * Asserts that the attempt ended with a redirect to the sign-in prompt and no session, and that
+   * the log named the fixed reason and nothing else.
+   *
+   * @param event - The request the route handled.
+   * @param reason - The reason code expected in the log.
+   * @param info - The spy on `console.info`.
+   * @param info.mock - The recorded calls.
+   * @param info.mock.calls - The arguments of each call.
+   */
+  const expectRefused = (event: ReturnType<typeof makeEvent>, reason: string, info: { mock: { calls: unknown[][] } }): void => {
+    expect(event.redirectedTo).toBe('/client/invoices?signin=required')
+    expect(event.written['portal_session']).toBeUndefined()
+    expect(event.written['authed']).toBeUndefined()
+    expect(JSON.stringify(info.mock.calls)).toContain(reason)
+    expect(JSON.stringify(info.mock.calls)).not.toContain('eyJ')
+  }
+
+  beforeEach(async () => {
+    signer = await createSigner()
+    issued = {}
+    setRuntimeConfig({ ssoIssuer: '' })
+    serveProvider()
+  })
+
+  it('completes a sign-in whose callback names the configured issuer', async () => {
+    const attempt = startAttempt()
+
+    const event = await returnFrom(attempt, { code: 'c1', state: attempt.state, iss: TEST_ISSUER })
+
+    expect(event.written['portal_session']).toBeDefined()
+    expect(event.redirectedTo).toBe('/client/dashboard')
+  })
+
+  it.each(['https://evil.test', '', `${TEST_ISSUER}/`])('ends the attempt before the code is exchanged when the callback names the issuer %j', async (iss) => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    const attempt = startAttempt({}, '/client/invoices')
+
+    const event = await returnFrom(attempt, { code: 'c1', state: attempt.state, iss })
+
+    expectRefused(event, 'issuer_mismatch', info)
+    expect(event.deleted).toContain(attempt.cookieName)
+    expect(backend.requests).toHaveLength(0)
+  })
+
+  it('refuses a mismatching issuer on an error answer too', async () => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    const attempt = startAttempt({}, '/client/invoices')
+
+    const event = await returnFrom(attempt, { error: 'access_denied', state: attempt.state, iss: 'https://evil.test' })
+
+    expectRefused(event, 'issuer_mismatch', info)
+  })
+
+  it('refuses any named issuer when none is configured, and accepts a callback that names none', async () => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    const attempt = startAttempt({}, '/client/invoices')
+    const second = startAttempt({}, '/client/invoices')
+    setRuntimeConfig({ ssoIssuer: '', public: { ssoPublicUrl: '' } })
+
+    const named = await returnFrom(attempt, { code: 'c1', state: attempt.state, iss: TEST_ISSUER })
+    expectRefused(named, 'issuer_mismatch', info)
+
+    const silent = await returnFrom(second, { code: 'c1', state: second.state })
+    expect(silent.written['portal_session']).toBeDefined()
+  })
+
+  it('accepts an ID token that verifies, and keeps the tokens', async () => {
+    const attempt = startAttempt({}, '/client/invoices')
+    issued = { id_token: await signIdToken(signer, { nonce: attempt.nonce }) }
+
+    const event = await returnFrom(attempt)
+
+    expect(event.redirectedTo).toBe('/client/invoices')
+    expect(await storedSession({ portal_session: event.written['portal_session']?.value ?? '' })).toMatchObject({ accessToken: 'at', refreshToken: 'rt' })
+  })
+
+  it('signs in without any key fetch when the token response carries no ID token', async () => {
+    const event = await returnFrom(startAttempt())
+
+    expect(event.written['portal_session']).toBeDefined()
+    expect(backend.requests.map((request) => request.url)).toEqual(['/connect/token'])
+  })
+
+  it('refuses an ID token that carries the nonce of another attempt', async () => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    const other = startAttempt()
+    const attempt = startAttempt({}, '/client/invoices')
+    issued = { id_token: await signIdToken(signer, { nonce: other.nonce }) }
+
+    const event = await returnFrom(attempt)
+
+    expectRefused(event, 'invalid_id_token', info)
+    expect(event.deleted).toContain(attempt.cookieName)
+  })
+
+  it('refuses an ID token with no nonce', async () => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    const attempt = startAttempt({}, '/client/invoices')
+    issued = { id_token: await signIdToken(signer, { nonce: undefined }) }
+
+    expectRefused(await returnFrom(attempt), 'invalid_id_token', info)
+  })
+
+  it.each([
+    ['signed by a key the provider does not publish', async () => ({ key: await createSigner(), claims: {} })],
+    ['for another audience', async () => ({ key: signer, claims: { aud: 'someone-else' } })],
+    ['from another issuer', async () => ({ key: signer, claims: { iss: 'https://evil.test' } })],
+    ['that has expired', async () => ({ key: signer, claims: { exp: Math.floor(Date.now() / 1000) - 3600 } })],
+  ])('refuses an ID token %s', async (_name, build) => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    const attempt = startAttempt({}, '/client/invoices')
+    const { key, claims } = await build()
+    issued = { id_token: await signIdToken(key, { nonce: attempt.nonce, ...claims }) }
+
+    expectRefused(await returnFrom(attempt), 'invalid_id_token', info)
+  })
+
+  it.each([['an empty string', ''], ['null', null], ['a number', 7], ['an object', {}], ['text that is not a token', 'garbage']])(
+    'refuses an id_token that is %s',
+    async (_name, value) => {
+      const info = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+      const attempt = startAttempt({}, '/client/invoices')
+      issued = { id_token: value }
+
+      expectRefused(await returnFrom(attempt), 'invalid_id_token', info)
+    },
+  )
+
+  it('fails closed when the provider keys cannot be fetched, with no JSON body and no detail', async () => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    const attempt = startAttempt({}, '/client/invoices')
+    issued = { id_token: await signIdToken(signer, { nonce: attempt.nonce }) }
+    serveProvider({ keysStatus: 503 })
+
+    const event = makeEvent({ query: { code: 'c1', state: attempt.state }, cookies: attempt.cookies })
+    const result = await route.default(event)
+
+    expectRefused(event, 'invalid_id_token', info)
+    expect(result).toBe('/client/invoices?signin=required')
+    expect(countRequests(backend.requests, '/.well-known/jwks')).toBe(1)
   })
 })

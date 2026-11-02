@@ -65,9 +65,9 @@ export default defineConfig({
         collapsed: true,
         items: [
           { text: 'Overview', link: '/operators/' },
-          { text: 'Installation', link: '/operators/install' },
+          { text: 'Install Hostpanel', link: '/operators/install' },
           { text: 'Upgrade', link: '/operators/upgrade' },
-          { text: 'Backup', link: '/operators/backup' },
+          { text: 'Back up and restore', link: '/operators/backup' },
           { text: 'Rollback', link: '/operators/rollback' },
           { text: 'Storefront & branding', link: '/operators/storefront' },
           { text: 'Configuration reference', link: '/operators/configuration' },

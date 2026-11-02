@@ -194,6 +194,10 @@ A key added to `.env.example` needs its GitLab variable before the next deploy, 
 - **Private package feed.** Builds of `AUTH_MODE=sso` read the feed credentials from the BuildKit secret
   `nuget_credentials`, never from a build argument: `docker build --secret id=nuget_credentials,env=NAME ...`
   (compose reads `NUGET_INNOVAYSE_CREDENTIALS` for it). An empty or absent secret builds without the feed.
+- **Plugin streaming.** `/api/client/plugins/` and `/api/admin/plugins/` can carry server-sent events from plugins, so
+  the nginx template gives them `proxy_buffering off`, `proxy_cache off`, HTTP/1.1, an empty `Connection` header and
+  `proxy_read_timeout 1h`, and the Caddyfile proxies them with `flush_interval -1`. The dev stack has no edge in
+  front of the API: the admin Vite proxy and the published API port pass the stream through as it is written.
 - **Response headers.** HSTS, `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options` and
   `Permissions-Policy` come from `nginx/snippets/security-headers.conf` (nginx) and the `security_headers`
   snippet of the Caddyfile. nginx drops inherited `add_header` lines in a location that has its own, so every

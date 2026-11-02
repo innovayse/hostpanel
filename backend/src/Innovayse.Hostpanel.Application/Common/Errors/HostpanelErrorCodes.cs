@@ -840,9 +840,6 @@ public static class HostpanelErrorCodes
     /// <summary>The request body is larger than the host passes to a plugin (<c>PluginApi:MaxBodyBytes</c>), checked before the plugin is called (413).</summary>
     public const string PLUGIN_REQUEST_TOO_LARGE = "PLUGIN_REQUEST_TOO_LARGE";
 
-    /// <summary>The route streams its reply, which this host cannot forward yet, so the plugin is not called (501).</summary>
-    public const string PLUGIN_STREAMING_NOT_SUPPORTED = "PLUGIN_STREAMING_NOT_SUPPORTED";
-
     /// <summary>
     /// The sentence a plugin's problem carries when the plugin gave none. Never the <c>type</c> of a response: a
     /// plugin's own codes are namespaced under <c>plugin.{id}.</c> and so can never equal a host code.

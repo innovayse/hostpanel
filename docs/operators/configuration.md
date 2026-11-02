@@ -351,6 +351,9 @@ Plugin settings are not in .env. Set them on the API service in a compose overri
 | `Plugins__MaxEntryCount` | `1000` | Maximum number of files in a plugin zip archive. |
 | `Plugins__MaxUncompressedBytes` | `209715200` | Maximum total uncompressed size of a plugin archive in bytes (200 MiB). |
 | `Plugins__TrustedPackageSha256__0`, `__1`, ... | n/a | SHA-256 hashes of plugin packages to trust unconditionally. Each hash is a separate indexed key. |
+| `PluginApi__MaxBodyBytes` | `1048576` | Largest request body the host reads for a plugin route, in bytes (1 to 67108864). |
+| `PluginApi__StreamHeartbeatSeconds` | `15` | Seconds a streamed plugin reply may stay silent before the host writes a comment line to keep the connection alive (1 to 300). |
+| `PluginApi__StreamEventMaxBytes` | `65536` | Largest data of one event of a streamed plugin reply, in bytes (1 to 1048576). A plugin that sends a larger event ends the stream with an `error` event. |
 | `PluginSigning__MaintainerKeys__0__KeyId`, `__PublicKey`, ... | *(shipped in the image)* | Ed25519 signing key entries for the official plugin maintainers. Shipped in the image; operators do not set these. |
 | `PluginSigning__OperatorKeys__0__KeyId` | n/a | Key ID of an operator-trusted plugin signer. Each entry is a pair of `__KeyId` and `__PublicKey` under the same index. |
 | `PluginSigning__OperatorKeys__0__PublicKey` | n/a | Ed25519 public key of the operator-trusted signer at index 0. Add more signers as `__1__KeyId` / `__1__PublicKey`, and so on. |

@@ -18,11 +18,35 @@ public sealed class PluginApiOptions
     /// <summary>The size of one read of a request body, in bytes. The body reader reads in chunks of this size, and the web server's limit leaves one chunk above the cap.</summary>
     public const int ReadChunkBytes = 8192;
 
+    /// <summary>The default silence, in seconds, after which a streamed reply sends a heartbeat comment.</summary>
+    public const int DefaultStreamHeartbeatSeconds = 15;
+
+    /// <summary>The longest <see cref="StreamHeartbeatSeconds"/> a deployment may configure, in seconds; a longer silence outlasts the read timeout of a proxy.</summary>
+    public const int StreamHeartbeatSecondsCeiling = 300;
+
+    /// <summary>The default cap on the data of one streamed event, in bytes (64 KiB).</summary>
+    public const int DefaultStreamEventMaxBytes = 65_536;
+
+    /// <summary>The largest <see cref="StreamEventMaxBytes"/> a deployment may configure, in bytes (1 MiB).</summary>
+    public const int StreamEventMaxBytesCeiling = 1_048_576;
+
     /// <summary>
     /// The most bytes of request body a plugin route accepts. A call that declares more, or sends more, is refused
     /// with <c>PLUGIN_REQUEST_TOO_LARGE</c> (413) before the plugin is called. The plugin sees the whole body or none of it.
     /// </summary>
     public int MaxBodyBytes { get; set; } = DefaultMaxBodyBytes;
+
+    /// <summary>
+    /// The seconds a streamed plugin reply may stay silent before the host writes a comment line, so a proxy and the
+    /// client see traffic and an idle connection is not dropped (15 by default).
+    /// </summary>
+    public int StreamHeartbeatSeconds { get; set; } = DefaultStreamHeartbeatSeconds;
+
+    /// <summary>
+    /// The most bytes (UTF-8) the data of one event of a streamed plugin reply may carry (64 KiB by default). A plugin that
+    /// emits a larger event ends the stream with the <c>error</c> event, so one event cannot hold a connection's memory.
+    /// </summary>
+    public int StreamEventMaxBytes { get; set; } = DefaultStreamEventMaxBytes;
 
     /// <summary>
     /// Gets the limit the web server is given for a plugin request: the cap, one read chunk, and 1/64 of the cap for the
@@ -33,6 +57,14 @@ public sealed class PluginApiOptions
     /// </summary>
     public long ServerBodyLimit => (long)MaxBodyBytes + ReadChunkBytes + (MaxBodyBytes / 64L);
 
-    /// <summary>Whether the values can bound a body: at least one byte and no more than <see cref="MaxBodyBytesCeiling"/>.</summary>
-    public bool IsValid => MaxBodyBytes is >= 1 and <= MaxBodyBytesCeiling;
+    /// <summary>Gets <see cref="StreamHeartbeatSeconds"/> as a span.</summary>
+    public TimeSpan StreamHeartbeat => TimeSpan.FromSeconds(StreamHeartbeatSeconds);
+
+    /// <summary>
+    /// Whether the values are usable: a body cap of at least one byte and no more than <see cref="MaxBodyBytesCeiling"/>, and a
+    /// heartbeat of one second to <see cref="StreamHeartbeatSecondsCeiling"/>, and an event cap of one byte to <see cref="StreamEventMaxBytesCeiling"/>.
+    /// </summary>
+    public bool IsValid => MaxBodyBytes is >= 1 and <= MaxBodyBytesCeiling
+        && StreamHeartbeatSeconds is >= 1 and <= StreamHeartbeatSecondsCeiling
+        && StreamEventMaxBytes is >= 1 and <= StreamEventMaxBytesCeiling;
 }

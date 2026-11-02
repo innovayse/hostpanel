@@ -588,46 +588,6 @@ public sealed partial class CallClientPluginTests : IClassFixture<AppPluginFixtu
         await ClientsTestSeeds.AssertCodeAsync(host, HostpanelErrorCodes.PLUGIN_FAILED);
     }
 
-    /// <summary>A route that streams is refused 501 before the plugin is called, because the host cannot forward a stream yet.</summary>
-    /// <returns>A task that completes when the assertions have run.</returns>
-    [Fact]
-    public async Task AStreamingRoute_Answers501WithoutCallingThePlugin()
-    {
-        var (_, http) = await OwnerAsync("streaming-route");
-
-        var response = await CallAsync(http, HttpMethod.Get, _fixture.PluginId, "stream");
-
-        response.StatusCode.Should().Be(HttpStatusCode.NotImplemented);
-        await ClientsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_STREAMING_NOT_SUPPORTED);
-        _fixture.Probe.Constructed.Should().Be(0);
-    }
-
-    /// <summary>A streamed reply from a route that did not declare streaming is the same 501, and the stream is never enumerated.</summary>
-    /// <returns>A task that completes when the assertions have run.</returns>
-    [Fact]
-    public async Task AStreamedReply_Answers501AndIsNeverEnumerated()
-    {
-        var (_, http) = await OwnerAsync("streamed-reply");
-        var enumerated = false;
-        _fixture.Probe.Behaviour = _ => PluginReply.Stream(Events(() => enumerated = true));
-
-        var response = await CallAsync(http, HttpMethod.Get, _fixture.PluginId, "ping");
-
-        response.StatusCode.Should().Be(HttpStatusCode.NotImplemented);
-        await ClientsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_STREAMING_NOT_SUPPORTED);
-        enumerated.Should().BeFalse();
-    }
-
-    /// <summary>An event source that notes when it is enumerated.</summary>
-    /// <param name="onEnumerated">Runs when the first event is asked for.</param>
-    /// <returns>An empty stream.</returns>
-    private static async IAsyncEnumerable<PluginEvent> Events(Action onEnumerated)
-    {
-        onEnumerated();
-        await Task.CompletedTask;
-        yield break;
-    }
-
     /// <summary>
     /// The references a plugin sees are stable for one plugin and one client, differ for another plugin and for another
     /// client, and are neither the host's ids nor reversible by looking at them.

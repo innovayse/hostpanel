@@ -54,6 +54,16 @@
 		max_size {$EDGE_MAX_BODY_SIZE}
 	}
 
+	# Plugin calls may answer with server-sent events: flush every chunk at once instead of buffering.
+	handle /api/client/plugins/* /api/admin/plugins/* {
+		reverse_proxy hostpanel-api:{$API_PORT} {
+			flush_interval -1
+			header_up X-Real-IP {client_ip}
+			# Replaced, never appended: a value the visitor sent must not reach the client or the API.
+			header_up X-Forwarded-For {remote_host}
+		}
+	}
+
 	handle /api/* {
 		reverse_proxy hostpanel-api:{$API_PORT} {
 			header_up X-Real-IP {client_ip}

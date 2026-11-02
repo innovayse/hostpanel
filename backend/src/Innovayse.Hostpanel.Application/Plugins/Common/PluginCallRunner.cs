@@ -9,6 +9,7 @@ using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
 using Innovayse.SDK.Plugins.Endpoints;
 using Innovayse.SDK.Plugins.Enums;
+using Innovayse.SDK.Plugins.Manifest;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -140,8 +141,8 @@ public sealed class PluginCallRunner
     /// <param name="input">The request, as the controller read it.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// The plugin's reply; <c>PLUGIN_STREAMING_NOT_SUPPORTED</c> for a streaming route or a streamed reply;
-    /// <c>PLUGIN_REQUEST_TOO_LARGE</c> when the body is over the cap; <c>PLUGIN_FAILED</c> when the plugin threw or broke
+    /// The plugin's reply, which on a streaming route may be a stream (not enumerated here: the response enumerates it
+    /// with the caller's abort token, see <see cref="PluginEventStream"/>); <c>PLUGIN_REQUEST_TOO_LARGE</c> when the body is over the cap; <c>PLUGIN_FAILED</c> when the plugin threw or broke
     /// its contract.
     /// </returns>
     public async Task<Result<PluginReplyDto>> RunAsync(
@@ -152,12 +153,6 @@ public sealed class PluginCallRunner
         ArgumentNullException.ThrowIfNull(input);
 
         var route = target.Match.Route;
-
-        // Streaming is #641. Refused before the plugin is called, so a route that cannot be answered has no side effect.
-        if (route.Streaming)
-        {
-            return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_STREAMING_NOT_SUPPORTED);
-        }
 
         var read = await PluginBodyReader.ReadAsync(input, _options.Value.MaxBodyBytes, ct);
         if (read is not { } body)
@@ -194,7 +189,7 @@ public sealed class PluginCallRunner
             };
 
             var reply = await endpoints.HandleAsync(call, ct);
-            return Map(pluginId, reply);
+            return Map(pluginId, route, reply);
         }
         catch (Exception ex) when (JobFailure.IsFailure(ex, ct))
         {
@@ -207,9 +202,10 @@ public sealed class PluginCallRunner
 
     /// <summary>Turns what the plugin answered into the host's reply.</summary>
     /// <param name="pluginId">The plugin that answered.</param>
+    /// <param name="route">The route that was called; only a route that declares <c>streaming</c> may answer with a stream.</param>
     /// <param name="reply">The plugin's reply; a plugin that returns none broke its contract.</param>
     /// <returns>The reply, or the failure for a reply the host cannot forward.</returns>
-    private Result<PluginReplyDto> Map(string pluginId, PluginReply? reply)
+    private Result<PluginReplyDto> Map(string pluginId, PluginRoute route, PluginReply? reply)
     {
         // The SDK factories refuse a status outside the contract, but the host does not rely on that: a reply built another
         // way (a reflected or subclassed type, a plugin compiled against a different SDK) is checked again here, because
@@ -229,12 +225,37 @@ public sealed class PluginCallRunner
             case PluginReplyKind.Problem:
                 return MapProblem(pluginId, reply);
             case PluginReplyKind.Stream:
-                // Never enumerated: an iterator that was not started has run nothing and holds nothing to release.
-                return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_STREAMING_NOT_SUPPORTED);
+                return MapStream(pluginId, route, reply);
             default:
                 _logger.LogError("Plugin {PluginId} returned {Reply}, which is not a reply.", pluginId, reply?.Kind.ToString() ?? "no reply");
                 return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_FAILED);
         }
+    }
+
+    /// <summary>Turns a plugin's stream into the host's, when the route declared one.</summary>
+    /// <param name="pluginId">The plugin that answered.</param>
+    /// <param name="route">The route that was called.</param>
+    /// <param name="reply">The plugin's stream reply.</param>
+    /// <returns>
+    /// The reply carrying the events and the heartbeat, or <c>PLUGIN_FAILED</c> when the route did not declare streaming or the
+    /// plugin gave no events; the events are never enumerated in that case, so an iterator that was not started holds
+    /// nothing to release.
+    /// </returns>
+    private Result<PluginReplyDto> MapStream(string pluginId, PluginRoute route, PluginReply reply)
+    {
+        if (!route.Streaming || reply.Events is null)
+        {
+            _logger.LogError("Plugin {PluginId} streamed a reply from a route that does not declare streaming, or gave no events.", pluginId);
+            return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_FAILED);
+        }
+
+        // Resolved now, while the request's language is known, not later inside the stream. The token is the placeholder of
+        // an iterator parameter: the response enumerates with the request abort token, which replaces it.
+        var failed = _messages.Resolve(HostpanelErrorCodes.PLUGIN_FAILED);
+        var events = PluginEventStream.TranslateAsync(pluginId, reply.Events, failed, _logger, _options.Value.StreamEventMaxBytes, CancellationToken.None);
+        var stream = new StreamedReply(events, _options.Value.StreamHeartbeat);
+
+        return Result<PluginReplyDto>.Success(new PluginReplyDto(reply.Status, null, null, null, stream));
     }
 
     /// <summary>Whether a reply carries a status its kind may have: 200 to 203 with a body, 204 with none, 400 to 599 except 401 and 407 for a problem.</summary>
@@ -248,7 +269,7 @@ public sealed class PluginCallRunner
             PluginReplyKind.NoContent => reply.Status == 204,
             PluginReplyKind.Problem => reply.Status is >= 400 and <= 599 and not (401 or 407),
 
-            // A stream (refused later, by Map) and a kind this host does not know carry no status rule here. An unknown
+            // A stream (checked against its route by MapStream) and a kind this host does not know carry no status rule here. An unknown
             // kind must not pass as valid: Map's default arm answers it PLUGIN_FAILED, so this method does not decide it.
             _ => true,
         };

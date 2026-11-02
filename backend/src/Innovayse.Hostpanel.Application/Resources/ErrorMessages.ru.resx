@@ -579,9 +579,6 @@
 <data name="PLUGIN_REQUEST_TOO_LARGE" xml:space="preserve">
     <value>Запрос слишком большой для этого плагина.</value>
   </data>
-<data name="PLUGIN_STREAMING_NOT_SUPPORTED" xml:space="preserve">
-    <value>Этот сервер пока не может передавать потоком ответ этого маршрута плагина.</value>
-  </data>
 <data name="PLUGIN_REPORTED_PROBLEM" xml:space="preserve">
     <value>Плагин сообщил о проблеме с запросом.</value>
   </data>

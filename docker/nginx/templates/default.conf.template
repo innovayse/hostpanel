@@ -13,6 +13,13 @@ upstream admin_frontend {
     server hostpanel-admin:80;
 }
 
+# Referrer-Policy default for security-headers.conf: empty when the upstream sent its own policy (the
+# header is then skipped and the upstream value passes alone), the default otherwise.
+map $upstream_http_referrer_policy $referrer_policy {
+    ""      "strict-origin-when-cross-origin";
+    default "";
+}
+
 # TLS ends at the edge, so $scheme is always http here; forward the edge's X-Forwarded-Proto or the API
 # refuses sign-in (__Host- cookies need a secure origin).
 map $http_x_forwarded_proto $panel_forwarded_proto {

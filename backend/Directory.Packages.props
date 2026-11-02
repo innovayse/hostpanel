@@ -29,11 +29,11 @@
 
   <!-- ASP.NET Core & Identity -->
   <ItemGroup>
-    <PackageVersion Include="Innovayse.Auth" Version="3.1.0" />
+    <PackageVersion Include="Innovayse.Auth" Version="5.1.0" />
     <PackageVersion Include="DnsClient" Version="1.8.0" />
     <!--
-      9.0.20 rather than the 9.0.1 the other ASP.NET packages here carry: Innovayse.Auth 3.1.0
-      declares JwtBearer >= 9.0.20, and central package management turns the resulting
+      9.0.21 rather than the 9.0.1 the other ASP.NET packages here carry: Innovayse.Auth 5.1.0
+      declares JwtBearer 9.0.21, and central package management turns the resulting
       downgrade into NU1605, which TreatWarningsAsErrors makes a restore failure.
     -->
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.21" />
@@ -143,10 +143,10 @@
     <PackageVersion Include="Swashbuckle.AspNetCore.Annotations" Version="6.9.0" />
     <!--
       The client portal keeps its sign-in sessions in Redis, and a back-channel logout deletes them from
-      here (Auth/PortalSessionRevoker). 2.8.16 is the version Innovayse.Auth depends on in an SSO build,
+      here (Auth/PortalSessionRevoker). 3.4.20 is the version Innovayse.Auth depends on in an SSO build,
       so both builds resolve the same client.
     -->
-    <PackageVersion Include="StackExchange.Redis" Version="2.8.16" />
+    <PackageVersion Include="StackExchange.Redis" Version="3.4.20" />
   </ItemGroup>
   <!-- Roslyn / Tooling -->
   <ItemGroup>

@@ -32,7 +32,9 @@
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Content-Type-Options "nosniff"
-		Referrer-Policy "strict-origin-when-cross-origin"
+		# Default only (the ? prefix): a response that sets its own policy, such as the sign-in callback
+		# with no-referrer, keeps it instead of carrying two headers the browser resolves to the looser one.
+		?Referrer-Policy "strict-origin-when-cross-origin"
 		X-Frame-Options "DENY"
 		Permissions-Policy "camera=(), microphone=(), geolocation=(), usb=()"
 	}
@@ -55,7 +57,9 @@
 	}
 
 	# Plugin calls may answer with server-sent events: flush every chunk at once instead of buffering.
-	handle /api/client/plugins/* /api/admin/plugins/* {
+	# handle takes one matcher, so the two prefixes go through a named path matcher.
+	@pluginCalls path /api/client/plugins/* /api/admin/plugins/*
+	handle @pluginCalls {
 		reverse_proxy hostpanel-api:{$API_PORT} {
 			flush_interval -1
 			header_up X-Real-IP {client_ip}

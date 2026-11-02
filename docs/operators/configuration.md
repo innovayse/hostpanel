@@ -105,6 +105,8 @@ Hostpanel supports two authentication modes: local (users managed by Hostpanel i
   { name: 'HOSTPANEL_BACKCHANNEL_LOGOUT_KEY', type: 'secret', default: 'CHANGE_ME', description: 'Shared with the provider for back-channel logout. Generate with openssl rand -hex 24. Must be at least 16 characters on a deployed host. Leave empty only where no provider is connected. Required for SSO. Tiers: all.' },
 ]" />
 
+Updating to a release that moves the sign-on client package to 5.1 resets the admin panel sessions once: the package now keeps its session cache keys per product, so the sessions stored under the old keys are no longer read. Every administrator signs in again after the update, with no action needed beyond that, and the old entries expire on their own. The package also maps the back-channel logout receiver itself at /api/auth/backchannel-logout, and a sign-in callback that has no matching attempt (a second tab, Back after signing in) now redirects to the sign-in page instead of answering an error body. Nothing needs configuring for either.
+
 ### Local session settings
 
 <Label type="local" /> These settings apply only when AUTH_MODE=local.

@@ -1,6 +1,4 @@
 using FluentValidation;
-using Innovayse.Hostpanel.Shared.Contracts.Interfaces;
-using Innovayse.Hostpanel.Shared.Models;
 using Innovayse.Hostpanel.SharedKernel.Domain;
 using JasperFx;
 using JasperFx.CodeGeneration;
@@ -69,7 +67,7 @@ public sealed class DurableDeliveryRetryPolicy : IHandlerPolicy
     {
         ArgumentNullException.ThrowIfNull(chains);
 
-        foreach (var chain in chains.Where(IsQueuedDelivery))
+        foreach (var chain in chains.Where(QueuedDelivery.IsQueued))
         {
             // Rules are matched in the order they are added, so the two deterministic refusals come
             // before the catch-all: a message that failed validation or broke a domain invariant fails
@@ -82,43 +80,5 @@ public sealed class DurableDeliveryRetryPolicy : IHandlerPolicy
                 .Then.ScheduleRetry(ScheduledDelays)
                 .Then.MoveToErrorQueue();
         }
-    }
-
-    /// <summary>
-    /// Whether a chain is delivered from a queue rather than invoked by a waiting caller: its message
-    /// is not a recurring job and none of its handlers answers with a <see cref="Result"/>.
-    /// </summary>
-    /// <param name="chain">The handler chain to classify.</param>
-    /// <returns><see langword="true"/> when the chain should get the retry rules.</returns>
-    private static bool IsQueuedDelivery(HandlerChain chain)
-    {
-        if (typeof(IRecurringJob).IsAssignableFrom(chain.MessageType))
-        {
-            return false;
-        }
-
-        return !chain.Handlers.Any(handler => AnswersWithResult(handler.Method.ReturnType));
-    }
-
-    /// <summary>
-    /// Whether a handler method's return type is, or asynchronously yields, <see cref="Result"/> or
-    /// <see cref="Result{T}"/>.
-    /// </summary>
-    /// <param name="returnType">The handler method's declared return type.</param>
-    /// <returns><see langword="true"/> for <c>Result</c>, <c>Result&lt;T&gt;</c> and a <c>Task</c> or <c>ValueTask</c> of either.</returns>
-    private static bool AnswersWithResult(Type returnType)
-    {
-        var answered = returnType;
-        if (returnType.IsGenericType)
-        {
-            var definition = returnType.GetGenericTypeDefinition();
-            if (definition == typeof(Task<>) || definition == typeof(ValueTask<>))
-            {
-                answered = returnType.GetGenericArguments()[0];
-            }
-        }
-
-        // Result<T> derives from Result, so one check covers both shapes.
-        return typeof(Result).IsAssignableFrom(answered);
     }
 }

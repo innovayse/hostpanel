@@ -142,9 +142,13 @@ public static class MessagingRegistration
             // made outside a handler (startup and hosted services, seeders), which the interceptor does.
             opts.UseEntityFrameworkCoreTransactions();
 
-            // Every local queue keeps its messages in the database inbox, so a message accepted before
-            // a crash or a deploy is still delivered afterwards.
-            opts.Policies.UseDurableLocalQueues();
+            // A local queue that carries published messages nobody waits on (events, commands sent for
+            // later) keeps them in the database inbox, so a message accepted before a crash or a deploy is
+            // still delivered afterwards. The queues of request/response use cases, which a controller
+            // invokes inline and which never carry a message, stay in memory: a durable receiver for each
+            // of them cost hundreds of idle inboxes and timers per host. See DurableQueuePolicy.
+            opts.Policies.ConfigureConventionalLocalRouting().Named(LocalQueueNames.For);
+            opts.Policies.Add<DurableQueuePolicy>();
 
             // The exception: recurring jobs (ResetDemoDataCommand is one) run on one in-memory queue.
             // Each pass schedules the next itself, and RecurringJobs.StartAsync and the demo startup

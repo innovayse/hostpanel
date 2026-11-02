@@ -587,8 +587,12 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   uses, **without `Policies.AutoApplyTransactions()`**: that policy would add a second `SaveChangesAsync` and an
   explicit transaction around every handler that takes the context, changing the unit of work of handlers that
   already save themselves (some more than once on purpose), while the interceptor's outbox already covers every
-  save, inside a handler or not (startup and hosted services, seeders). `opts.Policies.UseDurableLocalQueues()`
-  makes every local queue durable, with one exception: `IRecurringJob` messages and `ResetDemoDataCommand` go to
+  save, inside a handler or not (startup and hosted services, seeders). `DurableQueuePolicy`
+  (`Shared/Infrastructure`, an endpoint policy) makes a local queue durable only when a chain it serves is delivered
+  from a queue (`QueuedDelivery.IsQueued`, the same rule the retry policy uses): events and commands published for
+  later get a database inbox, while the queues of request/response use cases, which are only invoked inline, stay in
+  memory. Making every queue durable gave each host several hundred idle durable receivers and their timers, and three
+  integration shards that fit in 5 GB on develop ran out of memory. `IRecurringJob` messages and `ResetDemoDataCommand` go to
   the buffered in-memory queue `recurring-jobs`, because those chains re-schedule themselves and are re-created on
   every start, so a durable scheduled run would add a chain per restart (scheduled messages on a buffered queue stay
   in memory; `AlwaysMakeScheduledMessagesDurable` is left off). Failures on a queued chain follow

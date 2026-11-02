@@ -13,8 +13,11 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.Internal;
 using Microsoft.Extensions.Options;
 using Wolverine;
+using Wolverine.Configuration;
 using Wolverine.Runtime;
 using Wolverine.Runtime.Handlers;
+using Wolverine.Runtime.Routing;
+using Wolverine.Transports.Local;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Shared;
 
@@ -88,6 +91,39 @@ public sealed class MessagingRegistrationTests(IntegrationTestFactory factory) :
 
         chains.Single(c => c.MessageType == typeof(ClientCreatedEvent)).Failures
             .Should().NotBeEmpty("an event chain is delivered from a durable queue and must be retried on failure");
+    }
+
+    /// <summary>
+    /// Only queues that carry published messages keep a durable inbox: the queue of a single-handler event and
+    /// the per-handler queues of a separated event are durable, while the queue of a request/response command
+    /// and the recurring-jobs queue stay in memory.
+    /// </summary>
+    [Fact]
+    public void LocalQueues_AreDurableOnlyForQueuedMessages()
+    {
+        var runtime = factory.Services.GetRequiredService<IWolverineRuntime>();
+        var graph = factory.Services.GetRequiredService<HandlerGraph>();
+
+        ModeOf(runtime, typeof(ClientCreatedEvent)).Should().Be(EndpointMode.Durable);
+        foreach (var separated in graph.Chains.Single(c => c.MessageType == typeof(PaymentReceivedEvent)).ByEndpoint)
+        {
+            separated.Endpoints.Should().OnlyContain(e => e.Mode == EndpointMode.Durable);
+        }
+
+        ModeOf(runtime, typeof(CompleteGatewayPaymentCommand)).Should().NotBe(EndpointMode.Durable);
+        ModeOf(runtime, typeof(ReconcileGatewayPaymentsCronCommand)).Should().NotBe(EndpointMode.Durable);
+    }
+
+    /// <summary>The delivery mode of the local queue a message type is routed to.</summary>
+    /// <param name="runtime">The started runtime whose routing is read.</param>
+    /// <param name="messageType">The message type to route.</param>
+    /// <returns>The mode of the single local queue the message goes to.</returns>
+    private static EndpointMode ModeOf(IWolverineRuntime runtime, Type messageType)
+    {
+        return runtime.RoutingFor(messageType).Routes.OfType<MessageRoute>()
+            .Select(route => route.Sender.Endpoint)
+            .Single(endpoint => endpoint is LocalQueue)
+            .Mode;
     }
 
     /// <summary>

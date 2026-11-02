@@ -31,7 +31,10 @@ public abstract class BodyProbe : ControllerBase
     /// <param name="id">The plugin id route value; unused, it only gives the route its production shape.</param>
     /// <param name="path">The path below the plugin's prefix.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The body's length, whether every byte is the one the test sender generates and the content type; 413 over the cap.</returns>
+    /// <returns>
+    /// The body's length, whether every byte is the one the test sender generates, the content type and whether MVC's form
+    /// reader had already tried the body and been refused (a form binding error in the model state); 413 over the cap.
+    /// </returns>
     [HttpPost("{id}/{**path}")]
     public async Task<IActionResult> ReadAsync(string id, string? path, CancellationToken ct)
     {
@@ -46,6 +49,7 @@ public abstract class BodyProbe : ControllerBase
             length = bytes.Length,
             intact = bytes.Span.IndexOfAnyExcept((byte)'x') < 0,
             contentType = Request.ContentType,
+            formRefused = !ModelState.IsValid,
         });
     }
 

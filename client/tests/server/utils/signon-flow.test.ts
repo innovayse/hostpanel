@@ -44,6 +44,23 @@ describe('startSignonFlow', () => {
     expect(params.get('code_challenge')).toBe(createHash('sha256').update(verifier).digest('base64url'))
   })
 
+  it('sends a fresh nonce on every start and seals the same one into the transaction', () => {
+    const first = makeEvent()
+    const second = makeEvent()
+
+    const firstParams = startSignonFlow(first, null).params
+    const secondParams = startSignonFlow(second, null).params
+
+    const nonce = firstParams.get('nonce') ?? ''
+    expect(nonce).toMatch(/^[0-9a-f]{32}$/)
+    expect(secondParams.get('nonce')).not.toBe(nonce)
+    expect(nonce).not.toBe(firstParams.get('state'))
+    const name = transactionCookieName(firstParams.get('state') ?? '')
+    const lookup = openTransaction(makeEvent({ cookies: { [name]: first.written[name]?.value ?? '' } }), firstParams.get('state') ?? '')
+    expect(lookup.transaction?.nonce).toBe(nonce)
+    expect(first.written[name]?.value).not.toContain(nonce)
+  })
+
   it('writes one sealed transaction cookie httpOnly, Secure, SameSite=Lax for the sign-in attempt lifetime, and no shared cookie', () => {
     const event = makeEvent()
 
@@ -62,6 +79,13 @@ describe('startSignonFlow', () => {
     const first = startSignonFlow(interactive, '/client/invoices').params.get('state') ?? ''
     const second = startSignonFlow(silent, null, SignonTransactionKind.Silent).params.get('state') ?? ''
 
+    /**
+     * Opens the transaction a start wrote to its response.
+     *
+     * @param event - The event the start wrote to.
+     * @param state - The state of the attempt.
+     * @returns The transaction, or null when none can be found.
+     */
     const open = (event: ReturnType<typeof makeEvent>, state: string) => {
       const name = transactionCookieName(state)
       return openTransaction(makeEvent({ cookies: { [name]: event.written[name]?.value ?? '' } }), state).transaction

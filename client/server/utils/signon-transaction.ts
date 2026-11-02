@@ -5,7 +5,7 @@
  * Each attempt (an interactive sign-in or a silent probe) gets a cookie named after its `state`
  * (`<prefix>sso_tx_<first 16 hex of sha256(state)>`), so attempts started in several tabs, or by a
  * probe while a person is still typing a password, never overwrite one another. The cookie holds
- * the `state`, the PKCE verifier, the page to return to, the kind of attempt and its start time,
+ * the `state`, the PKCE verifier, the `nonce`, the page to return to, the kind of attempt and its start time,
  * sealed with AES-256-GCM under a key derived from the session encryption key, with the cookie name
  * as additional authenticated data. The browser can neither read nor edit it, and cannot move a
  * valid one to another name.
@@ -48,6 +48,8 @@ export interface NewSignonTransaction {
   state: string
   /** The PKCE code verifier whose challenge was sent to the provider. */
   verifier: string
+  /** The `nonce` sent to the provider, which the ID token of the token response must echo. */
+  nonce: string
   /** The page to open afterwards, already validated, or null for the default. */
   returnTo: string | null
   /** Whether this is an interactive sign-in or a silent probe. */
@@ -139,7 +141,7 @@ export const transactionCookieName = (state: string): string => {
  * @param right - The other value.
  * @returns True when both are equal.
  */
-const sameText = (left: string, right: string): boolean => {
+export const sameText = (left: string, right: string): boolean => {
   const leftBytes = Buffer.from(left)
   const rightBytes = Buffer.from(right)
   return leftBytes.length === rightBytes.length && timingSafeEqual(leftBytes, rightBytes)
@@ -174,6 +176,7 @@ const parseTransaction = (text: string): SignonTransaction | null => {
       value['v'] !== TRANSACTION_VERSION
       || typeof value['state'] !== 'string'
       || typeof value['verifier'] !== 'string'
+      || typeof value['nonce'] !== 'string'
       || (value['returnTo'] !== null && typeof value['returnTo'] !== 'string')
       || typeof value['kind'] !== 'string'
       || !kinds.includes(value['kind'])

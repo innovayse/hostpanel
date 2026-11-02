@@ -17,6 +17,10 @@ export enum SignonFailureReason {
   MissingCode = 'missing_code',
   /** The provider refused the code exchange, or could not be reached. */
   ExchangeFailed = 'exchange_failed',
+  /** The callback named an issuer other than the configured one (RFC 9207). */
+  IssuerMismatch = 'issuer_mismatch',
+  /** The ID token failed signature, issuer, audience, expiry, issue time or nonce checks, or its keys could not be fetched. */
+  InvalidIdToken = 'invalid_id_token',
   /** The callback matched no attempt, but the browser already holds a live session, so the visitor was passed on. */
   AlreadySignedIn = 'already_signed_in'
 }

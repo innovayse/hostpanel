@@ -17,7 +17,10 @@
  * path exchanges nothing, writes nothing and deletes nothing. A transaction cookie that fails
  * authentication is never treated that way: it is refused with a warning like any forgery.
  *
- * Once a transaction is found it is deleted (single use) before anything else is decided. When the
+ * Once a transaction is found it is deleted (single use) before anything else is decided. A callback
+ * that names an issuer (`iss`, RFC 9207) other than the configured one ends the attempt, and so does
+ * a token response whose `id_token` does not verify (signature against the provider's keys, issuer,
+ * audience, expiry, issue time and the attempt's `nonce`, see `server/utils/signon-oidc.ts`). When the
  * identity provider answers with an error instead of a code (a silent `prompt=none` probe that found
  * no session answers `login_required`), when the code is missing and when the code exchange fails,
  * the visitor is returned to the page they were on with the sign-in prompt flag
@@ -40,6 +43,7 @@ import type { SessionTokens } from '~/server/utils/portal-session'
 import { readQueryString } from '~/server/utils/readQueryString'
 import { requireSsoSetting } from '~/server/utils/requireSsoSetting'
 import { safeReturnPath } from '~/server/utils/signon-flow'
+import { issuerMatches, verifyIdToken } from '~/server/utils/signon-oidc'
 import { deleteTransaction, openTransaction } from '~/server/utils/signon-transaction'
 import { HttpMethod } from '~/types/httpmethod'
 import { SignonFailureReason } from '~/types/signonfailurereason'
@@ -56,6 +60,8 @@ interface SsoTokenResponse {
   expires_in: number
   /** Token type, always `Bearer`. */
   token_type: string
+  /** The signed identity token, when the SSO issued one; it is verified before the tokens are used. */
+  id_token?: unknown
 }
 
 /** The page the visitor lands on when the attempt tells nowhere else. */
@@ -140,6 +146,7 @@ export default defineEventHandler(async (event) => {
   const error = readQueryString(query.error)
   const code = readQueryString(query.code)
   const returnedState = readQueryString(query.state)
+  const returnedIssuer = readQueryString(query.iss)
   // Fail closed: the token exchange sends the callback address as `redirect_uri`, so an empty one can never succeed.
   const redirectUri = requireSsoSetting(config.ssoCallbackUrl)
 
@@ -160,6 +167,11 @@ export default defineEventHandler(async (event) => {
   deleteTransaction(event, transaction.state)
   for (const legacy of LEGACY_FLOW_COOKIES) {
     deleteCookie(event, legacy, cookieOptions(0))
+  }
+
+  // An answer that names another issuer was not sent by the provider this attempt went to.
+  if (returnedIssuer !== undefined && !issuerMatches(returnedIssuer)) {
+    return endSignInAttempt(event, SignonFailureReason.IssuerMismatch, transaction.returnTo)
   }
 
   // The provider answered with an error (a silent probe with no session answers `login_required`).
@@ -197,6 +209,12 @@ export default defineEventHandler(async (event) => {
   } catch {
     // Neither the provider's error body nor the failure itself is kept: the reason code is all that is told.
     return endSignInAttempt(event, SignonFailureReason.ExchangeFailed, transaction.returnTo)
+  }
+
+  // An identity token that came back must belong to this attempt and this provider; one that does not
+  // verify ends the attempt before any token is kept.
+  if (tokenResponse.id_token !== undefined && !(await verifyIdToken(tokenResponse.id_token, transaction.nonce))) {
+    return endSignInAttempt(event, SignonFailureReason.InvalidIdToken, transaction.returnTo)
   }
 
   const { access_token, refresh_token, expires_in } = tokenResponse

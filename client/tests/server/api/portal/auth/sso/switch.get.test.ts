@@ -71,6 +71,8 @@ describe('GET /api/portal/auth/sso/switch', () => {
     const state = authorize.get('state')
     const transaction = writtenTransaction(event, state)
     expect(transaction?.state).toBe(state)
+    expect(authorize.get('nonce')).toMatch(/^[0-9a-f]{32}$/)
+    expect(transaction?.nonce).toBe(authorize.get('nonce'))
     expect(authorize.get('code_challenge')).toBe(createHash('sha256').update(transaction?.verifier ?? '').digest('base64url'))
     expect(event.written[transactionCookieName(state ?? '')]?.options).toMatchObject({ httpOnly: true, secure: true, sameSite: 'lax', maxAge: SSO_FLOW_COOKIE_MAX_AGE })
     expect(transaction?.returnTo).toBe('/client/domains')

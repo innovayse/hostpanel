@@ -89,7 +89,6 @@ describe('issuerMatches and the provider issuer', () => {
   it.each([
     ['a configured address with a trailing slash and a declared issuer without', 'https://sso.test/', 'https://sso.test'],
     ['the same issuer with a path', 'https://sso.test/realm', 'https://sso.test/realm/'],
-    ['the default port written out', 'https://sso.test', 'https://sso.test:443/'],
   ])('accepts %s', async (_name, configured, declared) => {
     setRuntimeConfig({ public: { ssoPublicUrl: configured } })
     serveProvider({ issuer: declared })
@@ -106,6 +105,11 @@ describe('issuerMatches and the provider issuer', () => {
     ['a query', 'https://sso.test/?a=1'],
     ['a fragment', 'https://sso.test/#a'],
     ['two trailing slashes', 'https://sso.test//'],
+    ['the default port written out', 'https://sso.test:443/'],
+    ['dot segments', 'https://sso.test/x/../'],
+    ['an upper case host', 'https://SSO.test/'],
+    ['a backslash', 'https://sso.test\\'],
+    ['credentials', 'https://user@sso.test/'],
     ['text that is not a URL', 'sso.test'],
   ])('refuses a discovery document that declares %s', async (_name, declared) => {
     serveProvider({ issuer: declared })

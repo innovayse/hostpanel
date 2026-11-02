@@ -20,7 +20,7 @@ The `restrict` directive removes PTY, port forwarding and user rc; the forced co
 
 ## Set up SSH on a server
 
-Go to **Servers**, click a server row, then open the **SSH** tab.
+Go to **Servers** and click the **SSH** row action on a server to open the SSH key management dialog.
 
 <Steps>
 <li>
@@ -30,12 +30,12 @@ Go to **Servers**, click a server row, then open the **SSH** tab.
 | Field | Notes |
 |-------|-------|
 | SSH hostname | Hostname clients use to connect (shown to the client) |
-| SSH Port | Default 22 |
-| Agent Host | Address Hostpanel dials to reach the agent (may differ from the SSH hostname) |
-| Agent SSH Port | Default 22 |
-| Management User | System account the agent runs as; default `hpsshkeys` |
-| Connect Timeout (s) | Seconds before a connection attempt is abandoned |
-| Operation Timeout (s) | Seconds before an agent request is abandoned |
+| SSH port | Default 22 |
+| Agent host | Address Hostpanel dials to reach the agent (may differ from the SSH hostname) |
+| Agent SSH port | Default 22 |
+| Management user | System account the agent runs as; default `hpsshkeys` |
+| Connect timeout (s) | Seconds before a connection attempt is abandoned |
+| Operation timeout (s) | Seconds before an agent request is abandoned |
 
 **Network access.** Hostpanel connects from a fixed address. Allow only that address on the agent port with the line shown for your firewall (CSF, firewalld, or ufw). Set `SSH_AGENT_SOURCE_ADDRESSES` in the deployment environment to the address managed servers see Hostpanel's connections come from; the dialog then shows ready-made firewall and sshd lines.
 
@@ -46,7 +46,7 @@ With a VPN or private network: enter the server's private address as the Agent H
 </li>
 <li>
 
-**Generate identity.** Click **Generate Identity**. Hostpanel creates an ED25519 key pair for this server, stores the private key encrypted, and displays a one-command installer. Copy the command and run it as root on the server.
+**Generate identity.** Click **Generate identity**. Hostpanel creates an ED25519 key pair for this server, stores the private key encrypted, and displays a one-command installer. Copy the command and run it as root on the server.
 
 <Callout type="warning">
 Run the installer in a native SSH terminal, not in a hosting panel's browser terminal. Browser terminals drop <code>$</code> variables and echo input, which breaks the command.
@@ -76,19 +76,22 @@ The installer never touches sshd, the firewall, any VPN, Jailkit, or customer ac
 </li>
 <li>
 
-**Pin the host key.** Click **Read Host Key**. Hostpanel connects to the agent without authenticating and reads the fingerprint the server presents. Compare it with what the installer printed; if identical, click **Use This Fingerprint** and save. All future connections that present any other fingerprint are refused.
+**Pin the host key.** Click **Read host key**. Hostpanel connects to the agent without authenticating and reads the fingerprint the server presents. Compare it with what the installer printed; if identical, click **Use this fingerprint** and save. All future connections that present any other fingerprint are refused.
 
-If **Read Host Key** fails:
+If **Read host key** fails:
 
 | Error code | Meaning |
 |------------|---------|
-| `SSH_AGENT_HOST_UNREACHABLE` | Agent host is wrong, the connection timed out, or the server is down |
-| `SSH_AGENT_PORT_REFUSED` | The agent port actively refused the connection |
+| `SSH_SETTINGS_INCOMPLETE` | Agent host field is empty; fill in the connection settings first |
+| `SSH_AGENT_HOST_UNREACHABLE` | No network path to the agent host and port; check the address, firewall and VPN |
+| `SSH_AGENT_PORT_REFUSED` | The port actively refused the connection; nothing is listening there or a firewall rejects Hostpanel's address |
+| `SSH_AGENT_CONNECTION_CLOSED` | The server accepted then closed the connection before the SSH greeting; check `PerSourcePenalties`, `MaxStartups` and TCP wrappers |
+| `SSH_HOST_KEY_UNREADABLE` | Connected but received no host key; check that the port runs sshd |
 
 </li>
 <li>
 
-**Test the connection.** Click **Test Agent**. The status line shows one of:
+**Test the connection.** Click **Test agent**. The status line shows one of:
 
 - **Agent reachable** — agent responded and the binding matches.
 - **Agent unreachable** — connection failed; see "Last check failed" for the reason.
@@ -100,11 +103,16 @@ If the test fails the reason is shown as "Last check failed: _reason_" (`servers
 
 | Reason | Meaning |
 |--------|---------|
-| the agent was installed for a different server | Correct host but wrong binding — check the agent host or run this server's install command on it |
-| the agent version is not supported | Agent is too old for this Hostpanel version |
-| the agent failed internally | Agent-side error; check `/var/log/hostpanel-ssh-key-agent.log` |
-| the server has no complete agent settings | One or more required fields are empty (`SSH_SETTINGS_INCOMPLETE`) |
-| unknown reason | Unexpected response |
+| the server could not be reached | No network path to the agent host (`Unreachable`) |
+| the agent timed out | Connection opened but the agent did not respond in time (`Timeout`) |
+| the agent was installed for a different server | Correct host but wrong binding — check the agent host or run this server's install command on it (`BindingMismatch`) |
+| the agent version is not supported | Agent is too old for this Hostpanel version (`UnsupportedVersion`) |
+| the agent failed internally | Agent-side error; check `/var/log/hostpanel-ssh-key-agent.log` (`InternalError`) |
+| the agent rejected the request | Unexpected refusal from the agent (`InvalidRequest`) |
+| the agent does not support this operation | Agent version does not implement this operation (`UnknownOperation`) |
+| the request was too large | Request body exceeded the agent's size limit (`RequestTooLarge`) |
+| the server has no complete agent settings | One or more required fields are empty (`AgentNotConfigured`) |
+| unknown reason | Unexpected response (`Unknown`) |
 
 `SSH_AGENT_NOT_VERIFIED` is shown when enabling without a passing test. `SSH_MODULE_NOT_SUPPORTED` is returned for server types whose module has no agent profile.
 
@@ -118,7 +126,7 @@ If the test fails the reason is shown as "Last check failed: _reason_" (`servers
 
 ### Rotate identity
 
-Click **Rotate Identity** to issue a new key for the same server binding. Client SSH key access stops immediately until the installer is run again with the new command shown.
+Click **Rotate identity** to issue a new key for the same server binding. Client SSH key access stops immediately until the installer is run again with the new command shown.
 
 For disaster recovery, **Advanced** lets you paste an existing private key instead of generating a new one.
 

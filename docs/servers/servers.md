@@ -12,7 +12,7 @@ Servers are grouped by module in one table per module. Each row shows **Server N
 
 **Status badges:** Online, Offline, Not tested.
 
-**Row actions:** Test Connection, SSH, Edit, Delete.
+**Row actions:** Test Connection, SSH (opens the SSH key management dialog), Edit, Delete.
 
 **DEFAULT** badge marks the default server for its module. It has no effect on server selection today — the selector always picks by fill ratio regardless of this flag.
 
@@ -73,7 +73,7 @@ Click **Test Connection** on a server row. Hostpanel calls the server's panel AP
 
 ## Edit and delete a server
 
-Click a server row or the **Edit** row button to open the form. Operations on a server that no longer exists return `SERVER_NOT_FOUND`. Deleting a server that still hosts client services or SSH keys is refused (`SERVER_IN_USE`).
+Click **Edit** on a row to open the form. Operations on a server that no longer exists return `SERVER_NOT_FOUND`. Deleting a server that still hosts client services or SSH keys is refused (`SERVER_IN_USE`).
 
 ## Server groups
 

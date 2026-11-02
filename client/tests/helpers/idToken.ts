@@ -12,8 +12,11 @@ import { SignJWT, exportJWK, generateKeyPair } from 'jose'
 import type { CryptoKey, JWK } from 'jose'
 import type { StubReply, StubRequest } from './stubServer'
 
-/** The issuer the tests configure and the provider declares. */
+/** The public address of the provider the tests configure, written without a trailing slash. */
 export const TEST_ISSUER = 'https://sso.test'
+
+/** The issuer the provider declares in its discovery document and signs into tokens: with a trailing slash. */
+export const TEST_DECLARED_ISSUER = 'https://sso.test/'
 
 /** The client id the tests configure. */
 export const TEST_CLIENT_ID = 'client'
@@ -70,7 +73,7 @@ export const signIdToken = async (
 ): Promise<string> => {
   const now = Math.floor(Date.now() / 1000)
   const merged: Record<string, unknown> = {
-    iss: TEST_ISSUER, aud: TEST_CLIENT_ID, sub: 'person-1', nonce: 'nonce-1', iat: now, exp: now + 300, ...claims,
+    iss: TEST_DECLARED_ISSUER, aud: TEST_CLIENT_ID, sub: 'person-1', nonce: 'nonce-1', iat: now, exp: now + 300, ...claims,
   }
   for (const [name, value] of Object.entries(merged)) {
     if (value === undefined) {
@@ -86,7 +89,7 @@ export const signIdToken = async (
 export interface ProviderOptions {
   /** The keys the key set holds; read on every request, so a test can rotate them. */
   keys: () => JWK[]
-  /** The issuer the discovery document declares; the test issuer when absent. */
+  /** The issuer the discovery document declares; the test's declared issuer when absent. */
   issuer?: string
   /** The status the discovery document is served with; 200 when absent. */
   discoveryStatus?: number
@@ -108,7 +111,7 @@ export const providerReplies = (options: ProviderOptions) => (request: StubReque
   if (request.url === TEST_DISCOVERY_PATH) {
     return {
       status: options.discoveryStatus ?? 200,
-      body: { issuer: options.issuer ?? TEST_ISSUER, jwks_uri: `${TEST_ISSUER}${TEST_JWKS_PATH}` },
+      body: { issuer: options.issuer ?? TEST_DECLARED_ISSUER, jwks_uri: `${TEST_ISSUER}${TEST_JWKS_PATH}` },
     }
   }
   if (request.url === TEST_JWKS_PATH) {

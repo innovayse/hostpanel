@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Innovayse.Hostpanel.Application.Billing.Commands.DispatchFulfilmentNow;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,8 +21,16 @@ public sealed class DisposedHostReleaseTests
     private const int FactoryCount = 3;
 
     /// <summary>
+    /// How long a disposed host may stay reachable. Wolverine's stop does not wait for a message its local queue
+    /// is still handling, and that handler's pool thread holds the host until it is done (a first handler compiles
+    /// its code, which takes seconds on a busy runner). A leak keeps the host for the rest of the process, so a
+    /// bounded wait still fails on it.
+    /// </summary>
+    private static readonly TimeSpan ReleaseDeadline = TimeSpan.FromSeconds(60);
+
+    /// <summary>
     /// Proves that disposed hosts are released. A host is started and disposed first and not tracked, then three factories are started, used and disposed;
-    /// after two full collections with finalizers neither a factory nor the Wolverine runtime of its host is still
+    /// once the work in flight is done neither a factory nor the Wolverine runtime of its host is still
     /// alive. The first host is left out on purpose: EF Core keeps the options of the first <c>AppDbContext</c> of
     /// the process, whose interceptors are scoped services of that host, in a static service provider cache, so the
     /// first host of the process stays reachable whatever is released (found with <c>gcroot</c> on a dump:
@@ -40,11 +49,23 @@ public sealed class DisposedHostReleaseTests
         // the disposal's own frames, which keep the factory reachable. Yielding resumes on a fresh stack.
         await Task.Yield();
 
-        // Twice, because a finalizer can release the last reference to something the first pass found alive.
-        for (var pass = 0; pass < 2; pass++)
+        var clock = Stopwatch.StartNew();
+        while (true)
         {
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
+            // Twice, because a finalizer can release the last reference to something the first pass found alive.
+            for (var pass = 0; pass < 2; pass++)
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            }
+
+            if ((AliveIndexes(factories).Length == 0 && AliveIndexes(runtimes).Length == 0) || clock.Elapsed > ReleaseDeadline)
+            {
+                break;
+            }
+
+            // A handler that was still running when its host stopped holds the host until it finishes.
+            await Task.Delay(TimeSpan.FromMilliseconds(250));
         }
 
         AliveIndexes(factories).Should().BeEmpty("a disposed factory must not stay reachable");

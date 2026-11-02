@@ -235,9 +235,7 @@ After writing `.env` the installer pulls the images, starts the stack and waits 
 to five minutes for `GET /health` to return `200`.
 
 <Callout type="danger">
-Keep `.env` and `ENCRYPTION_KEY` safe. Without the same key a restore cannot
-read server passwords, API tokens or access hashes stored in the database. Back up
-`.env` alongside every database dump. See [Back up and restore](/operators/backup).
+Keep <code>.env</code> and <code>ENCRYPTION_KEY</code> safe. Without the same key a restore cannot read server passwords, API tokens or access hashes stored in the database. Back up <code>.env</code> alongside every database dump. See <a href="/operators/backup">Back up and restore</a>.
 </Callout>
 
 ## Install by hand with docker compose

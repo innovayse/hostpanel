@@ -99,19 +99,47 @@ A nightly cron job on the host is the simplest approach.
 mkdir -p /var/backups/hostpanel && chmod 700 /var/backups/hostpanel
 ```
 
-**2. Create `/etc/cron.d/hostpanel-backup`:**
+**2. Create `/usr/local/bin/hostpanel-backup`:**
 
 ```bash
-0 3 * * * root umask 077 && cd /opt/hostpanel && \
-  docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
-  sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' \
-  > /var/backups/hostpanel/$(date +\%Y-\%m-\%d).sql
+#!/bin/sh
+set -euo pipefail
+DEST=/var/backups/hostpanel/$(date +%Y-%m-%d-%H%M%S).sql
+cd /opt/hostpanel
+docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
+  sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > "$DEST"
+# Verify the dump is not empty
+test -s "$DEST" || { echo "pg_dump produced an empty file, aborting" >&2; rm -f "$DEST"; exit 1; }
+chmod 600 "$DEST"
+find /var/backups/hostpanel -name '*.sql' -mtime +30 -delete
 ```
-
-Keep at least seven daily dumps. Remove dumps older than thirty days:
 
 ```bash
-0 4 * * * root find /var/backups/hostpanel -name '*.sql' -mtime +30 -delete
+chmod +x /usr/local/bin/hostpanel-backup
 ```
+
+**3. Create `/etc/cron.d/hostpanel-backup`:**
+
+```bash
+0 3 * * * root /usr/local/bin/hostpanel-backup
+```
+
+Keep at least 30 daily dumps — the `find -mtime +30` line in the script removes anything older.
 
 Copy the dumps and `.env` to off-site storage after each run.
+
+**Branding and plugins volumes:**
+
+```bash
+docker run --rm \
+  -v hostpanel_hostpanel_branding:/data \
+  -v /var/backups/hostpanel:/backup \
+  alpine tar czf /backup/branding-$(date +%Y-%m-%d).tar.gz -C /data .
+
+docker run --rm \
+  -v hostpanel_hostpanel_plugins:/data \
+  -v /var/backups/hostpanel:/backup \
+  alpine tar czf /backup/plugins-$(date +%Y-%m-%d).tar.gz -C /data .
+```
+
+Add these to the backup script or run them alongside the database dump.

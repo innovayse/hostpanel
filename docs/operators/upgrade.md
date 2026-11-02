@@ -11,9 +11,7 @@ docker compose.
 ## Before you upgrade
 
 <Callout type="warning">
-Take a database dump before every upgrade. Database migrations run forward
-automatically on every API start and do not run backwards. If you need to go back,
-you will need the dump. See [Back up and restore](/operators/backup).
+Take a database dump before every upgrade. Database migrations run forward automatically on every API start and do not run backwards. If you need to go back, you will need the dump. See <a href="/operators/backup">Back up and restore</a>.
 </Callout>
 
 Read the changelog entry for the new release before upgrading. Take a database
@@ -28,8 +26,9 @@ the upgrade fails. Run the check script before upgrading — an empty result mea
 the migration will run cleanly.
 
 The script is included starting from the release that adds the unique index
-(the first release after v0.3.1). Fetch it from that release tag (replace
-`v1.0.0` with the version you are upgrading to):
+(the first release after v0.3.1). Fetch it from the release tag you are
+upgrading to (replace `v1.0.0` with the real tag — a 404 means the release
+does not contain the script yet and you can skip this step):
 
 ```bash
 curl -fsSL \
@@ -54,7 +53,7 @@ duplicate), then run it again before upgrading.
 
 The next release verifies the signature of every plugin on startup. Plugins
 uploaded before this release carry no signature file (`plugin.sig`) and are
-**skipped silently** on a production server after the upgrade. To restore them:
+**skipped with a warning in the API log** on a production server after the upgrade. To restore them:
 
 - Replace each plugin with a signed package, **or**
 - Switch on **Allow unsigned plugins** in the admin panel under **Plugins** and
@@ -100,7 +99,11 @@ When `.env` already exists the installer:
 
 - Keeps all your existing settings — it does **not** overwrite `.env` or ask the
   domain and email questions again.
-- Sets `IMAGE_TAG` to the requested version (or `latest`).
+- Updates `IMAGE_TAG` only when `--version` or `HOSTPANEL_VERSION` is given. Running
+  it without `--version` leaves `IMAGE_TAG` unchanged, so an installation pinned to a
+  specific version will not move to a newer one unless you pass the version explicitly.
+  The **Latest release** tab above omits `--version`, which means it will not upgrade
+  a pinned installation.
 - Adds any new keys introduced in `.env.example` since your install. New secrets
   (e.g. `SESSION_ENCRYPTION_KEY`) are generated automatically; other new keys get
   the example value and a warning is printed — review them.

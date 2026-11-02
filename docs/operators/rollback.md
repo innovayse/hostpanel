@@ -37,7 +37,11 @@ No leading `v` — use `1.3.2`, not `v1.3.2`:
 
 **3. If the new release added migrations, restore your pre-upgrade database dump.**
 
-Run these commands against the still-running `hostpanel-db`:
+<Callout type="danger">
+Restoring the pre-upgrade dump permanently removes everything written after the upgrade: orders, payments, tickets and any other data. Confirm you have the right dump file before proceeding.
+</Callout>
+
+Replace `pre-upgrade-2024-01-15-103000.sql` with the dated file created in upgrade step 1.
 
 ```bash
 cd /opt/hostpanel
@@ -47,8 +51,10 @@ docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
   sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' \
   > pre-rollback-$(date +%Y-%m-%d-%H%M%S).sql
 
-# Drop and recreate, then load the pre-upgrade dump
-# (replace the filename with the dated file from upgrade step 1):
+# Verify the pre-upgrade dump file is not empty before dropping:
+test -s pre-upgrade-2024-01-15-103000.sql || { echo "Dump file is empty or missing, aborting."; exit 1; }
+
+# Drop and recreate, then load the pre-upgrade dump:
 docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
   sh -c 'dropdb -U "$POSTGRES_USER" "$POSTGRES_DB" && \
          createdb -U "$POSTGRES_USER" "$POSTGRES_DB"'

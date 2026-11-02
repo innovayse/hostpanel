@@ -24,20 +24,26 @@ if you roll back.
 
 The next release adds a unique index on gateway payment references. If any two
 ledger rows share the same payment method and reference the migration stops and
-the upgrade fails. Run the check script first — an empty result means the
-migration will run cleanly:
+the upgrade fails. Run the check script before upgrading — an empty result means
+the migration will run cleanly.
+
+The script ships with the release. Fetch it from the release tag (replace `v1.x.y`
+with the version you are upgrading to):
 
 ```bash
 curl -fsSL \
-  https://raw.githubusercontent.com/innovayse/hostpanel/main/scripts/check-duplicate-gateway-payments.sh \
+  https://raw.githubusercontent.com/innovayse/hostpanel/v1.x.y/scripts/check-duplicate-gateway-payments.sh \
   | sh
 ```
 
-Or, if the server has no outbound internet access, fetch the script from the
-repository and run it over SSH:
+The script accepts an optional container name argument (default: `hostpanel-db`).
+If the database container has a different name pass it as the first argument.
+
+If the server has no outbound internet access, copy the script from the repository
+and run it over SSH:
 
 ```bash
-ssh prod 'sh -s' < scripts/check-duplicate-gateway-payments.sh
+ssh user@your-server 'sh -s' < scripts/check-duplicate-gateway-payments.sh
 ```
 
 If the script lists any rows, give each a distinct reference (or delete the
@@ -57,7 +63,15 @@ The API log names each skipped plugin. Development servers are not affected.
 
 ## Upgrade with the installer
 
-**1. Take a database dump and back up `.env`. Note the current `IMAGE_TAG`.**
+**1. Take a database dump and back up `.env`. Note the current `IMAGE_TAG`:**
+
+```bash
+cd /opt/hostpanel
+docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
+  sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' \
+  > pre-upgrade-$(date +%Y-%m-%d-%H%M%S).sql
+cp .env .env.bak
+```
 
 **2. Run the install command again, optionally with `--version`:**
 

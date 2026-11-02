@@ -47,7 +47,7 @@ Never put registrar credentials in a screenshot or shared document. API keys and
 
 ### Test the registrar connection
 
-On the integrations page for a registrar, click **Test Connection**. The **Connection Status** panel shows:
+On the integrations page for a registrar that supports connection probing, click **Test Connection**. The **Connection Status** panel shows:
 
 - **Connection OK** — credentials are valid and the registrar API is reachable.
 - **Connection Failed** — check the credentials and the whitelisted IP address.
@@ -68,10 +68,7 @@ Attempting to look up a TLD configuration that does not exist returns `TLD_CONFI
 
 ## Add a TLD
 
-Click **Add TLD** and fill in the two-step form.
-
-<Steps>
-<li>
+Click **Add TLD** and fill in the form.
 
 **General Settings:**
 - **TLD** — the extension without the leading dot (e.g. `com`, `net`, `am`).
@@ -82,9 +79,6 @@ Click **Add TLD** and fill in the two-step form.
 - **Sort Order** — position on the storefront, lowest first.
 - **Categories** — comma-separated labels used as storefront filter tabs (e.g. `Popular,Business`).
 
-</li>
-<li>
-
 **Pricing tables** — fill in **Registration Pricing**, **Transfer Pricing** and **Renewal Pricing**. Each table has one row per period (1 to 10 years) with:
 - **Period** — number of years.
 - **Cost** — what the registrar charges you.
@@ -92,9 +86,6 @@ Click **Add TLD** and fill in the two-step form.
 - **Margin** — calculated automatically.
 
 Clients billed in a currency other than the sell currency pay the sell price converted using the stored exchange rates. An order with no matching pricing row returns `ORDER_DOMAIN_PRICING_INVALID`.
-
-</li>
-</Steps>
 
 Click **Create TLD** to save.
 
@@ -104,13 +95,13 @@ Click **Import** on the TLD Pricing screen and choose a registrar provider. The 
 
 ## Keep cost prices up to date
 
-Click **Sync Prices** on a TLD to pull the current cost price from the registrar.
+Click **Sync Prices** on the TLD Pricing screen to pull the current cost prices from all registrar providers.
 
 <Callout type="note">
 Sync Prices only changes cost prices. Sell prices are never changed by a sync.
 </Callout>
 
-The daily job `SyncTldCostPricesCommand` runs at **04:00 UTC** and updates cost prices and the **Last Synced** timestamp for all TLDs automatically.
+A daily job runs at **04:00 UTC** by default and updates cost prices and the **Last Synced** timestamp for all TLDs automatically.
 
 ## Which registrar handles a domain
 

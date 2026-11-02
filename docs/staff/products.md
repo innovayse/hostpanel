@@ -10,7 +10,7 @@ Opening a product that does not exist returns `PRODUCT_NOT_FOUND`. Ordering a pr
 
 Products are grouped under **product groups**. Each group has a name, a description and an Active/Inactive status. There is no screen to create or edit product groups yet; groups are created by the initial data migration and seeded on a fresh install.
 
-Products inside a group share the same billing cycles and appear together on the storefront.
+Products inside a group appear together on the storefront.
 
 ## The Products screen
 
@@ -47,7 +47,7 @@ Go to **Settings → Products → Create Product** and fill in the form.
 </li>
 <li>
 
-**Product Group** — select the group this product belongs to. If the group does not exist yet, it must be created through a migration or a support request (`PRODUCT_GROUP_NOT_FOUND`).
+**Product Group** — select the group this product belongs to. If the group does not exist yet, it can be created through the API for now (`PRODUCT_GROUP_NOT_FOUND`).
 
 </li>
 <li>
@@ -87,7 +87,22 @@ Go to **Settings → Products → Create Product** and fill in the form.
 </li>
 <li>
 
-**Hidden** — tick to hide the product from the order form. Hidden products can still be ordered by staff directly.
+**SKU** — optional unique code used by fulfilment plugins to identify the product (letters, digits, hyphens, underscores or dots; at most 64 characters).
+
+</li>
+<li>
+
+**Metadata** — optional JSON object passed to the fulfilment plugin (at most 16 KB).
+
+</li>
+<li>
+
+**Grace period (days)** — days a service stays usable after its due date before it is suspended.
+
+</li>
+<li>
+
+**Hidden** — tick to set the product Inactive and hide it from the order form. An inactive product cannot be ordered (`PRODUCT_NOT_AVAILABLE`).
 
 </li>
 <li>
@@ -99,14 +114,17 @@ Click **Create Product**.
 
 ## Billing cycles and prices per currency
 
-On the **Pricing** tab, the grid has one row per currency that has been enabled. Each row shows:
+The pricing grid is part of the product form. It has one row per enabled currency. Each row shows:
 
 | Column | Meaning |
 |--------|---------|
 | Enabled | Whether this currency is offered for this product |
 | Currency | Currency code; the base currency is tagged "Base" |
 | Monthly | Price per month |
+| Quarterly | Price per three months |
+| Semi-annual | Price per six months |
 | Annual | Price per year |
+| Biennial | Price per two years |
 
 <Callout type="warning">
 A blank price makes the product unsellable on that cycle in that currency. Attempting to order such a product returns <code>ORDER_PRODUCT_PRICE_UNAVAILABLE</code>.
@@ -114,7 +132,7 @@ A blank price makes the product unsellable on that cycle in that currency. Attem
 
 There is no setup fee field. Clients billed in a non-base currency pay the price you enter for that currency directly — exchange rates are not applied to product prices.
 
-**Update Product Prices** on the Currencies screen overwrites all non-base-currency prices by converting from the base currency at the stored exchange rate.
+**Update Product Prices** on the Currencies screen opens a picker where you choose which currencies to recalculate. The selected currencies have their product prices overwritten by converting from the base currency at the stored exchange rate.
 
 ## What you can change after creation
 
@@ -122,7 +140,7 @@ You can edit the name, description, slug, package name, sort order, recommended 
 
 ## The plan specification
 
-On the product page, click **Edit specification** to open the Specification dialog.
+In the product list, open the row actions menu for a product and click **Edit specification** to open the Specification dialog.
 
 - **Add a line** — enter a Feature name and a value.
 - **Remove a line** — click the remove button on the row.
@@ -132,7 +150,7 @@ Feature names line up across products in a comparison table, so use the same spe
 ## Recommended and hidden products
 
 - **Recommended** — only one product per group can carry the Recommended badge. Setting it on a product clears it from all others in the same group.
-- **Hidden** — removes the product from the storefront order form. Staff can still order it for a client directly.
+- **Hidden** — sets the product Inactive and removes it from the storefront order form. An inactive product cannot be ordered by anyone (`PRODUCT_NOT_AVAILABLE`).
 
 ## Not available yet
 

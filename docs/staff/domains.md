@@ -24,7 +24,7 @@ When a client orders and pays for a domain:
 
 1. Hostpanel sends a registration request to the registrar.
 2. The domain moves to **Pending Registration**.
-3. Most registrars confirm immediately and the domain becomes **Active**. Some confirm later; `SyncPendingDomainStatusesCommand` checks all pending domains every **15 minutes** and activates them once the registrar confirms.
+3. Most registrars confirm immediately and the domain becomes **Active**. Some confirm later; a background job checks all pending domains every **15 minutes** and activates them once the registrar confirms.
 
 When registration succeeds, the customer receives `domain-registered`. If registration fails, the customer receives `domain-registration-failed`, staff receive `domain-registration-failed-admin`, and the order line is refunded automatically. The domain record stays Cancelled.
 
@@ -36,7 +36,7 @@ When a client transfers a domain in:
 2. The domain moves to **Pending Transfer**.
 3. When the registrar confirms the transfer, the domain moves to **Active** and the customer receives `domain-transferred`.
 
-To cancel a pending transfer, open the domain page and use the **Registrar Commands** card. If the registrar refuses the cancellation, the panel shows `DOMAIN_TRANSFER_CANCEL_UPSTREAM_FAILED`.
+There is no cancel transfer button in the admin interface. Contact the registrar directly to cancel a pending transfer if needed.
 
 ## The domain page
 
@@ -67,12 +67,12 @@ A domain that has no registrar reference returns `DOMAIN_NO_REGISTRAR_REF` when 
 
 ## All domains
 
-- **Domains** — shows all active and historical domain records across all clients, with filters for status, registrar and TLD.
-- **Domain Registrations** — shows registration and transfer orders in progress, useful for monitoring pending domains.
+- **Domains** — shows all domain records across all clients. Use the search box to find a domain by name.
+- **Domain Registrations** — lists all registration and transfer orders, useful for monitoring pending domains.
 
 ## Domain renewal
 
-A renewal invoice is raised automatically by `ProcessRenewalsCronCommand` (runs at **05:00 UTC**). Renewal reminder emails are sent by `SendRenewalRemindersCronCommand` (runs at **06:00 UTC**) on the days configured in `billing.renewal.reminder_days`.
+A renewal invoice is raised automatically by a daily job (runs at **05:00 UTC** by default). Renewal reminder emails are sent by another daily job (runs at **06:00 UTC** by default) on the days configured in `billing.renewal.reminder_days`.
 - The domain must be Active.
 - Auto Renew must be enabled on the domain.
 - The invoice is raised `billing.renewal.invoice_days_before` days before the expiry date.
@@ -85,7 +85,7 @@ Attempting to renew a domain that cannot be renewed (wrong status) returns `DOMA
 
 ## Expiry warnings
 
-`CheckDomainExpiriesCommand` runs daily at **09:00 UTC**. For each domain approaching expiry it:
+A daily job runs at **09:00 UTC** by default to check domain expiries. For each domain approaching expiry it:
 
 1. Sends one reminder email per threshold: **30**, **14**, **7** and **1 day** before expiry (these thresholds are fixed and not configurable with `billing.renewal.reminder_days`; that setting is for service renewal reminders).
 2. Marks domains past their expiry date as **Expired** and sends the `domain-expired` email.
@@ -117,7 +117,7 @@ The **Domain Renewal Reminder Emails** report (under Reports) lists all reminder
 | `REGISTRAR_ORDER_UPSTREAM_FAILED` | The registrar returned an unexpected error; check the Gateway Transaction Log |
 | `DOMAIN_REGISTRATION_UPSTREAM_FAILED` | Registration failed at the registrar; check the account balance and domain eligibility |
 | `DOMAIN_RENEWAL_UPSTREAM_FAILED` | Renewal failed at the registrar; check balance and domain status |
-| `DOMAIN_TRANSFER_UPSTREAM_FAILED` | Transfer failed; check the EPP code and registrar lock status |
+| `DOMAIN_TRANSFER_UPSTREAM_FAILED` | Transfer failed; check the EPP code and the domain's registrar lock status |
 | `DOMAIN_EPP_CODE_UPSTREAM_FAILED` | Could not retrieve the EPP code; check the registrar connection |
 | `DOMAIN_PRODUCT_NOT_CONFIGURED` | No domain product is linked to this TLD; check TLD Pricing |
 | `DOMAIN_ALREADY_REGISTERED` | A domain record for this name already exists in the system |

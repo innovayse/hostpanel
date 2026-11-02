@@ -59,7 +59,7 @@ From a client's page, click **Add Billable Item**.
 | Invoice on | Date to invoice the item |
 | Recurring Period | Weekly, Monthly, Quarterly, or Annually (Recurring only) |
 
-Billable items are placed on invoices by the daily `ProcessBillableItemsCronCommand` job. An item that has already been placed on an invoice cannot be changed (`BILLABLE_ITEM_INVOICED`).
+Billable items are placed on invoices by the daily billable items job. An item that has already been placed on an invoice cannot be changed (`BILLABLE_ITEM_INVOICED`).
 
 ## Quotes
 

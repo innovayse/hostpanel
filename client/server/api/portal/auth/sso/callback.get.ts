@@ -18,7 +18,9 @@
  * authentication is never treated that way: it is refused with a warning like any forgery.
  *
  * Once a transaction is found it is deleted (single use) before anything else is decided. A callback
- * that names an issuer (`iss`, RFC 9207) other than the configured one ends the attempt, and so does
+ * that names an issuer (`iss`, RFC 9207) other than the one the provider's discovery document declares
+ * (compared exactly, see `server/utils/signon-oidc.ts`) ends the attempt, and so does one that cannot be checked
+ * because the provider is unreachable or its document names another provider, and so does
  * a token response whose `id_token` does not verify (signature against the provider's keys, issuer,
  * audience, expiry, issue time and the attempt's `nonce`, see `server/utils/signon-oidc.ts`). When the
  * identity provider answers with an error instead of a code (a silent `prompt=none` probe that found
@@ -169,8 +171,9 @@ export default defineEventHandler(async (event) => {
     deleteCookie(event, legacy, cookieOptions(0))
   }
 
-  // An answer that names another issuer was not sent by the provider this attempt went to.
-  if (returnedIssuer !== undefined && !issuerMatches(returnedIssuer)) {
+  // An answer that names another issuer was not sent by the provider this attempt went to; when the
+  // provider cannot be asked who it is, the answer is refused as well.
+  if (returnedIssuer !== undefined && !(await issuerMatches(returnedIssuer))) {
     return endSignInAttempt(event, SignonFailureReason.IssuerMismatch, transaction.returnTo)
   }
 

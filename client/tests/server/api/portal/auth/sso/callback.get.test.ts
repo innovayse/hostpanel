@@ -17,7 +17,7 @@ import { createHash } from 'node:crypto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeEvent, refusal, setRuntimeConfig, signedIn, startBackend, storedSession } from '../../../../../helpers/bffHarness'
 import type { RouteModule } from '../../../../../helpers/bffHarness'
-import { TEST_ISSUER, countRequests, createSigner, providerReplies, signIdToken } from '../../../../../helpers/idToken'
+import { TEST_DECLARED_ISSUER, TEST_ISSUER, countRequests, createSigner, providerReplies, signIdToken } from '../../../../../helpers/idToken'
 import type { TestSigner } from '../../../../../helpers/idToken'
 import { startAttempt } from '../../../../../helpers/signonAttempt'
 import type { StartedAttempt } from '../../../../../helpers/signonAttempt'
@@ -601,16 +601,16 @@ describe('GET /api/portal/auth/sso/callback issuer and ID token checks', () => {
     serveProvider()
   })
 
-  it('completes a sign-in whose callback names the configured issuer', async () => {
+  it('completes a sign-in whose callback names the issuer the provider declares, though the configured address has no trailing slash', async () => {
     const attempt = startAttempt()
 
-    const event = await returnFrom(attempt, { code: 'c1', state: attempt.state, iss: TEST_ISSUER })
+    const event = await returnFrom(attempt, { code: 'c1', state: attempt.state, iss: TEST_DECLARED_ISSUER })
 
     expect(event.written['portal_session']).toBeDefined()
     expect(event.redirectedTo).toBe('/client/dashboard')
   })
 
-  it.each(['https://evil.test', '', `${TEST_ISSUER}/`])('ends the attempt before the code is exchanged when the callback names the issuer %j', async (iss) => {
+  it.each(['https://evil.test', '', TEST_ISSUER, `${TEST_DECLARED_ISSUER}/`])('ends the attempt before the code is exchanged when the callback names the issuer %j', async (iss) => {
     const info = vi.spyOn(console, 'info').mockImplementation(() => undefined)
     const attempt = startAttempt({}, '/client/invoices')
 
@@ -618,7 +618,29 @@ describe('GET /api/portal/auth/sso/callback issuer and ID token checks', () => {
 
     expectRefused(event, 'issuer_mismatch', info)
     expect(event.deleted).toContain(attempt.cookieName)
-    expect(backend.requests).toHaveLength(0)
+    expect(countRequests(backend.requests, '/connect/token')).toBe(0)
+  })
+
+  it('ends the attempt before the code is exchanged when the provider cannot be asked who it is', async () => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    const attempt = startAttempt({}, '/client/invoices')
+    backend.respondWith(providerReplies({ keys: () => [signer.jwk], discoveryStatus: 503 }))
+
+    const event = await returnFrom(attempt, { code: 'c1', state: attempt.state, iss: TEST_DECLARED_ISSUER })
+
+    expectRefused(event, 'issuer_mismatch', info)
+    expect(countRequests(backend.requests, '/connect/token')).toBe(0)
+  })
+
+  it('ends the attempt when an explicit issuer differs from the one the provider declares', async () => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    const attempt = startAttempt({}, '/client/invoices')
+    setRuntimeConfig({ ssoIssuer: TEST_ISSUER })
+
+    const event = await returnFrom(attempt, { code: 'c1', state: attempt.state, iss: TEST_DECLARED_ISSUER })
+
+    expectRefused(event, 'issuer_mismatch', info)
+    expect(countRequests(backend.requests, '/connect/token')).toBe(0)
   })
 
   it('refuses a mismatching issuer on an error answer too', async () => {
@@ -636,7 +658,7 @@ describe('GET /api/portal/auth/sso/callback issuer and ID token checks', () => {
     const second = startAttempt({}, '/client/invoices')
     setRuntimeConfig({ ssoIssuer: '', public: { ssoPublicUrl: '' } })
 
-    const named = await returnFrom(attempt, { code: 'c1', state: attempt.state, iss: TEST_ISSUER })
+    const named = await returnFrom(attempt, { code: 'c1', state: attempt.state, iss: TEST_DECLARED_ISSUER })
     expectRefused(named, 'issuer_mismatch', info)
 
     const silent = await returnFrom(second, { code: 'c1', state: second.state })
@@ -684,6 +706,7 @@ describe('GET /api/portal/auth/sso/callback issuer and ID token checks', () => {
     ['signed by a key the provider does not publish', async () => ({ key: await createSigner(), claims: {} })],
     ['for another audience', async () => ({ key: signer, claims: { aud: 'someone-else' } })],
     ['from another issuer', async () => ({ key: signer, claims: { iss: 'https://evil.test' } })],
+    ['naming the issuer without its trailing slash', async () => ({ key: signer, claims: { iss: TEST_ISSUER } })],
     ['that has expired', async () => ({ key: signer, claims: { exp: Math.floor(Date.now() / 1000) - 3600 } })],
   ])('refuses an ID token %s', async (_name, build) => {
     const info = vi.spyOn(console, 'info').mockImplementation(() => undefined)

@@ -78,9 +78,11 @@ export default defineConfig({
         collapsed: true,
         items: [
           { text: 'Overview', link: '/staff/' },
-          { text: 'Clients', link: '/staff/clients' },
+          { text: 'Clients, users and contacts', link: '/staff/clients' },
           { text: 'Orders', link: '/staff/orders' },
-          { text: 'Billing', link: '/staff/billing' },
+          { text: 'Invoices and payments', link: '/staff/billing' },
+          { text: 'Transactions, billable items and quotes', link: '/staff/transactions' },
+          { text: 'Currencies, renewals and jobs', link: '/staff/currencies' },
           { text: 'Products and pricing', link: '/staff/products' },
           { text: 'Domain extensions and registrars', link: '/staff/tld-pricing' },
           { text: 'Domains', link: '/staff/domains' },

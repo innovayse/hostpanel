@@ -1,8 +1,10 @@
 /**
  * Tests for `server/utils/signon-oidc.ts`: an ID token is trusted only when its signature verifies
  * against the provider's published keys and its issuer, audience, expiry, issue time and nonce are
- * right; the issuer of an authorization response must equal the configured one. The provider is a
- * real stub that serves a discovery document and a key set, and the tokens are really signed.
+ * right; the issuer of an authorization response must equal the issuer the provider declares in its
+ * discovery document, which must denote the configured provider (a trailing slash on either side not
+ * counting). The provider is a real stub that serves a discovery document and a key set, and the
+ * tokens are really signed.
  *
  * @module tests/server/utils/signon-oidc.test
  */
@@ -12,6 +14,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setRuntimeConfig, startBackend } from '../../helpers/bffHarness'
 import {
   TEST_CLIENT_ID,
+  TEST_DECLARED_ISSUER,
   TEST_DISCOVERY_PATH,
   TEST_ISSUER,
   TEST_JWKS_PATH,
@@ -22,7 +25,7 @@ import {
 } from '../../helpers/idToken'
 import type { TestSigner } from '../../helpers/idToken'
 import type { StubServer } from '../../helpers/stubServer'
-import { ID_TOKEN_LEEWAY_SECONDS, configuredIssuer, issuerMatches, resetSigningKeyCache, verifyIdToken } from '~/server/utils/signon-oidc'
+import { ID_TOKEN_LEEWAY_SECONDS, issuerMatches, resetSigningKeyCache, verifyIdToken } from '~/server/utils/signon-oidc'
 
 /** The nonce the attempt sealed. */
 const NONCE = 'nonce-1'
@@ -69,32 +72,80 @@ afterEach(async () => {
   await backend.close()
 })
 
-describe('configuredIssuer and issuerMatches', () => {
-  it('uses the public address of the provider when no issuer is set', () => {
-    expect(configuredIssuer()).toBe(TEST_ISSUER)
+describe('issuerMatches and the provider issuer', () => {
+  it('accepts the declared issuer with its trailing slash when the configured address has none', async () => {
+    expect(TEST_ISSUER.endsWith('/')).toBe(false)
+    expect(TEST_DECLARED_ISSUER.endsWith('/')).toBe(true)
+    expect(await issuerMatches(TEST_DECLARED_ISSUER)).toBe(true)
   })
 
-  it('prefers the issuer setting over the public address', () => {
-    setRuntimeConfig({ ssoIssuer: OTHER_ISSUER })
-
-    expect(configuredIssuer()).toBe(OTHER_ISSUER)
-    expect(issuerMatches(OTHER_ISSUER)).toBe(true)
-    expect(issuerMatches(TEST_ISSUER)).toBe(false)
+  it('compares the callback issuer exactly: the variant without the slash, another host and an empty value do not match', async () => {
+    expect(await issuerMatches(TEST_ISSUER)).toBe(false)
+    expect(await issuerMatches(`${TEST_DECLARED_ISSUER}/`)).toBe(false)
+    expect(await issuerMatches('https://evil.test/')).toBe(false)
+    expect(await issuerMatches('')).toBe(false)
   })
 
-  it('compares exactly: another host, a trailing slash and an empty value do not match', () => {
-    expect(issuerMatches(TEST_ISSUER)).toBe(true)
-    expect(issuerMatches('https://evil.test')).toBe(false)
-    expect(issuerMatches(`${TEST_ISSUER}/`)).toBe(false)
-    expect(issuerMatches('')).toBe(false)
+  it.each([
+    ['a configured address with a trailing slash and a declared issuer without', 'https://sso.test/', 'https://sso.test'],
+    ['the same issuer with a path', 'https://sso.test/realm', 'https://sso.test/realm/'],
+    ['the default port written out', 'https://sso.test', 'https://sso.test:443/'],
+  ])('accepts %s', async (_name, configured, declared) => {
+    setRuntimeConfig({ public: { ssoPublicUrl: configured } })
+    serveProvider({ issuer: declared })
+
+    expect(await issuerMatches(declared)).toBe(true)
+    expect(await issuerMatches(declared.endsWith('/') ? declared.slice(0, -1) : `${declared}/`)).toBe(false)
   })
 
-  it('matches nothing when no issuer is configured at all', () => {
+  it.each([
+    ['another host', 'https://evil.test/'],
+    ['another scheme', 'http://sso.test/'],
+    ['another port', 'https://sso.test:8443/'],
+    ['another path', 'https://sso.test/realm/'],
+    ['a query', 'https://sso.test/?a=1'],
+    ['a fragment', 'https://sso.test/#a'],
+    ['two trailing slashes', 'https://sso.test//'],
+    ['text that is not a URL', 'sso.test'],
+  ])('refuses a discovery document that declares %s', async (_name, declared) => {
+    serveProvider({ issuer: declared })
+
+    expect(await issuerMatches(declared)).toBe(false)
+    expect(await verifyIdToken(await signIdToken(signer, { iss: declared }), NONCE)).toBe(false)
+  })
+
+  it('refuses everything when the discovery document cannot be fetched', async () => {
+    serveProvider({ discoveryStatus: 503 })
+
+    expect(await issuerMatches(TEST_DECLARED_ISSUER)).toBe(false)
+  })
+
+  it('refuses everything when no provider address and no issuer are configured', async () => {
     setRuntimeConfig({ ssoIssuer: '', public: { ssoPublicUrl: '' } })
 
-    expect(configuredIssuer()).toBe('')
-    expect(issuerMatches('')).toBe(false)
-    expect(issuerMatches(TEST_ISSUER)).toBe(false)
+    expect(await issuerMatches(TEST_DECLARED_ISSUER)).toBe(false)
+    expect(await issuerMatches('')).toBe(false)
+  })
+
+  it('accepts an explicit issuer only when it equals the declared issuer exactly', async () => {
+    setRuntimeConfig({ ssoIssuer: OTHER_ISSUER })
+    serveProvider({ issuer: OTHER_ISSUER })
+
+    expect(await issuerMatches(OTHER_ISSUER)).toBe(true)
+    expect(await issuerMatches(TEST_DECLARED_ISSUER)).toBe(false)
+  })
+
+  it.each([
+    ['another issuer', OTHER_ISSUER, TEST_DECLARED_ISSUER],
+    ['the same issuer without the trailing slash the provider declares', TEST_ISSUER, TEST_DECLARED_ISSUER],
+    ['the same issuer with a trailing slash the provider does not declare', `${OTHER_ISSUER}/`, OTHER_ISSUER],
+  ])('refuses an explicit issuer that is %s', async (_name, explicit, declared) => {
+    setRuntimeConfig({ ssoIssuer: explicit })
+    serveProvider({ issuer: declared })
+
+    expect(await issuerMatches(declared)).toBe(false)
+    expect(await issuerMatches(explicit)).toBe(false)
+    expect(await verifyIdToken(await signIdToken(signer, { iss: declared }), NONCE)).toBe(false)
   })
 })
 
@@ -153,6 +204,8 @@ describe('verifyIdToken refuses', () => {
 
   it.each([
     ['another issuer', { iss: 'https://evil.test' }],
+    ['the declared issuer without its trailing slash', { iss: TEST_ISSUER }],
+    ['the declared issuer with an extra trailing slash', { iss: `${TEST_DECLARED_ISSUER}/` }],
     ['another audience', { aud: 'someone-else' }],
     ['several audiences without the client as authorized party', { aud: [TEST_CLIENT_ID, 'other'] }],
     ['several audiences with another authorized party', { aud: [TEST_CLIENT_ID, 'other'], azp: 'other' }],

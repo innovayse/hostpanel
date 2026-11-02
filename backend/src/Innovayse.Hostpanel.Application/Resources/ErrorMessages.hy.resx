@@ -594,6 +594,12 @@
 <data name="PLUGIN_FAILED" xml:space="preserve">
     <value>Հավելագրիչը չկարողացավ կատարել հարցումը։ Խնդրում ենք փորձել ավելի ուշ։</value>
   </data>
+<data name="PLUGIN_STORE_KEY_INVALID" xml:space="preserve">
+    <value>Հավելագրիչը սխալ է օգտագործել իր պահոցը։ Խնդրում ենք փորձել ավելի ուշ։</value>
+  </data>
+<data name="PLUGIN_STORE_VALUE_INVALID" xml:space="preserve">
+    <value>Հավելագրիչը սխալ է օգտագործել իր պահոցը։ Խնդրում ենք փորձել ավելի ուշ։</value>
+  </data>
 <data name="PLUGIN_REQUEST_TOO_LARGE" xml:space="preserve">
     <value>Հարցումը չափազանց մեծ է այս հավելագրիչի համար։</value>
   </data>

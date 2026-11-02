@@ -892,11 +892,11 @@ public static class DependencyInjection
         services.AddScoped<IIdentityPluginResolver, IdentityPluginResolver>();
 
         // The door to the plugin API routes: the app plugin of a route, the opaque references it sees (a keyed hash
-        // under a key derived from the encryption key, so nothing is stored) and, until the host shares client facts
-        // and keeps plugin data, the call-bound services that say so.
+        // under a key derived from the encryption key, so nothing is stored) and the call-bound services: the host facts
+        // of the call's client and the plugin's own store. Scoped, so a call can use them for as long as its request runs.
         services.AddScoped<IPluginEndpointResolver, PluginEndpointResolver>();
         services.AddSingleton<IPluginReferences>(new PluginReferences(encryptionKey));
-        services.AddScoped<IPluginCallServices, UnavailablePluginCallServices>();
+        services.AddScoped<IPluginCallServices, HostPluginCallServices>();
 
         // Hosted plugins start once the host is up and stop as it begins to stop, each failure kept to its plugin.
         // Registered in every environment: with no hosted plugin loaded it opens nothing and reads nothing.

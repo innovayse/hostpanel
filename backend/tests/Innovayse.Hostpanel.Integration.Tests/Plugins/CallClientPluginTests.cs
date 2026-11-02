@@ -5,7 +5,9 @@ using System.Text.RegularExpressions;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
+using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
+using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.SDK.Plugins.Endpoints;
@@ -24,6 +26,9 @@ public sealed partial class CallClientPluginTests : IClassFixture<AppPluginFixtu
 {
     /// <summary>The words a stack trace or an exception type would put in a response.</summary>
     private static readonly string[] LeakMarkers = ["secret-detail", "InvalidOperationException", "   at ", "Innovayse.Hostpanel"];
+
+    /// <summary>A fixed moment the seeded invoice is dated from, so no row depends on the wall clock.</summary>
+    private static readonly DateTimeOffset Origin = new(2031, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
     /// <summary>The host, the database and the plugins.</summary>
     private readonly AppPluginFixture _fixture;
@@ -565,27 +570,114 @@ public sealed partial class CallClientPluginTests : IClassFixture<AppPluginFixtu
     }
 
     /// <summary>
-    /// The host does not share client facts or keep plugin data yet: a plugin that asks for them fails visibly, as a plugin
-    /// failure, instead of reading an empty profile or losing a write.
+    /// A plugin that keeps a value and reads the client's facts through the host answers with that value, the caller's
+    /// profile name and the caller's own service and invoice ids only.
     /// </summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
-    public async Task APluginThatAsksForHostFactsOrTheStore_FailsVisibly()
+    public async Task APluginThatUsesTheStoreAndHostFacts_SeesOnlyTheCallersOwn()
     {
-        var (_, http) = await OwnerAsync("unavailable-services");
+        var (owner, http) = await OwnerAsync("host-facts");
+        var (stranger, _) = await OwnerAsync("host-facts-other");
+        var ownService = await ServicesTestSeeds.SeedPendingServiceAsync(_fixture.Factory, owner.ClientId);
+        var otherService = await ServicesTestSeeds.SeedPendingServiceAsync(_fixture.Factory, stranger.ClientId);
+        var ownInvoice = await SeedInvoiceAsync(owner.ClientId);
+        var otherInvoice = await SeedInvoiceAsync(stranger.ClientId);
+        _fixture.Probe.Behaviour = StoreAndFacts;
 
-        _fixture.Probe.Behaviour = call => PluginReply.Json(call.Host.GetProfileAsync(CancellationToken.None).GetAwaiter().GetResult()!);
-        var host = await CallAsync(http, HttpMethod.Get, _fixture.PluginId, "ping");
+        var response = await CallAsync(http, HttpMethod.Get, _fixture.PluginId, "ping");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await JsonOfAsync(response);
+        body.GetProperty("stored").GetString().Should().Be("stored-Portal host-facts");
+        body.GetProperty("name").GetString().Should().Be("Portal host-facts");
+        body.GetProperty("services").EnumerateArray().Select(id => id.GetInt32()).Should().Equal(ownService);
+        body.GetProperty("invoices").EnumerateArray().Select(id => id.GetInt32()).Should().Equal(ownInvoice);
+        ownService.Should().NotBe(otherService);
+        ownInvoice.Should().NotBe(otherInvoice);
+    }
+
+    /// <summary>A second client calling the same route reads none of the first client's stored value or services.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task ASecondClient_DoesNotSeeTheFirstClientsStoreOrServices()
+    {
+        var (first, firstHttp) = await OwnerAsync("store-first");
+        var (_, secondHttp) = await OwnerAsync("store-second");
+        await ServicesTestSeeds.SeedPendingServiceAsync(_fixture.Factory, first.ClientId);
+        string? seenBySecond = "unset";
+        var calls = 0;
         _fixture.Probe.Behaviour = call =>
         {
-            call.Store.SetAsync("k", "v", CancellationToken.None).GetAwaiter().GetResult();
+            if (Interlocked.Increment(ref calls) == 1)
+            {
+                call.Store.SetAsync("shared-key", "first-secret", CancellationToken.None).GetAwaiter().GetResult();
+                return PluginReply.Json(new { services = call.Host.ListServicesAsync(CancellationToken.None).GetAwaiter().GetResult().Count });
+            }
+
+            seenBySecond = call.Store.GetAsync("shared-key", CancellationToken.None).GetAwaiter().GetResult();
+            return PluginReply.Json(new { services = call.Host.ListServicesAsync(CancellationToken.None).GetAwaiter().GetResult().Count });
+        };
+
+        var firstResponse = await CallAsync(firstHttp, HttpMethod.Get, _fixture.PluginId, "ping");
+        var secondResponse = await CallAsync(secondHttp, HttpMethod.Get, _fixture.PluginId, "ping");
+
+        (await JsonOfAsync(firstResponse)).GetProperty("services").GetInt32().Should().Be(1);
+        secondResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await JsonOfAsync(secondResponse)).GetProperty("services").GetInt32().Should().Be(0);
+        seenBySecond.Should().BeNull();
+    }
+
+    /// <summary>A plugin that uses a store key the host refuses fails as a plugin failure, and neither the exception's message nor its code is in the reply.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task APluginThatSetsAnInvalidStoreKey_FailsWithoutLeakingTheMessage()
+    {
+        var (_, http) = await OwnerAsync("invalid-store-key");
+        _fixture.Probe.Behaviour = call =>
+        {
+            call.Store.SetAsync("a b", "v", CancellationToken.None).GetAwaiter().GetResult();
             return PluginReply.NoContent();
         };
-        var store = await CallAsync(http, HttpMethod.Get, _fixture.PluginId, "ping");
 
-        host.StatusCode.Should().Be(HttpStatusCode.BadGateway);
-        store.StatusCode.Should().Be(HttpStatusCode.BadGateway);
-        await ClientsTestSeeds.AssertCodeAsync(host, HostpanelErrorCodes.PLUGIN_FAILED);
+        var response = await CallAsync(http, HttpMethod.Get, _fixture.PluginId, "ping");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadGateway);
+        await ClientsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_FAILED);
+        var text = await response.Content.ReadAsStringAsync();
+        text.Should().NotContain("A plugin store key").And.NotContain("letters, digits").And.NotContain("DomainRuleException");
+        text.Should().NotContain("PLUGIN_STORE_KEY_INVALID");
+        text.Should().NotContainAny(LeakMarkers);
+    }
+
+    /// <summary>Writes a value, reads it back and lists the caller's services and invoices.</summary>
+    /// <param name="call">The call.</param>
+    /// <returns>A 200 JSON reply with the stored value, the profile name and the ids.</returns>
+    private static PluginReply StoreAndFacts(PluginCall call)
+    {
+        var ct = CancellationToken.None;
+        var profile = call.Host.GetProfileAsync(ct).GetAwaiter().GetResult()!;
+        call.Store.SetAsync("greeting", "stored-" + profile.Name, ct).GetAwaiter().GetResult();
+        return PluginReply.Json(new
+        {
+            stored = call.Store.GetAsync("greeting", ct).GetAwaiter().GetResult(),
+            name = profile.Name,
+            services = call.Host.ListServicesAsync(ct).GetAwaiter().GetResult().Select(s => s.Id).ToList(),
+            invoices = call.Host.ListInvoicesAsync(ct).GetAwaiter().GetResult().Select(i => i.Id).ToList(),
+        });
+    }
+
+    /// <summary>Creates an unpaid invoice for a client directly in the database.</summary>
+    /// <param name="clientId">The client.</param>
+    /// <returns>The invoice id.</returns>
+    private async Task<int> SeedInvoiceAsync(int clientId)
+    {
+        using var scope = _fixture.Factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var invoice = Invoice.Create(clientId, Origin.AddDays(14), "USD", Origin);
+        db.Invoices.Add(invoice);
+        await db.SaveChangesAsync();
+        return invoice.Id;
     }
 
     /// <summary>

@@ -501,11 +501,32 @@ docker/                              compose set (shared·dev·prod·platform), 
     needs no table, no migration and no write on the first call; the price is that references live as long as the
     encryption key, and rotating it gives every plugin new references. The identity plugin member's `UserRef` is their
     subject's, and their `ClientRef` is the account's client's, the same one the holder has.
-  - **`PluginCall.Host` and `.Store` are not available yet (#642).** The SDK requires both on every call; the host shares no
-    client facts and keeps no plugin data until #642. `IPluginCallServices` is the seam (`Create(PluginCallBinding(pluginId, clientId,
-    clientRef))`), and today's registration, `UnavailablePluginCallServices`, hands every call a host API and a store whose
-    every member throws `NotSupportedException`, which is answered as `PLUGIN_FAILED` and logged. An empty profile or a
-    store that forgets would be a lie a plugin could act on. #642 replaces that one registration.
+  - **Host facts and the plugin store (#642).** `IPluginCallServices` is implemented by `HostPluginCallServices` (scoped) and
+    builds, for each call, the `PluginCall.Host` and `PluginCall.Store` the SDK requires from one `PluginCallBinding(PluginId,
+    ClientId)`. The store's client scope is derived from that same `ClientId` through `IPluginReferences.ForClient`, so the
+    facts and the store can never be about two clients, and a plugin's own `ClientRef` equals its store scope.
+    *Host API* (`PluginHostApi`, `PluginFactMapper`): bound to the call's client, no method takes an id. The profile is the
+    company name when set, else "First Last"; email and language come from the identity provider and are null when the owner
+    has no identity account; currency comes from `IPayerCurrencyResolver`. Services and invoices are newest first (`CreatedAt`,
+    then `Id`, descending), at most `PluginHostLimits.MaxListed` (50), and invoices pass `Invoice.ClientVisibleFilter`, so a draft
+    is never shared. A call with no client, or whose client row is gone, gets a null profile and empty lists. Domain statuses
+    map to SDK statuses by name in an exhaustive switch; an unknown value throws.
+    *Store* (`PluginStore`, table `PluginDataEntries` (entity `PluginDataEntry`): `PluginId`, `ClientRef`, `Key`, `Value` text, `CreatedAt`, `UpdatedAt`; unique
+    index `IX_PluginDataEntries_PluginId_ClientRef_Key` with nulls not distinct): per client in the client area, plugin wide (null
+    `ClientRef`) on an admin call that is not about a client. An admin call gets no client until #644 passes a verified one;
+    then it sees the same facts and rows as that client's own call. A key is 1 to 200 characters of letters, digits, `.`, `-`,
+    `_` and `:`; a value is text up to 65,536 characters (`PluginDataEntry.MaxValueLength`), empty allowed, null refused; the rules
+    live on the `PluginDataEntry` aggregate (`Create`, `ChangeValue`, `EnsureKey`). A write loads the row tracked, calls
+    `ChangeValue` or adds `PluginDataEntry.Create`, and saves the request's context, so the auditable interceptor stamps the
+    timestamps; a remove loads and removes the row. That save flushes only the store's change because `PluginCallRunner` saves
+    its audit line before it builds the plugin, so nothing else is staged while plugin code runs (no separate context or
+    `IDbContextFactory` exists, and none is needed while that holds). Two first writes of one key race on the unique index:
+    `AppDbContext.SaveChangesAsync` translates that index's violation to `ConcurrencyConflictException`, like the gateway
+    payment reference, and the loser detaches its candidate and writes over the winner's row once. A contract breach throws `DomainRuleException` with
+    `PLUGIN_STORE_KEY_INVALID` or `PLUGIN_STORE_VALUE_INVALID` (`Domain/Plugins/PluginStoreErrors`, en/ru/hy, 502 in
+    `StatusMapping`); the runner answers it like any plugin throw, 502 `PLUGIN_FAILED`, and logs it, so the code itself
+    never reaches a caller. Known limits: no cap on the number of keys per scope, and rows outlive an
+    uninstalled plugin or a deleted client (the reference is a keyed hash, not a foreign key); nothing purges them yet.
   - **Status codes.** `PLUGIN_ROUTE_NOT_FOUND` 404, `PLUGIN_REQUEST_TOO_LARGE` 413 (the `_TOO_LARGE` suffix),
     and `PLUGIN_FAILED` 502 (exact `StatusMapping` rows); each has its sentence in
     en/ru/hy. `PLUGIN_STREAMING_NOT_SUPPORTED` went with #641.
@@ -519,7 +540,7 @@ docker/                              compose set (shared·dev·prod·platform), 
     tests derive a host with an enabled `PluginRateLimiter`. The client account is resolved before the plugin budget
     is checked, so a refused call still costs one lookup, which the global limiter bounds. A refused stream call has
     already spent its tier permit.
-  - Left for later issues: the host API and the store (#642), a call timeout (#792). A streamed call has no timeout
+  - Left for a later issue: a call timeout (#792). A streamed call has no timeout
     of its own until then: it ends when the plugin ends or the client leaves.
 - **Plugin slot index: widgets for a verified context (#644).** The answer is `PluginSlotIndexDto` with
   `PluginSlotWidgetDto` items. **Nothing of a plugin is built or called**: the index is read from manifests, so a foreign

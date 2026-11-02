@@ -172,7 +172,7 @@ public sealed class PluginCallRunner
         try
         {
             var endpoints = target.Build();
-            var services = _services.Create(new PluginCallBinding(pluginId, clientId, caller.ClientRef));
+            var services = _services.Create(new PluginCallBinding(pluginId, clientId));
             var call = new PluginCall
             {
                 Area = target.Area,

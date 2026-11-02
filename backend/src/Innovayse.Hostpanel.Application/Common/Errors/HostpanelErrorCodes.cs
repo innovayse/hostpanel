@@ -822,6 +822,33 @@ public static class HostpanelErrorCodes
     /// <summary>The plugin ships with this build and cannot be removed or replaced by an upload (409).</summary>
     public const string PLUGIN_BUILT_IN = "PLUGIN_BUILT_IN";
 
+    // Plugin routes
+
+    /// <summary>
+    /// A plugin route was called that is not served: the plugin is unknown, is not an app plugin, is switched off or
+    /// not configured, or does not declare that method and path in that area. One answer for all of them, so the
+    /// route cannot be probed (404).
+    /// </summary>
+    public const string PLUGIN_ROUTE_NOT_FOUND = "PLUGIN_ROUTE_NOT_FOUND";
+
+    /// <summary>
+    /// The plugin threw, or broke its contract (no reply, a malformed problem code, an unknown reply kind). Nothing of
+    /// the failure reaches the caller; the host logs it with the plugin id (502).
+    /// </summary>
+    public const string PLUGIN_FAILED = "PLUGIN_FAILED";
+
+    /// <summary>The request body is larger than the host passes to a plugin (<c>PluginApi:MaxBodyBytes</c>), checked before the plugin is called (413).</summary>
+    public const string PLUGIN_REQUEST_TOO_LARGE = "PLUGIN_REQUEST_TOO_LARGE";
+
+    /// <summary>The route streams its reply, which this host cannot forward yet, so the plugin is not called (501).</summary>
+    public const string PLUGIN_STREAMING_NOT_SUPPORTED = "PLUGIN_STREAMING_NOT_SUPPORTED";
+
+    /// <summary>
+    /// The sentence a plugin's problem carries when the plugin gave none. Never the <c>type</c> of a response: a
+    /// plugin's own codes are namespaced under <c>plugin.{id}.</c> and so can never equal a host code.
+    /// </summary>
+    public const string PLUGIN_REPORTED_PROBLEM = "PLUGIN_REPORTED_PROBLEM";
+
     // Admin: integrations
 
     /// <summary>The slug names neither a built-in integration nor a loaded plugin (404).</summary>

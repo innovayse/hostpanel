@@ -86,7 +86,10 @@ export default defineConfig({
           { text: 'Products and pricing', link: '/staff/products' },
           { text: 'Domain extensions and registrars', link: '/staff/tld-pricing' },
           { text: 'Domains', link: '/staff/domains' },
-          { text: 'Support desk', link: '/staff/support' },
+          { text: 'Support tickets', link: '/staff/support-tickets' },
+          { text: 'Announcements, knowledge base and downloads', link: '/staff/announcements' },
+          { text: 'Network issues', link: '/staff/network-issues' },
+          { text: 'Email templates', link: '/staff/email-templates' },
         ],
       },
       {

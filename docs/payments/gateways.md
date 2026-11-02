@@ -16,7 +16,7 @@ Hostpanel ships with four payment methods. No payment gateway is enabled by defa
 | **Bank Transfer** | Offline; the client pays by bank transfer and staff record the payment manually | Markets where bank transfer is the norm, or as a fallback |
 
 <Callout type="note">
-No payment gateway brand names are mentioned in this guide. The gateway names shown in your admin panel depend on which plugins are installed. The bundled bank gateway ships as a plugin pre-installed in the server image; it does not appear in the Plugin Manager.
+The gateway names shown in your admin panel depend on which plugins are installed. The bundled bank gateway ships as a plugin pre-installed in the server image; it does not appear in the Plugin Manager.
 </Callout>
 
 ## The Payment Gateways screen
@@ -75,14 +75,6 @@ Use the gateway's test mode or test address before switching to live. For the ca
 | `mode` | Mode | Select | No | Live or Test |
 
 The client portal's card form also needs `STRIPE_PUBLISHABLE_KEY` set in the deployment environment (see [Configuration reference](/operators/configuration)). This is the same key as `publishable_key` above.
-
-### Bundled wallet gateway
-
-| Key | Label | Type | Required | Notes |
-|-----|-------|------|----------|-------|
-| `client_id` | Client ID | Text | Yes | |
-| `client_secret` | Client Secret | Secret | Yes | |
-| `mode` | Mode | Select | No | Live or Sandbox |
 
 ### Bundled bank gateway
 

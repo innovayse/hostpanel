@@ -22,6 +22,7 @@ The `PluginType` enum defines what a plugin can be:
 | `Identity` | 3 | Listed only |
 | `Fulfilment` | 4 | Listed only |
 | `Hosted` | 5 | Listed only |
+| `App` | 6 | Listed only |
 
 ## A payment plugin
 
@@ -31,19 +32,20 @@ Inherit `PaymentGatewayBase` and implement `IPaymentPlugin` from `Innovayse.SDK.
 
 | Member | Description |
 |--------|-------------|
-| `string CurrencyCode` | ISO 4217 currency code this gateway settles in (e.g. `"AMD"`) |
-| `bool AcceptsCurrency(string iso4217)` | Return `true` when the gateway can charge in the given currency |
-| `Task<PaymentSession> CreatePaymentAsync(PaymentInstruction instruction, CancellationToken ct)` | Start a payment session and return a redirect URL |
+| `string CurrencyCode` | ISO 4217 numeric currency code this gateway settles in (e.g. `"840"` for USD, `"051"` for AMD) |
+| `Task<PaymentSession> CreatePaymentAsync(PaymentRequest request, CancellationToken ct)` | Start a payment session and return a redirect URL |
 | `Task<GatewayPaymentStatus> GetStatusAsync(string gatewayOrderId, CancellationToken ct)` | Poll the gateway for the current state |
 | `Task<string> RefundAsync(string gatewayOrderId, long amountMinor, CancellationToken ct)` | Issue a refund; return the gateway's refund reference |
 
 ### Types
 
-**`PaymentInstruction`** properties: `OrderNumber`, `AmountMinor`, `ReturnUrl`, `Description`, `Language`.
+**`PaymentRequest`** properties: `OrderNumber`, `AmountMinor`, `ReturnUrl`, `Description`, `Language`.
 
 **`PaymentSession`** properties: `GatewayOrderId`, `RedirectUrl`.
 
-**`GatewayPaymentStatus`** properties: `State` (`GatewayPaymentState`), `TransactionId`, `RawStatus`, `AmountMinor`, `Currency`.
+**`GatewayPaymentStatus`** properties: `State` (`GatewayPaymentState`), `TransactionId`, `RawStatus`, `AmountMinor`, `CurrencyNumeric` (ISO 4217 numeric).
+
+`AcceptsCurrency(string currencyNumeric)` has a default implementation that compares against `CurrencyCode`; override it only when the gateway accepts currencies other than its settlement currency.
 
 **`GatewayPaymentState`** enum: `Pending` (0), `Paid` (1), `Declined` (2).
 
@@ -64,18 +66,17 @@ using Innovayse.SDK.Base;
 using Innovayse.SDK.Plugins.Enums;
 using Innovayse.SDK.Plugins.Payment;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 public sealed class MyGateway : PaymentGatewayBase, IPaymentPlugin
 {
-    public MyGateway(IConfiguration configuration)
-        : base("my-gateway", configuration) { }
+    public MyGateway(string pluginId, IConfiguration configuration, ILogger<MyGateway> logger)
+        : base(pluginId, configuration, logger) { }
 
-    public string CurrencyCode => "USD";
-
-    public bool AcceptsCurrency(string iso4217) => iso4217 == "USD";
+    public string CurrencyCode => "840"; // USD (ISO 4217 numeric)
 
     public Task<PaymentSession> CreatePaymentAsync(
-        PaymentInstruction instruction, CancellationToken ct)
+        PaymentRequest request, CancellationToken ct)
     {
         var url = GetConfig("gateway_url")
             ?? throw new InvalidOperationException("gateway_url is required");
@@ -122,6 +123,11 @@ public sealed class MyGateway : PaymentGatewayBase, IPaymentPlugin
 ```
 
 ```csharp [MyGatewayTests.cs]
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
+using Innovayse.SDK.Plugins.Payment;
+using Xunit;
+
 public class MyGatewayTests
 {
     [Fact]
@@ -135,15 +141,15 @@ public class MyGatewayTests
             })
             .Build();
 
-        var gateway = new MyGateway(config);
-        var instruction = new PaymentInstruction(
+        var gateway = new MyGateway("my-gateway", config, NullLogger<MyGateway>.Instance);
+        var request = new PaymentRequest(
             OrderNumber: "1001",
             AmountMinor: 5000,
             ReturnUrl:   "https://panel.example.com/payment/result",
             Description: "Invoice #1001",
             Language:    "en");
 
-        var session = await gateway.CreatePaymentAsync(instruction, CancellationToken.None);
+        var session = await gateway.CreatePaymentAsync(request, CancellationToken.None);
 
         Assert.False(string.IsNullOrEmpty(session.RedirectUrl));
         Assert.False(string.IsNullOrEmpty(session.GatewayOrderId));
@@ -177,6 +183,8 @@ Every plugin ZIP must have `plugin.json` at the root.
   { name: 'fields', type: 'array', default: '[]', description: 'Settings shown on the integration page, in order.' }
 ]" />
 
+The fields above cover manifest version 1. Manifest version 2 (`"manifestVersion": 2`) adds `typedSettings`, `capabilities`, `locales`, `api`, `ui` and `externalOrigins`; documentation for those fields will be added in a follow-up page.
+
 Each entry in `fields`:
 
 <SettingTable :settings="[
@@ -193,9 +201,20 @@ Folder layout inside the ZIP:
 ```
 plugin.json              ← at the root
 MyCompany.MyGateway.dll  ← your assembly
+plugin.sig               ← signature file (required on production servers)
 ```
 
 Do **not** include the SDK assembly (`Innovayse.SDK.dll`) or any assembly the host already provides. The server refuses packages that contain a host assembly (`PLUGIN_HOST_ASSEMBLY_REFUSED`). A duplicate plugin `id` is skipped at startup without error — the first loaded version wins (built-in plugins load before uploaded ones).
+
+### Sign the package
+
+Production servers only accept signed packages. Use the `PluginSigner` tool from the SDK to generate `plugin.sig`:
+
+```bash
+dotnet pluginsigner sign --package MyCompany.MyGateway.zip --key my-private-key.pem
+```
+
+The operator must add the matching public key to `PluginSigning:OperatorKeys` in their deployment environment, or the package will be refused with `PLUGIN_SIGNATURE_KEY_UNKNOWN`. When you update a plugin, re-sign the new ZIP — updating re-checks the signature and the server will refuse a stale or missing `plugin.sig`.
 
 ## Test it
 

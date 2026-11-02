@@ -132,6 +132,94 @@ public sealed class RateLimitingRegistrationTests
         read.Should().Throw<OptionsValidationException>();
     }
 
+    /// <summary>With nothing configured the plugin tiers and the stream cap have the documented budgets.</summary>
+    [Fact]
+    public void PluginBudgets_HaveTheirDocumentedDefaults()
+    {
+        using var provider = Build([]);
+
+        var limits = provider.GetRequiredService<IOptions<RateLimitOptions>>().Value;
+
+        limits.PluginDefault.Should().BeEquivalentTo(new RateLimitTierOptions { PermitLimit = 120, WindowSeconds = 60 });
+        limits.PluginStrict.Should().BeEquivalentTo(new RateLimitTierOptions { PermitLimit = 20, WindowSeconds = 60 });
+        limits.PluginHeavy.Should().BeEquivalentTo(new RateLimitTierOptions { PermitLimit = 6, WindowSeconds = 60 });
+        limits.PluginStreamPermitLimit.Should().Be(3);
+    }
+
+    /// <summary>The plugin tiers and the stream cap are bound from the section.</summary>
+    [Fact]
+    public void PluginBudgets_AreBoundFromTheSection()
+    {
+        using var provider = Build(new()
+        {
+            ["RateLimit:PluginDefault:PermitLimit"] = "50",
+            ["RateLimit:PluginStrict:WindowSeconds"] = "30",
+            ["RateLimit:PluginHeavy:PermitLimit"] = "2",
+            ["RateLimit:PluginStreamPermitLimit"] = "7",
+        });
+
+        var limits = provider.GetRequiredService<IOptions<RateLimitOptions>>().Value;
+
+        limits.PluginDefault.PermitLimit.Should().Be(50);
+        limits.PluginStrict.WindowSeconds.Should().Be(30);
+        limits.PluginHeavy.PermitLimit.Should().Be(2);
+        limits.PluginStreamPermitLimit.Should().Be(7);
+    }
+
+    /// <summary>A plugin tier larger than the global budget is refused, like every other tier.</summary>
+    /// <param name="key">The setting key of the tier's permit limit.</param>
+    [Theory]
+    [InlineData("RateLimit:PluginDefault:PermitLimit")]
+    [InlineData("RateLimit:PluginStrict:PermitLimit")]
+    [InlineData("RateLimit:PluginHeavy:PermitLimit")]
+    public void PluginTierAboveGlobal_IsRefused(string key)
+    {
+        using var provider = Build(new() { ["RateLimit:Global:PermitLimit"] = "10", [key] = "11" });
+
+        var read = () => provider.GetRequiredService<IOptions<RateLimitOptions>>().Value;
+
+        read.Should().Throw<OptionsValidationException>();
+    }
+
+    /// <summary>A plugin tier with a non-positive window, or a stream cap of zero, is refused.</summary>
+    /// <param name="key">The setting key.</param>
+    [Theory]
+    [InlineData("RateLimit:PluginDefault:WindowSeconds")]
+    [InlineData("RateLimit:PluginDefault:PermitLimit")]
+    [InlineData("RateLimit:PluginStrict:PermitLimit")]
+    [InlineData("RateLimit:PluginHeavy:WindowSeconds")]
+    [InlineData("RateLimit:PluginHeavy:PermitLimit")]
+    [InlineData("RateLimit:PluginStreamPermitLimit")]
+    public void NonPositivePluginBudget_IsRefused(string key)
+    {
+        using var provider = Build(new() { [key] = "0" });
+
+        var read = () => provider.GetRequiredService<IOptions<RateLimitOptions>>().Value;
+
+        read.Should().Throw<OptionsValidationException>();
+    }
+
+    /// <summary>A heavy budget above strict, or a strict budget above default, refuses startup.</summary>
+    /// <param name="heavy">The heavy tier's permit limit.</param>
+    /// <param name="strict">The strict tier's permit limit.</param>
+    /// <param name="standard">The default tier's permit limit.</param>
+    [Theory]
+    [InlineData(30, 20, 120)]
+    [InlineData(6, 130, 120)]
+    public void UnorderedPluginTiers_AreRefused(int heavy, int strict, int standard)
+    {
+        using var provider = Build(new()
+        {
+            ["RateLimit:PluginHeavy:PermitLimit"] = heavy.ToString(),
+            ["RateLimit:PluginStrict:PermitLimit"] = strict.ToString(),
+            ["RateLimit:PluginDefault:PermitLimit"] = standard.ToString(),
+        });
+
+        var read = () => provider.GetRequiredService<IOptions<RateLimitOptions>>().Value;
+
+        read.Should().Throw<OptionsValidationException>();
+    }
+
     /// <summary>A Development host environment, so the limiter is switched on.</summary>
     private sealed class TestHostEnvironment : IHostEnvironment
     {

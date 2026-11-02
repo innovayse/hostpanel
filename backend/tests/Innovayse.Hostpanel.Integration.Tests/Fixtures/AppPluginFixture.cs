@@ -139,6 +139,25 @@ public sealed class AppPluginFixture : IAsyncLifetime
         return _logs.Entries.Any(entry => entry.Level >= LogLevel.Warning && entry.Message.Contains(pluginId, StringComparison.Ordinal));
     }
 
+    /// <summary>Marks the end of the log written so far, so a test can look only at what is logged after it.</summary>
+    /// <returns>The number of lines logged up to now, to pass as <c>since</c> to <see cref="LoggedRateLimitRefusal"/>.</returns>
+    public int LogMark()
+    {
+        return _logs.Entries.Count;
+    }
+
+    /// <summary>Whether the host logged that a rate limit policy refused a call of a plugin, after a mark.</summary>
+    /// <param name="policy">The policy that must have refused, such as <c>plugin-strict</c>.</param>
+    /// <param name="pluginId">The plugin id the line must name; it is part of the bucket the line writes.</param>
+    /// <param name="since">A mark from <see cref="LogMark"/>; lines logged before it (by an earlier test) are ignored.</param>
+    /// <returns><see langword="true"/> when such a warning was logged after the mark.</returns>
+    public bool LoggedRateLimitRefusal(string policy, string pluginId, int since)
+    {
+        return _logs.Entries.Skip(since).Any(entry => entry.Level == LogLevel.Warning
+            && entry.Message.Contains($"Rate limit {policy} refused", StringComparison.Ordinal)
+            && entry.Message.Contains(pluginId, StringComparison.Ordinal));
+    }
+
     /// <summary>Reads the activity log lines that name a plugin, oldest first.</summary>
     /// <param name="pluginId">The plugin id the line must name.</param>
     /// <returns>The lines: the client they concern, if any, and the description.</returns>
@@ -160,10 +179,12 @@ public sealed class AppPluginFixture : IAsyncLifetime
     /// <param name="path">The path template.</param>
     /// <param name="permission">The permission, <see langword="null"/> for none.</param>
     /// <param name="streaming">Whether the route streams its reply.</param>
+    /// <param name="rateLimit">The rate limit tier the route asks for, <see langword="null"/> for the default.</param>
     /// <returns>The route.</returns>
-    private static PluginRoute Route(PluginRouteMethod method, string path, string? permission, bool streaming = false)
+    private static PluginRoute Route(
+        PluginRouteMethod method, string path, string? permission, bool streaming = false, PluginRateLimitPolicy? rateLimit = null)
     {
-        return new PluginRoute { Method = method, Path = path, Permission = permission, Streaming = streaming };
+        return new PluginRoute { Method = method, Path = path, Permission = permission, Streaming = streaming, RateLimit = rateLimit };
     }
 
     /// <summary>A loaded plugin whose manifest declares the standard test routes.</summary>
@@ -198,6 +219,8 @@ public sealed class AppPluginFixture : IAsyncLifetime
                     Route(PluginRouteMethod.Get, "/items/latest", PluginPermissions.Any),
                     Route(PluginRouteMethod.Get, "/items/{name}", PluginPermissions.Any),
                     Route(PluginRouteMethod.Get, "/stream", PluginPermissions.Any, streaming: true),
+                    Route(PluginRouteMethod.Get, "/strict-ping", PluginPermissions.Any, rateLimit: PluginRateLimitPolicy.Strict),
+                    Route(PluginRouteMethod.Get, "/heavy-ping", PluginPermissions.Any, rateLimit: PluginRateLimitPolicy.Heavy),
                 ],
                 Admin =
                 [
@@ -205,6 +228,8 @@ public sealed class AppPluginFixture : IAsyncLifetime
                     Route(PluginRouteMethod.Post, "/reindex", null),
                     Route(PluginRouteMethod.Post, "/echo", null),
                     Route(PluginRouteMethod.Get, "/stream", null, streaming: true),
+                    Route(PluginRouteMethod.Get, "/strict-stats", null, rateLimit: PluginRateLimitPolicy.Strict),
+                    Route(PluginRouteMethod.Get, "/heavy-stats", null, rateLimit: PluginRateLimitPolicy.Heavy),
                 ],
             },
         };

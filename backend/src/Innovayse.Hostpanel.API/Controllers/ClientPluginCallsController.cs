@@ -6,6 +6,7 @@ using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Shared.Authorization;
 using Innovayse.Hostpanel.Shared.Controllers;
 using Innovayse.Hostpanel.Shared.Models;
+using Innovayse.SDK.Plugins.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;
@@ -37,6 +38,7 @@ namespace Innovayse.Hostpanel.API.Controllers;
 [AvailableToEveryClientUser]
 [RequireRequestedWith]
 [PluginBodyLimit]
+[PluginRateLimit(PluginArea.Client)]
 [NoFormBinding]
 [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status429TooManyRequests)]
 public sealed class ClientPluginCallsController : BaseApiController
@@ -62,7 +64,7 @@ public sealed class ClientPluginCallsController : BaseApiController
     /// <c>CLIENT_PERMISSION_DENIED</c> when the caller lacks the route's permission, or for a caller who is not a
     /// client user; 404 with <c>PLUGIN_ROUTE_NOT_FOUND</c> when the plugin, the route or the plugin's switch is not there,
     /// or with <c>CLIENT_PROFILE_NOT_FOUND</c> when the caller acts for no account; 413 with <c>PLUGIN_REQUEST_TOO_LARGE</c>
-    /// when the body is over <c>PluginApi:MaxBodyBytes</c>; 429 when the rate limit is hit; 501 with
+    /// when the body is over <c>PluginApi:MaxBodyBytes</c>; 429 when the plugin route's rate limit tier, or the caller's open streams, are spent; 501 with
     /// <c>PLUGIN_STREAMING_NOT_SUPPORTED</c> for a streaming route; 502 with <c>PLUGIN_FAILED</c> when the plugin threw;
     /// 503 with <c>IDENTITY_PLUGIN_UNAVAILABLE</c> when the identity plugin could not say who the caller is.
     /// </returns>

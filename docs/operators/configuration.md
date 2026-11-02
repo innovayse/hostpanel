@@ -225,10 +225,19 @@ The following settings are set directly on the API service in a compose override
 | `RateLimit__SshKeys__PermitLimit` | `20` | SSH key endpoints limit per window |
 | `RateLimit__SshKeys__WindowSeconds` | `60` | SSH key window length in seconds |
 | `RateLimit__ConcurrentPermitLimit` | `5` | Maximum concurrent requests from one address |
+| `RateLimit__PluginDefault__PermitLimit` | `120` | Plugin route limit per window, for a route that names no tier. Counted per plugin and per caller (the client account, or the administrator on an admin call) |
+| `RateLimit__PluginDefault__WindowSeconds` | `60` | Plugin default window length in seconds |
+| `RateLimit__PluginStrict__PermitLimit` | `20` | Limit per window for a plugin route that asks for the strict tier (costly or sensitive routes, such as one that sends messages) |
+| `RateLimit__PluginStrict__WindowSeconds` | `60` | Plugin strict window length in seconds |
+| `RateLimit__PluginHeavy__PermitLimit` | `6` | Limit per window for a plugin route that asks for the heavy tier (reports, exports) |
+| `RateLimit__PluginHeavy__WindowSeconds` | `60` | Plugin heavy window length in seconds |
+| `RateLimit__PluginStreamPermitLimit` | `3` | Streaming plugin routes one caller may hold open at once, per plugin |
 | `SignInLockout__MaxFailedAttempts` | `5` | Wrong passwords before lockout |
 | `SignInLockout__LockoutMinutes` | `15` | Minutes an account stays locked (locked sign-in → 423) |
 
 MaxFailedAttempts accepts 1–100, LockoutMinutes accepts 1–1440. Values outside these ranges refuse startup.
+
+Plugin routes are limited per plugin and per caller, so one plugin or one account cannot use up the API. A plugin route declares its tier in the plugin manifest (`rateLimit`: `default`, `strict` or `heavy`); a route that declares none uses the default tier. A refused request answers 429 with `Retry-After` and `X-RateLimit-Remaining`. Every plugin tier must be positive and no larger than `RateLimit__Global__PermitLimit`, the tiers must be ordered heavy <= strict <= default, and `RateLimit__PluginStreamPermitLimit` must be positive, or startup is refused.
 
 ## Edge proxy
 

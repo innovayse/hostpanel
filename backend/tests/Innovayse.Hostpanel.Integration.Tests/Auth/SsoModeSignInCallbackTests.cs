@@ -75,6 +75,21 @@ public sealed class SsoModeSignInCallbackTests : IAsyncLifetime
         response.Headers.CacheControl?.ToString().Should().Contain("no-store");
     }
 
+    /// <summary>
+    /// The callback's own Referrer-Policy reaches the browser: the header guard keeps it, so the address carrying the
+    /// code is never sent on as a Referer.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Callback_KeepsItsNoReferrerPolicy()
+    {
+        using var client = CreateSecureClient();
+
+        using var response = await client.GetAsync($"{CallbackPath}?code=stale&state=unknown");
+
+        response.Headers.GetValues("Referrer-Policy").Should().ContainSingle().Which.Should().Be("no-referrer");
+    }
+
     /// <summary>A restarted sign-in that finds no attempt either ends on an HTML page with a link back, never on JSON.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]

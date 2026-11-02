@@ -48,7 +48,6 @@ public sealed class StatusMappingTests
     [InlineData(HostpanelErrorCodes.PLUGIN_ROUTE_NOT_FOUND, 404)]
     [InlineData(HostpanelErrorCodes.PLUGIN_REQUEST_TOO_LARGE, 413)]
     [InlineData(HostpanelErrorCodes.PLUGIN_FAILED, 502)]
-    [InlineData(HostpanelErrorCodes.PLUGIN_STREAMING_NOT_SUPPORTED, 501)]
     [InlineData(HostpanelErrorCodes.EXCHANGE_RATE_BASE_NOT_QUOTED, 409)]
     [InlineData(HostpanelErrorCodes.SSH_AGENT_NOT_VERIFIED, 409)]
     [InlineData(HostpanelErrorCodes.SSH_AGENT_ENDPOINT_IN_USE, 409)]

@@ -100,6 +100,7 @@ repositories. The departures are short:
   `ExceptionHandlingMiddleware`, the model-state factory, the auth-event writers and the rate
   limiter. The body carries only those members, and both frontends read `type`/`detail`; do not
   add an `error`/`code` pair beside them.
+  `EventStreamResult` and `ServerSentEvent` (the `text/event-stream` writer and its framing) live in `Shared/Infrastructure` beside `ErrorBody` for the same reason: they are the host's own response writers, not controllers or use case code.
 - **The API sends the finished sentence, in the caller's language; the frontend does not
   translate codes.** Sentences live in `Application/Resources/ErrorMessages*.resx` (looked up by
   error code through `IErrorMessageResolver`) and `Shared/Resources/ValidationMessages*.resx` (middleware, binders) and
@@ -431,7 +432,7 @@ docker/                              compose set (shared·dev·prod·platform), 
     (default about 28.6 MiB, which may be below the cap) to `PluginApiOptions.ServerBodyLimit` (the cap, one read chunk of 8 KiB and 1/64 of the cap for chunk framing, which the
     server counts) on both plugin controllers, after authorisation: the runner stops at the first read that passes the cap, which
     is never more than one chunk beyond it, so it still answers its own 413 `PLUGIN_REQUEST_TOO_LARGE` first, while a
-    request the runner never reads (unknown plugin, undeclared route, refused caller, 501) is bounded by the server at
+    request the runner never reads (unknown plugin, undeclared route, refused caller) is bounded by the server at
     that same size instead of being drained without limit. `[NoFormBinding]` removes every MVC value provider except the
     route's and the query string's, because MVC otherwise reads and buffers a urlencoded or multipart body before the
     action, past the cap, and leaves the plugin an empty body. Architecture tests pin `[RequireRequestedWith]`,
@@ -445,7 +446,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   - **Audit.** A call that is not a GET writes one activity log line before the plugin runs, through `IActivityLogger`:
     `Called Plugin Route - Plugin ID: {id} - Area: {Client|Admin} - Route: {METHOD} {declared template}`, the client for a
     client call and none for an admin call, stamped with the caller by the logger. Never the body, never the concrete
-    path. A call refused before the plugin (404, 403, 413, 501) writes nothing.
+    path. A call refused before the plugin (404, 403, 413) writes nothing.
   - **Replies** (`PluginReplyDto : IForwardedReply`, written by `BaseApiController.HandleForwarded`, the only place a
     status the use case did not choose reaches the wire). `Json` and `NoContent` pass through with the plugin's status
     (camelCase body). `Problem` becomes the standard `ErrorResponse` (`application/problem+json`) with the plugin's status,
@@ -454,9 +455,20 @@ docker/                              compose set (shared·dev·prod·platform), 
     never answer with a host code and a frontend that branches on one is never fooled; a code that is not 1 to 64 letters,
     digits, `_`, `.` or `-` is a plugin fault. **A plugin that throws** (or whose constructor throws, or returns no reply
     or a malformed problem) answers 502 `PLUGIN_FAILED` with no message and no stack, logged with the plugin id; only the
-    caller's own cancellation propagates. **`Stream` is out of scope until #641**: a route marked `streaming`, or a streamed
-    reply from a route that is not, answers 501 `PLUGIN_STREAMING_NOT_SUPPORTED` (the plugin is not called for the
-    first, and the stream is never enumerated for the second).
+    caller's own cancellation propagates. **Streaming (#641).** A `Stream` reply is only accepted from a route that declares `streaming`
+    (`PluginCallRunner.MapStream`); from any other route it is a plugin fault, 502 `PLUGIN_FAILED`, and the stream is
+    never enumerated. A streaming route may still answer with JSON, no content or a problem, and a refusal or a throw
+    before the first event is the ordinary reply with its own status. An accepted stream is a `PluginReplyDto` carrying a
+    `Shared/Models/StreamedReply` (events plus `PluginApi:StreamHeartbeatSeconds`, default 15, 1 to 300);
+    `BaseApiController.HandleForwarded` hands it to `HandleStream`, which returns `Shared/Infrastructure/EventStreamResult`:
+    `text/event-stream`, `Cache-Control: no-cache`, `X-Accel-Buffering: no`, headers flushed at once, each event framed by
+    `ServerSentEvent.Format` (`event`, `id`, one `data` line per line of data) and flushed, `: keepalive` after each
+    silence of the heartbeat, and the plugin's enumerator opened with `HttpContext.RequestAborted`, so a disconnect cancels
+    the plugin (`PluginReply.Stream` documents the `EnumeratorCancellation` the plugin needs). A plugin that throws after
+    the first event ends the stream with an `error` event (`code` `PLUGIN_FAILED`, localized `message`, `partial`) and a
+    `done` event (`PluginEventStream`, vocabulary `PluginStreamEvent`); nothing of the exception is written. The
+    `plugin-stream` lease of `PluginRateLimitFilter` is registered for disposal with the response, so it is held for the
+    whole stream.
     **The status is checked again by the host**, not trusted to the SDK factories: a `Json` reply must be 200 to 203 with a
     body, `NoContent` 204, a `Problem` 400 to 599 except 401 and 407; anything else (a reply built by reflection or by a
     plugin compiled against another SDK) answers 502 `PLUGIN_FAILED`, logged with the plugin id. **A plugin problem
@@ -490,8 +502,8 @@ docker/                              compose set (shared·dev·prod·platform), 
     every member throws `NotSupportedException`, which is answered as `PLUGIN_FAILED` and logged. An empty profile or a
     store that forgets would be a lie a plugin could act on. #642 replaces that one registration.
   - **Status codes.** `PLUGIN_ROUTE_NOT_FOUND` 404, `PLUGIN_REQUEST_TOO_LARGE` 413 (the `_TOO_LARGE` suffix),
-    `PLUGIN_FAILED` 502 and `PLUGIN_STREAMING_NOT_SUPPORTED` 501 (exact `StatusMapping` rows; **the 501 is temporary and goes when #641 ships streaming**); each has its sentence in
-    en/ru/hy.
+    and `PLUGIN_FAILED` 502 (exact `StatusMapping` rows); each has its sentence in
+    en/ru/hy. `PLUGIN_STREAMING_NOT_SUPPORTED` went with #641.
   - **Rate limits (#640).** `API/Plugins/PluginRateLimitFilter` is a resource filter on both doors, marked
     `[PluginRateLimit(PluginArea)]`. It matches the route and measures the caller against `plugin-default`,
     `plugin-strict` or `plugin-heavy` (the manifest route's `RateLimit`, default when none) with
@@ -502,8 +514,8 @@ docker/                              compose set (shared·dev·prod·platform), 
     tests derive a host with an enabled `PluginRateLimiter`. The client account is resolved before the plugin budget
     is checked, so a refused call still costs one lookup, which the global limiter bounds. A refused stream call has
     already spent its tier permit.
-  - Left for later issues: streaming and its nginx settings (#641), the host API and the store (#642), a call
-    timeout (#792).
+  - Left for later issues: the host API and the store (#642), a call timeout (#792). A streamed call has no timeout
+    of its own until then: it ends when the plugin ends or the client leaves.
 
 ## CQRS — Wolverine, conforming
 

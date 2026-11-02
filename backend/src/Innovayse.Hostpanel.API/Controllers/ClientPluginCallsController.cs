@@ -58,14 +58,15 @@ public sealed class ClientPluginCallsController : BaseApiController
     /// <param name="path">The path below the plugin's prefix, matched against its declared routes.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// The plugin's own success (200, 201, 202, 203 with its JSON, or 204); 400, 409, 422 or any other failure
+    /// The plugin's own success (200, 201, 202, 203 with its JSON, or 204; a route that declares streaming may answer 200
+    /// with <c>text/event-stream</c>, one event after another with a comment line while it is silent, ended by the
+    /// plugin or by the client disconnecting); 400, 409, 422 or any other failure
     /// status the plugin chooses, with <c>plugin.{id}.{code}</c> as the code; 401 without a session; 403 with
     /// <c>CSRF_HEADER_MISSING</c> when a request that changes state has neither the header nor a bearer token, with
     /// <c>CLIENT_PERMISSION_DENIED</c> when the caller lacks the route's permission, or for a caller who is not a
     /// client user; 404 with <c>PLUGIN_ROUTE_NOT_FOUND</c> when the plugin, the route or the plugin's switch is not there,
     /// or with <c>CLIENT_PROFILE_NOT_FOUND</c> when the caller acts for no account; 413 with <c>PLUGIN_REQUEST_TOO_LARGE</c>
-    /// when the body is over <c>PluginApi:MaxBodyBytes</c>; 429 when the plugin route's rate limit tier, or the caller's open streams, are spent; 501 with
-    /// <c>PLUGIN_STREAMING_NOT_SUPPORTED</c> for a streaming route; 502 with <c>PLUGIN_FAILED</c> when the plugin threw;
+    /// when the body is over <c>PluginApi:MaxBodyBytes</c>; 429 when the plugin route's rate limit tier, or the caller's open streams, are spent; 502 with <c>PLUGIN_FAILED</c> when the plugin threw;
     /// 503 with <c>IDENTITY_PLUGIN_UNAVAILABLE</c> when the identity plugin could not say who the caller is.
     /// </returns>
     [HttpGet("{id}/{**path}")]
@@ -85,7 +86,6 @@ public sealed class ClientPluginCallsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status413PayloadTooLarge)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status501NotImplemented)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
     public async Task<IActionResult> CallAsync(string id, string? path, CancellationToken ct)
     {

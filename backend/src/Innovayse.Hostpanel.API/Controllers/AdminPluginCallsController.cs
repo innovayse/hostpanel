@@ -48,12 +48,14 @@ public sealed class AdminPluginCallsController : BaseApiController
     /// <param name="path">The path below the plugin's admin prefix, matched against its declared routes.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// The plugin's own success (200, 201, 202, 203 with its JSON, or 204); 400, 409, 422 or any other failure
+    /// The plugin's own success (200, 201, 202, 203 with its JSON, or 204; a route that declares streaming may answer 200
+    /// with <c>text/event-stream</c>, one event after another with a comment line while it is silent, ended by the
+    /// plugin or by the client disconnecting); 400, 409, 422 or any other failure
     /// status the plugin chooses, with <c>plugin.{id}.{code}</c> as the code; 401 without a session; 403 for a caller who is
     /// not an administrator, or with <c>CSRF_HEADER_MISSING</c> when a request that changes state has neither the header
     /// nor a bearer token; 404 with <c>PLUGIN_ROUTE_NOT_FOUND</c> when the plugin, the route or the plugin's switch is not
     /// there; 413 with <c>PLUGIN_REQUEST_TOO_LARGE</c> when the body is over <c>PluginApi:MaxBodyBytes</c>; 429 when the
-    /// plugin route's rate limit tier, or the caller's open streams, are spent; 501 with <c>PLUGIN_STREAMING_NOT_SUPPORTED</c> for a streaming route; 502 with
+    /// plugin route's rate limit tier, or the caller's open streams, are spent; 502 with
     /// <c>PLUGIN_FAILED</c> when the plugin threw; 503 when the plugin chooses it.
     /// </returns>
     [HttpGet("{id}/ext/{**path}")]
@@ -73,7 +75,6 @@ public sealed class AdminPluginCallsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status413PayloadTooLarge)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status501NotImplemented)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> CallAsync(string id, string? path, CancellationToken ct)

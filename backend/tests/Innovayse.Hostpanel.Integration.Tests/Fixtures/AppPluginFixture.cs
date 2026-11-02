@@ -27,6 +27,9 @@ public sealed class AppPluginFixture : IAsyncLifetime
     /// <summary>The body cap of the host, small so a test crosses it with a few bytes.</summary>
     public const int MaxBodyBytes = 64;
 
+    /// <summary>The silence, in seconds, after which a streamed reply sends a heartbeat; the least allowed, so a test sees one quickly.</summary>
+    public const int StreamHeartbeatSeconds = 1;
+
     /// <summary>Every log line the host wrote, for asserting that a failure was logged with the plugin id.</summary>
     private readonly RecordingLoggerProvider _logs = new();
 
@@ -81,7 +84,11 @@ public sealed class AppPluginFixture : IAsyncLifetime
                 services.RemoveAll<PluginRegistry>();
                 services.AddSingleton(registry);
                 services.AddSingleton(Probe);
-                services.Configure<PluginApiOptions>(options => options.MaxBodyBytes = MaxBodyBytes);
+                services.Configure<PluginApiOptions>(options =>
+                {
+                    options.MaxBodyBytes = MaxBodyBytes;
+                    options.StreamHeartbeatSeconds = StreamHeartbeatSeconds;
+                });
             });
         });
     }
@@ -219,6 +226,7 @@ public sealed class AppPluginFixture : IAsyncLifetime
                     Route(PluginRouteMethod.Get, "/items/latest", PluginPermissions.Any),
                     Route(PluginRouteMethod.Get, "/items/{name}", PluginPermissions.Any),
                     Route(PluginRouteMethod.Get, "/stream", PluginPermissions.Any, streaming: true),
+                    Route(PluginRouteMethod.Post, "/stream", PluginPermissions.Any, streaming: true),
                     Route(PluginRouteMethod.Get, "/strict-ping", PluginPermissions.Any, rateLimit: PluginRateLimitPolicy.Strict),
                     Route(PluginRouteMethod.Get, "/heavy-ping", PluginPermissions.Any, rateLimit: PluginRateLimitPolicy.Heavy),
                 ],

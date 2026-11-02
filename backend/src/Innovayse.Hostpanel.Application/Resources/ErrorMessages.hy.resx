@@ -579,9 +579,6 @@
 <data name="PLUGIN_REQUEST_TOO_LARGE" xml:space="preserve">
     <value>Հարցումը չափազանց մեծ է այս հավելագրիչի համար։</value>
   </data>
-<data name="PLUGIN_STREAMING_NOT_SUPPORTED" xml:space="preserve">
-    <value>Այս սերվերը դեռ չի կարող հոսքով փոխանցել այս հավելագրիչի երթուղու պատասխանը։</value>
-  </data>
 <data name="PLUGIN_REPORTED_PROBLEM" xml:space="preserve">
     <value>Հավելագրիչը հայտնել է հարցման հետ կապված խնդրի մասին։</value>
   </data>

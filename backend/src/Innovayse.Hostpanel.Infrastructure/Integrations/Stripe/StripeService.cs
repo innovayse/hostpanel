@@ -66,11 +66,15 @@ public sealed class StripeService : ICardPaymentGateway
     /// Stripe API client configured with the secret key, built only on first use.
     /// </summary>
     /// <remarks>
+    /// Never built when <see cref="IsConfigured"/> is false: every member answers
+    /// <see cref="CardGatewayFailure.NotConfigured"/> before it touches this.
+    /// <para>
     /// Built eagerly in the constructor, this threw for every caller that merely depends on
     /// <see cref="ICardPaymentGateway"/> the moment a deployment has no Stripe secret key configured,
     /// including a payment-methods lookup for an account that has never attached a card and
     /// was never going to call Stripe at all. Deferred construction means a missing key only
     /// breaks the calls that actually need Stripe.
+    /// </para>
     /// </remarks>
     private readonly Lazy<StripeClient> _client;
 
@@ -79,6 +83,11 @@ public sealed class StripeService : ICardPaymentGateway
         CardPaymentIntentInstruction instruction,
         CancellationToken ct)
     {
+        if (!IsConfigured)
+        {
+            return new CardPaymentIntentResult(null, CardGatewayFailure.NotConfigured);
+        }
+
         var service = new PaymentIntentService(_client.Value);
         var createOptions = new PaymentIntentCreateOptions
         {
@@ -121,6 +130,11 @@ public sealed class StripeService : ICardPaymentGateway
         CardPaymentVerifyInstruction instruction,
         CancellationToken ct)
     {
+        if (!IsConfigured)
+        {
+            return new CardPaymentIntentStatus(false, null, 0, string.Empty, null, null, CardGatewayFailure.NotConfigured);
+        }
+
         var paymentIntentId = instruction.PaymentIntentId;
         var service = new PaymentIntentService(_client.Value);
         PaymentIntent intent;
@@ -164,6 +178,11 @@ public sealed class StripeService : ICardPaymentGateway
         CardChargeInstruction instruction,
         CancellationToken ct)
     {
+        if (!IsConfigured)
+        {
+            return new CardChargeResult(false, null, CardGatewayFailure.NotConfigured);
+        }
+
         var service = new PaymentIntentService(_client.Value);
         try
         {
@@ -218,6 +237,11 @@ public sealed class StripeService : ICardPaymentGateway
     /// </remarks>
     public async Task<CardChargeLookupResult> FindChargeAsync(CardChargeLookupInstruction instruction, CancellationToken ct)
     {
+        if (!IsConfigured)
+        {
+            return CardChargeLookupResult.Failed(CardGatewayFailure.NotConfigured);
+        }
+
         var service = new PaymentIntentService(_client.Value);
         var invoiceId = instruction.InvoiceId.ToString(CultureInfo.InvariantCulture);
         var options = new PaymentIntentListOptions { Customer = instruction.CustomerId };
@@ -250,6 +274,12 @@ public sealed class StripeService : ICardPaymentGateway
     /// <inheritdoc />
     public async Task<CardRefundResult> RefundAsync(CardRefundInstruction instruction, CancellationToken ct)
     {
+        // A refund has no failure kind of its own; without a key nothing can be refunded, so it is refused.
+        if (!IsConfigured)
+        {
+            return new CardRefundResult(false, null);
+        }
+
         var transactionId = instruction.TransactionId;
         var service = new RefundService(_client.Value);
 
@@ -286,6 +316,11 @@ public sealed class StripeService : ICardPaymentGateway
     public async Task<CardPaymentMethodsResult> ListPaymentMethodsAsync(
         CardCustomerInstruction instruction, CancellationToken ct)
     {
+        if (!IsConfigured)
+        {
+            return CardPaymentMethodsResult.Failed(CardGatewayFailure.NotConfigured);
+        }
+
         var customerId = instruction.CustomerId;
         try
         {
@@ -323,6 +358,11 @@ public sealed class StripeService : ICardPaymentGateway
     public async Task<CardGatewayOperationResult> SetDefaultPaymentMethodAsync(
         CardDefaultMethodInstruction instruction, CancellationToken ct)
     {
+        if (!IsConfigured)
+        {
+            return new CardGatewayOperationResult(CardGatewayFailure.NotConfigured);
+        }
+
         var service = new CustomerService(_client.Value);
         try
         {
@@ -346,6 +386,11 @@ public sealed class StripeService : ICardPaymentGateway
     /// <inheritdoc />
     public async Task<CardGatewayOperationResult> DetachPaymentMethodAsync(CardDetachInstruction instruction, CancellationToken ct)
     {
+        if (!IsConfigured)
+        {
+            return new CardGatewayOperationResult(CardGatewayFailure.NotConfigured);
+        }
+
         var service = new PaymentMethodService(_client.Value);
         try
         {

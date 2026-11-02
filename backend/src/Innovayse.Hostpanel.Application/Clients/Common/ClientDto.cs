@@ -21,6 +21,7 @@ namespace Innovayse.Hostpanel.Application.Clients.Common;
 /// <param name="CreatedAt">Account creation timestamp.</param>
 /// <param name="Contacts">Additional contacts linked to this client.</param>
 /// <param name="ExternalAccount">The account in another system the client is linked to, null when there is no link.</param>
+/// <param name="CreditBalance">Credit held on the account, in the billing currency; while it is not zero the currency cannot change.</param>
 public sealed record ClientDto(
     int Id,
     string UserId,
@@ -37,4 +38,5 @@ public sealed record ClientDto(
     bool TwoFactorEnabled,
     DateTimeOffset CreatedAt,
     IReadOnlyList<ContactDto> Contacts,
-    ExternalAccountDto? ExternalAccount);
+    ExternalAccountDto? ExternalAccount,
+    decimal CreditBalance);

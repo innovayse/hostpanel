@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using Innovayse.Hostpanel.Infrastructure.Resilience;
-using Innovayse.SDK.Plugins;
+using Innovayse.SDK.Plugins.HostingPanel;
 
 namespace Innovayse.Hostpanel.Infrastructure.Integrations.CPanel;
 

@@ -99,7 +99,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         refunded.StatusCode.Should().Be(HttpStatusCode.NoContent);
         (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.PartiallyRefunded));
         (await RefundRowsAsync(invoiceId)).Should().ContainSingle()
-            .Which.Should().Match<Transaction>(t => t.TransactionId == reference && t.AmountOut == 5m);
+            .Which.Should().Match<Transaction>(t => t.TransactionId == reference && t.AmountOut == 5m && t.Source == TransactionSource.Manual);
     }
 
     /// <summary>Reads the client ledger rows that took money out for an invoice, oldest first.</summary>
@@ -231,7 +231,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
             invoice.AddItem("Hosting", 10m, 1);
             context.Invoices.Add(invoice);
             await context.SaveChangesAsync(CancellationToken.None);
-            var ledgerRow = invoice.Settle(PaymentMethodNames.Card, chargeId, DateTimeOffset.UtcNow);
+            var ledgerRow = invoice.Settle(PaymentMethodNames.Card, chargeId, DateTimeOffset.UtcNow, TransactionSource.Manual);
             context.Transactions.Add(ledgerRow!);
             await context.SaveChangesAsync(CancellationToken.None);
             invoiceId = invoice.Id;
@@ -257,6 +257,44 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         refundRow.TransactionId.Should().Be("re_card_1");
         refundRow.PaymentMethod.Should().Be(PaymentMethodNames.Card);
         refundRow.AmountOut.Should().Be(4m);
+        refundRow.Source.Should().Be(TransactionSource.GatewayRefund);
+    }
+
+    /// <summary>
+    /// A gateway refund of a card payment on a deployment with no card gateway key answers 409
+    /// <c>PAYMENT_METHOD_UNAVAILABLE</c>, never a 500, and the card gateway is never called.
+    /// </summary>
+    [Fact]
+    public async Task GatewayRefundOfACardPaymentWithoutCardGatewayKeyAnswersConflict()
+    {
+        var cardGateway = new FakeCardPaymentGateway { IsConfigured = false };
+        var host = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services => services.AddSingleton<ICardPaymentGateway>(cardGateway)));
+        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var clientId = await BillingTestSeeds.SeedClientAsync(host);
+
+        int invoiceId;
+        using (var scope = host.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+            invoice.AddItem("Hosting", 10m, 1);
+            context.Invoices.Add(invoice);
+            await context.SaveChangesAsync(CancellationToken.None);
+            context.Transactions.Add(invoice.Settle(PaymentMethodNames.Card, $"ch_{Guid.NewGuid():N}", DateTimeOffset.UtcNow, TransactionSource.Manual)!);
+            await context.SaveChangesAsync(CancellationToken.None);
+            invoiceId = invoice.Id;
+        }
+
+        var response = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/refund", new
+        {
+            amount = 4m,
+            refundType = nameof(RefundType.Gateway),
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.PAYMENT_METHOD_UNAVAILABLE);
+        cardGateway.RefundInstructions.Should().BeEmpty();
     }
 
     /// <summary>
@@ -289,7 +327,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
             invoice.SetGatewaySession(HostedGateway, $"gw-order-{Guid.NewGuid():N}", DateTimeOffset.UtcNow);
             context.Invoices.Add(invoice);
             await context.SaveChangesAsync(CancellationToken.None);
-            context.Transactions.Add(invoice.Settle(PaymentMethodNames.Card, chargeId, DateTimeOffset.UtcNow)!);
+            context.Transactions.Add(invoice.Settle(PaymentMethodNames.Card, chargeId, DateTimeOffset.UtcNow, TransactionSource.Manual)!);
             await context.SaveChangesAsync(CancellationToken.None);
             invoiceId = invoice.Id;
         }
@@ -440,8 +478,8 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         var second = await secondContext.Invoices.Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
         var now = DateTimeOffset.UtcNow;
 
-        firstContext.Transactions.Add(first.AddRefund(now, PaymentMethodNames.Manual, $"r-{Guid.NewGuid():N}", 60m, 0m, null));
-        secondContext.Transactions.Add(second.AddRefund(now.AddMilliseconds(1), PaymentMethodNames.Manual, $"r-{Guid.NewGuid():N}", 60m, 0m, null));
+        firstContext.Transactions.Add(first.AddRefund(now, PaymentMethodNames.Manual, $"r-{Guid.NewGuid():N}", 60m, 0m, null, false, TransactionSource.Manual));
+        secondContext.Transactions.Add(second.AddRefund(now.AddMilliseconds(1), PaymentMethodNames.Manual, $"r-{Guid.NewGuid():N}", 60m, 0m, null, false, TransactionSource.Manual));
         await firstContext.SaveChangesAsync(CancellationToken.None);
         var act = () => secondContext.SaveChangesAsync(CancellationToken.None);
 
@@ -614,11 +652,11 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         await context.SaveChangesAsync(CancellationToken.None);
         if (manualPart > 0)
         {
-            context.Transactions.Add(invoice.AddPayment(now.AddMinutes(-5), PaymentMethodNames.Manual, $"pay-{Guid.NewGuid():N}", manualPart, 0m, null));
+            context.Transactions.Add(invoice.AddPayment(now.AddMinutes(-5), PaymentMethodNames.Manual, $"pay-{Guid.NewGuid():N}", manualPart, 0m, null, TransactionSource.Manual));
         }
 
         invoice.SetGatewaySession(HostedGateway, $"gw-order-{Guid.NewGuid():N}", now);
-        context.Transactions.Add(invoice.Settle(HostedGateway, $"gw-pay-{Guid.NewGuid():N}", now)!);
+        context.Transactions.Add(invoice.Settle(HostedGateway, $"gw-pay-{Guid.NewGuid():N}", now, TransactionSource.Manual)!);
         await context.SaveChangesAsync(CancellationToken.None);
         return invoice.Id;
     }
@@ -643,8 +681,8 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         invoice.AddItem("Hosting", 100m, 1);
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
-        context.Transactions.Add(invoice.AddPayment(now.AddMinutes(-5), PaymentMethodNames.Card, olderCharge, 40m, 0m, null));
-        context.Transactions.Add(invoice.Settle(PaymentMethodNames.Card, newerCharge, now)!);
+        context.Transactions.Add(invoice.AddPayment(now.AddMinutes(-5), PaymentMethodNames.Card, olderCharge, 40m, 0m, null, TransactionSource.Manual));
+        context.Transactions.Add(invoice.Settle(PaymentMethodNames.Card, newerCharge, now, TransactionSource.Manual)!);
         await context.SaveChangesAsync(CancellationToken.None);
         return (invoice.Id, olderCharge, newerCharge);
     }

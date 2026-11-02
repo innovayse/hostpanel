@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 
 namespace Innovayse.Hostpanel.Domain.Tests.Billing;
 
@@ -13,7 +14,7 @@ public sealed class TransactionTests
     public void Create_StampsTheCurrency()
     {
         var transaction = Transaction.Create(
-            1, Now, "Top-up", "tx-1", null, "manual", 10m, 0m, 0m, false, "eur");
+            1, Now, "Top-up", "tx-1", null, "manual", 10m, 0m, 0m, false, "eur", TransactionSource.Manual);
 
         transaction.Currency.Should().Be("EUR");
     }
@@ -26,7 +27,7 @@ public sealed class TransactionTests
     public void Create_RefusesAMalformedCurrency(string currency)
     {
         var act = () => Transaction.Create(
-            1, Now, "Top-up", "tx-1", null, "manual", 10m, 0m, 0m, false, currency);
+            1, Now, "Top-up", "tx-1", null, "manual", 10m, 0m, 0m, false, currency, TransactionSource.Manual);
 
         act.Should().Throw<ArgumentException>();
     }
@@ -38,9 +39,62 @@ public sealed class TransactionTests
         var invoice = Invoice.Create(clientId: 1, dueDate: Now.AddDays(7), currency: "GBP", issuedAt: Now);
 
         var transaction = Transaction.CreateInvoicePayment(
-            invoice, Now, "manual", "tx-2", 25m, 0m);
+            invoice, Now, "manual", "tx-2", 25m, 0m, TransactionSource.Manual);
 
         transaction.Currency.Should().Be("GBP");
+    }
+
+    /// <summary>The source given at creation is what the row reports.</summary>
+    /// <param name="source">Each defined source.</param>
+    [Theory]
+    [InlineData(TransactionSource.GatewayPayment)]
+    [InlineData(TransactionSource.GatewayRefund)]
+    [InlineData(TransactionSource.Manual)]
+    [InlineData(TransactionSource.Import)]
+    public void Create_RecordsTheSource(TransactionSource source)
+    {
+        var transaction = Transaction.Create(
+            1, Now, "Top-up", "tx-1", null, "card", 10m, 0m, 0m, false, "USD", source);
+
+        transaction.Source.Should().Be(source);
+    }
+
+    /// <summary>A source that is not one of the defined values is refused.</summary>
+    [Fact]
+    public void Create_RefusesAnUndefinedSource()
+    {
+        var act = () => Transaction.Create(
+            1, Now, "Top-up", "tx-1", null, "card", 10m, 0m, 0m, false, "USD", (TransactionSource)99);
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    /// <summary>A payment is a gateway payment or a manual entry, never a refund or an import.</summary>
+    [Fact]
+    public void CreateInvoicePayment_AcceptsOnlyAPaymentSource()
+    {
+        var invoice = Invoice.Create(clientId: 1, dueDate: Now.AddDays(7), currency: "USD", issuedAt: Now);
+
+        Transaction.CreateInvoicePayment(invoice, Now, "card", "tx-3", 5m, 0m, TransactionSource.GatewayPayment)
+            .Source.Should().Be(TransactionSource.GatewayPayment);
+        var refund = () => Transaction.CreateInvoicePayment(invoice, Now, "card", "tx-3", 5m, 0m, TransactionSource.GatewayRefund);
+        var import = () => Transaction.CreateInvoicePayment(invoice, Now, "card", "tx-3", 5m, 0m, TransactionSource.Import);
+
+        refund.Should().Throw<ArgumentOutOfRangeException>();
+        import.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    /// <summary>A refund is a gateway refund or a manual entry, never a payment or an import.</summary>
+    [Fact]
+    public void CreateInvoiceRefund_AcceptsOnlyARefundSource()
+    {
+        var invoice = Invoice.Create(clientId: 1, dueDate: Now.AddDays(7), currency: "USD", issuedAt: Now);
+
+        Transaction.CreateInvoiceRefund(invoice, Now, "card", "re-1", 5m, false, TransactionSource.GatewayRefund)
+            .Source.Should().Be(TransactionSource.GatewayRefund);
+        var payment = () => Transaction.CreateInvoiceRefund(invoice, Now, "card", "re-1", 5m, false, TransactionSource.GatewayPayment);
+
+        payment.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     /// <summary>A transaction that moves no money in either direction is refused with the domain code.</summary>
@@ -48,7 +102,7 @@ public sealed class TransactionTests
     public void Create_RefusesZeroAmounts()
     {
         var act = () => Transaction.Create(
-            1, Now, "Nothing", "tx-0", null, "manual", 0m, 0m, 0m, false, "USD");
+            1, Now, "Nothing", "tx-0", null, "manual", 0m, 0m, 0m, false, "USD", TransactionSource.Manual);
 
         act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.TransactionAmountRequired);
     }
@@ -111,6 +165,6 @@ public sealed class TransactionTests
     /// <returns>The new transaction.</returns>
     private static Transaction NewTransaction()
     {
-        return Transaction.Create(1, Now, "Top-up", "tx-1", null, "manual", 10m, 0m, 0m, false, "USD");
+        return Transaction.Create(1, Now, "Top-up", "tx-1", null, "manual", 10m, 0m, 0m, false, "USD", TransactionSource.Manual);
     }
 }

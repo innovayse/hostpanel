@@ -229,9 +229,10 @@ const dismissDelete = (): void => {
   }
 }
 
-/** Filtering from the first page again whenever a filter changes. */
+/** Filtering from the first page again, with nothing ticked, so a bulk delete never takes rows the filter hides. */
 watch([filterClientId, filterDescription, filterAmount, filterStatus], () => {
   page.value = 1
+  selectedIds.value = []
 })
 
 /** Loads the items and the client picker's options. */

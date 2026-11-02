@@ -180,4 +180,21 @@ describe('InvoiceRefundTab', () => {
       refundTransactionId: 'EXT-1',
     })
   })
+
+  it('labels each refundable transaction with its amount in the invoice currency for an AMD invoice', () => {
+    const wrapper = mountWithApp(InvoiceRefundTab, {
+      props: {
+        invoice: invoiceFixture({
+          currency: 'AMD',
+          transactions: [
+            { id: 21, date: '2026-10-15T00:00:00Z', gateway: 'Stripe', transactionId: 'ch_1', amount: 24000, fees: 500, type: 'Payment' },
+          ],
+        }),
+      },
+    })
+
+    const options = (wrapper.getComponent(UiSelect).props() as { options: { label: string }[] }).options
+    expect(options.map((option) => option.label)).toContain('#21 — 24000.00 AMD (Stripe)')
+    expect(options.map((option) => option.label).join(' ')).not.toContain('$')
+  })
 })

@@ -24,8 +24,8 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
-import { SERVICE_STATUS_OPTIONS } from '@/lib/constants'
-import { capitalize, formatDate } from '@/lib/format'
+import { BILLING_CYCLE_OPTIONS, SERVICE_STATUS_OPTIONS } from '@/lib/constants'
+import { formatDate } from '@/lib/format'
 import { formatPrice } from '@/lib/money'
 import { serviceStatusTone, statusLabel } from '@/lib/tones'
 import { useServicesStore } from '@/stores/services'
@@ -100,7 +100,7 @@ onMounted(() => store.fetchAll())
               </UiLink>
             </UiTableCell>
             <UiTableCell>{{ formatPrice(service.price, service.priceCurrency) }}</UiTableCell>
-            <UiTableCell>{{ capitalize(service.billingCycle) }}</UiTableCell>
+            <UiTableCell>{{ statusLabel(BILLING_CYCLE_OPTIONS, service.billingCycle) }}</UiTableCell>
             <UiTableCell muted>{{ formatDate(service.nextDueDate) }}</UiTableCell>
             <UiTableCell>
               <UiBadge :tone="serviceStatusTone(service.status)" small>

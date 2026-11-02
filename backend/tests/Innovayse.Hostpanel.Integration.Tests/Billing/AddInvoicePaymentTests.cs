@@ -25,17 +25,24 @@ public sealed class AddInvoicePaymentTests(IntegrationTestFactory factory) : ICl
         var admin = await BillingTestSeeds.AdminClientAsync(factory);
         var clientId = await BillingTestSeeds.SeedClientAsync(factory);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 19.99m);
+        var reference = $"pay-{Guid.NewGuid():N}";
 
         var response = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/payment", new
         {
             date = DateTimeOffset.UtcNow,
             gateway = PaymentMethodNames.Manual,
-            transactionId = $"pay-{Guid.NewGuid():N}",
+            transactionId = reference,
             amount = 19.99m,
             fees = 0m,
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            (await db.Transactions.AsNoTracking().SingleAsync(t => t.TransactionId == reference)).Source
+                .Should().Be(TransactionSource.Manual);
+        }
 
         var fetched = await admin.GetAsync($"/api/billing/{invoiceId}");
         using var body = JsonDocument.Parse(await fetched.Content.ReadAsStringAsync());

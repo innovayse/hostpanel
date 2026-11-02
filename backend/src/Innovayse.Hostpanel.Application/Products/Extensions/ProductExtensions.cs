@@ -1,7 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Products.Common;
 using Innovayse.Hostpanel.Domain.Products;
-using Innovayse.Hostpanel.Domain.Products.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Innovayse.Hostpanel.Application.Products.Extensions;
@@ -95,14 +94,12 @@ public static class ProductExtensions
         }
     }
 
-    /// <summary>Prices a product's monthly and annual cycles in one currency.</summary>
+    /// <summary>Prices every billing cycle of a product in one currency.</summary>
     /// <param name="product">The product to price.</param>
     /// <param name="currencyCode">ISO 4217 code of the currency to price in.</param>
-    /// <returns>The two cycle prices; a cycle not sold in that currency is null.</returns>
+    /// <returns>The cycle prices; a cycle not sold in that currency is null.</returns>
     private static ProductPricingDto ToPricingDto(this Product product, string currencyCode) =>
-        new(
-            product.PriceFor(currencyCode, BillingCycle.Monthly),
-            product.PriceFor(currencyCode, BillingCycle.Annual));
+        ProductPricingDto.Of(cycle => product.PriceFor(currencyCode, cycle));
 
     /// <summary>Groups a product's stored prices by currency, one DTO per currency.</summary>
     /// <param name="product">The product whose prices are read.</param>
@@ -110,9 +107,6 @@ public static class ProductExtensions
     private static IReadOnlyList<ProductPriceDto> ToPriceDtos(this Product product) =>
         product.Prices
             .GroupBy(p => p.CurrencyCode)
-            .Select(g => new ProductPriceDto(
-                g.Key,
-                g.FirstOrDefault(p => p.Cycle == BillingCycle.Monthly)?.Amount,
-                g.FirstOrDefault(p => p.Cycle == BillingCycle.Annual)?.Amount))
+            .Select(g => ProductPriceDto.Of(g.Key, cycle => g.FirstOrDefault(p => p.Cycle == cycle)?.Amount))
             .ToList();
 }

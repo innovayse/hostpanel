@@ -1,5 +1,6 @@
 using FluentValidation;
 using Innovayse.Hostpanel.Application.Common;
+using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Shared.Constants;
 
 namespace Innovayse.Hostpanel.Application.Common.Validators;
@@ -20,6 +21,25 @@ public static class ValidationRuleExtensions
         ArgumentNullException.ThrowIfNull(rule);
 
         return rule.GreaterThan(0).WithMessage(message);
+    }
+
+    /// <summary>
+    /// Requires an ISO 4217 alpha currency code in the exact shape the domain stores: three ASCII
+    /// letters, with no padding (see <see cref="CurrencyCode.IsValid"/>). An absent, empty, padded,
+    /// numeric or punctuated value is refused with the one message, so a validator needs no separate
+    /// not-empty or length rule.
+    /// </summary>
+    /// <typeparam name="T">The command or query being validated.</typeparam>
+    /// <typeparam name="TProperty">The type of the property, a <see cref="string"/> (nullable or not).</typeparam>
+    /// <param name="rule">The rule builder for the currency property.</param>
+    /// <param name="message">The localized sentence reported when the value is not a currency code.</param>
+    /// <returns>The rule builder, for chaining.</returns>
+    public static IRuleBuilderOptions<T, TProperty> MustBeCurrencyCode<T, TProperty>(
+        this IRuleBuilder<T, TProperty> rule, string message)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+
+        return rule.Must(value => CurrencyCode.IsValid(value as string)).WithMessage(message);
     }
 
     /// <summary>Requires a 1-based page number.</summary>

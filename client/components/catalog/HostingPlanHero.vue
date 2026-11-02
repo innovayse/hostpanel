@@ -44,7 +44,7 @@
         <div class="flex flex-wrap items-end gap-6">
           <div class="flex items-baseline gap-1.5">
             <div class="text-5xl font-bold text-gray-900 dark:text-white [.tpl-classic_&]:text-classic-ink" data-testid="hosting-plan-price">{{ price }}</div>
-            <div class="text-gray-600 dark:text-gray-400 text-sm [.tpl-classic_&]:text-classic-muted">{{ $t('hosting.perMonthFull') }}</div>
+            <div class="text-gray-600 dark:text-gray-400 text-sm [.tpl-classic_&]:text-classic-muted">{{ period }}</div>
           </div>
           <UiButton
             size="lg"
@@ -81,6 +81,8 @@ interface Props {
   summary: string
   /** The plan's price for the selected cycle, formatted. */
   price: string
+  /** The unit the price is per, already translated ("/mo", "/qtr", "/yr"...), for the cycle the price is of. */
+  period: string
   /** Whether the plan is already in the cart. */
   inCart: boolean
 }

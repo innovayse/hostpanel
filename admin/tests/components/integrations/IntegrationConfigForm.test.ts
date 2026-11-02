@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest'
 import IntegrationConfigForm from '@/components/integrations/IntegrationConfigForm.vue'
 import { mountWithApp } from '../../helpers/mount'
+import { IntegrationFieldType } from '@/types/integration'
 import { integrationDetail } from '../../helpers/integrationFixtures'
 
 /**
@@ -41,6 +42,20 @@ describe('IntegrationConfigForm', () => {
     expect(wrapper.find('[data-testid="integration-field-secretKey-input"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="integration-field-secretKey-replace"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="integration-field-secretKey-clear"]').exists()).toBe(true)
+  })
+
+  it('renders a plugin secret field (type Secret, isSecret true) as the write only box', () => {
+    const wrapper = mountForm({
+      integration: integrationDetail({
+        config: { apiToken: { value: null, isSecret: true, hasValue: true } },
+        fieldDefinitions: [{ key: 'apiToken', label: 'API token', type: IntegrationFieldType.Secret, required: true }],
+      }),
+    })
+
+    expect(wrapper.get('[data-testid="integration-field-apiToken-masked"]').text()).toContain('set')
+    expect(wrapper.find('[data-testid="integration-field-apiToken-input"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="integration-field-apiToken-replace"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="integration-field-apiToken-clear"]').exists()).toBe(true)
   })
 
   it('leaves an untouched secret out of the save payload', async () => {

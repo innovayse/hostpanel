@@ -77,7 +77,7 @@ public sealed class InvoiceLapseTests
     {
         var invoice = Overdue(digital: true);
         invoice.MarkLapsed(LapseMoment);
-        invoice.Settle("bank", "ref-1", LapseMoment.AddDays(1));
+        invoice.Settle("bank", "ref-1", LapseMoment.AddDays(1), TransactionSource.Manual);
 
         var act = () => invoice.MarkLapsed(LapseMoment.AddDays(2));
 
@@ -95,7 +95,7 @@ public sealed class InvoiceLapseTests
         unpaid.AddItem("Plan", 10m, 1);
         var paid = Invoice.Create(1, Now.AddDays(7), "USD", Now);
         paid.AddItem("Plan", 10m, 1);
-        paid.Settle("bank", "ref-1", Now);
+        paid.Settle("bank", "ref-1", Now, TransactionSource.Manual);
 
         foreach (var invoice in new[] { unpaid, paid })
         {

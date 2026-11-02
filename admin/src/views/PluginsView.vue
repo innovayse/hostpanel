@@ -5,12 +5,15 @@
  * Lists installed plugins, provides ZIP upload for installation,
  * and shows a restart banner when pending changes need to take effect. A refused load offers a
  * retry; the outcome of an install or remove (success, or the API's sentence) shows above the list;
- * a removal is confirmed first in a danger prompt.
+ * a removal is confirmed first in a danger prompt. The "Allow unsigned plugins" switch with its warning sits
+ * under the uploader and saves through the settings store, like every other settings row.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePluginsStore } from '@/stores/plugins'
+import { useSettingsStore } from '@/stores/settings'
 import PluginCard from '@/components/plugins/PluginCard.vue'
+import PluginSigningCard from '@/components/plugins/PluginSigningCard.vue'
 import PluginUploader from '@/components/plugins/PluginUploader.vue'
 import RestartBanner from '@/components/plugins/RestartBanner.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
@@ -24,12 +27,16 @@ import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
+import type { SettingSaveResult } from '@/types/setting'
 
 /** Translation function. */
 const { t } = useI18n()
 
 /** Plugins store: the installed list, the restart flag and the refusal sentence. */
 const store = usePluginsStore()
+
+/** Settings store: the rows the signing switch reads, and the save that writes one. */
+const settingsStore = useSettingsStore()
 
 /** Id of the plugin whose removal is in flight. */
 const removingId = ref<string | null>(null)
@@ -107,8 +114,20 @@ const handleUpload = async (file: File): Promise<void> => {
   showOutcome(await store.install(file), 'plugins.plugins.pluginInstalled')
 }
 
-/** Loads the installed plugins. */
-onMounted(store.fetchAll)
+/**
+ * Persists the signing switch and reports how it went to the control that asked.
+ *
+ * @param id - Setting ID.
+ * @param value - New value, `true` or `false`.
+ * @returns Whether the value was stored, and the API's sentence when it was refused.
+ */
+const saveSetting = async (id: number, value: string): Promise<SettingSaveResult> => {
+  const saved = await settingsStore.updateSetting(id, value)
+  return { saved, error: saved ? null : settingsStore.actionError }
+}
+
+/** Loads the installed plugins and the settings the signing switch reads. */
+onMounted(() => Promise.all([store.fetchAll(), settingsStore.fetchSettings()]))
 </script>
 
 <template>
@@ -125,6 +144,16 @@ onMounted(store.fetchAll)
 
     <!-- Upload -->
     <PluginUploader @upload="handleUpload" />
+
+    <!-- Signature policy -->
+    <UiErrorState
+      v-if="settingsStore.error"
+      :message="settingsStore.error"
+      :loading="settingsStore.loading"
+      testid="plugin-signing-error"
+      @retry="settingsStore.fetchSettings()"
+    />
+    <PluginSigningCard v-else :settings="settingsStore.settings" :save="saveSetting" />
 
     <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="plugins-feedback" />
 

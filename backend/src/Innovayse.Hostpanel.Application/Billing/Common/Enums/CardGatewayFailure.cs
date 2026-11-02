@@ -11,4 +11,7 @@ public enum CardGatewayFailure
 
     /// <summary>The gateway could not be reached or failed on its side (a 5xx, a timeout, a network error).</summary>
     Unavailable = 1,
+
+    /// <summary>The deployment carries no card gateway secret key, so the gateway was never called.</summary>
+    NotConfigured = 2,
 }

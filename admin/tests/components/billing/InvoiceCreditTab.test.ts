@@ -101,4 +101,19 @@ describe('InvoiceCreditTab', () => {
 
     expect(wrapper.get('[data-testid="billing-invoice-credit-feedback"]').text()).toBe('The client has no credit.')
   })
+
+  it('names the amount to take back in the invoice currency in the remove credit prompt of an AMD invoice', async () => {
+    stubRoutes({ 'GET /api/billing/1': () => json(invoiceFixture()) })
+    const wrapper = mountWithApp(InvoiceCreditTab, {
+      props: { invoice: invoiceFixture({ currency: 'AMD', amounts: { ...invoiceFixture().amounts, credit: 5000 } }) },
+    })
+
+    await wrapper.get('[data-testid="billing-invoice-credit-remove-amount"] input').setValue('1500')
+    await wrapper.get('[data-testid="billing-invoice-credit-remove"]').trigger('click')
+    await flushPromises()
+
+    const body = wrapper.get('[data-testid="dialog-body"]').text()
+    expect(body).toContain('1500.00 AMD')
+    expect(body).not.toContain('$')
+  })
 })

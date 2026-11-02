@@ -58,6 +58,20 @@ describe('ServiceSidebar', () => {
     expect(unknown.find('[data-testid="service-link-cpanel"]').exists()).toBe(false)
   })
 
+  it('does not offer the control panel on a terminated service', async () => {
+    await grantPermissions(Permission.AllowSingleSignOn)
+    const wrapper = mountSidebar({ service: service({ status: ServiceStatus.Terminated }) })
+
+    expect(wrapper.find('[data-testid="service-link-cpanel"]').exists()).toBe(false)
+  })
+
+  it('does not offer the control panel on a service without a server even with single sign-on granted', async () => {
+    await grantPermissions(Permission.AllowSingleSignOn)
+    const wrapper = mountSidebar({ service: service({ server: null }) })
+
+    expect(wrapper.find('[data-testid="service-link-cpanel"]').exists()).toBe(false)
+  })
+
   it('asks for the control panel and shows a sign-in failure', async () => {
     const wrapper = mountSidebar({ ssoError: 'No answer' })
 

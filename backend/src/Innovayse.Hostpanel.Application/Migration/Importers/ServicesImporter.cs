@@ -1,12 +1,9 @@
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Application.Migration.Importers.Enums;
 using Innovayse.Hostpanel.Application.Migration.Importers.Records;
 using Innovayse.Hostpanel.Application.Migration.Importers.SourceValues;
 using Innovayse.Hostpanel.Domain.Migration;
 using Innovayse.Hostpanel.Domain.Migration.Enums;
 using Innovayse.Hostpanel.Domain.Products;
-using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -104,8 +101,8 @@ public sealed class ServicesImporter : IMigrationEntityImporter
             return RecordImportResult.Skipped(MigrationSkipReason.ProductNotFound);
         }
 
-        // A cycle this version cannot bill (quarterly, one-time) is skipped rather than stored as a
-        // guess: a service on the wrong cycle would be invoiced for the wrong amount of time.
+        // A cycle this version cannot bill (triennial, one-time and the like) is skipped rather than
+        // stored as a guess: a service on the wrong cycle would be invoiced for the wrong amount of time.
         if (!BillingCycleParser.TryParse(rec.BillingCycle, out var billingCycle))
         {
             return RecordImportResult.Skipped(MigrationSkipReason.BillingCycleUnsupported);

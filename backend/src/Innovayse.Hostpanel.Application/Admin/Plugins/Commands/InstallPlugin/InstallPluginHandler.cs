@@ -2,7 +2,9 @@ using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Audit.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Shared.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Innovayse.Hostpanel.Application.Admin.Plugins.Commands.InstallPlugin;
 
@@ -41,20 +43,34 @@ public sealed class InstallPluginHandler
     /// A result requiring a restart, or <c>PLUGIN_MANIFEST_INVALID</c> when the upload is empty, not
     /// a readable archive, or its <c>plugin.json</c> is missing or malformed;
     /// <c>PLUGIN_SDK_VERSION_UNSUPPORTED</c> when the plugin targets a different SDK version;
+    /// one of the manifest rule codes (<c>PLUGIN_MANIFEST_VERSION_UNKNOWN</c>, <c>PLUGIN_SDK_ASSEMBLY_OUTDATED</c>,
+    /// <c>PLUGIN_PERMISSION_UNKNOWN</c>, <c>PLUGIN_ADMIN_PERMISSION_DECLARED</c>, <c>PLUGIN_ROUTE_PATH_INVALID</c>,
+    /// <c>PLUGIN_ROUTE_DUPLICATE</c>, <c>PLUGIN_LABEL_KEY_MISSING</c>, <c>PLUGIN_SLOT_UNKNOWN</c>,
+    /// <c>PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED</c>, <c>PLUGIN_ASSEMBLY_UNREADABLE</c>) when the manifest breaks that rule;
     /// <c>PLUGIN_ID_INVALID</c> when the manifest's id breaks the plugin id rule;
     /// <c>PLUGIN_ARCHIVE_UNSAFE</c> when an entry would write outside the plugin's own folder;
     /// <c>PLUGIN_ARCHIVE_TOO_LARGE</c> when the archive exceeds the configured limits;
     /// <c>PLUGIN_HOST_ASSEMBLY_REFUSED</c> when it carries a host or framework assembly;
     /// <c>PLUGIN_NOT_TRUSTED</c> when a trusted-package list is set and the archive is not on it;
+    /// one of <c>PLUGIN_UNSIGNED</c>, <c>PLUGIN_SIGNATURE_MALFORMED</c>, <c>PLUGIN_SIGNATURE_KEY_UNKNOWN</c> or
+    /// <c>PLUGIN_SIGNATURE_INVALID</c> when the host enforces signatures, the setting "allow unsigned plugins" is off and
+    /// the package fails that check;
     /// <c>PLUGIN_BUILT_IN</c> when the id belongs to a plugin shipped with the build.
     /// </returns>
     public async Task<Result<PluginActionResultDto>> HandleAsync(InstallPluginCommand command, CancellationToken ct)
     {
         // The validator refuses a missing file before this runs, so Content is set here.
-        var outcome = await _store.InstallAsync(new PluginPackageUpload(command.Content!), ct);
+        // Read at the moment of the upload, so turning the setting on or off applies to the very next install.
+        var allowUnsigned = PluginSettingKeys.IsOn(await _db.Settings
+            .AsNoTracking()
+            .Where(s => s.Key == PluginSettingKeys.AllowUnsigned)
+            .Select(s => s.Value)
+            .FirstOrDefaultAsync(ct));
+
+        var outcome = await _store.InstallAsync(new PluginPackageUpload(command.Content!, allowUnsigned), ct);
         if (outcome.Outcome != PluginPackageOutcome.Installed)
         {
-            return Result<PluginActionResultDto>.FailureCode(PluginPackageErrors.CodeFor(outcome.Outcome));
+            return Result<PluginActionResultDto>.FailureCode(PluginPackageErrors.CodeFor(outcome));
         }
 
         await _activityLogger.RecordAsync(

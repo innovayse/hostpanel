@@ -76,7 +76,7 @@ public sealed class DemoPaymentCurrencyTests(IntegrationTestFactory factory) : I
     [Fact]
     public void WhenDisabled_APluginAcceptsOnlyItsOwnCurrency()
     {
-        Innovayse.SDK.Plugins.IPaymentPlugin plugin = new FakePaymentPlugin { CurrencyCode = "840" };
+        Innovayse.SDK.Plugins.Payment.IPaymentPlugin plugin = new FakePaymentPlugin { CurrencyCode = "840" };
 
         plugin.AcceptsCurrency("840").Should().BeTrue();
         plugin.AcceptsCurrency(AmdNumeric).Should().BeFalse();

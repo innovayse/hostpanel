@@ -34,7 +34,7 @@ public sealed class DemoProvisioningProvider : IProvisioningProvider
         Task.FromResult(new ServiceCredentials("demo-user", "demo-password", "demo-site.example", ServerIp, PanelUrl));
 
     /// <inheritdoc/>
-    public Task<string> GetCPanelSsoUrlAsync(string provisioningRef, CancellationToken ct) =>
+    public Task<string> GetCPanelSsoUrlAsync(string provisioningRef, string? callerIp, CancellationToken ct) =>
         Task.FromResult($"{PanelUrl}sso?account={Uri.EscapeDataString(provisioningRef)}");
 
     /// <inheritdoc/>

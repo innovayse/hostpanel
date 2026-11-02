@@ -23,6 +23,7 @@ import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
+import { useClientCurrency } from '@/composables/useClientCurrency'
 import { useClientOptions } from '@/composables/useClientOptions'
 import { QUOTE_STAGE_OPTIONS } from '@/lib/constants'
 import { toIsoDay } from '@/lib/format'
@@ -44,6 +45,9 @@ const { clients, load: loadClients } = useClientOptions()
 
 /** Id of the client the quote is for, as the picker holds it. */
 const clientId = ref('')
+
+/** Billing currency of the chosen client, the one the quote will be priced in. */
+const currency = useClientCurrency(computed(() => Number(clientId.value)))
 
 /** Quote subject. */
 const subject = ref('')
@@ -139,7 +143,7 @@ onMounted(() => {
         </UiStack>
       </UiCard>
 
-      <QuoteItemsEditor v-model="items" />
+      <QuoteItemsEditor v-model="items" :currency="currency" />
 
       <UiCard padding="lg">
         <UiStack>

@@ -11,6 +11,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 /// </summary>
 public sealed class FakeCardPaymentGateway : ICardPaymentGateway
 {
+    /// <summary>Guards <see cref="RefundInstructions"/> and <see cref="RefundsByKey"/>, which concurrent requests write.</summary>
+    private readonly object _refundLock = new();
+
     /// <inheritdoc/>
     public bool IsConfigured { get; set; }
 
@@ -99,15 +102,23 @@ public sealed class FakeCardPaymentGateway : ICardPaymentGateway
     /// <inheritdoc/>
     public Task<CardPaymentIntentResult> CreatePaymentIntentAsync(CardPaymentIntentInstruction instruction, CancellationToken ct)
     {
+        ThrowIfNotConfigured();
         LastIntentInstruction = instruction;
         return Task.FromResult(IntentFailure is { } failure
             ? new CardPaymentIntentResult(null, failure)
             : new CardPaymentIntentResult(IntentClientSecret));
     }
 
+    /// <summary>How many times <see cref="VerifyPaymentIntentAsync"/> was called.</summary>
+    public int VerifyCalls { get; private set; }
+
     /// <inheritdoc/>
-    public Task<CardPaymentIntentStatus> VerifyPaymentIntentAsync(CardPaymentVerifyInstruction instruction, CancellationToken ct) =>
-        Task.FromResult(Verification);
+    public Task<CardPaymentIntentStatus> VerifyPaymentIntentAsync(CardPaymentVerifyInstruction instruction, CancellationToken ct)
+    {
+        ThrowIfNotConfigured();
+        VerifyCalls++;
+        return Task.FromResult(Verification);
+    }
 
     /// <summary>
     /// The outcome of every charge the gateway took, by idempotency key. A key it has seen answers
@@ -115,9 +126,22 @@ public sealed class FakeCardPaymentGateway : ICardPaymentGateway
     /// </summary>
     public Dictionary<string, CardChargeResult> ChargesByKey { get; } = [];
 
+    /// <summary>
+    /// When set, every <see cref="ChargeSavedPaymentMethodAsync"/> call waits here until all of the
+    /// rendezvous' parties have called, so that concurrent requests have all read their invoice
+    /// unpaid before any charge is answered. Null for no waiting.
+    /// </summary>
+    public ChargeRendezvous? ChargeRendezvous { get; set; }
+
     /// <inheritdoc/>
-    public Task<CardChargeResult> ChargeSavedPaymentMethodAsync(CardChargeInstruction instruction, CancellationToken ct)
+    public async Task<CardChargeResult> ChargeSavedPaymentMethodAsync(CardChargeInstruction instruction, CancellationToken ct)
     {
+        ThrowIfNotConfigured();
+        if (ChargeRendezvous is { } rendezvous)
+        {
+            await rendezvous.ArriveAsync(ct);
+        }
+
         lock (ChargesByKey)
         {
             LastChargeInstruction = instruction;
@@ -128,7 +152,7 @@ public sealed class FakeCardPaymentGateway : ICardPaymentGateway
                 ChargeInstructionsByKey[instruction.IdempotencyKey] = instruction;
             }
 
-            return Task.FromResult(outcome);
+            return outcome;
         }
     }
 
@@ -142,6 +166,7 @@ public sealed class FakeCardPaymentGateway : ICardPaymentGateway
     /// <remarks>Answers with the settled charge taken under the key, never charging; a decline or an unseen key is nothing found.</remarks>
     public Task<CardChargeLookupResult> FindChargeAsync(CardChargeLookupInstruction instruction, CancellationToken ct)
     {
+        ThrowIfNotConfigured();
         lock (ChargesByKey)
         {
             ChargeLookups++;
@@ -163,8 +188,17 @@ public sealed class FakeCardPaymentGateway : ICardPaymentGateway
     /// <inheritdoc/>
     public async Task<CardRefundResult> RefundAsync(CardRefundInstruction instruction, CancellationToken ct)
     {
-        RefundInstructions.Add(instruction);
-        if (RefundInstructions.Count == ThrowsOnRefundCall)
+        ThrowIfNotConfigured();
+
+        // Concurrent requests call this at once, so the shared lists are only touched under the lock.
+        int callNumber;
+        lock (_refundLock)
+        {
+            RefundInstructions.Add(instruction);
+            callNumber = RefundInstructions.Count;
+        }
+
+        if (callNumber == ThrowsOnRefundCall)
         {
             throw new HttpRequestException("The card gateway did not answer the refund.");
         }
@@ -174,11 +208,17 @@ public sealed class FakeCardPaymentGateway : ICardPaymentGateway
             return new CardRefundResult(false, null);
         }
 
-        if (!RefundsByKey.TryGetValue(instruction.IdempotencyKey, out var refund))
+        CardRefundResult refund;
+        lock (_refundLock)
         {
-            var issued = RefundsByKey.Count + 1;
-            refund = new CardRefundResult(true, issued == 1 ? RefundId : $"{RefundId}-{issued}");
-            RefundsByKey[instruction.IdempotencyKey] = refund;
+            if (!RefundsByKey.TryGetValue(instruction.IdempotencyKey, out var known))
+            {
+                var issued = RefundsByKey.Count + 1;
+                known = new CardRefundResult(true, issued == 1 ? RefundId : $"{RefundId}-{issued}");
+                RefundsByKey[instruction.IdempotencyKey] = known;
+            }
+
+            refund = known;
         }
 
         if (AfterRefundIssued is not null)
@@ -225,8 +265,9 @@ public sealed class FakeCardPaymentGateway : ICardPaymentGateway
     }
 
     /// <summary>
-    /// Throws as the Stripe adapter does when it has no secret key: its client is built on first
-    /// use and the Stripe library refuses an empty API key with an <see cref="ArgumentException"/>.
+    /// Throws when there is no secret key, which is stricter than the real adapter (it answers
+    /// <see cref="CardGatewayFailure.NotConfigured"/>): a handler that reaches the gateway without
+    /// checking <see cref="IsConfigured"/> first fails its test instead of passing by luck.
     /// </summary>
     /// <exception cref="ArgumentException">When <see cref="IsConfigured"/> is false.</exception>
     private void ThrowIfNotConfigured()

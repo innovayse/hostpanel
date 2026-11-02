@@ -54,7 +54,7 @@ import { Permission } from '~/composables/usePermissions'
 import { useClientStore } from '~/stores/client'
 import type { ClientService } from '~/types/clientservice'
 import { ServiceTab } from '~/types/servicetab'
-import { webmailUrl as buildWebmailUrl } from '~/utils/controlPanel'
+import { canSignInToControlPanel, webmailUrl as buildWebmailUrl } from '~/utils/controlPanel'
 import { serviceSetupPending } from '~/utils/serviceSetup'
 
 /** Translates a key into the active locale. */
@@ -98,7 +98,7 @@ const canOrder = computed(() => store.mayDo(Permission.PlaceNewOrders))
 const canSetUp = computed(() => serviceSetupPending(props.service) && canOrder.value)
 
 /** Whether the person may sign in to the control panel from here. */
-const canSignIn = computed(() => store.mayDo(Permission.AllowSingleSignOn))
+const canSignIn = computed(() => canSignInToControlPanel(props.service, store.mayDo(Permission.AllowSingleSignOn)))
 
 /** Whether the person may change the service's control-panel password. */
 const canChangePassword = computed(() => store.mayDo(Permission.ViewModifyPasswords))

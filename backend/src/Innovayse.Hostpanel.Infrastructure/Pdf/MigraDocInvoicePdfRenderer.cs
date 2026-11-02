@@ -247,7 +247,8 @@ public sealed partial class MigraDocInvoicePdfRenderer : IInvoicePdfRenderer
     }
 
     /// <summary>
-    /// Adds a paragraph of text, setting any character the main font lacks in the fallback font.
+    /// Adds a paragraph of text, setting any character the main font lacks in the fallback font and
+    /// printing a placeholder for any character neither has.
     /// </summary>
     /// <param name="elements">Where the paragraph goes: a section's or a cell's elements.</param>
     /// <param name="text">The text to set.</param>
@@ -269,7 +270,8 @@ public sealed partial class MigraDocInvoicePdfRenderer : IInvoicePdfRenderer
         paragraph.Format.Font.Size = size;
         paragraph.Format.Font.Color = color ?? Ink;
         paragraph.Format.Alignment = alignment;
-        foreach (var (run, useFallback) in PdfFonts.Runs(BreakLongWords(text, bold, size), bold))
+        var printable = BreakLongWords(PdfFonts.ReplaceUncovered(text, bold), bold, size);
+        foreach (var (run, useFallback) in PdfFonts.Runs(printable, bold))
         {
             var formatted = paragraph.AddFormattedText(run);
             if (useFallback)

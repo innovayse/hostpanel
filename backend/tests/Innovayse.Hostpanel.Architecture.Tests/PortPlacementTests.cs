@@ -28,6 +28,7 @@ public sealed class PortPlacementTests
     private static readonly IReadOnlyDictionary<Type, string> RequestScopedAdapters = new Dictionary<Type, string>
     {
         [typeof(Innovayse.Hostpanel.API.Identity.HttpCallerAccessToken)] = "the request's Authorization header, through IHttpContextAccessor",
+        [typeof(Innovayse.Hostpanel.API.Identity.HttpCallerClientMemo)] = "the request's HttpContext.Items, through IHttpContextAccessor",
     };
 
     /// <summary>

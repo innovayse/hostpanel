@@ -9,9 +9,9 @@ import { useI18n } from 'vue-i18n'
 import { useClientSummaryStore } from '@/stores/clientSummary'
 import { useClientsStore } from '@/stores/clients'
 import { useResultBanner } from '@/composables/useResultBanner'
-import { QUOTE_STAGE_OPTIONS, SERVICE_STATUS_OPTIONS } from '@/lib/constants'
-import { capitalize, formatDate } from '@/lib/format'
-import { formatMoney, formatPrice } from '@/lib/money'
+import { BILLING_CYCLE_OPTIONS, QUOTE_STAGE_OPTIONS, SERVICE_STATUS_OPTIONS } from '@/lib/constants'
+import { formatDate } from '@/lib/format'
+import { formatPlainAmount, formatPrice } from '@/lib/money'
 import { domainStatusTone, serviceStatusTone, statusLabel, clientStatusTone, contactTypeTone, quoteStageTone } from '@/lib/tones'
 import ClientExternalAccountCard from '@/components/clients/ClientExternalAccountCard.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
@@ -35,6 +35,7 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import type { SetClientExternalAccountPayload } from '@/types/clientexternalaccount'
+import type { CurrencyAmount } from '@/types/currency'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
@@ -70,6 +71,23 @@ const client = computed(() => clientsStore.current)
 
 /** Shorthand for the summary data. */
 const summary = computed(() => summaryStore.summary)
+
+/**
+ * Billing currency of the client, used only to print a zero for a figure the client has no records
+ * behind; every other amount carries the currency the summary endpoint names for it.
+ */
+const billingCurrency = computed<string | null>(() => client.value?.preferences.currency ?? null)
+
+/**
+ * Formats the per-currency amounts of one figure, one text per currency the client has records in.
+ *
+ * @param amounts - The amounts the summary endpoint returned for the figure.
+ * @returns One "12.50 USD" text per currency, or a single zero in the billing currency when there are none.
+ */
+const amountTexts = (amounts: CurrencyAmount[]): string[] =>
+  amounts.length > 0
+    ? amounts.map((a) => formatPlainAmount(a.amount, a.currency))
+    : [formatPlainAmount(0, billingCurrency.value)]
 
 /** Local admin notes for the textarea. */
 const adminNotes = ref('')
@@ -184,8 +202,16 @@ interface InvoiceRow {
   label: string
   /** Number of invoices. */
   count: number
-  /** Sum of the invoices. */
-  total: number
+  /** Sum of the invoices, one text per currency. */
+  totals: string[]
+}
+
+/** One caption/amounts line of the income block: a text per currency. */
+interface AmountRow {
+  /** Translated caption. */
+  label: string
+  /** Amount texts, one per currency. */
+  values: string[]
 }
 
 /** Invoice status lines of the billing card. */
@@ -195,27 +221,27 @@ const invoiceRows = computed<InvoiceRow[]>(() => {
     return []
   }
   return [
-    { label: t('clients.clientSummary.paid'), count: s.invoices.paid.count, total: s.invoices.paid.total },
-    { label: t('clients.clientSummary.draft'), count: s.invoices.draft.count, total: s.invoices.draft.total },
-    { label: t('clients.clientSummary.unpaidDue'), count: s.invoices.unpaid.count, total: s.invoices.unpaid.total },
-    { label: t('clients.clientSummary.overdue'), count: s.invoices.overdue.count, total: s.invoices.overdue.total },
-    { label: t('clients.clientSummary.cancelled'), count: s.invoices.cancelled.count, total: s.invoices.cancelled.total },
-    { label: t('clients.clientSummary.partiallyRefunded'), count: s.invoices.partiallyRefunded.count, total: s.invoices.partiallyRefunded.total },
-    { label: t('clients.clientSummary.refunded'), count: s.invoices.refunded.count, total: s.invoices.refunded.total },
+    { label: t('clients.clientSummary.paid'), count: s.invoices.paid.count, totals: amountTexts(s.invoices.paid.totals) },
+    { label: t('clients.clientSummary.draft'), count: s.invoices.draft.count, totals: amountTexts(s.invoices.draft.totals) },
+    { label: t('clients.clientSummary.unpaidDue'), count: s.invoices.unpaid.count, totals: amountTexts(s.invoices.unpaid.totals) },
+    { label: t('clients.clientSummary.overdue'), count: s.invoices.overdue.count, totals: amountTexts(s.invoices.overdue.totals) },
+    { label: t('clients.clientSummary.cancelled'), count: s.invoices.cancelled.count, totals: amountTexts(s.invoices.cancelled.totals) },
+    { label: t('clients.clientSummary.partiallyRefunded'), count: s.invoices.partiallyRefunded.count, totals: amountTexts(s.invoices.partiallyRefunded.totals) },
+    { label: t('clients.clientSummary.refunded'), count: s.invoices.refunded.count, totals: amountTexts(s.invoices.refunded.totals) },
   ]
 })
 
 /** Income lines of the billing card. */
-const incomeRows = computed<InfoRow[]>(() => {
+const incomeRows = computed<AmountRow[]>(() => {
   const s = summary.value
   if (!s) {
     return []
   }
   return [
-    { label: t('clients.clientSummary.grossRevenue'), value: formatMoney(s.transactions.grossRevenue) },
-    { label: t('clients.clientSummary.clientExpenses'), value: formatMoney(s.transactions.clientExpenses) },
-    { label: t('clients.clientSummary.netIncome'), value: formatMoney(s.transactions.netIncome) },
-    { label: t('clients.clientSummary.creditBalance'), value: formatMoney(s.creditBalance) },
+    { label: t('clients.clientSummary.grossRevenue'), values: amountTexts(s.transactions.grossRevenue) },
+    { label: t('clients.clientSummary.clientExpenses'), values: amountTexts(s.transactions.clientExpenses) },
+    { label: t('clients.clientSummary.netIncome'), values: amountTexts(s.transactions.netIncome) },
+    { label: t('clients.clientSummary.creditBalance'), values: amountTexts([s.creditBalance]) },
   ]
 })
 
@@ -465,14 +491,18 @@ onMounted(() => {
                 <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ row.label }}</UiText>
                 <UiStack direction="row" gap="md">
                   <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md">{{ row.count }}</UiText>
-                  <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ formatMoney(row.total) }}</UiText>
+                  <UiStack align="end" gap="xs">
+                    <UiText v-for="text in row.totals" :key="text" :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ text }}</UiText>
+                  </UiStack>
                 </UiStack>
               </UiStack>
             </UiStack>
             <UiStack gap="sm">
               <UiStack v-for="row in incomeRows" :key="row.label" direction="row" :justify="UiJustify.Between" gap="sm">
                 <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ row.label }}</UiText>
-                <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ row.value }}</UiText>
+                <UiStack align="end" gap="xs">
+                  <UiText v-for="text in row.values" :key="text" :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ text }}</UiText>
+                </UiStack>
               </UiStack>
             </UiStack>
             <UiStack direction="row" wrap>
@@ -608,7 +638,7 @@ onMounted(() => {
                 <UiTableCell>{{ service.productName }}</UiTableCell>
                 <UiTableCell muted>{{ service.domain ?? DASH }}</UiTableCell>
                 <UiTableCell muted>{{ formatPrice(service.price, service.priceCurrency) }}</UiTableCell>
-                <UiTableCell muted>{{ capitalize(service.billingCycle) }}</UiTableCell>
+                <UiTableCell muted>{{ statusLabel(BILLING_CYCLE_OPTIONS, service.billingCycle) }}</UiTableCell>
                 <UiTableCell muted>{{ formatDate(service.nextDueDate) }}</UiTableCell>
                 <UiTableCell>
                   <UiBadge :tone="serviceStatusTone(service.status)" small>{{ statusLabel(SERVICE_STATUS_OPTIONS, service.status) }}</UiBadge>
@@ -733,7 +763,7 @@ onMounted(() => {
                 <UiTableCell>{{ quote.subject }}</UiTableCell>
                 <UiTableCell muted>{{ formatDate(quote.dateCreated) }}</UiTableCell>
                 <UiTableCell muted>{{ formatDate(quote.validUntil) }}</UiTableCell>
-                <UiTableCell>{{ formatMoney(quote.total) }}</UiTableCell>
+                <UiTableCell>{{ formatPlainAmount(quote.total, quote.currency) }}</UiTableCell>
                 <UiTableCell>
                   <UiBadge :tone="quoteStageTone(quote.stage)" small>
                     {{ statusLabel(QUOTE_STAGE_OPTIONS, quote.stage) }}

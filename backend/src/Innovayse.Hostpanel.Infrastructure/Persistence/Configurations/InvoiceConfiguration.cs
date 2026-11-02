@@ -47,6 +47,7 @@ public sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.Property(x => x.GatewayCheckCount).HasDefaultValue(0).IsRequired();
         builder.Property(x => x.GatewayConcludedAt);
         builder.Property(x => x.GatewayStalledNotifiedAt);
+        builder.Property(x => x.GatewayUnreferencedNotifiedAt);
         builder.Property(x => x.TaxRate).HasColumnType("numeric(5,2)").IsRequired();
         builder.Property(x => x.Tax).HasColumnType("numeric(18,4)").IsRequired();
         builder.Property(x => x.SubTotal).HasColumnType("numeric(18,4)").IsRequired();

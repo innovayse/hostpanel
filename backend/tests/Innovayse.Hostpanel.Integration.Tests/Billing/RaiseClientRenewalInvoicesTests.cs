@@ -213,6 +213,39 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     }
 
     /// <summary>
+    /// A service on any cycle is invoiced for exactly one period of that cycle: the line covers the
+    /// months the cycle names, bills the service's own recurring amount, and keeps the cycle on its
+    /// product snapshot. The cycles added after monthly and annual renew like the first two.
+    /// </summary>
+    /// <param name="cycle">The service's billing cycle.</param>
+    /// <param name="months">The months one period of that cycle covers.</param>
+    [Theory]
+    [InlineData(BillingCycle.Monthly, 1)]
+    [InlineData(BillingCycle.Annual, 12)]
+    [InlineData(BillingCycle.Quarterly, 3)]
+    [InlineData(BillingCycle.SemiAnnual, 6)]
+    [InlineData(BillingCycle.Biennial, 24)]
+    public async Task ServiceOnAnyCycle_IsInvoicedForOnePeriodOfThatCycle(BillingCycle cycle, int months)
+    {
+        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+        var (clientId, service, start) = await SeedServiceAsync(
+            context, DateTimeOffset.UtcNow.AddDays(10), cycle, recurringAmount: 42.5m);
+
+        var result = await RaiseAsync(bus, clientId);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be(1);
+        var line = (await InvoicesOfAsync(context, clientId)).Should().ContainSingle().Subject.Items.Should().ContainSingle().Subject;
+        line.ClientServiceId.Should().Be(service.Id);
+        line.Amount.Should().Be(42.5m);
+        line.RenewalPeriodStart.Should().Be(start);
+        line.RenewalPeriodEnd.Should().Be(start!.Value.AddMonths(months));
+        line.ProductSnapshot!.BillingCycle.Should().Be(cycle);
+    }
+
+    /// <summary>
     /// A service's renewal line keeps a copy of its product as it is sold now, on the service's cycle, so a
     /// fulfilment plugin told about the paid renewal delivers the same as for the first order.
     /// </summary>

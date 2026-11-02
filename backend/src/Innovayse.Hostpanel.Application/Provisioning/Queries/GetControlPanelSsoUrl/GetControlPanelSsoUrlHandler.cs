@@ -2,7 +2,9 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Provisioning.Common;
 using Innovayse.Hostpanel.Application.Provisioning.Extensions;
+using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Models;
+using Innovayse.Hostpanel.Shared.MultiTenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wolverine;
@@ -23,6 +25,9 @@ public sealed class GetControlPanelSsoUrlHandler
     /// <summary>Creates the provisioning provider configured for the service's server.</summary>
     private readonly IProvisioningProviderFactory _providerFactory;
 
+    /// <summary>The caller, whose address a panel may bind the sign-in session to.</summary>
+    private readonly ICurrentUserService _caller;
+
     /// <summary>Logs a provider failure without putting its detail on the wire.</summary>
     private readonly ILogger<GetControlPanelSsoUrlHandler> _logger;
 
@@ -30,16 +35,19 @@ public sealed class GetControlPanelSsoUrlHandler
     /// <param name="context">The module's data context.</param>
     /// <param name="bus">Reads the service's server from the Admin module.</param>
     /// <param name="providerFactory">Creates the provisioning provider configured for the service's server.</param>
+    /// <param name="caller">The caller, whose address a panel may bind the sign-in session to.</param>
     /// <param name="logger">Logs a provider failure without putting its detail on the wire.</param>
     public GetControlPanelSsoUrlHandler(
         IHostpanelDbContext context,
         IMessageBus bus,
         IProvisioningProviderFactory providerFactory,
+        ICurrentUserService caller,
         ILogger<GetControlPanelSsoUrlHandler> logger)
     {
         _context = context;
         _bus = bus;
         _providerFactory = providerFactory;
+        _caller = caller;
         _logger = logger;
     }
 
@@ -51,6 +59,7 @@ public sealed class GetControlPanelSsoUrlHandler
     /// <returns>
     /// A time-limited control-panel sign-in link, or <c>SERVICE_NOT_FOUND</c> when the id names no service,
     /// <c>SERVICE_NOT_PROVISIONED</c> when the service has never been provisioned,
+    /// <c>SERVICE_NOT_ACTIVE</c> when the service is terminated and its account removed,
     /// <c>SERVICE_NO_SERVER_ASSIGNED</c> when it has no usable server, or
     /// <c>SERVICE_CPANEL_SSO_UPSTREAM_FAILED</c> when the provider cannot issue one.
     /// </returns>
@@ -67,6 +76,13 @@ public sealed class GetControlPanelSsoUrlHandler
             return Result<ControlPanelSsoDto>.FailureCode(HostpanelErrorCodes.SERVICE_NOT_PROVISIONED);
         }
 
+        // A terminated service's reference outlives its account: the panel no longer holds it, so
+        // asking would only come back as an upstream failure that reads like an outage.
+        if (service.Status == ServiceStatus.Terminated)
+        {
+            return Result<ControlPanelSsoDto>.FailureCode(HostpanelErrorCodes.SERVICE_NOT_ACTIVE);
+        }
+
         var server = await _bus.FindServerAsync(service, ct);
         if (server is null)
         {
@@ -76,7 +92,10 @@ public sealed class GetControlPanelSsoUrlHandler
         try
         {
             var provider = _providerFactory.CreateFor(server);
-            var url = await provider.GetCPanelSsoUrlAsync(service.ProvisioningRef, ct);
+            // The browser that asked is the one that opens the link. Some panels (Plesk) open a
+            // session only from the address it was issued for; behind the portal's BFF this is the
+            // visitor's address, forwarded in X-Forwarded-For and resolved by the trusted-proxy step.
+            var url = await provider.GetCPanelSsoUrlAsync(service.ProvisioningRef, _caller.IpAddress, ct);
             return Result<ControlPanelSsoDto>.Success(new ControlPanelSsoDto(url));
         }
         catch (Exception ex)

@@ -25,7 +25,7 @@ public sealed class CreateProductValidatorTests
     /// <returns>The command.</returns>
     private static CreateProductCommand Command(string? sku = null, string? metadata = null, int? gracePeriodDays = null) => new(
         GroupId: 1, Name: "Licence", Description: null, Website: null, Slug: null, PackageName: null,
-        Type: ProductType.Digital, Prices: [new ProductPriceDto("USD", 9m, null)], ServerGroupId: null,
+        Type: ProductType.Digital, Prices: [new ProductPriceDto("USD", 9m, null, null, null, null)], ServerGroupId: null,
         Sku: sku, Metadata: metadata, GracePeriodDays: gracePeriodDays);
 
     /// <summary>A digital product with a SKU, a metadata object and an in-range grace period passes.</summary>

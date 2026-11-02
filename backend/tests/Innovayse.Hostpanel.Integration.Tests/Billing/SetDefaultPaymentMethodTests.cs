@@ -44,6 +44,24 @@ public sealed class SetDefaultPaymentMethodTests(IntegrationTestFactory factory)
         (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.PAYMENT_METHOD_UNAVAILABLE);
     }
 
+    /// <summary>
+    /// A client with no card customer still gets <c>NO_SAVED_PAYMENT_METHODS</c> when the gateway has no keys:
+    /// that check runs before the gateway check, so the answer does not hide behind a gateway state.
+    /// </summary>
+    [Fact]
+    public async Task SetDefault_NoCardCustomerAndGatewayNotConfigured_RefusesNoSavedPaymentMethods()
+    {
+        var cardGateway = new FakeCardPaymentGateway();
+        var host = BuildHost(cardGateway, configured: false);
+        var (client, _) = await BillingTestSeeds.RegisterClientAsync(factory, host, "set-default-none-not-configured");
+
+        var response = await client.PutAsJsonAsync("/api/me/payment-methods/pm_1", new { setAsDefault = true });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.NO_SAVED_PAYMENT_METHODS);
+        cardGateway.LastSetDefaultPaymentMethodId.Should().BeNull();
+    }
+
     /// <summary>Setting a saved, owned card as default asks card payment gateway to make it so.</summary>
     [Fact]
     public async Task SetDefault_AnOwnedCard_UpdatesCardGateway()

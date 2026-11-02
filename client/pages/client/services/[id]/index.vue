@@ -50,7 +50,7 @@
             <ClientServicesServiceDetailsCard :service="service" :currency="clientCurrency" />
             <ClientServicesServiceServerCard :service="service" :hosting-info="hostingInfo" />
             <ClientServicesServiceQuickActions
-              :has-server="Boolean(service.server)"
+              :service="service"
               :sso-loading="ssoLoading"
               @cpanel="loginToCpanel"
               @invoices="loadInvoices"

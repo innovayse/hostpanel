@@ -21,9 +21,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin;
 public sealed class PortalSettingsSeederTests(IntegrationTestFactory factory)
     : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>Every key the seeder owns: the portal keys plus the billing engine's.</summary>
+    /// <summary>Every key the seeder owns: the portal keys plus the billing engine's and the plugin system's.</summary>
     private static readonly IReadOnlyList<SettingDefault> AllDefaults =
-        PortalSettingKeys.Defaults.Concat(BillingSettingKeys.Defaults).ToList();
+        PortalSettingKeys.Defaults.Concat(BillingSettingKeys.Defaults).Concat(PluginSettingKeys.Defaults).ToList();
 
     /// <summary>
     /// Deletes every row in the <c>Settings</c> table, undoing the seeding

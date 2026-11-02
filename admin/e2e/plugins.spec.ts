@@ -1,13 +1,15 @@
 /**
  * Plugin manager flow: installed plugins are listed, uploading an archive installs it as
  * multipart data and shows the restart banner, restarting posts the command, and removing a
- * plugin asks first and then deletes it from the list.
+ * plugin asks first and then deletes it from the list, and the allow unsigned switch warns and saves its setting.
  */
 import { HttpMethod } from '../src/types/http'
+import { PluginSettingKey } from '../src/types/setting'
 import { expect, test } from '@playwright/test'
 import { cwpPlugin } from './fixtures/integrations'
 import { tinyPng } from './fixtures/settings'
 import type { PluginListItemDto } from '../src/types/plugin'
+import type { Setting } from '../src/types/setting'
 import { json, stubApi } from './support/stubApi'
 
 test('uploading an archive installs the plugin and offers the restart', async ({ page }) => {
@@ -88,4 +90,36 @@ test('a refused install shows the API sentence', async ({ page }) => {
   await page.getByTestId('plugin-install').click()
 
   await expect(page.getByTestId('plugins-feedback')).toContainText(sentence)
+})
+
+test('the allow unsigned switch warns, and saving it writes the setting', async ({ page }) => {
+  // The one settings row the server holds; the save changes it.
+  const row: Setting = { id: 9, key: PluginSettingKey.AllowUnsigned, value: 'false', isSecret: false, hasValue: true }
+
+  const api = await stubApi(page, {
+    signedIn: true,
+    routes: [
+      json(HttpMethod.Get, '/api/admin/plugins', []),
+      { method: HttpMethod.Get, path: '/api/admin/settings', respond: () => ({ body: [row] }) },
+      {
+        method: HttpMethod.Put,
+        path: '/api/admin/settings/9',
+        respond: () => {
+          row.value = 'true'
+          return { status: 204 }
+        },
+      },
+    ],
+  })
+
+  await page.goto('/plugins')
+  await expect(page.getByTestId('plugin-signing-warning')).toBeVisible()
+  await expect(page.getByTestId('plugin-allow-unsigned')).toHaveAttribute('aria-checked', 'false')
+
+  await page.getByTestId('plugin-allow-unsigned').click()
+  await page.getByTestId('plugin-allow-unsigned-save').click()
+
+  await expect(page.getByTestId('plugin-signing-active')).toBeVisible()
+  const [put] = api.callsTo(HttpMethod.Put, '/api/admin/settings/9')
+  expect(put?.postData).toContain('"value":"true"')
 })

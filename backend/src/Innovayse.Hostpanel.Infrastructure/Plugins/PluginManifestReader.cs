@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Innovayse.SDK.Plugins;
+using Innovayse.SDK.Plugins.Enums;
+using Innovayse.SDK.Plugins.Manifest;
 using Microsoft.Extensions.Logging;
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
@@ -33,19 +34,61 @@ internal sealed class PluginManifestReader
     /// <summary>Parses the text of a <c>plugin.json</c> file, without checking the SDK version.</summary>
     /// <param name="json">The manifest text.</param>
     /// <returns>The manifest, or <see langword="null"/> when the text is the JSON literal <c>null</c>.</returns>
-    /// <exception cref="JsonException">The text is not a well-formed manifest.</exception>
+    /// <exception cref="JsonException">
+    /// The text is not a well-formed manifest; a <c>settings</c> entry is <c>null</c> or has a <c>type</c> this release
+    /// does not define (a number outside the kinds, which the string converter would otherwise accept and read as
+    /// plain text); or a legacy <c>fields</c> entry is <c>null</c> or has a <c>type</c> the SDK does not recognise
+    /// (it would be read as plain text). A manifest is refused rather than loaded with a setting whose secrecy is
+    /// unknown. A <c>null</c> or missing <c>settings</c> or <c>fields</c> list is not an error: the SDK reads it as empty.
+    /// </exception>
     internal static PluginManifest? Deserialize(string json)
     {
-        return JsonSerializer.Deserialize<PluginManifest>(json, JsonOptions);
+        var manifest = JsonSerializer.Deserialize<PluginManifest>(json, JsonOptions);
+        if (manifest is null)
+        {
+            return null;
+        }
+
+        foreach (var setting in manifest.Settings)
+        {
+            if (setting is null || !Enum.IsDefined(setting.Type))
+            {
+                throw new JsonException($"Setting '{setting?.Key}' has an unknown type.");
+            }
+        }
+
+        foreach (var field in manifest.Fields)
+        {
+            if (field is null || !IsKnownFieldType(field))
+            {
+                throw new JsonException($"Field '{field?.Key}' has an unknown type.");
+            }
+        }
+
+        return manifest;
+    }
+
+    /// <summary>Tells whether the SDK recognises the type of a legacy field.</summary>
+    /// <param name="field">The legacy field.</param>
+    /// <returns>
+    /// <see langword="true"/> unless the SDK would read the type as plain text only because it does not know it.
+    /// <c>text</c> is the one type that really means plain text; asking the SDK keeps this list out of the host.
+    /// </returns>
+    private static bool IsKnownFieldType(PluginField field)
+    {
+        return string.Equals(field.Type, "text", StringComparison.OrdinalIgnoreCase)
+            || PluginSetting.FromField(field).Type != PluginSettingType.Text;
     }
 
     /// <summary>
-    /// Attempts to read and validate a <c>plugin.json</c> file.
+    /// Attempts to read and validate a <c>plugin.json</c> file, and the plugin assemblies beside it, against the
+    /// manifest rules of <see cref="PluginManifestValidator"/>. A refused plugin is logged with its id and the rule it
+    /// breaks, and only that plugin is left out: the caller goes on with the others.
     /// </summary>
     /// <param name="manifestPath">Absolute path to the <c>plugin.json</c> file.</param>
     /// <returns>
     /// A <see cref="PluginManifest"/> when the file is valid;
-    /// <see langword="null"/> when the file is missing, malformed, or incompatible.
+    /// <see langword="null"/> when the file is missing, malformed, incompatible, or breaks a manifest rule.
     /// </returns>
     public PluginManifest? TryRead(string manifestPath)
     {
@@ -71,6 +114,16 @@ internal sealed class PluginManifestReader
                 _logger.LogWarning(
                     "Plugin {Id} requires SDK version {Required}, supported is {Supported} — skipping",
                     manifest.Id, manifest.SdkVersion, SupportedSdkVersion);
+                return null;
+            }
+
+            var violation = PluginManifestValidator.Validate(manifest)
+                ?? PluginManifestValidator.ValidateSdkReference(Path.GetDirectoryName(Path.GetFullPath(manifestPath))!);
+            if (violation is not null)
+            {
+                _logger.LogWarning(
+                    "Plugin {Id} refused by manifest rule {Rule}: {Detail}. Skipping it; the other plugins still load.",
+                    manifest.Id, violation.Rule, violation.Detail);
                 return null;
             }
 

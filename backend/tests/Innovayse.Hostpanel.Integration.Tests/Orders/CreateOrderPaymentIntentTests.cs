@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 
 /// <summary>
@@ -68,7 +69,7 @@ public sealed class CreateOrderPaymentIntentTests(IntegrationTestFactory factory
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var invoice = await context.Invoices.Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
             context.Transactions.Add(invoice.AddPayment(
-                DateTimeOffset.UtcNow, PaymentMethodNames.Manual, $"full-{Guid.NewGuid():N}", 25m, 0m, null));
+                DateTimeOffset.UtcNow, PaymentMethodNames.Manual, $"full-{Guid.NewGuid():N}", 25m, 0m, null, TransactionSource.Manual));
             await context.SaveChangesAsync(CancellationToken.None);
         }
 
@@ -137,7 +138,7 @@ public sealed class CreateOrderPaymentIntentTests(IntegrationTestFactory factory
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var invoice = await context.Invoices.Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
             context.Transactions.Add(invoice.AddPayment(
-                DateTimeOffset.UtcNow, PaymentMethodNames.Manual, $"part-{Guid.NewGuid():N}", 10m, 0m, null));
+                DateTimeOffset.UtcNow, PaymentMethodNames.Manual, $"part-{Guid.NewGuid():N}", 10m, 0m, null, TransactionSource.Manual));
             await context.SaveChangesAsync(CancellationToken.None);
         }
 
@@ -189,6 +190,44 @@ public sealed class CreateOrderPaymentIntentTests(IntegrationTestFactory factory
         await client.PostAsJsonAsync($"/api/orders/{orderId}/create-payment-intent", new { paymentToken });
 
         cardGateway.LastIntentInstruction!.IdempotencyKey.Should().Be(firstKey);
+    }
+
+    /// <summary>
+    /// A deployment with no card gateway key refuses with 409 and <c>PAYMENT_METHOD_UNAVAILABLE</c>, never
+    /// a 500, and the gateway is never asked for an intent.
+    /// </summary>
+    [Fact]
+    public async Task CardGatewayNotConfigured_RefusesPaymentMethodUnavailableAndOpensNoIntent()
+    {
+        var cardGateway = new FakeCardPaymentGateway { IsConfigured = false };
+        var host = BuildHost(cardGateway);
+        var (orderId, paymentToken, _) = await OrdersTestSeeds.SeedOrderWithInvoiceAsync(factory);
+
+        var response = await host.CreateClient().PostAsJsonAsync(
+            $"/api/orders/{orderId}/create-payment-intent", new { paymentToken });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        await OrdersTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PAYMENT_METHOD_UNAVAILABLE);
+        cardGateway.LastIntentInstruction.Should().BeNull();
+    }
+
+    /// <summary>
+    /// With no card gateway key a wrong payment token is still <c>ORDER_NOT_FOUND</c>: the order checks
+    /// run before the gateway check, so the missing key does not reveal anything about an order.
+    /// </summary>
+    [Fact]
+    public async Task CardGatewayNotConfigured_WrongTokenStillRefusesNotFound()
+    {
+        var cardGateway = new FakeCardPaymentGateway { IsConfigured = false };
+        var host = BuildHost(cardGateway);
+        var (orderId, _, _) = await OrdersTestSeeds.SeedOrderWithInvoiceAsync(factory);
+
+        var response = await host.CreateClient().PostAsJsonAsync(
+            $"/api/orders/{orderId}/create-payment-intent", new { paymentToken = "wrong" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        await OrdersTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.ORDER_NOT_FOUND);
+        cardGateway.LastIntentInstruction.Should().BeNull();
     }
 
     /// <summary>An order of an account with card processing disabled opens no intent: 403 and the gateway is never asked.</summary>

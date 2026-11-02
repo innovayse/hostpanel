@@ -56,7 +56,7 @@ public sealed class GetMyServiceControlPanelSsoUrlHandler
     /// A time-limited control-panel single-sign-on URL, or <c>SERVICE_NOT_FOUND</c> when the
     /// service is not the caller's, when no such service exists, or when the caller has no client
     /// record, <c>CLIENT_SSO_DISABLED</c> (403) when the account does not allow single sign-on,
-    /// or <c>SERVICE_NOT_PROVISIONED</c>, <c>SERVICE_NO_SERVER_ASSIGNED</c> or
+    /// or <c>SERVICE_NOT_PROVISIONED</c>, <c>SERVICE_NOT_ACTIVE</c> (terminated), <c>SERVICE_NO_SERVER_ASSIGNED</c> or
     /// <c>SERVICE_CPANEL_SSO_UPSTREAM_FAILED</c> from the shared use case.
     /// </returns>
     /// <exception cref="UnauthorizedAccessException">Thrown when the request carries no subject.</exception>

@@ -199,6 +199,32 @@ public sealed class StripeServiceTests : IAsyncLifetime
         await refund.Should().ThrowAsync<global::Stripe.StripeException>();
     }
 
+    /// <summary>
+    /// With no secret key every member refuses with <see cref="CardGatewayFailure.NotConfigured"/>
+    /// instead of throwing on the empty key, and nothing reaches Stripe.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task EveryMember_WithoutASecretKey_RefusesNotConfiguredAndCallsNothingAsync()
+    {
+        var service = new StripeService(
+            Options.Create(new StripeOptions { ApiBaseUrl = stripe.BaseAddress.ToString().TrimEnd('/') }),
+            NullLogger<StripeService>.Instance);
+        var ct = CancellationToken.None;
+
+        service.IsConfigured.Should().BeFalse();
+        (await service.CreatePaymentIntentAsync(Instruction(), ct)).Failure.Should().Be(CardGatewayFailure.NotConfigured);
+        (await service.VerifyPaymentIntentAsync(new CardPaymentVerifyInstruction("pi_1"), ct)).Failure.Should().Be(CardGatewayFailure.NotConfigured);
+        (await service.ChargeSavedPaymentMethodAsync(new CardChargeInstruction("cus_1", "pm_1", 10m, "USD", 9, "key"), ct))
+            .Should().Match<CardChargeResult>(r => !r.Success && r.Failure == CardGatewayFailure.NotConfigured);
+        (await service.FindChargeAsync(new CardChargeLookupInstruction("cus_1", 9, "key"), ct)).Failure.Should().Be(CardGatewayFailure.NotConfigured);
+        (await service.RefundAsync(new CardRefundInstruction("pi_1", 10m, "USD", "key"), ct)).Success.Should().BeFalse();
+        (await service.ListPaymentMethodsAsync(new CardCustomerInstruction("cus_1"), ct)).Failure.Should().Be(CardGatewayFailure.NotConfigured);
+        (await service.SetDefaultPaymentMethodAsync(new CardDefaultMethodInstruction("cus_1", "pm_1"), ct)).Failure.Should().Be(CardGatewayFailure.NotConfigured);
+        (await service.DetachPaymentMethodAsync(new CardDetachInstruction("pm_1"), ct)).Failure.Should().Be(CardGatewayFailure.NotConfigured);
+        stripe.Requests.Should().BeEmpty();
+    }
+
     /// <summary>Builds a payment intent body in the shape Stripe answers with.</summary>
     /// <param name="amount">The amount in Stripe's units.</param>
     /// <param name="currency">The lowercase currency code.</param>

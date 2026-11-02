@@ -88,14 +88,10 @@ public sealed class UpdateProductPricesHandler
         // A cycle the base does not price is not for sale in any currency, so it converts to no
         // price and ReplacePrices drops whatever the target held for it.
         var basePrices = products
-            .Select(p => new ProductCurrencyPrices(
-                baseCurrency.Code,
-                p.PriceFor(baseCurrency.Code, BillingCycle.Monthly),
-                p.PriceFor(baseCurrency.Code, BillingCycle.Annual)))
+            .Select(p => ProductCurrencyPrices.Of(baseCurrency.Code, cycle => p.PriceFor(baseCurrency.Code, cycle)))
             .ToList();
         List<CurrencyAmountDto> baseAmounts = basePrices
-            .SelectMany(b => new[] { b.Monthly, b.Annual })
-            .OfType<decimal>()
+            .SelectMany(b => b.Priced().Select(priced => priced.Amount))
             .Select(a => new CurrencyAmountDto(a, baseCurrency.Code))
             .ToList();
 
@@ -119,19 +115,22 @@ public sealed class UpdateProductPricesHandler
         var cursor = 0;
         for (var i = 0; i < products.Count; i++)
         {
-            var baseMonthly = basePrices[i].Monthly;
-            var baseAnnual = basePrices[i].Annual;
-            var monthlyAt = baseMonthly is null ? -1 : cursor++;
-            var annualAt = baseAnnual is null ? -1 : cursor++;
+            // The converted amounts come back in the order the base amounts were sent: the product's
+            // priced cycles one after the other, so each cycle owns the next slot of that list.
+            Dictionary<BillingCycle, int> slotOf = [];
+            foreach (var (cycle, _) in basePrices[i].Priced())
+            {
+                slotOf[cycle] = cursor++;
+            }
 
             List<ProductCurrencyPrices> converted = [];
             foreach (var target in targets)
             {
                 var amounts = convertedByTarget[target];
-                var monthly = monthlyAt < 0 ? (decimal?)null : amounts[monthlyAt].Amount;
-                var annual = annualAt < 0 ? (decimal?)null : amounts[annualAt].Amount;
-                converted.Add(new ProductCurrencyPrices(target, monthly, annual));
-                written += (monthly is null ? 0 : 1) + (annual is null ? 0 : 1);
+                var prices = ProductCurrencyPrices.Of(
+                    target, cycle => slotOf.TryGetValue(cycle, out var slot) ? amounts[slot].Amount : null);
+                converted.Add(prices);
+                written += prices.Priced().Count();
             }
 
             products[i].ReplacePrices(converted, replaceAllCurrencies: false);

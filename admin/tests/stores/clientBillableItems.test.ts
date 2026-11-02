@@ -18,7 +18,7 @@ describe('clientBillableItemsStore', () => {
   })
 
   it('fetchItems returns the page and clears loading', async () => {
-    const page = { uninvoicedItems: [], uninvoicedTotal: 0, invoicedItems: { items: [], totalCount: 0 } }
+    const page = { uninvoicedItems: [], uninvoicedTotal: [], invoicedItems: { items: [], totalCount: 0 } }
     stubFetch(json(page))
     const store = useClientBillableItemsStore()
 

@@ -24,6 +24,7 @@ using Innovayse.Hostpanel.Domain.Ssl;
 using Innovayse.Hostpanel.Domain.Support;
 using Innovayse.Hostpanel.Domain.Testimonials;
 using Innovayse.Hostpanel.Infrastructure.Auth;
+using Innovayse.Hostpanel.Infrastructure.Persistence.Configurations;
 using Innovayse.Hostpanel.Infrastructure.Security;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.SharedKernel.Domain;
@@ -31,6 +32,7 @@ using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Npgsql;
 
 namespace Innovayse.Hostpanel.Infrastructure.Persistence;
 
@@ -295,7 +297,10 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// <param name="acceptAllChangesOnSuccess">Whether the change tracker accepts the changes after a successful save.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The number of rows written.</returns>
-    /// <exception cref="ConcurrencyConflictException">Another writer modified one of the saved aggregates concurrently.</exception>
+    /// <exception cref="ConcurrencyConflictException">
+    /// Another writer modified one of the saved aggregates concurrently, or another writer recorded the
+    /// same gateway payment first (the unique reference of a gateway payment row was violated).
+    /// </exception>
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
         try
@@ -308,6 +313,19 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
             // knows the cause was a concurrency conflict. ExceptionHandlingMiddleware answers it 409.
             throw new ConcurrencyConflictException(
                 "Another writer modified one of the saved aggregates concurrently.", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: TransactionConfiguration.GatewayPaymentReferenceIndex,
+        })
+        {
+            // A second gateway payment row under one method and reference means another writer recorded
+            // this payment first: the same lost race as a concurrent save of the invoice, so it takes the
+            // same path. Every settlement handler already answers that signal by re-reading the ledger and
+            // treating the payment as the replay it is, instead of failing the request with a 500.
+            throw new ConcurrencyConflictException(
+                "Another writer recorded the same gateway payment concurrently.", ex);
         }
     }
 

@@ -1,4 +1,4 @@
-using Innovayse.SDK.Plugins;
+using Innovayse.SDK.Plugins.HostingPanel;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 

@@ -23,6 +23,9 @@ public static class HttpBackstopTimeouts
     /// <summary>CWP7 control-panel clients, typed and named.</summary>
     public static readonly TimeSpan Cwp7 = TimeSpan.FromSeconds(120);
 
+    /// <summary>Plesk XML API client, resolved by name per server.</summary>
+    public static readonly TimeSpan Plesk = TimeSpan.FromSeconds(120);
+
     /// <summary>The migration pull client.</summary>
     public static readonly TimeSpan Migration = TimeSpan.FromMinutes(5);
 

@@ -97,17 +97,47 @@ public static class CurrencyCode
         return scale;
     }
 
-    /// <summary>Validates and upper-cases a currency code.</summary>
+    /// <summary>
+    /// Whether a value is exactly an ISO 4217 alpha code as stored: three ASCII letters, with no
+    /// padding. Digits, punctuation, whitespace and non-ASCII letters all fail. Case is not part of
+    /// the shape; <see cref="Normalise"/> upper-cases.
+    /// </summary>
+    /// <param name="currency">The value to inspect, or <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> when the value is three ASCII letters.</returns>
+    public static bool IsValid(string? currency) =>
+        currency is { Length: Length } && currency.All(char.IsAsciiLetter);
+
+    /// <summary>
+    /// Trims, validates and upper-cases a currency code; the non-throwing form of
+    /// <see cref="Normalise"/> for callers that skip bad data rather than fail on it.
+    /// </summary>
+    /// <param name="currency">The raw code, or <see langword="null"/>.</param>
+    /// <param name="normalised">The trimmed, upper-cased code when the result is <see langword="true"/>; otherwise empty.</param>
+    /// <returns><see langword="true"/> when the trimmed value is three ASCII letters.</returns>
+    public static bool TryNormalise(string? currency, out string normalised)
+    {
+        var trimmed = currency?.Trim();
+        if (!IsValid(trimmed))
+        {
+            normalised = string.Empty;
+            return false;
+        }
+
+        normalised = trimmed!.ToUpperInvariant();
+        return true;
+    }
+
+    /// <summary>Trims, validates and upper-cases a currency code.</summary>
     /// <param name="currency">The raw code.</param>
     /// <returns>The code in upper case.</returns>
-    /// <exception cref="ArgumentException">The code is not three letters.</exception>
+    /// <exception cref="ArgumentException">The code, once trimmed, is not exactly three ASCII letters.</exception>
     public static string Normalise(string currency)
     {
-        if (string.IsNullOrWhiteSpace(currency) || currency.Length != Length)
+        if (!TryNormalise(currency, out var normalised))
         {
             throw new ArgumentException("A three-letter ISO 4217 currency is required.", nameof(currency));
         }
 
-        return currency.ToUpperInvariant();
+        return normalised;
     }
 }

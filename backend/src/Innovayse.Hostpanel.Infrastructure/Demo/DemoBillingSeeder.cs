@@ -220,10 +220,12 @@ internal sealed class DemoBillingSeeder
         var fees = byCard ? Math.Round(invoice.Total * CardFeeRate, 2) : 0m;
         var paidAt = invoiceDate.AddDays(2 + ((position + monthsBack) % 9));
 
-        invoice.AddPayment(paidAt, gateway, $"demo_pay_{client.Id}_{monthsBack}", invoice.Total, fees, null);
+        var source = byCard ? TransactionSource.GatewayPayment : TransactionSource.Manual;
+        invoice.AddPayment(paidAt, gateway, $"demo_pay_{client.Id}_{monthsBack}", invoice.Total, fees, null, source);
         if (refund)
         {
-            invoice.AddRefund(paidAt.AddDays(5), gateway, $"demo_refund_{client.Id}_{monthsBack}", invoice.Total, 0m, "Refunded at the customer's request.");
+            invoice.AddRefund(paidAt.AddDays(5), gateway, $"demo_refund_{client.Id}_{monthsBack}", invoice.Total, 0m, "Refunded at the customer's request.",
+                addedToCredit: false, source: byCard ? TransactionSource.GatewayRefund : TransactionSource.Manual);
         }
     }
 
@@ -243,13 +245,15 @@ internal sealed class DemoBillingSeeder
                 if (payment.Type == InvoiceTransactionType.Payment)
                 {
                     _db.Transactions.Add(Transaction.CreateInvoicePayment(
-                        invoice, payment.Date, payment.Gateway, payment.TransactionId, payment.Amount, payment.Fees));
+                        invoice, payment.Date, payment.Gateway, payment.TransactionId, payment.Amount, payment.Fees,
+                        GatewayOrManual(payment.Gateway, TransactionSource.GatewayPayment)));
                 }
                 else if (payment.Type == InvoiceTransactionType.Refund)
                 {
                     _db.Transactions.Add(Transaction.Create(
                         invoice.ClientId, payment.Date, $"Invoice #{invoice.Id} Refund", payment.TransactionId, invoice.Id,
-                        payment.Gateway, 0m, payment.Amount, payment.Fees, false, invoice.Currency));
+                        payment.Gateway, 0m, payment.Amount, payment.Fees, false, invoice.Currency,
+                        GatewayOrManual(payment.Gateway, TransactionSource.GatewayRefund)));
                 }
             }
         }
@@ -260,9 +264,21 @@ internal sealed class DemoBillingSeeder
             _db.Transactions.Add(Transaction.Create(
                 client.Id, _today.AddDays(-20), "Account credit top-up", $"demo_credit_{client.Id}", null,
                 PaymentMethodNames.Card, client.CreditBalance, 0m, 0m, true,
-                client.Currency ?? DemoCatalogueSeeder.BaseCurrency));
+                client.Currency ?? DemoCatalogueSeeder.BaseCurrency, TransactionSource.GatewayPayment));
         }
 
         await _db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// The ledger source of a demo payment or refund: the gateway source for a card, because a card is
+    /// the one method the demo takes through a gateway, and a manual entry for any other method.
+    /// </summary>
+    /// <param name="paymentMethod">The method the payment or refund was recorded with.</param>
+    /// <param name="gatewaySource">The gateway source of the row's direction.</param>
+    /// <returns><paramref name="gatewaySource"/> for a card, otherwise <see cref="TransactionSource.Manual"/>.</returns>
+    private static TransactionSource GatewayOrManual(string paymentMethod, TransactionSource gatewaySource)
+    {
+        return paymentMethod == PaymentMethodNames.Card ? gatewaySource : TransactionSource.Manual;
     }
 }

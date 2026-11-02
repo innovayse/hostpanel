@@ -126,7 +126,7 @@ public sealed class CPanelProvisioningProvider : IProvisioningProvider
     }
 
     /// <inheritdoc/>
-    public Task<string> GetCPanelSsoUrlAsync(string provisioningRef, CancellationToken ct)
+    public Task<string> GetCPanelSsoUrlAsync(string provisioningRef, string? callerIp, CancellationToken ct)
     {
         return _client.GetCPanelSsoUrlAsync(provisioningRef, ct);
     }

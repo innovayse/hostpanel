@@ -7,6 +7,7 @@ using Innovayse.Hostpanel.Application.Billing.Constants;
 using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
@@ -153,16 +154,17 @@ public sealed class PayMyInvoiceHandler
             invoice.Settle(
                 covering?.Gateway ?? PaymentMethodNames.Card,
                 covering?.TransactionId ?? $"no-charge-{invoice.Id}-{now.Ticks}",
-                now);
+                now, TransactionSource.Manual);
             await _activity.RecordAsync(
                 new ActivityLogEntry(invoice.ClientId, $"Invoice Marked Paid - Invoice ID: {invoice.Id}"), ct);
             await _context.SaveChangesAsync(ct);
             return Result.Success();
         }
 
-        if (!_cardGateway.IsConfigured)
+        var configured = _cardGateway.RequireConfigured();
+        if (configured.IsFailure)
         {
-            return Result.FailureCode(HostpanelErrorCodes.PAYMENT_METHOD_UNAVAILABLE);
+            return configured;
         }
 
         // The ownership check above proved the invoice is the caller's, so the caller's own client

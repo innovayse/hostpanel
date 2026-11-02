@@ -11,9 +11,6 @@ namespace Innovayse.Hostpanel.Application.Billing.Currencies.Commands.SetBaseCur
 /// </summary>
 public sealed class SetBaseCurrencyValidator : LocalizedValidator<SetBaseCurrencyCommand>
 {
-    /// <summary>Length of an ISO 4217 alpha code.</summary>
-    private const int CodeLength = 3;
-
     /// <summary>
     ///     Initializes validator with localization service.
     /// </summary>
@@ -21,10 +18,6 @@ public sealed class SetBaseCurrencyValidator : LocalizedValidator<SetBaseCurrenc
     public SetBaseCurrencyValidator(IStringLocalizer<ApplicationValidationMessages> localizer)
         : base(localizer)
     {
-        RuleFor(x => x.Code)
-            .NotEmpty()
-            .Length(CodeLength)
-            .Must(code => code!.All(char.IsAsciiLetter))
-            .WithMessage(L["CurrencyCodeInvalid"]);
+        RuleFor(x => x.Code).MustBeCurrencyCode(L["CurrencyCodeInvalid"]);
     }
 }

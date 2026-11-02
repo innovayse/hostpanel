@@ -36,11 +36,20 @@ public interface IClientAccess
     /// </returns>
     Task<ClientPermission> GetCallerPermissionsAsync(CancellationToken ct);
 
+    /// <summary>Tells whether the identity plugin that decides the caller's account could not answer for this request.</summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// <see langword="true"/> when the plugin threw, timed out, or two are enabled: the permission filter then answers
+    /// <c>IDENTITY_PLUGIN_UNAVAILABLE</c> instead of a permission refusal the caller could take for permanent.
+    /// </returns>
+    Task<bool> IsIdentityUnavailableAsync(CancellationToken ct);
+
     /// <summary>Resolves the id of the account the current credential acts for, owner or linked user.</summary>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The account's primary key, or a failed <see cref="Result{T}"/> carrying
-    /// <c>CLIENT_PROFILE_NOT_FOUND</c> when the caller acts for no account.
+    /// <c>CLIENT_PROFILE_NOT_FOUND</c> when the caller acts for no account, or <c>IDENTITY_PLUGIN_UNAVAILABLE</c> when the
+    /// identity plugin could not answer.
     /// </returns>
     /// <exception cref="UnauthorizedAccessException">Thrown when the request carries no subject.</exception>
     Task<Result<int>> RequireClientIdAsync(CancellationToken ct);
@@ -52,7 +61,8 @@ public interface IClientAccess
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The owned account's primary key, or a failed <see cref="Result{T}"/> carrying
-    /// <c>CLIENT_PROFILE_NOT_FOUND</c> when the caller owns no client record.
+    /// <c>CLIENT_PROFILE_NOT_FOUND</c> when the caller owns no client record, or <c>IDENTITY_PLUGIN_UNAVAILABLE</c> when the
+    /// identity plugin could not answer.
     /// </returns>
     /// <exception cref="UnauthorizedAccessException">Thrown when the request carries no subject.</exception>
     Task<Result<int>> RequireOwnClientIdAsync(CancellationToken ct);

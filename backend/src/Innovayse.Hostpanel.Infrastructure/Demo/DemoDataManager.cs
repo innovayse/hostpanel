@@ -43,6 +43,9 @@ public sealed class DemoDataManager : IDemoDataManager
     /// <summary>What visitors changed on the sample payment methods; forgotten on a reset.</summary>
     private readonly DemoCardState _cardState;
 
+    /// <summary>What visitors did with the demo gateway's stored methods and charges; forgotten on a reset.</summary>
+    private readonly DemoStoredCredentialState _credentialState;
+
     /// <summary>Structured logger.</summary>
     private readonly ILogger<DemoDataManager> _logger;
 
@@ -56,6 +59,7 @@ public sealed class DemoDataManager : IDemoDataManager
     /// <param name="options">The demo switch and the published accounts.</param>
     /// <param name="departmentOptions">The configured contact addresses of the default support departments.</param>
     /// <param name="cardState">What visitors changed on the sample payment methods; forgotten on a reset.</param>
+    /// <param name="credentialState">What visitors did with the demo gateway's stored methods and charges; forgotten on a reset.</param>
     /// <param name="logger">Structured logger.</param>
     /// <param name="clock">The source of the current moment.</param>
     public DemoDataManager(
@@ -65,6 +69,7 @@ public sealed class DemoDataManager : IDemoDataManager
         IOptions<DemoOptions> options,
         IOptions<DefaultDepartmentsOptions> departmentOptions,
         DemoCardState cardState,
+        DemoStoredCredentialState credentialState,
         ILogger<DemoDataManager> logger,
         IClock clock)
     {
@@ -74,6 +79,7 @@ public sealed class DemoDataManager : IDemoDataManager
         _options = options;
         _departmentOptions = departmentOptions;
         _cardState = cardState;
+        _credentialState = credentialState;
         _logger = logger;
         _clock = clock;
     }
@@ -116,6 +122,7 @@ public sealed class DemoDataManager : IDemoDataManager
 
         // The sample methods come back exactly as seeded; only after the commit, so a failed reset keeps them.
         _cardState.Clear();
+        _credentialState.Clear();
     }
 
     /// <summary>Runs every seeder in dependency order.</summary>

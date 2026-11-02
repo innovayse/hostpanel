@@ -147,9 +147,10 @@ public static class ServicesTestSeeds
     /// <param name="clientId">The owning client's primary key.</param>
     /// <param name="domain">The domain the service carries, or <see langword="null"/> for none.</param>
     /// <param name="productType">The type of the product the service orders; a hosting product unless a test needs another.</param>
+    /// <param name="sku">The SKU the ordered product carries, or <see langword="null"/> for none.</param>
     /// <returns>The new service's primary key.</returns>
     public static async Task<int> SeedPendingServiceAsync(
-        IntegrationTestFactory factory, int clientId, string? domain = null, ProductType productType = ProductType.SharedHosting)
+        IntegrationTestFactory factory, int clientId, string? domain = null, ProductType productType = ProductType.SharedHosting, string? sku = null)
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
@@ -161,6 +162,7 @@ public static class ServicesTestSeeds
         await context.SaveChangesAsync(CancellationToken.None);
 
         var product = Product.Create(group.Id, "Starter", null, null, null, "starter", productType, 2m, 20m, DateTimeOffset.UtcNow);
+        product.SetSku(sku);
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
 

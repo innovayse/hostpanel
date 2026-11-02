@@ -331,6 +331,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<DateTimeOffset?>("GatewayUnreferencedNotifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<bool>("HasDigitalItems")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -681,6 +684,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<string>("TransactionId")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -695,6 +703,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.HasIndex("TransactionId");
 
                     b.HasIndex("ClientId", "Date");
+
+                    b.HasIndex(new[] { "PaymentMethod", "TransactionId" }, "IX_Transactions_PaymentMethod_TransactionId_GatewayPayment")
+                        .IsUnique()
+                        .HasFilter("\"Source\" = 'GatewayPayment'");
 
                     b.ToTable("Transactions");
                 });

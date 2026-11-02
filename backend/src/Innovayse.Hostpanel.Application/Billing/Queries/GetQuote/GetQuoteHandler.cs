@@ -48,7 +48,7 @@ public sealed class GetQuoteHandler
         var itemDtos = quote.Items
             .Select(item => new QuoteItemDto(
                 item.Id, item.Description, item.UnitPrice, item.Quantity, item.DiscountPercent, item.Taxed,
-                item.Amount))
+                item.AmountIn(quote.Currency)))
             .ToList();
 
         var dto = new QuoteDto(

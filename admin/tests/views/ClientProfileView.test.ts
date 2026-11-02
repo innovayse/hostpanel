@@ -13,7 +13,8 @@ import { useClientsStore } from '@/stores/clients'
 import { ClientStatus, type ClientDetail } from '@/types/client'
 import { createTestI18n } from '../helpers/i18n'
 import { mountClientView } from '../helpers/clientViews'
-import { stubPathRoutes } from '../helpers/routes'
+import { json } from '../helpers/fetch'
+import { stubPathRoutes, stubRouteTable } from '../helpers/routes'
 
 /** The test id of the status select on the form. */
 const STATUS_SELECT = 'client-profile-status'
@@ -48,13 +49,15 @@ const detail: ClientDetail = {
  * Mounts the profile view over a store that already holds an active client. The client route
  * answers the detail, so the re-read after a save fills the form again.
  *
+ * @param shown - The client the store holds; the active client by default.
+ * @param stub - Stubs the global fetch; answers the client route by default.
  * @returns The wrapper and the fetch mock the save goes through.
  */
-const mountProfile = async () => {
-  const fetchMock = stubPathRoutes([{ path: '/api/clients/5', body: detail }])
+const mountProfile = async (shown: ClientDetail = detail, stub: () => ReturnType<typeof vi.fn> = () => stubPathRoutes([{ path: '/api/clients/5', body: detail }])) => {
+  const fetchMock = stub()
   const pinia = createPinia()
   setActivePinia(pinia)
-  useClientsStore().current = detail
+  useClientsStore().current = shown
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [{ path: '/clients/:id/profile', component: { render: () => null } }],
@@ -169,5 +172,32 @@ describe('ClientProfileView', () => {
 
     expect(wrapper.findComponent(UiDialog).exists()).toBe(false)
     expect(writesOf(fetchMock)).toBe(1)
+  })
+
+  it('explains the currency lock under the field only while the client holds credit', async () => {
+    const { wrapper: withCredit } = await mountProfile({ ...detail, preferences: { ...detail.preferences, currency: 'USD' }, creditBalance: 10 })
+    const { wrapper: withoutCredit } = await mountProfile({ ...detail, creditBalance: 0 })
+
+    const hint = 'The currency cannot be changed while the client holds a credit balance.'
+    expect(withCredit.text()).toContain(hint)
+    expect(withoutCredit.text()).not.toContain(hint)
+  })
+
+  it('shows the API refusal of a currency change in the form level message', async () => {
+    const refusal = 'This client holds a credit balance, so the currency cannot be changed.'
+    const held: ClientDetail = { ...detail, preferences: { ...detail.preferences, currency: 'USD' }, creditBalance: 10 }
+    const { wrapper } = await mountProfile(held, () => stubRouteTable({
+      'PUT /clients/5': () => json({
+        type: 'CLIENT_CURRENCY_LOCKED_BY_CREDIT',
+        title: 'Conflict',
+        status: 409,
+        detail: refusal,
+      }, 409),
+    }))
+
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="client-profile-error"]').text()).toBe(refusal)
   })
 })

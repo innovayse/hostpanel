@@ -23,11 +23,16 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { Icon } from '@/lib/icons'
-import { formatUsdPlain } from '@/lib/money'
+import { formatPlainAmount } from '@/lib/money'
 import type { QuoteItemUpdate } from '@/types/quote'
 import { MAX_PERCENT } from '@/lib/limits'
 
 const { t } = useI18n()
+
+const props = defineProps<{
+  /** ISO 4217 code the quote is priced in; amounts read in dollars while it is not known yet. */
+  currency?: string | null
+}>()
 
 /** The quote lines; the editor replaces the array on every change. */
 const lines = defineModel<QuoteItemUpdate[]>({ required: true })
@@ -138,7 +143,7 @@ const removeLine = (index: number): void => {
               />
             </UiTableCell>
             <UiTableCell align="right">
-              <UiText tone="primary" size="md">{{ formatUsdPlain(lineTotal(line)) }}</UiText>
+              <UiText tone="primary" size="md">{{ formatPlainAmount(lineTotal(line), props.currency) }}</UiText>
             </UiTableCell>
             <UiTableCell align="right">
               <UiIconButton
@@ -161,11 +166,11 @@ const removeLine = (index: number): void => {
         <UiStack align="end" gap="xs">
           <UiStack direction="row" gap="lg" align="center">
             <UiText tone="muted" size="md">{{ t('shared.subTotal2') }}</UiText>
-            <UiText tone="secondary" size="md" data-testid="billing-quote-subtotal">{{ formatUsdPlain(subTotal) }}</UiText>
+            <UiText tone="secondary" size="md" data-testid="billing-quote-subtotal">{{ formatPlainAmount(subTotal, props.currency) }}</UiText>
           </UiStack>
           <UiStack direction="row" gap="lg" align="center">
             <UiText tone="primary" size="md">{{ t('shared.totalDue2') }}</UiText>
-            <UiText tone="primary" size="md" data-testid="billing-quote-total">{{ formatUsdPlain(subTotal) }}</UiText>
+            <UiText tone="primary" size="md" data-testid="billing-quote-total">{{ formatPlainAmount(subTotal, props.currency) }}</UiText>
           </UiStack>
         </UiStack>
       </UiStack>

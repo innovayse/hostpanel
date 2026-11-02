@@ -29,7 +29,7 @@ export const invoiceFixture = (overrides: Partial<InvoiceDetail> = {}): InvoiceD
   amountDue: 60,
   payment: { method: 'Stripe', gatewayTransactionId: null },
   notes: null,
-  items: [{ id: 11, description: 'Managed hosting', unitPrice: 100, quantity: 1, amount: 100 }],
+  items: [{ id: 11, description: 'Managed hosting', unitPrice: 100, quantity: 1, amount: 100, sku: null }],
   transactions: [
     { id: 21, date: '2026-10-15T00:00:00Z', gateway: 'Stripe', transactionId: 'ch_1', amount: 40, fees: 1.5, type: 'Payment' },
     { id: 22, date: '2026-10-16T00:00:00Z', gateway: 'Stripe', transactionId: 'rf_1', amount: 10, fees: 0, type: 'Refund', notes: 'Goodwill' },

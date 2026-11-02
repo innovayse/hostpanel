@@ -1,5 +1,7 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Products.Common;
+using Innovayse.Hostpanel.Domain.Products;
+using Innovayse.Hostpanel.Domain.Products.Enums;
 
 namespace Innovayse.Hostpanel.Application.Products.Extensions;
 
@@ -10,9 +12,11 @@ namespace Innovayse.Hostpanel.Application.Products.Extensions;
 /// <remarks>
 /// The pre-multi-currency admin form still posts <c>monthlyPrice</c>/<c>annualPrice</c> and no
 /// <c>prices</c>. Until that form is replaced, those two figures are the product's prices in the
-/// base currency, and only there: a save from that form replaces the base currency's rows and
-/// leaves every other currency as it was. Both the create and the update handler go through here
-/// so the rule lives once.
+/// base currency, and only there: a save from that form replaces the base currency's monthly and
+/// annual rows and leaves every other currency as it was. That form cannot name the quarterly,
+/// semi-annual and biennial cycles, so those keep the prices the product already has in the base
+/// currency instead of being dropped by a save that never mentioned them. Both the create and the
+/// update handler go through here so the rule lives once.
 /// </remarks>
 public static class ProductPriceResolution
 {
@@ -21,6 +25,7 @@ public static class ProductPriceResolution
     /// <param name="prices">The per-currency list, when the caller sent one.</param>
     /// <param name="legacyMonthly">The legacy monthly figure, when the caller sent that instead.</param>
     /// <param name="legacyAnnual">The legacy annual figure, when the caller sent that instead.</param>
+    /// <param name="existing">The product being updated, or <see langword="null"/> when it is being created.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// <paramref name="prices"/>, replacing every currency, when present; otherwise one entry in
@@ -32,6 +37,7 @@ public static class ProductPriceResolution
         IReadOnlyList<ProductPriceDto>? prices,
         decimal? legacyMonthly,
         decimal? legacyAnnual,
+        Product? existing,
         CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(payerCurrency);
@@ -49,7 +55,12 @@ public static class ProductPriceResolution
         }
 
         return new ResolvedPrices(
-            [new ProductPriceDto(baseCurrency.Code, legacyMonthly, legacyAnnual)],
+            [ProductPriceDto.Of(baseCurrency.Code, cycle => cycle switch
+            {
+                BillingCycle.Monthly => legacyMonthly,
+                BillingCycle.Annual => legacyAnnual,
+                _ => existing?.PriceFor(baseCurrency.Code, cycle),
+            })],
             ReplaceAllCurrencies: false,
             baseCurrency.Code);
     }

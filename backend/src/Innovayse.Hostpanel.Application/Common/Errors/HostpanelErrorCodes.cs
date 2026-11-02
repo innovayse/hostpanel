@@ -181,7 +181,8 @@ public static class HostpanelErrorCodes
     public const string PAYMENT_METHOD_NOT_OWNED = "PAYMENT_METHOD_NOT_OWNED";
 
     /// <summary>
-    /// The deployment cannot charge a saved payment method because it has no card gateway configured (409).
+    /// The deployment has no card gateway configured, so no card payment can be taken, refunded, opened or
+    /// confirmed and no saved payment method can be charged, set as the default or removed (409).
     /// </summary>
     public const string PAYMENT_METHOD_UNAVAILABLE = "PAYMENT_METHOD_UNAVAILABLE";
 
@@ -193,6 +194,12 @@ public static class HostpanelErrorCodes
     /// is configured to hand a payer back to (400).
     /// </summary>
     public const string RETURN_URL_NOT_ALLOWED = "RETURN_URL_NOT_ALLOWED";
+
+    /// <summary>
+    /// The enabled identity plugin threw, timed out, or two identity plugins are enabled, so nobody can be told
+    /// which client account they act for; the request is refused and may be retried (503, with <c>Retry-After</c>).
+    /// </summary>
+    public const string IDENTITY_PLUGIN_UNAVAILABLE = "IDENTITY_PLUGIN_UNAVAILABLE";
 
     /// <summary>The payment gateway declined or otherwise failed to charge the client (502).</summary>
     public const string GATEWAY_CHARGE_UPSTREAM_FAILED = "GATEWAY_CHARGE_UPSTREAM_FAILED";
@@ -664,6 +671,12 @@ public static class HostpanelErrorCodes
     /// <summary>The service's product names no hosting package to create the account on (409).</summary>
     public const string PRODUCT_PACKAGE_MISSING = "PRODUCT_PACKAGE_MISSING";
 
+    /// <summary>
+    /// The product has no server group and the servers run more than one supported panel, so which
+    /// panel its package belongs to is ambiguous (409).
+    /// </summary>
+    public const string PRODUCT_SERVER_GROUP_REQUIRED = "PRODUCT_SERVER_GROUP_REQUIRED";
+
     // Provisioning
 
     /// <summary>
@@ -736,6 +749,36 @@ public static class HostpanelErrorCodes
     /// <summary>The plugin was built against an SDK version this deployment does not support (400).</summary>
     public const string PLUGIN_SDK_VERSION_UNSUPPORTED = "PLUGIN_SDK_VERSION_UNSUPPORTED";
 
+    /// <summary>The manifest declares a <c>manifestVersion</c> this host does not know (400).</summary>
+    public const string PLUGIN_MANIFEST_VERSION_UNKNOWN = "PLUGIN_MANIFEST_VERSION_UNKNOWN";
+
+    /// <summary>The plugin was built against an older SDK major version than the host's and has to be rebuilt (400).</summary>
+    public const string PLUGIN_SDK_ASSEMBLY_OUTDATED = "PLUGIN_SDK_ASSEMBLY_OUTDATED";
+
+    /// <summary>A route, page or slot entry names a permission that is neither a client permission nor <c>Any</c> (400).</summary>
+    public const string PLUGIN_PERMISSION_UNKNOWN = "PLUGIN_PERMISSION_UNKNOWN";
+
+    /// <summary>An admin route, page or slot entry declares a permission, which the admin area does not take (400).</summary>
+    public const string PLUGIN_ADMIN_PERMISSION_DECLARED = "PLUGIN_ADMIN_PERMISSION_DECLARED";
+
+    /// <summary>A route path is not made of lowercase segments and parameters, or has an empty segment or a dot segment (400).</summary>
+    public const string PLUGIN_ROUTE_PATH_INVALID = "PLUGIN_ROUTE_PATH_INVALID";
+
+    /// <summary>The same method and path template is declared twice in one area (400).</summary>
+    public const string PLUGIN_ROUTE_DUPLICATE = "PLUGIN_ROUTE_DUPLICATE";
+
+    /// <summary>A text key used by a menu, page, setting or slot is missing from the plugin's English texts (400).</summary>
+    public const string PLUGIN_LABEL_KEY_MISSING = "PLUGIN_LABEL_KEY_MISSING";
+
+    /// <summary>A slot entry names a slot the host does not offer (400).</summary>
+    public const string PLUGIN_SLOT_UNKNOWN = "PLUGIN_SLOT_UNKNOWN";
+
+    /// <summary>A slot entry asks for a context key its slot does not offer (400).</summary>
+    public const string PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED = "PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED";
+
+    /// <summary>A file in the uploaded plugin could not be read, so the plugin cannot be checked (400).</summary>
+    public const string PLUGIN_ASSEMBLY_UNREADABLE = "PLUGIN_ASSEMBLY_UNREADABLE";
+
     /// <summary>
     /// One of the archive's entries would write outside the plugin's own directory (400). The
     /// zip-slip guard's refusal, named for what a caller can act on rather than the attack it
@@ -764,8 +807,47 @@ public static class HostpanelErrorCodes
     /// <summary>A trusted-package list is configured and the archive is not on it (400).</summary>
     public const string PLUGIN_NOT_TRUSTED = "PLUGIN_NOT_TRUSTED";
 
+    /// <summary>The plugin package carries no <c>plugin.sig</c> and the host does not admit unsigned packages (400).</summary>
+    public const string PLUGIN_UNSIGNED = "PLUGIN_UNSIGNED";
+
+    /// <summary>The plugin package's <c>plugin.sig</c> cannot be read as a signature (400).</summary>
+    public const string PLUGIN_SIGNATURE_MALFORMED = "PLUGIN_SIGNATURE_MALFORMED";
+
+    /// <summary>The plugin package is signed with a key that this host does not trust (400).</summary>
+    public const string PLUGIN_SIGNATURE_KEY_UNKNOWN = "PLUGIN_SIGNATURE_KEY_UNKNOWN";
+
+    /// <summary>The plugin package's signature does not match its files, so it was changed after signing (400).</summary>
+    public const string PLUGIN_SIGNATURE_INVALID = "PLUGIN_SIGNATURE_INVALID";
+
     /// <summary>The plugin ships with this build and cannot be removed or replaced by an upload (409).</summary>
     public const string PLUGIN_BUILT_IN = "PLUGIN_BUILT_IN";
+
+    // Plugin routes
+
+    /// <summary>
+    /// A plugin route was called that is not served: the plugin is unknown, is not an app plugin, is switched off or
+    /// not configured, or does not declare that method and path in that area. One answer for all of them, so the
+    /// route cannot be probed (404).
+    /// </summary>
+    public const string PLUGIN_ROUTE_NOT_FOUND = "PLUGIN_ROUTE_NOT_FOUND";
+
+    /// <summary>
+    /// The plugin threw, or broke its contract (no reply, a malformed problem code, an unknown reply kind). Nothing of
+    /// the failure reaches the caller; the host logs it with the plugin id (502).
+    /// </summary>
+    public const string PLUGIN_FAILED = "PLUGIN_FAILED";
+
+    /// <summary>The request body is larger than the host passes to a plugin (<c>PluginApi:MaxBodyBytes</c>), checked before the plugin is called (413).</summary>
+    public const string PLUGIN_REQUEST_TOO_LARGE = "PLUGIN_REQUEST_TOO_LARGE";
+
+    /// <summary>The route streams its reply, which this host cannot forward yet, so the plugin is not called (501).</summary>
+    public const string PLUGIN_STREAMING_NOT_SUPPORTED = "PLUGIN_STREAMING_NOT_SUPPORTED";
+
+    /// <summary>
+    /// The sentence a plugin's problem carries when the plugin gave none. Never the <c>type</c> of a response: a
+    /// plugin's own codes are namespaced under <c>plugin.{id}.</c> and so can never equal a host code.
+    /// </summary>
+    public const string PLUGIN_REPORTED_PROBLEM = "PLUGIN_REPORTED_PROBLEM";
 
     // Admin: integrations
 
@@ -1018,6 +1100,9 @@ public static class HostpanelErrorCodes
     /// The deduction exceeds the client's credit balance (400): <see cref="Domain.Clients.Client.DeductCredit"/>.
     /// </summary>
     public const string CLIENT_CREDIT_INSUFFICIENT = Domain.Clients.ClientsErrors.ClientCreditInsufficient;
+
+    /// <summary>The client holds a credit balance, so the billing currency cannot change (409): <see cref="Domain.Clients.Client.SetCurrency"/>.</summary>
+    public const string CLIENT_CURRENCY_LOCKED_BY_CREDIT = Domain.Clients.ClientsErrors.ClientCurrencyLockedByCredit;
 
     /// <summary>The account is not in a state that can be suspended (400): <see cref="Domain.Clients.Client.Suspend"/>.</summary>
     public const string CLIENT_SUSPEND_NOT_ALLOWED = Domain.Clients.ClientsErrors.ClientSuspendNotAllowed;

@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Migration.Importers.Enums;
 using Innovayse.Hostpanel.Application.Migration.Importers.Records;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Migration;
 using Innovayse.Hostpanel.Domain.Migration.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -94,10 +95,19 @@ public sealed class TransactionsImporter : IMigrationEntityImporter
             return RecordImportResult.Skipped(MigrationSkipReason.AlreadyExists);
         }
 
-        // A record without a currency is in what the migrated client is billed in.
-        var currency = string.IsNullOrWhiteSpace(rec.Currency)
-            ? (await _payerCurrency.ForClientAsync(clientId.Value, ct)).Code
-            : rec.Currency;
+        // A record without a currency is in what the migrated client is billed in. One that names
+        // a currency which is not a three-letter code is skipped: its amounts cannot be assumed to
+        // be in any other currency.
+        string currency;
+        if (string.IsNullOrWhiteSpace(rec.Currency))
+        {
+            currency = (await _payerCurrency.ForClientAsync(clientId.Value, ct)).Code;
+        }
+        else if (!CurrencyCode.TryNormalise(rec.Currency, out currency!))
+        {
+            return RecordImportResult.Skipped(MigrationSkipReason.CurrencyInvalid);
+        }
+
         var transaction = Transaction.Create(
             clientId.Value,
             date,
@@ -109,7 +119,8 @@ public sealed class TransactionsImporter : IMigrationEntityImporter
             rec.AmountOut,
             rec.Fees,
             false,
-            currency);
+            currency,
+            TransactionSource.Import);
 
         _context.Transactions.Add(transaction);
         await _context.SaveChangesAsync(ct);

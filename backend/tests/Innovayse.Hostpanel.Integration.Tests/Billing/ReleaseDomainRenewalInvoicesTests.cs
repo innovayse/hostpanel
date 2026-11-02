@@ -95,7 +95,7 @@ public sealed class ReleaseDomainRenewalInvoicesTests(IntegrationTestFactory fac
         {
             AddRenewal(i, seeded.DomainId);
             AddRenewal(i, seeded.OtherDomainId);
-            i.AddPayment(DateTimeOffset.UtcNow, PaymentMethodNames.Manual, "part", 20m, 0m, null);
+            i.AddPayment(DateTimeOffset.UtcNow, PaymentMethodNames.Manual, "part", 20m, 0m, null, TransactionSource.Manual);
         });
 
         var result = await ReleaseAsync(seeded.DomainId);

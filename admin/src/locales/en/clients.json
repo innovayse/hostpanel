@@ -141,7 +141,8 @@
     "addTimeBillingEntries": "Add Time Billing Entries",
     "addBillableItem": "+ Add Billable Item",
     "loadingBillableItems": "Loading billable items...",
-    "uninvoicedItemsValueUsdLength": "Uninvoiced Items — ${value} USD ({length})",
+    "uninvoicedItemsLength": "Uninvoiced Items ({length})",
+    "uninvoicedItemsAmountLength": "Uninvoiced Items — {amount} ({length})",
     "invoiceSelectedItems": "Invoice Selected Items",
     "noUninvoicedBillableItems": "No uninvoiced billable items.",
     "invoicedItems": "Invoiced Items",
@@ -293,6 +294,7 @@
     "streetAddress": "Street address",
     "suiteAptEtc": "Suite, apt, etc.",
     "billingPreferences": "Billing Preferences",
+    "currencyLockedByCreditHint": "The currency cannot be changed while the client holds a credit balance. Use or refund the balance first.",
     "billingContactName": "Billing contact name",
     "contactsLength": "Contacts ({length})",
     "noContactsAddedYet": "No contacts added yet"

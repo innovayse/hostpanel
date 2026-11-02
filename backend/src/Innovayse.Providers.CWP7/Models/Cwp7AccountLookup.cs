@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Innovayse.Providers.CWP7.Models.Enums;
-using Innovayse.SDK.Plugins;
+using Innovayse.SDK.Plugins.HostingPanel;
 
 namespace Innovayse.Providers.CWP7.Models;
 

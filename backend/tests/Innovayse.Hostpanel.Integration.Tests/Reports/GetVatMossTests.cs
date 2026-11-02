@@ -5,6 +5,7 @@ using System.Text.Json;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 
@@ -64,7 +65,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var invoice = await db.Invoices.Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
-            db.Transactions.Add(invoice.AddRefund(DateTimeOffset.UtcNow, "Manual", $"rf-{Guid.NewGuid():N}", 117m, 0m, null));
+            db.Transactions.Add(invoice.AddRefund(DateTimeOffset.UtcNow, "Manual", $"rf-{Guid.NewGuid():N}", 117m, 0m, null, false, TransactionSource.Manual));
             await db.SaveChangesAsync();
         }
 

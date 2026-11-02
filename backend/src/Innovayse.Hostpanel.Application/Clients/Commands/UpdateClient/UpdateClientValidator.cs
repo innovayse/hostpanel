@@ -58,11 +58,10 @@ public sealed class UpdateClientValidator : LocalizedValidator<UpdateClientComma
             .Must(l => LocaleOptions.SupportedLocales.Contains(l!, StringComparer.OrdinalIgnoreCase))
             .WithMessage(L["ClientLanguageInvalid"])
             .When(x => !string.IsNullOrEmpty(x.Preferences.Language));
-        // Exactly three, not merely "no more than three": Client.SetCurrency itself requires
-        // exactly three characters, and a shorter (or empty) code would otherwise pass this rule
-        // and throw there instead of answering a validation error here.
+        // The exact shape Client.SetCurrency requires, so a bad code answers a validation error
+        // here instead of throwing there.
         RuleFor(x => x.Preferences.Currency)
-            .Length(3).WithMessage(L["ClientCurrencyInvalid"])
+            .MustBeCurrencyCode(L["ClientCurrencyInvalid"])
             .When(x => x.Preferences.Currency is not null);
         RuleFor(x => x.Preferences.PaymentMethod)
             .MaximumLength(50).WithMessage(L["ClientPaymentMethodInvalid"])

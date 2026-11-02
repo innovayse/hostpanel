@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The command line a plugin publisher signs a package with (see rules/project.md, "Signed plugin packages").
+
+    Deliberately outside src/ and outside the solution: it is a publisher's tool, not part of the host, so the host
+    image does not build or ship it. It reuses PluginSignaturePayload and PluginSigner from the Infrastructure
+    project, so the format a package is signed in and the format the host verifies are the same code.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Innovayse.Hostpanel.PluginSigner</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Innovayse.Hostpanel.Infrastructure\Innovayse.Hostpanel.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

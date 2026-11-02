@@ -1,6 +1,5 @@
 using System.Net;
 using Innovayse.Hostpanel.Integration.Tests.Fixtures;
-using Innovayse.SDK.Plugins.Identity;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Auth;
 

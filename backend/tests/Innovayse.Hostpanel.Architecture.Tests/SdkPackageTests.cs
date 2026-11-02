@@ -61,6 +61,22 @@ public sealed class SdkPackageTests
         Property(project, "IsPackable").Should().Be("true");
     }
 
+    /// <summary>
+    /// The SDK is a plain library any host may use: it references no ASP.NET Core assembly, neither as a framework
+    /// reference in its project nor in the assembly it compiles to, so a plugin never needs a web stack to build.
+    /// </summary>
+    [Fact]
+    public void Package_ReferencesNoAspNetCore()
+    {
+        LoadProject().Descendants("FrameworkReference").Should().BeEmpty();
+        LoadProject().Descendants("PackageReference")
+            .Select(element => (string?)element.Attribute("Include") ?? string.Empty)
+            .Should().NotContain(name => name.StartsWith("Microsoft.AspNetCore", StringComparison.OrdinalIgnoreCase));
+        Layers.Sdk.GetReferencedAssemblies()
+            .Select(assembly => assembly.Name ?? string.Empty)
+            .Should().NotContain(name => name.StartsWith("Microsoft.AspNetCore", StringComparison.OrdinalIgnoreCase));
+    }
+
     /// <summary>Reads the SDK project file.</summary>
     /// <returns>The parsed project.</returns>
     private static XDocument LoadProject()

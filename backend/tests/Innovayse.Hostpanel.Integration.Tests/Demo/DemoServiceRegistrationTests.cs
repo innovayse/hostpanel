@@ -71,6 +71,25 @@ public sealed class DemoServiceRegistrationTests
         ImplementationOf<IDemoDataManager>(services).Should().Be<DemoDataManager>();
     }
 
+    /// <summary>Enabled: the stored credential book is registered once, as a singleton.</summary>
+    [Fact]
+    public void WhenEnabled_TheStoredCredentialStateIsASingleton()
+    {
+        var (services, _) = Build(ValidSettings());
+
+        services.Should().ContainSingle(d => d.ServiceType == typeof(DemoStoredCredentialState))
+            .Which.Lifetime.Should().Be(ServiceLifetime.Singleton);
+    }
+
+    /// <summary>Disabled: the stored credential book is not registered.</summary>
+    [Fact]
+    public void WhenDisabled_TheStoredCredentialStateIsNotRegistered()
+    {
+        var (services, _) = Build(new Dictionary<string, string?>());
+
+        services.Should().NotContain(d => d.ServiceType == typeof(DemoStoredCredentialState));
+    }
+
     /// <summary>Enabled: mail is not faked, so it keeps going through the configured relay.</summary>
     [Fact]
     public void WhenEnabled_MailIsNotReplaced()

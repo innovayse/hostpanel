@@ -11,7 +11,8 @@ public interface ICardPaymentGateway
 {
     /// <summary>
     /// Whether the deployment carries a card gateway secret key at all. <c>false</c> is a deployment
-    /// that takes no card payments through the card gateway; every other member fails on it.
+    /// that takes no card payments through the card gateway; every other member then answers
+    /// <see cref="Billing.Common.Enums.CardGatewayFailure.NotConfigured"/> without calling anything.
     /// </summary>
     bool IsConfigured { get; }
 

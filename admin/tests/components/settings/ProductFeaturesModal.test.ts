@@ -21,7 +21,7 @@ const product: Product = {
   packageName: null,
   type: 'SharedHosting',
   status: 'Active',
-  pricing: { monthly: null, annual: null },
+  pricing: { monthly: null, annual: null, quarterly: null, semiAnnual: null, biennial: null },
   prices: [],
   serverGroupId: null,
   isFeatured: false,

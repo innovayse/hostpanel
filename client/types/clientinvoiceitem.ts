@@ -16,4 +16,6 @@ export interface ClientInvoiceItem {
   quantity: number
   /** Line total (`unitPrice` × `quantity`). */
   amount: number
+  /** SKU of the product the line was sold from, from its product snapshot; `null` for a line without one (a domain, a manual line). */
+  sku: string | null
 }

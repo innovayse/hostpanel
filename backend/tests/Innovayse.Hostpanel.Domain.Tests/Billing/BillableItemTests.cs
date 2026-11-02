@@ -16,6 +16,24 @@ public sealed class BillableItemTests
         return item;
     }
 
+    /// <summary>A currency given in lower case is stored upper-cased, as an invoice does.</summary>
+    [Fact]
+    public void Create_StoresTheCurrencyUpperCased()
+    {
+        var item = BillableItem.Create(1, "Consulting", 40m, "usd", BillableItemType.OneTime);
+
+        item.Currency.Should().Be("USD");
+    }
+
+    /// <summary>A currency that is not three letters is refused.</summary>
+    [Fact]
+    public void Create_RefusesACurrencyThatIsNotThreeLetters()
+    {
+        var create = () => BillableItem.Create(1, "Consulting", 40m, "US", BillableItemType.OneTime);
+
+        create.Should().Throw<ArgumentException>();
+    }
+
     /// <summary>Releasing an invoiced item clears the flag and the invoice link, so it is billed again.</summary>
     [Fact]
     public void ReleaseFromInvoice_MakesTheItemWaitForInvoicingAgain()

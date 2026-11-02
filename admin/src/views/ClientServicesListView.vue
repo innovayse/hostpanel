@@ -7,9 +7,9 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useServicesStore } from '@/stores/services'
-import { SERVICE_STATUS_OPTIONS } from '@/lib/constants'
+import { BILLING_CYCLE_OPTIONS, SERVICE_STATUS_OPTIONS } from '@/lib/constants'
 import { serviceStatusTone, statusLabel } from '@/lib/tones'
-import { capitalize, formatDate } from '@/lib/format'
+import { formatDate } from '@/lib/format'
 import { formatPrice } from '@/lib/money'
 import type { ServiceListItem } from '@/types/service'
 import AddExistingServiceModal from '@/components/clients/AddExistingServiceModal.vue'
@@ -168,7 +168,7 @@ onMounted(() => fetchServices())
             <UiTableCell>{{ service.productName }}</UiTableCell>
             <UiTableCell muted>{{ service.domain ?? '—' }}</UiTableCell>
             <UiTableCell muted>{{ formatPrice(service.price, service.priceCurrency) }}</UiTableCell>
-            <UiTableCell muted>{{ capitalize(service.billingCycle) }}</UiTableCell>
+            <UiTableCell muted>{{ statusLabel(BILLING_CYCLE_OPTIONS, service.billingCycle) }}</UiTableCell>
             <UiTableCell muted>{{ formatDate(service.nextDueDate) }}</UiTableCell>
             <UiTableCell>
               <UiBadge :tone="serviceStatusTone(service.status)" small>{{ statusLabel(SERVICE_STATUS_OPTIONS, service.status) }}</UiBadge>

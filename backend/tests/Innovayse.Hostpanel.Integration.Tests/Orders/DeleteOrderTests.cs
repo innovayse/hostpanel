@@ -74,7 +74,7 @@ public sealed class DeleteOrderTests(IntegrationTestFactory factory) : IClassFix
             var seedDb = seedScope.ServiceProvider.GetRequiredService<AppDbContext>();
             var paid = await seedDb.Invoices.SingleAsync(i => i.Id == seeded.InvoiceId);
             await seedDb.InvoiceItems.Where(i => i.InvoiceId == seeded.InvoiceId).LoadAsync();
-            var payment = paid.Settle("bank-gateway", $"paid-{Guid.NewGuid():N}", DateTimeOffset.UtcNow);
+            var payment = paid.Settle("bank-gateway", $"paid-{Guid.NewGuid():N}", DateTimeOffset.UtcNow, TransactionSource.Manual);
             seedDb.Transactions.Add(payment!);
             await seedDb.SaveChangesAsync();
         }

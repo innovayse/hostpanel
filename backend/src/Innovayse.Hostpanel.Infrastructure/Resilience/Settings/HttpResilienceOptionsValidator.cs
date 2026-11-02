@@ -20,6 +20,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Resilience.Settings;
 /// longer than the whole call. Inverted that way the outer timeout fires first, every attempt is
 /// cut short by it, and the per-attempt budget is silently dead.
 /// </para>
+/// <para>
+/// The <see cref="TimeSpan"/> bounds of each profile live in <see cref="ResilienceProfileOptionsValidator"/>, which
+/// this validator runs for every profile; only the attribute-based ones (retry count, failure ratio,
+/// throughput) are read from the properties.
+/// </para>
 /// </remarks>
 public sealed class HttpResilienceOptionsValidator : IValidateOptions<HttpResilienceOptions>
 {
@@ -47,6 +52,12 @@ public sealed class HttpResilienceOptionsValidator : IValidateOptions<HttpResili
             if (!Validator.TryValidateObject(profile, new ValidationContext(profile), results, validateAllProperties: true))
             {
                 failures.AddRange(results.Select(r => $"{prefix}: {r.ErrorMessage}"));
+            }
+
+            var bounds = new ResilienceProfileOptionsValidator().Validate(null, profile);
+            if (bounds.Failed)
+            {
+                failures.AddRange(bounds.Failures!.Select(f => $"{prefix}: {f}"));
             }
 
             if (profile.TotalTimeout < profile.AttemptTimeout)

@@ -31,7 +31,7 @@ public sealed class GetInvoiceBriefTests(IntegrationTestFactory factory) : IClas
             context.Invoices.Add(invoice);
             await context.SaveChangesAsync(CancellationToken.None);
             context.Transactions.Add(invoice.AddPayment(
-                DateTimeOffset.UtcNow, PaymentMethodNames.Manual, $"part-{Guid.NewGuid():N}", 2.50m, 0m, null));
+                DateTimeOffset.UtcNow, PaymentMethodNames.Manual, $"part-{Guid.NewGuid():N}", 2.50m, 0m, null, TransactionSource.Manual));
             await context.SaveChangesAsync(CancellationToken.None);
             invoiceId = invoice.Id;
         }

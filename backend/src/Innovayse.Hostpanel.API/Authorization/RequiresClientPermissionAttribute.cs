@@ -105,8 +105,19 @@ public sealed class RequiresClientPermissionAttribute : Attribute, IAsyncAuthori
         ArgumentNullException.ThrowIfNull(context);
 
         var services = context.HttpContext.RequestServices;
-        var held = await services.GetRequiredService<IClientAccess>()
-            .GetCallerPermissionsAsync(context.HttpContext.RequestAborted);
+        var clientAccess = services.GetRequiredService<IClientAccess>();
+        var ct = context.HttpContext.RequestAborted;
+
+        // The plugin that decides the account did not answer: say so (503, retryable) rather than a permission refusal.
+        if (await clientAccess.IsIdentityUnavailableAsync(ct))
+        {
+            var unavailable = ErrorBody.ForCode(services, HostpanelErrorCodes.IDENTITY_PLUGIN_UNAVAILABLE);
+            RetryAfterHeader.ApplyFor(context.HttpContext, unavailable.Status);
+            context.Result = ErrorBody.ToActionResult(unavailable);
+            return;
+        }
+
+        var held = await clientAccess.GetCallerPermissionsAsync(ct);
 
         if ((held & Permission) == Permission)
         {

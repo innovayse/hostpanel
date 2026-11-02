@@ -55,7 +55,15 @@ docker compose -f docker-compose.hub.yml stop \
   hostpanel-api hostpanel-client hostpanel-admin
 ```
 
-**2. Drop and recreate the database:**
+**2. Dump the current database state** before overwriting it:
+
+```bash
+docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
+  sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' \
+  > pre-restore-$(date +%Y-%m-%d-%H%M%S).sql
+```
+
+**3. Drop and recreate the database:**
 
 ```bash
 docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
@@ -63,30 +71,38 @@ docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
          createdb -U "$POSTGRES_USER" "$POSTGRES_DB"'
 ```
 
-**3. Load the dump:**
+**4. Load the dump:**
 
 ```bash
 docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
-  sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB"' < backup.sql
+  sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction \
+         -U "$POSTGRES_USER" "$POSTGRES_DB"' < backup.sql
 ```
 
-**4.** Make sure `.env` contains the same `ENCRYPTION_KEY` that was used when the dump was taken.
+**5.** Make sure `.env` contains the same `ENCRYPTION_KEY` that was used when the dump was taken.
 
-**5. Start the full stack:**
+**6. Start the full stack:**
 
 ```bash
 docker compose -f docker-compose.hub.yml up -d
 ```
 
-**6.** Check that `GET /health` returns `200` and that you can sign in.
+**7.** Check that `GET /health` returns `200` and that you can sign in.
 
 ## Schedule backups
 
-A nightly cron job on the host is the simplest approach. Create
-`/etc/cron.d/hostpanel-backup`:
+A nightly cron job on the host is the simplest approach.
+
+**1. Create the backup directory before the cron job runs:**
 
 ```bash
-0 3 * * * root cd /opt/hostpanel && \
+mkdir -p /var/backups/hostpanel && chmod 700 /var/backups/hostpanel
+```
+
+**2. Create `/etc/cron.d/hostpanel-backup`:**
+
+```bash
+0 3 * * * root umask 077 && cd /opt/hostpanel && \
   docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
   sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' \
   > /var/backups/hostpanel/$(date +\%Y-\%m-\%d).sql
@@ -96,12 +112,6 @@ Keep at least seven daily dumps. Remove dumps older than thirty days:
 
 ```bash
 0 4 * * * root find /var/backups/hostpanel -name '*.sql' -mtime +30 -delete
-```
-
-Make sure the backup directory exists and is readable only by root:
-
-```bash
-mkdir -p /var/backups/hostpanel && chmod 700 /var/backups/hostpanel
 ```
 
 Copy the dumps and `.env` to off-site storage after each run.

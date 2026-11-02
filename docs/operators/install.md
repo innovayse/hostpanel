@@ -41,14 +41,27 @@ docker compose -f docker-compose.hub.yml up -d
 ```
 
 ```bash [.env]
-# Minimum required values for a manual install:
+# Required values for a manual install (generate secrets with openssl):
 ASPNETCORE_ENVIRONMENT=Production
 AUTH_MODE=local
+IMAGE_TAG=latest
 DOMAIN=panel.example.com
 ADMIN_DOMAIN=admin.example.com
+ADMIN_BASE_URL=https://panel.example.com
+CLIENT_BASE_URL=https://panel.example.com
+NUXT_PUBLIC_BASE_URL=https://panel.example.com
+ALLOWED_HOSTS=panel.example.com;admin.example.com;hostpanel-api;localhost
+ACME_EMAIL=you@example.com
+EMAIL_TO=you@example.com
+SMTP_HOST=smtp.example.com
+SMTP_ENCRYPTION=tls
+POSTGRES_DB=hostpanel
+POSTGRES_PASSWORD=<openssl rand -hex 24>
+RABBITMQ_PASSWORD=<openssl rand -hex 24>
 JWT_SECRET=<openssl rand -hex 32>
 ENCRYPTION_KEY=<openssl rand -base64 32>
 SESSION_ENCRYPTION_KEY=<openssl rand -base64 32>
+HOSTPANEL_BACKCHANNEL_LOGOUT_KEY=<openssl rand -hex 24>
 ```
 
 :::
@@ -115,8 +128,8 @@ See [First run](#first-run).
 
 ## Installer options
 
-Pass flags on the command line or set the matching environment variable before piping
-to `bash`:
+Pass flags on the command line or set the matching environment variable in front of
+`bash` on the pipe:
 
 <SettingTable :settings="[
   { name: '--dir &lt;path&gt; / HOSTPANEL_DIR', type: 'string', default: '/opt/hostpanel', description: 'Directory the installer downloads files into and starts the stack from.' },
@@ -132,10 +145,11 @@ to `bash`:
 **Non-interactive example** (CI/CD or a provisioning script):
 
 ```bash
-HOSTPANEL_DOMAIN=panel.example.com \
-HOSTPANEL_ADMIN_EMAIL=you@example.com \
-HOSTPANEL_NONINTERACTIVE=1 \
-  curl -fsSL https://raw.githubusercontent.com/innovayse/hostpanel/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/innovayse/hostpanel/main/install.sh \
+  | HOSTPANEL_DOMAIN=panel.example.com \
+    HOSTPANEL_ADMIN_EMAIL=you@example.com \
+    HOSTPANEL_NONINTERACTIVE=1 \
+    bash
 ```
 
 ## With automatic TLS (default)
@@ -221,9 +235,9 @@ After writing `.env` the installer pulls the images, starts the stack and waits 
 to five minutes for `GET /health` to return `200`.
 
 <Callout type="danger">
-Keep <code>.env</code> and <code>ENCRYPTION_KEY</code> safe. Without the same key a restore cannot
+Keep `.env` and `ENCRYPTION_KEY` safe. Without the same key a restore cannot
 read server passwords, API tokens or access hashes stored in the database. Back up
-<code>.env</code> alongside every database dump. See <a href="/operators/backup">Back up and restore</a>.
+`.env` alongside every database dump. See [Back up and restore](/operators/backup).
 </Callout>
 
 ## Install by hand with docker compose
@@ -247,8 +261,27 @@ curl -fsSL "$BASE/docker/.env.example" -o .env.example
 cp .env.example .env && chmod 600 .env
 ```
 
-**3. Edit `.env`.** At minimum set `DOMAIN`, `ADMIN_DOMAIN` and
-`ASPNETCORE_ENVIRONMENT=Production`. Generate the required secrets:
+**3. Edit `.env`.** The example ships with `IMAGE_TAG=local`, `ALLOWED_HOSTS=panel.example.test`,
+`POSTGRES_DB=innovayse_dev`, a placeholder `ENCRYPTION_KEY` and `SMTP_HOST=hostpanel-mailhog` —
+leaving these unchanged will fail the pull or be refused on startup. Set at least:
+
+| Setting | Example value |
+|---|---|
+| `ASPNETCORE_ENVIRONMENT` | `Production` |
+| `IMAGE_TAG` | `latest` |
+| `DOMAIN` | `panel.example.com` |
+| `ADMIN_DOMAIN` | `admin.example.com` |
+| `ADMIN_BASE_URL` | `https://admin.example.com` |
+| `CLIENT_BASE_URL` | `https://panel.example.com` |
+| `NUXT_PUBLIC_BASE_URL` | `https://panel.example.com` |
+| `ALLOWED_HOSTS` | `panel.example.com;admin.example.com;hostpanel-api;localhost` |
+| `ACME_EMAIL` | `you@example.com` |
+| `EMAIL_TO` | `you@example.com` |
+| `SMTP_HOST` | `smtp.example.com` |
+| `SMTP_ENCRYPTION` | `tls` |
+| `POSTGRES_DB` | `hostpanel` |
+
+Generate the required secrets:
 
 ```bash
 openssl rand -hex 32     # paste as JWT_SECRET
@@ -279,7 +312,7 @@ Edit `/opt/hostpanel/.env` and set:
 
 | Setting | Description |
 |---|---|
-| `SMTP_HOST` | Your relay host, e.g. `smtp.mailgun.org` |
+| `SMTP_HOST` | Your relay host, e.g. `smtp.example.com` |
 | `SMTP_PORT` | Usually `587` (STARTTLS) or `465` (implicit TLS) |
 | `SMTP_USERNAME` | Relay username |
 | `SMTP_PASSWORD` | Relay password |
@@ -361,7 +394,6 @@ Check that everything is working:
 - Both the client portal and admin panel URLs open in a browser.
 - You can sign in to the admin panel.
 - `GET /health` returns `200`.
-- A test email arrives — send one from **Admin → Settings → Email Templates**.
 
 ## Troubleshooting
 
@@ -380,7 +412,7 @@ Common causes:
 |---|---|
 | Secret still `CHANGE_ME` or too short | `JWT_SECRET`, `ENCRYPTION_KEY`, `SESSION_ENCRYPTION_KEY` or `HOSTPANEL_BACKCHANNEL_LOGOUT_KEY` holds a placeholder. Generate a real value with `openssl rand`. |
 | `SMTP_ENCRYPTION` invalid | Value is unset, misspelled or not one of `tls`, `ssl`, `none`. |
-| Only one of a required pair is set | e.g. `TELEGRAM_BOT_TOKEN` set but `TELEGRAM_CHAT_ID` empty. Set both or clear both. |
+| Only one of an optional pair is set | e.g. `TELEGRAM_BOT_TOKEN` set but `TELEGRAM_CHAT_ID` empty. Set both or clear both. |
 
 **Certificates are not issued**
 

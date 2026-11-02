@@ -13,12 +13,47 @@ docker compose.
 <Callout type="warning">
 Take a database dump before every upgrade. Database migrations run forward
 automatically on every API start and do not run backwards. If you need to go back,
-you will need the dump. See <a href="/operators/backup">Back up and restore</a>.
+you will need the dump. See [Back up and restore](/operators/backup).
 </Callout>
 
 Read the changelog entry for the new release before upgrading. Take a database
 dump and note the current `IMAGE_TAG` in `/opt/hostpanel/.env` — you will need it
 if you roll back.
+
+### Check for duplicate gateway payments
+
+The next release adds a unique index on gateway payment references. If any two
+ledger rows share the same payment method and reference the migration stops and
+the upgrade fails. Run the check script first — an empty result means the
+migration will run cleanly:
+
+```bash
+curl -fsSL \
+  https://raw.githubusercontent.com/innovayse/hostpanel/main/scripts/check-duplicate-gateway-payments.sh \
+  | sh
+```
+
+Or, if the server has no outbound internet access, fetch the script from the
+repository and run it over SSH:
+
+```bash
+ssh prod 'sh -s' < scripts/check-duplicate-gateway-payments.sh
+```
+
+If the script lists any rows, give each a distinct reference (or delete the
+duplicate), then run it again before upgrading.
+
+### Uploaded plugins and signed packages
+
+The next release verifies the signature of every plugin on startup. Plugins
+uploaded before this release carry no signature file (`plugin.sig`) and are
+**skipped silently** on a production server after the upgrade. To restore them:
+
+- Replace each plugin with a signed package, **or**
+- Switch on **Allow unsigned plugins** in the admin panel under **Plugins** and
+  restart the API.
+
+The API log names each skipped plugin. Development servers are not affected.
 
 ## Upgrade with the installer
 
@@ -85,8 +120,7 @@ for example `innovayse/hostpanel:api-1.4.0`. The moving `latest` tags
   ```
 
 - `GET /health` returns `200`.
-- You can sign in to the admin panel and the version shown in the footer matches
-  the release.
+- You can sign in to the admin panel.
 - A test invoice PDF downloads correctly.
 - The recurring billing jobs ran as expected — see the [billing guide](/staff/billing).
 

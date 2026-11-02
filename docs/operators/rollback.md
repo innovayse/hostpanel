@@ -20,26 +20,44 @@ If it did, you must restore your pre-upgrade dump as part of the rollback.
 
 ## Roll back the images
 
-**1. Stop the stack:**
+**1. Stop the application containers** (leave the database running):
 
 ```bash
-cd /opt/hostpanel && docker compose -f docker-compose.hub.yml down
+cd /opt/hostpanel
+docker compose -f docker-compose.hub.yml stop \
+  hostpanel-api hostpanel-client hostpanel-admin hostpanel-caddy
 ```
 
-**2. If the new release added migrations, restore your pre-upgrade database dump.**
-
-See [Restore a dump](/operators/backup#restore-a-dump) and use the dump you took
-before the upgrade. Keep `hostpanel-db` running while restoring, then bring it
-down again before the next step.
-
-**3. Set `IMAGE_TAG` in `/opt/hostpanel/.env`** back to the previous version.
+**2. Set `IMAGE_TAG` in `/opt/hostpanel/.env`** back to the previous version.
 No leading `v` — use `1.3.2`, not `v1.3.2`:
 
 ```bash
 # e.g. IMAGE_TAG=1.3.2
 ```
 
-**4. Pull the old images and restart:**
+**3. If the new release added migrations, restore your pre-upgrade database dump.**
+
+Run these commands against the still-running `hostpanel-db`:
+
+```bash
+cd /opt/hostpanel
+
+# Safety dump of the current (migrated) state:
+docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
+  sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' \
+  > pre-rollback-$(date +%Y-%m-%d-%H%M%S).sql
+
+# Drop and recreate, then load the pre-upgrade dump:
+docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
+  sh -c 'dropdb -U "$POSTGRES_USER" "$POSTGRES_DB" && \
+         createdb -U "$POSTGRES_USER" "$POSTGRES_DB"'
+
+docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
+  sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction \
+         -U "$POSTGRES_USER" "$POSTGRES_DB"' < pre-upgrade-dump.sql
+```
+
+**4. Pull the old images and restart the stack:**
 
 ```bash
 cd /opt/hostpanel

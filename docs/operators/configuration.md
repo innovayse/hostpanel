@@ -7,7 +7,7 @@ description: Every .env setting that Hostpanel reads, with defaults, required fl
 
 ## How configuration works
 
-Settings live in `docker/.env.example`, copied to `.env` next to the compose file. The compose file reads from `.env` and passes the values to services as environment variables. Some settings reach services under a different name — for example, `STACK_NETWORK_SUBNET` arrives at the API as `RateLimit__KnownNetworks__0`.
+Settings live in `docker/.env.example`, copied to `.env` next to the compose file. The compose file reads from `.env` and passes the values to services as environment variables. Some settings reach services under a different name, for example, `STACK_NETWORK_SUBNET` arrives at the API as `RateLimit__KnownNetworks__0`.
 
 Not every setting lives in `.env.example`. A few rate-limit and order-numbering settings are set directly on the API service in a compose override file (see [Reverse proxy and trusted proxies](#reverse-proxy-and-trusted-proxies) and [API and ports](#api-and-ports) for the complete list).
 
@@ -56,18 +56,19 @@ Orders__NumberPrefix (override)   → Orders__NumberPrefix (no rename)
 ## Required secrets
 
 <Callout type="danger">
-Every `CHANGE_ME` is a placeholder, not a real default. The API refuses to start outside Development if a secret contains a placeholder or is too short. Always generate fresh values for production.
+Every <code>CHANGE_ME</code> is a placeholder, not a real default. The API refuses to start outside Development if a secret contains a placeholder or is too short. Always generate fresh values for production.
 </Callout>
 
 <Callout type="tip">
-Generate secure random values using `openssl`:
-
-- **JWT_SECRET** (at least 32 characters): `openssl rand -hex 32`
-- **ENCRYPTION_KEY** (exactly 32 bytes, base64): `openssl rand -base64 32`
-- **SESSION_ENCRYPTION_KEY** (exactly 32 bytes, base64): `openssl rand -base64 32`
-- **HOSTPANEL_BACKCHANNEL_LOGOUT_KEY** (at least 16 hex characters): `openssl rand -hex 24`
-- **POSTGRES_PASSWORD**: `openssl rand -hex 24`
-- **RABBITMQ_PASSWORD**: `openssl rand -hex 24`
+Generate secure random values using <code>openssl</code>:
+<ul>
+<li><strong>JWT_SECRET</strong> (at least 32 characters): <code>openssl rand -hex 32</code></li>
+<li><strong>ENCRYPTION_KEY</strong> (exactly 32 bytes, base64): <code>openssl rand -base64 32</code></li>
+<li><strong>SESSION_ENCRYPTION_KEY</strong> (exactly 32 bytes, base64): <code>openssl rand -base64 32</code></li>
+<li><strong>HOSTPANEL_BACKCHANNEL_LOGOUT_KEY</strong> (at least 16 characters): <code>openssl rand -hex 24</code></li>
+<li><strong>POSTGRES_PASSWORD</strong>: <code>openssl rand -hex 24</code></li>
+<li><strong>RABBITMQ_PASSWORD</strong>: <code>openssl rand -hex 24</code></li>
+</ul>
 </Callout>
 
 ## General
@@ -77,8 +78,8 @@ A server left on <code>Development</code> runs the DevDataSeeder and re-seeds te
 </Callout>
 
 <SettingTable :settings="[
-  { name: 'ASPNETCORE_ENVIRONMENT', type: 'string', default: 'Development', description: 'Runtime mode: Production or Development. Development also runs DevDataSeeder, which re-seeds test data on every restart. A server must use Production. Required in hub and prod. Tiers: all.' },
-  { name: 'AUTH_APP_NAME', type: 'string', default: 'hostpanel', description: 'Application name registered with the auth layer (cookie and client naming). Tiers: all.' },
+  { name: 'ASPNETCORE_ENVIRONMENT', type: 'string', default: 'Development', description: 'Runtime mode: Production or Development. Development also runs DevDataSeeder, which re-seeds test data on every restart. A server must use Production. Required in hub and prod. Tiers: hub, prod, dev.' },
+  { name: 'AUTH_APP_NAME', type: 'string', default: 'hostpanel', description: 'Application name registered with the auth layer (cookie and client naming). Tiers: hub, prod, dev.' },
   { name: 'DISABLE_RELEASE_UPDATE_CHECKS', type: 'flag', default: 'false', description: 'Set to true to disable the daily check for a newer release on GitHub. Disable when the installation has no outbound internet access. Maps to ScheduledJobs__DisableReleaseUpdateChecks. Tiers: hub, prod.' },
 ]" />
 
@@ -109,8 +110,8 @@ Hostpanel supports two authentication modes: local (users managed by Hostpanel i
 <Label type="local" /> These settings apply only when AUTH_MODE=local.
 
 <SettingTable :settings="[
-  { name: 'SESSION_ACCESS_TOKEN_MINUTES', type: 'string', default: '15', description: 'Access-token lifetime in minutes. Sliding renewal re-issues the token while the person keeps working. Tiers: all.' },
-  { name: 'SESSION_MAX_MINUTES', type: 'string', default: '720', description: 'Absolute session age after which token renewal stops and the person must sign in again. Tiers: all.' },
+  { name: 'SESSION_ACCESS_TOKEN_MINUTES', type: 'string', default: '15', description: 'Access-token lifetime in minutes. Sliding renewal re-issues the token while the person keeps working. Tiers: hub, prod, dev.' },
+  { name: 'SESSION_MAX_MINUTES', type: 'string', default: '720', description: 'Absolute session age after which token renewal stops and the person must sign in again. Tiers: hub, prod, dev.' },
 ]" />
 
 ## Addresses and host names
@@ -121,7 +122,7 @@ Hostpanel supports two authentication modes: local (users managed by Hostpanel i
   { name: 'ADMIN_BASE_URL', type: 'string', default: 'https://admin.yourdomain.com', description: 'Absolute URL of the admin panel (scheme, no trailing slash). Base of links the API mails to staff. Required in prod and hub. Tiers: prod, hub.' },
   { name: 'CLIENT_BASE_URL', type: 'string', default: 'https://yourdomain.com', description: 'Absolute URL of the client portal (scheme, no trailing slash). Base of links the API mails to clients. Required in prod and hub. Tiers: prod, hub.' },
   { name: 'NUXT_PUBLIC_BASE_URL', type: 'string', default: 'https://panel.example.com', description: 'Public URL the client portal JavaScript uses for API calls. Required. Tiers: all.' },
-  { name: 'ADMIN_BASE_URL_PATH', type: 'string', default: '/', description: 'Base path the admin SPA is served under (/ or /admin). Read by the admin container at start, not at build. Tiers: all.' },
+  { name: 'ADMIN_BASE_URL_PATH', type: 'string', default: '/', description: 'Base path the admin SPA is served under (/ or /admin). Read by the admin container at start, not at build. Tiers: hub, prod.' },
   { name: 'ALLOWED_HOSTS', type: 'string', default: 'panel.example.test;hostpanel-api;localhost', description: 'Host names the API answers to, semicolon-separated. Include the public host, hostpanel-api and localhost. Required. Tiers: all.' },
   { name: 'PANEL_DEV_ORIGIN', type: 'string', default: 'http://panel.example.test', description: 'Dev-proxy origin the API allows alongside localhost (CORS). Tiers: dev.' },
   { name: 'SSH_AGENT_SOURCE_ADDRESSES', type: 'string', default: '', description: 'Public address(es) this installation connects to SSH key agents from, comma-separated. New in next release. Tiers: prod, hub.' },
@@ -200,8 +201,8 @@ visitor → [extra proxy] → edge (Caddy/nginx) → client portal → API
 Each extra proxy in front of the bundled edge adds 1 to both counts. The shipped stacks have one built-in edge layer, so the default is `1`. If you place an extra proxy in front (load balancer, WAF, CDN), increase both counts by 1 per extra layer.
 
 <SettingTable :settings="[
-  { name: 'STACK_NETWORK_SUBNET', type: 'string', default: '172.30.0.0/24', description: 'CIDR range of the Docker network the stack creates. Passed to the API as RateLimit__KnownNetworks__0. Pick a range no other network on the host uses. Required. Tiers: all.' },
-  { name: 'RATE_LIMIT_TRUSTED_PROXY_COUNT', type: 'string', default: '1', description: 'Number of proxies in front of the API (RateLimit__TrustedProxyCount). The shipped stacks need 1 (the bundled edge). Add one per extra proxy. Tiers: all.' },
+  { name: 'STACK_NETWORK_SUBNET', type: 'string', default: '172.30.0.0/24', description: 'CIDR range of the Docker network the stack creates. Passed to the API as RateLimit__KnownNetworks__0. Pick a range no other network on the host uses. Required. Tiers: hub, prod, dev.' },
+  { name: 'RATE_LIMIT_TRUSTED_PROXY_COUNT', type: 'string', default: '1', description: 'Number of proxies in front of the API (RateLimit__TrustedProxyCount). The shipped stacks need 1 (the bundled edge). Add one per extra proxy. Tiers: hub, prod, dev.' },
   { name: 'CLIENT_TRUSTED_PROXY_COUNT', type: 'string', default: '1', description: 'Number of proxies in front of the client portal (NUXT_TRUSTED_PROXY_COUNT). The shipped stacks need 1. Add one per extra proxy. The dev stack fixes this at 0 and does not read this variable. Tiers: hub, prod, demo.' },
 ]" />
 
@@ -262,8 +263,8 @@ The edge layer (Caddy on hub, nginx on prod) terminates TLS and routes to the AP
 ## API and ports
 
 <SettingTable :settings="[
-  { name: 'API_PORT', type: 'string', default: '5148', description: 'Port the API listens on inside its container. Templated into the edge config — change here only. Tiers: all.' },
-  { name: 'CLIENT_PORT', type: 'string', default: '3000', description: 'Port the client portal listens on inside its container. Templated into the edge config — change here only. Tiers: all.' },
+  { name: 'API_PORT', type: 'string', default: '5148', description: 'Port the API listens on inside its container. Templated into the edge config, change here only. Tiers: all.' },
+  { name: 'CLIENT_PORT', type: 'string', default: '3000', description: 'Port the client portal listens on inside its container. Templated into the edge config, change here only. Tiers: all.' },
   { name: 'API_GC_SERVER', type: 'string', default: '0', description: '.NET GC mode: 0 workstation, 1 server. Tiers: prod, hub.' },
   { name: 'API_GC_CONSERVE_MEMORY', type: 'string', default: '5', description: 'Memory conservation level, 0–9. Tiers: prod, hub.' },
   { name: 'API_GC_HEAP_HARD_LIMIT_PERCENT', type: 'string', default: '75', description: 'Heap cap as a percentage of container memory. Tiers: prod, hub.' },
@@ -399,9 +400,9 @@ Demo mode requires AUTH_MODE=local and its own POSTGRES_DB. It resets sample dat
 <SettingTable :settings="[
   { name: 'DEMO_ENABLED', type: 'flag', default: 'true', description: 'Enable demo mode. Tiers: demo.' },
   { name: 'DEMO_RESET_INTERVAL_HOURS', type: 'string', default: '24', description: 'Hours between database wipes and re-seeds. Tiers: demo.' },
-  { name: 'DEMO_ADMIN_EMAIL', type: 'string', default: 'admin@demo.local', description: 'Demo admin sign-in email (shown on the sign-in page). Required for demo. Tiers: demo.' },
+  { name: 'DEMO_ADMIN_EMAIL', type: 'string', default: 'admin@demo.local', description: 'Demo admin sign-in email (shown on the sign-in page). Tiers: demo.' },
   { name: 'DEMO_ADMIN_PASSWORD', type: 'secret', default: '', description: 'Demo admin password. At least 8 characters with upper and lower case. No default; compose refuses to start without it. Required for demo. Tiers: demo.' },
-  { name: 'DEMO_CLIENT_EMAIL', type: 'string', default: 'client@demo.local', description: 'Demo client sign-in email. Required for demo. Tiers: demo.' },
+  { name: 'DEMO_CLIENT_EMAIL', type: 'string', default: 'client@demo.local', description: 'Demo client sign-in email. Tiers: demo.' },
   { name: 'DEMO_CLIENT_PASSWORD', type: 'secret', default: '', description: 'Demo client password. At least 8 characters with upper and lower case. Required for demo. Tiers: demo.' },
   { name: 'DEMO_CONTACT_EMAIL', type: 'string', default: '', description: 'Contact email shown in the demo storefront footer. Empty keeps the fictional placeholder. Tiers: demo.' },
   { name: 'DEMO_CONTACT_PHONE', type: 'string', default: '', description: 'Contact phone shown in the demo storefront. Tiers: demo.' },
@@ -409,12 +410,12 @@ Demo mode requires AUTH_MODE=local and its own POSTGRES_DB. It resets sample dat
   { name: 'DEMO_REDIS_PORT', type: 'string', default: '6379', description: 'Port of the demo\'s Redis inside the network. Tiers: demo.' },
   { name: 'DEMO_SESSION_ENCRYPTION_KEY', type: 'secret', default: '', description: 'Session encryption key for the demo portal. Use a separate value from the production one. Required for demo. Tiers: demo.' },
   { name: 'DEMO_PUBLISH_ADDRESS', type: 'string', default: '127.0.0.1', description: 'Address the demo\'s published ports bind to. Loopback keeps them off the network. Required for demo. Tiers: demo.' },
-  { name: 'DEMO_SMTP_ENCRYPTION', type: 'string', default: 'none', description: 'Demo mail catcher encryption. Use none. Tiers: demo.' },
-  { name: 'DEMO_API_HOST_PORT', type: 'string', default: '5150', description: 'Host port for the demo API. Tiers: demo.' },
-  { name: 'DEMO_CLIENT_HOST_PORT', type: 'string', default: '3002', description: 'Host port for the demo client portal. Tiers: demo.' },
-  { name: 'DEMO_ADMIN_HOST_PORT', type: 'string', default: '5175', description: 'Host port for the demo admin panel. Tiers: demo.' },
-  { name: 'DEMO_ADMIN_BASE_URL', type: 'string', default: 'http://localhost:5175', description: 'Absolute URL of the demo admin panel. Tiers: demo.' },
-  { name: 'DEMO_CLIENT_BASE_URL', type: 'string', default: 'http://localhost:3002', description: 'Absolute URL of the demo client portal. Tiers: demo.' },
+  { name: 'DEMO_SMTP_ENCRYPTION', type: 'string', default: 'none', description: 'Demo mail catcher encryption. Use none. Required for demo. Tiers: demo.' },
+  { name: 'DEMO_API_HOST_PORT', type: 'string', default: '5150', description: 'Host port for the demo API. Required for demo. Tiers: demo.' },
+  { name: 'DEMO_CLIENT_HOST_PORT', type: 'string', default: '3002', description: 'Host port for the demo client portal. Required for demo. Tiers: demo.' },
+  { name: 'DEMO_ADMIN_HOST_PORT', type: 'string', default: '5175', description: 'Host port for the demo admin panel. Required for demo. Tiers: demo.' },
+  { name: 'DEMO_ADMIN_BASE_URL', type: 'string', default: 'http://localhost:5175', description: 'Absolute URL of the demo admin panel. Required for demo. Tiers: demo.' },
+  { name: 'DEMO_CLIENT_BASE_URL', type: 'string', default: 'http://localhost:3002', description: 'Absolute URL of the demo client portal. Required for demo. Tiers: demo.' },
   { name: 'DEMO_MAILHOG_UI_HOST_PORT', type: 'string', default: '8028', description: 'Host port for the demo Mailhog UI. Tiers: demo.' },
   { name: 'DEMO_NETWORK_SUBNET', type: 'string', default: '', description: 'Required. CIDR range of the demo stack internal network. Not in .env.example; docker-compose.demo.yml refuses to start without it. Example: 172.28.0.0/16. Tiers: demo.' },
   { name: 'DEMO_EDGE_NETWORK_SUBNET', type: 'string', default: '', description: 'Required. CIDR range of the demo edge network. Not in .env.example; docker-compose.demo.yml refuses to start without it. Example: 172.29.0.0/16. Tiers: demo.' },

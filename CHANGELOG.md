@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Single sign-on builds use the sign-on client package 5.1 (JwtBearer 9.0.21, StackExchange.Redis 3.4.20). The first update signs every admin panel user out once, because the package now scopes its session cache keys per product. A sign-in callback with no matching attempt (a second tab, Back after signing in) redirects to the sign-in page instead of answering an error body, and two sign-ins started in one browser no longer spend each other.
+
 - Before upgrading a production server that has uploaded plugins: plugins in the upload folder carry no signature yet, so after this release they are skipped at start (the log names each one) until the plugin is replaced by a signed package, or an administrator switches on "Allow unsigned plugins" on the Plugins page and the server is restarted. Plugins shipped inside the server image keep loading (#638).
 - Ledger transactions record where they came from (gateway payment, gateway refund, manual entry or import), and a gateway payment can be recorded only once per payment method and reference. Manual entries and imports may still share a reference. Before upgrading, `scripts/check-duplicate-gateway-payments.sh` lists existing gateway payment rows that share a reference; the upgrade stops and names them if any are left.
 - The plugin SDK (`Innovayse.SDK`) is MIT licensed, so a plugin may be free or paid, open or closed source; the rest of the repository stays AGPL-3.0-or-later. The package ships with its license text and readme inside, and its readme shows how to pin a version and write a minimal plugin.

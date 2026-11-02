@@ -11,7 +11,7 @@ docker compose.
 ## Before you upgrade
 
 <Callout type="warning">
-Take a database dump before every upgrade. Database migrations run forward automatically on every API start and do not run backwards. If you need to go back, you will need the dump. See <a href="/operators/backup">Back up and restore</a>.
+Take a database dump before every upgrade. Database migrations run forward automatically on every API start and do not run backwards. If you need to go back, you will need the dump. See <a href="./backup">Back up and restore</a>.
 </Callout>
 
 Read the changelog entry for the new release before upgrading. Take a database
@@ -66,6 +66,7 @@ The API log names each skipped plugin. Development servers are not affected.
 **1. Take a database dump and back up `.env`. Note the current `IMAGE_TAG`:**
 
 ```bash
+umask 077
 cd /opt/hostpanel
 docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
   sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' \
@@ -73,23 +74,20 @@ docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
 cp .env .env.bak
 ```
 
-**2. Run the install command again, optionally with `--version`:**
+Note the `IMAGE_TAG` value from `.env` — you will need it if you roll back.
 
-::: code-group
+**2. Run the installer with `--version`:**
 
-```bash [Latest release]
-curl -fsSL \
-  https://raw.githubusercontent.com/innovayse/hostpanel/main/install.sh \
-  | bash
-```
-
-```bash [Specific version]
+```bash
 curl -fsSL \
   https://raw.githubusercontent.com/innovayse/hostpanel/main/install.sh \
   | bash -s -- --version 1.4.0
 ```
 
-:::
+Always pass `--version`. The installer only updates `IMAGE_TAG` when `--version`
+or `HOSTPANEL_VERSION` is given. Running it without `--version` downloads updated
+compose and Caddyfile files but leaves `IMAGE_TAG` unchanged, so the old images
+run with the new stack files.
 
 **3. Check the output** for any warnings about new settings added to `.env` and review them.
 
@@ -99,11 +97,7 @@ When `.env` already exists the installer:
 
 - Keeps all your existing settings — it does **not** overwrite `.env` or ask the
   domain and email questions again.
-- Updates `IMAGE_TAG` only when `--version` or `HOSTPANEL_VERSION` is given. Running
-  it without `--version` leaves `IMAGE_TAG` unchanged, so an installation pinned to a
-  specific version will not move to a newer one unless you pass the version explicitly.
-  The **Latest release** tab above omits `--version`, which means it will not upgrade
-  a pinned installation.
+- Updates `IMAGE_TAG` to the version given with `--version` or `HOSTPANEL_VERSION`.
 - Adds any new keys introduced in `.env.example` since your install. New secrets
   (e.g. `SESSION_ENCRYPTION_KEY`) are generated automatically; other new keys get
   the example value and a warning is printed — review them.

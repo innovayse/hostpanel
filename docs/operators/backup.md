@@ -6,7 +6,7 @@ description: How to back up the Hostpanel database and volumes, and how to resto
 # Back up and restore
 
 How to take a database dump, back up the volumes that hold uploaded files and
-certificates, and restore them on the same or a different server.
+restore them on the same or a different server.
 
 ## What to back up
 
@@ -16,10 +16,13 @@ certificates, and restore them on the same or a different server.
 | `hostpanel_pgdata` volume (or a SQL dump) | All application data: clients, orders, invoices, services, settings. |
 | `hostpanel_hostpanel_branding` volume | Logos, favicons and other branding files uploaded in the admin panel. |
 | `hostpanel_hostpanel_plugins` volume | Plugins installed through the admin panel. |
-| `hostpanel_caddydata` volume | Issued TLS certificates. Losing them means re-issuance, which can hit Let's Encrypt rate limits. |
 
 The Redis and RabbitMQ volumes hold transient data (sessions, queued messages)
 and do not need to be backed up.
+
+The `hostpanel_caddydata` volume holds issued TLS certificates. Losing it causes
+re-issuance on next start, which can hit Let's Encrypt rate limits. Back it up
+if you want to avoid re-issuance, but it is not required for a data restore.
 
 <Callout type="danger">
 Without the same <code>ENCRYPTION_KEY</code> from <code>.env</code>, a restored database cannot
@@ -35,35 +38,53 @@ the client portal.
 **1. Run `pg_dump` against the running `hostpanel-db` container:**
 
 ```bash
+umask 077
 cd /opt/hostpanel
 docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
-  sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > backup.sql
+  sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' \
+  > backup-$(date +%Y-%m-%d-%H%M%S).sql
 ```
 
-**2. Copy `backup.sql` and `.env` to off-site storage** (object storage, an off-site backup service).
+**2. Copy the dump and `.env` to off-site storage** (object storage, an off-site backup service).
 
 Alternatively, stop the stack and snapshot the `hostpanel_pgdata` Docker volume
 directly, which preserves the raw data files.
 
 ## Restore a dump
 
+<Callout type="danger">
+Restoring a dump permanently removes everything written after the dump was taken: orders, payments, tickets and any other data. Confirm you have the right dump file before proceeding.
+</Callout>
+
 **1. Stop the application containers** (keep the database running):
 
 ```bash
 cd /opt/hostpanel
 docker compose -f docker-compose.hub.yml stop \
-  hostpanel-api hostpanel-client hostpanel-admin
+  hostpanel-api hostpanel-client hostpanel-admin hostpanel-caddy
 ```
 
 **2. Dump the current database state** before overwriting it:
 
 ```bash
+umask 077
 docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
   sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' \
   > pre-restore-$(date +%Y-%m-%d-%H%M%S).sql
 ```
 
-**3. Drop and recreate the database:**
+**3. Verify the backup file is not empty:**
+
+```bash
+if ! test -s backup-2024-01-15-030000.sql; then
+  echo "Backup file is empty or missing, aborting."
+  exit 1
+fi
+```
+
+Replace `backup-2024-01-15-030000.sql` with the actual file name.
+
+**4. Drop and recreate the database:**
 
 ```bash
 docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
@@ -71,29 +92,54 @@ docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
          createdb -U "$POSTGRES_USER" "$POSTGRES_DB"'
 ```
 
-**4. Load the dump:**
+**5. Load the dump:**
 
 ```bash
 docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
   sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction \
-         -U "$POSTGRES_USER" "$POSTGRES_DB"' < backup.sql
+         -U "$POSTGRES_USER" "$POSTGRES_DB"' < backup-2024-01-15-030000.sql
 ```
 
-**5.** Make sure `.env` contains the same `ENCRYPTION_KEY` that was used when the dump was taken.
+**6.** Make sure `.env` contains the same `ENCRYPTION_KEY` that was used when the dump was taken.
 
-**6. Start the full stack:**
+**7. Restore the branding and plugins volumes:**
+
+```bash
+# Restore branding files:
+docker run --rm \
+  -v hostpanel_hostpanel_branding:/data \
+  -v /path/to/your/backups:/backup \
+  alpine sh -c 'cd /data && tar xzf /backup/branding-2024-01-15.tar.gz'
+
+# Fix ownership so the API can read the files:
+docker run --rm \
+  -v hostpanel_hostpanel_branding:/data \
+  alpine chown -R 1000:1000 /data
+
+# Restore plugins:
+docker run --rm \
+  -v hostpanel_hostpanel_plugins:/data \
+  -v /path/to/your/backups:/backup \
+  alpine sh -c 'cd /data && tar xzf /backup/plugins-2024-01-15.tar.gz'
+
+docker run --rm \
+  -v hostpanel_hostpanel_plugins:/data \
+  alpine chown -R 1000:1000 /data
+```
+
+**8. Start the full stack:**
 
 ```bash
 docker compose -f docker-compose.hub.yml up -d
 ```
 
-**7.** Check that `GET /health` returns `200` and that you can sign in.
+**9.** Check that `GET /health` returns `200` and that you can sign in.
 
 ## Schedule backups
 
 A nightly cron job on the host is the simplest approach.
 
-**1. Create the backup directory before the cron job runs:**
+**1. Create the backup directory:**
 
 ```bash
 mkdir -p /var/backups/hostpanel && chmod 700 /var/backups/hostpanel
@@ -102,35 +148,23 @@ mkdir -p /var/backups/hostpanel && chmod 700 /var/backups/hostpanel
 **2. Create `/usr/local/bin/hostpanel-backup`:**
 
 ```bash
-#!/bin/sh
-set -euo pipefail
-DEST=/var/backups/hostpanel/$(date +%Y-%m-%d-%H%M%S).sql
+#!/bin/bash
+set -eu
+umask 077
+DEST=/var/backups/hostpanel/db-$(date +%Y-%m-%d-%H%M%S).sql
 cd /opt/hostpanel
+
+# Database dump
 docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
   sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > "$DEST"
-# Verify the dump is not empty
-test -s "$DEST" || { echo "pg_dump produced an empty file, aborting" >&2; rm -f "$DEST"; exit 1; }
+if ! test -s "$DEST"; then
+  echo "pg_dump produced an empty file, aborting" >&2
+  rm -f "$DEST"
+  exit 1
+fi
 chmod 600 "$DEST"
-find /var/backups/hostpanel -name '*.sql' -mtime +30 -delete
-```
 
-```bash
-chmod +x /usr/local/bin/hostpanel-backup
-```
-
-**3. Create `/etc/cron.d/hostpanel-backup`:**
-
-```bash
-0 3 * * * root /usr/local/bin/hostpanel-backup
-```
-
-Keep at least 30 daily dumps — the `find -mtime +30` line in the script removes anything older.
-
-Copy the dumps and `.env` to off-site storage after each run.
-
-**Branding and plugins volumes:**
-
-```bash
+# Branding and plugins volumes
 docker run --rm \
   -v hostpanel_hostpanel_branding:/data \
   -v /var/backups/hostpanel:/backup \
@@ -140,6 +174,21 @@ docker run --rm \
   -v hostpanel_hostpanel_plugins:/data \
   -v /var/backups/hostpanel:/backup \
   alpine tar czf /backup/plugins-$(date +%Y-%m-%d).tar.gz -C /data .
+
+# Remove backups older than 30 days
+find /var/backups/hostpanel -name 'db-*.sql' -mtime +30 -delete
+find /var/backups/hostpanel -name 'branding-*.tar.gz' -mtime +30 -delete
+find /var/backups/hostpanel -name 'plugins-*.tar.gz' -mtime +30 -delete
 ```
 
-Add these to the backup script or run them alongside the database dump.
+```bash
+chmod +x /usr/local/bin/hostpanel-backup
+```
+
+**3. Create `/etc/cron.d/hostpanel-backup`:**
+
+```
+0 3 * * * root /usr/local/bin/hostpanel-backup
+```
+
+Copy the dumps and `.env` to off-site storage after each run.

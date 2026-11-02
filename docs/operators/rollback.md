@@ -8,9 +8,7 @@ description: How to go back to a previous Hostpanel version after an upgrade.
 How to go back to a previous Hostpanel release when an upgrade causes a problem.
 
 <Callout type="warning">
-If the new version added a database migration, restore the dump you took before
-the upgrade first — migrations do not run backwards. Running the old images against
-a migrated database can cause data corruption.
+If the new version added a database migration, restore the dump you took before the upgrade first — migrations do not run backwards. Running the old images against a migrated database can cause data corruption.
 </Callout>
 
 ## Before you roll back
@@ -28,12 +26,17 @@ docker compose -f docker-compose.hub.yml stop \
   hostpanel-api hostpanel-client hostpanel-admin hostpanel-caddy
 ```
 
-**2. Set `IMAGE_TAG` in `/opt/hostpanel/.env`** back to the previous version.
-No leading `v` — use `1.3.2`, not `v1.3.2`:
+**2. Roll back the compose files, Caddyfile and `IMAGE_TAG`** using the installer:
 
 ```bash
-# e.g. IMAGE_TAG=1.3.2
+curl -fsSL \
+  https://raw.githubusercontent.com/innovayse/hostpanel/main/install.sh \
+  | bash -s -- --version 1.3.2
 ```
+
+This restores the compose file and Caddyfile to the old version as well as setting
+`IMAGE_TAG`. Replace `1.3.2` with the version you are rolling back to — the value
+you noted in upgrade step 1.
 
 **3. If the new release added migrations, restore your pre-upgrade database dump.**
 
@@ -47,12 +50,16 @@ Replace `pre-upgrade-2024-01-15-103000.sql` with the dated file created in upgra
 cd /opt/hostpanel
 
 # Safety dump of the current (migrated) state:
+umask 077
 docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
   sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' \
   > pre-rollback-$(date +%Y-%m-%d-%H%M%S).sql
 
 # Verify the pre-upgrade dump file is not empty before dropping:
-test -s pre-upgrade-2024-01-15-103000.sql || { echo "Dump file is empty or missing, aborting."; exit 1; }
+if ! test -s pre-upgrade-2024-01-15-103000.sql; then
+  echo "Dump file is empty or missing, aborting."
+  exit 1
+fi
 
 # Drop and recreate, then load the pre-upgrade dump:
 docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
@@ -64,11 +71,10 @@ docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
          -U "$POSTGRES_USER" "$POSTGRES_DB"' < pre-upgrade-2024-01-15-103000.sql
 ```
 
-**4. Pull the old images and restart the stack:**
+**4. Start the stack:**
 
 ```bash
 cd /opt/hostpanel
-docker compose -f docker-compose.hub.yml pull
 docker compose -f docker-compose.hub.yml up -d
 ```
 

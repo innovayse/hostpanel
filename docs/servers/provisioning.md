@@ -99,7 +99,7 @@ A service is terminated in three ways:
 
 When a service is terminated manually, Hostpanel contacts the panel first. If the panel refuses, it returns `SERVICE_TERMINATE_UPSTREAM_FAILED` and the service remains unchanged — no status change is written. If the panel accepts, the service is set to Terminated and the SSH keys are revoked.
 
-If the panel refused and the service stayed as it was, the daily auto-terminate job retries automatically and staff receive the `service-termination-failed-admin` email.
+If the panel refused and the service stayed as it was, the daily auto-terminate job retries when the service is next due for auto-terminate, and staff receive the `service-termination-failed-admin` email at that point.
 
 `SERVICE_TERMINATE_NOT_ALLOWED` is returned when attempting to terminate a service that is already Terminated.
 

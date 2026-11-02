@@ -41,7 +41,7 @@ Go to **Servers** and click the **SSH** row action on a server to open the SSH k
 
 On OpenSSH 9.8 and later, failed or unauthenticated connections are penalised per source address (`PerSourcePenalties`, on by default). Add Hostpanel's address to `PerSourcePenaltyExemptList` in `sshd_config` to prevent a temporary lockout. The dialog shows the exact line to add.
 
-With a VPN or private network: enter the server's private address as the Agent Host; the host Hostpanel runs on must be in that network.
+With a VPN or private network: enter the server's private address as the Agent host; the host Hostpanel runs on must be in that network.
 
 </li>
 <li>
@@ -114,6 +114,8 @@ If the test fails the reason is shown as "Last check failed: _reason_" (`servers
 | the server has no complete agent settings | One or more required fields are empty (`AgentNotConfigured`) |
 | unknown reason | Unexpected response (`Unknown`) |
 
+The table lists common reasons. The admin panel shows about twenty; consult `servers.ssh.failures` in the locale file for the full list.
+
 `SSH_AGENT_NOT_VERIFIED` is shown when enabling without a passing test. `SSH_MODULE_NOT_SUPPORTED` is returned for server types whose module has no agent profile.
 
 </li>
@@ -136,7 +138,7 @@ The installer writes the base configuration from the chosen profile. An administ
 
 <SettingTable :settings="[
   { name: 'provider', type: 'string', default: 'cwp / generic-linux', description: 'Agent profile name. Set by the installer; reported on ping.' },
-  { name: 'binding', type: 'string', default: '', description: 'UUID of the Hostpanel server record. Set by the installer; checked on Test Agent.' },
+  { name: 'binding', type: 'string', default: '', description: 'UUID of the Hostpanel server record. Set by the installer; checked on Test agent.' },
   { name: 'min_uid', type: 'number', default: '1000', description: 'Minimum numeric uid a customer account must have. System accounts below this value are always refused.' },
   { name: 'home_root', type: 'string', default: '/home', description: 'Expected parent of every customer home directory. An account whose passwd home is not directly under this path is refused.' },
   { name: 'deny_accounts', type: 'string', default: 'root,admin,nobody,mysql,postfix,dovecot,named,apache,nginx,hpsshkeys', description: 'Comma-separated account names that are always refused regardless of uid or home. Both profiles add hpsshkeys; the built-in default does not include it.' },

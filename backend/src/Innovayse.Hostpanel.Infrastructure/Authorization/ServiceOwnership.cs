@@ -45,4 +45,24 @@ public sealed class ServiceOwnership : IServiceOwnership
         // this route into a way of enumerating ids, and service ids are sequential integers.
         return Result.FailureCode(HostpanelErrorCodes.SERVICE_NOT_FOUND);
     }
+
+    /// <inheritdoc/>
+    public async Task<Result<int>> GetOwnedProductIdAsync(int serviceId, CancellationToken ct)
+    {
+        var clientId = await _access.RequireClientIdAsync(ct);
+        if (clientId.IsSuccess)
+        {
+            // One read answers both questions: no row means foreign or missing, and the two answer alike.
+            var productId = await _context.ClientServices.AsNoTracking()
+                .Where(s => s.Id == serviceId && s.ClientId == clientId.Value)
+                .Select(s => (int?)s.ProductId)
+                .FirstOrDefaultAsync(ct);
+            if (productId is { } product)
+            {
+                return Result<int>.Success(product);
+            }
+        }
+
+        return Result<int>.FailureCode(HostpanelErrorCodes.SERVICE_NOT_FOUND);
+    }
 }

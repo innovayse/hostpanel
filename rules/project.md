@@ -516,6 +516,28 @@ docker/                              compose set (shared·dev·prod·platform), 
     already spent its tier permit.
   - Left for later issues: the host API and the store (#642), a call timeout (#792). A streamed call has no timeout
     of its own until then: it ends when the plugin ends or the client leaves.
+- **Plugin slot index: widgets for a verified context (#644).** The answer is `PluginSlotIndexDto` with
+  `PluginSlotWidgetDto` items. **Nothing of a plugin is built or called**: the index is read from manifests, so a foreign
+  id cannot reach plugin code.
+  - Endpoints: `GET /api/client/plugins/slots/{slotId}` (`ClientPluginSlotsController`) and
+    `GET /api/admin/plugins/slots/{slotId}` (`AdminPluginSlotsController`). The query names the record the page shows
+    (`serviceId`, and `clientId` on an admin slot). Use cases: `GetClientPluginSlotQuery` and `GetAdminPluginSlotQuery`
+    (`Application/Plugins/Queries/`), sharing `PluginSlotIndexBuilder`. Rows of other modules are read through
+    `IServiceOwnership` and `IPluginSlotContextReader`, never from the handler.
+  - Order of checks, which is the contract: the slot (unknown or of the other panel is `PLUGIN_SLOT_NOT_FOUND`), the
+    caller's account, the context, then the index. A client slot's service must be the caller's own
+    (`SERVICE_NOT_FOUND` for foreign and missing alike, one query that also yields the product); an admin context must
+    exist (`SERVICE_NOT_FOUND`, `CLIENT_NOT_FOUND`) and a client named beside a service must be its own. A slot that needs
+    a record and gets none is `PLUGIN_SLOT_CONTEXT_REQUIRED` (400, the default arm of `StatusMapping`).
+  - Filters: the plugin is an enabled, configured app plugin (the `IPluginEndpointResolver` gates); the operator has not
+    hidden the widget; the caller holds its `permission` (`PluginClientPermissions`, the rule a route uses: absent means
+    the account holder alone, `Any` means none, anything unparsable fails closed; an admin slot takes none); a widget
+    with `productIds` is listed only when the slot's service orders one of them. Titles resolve through `PluginText`.
+    The order is `order`, then plugin id, then widget id, ordinal.
+  - Manifest rules: a slot widget id matches `[a-z0-9][a-z0-9_-]*` and is unique per slot within a plugin, and the
+    plugin id is a `PluginIdentifier`.
+  - Hide setting: `plugins.hidden_slot_widgets` (`PluginSettingKeys.HiddenSlotWidgets`, seeded empty) holds comma
+    separated `slot:plugin:widget` entries. Empty entries are ignored, and the validator and the reader share one grammar.
 
 ## CQRS — Wolverine, conforming
 

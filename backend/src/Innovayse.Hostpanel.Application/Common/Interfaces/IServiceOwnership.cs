@@ -44,4 +44,16 @@ public interface IServiceOwnership
     /// </returns>
     /// <exception cref="UnauthorizedAccessException">Thrown when the request carries no subject.</exception>
     Task<Result> RequireOwnedByCallerAsync(int serviceId, CancellationToken ct);
+
+    /// <summary>
+    /// Verifies the same ownership as <see cref="RequireOwnedByCallerAsync"/> and reads the service's product in one query.
+    /// </summary>
+    /// <param name="serviceId">Client service primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// The product id of the caller's own service, or a failed <see cref="Result{T}"/> carrying <c>SERVICE_NOT_FOUND</c>
+    /// for a foreign service, a missing one or a caller with no account, which answer alike on purpose.
+    /// </returns>
+    /// <exception cref="UnauthorizedAccessException">Thrown when the request carries no subject.</exception>
+    Task<Result<int>> GetOwnedProductIdAsync(int serviceId, CancellationToken ct);
 }

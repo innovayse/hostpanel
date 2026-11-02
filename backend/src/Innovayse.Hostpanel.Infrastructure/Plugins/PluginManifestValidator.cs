@@ -3,6 +3,7 @@ using System.Reflection.PortableExecutable;
 using System.Text.RegularExpressions;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
+using Innovayse.Hostpanel.Domain.Plugins;
 using Innovayse.SDK.Plugins.Enums;
 using Innovayse.SDK.Plugins.Manifest;
 using Innovayse.SDK.Plugins.Slots;
@@ -49,6 +50,10 @@ internal static partial class PluginManifestValidator
     [GeneratedRegex(@"\A[a-z0-9][a-z0-9_-]*\z", RegexOptions.CultureInvariant)]
     private static partial Regex LiteralSegmentPattern();
 
+    /// <summary>Matches a slot widget id: the same safe shape as a literal route segment, because the id is a key in a setting and a URL-safe reference.</summary>
+    [GeneratedRegex(@"\A[a-z0-9][a-z0-9_-]*\z", RegexOptions.CultureInvariant)]
+    private static partial Regex WidgetIdPattern();
+
     /// <summary>Matches one route parameter segment such as <c>{id}</c>, with nothing after it, not even a newline.</summary>
     [GeneratedRegex(@"\A\{[A-Za-z][A-Za-z0-9]*\}\z", RegexOptions.CultureInvariant)]
     private static partial Regex ParameterSegmentPattern();
@@ -68,6 +73,11 @@ internal static partial class PluginManifestValidator
             return new PluginManifestViolation(
                 PluginManifestRule.ManifestVersionUnknown,
                 $"manifestVersion {manifest.ManifestVersion} is not one of {string.Join(", ", SupportedManifestVersions.Order())}");
+        }
+
+        if (!PluginIdentifier.IsValid(manifest.Id))
+        {
+            return new PluginManifestViolation(PluginManifestRule.PluginIdInvalid, "the manifest id is not a valid plugin id");
         }
 
         return CheckRoutes(PluginArea.Client, manifest.Api.Client)
@@ -216,14 +226,25 @@ internal static partial class PluginManifestValidator
         return null;
     }
 
-    /// <summary>Checks the slot entries: the slot exists, offers each context key, and its permission fits its area.</summary>
+    /// <summary>Checks the slot entries: the widget id is safe and unique per slot, the slot exists, offers each context key, and its permission fits its area.</summary>
     /// <param name="slots">The slot entries.</param>
     /// <returns>The first violation, or <see langword="null"/>.</returns>
     private static PluginManifestViolation? CheckSlots(IReadOnlyList<PluginSlotEntry> slots)
     {
+        var seen = new HashSet<(string Slot, string Id)>();
         foreach (var entry in slots)
         {
             var where = $"ui.slots '{entry.Id}'";
+            if (entry.Id is null || !WidgetIdPattern().IsMatch(entry.Id))
+            {
+                return new PluginManifestViolation(PluginManifestRule.SlotWidgetIdInvalid, $"{where}: the widget id is not lowercase letters, digits, hyphens and underscores");
+            }
+
+            if (!seen.Add((entry.Slot, entry.Id)))
+            {
+                return new PluginManifestViolation(PluginManifestRule.SlotWidgetDuplicate, $"{where}: declared more than once for slot '{entry.Slot}'");
+            }
+
             var slot = PluginSlots.Find(entry.Slot);
             if (slot is null)
             {

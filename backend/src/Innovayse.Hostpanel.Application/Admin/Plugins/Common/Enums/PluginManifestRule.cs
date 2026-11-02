@@ -36,4 +36,13 @@ public enum PluginManifestRule
 
     /// <summary>A file in the plugin folder could not be read, so its SDK reference could not be checked.</summary>
     AssemblyUnreadable = 10,
+
+    /// <summary>A slot widget id is not lowercase letters, digits, hyphen and underscore starting with a letter or digit.</summary>
+    SlotWidgetIdInvalid = 11,
+
+    /// <summary>The same widget id is declared twice for one slot in one plugin.</summary>
+    SlotWidgetDuplicate = 12,
+
+    /// <summary>The manifest id is not a valid plugin id (lowercase words joined by single hyphens).</summary>
+    PluginIdInvalid = 13,
 }

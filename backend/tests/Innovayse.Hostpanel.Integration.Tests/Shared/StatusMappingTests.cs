@@ -46,6 +46,8 @@ public sealed class StatusMappingTests
     [InlineData(HostpanelErrorCodes.EXCHANGE_RATE_SOURCE_UNAVAILABLE, 503)]
     [InlineData(HostpanelErrorCodes.IDENTITY_PLUGIN_UNAVAILABLE, 503)]
     [InlineData(HostpanelErrorCodes.PLUGIN_ROUTE_NOT_FOUND, 404)]
+    [InlineData(HostpanelErrorCodes.PLUGIN_SLOT_NOT_FOUND, 404)]
+    [InlineData(HostpanelErrorCodes.PLUGIN_SLOT_CONTEXT_REQUIRED, 400)]
     [InlineData(HostpanelErrorCodes.PLUGIN_REQUEST_TOO_LARGE, 413)]
     [InlineData(HostpanelErrorCodes.PLUGIN_FAILED, 502)]
     [InlineData(HostpanelErrorCodes.EXCHANGE_RATE_BASE_NOT_QUOTED, 409)]

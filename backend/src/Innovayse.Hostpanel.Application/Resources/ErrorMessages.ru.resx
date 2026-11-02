@@ -537,6 +537,15 @@
 <data name="PLUGIN_ASSEMBLY_UNREADABLE" xml:space="preserve">
     <value>Не удалось прочитать один из файлов этого плагина, поэтому плагин нельзя проверить. Загрузите его ещё раз.</value>
   </data>
+<data name="PLUGIN_SLOT_WIDGET_ID_INVALID" xml:space="preserve">
+    <value>Идентификатор виджета в этом плагине недопустим: используйте строчные буквы, цифры, дефисы и подчёркивания, начиная с буквы или цифры.</value>
+  </data>
+<data name="PLUGIN_SLOT_WIDGET_DUPLICATE" xml:space="preserve">
+    <value>Этот плагин объявляет один и тот же идентификатор виджета дважды для одного слота.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_ID_INVALID" xml:space="preserve">
+    <value>Идентификатор плагина в манифесте недопустим: используйте строчные буквы и цифры, слова разделяйте одним дефисом.</value>
+  </data>
 <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>Этот архив содержит запись, которая записала бы файл вне папки плагина, и был отклонён.</value>
   </data>
@@ -572,6 +581,12 @@
   </data>
 <data name="PLUGIN_ROUTE_NOT_FOUND" xml:space="preserve">
     <value>По этому адресу ничего нет.</value>
+  </data>
+<data name="PLUGIN_SLOT_NOT_FOUND" xml:space="preserve">
+    <value>Такой области страницы нет.</value>
+  </data>
+<data name="PLUGIN_SLOT_CONTEXT_REQUIRED" xml:space="preserve">
+    <value>Для этой области страницы нужен контекст.</value>
   </data>
 <data name="PLUGIN_FAILED" xml:space="preserve">
     <value>Плагин не смог выполнить запрос. Повторите попытку позже.</value>

@@ -74,7 +74,9 @@ repositories. The departures are short:
   `AutoTerminateSuspendedCron`, `SyncServerAccountCountsCron`, `DispatchFulfilmentCron`) and `ResetDemoData`,
   `CheckDomainExpiries` and `SyncPendingDomainStatuses` are scheduled messages, not dispatched by a
   caller, so nothing would receive a `Result`. So are `RunMigrationPull` (published by
-  `MigrationPullQueue` once a job's queued state is saved; the job row records how the pull ended)
+  `MigrationPullQueue` once a job's queued state is saved; the job row records how the pull ended; when two
+  deliveries of one pull race, the save that starts the job (`job.Start`) loses with `ConcurrencyConflictException`
+  and the worker logs it at Information and returns without touching the job, which the winner runs)
   and `RecoverInterruptedMigrationJobs` (a recurring job: it fails queued or running pulls whose `MigrationJobs.LastHeartbeatAt` is older than `ScheduledJobs:MigrationStaleAfterMinutes`, so a pull another instance still runs is left alone). The crons run each pass through
   `Application/Common/RecurringJobs.RunAsync`, which takes the job's lease, logs a failed pass and schedules
   the next one from the end of the pass; the log line is the record of the failure. Wrapping them in a
@@ -85,7 +87,10 @@ repositories. The departures are short:
   whose holder crashed expires. On startup `RecurringJobs.StartAsync` runs a job at once when its last success
   is older than its period, and otherwise schedules its next regular run. Every hour and interval lives in
   `ScheduledJobsOptions` (section `ScheduledJobs`), read by the startup services and the handlers alike; a
-  scheduled run is in memory, so a host that is stopping ends the chain and the next start catches up.
+  scheduled run is in memory, so a host that is stopping ends the chain and the next start catches up. It stays in
+  memory although every other local queue is durable (see "Durable messaging"): the chain re-schedules itself after
+  each pass and every start re-creates it from `JobRuns`, so a scheduled run that survived a restart would be
+  scheduled a second time and each restart would add a chain.
   `DispatchFulfilmentCron` runs every 30 seconds and delivers the due `FulfilmentRecords` to their plugins
   (`FulfilmentDispatcher`, claim with a lease, back-off, paid then refunded then lapsed per invoice and plugin);
   `DispatchFulfilmentNow` is one extra pass of the same job under the same lease, scheduling nothing, for the
@@ -100,6 +105,7 @@ repositories. The departures are short:
   `ExceptionHandlingMiddleware`, the model-state factory, the auth-event writers and the rate
   limiter. The body carries only those members, and both frontends read `type`/`detail`; do not
   add an `error`/`code` pair beside them.
+  `EventStreamResult` and `ServerSentEvent` (the `text/event-stream` writer and its framing) live in `Shared/Infrastructure` beside `ErrorBody` for the same reason: they are the host's own response writers, not controllers or use case code.
 - **The API sends the finished sentence, in the caller's language; the frontend does not
   translate codes.** Sentences live in `Application/Resources/ErrorMessages*.resx` (looked up by
   error code through `IErrorMessageResolver`) and `Shared/Resources/ValidationMessages*.resx` (middleware, binders) and
@@ -431,7 +437,7 @@ docker/                              compose set (shared·dev·prod·platform), 
     (default about 28.6 MiB, which may be below the cap) to `PluginApiOptions.ServerBodyLimit` (the cap, one read chunk of 8 KiB and 1/64 of the cap for chunk framing, which the
     server counts) on both plugin controllers, after authorisation: the runner stops at the first read that passes the cap, which
     is never more than one chunk beyond it, so it still answers its own 413 `PLUGIN_REQUEST_TOO_LARGE` first, while a
-    request the runner never reads (unknown plugin, undeclared route, refused caller, 501) is bounded by the server at
+    request the runner never reads (unknown plugin, undeclared route, refused caller) is bounded by the server at
     that same size instead of being drained without limit. `[NoFormBinding]` removes every MVC value provider except the
     route's and the query string's, because MVC otherwise reads and buffers a urlencoded or multipart body before the
     action, past the cap, and leaves the plugin an empty body. Architecture tests pin `[RequireRequestedWith]`,
@@ -445,7 +451,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   - **Audit.** A call that is not a GET writes one activity log line before the plugin runs, through `IActivityLogger`:
     `Called Plugin Route - Plugin ID: {id} - Area: {Client|Admin} - Route: {METHOD} {declared template}`, the client for a
     client call and none for an admin call, stamped with the caller by the logger. Never the body, never the concrete
-    path. A call refused before the plugin (404, 403, 413, 501) writes nothing.
+    path. A call refused before the plugin (404, 403, 413) writes nothing.
   - **Replies** (`PluginReplyDto : IForwardedReply`, written by `BaseApiController.HandleForwarded`, the only place a
     status the use case did not choose reaches the wire). `Json` and `NoContent` pass through with the plugin's status
     (camelCase body). `Problem` becomes the standard `ErrorResponse` (`application/problem+json`) with the plugin's status,
@@ -454,9 +460,20 @@ docker/                              compose set (shared·dev·prod·platform), 
     never answer with a host code and a frontend that branches on one is never fooled; a code that is not 1 to 64 letters,
     digits, `_`, `.` or `-` is a plugin fault. **A plugin that throws** (or whose constructor throws, or returns no reply
     or a malformed problem) answers 502 `PLUGIN_FAILED` with no message and no stack, logged with the plugin id; only the
-    caller's own cancellation propagates. **`Stream` is out of scope until #641**: a route marked `streaming`, or a streamed
-    reply from a route that is not, answers 501 `PLUGIN_STREAMING_NOT_SUPPORTED` (the plugin is not called for the
-    first, and the stream is never enumerated for the second).
+    caller's own cancellation propagates. **Streaming (#641).** A `Stream` reply is only accepted from a route that declares `streaming`
+    (`PluginCallRunner.MapStream`); from any other route it is a plugin fault, 502 `PLUGIN_FAILED`, and the stream is
+    never enumerated. A streaming route may still answer with JSON, no content or a problem, and a refusal or a throw
+    before the first event is the ordinary reply with its own status. An accepted stream is a `PluginReplyDto` carrying a
+    `Shared/Models/StreamedReply` (events plus `PluginApi:StreamHeartbeatSeconds`, default 15, 1 to 300);
+    `BaseApiController.HandleForwarded` hands it to `HandleStream`, which returns `Shared/Infrastructure/EventStreamResult`:
+    `text/event-stream`, `Cache-Control: no-cache`, `X-Accel-Buffering: no`, headers flushed at once, each event framed by
+    `ServerSentEvent.Format` (`event`, `id`, one `data` line per line of data) and flushed, `: keepalive` after each
+    silence of the heartbeat, and the plugin's enumerator opened with `HttpContext.RequestAborted`, so a disconnect cancels
+    the plugin (`PluginReply.Stream` documents the `EnumeratorCancellation` the plugin needs). A plugin that throws after
+    the first event ends the stream with an `error` event (`code` `PLUGIN_FAILED`, localized `message`, `partial`) and a
+    `done` event (`PluginEventStream`, vocabulary `PluginStreamEvent`); nothing of the exception is written. The
+    `plugin-stream` lease of `PluginRateLimitFilter` is registered for disposal with the response, so it is held for the
+    whole stream.
     **The status is checked again by the host**, not trusted to the SDK factories: a `Json` reply must be 200 to 203 with a
     body, `NoContent` 204, a `Problem` 400 to 599 except 401 and 407; anything else (a reply built by reflection or by a
     plugin compiled against another SDK) answers 502 `PLUGIN_FAILED`, logged with the plugin id. **A plugin problem
@@ -490,8 +507,8 @@ docker/                              compose set (shared·dev·prod·platform), 
     every member throws `NotSupportedException`, which is answered as `PLUGIN_FAILED` and logged. An empty profile or a
     store that forgets would be a lie a plugin could act on. #642 replaces that one registration.
   - **Status codes.** `PLUGIN_ROUTE_NOT_FOUND` 404, `PLUGIN_REQUEST_TOO_LARGE` 413 (the `_TOO_LARGE` suffix),
-    `PLUGIN_FAILED` 502 and `PLUGIN_STREAMING_NOT_SUPPORTED` 501 (exact `StatusMapping` rows; **the 501 is temporary and goes when #641 ships streaming**); each has its sentence in
-    en/ru/hy.
+    and `PLUGIN_FAILED` 502 (exact `StatusMapping` rows); each has its sentence in
+    en/ru/hy. `PLUGIN_STREAMING_NOT_SUPPORTED` went with #641.
   - **Rate limits (#640).** `API/Plugins/PluginRateLimitFilter` is a resource filter on both doors, marked
     `[PluginRateLimit(PluginArea)]`. It matches the route and measures the caller against `plugin-default`,
     `plugin-strict` or `plugin-heavy` (the manifest route's `RateLimit`, default when none) with
@@ -502,8 +519,30 @@ docker/                              compose set (shared·dev·prod·platform), 
     tests derive a host with an enabled `PluginRateLimiter`. The client account is resolved before the plugin budget
     is checked, so a refused call still costs one lookup, which the global limiter bounds. A refused stream call has
     already spent its tier permit.
-  - Left for later issues: streaming and its nginx settings (#641), the host API and the store (#642), a call
-    timeout (#792).
+  - Left for later issues: the host API and the store (#642), a call timeout (#792). A streamed call has no timeout
+    of its own until then: it ends when the plugin ends or the client leaves.
+- **Plugin slot index: widgets for a verified context (#644).** The answer is `PluginSlotIndexDto` with
+  `PluginSlotWidgetDto` items. **Nothing of a plugin is built or called**: the index is read from manifests, so a foreign
+  id cannot reach plugin code.
+  - Endpoints: `GET /api/client/plugins/slots/{slotId}` (`ClientPluginSlotsController`) and
+    `GET /api/admin/plugins/slots/{slotId}` (`AdminPluginSlotsController`). The query names the record the page shows
+    (`serviceId`, and `clientId` on an admin slot). Use cases: `GetClientPluginSlotQuery` and `GetAdminPluginSlotQuery`
+    (`Application/Plugins/Queries/`), sharing `PluginSlotIndexBuilder`. Rows of other modules are read through
+    `IServiceOwnership` and `IPluginSlotContextReader`, never from the handler.
+  - Order of checks, which is the contract: the slot (unknown or of the other panel is `PLUGIN_SLOT_NOT_FOUND`), the
+    caller's account, the context, then the index. A client slot's service must be the caller's own
+    (`SERVICE_NOT_FOUND` for foreign and missing alike, one query that also yields the product); an admin context must
+    exist (`SERVICE_NOT_FOUND`, `CLIENT_NOT_FOUND`) and a client named beside a service must be its own. A slot that needs
+    a record and gets none is `PLUGIN_SLOT_CONTEXT_REQUIRED` (400, the default arm of `StatusMapping`).
+  - Filters: the plugin is an enabled, configured app plugin (the `IPluginEndpointResolver` gates); the operator has not
+    hidden the widget; the caller holds its `permission` (`PluginClientPermissions`, the rule a route uses: absent means
+    the account holder alone, `Any` means none, anything unparsable fails closed; an admin slot takes none); a widget
+    with `productIds` is listed only when the slot's service orders one of them. Titles resolve through `PluginText`.
+    The order is `order`, then plugin id, then widget id, ordinal.
+  - Manifest rules: a slot widget id matches `[a-z0-9][a-z0-9_-]*` and is unique per slot within a plugin, and the
+    plugin id is a `PluginIdentifier`.
+  - Hide setting: `plugins.hidden_slot_widgets` (`PluginSettingKeys.HiddenSlotWidgets`, seeded empty) holds comma
+    separated `slot:plugin:widget` entries. Empty entries are ignored, and the validator and the reader share one grammar.
 
 ## CQRS — Wolverine, conforming
 
@@ -535,6 +574,54 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   host that keeps the production container (`IntegrationTestFactory.WithProductionAdapters`, no test double), and
   walks the production registrations for a type, constructor or constructor parameter that is not public; the
   test host's public fakes would otherwise hide a production adapter that is not.
+- **Durable messaging.** Messages are persisted in PostgreSQL (`opts.PersistMessagesWithPostgresql`) in
+  Wolverine's own schema `wolverine` (incoming, outgoing, dead-letter and node tables, lower-case names that are
+  Wolverine's and exempt as framework-owned). The connection string is `ConnectionStrings:DefaultConnection`, read
+  while Wolverine is configured; a missing one refuses startup with the key's name. The schema is created and
+  updated by Wolverine at host start (`AutoBuildMessageStorageOnStartup = CreateOrUpdate`, set explicitly), in
+  every environment including `Testing`, and **not by an EF migration**: mapping Wolverine's tables into
+  `AppDbContext` would make the EF model own a framework schema whose shape changes with the Wolverine version and
+  put framework tables under `ModelDiffBaselineTests` and `DatabaseIdentifierNamingTests`. EF migrations run as
+  before. **The deploy database user needs `CREATE` on the database** (not only on `public`), because Wolverine
+  creates the `wolverine` schema itself at the first start; without it the host refuses to start on that first boot. `opts.UseEntityFrameworkCoreTransactions()` registers the `IDbContextOutbox` the domain-event interceptor
+  uses, **without `Policies.AutoApplyTransactions()`**: that policy would add a second `SaveChangesAsync` and an
+  explicit transaction around every handler that takes the context, changing the unit of work of handlers that
+  already save themselves (some more than once on purpose), while the interceptor's outbox already covers every
+  save, inside a handler or not (startup and hosted services, seeders). `DurableQueuePolicy`
+  (`Shared/Infrastructure`, an endpoint policy) makes a local queue durable only when a chain it serves is delivered
+  from a queue (`QueuedDelivery.IsQueued`, the same rule the retry policy uses): events and commands published for
+  later get a database inbox, while the queues of request/response use cases, which are only invoked inline, stay in
+  memory. Making every queue durable gave each host several hundred idle durable receivers and their timers, and three
+  integration shards that fit in 5 GB on develop ran out of memory. `IRecurringJob` messages and `ResetDemoDataCommand` go to
+  the buffered in-memory queue `recurring-jobs`, because those chains re-schedule themselves and are re-created on
+  every start, so a durable scheduled run would add a chain per restart (scheduled messages on a buffered queue stay
+  in memory; `AlwaysMakeScheduledMessagesDurable` is left off). Failures on a queued chain follow
+  `DurableDeliveryRetryPolicy` (`Shared/Infrastructure`, beside `RecurringJobTimeoutPolicy`), which applies only to
+  chains delivered from a queue: not `IRecurringJob`, and a handler that returns no response. Request and response
+  chains reached by `InvokeAsync` are left out on purpose, because Wolverine would run the cooldown retries inline
+  there too and a controller's command must answer once. A `ValidationException` or `DomainException` goes straight
+  to the dead letters (a retry changes nothing); anything else is retried with cooldowns of 1 s, 5 s and 30 s, then
+  rescheduled durably after 5 min, 30 min and 2 h (this survives a restart), then dead-lettered in
+  `wolverine`'s dead-letter table. The values are documented constants on the policy, structure rather than
+  per-tier configuration. The durability mode is the default `Balanced`: a rolling deploy briefly runs two
+  containers on one database, and `Balanced` assigns inbox ownership per node where `Solo` would let both recover
+  the same envelopes. **Handlers of one event are separated** (`opts.MultipleHandlerBehavior =
+  MultipleHandlerBehavior.Separated` in `MessagingRegistration`): each handler of an event gets its own durable local
+  queue and its own chain (`HandlerChain.ByEndpoint`, which `DurableDeliveryRetryPolicy` reaches too), so a failing
+  handler is retried and dead-lettered alone and never re-runs a sibling that already succeeded. Every handler
+  reached through a durable queue must still be idempotent on its own, because its own retry, a recovery after a
+  crash or a second delivery runs it again. Production code never `InvokeAsync`s an event: an event is published
+  (the outbox, or `PublishAsync`), since an inline invoke of a separated event would not reach its per-handler
+  queues. Tests publish an event through `Fixtures/MessageDispatch.PublishAndWaitAsync` (an extension on
+  `IServiceProvider`), which publishes with Wolverine's message tracking and waits until every handler's queue has
+  finished, ignoring the `recurring-jobs` schedule. The demo reset truncates the EF model's
+  tables only and leaves the `wolverine` schema alone: truncating the inbox under a running durability agent would
+  break its ownership bookkeeping, and a durable message about a truncated row finds nothing. The integration test
+  factory supplies the connection string with `UseSetting`, not `ConfigureAppConfiguration`, because Wolverine
+  reads it from the `WebApplicationBuilder` before `Build()`, and configuration added through
+  `ConfigureAppConfiguration` arrives only after it. Wolverine builds its schema in each factory's own database at
+  host start. A test change that adds a new top-level folder in `Integration.Tests/` still needs that folder added
+  to a shard (see "Tests").
 - **No identity on a message** (`NoIdentityOnMessagesTests`); handlers read it from
   `ICurrentUserService` (`Shared/MultiTenancy/`).
 - **Client portal permissions are enforced on the server, per action.** Every action behind `Policies.Client` carries
@@ -584,10 +671,21 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   many modules' tables directly, because they are a bulk import of legacy data across modules that runs as
   one job with its own log; the reason is written on `IMigrationEntityImporter` and the entry is marked
   `CrossModuleAccess.Writer` in `CrossModuleReadModels`. No other writer joins it without an owner decision.
-- **Domain events are dispatched.** `BaseEntity.DomainEvents` collects them and
-  `Infrastructure/Persistence/DomainEventDispatchInterceptor.cs` publishes them through Wolverine
-  after `SaveChanges` (inside an explicit transaction: on its commit, dropped on rollback), then clears them. `IDomainEventGate` suppresses dispatch for bulk writers
-  (`MigrationPullWorker`, `DevDataSeeder`; tests use `Fixtures/SuppressedDomainEventGate`).
+- **Domain events are dispatched through the outbox, in the same transaction as the change.** `BaseEntity.DomainEvents`
+  collects them and `Infrastructure/Persistence/DomainEventDispatchInterceptor.cs` writes them to Wolverine's
+  PostgreSQL outbox (`IDbContextOutbox`, enrolled on the context) on the context's current transaction, so an event
+  exists if and only if its state change committed. When a tracked entity has pending events
+  (`BaseEntity.HasDomainEvents`, so a deferred factory is not evaluated before the insert assigns ids) and no
+  transaction is open, the interceptor begins one and owns it: after the save it takes and clears the events,
+  publishes them, commits and then flushes them to the local durable queues (if the process dies between the commit
+  and the flush, the durability agent recovers them from the stored envelopes). Inside a caller's explicit transaction
+  the events are flushed when that transaction commits and dropped with it on a rollback. A failed save rolls back an
+  owned transaction and leaves the events on the entity, so a retried save still carries them. A publish failure
+  throws and fails the save instead of being logged afterwards: the write and its announcement are one unit.
+  Synchronous `SaveChanges` is not intercepted; nothing saves synchronously. `IDomainEventGate` is unchanged: it
+  suppresses dispatch for bulk writers (`MigrationPullWorker`, `DevDataSeeder`; tests use
+  `Fixtures/SuppressedDomainEventGate`), whose events are taken and discarded with no transaction opened and nothing
+  written.
   `DevDataSeeder` reads the passwords of the accounts it creates from `DevDataSeederOptions` (section `DevDataSeed`, both required, no default in code or `appsettings.json`). The dev compose file supplies them as `DevDataSeed__AdminPassword` / `DevDataSeed__ClientPassword` from `DEV_SEED_ADMIN_PASSWORD` / `DEV_SEED_CLIENT_PASSWORD` (documented dev defaults in `docker/.env.example`); no `appsettings.Development.json` is kept, it is git-ignored.
   `BaseEntity.AddDomainEvent(Func<IDomainEvent>)` defers building an event that needs the id
   until after the save. `ClientService.Suspend/Unsuspend/Terminate` take `hostingAlreadyUpdated`
@@ -604,8 +702,8 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   `RestoreServiceSshKeysCommand` on `ClientServiceUnsuspendedEvent`, which puts them back. `Provisioning/Events/ServiceUnsuspendedHandler`
   dispatches the same `RestoreServiceSshKeysCommand` a second time, but only after the panel answered `Updated` for
   the unlock, because an agent refuses keys for a locked account and the two unsuspensions are not ordered. All three
-  only trigger idempotent commands, log a refusal or failure for staff and never throw, since Wolverine runs every
-  handler of one message in a single chain.
+  only trigger idempotent commands and log a refusal or failure for staff instead of throwing. Each runs on its own
+  queue (handlers are separated, see "Durable messaging"), so one of them failing never re-runs the others.
   The remaining three react to `ClientClosedEvent` and are described under "Client account status" below.
 
 - **`InvoiceItems.ClientServiceId` and `InvoiceItems.RegisteredDomainId` carry no foreign key, on purpose.** An
@@ -724,6 +822,23 @@ feature does not exist is not kept. The decisions:
   received and renewal reminders use `Invoice`; ticket replied and closed use `Support`; service
   provisioned uses `Product`; the domain mails use `Domain`. Mail to staff, verification and
   security mail are never copied. `General` and `Affiliate` have no sender yet.
+- **Mail sent from a message is sent once per recipient.** `SendEmailCommand` takes an optional `IdempotencyKey`.
+  Every handler that mails in reaction to a message passes `EmailIdempotencyKey.ForMessage(message, templateSlug)`
+  (SHA-256 over the message type, its JSON and the slug); `SendRenewalReminder` passes `ForParts(invoice id,
+  threshold)`. Per address (the main recipient and each contact copy) the handler keys the row with
+  `ForRecipient(key, address)` and stores it on `EmailLogs.IdempotencyKey` (64 lower-case hex, unique index
+  `IX_EmailLogs_IdempotencyKey` filtered on not null) beside `EmailLogs.State` (`EmailDeliveryState`: `Sending`,
+  `Sent`, `Failed`; `Success` always equals `State == Sent`). The order is **claim, send, outcome**: the row is
+  claimed in `Sending` and saved before the relay is called (`EmailLog.Claim`, or `Reclaim` of a row whose
+  `MayResend` allows it), then `MarkDelivered` or `MarkUndelivered` is saved. A `Sent` row is never sent again; a
+  `Failed` row is retried; a `Sending` row is trusted to be in flight for `Notifications:DeliveryClaimSeconds`
+  (30 to 3600, default 300) and only then reclaimed. Two deliveries racing for one row meet the unique index or the
+  row's concurrency token, `AppDbContext` raises `ConcurrencyConflictException`, and the loser skips that address.
+  What remains: a crash after the relay accepted the message and before the outcome is saved leaves the row in
+  `Sending`, and the next delivery resends it once after the lease. Synchronous mails sent inside a request (email
+  change, invitation, verification, password reset) pass no key and are not deduplicated: the person is waiting
+  for exactly that mail, a second request is meant to send a fresh one (often with a new token), and no queue
+  retries them.
 - **Client data export** lists the whole profile, contacts with address and `Notify*` flags, linked users
   with permissions, invitations (never the token), and mail to the account's and every contact's address,
   matched case-insensitively. The lists with no ceiling, `emails` and `activityLog`, carry the newest 500
@@ -768,7 +883,7 @@ feature does not exist is not kept. The decisions:
 
 ## Stack
 
-.NET 9 · Wolverine 5.41.0 · EF Core 9 + Npgsql 9 · PostgreSQL 17 · ASP.NET Identity (local
+.NET 9 · Wolverine 5.41.0 (WolverineFx.Postgresql, WolverineFx.EntityFrameworkCore) · EF Core 9 + Npgsql 9 · PostgreSQL 17 · ASP.NET Identity (local
 mode) + JWT bearer · `Innovayse.Auth` (cookie session for the admin SPA, sso builds only) · SkiaSharp (branding images) ·
 Serilog · Scalar + Swashbuckle · Mapster · Stripe.net · MailKit · Otp.NET · Fluid.Core ·
 DnsClient · Redis (sessions + data-protection key ring) · RabbitMQ · xUnit + FluentAssertions +
@@ -1343,8 +1458,9 @@ Never spread one of these, and never restructure as a side effect of a feature.
   `RegisterHandler` publishes four arguments and stops, so `IpAddress`,
   `UserAgent`, `DeviceType`, `OperatingSystem` and `Browser` arrive null and `Client.Create`
   writes five mapped, migrated columns from them. Finish it by capturing all five from the
-  request, not by trimming the record. Wolverine runs with discovery only — no broker — so the
-  event never leaves the process.
+  request, not by trimming the record. Wolverine runs with no broker, so the event never leaves
+  the process; it is persisted in the `wolverine` schema like every other queued message (see "Durable
+  messaging").
 - **Migration imports go through an importer registry.** `IMigrationEntityImporter` is the one
   contract: an importer names its `MigrationEntityType` in `EntityType` and imports that kind in
   `ImportAsync`. Every importer is registered in DI; adding an entity kind means adding an importer

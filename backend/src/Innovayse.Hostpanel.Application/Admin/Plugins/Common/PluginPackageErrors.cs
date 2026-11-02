@@ -54,6 +54,9 @@ public static class PluginPackageErrors
             PluginManifestRule.SlotUnknown => HostpanelErrorCodes.PLUGIN_SLOT_UNKNOWN,
             PluginManifestRule.SlotContextKeyNotOffered => HostpanelErrorCodes.PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED,
             PluginManifestRule.AssemblyUnreadable => HostpanelErrorCodes.PLUGIN_ASSEMBLY_UNREADABLE,
+            PluginManifestRule.SlotWidgetIdInvalid => HostpanelErrorCodes.PLUGIN_SLOT_WIDGET_ID_INVALID,
+            PluginManifestRule.SlotWidgetDuplicate => HostpanelErrorCodes.PLUGIN_SLOT_WIDGET_DUPLICATE,
+            PluginManifestRule.PluginIdInvalid => HostpanelErrorCodes.PLUGIN_MANIFEST_ID_INVALID,
             _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, "Not a manifest rule."),
         };
     }

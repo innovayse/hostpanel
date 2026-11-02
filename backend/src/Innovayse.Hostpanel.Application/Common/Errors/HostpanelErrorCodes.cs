@@ -297,6 +297,12 @@ public static class HostpanelErrorCodes
     public const string EMAIL_TEMPLATE_NOT_FOUND = "EMAIL_TEMPLATE_NOT_FOUND";
 
     /// <summary>
+    /// A mail log row already recorded as delivered was asked to be claimed again. The send handler asks
+    /// <c>EmailLog.MayResend</c> first, so this only surfaces when that check is skipped.
+    /// </summary>
+    public const string EMAIL_ALREADY_DELIVERED = Domain.Notifications.NotificationsErrors.EmailAlreadyDelivered;
+
+    /// <summary>
     /// The template already has a version in the requested language (409):
     /// <c>CreateEmailTemplateHandler</c>; each slug holds one version per language.
     /// </summary>
@@ -779,6 +785,15 @@ public static class HostpanelErrorCodes
     /// <summary>A file in the uploaded plugin could not be read, so the plugin cannot be checked (400).</summary>
     public const string PLUGIN_ASSEMBLY_UNREADABLE = "PLUGIN_ASSEMBLY_UNREADABLE";
 
+    /// <summary>A slot widget id is not lowercase letters, digits, hyphen and underscore (400).</summary>
+    public const string PLUGIN_SLOT_WIDGET_ID_INVALID = "PLUGIN_SLOT_WIDGET_ID_INVALID";
+
+    /// <summary>The same widget id is declared twice for one slot in one plugin (400).</summary>
+    public const string PLUGIN_SLOT_WIDGET_DUPLICATE = "PLUGIN_SLOT_WIDGET_DUPLICATE";
+
+    /// <summary>The manifest id is not a valid plugin id (400).</summary>
+    public const string PLUGIN_MANIFEST_ID_INVALID = "PLUGIN_MANIFEST_ID_INVALID";
+
     /// <summary>
     /// One of the archive's entries would write outside the plugin's own directory (400). The
     /// zip-slip guard's refusal, named for what a caller can act on rather than the attack it
@@ -840,14 +855,20 @@ public static class HostpanelErrorCodes
     /// <summary>The request body is larger than the host passes to a plugin (<c>PluginApi:MaxBodyBytes</c>), checked before the plugin is called (413).</summary>
     public const string PLUGIN_REQUEST_TOO_LARGE = "PLUGIN_REQUEST_TOO_LARGE";
 
-    /// <summary>The route streams its reply, which this host cannot forward yet, so the plugin is not called (501).</summary>
-    public const string PLUGIN_STREAMING_NOT_SUPPORTED = "PLUGIN_STREAMING_NOT_SUPPORTED";
-
     /// <summary>
     /// The sentence a plugin's problem carries when the plugin gave none. Never the <c>type</c> of a response: a
     /// plugin's own codes are namespaced under <c>plugin.{id}.</c> and so can never equal a host code.
     /// </summary>
     public const string PLUGIN_REPORTED_PROBLEM = "PLUGIN_REPORTED_PROBLEM";
+
+    /// <summary>
+    /// A plugin slot was asked for that the host does not offer in that area: no such slot id, or a slot of the other
+    /// panel. One answer for both (404).
+    /// </summary>
+    public const string PLUGIN_SLOT_NOT_FOUND = "PLUGIN_SLOT_NOT_FOUND";
+
+    /// <summary>The slot needs a context id (a service or a client) and the request named none (400).</summary>
+    public const string PLUGIN_SLOT_CONTEXT_REQUIRED = "PLUGIN_SLOT_CONTEXT_REQUIRED";
 
     // Admin: integrations
 

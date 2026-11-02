@@ -105,6 +105,8 @@ Hostpanel supports two authentication modes: local (users managed by Hostpanel i
   { name: 'HOSTPANEL_BACKCHANNEL_LOGOUT_KEY', type: 'secret', default: 'CHANGE_ME', description: 'Shared with the provider for back-channel logout. Generate with openssl rand -hex 24. Must be at least 16 characters on a deployed host. Leave empty only where no provider is connected. Required for SSO. Tiers: all.' },
 ]" />
 
+Updating to a release that moves the sign-on client package to 5.1 resets the admin panel sessions once: the package now keeps its session cache keys per product, so the sessions stored under the old keys are no longer read. Every administrator signs in again after the update, with no action needed beyond that, and the old entries expire on their own. The package also maps the back-channel logout receiver itself at /api/auth/backchannel-logout, and a sign-in callback that has no matching attempt (a second tab, Back after signing in) now redirects to the sign-in page instead of answering an error body. Nothing needs configuring for either.
+
 ### Local session settings
 
 <Label type="local" /> These settings apply only when AUTH_MODE=local.
@@ -351,6 +353,9 @@ Plugin settings are not in .env. Set them on the API service in a compose overri
 | `Plugins__MaxEntryCount` | `1000` | Maximum number of files in a plugin zip archive. |
 | `Plugins__MaxUncompressedBytes` | `209715200` | Maximum total uncompressed size of a plugin archive in bytes (200 MiB). |
 | `Plugins__TrustedPackageSha256__0`, `__1`, ... | n/a | SHA-256 hashes of plugin packages to trust unconditionally. Each hash is a separate indexed key. |
+| `PluginApi__MaxBodyBytes` | `1048576` | Largest request body the host reads for a plugin route, in bytes (1 to 67108864). |
+| `PluginApi__StreamHeartbeatSeconds` | `15` | Seconds a streamed plugin reply may stay silent before the host writes a comment line to keep the connection alive (1 to 300). |
+| `PluginApi__StreamEventMaxBytes` | `65536` | Largest data of one event of a streamed plugin reply, in bytes (1 to 1048576). A plugin that sends a larger event ends the stream with an `error` event. |
 | `PluginSigning__MaintainerKeys__0__KeyId`, `__PublicKey`, ... | *(shipped in the image)* | Ed25519 signing key entries for the official plugin maintainers. Shipped in the image; operators do not set these. |
 | `PluginSigning__OperatorKeys__0__KeyId` | n/a | Key ID of an operator-trusted plugin signer. Each entry is a pair of `__KeyId` and `__PublicKey` under the same index. |
 | `PluginSigning__OperatorKeys__0__PublicKey` | n/a | Ed25519 public key of the operator-trusted signer at index 0. Add more signers as `__1__KeyId` / `__1__PublicKey`, and so on. |

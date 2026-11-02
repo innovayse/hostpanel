@@ -3,7 +3,6 @@ using Innovayse.Hostpanel.Domain.Support;
 using Innovayse.Hostpanel.Domain.Support.Enums;
 using Innovayse.Hostpanel.Domain.Support.Events;
 using Microsoft.Extensions.DependencyInjection;
-using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Support;
 
@@ -24,7 +23,6 @@ public sealed class TicketRepliedHandlerTests(IntegrationTestFactory factory) : 
         var host = EventHandlerTestHost.WithFakeRelay(factory, emailSender);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var (client, email) = await EventHandlerTestHost.SeedIdentityClientAsync(scope.ServiceProvider, context, "ticket-notify", "Jane", "Doe");
         var departmentId = await SupportTestSeeds.SeedDepartmentAsync(context);
@@ -32,7 +30,7 @@ public sealed class TicketRepliedHandlerTests(IntegrationTestFactory factory) : 
         context.Tickets.Add(ticket);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        await bus.InvokeAsync(new TicketRepliedEvent(ticket.Id, IsStaffReply: true) { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new TicketRepliedEvent(ticket.Id, IsStaffReply: true) { OccurredAt = DateTimeOffset.UtcNow });
 
         var message = Assert.Single(emailSender.Sent);
         Assert.Equal(email, message.To);
@@ -50,7 +48,6 @@ public sealed class TicketRepliedHandlerTests(IntegrationTestFactory factory) : 
         var host = EventHandlerTestHost.WithFakeRelay(factory, emailSender);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         const string subject = "Printer <b>offline</b> & jammed";
         var (client, _) = await EventHandlerTestHost.SeedIdentityClientAsync(scope.ServiceProvider, context, "ticket-notify", "Jane", "Doe");
@@ -59,7 +56,7 @@ public sealed class TicketRepliedHandlerTests(IntegrationTestFactory factory) : 
         context.Tickets.Add(ticket);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        await bus.InvokeAsync(new TicketRepliedEvent(ticket.Id, IsStaffReply: true) { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new TicketRepliedEvent(ticket.Id, IsStaffReply: true) { OccurredAt = DateTimeOffset.UtcNow });
 
         var message = Assert.Single(emailSender.Sent);
         Assert.Contains($"#{ticket.Id}: {subject}", message.Subject, StringComparison.Ordinal);
@@ -73,7 +70,6 @@ public sealed class TicketRepliedHandlerTests(IntegrationTestFactory factory) : 
         var host = EventHandlerTestHost.WithFakeRelay(factory, emailSender);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var departmentEmail = $"support-{Guid.NewGuid():N}@example.com";
         var department = Department.Create($"Support-{Guid.NewGuid():N}", departmentEmail);
@@ -85,7 +81,7 @@ public sealed class TicketRepliedHandlerTests(IntegrationTestFactory factory) : 
         context.Tickets.Add(ticket);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        await bus.InvokeAsync(new TicketRepliedEvent(ticket.Id, IsStaffReply: false) { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new TicketRepliedEvent(ticket.Id, IsStaffReply: false) { OccurredAt = DateTimeOffset.UtcNow });
 
         var message = Assert.Single(emailSender.Sent);
         Assert.Equal(departmentEmail, message.To);

@@ -45,6 +45,9 @@ public static class DependencyInjection
         // The part of a plugin call the client and admin areas share: route matching, body cap, audit, reply mapping.
         services.AddScoped<PluginCallRunner>();
 
+        // Lists the widgets enabled plugins put into a page slot, for the client and the admin slot index.
+        services.AddScoped<PluginSlotIndexBuilder>();
+
         return services;
     }
 }

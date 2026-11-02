@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.SharedKernel.Domain;
+using Innovayse.Hostpanel.SharedKernel.Domain.Interfaces;
 
 namespace Innovayse.Hostpanel.Domain.Tests.SharedKernel;
 
@@ -18,5 +19,12 @@ internal sealed class ProbeEntity : BaseEntity
     public void DoSomething()
     {
         AddDomainEvent(new TestDomainEvent(Id));
+    }
+
+    /// <summary>Raises an event through the deferred overload, so a test can see when it is built.</summary>
+    /// <param name="eventFactory">Builds the event; the test counts its calls.</param>
+    public void DoSomethingDeferred(Func<IDomainEvent> eventFactory)
+    {
+        AddDomainEvent(eventFactory);
     }
 }

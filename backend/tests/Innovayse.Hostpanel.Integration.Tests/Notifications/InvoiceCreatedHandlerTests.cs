@@ -1,7 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing.Events;
 using Microsoft.Extensions.DependencyInjection;
-using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 
@@ -25,11 +24,10 @@ public sealed class InvoiceCreatedHandlerTests(IntegrationTestFactory factory) :
         var host = EventHandlerTestHost.WithFakeRelay(factory, emailSender, NotificationsTestSeeds.AdminEmail);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var (client, email) = await EventHandlerTestHost.SeedIdentityClientAsync(scope.ServiceProvider, context, "notification-event");
 
-        await bus.InvokeAsync(new InvoiceCreatedEvent(1, client.Id, 19.90m, "USD") { OccurredAt = EventMoment }, CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new InvoiceCreatedEvent(1, client.Id, 19.90m, "USD") { OccurredAt = EventMoment });
 
         var message = Assert.Single(emailSender.Sent);
         Assert.Equal(email, message.To);

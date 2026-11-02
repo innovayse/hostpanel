@@ -1,6 +1,8 @@
 using Innovayse.Hostpanel.API.Extensions;
 using Innovayse.Hostpanel.Application.Billing.Commands.CompleteGatewayPayment;
 using Innovayse.Hostpanel.Application.Billing.Commands.ReconcileGatewayPaymentsCron;
+using Innovayse.Hostpanel.Domain.Billing.Events;
+using Innovayse.Hostpanel.Domain.Clients.Events;
 using Innovayse.Hostpanel.Shared.Contracts.Interfaces;
 using Innovayse.Hostpanel.Shared.Settings;
 using JasperFx.CodeGeneration;
@@ -10,14 +12,19 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.Internal;
 using Microsoft.Extensions.Options;
+using Wolverine;
+using Wolverine.Configuration;
 using Wolverine.Runtime;
 using Wolverine.Runtime.Handlers;
+using Wolverine.Runtime.Routing;
+using Wolverine.Transports.Local;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Shared;
 
 /// <summary>
 /// <see cref="MessagingRegistration"/>: how Wolverine gets its handler code in each environment, the
-/// execution timeout the chains of the recurring jobs get in place of the one-minute default, and the
+/// execution timeout the chains of the recurring jobs get in place of the one-minute default, the durable
+/// retry rules only queued chains get (the per-handler chains of a separated event included), and the
 /// refusal of service location that every chain is built under.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
@@ -71,6 +78,101 @@ public sealed class MessagingRegistrationTests(IntegrationTestFactory factory) :
 
         chains.Single(c => c.MessageType == typeof(CompleteGatewayPaymentCommand)).ExecutionTimeoutInSeconds
             .Should().NotBe((int)lease.TotalSeconds);
+    }
+
+    /// <summary>
+    /// A chain delivered from a queue, such as a domain event's, gets the durable retry rules, so a
+    /// handler that throws is retried and finally dead-lettered rather than lost.
+    /// </summary>
+    [Fact]
+    public void QueuedEventChain_HasTheDurableRetryRules()
+    {
+        var chains = factory.Services.GetRequiredService<HandlerGraph>().Chains;
+
+        chains.Single(c => c.MessageType == typeof(ClientCreatedEvent)).Failures
+            .Should().NotBeEmpty("an event chain is delivered from a durable queue and must be retried on failure");
+    }
+
+    /// <summary>
+    /// Only queues that carry published messages keep a durable inbox: the queue of a single-handler event and
+    /// the per-handler queues of a separated event are durable, while the queue of a request/response command
+    /// and the recurring-jobs queue stay in memory.
+    /// </summary>
+    [Fact]
+    public void LocalQueues_AreDurableOnlyForQueuedMessages()
+    {
+        var runtime = factory.Services.GetRequiredService<IWolverineRuntime>();
+        var graph = factory.Services.GetRequiredService<HandlerGraph>();
+
+        ModeOf(runtime, typeof(ClientCreatedEvent)).Should().Be(EndpointMode.Durable);
+        foreach (var separated in graph.Chains.Single(c => c.MessageType == typeof(PaymentReceivedEvent)).ByEndpoint)
+        {
+            separated.Endpoints.Should().OnlyContain(e => e.Mode == EndpointMode.Durable);
+        }
+
+        ModeOf(runtime, typeof(CompleteGatewayPaymentCommand)).Should().NotBe(EndpointMode.Durable);
+        ModeOf(runtime, typeof(ReconcileGatewayPaymentsCronCommand)).Should().NotBe(EndpointMode.Durable);
+    }
+
+    /// <summary>The delivery mode of the local queue a message type is routed to.</summary>
+    /// <param name="runtime">The started runtime whose routing is read.</param>
+    /// <param name="messageType">The message type to route.</param>
+    /// <returns>The mode of the single local queue the message goes to.</returns>
+    private static EndpointMode ModeOf(IWolverineRuntime runtime, Type messageType)
+    {
+        return runtime.RoutingFor(messageType).Routes.OfType<MessageRoute>()
+            .Select(route => route.Sender.Endpoint)
+            .Single(endpoint => endpoint is LocalQueue)
+            .Mode;
+    }
+
+    /// <summary>
+    /// The host separates the handlers of one message, so a retry of one handler never replays the others.
+    /// </summary>
+    [Fact]
+    public void MultipleHandlerBehavior_IsSeparated()
+    {
+        var runtime = factory.Services.GetRequiredService<IWolverineRuntime>();
+
+        runtime.Options.MultipleHandlerBehavior.Should().Be(MultipleHandlerBehavior.Separated);
+    }
+
+    /// <summary>
+    /// An event with several handlers keeps no handler on its own chain and runs each one on a chain of its
+    /// own, and every one of those chains carries the durable retry rules, so the policy reaches them.
+    /// </summary>
+    [Fact]
+    public void EventWithSeveralHandlers_RunsEachOnItsOwnChain_WithTheDurableRetryRules()
+    {
+        var chain = factory.Services.GetRequiredService<HandlerGraph>().Chains
+            .Single(c => c.MessageType == typeof(PaymentReceivedEvent));
+
+        chain.Handlers.Should().BeEmpty("a separated event's handlers move to their own chains");
+        chain.ByEndpoint.Should().HaveCountGreaterThanOrEqualTo(2, "PaymentReceivedEvent has more than one handler");
+        foreach (var separated in chain.ByEndpoint)
+        {
+            separated.Handlers.Should().ContainSingle("each separated chain runs one handler");
+            separated.Failures.Should().NotBeEmpty(
+                "the per-handler chain {0} is delivered from a durable queue and must be retried on failure",
+                separated.TypeName);
+        }
+    }
+
+    /// <summary>
+    /// A command a caller invokes and waits on (its handler answers a <c>Result</c>) gets no retry rules,
+    /// because Wolverine would replay it inline and the caller must be answered once; nor does a recurring
+    /// job, whose next pass is its retry.
+    /// </summary>
+    /// <param name="messageType">The message whose chain is inspected.</param>
+    [Theory]
+    [InlineData(typeof(CompleteGatewayPaymentCommand))]
+    [InlineData(typeof(ReconcileGatewayPaymentsCronCommand))]
+    public void InvokedAndRecurringChains_HaveNoRetryRules(Type messageType)
+    {
+        var chains = factory.Services.GetRequiredService<HandlerGraph>().Chains;
+
+        chains.Single(c => c.MessageType == messageType).Failures
+            .Should().BeEmpty("{0} is answered to a waiting caller or re-run by its own schedule", messageType.Name);
     }
 
     /// <summary>
@@ -237,7 +339,10 @@ public sealed class MessagingRegistrationTests(IntegrationTestFactory factory) :
     /// <returns>Its namespace-qualified name.</returns>
     private static string NameOf(Type type) => $"{type.Namespace}.{type.Name}";
 
-    /// <summary>Builds the handler of every chain the host discovered and names the ones that fail.</summary>
+    /// <summary>
+    /// Builds the handler of every chain the host discovered, each per-handler chain of a message with
+    /// several handlers included, and names the ones that fail.
+    /// </summary>
     /// <param name="host">The host whose chains are built.</param>
     /// <returns>One line per chain that could not be built: its message type and the first line of the reason.</returns>
     internal static List<string> ChainsThatFailToBuild(WebApplicationFactory<Program> host)
@@ -248,19 +353,38 @@ public sealed class MessagingRegistrationTests(IntegrationTestFactory factory) :
         graph.Chains.Should().NotBeEmpty("the handlers of the API and Application assemblies are discovered");
         foreach (var chain in graph.Chains)
         {
-            try
+            // Under MultipleHandlerBehavior.Separated a message with several handlers keeps none on its
+            // own chain, and asking for that chain's handler throws; its handlers are built per endpoint.
+            if (chain.Handlers.Count > 0)
             {
-                graph.HandlerFor(chain.MessageType);
+                TryBuild(offenders, chain.MessageType, () => graph.HandlerFor(chain.MessageType));
             }
-            catch (Exception exception)
+
+            foreach (var separated in chain.ByEndpoint)
             {
-                var reason = exception.Message
-                    .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                    .FirstOrDefault() ?? exception.GetType().Name;
-                offenders.Add($"{chain.MessageType.Name}: {exception.GetType().Name}: {reason}");
+                TryBuild(offenders, chain.MessageType, () => graph.HandlerFor(chain.MessageType, separated.Endpoints[0]));
             }
         }
 
         return offenders;
+    }
+
+    /// <summary>Builds one handler and records the reason when it cannot be built.</summary>
+    /// <param name="offenders">The offender lines collected so far; a failure adds one.</param>
+    /// <param name="messageType">The message whose handler is built, named in the offender line.</param>
+    /// <param name="build">Asks the handler graph for the handler, which compiles it on first use.</param>
+    private static void TryBuild(List<string> offenders, Type messageType, Action build)
+    {
+        try
+        {
+            build();
+        }
+        catch (Exception exception)
+        {
+            var reason = exception.Message
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .FirstOrDefault() ?? exception.GetType().Name;
+            offenders.Add($"{messageType.Name}: {exception.GetType().Name}: {reason}");
+        }
     }
 }

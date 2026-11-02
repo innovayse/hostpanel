@@ -4,7 +4,6 @@ using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Domain.Services.Events;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Services;
 
@@ -26,8 +25,7 @@ public sealed class ClientServiceTerminatedHandlerTests(IntegrationTestFactory f
         await context.SaveChangesAsync(CancellationToken.None);
         var service = await context.ClientServices.AsNoTracking().FirstAsync(s => s.Id == serviceId, CancellationToken.None);
 
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        await bus.InvokeAsync(new ClientServiceTerminatedEvent(serviceId, service.ClientId, DateTimeOffset.UtcNow), CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new ClientServiceTerminatedEvent(serviceId, service.ClientId, DateTimeOffset.UtcNow));
 
         (await context.CancellationRequests.AsNoTracking().SingleAsync(r => r.ServiceId == serviceId, CancellationToken.None))
             .Status.Should().Be(CancellationStatus.Closed);
@@ -38,10 +36,9 @@ public sealed class ClientServiceTerminatedHandlerTests(IntegrationTestFactory f
     public async Task ClientServiceTerminated_UnknownServiceDoesNotThrow()
     {
         using var scope = factory.Services.CreateScope();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
-        var act = () => bus.InvokeAsync(
-            new ClientServiceTerminatedEvent(ServicesTestSeeds.NoSuchServiceId, 1, DateTimeOffset.UtcNow), CancellationToken.None);
+        var act = () => scope.ServiceProvider.PublishAndWaitAsync(
+            new ClientServiceTerminatedEvent(ServicesTestSeeds.NoSuchServiceId, 1, DateTimeOffset.UtcNow));
 
         await act.Should().NotThrowAsync();
     }

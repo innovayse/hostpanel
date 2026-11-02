@@ -195,6 +195,9 @@
 <data name="EMAIL_TEMPLATE_NOT_FOUND" xml:space="preserve">
     <value>No such email template.</value>
   </data>
+  <data name="EMAIL_ALREADY_DELIVERED" xml:space="preserve">
+    <value>This email was already delivered.</value>
+  </data>
 <data name="EMAIL_TEMPLATE_ALREADY_EXISTS" xml:space="preserve">
     <value>This template already has a version in that language.</value>
   </data>
@@ -537,6 +540,15 @@
 <data name="PLUGIN_ASSEMBLY_UNREADABLE" xml:space="preserve">
     <value>A file in this plugin could not be read, so the plugin cannot be checked. Upload it again.</value>
   </data>
+<data name="PLUGIN_SLOT_WIDGET_ID_INVALID" xml:space="preserve">
+    <value>A widget id in this plugin is not valid: use lowercase letters, digits, hyphens and underscores, starting with a letter or digit.</value>
+  </data>
+<data name="PLUGIN_SLOT_WIDGET_DUPLICATE" xml:space="preserve">
+    <value>This plugin declares the same widget id twice for one slot.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_ID_INVALID" xml:space="preserve">
+    <value>The plugin id in the manifest is not valid: use lowercase letters and digits, with single hyphens between words.</value>
+  </data>
 <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>That archive contains an entry that would write outside the plugin's own folder and was rejected.</value>
   </data>
@@ -573,14 +585,17 @@
 <data name="PLUGIN_ROUTE_NOT_FOUND" xml:space="preserve">
     <value>Nothing is served at this address.</value>
   </data>
+<data name="PLUGIN_SLOT_NOT_FOUND" xml:space="preserve">
+    <value>That page area is not available.</value>
+  </data>
+<data name="PLUGIN_SLOT_CONTEXT_REQUIRED" xml:space="preserve">
+    <value>A context is required for this page area.</value>
+  </data>
 <data name="PLUGIN_FAILED" xml:space="preserve">
     <value>The plugin could not complete the request. Please try again later.</value>
   </data>
 <data name="PLUGIN_REQUEST_TOO_LARGE" xml:space="preserve">
     <value>The request is too large for this plugin.</value>
-  </data>
-<data name="PLUGIN_STREAMING_NOT_SUPPORTED" xml:space="preserve">
-    <value>This server cannot stream the reply of this plugin route yet.</value>
   </data>
 <data name="PLUGIN_REPORTED_PROBLEM" xml:space="preserve">
     <value>The plugin reported a problem with the request.</value>

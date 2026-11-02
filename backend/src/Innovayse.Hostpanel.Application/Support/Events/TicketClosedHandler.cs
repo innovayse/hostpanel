@@ -44,14 +44,29 @@ public sealed class TicketClosedHandler
             return;
         }
 
+        // The event arrives through a durable queue, so it can arrive after the demo reset truncated the
+        // tables and reused the ids: a ticket that is gone or now belongs to another client is not the one
+        // that was closed, and mailing about it would tell the wrong account about a ticket it never had.
         var subject = await _context.Tickets
             .AsNoTracking()
-            .Where(t => t.Id == evt.TicketId)
+            .Where(t => t.Id == evt.TicketId && t.ClientId == evt.ClientId)
             .Select(t => t.Subject)
-            .FirstOrDefaultAsync(ct) ?? string.Empty;
+            .FirstOrDefaultAsync(ct);
+        if (subject is null)
+        {
+            return;
+        }
 
         var data = new TicketClosedTemplateModel(new TicketTemplateData(evt.TicketId, subject));
 
-        await _bus.InvokeAsync(new SendEmailCommand(email, client.Language, "ticket-closed", data, new ContactCopy(evt.ClientId, ContactNotification.Support)), ct);
+        await _bus.InvokeAsync(
+            new SendEmailCommand(
+                email,
+                client.Language,
+                "ticket-closed",
+                data,
+                new ContactCopy(evt.ClientId, ContactNotification.Support),
+                IdempotencyKey: EmailIdempotencyKey.ForMessage(evt, "ticket-closed")),
+            ct);
     }
 }

@@ -19,4 +19,7 @@ public interface IForwardedReply
 
     /// <summary>The finished sentence of a problem, written as the <c>detail</c> of the standard error body; <see langword="null"/> for a success.</summary>
     public string? Detail { get; }
+
+    /// <summary>The events of a streamed success, written as server-sent events; <see langword="null"/> for a reply with one body or a problem.</summary>
+    public StreamedReply? Stream { get; }
 }

@@ -1,12 +1,16 @@
 using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Common.Settings;
+using Innovayse.Hostpanel.Application.Notifications.Common;
 using Innovayse.Hostpanel.Application.Notifications.Rendering;
 using Innovayse.Hostpanel.Domain.Notifications;
 using Innovayse.Hostpanel.Shared.Constants;
+using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Notifications.Commands.SendEmail;
@@ -15,6 +19,14 @@ namespace Innovayse.Hostpanel.Application.Notifications.Commands.SendEmail;
 /// Sends an email by rendering the requested template and delegating to <see cref="IEmailSender"/>.
 /// Always writes an <see cref="EmailLog"/> entry regardless of send outcome.
 /// </summary>
+/// <remarks>
+/// A command carrying an idempotency key is sent at most once per recipient: each address gets its own
+/// log row keyed by <see cref="EmailIdempotencyKey.ForRecipient"/>, claimed (state Sending) and saved
+/// before the relay is called, so a replay of the same message finds the row and skips the address.
+/// The one remaining window is a crash after the relay accepted and before the outcome was saved: the
+/// row stays Sending, and after <see cref="NotificationOptions.DeliveryClaimSeconds"/> the next replay
+/// sends that address once more.
+/// </remarks>
 public sealed class SendEmailHandler
 {
     /// <summary>The module's data context.</summary>
@@ -35,6 +47,9 @@ public sealed class SendEmailHandler
     /// <summary>The Wolverine bus, for the addresses of the contacts a message is copied to.</summary>
     private readonly IMessageBus _bus;
 
+    /// <summary>How long a keyed delivery claimed by another attempt is trusted to still be in flight.</summary>
+    private readonly IOptions<NotificationOptions> _options;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="emailSender">The mail relay this platform does not own.</param>
@@ -42,13 +57,15 @@ public sealed class SendEmailHandler
     /// <param name="logger">Records a refusal no caller reads.</param>
     /// <param name="clock">The source of the current moment.</param>
     /// <param name="bus">The Wolverine bus, for the addresses of the contacts a message is copied to.</param>
+    /// <param name="options">How long a keyed delivery claimed by another attempt is trusted to still be in flight.</param>
     public SendEmailHandler(
         IHostpanelDbContext context,
         IEmailSender emailSender,
         TemplateRenderer renderer,
         ILogger<SendEmailHandler> logger,
         IClock clock,
-        IMessageBus bus)
+        IMessageBus bus,
+        IOptions<NotificationOptions> options)
     {
         _context = context;
         _emailSender = emailSender;
@@ -56,6 +73,7 @@ public sealed class SendEmailHandler
         _logger = logger;
         _clock = clock;
         _bus = bus;
+        _options = options;
     }
 
     /// <summary>Handles the command.</summary>
@@ -98,7 +116,7 @@ public sealed class SendEmailHandler
         var subject = await _renderer.RenderTextAsync(template.Subject, cmd.TemplateData, ct);
         var body = await _renderer.RenderHtmlAsync(template.Body, cmd.TemplateData, ct);
 
-        await DeliverAsync(cmd.To, cmd.TemplateSlug, subject, body, ct);
+        await DeliverAsync(cmd.To, cmd.TemplateSlug, subject, body, cmd.IdempotencyKey, ct);
 
         // The contacts who switched this kind of mail on get the same message. Each copy is its own
         // delivery and its own log line, and an address already written to is not mailed twice.
@@ -107,7 +125,7 @@ public sealed class SendEmailHandler
             var contacts = await _bus.ListContactNotificationEmailsAsync(copy.ClientId, copy.Topic, ct);
             foreach (var address in contacts.Where(a => !string.Equals(a, cmd.To, StringComparison.OrdinalIgnoreCase)))
             {
-                await DeliverAsync(address, cmd.TemplateSlug, subject, body, ct);
+                await DeliverAsync(address, cmd.TemplateSlug, subject, body, cmd.IdempotencyKey, ct);
             }
         }
 
@@ -116,14 +134,105 @@ public sealed class SendEmailHandler
         return Result.Success();
     }
 
-    /// <summary>Hands one rendered message to the relay and stages its log line.</summary>
+    /// <summary>Delivers one rendered message to one address, keyed when the command carries a key.</summary>
+    /// <param name="to">The recipient address.</param>
+    /// <param name="templateSlug">The template the message was rendered from, for the log.</param>
+    /// <param name="subject">The rendered subject.</param>
+    /// <param name="body">The rendered HTML body.</param>
+    /// <param name="messageKey">The command's idempotency key; null sends without a claim.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes once the address was delivered to, skipped, or staged for saving.</returns>
+    private Task DeliverAsync(
+        string to, string templateSlug, string subject, string body, string? messageKey, CancellationToken ct)
+    {
+        return messageKey is null
+            ? DeliverUnkeyedAsync(to, templateSlug, subject, body, ct)
+            : DeliverOnceAsync(to, templateSlug, subject, body, EmailIdempotencyKey.ForRecipient(messageKey, to), ct);
+    }
+
+    /// <summary>
+    /// Sends one keyed message at most once: claims (or reclaims) its log row and saves the claim before
+    /// the relay is called, then saves the outcome. Every step is saved here, not by the caller, because
+    /// the claim must be visible to a concurrent or replayed delivery before the mail leaves.
+    /// </summary>
+    /// <param name="to">The recipient address.</param>
+    /// <param name="templateSlug">The template the message was rendered from, for the log.</param>
+    /// <param name="subject">The rendered subject.</param>
+    /// <param name="body">The rendered HTML body.</param>
+    /// <param name="key">This recipient's idempotency key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes once the outcome is saved, or at once when another delivery owns it.</returns>
+    private async Task DeliverOnceAsync(
+        string to, string templateSlug, string subject, string body, string key, CancellationToken ct)
+    {
+        var now = _clock.UtcNow;
+        var log = await _context.EmailLogs.SingleOrDefaultAsync(l => l.IdempotencyKey == key, ct);
+        if (log is null)
+        {
+            log = EmailLog.Claim(to, subject, body, key, now);
+            _context.EmailLogs.Add(log);
+        }
+        else if (log.MayResend(now, _options.Value.DeliveryClaimLease))
+        {
+            log.Reclaim(now);
+        }
+        else
+        {
+            // Sent already, or claimed by a delivery still inside its lease: this replay adds nothing.
+            _logger.LogInformation(
+                "Email from template {TemplateSlug} was already sent or is being sent; skipped", templateSlug);
+            return;
+        }
+
+        try
+        {
+            await _context.SaveChangesAsync(ct);
+        }
+        catch (ConcurrencyConflictException)
+        {
+            // The unique key (a concurrent first claim) or the row version (a concurrent reclaim) says
+            // another delivery owns this address; it sends, this one must not.
+            _context.DetachAll();
+            _logger.LogInformation(
+                "Email from template {TemplateSlug} was claimed by another delivery; skipped", templateSlug);
+            return;
+        }
+
+        var sent = await _emailSender.SendAsync(new EmailMessage(to, subject, body), ct);
+        if (sent.Failure is { } failure)
+        {
+            _logger.LogWarning(
+                "Email from template {TemplateSlug} was not delivered: {Failure}", templateSlug, failure);
+            log.MarkUndelivered(failure, _clock.UtcNow);
+        }
+        else
+        {
+            log.MarkDelivered(_clock.UtcNow);
+        }
+
+        try
+        {
+            await _context.SaveChangesAsync(ct);
+        }
+        catch (ConcurrencyConflictException)
+        {
+            // Our lease ran out mid-send and another delivery reclaimed the row; its outcome is the one kept.
+            _context.DetachAll();
+            _logger.LogWarning(
+                "Email from template {TemplateSlug} was reclaimed by another delivery before its outcome was saved",
+                templateSlug);
+        }
+    }
+
+    /// <summary>Hands one rendered message to the relay and stages its log line, as for every unkeyed send.</summary>
     /// <param name="to">The recipient address.</param>
     /// <param name="templateSlug">The template the message was rendered from, for the log.</param>
     /// <param name="subject">The rendered subject.</param>
     /// <param name="body">The rendered HTML body.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes once the relay has answered; the log line is saved by the caller.</returns>
-    private async Task DeliverAsync(string to, string templateSlug, string subject, string body, CancellationToken ct)
+    private async Task DeliverUnkeyedAsync(
+        string to, string templateSlug, string subject, string body, CancellationToken ct)
     {
         // The relay is a port this platform does not own; a failed send is recorded on the log
         // entry as its classified reason rather than turned into a refusal, so a caller that fires

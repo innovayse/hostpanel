@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
@@ -89,17 +88,15 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
 
         // Auth:Mode and EncryptionKey come from appsettings.Testing.json, which the Testing
         // environment loads before the first line of Program.cs runs; see the comment there.
-        builder.ConfigureAppConfiguration((_, config) =>
-        {
-            // Read when the DbContext is first resolved, long after Build(), so this one
-            // is safe to add here, and it has to be, because the container it names is
-            // not started until InitializeAsync runs.
-            config.AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["ConnectionStrings:DefaultConnection"] = _connectionString
-                    ?? throw new InvalidOperationException("InitializeAsync must run before the host is built.")
-            });
-        });
+        // A host setting, not ConfigureAppConfiguration: Wolverine reads the connection string for its
+        // message store while it is configured in Program.cs, before Build(), and a source added through
+        // ConfigureAppConfiguration only reaches the configuration after Build(), so Wolverine would see
+        // none and refuse to start. UseSetting is visible to the WebApplicationBuilder from its first line.
+        // The host is built on the first use of Services, which InitializeAsync makes only after it
+        // created the database this names.
+        builder.UseSetting(
+            "ConnectionStrings:DefaultConnection",
+            _connectionString ?? throw new InvalidOperationException("InitializeAsync must run before the host is built."));
 
         // Suppress Windows EventLog provider to prevent ObjectDisposedException on teardown
         builder.ConfigureLogging(logging => logging.ClearProviders());

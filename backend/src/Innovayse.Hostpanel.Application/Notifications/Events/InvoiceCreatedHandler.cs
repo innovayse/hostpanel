@@ -35,6 +35,14 @@ public sealed class InvoiceCreatedHandler
 
         var data = new InvoiceCreatedTemplateModel(new BilledInvoiceTemplateData(evt.InvoiceId, evt.Total, evt.Currency));
 
-        await _bus.InvokeAsync(new SendEmailCommand(email, client.Language, "invoice-created", data, new ContactCopy(evt.ClientId, ContactNotification.Invoice)), ct);
+        await _bus.InvokeAsync(
+            new SendEmailCommand(
+                email,
+                client.Language,
+                "invoice-created",
+                data,
+                new ContactCopy(evt.ClientId, ContactNotification.Invoice),
+                IdempotencyKey: EmailIdempotencyKey.ForMessage(evt, "invoice-created")),
+            ct);
     }
 }

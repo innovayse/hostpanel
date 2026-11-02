@@ -28,11 +28,7 @@ public sealed partial class ResourceCoverageTests
     /// The codes that answer a status <c>rules/api.md</c> does not list, each with that status and why. An entry is
     /// temporary by construction: <see cref="EveryStatusException_IsStillNeeded"/> fails once the code stops answering it.
     /// </summary>
-    private static readonly IReadOnlyDictionary<string, int> StatusExceptions = new Dictionary<string, int>
-    {
-        // A streaming plugin route cannot be forwarded until #641; 501 says exactly that, and #641 removes the code.
-        ["PLUGIN_STREAMING_NOT_SUPPORTED"] = 501,
-    };
+    private static readonly IReadOnlyDictionary<string, int> StatusExceptions = new Dictionary<string, int>();
 
     /// <summary>The codes the registry declares.</summary>
     private static readonly IReadOnlyList<string> Codes = typeof(HostpanelErrorCodes)

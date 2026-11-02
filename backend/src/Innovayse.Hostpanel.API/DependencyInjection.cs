@@ -113,13 +113,15 @@ public static class DependencyInjection
                     + "number, and an invoice payment term of 0 to 365 days.")
             .ValidateOnStart();
 
-        // How large a request body the host passes on to a plugin route.
+        // How large a request body the host passes on to a plugin route, and how often a streamed reply sends a heartbeat.
         services.AddOptions<PluginApiOptions>()
             .Bind(configuration.GetSection(PluginApiOptions.SectionName))
             .Validate(
                 o => o.IsValid,
                 $"{PluginApiOptions.SectionName}:{nameof(PluginApiOptions.MaxBodyBytes)} must be from 1 to "
-                    + $"{PluginApiOptions.MaxBodyBytesCeiling} bytes.")
+                    + $"{PluginApiOptions.MaxBodyBytesCeiling} bytes, and {PluginApiOptions.SectionName}:"
+                    + $"{nameof(PluginApiOptions.StreamHeartbeatSeconds)} from 1 to {PluginApiOptions.StreamHeartbeatSecondsCeiling} seconds, and {PluginApiOptions.SectionName}:"
+                    + $"{nameof(PluginApiOptions.StreamEventMaxBytes)} from 1 to {PluginApiOptions.StreamEventMaxBytesCeiling} bytes.")
             .ValidateOnStart();
 
         // The caller of the request, for handlers. Registered by type, not through a factory, so

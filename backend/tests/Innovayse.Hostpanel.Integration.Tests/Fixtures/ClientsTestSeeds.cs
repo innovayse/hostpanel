@@ -9,7 +9,6 @@ using Innovayse.Hostpanel.Domain.Auth.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
@@ -177,9 +176,9 @@ public static class ClientsTestSeeds
 
     /// <summary>
     /// Registers a real Identity account through <c>/api/auth/register</c> and runs
-    /// <c>CreateClientOnRegisterHandler</c> inline so the account is linked to a client row.
+    /// <c>CreateClientOnRegisterHandler</c> published and waited for so the account is linked to a client row.
     /// </summary>
-    /// <param name="factory">The factory to register against and resolve the bus from.</param>
+    /// <param name="factory">The factory to register against and publish the event through.</param>
     /// <param name="label">Distinguishes the registered address between callers in the same test.</param>
     /// <returns>The subject and email of the newly registered, now client-linked account.</returns>
     /// <remarks>
@@ -198,17 +197,17 @@ public static class ClientsTestSeeds
         var userId = (await registered.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("userId").GetString()!;
 
         using var scope = factory.Services.CreateScope();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         // Registration publishes this event to a local queue that the whole suite shares, so a
-        // 10 s poll still timed out under a full run. Running the same real handler inline makes
-        // the row exist now. The handler skips a subject that already has a client, and the
-        // unique index on UserId refuses a second row if the queued copy wins the race.
+        // 10 s poll still timed out under a full run. Publishing a second copy and waiting for its
+        // handler makes the row exist now. The handler skips a subject that already has a client, and
+        // the unique index on UserId refuses a second row if the queued copy wins the race; the
+        // tracked session reports that refusal wrapped in an AggregateException.
         try
         {
-            await bus.InvokeAsync(new ClientRegisteredIntegrationEvent(userId, email, "Linked", "Person"));
+            await scope.ServiceProvider.PublishAndWaitAsync(new ClientRegisteredIntegrationEvent(userId, email, "Linked", "Person"));
         }
-        catch (DbUpdateException)
+        catch (AggregateException ex) when (ex.InnerExceptions.All(e => e is DbUpdateException))
         {
             // The queued copy inserted the row between the handler's check and its save.
         }

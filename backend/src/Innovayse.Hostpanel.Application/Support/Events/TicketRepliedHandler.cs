@@ -59,7 +59,15 @@ public sealed class TicketRepliedHandler
                 return;
             }
 
-            await _bus.InvokeAsync(new SendEmailCommand(email, client.Language, "ticket-replied", data, new ContactCopy(ticket.ClientId, ContactNotification.Support)), ct);
+            await _bus.InvokeAsync(
+                new SendEmailCommand(
+                    email,
+                    client.Language,
+                    "ticket-replied",
+                    data,
+                    new ContactCopy(ticket.ClientId, ContactNotification.Support),
+                    IdempotencyKey: EmailIdempotencyKey.ForMessage(evt, "ticket-replied")),
+                ct);
         }
         else if (ticket.DepartmentId is int departmentId)
         {
@@ -73,7 +81,14 @@ public sealed class TicketRepliedHandler
                 return;
             }
 
-            await _bus.InvokeAsync(new SendEmailCommand(departmentEmail, null, "ticket-replied", data), ct);
+            await _bus.InvokeAsync(
+                new SendEmailCommand(
+                    departmentEmail,
+                    null,
+                    "ticket-replied",
+                    data,
+                    IdempotencyKey: EmailIdempotencyKey.ForMessage(evt, "ticket-replied")),
+                ct);
         }
     }
 }

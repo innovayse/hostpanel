@@ -45,6 +45,14 @@ public sealed class ServiceProvisionedHandler
         var data = new ServiceProvisionedTemplateModel(
             new ProvisionedServiceTemplateData(evt.ServiceId, evt.ProvisioningRef, service.Domain, service.Account.Username));
 
-        await _bus.InvokeAsync(new SendEmailCommand(email, client.Language, "service-provisioned", data, new ContactCopy(evt.ClientId, ContactNotification.Product)), ct);
+        await _bus.InvokeAsync(
+            new SendEmailCommand(
+                email,
+                client.Language,
+                "service-provisioned",
+                data,
+                new ContactCopy(evt.ClientId, ContactNotification.Product),
+                IdempotencyKey: EmailIdempotencyKey.ForMessage(evt, "service-provisioned")),
+            ct);
     }
 }

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Innovayse.Hostpanel.Application.Common.Settings;
 
 /// <summary>
@@ -47,4 +49,15 @@ public sealed class NotificationOptions
     /// </para>
     /// </remarks>
     public required string ContactEmail { get; init; }
+
+    /// <summary>
+    /// How long a keyed mail claimed for sending (state Sending) is trusted to be in flight, in seconds,
+    /// 30 to 3600. A replay inside this window skips the recipient; after it, the sender is presumed to
+    /// have crashed between claim and outcome and the mail is sent again.
+    /// </summary>
+    [Range(30, 3600)]
+    public int DeliveryClaimSeconds { get; init; } = 300;
+
+    /// <summary>The claim lease as a <see cref="TimeSpan"/>, so callers do not repeat the unit.</summary>
+    public TimeSpan DeliveryClaimLease => TimeSpan.FromSeconds(DeliveryClaimSeconds);
 }

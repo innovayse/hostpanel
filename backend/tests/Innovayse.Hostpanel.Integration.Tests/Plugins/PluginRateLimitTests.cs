@@ -4,6 +4,7 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Settings;
+using Innovayse.SDK.Plugins.Endpoints;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -61,6 +62,33 @@ public sealed class PluginRateLimitTests : IClassFixture<AppPluginFixture>
             services.RemoveAll<PluginRateLimiter>();
             services.AddSingleton(new PluginRateLimiter(Limits(defaultPermits), disabled: false));
         });
+    }
+
+    /// <summary>
+    /// Calls a client area route, trying again for as long as the answer is the stream refusal. The lease of a finished
+    /// stream is released when its response is disposed, which can run after the client has read the end of the body, so
+    /// the next call may meet the allowance still taken for a moment; a bounded retry waits for the release without a fixed sleep.
+    /// </summary>
+    /// <param name="http">The caller.</param>
+    /// <param name="path">The path below the plugin's prefix.</param>
+    /// <returns>The first answer that is not a 429, or the last 429 once the wait is spent.</returns>
+    private async Task<HttpResponseMessage> CallOnceReleasedAsync(HttpClient http, string path)
+    {
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(15);
+        while (true)
+        {
+            var response = await ClientCallAsync(http, path);
+            if (response.StatusCode != HttpStatusCode.TooManyRequests || DateTime.UtcNow >= deadline)
+            {
+                return response;
+            }
+
+            response.Dispose();
+
+            // The lease goes when the server finishes the response, which can be just after the client read its end;
+            // a short pause keeps the retries from spending the tier budget while that happens.
+            await Task.Delay(TimeSpan.FromMilliseconds(20));
+        }
     }
 
     /// <summary>Registers an account holder and makes their client of a host.</summary>
@@ -236,31 +264,35 @@ public sealed class PluginRateLimitTests : IClassFixture<AppPluginFixture>
     }
 
     /// <summary>
-    /// A streaming route is refused with 429 <c>plugin-stream</c> while the caller already holds as many streams as are
-    /// allowed, and is served again (here the not yet supported 501) once one ends.
+    /// A streaming route is refused with 429 <c>plugin-stream</c> while the caller holds as many open streams as are allowed,
+    /// here one real stream kept open by the plugin, and is served again once that stream has ended.
     /// </summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
     public async Task StreamingRoute_IsRefusedWhileTheCallerHoldsTheAllowedStreams()
     {
-        using var host = LimitedHost();
-        var (owner, http) = await OwnerAsync(host, "plugin-limit-stream");
-        var limiter = host.Services.GetRequiredService<PluginRateLimiter>();
-        var key = PluginRateLimiter.KeyFor(_fixture.PluginId, $"client:{owner.ClientId}");
+        // A large default budget: the retries below wait on the stream allowance, they must not run out the tier first.
+        using var host = LimitedHost(defaultPermits: 1000);
+        var (_, http) = await OwnerAsync(host, "plugin-limit-stream");
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _fixture.Probe.Behaviour = _ => PluginReply.Stream(GatedStream.Open(gate.Task, CancellationToken.None));
 
-        // The held stream: a real one cannot be kept open yet, so the allowance is taken the way an open stream takes it.
-        using var held = await limiter.AcquireStreamAsync(key, CancellationToken.None);
-        held.IsAcquired.Should().BeTrue();
+        // Headers are in, the plugin has sent its first event and is waiting: the stream is open and holds the allowance.
+        using var open = await http.SendAsync(
+            new HttpRequestMessage(HttpMethod.Get, $"/api/client/plugins/{_fixture.PluginId}/stream"), HttpCompletionOption.ResponseHeadersRead);
+        open.StatusCode.Should().Be(HttpStatusCode.OK);
+        using var reader = new StreamReader(await open.Content.ReadAsStreamAsync());
+        (await reader.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(15))).Should().Be("data: first");
 
         using var refused = await ClientCallAsync(http, "stream");
         await AssertRefusedAsync(refused, RateLimitPolicies.PluginStream);
 
-        // Ends the allowance before the retry; the using above then disposes a lease that is already released.
-        held.Dispose();
-        using var released = await ClientCallAsync(http, "stream");
+        // The stream ends, its response completes and the lease goes with it.
+        gate.SetResult();
+        (await reader.ReadToEndAsync().WaitAsync(TimeSpan.FromSeconds(15))).Should().Contain("data: last");
+        using var released = await CallOnceReleasedAsync(http, "stream");
 
-        released.StatusCode.Should().Be(HttpStatusCode.NotImplemented);
-        await ClientsTestSeeds.AssertCodeAsync(released, HostpanelErrorCodes.PLUGIN_STREAMING_NOT_SUPPORTED);
+        released.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     /// <summary>
@@ -276,10 +308,13 @@ public sealed class PluginRateLimitTests : IClassFixture<AppPluginFixture>
         var (_, http) = await OwnerAsync(host, "plugin-limit-stream-release");
         var calls = Limits(100).PluginStreamPermitLimit + 3;
 
+        _fixture.Probe.Behaviour = _ => PluginReply.Stream(GatedStream.Open(Task.CompletedTask, CancellationToken.None));
+
         for (var i = 0; i < calls; i++)
         {
-            using var response = await ClientCallAsync(http, "stream");
-            response.StatusCode.Should().Be(HttpStatusCode.NotImplemented);
+            using var response = await CallOnceReleasedAsync(http, "stream");
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            (await response.Content.ReadAsStringAsync()).Should().Be("data: first\n\ndata: last\n\n");
         }
     }
 
@@ -301,6 +336,6 @@ public sealed class PluginRateLimitTests : IClassFixture<AppPluginFixture>
 
         held.IsAcquired.Should().BeTrue();
         ordinary.StatusCode.Should().Be(HttpStatusCode.OK);
-        otherStream.StatusCode.Should().Be(HttpStatusCode.NotImplemented);
+        otherStream.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 }

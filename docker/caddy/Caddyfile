@@ -32,7 +32,9 @@
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Content-Type-Options "nosniff"
-		Referrer-Policy "strict-origin-when-cross-origin"
+		# Default only (the ? prefix): a response that sets its own policy, such as the sign-in callback
+		# with no-referrer, keeps it instead of carrying two headers the browser resolves to the looser one.
+		?Referrer-Policy "strict-origin-when-cross-origin"
 		X-Frame-Options "DENY"
 		Permissions-Policy "camera=(), microphone=(), geolocation=(), usb=()"
 	}
@@ -52,6 +54,18 @@
 	header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com https://www.googletagmanager.com {$EDGE_CLIENT_CSP_SOURCES:}; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https: {$EDGE_CLIENT_CSP_SOURCES:}; connect-src 'self' https://api.stripe.com https://m.stripe.network https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com {$EDGE_CLIENT_CSP_SOURCES:}; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self' https:; frame-ancestors 'none'"
 	request_body {
 		max_size {$EDGE_MAX_BODY_SIZE}
+	}
+
+	# Plugin calls may answer with server-sent events: flush every chunk at once instead of buffering.
+	# handle takes one matcher, so the two prefixes go through a named path matcher.
+	@pluginCalls path /api/client/plugins/* /api/admin/plugins/*
+	handle @pluginCalls {
+		reverse_proxy hostpanel-api:{$API_PORT} {
+			flush_interval -1
+			header_up X-Real-IP {client_ip}
+			# Replaced, never appended: a value the visitor sent must not reach the client or the API.
+			header_up X-Forwarded-For {remote_host}
+		}
 	}
 
 	handle /api/* {

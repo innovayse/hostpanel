@@ -6,7 +6,6 @@ using Innovayse.Hostpanel.Shared.Models;
 using Innovayse.Hostpanel.Shared.MultiTenancy;
 using Innovayse.SDK.Plugins.Endpoints;
 using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Manifest;
 
 namespace Innovayse.Hostpanel.Application.Plugins.Commands.CallClientPlugin;
 
@@ -70,8 +69,7 @@ public sealed class CallClientPluginHandler
             return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.IDENTITY_PLUGIN_UNAVAILABLE);
         }
 
-        var needed = RequiredPermission(target.Match.Route);
-        if ((access.Permissions & needed) != needed)
+        if (!PluginClientPermissions.IsHeld(access.Permissions, target.Match.Route.Permission))
         {
             return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.CLIENT_PERMISSION_DENIED);
         }
@@ -92,29 +90,6 @@ public sealed class CallClientPluginHandler
         };
 
         return await _runner.RunAsync(target, caller, clientId, command.Input, ct);
-    }
-
-    /// <summary>The permission a route needs.</summary>
-    /// <param name="route">The declared route.</param>
-    /// <returns>
-    /// <see cref="ClientPermission.None"/> for <see cref="PluginPermissions.Any"/>, the named flag for a defined permission,
-    /// and <see cref="ClientPermission.All"/> for a route that declares none or a name nobody defined: like every portal
-    /// action, a route that does not say who may call it is for the account holder alone, never for everyone.
-    /// </returns>
-    private static ClientPermission RequiredPermission(PluginRoute route)
-    {
-        if (route.Permission == PluginPermissions.Any)
-        {
-            return ClientPermission.None;
-        }
-
-        // IsDefined on a string matches defined names only, so "7" or "ViewDomains, ViewEmails" never parse.
-        return route.Permission is not null
-            && Enum.IsDefined(typeof(ClientPermission), route.Permission)
-            && Enum.TryParse<ClientPermission>(route.Permission, out var permission)
-            && permission != ClientPermission.None
-                ? permission
-                : ClientPermission.All;
     }
 
     /// <summary>The names of the single flags a caller holds, as the plugin lists them.</summary>

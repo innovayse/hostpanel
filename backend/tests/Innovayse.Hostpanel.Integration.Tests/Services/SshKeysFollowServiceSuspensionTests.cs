@@ -4,7 +4,6 @@ using Innovayse.Hostpanel.Domain.Services.Events;
 using Innovayse.Hostpanel.Domain.Ssh.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Services;
 
@@ -40,13 +39,12 @@ public sealed class SshKeysFollowServiceSuspensionTests(IntegrationTestFactory f
         (await StatesAsync(serviceId)).Should().Equal(SshKeySyncState.Installed, SshKeySyncState.Installed);
     }
 
-    /// <summary>Delivers an event through the real bus, in a fresh scope.</summary>
+    /// <summary>Publishes an event through the real bus and waits until it and every message it cascades to were handled.</summary>
     /// <param name="evt">The event.</param>
-    /// <returns>A task that completes once it was handled.</returns>
+    /// <returns>A task that completes once every handler of the event has run.</returns>
     private async Task PublishAsync(object evt)
     {
-        using var scope = factory.Services.CreateScope();
-        await scope.ServiceProvider.GetRequiredService<IMessageBus>().InvokeAsync(evt, CancellationToken.None);
+        await factory.Services.PublishAndWaitAsync(evt);
     }
 
     /// <summary>The service's key states, oldest first.</summary>

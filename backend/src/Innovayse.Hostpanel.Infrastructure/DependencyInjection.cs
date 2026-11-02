@@ -432,6 +432,7 @@ public static class DependencyInjection
 
         // The same rule for client services. The client-facing service handlers call it themselves.
         services.AddScoped<IServiceOwnership, ServiceOwnership>();
+        services.AddScoped<IPluginSlotContextReader, PluginSlotContextReader>();
 
         // What the signed-in user may do on a client account. The portal's permission filter decides
         // with it and the account endpoint reports it; both read it per request and neither trusts
@@ -650,6 +651,7 @@ public static class DependencyInjection
             .ValidateOnStart();
         services.AddOptions<NotificationOptions>()
             .Bind(configuration.GetSection(NotificationOptions.SectionName))
+            .ValidateDataAnnotations()
             .ValidateOnStart();
         services.AddScoped<IEmailSender, SmtpEmailSender>();
         services.AddScoped<TemplateRenderer>();

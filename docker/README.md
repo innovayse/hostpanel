@@ -194,10 +194,17 @@ A key added to `.env.example` needs its GitLab variable before the next deploy, 
 - **Private package feed.** Builds of `AUTH_MODE=sso` read the feed credentials from the BuildKit secret
   `nuget_credentials`, never from a build argument: `docker build --secret id=nuget_credentials,env=NAME ...`
   (compose reads `NUGET_INNOVAYSE_CREDENTIALS` for it). An empty or absent secret builds without the feed.
+- **Admin session reset on update.** The sign-on client package (5.1) keeps its session cache keys per product, so the first update to a release that carries it signs every admin panel user out once; the old entries expire on their own. The package maps the back-channel logout receiver (`/api/auth/backchannel-logout`) itself, and a sign-in callback with no matching attempt redirects to the sign-in page instead of answering an error body.
+- **Plugin streaming.** `/api/client/plugins/` and `/api/admin/plugins/` can carry server-sent events from plugins, so
+  the nginx template gives them `proxy_buffering off`, `proxy_cache off`, HTTP/1.1, an empty `Connection` header and
+  `proxy_read_timeout 1h`, and the Caddyfile proxies them with `flush_interval -1`. The dev stack has no edge in
+  front of the API: the admin Vite proxy and the published API port pass the stream through as it is written.
 - **Response headers.** HSTS, `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options` and
   `Permissions-Policy` come from `nginx/snippets/security-headers.conf` (nginx) and the `security_headers`
   snippet of the Caddyfile. nginx drops inherited `add_header` lines in a location that has its own, so every
-  location includes the snippet by name. The admin image sends its own policy (`snippets/admin-csp.conf`:
+  location includes the snippet by name. `Referrer-Policy` is only a default: nginx takes it from a `map` on
+  `$upstream_http_referrer_policy` (defined in the edge template and in `admin.conf`) and Caddy uses the
+  `?Referrer-Policy` form, so a response that sets its own policy is never given a second one. The admin image sends its own policy (`snippets/admin-csp.conf`:
   same-origin scripts and connections). The client portal's policy is written in the edge config; it allows
   the payment provider's script, frames and API and the optional tag manager, and
   `EDGE_CLIENT_CSP_SOURCES` adds a deployment's own origins (a chat server). Uploaded files are served with

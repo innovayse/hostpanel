@@ -232,6 +232,27 @@ public sealed class PluginManifestValidatorTests : IDisposable
             """)).Should().BeNull();
     }
 
+    /// <summary>A widget id that is not lowercase letters, digits, hyphen and underscore is refused.</summary>
+    /// <param name="id">The widget id.</param>
+    [Theory]
+    [InlineData("Tab")]
+    [InlineData("a:b")]
+    [InlineData("a,b")]
+    [InlineData("-x")]
+    [InlineData("a b")]
+    public void Validate_UnsafeWidgetId_BreaksSlotWidgetIdInvalid(string id)
+    {
+        AssertBreaks(Manifest($$""","ui":{"slots":[{"id":"{{id}}","slot":"client.dashboard.cards","view":"v.json"}]}"""), PluginManifestRule.SlotWidgetIdInvalid);
+    }
+
+    /// <summary>The same widget id twice for one slot is refused, while one id in two slots is fine.</summary>
+    [Fact]
+    public void Validate_DuplicateWidgetIdInOneSlot_BreaksSlotWidgetDuplicate()
+    {
+        AssertBreaks(Manifest(""","ui":{"slots":[{"id":"w","slot":"client.dashboard.cards","view":"v.json"},{"id":"w","slot":"client.dashboard.cards","view":"v.json"}]}"""), PluginManifestRule.SlotWidgetDuplicate);
+        PluginManifestValidator.Validate(Manifest(""","ui":{"slots":[{"id":"w","slot":"client.dashboard.cards","view":"v.json"},{"id":"w","slot":"client.service.tabs","view":"v.json"}]}""")).Should().BeNull();
+    }
+
     /// <summary>A slot id the host does not offer is refused.</summary>
     [Fact]
     public void Validate_UnknownSlot_BreaksSlotUnknown()

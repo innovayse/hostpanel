@@ -184,20 +184,6 @@ public sealed class CallAdminPluginTests : IClassFixture<AppPluginFixture>
         (await failure.Content.ReadAsStringAsync()).Should().NotContain("secret-detail");
     }
 
-    /// <summary>A streaming admin route is refused 501 before the plugin is called.</summary>
-    /// <returns>A task that completes when the assertions have run.</returns>
-    [Fact]
-    public async Task AStreamingRoute_Answers501()
-    {
-        using var admin = await _fixture.AdminClientAsync();
-
-        var response = await CallAsync(admin, HttpMethod.Get, _fixture.PluginId, "stream");
-
-        response.StatusCode.Should().Be(HttpStatusCode.NotImplemented);
-        await ClientsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_STREAMING_NOT_SUPPORTED);
-        _fixture.Probe.Constructed.Should().Be(0);
-    }
-
     /// <summary>An unsafe admin call is audited with the plugin id and the route and no client; a read is not.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]

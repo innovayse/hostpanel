@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Clients.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Notifications.Commands.SendEmail;
 using Innovayse.Hostpanel.Application.Notifications.Common;
 using Innovayse.Hostpanel.Application.Notifications.Common.TemplateModels;
@@ -12,6 +13,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
@@ -210,5 +212,160 @@ public sealed class SendEmailTests(IntegrationTestFactory factory) : IClassFixtu
         emailSender.Sent.Select(m => m.To).Should().BeEquivalentTo(new[] { to, wanting });
         (await context.EmailLogs.AsNoTracking().CountAsync(l => l.To == wanting)).Should().Be(1);
         (await context.EmailLogs.AsNoTracking().CountAsync(l => l.To == declining)).Should().Be(0);
+    }
+
+    /// <summary>A keyed send replayed with the same key reaches the relay once and leaves one Sent row.</summary>
+    [Fact]
+    public async Task Send_KeyedReplay_SendsOnce()
+    {
+        var emailSender = new FakeEmailSender();
+        var host = HostWithFakeRelay(emailSender);
+        var (slug, to, key) = await KeyedScenarioAsync();
+        var command = new SendEmailCommand(to, null, slug, AdaInvite, IdempotencyKey: key);
+
+        await InvokeInNewScopeAsync(host, command);
+        var replay = await InvokeInNewScopeAsync(host, command);
+
+        replay.IsSuccess.Should().BeTrue();
+        emailSender.Sent.Should().ContainSingle(m => m.To == to);
+        var rows = await LogsForAsync(host, to);
+        rows.Should().ContainSingle().Which.State.Should().Be(EmailDeliveryState.Sent);
+        rows[0].IdempotencyKey.Should().Be(EmailIdempotencyKey.ForRecipient(key, to));
+    }
+
+    /// <summary>Two deliveries of the same keyed command running at once send the mail once between them.</summary>
+    [Fact]
+    public async Task Send_TwoConcurrentKeyedSends_SendOnce()
+    {
+        var emailSender = new FakeEmailSender();
+        var host = HostWithFakeRelay(emailSender);
+        var (slug, to, key) = await KeyedScenarioAsync();
+        var command = new SendEmailCommand(to, null, slug, AdaInvite, IdempotencyKey: key);
+
+        var outcomes = await Task.WhenAll(InvokeInNewScopeAsync(host, command), InvokeInNewScopeAsync(host, command));
+
+        outcomes.Should().OnlyContain(o => o.IsSuccess);
+        emailSender.Sent.Count(m => m.To == to).Should().Be(1);
+        (await LogsForAsync(host, to)).Should().ContainSingle();
+    }
+
+    /// <summary>A keyed mail the relay refused is sent again on replay, on the same row.</summary>
+    [Fact]
+    public async Task Send_FailedKeyedRowOnReplay_IsResent()
+    {
+        var refusing = HostWithFakeRelay(new FakeEmailSender { FailWith = EmailSendFailure.AuthenticationRejected });
+        var emailSender = new FakeEmailSender();
+        var accepting = HostWithFakeRelay(emailSender);
+        var (slug, to, key) = await KeyedScenarioAsync();
+        var command = new SendEmailCommand(to, null, slug, AdaInvite, IdempotencyKey: key);
+
+        await InvokeInNewScopeAsync(refusing, command);
+        (await LogsForAsync(accepting, to)).Should().ContainSingle().Which.State.Should().Be(EmailDeliveryState.Failed);
+        await InvokeInNewScopeAsync(accepting, command);
+
+        emailSender.Sent.Should().ContainSingle(m => m.To == to);
+        var row = (await LogsForAsync(accepting, to)).Should().ContainSingle().Subject;
+        row.State.Should().Be(EmailDeliveryState.Sent);
+        row.Success.Should().BeTrue();
+        row.Failure.Should().BeNull();
+    }
+
+    /// <summary>
+    /// A row another delivery claimed inside the lease is left to it and nothing is sent; one claimed
+    /// longer ago than the lease (a sender that crashed before saving its outcome) is sent again.
+    /// </summary>
+    /// <param name="outsideLease">Whether the existing claim is older than the configured lease.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Send_SendingRow_IsResentOnlyOutsideTheLease(bool outsideLease)
+    {
+        var emailSender = new FakeEmailSender();
+        var host = HostWithFakeRelay(emailSender);
+        var (slug, to, key) = await KeyedScenarioAsync();
+        var lease = host.Services.GetRequiredService<IOptions<NotificationOptions>>().Value.DeliveryClaimLease;
+        var claimedAt = outsideLease
+            ? DateTimeOffset.UtcNow - lease - TimeSpan.FromMinutes(1)
+            : DateTimeOffset.UtcNow;
+        using (var seedScope = host.Services.CreateScope())
+        {
+            var seedContext = seedScope.ServiceProvider.GetRequiredService<AppDbContext>();
+            seedContext.EmailLogs.Add(
+                EmailLog.Claim(to, "Hello Ada", "Body", EmailIdempotencyKey.ForRecipient(key, to), claimedAt));
+            await seedContext.SaveChangesAsync();
+        }
+
+        var outcome = await InvokeInNewScopeAsync(
+            host, new SendEmailCommand(to, null, slug, AdaInvite, IdempotencyKey: key));
+
+        outcome.IsSuccess.Should().BeTrue();
+        emailSender.Sent.Count(m => m.To == to).Should().Be(outsideLease ? 1 : 0);
+        var row = (await LogsForAsync(host, to)).Should().ContainSingle().Subject;
+        row.State.Should().Be(outsideLease ? EmailDeliveryState.Sent : EmailDeliveryState.Sending);
+    }
+
+    /// <summary>An unkeyed command sent twice is two mails and two log rows, exactly as before keys existed.</summary>
+    [Fact]
+    public async Task Send_UnkeyedTwice_SendsTwice()
+    {
+        var emailSender = new FakeEmailSender();
+        var host = HostWithFakeRelay(emailSender);
+        var (slug, to, _) = await KeyedScenarioAsync();
+        var command = new SendEmailCommand(to, null, slug, AdaInvite);
+
+        await InvokeInNewScopeAsync(host, command);
+        await InvokeInNewScopeAsync(host, command);
+
+        emailSender.Sent.Count(m => m.To == to).Should().Be(2);
+        var rows = await LogsForAsync(host, to);
+        rows.Should().HaveCount(2).And.OnlyContain(l => l.IdempotencyKey == null && l.State == EmailDeliveryState.Sent);
+    }
+
+    /// <summary>A key that is not 64 lower-case hex characters is refused before anything is sent.</summary>
+    [Fact]
+    public async Task Send_MalformedKey_IsRefusedByValidation()
+    {
+        var emailSender = new FakeEmailSender();
+        var host = HostWithFakeRelay(emailSender);
+        var (slug, to, key) = await KeyedScenarioAsync();
+
+        var act = () => InvokeInNewScopeAsync(
+            host, new SendEmailCommand(to, null, slug, AdaInvite, IdempotencyKey: key.ToUpperInvariant()));
+
+        await act.Should().ThrowAsync<FluentValidation.ValidationException>();
+        emailSender.Sent.Should().BeEmpty();
+    }
+
+    /// <summary>Seeds a fresh active template and picks a fresh recipient and message key for one keyed test.</summary>
+    /// <returns>The template slug, the recipient address and the message key.</returns>
+    private async Task<(string Slug, string To, string Key)> KeyedScenarioAsync()
+    {
+        var slug = $"send-email-keyed-{Guid.NewGuid():N}";
+        await NotificationsTestSeeds.EnsureTemplateAsync(factory, slug, "Hello {{first_name}}");
+        var to = $"send-email-keyed-{Guid.NewGuid():N}@example.test";
+        return (slug, to, EmailIdempotencyKey.ForParts(slug, to));
+    }
+
+    /// <summary>Dispatches <paramref name="command"/> in a scope of its own, as one delivery would.</summary>
+    /// <param name="host">The host whose bus to use.</param>
+    /// <param name="command">The command to dispatch.</param>
+    /// <returns>The handler's answer.</returns>
+    private static async Task<Innovayse.Hostpanel.Shared.Models.Result> InvokeInNewScopeAsync(
+        WebApplicationFactory<Program> host, SendEmailCommand command)
+    {
+        using var scope = host.Services.CreateScope();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+        return await bus.InvokeAsync<Innovayse.Hostpanel.Shared.Models.Result>(command, CancellationToken.None);
+    }
+
+    /// <summary>Reads every log row written for one recipient, untracked.</summary>
+    /// <param name="host">The host whose database to read.</param>
+    /// <param name="to">The recipient address.</param>
+    /// <returns>The rows, oldest first.</returns>
+    private static async Task<List<EmailLog>> LogsForAsync(WebApplicationFactory<Program> host, string to)
+    {
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        return await context.EmailLogs.AsNoTracking().Where(l => l.To == to).OrderBy(l => l.Id).ToListAsync();
     }
 }

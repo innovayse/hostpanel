@@ -122,6 +122,7 @@ export default defineConfig({
         items: [
           { text: 'Overview', link: '/migration/' },
           { text: 'Moving from another billing system', link: '/migration/from-another-system' },
+          { text: 'Import report and skip reasons', link: '/migration/import-report' },
         ],
       },
       {

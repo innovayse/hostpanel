@@ -62,7 +62,7 @@ Every `CHANGE_ME` is a placeholder, not a real default. The API refuses to start
 <Callout type="tip">
 Generate secure random values using `openssl`:
 
-- **JWT_SECRET** (at least 32 hex characters): `openssl rand -hex 32`
+- **JWT_SECRET** (at least 32 characters): `openssl rand -hex 32`
 - **ENCRYPTION_KEY** (exactly 32 bytes, base64): `openssl rand -base64 32`
 - **SESSION_ENCRYPTION_KEY** (exactly 32 bytes, base64): `openssl rand -base64 32`
 - **HOSTPANEL_BACKCHANNEL_LOGOUT_KEY** (at least 16 hex characters): `openssl rand -hex 24`
@@ -137,9 +137,9 @@ ENCRYPTION_KEY protects server passwords, API tokens and access hashes. Never ch
 </Callout>
 
 <SettingTable :settings="[
-  { name: 'ENCRYPTION_KEY', type: 'secret', default: 'Q0hBTkdF...', description: 'Must decode to exactly 32 bytes. Protects encrypted database columns. Generate: openssl rand -base64 32. The example value is a placeholder and is refused outside Development. Required in prod, hub, demo. Tiers: prod, hub, demo.' },
-  { name: 'SESSION_ENCRYPTION_KEY', type: 'secret', default: '', description: 'Key for client portal sessions (AES-256-GCM). 32 random bytes, base64. Changing it signs everyone out. Required in prod, hub and demo. Required in prod, hub, demo. Tiers: prod, hub, demo.' },
-  { name: 'JWT_SECRET', type: 'secret', default: 'CHANGE_ME_...', description: 'At least 32 characters. Placeholder is refused outside Development. Generate: openssl rand -hex 32. Tiers: all.' },
+  { name: 'ENCRYPTION_KEY', type: 'secret', default: 'see .env.example', description: 'Must decode to exactly 32 bytes. Protects encrypted database columns. Generate: openssl rand -base64 32. The example value is a placeholder and is refused outside Development. Required in prod, hub, demo. Tiers: prod, hub, demo.' },
+  { name: 'SESSION_ENCRYPTION_KEY', type: 'secret', default: '', description: 'Key for client portal sessions (AES-256-GCM). 32 random bytes, base64. Changing it signs everyone out. Required in prod, hub, demo. Tiers: prod, hub, demo.' },
+  { name: 'JWT_SECRET', type: 'secret', default: 'see .env.example', description: 'At least 32 characters. Placeholder is refused outside Development. Generate: openssl rand -hex 32. Tiers: all.' },
   { name: 'JWT_ISSUER', type: 'string', default: 'innovayse-api', description: 'Issuer claim stamped into every token. Tiers: all.' },
   { name: 'JWT_AUDIENCE', type: 'string', default: 'innovayse-clients', description: 'Audience claim verified on every token. Tiers: all.' },
 ]" />
@@ -202,7 +202,7 @@ Each extra proxy in front of the bundled edge adds 1 to both counts. The shipped
 <SettingTable :settings="[
   { name: 'STACK_NETWORK_SUBNET', type: 'string', default: '172.30.0.0/24', description: 'CIDR range of the Docker network the stack creates. Passed to the API as RateLimit__KnownNetworks__0. Pick a range no other network on the host uses. Required. Tiers: all.' },
   { name: 'RATE_LIMIT_TRUSTED_PROXY_COUNT', type: 'string', default: '1', description: 'Number of proxies in front of the API (RateLimit__TrustedProxyCount). The shipped stacks need 1 (the bundled edge). Add one per extra proxy. Tiers: all.' },
-  { name: 'CLIENT_TRUSTED_PROXY_COUNT', type: 'string', default: '1', description: 'Number of proxies in front of the client portal (NUXT_TRUSTED_PROXY_COUNT). The shipped stacks need 1. Add one per extra proxy. The dev stack fixes this at 0 (not read from .env in dev). Tiers: all.' },
+  { name: 'CLIENT_TRUSTED_PROXY_COUNT', type: 'string', default: '1', description: 'Number of proxies in front of the client portal (NUXT_TRUSTED_PROXY_COUNT). The shipped stacks need 1. Add one per extra proxy. The dev stack fixes this at 0 and does not read this variable. Tiers: hub, prod, demo.' },
 ]" />
 
 ### Rate-limit settings (compose override only)
@@ -328,7 +328,6 @@ All these settings control the public-facing storefront and have NUXT_PUBLIC_POR
   { name: 'STRIPE_PUBLISHABLE_KEY', type: 'string', default: '', description: 'Stripe publishable key for the browser card form. Empty disables the card form. Tiers: all.' },
 ]" />
 
-The client portal also accepts optional URLs for other apps in your platform (MAIN_APP_URL, NUXT_PUBLIC_SHEETS_URL and similar). Left empty each link is hidden. See docker/.env.example for the full list.
 
 ## Plugins
 
@@ -338,12 +337,13 @@ Plugin settings are not in .env. Set them on the API service in a compose overri
 
 | Setting | Default | Description |
 |---|---|---|
-| `Plugins__InstallPath` | `/app/plugins-installed` | Directory where the API installs plugin packages. |
-| `Plugins__MaxEntryCount` | — | Maximum number of files in a plugin zip archive. |
-| `Plugins__MaxUncompressedBytes` | — | Maximum total uncompressed size of a plugin archive in bytes. |
-| `Plugins__TrustedPackageSha256` | — | Comma-separated list of SHA-256 hashes of plugin packages to trust unconditionally. |
-| `PluginSigning__MaintainerKeys` | — | Semicolon-separated Ed25519 public keys of the official plugin maintainers (shipped in the image). |
-| `PluginSigning__OperatorKeys` | — | Semicolon-separated Ed25519 public keys added by the operator to trust additional signers. |
+| `Plugins__InstallPath` | *(empty — falls back to `plugins-installed` beside the app)* | Directory where the API installs plugin packages. |
+| `Plugins__MaxEntryCount` | `1000` | Maximum number of files in a plugin zip archive. |
+| `Plugins__MaxUncompressedBytes` | `209715200` | Maximum total uncompressed size of a plugin archive in bytes (200 MiB). |
+| `Plugins__TrustedPackageSha256__0`, `__1`, … | — | SHA-256 hashes of plugin packages to trust unconditionally. Each hash is a separate indexed key. |
+| `PluginSigning__MaintainerKeys__0__KeyId`, `__PublicKey`, … | *(shipped in the image)* | Ed25519 signing key entries for the official plugin maintainers. Shipped in the image; operators do not set these. |
+| `PluginSigning__OperatorKeys__0__KeyId` | — | Key ID of an operator-trusted plugin signer. Each entry is a pair of `__KeyId` and `__PublicKey` under the same index. |
+| `PluginSigning__OperatorKeys__0__PublicKey` | — | Ed25519 public key of the operator-trusted signer at index 0. Add more signers as `__1__KeyId` / `__1__PublicKey`, and so on. |
 
 ## Development-only settings
 
@@ -416,8 +416,8 @@ Demo mode requires AUTH_MODE=local and its own POSTGRES_DB. It resets sample dat
   { name: 'DEMO_ADMIN_BASE_URL', type: 'string', default: 'http://localhost:5175', description: 'Absolute URL of the demo admin panel. Tiers: demo.' },
   { name: 'DEMO_CLIENT_BASE_URL', type: 'string', default: 'http://localhost:3002', description: 'Absolute URL of the demo client portal. Tiers: demo.' },
   { name: 'DEMO_MAILHOG_UI_HOST_PORT', type: 'string', default: '8028', description: 'Host port for the demo Mailhog UI. Tiers: demo.' },
-  { name: 'DEMO_NETWORK_SUBNET', type: 'string', default: '', description: 'CIDR range of the demo stack internal network. Tiers: demo.' },
-  { name: 'DEMO_EDGE_NETWORK_SUBNET', type: 'string', default: '', description: 'CIDR range of the demo edge network. Tiers: demo.' },
+  { name: 'DEMO_NETWORK_SUBNET', type: 'string', default: '', description: 'Required. CIDR range of the demo stack internal network. Not in .env.example; docker-compose.demo.yml refuses to start without it. Example: 172.28.0.0/16. Tiers: demo.' },
+  { name: 'DEMO_EDGE_NETWORK_SUBNET', type: 'string', default: '', description: 'Required. CIDR range of the demo edge network. Not in .env.example; docker-compose.demo.yml refuses to start without it. Example: 172.29.0.0/16. Tiers: demo.' },
 ]" />
 
 ## Startup refusals

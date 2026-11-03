@@ -33,17 +33,17 @@ Inherit `PaymentGatewayBase` and implement `IPaymentPlugin` from `Innovayse.SDK.
 | Member | Description |
 |--------|-------------|
 | `string CurrencyCode` | ISO 4217 numeric currency code this gateway settles in (e.g. `"840"` for USD, `"051"` for AMD) |
-| `Task<PaymentSession> CreatePaymentAsync(PaymentRequest request, CancellationToken ct)` | Start a payment session and return a redirect URL |
+| `Task<PaymentSession> CreatePaymentAsync(PaymentInstruction instruction, CancellationToken ct)` | Start a payment session and return a redirect URL |
 | `Task<GatewayPaymentStatus> GetStatusAsync(string gatewayOrderId, CancellationToken ct)` | Poll the gateway for the current state |
 | `Task<string> RefundAsync(string gatewayOrderId, long amountMinor, CancellationToken ct)` | Issue a refund; return the gateway's refund reference |
 
 ### Types
 
-**`PaymentRequest`** properties: `OrderNumber`, `AmountMinor`, `ReturnUrl`, `Description`, `Language`.
+**`PaymentInstruction`** properties: `OrderNumber`, `AmountMinor`, `ReturnUrl`, `Description`, `Language`.
 
 **`PaymentSession`** properties: `GatewayOrderId`, `RedirectUrl`.
 
-**`GatewayPaymentStatus`** properties: `State` (`GatewayPaymentState`), `TransactionId`, `RawStatus`, `AmountMinor`, `CurrencyNumeric` (ISO 4217 numeric).
+**`GatewayPaymentStatus`** properties: `State` (`GatewayPaymentState`), `TransactionId`, `RawStatus`, `AmountMinor`, `Currency` (ISO 4217 numeric).
 
 `AcceptsCurrency(string currencyNumeric)` has a default implementation that compares against `CurrencyCode`; override it only when the gateway accepts currencies other than its settlement currency.
 
@@ -76,7 +76,7 @@ public sealed class MyGateway : PaymentGatewayBase, IPaymentPlugin
     public string CurrencyCode => "840"; // USD (ISO 4217 numeric)
 
     public Task<PaymentSession> CreatePaymentAsync(
-        PaymentRequest request, CancellationToken ct)
+        PaymentInstruction instruction, CancellationToken ct)
     {
         var url = GetConfig("gateway_url")
             ?? throw new InvalidOperationException("gateway_url is required");
@@ -111,7 +111,7 @@ public sealed class MyGateway : PaymentGatewayBase, IPaymentPlugin
   "category": "Payment Gateways",
   "color": "#0369a1",
   "entryPoint": "MyCompany.MyGateway.MyGateway",
-  "sdkVersion": "1.0",
+  "sdkVersion": "2.0",
   "showInIntegrations": true,
   "integrationsCategory": "Payment Gateways",
   "fields": [
@@ -142,14 +142,14 @@ public class MyGatewayTests
             .Build();
 
         var gateway = new MyGateway("my-gateway", config, NullLogger<MyGateway>.Instance);
-        var request = new PaymentRequest(
+        var instruction = new PaymentInstruction(
             OrderNumber: "1001",
             AmountMinor: 5000,
             ReturnUrl:   "https://panel.example.com/payment/result",
             Description: "Invoice #1001",
             Language:    "en");
 
-        var session = await gateway.CreatePaymentAsync(request, CancellationToken.None);
+        var session = await gateway.CreatePaymentAsync(instruction, CancellationToken.None);
 
         Assert.False(string.IsNullOrEmpty(session.RedirectUrl));
         Assert.False(string.IsNullOrEmpty(session.GatewayOrderId));
@@ -173,17 +173,17 @@ Every plugin ZIP must have `plugin.json` at the root.
   { name: 'version', type: 'string', default: '', description: 'Semantic version string, e.g. 1.0.0.' },
   { name: 'author', type: 'string', default: '', description: 'Author name shown on the plugin card.' },
   { name: 'description', type: 'string', default: '', description: 'One-line description shown on the plugin card.' },
-  { name: 'type', type: 'string', default: '', description: 'Plugin type: Payment, Provisioning, Registrar, Identity, Fulfilment or Hosted.' },
+  { name: 'type', type: 'string', default: '', description: 'Plugin type: Payment, Provisioning, Registrar, Identity, Fulfilment, Hosted or App.' },
   { name: 'category', type: 'string', default: '', description: 'Category used to group the plugin inside the Plugin Manager.' },
   { name: 'color', type: 'string', default: '', description: 'Hex colour for the plugin icon background, e.g. #0369a1.' },
   { name: 'entryPoint', type: 'string', default: '', description: 'Fully qualified class name of the class that implements the plugin interface.' },
-  { name: 'sdkVersion', type: 'string', default: '', description: 'SDK version the plugin was built against. Supported value: 1.0.' },
+  { name: 'sdkVersion', type: 'string', default: '', description: 'SDK major version the plugin was built against. The current supported value is 2. Older major versions are refused.' },
   { name: 'showInIntegrations', type: 'boolean', default: 'false', description: 'When true, the plugin appears as a card on the Integrations screen.' },
   { name: 'integrationsCategory', type: 'string', default: '', description: 'Category heading under which the card appears on the Integrations screen.' },
   { name: 'fields', type: 'array', default: '[]', description: 'Settings shown on the integration page, in order.' }
 ]" />
 
-The fields above cover manifest version 1. Manifest version 2 (`"manifestVersion": 2`) adds `typedSettings`, `capabilities`, `locales`, `api`, `ui` and `externalOrigins`; documentation for those fields will be added in a follow-up page.
+The fields above cover manifest version 1. Manifest version 2 (`"manifestVersion": 2`) adds `settings`, `capabilities`, `locales`, `api`, `ui` and `externalOrigins`; documentation for those fields will be added in a follow-up page.
 
 Each entry in `fields`:
 
@@ -208,13 +208,23 @@ Do **not** include the SDK assembly (`Innovayse.SDK.dll`) or any assembly the ho
 
 ### Sign the package
 
-Production servers only accept signed packages. Use the `PluginSigner` tool from the SDK to generate `plugin.sig`:
+Production servers only accept signed packages. The `PluginSigner` tool is part of the Hostpanel repository (`backend/tools/Innovayse.Hostpanel.PluginSigner`), not the SDK. Run it on the **unpacked folder** before zipping.
+
+Generate a key pair (store the key file outside any git working tree — the tool refuses to sign if the key file is inside one):
 
 ```bash
-dotnet pluginsigner sign --package MyCompany.MyGateway.zip --key my-private-key.pem
+dotnet run --project backend/tools/Innovayse.Hostpanel.PluginSigner -- keygen my-key.pem my-key-id
 ```
 
-The operator must add the matching public key to `PluginSigning:OperatorKeys` in their deployment environment, or the package will be refused with `PLUGIN_SIGNATURE_KEY_UNKNOWN`. When you update a plugin, re-sign the new ZIP — updating re-checks the signature and the server will refuse a stale or missing `plugin.sig`.
+Sign the plugin folder:
+
+```bash
+dotnet run --project backend/tools/Innovayse.Hostpanel.PluginSigner -- sign ./MyCompany.MyGateway my-key.pem my-key-id
+```
+
+This writes `plugin.sig` into the folder. Zip the folder after signing.
+
+The operator must add the matching public key to `PluginSigning:OperatorKeys` in their deployment environment, or the package will be refused with `PLUGIN_SIGNATURE_KEY_UNKNOWN`. When you update a plugin, re-sign the new folder before re-zipping — updating re-checks the signature and the server will refuse a stale or missing `plugin.sig`.
 
 ## Test it
 
@@ -230,7 +240,7 @@ Start a local Hostpanel stack (see [Local development](/developers/local-dev)).
 </li>
 <li>
 
-Build your class library in Release, zip the output folder, and upload the ZIP via **Settings → Plugin Manager → Install Plugin**.
+Build your class library in Release, sign the output folder with `PluginSigner`, zip it, and upload the ZIP via **Settings → Plugin Manager → Install Plugin**. On a local server, set `plugins.allow_unsigned` to `true` in configuration to skip signature verification — do not enable this on a production server.
 
 </li>
 <li>
@@ -245,7 +255,7 @@ Go to **Integrations**, find your plugin card, click **Configure →**, enter th
 </li>
 <li>
 
-Create a test client, raise an invoice, and pay it. Verify the payment appears in **Gateway Transaction Log**.
+Create a test client, raise an invoice, and pay it. Verify the payment appears in **Gateway Transaction Log**. If signature verification fails, the upload is rejected with `PLUGIN_UNSIGNED`.
 
 </li>
 </Steps>

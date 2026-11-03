@@ -4,14 +4,13 @@ title: Payment gateways
 
 # Payment gateways <Label type="admin" />
 
-Hostpanel ships with four payment methods. No payment gateway is enabled by default; an operator enables each one after entering their credentials.
+Hostpanel ships with three payment methods. No payment gateway is enabled by default; an operator enables each one after entering their credentials.
 
 ## What ships with Hostpanel
 
 | Method | How it works | When to use |
 |--------|-------------|-------------|
 | **Bundled card gateway** | Card form on the checkout page; the card number never reaches Hostpanel | Accepting debit and credit cards directly at checkout |
-| **Bundled wallet gateway** | Client is redirected to the provider's hosted page and returns with a result | Accepting wallet or account-based payments |
 | **Bundled bank gateway** | Plugin; the client is redirected to the bank's hosted card page | Card payments routed through a local bank gateway |
 | **Bank Transfer** | Offline; the client pays by bank transfer and staff record the payment manually | Markets where bank transfer is the norm, or as a fallback |
 
@@ -63,7 +62,7 @@ Toggle **Enabled** on. The card on the Integrations page now shows **Active**.
 ## Gateway settings
 
 <Callout type="tip">
-Use the gateway's test mode or test address before switching to live. For the card and wallet gateways, set Mode to Test or Sandbox. For the bank gateway, point Gateway base URL at the bank's test address.
+Use the gateway's test mode or test address before switching to live. For the card gateway, set Mode to Test or Sandbox. For the bank gateway, point Gateway base URL at the bank's test address.
 </Callout>
 
 ### Bundled card gateway
@@ -107,7 +106,7 @@ A gateway charges only in the currencies it supports. When a client tries to pay
 
 ## What customers see
 
-Clients choose their payment method on the checkout page ("Pay by card", "Pay by bank transfer") and on the invoice pay page. After a card or wallet payment they land on the payment result page. See the [client portal guide](/customers/portal) for the full flow.
+Clients choose their payment method on the checkout page ("Pay by card", "Pay by bank transfer") and on the invoice pay page. After a card payment they land on the payment result page. See the [client portal guide](/customers/portal) for the full flow.
 
 ## Screens that are not built yet
 

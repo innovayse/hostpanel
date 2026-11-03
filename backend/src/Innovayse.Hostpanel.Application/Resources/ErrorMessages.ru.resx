@@ -594,6 +594,15 @@
 <data name="PLUGIN_FAILED" xml:space="preserve">
     <value>Плагин не смог выполнить запрос. Повторите попытку позже.</value>
   </data>
+<data name="PLUGIN_STORE_QUOTA_EXCEEDED" xml:space="preserve">
+    <value>Хранилище этого плагина для данной учётной записи заполнено. Обратитесь в поддержку.</value>
+  </data>
+<data name="PLUGIN_STORE_KEY_INVALID" xml:space="preserve">
+    <value>Плагин неправильно использовал своё хранилище. Повторите попытку позже.</value>
+  </data>
+<data name="PLUGIN_STORE_VALUE_INVALID" xml:space="preserve">
+    <value>Плагин неправильно использовал своё хранилище. Повторите попытку позже.</value>
+  </data>
 <data name="PLUGIN_REQUEST_TOO_LARGE" xml:space="preserve">
     <value>Запрос слишком большой для этого плагина.</value>
   </data>

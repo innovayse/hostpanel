@@ -296,7 +296,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   `Plugins:TrustedPackageSha256` lists any digest, the archive's SHA-256 must be one of them
   (`PLUGIN_NOT_TRUSTED`; an empty list, the default, accepts any archive that passes the other
   checks). Every install and removal writes an activity log line with no client (`ActivityLog.ClientId`
-  is nullable for system-wide actions), carrying the plugin id and, for an install, the digest.
+  is nullable for system-wide actions), carrying the plugin id and, for an install, the digest. A removal also switches the plugin off and purges its stored data through the outbox (`PluginRemovedEvent`, see the plugin store under "Plugin routes").
 - **One manifest validator for load and install (`Infrastructure/Plugins/PluginManifestValidator`).** A plugin
   is checked against the manifest rules in one place, asked by `PluginManifestReader.TryRead` (startup load,
   `plugins/` and the upload folder) and by `PluginPackageStore` (install); no rule is written twice. `Validate`
@@ -501,13 +501,79 @@ docker/                              compose set (shared·dev·prod·platform), 
     needs no table, no migration and no write on the first call; the price is that references live as long as the
     encryption key, and rotating it gives every plugin new references. The identity plugin member's `UserRef` is their
     subject's, and their `ClientRef` is the account's client's, the same one the holder has.
-  - **`PluginCall.Host` and `.Store` are not available yet (#642).** The SDK requires both on every call; the host shares no
-    client facts and keeps no plugin data until #642. `IPluginCallServices` is the seam (`Create(PluginCallBinding(pluginId, clientId,
-    clientRef))`), and today's registration, `UnavailablePluginCallServices`, hands every call a host API and a store whose
-    every member throws `NotSupportedException`, which is answered as `PLUGIN_FAILED` and logged. An empty profile or a
-    store that forgets would be a lie a plugin could act on. #642 replaces that one registration.
+  - **Host facts and the plugin store (#642).** `IPluginCallServices` is implemented by `HostPluginCallServices` (scoped) and
+    builds, for each call, the `PluginCall.Host` and `PluginCall.Store` the SDK requires from one
+    `PluginCallBinding` (built only through `ForClient(pluginId, clientId, clientRef, permissions)` or `WithoutClient(pluginId)`, so its reference is null exactly when its client is). **The binding is the one source of the client reference**:
+    the area's handler builds it once (`CallClientPluginHandler`: the client from `ICallerClientResolver`, its
+    `IPluginReferences.ForClient` reference and the caller's permissions; `CallAdminPluginHandler`:
+    `PluginCallBinding.WithoutClient`), and `PluginCallRunner.RunAsync(target, binding, userRef, input, ct)` builds the
+    `PluginCaller` from it (`ClientRef`, the held permission names) and hands the same binding to the services. Nothing else
+    derives a reference, so `caller.ClientRef`, the store scope and the facts are always about one client.
+    *Host API* (`Infrastructure/Plugins/PluginHostApi`, mapping in `Infrastructure/Plugins/Extensions/`): bound to the call's client, no method takes an id.
+    It reads other modules' rows only through the port `IPluginHostFactsReader` (`Infrastructure/Plugins/PluginHostFactsReader`,
+    like `IPluginSlotContextReader`), never a `DbSet`. **What it shows follows the caller's permissions** (security.md,
+    visibility before capability), decided before anything is read: invoices only with `ViewPayInvoices`, services only with
+    `ViewProductsServices`, and the profile's sign-in email only with `ModifyMasterProfile` (a sub-user without it never sees
+    the address in the portal either); the name, currency and language go to every client caller. An admin call carries no
+    client and gets no facts. The profile is the company name when set, else "First Last"; email and language come from the
+    identity provider and are null when the owner has no identity account; currency comes from `IPayerCurrencyResolver`.
+    Services and invoices are newest first (`CreatedAt`, then `Id`, descending), at most `PluginHostLimits.MaxListed` (50, cut
+    in SQL), and invoices pass `Invoice.ClientVisibleFilter`, so a draft is never shared. A call whose client row is gone gets a
+    null profile and empty lists. Domain statuses map to SDK statuses by name in an exhaustive switch; an unknown value throws, and so does a draft invoice, which the filter keeps from ever reaching it.
+    *Store* (`Infrastructure/Plugins/PluginStore`): table `PluginDataEntries` (aggregate `PluginDataEntry`: `PluginId`,
+    `ClientRef`, `Key`, `Value` text, `CreatedAt`, `UpdatedAt`; unique `IX_PluginDataEntries_PluginId_ClientRef_Key`, nulls not
+    distinct) and table `PluginDataScopes` (aggregate `PluginDataScope`: `PluginId`, `ClientRef`, `KeyCount`, `StoredChars`,
+    `Revision`, xmin concurrency token; unique `IX_PluginDataScopes_PluginId_ClientRef`, nulls not distinct). A scope is per
+    client in the client area and plugin wide (null `ClientRef`) on an admin call. A key is 1 to 200 characters of letters,
+    digits, `.`, `-`, `_` and `:`; a value is text up to 65,536 characters (`PluginDataEntry.MaxValueLength`), empty allowed,
+    null refused. A contract breach throws `DomainRuleException` `PLUGIN_STORE_KEY_INVALID` or `PLUGIN_STORE_VALUE_INVALID`
+    (`Domain/Plugins/PluginStoreErrors`, sentences in en/ru/hy); the runner answers it like any plugin throw, 502
+    `PLUGIN_FAILED`, and logs it, so these two codes never reach a caller and have no `StatusMapping` row.
+    - **Quota, one rule.** `PluginApi:MaxStoreKeysPerScope` (keys, default 1000, 1 to 100,000) and
+      `PluginApi:MaxStoreCharsPerScope` (characters of every key and value, default 4 Mi, from one full key and value to
+      1 Gi), both on `PluginApiOptions`, validated on start, read as one `PluginStoreQuota`. `PluginDataScope.Admit` is the only
+      place either is checked: a write that would take the scope past either measure is refused with `DomainRuleException`
+      `PLUGIN_STORE_QUOTA_EXCEEDED`; a write that shrinks or keeps the size is always allowed, even in a scope over a lowered
+      quota. The refusal fails closed (nothing is written, whether or not the plugin catches it), and the store raises the
+      call's `PluginStoreQuotaSignal`, host state the plugin cannot set: when the plugin then throws, the runner answers 402
+      `PLUGIN_STORE_QUOTA_EXCEEDED` (its own exact `StatusMapping` row, the 402 every quota refusal answers; en/ru/hy) instead of
+      `PLUGIN_FAILED`, so only a refusal the host made carries that code. Inside a stream that already started the refusal ends
+      the stream like any other throw.
+    - **Writes and races: last writer wins.** Every `SetAsync` and `RemoveAsync` loads the scope row and the entry tracked,
+      asks `Admit`/`Release` (each bumps `Revision`, so every write of a scope changes the scope row) and saves once. The scope
+      row's xmin token therefore serializes the writes of one scope, which keeps the counters exact; a first write of a scope or
+      a key meets the unique index instead, which `AppDbContext.SaveChangesAsync` translates to `ConcurrencyConflictException`
+      like the gateway payment reference. On that conflict the store detaches what the attempt tracked and repeats the whole
+      operation from a fresh read, at most five times, then lets the conflict propagate (answered `PLUGIN_FAILED`). So two
+      writes of one key both succeed and the one that commits last is the value kept (there is no compare-and-set; a plugin
+      that needs one keeps a version in its value); a remove that lost to another remove answers `false` (absent), and a write
+      after another call removed the key creates it again. The save flushes only the store's change because `PluginCallRunner`
+      saves its audit line before it builds the plugin, so nothing else is staged while plugin code runs.
+    - **Purge on uninstall.** `RemovePluginHandler` (Admin) refuses an invalid id and a built-in plugin as before. When the
+      package store removed the files, or they were already gone but the plugin has a switch row (a valid, non-built-in id
+      that was switched on here, so data a lost package left behind can still be removed), it switches the plugin off
+      (`integration:{id}:is_enabled` set to `false` through `Setting.SwitchOffRemovedPlugin`), stages the activity line and
+      saves once; files gone and no switch row answers `PLUGIN_NOT_FOUND` and writes nothing, because a plugin never
+      switched on ran no call and kept no data. The switch raises `PluginRemovedEvent` (with the removal moment), which
+      #802's interceptor writes to the outbox in that same transaction, so the switch-off and the purge commit together or
+      not at all. `PluginActivator.PrepareAsync` reads the switch on every call, so no new call reaches a still-loaded
+      plugin from the commit on; a call already running at that moment can still finish its writes.
+      `Plugins/Events/PurgeRemovedPluginDataHandler` (returns `Task`, so it is a queued chain with a durable inbox and the
+      queued retry policy) goes scope by scope and deletes the entries last written at or before the removal
+      (`UpdatedAt`, else `CreatedAt`), in batches of 500 through the context (no bulk delete), releasing each from its
+      `PluginDataScope` and deleting the scope once it is empty. A retry may run hours later, after the same id was
+      installed and switched on again, so rows written after the removal (by that new installation, or by a call that was
+      already running) are kept with their scope; the scope's xmin token makes the purge and such a write conflict
+      instead of interleaving, and the purge then re-reads the scope. A second delivery finds nothing old and stops. The
+      answer is `requiresRestart: true` when files were removed and `false` when they were already gone (the admin store
+      never lowers a banner it already shows).
+    - No purge for clients: a client is never deleted, only closed (`ClientClosedEvent`), and a closed client keeps reading
+      their history, so a plugin's per-client rows are kept like the rest of that history. The only path that removes clients
+      is the demo reset, which truncates every model table, the store tables included. Rows are keyed by the opaque
+      `ClientRef` (no client id column), so a future client erase would compute `IPluginReferences.ForClient` per plugin that
+      has rows.
   - **Status codes.** `PLUGIN_ROUTE_NOT_FOUND` 404, `PLUGIN_REQUEST_TOO_LARGE` 413 (the `_TOO_LARGE` suffix),
-    and `PLUGIN_FAILED` 502 (exact `StatusMapping` rows); each has its sentence in
+    `PLUGIN_FAILED` 502 and `PLUGIN_STORE_QUOTA_EXCEEDED` 402 (exact `StatusMapping` rows); each has its sentence in
     en/ru/hy. `PLUGIN_STREAMING_NOT_SUPPORTED` went with #641.
   - **Rate limits (#640).** `API/Plugins/PluginRateLimitFilter` is a resource filter on both doors, marked
     `[PluginRateLimit(PluginArea)]`. It matches the route and measures the caller against `plugin-default`,
@@ -519,7 +585,7 @@ docker/                              compose set (shared·dev·prod·platform), 
     tests derive a host with an enabled `PluginRateLimiter`. The client account is resolved before the plugin budget
     is checked, so a refused call still costs one lookup, which the global limiter bounds. A refused stream call has
     already spent its tier permit.
-  - Left for later issues: the host API and the store (#642), a call timeout (#792). A streamed call has no timeout
+  - Left for a later issue: a call timeout (#792). A streamed call has no timeout
     of its own until then: it ends when the plugin ends or the client leaves.
 - **Plugin slot index: widgets for a verified context (#644).** The answer is `PluginSlotIndexDto` with
   `PluginSlotWidgetDto` items. **Nothing of a plugin is built or called**: the index is read from manifests, so a foreign
@@ -704,6 +770,8 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   the unlock, because an agent refuses keys for a locked account and the two unsuspensions are not ordered. All three
   only trigger idempotent commands and log a refusal or failure for staff instead of throwing. Each runs on its own
   queue (handlers are separated, see "Durable messaging"), so one of them failing never re-runs the others.
+  `Plugins/Events/PurgeRemovedPluginDataHandler` deletes a removed plugin's store rows written up to the removal on
+  `PluginRemovedEvent`; it is idempotent and writes only the Plugins module's own tables (see the plugin store under "Plugin routes").
   The remaining three react to `ClientClosedEvent` and are described under "Client account status" below.
 
 - **`InvoiceItems.ClientServiceId` and `InvoiceItems.RegisteredDomainId` carry no foreign key, on purpose.** An

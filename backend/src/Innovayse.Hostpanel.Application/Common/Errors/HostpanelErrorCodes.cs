@@ -852,6 +852,18 @@ public static class HostpanelErrorCodes
     /// </summary>
     public const string PLUGIN_FAILED = "PLUGIN_FAILED";
 
+    /// <summary>A plugin passed a store key the SDK does not allow; answered to the caller as <see cref="PLUGIN_FAILED"/> (502).</summary>
+    public const string PLUGIN_STORE_KEY_INVALID = Domain.Plugins.PluginStoreErrors.KeyInvalid;
+
+    /// <summary>A plugin passed a missing or oversized store value; answered to the caller as <see cref="PLUGIN_FAILED"/> (502).</summary>
+    public const string PLUGIN_STORE_VALUE_INVALID = Domain.Plugins.PluginStoreErrors.ValueInvalid;
+
+    /// <summary>
+    /// A plugin's write would take its store scope past the configured number of keys
+    /// (<c>PluginApi:MaxStoreKeysPerScope</c>) or characters (<c>PluginApi:MaxStoreCharsPerScope</c>) (402).
+    /// </summary>
+    public const string PLUGIN_STORE_QUOTA_EXCEEDED = Domain.Plugins.PluginStoreErrors.QuotaExceeded;
+
     /// <summary>The request body is larger than the host passes to a plugin (<c>PluginApi:MaxBodyBytes</c>), checked before the plugin is called (413).</summary>
     public const string PLUGIN_REQUEST_TOO_LARGE = "PLUGIN_REQUEST_TOO_LARGE";
 

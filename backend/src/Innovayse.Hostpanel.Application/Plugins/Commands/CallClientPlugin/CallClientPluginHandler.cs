@@ -1,10 +1,8 @@
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
-using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Innovayse.Hostpanel.Shared.MultiTenancy;
-using Innovayse.SDK.Plugins.Endpoints;
 using Innovayse.SDK.Plugins.Enums;
 
 namespace Innovayse.Hostpanel.Application.Plugins.Commands.CallClientPlugin;
@@ -81,25 +79,13 @@ public sealed class CallClientPluginHandler
             return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.CLIENT_PROFILE_NOT_FOUND);
         }
 
+        // The binding is built once, here: the reference the plugin sees on its caller is the scope of its store, and the
+        // host facts follow the same permissions.
         var pluginId = target.Manifest.Id;
-        var caller = new PluginCaller
-        {
-            ClientRef = _references.ForClient(pluginId, clientId),
-            UserRef = _references.ForUser(pluginId, _currentUser.RequireUserId()),
-            Permissions = HeldNames(access.Permissions),
-        };
+        var binding = PluginCallBinding.ForClient(
+            pluginId, clientId, _references.ForClient(pluginId, clientId), access.Permissions);
+        var userRef = _references.ForUser(pluginId, _currentUser.RequireUserId());
 
-        return await _runner.RunAsync(target, caller, clientId, command.Input, ct);
-    }
-
-    /// <summary>The names of the single flags a caller holds, as the plugin lists them.</summary>
-    /// <param name="held">The permissions the caller holds on the account.</param>
-    /// <returns>The flag names; neither <c>None</c> nor the combined <c>All</c>.</returns>
-    private static List<string> HeldNames(ClientPermission held)
-    {
-        return Enum.GetValues<ClientPermission>()
-            .Where(flag => flag is not (ClientPermission.None or ClientPermission.All) && held.HasFlag(flag))
-            .Select(flag => flag.ToString())
-            .ToList();
+        return await _runner.RunAsync(target, binding, userRef, command.Input, ct);
     }
 }

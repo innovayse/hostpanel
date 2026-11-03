@@ -113,7 +113,8 @@ public static class DependencyInjection
                     + "number, and an invoice payment term of 0 to 365 days.")
             .ValidateOnStart();
 
-        // How large a request body the host passes on to a plugin route, and how often a streamed reply sends a heartbeat.
+        // How large a request body the host passes on to a plugin route, how often a streamed reply sends a heartbeat,
+        // and how much one plugin store scope holds.
         services.AddOptions<PluginApiOptions>()
             .Bind(configuration.GetSection(PluginApiOptions.SectionName))
             .Validate(
@@ -121,7 +122,11 @@ public static class DependencyInjection
                 $"{PluginApiOptions.SectionName}:{nameof(PluginApiOptions.MaxBodyBytes)} must be from 1 to "
                     + $"{PluginApiOptions.MaxBodyBytesCeiling} bytes, and {PluginApiOptions.SectionName}:"
                     + $"{nameof(PluginApiOptions.StreamHeartbeatSeconds)} from 1 to {PluginApiOptions.StreamHeartbeatSecondsCeiling} seconds, and {PluginApiOptions.SectionName}:"
-                    + $"{nameof(PluginApiOptions.StreamEventMaxBytes)} from 1 to {PluginApiOptions.StreamEventMaxBytesCeiling} bytes.")
+                    + $"{nameof(PluginApiOptions.StreamEventMaxBytes)} from 1 to {PluginApiOptions.StreamEventMaxBytesCeiling} bytes, and "
+                    + $"{PluginApiOptions.SectionName}:{nameof(PluginApiOptions.MaxStoreKeysPerScope)} from 1 to "
+                    + $"{PluginApiOptions.MaxStoreKeysPerScopeCeiling} keys, and {PluginApiOptions.SectionName}:"
+                    + $"{nameof(PluginApiOptions.MaxStoreCharsPerScope)} from {PluginApiOptions.MaxStoreCharsPerScopeFloor} to "
+                    + $"{PluginApiOptions.MaxStoreCharsPerScopeCeiling} characters.")
             .ValidateOnStart();
 
         // The caller of the request, for handlers. Registered by type, not through a factory, so

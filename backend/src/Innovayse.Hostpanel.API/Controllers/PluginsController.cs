@@ -90,14 +90,19 @@ public sealed class PluginsController : BaseApiController
         return HandleResult(outcome);
     }
 
-    /// <summary>Removes an uploaded plugin by deleting its files from disk.</summary>
+    /// <summary>
+    /// Removes an uploaded plugin: deletes its files, switches it off and queues the purge of the data it kept. A valid,
+    /// non-built-in id whose files are already gone is cleared the same way, so data a lost package left behind can still
+    /// be removed.
+    /// </summary>
     /// <param name="id">Plugin identifier as declared in <c>plugin.json</c>.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 with <c>requiresRestart: true</c> on success; 400 with <c>VALIDATION_ERROR</c> or
-    /// <c>PLUGIN_ID_INVALID</c>; 401 without a session; 403 for a caller who is not an administrator;
-    /// 404 with <c>PLUGIN_NOT_FOUND</c>; 409 with <c>PLUGIN_BUILT_IN</c> for a plugin shipped with
-    /// the build; 429 when the rate limit is hit.
+    /// 200 with <c>requiresRestart: true</c> when the files were removed, or <c>requiresRestart: false</c> when they were
+    /// already gone; 400 with <c>VALIDATION_ERROR</c> or <c>PLUGIN_ID_INVALID</c>; 401 without a session; 403 for a caller
+    /// who is not an administrator; 404 with <c>PLUGIN_NOT_FOUND</c> when no files are left and the plugin was never
+    /// switched on here; 409 with <c>PLUGIN_BUILT_IN</c> for a plugin shipped with the build; 429 when the rate limit is
+    /// hit.
     /// </returns>
     [HttpDelete("{id}")]
     [ProducesResponseType(typeof(PluginActionResultDto), StatusCodes.Status200OK)]

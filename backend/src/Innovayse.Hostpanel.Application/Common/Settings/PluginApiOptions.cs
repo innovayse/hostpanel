@@ -1,7 +1,9 @@
+using Innovayse.Hostpanel.Domain.Plugins;
+
 namespace Innovayse.Hostpanel.Application.Common.Settings;
 
 /// <summary>
-/// What the host allows a call to a plugin route to carry. Bound from the "PluginApi" section; a deployment sets
+/// What the host allows a call to a plugin route to carry and to keep in its store. Bound from the "PluginApi" section; a deployment sets
 /// it only to change the defaults.
 /// </summary>
 public sealed class PluginApiOptions
@@ -14,6 +16,33 @@ public sealed class PluginApiOptions
 
     /// <summary>The largest <see cref="MaxBodyBytes"/> a deployment may configure, in bytes (64 MiB).</summary>
     public const int MaxBodyBytesCeiling = 67_108_864;
+
+    /// <summary>
+    /// How many keys one plugin store scope (a plugin and one client, or a plugin's plugin-wide values) holds by default.
+    /// Generous for settings, cursors and per-client state; a plugin that needs more belongs in its own storage.
+    /// </summary>
+    public const int DefaultMaxStoreKeysPerScope = 1000;
+
+    /// <summary>The largest <see cref="MaxStoreKeysPerScope"/> a deployment may configure.</summary>
+    public const int MaxStoreKeysPerScopeCeiling = 100_000;
+
+    /// <summary>
+    /// How many characters one plugin store scope holds by default, keys and values together (4 Mi characters, about
+    /// 8 MiB as stored text): room for 64 full-size values, or the default number of keys at about 4 KiB each.
+    /// </summary>
+    public const long DefaultMaxStoreCharsPerScope = 4_194_304;
+
+    /// <summary>
+    /// The smallest <see cref="MaxStoreCharsPerScope"/> a deployment may configure, in characters: one key of the longest
+    /// length with one value of the longest length, so a scope can always hold at least one full write.
+    /// </summary>
+    public const long MaxStoreCharsPerScopeFloor = (long)PluginDataEntry.MaxKeyLength + PluginDataEntry.MaxValueLength;
+
+    /// <summary>
+    /// The largest <see cref="MaxStoreCharsPerScope"/> a deployment may configure, in characters (1 Gi): one scope is one
+    /// plugin's data about one client, and anything larger belongs in the plugin's own storage.
+    /// </summary>
+    public const long MaxStoreCharsPerScopeCeiling = 1_073_741_824;
 
     /// <summary>The size of one read of a request body, in bytes. The body reader reads in chunks of this size, and the web server's limit leaves one chunk above the cap.</summary>
     public const int ReadChunkBytes = 8192;
@@ -49,6 +78,24 @@ public sealed class PluginApiOptions
     public int StreamEventMaxBytes { get; set; } = DefaultStreamEventMaxBytes;
 
     /// <summary>
+    /// The most keys a plugin keeps in one store scope (count, 1 to <see cref="MaxStoreKeysPerScopeCeiling"/>). A write
+    /// that would add a new key past it is refused with <c>PLUGIN_STORE_QUOTA_EXCEEDED</c> (402); replacing an existing
+    /// key never adds one.
+    /// </summary>
+    public int MaxStoreKeysPerScope { get; set; } = DefaultMaxStoreKeysPerScope;
+
+    /// <summary>
+    /// The most characters a plugin keeps in one store scope, every key and every value counted (UTF-16 characters, as
+    /// stored; <see cref="MaxStoreCharsPerScopeFloor"/> to <see cref="MaxStoreCharsPerScopeCeiling"/>). A write that
+    /// would grow the scope past it is refused with <c>PLUGIN_STORE_QUOTA_EXCEEDED</c> (402); a write that shrinks or
+    /// keeps the scope's size, and a removal, never is.
+    /// </summary>
+    public long MaxStoreCharsPerScope { get; set; } = DefaultMaxStoreCharsPerScope;
+
+    /// <summary>Gets <see cref="MaxStoreKeysPerScope"/> and <see cref="MaxStoreCharsPerScope"/> as the one quota every store write is checked against.</summary>
+    public PluginStoreQuota StoreQuota => new(MaxStoreKeysPerScope, MaxStoreCharsPerScope);
+
+    /// <summary>
     /// Gets the limit the web server is given for a plugin request: the cap, one read chunk, and 1/64 of the cap for the
     /// framing of a chunked body. The server counts the chunk headers it strips (about 9 bytes per chunk), so a body of
     /// exactly the cap sent in 64 KiB chunks reaches the server's count above the cap by about 0.014%; the allowance
@@ -62,9 +109,13 @@ public sealed class PluginApiOptions
 
     /// <summary>
     /// Whether the values are usable: a body cap of at least one byte and no more than <see cref="MaxBodyBytesCeiling"/>, and a
-    /// heartbeat of one second to <see cref="StreamHeartbeatSecondsCeiling"/>, and an event cap of one byte to <see cref="StreamEventMaxBytesCeiling"/>.
+    /// heartbeat of one second to <see cref="StreamHeartbeatSecondsCeiling"/>, and an event cap of one byte to <see cref="StreamEventMaxBytesCeiling"/>, and 1 to
+    /// <see cref="MaxStoreKeysPerScopeCeiling"/> store keys per scope, and <see cref="MaxStoreCharsPerScopeFloor"/> to
+    /// <see cref="MaxStoreCharsPerScopeCeiling"/> store characters per scope.
     /// </summary>
     public bool IsValid => MaxBodyBytes is >= 1 and <= MaxBodyBytesCeiling
         && StreamHeartbeatSeconds is >= 1 and <= StreamHeartbeatSecondsCeiling
-        && StreamEventMaxBytes is >= 1 and <= StreamEventMaxBytesCeiling;
+        && StreamEventMaxBytes is >= 1 and <= StreamEventMaxBytesCeiling
+        && MaxStoreKeysPerScope is >= 1 and <= MaxStoreKeysPerScopeCeiling
+        && MaxStoreCharsPerScope is >= MaxStoreCharsPerScopeFloor and <= MaxStoreCharsPerScopeCeiling;
 }

@@ -55,6 +55,9 @@ public static class StatusMapping
             // Exact row: a plugin's own code failed the call (a gateway between us and code we do not own, 502); the name
             // carries no token.
             "PLUGIN_FAILED" => new(502, "Bad Gateway"),
+            // Exact row: a plugin's store for this account is full. A quota refusal answers 402 like QUOTA_EXCEEDED
+            // (controllers.md), and the code needs its own row because that one matches only the exact code.
+            "PLUGIN_STORE_QUOTA_EXCEEDED" => new(402, "Payment Required"),
             // Exact row: the user is not on the caller's account, which reads as absent (404), not as a
             // malformed request; the name carries no NOT_FOUND token for the generic arm to catch.
             "CLIENT_USER_NOT_LINKED" => new(404, "Not Found"),

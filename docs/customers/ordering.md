@@ -24,11 +24,6 @@ Click **Continue** to add it to your cart.
 </li>
 </Steps>
 
-| Error | What it means |
-|-------|--------------|
-| `ORDER_PRODUCT_PRICE_UNAVAILABLE` | That product has no price in your currency for the billing cycle you chose. |
-| `PRODUCT_NOT_AVAILABLE` | That product is not available for ordering. |
-
 ## Find a domain
 
 <Steps>
@@ -91,8 +86,3 @@ If the total changed after you reviewed the cart, a confirmation prompt appears:
 
 The page shows **Payment Successful!**. Buttons let you **Set Up My Service** or **Manage Your Domain** depending on what you ordered.
 
-| Error | What it means |
-|-------|--------------|
-| `CLIENT_SUSPENDED` | This account is suspended, so it cannot place orders or pay online. Contact support to have it reactivated. |
-| `CLIENT_CLOSED` | This account is closed and can no longer place orders or be billed. |
-| `CLIENT_CARD_PAYMENT_DISABLED` | Card payments are disabled for this account. Pay by another method or contact support. |

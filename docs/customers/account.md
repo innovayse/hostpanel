@@ -30,11 +30,6 @@ A confirmation email is sent to the address you entered. A "Verify your email" b
 </li>
 </Steps>
 
-| Error | What it means |
-|-------|--------------|
-| `EMAIL_ALREADY_IN_USE` | This email address is already used by another account. |
-| `ACCOUNT_EMAIL_EXISTS` | An account with this email address already exists. Sign in to continue. |
-
 ## Sign in
 
 <Steps>
@@ -55,12 +50,6 @@ If two-factor authentication is on, you are taken to the two-factor step — see
 
 </li>
 </Steps>
-
-| Error | What it means |
-|-------|--------------|
-| `SIGN_IN_UNAUTHORIZED` | Invalid email or password. |
-| `SIGN_IN_ACCOUNT_LOCKED` | Too many wrong passwords. This account is locked for a while, try again later. |
-| `PENDING_TOKEN_UNAUTHORIZED` | That sign-in step has expired or is not valid. Sign in again. |
 
 ## Forgot your password <Label type="local" />
 
@@ -89,10 +78,6 @@ Enter **New Password** and **Confirm Password**, then click **Reset Password**.
 
 If the link has expired the page shows "Invalid reset link". Click **Request a new reset link** to start over.
 
-| Error | What it means |
-|-------|--------------|
-| `TOKEN_INVALID_OR_EXPIRED` | The link is invalid or has expired. Request a new one. |
-
 ## Your account details
 
 Go to **Account**. The tabs you see depend on your permissions. The full set is: **Account Details**, **User Management**, **Email History** and **Payment Methods**.
@@ -101,7 +86,7 @@ Go to **Account**. The tabs you see depend on your permissions. The full set is:
 
 The **Account Details** tab has two sections: **Account Information** (name, company, phone, address) and **Billing Address**. Click **Edit** to change them, then **Save Changes**.
 
-**Email preferences** — six toggles control which notification emails you receive:
+**Email Preferences** — six toggles control which notification emails you receive:
 
 | Toggle | What it controls |
 |--------|-----------------|
@@ -144,9 +129,13 @@ Each contact has five email notification toggles: General Emails, Invoice Emails
 
 Click the edit icon to change a contact's details, or **Delete** to remove them.
 
+### Two-factor authentication
+
+The **Two-Factor Authentication** card lets you enable or disable 2FA. See [Two-factor authentication](./two-factor) for details.
+
 ### Email History and Payment Methods
 
-**Email History** shows emails sent to your account. **Payment Methods** lists saved cards; you can set a default card or remove one.
+**Email History** shows emails sent to your account. **Payment Methods** lists saved cards; you can set a default card or remove one. To see the **Payment Methods** tab your account needs the **View & Pay Invoices** permission.
 
 ## Users and permissions
 
@@ -190,7 +179,7 @@ The person receives an email. When they click the link the **Accept Your Invitat
 | Perform Single Sign-On | Log in to services directly |
 | View Domains | View domain registrations |
 | Manage Domain Settings | Change nameservers, lock, transfer and contact details |
-| View & Pay Invoices | View and pay invoices |
+| View & Pay Invoices | View and pay invoices; access the Payment Methods tab |
 | View & Accept Quotes | View and accept quotes |
 | View & Open Support Tickets | Open, reply to and manage support tickets |
 | View & Manage Affiliate Account | View affiliate reports and request withdrawals |
@@ -198,7 +187,3 @@ The person receives an email. When they click the link the **Accept Your Invitat
 | Place New Orders/Upgrades/Cancellations | Place orders and request cancellations |
 
 The account owner always has full permissions and cannot be removed.
-
-| Error | What it means |
-|-------|--------------|
-| `CLIENT_PERMISSION_DENIED` | Your account does not have permission to do this. Ask the account owner to grant you access. |

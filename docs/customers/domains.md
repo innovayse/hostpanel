@@ -15,8 +15,9 @@ Domain statuses:
 | Status | What it means |
 |--------|--------------|
 | Active | Registered and working |
-| Pending | Registration is being processed |
+| Pending Registration | Registration is being processed |
 | Pending Transfer | Transfer to this provider is in progress |
+| Pending DNS | DNS is being set up |
 | Expired | The domain has expired and is not active |
 | Grace Period | Recently expired — can still be renewed at the normal price |
 | Redemption | In the redemption period — can be recovered at a higher cost |
@@ -32,7 +33,7 @@ Open a domain and go to its nameserver settings. Choose:
 - **Use default nameservers** — uses your hosting provider's nameservers.
 - **Use custom nameservers** — enter your own nameserver addresses.
 
-Save the change. DNS changes can take up to 48 hours to take effect worldwide.
+Save the change. DNS changes can take up to 24 hours to take effect worldwide.
 
 ## Lock, transfer code and privacy
 
@@ -45,10 +46,6 @@ Save the change. DNS changes can take up to 48 hours to take effect worldwide.
 ## Renew a domain
 
 Click **Renew Now** to renew a domain before it expires. You can also turn on **auto renew** — when enabled, a renewal invoice is raised automatically before the domain expires and the domain renews once it is paid.
-
-| Error | What it means |
-|-------|--------------|
-| `RENEWAL_INVOICE_OPEN` | A renewal invoice for this domain cannot be released right now. It is overdue together with other items, or a payment on it is in progress. Settle that invoice first, then renew. |
 
 ## Contact details
 

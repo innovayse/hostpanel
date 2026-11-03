@@ -42,10 +42,6 @@ Click **Activate 2FA**. The card now shows **2FA Enabled**.
 </li>
 </Steps>
 
-| Error | What it means |
-|-------|--------------|
-| `TWO_FACTOR_CODE_INVALID` | That code did not match. Check your authenticator app and try again. |
-
 ## Sign in with a two-factor code
 
 After entering your email and password you are taken to the two-factor step.
@@ -67,11 +63,7 @@ Click **Back to sign in** to go back and use a different account.
 
 ## Lost your phone
 
-There are no recovery codes. If you lose access to your authenticator app, contact your hosting provider's support team — they can remove the two-factor requirement from your account so you can sign in again.
-
-<Callout type="warning">
-Keep access to your authenticator app at all times. Without it and without support help, you cannot sign in.
-</Callout>
+There are no recovery codes. If you lose access to your authenticator app, contact your hosting provider for help regaining access to your account.
 
 ## Turn off two-factor authentication
 

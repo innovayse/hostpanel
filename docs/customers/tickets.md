@@ -47,10 +47,6 @@ To add a reply, open the ticket, type in the **Add Reply** box and click **Send 
 
 A closed ticket cannot receive new replies. Open a new ticket if you need further help.
 
-| Error | What it means |
-|-------|--------------|
-| `TICKET_REPLY_NOT_ALLOWED` | A closed ticket cannot receive new replies. Open a new ticket instead. |
-
 ## Announcements and knowledge base
 
-The **Support** section also shows announcements posted by your hosting provider and a knowledge base with help articles. Check there first — your question may already be answered.
+**Announcements** and **Knowledge Base** appear as separate items in the menu alongside Support Tickets. Check the knowledge base first — your question may already be answered.

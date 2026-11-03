@@ -22,6 +22,7 @@ An invoice page shows: **Issued**, **Due Date**, **Date Paid**, **Subtotal**, **
 | Paid | Paid in full |
 | Cancelled | The invoice was cancelled and no payment is needed |
 | Refunded | A refund was issued |
+| Partially Refunded | Part of the payment has been refunded |
 | Collections | The invoice has been sent to collections |
 
 Draft invoices are not shown to customers.
@@ -80,10 +81,3 @@ The service page shows the reason for suspension:
 Paying the overdue invoice brings a suspended service back automatically.
 </Callout>
 
-| Error | What it means |
-|-------|--------------|
-| `INVOICE_NOT_PAYABLE` | This invoice cannot be paid in its current status. |
-| `CLIENT_CARD_PAYMENT_DISABLED` | Card payments are disabled for this account. Pay by another method or contact support. |
-| `GATEWAY_SESSION_ALREADY_STARTED` | A payment attempt is already in progress for this invoice. Please wait or complete the existing payment. |
-| `GATEWAY_CHARGE_UPSTREAM_FAILED` | The payment gateway declined the charge. |
-| `RENEWAL_INVOICE_OPEN` | A renewal invoice for this domain cannot be released right now. It is overdue together with other items, or a payment on it is in progress. Settle that invoice first, then renew. |

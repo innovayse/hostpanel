@@ -42,17 +42,13 @@ The service becomes active once setup is complete.
 
 Setup becomes available once the first invoice is paid in full.
 
-| Error | What it means |
-|-------|--------------|
-| `SERVICE_FIRST_INVOICE_UNPAID` | This service can be set up once its first invoice is paid in full. |
-
 ## Manage a service
 
 Click a service to open it. The **Overview** tab shows your plan, billing details and quick links.
 
-- **Change Password** — enter a new password and click **Change Password**.
-- **Login to Control Panel** — opens your hosting control panel directly.
-- **Request Cancellation** — choose **Immediate** (cancels straight away) or **End of Billing Period** (runs until the end of the current period), enter a reason and click **Submit Cancellation Request**.
+- **Change Password**: enter a new password and click **Change Password**. Requires the **View & Modify Product Passwords** permission.
+- **Login to Control Panel**: opens your hosting control panel directly.
+- **Request Cancellation**: choose **Immediate** (cancels straight away) or **End of Billing Period** (runs until the end of the current period), enter a reason and click **Submit Cancellation Request**. Requires the **Place New Orders/Upgrades/Cancellations** permission.
 
 ## SSH keys
 
@@ -124,9 +120,3 @@ Click **Revoke** next to the key, then confirm with **Revoke this key?**. The ke
 | "SSH keys can only be managed while the service is active." | Reactivate the service first |
 | "The hosting server could not be reached. Please try again later." | A temporary network issue — try again in a moment |
 
-| Error | What it means |
-|-------|--------------|
-| `SSH_KEY_INVALID` | The key is not a valid ED25519 public key. |
-| `SSH_PRIVATE_KEY_REJECTED` | That is a private key. Paste the public key (the .pub file) instead. |
-| `SSH_KEY_LIMIT_REACHED` | The service already holds the maximum number of SSH keys. Revoke one to add another. |
-| `SSH_KEY_STALE` | This key was issued on the service's previous server. Contact support to remove it. |

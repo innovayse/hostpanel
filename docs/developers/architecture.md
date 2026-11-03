@@ -36,12 +36,12 @@ Dependencies point inward. Outer layers may reference inner ones; inner layers n
 
 | Layer | Project | Holds |
 |-------|---------|-------|
-| **SharedKernel** | `SharedKernel` | Primitives shared across all layers: base types, result types, extension methods. |
+| **SharedKernel** | `Innovayse.Hostpanel.SharedKernel` | Primitives shared across all layers: base types, result types, extension methods. |
 | **Domain** | `Innovayse.Hostpanel.Domain` | Entities, enums and domain logic. No dependency on infrastructure or application concerns. |
 | **Application** | `Innovayse.Hostpanel.Application` | Use cases: commands, queries, handlers, validators. Defines ports (`I<Port>` interfaces) for everything the application needs from the outside. |
 | **Infrastructure** | `Innovayse.Hostpanel.Infrastructure` | Adapters that implement the application's ports: the ORM, email, storage, the message bus, background jobs. |
 | **API** | `Innovayse.Hostpanel.API` | Controllers, middleware, startup. The composition root: wires everything together. |
-| **Shared** | `Shared` | Cross-cutting code used by both the main project and the bundled plugins: `BaseApiController`, `StatusMapping`, shared models. |
+| **Shared** | `Shared` | Cross-cutting code for the main project: `BaseApiController`, `StatusMapping`, shared models. Plugins do not reference this project. |
 
 ## The plugin SDK and bundled plugins
 
@@ -49,7 +49,7 @@ The SDK lives at `backend/src/Innovayse.SDK` as a git submodule (hosted separate
 
 Bundled plugins ship with the server image and live under `backend/src/Innovayse.Providers.*`. They are the reference implementations for plugin authors.
 
-See the **Write a plugin** guide in the Developers section for the full plugin authoring guide.
+See the [Write a plugin](./write-a-plugin) guide for the full plugin authoring guide.
 
 ## The repository
 

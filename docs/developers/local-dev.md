@@ -54,7 +54,7 @@ Start all services:
 docker compose -f docker-compose.shared.yml -f docker-compose.dev.yml up -d
 ```
 
-Services started: `hostpanel-db`, `hostpanel-api`, `hostpanel-client`, `hostpanel-admin`, plus the message queue, cache and local mail catcher.
+Services started: `hostpanel-db`, `hostpanel-api`, `hostpanel-client`, `hostpanel-admin`, plus RabbitMQ, Redis and MailHog.
 
 </li>
 <li>
@@ -62,7 +62,7 @@ Services started: `hostpanel-db`, `hostpanel-api`, `hostpanel-client`, `hostpane
 Follow the API log to watch startup and migrations:
 
 ```bash
-docker compose logs -f hostpanel-api
+./scripts/manage.sh logs api
 ```
 
 Wait for "Now listening on" before opening the apps.
@@ -73,10 +73,10 @@ Wait for "Now listening on" before opening the apps.
 ## Open it
 
 <SettingTable :settings="[
-  { name: 'CLIENT_HOST_PORT', type: 'number', default: '3001', description: 'Client portal' },
-  { name: 'ADMIN_HOST_PORT', type: 'number', default: '5174', description: 'Admin panel' },
-  { name: 'API_HOST_PORT', type: 'number', default: '5149', description: 'API and OpenAPI page at /swagger' },
-  { name: 'MAILHOG_UI_HOST_PORT', type: 'number', default: '8027', description: 'Local mail inbox UI. Shows all outgoing emails.' },
+  { name: 'CLIENT_HOST_PORT', type: 'number', default: '3001', description: 'Client portal — http://localhost:3001' },
+  { name: 'ADMIN_HOST_PORT', type: 'number', default: '5174', description: 'Admin panel — http://localhost:5174' },
+  { name: 'API_HOST_PORT', type: 'number', default: '5149', description: 'API and OpenAPI page — http://localhost:5149/swagger' },
+  { name: 'MAILHOG_UI_HOST_PORT', type: 'number', default: '8027', description: 'Local mail inbox UI — http://localhost:8027' },
 ]" />
 
 The dev seed creates these accounts:
@@ -88,7 +88,7 @@ The dev seed creates these accounts:
 
 ## Hot reload
 
-The API container mounts the source tree and rebuilds on file changes. If the watcher misses changes (common on some host filesystems), set `DEV_FILE_POLLING=true` in `.env` and restart.
+The API container mounts the source tree and rebuilds on file changes. File polling is enabled by default in `.env.example` to cover host filesystems that do not emit watch events reliably.
 
 <Callout type="warning">
 Never run <code>dotnet build</code>, <code>dotnet restore</code>, <code>npm install</code> or similar on the host while the dev stack is up. The container and the host will fight over the same files.
@@ -108,11 +108,16 @@ Set the API's connection string, RabbitMQ and SMTP settings through environment 
 
 ## Reset the data
 
-Drop the database inside the running container and restart to re-seed:
+Use the management script from the `docker/` directory:
 
 ```bash
-docker compose exec hostpanel-api dotnet ef database drop --force
-docker compose restart hostpanel-api
+./scripts/manage.sh db reset
+```
+
+This asks for confirmation, drops the database and applies all migrations. To seed development data afterwards:
+
+```bash
+./scripts/manage.sh db seed
 ```
 
 ## Troubleshooting
@@ -121,4 +126,3 @@ docker compose restart hostpanel-api
 |---------|-----|
 | Port already in use | Change `API_HOST_PORT`, `CLIENT_HOST_PORT` or `ADMIN_HOST_PORT` in `.env` |
 | Subnet clash with another network | Change `STACK_NETWORK_SUBNET` in `.env` (default `172.30.0.0/24`) |
-| File watcher not picking up changes | Set `DEV_FILE_POLLING=true` in `.env` and restart the stack |

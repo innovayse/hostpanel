@@ -10,19 +10,18 @@ description: Every check CI runs and how to run them locally.
 Every pull request must pass:
 
 1. Backend tests: domain, integration, architecture and plugin
-2. Backend formatting check
-3. Admin panel: lint, typecheck, unit tests, end-to-end tests
-4. Client portal: lint, typecheck, unit tests, end-to-end tests
+2. Admin panel: lint, typecheck, unit tests, end-to-end tests
+3. Client portal: lint, typecheck, unit tests
 
 ## Backend tests
 
-Run all backend tests inside the API container:
+Run all backend tests inside the API container (from the `docker/` directory):
 
 ```bash
-docker compose exec hostpanel-api dotnet test
+./scripts/manage.sh test
 ```
 
-Four test projects:
+Five test projects:
 
 **`Innovayse.Hostpanel.Domain.Tests`**: unit tests for domain logic.
 
@@ -34,15 +33,12 @@ Four test projects:
 |------------|---------------|
 | `PortPlacementTests` | All `I<Port>` interfaces are in `Application/Common/Interfaces/` |
 | `DatabaseIdentifierNamingTests` | All table, column and key names are PascalCase |
-| `ModelDiffBaselineTests` | The model matches the latest migration |
 | `UseCaseShapeTests` | Every handler has a matching integration test file |
 | `ResourceCoverageTests` | Every error code has a sentence in `ErrorMessages.resx` |
 
+`ModelDiffBaselineTests` lives in `Integration.Tests/Persistence` and checks that the EF model matches the latest migration.
+
 **`Innovayse.CWP.Tests`**, **`Innovayse.Inecobank.Tests`**: tests for the bundled plugins.
-
-## Backend formatting
-
-Run the formatter before every commit. See `rules/dotnet-format.md` for the exact command.
 
 ## Admin panel
 
@@ -63,7 +59,7 @@ npm run typecheck
 ```
 
 ```bash [test]
-npm run test
+npm test -- --maxWorkers=2
 ```
 
 ```bash [e2e]
@@ -79,23 +75,23 @@ Run from the `client/` directory. On a laptop, limit test workers to 2 to avoid 
 ::: code-group
 
 ```bash [lint]
-npm run lint
+yarn lint
 ```
 
 ```bash [lint:i18n]
-npm run lint:i18n
+yarn lint:i18n
 ```
 
 ```bash [typecheck]
-npm run typecheck
+yarn typecheck
 ```
 
 ```bash [test]
-npm run test -- --workers=2
+yarn test --maxWorkers=2
 ```
 
 ```bash [e2e]
-npm run e2e
+yarn e2e
 ```
 
 :::
@@ -105,6 +101,7 @@ The `lint` script includes the layer check (`client/scripts/check-layers.mjs`).
 ## Before opening a pull request
 
 - Branch from `develop`, not from another feature branch.
+- Run the backend formatter. See `rules/dotnet-format.md` for the exact command.
 - Include tests for every change in the same pull request.
 - Follow the commit message style in `rules/project.md`.
 - See [Contributing](./contributing) for the full pull request checklist.

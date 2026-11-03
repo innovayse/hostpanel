@@ -143,8 +143,9 @@ picks it up. The **Migrated**, **Skipped** and **Failed** counters update as rec
 ## When a job fails
 
 The failure reason is shown on the job card. Click **Retry import** to queue the pull again.
-A retry resets the counters and starts from the beginning; records that already exist are skipped,
-so retrying is safe.
+A retry resets the counters and starts from the beginning. Most record types skip duplicates on
+retry, but announcements, network issues, download categories, downloads and ticket replies have no
+duplicate check and will be added again on a second run.
 
 | Reason | What to do |
 |---|---|
@@ -158,14 +159,18 @@ so retrying is safe.
 ## Run it again safely
 
 <Callout type="warning">
-Existing records are never updated by a second run. A record that already exists here is logged as
-Skipped with "Already exists" and left unchanged.
+Most record types skip duplicates on a second run. Announcements, network issues, download
+categories, downloads and ticket replies have no duplicate check and will be added again.
+A record that already exists and is not one of those types is logged as Skipped with
+"Already exists" and left unchanged.
 </Callout>
 
 Records are matched as follows: clients by email address, contacts by email, products by name,
-domains by domain name, invoices by client and external id, tickets and quotes by client and
-subject, orders by order number, transactions by client and transaction id.
-Running the same job a second time only adds records that are new since the last run.
+product groups by name, domains by domain name, services by client and domain (or client and panel
+username), invoices by client and external id, tickets and quotes by client and subject,
+orders by order number, transactions by client and transaction id, knowledgebase articles by
+title, knowledgebase categories by name.
+For all other types, running the same job a second time only adds records that are new since the last run.
 
 To re-import a changed record, delete it in Hostpanel first, then retry the job.
 
@@ -205,8 +210,13 @@ the request and dispatches it to `ApiKernel`.
 ```
 modules/addons/innovayse_migration/
   api.php
-  Module.php
+  autoload.php
+  innovayse_migration.php
   lib/
+    Module.php
+    ApiKernel.php
+    Router.php
+    Paging.php
     Mapping/
     Database/
     Addon/

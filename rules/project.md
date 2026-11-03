@@ -185,10 +185,11 @@ docker/                              compose set (shared·dev·prod·platform), 
   `Assembly.LoadFrom` over it would give the process two distinct `IPaymentPlugin` types with the
   same name, after which every cast in `PluginActivator` fails. The CWP providers are
   deliberately **not** staged, so they cannot activate at runtime by accident.
-- **The SDK is grouped by area (SDK 2.0.0).** Every SDK type lives in `Plugins/<Area>/` and its
-  namespace equals the folder: `Payment`, `Provisioning`, `Registrar`, `HostingPanel`, `Hosting`,
-  `Fulfilment`, `Identity`, `StoredCredentials`, `Manifest`, `Endpoints`, `Host`, `Store`,
-  `Lifecycle`, `Slots`, `Enums`. Each interface sits next to the records it uses; there is no
+- **The SDK is grouped by area (since SDK 2.0.0; the submodule pins 2.1.0, commit `6a725c2`, which adds the `Ui`
+  view schema, `externalOrigins`, the endpoints capability and the fulfilment `ClientRef`).** Every SDK type lives in
+  `Plugins/<Area>/` and its namespace equals the folder: `Payment`, `Provisioning`, `Registrar`, `HostingPanel`, `Hosting`,
+  `Fulfilment`, `Identity`, `StoredCredentials`, `Manifest`, `Api`, `Endpoints`, `Host`, `Store`,
+  `Lifecycle`, `Slots`, `Ui`, `Enums`. Each interface sits next to the records it uses; there is no
   `Interfaces/` folder (file-layout allows one only in Domain, `Application/Common/Interfaces/` and
   Shared) and nothing at the `Plugins/` root. Enums are in `Plugins/Enums/` with explicit values:
   `PluginType` keeps its released values starting at 0, every other enum starts at 1. The abstract base
@@ -216,7 +217,10 @@ docker/                              compose set (shared·dev·prod·platform), 
   twice), a throw marks the attempt failed and retries, a normal return marks it done. The host calls
   `OnInvoicePaidAsync` once a paid invoice has a digital line, `OnInvoiceRefundedAsync` after money moved back,
   `OnSubscriptionLapsedAsync` when a renewal invoice passes its grace period unpaid, and `AdviseRefundAsync`
-  **before** a refund moves money. *Refund advice* (`RefundAdviser`, the one place that asks): every enabled
+  **before** a refund moves money. Every fulfilment context and the refund advice context carry `ClientRef`, the
+  receiving plugin's own `IPluginReferences.ForClient(pluginId, clientId)`, the same value that plugin's endpoint calls
+  for that client carry; it is computed per plugin by `FulfilmentDispatcher` and `RefundAdviser`, and
+  `FulfilmentContextBuilder` (pure) only places it. *Refund advice* (`RefundAdviser`, the one place that asks): every enabled
   fulfilment plugin is asked, the smallest `MaxRefundableAmount` wins, a cap of zero or less refuses the refund
   (`REFUND_BLOCKED_BY_PLUGIN`), a smaller positive cap reduces it and the plugin's `Reason` goes into the refund
   notes, and a plugin that throws or times out refuses it too (`REFUND_ADVICE_UNAVAILABLE`, fail closed). With no
@@ -326,8 +330,47 @@ docker/                              compose set (shared·dev·prod·platform), 
   manifest has none of these blocks and passes. At load a refused manifest skips only that plugin and logs
   one warning with the plugin id and the rule; at install the response is the rule's localised error and
   nothing is left behind. The manifest-level `sdkVersion` check (`PLUGIN_SDK_VERSION_UNSUPPORTED`) is separate
-  and unchanged. Rules for view documents (`view` files) arrive with the view document schema and are not
-  checked yet.
+  and unchanged. **View documents** (the `view` file of every page and slot) are read and checked by
+  `PluginViewDocumentReader` (`Infrastructure/Plugins`), at load after the signature check and before any assembly
+  loads, and at install on the unpacked files, with the same `PluginManifestRule`s: `ViewMissing`
+  (`PLUGIN_VIEW_MISSING`, no such file), `ViewInvalid` (`PLUGIN_VIEW_INVALID`: the path is not package-relative
+  `.json`, the file is over the size cap, it is not JSON, or it breaks the structure or link rule below),
+  `ViewSchemaUnsupported` (`PLUGIN_VIEW_SCHEMA_UNSUPPORTED`, `schema` is not `PluginViews.SchemaVersion`),
+  `ViewBlockKindUnknown` (`PLUGIN_VIEW_BLOCK_KIND_UNKNOWN`, an object with `kind` outside `PluginViews.BlockKinds`),
+  `ViewRouteUndeclared` (`PLUGIN_VIEW_ROUTE_UNDECLARED`, a `PluginViewRoute` that no route of the page's or slot's area
+  declares), and `LabelKeyMissing` for a key-shaped label under `PluginViews.LabelProperties` that `en` lacks
+  (the same `PluginManifestValidator` check as manifest labels).
+  - **Structure.** The root is an object with an integer `schema` and a `blocks` array. Every entry of a `blocks`
+    array (the root's or a tab's) and of a block's `actions` array is an object with a string `kind`; a block's `tabs`
+    is an array of objects whose `blocks`, when present, follow the same rule. A block the panel would skip or crash on
+    is refused at install, not rendered blank. The parser's `MaxDepth` is 32 (root counted), and a member name that
+    appears twice in one object is refused (the localiser would throw on it when the page is served).
+  - **Links.** The URL-like members `href`, `url`, `src`, `image` and `to` (names compared ignoring case, at any depth)
+    are each either host-relative (one leading `/`, never `//`) or an absolute `https` URL with a host and no user info;
+    neither may hold a backslash or a control character, and a host-relative link may not reach the host API (`/api` or
+    under `/api/`, any case, checked on the raw text and once more after one percent-decoding). Anything else
+    (`javascript:`, `data:`, `http:`, protocol-relative) is `PLUGIN_VIEW_INVALID`. `icon` must be a plain icon name
+    (`\A[a-z0-9-]{1,64}\z`), never a URL, and `target` and `formAction` are refused outright. The contract for both
+    panels: every string of a view is rendered as text only, never through `v-html`, a link is built only from these
+    checked members, and an absolute link opens with `rel="noopener noreferrer"`.
+  - **No links on the way.** A folder between the plugin folder and the view file, or the file itself, that is a
+    symlink or junction is `PLUGIN_VIEW_INVALID`; the check is on the path, accepted for the reason the signature check
+    gives (only the host writes the plugin folder). A file that is not seekable (FIFO, device) is refused too.
+  - **Size cap (`Plugins:MaxViewBytes`, `PluginOptions`, bytes, default 262144, 1 to 4194304, validated on start by
+    `PluginOptionsValidator`).** The length is read from the same open handle that is then read, before anything is
+    read, and the read itself is bounded (never more than the cap plus one byte), because the file may grow between the
+    two; over the cap is `PLUGIN_VIEW_INVALID`, at load and at install alike.
+  - **Violation details** carry only the package-relative path and, for a parse or I/O fault, the exception type name;
+    never an absolute host path, an exception message or document text, because the detail reaches the install response.
+  - **Kept in memory.** The parsed documents live in `LoadedPlugin.Views` (`PluginViewDocuments`), so serving a page
+    reads no file. A localised copy is cached per path and language (`PluginViewDocuments.Localised`, key
+    `LocalisedViewKey`), always: the language is first normalised by `PluginUiTexts` to a supported one (`en`, `ru`,
+    `hy`, anything else becomes `en`), so the cache holds at most documents times three and a caller cannot grow it.
+- **Menu icons and page ids (#643).** A menu `icon` is a plain name, `\A[a-z0-9-]{1,64}\z`
+  (`PLUGIN_MENU_ICON_INVALID`, `PluginManifestRule.MenuIconInvalid`); the panels map a name to a built-in icon only and
+  never load it as a URL. A page id is a `PluginPageIdentifier` (`Domain/Plugins`: `\A[a-z0-9][a-z0-9_-]*\z`, at most 64
+  characters, not the reserved `by-path`) and unique within its area (`PLUGIN_PAGE_ID_INVALID`,
+  `PluginManifestRule.PageIdInvalid`), so every page the installer accepts is reachable by the page lookup.
 - **Signed plugin packages (`Infrastructure/Plugins/PluginSignatureVerifier`, section `PluginSigning`).** An uploaded
   package carries a detached Ed25519 signature, `plugin.sig` at its root, checked in one place by both paths, like the
   manifest validator: at install (`PluginPackageStore`, on the unpacked files, before the move into place) and at load
@@ -520,6 +563,8 @@ docker/                              compose set (shared·dev·prod·platform), 
     Services and invoices are newest first (`CreatedAt`, then `Id`, descending), at most `PluginHostLimits.MaxListed` (50, cut
     in SQL), and invoices pass `Invoice.ClientVisibleFilter`, so a draft is never shared. A call whose client row is gone gets a
     null profile and empty lists. Domain statuses map to SDK statuses by name in an exhaustive switch; an unknown value throws, and so does a draft invoice, which the filter keeps from ever reaching it.
+    `IssueSshAccessAsync` and `RevokeSshAccessAsync` always throw `PluginHostAccessException`
+    (`PluginHostAccessFailure.NotAllowed`) until hosting access is granted (#758): no manifest is admitted with `hostAccess` yet.
     *Store* (`Infrastructure/Plugins/PluginStore`): table `PluginDataEntries` (aggregate `PluginDataEntry`: `PluginId`,
     `ClientRef`, `Key`, `Value` text, `CreatedAt`, `UpdatedAt`; unique `IX_PluginDataEntries_PluginId_ClientRef_Key`, nulls not
     distinct) and table `PluginDataScopes` (aggregate `PluginDataScope`: `PluginId`, `ClientRef`, `KeyCount`, `StoredChars`,
@@ -609,6 +654,58 @@ docker/                              compose set (shared·dev·prod·platform), 
     plugin id is a `PluginIdentifier`.
   - Hide setting: `plugins.hidden_slot_widgets` (`PluginSettingKeys.HiddenSlotWidgets`, seeded empty) holds comma
     separated `slot:plugin:widget` entries. Empty entries are ignored, and the validator and the reader share one grammar.
+
+- **Plugin UI index and pages (#643).** Four read endpoints serve what a plugin adds to a panel:
+  `GET api/client/plugins/ui` (`Policies.Client`, `[AvailableToEveryClientUser]`) and `GET api/admin/plugins/ui`
+  (`Policies.Admin`) answer the index `PluginUiDto { Menus, Pages }` (menus `{pluginId, id, label, page, icon, order}`,
+  pages `{pluginId, id, path, title}`; both empty with no available plugin); `GET api/{client|admin}/plugins/ui/{pluginId}/pages/{pageId}`
+  answers `PluginPageViewDto {pluginId, id, path, title, view, externalOrigins}` (`externalOrigins`: the manifest's
+  declared origins as written, empty when none, which the panels need to render a link to an absolute `https` address).
+  A fifth, `GET api/{client|admin}/plugins/ui/{pluginId}/pages/by-path?path=` (`GetPluginPageByPathQuery`), finds the page
+  by its panel path: both lookups go through `PluginPageReader` (one order of checks, below), and
+  `PluginPagePathMatcher` picks the page: the path starts with `/`, is at most 512 characters, holds no empty, `.` or `..`
+  segment, no backslash and no control character (otherwise no page), segments compare ignoring case, a parameter takes
+  one segment, and the page with most literal segments wins (manifest order on a tie). **Availability is the same gate
+  as the routes:** `IPluginUiSource` (`Infrastructure/Plugins/PluginUiSource`) lists a plugin only when it is loaded, an
+  app plugin and passes `PluginActivator.PrepareAsync` (enabled and configured), so a page shows exactly when its routes
+  answer. The answer is computed for every plugin in one pass and kept for 10 seconds by `PluginAvailabilityCache`
+  (singleton), used by the index and both page lookups alike; `IPluginAvailabilityInvalidator` drops it after the save
+  of `RemovePluginHandler`, `SaveIntegrationConfigHandler` and `UpdateSettingHandler` (for `integration:*` keys), so a
+  switch shows at once. The slot index (#644) does not use the cache yet; it still asks `IPluginEndpointResolver` per
+  plugin.
+  **Permissions:** a client page is listed or served only when `PluginClientPermissions.IsHeld(held, page.Permission)`,
+  the one rule the route door and the slot index also use (`Any` needs none, a defined name needs that flag, **absent
+  means `ClientPermission.All`, the account holder only**, anything unparsable fails closed); the admin area holds
+  `All` and so has no filter. The viewer is resolved by `PluginUiViewer.PermissionsAsync`, the way the route door
+  resolves its caller (`ICallerClientResolver`). A menu is listed only beside a visible page.
+  **Order:** `PluginUiSource` is the ordering contract: it lists plugins by manifest id (ordinal), so neither load order
+  nor instance changes it, and the index keeps that order without sorting again; pages keep manifest order within a plugin, and menus are ordered by
+  `Order`, then plugin id, then menu id (ordinal).
+  **Labels:** `PluginUiTexts.For(manifest)` resolves a menu label and a page title through `PluginText.Resolve` (one
+  rule for menus, pages, slots and views), and `Localise` every label of a view, in the request language
+  (`X-Language`, so `CurrentUICulture`, normalised to a supported language, otherwise `en`), English when that locale
+  lacks the key, otherwise the value itself as plain
+  text. `PluginText` compares locale codes ignoring case, as the manifest validator does, so `EN` reads like `en`.
+  **Index answers:** 503 `IDENTITY_PLUGIN_UNAVAILABLE` when the identity plugin cannot say who a client caller is, 404
+  `CLIENT_PROFILE_NOT_FOUND` when the caller acts for no single account, otherwise the filtered index.
+  **Page answers (the order is the contract):** the viewer is resolved first, so the lookups run for every caller alike.
+  503 `IDENTITY_PLUGIN_UNAVAILABLE` stays, because an outage says nothing about the page. **Every other refusal is the
+  same 404 `PLUGIN_PAGE_NOT_FOUND` with an identical body**: a malformed `pluginId` or `pageId` (no 400, which would
+  say which ids are well formed), an unknown plugin, a disabled or unconfigured one, a plugin
+  that is not an app plugin, an undeclared page, a missing view, a client caller who acts for no account and one who
+  does not hold the page's permission. A page never answers 403 or `CLIENT_PROFILE_NOT_FOUND`, so the endpoint is no
+  oracle for which plugins and pages exist. The route door (#639) differs on purpose: it still answers 403
+  `CLIENT_PERMISSION_DENIED` after the 404, a signal accepted and explained under "Signals that remain".
+  **The plugin ids `ui` and `slots` are reserved** (`PluginIdentifier.Reserved`): the routes
+  `api/{area}/plugins/{id}/{**path}` would otherwise swallow `plugins/ui` and `plugins/slots`, and a plugin with either id
+  would shadow the index or the slot index. `PluginIdentifier` asks two
+  questions: `IsWellFormed` (the shape: lower-case words joined by single hyphens, at most 64 characters) and `IsValid`
+  (`IsWellFormed && !IsReserved`, whether a plugin may take the id). An install of a manifest with a reserved id is
+  refused with `PLUGIN_MANIFEST_ID_INVALID` (`PluginManifestRule.PluginIdInvalid`), and the loader skips a reserved
+  folder or manifest id with one warning. Listing, removal (`RemovePluginValidator`, `PluginPackageStore`) and
+  `Setting.SwitchOffRemovedPlugin` / `CreateSwitchedOffForRemovedPlugin` check only the shape, so a plugin installed as
+  `ui` or `slots` before the id was reserved stays listable and removable, and its data is still purged. #647 (admin plugin pages)
+  builds on these shapes.
 
 ## CQRS — Wolverine, conforming
 

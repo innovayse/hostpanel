@@ -57,13 +57,13 @@ public sealed class SecretRecordPrintingTests
         var offenders = Assemblies
             .SelectMany(Layers.AuthoredTypesOf)
             .Where(IsRecord)
-            .Where(type => SecretProperties(type).Any() && !DeclaresPrintMembers(type))
+            .Where(type => SecretProperties(type).Any() && !DeclaresPrintMembers(type) && !DeclaresToString(type))
             .Select(type => $"{type.FullName} ({string.Join(", ", SecretProperties(type).Select(p => p.Name))})")
             .OrderBy(name => name, StringComparer.Ordinal)
             .ToList();
 
         string.Join(Environment.NewLine, offenders).Should().BeEmpty(
-            "a record's generated ToString prints every property; override PrintMembers with SecretMembers.Print");
+            "a record's generated ToString prints every property; override PrintMembers with SecretMembers.Print, or write ToString by hand");
     }
 
     /// <summary>
@@ -192,6 +192,22 @@ public sealed class SecretRecordPrintingTests
             "PrintMembers",
             BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly,
             [typeof(StringBuilder)]);
+
+        return method is not null && !method.IsDefined(typeof(CompilerGeneratedAttribute), false);
+    }
+
+    /// <summary>
+    /// Tells whether a record replaces <c>ToString</c> with its own; the compiler-synthesised one is
+    /// marked <see cref="CompilerGeneratedAttribute"/>. The behaviour test still proves the text hides the secret.
+    /// </summary>
+    /// <param name="type">The record type.</param>
+    /// <returns><see langword="true"/> when the record declares <c>ToString</c> itself.</returns>
+    private static bool DeclaresToString(Type type)
+    {
+        var method = type.GetMethod(
+            nameof(ToString),
+            BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly,
+            Type.EmptyTypes);
 
         return method is not null && !method.IsDefined(typeof(CompilerGeneratedAttribute), false);
     }

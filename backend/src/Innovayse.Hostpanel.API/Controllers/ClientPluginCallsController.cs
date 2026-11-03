@@ -16,7 +16,7 @@ namespace Innovayse.Hostpanel.API.Controllers;
 /// <summary>
 /// The one door to the client area API of every app plugin: <c>/api/client/plugins/{id}/{path}</c>. It binds the
 /// request and dispatches it; the use case matches it against the routes the plugin's manifest declares, checks the
-/// caller's account and the route's permission, and only then calls the plugin.
+/// caller's account and the route's permission (a refusal is a 404 like an absent route), and only then calls the plugin.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -27,7 +27,7 @@ namespace Innovayse.Hostpanel.API.Controllers;
 /// </para>
 /// <para>
 /// A request that changes state needs <c>X-Requested-With: XMLHttpRequest</c> or a bearer token (<see cref="RequireRequestedWithAttribute"/>).
-/// A plugin route that is undeclared, disabled or unknown answers 404 <c>PLUGIN_ROUTE_NOT_FOUND</c>, always the same.
+/// A plugin route that is undeclared, disabled, unknown or not permitted to the caller answers 404 <c>PLUGIN_ROUTE_NOT_FOUND</c>, always the same.
 /// The body, and the status of a success, are the plugin's: the document lists the statuses a plugin may choose.
 /// A plugin's own problem keeps the status the plugin chose (any 4xx or 5xx except 401 and 407) and its code is
 /// written <c>plugin.{pluginId}.{code}</c>.
@@ -62,9 +62,9 @@ public sealed class ClientPluginCallsController : BaseApiController
     /// with <c>text/event-stream</c>, one event after another with a comment line while it is silent, ended by the
     /// plugin or by the client disconnecting); 400, 409, 422 or any other failure
     /// status the plugin chooses, with <c>plugin.{id}.{code}</c> as the code; 401 without a session; 403 with
-    /// <c>CSRF_HEADER_MISSING</c> when a request that changes state has neither the header nor a bearer token, with
-    /// <c>CLIENT_PERMISSION_DENIED</c> when the caller lacks the route's permission, or for a caller who is not a
-    /// client user; 404 with <c>PLUGIN_ROUTE_NOT_FOUND</c> when the plugin, the route or the plugin's switch is not there,
+    /// <c>CSRF_HEADER_MISSING</c> when a request that changes state has neither the header nor a bearer token, or for a caller who is not a
+    /// client user (the portal policy, never for a plugin or a route, which answer 404 whoever asks);
+    /// 404 with <c>PLUGIN_ROUTE_NOT_FOUND</c> when the plugin, the route or the plugin's switch is not there, or the caller lacks the route's permission,
     /// or with <c>CLIENT_PROFILE_NOT_FOUND</c> when the caller acts for no account; 413 with <c>PLUGIN_REQUEST_TOO_LARGE</c>
     /// when the body is over <c>PluginApi:MaxBodyBytes</c>; 429 when the plugin route's rate limit tier, or the caller's open streams, are spent; 502 with <c>PLUGIN_FAILED</c> when the plugin threw;
     /// 503 with <c>IDENTITY_PLUGIN_UNAVAILABLE</c> when the identity plugin could not say who the caller is.

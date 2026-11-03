@@ -3,7 +3,6 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Shared.Models;
 using Innovayse.Hostpanel.Shared.MultiTenancy;
-using Innovayse.SDK.Plugins.Enums;
 
 namespace Innovayse.Hostpanel.Application.Plugins.Commands.CallAdminPlugin;
 
@@ -14,7 +13,10 @@ namespace Innovayse.Hostpanel.Application.Plugins.Commands.CallAdminPlugin;
 /// </summary>
 public sealed class CallAdminPluginHandler
 {
-    /// <summary>Matches the request to a route and calls the plugin.</summary>
+    /// <summary>Decides whether the route is served.</summary>
+    private readonly PluginCallGate _gate;
+
+    /// <summary>Calls the plugin.</summary>
     private readonly PluginCallRunner _runner;
 
     /// <summary>The signed-in administrator; its subject becomes the plugin's opaque user reference.</summary>
@@ -24,11 +26,14 @@ public sealed class CallAdminPluginHandler
     private readonly IPluginReferences _references;
 
     /// <summary>Initializes the handler.</summary>
-    /// <param name="runner">Matches the request to a route and calls the plugin.</param>
+    /// <param name="gate">Decides whether the route is served.</param>
+    /// <param name="runner">Calls the plugin.</param>
     /// <param name="currentUser">The signed-in administrator.</param>
     /// <param name="references">Makes the opaque references the plugin sees.</param>
-    public CallAdminPluginHandler(PluginCallRunner runner, ICurrentUserService currentUser, IPluginReferences references)
+    public CallAdminPluginHandler(
+        PluginCallGate gate, PluginCallRunner runner, ICurrentUserService currentUser, IPluginReferences references)
     {
+        _gate = gate;
         _runner = runner;
         _currentUser = currentUser;
         _references = references;
@@ -38,13 +43,14 @@ public sealed class CallAdminPluginHandler
     /// <param name="command">The plugin id and the request.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// The plugin's reply; <c>PLUGIN_ROUTE_NOT_FOUND</c> when the route is not served; and what
+    /// The plugin's reply; <c>PLUGIN_ROUTE_NOT_FOUND</c> when no app plugin has that id, the plugin does not declare that path
+    /// or method in the admin area, or the plugin is switched off or not configured; and what
     /// <see cref="PluginCallRunner.RunAsync"/> answers after that.
     /// </returns>
     public async Task<Result<PluginReplyDto>> HandleAsync(CallAdminPluginCommand command, CancellationToken ct)
     {
-        var target = await _runner.FindAsync(command.PluginId, PluginArea.Admin, command.Input, ct);
-        if (target is null)
+        var decision = await _gate.EvaluateAdminAsync(command.PluginId, command.Input, ct);
+        if (decision.Target is not { } target)
         {
             return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_ROUTE_NOT_FOUND);
         }

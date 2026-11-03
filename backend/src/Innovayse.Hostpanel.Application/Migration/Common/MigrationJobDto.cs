@@ -1,4 +1,6 @@
+using System.Text;
 using Innovayse.Hostpanel.Domain.Migration.Enums;
+using Innovayse.Hostpanel.SharedKernel.Domain;
 
 namespace Innovayse.Hostpanel.Application.Migration.Common;
 
@@ -18,7 +20,7 @@ namespace Innovayse.Hostpanel.Application.Migration.Common;
 /// <param name="CompletedAt">When the pull finished (UTC); null while it has not.</param>
 public sealed record MigrationJobDto(
     int Id,
-    string Key,
+    [property: SecretMember] string Key,
     string SourceUrl,
     MigrationJobStatus Status,
     string? Label,
@@ -29,4 +31,13 @@ public sealed record MigrationJobDto(
     bool PluginConnected,
     DateTimeOffset? LastPingAt,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? CompletedAt);
+    DateTimeOffset? CompletedAt)
+{
+    /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
+    /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>
+    /// <returns><see langword="true"/> when at least one member was written.</returns>
+    private bool PrintMembers(StringBuilder builder)
+    {
+        return SecretMembers.Print(this, builder);
+    }
+}

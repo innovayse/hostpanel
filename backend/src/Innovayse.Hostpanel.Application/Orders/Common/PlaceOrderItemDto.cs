@@ -1,5 +1,7 @@
+using System.Text;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Products.Enums;
+using Innovayse.Hostpanel.SharedKernel.Domain;
 
 namespace Innovayse.Hostpanel.Application.Orders.Common;
 
@@ -21,4 +23,13 @@ public sealed record PlaceOrderItemDto(
     string? Hostname,
     DomainAction? DomainAction = null,
     string? EppCode = null,
-    int? Years = null);
+    int? Years = null)
+{
+    /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
+    /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>
+    /// <returns><see langword="true"/> when at least one member was written.</returns>
+    private bool PrintMembers(StringBuilder builder)
+    {
+        return SecretMembers.Print(this, builder);
+    }
+}

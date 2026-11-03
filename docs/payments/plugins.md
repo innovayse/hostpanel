@@ -1,12 +1,9 @@
 ---
-title: Payment plugins
+title: Plugin manager
+description: Install, update, remove and sign payment plugins.
 ---
 
-# Payment plugins
-
-::: warning Work in progress
-This page is being written. Check back soon.
-:::
+# Plugin manager
 
 ## Signed plugin packages
 
@@ -207,3 +204,48 @@ The admin API is `GET /api/admin/plugins/{pluginId}/slot-widgets`, which lists t
 `slotId`, `widgetId`, `title`, `manifestProductIds`, `productIds` and `isBound`, and
 `PUT /api/admin/plugins/{pluginId}/slot-widgets/{slotId}/{widgetId}` with the body `{ "productIds": [3, 7] }`, which
 answers the same shape with the products that were stored. An empty list clears the binding. When two saves of the same widget keep colliding the answer is 409. A widget the plugin does not declare in that slot answers 404 `PLUGIN_SLOT_WIDGET_NOT_FOUND`.
+
+## Plugin errors
+
+The API returns these error codes as the `type` field of the error response body.
+
+| Code | Status | When |
+|------|--------|------|
+| `PLUGIN_MANIFEST_INVALID` | 400 | The `plugin.json` is missing or cannot be parsed. |
+| `PLUGIN_MANIFEST_VERSION_UNKNOWN` | 400 | The manifest declares a manifest version this server does not know. |
+| `PLUGIN_MANIFEST_VERSION_INVALID` | 400 | The plugin version string is not a valid strict version (`major.minor.patch`). |
+| `PLUGIN_MANIFEST_ID_INVALID` | 400 | The plugin id in the manifest is not valid. |
+| `PLUGIN_ID_INVALID` | 400 | The plugin id passed to a remove or purge call is not valid. |
+| `PLUGIN_SDK_VERSION_UNSUPPORTED` | 400 | The manifest `sdkVersion` field is not accepted. The accepted value is `1.0`. |
+| `PLUGIN_SDK_ASSEMBLY_OUTDATED` | 400 | The plugin was built against an older SDK assembly major version. Rebuild against the current SDK. |
+| `PLUGIN_ASSEMBLY_UNREADABLE` | 400 | The plugin assembly or another required file cannot be read. Upload the package again. |
+| `PLUGIN_HOST_ASSEMBLY_REFUSED` | 400 | The package includes an assembly the host already provides. Remove it from the ZIP. |
+| `PLUGIN_ARCHIVE_TOO_LARGE` | 413 | The uploaded archive exceeds the size limit. |
+| `PLUGIN_ARCHIVE_UNSAFE` | 400 | The archive contains unsafe entries (for example path traversal). |
+| `PLUGIN_PERMISSION_UNKNOWN` | 400 | A permission declared in the manifest does not exist. |
+| `PLUGIN_ADMIN_PERMISSION_DECLARED` | 400 | A permission is set on an admin route, page or slot. The admin area takes none. |
+| `PLUGIN_ROUTE_PATH_INVALID` | 400 | A route path in the manifest is not valid. |
+| `PLUGIN_ROUTE_DUPLICATE` | 400 | The same route is declared twice for one method in one panel. |
+| `PLUGIN_LABEL_KEY_MISSING` | 400 | A text key is used in the manifest but the English locale file does not define it. |
+| `PLUGIN_SLOT_UNKNOWN` | 400 | Content is put into a slot the server does not offer. |
+| `PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED` | 400 | A slot is asked for context it does not offer. |
+| `PLUGIN_SLOT_WIDGET_ID_INVALID` | 400 | A widget id is not valid. Use lowercase letters, digits, hyphens and underscores. |
+| `PLUGIN_SLOT_WIDGET_DUPLICATE` | 400 | The same widget id is declared twice for one slot. |
+| `PLUGIN_VIEW_MISSING` | 400 | A view file declared in the manifest is not present in the package. |
+| `PLUGIN_VIEW_INVALID` | 400 | A view file is present but cannot be parsed or is structurally invalid. |
+| `PLUGIN_VIEW_SCHEMA_UNSUPPORTED` | 400 | The view schema version is not supported. |
+| `PLUGIN_VIEW_BLOCK_KIND_UNKNOWN` | 400 | A view block uses a kind the server does not know. |
+| `PLUGIN_VIEW_ROUTE_UNDECLARED` | 400 | A view references a route not declared in the manifest. |
+| `PLUGIN_MENU_ICON_INVALID` | 400 | The menu icon name is not valid. |
+| `PLUGIN_PAGE_ID_INVALID` | 400 | A page id in the manifest is not valid. |
+| `PLUGIN_UNSIGNED` | 400 | The package has no signature and the server requires signed packages. |
+| `PLUGIN_SIGNATURE_MALFORMED` | 400 | The signature file exists but cannot be read or parsed. |
+| `PLUGIN_SIGNATURE_KEY_UNKNOWN` | 400 | The package is signed with a key id the server does not recognise. Add the public key to `PluginSigning:OperatorKeys`. |
+| `PLUGIN_SIGNATURE_INVALID` | 400 | The package signature does not match the files. |
+| `PLUGIN_NOT_TRUSTED` | 400 | The archive's SHA-256 is not listed in `Plugins:TrustedPackageSha256`. |
+| `PLUGIN_BUILT_IN` | 409 | The plugin id matches a plugin that ships with the server. Built-in plugins cannot be replaced. |
+| `PLUGIN_DOWNGRADE_REFUSED` | 409 | The uploaded version is older than the installed (or staged) version. Pass `force=true` to override. |
+| `PLUGIN_STILL_INSTALLED` | 409 | Purge was called while the plugin folder still exists on disk. Remove the plugin first. |
+| `PLUGIN_NOT_FOUND` | 404 | The plugin id is not known or keeps no stored data. |
+| `PLUGIN_SLOT_PRODUCTS_UNKNOWN` | 400 | All product ids in a slot widget binding request are unknown. |
+| `PLUGIN_SLOT_WIDGET_NOT_FOUND` | 404 | The slot widget is not declared by the plugin. |

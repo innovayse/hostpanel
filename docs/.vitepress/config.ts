@@ -113,6 +113,7 @@ export default defineConfig({
         items: [
           { text: 'Overview', link: '/payments/' },
           { text: 'Gateways', link: '/payments/gateways' },
+          { text: 'How online payments are confirmed', link: '/payments/confirming' },
           { text: 'Plugins', link: '/payments/plugins' },
         ],
       },
@@ -145,6 +146,7 @@ export default defineConfig({
           { text: 'Contributing', link: '/developers/contributing' },
           { text: 'Translating', link: '/developers/translating' },
           { text: 'Integrations', link: '/developers/integrations' },
+          { text: 'Write a plugin', link: '/developers/write-a-plugin' },
         ],
       },
       {

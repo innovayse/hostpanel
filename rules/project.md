@@ -300,7 +300,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   `Plugins:TrustedPackageSha256` lists any digest, the archive's SHA-256 must be one of them
   (`PLUGIN_NOT_TRUSTED`; an empty list, the default, accepts any archive that passes the other
   checks). Every install and removal writes an activity log line with no client (`ActivityLog.ClientId`
-  is nullable for system-wide actions), carrying the plugin id and, for an install, the digest. A removal also switches the plugin off and purges its stored data through the outbox (`PluginRemovedEvent`, see the plugin store under "Plugin routes").
+  is nullable for system-wide actions), carrying the plugin id and, for an install, the digest. A removal also switches the plugin off and drops any staged upgrade; it keeps the plugin's stored data until an operator purges it (`PluginDataPurgeRequestedEvent`, see "Plugin upgrade, refused plugins and data purge" below and the plugin store under "Plugin routes").
 - **One manifest validator for load and install (`Infrastructure/Plugins/PluginManifestValidator`).** A plugin
   is checked against the manifest rules in one place, asked by `PluginManifestReader.TryRead` (startup load,
   `plugins/` and the upload folder) and by `PluginPackageStore` (install); no rule is written twice. `Validate`
@@ -371,6 +371,34 @@ docker/                              compose set (shared·dev·prod·platform), 
   never load it as a URL. A page id is a `PluginPageIdentifier` (`Domain/Plugins`: `\A[a-z0-9][a-z0-9_-]*\z`, at most 64
   characters, not the reserved `by-path`) and unique within its area (`PLUGIN_PAGE_ID_INVALID`,
   `PluginManifestRule.PageIdInvalid`), so every page the installer accepts is reachable by the page lookup.
+- **Plugin upgrade, refused plugins and data purge (#649, #785).** An upload of a plugin id that is already installed
+  with a different version is an upgrade: it passes the same checks as a fresh install (signature, manifest rules, size
+  limits), is unpacked into `.staged/{id}` of the upload folder (a name that fails the plugin id rule) and answers
+  `requiresRestart: true` with `stagedVersion`; the installed files are not touched. `PluginUpgradeApplier.Apply` swaps the
+  staged folder in at the next startup, before `PluginLoader` scans, and writes `.upgrades/{id}.json` (from and to version)
+  **before** the swap, atomically (temp file plus rename); an unreadable record is logged with its file name and rebuilt
+  from the name; a still pending record keeps its first from version; startup sweeps `.staging` and moves a version a crash
+  left set aside back. `PluginMigrationRunner` (`IHostedLifecycleService.StartingAsync`, before the web server accepts a
+  request, and `IPluginMigrationRetry.RetryAsync` from `SaveIntegrationConfigHandler` when a plugin is saved enabled) then
+  calls the SDK `IPluginMigrations.MigrateAsync` of each upgraded, enabled plugin, writes the activity line `Migrated
+  Plugin Data` and only then deletes the record. The hook has a time limit (`Plugins:MigrationTimeoutSeconds`, validated;
+  the token is cancelled and the host stops waiting). While a record exists, or after a failed or timed out attempt,
+  `PluginRegistry.IsMigrationPending` is set and `PluginActivator` returns `PluginActivationOutcome.MigrationPending`, so
+  the plugin is neither called nor started (the migration alone activates it through `ActivateForMigrationAsync`). A
+  throwing hook, a switched-off plugin or a plugin that did not load keeps the record and the gate; it is tried again at
+  the next start and on enable or settings save. The hook takes no versions, so they only reach the log and the activity
+  line. A plugin that is loaded is never overwritten in place: any upload for it, equal version included, is staged; a not
+  loaded plugin of the same version is replaced at once. An older version, one older than the already staged upload, or
+  one compared with an unparseable installed version is refused with `PLUGIN_DOWNGRADE_REFUSED` (409) unless the request
+  carries `?force=true`; staging, a forced downgrade and a refused downgrade are audited. Versions are strict semantic
+  versions (`Domain/Plugins/PluginVersion`, `PluginManifestRule.VersionInvalid`, `PLUGIN_MANIFEST_VERSION_INVALID`).
+  Settings and the plugin store are never touched by an upgrade. A refused plugin claims its id (a same-named upload never
+  loads or overwrites its refusal). The data purge looks at the package folder (`IPluginPackageStore.HasPackageFolder`) and
+  counts slot widget bindings as kept data. `PluginLoader` keeps every plugin it refused for a broken manifest rule
+  (`RefusedPlugin`: folder name, `PluginManifestRule`, detail; built-in and upload folder alike) in `PluginRegistry`
+  (`IPluginRegistry.GetRefusedPlugins`); `GET /api/admin/plugins` lists it with `status: "Refused"`, `refusedRule` and
+  `refusedDetail`, never as loaded, and it can be removed like any upload. A removed plugin that still keeps data is listed
+  with `status: "Removed"` so the operator can purge it. Needs no database migration.
 - **Signed plugin packages (`Infrastructure/Plugins/PluginSignatureVerifier`, section `PluginSigning`).** An uploaded
   package carries a detached Ed25519 signature, `plugin.sig` at its root, checked in one place by both paths, like the
   manifest validator: at install (`PluginPackageStore`, on the unpacked files, before the move into place) and at load
@@ -520,7 +548,12 @@ docker/                              compose set (shared·dev·prod·platform), 
     the first event ends the stream with an `error` event (`code` `PLUGIN_FAILED`, localized `message`, `partial`) and a
     `done` event (`PluginEventStream`, vocabulary `PluginStreamEvent`); nothing of the exception is written. The
     `plugin-stream` lease of `PluginRateLimitFilter` is registered for disposal with the response, so it is held for the
-    whole stream.
+    whole stream. **A stream has a silence limit, not a length limit**: `PluginCallRunner.MapStream` gives the reply a
+    `Shared/Models/StreamIdleLimit` (the call limit, the `error` plus `done` events that tell the client, and a log callback),
+    and `EventStreamResult` ends the stream when the producer has sent no event for that long, counted from the start or from
+    its last event. The host's own `: keepalive` heartbeat does not count as an event, so a heartbeat below the limit never keeps
+    a silent plugin alive. The plugin is cancelled through its token, the client gets `error` with `PLUGIN_TIMEOUT` and `done`,
+    and the `plugin-stream` lease is released with the response. A first event that arrives as the wait runs out is used, not cut.
     **The status is checked again by the host**, not trusted to the SDK factories: a `Json` reply must be 200 to 203 with a
     body, `NoContent` 204, a `Problem` 400 to 599 except 401 and 407; anything else (a reply built by reflection or by a
     plugin compiled against another SDK) answers 502 `PLUGIN_FAILED`, logged with the plugin id. **A plugin problem
@@ -539,7 +572,18 @@ docker/                              compose set (shared·dev·prod·platform), 
     refusal and a call that reaches plugin code. Both are accepted: the route list of an enabled plugin is not a secret (it is in
     the plugin manifest the administrator installed), the 403 is only given to a caller who is already signed in as a client,
     the permission must be answered before plugin code runs, and hiding the difference would mean running plugin code or adding
-    sleeps for no one's benefit. A per call timeout is not there yet (#792).
+    sleeps for no one's benefit.
+  - **A time limit per plugin call (#792).** `PluginApi:CallTimeoutSeconds` (default 30, 1 to `MaxCallTimeoutSeconds`) is the
+    limit of every plugin route today; `MaxCallTimeoutSeconds` (default 600, 1 to 3600, never below the default limit) is the
+    ceiling a per route limit will be capped at (`PluginApiOptions.CallTimeoutFor(int?)`) once the plugin SDK route record has a
+    field to ask for one; until then no route can ask. The two are validated together at startup. `PluginCallRunner` gives the
+    plugin a token that fires at the limit. Anything the plugin does after it fired, a throw or a reply it still returns, is
+    `PLUGIN_TIMEOUT` (504), with no text of the plugin; the plugin id is logged, and the audit line of an unsafe call, written
+    before the plugin runs, stays as written. A plugin that ignores the token is abandoned after `PluginApi:AbandonWaitSeconds`
+    (default 5, 1 to 60) past the limit, so the request and its scope end. Its work still runs, so the abandoned calls are
+    counted per plugin in the singleton `PluginAbandonedCalls` until the work ends, and while a plugin holds
+    `PluginApi:MaxAbandonedCallsPerPlugin` of them (default 8, 1 to 1000) new calls to it are refused at once with
+    `PLUGIN_TIMEOUT`, without calling the plugin.
   - **Opaque references (`IPluginReferences`, `Infrastructure/Plugins/PluginReferences`).** `PluginCaller.ClientRef` and
     `UserRef` are the URL-safe Base64 of an HMAC-SHA256 over `kind`, the plugin id and the host id, under a key derived
     (HKDF-SHA256, purpose label `innovayse-hostpanel-plugin-references-v1`) from the encryption key the host already
@@ -598,15 +642,17 @@ docker/                              compose set (shared·dev·prod·platform), 
       that needs one keeps a version in its value); a remove that lost to another remove answers `false` (absent), and a write
       after another call removed the key creates it again. The save flushes only the store's change because `PluginCallRunner`
       saves its audit line before it builds the plugin, so nothing else is staged while plugin code runs.
-    - **Purge on uninstall.** `RemovePluginHandler` (Admin) refuses an invalid id and a built-in plugin as before. When the
-      package store removed the files, or they were already gone but the plugin has a switch row (a valid, non-built-in id
-      that was switched on here, so data a lost package left behind can still be removed), it switches the plugin off
-      (`integration:{id}:is_enabled` set to `false` through `Setting.SwitchOffRemovedPlugin`), stages the activity line and
-      saves once; files gone and no switch row answers `PLUGIN_NOT_FOUND` and writes nothing, because a plugin never
-      switched on ran no call and kept no data. The switch raises `PluginRemovedEvent` (with the removal moment), which
-      #802's interceptor writes to the outbox in that same transaction, so the switch-off and the purge commit together or
-      not at all. `PluginActivator.PrepareAsync` reads the switch on every call, so no new call reaches a still-loaded
-      plugin from the commit on; a call already running at that moment can still finish its writes.
+    - **Purge is an operator action, not part of the removal.** `RemovePluginHandler` (Admin) refuses an invalid id and a
+      built-in plugin as before. When the package store removed the files, or they were already gone but the plugin has a
+      switch row, it switches the plugin off (`integration:{id}:is_enabled` set to `false` through
+      `Setting.SwitchOffRemovedPlugin`), stages the activity line and saves once; files gone and no switch row answers
+      `PLUGIN_NOT_FOUND`. The stored data stays. `DELETE /api/admin/plugins/{id}/data` (`PurgePluginDataCommand`) deletes
+      it: refused with `PLUGIN_STILL_INSTALLED` (409) while the package is on disk, `PLUGIN_NOT_FOUND` when the plugin
+      keeps no data; otherwise `Setting.RequestDataPurge` raises `PluginDataPurgeRequestedEvent` (with the request moment),
+      which #802's interceptor writes to the outbox in the same transaction as the audit line (`Purged Plugin Data`).
+      That event is the one purge step: the store purge is its handler, and any other module that keeps rows per plugin id
+      adds its own handler of it. `PluginActivator.PrepareAsync` reads the switch on every call, so no new call reaches a
+      still-loaded plugin from the removal on; a call already running at that moment can still finish its writes.
       `Plugins/Events/PurgeRemovedPluginDataHandler` (returns `Task`, so it is a queued chain with a durable inbox and the
       queued retry policy) goes scope by scope and deletes the entries last written at or before the removal
       (`UpdatedAt`, else `CreatedAt`), in batches of 500 through the context (no bulk delete), releasing each from its
@@ -634,8 +680,8 @@ docker/                              compose set (shared·dev·prod·platform), 
     tests derive a host with an enabled `PluginRateLimiter`. The client account is resolved before the plugin budget
     is checked, so a refused call still costs one lookup, which the global limiter bounds. A refused stream call has
     already spent its tier permit.
-  - Left for a later issue: a call timeout (#792). A streamed call has no timeout
-    of its own until then: it ends when the plugin ends or the client leaves.
+  - A streamed call ends when the plugin ends, when the client leaves, or when the producer is silent for the call limit
+    (see the stream silence limit above).
 - **Plugin slot index: widgets for a verified context (#644).** The answer is `PluginSlotIndexDto` with
   `PluginSlotWidgetDto` items. **Nothing of a plugin is built or called**: the index is read from manifests, so a foreign
   id cannot reach plugin code.
@@ -871,8 +917,8 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   the unlock, because an agent refuses keys for a locked account and the two unsuspensions are not ordered. All three
   only trigger idempotent commands and log a refusal or failure for staff instead of throwing. Each runs on its own
   queue (handlers are separated, see "Durable messaging"), so one of them failing never re-runs the others.
-  `Plugins/Events/PurgeRemovedPluginDataHandler` deletes a removed plugin's store rows written up to the removal on
-  `PluginRemovedEvent`; it is idempotent and writes only the Plugins module's own tables (see the plugin store under "Plugin routes").
+  `Plugins/Events/PurgeRemovedPluginDataHandler` deletes a removed plugin's store rows written up to the operator's purge request on
+  `PluginDataPurgeRequestedEvent`; it is idempotent and writes only the Plugins module's own tables (see the plugin store under "Plugin routes").
   The remaining three react to `ClientClosedEvent` and are described under "Client account status" below.
 
 - **`InvoiceItems.ClientServiceId` and `InvoiceItems.RegisteredDomainId` carry no foreign key, on purpose.** An

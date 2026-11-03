@@ -41,4 +41,31 @@ public sealed class PluginSlotContextReader : IPluginSlotContextReader
             .Select(s => s.Value)
             .FirstOrDefaultAsync(ct);
     }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<PluginSlotBindingDto>> ListBindingsAsync(string? pluginId, string? slotId, CancellationToken ct)
+    {
+        // A left join: the row of a deleted product stays, flagged, so a bound widget is never mistaken for an unbound one.
+        return await (
+            from b in _db.PluginSlotProductBindings.AsNoTracking()
+            where (pluginId == null || b.PluginId == pluginId) && (slotId == null || b.SlotId == slotId)
+            join p in _db.Products.AsNoTracking() on b.ProductId equals p.Id into products
+            select new PluginSlotBindingDto(b.PluginId, b.SlotId, b.WidgetId, b.ProductId, products.Any()))
+            .ToListAsync(ct);
+    }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlySet<int>> ExistingProductIdsAsync(IReadOnlyCollection<int> productIds, CancellationToken ct)
+    {
+        if (productIds.Count == 0)
+        {
+            return new HashSet<int>();
+        }
+
+        var existing = await _db.Products.AsNoTracking()
+            .Where(p => productIds.Contains(p.Id))
+            .Select(p => p.Id)
+            .ToListAsync(ct);
+        return existing.ToHashSet();
+    }
 }

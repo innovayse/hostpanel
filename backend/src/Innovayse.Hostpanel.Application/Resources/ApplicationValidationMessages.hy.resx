@@ -971,6 +971,15 @@
   <data name="PluginIdInvalid" xml:space="preserve">
     <value>Հավելագրիչի նույնացուցիչը կարող է պարունակել միայն փոքրատառ լատինական տառեր, թվեր և միայնակ գծիկներ՝ առավելագույնը 64 նիշ։</value>
   </data>
+  <data name="PluginSlotIdInvalid" xml:space="preserve">
+    <value>Էջի հատվածի նույնացուցիչը սխալ է։</value>
+  </data>
+  <data name="PluginWidgetIdInvalid" xml:space="preserve">
+    <value>Վիջեթի նույնացուցիչը սխալ է։</value>
+  </data>
+  <data name="PluginProductIdsInvalid" xml:space="preserve">
+    <value>Ընտրեք առավելագույնը {0} ապրանք։</value>
+  </data>
   <data name="IntegrationSlugRequired" xml:space="preserve">
     <value>Ինտեգրման սլագը պարտադիր է։</value>
   </data>

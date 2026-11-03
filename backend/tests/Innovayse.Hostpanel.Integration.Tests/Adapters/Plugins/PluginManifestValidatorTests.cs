@@ -55,6 +55,23 @@ public sealed class PluginManifestValidatorTests : IDisposable
         PluginManifestValidator.Validate(PluginManifestReader.Deserialize(PluginsTestSeeds.ManifestJson("p"))!).Should().BeNull();
     }
 
+    /// <summary>A plugin version that is not a strict semantic version breaks the version rule.</summary>
+    /// <param name="version">The version text in the manifest.</param>
+    [Theory]
+    [InlineData("")]
+    [InlineData("1.0")]
+    [InlineData("01.0.0")]
+    [InlineData("1.0.0.0")]
+    [InlineData("v1.0.0")]
+    [InlineData("1.0.0+")]
+    [InlineData("4294967296.0.0")]
+    public void Validate_InvalidPluginVersion_BreaksVersionInvalid(string version)
+    {
+        var json = PluginsTestSeeds.ManifestJson("p").Replace("\"version\": \"1.0.0\"", $"\"version\": \"{version}\"");
+
+        AssertBreaks(PluginManifestReader.Deserialize(json)!, PluginManifestRule.VersionInvalid);
+    }
+
     /// <summary>A client route, page or slot entry may name Any or a defined client permission, and nothing else.</summary>
     [Fact]
     public void Validate_UnknownClientPermission_BreaksPermissionUnknown()

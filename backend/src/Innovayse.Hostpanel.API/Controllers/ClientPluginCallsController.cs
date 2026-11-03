@@ -66,7 +66,7 @@ public sealed class ClientPluginCallsController : BaseApiController
     /// client user (the portal policy, never for a plugin or a route, which answer 404 whoever asks);
     /// 404 with <c>PLUGIN_ROUTE_NOT_FOUND</c> when the plugin, the route or the plugin's switch is not there, or the caller lacks the route's permission,
     /// or with <c>CLIENT_PROFILE_NOT_FOUND</c> when the caller acts for no account; 413 with <c>PLUGIN_REQUEST_TOO_LARGE</c>
-    /// when the body is over <c>PluginApi:MaxBodyBytes</c>; 429 when the plugin route's rate limit tier, or the caller's open streams, are spent; 502 with <c>PLUGIN_FAILED</c> when the plugin threw;
+    /// when the body is over <c>PluginApi:MaxBodyBytes</c>; 429 when the plugin route's rate limit tier, or the caller's open streams, are spent; 502 with <c>PLUGIN_FAILED</c> when the plugin threw; 504 with <c>PLUGIN_TIMEOUT</c> when it did not answer within <c>PluginApi:CallTimeoutSeconds</c>;
     /// 503 with <c>IDENTITY_PLUGIN_UNAVAILABLE</c> when the identity plugin could not say who the caller is.
     /// </returns>
     [HttpGet("{id}/{**path}")]
@@ -87,6 +87,7 @@ public sealed class ClientPluginCallsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status413PayloadTooLarge)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status504GatewayTimeout)]
     public async Task<IActionResult> CallAsync(string id, string? path, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<PluginReplyDto>>(

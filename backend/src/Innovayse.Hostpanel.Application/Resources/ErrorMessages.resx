@@ -549,6 +549,9 @@
 <data name="PLUGIN_MANIFEST_ID_INVALID" xml:space="preserve">
     <value>The plugin id in the manifest is not valid: use lowercase letters and digits, with single hyphens between words.</value>
   </data>
+<data name="PLUGIN_MANIFEST_VERSION_INVALID" xml:space="preserve">
+    <value>The plugin version in the manifest is not valid: write it as major.minor.patch, for example 1.2.3, with no leading zeros.</value>
+  </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>This plugin names a view document that its package does not contain.</value>
   </data>
@@ -606,6 +609,12 @@
 <data name="PLUGIN_BUILT_IN" xml:space="preserve">
     <value>This plugin ships with the server and cannot be removed or replaced.</value>
   </data>
+<data name="PLUGIN_DOWNGRADE_REFUSED" xml:space="preserve">
+    <value>This is an older version than the installed plugin. Upload it again with the downgrade confirmed to install it anyway.</value>
+  </data>
+<data name="PLUGIN_STILL_INSTALLED" xml:space="preserve">
+    <value>This plugin is still installed. Remove it before purging the data it kept.</value>
+  </data>
 <data name="PLUGIN_ROUTE_NOT_FOUND" xml:space="preserve">
     <value>Nothing is served at this address.</value>
   </data>
@@ -615,8 +624,17 @@
 <data name="PLUGIN_SLOT_CONTEXT_REQUIRED" xml:space="preserve">
     <value>A context is required for this page area.</value>
   </data>
+  <data name="PLUGIN_SLOT_WIDGET_NOT_FOUND" xml:space="preserve">
+    <value>The widget is not declared by that plugin.</value>
+  </data>
+  <data name="PLUGIN_SLOT_PRODUCTS_UNKNOWN" xml:space="preserve">
+    <value>None of the products exist, so the widget was not bound. Send an empty list to clear the binding.</value>
+  </data>
 <data name="PLUGIN_FAILED" xml:space="preserve">
     <value>The plugin could not complete the request. Please try again later.</value>
+  </data>
+<data name="PLUGIN_TIMEOUT" xml:space="preserve">
+    <value>The plugin took too long to answer. Please try again later.</value>
   </data>
 <data name="PLUGIN_STORE_QUOTA_EXCEEDED" xml:space="preserve">
     <value>This plugin's storage for this account is full. Please contact support.</value>

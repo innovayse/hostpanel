@@ -69,4 +69,7 @@ public enum PluginManifestRule
     /// underscores, starting with a letter or digit), or the same page id is declared twice in one area.
     /// </summary>
     PageIdInvalid = 20,
+
+    /// <summary>The manifest version is not a strict semantic version (<c>major.minor.patch</c>, no leading zeros).</summary>
+    VersionInvalid = 21,
 }

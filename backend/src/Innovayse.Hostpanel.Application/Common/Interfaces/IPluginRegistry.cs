@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.SDK.Plugins.Manifest;
 
 namespace Innovayse.Hostpanel.Application.Common.Interfaces;
@@ -15,8 +16,23 @@ public interface IPluginRegistry
     bool IsLoaded(string pluginId);
 
     /// <summary>
+    /// Tells whether the plugin was upgraded and its data migration has not succeeded yet. Such a plugin is not called
+    /// and not started: its code would run against data in the old shape.
+    /// </summary>
+    /// <param name="pluginId">The plugin identifier as declared in <c>plugin.json</c>.</param>
+    /// <returns><see langword="true"/> while the migration is pending or its last attempt failed.</returns>
+    bool IsMigrationPending(string pluginId);
+
+    /// <summary>
     /// Returns the manifests of all plugins that were successfully loaded at startup.
     /// </summary>
     /// <returns>Read-only collection of loaded plugin manifests.</returns>
     IReadOnlyCollection<PluginManifest> GetLoadedManifests();
+
+    /// <summary>
+    /// Returns the plugins the loader skipped at startup because they break a manifest rule, in the upload folder and
+    /// the built-in folder alike.
+    /// </summary>
+    /// <returns>Read-only collection of refused plugins; empty when none was refused.</returns>
+    IReadOnlyCollection<RefusedPlugin> GetRefusedPlugins();
 }

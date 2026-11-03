@@ -38,25 +38,21 @@ public sealed class Setting : BaseEntity, IAggregateRoot
         new() { Key = key, Value = value, Description = description };
 
     /// <summary>
-    /// Creates the switch row of a removed plugin that never had one, already off, and raises
-    /// <see cref="PluginRemovedEvent"/> exactly as <see cref="SwitchOffRemovedPlugin"/> does on an existing row.
+    /// Creates the switch row of a removed plugin that never had one, already off. Its stored data is kept.
     /// </summary>
     /// <param name="pluginId">
     /// The removed plugin's id; must have the plugin id shape (<see cref="PluginIdentifier.IsWellFormed"/>).
     /// </param>
-    /// <param name="removedAt">When the removal was made, UTC, read by the caller from its clock.</param>
     /// <returns>A new, unpersisted switch row holding <see cref="IntegrationSettingKeys.DisabledValue"/>.</returns>
     /// <exception cref="ArgumentException"><paramref name="pluginId"/> breaks the plugin id shape.</exception>
-    public static Setting CreateSwitchedOffForRemovedPlugin(string pluginId, DateTimeOffset removedAt)
+    public static Setting CreateSwitchedOffForRemovedPlugin(string pluginId)
     {
         EnsurePluginId(pluginId);
 
-        var setting = Create(
+        return Create(
             IntegrationSettingKeys.EnabledKey(pluginId),
             IntegrationSettingKeys.DisabledValue,
             string.Format(CultureInfo.InvariantCulture, PluginSwitchDescriptionFormat, pluginId));
-        setting.SwitchOffRemovedPlugin(pluginId, removedAt);
-        return setting;
     }
 
     // ── CRUD half ──────────────────────────────────────────────────────────────
@@ -70,18 +66,42 @@ public sealed class Setting : BaseEntity, IAggregateRoot
     // ── specific logic ─────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Turns a removed plugin's switch off and raises <see cref="PluginRemovedEvent"/>, so the switch and the purge of
-    /// the plugin's stored data are one unit: the event is written to the outbox in the save that stores the switch.
+    /// Turns a removed plugin's switch off, so a plugin that stays loaded until the restart is refused from the next
+    /// call on. The plugin's stored data is kept; <see cref="RequestDataPurge"/> deletes it.
     /// </summary>
     /// <param name="pluginId">
     /// The removed plugin's id; must have the plugin id shape (<see cref="PluginIdentifier.IsWellFormed"/>) and name this
     /// row's plugin.
     /// </param>
-    /// <param name="removedAt">When the removal was made, UTC, read by the caller from its clock.</param>
     /// <exception cref="ArgumentException">
     /// <paramref name="pluginId"/> breaks the plugin id shape, or this row is not that plugin's switch.
     /// </exception>
-    public void SwitchOffRemovedPlugin(string pluginId, DateTimeOffset removedAt)
+    public void SwitchOffRemovedPlugin(string pluginId)
+    {
+        EnsureSwitchOf(pluginId);
+        Value = IntegrationSettingKeys.DisabledValue;
+    }
+
+    /// <summary>
+    /// Raises <see cref="PluginDataPurgeRequestedEvent"/> for the plugin this row switches, so the request and the
+    /// purge of the plugin's stored data are one unit: the event is written to the outbox in the save that stores
+    /// the request's audit line.
+    /// </summary>
+    /// <param name="pluginId">The plugin whose data is purged; must have the plugin id shape and name this row's plugin.</param>
+    /// <param name="requestedAt">When the operator asked for the purge, UTC, read by the caller from its clock.</param>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="pluginId"/> breaks the plugin id shape, or this row is not that plugin's switch.
+    /// </exception>
+    public void RequestDataPurge(string pluginId, DateTimeOffset requestedAt)
+    {
+        EnsureSwitchOf(pluginId);
+        AddDomainEvent(new PluginDataPurgeRequestedEvent(pluginId, requestedAt));
+    }
+
+    /// <summary>Refuses a plugin id without the plugin id shape, or a row that is not that plugin's switch.</summary>
+    /// <param name="pluginId">The candidate plugin id.</param>
+    /// <exception cref="ArgumentException">The id breaks the plugin id shape, or this row is another setting.</exception>
+    private void EnsureSwitchOf(string pluginId)
     {
         EnsurePluginId(pluginId);
 
@@ -91,9 +111,6 @@ public sealed class Setting : BaseEntity, IAggregateRoot
         {
             throw new ArgumentException("The setting is not the switch of this plugin.", nameof(pluginId));
         }
-
-        Value = IntegrationSettingKeys.DisabledValue;
-        AddDomainEvent(new PluginRemovedEvent(pluginId, removedAt));
     }
 
     /// <summary>

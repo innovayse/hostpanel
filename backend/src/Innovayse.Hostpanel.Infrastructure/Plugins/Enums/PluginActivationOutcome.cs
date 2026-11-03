@@ -17,4 +17,11 @@ public enum PluginActivationOutcome
 
     /// <summary>The plugin is switched on but a field its manifest marks required holds no value.</summary>
     RequiredSettingMissing = 3,
+
+    /// <summary>
+    /// The plugin was upgraded and its data migration has not succeeded yet, so its code is not run: it would read data
+    /// in the old shape. The gate lifts when the migration succeeds (at startup, or when the plugin is switched on or its
+    /// settings are saved).
+    /// </summary>
+    MigrationPending = 4,
 }

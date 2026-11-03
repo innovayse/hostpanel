@@ -23,12 +23,19 @@ public sealed class AppPluginProbe
     /// <summary>Gets or sets how a plugin answers a call; <see cref="Echo"/> until a test scripts another.</summary>
     public Func<PluginCall, PluginReply> Behaviour { get; set; } = Echo;
 
+    /// <summary>
+    /// Gets or sets an answer that sees the token the host hands the plugin; when set it is used instead of
+    /// <see cref="Behaviour"/>, so a test can script a plugin that never answers or ignores its token.
+    /// </summary>
+    public Func<PluginCall, CancellationToken, Task<PluginReply>>? AsyncBehaviour { get; set; }
+
     /// <summary>Forgets the calls and the build count and restores <see cref="Echo"/>; each test starts from here.</summary>
     public void Reset()
     {
         Interlocked.Exchange(ref _constructed, 0);
         Calls.Clear();
         Behaviour = Echo;
+        AsyncBehaviour = null;
     }
 
     /// <summary>Notes that a plugin was built.</summary>

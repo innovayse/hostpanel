@@ -1019,6 +1019,15 @@
   <data name="PluginIdInvalid" xml:space="preserve">
     <value>A plugin id uses only lower-case letters, digits and single hyphens, up to 64 characters.</value>
   </data>
+  <data name="PluginSlotIdInvalid" xml:space="preserve">
+    <value>The slot id is not valid.</value>
+  </data>
+  <data name="PluginWidgetIdInvalid" xml:space="preserve">
+    <value>The widget id is not valid.</value>
+  </data>
+  <data name="PluginProductIdsInvalid" xml:space="preserve">
+    <value>Choose up to {0} products.</value>
+  </data>
   <data name="IntegrationSlugRequired" xml:space="preserve">
     <value>An integration slug is required.</value>
   </data>

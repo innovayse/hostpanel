@@ -51,19 +51,25 @@ public sealed class PluginActivator
     /// <summary>Structured logger: a misconfigured plugin is left out silently otherwise, so each such gate logs why.</summary>
     private readonly ILogger<PluginActivator> _logger;
 
+    /// <summary>Tells whether a plugin's data migration is still pending, which keeps the plugin from being activated.</summary>
+    private readonly IPluginRegistry _registry;
+
     /// <summary>Initializes a new instance of the <see cref="PluginActivator"/> class.</summary>
     /// <param name="db">The data context, used to read the plugin's current settings rows.</param>
     /// <param name="cipher">Decrypts the stored secret fields before they reach the plugin.</param>
     /// <param name="serviceProvider">Service provider used to construct the plugin instance with its other dependencies.</param>
     /// <param name="hostConfiguration">Host application configuration; only the plugin's own section is ever read from it.</param>
+    /// <param name="registry">Tells whether a plugin's data migration is still pending, which keeps the plugin from being activated.</param>
     /// <param name="logger">Structured logger: a misconfigured plugin is left out silently otherwise, so each such gate logs why.</param>
     public PluginActivator(
         AppDbContext db,
         ISecretSettingCipher cipher,
         IServiceProvider serviceProvider,
         IConfiguration hostConfiguration,
+        IPluginRegistry registry,
         ILogger<PluginActivator> logger)
     {
+        _registry = registry;
         _db = db;
         _cipher = cipher;
         _serviceProvider = serviceProvider;
@@ -103,7 +109,35 @@ public sealed class PluginActivator
     /// plugin from the configuration read here. Gates are logged exactly as <see cref="ActivateAsync{TContract}"/>
     /// logs them.
     /// </returns>
-    public async Task<PreparedPluginActivation<TContract>> PrepareAsync<TContract>(LoadedPlugin plugin, CancellationToken ct)
+    public Task<PreparedPluginActivation<TContract>> PrepareAsync<TContract>(LoadedPlugin plugin, CancellationToken ct)
+        where TContract : class
+    {
+        return PrepareAsync<TContract>(plugin, gateOnMigration: true, ct);
+    }
+
+    /// <summary>
+    /// Activates a plugin as <typeparamref name="TContract"/> for its own migration hook, which is the one caller that
+    /// must reach a plugin the migration gate keeps from everyone else. Every other gate still applies.
+    /// </summary>
+    /// <typeparam name="TContract">The SDK contract of the migration hook.</typeparam>
+    /// <param name="plugin">The loaded plugin.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The outcome and, when it is <see cref="PluginActivationOutcome.Activated"/>, the instance.</returns>
+    internal async Task<PluginActivation<TContract>> ActivateForMigrationAsync<TContract>(LoadedPlugin plugin, CancellationToken ct)
+        where TContract : class
+    {
+        var prepared = await PrepareAsync<TContract>(plugin, gateOnMigration: false, ct);
+        return new PluginActivation<TContract>(prepared.PluginId, prepared.Outcome, prepared.Create?.Invoke());
+    }
+
+    /// <summary>The gates both entry points share.</summary>
+    /// <typeparam name="TContract">The SDK contract the caller is going to call the plugin through.</typeparam>
+    /// <param name="plugin">The loaded plugin.</param>
+    /// <param name="gateOnMigration">Whether a plugin with a pending data migration is refused.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The outcome and the deferred build.</returns>
+    private async Task<PreparedPluginActivation<TContract>> PrepareAsync<TContract>(
+        LoadedPlugin plugin, bool gateOnMigration, CancellationToken ct)
         where TContract : class
     {
         var id = plugin.Manifest.Id;
@@ -119,6 +153,14 @@ public sealed class PluginActivator
                     + "does not implement {InterfaceType}.",
                 id, plugin.Manifest.Type, plugin.ImplementationType, typeof(TContract).Name);
             return new PreparedPluginActivation<TContract>(id, PluginActivationOutcome.ContractNotImplemented, null);
+        }
+
+        // Fails closed: an upgraded plugin whose migration has not succeeded would run new code on old data. Checked
+        // before any settings are read, so the gate costs a memory lookup. Lifted by the migration, not by the operator.
+        if (gateOnMigration && _registry.IsMigrationPending(id))
+        {
+            _logger.LogWarning("Plugin '{Module}' is not activated: its data migration after the upgrade has not succeeded yet.", id);
+            return new PreparedPluginActivation<TContract>(id, PluginActivationOutcome.MigrationPending, null);
         }
 
         var values = await ReadConfigurationAsync(id, ct);

@@ -299,6 +299,9 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// </summary>
     public DbSet<PluginDataScope> PluginDataScopes => Set<PluginDataScope>();
 
+    /// <summary>Gets the products an operator bound plugin slot widgets to after install; see <see cref="PluginSlotProductBinding"/>.</summary>
+    public DbSet<PluginSlotProductBinding> PluginSlotProductBindings => Set<PluginSlotProductBinding>();
+
     /// <summary>
     /// Gets the Data Protection key ring, shared by every instance so a token protected by one
     /// instance is read by any other and outlives a redeploy. Named by this property like every
@@ -380,10 +383,28 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
             throw new ConcurrencyConflictException(
                 "Another call opened the same plugin store scope concurrently.", ex);
         }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: PluginSlotProductBindingConfiguration.BindingIndex,
+        })
+        {
+            // Two operator saves bound the same widget to the same product at once: the same lost race as a concurrent
+            // save, so it takes the same path. The save handler retries once from a fresh read.
+            throw new ConcurrencyConflictException(
+                "Another save bound the same plugin widget to the same product concurrently.", ex);
+        }
     }
 
     /// <inheritdoc/>
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken ct) => Database.BeginTransactionAsync(ct);
+
+    /// <inheritdoc/>
+    public async Task LockForTransactionAsync(string key, CancellationToken ct)
+    {
+        // The 64-bit hash of the key is the lock id; the lock is released by the server when the transaction ends.
+        await Database.ExecuteSqlAsync($"SELECT pg_advisory_xact_lock(hashtextextended({key}, 0))", ct);
+    }
 
     /// <inheritdoc/>
     public void DetachAll()

@@ -2487,6 +2487,44 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("PluginDataScopes");
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Plugins.PluginSlotProductBinding", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PluginId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SlotId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("WidgetId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PluginId", "SlotId", "WidgetId", "ProductId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_PluginSlotProductBindings_PluginId_SlotId_WidgetId_ProductId");
+
+                    b.ToTable("PluginSlotProductBindings");
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Products.Product", b =>
                 {
                     b.Property<int>("Id")

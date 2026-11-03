@@ -11,10 +11,6 @@ import { usePluginsStore } from '@/stores/plugins'
 import type { PluginListItemDto } from '@/types/plugin'
 import { json, problem, stubFetch, stubOffline } from '../helpers/fetch'
 
-/** The refusal the server gives an upload older than the installed version. */
-const downgrade = (): Response =>
-  json({ type: 'PLUGIN_DOWNGRADE_REFUSED', title: 'Refused', status: 409, detail: 'Older than installed.' }, 409)
-
 /** The sentence shown when nothing answered. */
 const NO_ANSWER = 'Could not reach the server. Check your connection and try again.'
 

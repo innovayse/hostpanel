@@ -6,6 +6,7 @@ using Innovayse.Hostpanel.Domain.Plugins;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Shared.Constants;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,8 +19,48 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Plugins;
 /// plugin drops what was staged.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
-public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
+public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>, IDisposable
 {
+    /// <summary>
+    /// This test's own upload folder. Every host that starts swaps the upgrades staged under its own upload folder in,
+    /// as the real application does at a restart, so sharing the default folder would let any other test class's host
+    /// start-up swap a staged upgrade of this one in the middle of a test.
+    /// </summary>
+    private readonly string _installRoot = Path.Combine(Path.GetTempPath(), $"hostpanel-upgrade-{Guid.NewGuid():N}");
+
+    /// <summary>The host that uses <see cref="_installRoot"/>, created on first use.</summary>
+    private WebApplicationFactory<Program>? _host;
+
+    /// <summary>A host derived from the shared one whose upload folder is <see cref="_installRoot"/>.</summary>
+    private WebApplicationFactory<Program> Host =>
+        _host ??= factory.WithWebHostBuilder(builder => builder.UseSetting("Plugins:InstallPath", _installRoot));
+
+    /// <summary>Stops the host and deletes the upload folder.</summary>
+    public void Dispose()
+    {
+        _host?.Dispose();
+        if (Directory.Exists(_installRoot))
+        {
+            Directory.Delete(_installRoot, recursive: true);
+        }
+    }
+
+    /// <summary>The folder an uploaded plugin is unpacked into under this test's upload folder.</summary>
+    /// <param name="pluginId">The plugin id.</param>
+    /// <returns>The absolute folder path.</returns>
+    private string InstalledFolder(string pluginId)
+    {
+        return Path.Combine(_installRoot, pluginId);
+    }
+
+    /// <summary>The folder an upgrade waits in until the next restart under this test's upload folder.</summary>
+    /// <param name="pluginId">The plugin id.</param>
+    /// <returns>The absolute folder path.</returns>
+    private string StagedFolder(string pluginId)
+    {
+        return Path.Combine(_installRoot, ".staged", pluginId);
+    }
+
     /// <summary>
     /// A newer version is staged: the response names the staged version and asks for a restart, the installed files and
     /// the settings and stored data of the plugin are untouched, the list shows the staged version, and the staging is
@@ -28,7 +69,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     [Fact]
     public async Task NewerVersion_IsStagedAndLeavesTheInstalledPluginAndItsDataAsync()
     {
-        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var client = await PluginsTestSeeds.AdminClientAsync(factory, Host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "1.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
         await SeedSettingAndDataAsync(pluginId);
@@ -41,9 +82,9 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
             var body = await upgrade.Content.ReadFromJsonAsync<JsonElement>();
             body.GetProperty("requiresRestart").GetBoolean().Should().BeTrue();
             body.GetProperty("stagedVersion").GetString().Should().Be("2.0.0");
-            (await File.ReadAllTextAsync(Path.Combine(PluginsTestSeeds.InstalledFolder(pluginId), "readme.txt")))
+            (await File.ReadAllTextAsync(Path.Combine(InstalledFolder(pluginId), "readme.txt")))
                 .Should().Be("version 1.0.0", "the swap happens on restart");
-            (await File.ReadAllTextAsync(Path.Combine(PluginsTestSeeds.StagedFolder(pluginId), "readme.txt")))
+            (await File.ReadAllTextAsync(Path.Combine(StagedFolder(pluginId), "readme.txt")))
                 .Should().Be("version 2.0.0");
             (await SettingCountAsync(pluginId)).Should().Be(1, "the plugin's settings are kept");
             (await EntryCountAsync(pluginId)).Should().Be(1, "the plugin's stored data is kept");
@@ -70,7 +111,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     [Fact]
     public async Task SecondUpgrade_ReplacesTheStagedOneAsync()
     {
-        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var client = await PluginsTestSeeds.AdminClientAsync(factory, Host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "1.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -79,7 +120,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
             (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "2.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
             (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "2.1.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
 
-            (await File.ReadAllTextAsync(Path.Combine(PluginsTestSeeds.StagedFolder(pluginId), "readme.txt"))).Should().Be("version 2.1.0");
+            (await File.ReadAllTextAsync(Path.Combine(StagedFolder(pluginId), "readme.txt"))).Should().Be("version 2.1.0");
         }
         finally
         {
@@ -91,7 +132,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     [Fact]
     public async Task Downgrade_IsRefusedWithoutForceAsync()
     {
-        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var client = await PluginsTestSeeds.AdminClientAsync(factory, Host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "2.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -101,8 +142,8 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
 
             response.StatusCode.Should().Be(HttpStatusCode.Conflict);
             await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_DOWNGRADE_REFUSED);
-            Directory.Exists(PluginsTestSeeds.StagedFolder(pluginId)).Should().BeFalse();
-            (await File.ReadAllTextAsync(Path.Combine(PluginsTestSeeds.InstalledFolder(pluginId), "readme.txt"))).Should().Be("version 2.0.0");
+            Directory.Exists(StagedFolder(pluginId)).Should().BeFalse();
+            (await File.ReadAllTextAsync(Path.Combine(InstalledFolder(pluginId), "readme.txt"))).Should().Be("version 2.0.0");
         }
         finally
         {
@@ -114,7 +155,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     [Fact]
     public async Task Downgrade_IsStagedWhenForcedAsync()
     {
-        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var client = await PluginsTestSeeds.AdminClientAsync(factory, Host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "2.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -125,7 +166,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
             response.StatusCode.Should().Be(HttpStatusCode.OK);
             var body = await response.Content.ReadFromJsonAsync<JsonElement>();
             body.GetProperty("stagedVersion").GetString().Should().Be("1.0.0");
-            (await File.ReadAllTextAsync(Path.Combine(PluginsTestSeeds.StagedFolder(pluginId), "readme.txt"))).Should().Be("version 1.0.0");
+            (await File.ReadAllTextAsync(Path.Combine(StagedFolder(pluginId), "readme.txt"))).Should().Be("version 1.0.0");
         }
         finally
         {
@@ -137,7 +178,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     [Fact]
     public async Task UpgradeBreakingAManifestRule_IsNeverStagedAsync()
     {
-        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var client = await PluginsTestSeeds.AdminClientAsync(factory, Host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "1.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
         var broken = PluginsTestSeeds.BuildZip(new Dictionary<string, string>
@@ -152,7 +193,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
 
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_MANIFEST_VERSION_UNKNOWN);
-            Directory.Exists(PluginsTestSeeds.StagedFolder(pluginId)).Should().BeFalse();
+            Directory.Exists(StagedFolder(pluginId)).Should().BeFalse();
         }
         finally
         {
@@ -164,7 +205,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     [Fact]
     public async Task Remove_DropsTheStagedUpgradeAsync()
     {
-        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var client = await PluginsTestSeeds.AdminClientAsync(factory, Host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "1.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "2.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
@@ -172,15 +213,15 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
         var remove = await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
 
         remove.StatusCode.Should().Be(HttpStatusCode.OK);
-        Directory.Exists(PluginsTestSeeds.StagedFolder(pluginId)).Should().BeFalse();
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(StagedFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(InstalledFolder(pluginId)).Should().BeFalse();
     }
 
     /// <summary>A forced downgrade is audited as a forced downgrade with both versions, not as an ordinary upgrade.</summary>
     [Fact]
     public async Task ForcedDowngrade_IsAuditedExplicitlyAsync()
     {
-        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var client = await PluginsTestSeeds.AdminClientAsync(factory, Host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "2.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -202,7 +243,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     [Fact]
     public async Task RefusedDowngrade_IsAuditedAsync()
     {
-        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var client = await PluginsTestSeeds.AdminClientAsync(factory, Host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "2.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -226,7 +267,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     [Fact]
     public async Task UploadOlderThanTheStagedOne_IsADowngradeAsync()
     {
-        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var client = await PluginsTestSeeds.AdminClientAsync(factory, Host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "1.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "3.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
@@ -237,11 +278,11 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
 
             refused.StatusCode.Should().Be(HttpStatusCode.Conflict);
             await PluginsTestSeeds.AssertCodeAsync(refused, HostpanelErrorCodes.PLUGIN_DOWNGRADE_REFUSED);
-            (await File.ReadAllTextAsync(Path.Combine(PluginsTestSeeds.StagedFolder(pluginId), "readme.txt"))).Should().Be("version 3.0.0");
+            (await File.ReadAllTextAsync(Path.Combine(StagedFolder(pluginId), "readme.txt"))).Should().Be("version 3.0.0");
 
             (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "2.0.0"), force: true))
                 .StatusCode.Should().Be(HttpStatusCode.OK);
-            (await File.ReadAllTextAsync(Path.Combine(PluginsTestSeeds.StagedFolder(pluginId), "readme.txt"))).Should().Be("version 2.0.0");
+            (await File.ReadAllTextAsync(Path.Combine(StagedFolder(pluginId), "readme.txt"))).Should().Be("version 2.0.0");
             (await LinesAsync("Forced Plugin Downgrade", pluginId)).Should().ContainSingle().Which.Should().Contain("3.0.0 to 2.0.0");
         }
         finally
@@ -257,10 +298,10 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     [Fact]
     public async Task UnparseableInstalledVersion_CountsAsADowngradeUnlessForcedAsync()
     {
-        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var client = await PluginsTestSeeds.AdminClientAsync(factory, Host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "1.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
-        var manifestPath = Path.Combine(PluginsTestSeeds.InstalledFolder(pluginId), "plugin.json");
+        var manifestPath = Path.Combine(InstalledFolder(pluginId), "plugin.json");
         await File.WriteAllTextAsync(manifestPath, (await File.ReadAllTextAsync(manifestPath)).Replace("\"version\": \"1.0.0\"", "\"version\": \"latest\""));
 
         try
@@ -286,22 +327,22 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     [InlineData("99999999999.0.0")]
     public async Task InvalidVersion_IsRefusedAtInstallAsync(string version)
     {
-        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var client = await PluginsTestSeeds.AdminClientAsync(factory, Host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
 
         var response = await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, version));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_MANIFEST_VERSION_INVALID);
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
-        Directory.Exists(PluginsTestSeeds.StagedFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(StagedFolder(pluginId)).Should().BeFalse();
     }
 
     /// <summary>The same version uploaded again while an upgrade is staged replaces the staged upload and is audited as a replacement.</summary>
     [Fact]
     public async Task SameVersionAsTheStagedOne_IsAuditedAsAReplacementAsync()
     {
-        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var client = await PluginsTestSeeds.AdminClientAsync(factory, Host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "1.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "2.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);

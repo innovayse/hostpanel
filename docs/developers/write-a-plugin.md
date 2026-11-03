@@ -208,7 +208,7 @@ Do **not** include the SDK assembly (`Innovayse.SDK.dll`) or any assembly the ho
 
 ### Sign the package
 
-Packages loaded from outside the Development and Testing environments must be signed. To skip signature checks on a non-production server, open **Plugins** in the admin panel and switch on **Allow unsigned plugins**. The `PluginSigner` tool is part of the Hostpanel repository (`backend/tools/Innovayse.Hostpanel.PluginSigner`), not the SDK. Run it on the **unpacked folder** before zipping.
+Packages loaded from outside the Development and Testing environments must be signed. To skip signature checks, open **Plugins** in the admin panel and switch on **Allow unsigned plugins**. The `PluginSigner` tool is part of the Hostpanel repository (`backend/tools/Innovayse.Hostpanel.PluginSigner`), not the SDK. Run it on the **unpacked folder** before zipping.
 
 Generate a key pair. The key file is a base64-encoded private key; store it outside any git working tree (the tool refuses to sign if the key file is inside one):
 
@@ -224,7 +224,7 @@ dotnet run --project backend/tools/Innovayse.Hostpanel.PluginSigner -- sign ./My
 
 This writes `plugin.sig` into the folder. Zip the folder after signing.
 
-The operator must add the matching public key to `PluginSigning:OperatorKeys` in their deployment environment, or the package will be refused with `PLUGIN_NOT_TRUSTED`. When you update a plugin, re-sign the new folder before re-zipping — updating re-checks the signature and the server will refuse a stale or missing `plugin.sig`.
+The operator must add the matching public key to `PluginSigning:OperatorKeys` in their deployment environment, or the package will be refused with `PLUGIN_SIGNATURE_KEY_UNKNOWN`. When you update a plugin, re-sign the new folder before re-zipping — updating re-checks the signature and the server will refuse a stale or missing `plugin.sig`.
 
 ## Test it
 

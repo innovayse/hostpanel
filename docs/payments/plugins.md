@@ -214,7 +214,8 @@ The API returns these error codes as the `type` field of the error response body
 | `PLUGIN_MANIFEST_INVALID` | 400 | The `plugin.json` is missing or cannot be parsed. |
 | `PLUGIN_MANIFEST_VERSION_UNKNOWN` | 400 | The manifest declares a manifest version this server does not know. |
 | `PLUGIN_MANIFEST_VERSION_INVALID` | 400 | The plugin version string is not a valid strict version (`major.minor.patch`). |
-| `PLUGIN_ID_INVALID` | 400 | The plugin id in the manifest is not valid. |
+| `PLUGIN_MANIFEST_ID_INVALID` | 400 | The plugin id in the manifest is not valid. |
+| `PLUGIN_ID_INVALID` | 400 | The plugin id passed to a remove or purge call is not valid. |
 | `PLUGIN_SDK_VERSION_UNSUPPORTED` | 400 | The manifest `sdkVersion` field is not accepted. The accepted value is `1.0`. |
 | `PLUGIN_SDK_ASSEMBLY_OUTDATED` | 400 | The plugin was built against an older SDK assembly major version. Rebuild against the current SDK. |
 | `PLUGIN_ASSEMBLY_UNREADABLE` | 400 | The plugin assembly or another required file cannot be read. Upload the package again. |
@@ -239,10 +240,10 @@ The API returns these error codes as the `type` field of the error response body
 | `PLUGIN_PAGE_ID_INVALID` | 400 | A page id in the manifest is not valid. |
 | `PLUGIN_UNSIGNED` | 400 | The package has no signature and the server requires signed packages. |
 | `PLUGIN_SIGNATURE_MALFORMED` | 400 | The signature file exists but cannot be read or parsed. |
-| `PLUGIN_SIGNATURE_KEY_UNKNOWN` | 400 | The package is signed with a key id the server does not recognise. |
+| `PLUGIN_SIGNATURE_KEY_UNKNOWN` | 400 | The package is signed with a key id the server does not recognise. Add the public key to `PluginSigning:OperatorKeys`. |
 | `PLUGIN_SIGNATURE_INVALID` | 400 | The package signature does not match the files. |
-| `PLUGIN_NOT_TRUSTED` | 400 | The signing key is not in the trusted keys list. Add the public key to `PluginSigning:OperatorKeys`. |
-| `PLUGIN_BUILT_IN` | 400 | The plugin id matches a plugin that ships with the server. Built-in plugins cannot be replaced. |
+| `PLUGIN_NOT_TRUSTED` | 400 | The archive's SHA-256 is not listed in `Plugins:TrustedPackageSha256`. |
+| `PLUGIN_BUILT_IN` | 409 | The plugin id matches a plugin that ships with the server. Built-in plugins cannot be replaced. |
 | `PLUGIN_DOWNGRADE_REFUSED` | 409 | The uploaded version is older than the installed (or staged) version. Pass `force=true` to override. |
 | `PLUGIN_STILL_INSTALLED` | 409 | Purge was called while the plugin folder still exists on disk. Remove the plugin first. |
 | `PLUGIN_NOT_FOUND` | 404 | The plugin id is not known or keeps no stored data. |

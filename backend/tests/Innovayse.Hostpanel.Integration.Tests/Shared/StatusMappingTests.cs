@@ -16,6 +16,7 @@ public sealed class StatusMappingTests
     [InlineData(SharedErrorCodes.ValidationError, 400)]
     [InlineData("INVOICE_VALIDATION_FAILED", 422)]
     [InlineData("QUOTA_EXCEEDED", 402)]
+    [InlineData(HostpanelErrorCodes.PLUGIN_STORE_QUOTA_EXCEEDED, 402)]
     [InlineData(HostpanelErrorCodes.SERVICE_FIRST_INVOICE_UNPAID, 402)]
     [InlineData(HostpanelErrorCodes.PROVISIONING_ACCOUNT_CONFLICT, 409)]
     [InlineData(SharedErrorCodes.Unauthorized, 401)]

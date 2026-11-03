@@ -42,7 +42,7 @@ public sealed class RetryFulfilmentRecordTests(IntegrationTestFactory factory) :
             .ExecuteAndWaitAsync(retry);
 
         response!.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        scenario.Plugin.Calls.Should().Equal([("OnInvoicePaidAsync", invoiceId)]);
+        scenario.Plugin.Calls.Should().Equal([new FulfilmentCall("OnInvoicePaidAsync", invoiceId)]);
         var record = await scenario.ReadAsync(invoiceId, FulfilmentKind.Paid);
         record.Status.Should().Be(FulfilmentStatus.Done);
         record.Attempts.Should().Be(1);

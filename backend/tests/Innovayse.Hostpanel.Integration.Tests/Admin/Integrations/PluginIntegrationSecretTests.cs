@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Application.Admin.Integrations.Commands.SaveIntegrationConfig;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Queries.GetIntegration;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Domain.Settings.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
@@ -47,7 +48,8 @@ public sealed class PluginIntegrationSecretTests(IntegrationTestFactory factory)
                 SdkVersion = "1.0",
                 Settings = settings,
             },
-            typeof(object)));
+            typeof(object),
+            PluginViewDocuments.None));
         return registry;
     }
 
@@ -75,7 +77,9 @@ public sealed class PluginIntegrationSecretTests(IntegrationTestFactory factory)
             scope.ServiceProvider.GetRequiredService<ISecretSettingCipher>(),
             registry,
             scope.ServiceProvider.GetRequiredService<ICurrentUserService>(),
-            NullLogger<SaveIntegrationConfigHandler>.Instance);
+            scope.ServiceProvider.GetRequiredService<IPluginMigrationRetry>(),
+            NullLogger<SaveIntegrationConfigHandler>.Instance,
+            scope.ServiceProvider.GetRequiredService<IPluginAvailabilityInvalidator>());
 
         var result = await handler.HandleAsync(
             new SaveIntegrationConfigCommand(

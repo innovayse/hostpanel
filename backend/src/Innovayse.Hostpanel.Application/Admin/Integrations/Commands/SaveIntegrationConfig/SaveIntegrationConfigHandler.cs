@@ -36,8 +36,14 @@ public sealed class SaveIntegrationConfigHandler
     /// <summary>The acting admin, named in the audit line of a secret change.</summary>
     private readonly ICurrentUserService _currentUser;
 
+    /// <summary>Runs the pending migration of an upgraded plugin once the operator has switched it on and saved its settings.</summary>
+    private readonly IPluginMigrationRetry _migrations;
+
     /// <summary>Receives the audit line of a secret change (key only, never the value).</summary>
     private readonly ILogger<SaveIntegrationConfigHandler> _logger;
+
+    /// <summary>Drops the panels' remembered plugin availability once the switch and fields have committed.</summary>
+    private readonly IPluginAvailabilityInvalidator _availability;
 
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
@@ -48,21 +54,27 @@ public sealed class SaveIntegrationConfigHandler
     /// <param name="cipher">Encrypts a secret field value before it is stored.</param>
     /// <param name="plugins">Loaded plugins, whose manifests declare their fields and which of them are secret.</param>
     /// <param name="currentUser">The acting admin, named in the audit line of a secret change.</param>
+    /// <param name="migrations">Runs the pending migration of an upgraded plugin once the operator has switched it on and saved its settings.</param>
     /// <param name="logger">Receives the audit line of a secret change.</param>
+    /// <param name="availability">Drops the panels' remembered plugin availability once the switch and fields have committed.</param>
     public SaveIntegrationConfigHandler(
         IHostpanelDbContext context,
         IMemoryCache cache,
         ISecretSettingCipher cipher,
         IPluginRegistry plugins,
         ICurrentUserService currentUser,
-        ILogger<SaveIntegrationConfigHandler> logger)
+        IPluginMigrationRetry migrations,
+        ILogger<SaveIntegrationConfigHandler> logger,
+        IPluginAvailabilityInvalidator availability)
     {
+        _migrations = migrations;
         _context = context;
         _cache = cache;
         _cipher = cipher;
         _plugins = plugins;
         _currentUser = currentUser;
         _logger = logger;
+        _availability = availability;
     }
 
     /// <summary>
@@ -137,9 +149,20 @@ public sealed class SaveIntegrationConfigHandler
 
         await _context.SaveChangesAsync(ct);
 
+        // The switch and the required fields decide whether a plugin's pages show; after the commit, the panels read
+        // them again at once instead of after the cache lifetime.
+        _availability.Invalidate();
+
         foreach (var (key, change) in audit)
         {
             SecretSettingAudit.Record(_logger, key, change, _currentUser.UserId);
+        }
+
+        // An upgraded plugin whose migration could not run (switched off, or a required setting missing) can run it now;
+        // a no-op for every other slug. A failure is kept inside the port: the settings are already saved.
+        if (command.IsEnabled)
+        {
+            await _migrations.RetryAsync(slug, ct);
         }
 
         // A saved hosting-panel credential invalidates the cached live server-info result the

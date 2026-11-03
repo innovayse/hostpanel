@@ -549,6 +549,33 @@
 <data name="PLUGIN_MANIFEST_ID_INVALID" xml:space="preserve">
     <value>The plugin id in the manifest is not valid: use lowercase letters and digits, with single hyphens between words.</value>
   </data>
+<data name="PLUGIN_MANIFEST_VERSION_INVALID" xml:space="preserve">
+    <value>The plugin version in the manifest is not valid: write it as major.minor.patch, for example 1.2.3, with no leading zeros.</value>
+  </data>
+<data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
+    <value>This plugin names a view document that its package does not contain.</value>
+  </data>
+<data name="PLUGIN_VIEW_INVALID" xml:space="preserve">
+    <value>One of this plugin's view documents is not a valid view document.</value>
+  </data>
+<data name="PLUGIN_VIEW_SCHEMA_UNSUPPORTED" xml:space="preserve">
+    <value>One of this plugin's view documents uses a schema version this server does not support.</value>
+  </data>
+<data name="PLUGIN_VIEW_BLOCK_KIND_UNKNOWN" xml:space="preserve">
+    <value>One of this plugin's view documents uses a block kind that this server does not know.</value>
+  </data>
+<data name="PLUGIN_VIEW_ROUTE_UNDECLARED" xml:space="preserve">
+    <value>One of this plugin's view documents calls a route that the plugin does not declare.</value>
+  </data>
+  <data name="PLUGIN_MENU_ICON_INVALID" xml:space="preserve">
+    <value>This plugin gives a menu an icon that is not a plain icon name: use 1 to 64 lowercase letters, digits and hyphens.</value>
+  </data>
+  <data name="PLUGIN_PAGE_ID_INVALID" xml:space="preserve">
+    <value>This plugin declares a page whose id is not valid or is used twice in one panel: use 1 to 64 lowercase letters, digits, hyphens and underscores, starting with a letter or digit.</value>
+  </data>
+<data name="PLUGIN_PAGE_NOT_FOUND" xml:space="preserve">
+    <value>This plugin page does not exist.</value>
+  </data>
 <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>That archive contains an entry that would write outside the plugin's own folder and was rejected.</value>
   </data>
@@ -582,6 +609,12 @@
 <data name="PLUGIN_BUILT_IN" xml:space="preserve">
     <value>This plugin ships with the server and cannot be removed or replaced.</value>
   </data>
+<data name="PLUGIN_DOWNGRADE_REFUSED" xml:space="preserve">
+    <value>This is an older version than the installed plugin. Upload it again with the downgrade confirmed to install it anyway.</value>
+  </data>
+<data name="PLUGIN_STILL_INSTALLED" xml:space="preserve">
+    <value>This plugin is still installed. Remove it before purging the data it kept.</value>
+  </data>
 <data name="PLUGIN_ROUTE_NOT_FOUND" xml:space="preserve">
     <value>Nothing is served at this address.</value>
   </data>
@@ -591,8 +624,26 @@
 <data name="PLUGIN_SLOT_CONTEXT_REQUIRED" xml:space="preserve">
     <value>A context is required for this page area.</value>
   </data>
+  <data name="PLUGIN_SLOT_WIDGET_NOT_FOUND" xml:space="preserve">
+    <value>The widget is not declared by that plugin.</value>
+  </data>
+  <data name="PLUGIN_SLOT_PRODUCTS_UNKNOWN" xml:space="preserve">
+    <value>None of the products exist, so the widget was not bound. Send an empty list to clear the binding.</value>
+  </data>
 <data name="PLUGIN_FAILED" xml:space="preserve">
     <value>The plugin could not complete the request. Please try again later.</value>
+  </data>
+<data name="PLUGIN_TIMEOUT" xml:space="preserve">
+    <value>The plugin took too long to answer. Please try again later.</value>
+  </data>
+<data name="PLUGIN_STORE_QUOTA_EXCEEDED" xml:space="preserve">
+    <value>This plugin's storage for this account is full. Please contact support.</value>
+  </data>
+<data name="PLUGIN_STORE_KEY_INVALID" xml:space="preserve">
+    <value>The plugin used its storage incorrectly. Please try again later.</value>
+  </data>
+<data name="PLUGIN_STORE_VALUE_INVALID" xml:space="preserve">
+    <value>The plugin used its storage incorrectly. Please try again later.</value>
   </data>
 <data name="PLUGIN_REQUEST_TOO_LARGE" xml:space="preserve">
     <value>The request is too large for this plugin.</value>

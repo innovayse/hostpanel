@@ -28,7 +28,12 @@ public sealed partial class ResourceCoverageTests
     /// The codes that answer a status <c>rules/api.md</c> does not list, each with that status and why. An entry is
     /// temporary by construction: <see cref="EveryStatusException_IsStillNeeded"/> fails once the code stops answering it.
     /// </summary>
-    private static readonly IReadOnlyDictionary<string, int> StatusExceptions = new Dictionary<string, int>();
+    private static readonly IReadOnlyDictionary<string, int> StatusExceptions = new Dictionary<string, int>
+    {
+        // A plugin did not answer within the call time limit: the host is a gateway to code it does not own (#792), so the
+        // answer is 504, the status for an upstream that timed out, which 502 (it failed) does not say.
+        [HostpanelErrorCodes.PLUGIN_TIMEOUT] = 504,
+    };
 
     /// <summary>The codes the registry declares.</summary>
     private static readonly IReadOnlyList<string> Codes = typeof(HostpanelErrorCodes)

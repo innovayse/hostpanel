@@ -11,6 +11,7 @@ using Innovayse.Hostpanel.Domain.Migration;
 using Innovayse.Hostpanel.Domain.Notifications;
 using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Domain.Partners;
+using Innovayse.Hostpanel.Domain.Plugins;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Projects;
 using Innovayse.Hostpanel.Domain.Servers;
@@ -227,6 +228,22 @@ public interface IHostpanelDbContext
     /// <summary>Gets the per-locale translations of the storefront frequently asked questions.</summary>
     public DbSet<FaqTranslation> FaqTranslations { get; }
 
+    /// <summary>Gets the values plugins keep in the host-kept plugin store, per plugin and per client reference.</summary>
+    public DbSet<PluginDataEntry> PluginDataEntries { get; }
+
+    /// <summary>
+    /// Gets the running totals of each plugin store scope (keys and characters held, per plugin and per client
+    /// reference), which the store's quota is checked against.
+    /// </summary>
+    public DbSet<PluginDataScope> PluginDataScopes { get; }
+
+    /// <summary>
+    /// Gets the products an operator bound plugin slot widgets to after install, one row per plugin, slot, widget and
+    /// product. Written only by the operator command; the slot index and the admin list read it through
+    /// <c>IPluginSlotContextReader</c>, and the Plugins module purge of a removed plugin deletes its rows.
+    /// </summary>
+    public DbSet<PluginSlotProductBinding> PluginSlotProductBindings { get; }
+
     /// <summary>Saves every tracked change in one transaction.</summary>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The number of rows written.</returns>
@@ -240,6 +257,16 @@ public interface IHostpanelDbContext
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The open transaction; disposing it without a commit rolls it back.</returns>
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken ct);
+
+    /// <summary>
+    /// Takes a database advisory lock for <paramref name="key"/> that lasts until the open transaction ends, so writers of
+    /// one thing that must be replaced whole run one after another and the last one wins. Waits while another
+    /// transaction holds the same key. Must be called inside a transaction started by <see cref="BeginTransactionAsync"/>.
+    /// </summary>
+    /// <param name="key">Names what is serialised, such as one plugin widget; the same text locks the same thing.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes once the lock is held.</returns>
+    public Task LockForTransactionAsync(string key, CancellationToken ct);
 
     /// <summary>Detaches every tracked entity, clearing pending or failed change state before a fresh save.</summary>
     public void DetachAll();

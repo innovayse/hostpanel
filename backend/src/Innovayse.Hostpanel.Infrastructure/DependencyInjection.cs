@@ -433,6 +433,7 @@ public static class DependencyInjection
         // The same rule for client services. The client-facing service handlers call it themselves.
         services.AddScoped<IServiceOwnership, ServiceOwnership>();
         services.AddScoped<IPluginSlotContextReader, PluginSlotContextReader>();
+        services.AddScoped<IPluginHostFactsReader, PluginHostFactsReader>();
 
         // What the signed-in user may do on a client account. The portal's permission filter decides
         // with it and the account endpoint reports it; both read it per request and neither trusts
@@ -878,11 +879,14 @@ public static class DependencyInjection
         services.AddSingleton(signatureVerifier);
         var allowUnsigned = signatureVerifier.Enforced
             && AllowUnsignedSettingReader.Read(configuration.GetConnectionString("DefaultConnection"), loggerFactory.CreateLogger(nameof(PluginLoader)));
+        // A staged upgrade is swapped in before any plugin folder is scanned, so no assembly of the old version is loaded.
+        PluginUpgradeApplier.Apply(pluginOptions.InstallRoot, loggerFactory.CreateLogger(nameof(PluginUpgradeApplier)));
         PluginLoader.DiscoverAndRegister(
             services,
             [new PluginRoot(PluginOptions.BuiltInRoot, PluginOrigin.BuiltIn), new PluginRoot(pluginOptions.InstallRoot, PluginOrigin.Uploaded)],
             signatureVerifier,
             allowUnsigned,
+            pluginOptions.MaxViewBytes,
             loggerFactory);
 
         // Every plugin is turned into an instance by the one activator (its settings gate and configuration),
@@ -891,16 +895,31 @@ public static class DependencyInjection
         services.AddScoped<IFulfilmentPluginResolver, FulfilmentPluginResolver>();
         services.AddScoped<IIdentityPluginResolver, IdentityPluginResolver>();
 
-        // The door to the plugin API routes: the app plugin of a route, the opaque references it sees (a keyed hash
-        // under a key derived from the encryption key, so nothing is stored) and, until the host shares client facts
-        // and keeps plugin data, the call-bound services that say so.
+        // The door to the plugin API routes and the panels' plugin pages: the app plugin of a route or page, the opaque
+        // references it sees (a keyed hash under a key derived from the encryption key, so nothing is stored) and the
+        // call-bound services: the host facts of the call's client and the plugin's own store. Scoped, so a call can use
+        // them for as long as its request runs.
         services.AddScoped<IPluginEndpointResolver, PluginEndpointResolver>();
+        services.AddScoped<IPluginUiSource, PluginUiSource>();
+
+        // The panels' plugin availability, computed for every plugin in one pass and remembered for a few seconds, so an
+        // index request is not one settings read per plugin and a page lookup costs the same for any id. Singletons: one
+        // remembered set per process, dropped through the invalidator by every use case that writes plugin settings.
+        services.AddSingleton<PluginAvailabilityCache>();
+        services.AddSingleton<IPluginAvailabilityInvalidator, PluginAvailabilityInvalidator>();
         services.AddSingleton<IPluginReferences>(new PluginReferences(encryptionKey));
-        services.AddScoped<IPluginCallServices, UnavailablePluginCallServices>();
+        services.AddScoped<IPluginCallServices, HostPluginCallServices>();
 
         // Hosted plugins start once the host is up and stop as it begins to stop, each failure kept to its plugin.
         // Registered in every environment: with no hosted plugin loaded it opens nothing and reads nothing.
         services.AddHostedService<HostedPluginRunner>();
+
+        // The migration hook of a plugin whose upgrade was swapped in runs once while the host is starting, before the
+        // web server accepts a request. Registered in every environment: with no pending upgrade it does nothing.
+        // The same instance is the retry the settings save calls when an operator switches an upgraded plugin on.
+        services.AddSingleton<PluginMigrationRunner>();
+        services.AddHostedService(provider => provider.GetRequiredService<PluginMigrationRunner>());
+        services.AddSingleton<IPluginMigrationRetry>(provider => provider.GetRequiredService<PluginMigrationRunner>());
 
         // Public demo. Last on purpose: when Demo:Enabled is true this swaps the outward ports
         // registered above (payment, registrar, provisioning, rates, monitoring) for offline fakes,

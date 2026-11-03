@@ -6,4 +6,8 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 /// Whether the admin setting "allow unsigned plugins" is on, read by the caller at the moment of the upload. It
 /// matters only to a host that enforces signatures; a development host accepts an unsigned package either way.
 /// </param>
-public sealed record PluginPackageUpload(Stream Content, bool AllowUnsigned);
+/// <param name="ForceDowngrade">
+/// Whether the operator accepts an upload older than the installed version. Without it a downgrade is refused with
+/// <see cref="Enums.PluginPackageOutcome.DowngradeRefused"/>.
+/// </param>
+public sealed record PluginPackageUpload(Stream Content, bool AllowUnsigned, bool ForceDowngrade = false);

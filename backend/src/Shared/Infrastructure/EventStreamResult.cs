@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.Http;
@@ -12,7 +13,8 @@ namespace Innovayse.Hostpanel.Shared.Infrastructure;
 /// Writes a <see cref="StreamedReply"/> as <c>text/event-stream</c>: the headers first, then every event as it is produced,
 /// flushed at once, with a comment line whenever the stream has been silent for the reply's heartbeat. The events are
 /// enumerated with a token linked to the request abort token and cancelled on every way out, so a client that goes away,
-/// a failed write and a normal end all cancel the producer. The request always ends: waiting for a producer that ignores
+/// a failed write and a normal end all cancel the producer. When the reply has an idle limit, a producer that sends nothing
+/// for that long is cancelled and the client is told with the limit's end events; heartbeats do not count as activity. The request always ends: waiting for a producer that ignores
 /// its token is bounded.
 /// </summary>
 public sealed class EventStreamResult : IActionResult
@@ -78,13 +80,37 @@ public sealed class EventStreamResult : IActionResult
             await http.Response.StartAsync(ct);
             await http.Response.Body.FlushAsync(ct);
 
+            // The producer's own silence: restarted by each of its events, never by the host's heartbeat.
+            var idle = Stopwatch.StartNew();
+            var limit = _reply.IdleLimit;
+
             pending = events.MoveNextAsync().AsTask();
             while (true)
             {
-                using var silence = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                var finished = await Task.WhenAny(pending, Task.Delay(_reply.Heartbeat, silence.Token));
-                if (finished != pending)
+                var wait = _reply.Heartbeat;
+                if (limit is not null)
                 {
+                    wait = TimeSpan.FromTicks(Math.Min(wait.Ticks, Math.Max(0, (limit.Timeout - idle.Elapsed).Ticks)));
+                }
+
+                using var silence = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                var finished = await Task.WhenAny(pending, Task.Delay(wait, silence.Token));
+
+                // The event may have arrived just as the wait ran out: it is then used, not cut.
+                if (finished != pending && !pending.IsCompleted)
+                {
+                    if (limit is not null && idle.Elapsed >= limit.Timeout)
+                    {
+                        // The producer is cancelled in the finally; the client is told why the stream ended.
+                        limit.OnExpired();
+                        foreach (var end in limit.EndEvents)
+                        {
+                            await WriteAsync(http, ServerSentEvent.Format(end), ct);
+                        }
+
+                        return;
+                    }
+
                     await WriteAsync(http, ServerSentEvent.Heartbeat, ct);
                     continue;
                 }
@@ -96,6 +122,7 @@ public sealed class EventStreamResult : IActionResult
                 }
 
                 await WriteAsync(http, ServerSentEvent.Format(events.Current), ct);
+                idle.Restart();
                 pending = events.MoveNextAsync().AsTask();
             }
         }

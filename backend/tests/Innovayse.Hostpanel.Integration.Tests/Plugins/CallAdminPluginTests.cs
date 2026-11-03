@@ -1,9 +1,13 @@
 using System.Net;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Settings;
+using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.SDK.Plugins.Endpoints;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Plugins;
 
@@ -182,6 +186,69 @@ public sealed class CallAdminPluginTests : IClassFixture<AppPluginFixture>
         failure.StatusCode.Should().Be(HttpStatusCode.BadGateway);
         await ClientsTestSeeds.AssertCodeAsync(failure, HostpanelErrorCodes.PLUGIN_FAILED);
         (await failure.Content.ReadAsStringAsync()).Should().NotContain("secret-detail");
+    }
+
+    /// <summary>
+    /// An admin call that is not about a client sees no client reference and writes to the plugin-wide store scope (no
+    /// reference), the same null the plugin sees on its caller, and it reads no host facts.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task AnAdminCall_WritesToThePluginWideScope_AndSeesNoFacts()
+    {
+        using var admin = await _fixture.AdminClientAsync();
+        var key = $"admin-scope-{Guid.NewGuid():N}";
+        _fixture.Probe.Behaviour = call =>
+        {
+            var ct = CancellationToken.None;
+            call.Store.SetAsync(key, "v", ct).GetAwaiter().GetResult();
+            return PluginReply.Json(new
+            {
+                clientRef = call.Caller.ClientRef,
+                hasProfile = call.Host.GetProfileAsync(ct).GetAwaiter().GetResult() is not null,
+                services = call.Host.ListServicesAsync(ct).GetAwaiter().GetResult().Count,
+                invoices = call.Host.ListInvoicesAsync(ct).GetAwaiter().GetResult().Count,
+            });
+        };
+
+        var response = await CallAsync(admin, HttpMethod.Get, _fixture.PluginId, "stats");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var seen = await JsonOfAsync(response);
+        seen.GetProperty("clientRef").ValueKind.Should().Be(JsonValueKind.Null);
+        seen.GetProperty("hasProfile").GetBoolean().Should().BeFalse();
+        seen.GetProperty("services").GetInt32().Should().Be(0);
+        seen.GetProperty("invoices").GetInt32().Should().Be(0);
+        using var scope = _fixture.Factory.Services.CreateScope();
+        var row = await scope.ServiceProvider.GetRequiredService<AppDbContext>().PluginDataEntries.AsNoTracking()
+            .SingleAsync(d => d.PluginId == _fixture.PluginId && d.Key == key);
+        row.ClientRef.Should().BeNull();
+    }
+
+    /// <summary>A plugin-wide store over its quota answers 402 <c>PLUGIN_STORE_QUOTA_EXCEEDED</c> with the standard error body.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task AStoreOverItsQuota_Answers402WithTheStandardBody()
+    {
+        using var derived = _fixture.Derive(services =>
+            services.Configure<PluginApiOptions>(options => options.MaxStoreKeysPerScope = 1));
+        using var signedIn = await _fixture.AdminClientAsync();
+        using var admin = AppPluginFixture.WithBearerOf(derived, signedIn);
+        _fixture.Probe.Behaviour = call =>
+        {
+            call.Store.SetAsync($"q-{Guid.NewGuid():N}", "1", CancellationToken.None).GetAwaiter().GetResult();
+            call.Store.SetAsync($"q-{Guid.NewGuid():N}", "2", CancellationToken.None).GetAwaiter().GetResult();
+            return PluginReply.NoContent();
+        };
+
+        var response = await CallAsync(admin, HttpMethod.Get, _fixture.OtherPluginId, "stats");
+
+        response.StatusCode.Should().Be(HttpStatusCode.PaymentRequired);
+        response.Content.Headers.ContentType!.MediaType.Should().Be(ErrorBody.ContentType);
+        var body = await JsonOfAsync(response);
+        body.GetProperty("type").GetString().Should().Be(HostpanelErrorCodes.PLUGIN_STORE_QUOTA_EXCEEDED);
+        body.GetProperty("status").GetInt32().Should().Be((int)HttpStatusCode.PaymentRequired);
+        body.GetProperty("detail").GetString().Should().NotBeNullOrWhiteSpace();
     }
 
     /// <summary>An unsafe admin call is audited with the plugin id and the route and no client; a read is not.</summary>

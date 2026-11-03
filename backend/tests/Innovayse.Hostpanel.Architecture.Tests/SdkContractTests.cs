@@ -98,16 +98,31 @@ public sealed class SdkContractTests
     }
 
     /// <summary>
-    /// The host API is read only and bound to the call's client: every method is a read, and none takes a client,
-    /// service or invoice id.
+    /// The host API is bound to the call's client: the three reads take nothing but the token, and the two SSH members
+    /// (SDK 2.1.0) name only a service of that client and never a client id.
     /// </summary>
     [Fact]
-    public void IPluginHostApi_IsReadOnlyAndTakesNoClientId()
+    public void IPluginHostApi_ReadsTakeNoIdAndSshNamesOnlyAService()
     {
         var methods = typeof(IPluginHostApi).GetMethods();
+        string[] reads = ["GetProfileAsync", "ListServicesAsync", "ListInvoicesAsync"];
 
-        methods.Select(m => m.Name).Should().BeEquivalentTo("GetProfileAsync", "ListServicesAsync", "ListInvoicesAsync");
-        methods.Should().OnlyContain(m => m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == typeof(CancellationToken));
+        methods.Select(m => m.Name).Should().BeEquivalentTo([.. reads, "IssueSshAccessAsync", "RevokeSshAccessAsync"]);
+        methods.Where(m => reads.Contains(m.Name)).Should().OnlyContain(
+            m => m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == typeof(CancellationToken));
+        typeof(IPluginHostApi).GetMethod("IssueSshAccessAsync")!.GetParameters().Select(p => p.ParameterType)
+            .Should().Equal(typeof(int), typeof(string), typeof(CancellationToken));
+        typeof(IPluginHostApi).GetMethod("IssueSshAccessAsync")!.ReturnType.Should().Be(typeof(Task<PluginSshAccess>));
+        typeof(IPluginHostApi).GetMethod("RevokeSshAccessAsync")!.GetParameters().Select(p => p.ParameterType)
+            .Should().Equal(typeof(int), typeof(Guid), typeof(CancellationToken));
+        methods.SelectMany(m => m.GetParameters()).Select(p => p.Name!.ToLowerInvariant())
+            .Should().NotContain(n => n.Contains("clientid") || n.Contains("pluginid"));
+        typeof(PluginSshAccess).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
+            "KeyId", "Host", "Port", "Username", "Domain", "PrivateKey", "HostKeyFingerprint");
+        PluginHostAccess.Ssh.Should().Be("ssh");
+        PluginHostAccess.All.Should().Equal("ssh");
+        Enum.GetNames<PluginHostAccessFailure>().Should().Equal(
+            "NotAllowed", "NotFound", "Unavailable", "LimitReached", "ServerUnavailable");
         typeof(IPluginHostApi).GetMethod("GetProfileAsync")!.ReturnType.Should().Be(typeof(Task<PluginClientProfile?>));
         typeof(IPluginHostApi).GetMethod("ListServicesAsync")!.ReturnType.Should().Be(typeof(Task<IReadOnlyList<PluginClientService>>));
         typeof(IPluginHostApi).GetMethod("ListInvoicesAsync")!.ReturnType.Should().Be(typeof(Task<IReadOnlyList<PluginClientInvoice>>));
@@ -309,7 +324,10 @@ public sealed class SdkContractTests
             .Should().Be(typeof(Task<RefundAdvice>));
     }
 
-    /// <summary>Every fulfilment context carries the invoice, the client, the external account and the lines.</summary>
+    /// <summary>
+    /// Every fulfilment context carries the invoice, the client, the plugin's own client reference (SDK 2.1.0, a
+    /// positional string right after the client id), the external account and the lines.
+    /// </summary>
     /// <param name="context">The fulfilment context type under inspection.</param>
     [Theory]
     [InlineData(typeof(InvoicePaidContext))]
@@ -320,7 +338,10 @@ public sealed class SdkContractTests
     {
         var names = context.GetProperties().Select(p => p.Name).ToList();
 
-        names.Should().Contain(["InvoiceId", "ClientId", "Account", "Lines"]);
+        names.Should().Contain(["InvoiceId", "ClientId", "ClientRef", "Account", "Lines"]);
+        context.GetProperty("ClientRef")!.PropertyType.Should().Be(typeof(string));
+        context.GetConstructors().Single().GetParameters().Take(3).Select(p => p.Name)
+            .Should().Equal("InvoiceId", "ClientId", "ClientRef");
         context.GetProperty("Lines")!.PropertyType.Should().Be(typeof(IReadOnlyList<FulfilmentLine>));
     }
 
@@ -382,17 +403,27 @@ public sealed class SdkContractTests
     public void PluginManifest_CapabilitiesAreOptionalAndNamed()
     {
         PluginCapabilities.StoredCredentials.Should().Be("storedCredentials");
+        PluginCapabilities.Endpoints.Should().Be("endpoints");
         var without = new PluginManifest
         {
-            Id = "p", Name = "P", Version = "1.0.0", Author = "A", Description = "D", Type = PluginType.Payment,
-            Category = "Payment", EntryPoint = "P.Plugin", SdkVersion = "1.0",
+            Id = "p",
+            Name = "P",
+            Version = "1.0.0",
+            Author = "A",
+            Description = "D",
+            Type = PluginType.Payment,
+            Category = "Payment",
+            EntryPoint = "P.Plugin",
+            SdkVersion = "1.0",
         };
         without.Capabilities.Should().BeEmpty();
+        without.HostAccess.Should().BeEmpty();
 
         var parsed = JsonSerializer.Deserialize<PluginManifest>(
-            """{"id":"p","name":"P","version":"1.0.0","author":"A","description":"D","type":"Payment","category":"Payment","entryPoint":"P.Plugin","sdkVersion":"1.0","capabilities":["storedCredentials"]}""",
+            """{"id":"p","name":"P","version":"1.0.0","author":"A","description":"D","type":"Payment","category":"Payment","entryPoint":"P.Plugin","sdkVersion":"1.0","capabilities":["storedCredentials"],"hostAccess":["ssh"]}""",
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true, Converters = { new JsonStringEnumConverter() } });
         parsed!.Capabilities.Should().Equal(PluginCapabilities.StoredCredentials);
+        parsed.HostAccess.Should().Equal(PluginHostAccess.Ssh);
     }
 
     /// <summary>The manifest v2 enums keep their names and explicit values; 0 is never a kind or a method.</summary>
@@ -451,8 +482,15 @@ public sealed class SdkContractTests
     {
         var manifest = new PluginManifest
         {
-            Id = "p", Name = "P", Version = "1.0.0", Author = "A", Description = "D", Type = PluginType.Payment,
-            Category = "Payment", EntryPoint = "P.Plugin", SdkVersion = "1.0",
+            Id = "p",
+            Name = "P",
+            Version = "1.0.0",
+            Author = "A",
+            Description = "D",
+            Type = PluginType.Payment,
+            Category = "Payment",
+            EntryPoint = "P.Plugin",
+            SdkVersion = "1.0",
         };
 
         manifest.ManifestVersion.Should().Be(1);
@@ -586,8 +624,16 @@ public sealed class SdkContractTests
     {
         var manifest = new PluginManifest
         {
-            Id = "p", Name = "P", Version = "1.0.0", Author = "A", Description = "D", Type = PluginType.Payment,
-            Category = "Payment", EntryPoint = "P.Plugin", SdkVersion = "1.0", Fields = null!,
+            Id = "p",
+            Name = "P",
+            Version = "1.0.0",
+            Author = "A",
+            Description = "D",
+            Type = PluginType.Payment,
+            Category = "Payment",
+            EntryPoint = "P.Plugin",
+            SdkVersion = "1.0",
+            Fields = null!,
         };
 
         manifest.Fields.Should().NotBeNull().And.BeEmpty();

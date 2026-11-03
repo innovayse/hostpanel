@@ -194,10 +194,11 @@ docker/                              compose set (shared·dev·prod·platform), 
   `Assembly.LoadFrom` over it would give the process two distinct `IPaymentPlugin` types with the
   same name, after which every cast in `PluginActivator` fails. The CWP providers are
   deliberately **not** staged, so they cannot activate at runtime by accident.
-- **The SDK is grouped by area (SDK 2.0.0).** Every SDK type lives in `Plugins/<Area>/` and its
-  namespace equals the folder: `Payment`, `Provisioning`, `Registrar`, `HostingPanel`, `Hosting`,
-  `Fulfilment`, `Identity`, `StoredCredentials`, `Manifest`, `Endpoints`, `Host`, `Store`,
-  `Lifecycle`, `Slots`, `Enums`. Each interface sits next to the records it uses; there is no
+- **The SDK is grouped by area (since SDK 2.0.0; the submodule pins 2.1.0, commit `6a725c2`, which adds the `Ui`
+  view schema, `externalOrigins`, the endpoints capability and the fulfilment `ClientRef`).** Every SDK type lives in
+  `Plugins/<Area>/` and its namespace equals the folder: `Payment`, `Provisioning`, `Registrar`, `HostingPanel`, `Hosting`,
+  `Fulfilment`, `Identity`, `StoredCredentials`, `Manifest`, `Api`, `Endpoints`, `Host`, `Store`,
+  `Lifecycle`, `Slots`, `Ui`, `Enums`. Each interface sits next to the records it uses; there is no
   `Interfaces/` folder (file-layout allows one only in Domain, `Application/Common/Interfaces/` and
   Shared) and nothing at the `Plugins/` root. Enums are in `Plugins/Enums/` with explicit values:
   `PluginType` keeps its released values starting at 0, every other enum starts at 1. The abstract base
@@ -225,7 +226,10 @@ docker/                              compose set (shared·dev·prod·platform), 
   twice), a throw marks the attempt failed and retries, a normal return marks it done. The host calls
   `OnInvoicePaidAsync` once a paid invoice has a digital line, `OnInvoiceRefundedAsync` after money moved back,
   `OnSubscriptionLapsedAsync` when a renewal invoice passes its grace period unpaid, and `AdviseRefundAsync`
-  **before** a refund moves money. *Refund advice* (`RefundAdviser`, the one place that asks): every enabled
+  **before** a refund moves money. Every fulfilment context and the refund advice context carry `ClientRef`, the
+  receiving plugin's own `IPluginReferences.ForClient(pluginId, clientId)`, the same value that plugin's endpoint calls
+  for that client carry; it is computed per plugin by `FulfilmentDispatcher` and `RefundAdviser`, and
+  `FulfilmentContextBuilder` (pure) only places it. *Refund advice* (`RefundAdviser`, the one place that asks): every enabled
   fulfilment plugin is asked, the smallest `MaxRefundableAmount` wins, a cap of zero or less refuses the refund
   (`REFUND_BLOCKED_BY_PLUGIN`), a smaller positive cap reduces it and the plugin's `Reason` goes into the refund
   notes, and a plugin that throws or times out refuses it too (`REFUND_ADVICE_UNAVAILABLE`, fail closed). With no
@@ -305,7 +309,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   `Plugins:TrustedPackageSha256` lists any digest, the archive's SHA-256 must be one of them
   (`PLUGIN_NOT_TRUSTED`; an empty list, the default, accepts any archive that passes the other
   checks). Every install and removal writes an activity log line with no client (`ActivityLog.ClientId`
-  is nullable for system-wide actions), carrying the plugin id and, for an install, the digest.
+  is nullable for system-wide actions), carrying the plugin id and, for an install, the digest. A removal also switches the plugin off and drops any staged upgrade; it keeps the plugin's stored data until an operator purges it (`PluginDataPurgeRequestedEvent`, see "Plugin upgrade, refused plugins and data purge" below and the plugin store under "Plugin routes").
 - **One manifest validator for load and install (`Infrastructure/Plugins/PluginManifestValidator`).** A plugin
   is checked against the manifest rules in one place, asked by `PluginManifestReader.TryRead` (startup load,
   `plugins/` and the upload folder) and by `PluginPackageStore` (install); no rule is written twice. `Validate`
@@ -335,8 +339,75 @@ docker/                              compose set (shared·dev·prod·platform), 
   manifest has none of these blocks and passes. At load a refused manifest skips only that plugin and logs
   one warning with the plugin id and the rule; at install the response is the rule's localised error and
   nothing is left behind. The manifest-level `sdkVersion` check (`PLUGIN_SDK_VERSION_UNSUPPORTED`) is separate
-  and unchanged. Rules for view documents (`view` files) arrive with the view document schema and are not
-  checked yet.
+  and unchanged. **View documents** (the `view` file of every page and slot) are read and checked by
+  `PluginViewDocumentReader` (`Infrastructure/Plugins`), at load after the signature check and before any assembly
+  loads, and at install on the unpacked files, with the same `PluginManifestRule`s: `ViewMissing`
+  (`PLUGIN_VIEW_MISSING`, no such file), `ViewInvalid` (`PLUGIN_VIEW_INVALID`: the path is not package-relative
+  `.json`, the file is over the size cap, it is not JSON, or it breaks the structure or link rule below),
+  `ViewSchemaUnsupported` (`PLUGIN_VIEW_SCHEMA_UNSUPPORTED`, `schema` is not `PluginViews.SchemaVersion`),
+  `ViewBlockKindUnknown` (`PLUGIN_VIEW_BLOCK_KIND_UNKNOWN`, an object with `kind` outside `PluginViews.BlockKinds`),
+  `ViewRouteUndeclared` (`PLUGIN_VIEW_ROUTE_UNDECLARED`, a `PluginViewRoute` that no route of the page's or slot's area
+  declares), and `LabelKeyMissing` for a key-shaped label under `PluginViews.LabelProperties` that `en` lacks
+  (the same `PluginManifestValidator` check as manifest labels).
+  - **Structure.** The root is an object with an integer `schema` and a `blocks` array. Every entry of a `blocks`
+    array (the root's or a tab's) and of a block's `actions` array is an object with a string `kind`; a block's `tabs`
+    is an array of objects whose `blocks`, when present, follow the same rule. A block the panel would skip or crash on
+    is refused at install, not rendered blank. The parser's `MaxDepth` is 32 (root counted), and a member name that
+    appears twice in one object is refused (the localiser would throw on it when the page is served).
+  - **Links.** The URL-like members `href`, `url`, `src`, `image` and `to` (names compared ignoring case, at any depth)
+    are each either host-relative (one leading `/`, never `//`) or an absolute `https` URL with a host and no user info;
+    neither may hold a backslash or a control character, and a host-relative link may not reach the host API (`/api` or
+    under `/api/`, any case, checked on the raw text and once more after one percent-decoding). Anything else
+    (`javascript:`, `data:`, `http:`, protocol-relative) is `PLUGIN_VIEW_INVALID`. `icon` must be a plain icon name
+    (`\A[a-z0-9-]{1,64}\z`), never a URL, and `target` and `formAction` are refused outright. The contract for both
+    panels: every string of a view is rendered as text only, never through `v-html`, a link is built only from these
+    checked members, and an absolute link opens with `rel="noopener noreferrer"`.
+  - **No links on the way.** A folder between the plugin folder and the view file, or the file itself, that is a
+    symlink or junction is `PLUGIN_VIEW_INVALID`; the check is on the path, accepted for the reason the signature check
+    gives (only the host writes the plugin folder). A file that is not seekable (FIFO, device) is refused too.
+  - **Size cap (`Plugins:MaxViewBytes`, `PluginOptions`, bytes, default 262144, 1 to 4194304, validated on start by
+    `PluginOptionsValidator`).** The length is read from the same open handle that is then read, before anything is
+    read, and the read itself is bounded (never more than the cap plus one byte), because the file may grow between the
+    two; over the cap is `PLUGIN_VIEW_INVALID`, at load and at install alike.
+  - **Violation details** carry only the package-relative path and, for a parse or I/O fault, the exception type name;
+    never an absolute host path, an exception message or document text, because the detail reaches the install response.
+  - **Kept in memory.** The parsed documents live in `LoadedPlugin.Views` (`PluginViewDocuments`), so serving a page
+    reads no file. A localised copy is cached per path and language (`PluginViewDocuments.Localised`, key
+    `LocalisedViewKey`), always: the language is first normalised by `PluginUiTexts` to a supported one (`en`, `ru`,
+    `hy`, anything else becomes `en`), so the cache holds at most documents times three and a caller cannot grow it.
+- **Menu icons and page ids (#643).** A menu `icon` is a plain name, `\A[a-z0-9-]{1,64}\z`
+  (`PLUGIN_MENU_ICON_INVALID`, `PluginManifestRule.MenuIconInvalid`); the panels map a name to a built-in icon only and
+  never load it as a URL. A page id is a `PluginPageIdentifier` (`Domain/Plugins`: `\A[a-z0-9][a-z0-9_-]*\z`, at most 64
+  characters, not the reserved `by-path`) and unique within its area (`PLUGIN_PAGE_ID_INVALID`,
+  `PluginManifestRule.PageIdInvalid`), so every page the installer accepts is reachable by the page lookup.
+- **Plugin upgrade, refused plugins and data purge (#649, #785).** An upload of a plugin id that is already installed
+  with a different version is an upgrade: it passes the same checks as a fresh install (signature, manifest rules, size
+  limits), is unpacked into `.staged/{id}` of the upload folder (a name that fails the plugin id rule) and answers
+  `requiresRestart: true` with `stagedVersion`; the installed files are not touched. `PluginUpgradeApplier.Apply` swaps the
+  staged folder in at the next startup, before `PluginLoader` scans, and writes `.upgrades/{id}.json` (from and to version)
+  **before** the swap, atomically (temp file plus rename); an unreadable record is logged with its file name and rebuilt
+  from the name; a still pending record keeps its first from version; startup sweeps `.staging` and moves a version a crash
+  left set aside back. `PluginMigrationRunner` (`IHostedLifecycleService.StartingAsync`, before the web server accepts a
+  request, and `IPluginMigrationRetry.RetryAsync` from `SaveIntegrationConfigHandler` when a plugin is saved enabled) then
+  calls the SDK `IPluginMigrations.MigrateAsync` of each upgraded, enabled plugin, writes the activity line `Migrated
+  Plugin Data` and only then deletes the record. The hook has a time limit (`Plugins:MigrationTimeoutSeconds`, validated;
+  the token is cancelled and the host stops waiting). While a record exists, or after a failed or timed out attempt,
+  `PluginRegistry.IsMigrationPending` is set and `PluginActivator` returns `PluginActivationOutcome.MigrationPending`, so
+  the plugin is neither called nor started (the migration alone activates it through `ActivateForMigrationAsync`). A
+  throwing hook, a switched-off plugin or a plugin that did not load keeps the record and the gate; it is tried again at
+  the next start and on enable or settings save. The hook takes no versions, so they only reach the log and the activity
+  line. A plugin that is loaded is never overwritten in place: any upload for it, equal version included, is staged; a not
+  loaded plugin of the same version is replaced at once. An older version, one older than the already staged upload, or
+  one compared with an unparseable installed version is refused with `PLUGIN_DOWNGRADE_REFUSED` (409) unless the request
+  carries `?force=true`; staging, a forced downgrade and a refused downgrade are audited. Versions are strict semantic
+  versions (`Domain/Plugins/PluginVersion`, `PluginManifestRule.VersionInvalid`, `PLUGIN_MANIFEST_VERSION_INVALID`).
+  Settings and the plugin store are never touched by an upgrade. A refused plugin claims its id (a same-named upload never
+  loads or overwrites its refusal). The data purge looks at the package folder (`IPluginPackageStore.HasPackageFolder`) and
+  counts slot widget bindings as kept data. `PluginLoader` keeps every plugin it refused for a broken manifest rule
+  (`RefusedPlugin`: folder name, `PluginManifestRule`, detail; built-in and upload folder alike) in `PluginRegistry`
+  (`IPluginRegistry.GetRefusedPlugins`); `GET /api/admin/plugins` lists it with `status: "Refused"`, `refusedRule` and
+  `refusedDetail`, never as loaded, and it can be removed like any upload. A removed plugin that still keeps data is listed
+  with `status: "Removed"` so the operator can purge it. Needs no database migration.
 - **Signed plugin packages (`Infrastructure/Plugins/PluginSignatureVerifier`, section `PluginSigning`).** An uploaded
   package carries a detached Ed25519 signature, `plugin.sig` at its root, checked in one place by both paths, like the
   manifest validator: at install (`PluginPackageStore`, on the unpacked files, before the move into place) and at load
@@ -408,19 +479,23 @@ docker/                              compose set (shared·dev·prod·platform), 
   same way for both. The part both areas share is `PluginCallRunner` (`Application/Plugins/Common`); each handler adds
   only its area's authorisation. Nothing about a plugin is trusted: the manifest was validated at load, and a route is
   looked up in it, never guessed.
-  - **The order is the contract, and authorisation sits before plugin code.** (1) `PluginCallRunner.FindAsync`: the plugin
-    is loaded and is an app plugin, the manifest declares that method and path in that area (`PluginRouteMatcher`:
-    segments compare ignoring case, a parameter takes one non-empty segment, a literal beats a parameter, a trailing slash
-    matches nothing) and the plugin is switched on and configured. `IPluginEndpointResolver` does this in two steps,
-    `Find` (manifest) and `PrepareAsync` (the `PluginActivator` gates, now `PrepareAsync` with `ActivateAsync` built on
-    it, without constructing the plugin): **an unknown plugin, a plugin of another type, a disabled one, an
-    unconfigured one and an undeclared route all answer the same 404 `PLUGIN_ROUTE_NOT_FOUND`**, whoever asks and whatever
-    permission they lack. (2) The area's own check. (3) `RunAsync`: the streaming route refusal, the body, the audit
-    line, then the plugin is built and called. The permission refusal therefore also comes before the plugin's
-    constructor runs.
+  - **The order is the contract, and authorisation sits before plugin code.** `PluginCallGate` (`Application/Plugins/Common`)
+    decides it, for both areas and for `PluginRateLimitFilter`, with a `PluginCallGateOutcome`. A client call: (1) the
+    caller's account from `ICallerClientResolver` (`IdentityUnavailable`, then no account, whatever the plugin);
+    (2) memory only, no I/O: the plugin is loaded and is an app plugin, and the manifest declares that method and path in
+    that area (`PluginRouteMatcher`: segments compare ignoring case, a parameter takes one non-empty segment, a literal
+    beats a parameter, a trailing slash matches nothing); (3) the route's permission; (4) only then the plugin's switch and
+    settings (`IPluginEndpointResolver.PrepareAsync`, the `PluginActivator` gates, without constructing the plugin), the
+    one database read. **An unknown plugin, a plugin of another type, a disabled one, an unconfigured one, an undeclared
+    route, a wrong method and a route the caller lacks the permission for all answer the same 404 `PLUGIN_ROUTE_NOT_FOUND`,
+    byte for byte**, and a refusal at step 2 or 3 never does the settings read, so neither the body nor the timing tells an
+    installed plugin from an absent one; the real reason is only in the Debug log, as the enum, never the client's path.
+    (5) `RunAsync`: the streaming route refusal, the body, the audit line, then the plugin is built and called. (#828 moved
+    the permission check ahead of the enabled check and turned its 403 into this 404.) The rate limit filter measures only
+    calls the gate admits, so a 429 cannot reveal a disabled or unconfigured plugin either.
   - **Client area.** The caller, the account and the permissions come from `ICallerClientResolver`, the single source of
     truth the permission attribute uses (owner, sub-user, identity plugin member). `IdentityUnavailable` answers 503
-    `IDENTITY_PLUGIN_UNAVAILABLE`; a route permission not held answers 403 `CLIENT_PERMISSION_DENIED`; a caller who acts
+    `IDENTITY_PLUGIN_UNAVAILABLE`; a route permission not held answers the 404 `PLUGIN_ROUTE_NOT_FOUND` above, not 403; a caller who acts
     for no single account answers 404 `CLIENT_PROFILE_NOT_FOUND`, because the SDK promises a client area plugin a client.
     A route `permission` is a defined `ClientPermission` name (that flag is needed), `PluginPermissions.Any` (no
     permission, but still a client) or **absent, which means `ClientPermission.All`: a route that does not say who may
@@ -482,7 +557,12 @@ docker/                              compose set (shared·dev·prod·platform), 
     the first event ends the stream with an `error` event (`code` `PLUGIN_FAILED`, localized `message`, `partial`) and a
     `done` event (`PluginEventStream`, vocabulary `PluginStreamEvent`); nothing of the exception is written. The
     `plugin-stream` lease of `PluginRateLimitFilter` is registered for disposal with the response, so it is held for the
-    whole stream.
+    whole stream. **A stream has a silence limit, not a length limit**: `PluginCallRunner.MapStream` gives the reply a
+    `Shared/Models/StreamIdleLimit` (the call limit, the `error` plus `done` events that tell the client, and a log callback),
+    and `EventStreamResult` ends the stream when the producer has sent no event for that long, counted from the start or from
+    its last event. The host's own `: keepalive` heartbeat does not count as an event, so a heartbeat below the limit never keeps
+    a silent plugin alive. The plugin is cancelled through its token, the client gets `error` with `PLUGIN_TIMEOUT` and `done`,
+    and the `plugin-stream` lease is released with the response. A first event that arrives as the wait runs out is used, not cut.
     **The status is checked again by the host**, not trusted to the SDK factories: a `Json` reply must be 200 to 203 with a
     body, `NoContent` 204, a `Problem` 400 to 599 except 401 and 407; anything else (a reply built by reflection or by a
     plugin compiled against another SDK) answers 502 `PLUGIN_FAILED`, logged with the plugin id. **A plugin problem
@@ -501,7 +581,18 @@ docker/                              compose set (shared·dev·prod·platform), 
     refusal and a call that reaches plugin code. Both are accepted: the route list of an enabled plugin is not a secret (it is in
     the plugin manifest the administrator installed), the 403 is only given to a caller who is already signed in as a client,
     the permission must be answered before plugin code runs, and hiding the difference would mean running plugin code or adding
-    sleeps for no one's benefit. A per call timeout is not there yet (#792).
+    sleeps for no one's benefit.
+  - **A time limit per plugin call (#792).** `PluginApi:CallTimeoutSeconds` (default 30, 1 to `MaxCallTimeoutSeconds`) is the
+    limit of every plugin route today; `MaxCallTimeoutSeconds` (default 600, 1 to 3600, never below the default limit) is the
+    ceiling a per route limit will be capped at (`PluginApiOptions.CallTimeoutFor(int?)`) once the plugin SDK route record has a
+    field to ask for one; until then no route can ask. The two are validated together at startup. `PluginCallRunner` gives the
+    plugin a token that fires at the limit. Anything the plugin does after it fired, a throw or a reply it still returns, is
+    `PLUGIN_TIMEOUT` (504), with no text of the plugin; the plugin id is logged, and the audit line of an unsafe call, written
+    before the plugin runs, stays as written. A plugin that ignores the token is abandoned after `PluginApi:AbandonWaitSeconds`
+    (default 5, 1 to 60) past the limit, so the request and its scope end. Its work still runs, so the abandoned calls are
+    counted per plugin in the singleton `PluginAbandonedCalls` until the work ends, and while a plugin holds
+    `PluginApi:MaxAbandonedCallsPerPlugin` of them (default 8, 1 to 1000) new calls to it are refused at once with
+    `PLUGIN_TIMEOUT`, without calling the plugin.
   - **Opaque references (`IPluginReferences`, `Infrastructure/Plugins/PluginReferences`).** `PluginCaller.ClientRef` and
     `UserRef` are the URL-safe Base64 of an HMAC-SHA256 over `kind`, the plugin id and the host id, under a key derived
     (HKDF-SHA256, purpose label `innovayse-hostpanel-plugin-references-v1`) from the encryption key the host already
@@ -510,13 +601,83 @@ docker/                              compose set (shared·dev·prod·platform), 
     needs no table, no migration and no write on the first call; the price is that references live as long as the
     encryption key, and rotating it gives every plugin new references. The identity plugin member's `UserRef` is their
     subject's, and their `ClientRef` is the account's client's, the same one the holder has.
-  - **`PluginCall.Host` and `.Store` are not available yet (#642).** The SDK requires both on every call; the host shares no
-    client facts and keeps no plugin data until #642. `IPluginCallServices` is the seam (`Create(PluginCallBinding(pluginId, clientId,
-    clientRef))`), and today's registration, `UnavailablePluginCallServices`, hands every call a host API and a store whose
-    every member throws `NotSupportedException`, which is answered as `PLUGIN_FAILED` and logged. An empty profile or a
-    store that forgets would be a lie a plugin could act on. #642 replaces that one registration.
+  - **Host facts and the plugin store (#642).** `IPluginCallServices` is implemented by `HostPluginCallServices` (scoped) and
+    builds, for each call, the `PluginCall.Host` and `PluginCall.Store` the SDK requires from one
+    `PluginCallBinding` (built only through `ForClient(pluginId, clientId, clientRef, permissions)` or `WithoutClient(pluginId)`, so its reference is null exactly when its client is). **The binding is the one source of the client reference**:
+    the area's handler builds it once (`CallClientPluginHandler`: the client from `ICallerClientResolver`, its
+    `IPluginReferences.ForClient` reference and the caller's permissions; `CallAdminPluginHandler`:
+    `PluginCallBinding.WithoutClient`), and `PluginCallRunner.RunAsync(target, binding, userRef, input, ct)` builds the
+    `PluginCaller` from it (`ClientRef`, the held permission names) and hands the same binding to the services. Nothing else
+    derives a reference, so `caller.ClientRef`, the store scope and the facts are always about one client.
+    *Host API* (`Infrastructure/Plugins/PluginHostApi`, mapping in `Infrastructure/Plugins/Extensions/`): bound to the call's client, no method takes an id.
+    It reads other modules' rows only through the port `IPluginHostFactsReader` (`Infrastructure/Plugins/PluginHostFactsReader`,
+    like `IPluginSlotContextReader`), never a `DbSet`. **What it shows follows the caller's permissions** (security.md,
+    visibility before capability), decided before anything is read: invoices only with `ViewPayInvoices`, services only with
+    `ViewProductsServices`, and the profile's sign-in email only with `ModifyMasterProfile` (a sub-user without it never sees
+    the address in the portal either); the name, currency and language go to every client caller. An admin call carries no
+    client and gets no facts. The profile is the company name when set, else "First Last"; email and language come from the
+    identity provider and are null when the owner has no identity account; currency comes from `IPayerCurrencyResolver`.
+    Services and invoices are newest first (`CreatedAt`, then `Id`, descending), at most `PluginHostLimits.MaxListed` (50, cut
+    in SQL), and invoices pass `Invoice.ClientVisibleFilter`, so a draft is never shared. A call whose client row is gone gets a
+    null profile and empty lists. Domain statuses map to SDK statuses by name in an exhaustive switch; an unknown value throws, and so does a draft invoice, which the filter keeps from ever reaching it.
+    `IssueSshAccessAsync` and `RevokeSshAccessAsync` always throw `PluginHostAccessException`
+    (`PluginHostAccessFailure.NotAllowed`) until hosting access is granted (#758): no manifest is admitted with `hostAccess` yet.
+    *Store* (`Infrastructure/Plugins/PluginStore`): table `PluginDataEntries` (aggregate `PluginDataEntry`: `PluginId`,
+    `ClientRef`, `Key`, `Value` text, `CreatedAt`, `UpdatedAt`; unique `IX_PluginDataEntries_PluginId_ClientRef_Key`, nulls not
+    distinct) and table `PluginDataScopes` (aggregate `PluginDataScope`: `PluginId`, `ClientRef`, `KeyCount`, `StoredChars`,
+    `Revision`, xmin concurrency token; unique `IX_PluginDataScopes_PluginId_ClientRef`, nulls not distinct). A scope is per
+    client in the client area and plugin wide (null `ClientRef`) on an admin call. A key is 1 to 200 characters of letters,
+    digits, `.`, `-`, `_` and `:`; a value is text up to 65,536 characters (`PluginDataEntry.MaxValueLength`), empty allowed,
+    null refused. A contract breach throws `DomainRuleException` `PLUGIN_STORE_KEY_INVALID` or `PLUGIN_STORE_VALUE_INVALID`
+    (`Domain/Plugins/PluginStoreErrors`, sentences in en/ru/hy); the runner answers it like any plugin throw, 502
+    `PLUGIN_FAILED`, and logs it, so these two codes never reach a caller and have no `StatusMapping` row.
+    - **Quota, one rule.** `PluginApi:MaxStoreKeysPerScope` (keys, default 1000, 1 to 100,000) and
+      `PluginApi:MaxStoreCharsPerScope` (characters of every key and value, default 4 Mi, from one full key and value to
+      1 Gi), both on `PluginApiOptions`, validated on start, read as one `PluginStoreQuota`. `PluginDataScope.Admit` is the only
+      place either is checked: a write that would take the scope past either measure is refused with `DomainRuleException`
+      `PLUGIN_STORE_QUOTA_EXCEEDED`; a write that shrinks or keeps the size is always allowed, even in a scope over a lowered
+      quota. The refusal fails closed (nothing is written, whether or not the plugin catches it), and the store raises the
+      call's `PluginStoreQuotaSignal`, host state the plugin cannot set: when the plugin then throws, the runner answers 402
+      `PLUGIN_STORE_QUOTA_EXCEEDED` (its own exact `StatusMapping` row, the 402 every quota refusal answers; en/ru/hy) instead of
+      `PLUGIN_FAILED`, so only a refusal the host made carries that code. Inside a stream that already started the refusal ends
+      the stream like any other throw.
+    - **Writes and races: last writer wins.** Every `SetAsync` and `RemoveAsync` loads the scope row and the entry tracked,
+      asks `Admit`/`Release` (each bumps `Revision`, so every write of a scope changes the scope row) and saves once. The scope
+      row's xmin token therefore serializes the writes of one scope, which keeps the counters exact; a first write of a scope or
+      a key meets the unique index instead, which `AppDbContext.SaveChangesAsync` translates to `ConcurrencyConflictException`
+      like the gateway payment reference. On that conflict the store detaches what the attempt tracked and repeats the whole
+      operation from a fresh read, at most five times, then lets the conflict propagate (answered `PLUGIN_FAILED`). So two
+      writes of one key both succeed and the one that commits last is the value kept (there is no compare-and-set; a plugin
+      that needs one keeps a version in its value); a remove that lost to another remove answers `false` (absent), and a write
+      after another call removed the key creates it again. The save flushes only the store's change because `PluginCallRunner`
+      saves its audit line before it builds the plugin, so nothing else is staged while plugin code runs.
+    - **Purge is an operator action, not part of the removal.** `RemovePluginHandler` (Admin) refuses an invalid id and a
+      built-in plugin as before. When the package store removed the files, or they were already gone but the plugin has a
+      switch row, it switches the plugin off (`integration:{id}:is_enabled` set to `false` through
+      `Setting.SwitchOffRemovedPlugin`), stages the activity line and saves once; files gone and no switch row answers
+      `PLUGIN_NOT_FOUND`. The stored data stays. `DELETE /api/admin/plugins/{id}/data` (`PurgePluginDataCommand`) deletes
+      it: refused with `PLUGIN_STILL_INSTALLED` (409) while the package is on disk, `PLUGIN_NOT_FOUND` when the plugin
+      keeps no data; otherwise `Setting.RequestDataPurge` raises `PluginDataPurgeRequestedEvent` (with the request moment),
+      which #802's interceptor writes to the outbox in the same transaction as the audit line (`Purged Plugin Data`).
+      That event is the one purge step: the store purge is its handler, and any other module that keeps rows per plugin id
+      adds its own handler of it. `PluginActivator.PrepareAsync` reads the switch on every call, so no new call reaches a
+      still-loaded plugin from the removal on; a call already running at that moment can still finish its writes.
+      `Plugins/Events/PurgeRemovedPluginDataHandler` (returns `Task`, so it is a queued chain with a durable inbox and the
+      queued retry policy) goes scope by scope and deletes the entries last written at or before the removal
+      (`UpdatedAt`, else `CreatedAt`), in batches of 500 through the context (no bulk delete), releasing each from its
+      `PluginDataScope` and deleting the scope once it is empty. A retry may run hours later, after the same id was
+      installed and switched on again, so rows written after the removal (by that new installation, or by a call that was
+      already running) are kept with their scope; the scope's xmin token makes the purge and such a write conflict
+      instead of interleaving, and the purge then re-reads the scope. A second delivery finds nothing old and stops. The
+      answer is `requiresRestart: true` when files were removed and `false` when they were already gone (the admin store
+      never lowers a banner it already shows).
+    - No purge for clients: a client is never deleted, only closed (`ClientClosedEvent`), and a closed client keeps reading
+      their history, so a plugin's per-client rows are kept like the rest of that history. The only path that removes clients
+      is the demo reset, which truncates every model table, the store tables included. Rows are keyed by the opaque
+      `ClientRef` (no client id column), so a future client erase would compute `IPluginReferences.ForClient` per plugin that
+      has rows.
   - **Status codes.** `PLUGIN_ROUTE_NOT_FOUND` 404, `PLUGIN_REQUEST_TOO_LARGE` 413 (the `_TOO_LARGE` suffix),
-    and `PLUGIN_FAILED` 502 (exact `StatusMapping` rows); each has its sentence in
+    `PLUGIN_FAILED` 502 and `PLUGIN_STORE_QUOTA_EXCEEDED` 402 (exact `StatusMapping` rows); each has its sentence in
     en/ru/hy. `PLUGIN_STREAMING_NOT_SUPPORTED` went with #641.
   - **Rate limits (#640).** `API/Plugins/PluginRateLimitFilter` is a resource filter on both doors, marked
     `[PluginRateLimit(PluginArea)]`. It matches the route and measures the caller against `plugin-default`,
@@ -528,8 +689,8 @@ docker/                              compose set (shared·dev·prod·platform), 
     tests derive a host with an enabled `PluginRateLimiter`. The client account is resolved before the plugin budget
     is checked, so a refused call still costs one lookup, which the global limiter bounds. A refused stream call has
     already spent its tier permit.
-  - Left for later issues: the host API and the store (#642), a call timeout (#792). A streamed call has no timeout
-    of its own until then: it ends when the plugin ends or the client leaves.
+  - A streamed call ends when the plugin ends, when the client leaves, or when the producer is silent for the call limit
+    (see the stream silence limit above).
 - **Plugin slot index: widgets for a verified context (#644).** The answer is `PluginSlotIndexDto` with
   `PluginSlotWidgetDto` items. **Nothing of a plugin is built or called**: the index is read from manifests, so a foreign
   id cannot reach plugin code.
@@ -552,6 +713,58 @@ docker/                              compose set (shared·dev·prod·platform), 
     plugin id is a `PluginIdentifier`.
   - Hide setting: `plugins.hidden_slot_widgets` (`PluginSettingKeys.HiddenSlotWidgets`, seeded empty) holds comma
     separated `slot:plugin:widget` entries. Empty entries are ignored, and the validator and the reader share one grammar.
+
+- **Plugin UI index and pages (#643).** Four read endpoints serve what a plugin adds to a panel:
+  `GET api/client/plugins/ui` (`Policies.Client`, `[AvailableToEveryClientUser]`) and `GET api/admin/plugins/ui`
+  (`Policies.Admin`) answer the index `PluginUiDto { Menus, Pages }` (menus `{pluginId, id, label, page, icon, order}`,
+  pages `{pluginId, id, path, title}`; both empty with no available plugin); `GET api/{client|admin}/plugins/ui/{pluginId}/pages/{pageId}`
+  answers `PluginPageViewDto {pluginId, id, path, title, view, externalOrigins}` (`externalOrigins`: the manifest's
+  declared origins as written, empty when none, which the panels need to render a link to an absolute `https` address).
+  A fifth, `GET api/{client|admin}/plugins/ui/{pluginId}/pages/by-path?path=` (`GetPluginPageByPathQuery`), finds the page
+  by its panel path: both lookups go through `PluginPageReader` (one order of checks, below), and
+  `PluginPagePathMatcher` picks the page: the path starts with `/`, is at most 512 characters, holds no empty, `.` or `..`
+  segment, no backslash and no control character (otherwise no page), segments compare ignoring case, a parameter takes
+  one segment, and the page with most literal segments wins (manifest order on a tie). **Availability is the same gate
+  as the routes:** `IPluginUiSource` (`Infrastructure/Plugins/PluginUiSource`) lists a plugin only when it is loaded, an
+  app plugin and passes `PluginActivator.PrepareAsync` (enabled and configured), so a page shows exactly when its routes
+  answer. The answer is computed for every plugin in one pass and kept for 10 seconds by `PluginAvailabilityCache`
+  (singleton), used by the index and both page lookups alike; `IPluginAvailabilityInvalidator` drops it after the save
+  of `RemovePluginHandler`, `SaveIntegrationConfigHandler` and `UpdateSettingHandler` (for `integration:*` keys), so a
+  switch shows at once. The slot index (#644) does not use the cache yet; it still asks `IPluginEndpointResolver` per
+  plugin.
+  **Permissions:** a client page is listed or served only when `PluginClientPermissions.IsHeld(held, page.Permission)`,
+  the one rule the route door and the slot index also use (`Any` needs none, a defined name needs that flag, **absent
+  means `ClientPermission.All`, the account holder only**, anything unparsable fails closed); the admin area holds
+  `All` and so has no filter. The viewer is resolved by `PluginUiViewer.PermissionsAsync`, the way the route door
+  resolves its caller (`ICallerClientResolver`). A menu is listed only beside a visible page.
+  **Order:** `PluginUiSource` is the ordering contract: it lists plugins by manifest id (ordinal), so neither load order
+  nor instance changes it, and the index keeps that order without sorting again; pages keep manifest order within a plugin, and menus are ordered by
+  `Order`, then plugin id, then menu id (ordinal).
+  **Labels:** `PluginUiTexts.For(manifest)` resolves a menu label and a page title through `PluginText.Resolve` (one
+  rule for menus, pages, slots and views), and `Localise` every label of a view, in the request language
+  (`X-Language`, so `CurrentUICulture`, normalised to a supported language, otherwise `en`), English when that locale
+  lacks the key, otherwise the value itself as plain
+  text. `PluginText` compares locale codes ignoring case, as the manifest validator does, so `EN` reads like `en`.
+  **Index answers:** 503 `IDENTITY_PLUGIN_UNAVAILABLE` when the identity plugin cannot say who a client caller is, 404
+  `CLIENT_PROFILE_NOT_FOUND` when the caller acts for no single account, otherwise the filtered index.
+  **Page answers (the order is the contract):** the viewer is resolved first, so the lookups run for every caller alike.
+  503 `IDENTITY_PLUGIN_UNAVAILABLE` stays, because an outage says nothing about the page. **Every other refusal is the
+  same 404 `PLUGIN_PAGE_NOT_FOUND` with an identical body**: a malformed `pluginId` or `pageId` (no 400, which would
+  say which ids are well formed), an unknown plugin, a disabled or unconfigured one, a plugin
+  that is not an app plugin, an undeclared page, a missing view, a client caller who acts for no account and one who
+  does not hold the page's permission. A page never answers 403 or `CLIENT_PROFILE_NOT_FOUND`, so the endpoint is no
+  oracle for which plugins and pages exist. The route door (#639) differs on purpose: it still answers 403
+  `CLIENT_PERMISSION_DENIED` after the 404, a signal accepted and explained under "Signals that remain".
+  **The plugin ids `ui` and `slots` are reserved** (`PluginIdentifier.Reserved`): the routes
+  `api/{area}/plugins/{id}/{**path}` would otherwise swallow `plugins/ui` and `plugins/slots`, and a plugin with either id
+  would shadow the index or the slot index. `PluginIdentifier` asks two
+  questions: `IsWellFormed` (the shape: lower-case words joined by single hyphens, at most 64 characters) and `IsValid`
+  (`IsWellFormed && !IsReserved`, whether a plugin may take the id). An install of a manifest with a reserved id is
+  refused with `PLUGIN_MANIFEST_ID_INVALID` (`PluginManifestRule.PluginIdInvalid`), and the loader skips a reserved
+  folder or manifest id with one warning. Listing, removal (`RemovePluginValidator`, `PluginPackageStore`) and
+  `Setting.SwitchOffRemovedPlugin` / `CreateSwitchedOffForRemovedPlugin` check only the shape, so a plugin installed as
+  `ui` or `slots` before the id was reserved stays listable and removable, and its data is still purged. #647 (admin plugin pages)
+  builds on these shapes.
 
 ## CQRS — Wolverine, conforming
 
@@ -713,6 +926,8 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   the unlock, because an agent refuses keys for a locked account and the two unsuspensions are not ordered. All three
   only trigger idempotent commands and log a refusal or failure for staff instead of throwing. Each runs on its own
   queue (handlers are separated, see "Durable messaging"), so one of them failing never re-runs the others.
+  `Plugins/Events/PurgeRemovedPluginDataHandler` deletes a removed plugin's store rows written up to the operator's purge request on
+  `PluginDataPurgeRequestedEvent`; it is idempotent and writes only the Plugins module's own tables (see the plugin store under "Plugin routes").
   The remaining three react to `ClientClosedEvent` and are described under "Client account status" below.
 
 - **`InvoiceItems.ClientServiceId` and `InvoiceItems.RegisteredDomainId` carry no foreign key, on purpose.** An

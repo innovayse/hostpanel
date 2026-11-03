@@ -1,5 +1,6 @@
 ---
 title: Moving from another billing system
+description: How to import clients, invoices, services and domains into Hostpanel from an existing billing system.
 ---
 
 # Moving from another billing system
@@ -16,8 +17,9 @@ A migration job holds a secret key. The addon on the source system reads every r
 key, and returns one page of records at a time. Hostpanel imports each page before asking for the
 next. The pull runs in the background — closing the browser does not stop it.
 
-If the server restarts mid-pull, the recovery job (`RecoverInterruptedMigrationJobsCommand`) marks
-the interrupted job as failed every five minutes, so it can be retried.
+If the server restarts mid-pull, the recovery job (`RecoverInterruptedMigrationJobsCommand`) runs
+every five minutes and marks as failed any job whose heartbeat has not updated in the last fifteen
+minutes (both intervals are configurable), so the job can be retried.
 
 The source address must be a public HTTPS address. Internal addresses and non-HTTPS schemes are not
 allowed.
@@ -75,8 +77,9 @@ not exist here are skipped.
 ## Create a migration
 
 <Steps>
+<li>
 
-### Open Migration Tools
+**Open Migration Tools**
 
 Go to **Migration Tools** in the admin panel and click **New Migration**.
 
@@ -88,7 +91,10 @@ Fill in:
 
 Click **Create Migration**. A secret key is generated for the job.
 
-### Install the addon on the source system
+</li>
+<li>
+
+**Install the addon on the source system**
 
 Download `innovayse-migration.zip` from the **Setup Required** card and extract it to the root of
 the source system. The files land in:
@@ -101,7 +107,10 @@ Open the source system's admin panel, go to **Admin → Addons**, find **Innovay
 activate it. Open the addon's settings page and paste the secret key from the **Setup Required**
 card into the **Migration Key** field.
 
-### Test the connection
+</li>
+<li>
+
+**Test the connection**
 
 Click **Check**. Hostpanel calls the addon's ping endpoint. The card shows one of:
 - **Plugin connected** — the key was accepted.
@@ -110,11 +119,15 @@ Click **Check**. Hostpanel calls the addon's ping endpoint. The card shows one o
 - **Not reachable** — the addon did not answer or refused the key. Check the source URL, confirm
   the addon is active, and confirm the key in the addon settings matches the one on the card.
 
-### Start the import
+</li>
+<li>
+
+**Start the import**
 
 Click **Start Import**. The job moves to **Queued**, then to **Running** as the background worker
 picks it up. The **Migrated**, **Skipped** and **Failed** counters update as records are processed.
 
+</li>
 </Steps>
 
 ## Job statuses
@@ -129,7 +142,7 @@ picks it up. The **Migrated**, **Skipped** and **Failed** counters update as rec
 
 ## When a job fails
 
-The failure reason is shown on the job card. Click **Retry Import** to queue the pull again.
+The failure reason is shown on the job card. Click **Retry import** to queue the pull again.
 A retry resets the counters and starts from the beginning; records that already exist are skipped,
 so retrying is safe.
 
@@ -139,7 +152,7 @@ so retrying is safe.
 | Source refused the request, check the key | The key is wrong or the addon is not active. Re-copy the key from the job card into the addon settings. |
 | Records could not be imported | Check the server log for details. Fix the underlying problem and retry. |
 | Import was stopped | The pull was cancelled. Retry when ready. |
-| The server stopped before the import finished | The process was interrupted (restart or crash). The recovery job detects stale heartbeats every 5 minutes and marks the job as failed so it can be retried. |
+| The server stopped before the import finished | The process was interrupted (restart or crash). The recovery job runs every 5 minutes and fails any job with no heartbeat for 15 minutes (both configurable). Retry when the server is stable. |
 | The source address is not allowed, use a public HTTPS address | The source URL must use HTTPS and resolve to a public address. Internal addresses are not allowed. |
 
 ## Run it again safely
@@ -149,11 +162,12 @@ Existing records are never updated by a second run. A record that already exists
 Skipped with "Already exists" and left unchanged.
 </Callout>
 
-Clients are matched by email address; other records are matched by their id in the source system.
+Records are matched as follows: clients by email address, contacts by email, products by name,
+domains by domain name, invoices by client and external id, tickets and quotes by client and
+subject, orders by order number, transactions by client and transaction id.
 Running the same job a second time only adds records that are new since the last run.
 
-To re-import a changed record, delete it in Hostpanel first, then retry the job. Deleting a client
-also deletes their invoices, services and tickets.
+To re-import a changed record, delete it in Hostpanel first, then retry the job.
 
 ## Check the result
 
@@ -190,16 +204,15 @@ the request and dispatches it to `ApiKernel`.
 
 ```
 modules/addons/innovayse_migration/
-  api.php          # front controller
-  autoload.php
-  innovayse_migration.php  # addon registration
+  api.php
+  Module.php
   lib/
-    ApiKernel.php
-    Router.php
-    Auth/          # key check and throttle
-    Export/        # exporters, one per entity
-    Http/          # Action, ApiError, Request, Paging
-    Paging/
+    Mapping/
+    Database/
+    Addon/
+    Export/
+    Http/
+    Auth/
 ```
 
 ### Request format
@@ -207,11 +220,11 @@ modules/addons/innovayse_migration/
 Every request is a JSON POST body:
 
 <SettingTable :settings="[
-  { name: 'key', description: 'The migration key configured in the addon settings.' },
-  { name: 'action', description: 'One of: ping, totals, clients, contacts, product_groups, products, invoices, services, domains, tickets, ticket_replies, orders, transactions, quotes, knowledgebase_categories, knowledgebase, announcements, download_categories, downloads, network_issues.' },
-  { name: 'page', description: 'Page number, from 1. Default: 1.' },
-  { name: 'perPage', description: 'Page size, 10 to 500. Default: 100.' },
-  { name: 'afterId', description: 'Keyset cursor: return only rows whose id is greater than this value. When present, page is ignored.' },
+  { name: 'key', type: 'string', description: 'The migration key configured in the addon settings.' },
+  { name: 'action', type: 'string', description: 'One of: ping, totals, clients, contacts, product_groups, products, invoices, services, domains, tickets, ticket_replies, orders, transactions, quotes, knowledgebase_categories, knowledgebase, announcements, download_categories, downloads, network_issues.' },
+  { name: 'page', type: 'number', default: '1', description: 'Page number, from 1.' },
+  { name: 'perPage', type: 'number', default: '100', description: 'Page size, 10 to 500.' },
+  { name: 'afterId', type: 'number', description: 'Keyset cursor: return only rows whose id is greater than this value. When present, page is ignored.' },
 ]" />
 
 The `ping` action returns `{"ok":true}`. The `totals` action returns one count per entity type.

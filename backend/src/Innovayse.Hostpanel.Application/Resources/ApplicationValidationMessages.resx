@@ -872,6 +872,9 @@
   <data name="SendEmailTemplateSlugRequired" xml:space="preserve">
     <value>Name the template to send.</value>
   </data>
+  <data name="SendEmailIdempotencyKeyInvalid" xml:space="preserve">
+    <value>The idempotency key must be 64 lower-case hexadecimal characters.</value>
+  </data>
   <data name="ProductGroupIdInvalid" xml:space="preserve">
     <value>Provide a valid product group id.</value>
   </data>

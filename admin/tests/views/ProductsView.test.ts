@@ -32,10 +32,10 @@ const plan: Product = {
   packageName: null,
   type: 'SharedHosting',
   status: 'Active',
-  pricing: { monthly: 4.5, annual: null },
+  pricing: { monthly: 4.5, annual: null, quarterly: 12, semiAnnual: null, biennial: null },
   prices: [
-    { currencyCode: 'USD', monthly: 4.5, annual: null },
-    { currencyCode: 'EUR', monthly: 4.1, annual: null },
+    { currencyCode: 'USD', monthly: 4.5, annual: null, quarterly: 12, semiAnnual: null, biennial: null },
+    { currencyCode: 'EUR', monthly: 4.1, annual: null, quarterly: null, semiAnnual: null, biennial: null },
   ],
   serverGroupId: null,
   isFeatured: false,
@@ -73,6 +73,17 @@ describe('ProductsView', () => {
     expect(row).toContain('+EUR')
     expect(row).toContain('Active')
     expect(wrapper.get('[data-testid="product-row-2"]').text()).toContain('Inactive')
+  })
+
+  it('shows a column per billing cycle and the price of a product on a newer cycle', async () => {
+    stubRouteTable(routes)
+    const { wrapper } = await mountScreen(ProductsView)
+    const header = wrapper.get('thead').text()
+
+    for (const label of ['Monthly', 'Annual', 'Quarterly', 'Semi-annual', 'Biennial']) {
+      expect(header).toContain(label)
+    }
+    expect(wrapper.get('[data-testid="product-row-1"]').text()).toContain('$12.00')
   })
 
   it('labels a digital product with its type', async () => {

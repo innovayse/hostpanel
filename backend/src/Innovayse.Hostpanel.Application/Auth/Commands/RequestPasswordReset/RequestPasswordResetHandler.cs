@@ -97,6 +97,8 @@ public sealed class RequestPasswordResetHandler
         var encodedEmail = Uri.EscapeDataString(account.Email);
         var resetLink = $"{_clientPortal.Value.BaseUrl}/client/reset-password?token={encodedToken}&email={encodedEmail}";
 
+        // No idempotency key: this runs inside the caller's request and is never replayed by a queue, and a
+        // repeated request is a deliberate new reset link that must be mailed again.
         await _bus.InvokeAsync(new SendEmailCommand(
             account.Email,
             account.Language,

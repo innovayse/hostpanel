@@ -22,6 +22,10 @@ namespace Innovayse.Hostpanel.Application.Billing.Common;
 /// plugin there is nothing to ask and the refund is unchanged.
 /// </para>
 /// <para>
+/// Each plugin is asked with its own client reference (<see cref="IPluginReferences"/>), so the context one plugin
+/// receives never names the client the way another plugin sees it.
+/// </para>
+/// <para>
 /// A cap of zero or less refuses the refund; a smaller positive cap reduces it and the plugin's reason is
 /// written to the refund's notes, so staff can see why less came back than was asked.
 /// </para>
@@ -37,6 +41,12 @@ public sealed class RefundAdviser
     /// <summary>Reads the external account a client is linked to.</summary>
     private readonly IClientExternalAccounts _accounts;
 
+    /// <summary>
+    /// Computes each asked plugin's own reference to the invoice's client, the same one an endpoint call of that
+    /// plugin for that client carries.
+    /// </summary>
+    private readonly IPluginReferences _references;
+
     /// <summary>The timings shared with the fulfilment dispatch: how long a plugin has to answer.</summary>
     private readonly IOptions<ScheduledJobsOptions> _options;
 
@@ -46,16 +56,19 @@ public sealed class RefundAdviser
     /// <summary>Initializes a new instance of the <see cref="RefundAdviser"/> class.</summary>
     /// <param name="plugins">Resolves the fulfilment plugins an admin has switched on.</param>
     /// <param name="accounts">Reads the external account a client is linked to.</param>
+    /// <param name="references">Computes each asked plugin's own reference to the invoice's client.</param>
     /// <param name="options">The timings shared with the fulfilment dispatch.</param>
     /// <param name="logger">Structured logger.</param>
     public RefundAdviser(
         IFulfilmentPluginResolver plugins,
         IClientExternalAccounts accounts,
+        IPluginReferences references,
         IOptions<ScheduledJobsOptions> options,
         ILogger<RefundAdviser> logger)
     {
         _plugins = plugins;
         _accounts = accounts;
+        _references = references;
         _options = options;
         _logger = logger;
     }
@@ -71,8 +84,6 @@ public sealed class RefundAdviser
     /// </returns>
     public async Task<Result<RefundCap>> AdviseAsync(Invoice invoice, decimal requested, string? notes, CancellationToken ct)
     {
-        ArgumentNullException.ThrowIfNull(invoice);
-
         var plugins = await _plugins.ResolveAllAsync(ct);
         if (plugins.Count == 0)
         {
@@ -80,13 +91,14 @@ public sealed class RefundAdviser
         }
 
         var account = await _accounts.FindAsync(invoice.ClientId, ct);
-        var context = new RefundAdviceContext(
-            invoice.Id, invoice.ClientId, account, FulfilmentContextBuilder.Lines(invoice), requested, invoice.Currency);
 
         var allowed = requested;
         var sentences = new List<string>();
         foreach (var active in plugins)
         {
+            // One context per plugin: each is told its own reference to the client, never another plugin's.
+            var context = FulfilmentContextBuilder.RefundAdvice(
+                invoice, _references.ForClient(active.PluginId, invoice.ClientId), account, requested);
             var advice = await AskAsync(active, context, invoice.Id, ct);
             if (advice is null)
             {

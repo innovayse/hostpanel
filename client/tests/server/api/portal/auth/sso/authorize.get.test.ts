@@ -62,6 +62,8 @@ describe('GET /api/portal/auth/sso/authorize', () => {
     const state = target.searchParams.get('state')
     const transaction = writtenTransaction(event, state)
     expect(transaction?.state).toBe(state)
+    expect(target.searchParams.get('nonce')).toMatch(/^[0-9a-f]{32}$/)
+    expect(transaction?.nonce).toBe(target.searchParams.get('nonce'))
     expect(target.searchParams.get('code_challenge')).toBe(createHash('sha256').update(transaction?.verifier ?? '').digest('base64url'))
     expect(event.written[transactionCookieName(state ?? '')]?.options).toMatchObject({ httpOnly: true, maxAge: SSO_FLOW_COOKIE_MAX_AGE })
     expect(Object.keys(event.written)).toHaveLength(1)
@@ -84,6 +86,12 @@ describe('GET /api/portal/auth/sso/authorize', () => {
     await route.default(interactive)
     await route.default(plain)
 
+    /**
+     * Opens the transaction a route sealed for the state in its redirect.
+     *
+     * @param event - The event the route handled.
+     * @returns The sealed transaction, or null when none can be found.
+     */
     const sealedBy = (event: ReturnType<typeof makeEvent>) =>
       writtenTransaction(event, new URL(event.redirectedTo ?? '').searchParams.get('state'))
     expect(new URL(silent.redirectedTo ?? '').searchParams.get('prompt')).toBe('none')

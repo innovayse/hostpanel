@@ -25,6 +25,9 @@ namespace Innovayse.Hostpanel.API.Controllers;
 /// Which account is never in the route or the body, and is not read from a claim here either:
 /// every use case below resolves the caller inside its own handler, so each action binds and
 /// dispatches exactly once.
+/// Every action behind the client portal policy may also answer 503 with <c>IDENTITY_PLUGIN_UNAVAILABLE</c> (and <c>Retry-After</c>)
+/// when the enabled identity plugin cannot say which account the caller acts for; the convention
+/// <c>IdentityPluginUnavailableConvention</c> declares it once in the generated document.
 /// </remarks>
 [Route("api/clients/me")]
 [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status429TooManyRequests)]

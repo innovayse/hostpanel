@@ -1,3 +1,5 @@
+using Innovayse.SDK.Plugins.Enums;
+
 namespace Innovayse.Hostpanel.Application.Billing.Common.Enums;
 
 /// <summary>

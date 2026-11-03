@@ -45,9 +45,12 @@ public enum MigrationSkipReason
     /// <summary>The client record has no first name and no email address to take one from.</summary>
     NameMissing = 13,
 
-    /// <summary>The record names a billing cycle this version cannot bill, such as quarterly or one-time.</summary>
+    /// <summary>The record names a billing cycle this version cannot bill, such as triennial or one-time (monthly, quarterly, semi-annual, annual and biennial are billed).</summary>
     BillingCycleUnsupported = 14,
 
     /// <summary>Every line of the order is a domain or a service addon, which has no catalogue product here, so the order has nothing to import.</summary>
     NoProductLines = 15,
+
+    /// <summary>The record carries a currency that is not a three-letter ISO 4217 code, so its amounts cannot be placed in any currency.</summary>
+    CurrencyInvalid = 16,
 }

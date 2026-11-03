@@ -10,7 +10,7 @@
  */
 
 import { FAMILY_BULLET_LIMIT } from '~/constants/planFeatureLimit'
-import { PRICING_CYCLES } from '~/constants/pricingCycle'
+import { PRICING_CYCLES, PRICING_CYCLE_MONTHS } from '~/constants/pricingCycle'
 import { PricingCycle } from '~/types/pricingcycle'
 import type { PortalProduct } from '~/types/portalproduct'
 import type { PortalProductGroup } from '~/types/portalproductgroup'
@@ -71,10 +71,12 @@ export const firstOfferedPrice = (pricing: PortalProductPricing | null | undefin
  * The cheapest per-month price a product offers, for ordering; products with no price sort last.
  *
  * @param product The product.
- * @returns The monthly price, else the annual price per month, else infinity.
+ * @returns The price per month of the first cycle the product is priced for (shortest first), else infinity.
  */
-export const orderingPrice = (product: PortalProduct): number =>
-  product.pricing?.monthly ?? (product.pricing?.annual != null ? product.pricing.annual / 12 : Number.POSITIVE_INFINITY)
+export const orderingPrice = (product: PortalProduct): number => {
+  const offered = firstOfferedPrice(product.pricing)
+  return offered ? offered.amount / PRICING_CYCLE_MONTHS[offered.cycle] : Number.POSITIVE_INFINITY
+}
 
 /**
  * Orders plans for display. The API returns products in no meaningful order (the database's), so

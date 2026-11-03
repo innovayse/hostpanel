@@ -68,12 +68,10 @@ public sealed class GatewayPaymentCreditedAdminHandlerTests(IntegrationTestFacto
     {
         var sender = new FakeEmailSender();
         var host = EventHandlerTestHost.WithFakeRelay(factory, sender);
-        using var scope = host.Services.CreateScope();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
-        await bus.InvokeAsync(
-            new GatewayPaymentCreditedEvent(1, 1, "bank-gateway", "ref-none", 1m, "USD", Credited: true) { OccurredAt = DateTimeOffset.UtcNow },
-            CancellationToken.None);
+        await PublishAndWaitAsync(
+            host,
+            new GatewayPaymentCreditedEvent(1, 1, "bank-gateway", "ref-none", 1m, "USD", Credited: true) { OccurredAt = DateTimeOffset.UtcNow });
 
         sender.Sent.Should().BeEmpty();
     }

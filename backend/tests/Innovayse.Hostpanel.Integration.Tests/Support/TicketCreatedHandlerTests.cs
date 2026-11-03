@@ -3,7 +3,6 @@ using Innovayse.Hostpanel.Domain.Support;
 using Innovayse.Hostpanel.Domain.Support.Enums;
 using Innovayse.Hostpanel.Domain.Support.Events;
 using Microsoft.Extensions.DependencyInjection;
-using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Support;
 
@@ -24,7 +23,6 @@ public sealed class TicketCreatedHandlerTests(IntegrationTestFactory factory) : 
         var host = EventHandlerTestHost.WithFakeRelay(factory, emailSender);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var departmentEmail = $"support-{Guid.NewGuid():N}@example.com";
         var department = Department.Create($"Support-{Guid.NewGuid():N}", departmentEmail);
@@ -36,7 +34,7 @@ public sealed class TicketCreatedHandlerTests(IntegrationTestFactory factory) : 
         context.Tickets.Add(ticket);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        await bus.InvokeAsync(new TicketCreatedEvent(ticket.Id, clientId, department.Id) { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new TicketCreatedEvent(ticket.Id, clientId, department.Id) { OccurredAt = DateTimeOffset.UtcNow });
 
         var message = Assert.Single(emailSender.Sent);
         Assert.Equal(departmentEmail, message.To);
@@ -50,9 +48,37 @@ public sealed class TicketCreatedHandlerTests(IntegrationTestFactory factory) : 
         var emailSender = new FakeEmailSender();
         var host = EventHandlerTestHost.WithFakeRelay(factory, emailSender);
         using var scope = host.Services.CreateScope();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
-        await bus.InvokeAsync(new TicketCreatedEvent(1, 1, 999_999_999) { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new TicketCreatedEvent(1, 1, 999_999_999) { OccurredAt = DateTimeOffset.UtcNow });
+
+        Assert.Empty(emailSender.Sent);
+    }
+
+    /// <summary>
+    /// A late copy of the event naming a ticket that now belongs to another client (the demo reset reused the
+    /// id) does not mail the department about it.
+    /// </summary>
+    [Fact]
+    public async Task TicketCreated_ForATicketOfAnotherClient_DoesNotSendAsync()
+    {
+        var emailSender = new FakeEmailSender();
+        var host = EventHandlerTestHost.WithFakeRelay(factory, emailSender);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+
+        var department = Department.Create($"Support-{Guid.NewGuid():N}", $"support-{Guid.NewGuid():N}@example.com");
+        context.Departments.Add(department);
+        await context.SaveChangesAsync(CancellationToken.None);
+        var ownerId = await DomainsTestSeeds.SeedClientAsync(context);
+        var otherClientId = await DomainsTestSeeds.SeedClientAsync(context);
+        var ticket = Ticket.Create(ownerId, "Help", "Something's broken", department.Id, TicketPriority.Medium, DateTimeOffset.UtcNow);
+        using (scope.ServiceProvider.GetRequiredService<IDomainEventGate>().Suppress())
+        {
+            context.Tickets.Add(ticket);
+            await context.SaveChangesAsync(CancellationToken.None);
+        }
+
+        await scope.ServiceProvider.PublishAndWaitAsync(new TicketCreatedEvent(ticket.Id, otherClientId, department.Id) { OccurredAt = DateTimeOffset.UtcNow });
 
         Assert.Empty(emailSender.Sent);
     }

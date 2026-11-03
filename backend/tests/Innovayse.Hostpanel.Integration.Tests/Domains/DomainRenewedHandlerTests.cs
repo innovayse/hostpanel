@@ -8,7 +8,6 @@ using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 
@@ -32,7 +31,6 @@ public sealed class DomainRenewedHandlerTests(IntegrationTestFactory factory) : 
         var host = EventHandlerTestHost.WithFakeRelay(factory, emailSender);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var (client, email) = await EventHandlerTestHost.SeedIdentityClientAsync(scope.ServiceProvider, context, "domain-event");
         var productId = await DomainsTestSeeds.SeedHostingProductAsync(context);
@@ -61,7 +59,7 @@ public sealed class DomainRenewedHandlerTests(IntegrationTestFactory factory) : 
         context.Domains.Add(domain);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        await bus.InvokeAsync(new DomainRenewedEvent(domain.Id, client.Id, DateTimeOffset.UtcNow.AddYears(2)) { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainRenewedEvent(domain.Id, client.Id, DateTimeOffset.UtcNow.AddYears(2)) { OccurredAt = DateTimeOffset.UtcNow });
 
         var message = Assert.Single(emailSender.Sent);
         Assert.Equal(email, message.To);
@@ -85,7 +83,6 @@ public sealed class DomainRenewedHandlerTests(IntegrationTestFactory factory) : 
         var host = EventHandlerTestHost.WithFakeRelay(factory, emailSender);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var (client, email) = await EventHandlerTestHost.SeedIdentityClientAsync(scope.ServiceProvider, context, "domain-event-manual");
         var productId = await DomainsTestSeeds.SeedHostingProductAsync(context);
@@ -114,7 +111,7 @@ public sealed class DomainRenewedHandlerTests(IntegrationTestFactory factory) : 
         context.Domains.Add(domain);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        await bus.InvokeAsync(new DomainRenewedEvent(domain.Id, client.Id, DateTimeOffset.UtcNow.AddYears(2)) { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainRenewedEvent(domain.Id, client.Id, DateTimeOffset.UtcNow.AddYears(2)) { OccurredAt = DateTimeOffset.UtcNow });
 
         var message = Assert.Single(emailSender.Sent);
         Assert.Equal(email, message.To);
@@ -140,7 +137,6 @@ public sealed class DomainRenewedHandlerTests(IntegrationTestFactory factory) : 
         var host = EventHandlerTestHost.WithFakeRelay(factory, emailSender);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var (client, _) = await EventHandlerTestHost.SeedIdentityClientAsync(scope.ServiceProvider, context, "domain-event-legacy");
         var productId = await DomainsTestSeeds.SeedHostingProductAsync(context);
@@ -175,10 +171,46 @@ public sealed class DomainRenewedHandlerTests(IntegrationTestFactory factory) : 
         context.Domains.Add(domain);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        await bus.InvokeAsync(new DomainRenewedEvent(domain.Id, client.Id, DateTimeOffset.UtcNow.AddYears(2)) { OccurredAt = DateTimeOffset.UtcNow }, CancellationToken.None);
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainRenewedEvent(domain.Id, client.Id, DateTimeOffset.UtcNow.AddYears(2)) { OccurredAt = DateTimeOffset.UtcNow });
 
         var reloaded = await context.ClientServices.AsNoTracking()
             .FirstAsync(s => s.Id == service.Id, CancellationToken.None);
         Assert.Equal(ServiceStatus.Active, reloaded.Status);
+    }
+
+    /// <summary>
+    /// A late copy of the event naming a domain that now belongs to another client (the demo reset reused
+    /// the id) neither lifts the linked service's expiry suspension nor mails anyone.
+    /// </summary>
+    [Fact]
+    public async Task DomainRenewed_ForADomainOfAnotherClient_DoesNothingAsync()
+    {
+        var emailSender = new FakeEmailSender();
+        var host = EventHandlerTestHost.WithFakeRelay(factory, emailSender);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+
+        var (client, _) = await EventHandlerTestHost.SeedIdentityClientAsync(scope.ServiceProvider, context, "domain-event-stale");
+        var (stranger, _) = await EventHandlerTestHost.SeedIdentityClientAsync(scope.ServiceProvider, context, "domain-event-stranger");
+        var productId = await DomainsTestSeeds.SeedHostingProductAsync(context);
+        var service = ClientService.Create(stranger.Id, productId, BillingCycle.Monthly, DateTimeOffset.UtcNow);
+        var domain = RegisteredDomain.Register(
+            stranger.Id, $"stale-{Guid.NewGuid():N}.test", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+        using (scope.ServiceProvider.GetRequiredService<IDomainEventGate>().Suppress())
+        {
+            await ServicesTestSeeds.AddActivatedAsync(context, service, "provisioning-ref", DateTimeOffset.UtcNow);
+            service.Suspend(DateTimeOffset.UtcNow, source: SuspensionSource.DomainExpired);
+            await context.SaveChangesAsync(CancellationToken.None);
+            domain.LinkService(service.Id);
+            context.Domains.Add(domain);
+            await context.SaveChangesAsync(CancellationToken.None);
+        }
+
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainRenewedEvent(domain.Id, client.Id, DateTimeOffset.UtcNow.AddYears(2)) { OccurredAt = DateTimeOffset.UtcNow });
+
+        Assert.Empty(emailSender.Sent);
+        var reloaded = await context.ClientServices.AsNoTracking()
+            .FirstAsync(s => s.Id == service.Id, CancellationToken.None);
+        Assert.Equal(ServiceStatus.Suspended, reloaded.Status);
     }
 }

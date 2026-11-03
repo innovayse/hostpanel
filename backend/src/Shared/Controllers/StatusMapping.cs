@@ -46,12 +46,18 @@ public static class StatusMapping
             "ORDER_NUMBER_RANGE_EXHAUSTED" => new(503, "Service Unavailable"),
             // Exact rows: the stored service or product is not ready to provision, a state conflict
             // rather than a malformed request, and neither name carries a CONFLICT token.
-            "SERVICE_HOSTING_DETAILS_MISSING" or "PRODUCT_PACKAGE_MISSING" => new(409, "Conflict"),
+            "SERVICE_HOSTING_DETAILS_MISSING" or "PRODUCT_PACKAGE_MISSING" or "PRODUCT_SERVER_GROUP_REQUIRED" => new(409, "Conflict"),
             // Exact row: only a terminated service has a termination date to correct, so the stored
             // status stands in the way (a state conflict), and the name carries no CONFLICT token.
             "SERVICE_NOT_TERMINATED" => new(409, "Conflict"),
             // A plugin shipped with the build: the request is well-formed, the target's state refuses it.
             "PLUGIN_BUILT_IN" => new(409, "Conflict"),
+            // Exact row: a plugin's own code failed the call (a gateway between us and code we do not own, 502); the name
+            // carries no token.
+            "PLUGIN_FAILED" => new(502, "Bad Gateway"),
+            // Exact row: a plugin's store for this account is full. A quota refusal answers 402 like QUOTA_EXCEEDED
+            // (controllers.md), and the code needs its own row because that one matches only the exact code.
+            "PLUGIN_STORE_QUOTA_EXCEEDED" => new(402, "Payment Required"),
             // Exact row: the user is not on the caller's account, which reads as absent (404), not as a
             // malformed request; the name carries no NOT_FOUND token for the generic arm to catch.
             "CLIENT_USER_NOT_LINKED" => new(404, "Not Found"),
@@ -125,6 +131,10 @@ public static class StatusMapping
             // wait, the server's capacity rather than the request (503 with Retry-After), and the name
             // carries no token for it.
             "INVOICE_PDF_RENDER_BUSY" => new(503, "Service Unavailable"),
+            // Exact row: the identity plugin that decides which client a caller acts for failed or timed
+            // out, or two are enabled; a dependency that did not answer (503 with Retry-After), and the
+            // name carries no token for it.
+            "IDENTITY_PLUGIN_UNAVAILABLE" => new(503, "Service Unavailable"),
             var code when code.Contains("UNAUTHORIZED", StringComparison.Ordinal) => new(401, "Unauthorized"),
             var code when code.Contains("FORBIDDEN", StringComparison.Ordinal) => new(403, "Forbidden"),
             var code when code.Contains("ACCESS_DENIED", StringComparison.Ordinal) => new(403, "Forbidden"),

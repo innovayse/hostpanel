@@ -5,6 +5,7 @@ using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -130,6 +131,7 @@ public sealed class BulkInvoiceActionTests(IntegrationTestFactory factory) : ICl
             rows[0].AmountIn.Should().Be(invoice.Total);
             rows[0].Currency.Should().Be("AMD");
             rows[0].PaymentMethod.Should().Be(PaymentMethodNames.Manual);
+            rows[0].Source.Should().Be(TransactionSource.Manual);
         }
     }
 

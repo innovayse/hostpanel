@@ -15,9 +15,9 @@ using Innovayse.Hostpanel.Infrastructure.Demo;
 using Innovayse.Hostpanel.Infrastructure.Email;
 using Innovayse.Hostpanel.Infrastructure.Email.Settings;
 using Innovayse.Hostpanel.Infrastructure.ImageProcessing;
-using Innovayse.Hostpanel.Infrastructure.Integrations.GitHub;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Settings;
+using Innovayse.Hostpanel.Infrastructure.Integrations.GitHub;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Migration;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Migration.Settings;
 using Innovayse.Hostpanel.Infrastructure.Integrations.NameAm;
@@ -30,11 +30,12 @@ using Innovayse.Hostpanel.Infrastructure.Integrations.Stripe.Settings;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Telegram;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Telegram.Settings;
 using Innovayse.Hostpanel.Infrastructure.Monitoring;
-using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Pdf;
 using Innovayse.Hostpanel.Infrastructure.Pdf.Settings;
+using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Persistence.Settings;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
+using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
 using Innovayse.Hostpanel.Infrastructure.Provisioning;
 using Innovayse.Hostpanel.Infrastructure.Provisioning.Settings;
@@ -52,13 +53,14 @@ using Innovayse.Hostpanel.Infrastructure.Time;
 using Innovayse.Hostpanel.Shared.Settings;
 using Innovayse.Providers.CWP;
 using Innovayse.Providers.CWP7;
-using Innovayse.SDK.Plugins;
+using Innovayse.SDK.Plugins.HostingPanel;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;
@@ -84,11 +86,13 @@ public static class DependencyInjection
     /// <param name="services">The service collection to configure.</param>
     /// <param name="configuration">Application configuration.</param>
     /// <param name="loggerFactory">Logger factory used during plugin discovery at startup.</param>
+    /// <param name="environment">The host environment, which decides whether plugin signatures are enforced.</param>
     /// <returns>The same <paramref name="services"/> for chaining.</returns>
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
         IConfiguration configuration,
-        ILoggerFactory loggerFactory)
+        ILoggerFactory loggerFactory,
+        IHostEnvironment environment)
     {
         // Encryption.
         //
@@ -140,11 +144,7 @@ public static class DependencyInjection
         // HttpResilienceOptions, and an operator only names one to move it. It is validated on
         // start rather than at first use, because the first use of the cPanel profile is a
         // customer's provisioning run.
-        services.AddOptions<HttpResilienceOptions>()
-            .Bind(configuration.GetSection(HttpResilienceOptions.SectionName))
-            .ValidateOnStart();
-        services.AddSingleton<
-            IValidateOptions<HttpResilienceOptions>, HttpResilienceOptionsValidator>();
+        services.AddHttpResilienceOptions(configuration);
 
         // EF Core
         // Domain events are delivered by an interceptor on the context, per scope: the gate lets a
@@ -432,6 +432,8 @@ public static class DependencyInjection
 
         // The same rule for client services. The client-facing service handlers call it themselves.
         services.AddScoped<IServiceOwnership, ServiceOwnership>();
+        services.AddScoped<IPluginSlotContextReader, PluginSlotContextReader>();
+        services.AddScoped<IPluginHostFactsReader, PluginHostFactsReader>();
 
         // What the signed-in user may do on a client account. The portal's permission filter decides
         // with it and the account endpoint reports it; both read it per request and neither trusts
@@ -570,6 +572,7 @@ public static class DependencyInjection
             .AddInecobankResilience();
 
         services.AddScoped<IPaymentPluginResolver, PaymentPluginResolver>();
+        services.AddScoped<IStoredCredentialPluginResolver, StoredCredentialPluginResolver>();
 
         // The chat notifier, the operator's channel for public contact-form enquiries.
         // Optional in the same way the card gateway and the default registrar are: an unset section is a deployment that
@@ -649,6 +652,7 @@ public static class DependencyInjection
             .ValidateOnStart();
         services.AddOptions<NotificationOptions>()
             .Bind(configuration.GetSection(NotificationOptions.SectionName))
+            .ValidateDataAnnotations()
             .ValidateOnStart();
         services.AddScoped<IEmailSender, SmtpEmailSender>();
         services.AddScoped<TemplateRenderer>();
@@ -861,13 +865,48 @@ public static class DependencyInjection
             .ValidateOnStart();
         services.AddScoped<IPluginPackageStore, PluginPackageStore>();
         var pluginOptions = configuration.GetSection(PluginOptions.SectionName).Get<PluginOptions>() ?? new PluginOptions();
-        PluginLoader.DiscoverAndRegister(services, [PluginOptions.BuiltInRoot, pluginOptions.InstallRoot], loggerFactory);
+
+        // Uploaded plugins must prove who made them: a signature by one of the trusted keys (the maintainers' shipped
+        // ones plus the operator's own), unless the host is Development or the admin allows unsigned plugins. Plugins
+        // shipped inside the image are the host's own files and are not checked; see PluginSignatureVerifier. The
+        // setting lives in the database, which the container does not exist to read yet, so the loader is handed it here.
+        services.AddSingleton<IValidateOptions<PluginSigningOptions>, PluginSigningOptionsValidator>();
+        services.AddOptions<PluginSigningOptions>()
+            .Bind(configuration.GetSection(PluginSigningOptions.SectionName))
+            .ValidateOnStart();
+        var signingOptions = configuration.GetSection(PluginSigningOptions.SectionName).Get<PluginSigningOptions>() ?? new PluginSigningOptions();
+        var signatureVerifier = PluginSignatureVerifier.Create(signingOptions, environment);
+        services.AddSingleton(signatureVerifier);
+        var allowUnsigned = signatureVerifier.Enforced
+            && AllowUnsignedSettingReader.Read(configuration.GetConnectionString("DefaultConnection"), loggerFactory.CreateLogger(nameof(PluginLoader)));
+        PluginLoader.DiscoverAndRegister(
+            services,
+            [new PluginRoot(PluginOptions.BuiltInRoot, PluginOrigin.BuiltIn), new PluginRoot(pluginOptions.InstallRoot, PluginOrigin.Uploaded)],
+            signatureVerifier,
+            allowUnsigned,
+            pluginOptions.MaxViewBytes,
+            loggerFactory);
 
         // Every plugin is turned into an instance by the one activator (its settings gate and configuration),
         // whichever resolver or runner asks for it. Scoped: it reads the settings through the request's context.
         services.AddScoped<PluginActivator>();
         services.AddScoped<IFulfilmentPluginResolver, FulfilmentPluginResolver>();
         services.AddScoped<IIdentityPluginResolver, IdentityPluginResolver>();
+
+        // The door to the plugin API routes and the panels' plugin pages: the app plugin of a route or page, the opaque
+        // references it sees (a keyed hash under a key derived from the encryption key, so nothing is stored) and the
+        // call-bound services: the host facts of the call's client and the plugin's own store. Scoped, so a call can use
+        // them for as long as its request runs.
+        services.AddScoped<IPluginEndpointResolver, PluginEndpointResolver>();
+        services.AddScoped<IPluginUiSource, PluginUiSource>();
+
+        // The panels' plugin availability, computed for every plugin in one pass and remembered for a few seconds, so an
+        // index request is not one settings read per plugin and a page lookup costs the same for any id. Singletons: one
+        // remembered set per process, dropped through the invalidator by every use case that writes plugin settings.
+        services.AddSingleton<PluginAvailabilityCache>();
+        services.AddSingleton<IPluginAvailabilityInvalidator, PluginAvailabilityInvalidator>();
+        services.AddSingleton<IPluginReferences>(new PluginReferences(encryptionKey));
+        services.AddScoped<IPluginCallServices, HostPluginCallServices>();
 
         // Hosted plugins start once the host is up and stop as it begins to stop, each failure kept to its plugin.
         // Registered in every environment: with no hosted plugin loaded it opens nothing and reads nothing.
@@ -879,6 +918,23 @@ public static class DependencyInjection
         // on the configured relay so a demo can show real mail in a catcher.
         var demo = configuration.GetSection(DemoOptions.SectionName).Get<DemoOptions>() ?? new DemoOptions();
         services.AddDemoMode(demo, ownsItsUsers);
+
+        return services;
+    }
+
+    /// <summary>
+    /// Binds the <c>HttpResilience</c> section and validates it on start, so a bad profile stops the
+    /// host from starting instead of surfacing on the first call to the affected client.
+    /// </summary>
+    /// <param name="services">The service collection to add to.</param>
+    /// <param name="configuration">Application configuration holding the section.</param>
+    /// <returns>The same <paramref name="services"/> for chaining.</returns>
+    internal static IServiceCollection AddHttpResilienceOptions(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<HttpResilienceOptions>()
+            .Bind(configuration.GetSection(HttpResilienceOptions.SectionName))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<HttpResilienceOptions>, HttpResilienceOptionsValidator>();
 
         return services;
     }

@@ -57,7 +57,7 @@ public sealed class SetupServiceTests(IntegrationTestFactory factory) : IClassFi
         await context.SaveChangesAsync(CancellationToken.None);
 
         var selector = scope.ServiceProvider.GetRequiredService<IServerSelector>();
-        (await selector.SelectAsync(ServerModule.Cwp7, CancellationToken.None)).Should().BeNull(
+        (await selector.SelectAsync([ServerModule.Cwp7], CancellationToken.None)).Should().BeNull(
             "the test host registers no server, so this refusal is genuine and not a stale fixture");
 
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();

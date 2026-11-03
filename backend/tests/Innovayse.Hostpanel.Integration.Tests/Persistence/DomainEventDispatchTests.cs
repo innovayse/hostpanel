@@ -12,10 +12,13 @@ namespace Innovayse.Hostpanel.Integration.Tests.Persistence;
 
 /// <summary>
 /// <c>DomainEventDispatchInterceptor</c> against Postgres and the real Wolverine bus: an event an
-/// entity raises reaches its handler after the save commits, exactly once, with the entity's real id.
+/// entity raises is written to Wolverine's outbox in the save's own transaction (one the interceptor
+/// opens when the caller has none), so it reaches its handler once that transaction commits, exactly
+/// once, with the entity's real id; a rolled-back transaction takes the event with it, and a suppressed
+/// gate writes nothing.
 /// </summary>
 /// <remarks>
-/// Delivery is asynchronous (Wolverine's local queues), so each test waits for the effect with a
+/// Delivery is asynchronous (Wolverine's durable local queues), so each test waits for the effect with a
 /// bounded poll on <see cref="FakeEmailSender"/> (the one port this platform does not own)
 /// rather than a fixed delay. Nothing else is faked: the entities, the context, the interceptor, the
 /// bus, the handlers and the template rendering are the production ones.
@@ -139,8 +142,9 @@ public sealed class DomainEventDispatchTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>
-    /// Events raised by a save inside an explicit transaction that rolls back are never published;
-    /// a later committed save on its own proves the pipeline was running.
+    /// Events raised by a save inside an explicit transaction that rolls back are never handled: their
+    /// outbox rows were written in that transaction and roll back with the data. A later committed save
+    /// on its own proves the pipeline was running.
     /// </summary>
     [Fact]
     public async Task SavingInARolledBackTransaction_PublishesNothingAsync()
@@ -171,8 +175,8 @@ public sealed class DomainEventDispatchTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>
-    /// Events raised by a save inside an explicit transaction are held until it commits: nothing goes
-    /// out between the save and the commit, and the commit delivers them once.
+    /// Events raised by a save inside an explicit transaction are held in the outbox until it commits:
+    /// nothing is handled between the save and the commit, and the commit delivers them once.
     /// </summary>
     [Fact]
     public async Task SavingInACommittedTransaction_PublishesOnCommitAsync()

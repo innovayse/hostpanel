@@ -8,18 +8,22 @@ import ClientSummaryView from '@/views/ClientSummaryView.vue'
 import { useClientsStore } from '@/stores/clients'
 import { mountClientView } from '../helpers/clientViews'
 import { callOf, json, problem } from '../helpers/fetch'
+import { quoteRowFixture } from '../helpers/billingFixtures'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
+import { CurrencyCode } from '@/types/currency'
 import type { ClientSummaryData } from '@/types/client'
+import type { InvoiceStatusCount } from '@/types/invoice'
 import type { ClientExternalAccount } from '@/types/clientexternalaccount'
 
 /**
  * Client 7 as the detail endpoint returns it.
  *
  * @param externalAccount - The link the client holds, null for none.
+ * @param currency - The client's billing currency, null for none.
  * @returns The response.
  */
-const client = (externalAccount: ClientExternalAccount | null = null) =>
+const client = (externalAccount: ClientExternalAccount | null = null, currency: string | null = null) =>
   json({
     externalAccount,
     id: 7,
@@ -30,7 +34,7 @@ const client = (externalAccount: ClientExternalAccount | null = null) =>
     createdAt: '2026-01-01T00:00:00Z',
     contacts: [],
     address: {},
-    preferences: { adminNotes: '' },
+    preferences: { adminNotes: '', currency },
     notifications: { general: true, invoice: true, support: true, product: true, domain: true, affiliate: true },
     settings: {
       overdueNotices: true,
@@ -44,21 +48,26 @@ const client = (externalAccount: ClientExternalAccount | null = null) =>
   })
 
 /** No invoices of a status: the count and the sum. */
-const none = { count: 0, total: 0 }
+const none: InvoiceStatusCount = { count: 0, totals: [] }
 
 /** The summary figures of client 7 as `GET /api/clients/7/summary` returns them. */
 const summary: ClientSummaryData = {
   invoices: {
     draft: none,
     unpaid: none,
-    paid: { count: 2, total: 40 },
+    paid: { count: 2, totals: [{ amount: 40, currency: 'USD' }] },
     overdue: none,
     cancelled: none,
     refunded: none,
-    partiallyRefunded: { count: 1, total: 15 },
+    partiallyRefunded: { count: 1, totals: [{ amount: 15, currency: 'USD' }] },
   },
-  transactions: { grossRevenue: 40, clientExpenses: 0, totalFees: 0, netIncome: 40 },
-  creditBalance: 0,
+  transactions: {
+    grossRevenue: [{ amount: 40, currency: 'USD' }],
+    clientExpenses: [],
+    totalFees: [],
+    netIncome: [{ amount: 40, currency: 'USD' }],
+  },
+  creditBalance: { amount: 0, currency: 'USD' },
   counts: {
     activeServicesCount: 1,
     totalServicesCount: 1,
@@ -268,5 +277,81 @@ describe('ClientSummaryView', () => {
     expect((wrapper.get('[data-testid="client-external-account-provider"]').element as HTMLInputElement).value).toBe('')
     expect(wrapper.find('[data-testid="client-external-account-clear"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="client-external-account-status"]').text()).toBe('External account link cleared.')
+  })
+
+  it('prints each figure in the currency the summary names for it, never in an assumed one', async () => {
+    stubRoutes({
+      ...summaryRoutes(
+        () => new Response(null, { status: 204 }),
+        undefined,
+        () => client(null, CurrencyCode.Amd),
+      ),
+      'GET /api/clients/7/summary': () => json({ ...summary, creditBalance: { amount: 5000, currency: 'AMD' } }),
+    })
+    const wrapper = await mountSummary()
+
+    const billing = wrapper.get('[data-testid="client-summary-billing"]').text()
+    expect(billing).toContain('5000.00 AMD')
+    expect(billing).toContain('40.00 USD')
+    expect(billing).not.toContain('40.00 AMD')
+    expect(billing).not.toContain('$')
+  })
+
+  it('prints one amount per currency when the client has records in several', async () => {
+    const mixed: ClientSummaryData = {
+      ...summary,
+      invoices: {
+        ...summary.invoices,
+        paid: {
+          count: 3,
+          totals: [
+            { amount: 20000, currency: 'AMD' },
+            { amount: 50, currency: 'USD' },
+          ],
+        },
+      },
+      transactions: {
+        grossRevenue: [
+          { amount: 20000, currency: 'AMD' },
+          { amount: 50, currency: 'USD' },
+        ],
+        clientExpenses: [],
+        totalFees: [],
+        netIncome: [
+          { amount: 19000, currency: 'AMD' },
+          { amount: 50, currency: 'USD' },
+        ],
+      },
+    }
+    stubRoutes({
+      ...summaryRoutes(() => new Response(null, { status: 204 }), undefined, () => client(null, CurrencyCode.Amd)),
+      'GET /api/clients/7/summary': () => json(mixed),
+    })
+    const wrapper = await mountSummary()
+
+    const billing = wrapper.get('[data-testid="client-summary-billing"]').text()
+    expect(billing).toContain('20000.00 AMD')
+    expect(billing).toContain('50.00 USD')
+    expect(billing).toContain('19000.00 AMD')
+    expect(billing).not.toContain('20050')
+  })
+
+  it('prints a zero in the billing currency for a figure without records', async () => {
+    stubRoutes(summaryRoutes(() => new Response(null, { status: 204 }), undefined, () => client(null, CurrencyCode.Amd)))
+    const wrapper = await mountSummary()
+
+    expect(wrapper.get('[data-testid="client-summary-billing"]').text()).toMatch(/Client Expenses\s*0\.00 AMD/)
+  })
+
+  it('prints a quote total in the currency of the quote', async () => {
+    stubRoutes({
+      'GET /api/billing/quotes/client/7': () =>
+        json({ items: [quoteRowFixture({ total: 24000, currency: CurrencyCode.Amd })], pageNumber: 1, pageSize: 5, totalCount: 1, totalPages: 1 }),
+      ...summaryRoutes(() => new Response(null, { status: 204 })),
+    })
+    const wrapper = await mountSummary()
+
+    expect(wrapper.text()).toContain('24000.00 AMD')
+    expect(wrapper.text()).not.toContain('$24000.00')
   })
 })

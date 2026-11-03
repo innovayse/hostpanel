@@ -20,6 +20,7 @@
     <PackageReference Include="DnsClient" />
     <PackageReference Include="SSH.NET" />
     <PackageReference Include="FluentValidation" />
+    <PackageReference Include="BouncyCastle.Cryptography" />
     <PackageReference Include="MailKit" />
     <PackageReference Include="Mapster" />
     <!-- Auth: the Data Protection key ring is persisted through AppDbContext; see DependencyInjection.cs. -->
@@ -66,6 +67,8 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
     <PackageReference Include="WolverineFx" />
     <PackageReference Include="WolverineFx.Postgresql" />
+    <!-- Persistence/DomainEventDispatchInterceptor enrolls the context in IDbContextOutbox. -->
+    <PackageReference Include="WolverineFx.EntityFrameworkCore" />
   </ItemGroup>
   <ItemGroup>
     <!-- Invoice PDF fonts, read by Pdf/PdfFonts.cs. The production image has no system fonts. -->

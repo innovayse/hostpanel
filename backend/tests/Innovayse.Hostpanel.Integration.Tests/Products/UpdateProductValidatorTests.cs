@@ -24,7 +24,7 @@ public sealed class UpdateProductValidatorTests
     /// <returns>The command.</returns>
     private static UpdateProductCommand Command(string? sku = null, string? metadata = null, int? gracePeriodDays = null) => new(
         Id: 1, Name: "Licence", Description: null, Website: null, Slug: null, PackageName: null,
-        Prices: [new ProductPriceDto("USD", 9m, null)], ServerGroupId: null,
+        Prices: [new ProductPriceDto("USD", 9m, null, null, null, null)], ServerGroupId: null,
         Sku: sku, Metadata: metadata, GracePeriodDays: gracePeriodDays);
 
     /// <summary>A SKU, a metadata object and an in-range grace period pass.</summary>

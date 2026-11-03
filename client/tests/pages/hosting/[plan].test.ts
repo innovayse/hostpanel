@@ -44,6 +44,8 @@ const plans: PortalProduct[] = [
   { id: 3, groupId: 1, name: 'Free Trial', description: 'Try it', pricing: { monthly: 0, annual: 0 } },
   { id: 5, groupId: 1, name: 'Freelancer', description: 'For freelancers', pricing: { monthly: 9, annual: 90 } },
   { id: 4, groupId: 1, name: 'Custom', description: 'Ask us', pricing: { monthly: null, annual: null } },
+  { id: 6, groupId: 1, name: 'Quarterly Only', description: 'Billed every quarter', pricing: { monthly: null, annual: null, quarterly: 14 } },
+  { id: 7, groupId: 1, name: 'Every Cycle', description: 'All cycles', pricing: { monthly: 5, annual: 50, quarterly: 14, semiAnnual: 27, biennial: 90 } },
 ]
 
 /** The `useHead` stand-in, so a test reads the links the page publishes. */
@@ -101,12 +103,52 @@ describe('hosting plan page', () => {
     expect(wrapper.find('[data-testid="hosting-plan-cycle-annual"]').text()).toContain('50.00')
   })
 
+  it('offers a plan only the cycles it is priced for, never one an older API did not send', async () => {
+    const wrapper = await mountPlan()
+
+    expect(wrapper.find('[data-testid="hosting-plan-cycle-quarterly"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="hosting-plan-cycle-semiAnnual"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="hosting-plan-cycle-biennial"]').exists()).toBe(false)
+  })
+
+  it('offers every cycle a plan is priced for, each with its own price', async () => {
+    const wrapper = await mountPlan('every-cycle')
+
+    expect(wrapper.find('[data-testid="hosting-plan-cycle-monthly"]').text()).toContain('5.00')
+    expect(wrapper.find('[data-testid="hosting-plan-cycle-quarterly"]').text()).toContain('14.00')
+    expect(wrapper.find('[data-testid="hosting-plan-cycle-semiAnnual"]').text()).toContain('27.00')
+    expect(wrapper.find('[data-testid="hosting-plan-cycle-annual"]').text()).toContain('50.00')
+    expect(wrapper.find('[data-testid="hosting-plan-cycle-biennial"]').text()).toContain('90.00')
+  })
+
+  it('adds a plan to the cart on a newer cycle with that cycle, price and label', async () => {
+    const wrapper = await mountPlan('every-cycle')
+    await wrapper.find('[data-testid="hosting-plan-cycle-biennial"]').trigger('click')
+
+    expect(wrapper.find('[data-testid="hosting-plan-price"]').text()).toContain('90.00')
+    expect(wrapper.find('[data-testid="hosting-plan-page"]').text()).toContain('products.pricing.period.biennially')
+    await wrapper.find('[data-testid="hosting-plan-order"]').trigger('click')
+
+    expect(useCartStore().items[0]).toMatchObject({ pid: 7, billingcycle: 'biennial', amount: 90, currency: 'USD', cycleLabel: 'hosting.cycles.biennially' })
+  })
+
+  it('starts a plan with no monthly price on the first cycle it is priced for and can order it', async () => {
+    const wrapper = await mountPlan('quarterly-only')
+
+    expect(wrapper.find('[data-testid="hosting-plan-price"]').text()).toContain('14.00')
+    await wrapper.find('[data-testid="hosting-plan-order"]').trigger('click')
+
+    expect(useCartStore().items[0]).toMatchObject({ pid: 6, billingcycle: 'quarterly', amount: 14, cycleLabel: 'hosting.cycles.quarterly' })
+  })
+
   it('switches the headline price to the annual cycle', async () => {
     const wrapper = await mountPlan()
+    expect(wrapper.find('[data-testid="hosting-plan-page"]').text()).toContain('products.pricing.period.monthly')
 
     await wrapper.find('[data-testid="hosting-plan-cycle-annual"]').trigger('click')
 
     expect(wrapper.find('[data-testid="hosting-plan-price"]').text()).toContain('50.00')
+    expect(wrapper.find('[data-testid="hosting-plan-page"]').text()).toContain('products.pricing.period.annually')
   })
 
   it('adds the plan to the cart in the selected cycle, and then shows it as in the cart', async () => {

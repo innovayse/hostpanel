@@ -26,6 +26,11 @@ public sealed class BillingCycleConverterTests(IntegrationTestFactory factory) :
     [InlineData("Annual", BillingCycle.Annual)]
     [InlineData("annually", BillingCycle.Annual)]
     [InlineData("Annually", BillingCycle.Annual)]
+    [InlineData("Quarterly", BillingCycle.Quarterly)]
+    [InlineData("quarterly", BillingCycle.Quarterly)]
+    [InlineData("SemiAnnual", BillingCycle.SemiAnnual)]
+    [InlineData("semi-annual", BillingCycle.SemiAnnual)]
+    [InlineData("Biennial", BillingCycle.Biennial)]
     public void FromStored_EveryLegacySpelling_ReadsTheCycle(string stored, BillingCycle expected)
     {
         BillingCycleConverter.FromStored(stored).Should().Be(expected);
@@ -35,7 +40,7 @@ public sealed class BillingCycleConverterTests(IntegrationTestFactory factory) :
     /// <param name="stored">The column value.</param>
     [Theory]
     [InlineData("free")]
-    [InlineData("quarterly")]
+    [InlineData("weekly")]
     [InlineData("")]
     public void FromStored_UnknownText_Throws(string stored)
     {
@@ -50,6 +55,9 @@ public sealed class BillingCycleConverterTests(IntegrationTestFactory factory) :
     [Theory]
     [InlineData(BillingCycle.Monthly, "Monthly")]
     [InlineData(BillingCycle.Annual, "Annual")]
+    [InlineData(BillingCycle.Quarterly, "Quarterly")]
+    [InlineData(BillingCycle.SemiAnnual, "SemiAnnual")]
+    [InlineData(BillingCycle.Biennial, "Biennial")]
     public void ToStored_WritesTheCanonicalText(BillingCycle cycle, string expected)
     {
         BillingCycleConverter.ToStored(cycle).Should().Be(expected);
@@ -62,6 +70,9 @@ public sealed class BillingCycleConverterTests(IntegrationTestFactory factory) :
     [InlineData("monthly", BillingCycle.Monthly)]
     [InlineData("annual", BillingCycle.Annual)]
     [InlineData("annually", BillingCycle.Annual)]
+    [InlineData("Quarterly", BillingCycle.Quarterly)]
+    [InlineData("SemiAnnual", BillingCycle.SemiAnnual)]
+    [InlineData("Biennial", BillingCycle.Biennial)]
     public async Task ClientServices_LegacyRow_LoadsAsItsCycleAsync(string legacy, BillingCycle expected)
     {
         using var scope = factory.Services.CreateScope();

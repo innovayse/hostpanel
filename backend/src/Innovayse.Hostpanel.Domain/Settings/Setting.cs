@@ -1,3 +1,6 @@
+using System.Globalization;
+using Innovayse.Hostpanel.Domain.Plugins;
+using Innovayse.Hostpanel.Domain.Plugins.Events;
 using Innovayse.Hostpanel.SharedKernel.Domain;
 using Innovayse.Hostpanel.SharedKernel.Domain.Interfaces;
 
@@ -6,6 +9,12 @@ namespace Innovayse.Hostpanel.Domain.Settings;
 /// <summary>Represents a system-wide configuration key-value setting.</summary>
 public sealed class Setting : BaseEntity, IAggregateRoot
 {
+    /// <summary>
+    /// The description a plugin's switch row is created with, <c>{0}</c> being the plugin id. The same sentence the
+    /// integration save writes, so a row created by a removal reads like one created from the Integrations page.
+    /// </summary>
+    private const string PluginSwitchDescriptionFormat = "Whether the {0} integration is enabled.";
+
     /// <summary>Gets the unique configuration key.</summary>
     public string Key { get; private set; } = string.Empty;
 
@@ -29,8 +38,75 @@ public sealed class Setting : BaseEntity, IAggregateRoot
         new() { Key = key, Value = value, Description = description };
 
     /// <summary>
+    /// Creates the switch row of a removed plugin that never had one, already off, and raises
+    /// <see cref="PluginRemovedEvent"/> exactly as <see cref="SwitchOffRemovedPlugin"/> does on an existing row.
+    /// </summary>
+    /// <param name="pluginId">
+    /// The removed plugin's id; must have the plugin id shape (<see cref="PluginIdentifier.IsWellFormed"/>).
+    /// </param>
+    /// <param name="removedAt">When the removal was made, UTC, read by the caller from its clock.</param>
+    /// <returns>A new, unpersisted switch row holding <see cref="IntegrationSettingKeys.DisabledValue"/>.</returns>
+    /// <exception cref="ArgumentException"><paramref name="pluginId"/> breaks the plugin id shape.</exception>
+    public static Setting CreateSwitchedOffForRemovedPlugin(string pluginId, DateTimeOffset removedAt)
+    {
+        EnsurePluginId(pluginId);
+
+        var setting = Create(
+            IntegrationSettingKeys.EnabledKey(pluginId),
+            IntegrationSettingKeys.DisabledValue,
+            string.Format(CultureInfo.InvariantCulture, PluginSwitchDescriptionFormat, pluginId));
+        setting.SwitchOffRemovedPlugin(pluginId, removedAt);
+        return setting;
+    }
+
+    // ── CRUD half ──────────────────────────────────────────────────────────────
+
+    /// <summary>
     /// Updates the configuration value.
     /// </summary>
     /// <param name="value">The new value to store.</param>
     public void UpdateValue(string value) => Value = value;
+
+    // ── specific logic ─────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Turns a removed plugin's switch off and raises <see cref="PluginRemovedEvent"/>, so the switch and the purge of
+    /// the plugin's stored data are one unit: the event is written to the outbox in the save that stores the switch.
+    /// </summary>
+    /// <param name="pluginId">
+    /// The removed plugin's id; must have the plugin id shape (<see cref="PluginIdentifier.IsWellFormed"/>) and name this
+    /// row's plugin.
+    /// </param>
+    /// <param name="removedAt">When the removal was made, UTC, read by the caller from its clock.</param>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="pluginId"/> breaks the plugin id shape, or this row is not that plugin's switch.
+    /// </exception>
+    public void SwitchOffRemovedPlugin(string pluginId, DateTimeOffset removedAt)
+    {
+        EnsurePluginId(pluginId);
+
+        // Compared exactly: the keys are composed by IntegrationSettingKeys and a plugin id is lower case, so a row
+        // whose key differs is another setting and must never be turned into a removal.
+        if (!string.Equals(Key, IntegrationSettingKeys.EnabledKey(pluginId), StringComparison.Ordinal))
+        {
+            throw new ArgumentException("The setting is not the switch of this plugin.", nameof(pluginId));
+        }
+
+        Value = IntegrationSettingKeys.DisabledValue;
+        AddDomainEvent(new PluginRemovedEvent(pluginId, removedAt));
+    }
+
+    /// <summary>
+    /// Refuses an id without the plugin id shape, before it can name a key or select rows. Only the shape: a plugin
+    /// installed under an id that was reserved later must still be switched off and purged when it is removed.
+    /// </summary>
+    /// <param name="pluginId">The candidate plugin id.</param>
+    /// <exception cref="ArgumentException"><paramref name="pluginId"/> breaks the plugin id shape.</exception>
+    private static void EnsurePluginId(string pluginId)
+    {
+        if (!PluginIdentifier.IsWellFormed(pluginId))
+        {
+            throw new ArgumentException("The plugin id breaks the plugin id shape.", nameof(pluginId));
+        }
+    }
 }

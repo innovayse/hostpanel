@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Audit;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Migration;
@@ -136,7 +137,7 @@ public sealed class ReferentialIntegrityTests(IntegrationTestFactory factory) : 
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
         var ledgerRow = Transaction.Create(
-            clientId, DateTimeOffset.UtcNow, "Payment", $"tx-{Guid.NewGuid():N}", invoice.Id, "manual", 10m, 0m, 0m, false, TestCurrencies.Base);
+            clientId, DateTimeOffset.UtcNow, "Payment", $"tx-{Guid.NewGuid():N}", invoice.Id, "manual", 10m, 0m, 0m, false, TestCurrencies.Base, TransactionSource.Manual);
         context.Transactions.Add(ledgerRow);
         await context.SaveChangesAsync(CancellationToken.None);
 

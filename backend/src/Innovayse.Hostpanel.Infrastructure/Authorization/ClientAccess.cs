@@ -35,11 +35,24 @@ public sealed class ClientAccess : IClientAccess
     }
 
     /// <inheritdoc/>
+    public async Task<bool> IsIdentityUnavailableAsync(CancellationToken ct)
+    {
+        var access = await _resolver.ResolveAsync(ct);
+
+        return access.IdentityUnavailable;
+    }
+
+    /// <inheritdoc/>
     public async Task<Result<int>> RequireClientIdAsync(CancellationToken ct)
     {
         _caller.RequireUserId();
 
         var access = await _resolver.ResolveAsync(ct);
+
+        if (access.IdentityUnavailable)
+        {
+            return Result<int>.FailureCode(HostpanelErrorCodes.IDENTITY_PLUGIN_UNAVAILABLE);
+        }
 
         return access.ClientId is { } clientId
             ? Result<int>.Success(clientId)
@@ -52,6 +65,11 @@ public sealed class ClientAccess : IClientAccess
         _caller.RequireUserId();
 
         var access = await _resolver.ResolveAsync(ct);
+
+        if (access.IdentityUnavailable)
+        {
+            return Result<int>.FailureCode(HostpanelErrorCodes.IDENTITY_PLUGIN_UNAVAILABLE);
+        }
 
         return access is { IsOwner: true, ClientId: { } clientId }
             ? Result<int>.Success(clientId)

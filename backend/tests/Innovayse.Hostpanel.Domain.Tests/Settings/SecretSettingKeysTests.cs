@@ -67,14 +67,4 @@ public class SecretSettingKeysTests
         Assert.False(SecretSettingKeys.IsSecretFieldType(IntegrationFieldType.Text));
         Assert.False(SecretSettingKeys.IsSecretFieldType(IntegrationFieldType.TextArea));
     }
-
-    /// <summary>A manifest type is read without regard to case, and an unknown one is plain text.</summary>
-    [Fact]
-    public void FromManifest_ReadsKnownTypesAndFallsBackToText()
-    {
-        Assert.Equal(IntegrationFieldType.Secret, IntegrationFieldTypes.FromManifest("secret"));
-        Assert.Equal(IntegrationFieldType.TextArea, IntegrationFieldTypes.FromManifest("textarea"));
-        Assert.Equal(IntegrationFieldType.Text, IntegrationFieldTypes.FromManifest("colour"));
-        Assert.Equal(IntegrationFieldType.Text, IntegrationFieldTypes.FromManifest(null));
-    }
 }

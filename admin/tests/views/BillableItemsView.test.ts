@@ -75,6 +75,15 @@ describe('BillableItemsView', () => {
     expect(wrapper.get('[data-testid="billing-billable-items-count"]').text()).toContain('1 Records Found')
   })
 
+  it('drops the ticked items when a filter changes', async () => {
+    stubRoutes({ 'GET /api/billing/billable-items': itemsPage, 'GET /api/clients': noClients })
+    const wrapper = await mountList()
+    await wrapper.get('[data-testid="billing-billable-item-select-5"]').trigger('click')
+    await wrapper.get('[data-testid="billing-billable-items-filter-toggle"]').trigger('click')
+    await wrapper.get('[data-testid="billing-billable-items-filter-description"]').setValue('support')
+    expect(wrapper.find('[data-testid="billing-billable-items-bulk"]').exists()).toBe(false)
+  })
+
   it('deletes the ticked items only after the confirmation', async () => {
     const mock = stubRoutes({
       'GET /api/billing/billable-items': itemsPage,

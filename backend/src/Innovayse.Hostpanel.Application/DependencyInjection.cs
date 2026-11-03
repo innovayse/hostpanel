@@ -2,6 +2,7 @@ using FluentValidation;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Clients.Commands.AcceptInvitation;
 using Innovayse.Hostpanel.Application.Common;
+using Innovayse.Hostpanel.Application.Plugins.Common;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Application;
@@ -43,6 +44,13 @@ public static class DependencyInjection
 
         // Hands out the exclusive right to charge an invoice's card (one automatic or manual attempt at a time).
         services.AddScoped<InvoicePaymentClaimGate>();
+
+        // The part of a plugin call the client and admin areas share: route matching, body cap, audit, reply mapping.
+        services.AddScoped<PluginCallRunner>();
+        services.AddScoped<PluginCallGate>();
+
+        // Lists the widgets enabled plugins put into a page slot, for the client and the admin slot index.
+        services.AddScoped<PluginSlotIndexBuilder>();
 
         return services;
     }

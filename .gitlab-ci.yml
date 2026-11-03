@@ -346,7 +346,7 @@ backend:test:integration:d:
   extends: .test-integration
   variables:
     TEST_FILTER: >-
-      FullyQualifiedName~Integration.Tests.Domains.|FullyQualifiedName~Integration.Tests.Support.
+      FullyQualifiedName~Integration.Tests.Domains.|FullyQualifiedName~Integration.Tests.Plugins.|FullyQualifiedName~Integration.Tests.Support.
 
 backend:test:integration:e:
   extends: .test-integration

@@ -6,6 +6,7 @@ using Innovayse.Hostpanel.Shared.Models;
 using Innovayse.Hostpanel.Shared.Models.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Shared.Controllers;
@@ -180,6 +181,64 @@ public abstract class BaseApiController : ControllerBase
         ArgumentNullException.ThrowIfNull(result);
 
         return result.IsFailure ? MapFailure(result) : StatusCode(StatusCodes.Status202Accepted);
+    }
+
+    /// <summary>
+    /// The reply a use case forwarded from a plugin, or the mapped refusal: a success answers with the status the
+    /// plugin chose and its JSON body (or none), and a problem answers in the standard error body with that status.
+    /// </summary>
+    /// <remarks>
+    /// The one place a status that is not ours to choose reaches the wire, so no controller names one. A problem
+    /// carries its finished sentence already, in the caller's language, and a 503 problem also carries
+    /// <c>Retry-After</c> like every other 503.
+    /// </remarks>
+    /// <typeparam name="T">The forwarded reply type.</typeparam>
+    /// <param name="result">The handler's outcome.</param>
+    /// <returns>The response.</returns>
+    protected IActionResult HandleForwarded<T>(Result<T> result)
+        where T : IForwardedReply
+    {
+        ArgumentNullException.ThrowIfNull(result);
+
+        if (result.IsFailure || result.Value is null)
+        {
+            return MapFailure(result);
+        }
+
+        var reply = result.Value;
+        if (reply.ErrorCode is not null)
+        {
+            RetryAfterHeader.ApplyFor(HttpContext, reply.Status);
+            return Error(reply.ErrorCode, ReasonPhrases.GetReasonPhrase(reply.Status), reply.Status, reply.Detail ?? string.Empty);
+        }
+
+        if (reply.Stream is { } stream)
+        {
+            return HandleStream(Result<StreamedReply>.Success(stream));
+        }
+
+        // A JsonResult, not an ObjectResult: content negotiation would write a plugin's bare string as text/plain, and a
+        // plugin that returned a JSON document must get a JSON document whatever the caller's Accept header says.
+        return reply.Body is null ? StatusCode(reply.Status) : new JsonResult(reply.Body) { StatusCode = reply.Status };
+    }
+
+    /// <summary>
+    /// A stream of server-sent events, or the mapped refusal. The refusal is answered before the first event, with its own
+    /// status and the standard error body; once the stream has started the status is 200 and cannot change.
+    /// </summary>
+    /// <remarks>
+    /// The response is <c>text/event-stream</c>, <c>Cache-Control: no-cache</c> and <c>X-Accel-Buffering: no</c>, each event
+    /// is flushed as it is produced, a comment line is sent after every silence of the reply's heartbeat, and the events are
+    /// enumerated with the request abort token so a disconnect cancels the producer. The response filters and the resource
+    /// filters that registered something for disposal (a concurrency lease) release it when the stream has ended.
+    /// </remarks>
+    /// <param name="result">The handler's outcome.</param>
+    /// <returns>The response.</returns>
+    protected IActionResult HandleStream(Result<StreamedReply> result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+
+        return result.IsFailure || result.Value is null ? MapFailure(result) : new EventStreamResult(result.Value);
     }
 
     /// <summary>Maps a refusal to its status and localizes its sentence by code; a 503 also carries <c>Retry-After</c>.</summary>

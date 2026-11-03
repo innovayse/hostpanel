@@ -1,5 +1,5 @@
-using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
+using Innovayse.SDK.Plugins.Payment;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
@@ -17,8 +17,8 @@ public sealed class FakePaymentPlugin : IPaymentPlugin
     /// <summary>How many times <see cref="GetStatusAsync"/> was called.</summary>
     public int GetStatusCallCount { get; private set; }
 
-    /// <summary>The request the last <see cref="CreatePaymentAsync"/> call carried.</summary>
-    public PaymentRequest? LastCreatePaymentRequest { get; private set; }
+    /// <summary>The instruction the last <see cref="CreatePaymentAsync"/> call carried.</summary>
+    public PaymentInstruction? LastCreatePaymentInstruction { get; private set; }
 
     /// <inheritdoc/>
     public string CurrencyCode { get; set; } = "840";
@@ -48,10 +48,10 @@ public sealed class FakePaymentPlugin : IPaymentPlugin
     public long? LastRefundAmountMinor { get; private set; }
 
     /// <inheritdoc/>
-    public Task<PaymentSession> CreatePaymentAsync(PaymentRequest request, CancellationToken ct)
+    public Task<PaymentSession> CreatePaymentAsync(PaymentInstruction instruction, CancellationToken ct)
     {
         CreatePaymentCallCount++;
-        LastCreatePaymentRequest = request;
+        LastCreatePaymentInstruction = instruction;
         return CreatePaymentThrows is not null
             ? Task.FromException<PaymentSession>(CreatePaymentThrows)
             : Task.FromResult(CreatePaymentResult);

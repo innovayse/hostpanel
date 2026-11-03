@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Admin.Common;
 using Innovayse.Hostpanel.Application.Admin.Common.Enums;
+using Innovayse.Hostpanel.Application.Audit.Common;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
@@ -40,8 +41,14 @@ public sealed class UpdateSettingHandler
     /// <summary>The acting admin, named in the audit line of a secret change.</summary>
     private readonly ICurrentUserService _currentUser;
 
+    /// <summary>Stages the activity log line of a change to a setting that weakens a security control.</summary>
+    private readonly IActivityLogger _activityLogger;
+
     /// <summary>Receives the audit line of a secret change (key only, never the value).</summary>
     private readonly ILogger<UpdateSettingHandler> _logger;
+
+    /// <summary>Drops the panels' remembered plugin availability after a plugin's own setting was saved.</summary>
+    private readonly IPluginAvailabilityInvalidator _availability;
 
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
@@ -49,21 +56,27 @@ public sealed class UpdateSettingHandler
     /// <param name="plugins">Loaded plugins, whose manifests declare which of their fields are secret.</param>
     /// <param name="branding">Removes the branding upload a replaced image setting pointed at.</param>
     /// <param name="currentUser">The acting admin, named in the audit line of a secret change.</param>
+    /// <param name="activityLogger">Stages the activity log line of a change to a setting that weakens a security control.</param>
     /// <param name="logger">Receives the audit line of a secret change.</param>
+    /// <param name="availability">Drops the panels' remembered plugin availability after a plugin's own setting was saved.</param>
     public UpdateSettingHandler(
         IHostpanelDbContext context,
         ISecretSettingCipher cipher,
         IPluginRegistry plugins,
         IBrandingStorage branding,
         ICurrentUserService currentUser,
-        ILogger<UpdateSettingHandler> logger)
+        IActivityLogger activityLogger,
+        ILogger<UpdateSettingHandler> logger,
+        IPluginAvailabilityInvalidator availability)
     {
         _context = context;
         _cipher = cipher;
         _plugins = plugins;
         _branding = branding;
         _currentUser = currentUser;
+        _activityLogger = activityLogger;
         _logger = logger;
+        _availability = availability;
     }
 
     /// <summary>
@@ -100,7 +113,8 @@ public sealed class UpdateSettingHandler
         // Empty means "unset" for a key that seeds empty, the storefront then uses its
         // built-in default, and skips both checks below. A key that seeds with a value never
         // had an empty state and goes through them, where the empty string is refused.
-        var allowsEmpty = PortalSettingKeys.AllowsEmpty(setting.Key) || BillingSettingKeys.AllowsEmpty(setting.Key);
+        var allowsEmpty = PortalSettingKeys.AllowsEmpty(setting.Key) || BillingSettingKeys.AllowsEmpty(setting.Key)
+            || PluginSettingKeys.AllowsEmpty(setting.Key);
         if (value.Length > 0 || !allowsEmpty)
         {
             if (PortalSettingKeys.AllowedValues.TryGetValue(setting.Key, out var allowed))
@@ -120,7 +134,8 @@ public sealed class UpdateSettingHandler
                 value = canonical;
             }
             else if (PortalSettingKeys.Patterns.TryGetValue(setting.Key, out var pattern)
-                || BillingSettingKeys.Patterns.TryGetValue(setting.Key, out pattern))
+                || BillingSettingKeys.Patterns.TryGetValue(setting.Key, out pattern)
+                || PluginSettingKeys.Patterns.TryGetValue(setting.Key, out pattern))
             {
                 // Stored in the canonical spelling so the storefront and the e-mail renderer
                 // can compare and concatenate without normalising again.
@@ -137,7 +152,17 @@ public sealed class UpdateSettingHandler
 
         var previous = setting.Value;
         setting.UpdateValue(value);
+
+        // A setting that weakens a security control is audited on every change, in the same save as the
+        // change itself, so the line and the new value commit or fail together.
+        if (PluginSettingKeys.IsAudited(setting.Key) && !string.Equals(previous, value, StringComparison.Ordinal))
+        {
+            await _activityLogger.RecordAsync(
+                new ActivityLogEntry(null, $"Changed Setting - Setting: {setting.Key} - From: {previous} - To: {value}"), ct);
+        }
+
         await _context.SaveChangesAsync(ct);
+        InvalidateWhenIntegrationSetting(setting.Key);
 
         // A replaced branding image leaves its old upload referenced by nothing; it is removed once
         // the new value is saved, never before, so a failed save keeps the live files in place.
@@ -179,8 +204,22 @@ public sealed class UpdateSettingHandler
         }
 
         await _context.SaveChangesAsync(ct);
+        InvalidateWhenIntegrationSetting(setting.Key);
         SecretSettingAudit.Record(_logger, setting.Key, change, _currentUser.UserId);
         return Result.Success();
+    }
+
+    /// <summary>
+    /// Drops the panels' remembered plugin availability when the saved row is an integration's switch or field, which
+    /// decide whether a plugin's pages show; any other setting leaves it alone. Called after the save has committed.
+    /// </summary>
+    /// <param name="key">The key of the saved setting.</param>
+    private void InvalidateWhenIntegrationSetting(string key)
+    {
+        if (key.StartsWith(IntegrationSettingKeys.RootPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            _availability.Invalidate();
+        }
     }
 
     /// <summary>

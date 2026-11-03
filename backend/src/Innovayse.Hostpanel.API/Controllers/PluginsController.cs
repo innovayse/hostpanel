@@ -67,7 +67,9 @@ public sealed class PluginsController : BaseApiController
     /// 200 with <c>requiresRestart: true</c> on success; 400 with <c>VALIDATION_ERROR</c> (no file),
     /// <c>PLUGIN_MANIFEST_INVALID</c>, <c>PLUGIN_SDK_VERSION_UNSUPPORTED</c>,
     /// <c>PLUGIN_ID_INVALID</c>, <c>PLUGIN_ARCHIVE_UNSAFE</c>, <c>PLUGIN_HOST_ASSEMBLY_REFUSED</c> or
-    /// <c>PLUGIN_NOT_TRUSTED</c>; 401 without a session; 403 for a caller who is not an
+    /// <c>PLUGIN_NOT_TRUSTED</c>, or one of <c>PLUGIN_UNSIGNED</c>, <c>PLUGIN_SIGNATURE_MALFORMED</c>,
+    /// <c>PLUGIN_SIGNATURE_KEY_UNKNOWN</c> and <c>PLUGIN_SIGNATURE_INVALID</c> when the host enforces signatures and the
+    /// package fails that check while "allow unsigned plugins" is off; 401 without a session; 403 for a caller who is not an
     /// administrator; 409 with <c>PLUGIN_BUILT_IN</c> when the id belongs to a plugin shipped with
     /// the build; 413 when the upload is over the request limit or with
     /// <c>PLUGIN_ARCHIVE_TOO_LARGE</c>; 429 when the rate limit is hit.
@@ -88,14 +90,19 @@ public sealed class PluginsController : BaseApiController
         return HandleResult(outcome);
     }
 
-    /// <summary>Removes an uploaded plugin by deleting its files from disk.</summary>
+    /// <summary>
+    /// Removes an uploaded plugin: deletes its files, switches it off and queues the purge of the data it kept. A valid,
+    /// non-built-in id whose files are already gone is cleared the same way, so data a lost package left behind can still
+    /// be removed.
+    /// </summary>
     /// <param name="id">Plugin identifier as declared in <c>plugin.json</c>.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 with <c>requiresRestart: true</c> on success; 400 with <c>VALIDATION_ERROR</c> or
-    /// <c>PLUGIN_ID_INVALID</c>; 401 without a session; 403 for a caller who is not an administrator;
-    /// 404 with <c>PLUGIN_NOT_FOUND</c>; 409 with <c>PLUGIN_BUILT_IN</c> for a plugin shipped with
-    /// the build; 429 when the rate limit is hit.
+    /// 200 with <c>requiresRestart: true</c> when the files were removed, or <c>requiresRestart: false</c> when they were
+    /// already gone; 400 with <c>VALIDATION_ERROR</c> or <c>PLUGIN_ID_INVALID</c>; 401 without a session; 403 for a caller
+    /// who is not an administrator; 404 with <c>PLUGIN_NOT_FOUND</c> when no files are left and the plugin was never
+    /// switched on here; 409 with <c>PLUGIN_BUILT_IN</c> for a plugin shipped with the build; 429 when the rate limit is
+    /// hit.
     /// </returns>
     [HttpDelete("{id}")]
     [ProducesResponseType(typeof(PluginActionResultDto), StatusCodes.Status200OK)]

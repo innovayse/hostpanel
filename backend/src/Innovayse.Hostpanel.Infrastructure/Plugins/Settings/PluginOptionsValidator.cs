@@ -11,8 +11,6 @@ public sealed class PluginOptionsValidator : IValidateOptions<PluginOptions>
     /// <returns>Success, or a failure naming the offending key.</returns>
     public ValidateOptionsResult Validate(string? name, PluginOptions options)
     {
-        ArgumentNullException.ThrowIfNull(options);
-
         if (options.MaxEntryCount <= 0)
         {
             return Fail(nameof(PluginOptions.MaxEntryCount), "must be greater than zero");
@@ -21,6 +19,13 @@ public sealed class PluginOptionsValidator : IValidateOptions<PluginOptions>
         if (options.MaxUncompressedBytes <= 0)
         {
             return Fail(nameof(PluginOptions.MaxUncompressedBytes), "must be greater than zero");
+        }
+
+        if (options.MaxViewBytes < 1 || options.MaxViewBytes > PluginOptions.MaxViewBytesCeiling)
+        {
+            return Fail(
+                nameof(PluginOptions.MaxViewBytes),
+                $"must be between 1 and {PluginOptions.MaxViewBytesCeiling} bytes");
         }
 
         foreach (var digest in options.TrustedPackageSha256)

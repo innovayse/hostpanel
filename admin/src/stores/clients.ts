@@ -208,6 +208,18 @@ export const useClientsStore = defineStore('clients', () => {
   }
 
   /**
+   * Reads the billing currency of one client without touching the opened client or the store error,
+   * for a screen that prices something in it before the record exists (a new quote).
+   *
+   * @param id - The client identifier.
+   * @returns The ISO 4217 code, or null when the client has none or could not be read.
+   */
+  const fetchClientCurrency = async (id: number): Promise<string | null> => {
+    const result = await runAction(ref<string | null>(null), () => api.get(id))
+    return result.ok ? (result.value.preferences.currency ?? null) : null
+  }
+
+  /**
    * Loads the clients a picker offers, with the display name already composed.
    *
    * @returns The options; an empty list when the call failed (see `error`).
@@ -385,6 +397,7 @@ export const useClientsStore = defineStore('clients', () => {
     saveExternalAccount,
     clearExternalAccountFieldError,
     fetchClientOptions,
+    fetchClientCurrency,
     searchClients,
     searchUsers,
     fetchCountries,

@@ -12,6 +12,9 @@ public sealed class RenewalPeriodTests
     [Theory]
     [InlineData(BillingCycle.Monthly, 1)]
     [InlineData(BillingCycle.Annual, 12)]
+    [InlineData(BillingCycle.Quarterly, 3)]
+    [InlineData(BillingCycle.SemiAnnual, 6)]
+    [InlineData(BillingCycle.Biennial, 24)]
     public void EndOf_EachCycle_AddsItsMonths(BillingCycle cycle, int months)
     {
         var start = new DateTimeOffset(2026, 3, 10, 0, 0, 0, TimeSpan.Zero);
@@ -58,6 +61,53 @@ public sealed class RenewalPeriodTests
         var start = new DateTimeOffset(2027, 2, 28, 0, 0, 0, TimeSpan.Zero);
 
         RenewalPeriod.EndOf(start, BillingCycle.Annual, anchorDay: 29).Should().Be(new DateTimeOffset(2028, 2, 29, 0, 0, 0, TimeSpan.Zero));
+    }
+
+    /// <summary>
+    /// Every cycle the enum names has a length, so a cycle added later without one fails here and
+    /// not on the first renewal of a client's service.
+    /// </summary>
+    [Fact]
+    public void EndOf_EveryBillingCycle_HasALength()
+    {
+        var start = new DateTimeOffset(2026, 3, 10, 0, 0, 0, TimeSpan.Zero);
+
+        foreach (var cycle in Enum.GetValues<BillingCycle>())
+        {
+            RenewalPeriod.EndOf(start, cycle, anchorDay: 10).Should().BeAfter(start);
+        }
+    }
+
+    /// <summary>
+    /// Month-end and leap-day renewals for the cycles added after monthly and annual, with the
+    /// expected dates worked out by hand: the end is one cycle on, a start that was clamped to a
+    /// short month's last day is moved back towards the anchor day, and a leap day survives
+    /// a common year and returns in the next leap year.
+    /// </summary>
+    /// <param name="start">The period start, as a date.</param>
+    /// <param name="cycle">The billing cycle.</param>
+    /// <param name="anchorDay">The day of month the service was bought on.</param>
+    /// <param name="expected">The expected period end, as a date.</param>
+    [Theory]
+    [InlineData("2026-01-31", BillingCycle.Quarterly, 31, "2026-04-30")]
+    [InlineData("2026-04-30", BillingCycle.Quarterly, 31, "2026-07-31")]
+    [InlineData("2026-08-31", BillingCycle.SemiAnnual, 31, "2027-02-28")]
+    [InlineData("2027-02-28", BillingCycle.SemiAnnual, 31, "2027-08-31")]
+    [InlineData("2027-08-31", BillingCycle.SemiAnnual, 31, "2028-02-29")]
+    [InlineData("2028-02-29", BillingCycle.SemiAnnual, 31, "2028-08-31")]
+    [InlineData("2028-02-29", BillingCycle.Biennial, 29, "2030-02-28")]
+    [InlineData("2030-02-28", BillingCycle.Biennial, 29, "2032-02-29")]
+    [InlineData("2026-02-28", BillingCycle.Biennial, 28, "2028-02-28")]
+    [InlineData("2026-01-31", BillingCycle.Biennial, 31, "2028-01-31")]
+    [InlineData("2027-11-29", BillingCycle.Quarterly, 29, "2028-02-29")]
+    [InlineData("2026-11-29", BillingCycle.Quarterly, 29, "2027-02-28")]
+    [InlineData("2027-02-28", BillingCycle.Quarterly, 29, "2027-05-29")]
+    public void EndOf_NewCycles_MonthEndAndLeapDayDates(string start, BillingCycle cycle, int anchorDay, string expected)
+    {
+        var from = DateTimeOffset.Parse(start, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal);
+        var to = DateTimeOffset.Parse(expected, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal);
+
+        RenewalPeriod.EndOf(from, cycle, anchorDay).Should().Be(to);
     }
 
     /// <summary>Domain periods are whole years, and a non-positive period counts as one year.</summary>

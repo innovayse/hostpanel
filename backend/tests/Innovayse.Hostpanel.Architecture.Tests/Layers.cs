@@ -1,4 +1,5 @@
 using System.Reflection;
+using Innovayse.SDK.Plugins.Manifest;
 
 namespace Innovayse.Hostpanel.Architecture.Tests;
 
@@ -24,7 +25,7 @@ internal static class Layers
     public static readonly Assembly Api = typeof(Innovayse.Hostpanel.API.Controllers.HealthController).Assembly;
 
     /// <summary>The plugin SDK: contracts every provider implements.</summary>
-    public static readonly Assembly Sdk = typeof(Innovayse.SDK.Plugins.PluginManifest).Assembly;
+    public static readonly Assembly Sdk = typeof(Innovayse.SDK.Plugins.Manifest.PluginManifest).Assembly;
 
     /// <summary>The CWP provider plugin.</summary>
     public static readonly Assembly ProviderCwp = typeof(Innovayse.Providers.CWP.CwpProvisioningProvider).Assembly;

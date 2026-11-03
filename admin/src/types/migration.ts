@@ -321,6 +321,8 @@ export const MigrationSkipReason = {
   BillingCycleUnsupported: 'BillingCycleUnsupported',
   /** Every line of the order is a domain or a service addon, which has no catalogue product here. */
   NoProductLines: 'NoProductLines',
+  /** The record carries a currency that is not a three-letter code. */
+  CurrencyInvalid: 'CurrencyInvalid',
 } as const
 
 /** One of the {@link MigrationSkipReason} values. */

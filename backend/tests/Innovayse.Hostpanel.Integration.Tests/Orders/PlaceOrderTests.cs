@@ -131,6 +131,114 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
         return product.Id;
     }
 
+    /// <summary>Seeds an active hosting product priced in USD for one billing cycle only.</summary>
+    /// <param name="cycle">The cycle to price.</param>
+    /// <param name="amount">The USD amount of that cycle.</param>
+    /// <returns>The new product's primary key.</returns>
+    private async Task<int> SeedProductPricedForAsync(BillingCycle cycle, decimal amount)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var group = ProductGroup.Create($"place-order-cycle-{Guid.NewGuid():N}", null);
+        db.ProductGroups.Add(group);
+        await db.SaveChangesAsync();
+
+        var product = Product.Create(
+            group.Id, "Cycle Hosting", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+        product.SetPrice("USD", cycle, amount);
+        db.Products.Add(product);
+        await db.SaveChangesAsync();
+
+        return product.Id;
+    }
+
+    /// <summary>
+    /// An order for each cycle added after monthly and annual is billed at that cycle's own USD price
+    /// and its invoice line keeps that cycle, so a renewal later reads the right period.
+    /// </summary>
+    /// <param name="cycle">The billing cycle ordered.</param>
+    /// <param name="amount">The price of that cycle.</param>
+    [Theory]
+    [InlineData(BillingCycle.Quarterly, 55.5)]
+    [InlineData(BillingCycle.SemiAnnual, 105.25)]
+    [InlineData(BillingCycle.Biennial, 380.0)]
+    public async Task CheckoutBillsTheNewCycleAtItsOwnPriceAndKeepsItOnTheInvoiceLine(BillingCycle cycle, double amount)
+    {
+        await EnableBankTransferAsync();
+        var price = (decimal)amount;
+        var productId = await SeedProductPricedForAsync(cycle, price);
+
+        var response = await factory.CreateClient().PostAsJsonAsync("/api/orders", GuestOrder(productId, cycle: cycle));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        body.RootElement.GetProperty("total").GetDecimal().Should().Be(price);
+        body.RootElement.GetProperty("currency").GetString().Should().Be("USD");
+        var invoiceId = body.RootElement.GetProperty("invoiceId").GetInt32();
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var invoice = await db.Invoices.AsNoTracking().Include(i => i.Items).SingleAsync(i => i.Id == invoiceId);
+        invoice.Status.Should().Be(InvoiceStatus.Unpaid);
+        invoice.Items.Should().ContainSingle().Which.ProductSnapshot!.BillingCycle.Should().Be(cycle);
+    }
+
+    /// <summary>
+    /// The storefront sends the cycle in the spelling it keys its prices by (all lower case, or camelCase
+    /// for semi-annual), not the member name: checkout reads every one of them as the same cycle, so a
+    /// quarterly order from the portal is not refused for its casing.
+    /// </summary>
+    /// <param name="sent">The cycle text the portal sends.</param>
+    /// <param name="cycle">The cycle it must be read as.</param>
+    /// <param name="amount">The price of that cycle.</param>
+    [Theory]
+    [InlineData("monthly", BillingCycle.Monthly, 9.5)]
+    [InlineData("annual", BillingCycle.Annual, 95.0)]
+    [InlineData("quarterly", BillingCycle.Quarterly, 27.0)]
+    [InlineData("semiAnnual", BillingCycle.SemiAnnual, 52.0)]
+    [InlineData("biennial", BillingCycle.Biennial, 170.0)]
+    public async Task CheckoutReadsTheCycleInTheSpellingThePortalSends(string sent, BillingCycle cycle, double amount)
+    {
+        await EnableBankTransferAsync();
+        var productId = await SeedProductPricedForAsync(cycle, (decimal)amount);
+        var body = new
+        {
+            firstName = "Ada",
+            lastName = "Lovelace",
+            email = $"guest-{Guid.NewGuid():N}@example.test",
+            password = TestPassword,
+            paymentMethod = "bank_transfer",
+            items = new[] { new { productId, billingCycle = sent } },
+        };
+
+        var response = await factory.CreateClient().PostAsJsonAsync("/api/orders", body);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        json.RootElement.GetProperty("total").GetDecimal().Should().Be((decimal)amount);
+    }
+
+    /// <summary>
+    /// A cycle the product has no price for is refused with the price-unavailable code, not billed
+    /// at another cycle's price and not a server error: a product sold monthly cannot be ordered quarterly.
+    /// </summary>
+    /// <param name="cycle">A cycle the seeded product is not priced for.</param>
+    [Theory]
+    [InlineData(BillingCycle.Quarterly)]
+    [InlineData(BillingCycle.SemiAnnual)]
+    [InlineData(BillingCycle.Biennial)]
+    [InlineData(BillingCycle.Annual)]
+    public async Task CheckoutRefusesACycleTheProductIsNotPricedFor(BillingCycle cycle)
+    {
+        await EnableBankTransferAsync();
+        var productId = await SeedProductAsync();
+
+        var response = await factory.CreateClient().PostAsJsonAsync("/api/orders", GuestOrder(productId, cycle: cycle));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await AssertCodeAsync(response, HostpanelErrorCodes.ORDER_PRODUCT_PRICE_UNAVAILABLE);
+    }
+
     /// <summary>
     /// A guest checkout with valid registration fields places an order, gets a payment token, and
     /// keeps the phone number the guest gave on the client record it creates.
@@ -843,18 +951,19 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
         stored.Phone.Should().Be("+37411111111");
     }
 
-    /// <summary>A complete guest checkout body for one monthly line of a product.</summary>
+    /// <summary>A complete guest checkout body for one line of a product, monthly unless a cycle is given.</summary>
     /// <param name="productId">The product to order.</param>
     /// <param name="email">The guest's address; a fresh one when omitted.</param>
+    /// <param name="cycle">The billing cycle of the line; monthly when omitted.</param>
     /// <returns>The request body.</returns>
-    private static object GuestOrder(int productId, string? email = null) => new
+    private static object GuestOrder(int productId, string? email = null, BillingCycle cycle = BillingCycle.Monthly) => new
     {
         firstName = "Ada",
         lastName = "Lovelace",
         email = email ?? $"guest-{Guid.NewGuid():N}@example.test",
         password = TestPassword,
         paymentMethod = "bank_transfer",
-        items = new[] { new { productId, billingCycle = nameof(BillingCycle.Monthly) } },
+        items = new[] { new { productId, billingCycle = cycle.ToString() } },
     };
 
     /// <summary>Seeds a USD-sold TLD and the AMD and USD rates, so the conversion is deterministic.</summary>

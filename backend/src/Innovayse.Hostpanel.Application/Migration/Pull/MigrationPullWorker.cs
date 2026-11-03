@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Migration.Common;
 using Innovayse.Hostpanel.Domain.Migration;
 using Innovayse.Hostpanel.Domain.Migration.Enums;
+using Innovayse.Hostpanel.Shared.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -162,7 +163,19 @@ public sealed class MigrationPullWorker
             job.ExportDownloads ? totalsResp.Content.Downloads : 0,
             job.ExportNetworkIssues ? totalsResp.Support.NetworkIssues : 0));
         job.RecordHeartbeat(_clock.UtcNow);
-        await _context.SaveChangesAsync(ct);
+        try
+        {
+            await _context.SaveChangesAsync(ct);
+        }
+        catch (ConcurrencyConflictException)
+        {
+            // Two deliveries of one pull both read the job as queued; the job row's xmin token lets only
+            // one start it. The other must leave the job alone: falling through to the failure path would
+            // fail a job the winner is running.
+            _context.DetachAll();
+            _logger.LogInformation("Migration job {JobId} was started by another pull; this one stops.", jobId);
+            return;
+        }
 
         // 2. Run each selected entity kind's importer in the order MigrationImportOrder names.
         foreach (var importer in _importers)

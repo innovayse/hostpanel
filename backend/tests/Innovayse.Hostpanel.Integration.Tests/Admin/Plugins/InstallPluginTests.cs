@@ -87,6 +87,66 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
         await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_MANIFEST_INVALID);
     }
 
+    /// <summary>
+    /// A manifest that breaks a manifest rule is refused with that rule's code and nothing is installed; the
+    /// message is the localised text of the code, in the caller's language.
+    /// </summary>
+    /// <param name="extraMembers">The manifest members that break the rule, each starting with a comma.</param>
+    /// <param name="code">The error code the rule answers with.</param>
+    [Theory]
+    [InlineData(",\"manifestVersion\":9", "PLUGIN_MANIFEST_VERSION_UNKNOWN")]
+    [InlineData(",\"manifestVersion\":2,\"api\":{\"client\":[{\"method\":\"get\",\"path\":\"/a\",\"permission\":\"Nonsense\"}]}", "PLUGIN_PERMISSION_UNKNOWN")]
+    [InlineData(",\"manifestVersion\":2,\"api\":{\"admin\":[{\"method\":\"get\",\"path\":\"/a\",\"permission\":\"Any\"}]}", "PLUGIN_ADMIN_PERMISSION_DECLARED")]
+    [InlineData(",\"manifestVersion\":2,\"api\":{\"client\":[{\"method\":\"get\",\"path\":\"/A/../b\"}]}", "PLUGIN_ROUTE_PATH_INVALID")]
+    [InlineData(",\"manifestVersion\":2,\"api\":{\"client\":[{\"method\":\"get\",\"path\":\"/a\"},{\"method\":\"get\",\"path\":\"/a\"}]}", "PLUGIN_ROUTE_DUPLICATE")]
+    [InlineData(",\"manifestVersion\":2,\"settings\":[{\"key\":\"k\",\"label\":\"setting.k\",\"type\":\"text\"}]", "PLUGIN_LABEL_KEY_MISSING")]
+    [InlineData(",\"manifestVersion\":2,\"ui\":{\"slots\":[{\"id\":\"s\",\"slot\":\"client.nowhere\",\"view\":\"v.json\"}]}", "PLUGIN_SLOT_UNKNOWN")]
+    [InlineData(",\"manifestVersion\":2,\"ui\":{\"slots\":[{\"id\":\"s\",\"slot\":\"client.dashboard.cards\",\"view\":\"v.json\",\"contextKeys\":[\"serviceId\"]}]}", "PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED")]
+    public async Task AManifestBreakingARule_RefusesWithTheLocalisedMessageAsync(string extraMembers, string code)
+    {
+        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        client.DefaultRequestHeaders.Add("X-Language", "ru");
+        var pluginId = $"test-plugin-{Guid.NewGuid():N}";
+        var zip = PluginsTestSeeds.BuildZip(new Dictionary<string, string> { ["plugin.json"] = PluginsTestSeeds.ManifestJson(pluginId, extraMembers) });
+
+        var response = await PluginsTestSeeds.InstallAsync(client, zip);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        using var body = System.Text.Json.JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        body.RootElement.GetProperty("type").GetString().Should().Be(code);
+        body.RootElement.GetProperty("detail").GetString().Should().MatchRegex("[А-Яа-яЁё]").And.NotContain("PLUGIN_");
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+    }
+
+    /// <summary>
+    /// A plugin built against an older SDK major version is refused with <c>PLUGIN_SDK_ASSEMBLY_OUTDATED</c> and
+    /// the English text asks for a rebuild; nothing is left in the upload folder, and no staging folder keeps the
+    /// unpacked assembly (checked by its file name, which is unique to this test, so a parallel install cannot disturb it).
+    /// </summary>
+    [Fact]
+    public async Task APluginBuiltAgainstAnOlderSdk_RefusesAndLeavesNothingAsync()
+    {
+        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var pluginId = $"test-plugin-{Guid.NewGuid():N}";
+        var oldDll = $"Old.{pluginId}.dll";
+        var zip = PluginsTestSeeds.BuildZip(new Dictionary<string, byte[]>
+        {
+            ["plugin.json"] = System.Text.Encoding.UTF8.GetBytes(PluginsTestSeeds.ManifestJson(pluginId)),
+            [oldDll] = PluginAssemblyFixtures.BuiltAgainstSdk(new Version(1, 4, 0, 0)),
+        });
+
+        var response = await PluginsTestSeeds.InstallAsync(client, zip);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        using var body = System.Text.Json.JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        body.RootElement.GetProperty("type").GetString().Should().Be(HostpanelErrorCodes.PLUGIN_SDK_ASSEMBLY_OUTDATED);
+        body.RootElement.GetProperty("detail").GetString().Should().Contain("rebuilt");
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+
+        var staging = Path.Combine(new PluginOptions().InstallRoot, ".staging");
+        (Directory.Exists(staging) ? Directory.EnumerateFiles(staging, oldDll, SearchOption.AllDirectories) : []).Should().BeEmpty();
+    }
+
     /// <summary>An empty file is not a plugin: refused with <c>PLUGIN_MANIFEST_INVALID</c>.</summary>
     [Fact]
     public async Task AnEmptyUpload_RefusesAsync()

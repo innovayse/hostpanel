@@ -32,6 +32,7 @@ import { Icon } from '@/lib/icons'
 import { quoteStageTone, statusLabel } from '@/lib/tones'
 import { QUOTE_STAGE_OPTIONS } from '@/lib/constants'
 import { formatDate } from '@/lib/format'
+import { useClientCurrency } from '@/composables/useClientCurrency'
 import { useQuotesStore } from '@/stores/quotes'
 import { QuoteStage } from '@/types/quote'
 import type { QuoteItemUpdate } from '@/types/quote'
@@ -59,6 +60,22 @@ const quoteId = computed<number>(() => (isNew.value ? 0 : Number(route.params.id
 
 /** Client the new quote is for, from the query; 0 when absent. */
 const queryClientId = computed<number>(() => Number(route.query.clientId ?? 0))
+
+/** Billing currency of the client a new quote is for; null for a stored quote, which carries its own. */
+const clientCurrency = useClientCurrency(computed(() => (isNew.value ? queryClientId.value : 0)))
+
+/**
+ * Currency the lines are priced in: a new quote's client's, otherwise the stored quote's, taken
+ * only when the loaded quote is the one in the route (the store keeps the previous quote until
+ * the next one arrives).
+ */
+const quoteCurrency = computed<string | null>(() => {
+  if (isNew.value) {
+    return clientCurrency.value
+  }
+  const quote = store.currentQuote
+  return quote !== null && quote.id === quoteId.value ? quote.currency : null
+})
 
 /** Quote subject. */
 const subject = ref('')
@@ -295,7 +312,7 @@ onMounted(() => {
         </UiStack>
       </UiCard>
 
-      <QuoteItemsEditor v-model="items" />
+      <QuoteItemsEditor v-model="items" :currency="quoteCurrency" />
 
       <UiCard padding="md">
         <UiStack>

@@ -67,14 +67,16 @@ repositories. The departures are short:
   are named for what they carry (`DomainRegistrationOrder`, `DomainRenewalOrder`,
   `DomainTransferOrder`, `ProvisionAccountOrder`, `SuspendAccountOrder`, `TerminateAccountOrder`);
   `NoRequestTypesTests` covers all three layers (the `CancellationRequest` entity is exempt). The wire models inside
-  `Innovayse.Providers.*` and the SDK's `PaymentRequest` are third-party-facing contracts and keep their names.
+  `Innovayse.Providers.*` are third-party-facing contracts and keep their names.
 - **Recurring jobs and background handlers return `Task`, not `Result`.** The crons
   (`CheckOverdueInvoicesCron`, `ProcessBillableItemsCron`, `ProcessRenewalsCron`,
   `ReconcileGatewayPaymentsCron`, `SendRenewalRemindersCron`, `SuspendOverdueServicesCron`,
   `AutoTerminateSuspendedCron`, `SyncServerAccountCountsCron`, `DispatchFulfilmentCron`) and `ResetDemoData`,
   `CheckDomainExpiries` and `SyncPendingDomainStatuses` are scheduled messages, not dispatched by a
   caller, so nothing would receive a `Result`. So are `RunMigrationPull` (published by
-  `MigrationPullQueue` once a job's queued state is saved; the job row records how the pull ended)
+  `MigrationPullQueue` once a job's queued state is saved; the job row records how the pull ended; when two
+  deliveries of one pull race, the save that starts the job (`job.Start`) loses with `ConcurrencyConflictException`
+  and the worker logs it at Information and returns without touching the job, which the winner runs)
   and `RecoverInterruptedMigrationJobs` (a recurring job: it fails queued or running pulls whose `MigrationJobs.LastHeartbeatAt` is older than `ScheduledJobs:MigrationStaleAfterMinutes`, so a pull another instance still runs is left alone). The crons run each pass through
   `Application/Common/RecurringJobs.RunAsync`, which takes the job's lease, logs a failed pass and schedules
   the next one from the end of the pass; the log line is the record of the failure. Wrapping them in a
@@ -85,7 +87,10 @@ repositories. The departures are short:
   whose holder crashed expires. On startup `RecurringJobs.StartAsync` runs a job at once when its last success
   is older than its period, and otherwise schedules its next regular run. Every hour and interval lives in
   `ScheduledJobsOptions` (section `ScheduledJobs`), read by the startup services and the handlers alike; a
-  scheduled run is in memory, so a host that is stopping ends the chain and the next start catches up.
+  scheduled run is in memory, so a host that is stopping ends the chain and the next start catches up. It stays in
+  memory although every other local queue is durable (see "Durable messaging"): the chain re-schedules itself after
+  each pass and every start re-creates it from `JobRuns`, so a scheduled run that survived a restart would be
+  scheduled a second time and each restart would add a chain.
   `DispatchFulfilmentCron` runs every 30 seconds and delivers the due `FulfilmentRecords` to their plugins
   (`FulfilmentDispatcher`, claim with a lease, back-off, paid then refunded then lapsed per invoice and plugin);
   `DispatchFulfilmentNow` is one extra pass of the same job under the same lease, scheduling nothing, for the
@@ -93,13 +98,14 @@ repositories. The departures are short:
   an interval job under half its interval, or the 30-second job would run every second beat.
 - **Our own API contracts carry no `[JsonPropertyName]`**: the wire name is the property name in camelCase.
   A route id is overlaid on the bound command with `with { ... }`; there are no `*Body` types. The SDK ports are
-  vendor-free too (`IHostingPanelApiClient`, `IHostingPanelV7ApiClient`; `NoVendorNamesTests` covers the SDK).
+  vendor-free too (`IHostingPanelApiClient`, `IHostingPanelV7ApiClient`; `NoVendorNamesTests` covers the SDK: its type names, and the text of its comments and strings, which also name no host-internal type).
 - **Errors are one `ErrorResponse` body, `application/problem+json`**
   (`Type`/`Title`/`Status`/`Detail`/`Errors`, camelCase on the wire), written by one serializer,
   `Shared/Infrastructure/ErrorBody.cs`, for every surface: `BaseApiController`,
   `ExceptionHandlingMiddleware`, the model-state factory, the auth-event writers and the rate
   limiter. The body carries only those members, and both frontends read `type`/`detail`; do not
   add an `error`/`code` pair beside them.
+  `EventStreamResult` and `ServerSentEvent` (the `text/event-stream` writer and its framing) live in `Shared/Infrastructure` beside `ErrorBody` for the same reason: they are the host's own response writers, not controllers or use case code.
 - **The API sends the finished sentence, in the caller's language; the frontend does not
   translate codes.** Sentences live in `Application/Resources/ErrorMessages*.resx` (looked up by
   error code through `IErrorMessageResolver`) and `Shared/Resources/ValidationMessages*.resx` (middleware, binders) and
@@ -149,8 +155,9 @@ docker/                              compose set (shared·dev·prod·platform), 
   `PortPlacementTests` fails on one anywhere else. Adapters sit in Infrastructure under a
   capability folder (`Storage/`, `Email/`, `Integrations/<Provider>/`, `Auth/`); EF configurations sit in `Persistence/Configurations/`.
   Two documented exceptions in `PortPlacementTests`. A request-scoped adapter lives under `API/` and
-  sits in the test's allow-list with what it reads (today `API/Identity/HttpCallerAccessToken`,
-  the `Authorization` header, behind `ICallerAccessToken`). `Innovayse.Providers.CWP7` implements
+  sits in the test's allow-list with what it reads (today `API/Identity/HttpCallerAccessToken`, the `Authorization`
+  header, behind `ICallerAccessToken`, and `API/Identity/HttpCallerClientMemo`, the request's `HttpContext.Items`, behind
+  `ICallerClientMemo`). `Innovayse.Providers.CWP7` implements
   `IProvisioningProvider` and is not scanned: it is not a plugin, Infrastructure links it and
   `ProvisioningProviderFactory` builds it per server, so it is an Infrastructure adapter in its
   own assembly. The SDK's `IProvisioningPlugin` is only a marker with no operations, so there is
@@ -178,12 +185,22 @@ docker/                              compose set (shared·dev·prod·platform), 
   `Assembly.LoadFrom` over it would give the process two distinct `IPaymentPlugin` types with the
   same name, after which every cast in `PluginActivator` fails. The CWP providers are
   deliberately **not** staged, so they cannot activate at runtime by accident.
-- **Six plugin types, one activator.** The loader registers each plugin under the SDK contract of the
+- **The SDK is grouped by area (since SDK 2.0.0; the submodule pins 2.1.0, commit `6a725c2`, which adds the `Ui`
+  view schema, `externalOrigins`, the endpoints capability and the fulfilment `ClientRef`).** Every SDK type lives in
+  `Plugins/<Area>/` and its namespace equals the folder: `Payment`, `Provisioning`, `Registrar`, `HostingPanel`, `Hosting`,
+  `Fulfilment`, `Identity`, `StoredCredentials`, `Manifest`, `Api`, `Endpoints`, `Host`, `Store`,
+  `Lifecycle`, `Slots`, `Ui`, `Enums`. Each interface sits next to the records it uses; there is no
+  `Interfaces/` folder (file-layout allows one only in Domain, `Application/Common/Interfaces/` and
+  Shared) and nothing at the `Plugins/` root. Enums are in `Plugins/Enums/` with explicit values:
+  `PluginType` keeps its released values starting at 0, every other enum starts at 1. The abstract base
+  classes a plugin derives from live in the `Innovayse.SDK.Base` namespace (`Base/`), not in an area. Inputs are `*Instruction` or `*Context`, outputs `*Result`, `*Status`,
+  `*Lookup` or `*Session`; never `*Request`. `SdkContractTests` pins every namespace.
+- **Seven plugin types, one activator.** The loader registers each plugin under the SDK contract of the
   type its manifest declares: provisioning, payment, registrar, identity (`IClientResolver`),
-  fulfilment (`IFulfilmentPlugin`) and hosted (`IHostedPlugin`). Every plugin becomes an instance in
+  fulfilment (`IFulfilmentPlugin`), hosted (`IHostedPlugin`) and app (`IPluginEndpoints`). Every plugin becomes an instance in
   one place, `Infrastructure/Plugins/PluginActivator`: it checks the loaded type really implements the
-  contract, that `integration:{id}:is_enabled` is `true` and that every required manifest field is
-  stored, then builds the plugin with its own configuration. The resolvers only choose:
+  contract, that `integration:{id}:is_enabled` is `true` and that every required manifest setting
+  (`manifest.GetSettings()`, which falls back to the legacy `fields`) is stored, then builds the plugin with its own configuration. The resolvers only choose:
   `PaymentPluginResolver` (`IPaymentPluginResolver`, one plugin by module id),
   `FulfilmentPluginResolver` (`IFulfilmentPluginResolver`, every enabled fulfilment plugin in id order) and
   `IdentityPluginResolver` (`IIdentityPluginResolver`, the one enabled identity plugin; two or more
@@ -193,13 +210,17 @@ docker/                              compose set (shared·dev·prod·platform), 
   stop that throws is logged with the plugin id and never stops the host or the other plugins. A plugin
   is enabled from the admin Integrations page, where it is listed (with its type) when its manifest sets
   `showInIntegrations`.
+- **Stored credentials are an optional payment capability.** `IStoredCredentialPlugin` (SDK) is implemented by a payment plugin on top of `IPaymentPlugin`; `IStoredCredentialPluginResolver` resolves it on top of `IPaymentPluginResolver` and answers nothing when the chosen plugin does not implement it. It is not a seventh plugin type and has no manifest type of its own.
 - **What the three newer plugin types promise.** *Fulfilment* (`IFulfilmentPlugin`): the host writes a
   `FulfilmentRecords` row in the payment's own transaction and `DispatchFulfilmentCron` delivers it, so delivery is
   **at least once** with back-off; every method must be idempotent on `InvoiceId` (the same paid invoice can arrive
   twice), a throw marks the attempt failed and retries, a normal return marks it done. The host calls
   `OnInvoicePaidAsync` once a paid invoice has a digital line, `OnInvoiceRefundedAsync` after money moved back,
   `OnSubscriptionLapsedAsync` when a renewal invoice passes its grace period unpaid, and `AdviseRefundAsync`
-  **before** a refund moves money. *Refund advice* (`RefundAdviser`, the one place that asks): every enabled
+  **before** a refund moves money. Every fulfilment context and the refund advice context carry `ClientRef`, the
+  receiving plugin's own `IPluginReferences.ForClient(pluginId, clientId)`, the same value that plugin's endpoint calls
+  for that client carry; it is computed per plugin by `FulfilmentDispatcher` and `RefundAdviser`, and
+  `FulfilmentContextBuilder` (pure) only places it. *Refund advice* (`RefundAdviser`, the one place that asks): every enabled
   fulfilment plugin is asked, the smallest `MaxRefundableAmount` wins, a cap of zero or less refuses the refund
   (`REFUND_BLOCKED_BY_PLUGIN`), a smaller positive cap reduces it and the plugin's `Reason` goes into the refund
   notes, and a plugin that throws or times out refuses it too (`REFUND_ADVICE_UNAVAILABLE`, fail closed). With no
@@ -211,7 +232,16 @@ docker/                              compose set (shared·dev·prod·platform), 
   that stops vouching applies on the next request); with no plugin a roleless user is refused. A signed-in principal the
   plugin refuses resolves to `CallerClientAccess.Refused` (`IdentityRefused`), and `PlaceOrderHandler` answers
   `CLIENT_PERMISSION_DENIED` for it instead of creating a client, while an unauthenticated caller stays
-  `CallerClientAccess.None`. The host links the returned `ExternalAccount` (provider plus id) to a client row,
+  `CallerClientAccess.None`. The policy is not role-only: a staff member (admin or support, who hold no client role)
+  that an enabled plugin vouches for also passes `Policies.Client`, because the policy asks the resolver for anyone
+  without the client role. `CallerClientResolver` keeps its answer for the request (`ICallerClientMemo`, kept in `HttpContext.Items`, because the bus runs a use case in its own scope), so the policy, the
+  permission filter and the use case ask the plugin once; `ICallerClientResolver.Invalidate()` is used only by
+  `PlaceOrderHandler`, after it creates the caller's client row. A plugin that throws, times out, or two enabled
+  identity plugins (`IdentityPluginConflictException`) fail closed in that one resolver, logged by exception type
+  and plugin ids only: the answer is `CallerClientAccess.Unavailable` (`IdentityUnavailable`), the portal policy
+  refuses it, the permission filter, `IClientAccess.Require*` and `PlaceOrderHandler` answer 503
+  `IDENTITY_PLUGIN_UNAVAILABLE` with `Retry-After` and create nothing, and so does the portal policy itself, through `IdentityPluginUnavailableResponder` (it reads the request memo, which is stored per subject, and keeps every other refusal a plain 403); `IdentityPluginUnavailableConvention` declares the 503 once for every portal action; the account read (`GetMyAccount`) degrades to no client
+  instead, so sign-in is not blocked. The host links the returned `ExternalAccount` (provider plus id) to a client row,
   creating it on the first order, and `IdentityPluginPermissions` maps the rights to client permissions: every
   admitted principal gets the read-only flags (services, domains, open tickets, emails); `CanPurchase` adds
   `PlaceNewOrders` and `ViewPayInvoices`; `CanManagePaymentMethods` adds `ViewPayInvoices` (the payment method
@@ -233,9 +263,25 @@ docker/                              compose set (shared·dev·prod·platform), 
   (the rows are filtered by prefix in SQL, never the whole `Settings` table). Connection strings,
   signing keys and other integrations never reach a plugin. The keys keep their full path because
   the SDK base classes read `integration:{id}:{key}`; a relative `IConfigurationSection` would make
-  every such read miss. This is the public plugin contract; typed plugin settings are planned for a
-  later SDK version, and until then this is the one type below the composition root allowed to hold
+  every such read miss. This is the public plugin contract: a plugin still reads its settings through `IConfiguration`
+  even though the manifest now declares them typed (see the manifest v2 note below), and this is the one type below the composition root allowed to hold
   `IConfiguration` (allow-listed in `ConfigurationTests`). Nothing else may follow it.
+- **Manifest v2 (SDK 1.4.0): `settings` supersede `fields`.** A `plugin.json` may declare typed `settings`
+  (text, url, select, secret, number, boolean, textarea); the legacy `fields` list is still read. The host
+  reads a manifest's settings in one place only, `PluginManifest.GetSettings()` (the `settings` when it lists
+  any, otherwise each legacy field converted): the activator's required check, the integration detail and
+  save (`IntegrationFields`), the loader's integration entry and the field mapping
+  (`PluginSettingMappingExtensions`) all go through it, and no host code reads `manifest.Fields` directly.
+  The one exception is secret classification, `Application/Admin/Common/SettingSecrecy`, the only question
+  every settings read and write asks: it takes the union of `GetSettings()` and the legacy fields, so a
+  secret declared in either list is secret even in a manifest that mixes the two and omits it from `settings`.
+  A secret is never returned in clear (`isSecret` and `hasValue` only) and is encrypted on save. A `settings`
+  entry with a `type` the host does not define, and a legacy `fields` entry with a `type` the SDK does not
+  recognise (the SDK would read it as plain text), are refused when the manifest is read
+  (`PluginManifestReader.Deserialize`, the plugin does not load), and anywhere an undefined settings kind still
+  reaches the classifier it counts as secret: an unknown type never reads as plain text. A `null` `settings`
+  or `fields` list reads as empty, as in the SDK. The wire
+  shape of a field definition (`FieldDefinitionDto`) is unchanged; a select carries the values of its options.
 - **Two plugin folders: built-in and uploaded (`PluginOptions`, section `Plugins`).** The build's own
   `plugins/` folder (`PluginOptions.BuiltInRoot`) holds the plugins shipped with the build; they load
   first, are listed with `isBuiltIn: true`, and cannot be removed or replaced from the admin panel
@@ -254,7 +300,416 @@ docker/                              compose set (shared·dev·prod·platform), 
   `Plugins:TrustedPackageSha256` lists any digest, the archive's SHA-256 must be one of them
   (`PLUGIN_NOT_TRUSTED`; an empty list, the default, accepts any archive that passes the other
   checks). Every install and removal writes an activity log line with no client (`ActivityLog.ClientId`
-  is nullable for system-wide actions), carrying the plugin id and, for an install, the digest.
+  is nullable for system-wide actions), carrying the plugin id and, for an install, the digest. A removal also switches the plugin off and purges its stored data through the outbox (`PluginRemovedEvent`, see the plugin store under "Plugin routes").
+- **One manifest validator for load and install (`Infrastructure/Plugins/PluginManifestValidator`).** A plugin
+  is checked against the manifest rules in one place, asked by `PluginManifestReader.TryRead` (startup load,
+  `plugins/` and the upload folder) and by `PluginPackageStore` (install); no rule is written twice. `Validate`
+  checks the manifest, `ValidateSdkReference` the assemblies beside it. Each rule is a `PluginManifestRule`
+  (Application `Admin/Plugins/Common/Enums`), which is also its error code (`PluginPackageErrors.CodeFor`,
+  `ErrorMessages` en/ru/hy, default 400): `manifestVersion` must be 1 or 2 (`PLUGIN_MANIFEST_VERSION_UNKNOWN`);
+  a client route, page or slot `permission` is `PluginPermissions.Any` or a defined `ClientPermission` name,
+  one name, exact case, not `None` (`PLUGIN_PERMISSION_UNKNOWN`; `ClientPermission.All`, the combined flag, is a
+  defined name and is accepted); an admin route, page or slot (a slot whose
+  `PluginSlot.Area` is admin) takes none (`PLUGIN_ADMIN_PERMISSION_DECLARED`); a route `path` and a page `path`
+  (both sit below the plugin's own prefix, so one rule) start with `/`
+  and every segment is a lowercase literal (`a-z0-9_-`) or a `{parameter}`, so no `..`, no empty segment, not
+  `/` alone (`PLUGIN_ROUTE_PATH_INVALID`); the segment patterns are anchored with `\A` and `\z`, never `$`, which
+  would let a trailing newline through; a method and path template is unique within an area, parameter names
+  ignored (`PLUGIN_ROUTE_DUPLICATE`; page paths are not checked for duplicates); a `slot` is in `PluginSlots` (`PLUGIN_SLOT_UNKNOWN`) and each `contextKeys`
+  entry satisfies `PluginSlot.Offers` (`PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED`); a menu and setting `label`, and a
+  page and slot `title`, shaped like a text key (dot separated words, no spaces, such as `menu.reports`) must
+  exist in the `en` locale, any other value is plain text; a setting `description` and `placeholder` is usually
+  help text or an example (`api.example.org`, `v1.0`) that has the shape of a key, so it counts as a key only
+  when some locale defines that exact value, and must then be defined in `en` too
+  (`PLUGIN_LABEL_KEY_MISSING`); an assembly in the plugin folder whose metadata references the SDK at a
+  lower major version than the host's is refused with a rebuild message (`PLUGIN_SDK_ASSEMBLY_OUTDATED`; only an
+  older major is refused, a newer minor or a newer major is not checked here), and one the host cannot read
+  (`IOException`, `UnauthorizedAccessException`) is refused with `PLUGIN_ASSEMBLY_UNREADABLE` instead of a server
+  error,
+  read with `System.Reflection.Metadata` so the plugin is never loaded into the default context. A version 1
+  manifest has none of these blocks and passes. At load a refused manifest skips only that plugin and logs
+  one warning with the plugin id and the rule; at install the response is the rule's localised error and
+  nothing is left behind. The manifest-level `sdkVersion` check (`PLUGIN_SDK_VERSION_UNSUPPORTED`) is separate
+  and unchanged. **View documents** (the `view` file of every page and slot) are read and checked by
+  `PluginViewDocumentReader` (`Infrastructure/Plugins`), at load after the signature check and before any assembly
+  loads, and at install on the unpacked files, with the same `PluginManifestRule`s: `ViewMissing`
+  (`PLUGIN_VIEW_MISSING`, no such file), `ViewInvalid` (`PLUGIN_VIEW_INVALID`: the path is not package-relative
+  `.json`, the file is over the size cap, it is not JSON, or it breaks the structure or link rule below),
+  `ViewSchemaUnsupported` (`PLUGIN_VIEW_SCHEMA_UNSUPPORTED`, `schema` is not `PluginViews.SchemaVersion`),
+  `ViewBlockKindUnknown` (`PLUGIN_VIEW_BLOCK_KIND_UNKNOWN`, an object with `kind` outside `PluginViews.BlockKinds`),
+  `ViewRouteUndeclared` (`PLUGIN_VIEW_ROUTE_UNDECLARED`, a `PluginViewRoute` that no route of the page's or slot's area
+  declares), and `LabelKeyMissing` for a key-shaped label under `PluginViews.LabelProperties` that `en` lacks
+  (the same `PluginManifestValidator` check as manifest labels).
+  - **Structure.** The root is an object with an integer `schema` and a `blocks` array. Every entry of a `blocks`
+    array (the root's or a tab's) and of a block's `actions` array is an object with a string `kind`; a block's `tabs`
+    is an array of objects whose `blocks`, when present, follow the same rule. A block the panel would skip or crash on
+    is refused at install, not rendered blank. The parser's `MaxDepth` is 32 (root counted), and a member name that
+    appears twice in one object is refused (the localiser would throw on it when the page is served).
+  - **Links.** The URL-like members `href`, `url`, `src`, `image` and `to` (names compared ignoring case, at any depth)
+    are each either host-relative (one leading `/`, never `//`) or an absolute `https` URL with a host and no user info;
+    neither may hold a backslash or a control character, and a host-relative link may not reach the host API (`/api` or
+    under `/api/`, any case, checked on the raw text and once more after one percent-decoding). Anything else
+    (`javascript:`, `data:`, `http:`, protocol-relative) is `PLUGIN_VIEW_INVALID`. `icon` must be a plain icon name
+    (`\A[a-z0-9-]{1,64}\z`), never a URL, and `target` and `formAction` are refused outright. The contract for both
+    panels: every string of a view is rendered as text only, never through `v-html`, a link is built only from these
+    checked members, and an absolute link opens with `rel="noopener noreferrer"`.
+  - **No links on the way.** A folder between the plugin folder and the view file, or the file itself, that is a
+    symlink or junction is `PLUGIN_VIEW_INVALID`; the check is on the path, accepted for the reason the signature check
+    gives (only the host writes the plugin folder). A file that is not seekable (FIFO, device) is refused too.
+  - **Size cap (`Plugins:MaxViewBytes`, `PluginOptions`, bytes, default 262144, 1 to 4194304, validated on start by
+    `PluginOptionsValidator`).** The length is read from the same open handle that is then read, before anything is
+    read, and the read itself is bounded (never more than the cap plus one byte), because the file may grow between the
+    two; over the cap is `PLUGIN_VIEW_INVALID`, at load and at install alike.
+  - **Violation details** carry only the package-relative path and, for a parse or I/O fault, the exception type name;
+    never an absolute host path, an exception message or document text, because the detail reaches the install response.
+  - **Kept in memory.** The parsed documents live in `LoadedPlugin.Views` (`PluginViewDocuments`), so serving a page
+    reads no file. A localised copy is cached per path and language (`PluginViewDocuments.Localised`, key
+    `LocalisedViewKey`), always: the language is first normalised by `PluginUiTexts` to a supported one (`en`, `ru`,
+    `hy`, anything else becomes `en`), so the cache holds at most documents times three and a caller cannot grow it.
+- **Menu icons and page ids (#643).** A menu `icon` is a plain name, `\A[a-z0-9-]{1,64}\z`
+  (`PLUGIN_MENU_ICON_INVALID`, `PluginManifestRule.MenuIconInvalid`); the panels map a name to a built-in icon only and
+  never load it as a URL. A page id is a `PluginPageIdentifier` (`Domain/Plugins`: `\A[a-z0-9][a-z0-9_-]*\z`, at most 64
+  characters, not the reserved `by-path`) and unique within its area (`PLUGIN_PAGE_ID_INVALID`,
+  `PluginManifestRule.PageIdInvalid`), so every page the installer accepts is reachable by the page lookup.
+- **Signed plugin packages (`Infrastructure/Plugins/PluginSignatureVerifier`, section `PluginSigning`).** An uploaded
+  package carries a detached Ed25519 signature, `plugin.sig` at its root, checked in one place by both paths, like the
+  manifest validator: at install (`PluginPackageStore`, on the unpacked files, before the move into place) and at load
+  (`PluginLoader`, **before any assembly of the plugin is loaded**, because loading can already run its code). A refusal
+  is a `PluginSignatureRule` (Application `Admin/Plugins/Common/Enums`, a sibling of `PluginManifestRule`), which is also
+  its error code (`PluginPackageErrors.CodeFor`, en/ru/hy, 400): `Unsigned` (`PLUGIN_UNSIGNED`, no `plugin.sig`),
+  `Malformed` (`PLUGIN_SIGNATURE_MALFORMED`, the file is not a signature, is over 4 KB, or a file name holds a control
+  character), `UnknownKey` (`PLUGIN_SIGNATURE_KEY_UNKNOWN`, the key id is not trusted), `Invalid`
+  (`PLUGIN_SIGNATURE_INVALID`, a file was changed, added or removed after signing). At install the response is the rule's
+  localised error and nothing is left behind (`PluginPackageOutcome.SignatureRefused`); at load only that plugin is
+  skipped and one warning carries its id and the rule.
+  - **The format** (`PluginSignatureFile`, `PluginSignaturePayload`; both the signing tool and the host use this code).
+    `plugin.sig` is `{"keyId":"...","signature":"<base64 of the 64-byte Ed25519 signature>"}`. The signature covers
+    this UTF-8 text (no byte order mark, every line ends in `\n`): the line `innovayse-plugin-signature-v1`, the
+    line `key <keyId>`, then one line per file, `<lower-case hex SHA-256> <path>`, where `<path>` is relative to the
+    package root with forward slashes, sorted by path with ordinal comparison. Every file under the root is listed
+    (sub-folders too) except `plugin.sig` at the root; folders are not listed. The key id is inside the payload, so a
+    signature cannot be presented under another id. A key id is `[a-z0-9][a-z0-9._-]{0,63}` (`TrustedKeyId`). A path
+    holding a control character or a lone surrogate (no UTF-8 form; the payload is encoded strictly), and any file or
+    folder that is a link (symlink or junction, never followed), cannot be signed and is `Malformed`. The check is on the
+    path, not on the opened handle, so a path swapped for a link between the check and the open would be followed; this is
+    accepted because the package root is created by the host (a staging folder it extracts the archive into, or an install
+    folder only its own process writes, and a zip entry is never written as a link), so no one else can write there. The
+    signing tool runs on the publisher's own folder and has no such guarantee.
+    `PluginSignaturePayload.Header` carries the version, so a change of format is a new header, not a silent clash.
+  - **Trusted keys** are public keys only (`PluginSigningOptions`, sealed, `SectionName = "PluginSigning"`, validated
+    at startup by `PluginSigningOptionsValidator`): `MaintainerKeys` ships in `appsettings.json` (empty until the
+    maintainers publish a key; nothing placeholder is shipped, tests generate their own keys per run) and `OperatorKeys`
+    is the operator's own (`PluginSigning__OperatorKeys__0__KeyId` and `__PublicKey`, the base64 of the 32-byte raw
+    key). Two lists because configuration arrays merge by index: one list would let an operator's first entry replace
+    the maintainers' first. The trusted set is both lists; a key id may appear once. A private key is never in the
+    repository, in configuration or on the host.
+  - **The policy** (`PluginSignatureVerifier.Check`). A plugin staged inside the image (`PluginOrigin.BuiltIn`, the
+    build's `plugins/` folder, such as the payment provider) is part of the host and **is never signature-checked**: it
+    is exactly as trustworthy as the image it shipped in, and the existing `Plugins:TrustedPackageSha256` pin stays
+    what it was, an archive digest allow-list for uploads. An uploaded plugin (`PluginOrigin.Uploaded`) is checked
+    wherever signatures are enforced, which is every environment except Development and Testing
+    (`PluginSignatureVerifier.Create`, the same environment test `DeployedSecretsValidator` uses); in Development an
+    unsigned package loads. Where enforced, an unsigned, tampered or unknown-key package is refused unless the admin
+    setting `plugins.allow_unsigned` (`PluginSettingKeys`, a `plugins.*` row seeded `false` by `PortalSettingsSeeder`,
+    validated by `UpdateSettingHandler`) is on; then it is admitted with a warning naming the plugin and the rule.
+    Turning it on is audited: `UpdateSettingHandler` writes a system-wide activity log line `Changed Setting - Setting:
+    plugins.allow_unsigned - From: false - To: true` in the same save (`PluginSettingKeys.IsAudited`).
+  - **When the setting is read.** At install `InstallPluginHandler` reads the row for each upload, so a change applies to
+    the next upload at once. At startup the loader needs it before the container exists, so
+    `AllowUnsignedSettingReader` reads that one row with a plain Npgsql query in `AddInfrastructure`; a database that
+    cannot be reached, a missing table (the first start), a missing row or any other failure reads as off, the safe
+    answer; the warning logs the setting name and the exception type only, never the connection string or host. Plugins
+    already installed therefore follow a change of the setting at the next restart.
+  - **Known limitation: no downgrade protection.** The signature proves who published the files and that they are
+    unchanged, not that they are the newest. An older signed version of a plugin can be installed again, and nothing in
+    the signature stops it, so a version with a known flaw stays installable for as long as its key is trusted. Removing a
+    trusted key is the only revocation today; a signed version floor or a revocation list is not built.
+  - **Signing** (`backend/tools/Innovayse.Hostpanel.PluginSigner`, outside `src/` and the solution, so the image does not
+    build it): `dotnet run --project backend/tools/Innovayse.Hostpanel.PluginSigner -- keygen <private-key-file>`
+    creates a key (the file holds the base64 of the 32-byte private key) and prints the public key;
+    `... -- sign <package-dir> <private-key-file> <key-id>` writes `plugin.sig`; `... -- public-key <private-key-file>`
+    prints the public key again. The tool refuses a key file inside a git working tree. Sign the folder that will be
+    zipped, after its last change. The future plugin repositories (#780) sign in their release pipeline with the same tool.
+  - **Admin.** The plugins page shows the `plugins.allow_unsigned` switch (`PluginSigningCard`) with a visible warning,
+    saved through the settings store like every other settings row.
+- **Plugin routes: one safe door for every app plugin (#639).** An app plugin (`PluginType.App`, `IPluginEndpoints`)
+  answers HTTP-shaped calls the host forwards, never a request or a token. Two thin catch-all controllers bind the request
+  and dispatch once: `ClientPluginCallsController` (`/api/client/plugins/{id}/{**path}`, `Policies.Client`) and
+  `AdminPluginCallsController` (`/api/admin/plugins/{id}/ext/{**path}`, `Policies.Admin`; `ext` keeps it apart from the
+  administration routes `install`, `restart` and `DELETE {id}`). Each has one command, `CallClientPluginCommand` and
+  `CallAdminPluginCommand` (folders `Application/Plugins/Commands/`), carrying the plugin id and a `PluginHttpInput`
+  (method, path, query, the unread body stream, content type and length) that `API/Plugins/PluginHttpInputReader` builds, the
+  same way for both. The part both areas share is `PluginCallRunner` (`Application/Plugins/Common`); each handler adds
+  only its area's authorisation. Nothing about a plugin is trusted: the manifest was validated at load, and a route is
+  looked up in it, never guessed.
+  - **The order is the contract, and authorisation sits before plugin code.** `PluginCallGate` (`Application/Plugins/Common`)
+    decides it, for both areas and for `PluginRateLimitFilter`, with a `PluginCallGateOutcome`. A client call: (1) the
+    caller's account from `ICallerClientResolver` (`IdentityUnavailable`, then no account, whatever the plugin);
+    (2) memory only, no I/O: the plugin is loaded and is an app plugin, and the manifest declares that method and path in
+    that area (`PluginRouteMatcher`: segments compare ignoring case, a parameter takes one non-empty segment, a literal
+    beats a parameter, a trailing slash matches nothing); (3) the route's permission; (4) only then the plugin's switch and
+    settings (`IPluginEndpointResolver.PrepareAsync`, the `PluginActivator` gates, without constructing the plugin), the
+    one database read. **An unknown plugin, a plugin of another type, a disabled one, an unconfigured one, an undeclared
+    route, a wrong method and a route the caller lacks the permission for all answer the same 404 `PLUGIN_ROUTE_NOT_FOUND`,
+    byte for byte**, and a refusal at step 2 or 3 never does the settings read, so neither the body nor the timing tells an
+    installed plugin from an absent one; the real reason is only in the Debug log, as the enum, never the client's path.
+    (5) `RunAsync`: the streaming route refusal, the body, the audit line, then the plugin is built and called. (#828 moved
+    the permission check ahead of the enabled check and turned its 403 into this 404.) The rate limit filter measures only
+    calls the gate admits, so a 429 cannot reveal a disabled or unconfigured plugin either.
+  - **Client area.** The caller, the account and the permissions come from `ICallerClientResolver`, the single source of
+    truth the permission attribute uses (owner, sub-user, identity plugin member). `IdentityUnavailable` answers 503
+    `IDENTITY_PLUGIN_UNAVAILABLE`; a route permission not held answers the 404 `PLUGIN_ROUTE_NOT_FOUND` above, not 403; a caller who acts
+    for no single account answers 404 `CLIENT_PROFILE_NOT_FOUND`, because the SDK promises a client area plugin a client.
+    A route `permission` is a defined `ClientPermission` name (that flag is needed), `PluginPermissions.Any` (no
+    permission, but still a client) or **absent, which means `ClientPermission.All`: a route that does not say who may
+    call it is for the account holder alone**, like every portal action that must carry a decision.
+    The controller is `[AvailableToEveryClientUser]` because the permission is dynamic (the matched route's), so
+    `ClientPortalPermissionTests` is satisfied and the use case enforces it. `PluginCaller.Permissions` lists the single
+    flags held, never `None` or `All`. Admin area: `Policies.Admin` is the whole check; the plugin gets no client, no
+    permissions and an opaque user reference. An admin call carries no `PluginCall.Context` yet (slot context is a later
+    issue).
+  - **Unsafe methods need `X-Requested-With: XMLHttpRequest` or a bearer token.** The rule is one class, `API/Auth/CsrfRule`,
+    shared by `LocalSessionCsrfMiddleware` (cookie requests, local mode) and `[RequireRequestedWith]` on both plugin
+    controllers, which states it for these routes whatever credential the request carries (403 `CSRF_HEADER_MISSING`).
+  - **Body cap (`PluginApiOptions`, section `PluginApi`, `MaxBodyBytes`, default 1 MiB, 1 to 64 MiB, validated on start).**
+    A declared `Content-Length` over the cap is refused without reading; a body without one is read in chunks and refused
+    the moment it passes the cap: 413 `PLUGIN_REQUEST_TOO_LARGE` before the plugin is called. The plugin sees the whole
+    body or none of it. **Memory cost:** the body is read once by `PluginBodyReader` into one buffer and the plugin is handed a slice of it (no
+    second copy), so a call holds up to `MaxBodyBytes` (up to 64 MiB) for as long as it runs. The buffer is never sized
+    from a declared length beyond 64 KiB, because a declared length is only a claim (a caller who declares the whole cap and
+    sends nothing must not make the host allocate it); it grows by doubling as bytes really arrive, so a chunked or large
+    body briefly holds the old and the new array at once (up to about 3 times the body at the last growth step). Size
+    `MaxBodyBytes` for the number of concurrent plugin calls a deployment expects, not only for the largest body.
+    **Two guards keep the runner the only reader.** `[PluginBodyLimit]` sets the web server's per request body limit
+    (default about 28.6 MiB, which may be below the cap) to `PluginApiOptions.ServerBodyLimit` (the cap, one read chunk of 8 KiB and 1/64 of the cap for chunk framing, which the
+    server counts) on both plugin controllers, after authorisation: the runner stops at the first read that passes the cap, which
+    is never more than one chunk beyond it, so it still answers its own 413 `PLUGIN_REQUEST_TOO_LARGE` first, while a
+    request the runner never reads (unknown plugin, undeclared route, refused caller) is bounded by the server at
+    that same size instead of being drained without limit. `[NoFormBinding]` removes every MVC value provider except the
+    route's and the query string's, because MVC otherwise reads and buffers a urlencoded or multipart body before the
+    action, past the cap, and leaves the plugin an empty body. Architecture tests pin `[RequireRequestedWith]`,
+    `[PluginBodyLimit]`, `[NoFormBinding]` and the policy on both controllers; `PluginKestrelBodyTests` proves the limits on
+    a real Kestrel socket (`KestrelBodyHost`: the same guards, `PluginHttpInputReader` and `PluginBodyReader` behind probe
+    controllers), since the in-memory test server has no limit and the API's own entry point cannot be put on a socket by the
+    test factory (the JasperFx run command disposes the host once a real server starts). **Those tests prove the two
+    filters and the reader, not the whole pipeline through `PluginCallRunner`**: the probe controllers stand in for the
+    doors, so the order of the runner's steps is covered by the in-memory call tests, and the reader and
+    `PluginApiOptions.ServerBodyLimit` also have direct unit tests (`PluginBodyReaderTests`, `PluginApiOptionsTests`).
+  - **Audit.** A call that is not a GET writes one activity log line before the plugin runs, through `IActivityLogger`:
+    `Called Plugin Route - Plugin ID: {id} - Area: {Client|Admin} - Route: {METHOD} {declared template}`, the client for a
+    client call and none for an admin call, stamped with the caller by the logger. Never the body, never the concrete
+    path. A call refused before the plugin (404, 403, 413) writes nothing.
+  - **Replies** (`PluginReplyDto : IForwardedReply`, written by `BaseApiController.HandleForwarded`, the only place a
+    status the use case did not choose reaches the wire). `Json` and `NoContent` pass through with the plugin's status
+    (camelCase body). `Problem` becomes the standard `ErrorResponse` (`application/problem+json`) with the plugin's status,
+    the title of that status and its sentence (cut to 500 characters; the localised `PLUGIN_REPORTED_PROBLEM` when it gave
+    none). **The code is written `plugin.{pluginId}.{code}`**: host codes are SCREAMING_SNAKE with no dot, so a plugin can
+    never answer with a host code and a frontend that branches on one is never fooled; a code that is not 1 to 64 letters,
+    digits, `_`, `.` or `-` is a plugin fault. **A plugin that throws** (or whose constructor throws, or returns no reply
+    or a malformed problem) answers 502 `PLUGIN_FAILED` with no message and no stack, logged with the plugin id; only the
+    caller's own cancellation propagates. **Streaming (#641).** A `Stream` reply is only accepted from a route that declares `streaming`
+    (`PluginCallRunner.MapStream`); from any other route it is a plugin fault, 502 `PLUGIN_FAILED`, and the stream is
+    never enumerated. A streaming route may still answer with JSON, no content or a problem, and a refusal or a throw
+    before the first event is the ordinary reply with its own status. An accepted stream is a `PluginReplyDto` carrying a
+    `Shared/Models/StreamedReply` (events plus `PluginApi:StreamHeartbeatSeconds`, default 15, 1 to 300);
+    `BaseApiController.HandleForwarded` hands it to `HandleStream`, which returns `Shared/Infrastructure/EventStreamResult`:
+    `text/event-stream`, `Cache-Control: no-cache`, `X-Accel-Buffering: no`, headers flushed at once, each event framed by
+    `ServerSentEvent.Format` (`event`, `id`, one `data` line per line of data) and flushed, `: keepalive` after each
+    silence of the heartbeat, and the plugin's enumerator opened with `HttpContext.RequestAborted`, so a disconnect cancels
+    the plugin (`PluginReply.Stream` documents the `EnumeratorCancellation` the plugin needs). A plugin that throws after
+    the first event ends the stream with an `error` event (`code` `PLUGIN_FAILED`, localized `message`, `partial`) and a
+    `done` event (`PluginEventStream`, vocabulary `PluginStreamEvent`); nothing of the exception is written. The
+    `plugin-stream` lease of `PluginRateLimitFilter` is registered for disposal with the response, so it is held for the
+    whole stream.
+    **The status is checked again by the host**, not trusted to the SDK factories: a `Json` reply must be 200 to 203 with a
+    body, `NoContent` 204, a `Problem` 400 to 599 except 401 and 407; anything else (a reply built by reflection or by a
+    plugin compiled against another SDK) answers 502 `PLUGIN_FAILED`, logged with the plugin id. **A plugin problem
+    sentence is the plugin's own text**: the host cuts it to 500 characters but does not localise it, so it may be in any
+    language, and only the host's own sentences (title, `PLUGIN_REPORTED_PROBLEM`, every other code) are in en, ru and hy.
+  - **Route values are untrusted input.** The path is matched segment by segment against the declared templates after the
+    server has decoded it once. A `..` or `.` segment is never resolved into another route (an undeclared shape is 404), an
+    empty segment matches no parameter, and a parameter takes one segment whose text reaches the plugin unchanged: `..`,
+    `%2e%2e` (still the literal text), `a%2Fb` (the server leaves `%2F` encoded, so it arrives as those five characters, not
+    as a `/`), a backslash or a NUL character are all just text in `RouteValues`. A plugin must never use one as a file
+    name, a path, an address or a query fragment without its own validation. The method is the real method: `HEAD` and
+    `OPTIONS` are not mapped (404 or 405, no plugin code) and a method override header is ignored.
+  - **Signals that remain, and why they are accepted.** The 404 that hides whether a plugin exists is the same body for
+    unknown, disabled, another type and undeclared, but a caller can still tell the 404 from a 403 `CLIENT_PERMISSION_DENIED`
+    or 413 and so learn that an enabled plugin declares that route; and the time to answer differs slightly between a
+    refusal and a call that reaches plugin code. Both are accepted: the route list of an enabled plugin is not a secret (it is in
+    the plugin manifest the administrator installed), the 403 is only given to a caller who is already signed in as a client,
+    the permission must be answered before plugin code runs, and hiding the difference would mean running plugin code or adding
+    sleeps for no one's benefit. A per call timeout is not there yet (#792).
+  - **Opaque references (`IPluginReferences`, `Infrastructure/Plugins/PluginReferences`).** `PluginCaller.ClientRef` and
+    `UserRef` are the URL-safe Base64 of an HMAC-SHA256 over `kind`, the plugin id and the host id, under a key derived
+    (HKDF-SHA256, purpose label `innovayse-hostpanel-plugin-references-v1`) from the encryption key the host already
+    requires. Stable for one plugin and one subject, different for every other plugin, never a host id, and not reversible
+    or computable by a plugin because it does not hold the key. A keyed hash was chosen over a stored mapping because it
+    needs no table, no migration and no write on the first call; the price is that references live as long as the
+    encryption key, and rotating it gives every plugin new references. The identity plugin member's `UserRef` is their
+    subject's, and their `ClientRef` is the account's client's, the same one the holder has.
+  - **Host facts and the plugin store (#642).** `IPluginCallServices` is implemented by `HostPluginCallServices` (scoped) and
+    builds, for each call, the `PluginCall.Host` and `PluginCall.Store` the SDK requires from one
+    `PluginCallBinding` (built only through `ForClient(pluginId, clientId, clientRef, permissions)` or `WithoutClient(pluginId)`, so its reference is null exactly when its client is). **The binding is the one source of the client reference**:
+    the area's handler builds it once (`CallClientPluginHandler`: the client from `ICallerClientResolver`, its
+    `IPluginReferences.ForClient` reference and the caller's permissions; `CallAdminPluginHandler`:
+    `PluginCallBinding.WithoutClient`), and `PluginCallRunner.RunAsync(target, binding, userRef, input, ct)` builds the
+    `PluginCaller` from it (`ClientRef`, the held permission names) and hands the same binding to the services. Nothing else
+    derives a reference, so `caller.ClientRef`, the store scope and the facts are always about one client.
+    *Host API* (`Infrastructure/Plugins/PluginHostApi`, mapping in `Infrastructure/Plugins/Extensions/`): bound to the call's client, no method takes an id.
+    It reads other modules' rows only through the port `IPluginHostFactsReader` (`Infrastructure/Plugins/PluginHostFactsReader`,
+    like `IPluginSlotContextReader`), never a `DbSet`. **What it shows follows the caller's permissions** (security.md,
+    visibility before capability), decided before anything is read: invoices only with `ViewPayInvoices`, services only with
+    `ViewProductsServices`, and the profile's sign-in email only with `ModifyMasterProfile` (a sub-user without it never sees
+    the address in the portal either); the name, currency and language go to every client caller. An admin call carries no
+    client and gets no facts. The profile is the company name when set, else "First Last"; email and language come from the
+    identity provider and are null when the owner has no identity account; currency comes from `IPayerCurrencyResolver`.
+    Services and invoices are newest first (`CreatedAt`, then `Id`, descending), at most `PluginHostLimits.MaxListed` (50, cut
+    in SQL), and invoices pass `Invoice.ClientVisibleFilter`, so a draft is never shared. A call whose client row is gone gets a
+    null profile and empty lists. Domain statuses map to SDK statuses by name in an exhaustive switch; an unknown value throws, and so does a draft invoice, which the filter keeps from ever reaching it.
+    `IssueSshAccessAsync` and `RevokeSshAccessAsync` always throw `PluginHostAccessException`
+    (`PluginHostAccessFailure.NotAllowed`) until hosting access is granted (#758): no manifest is admitted with `hostAccess` yet.
+    *Store* (`Infrastructure/Plugins/PluginStore`): table `PluginDataEntries` (aggregate `PluginDataEntry`: `PluginId`,
+    `ClientRef`, `Key`, `Value` text, `CreatedAt`, `UpdatedAt`; unique `IX_PluginDataEntries_PluginId_ClientRef_Key`, nulls not
+    distinct) and table `PluginDataScopes` (aggregate `PluginDataScope`: `PluginId`, `ClientRef`, `KeyCount`, `StoredChars`,
+    `Revision`, xmin concurrency token; unique `IX_PluginDataScopes_PluginId_ClientRef`, nulls not distinct). A scope is per
+    client in the client area and plugin wide (null `ClientRef`) on an admin call. A key is 1 to 200 characters of letters,
+    digits, `.`, `-`, `_` and `:`; a value is text up to 65,536 characters (`PluginDataEntry.MaxValueLength`), empty allowed,
+    null refused. A contract breach throws `DomainRuleException` `PLUGIN_STORE_KEY_INVALID` or `PLUGIN_STORE_VALUE_INVALID`
+    (`Domain/Plugins/PluginStoreErrors`, sentences in en/ru/hy); the runner answers it like any plugin throw, 502
+    `PLUGIN_FAILED`, and logs it, so these two codes never reach a caller and have no `StatusMapping` row.
+    - **Quota, one rule.** `PluginApi:MaxStoreKeysPerScope` (keys, default 1000, 1 to 100,000) and
+      `PluginApi:MaxStoreCharsPerScope` (characters of every key and value, default 4 Mi, from one full key and value to
+      1 Gi), both on `PluginApiOptions`, validated on start, read as one `PluginStoreQuota`. `PluginDataScope.Admit` is the only
+      place either is checked: a write that would take the scope past either measure is refused with `DomainRuleException`
+      `PLUGIN_STORE_QUOTA_EXCEEDED`; a write that shrinks or keeps the size is always allowed, even in a scope over a lowered
+      quota. The refusal fails closed (nothing is written, whether or not the plugin catches it), and the store raises the
+      call's `PluginStoreQuotaSignal`, host state the plugin cannot set: when the plugin then throws, the runner answers 402
+      `PLUGIN_STORE_QUOTA_EXCEEDED` (its own exact `StatusMapping` row, the 402 every quota refusal answers; en/ru/hy) instead of
+      `PLUGIN_FAILED`, so only a refusal the host made carries that code. Inside a stream that already started the refusal ends
+      the stream like any other throw.
+    - **Writes and races: last writer wins.** Every `SetAsync` and `RemoveAsync` loads the scope row and the entry tracked,
+      asks `Admit`/`Release` (each bumps `Revision`, so every write of a scope changes the scope row) and saves once. The scope
+      row's xmin token therefore serializes the writes of one scope, which keeps the counters exact; a first write of a scope or
+      a key meets the unique index instead, which `AppDbContext.SaveChangesAsync` translates to `ConcurrencyConflictException`
+      like the gateway payment reference. On that conflict the store detaches what the attempt tracked and repeats the whole
+      operation from a fresh read, at most five times, then lets the conflict propagate (answered `PLUGIN_FAILED`). So two
+      writes of one key both succeed and the one that commits last is the value kept (there is no compare-and-set; a plugin
+      that needs one keeps a version in its value); a remove that lost to another remove answers `false` (absent), and a write
+      after another call removed the key creates it again. The save flushes only the store's change because `PluginCallRunner`
+      saves its audit line before it builds the plugin, so nothing else is staged while plugin code runs.
+    - **Purge on uninstall.** `RemovePluginHandler` (Admin) refuses an invalid id and a built-in plugin as before. When the
+      package store removed the files, or they were already gone but the plugin has a switch row (a valid, non-built-in id
+      that was switched on here, so data a lost package left behind can still be removed), it switches the plugin off
+      (`integration:{id}:is_enabled` set to `false` through `Setting.SwitchOffRemovedPlugin`), stages the activity line and
+      saves once; files gone and no switch row answers `PLUGIN_NOT_FOUND` and writes nothing, because a plugin never
+      switched on ran no call and kept no data. The switch raises `PluginRemovedEvent` (with the removal moment), which
+      #802's interceptor writes to the outbox in that same transaction, so the switch-off and the purge commit together or
+      not at all. `PluginActivator.PrepareAsync` reads the switch on every call, so no new call reaches a still-loaded
+      plugin from the commit on; a call already running at that moment can still finish its writes.
+      `Plugins/Events/PurgeRemovedPluginDataHandler` (returns `Task`, so it is a queued chain with a durable inbox and the
+      queued retry policy) goes scope by scope and deletes the entries last written at or before the removal
+      (`UpdatedAt`, else `CreatedAt`), in batches of 500 through the context (no bulk delete), releasing each from its
+      `PluginDataScope` and deleting the scope once it is empty. A retry may run hours later, after the same id was
+      installed and switched on again, so rows written after the removal (by that new installation, or by a call that was
+      already running) are kept with their scope; the scope's xmin token makes the purge and such a write conflict
+      instead of interleaving, and the purge then re-reads the scope. A second delivery finds nothing old and stops. The
+      answer is `requiresRestart: true` when files were removed and `false` when they were already gone (the admin store
+      never lowers a banner it already shows).
+    - No purge for clients: a client is never deleted, only closed (`ClientClosedEvent`), and a closed client keeps reading
+      their history, so a plugin's per-client rows are kept like the rest of that history. The only path that removes clients
+      is the demo reset, which truncates every model table, the store tables included. Rows are keyed by the opaque
+      `ClientRef` (no client id column), so a future client erase would compute `IPluginReferences.ForClient` per plugin that
+      has rows.
+  - **Status codes.** `PLUGIN_ROUTE_NOT_FOUND` 404, `PLUGIN_REQUEST_TOO_LARGE` 413 (the `_TOO_LARGE` suffix),
+    `PLUGIN_FAILED` 502 and `PLUGIN_STORE_QUOTA_EXCEEDED` 402 (exact `StatusMapping` rows); each has its sentence in
+    en/ru/hy. `PLUGIN_STREAMING_NOT_SUPPORTED` went with #641.
+  - **Rate limits (#640).** `API/Plugins/PluginRateLimitFilter` is a resource filter on both doors, marked
+    `[PluginRateLimit(PluginArea)]`. It matches the route and measures the caller against `plugin-default`,
+    `plugin-strict` or `plugin-heavy` (the manifest route's `RateLimit`, default when none) with
+    `Shared/Infrastructure/PluginRateLimiter`, keyed by plugin and client account (client calls) or administrator
+    (admin calls). A streaming route also takes a `plugin-stream` concurrency lease, held until the response is
+    disposed. Budgets are `RateLimit:PluginDefault|PluginStrict|PluginHeavy|PluginStreamPermitLimit`. A refusal is the
+    middleware's own 429 (`RateLimitingExtensions.WriteRejectionAsync`). The limiter is a no-limiter in Testing, and
+    tests derive a host with an enabled `PluginRateLimiter`. The client account is resolved before the plugin budget
+    is checked, so a refused call still costs one lookup, which the global limiter bounds. A refused stream call has
+    already spent its tier permit.
+  - Left for a later issue: a call timeout (#792). A streamed call has no timeout
+    of its own until then: it ends when the plugin ends or the client leaves.
+- **Plugin slot index: widgets for a verified context (#644).** The answer is `PluginSlotIndexDto` with
+  `PluginSlotWidgetDto` items. **Nothing of a plugin is built or called**: the index is read from manifests, so a foreign
+  id cannot reach plugin code.
+  - Endpoints: `GET /api/client/plugins/slots/{slotId}` (`ClientPluginSlotsController`) and
+    `GET /api/admin/plugins/slots/{slotId}` (`AdminPluginSlotsController`). The query names the record the page shows
+    (`serviceId`, and `clientId` on an admin slot). Use cases: `GetClientPluginSlotQuery` and `GetAdminPluginSlotQuery`
+    (`Application/Plugins/Queries/`), sharing `PluginSlotIndexBuilder`. Rows of other modules are read through
+    `IServiceOwnership` and `IPluginSlotContextReader`, never from the handler.
+  - Order of checks, which is the contract: the slot (unknown or of the other panel is `PLUGIN_SLOT_NOT_FOUND`), the
+    caller's account, the context, then the index. A client slot's service must be the caller's own
+    (`SERVICE_NOT_FOUND` for foreign and missing alike, one query that also yields the product); an admin context must
+    exist (`SERVICE_NOT_FOUND`, `CLIENT_NOT_FOUND`) and a client named beside a service must be its own. A slot that needs
+    a record and gets none is `PLUGIN_SLOT_CONTEXT_REQUIRED` (400, the default arm of `StatusMapping`).
+  - Filters: the plugin is an enabled, configured app plugin (the `IPluginEndpointResolver` gates); the operator has not
+    hidden the widget; the caller holds its `permission` (`PluginClientPermissions`, the rule a route uses: absent means
+    the account holder alone, `Any` means none, anything unparsable fails closed; an admin slot takes none); a widget
+    with `productIds` is listed only when the slot's service orders one of them. Titles resolve through `PluginText`.
+    The order is `order`, then plugin id, then widget id, ordinal.
+  - Manifest rules: a slot widget id matches `[a-z0-9][a-z0-9_-]*` and is unique per slot within a plugin, and the
+    plugin id is a `PluginIdentifier`.
+  - Hide setting: `plugins.hidden_slot_widgets` (`PluginSettingKeys.HiddenSlotWidgets`, seeded empty) holds comma
+    separated `slot:plugin:widget` entries. Empty entries are ignored, and the validator and the reader share one grammar.
+
+- **Plugin UI index and pages (#643).** Four read endpoints serve what a plugin adds to a panel:
+  `GET api/client/plugins/ui` (`Policies.Client`, `[AvailableToEveryClientUser]`) and `GET api/admin/plugins/ui`
+  (`Policies.Admin`) answer the index `PluginUiDto { Menus, Pages }` (menus `{pluginId, id, label, page, icon, order}`,
+  pages `{pluginId, id, path, title}`; both empty with no available plugin); `GET api/{client|admin}/plugins/ui/{pluginId}/pages/{pageId}`
+  answers `PluginPageViewDto {pluginId, id, path, title, view, externalOrigins}` (`externalOrigins`: the manifest's
+  declared origins as written, empty when none, which the panels need to render a link to an absolute `https` address).
+  A fifth, `GET api/{client|admin}/plugins/ui/{pluginId}/pages/by-path?path=` (`GetPluginPageByPathQuery`), finds the page
+  by its panel path: both lookups go through `PluginPageReader` (one order of checks, below), and
+  `PluginPagePathMatcher` picks the page: the path starts with `/`, is at most 512 characters, holds no empty, `.` or `..`
+  segment, no backslash and no control character (otherwise no page), segments compare ignoring case, a parameter takes
+  one segment, and the page with most literal segments wins (manifest order on a tie). **Availability is the same gate
+  as the routes:** `IPluginUiSource` (`Infrastructure/Plugins/PluginUiSource`) lists a plugin only when it is loaded, an
+  app plugin and passes `PluginActivator.PrepareAsync` (enabled and configured), so a page shows exactly when its routes
+  answer. The answer is computed for every plugin in one pass and kept for 10 seconds by `PluginAvailabilityCache`
+  (singleton), used by the index and both page lookups alike; `IPluginAvailabilityInvalidator` drops it after the save
+  of `RemovePluginHandler`, `SaveIntegrationConfigHandler` and `UpdateSettingHandler` (for `integration:*` keys), so a
+  switch shows at once. The slot index (#644) does not use the cache yet; it still asks `IPluginEndpointResolver` per
+  plugin.
+  **Permissions:** a client page is listed or served only when `PluginClientPermissions.IsHeld(held, page.Permission)`,
+  the one rule the route door and the slot index also use (`Any` needs none, a defined name needs that flag, **absent
+  means `ClientPermission.All`, the account holder only**, anything unparsable fails closed); the admin area holds
+  `All` and so has no filter. The viewer is resolved by `PluginUiViewer.PermissionsAsync`, the way the route door
+  resolves its caller (`ICallerClientResolver`). A menu is listed only beside a visible page.
+  **Order:** `PluginUiSource` is the ordering contract: it lists plugins by manifest id (ordinal), so neither load order
+  nor instance changes it, and the index keeps that order without sorting again; pages keep manifest order within a plugin, and menus are ordered by
+  `Order`, then plugin id, then menu id (ordinal).
+  **Labels:** `PluginUiTexts.For(manifest)` resolves a menu label and a page title through `PluginText.Resolve` (one
+  rule for menus, pages, slots and views), and `Localise` every label of a view, in the request language
+  (`X-Language`, so `CurrentUICulture`, normalised to a supported language, otherwise `en`), English when that locale
+  lacks the key, otherwise the value itself as plain
+  text. `PluginText` compares locale codes ignoring case, as the manifest validator does, so `EN` reads like `en`.
+  **Index answers:** 503 `IDENTITY_PLUGIN_UNAVAILABLE` when the identity plugin cannot say who a client caller is, 404
+  `CLIENT_PROFILE_NOT_FOUND` when the caller acts for no single account, otherwise the filtered index.
+  **Page answers (the order is the contract):** the viewer is resolved first, so the lookups run for every caller alike.
+  503 `IDENTITY_PLUGIN_UNAVAILABLE` stays, because an outage says nothing about the page. **Every other refusal is the
+  same 404 `PLUGIN_PAGE_NOT_FOUND` with an identical body**: a malformed `pluginId` or `pageId` (no 400, which would
+  say which ids are well formed), an unknown plugin, a disabled or unconfigured one, a plugin
+  that is not an app plugin, an undeclared page, a missing view, a client caller who acts for no account and one who
+  does not hold the page's permission. A page never answers 403 or `CLIENT_PROFILE_NOT_FOUND`, so the endpoint is no
+  oracle for which plugins and pages exist. The route door (#639) differs on purpose: it still answers 403
+  `CLIENT_PERMISSION_DENIED` after the 404, a signal accepted and explained under "Signals that remain".
+  **The plugin ids `ui` and `slots` are reserved** (`PluginIdentifier.Reserved`): the routes
+  `api/{area}/plugins/{id}/{**path}` would otherwise swallow `plugins/ui` and `plugins/slots`, and a plugin with either id
+  would shadow the index or the slot index. `PluginIdentifier` asks two
+  questions: `IsWellFormed` (the shape: lower-case words joined by single hyphens, at most 64 characters) and `IsValid`
+  (`IsWellFormed && !IsReserved`, whether a plugin may take the id). An install of a manifest with a reserved id is
+  refused with `PLUGIN_MANIFEST_ID_INVALID` (`PluginManifestRule.PluginIdInvalid`), and the loader skips a reserved
+  folder or manifest id with one warning. Listing, removal (`RemovePluginValidator`, `PluginPackageStore`) and
+  `Setting.SwitchOffRemovedPlugin` / `CreateSwitchedOffForRemovedPlugin` check only the shape, so a plugin installed as
+  `ui` or `slots` before the id was reserved stays listable and removable, and its data is still purged. #647 (admin plugin pages)
+  builds on these shapes.
 
 ## CQRS — Wolverine, conforming
 
@@ -286,6 +741,54 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   host that keeps the production container (`IntegrationTestFactory.WithProductionAdapters`, no test double), and
   walks the production registrations for a type, constructor or constructor parameter that is not public; the
   test host's public fakes would otherwise hide a production adapter that is not.
+- **Durable messaging.** Messages are persisted in PostgreSQL (`opts.PersistMessagesWithPostgresql`) in
+  Wolverine's own schema `wolverine` (incoming, outgoing, dead-letter and node tables, lower-case names that are
+  Wolverine's and exempt as framework-owned). The connection string is `ConnectionStrings:DefaultConnection`, read
+  while Wolverine is configured; a missing one refuses startup with the key's name. The schema is created and
+  updated by Wolverine at host start (`AutoBuildMessageStorageOnStartup = CreateOrUpdate`, set explicitly), in
+  every environment including `Testing`, and **not by an EF migration**: mapping Wolverine's tables into
+  `AppDbContext` would make the EF model own a framework schema whose shape changes with the Wolverine version and
+  put framework tables under `ModelDiffBaselineTests` and `DatabaseIdentifierNamingTests`. EF migrations run as
+  before. **The deploy database user needs `CREATE` on the database** (not only on `public`), because Wolverine
+  creates the `wolverine` schema itself at the first start; without it the host refuses to start on that first boot. `opts.UseEntityFrameworkCoreTransactions()` registers the `IDbContextOutbox` the domain-event interceptor
+  uses, **without `Policies.AutoApplyTransactions()`**: that policy would add a second `SaveChangesAsync` and an
+  explicit transaction around every handler that takes the context, changing the unit of work of handlers that
+  already save themselves (some more than once on purpose), while the interceptor's outbox already covers every
+  save, inside a handler or not (startup and hosted services, seeders). `DurableQueuePolicy`
+  (`Shared/Infrastructure`, an endpoint policy) makes a local queue durable only when a chain it serves is delivered
+  from a queue (`QueuedDelivery.IsQueued`, the same rule the retry policy uses): events and commands published for
+  later get a database inbox, while the queues of request/response use cases, which are only invoked inline, stay in
+  memory. Making every queue durable gave each host several hundred idle durable receivers and their timers, and three
+  integration shards that fit in 5 GB on develop ran out of memory. `IRecurringJob` messages and `ResetDemoDataCommand` go to
+  the buffered in-memory queue `recurring-jobs`, because those chains re-schedule themselves and are re-created on
+  every start, so a durable scheduled run would add a chain per restart (scheduled messages on a buffered queue stay
+  in memory; `AlwaysMakeScheduledMessagesDurable` is left off). Failures on a queued chain follow
+  `DurableDeliveryRetryPolicy` (`Shared/Infrastructure`, beside `RecurringJobTimeoutPolicy`), which applies only to
+  chains delivered from a queue: not `IRecurringJob`, and a handler that returns no response. Request and response
+  chains reached by `InvokeAsync` are left out on purpose, because Wolverine would run the cooldown retries inline
+  there too and a controller's command must answer once. A `ValidationException` or `DomainException` goes straight
+  to the dead letters (a retry changes nothing); anything else is retried with cooldowns of 1 s, 5 s and 30 s, then
+  rescheduled durably after 5 min, 30 min and 2 h (this survives a restart), then dead-lettered in
+  `wolverine`'s dead-letter table. The values are documented constants on the policy, structure rather than
+  per-tier configuration. The durability mode is the default `Balanced`: a rolling deploy briefly runs two
+  containers on one database, and `Balanced` assigns inbox ownership per node where `Solo` would let both recover
+  the same envelopes. **Handlers of one event are separated** (`opts.MultipleHandlerBehavior =
+  MultipleHandlerBehavior.Separated` in `MessagingRegistration`): each handler of an event gets its own durable local
+  queue and its own chain (`HandlerChain.ByEndpoint`, which `DurableDeliveryRetryPolicy` reaches too), so a failing
+  handler is retried and dead-lettered alone and never re-runs a sibling that already succeeded. Every handler
+  reached through a durable queue must still be idempotent on its own, because its own retry, a recovery after a
+  crash or a second delivery runs it again. Production code never `InvokeAsync`s an event: an event is published
+  (the outbox, or `PublishAsync`), since an inline invoke of a separated event would not reach its per-handler
+  queues. Tests publish an event through `Fixtures/MessageDispatch.PublishAndWaitAsync` (an extension on
+  `IServiceProvider`), which publishes with Wolverine's message tracking and waits until every handler's queue has
+  finished, ignoring the `recurring-jobs` schedule. The demo reset truncates the EF model's
+  tables only and leaves the `wolverine` schema alone: truncating the inbox under a running durability agent would
+  break its ownership bookkeeping, and a durable message about a truncated row finds nothing. The integration test
+  factory supplies the connection string with `UseSetting`, not `ConfigureAppConfiguration`, because Wolverine
+  reads it from the `WebApplicationBuilder` before `Build()`, and configuration added through
+  `ConfigureAppConfiguration` arrives only after it. Wolverine builds its schema in each factory's own database at
+  host start. A test change that adds a new top-level folder in `Integration.Tests/` still needs that folder added
+  to a shard (see "Tests").
 - **No identity on a message** (`NoIdentityOnMessagesTests`); handlers read it from
   `ICurrentUserService` (`Shared/MultiTenancy/`).
 - **Client portal permissions are enforced on the server, per action.** Every action behind `Policies.Client` carries
@@ -335,10 +838,21 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   many modules' tables directly, because they are a bulk import of legacy data across modules that runs as
   one job with its own log; the reason is written on `IMigrationEntityImporter` and the entry is marked
   `CrossModuleAccess.Writer` in `CrossModuleReadModels`. No other writer joins it without an owner decision.
-- **Domain events are dispatched.** `BaseEntity.DomainEvents` collects them and
-  `Infrastructure/Persistence/DomainEventDispatchInterceptor.cs` publishes them through Wolverine
-  after `SaveChanges` (inside an explicit transaction: on its commit, dropped on rollback), then clears them. `IDomainEventGate` suppresses dispatch for bulk writers
-  (`MigrationPullWorker`, `DevDataSeeder`; tests use `Fixtures/SuppressedDomainEventGate`).
+- **Domain events are dispatched through the outbox, in the same transaction as the change.** `BaseEntity.DomainEvents`
+  collects them and `Infrastructure/Persistence/DomainEventDispatchInterceptor.cs` writes them to Wolverine's
+  PostgreSQL outbox (`IDbContextOutbox`, enrolled on the context) on the context's current transaction, so an event
+  exists if and only if its state change committed. When a tracked entity has pending events
+  (`BaseEntity.HasDomainEvents`, so a deferred factory is not evaluated before the insert assigns ids) and no
+  transaction is open, the interceptor begins one and owns it: after the save it takes and clears the events,
+  publishes them, commits and then flushes them to the local durable queues (if the process dies between the commit
+  and the flush, the durability agent recovers them from the stored envelopes). Inside a caller's explicit transaction
+  the events are flushed when that transaction commits and dropped with it on a rollback. A failed save rolls back an
+  owned transaction and leaves the events on the entity, so a retried save still carries them. A publish failure
+  throws and fails the save instead of being logged afterwards: the write and its announcement are one unit.
+  Synchronous `SaveChanges` is not intercepted; nothing saves synchronously. `IDomainEventGate` is unchanged: it
+  suppresses dispatch for bulk writers (`MigrationPullWorker`, `DevDataSeeder`; tests use
+  `Fixtures/SuppressedDomainEventGate`), whose events are taken and discarded with no transaction opened and nothing
+  written.
   `DevDataSeeder` reads the passwords of the accounts it creates from `DevDataSeederOptions` (section `DevDataSeed`, both required, no default in code or `appsettings.json`). The dev compose file supplies them as `DevDataSeed__AdminPassword` / `DevDataSeed__ClientPassword` from `DEV_SEED_ADMIN_PASSWORD` / `DEV_SEED_CLIENT_PASSWORD` (documented dev defaults in `docker/.env.example`); no `appsettings.Development.json` is kept, it is git-ignored.
   `BaseEntity.AddDomainEvent(Func<IDomainEvent>)` defers building an event that needs the id
   until after the save. `ClientService.Suspend/Unsuspend/Terminate` take `hostingAlreadyUpdated`
@@ -355,8 +869,10 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   `RestoreServiceSshKeysCommand` on `ClientServiceUnsuspendedEvent`, which puts them back. `Provisioning/Events/ServiceUnsuspendedHandler`
   dispatches the same `RestoreServiceSshKeysCommand` a second time, but only after the panel answered `Updated` for
   the unlock, because an agent refuses keys for a locked account and the two unsuspensions are not ordered. All three
-  only trigger idempotent commands, log a refusal or failure for staff and never throw, since Wolverine runs every
-  handler of one message in a single chain.
+  only trigger idempotent commands and log a refusal or failure for staff instead of throwing. Each runs on its own
+  queue (handlers are separated, see "Durable messaging"), so one of them failing never re-runs the others.
+  `Plugins/Events/PurgeRemovedPluginDataHandler` deletes a removed plugin's store rows written up to the removal on
+  `PluginRemovedEvent`; it is idempotent and writes only the Plugins module's own tables (see the plugin store under "Plugin routes").
   The remaining three react to `ClientClosedEvent` and are described under "Client account status" below.
 
 - **`InvoiceItems.ClientServiceId` and `InvoiceItems.RegisteredDomainId` carry no foreign key, on purpose.** An
@@ -475,6 +991,23 @@ feature does not exist is not kept. The decisions:
   received and renewal reminders use `Invoice`; ticket replied and closed use `Support`; service
   provisioned uses `Product`; the domain mails use `Domain`. Mail to staff, verification and
   security mail are never copied. `General` and `Affiliate` have no sender yet.
+- **Mail sent from a message is sent once per recipient.** `SendEmailCommand` takes an optional `IdempotencyKey`.
+  Every handler that mails in reaction to a message passes `EmailIdempotencyKey.ForMessage(message, templateSlug)`
+  (SHA-256 over the message type, its JSON and the slug); `SendRenewalReminder` passes `ForParts(invoice id,
+  threshold)`. Per address (the main recipient and each contact copy) the handler keys the row with
+  `ForRecipient(key, address)` and stores it on `EmailLogs.IdempotencyKey` (64 lower-case hex, unique index
+  `IX_EmailLogs_IdempotencyKey` filtered on not null) beside `EmailLogs.State` (`EmailDeliveryState`: `Sending`,
+  `Sent`, `Failed`; `Success` always equals `State == Sent`). The order is **claim, send, outcome**: the row is
+  claimed in `Sending` and saved before the relay is called (`EmailLog.Claim`, or `Reclaim` of a row whose
+  `MayResend` allows it), then `MarkDelivered` or `MarkUndelivered` is saved. A `Sent` row is never sent again; a
+  `Failed` row is retried; a `Sending` row is trusted to be in flight for `Notifications:DeliveryClaimSeconds`
+  (30 to 3600, default 300) and only then reclaimed. Two deliveries racing for one row meet the unique index or the
+  row's concurrency token, `AppDbContext` raises `ConcurrencyConflictException`, and the loser skips that address.
+  What remains: a crash after the relay accepted the message and before the outcome is saved leaves the row in
+  `Sending`, and the next delivery resends it once after the lease. Synchronous mails sent inside a request (email
+  change, invitation, verification, password reset) pass no key and are not deduplicated: the person is waiting
+  for exactly that mail, a second request is meant to send a fresh one (often with a new token), and no queue
+  retries them.
 - **Client data export** lists the whole profile, contacts with address and `Notify*` flags, linked users
   with permissions, invitations (never the token), and mail to the account's and every contact's address,
   matched case-insensitively. The lists with no ceiling, `emails` and `activityLog`, carry the newest 500
@@ -502,6 +1035,7 @@ feature does not exist is not kept. The decisions:
   The demo accounts' own credentials are protected by one rule, `IDemoAccountGuard` (Application port, `Infrastructure/Demo/DemoAccountGuard`):
   with demo on, the email and password of `Demo__AdminEmail` / `Demo__ClientEmail` cannot change; password
   reset (`ResetPasswordCommand`) and `UpdateClientHandler`'s email change ask it and answer 403 `DEMO_ACTION_DISABLED`. Local sign-in (`UserService`) asks it too: wrong passwords are not counted against those two accounts, so no visitor can lock them.
+- **Demo stored charges.** The demo payment plugin implements `IStoredCredentialPlugin` in memory; the last two digits of the amount in minor units pick the outcome: 02 declined, 03 action required, 04 pending, 05 money taken and then `TimeoutException`, 06 `TimeoutException` before anything is taken, anything else succeeded. The first result per idempotency key is final: a repeat answers it and never throws (a 06 key records nothing, so it throws again). The book is `DemoStoredCredentialState`, a singleton shared by every resolve and cleared by the demo reset beside `DemoCardState`.
 - **Currency.** The demo payment plugin accepts every currency stored (`IPaymentPlugin.AcceptsCurrency`), not only USD.
 - **Data.** `IDemoDataManager` resets (wipes and reseeds) at startup instead of running `DevDataSeeder`, so every deploy shows the current seed, and
   `ResetDemoDataCommand` truncates every table except the identity roles and reseeds in one
@@ -518,7 +1052,7 @@ feature does not exist is not kept. The decisions:
 
 ## Stack
 
-.NET 9 · Wolverine 5.41.0 · EF Core 9 + Npgsql 9 · PostgreSQL 17 · ASP.NET Identity (local
+.NET 9 · Wolverine 5.41.0 (WolverineFx.Postgresql, WolverineFx.EntityFrameworkCore) · EF Core 9 + Npgsql 9 · PostgreSQL 17 · ASP.NET Identity (local
 mode) + JWT bearer · `Innovayse.Auth` (cookie session for the admin SPA, sso builds only) · SkiaSharp (branding images) ·
 Serilog · Scalar + Swashbuckle · Mapster · Stripe.net · MailKit · Otp.NET · Fluid.Core ·
 DnsClient · Redis (sessions + data-protection key ring) · RabbitMQ · xUnit + FluentAssertions +
@@ -595,6 +1129,16 @@ backend on the shared network, and Docker's DNS round-robins between the two.
   (the local `AspNetUsers.Id` or the external identity provider's subject), run before and after switching
   `AUTH_MODE`. Defaults to the `hostpanel-db` container; on a remote host pipe it as
   `ssh <host> 'sh -s' < scripts/check-client-owner-ids.sh`.
+- `scripts/check-duplicate-gateway-payments.sh [container]` — read-only list of the ledger rows that would stop the
+  unique gateway payment reference. Every `Transactions` row has a `Source` (`GatewayPayment`, `GatewayRefund`,
+  `Manual`, `Import`; `TransactionSource` in Domain, set by the creating path and never changed), and a filtered
+  unique index on `PaymentMethod` and `TransactionId` covers the `GatewayPayment` rows only, so manual entries
+  and imports may repeat a reference. The `AddTransactionSource` migration backfills `Source` from the rows
+  themselves and stops, naming the rows, when two gateway payments share a reference, so this script must be run
+  before every production deploy that carries the migration, and any row it lists resolved first. The backfill reads
+  only the rows: a staff entry typed under a name that is also a gateway (with a reference and a description a gateway
+  path writes) is classified as a gateway row, and counts toward a duplicate. A second gateway payment saved under one reference surfaces as `ConcurrencyConflictException`
+  (`AppDbContext` translates the violation), which the settlement handlers already answer as a replay.
 - `scripts/pack-cwp-plugin.sh` — publishes `Innovayse.Providers.CWP` (Release, net8.0) on the host, strips
   PDB/XML and framework DLLs, adds `plugin.json` and writes `dist/innovayse-cwp.zip`.
 - `scripts/check-empty-plugins.sh <test project> ...` — fails when `plugins/` or `plugins-installed/` in a
@@ -1083,8 +1627,9 @@ Never spread one of these, and never restructure as a side effect of a feature.
   `RegisterHandler` publishes four arguments and stops, so `IpAddress`,
   `UserAgent`, `DeviceType`, `OperatingSystem` and `Browser` arrive null and `Client.Create`
   writes five mapped, migrated columns from them. Finish it by capturing all five from the
-  request, not by trimming the record. Wolverine runs with discovery only — no broker — so the
-  event never leaves the process.
+  request, not by trimming the record. Wolverine runs with no broker, so the event never leaves
+  the process; it is persisted in the `wolverine` schema like every other queued message (see "Durable
+  messaging").
 - **Migration imports go through an importer registry.** `IMigrationEntityImporter` is the one
   contract: an importer names its `MigrationEntityType` in `EntityType` and imports that kind in
   `ImportAsync`. Every importer is registered in DI; adding an entity kind means adding an importer

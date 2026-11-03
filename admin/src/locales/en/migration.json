@@ -96,6 +96,7 @@
     "downloadCategoryNotFound": "No download category exists",
     "nameMissing": "No client name or email to take one from",
     "billingCycleUnsupported": "The billing cycle cannot be billed here",
-    "noProductLines": "The order has only domain or addon lines, with no product here"
+    "noProductLines": "The order has only domain or addon lines, with no product here",
+    "currencyInvalid": "The currency is not a three-letter code"
   }
 }

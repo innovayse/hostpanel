@@ -198,7 +198,8 @@ public sealed class RefundInvoicePaymentHandler
         foreach (var refund in refunds)
         {
             var ledgerRow = invoice.AddRefund(
-                now, refund.Gateway, refund.Reference, refund.Amount, 0m, notes, addedToCredit: toCreditBalance);
+                now, refund.Gateway, refund.Reference, refund.Amount, 0m, notes, addedToCredit: toCreditBalance,
+                source: TransactionSource.Manual);
             _context.Transactions.Add(ledgerRow);
         }
 
@@ -388,7 +389,8 @@ public sealed class RefundInvoicePaymentHandler
                 if (!invoice.Transactions.Any(t => t.Type == InvoiceTransactionType.Refund && t.TransactionId == refund.Reference))
                 {
                     _context.Transactions.Add(invoice.AddRefund(
-                        now, refund.Gateway, refund.Reference, refund.Amount, 0m, notes, addedToCredit: false));
+                        now, refund.Gateway, refund.Reference, refund.Amount, 0m, notes, addedToCredit: false,
+                        source: TransactionSource.GatewayRefund));
                 }
             }
 

@@ -6,11 +6,12 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Orders.Commands.FulfillInvoicedOrder;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Billing.Events;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
-using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
+using Innovayse.SDK.Plugins.Payment;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wolverine;
@@ -131,7 +132,7 @@ public sealed class CompleteGatewayPaymentHandler
         {
             _logger.LogWarning(
                 "Invoice {InvoiceId} gateway session {GatewayOrderId} reports {Amount} in {Currency}, which is not what the invoice owes; not marked paid.",
-                invoice.Id, invoice.GatewayOrderId, status.AmountMinor, status.CurrencyNumeric);
+                invoice.Id, invoice.GatewayOrderId, status.AmountMinor, status.Currency);
             return Result<GatewayCompletionDto>.FailureCode(HostpanelErrorCodes.GATEWAY_PAYMENT_MISMATCH);
         }
 
@@ -151,7 +152,7 @@ public sealed class CompleteGatewayPaymentHandler
         // makes "ledger row exists" and "invoice is Paid" one atomic fact.
         var module = invoice.GatewayModule;
         var ledgerRow = invoice.Settle(
-            module, gatewayTransactionId, _clock.UtcNow);
+            module, gatewayTransactionId, _clock.UtcNow, TransactionSource.GatewayPayment);
         if (ledgerRow is not null)
         {
             _context.Transactions.Add(ledgerRow);
@@ -275,7 +276,7 @@ public sealed class CompleteGatewayPaymentHandler
             return null;
         }
 
-        if (current.Transactions.Any(t => t.TransactionId == reference) || await _context.IsRecordedAsync(reference, ct))
+        if (current.Transactions.Any(t => t.TransactionId == reference) || await _context.IsRecordedAsync(module, reference, ct))
         {
             _logger.LogInformation("Invoice {InvoiceId} was already marked paid by a concurrent completion.", invoiceId);
         }
@@ -312,7 +313,7 @@ public sealed class CompleteGatewayPaymentHandler
         Invoice invoice, string module, string reference, GatewayPaymentStatus status, CancellationToken ct)
     {
         // Recorded on the invoice's own payment history or on the ledger: the money is accounted for.
-        if (invoice.Transactions.Any(t => t.TransactionId == reference) || await _context.IsRecordedAsync(reference, ct))
+        if (invoice.Transactions.Any(t => t.TransactionId == reference) || await _context.IsRecordedAsync(module, reference, ct))
         {
             return;
         }
@@ -350,8 +351,29 @@ public sealed class CompleteGatewayPaymentHandler
             0m,
             0m,
             addedToCredit: credit,
-            invoice.Currency));
-        await _context.SaveChangesAsync(ct);
+            invoice.Currency,
+            TransactionSource.GatewayPayment));
+        try
+        {
+            await _context.SaveChangesAsync(ct);
+        }
+        catch (ConcurrencyConflictException)
+        {
+            // The ledger refuses a second gateway payment under one reference, and answers that the same
+            // way as any lost save. Only when the payment is on the ledger now was it a concurrent request
+            // that recorded it: the money is accounted for, so this replay stands down without recording
+            // or alerting a second time. Any other lost save (the client's balance moved) is the caller's.
+            _context.DetachAll();
+            if (!await _context.IsRecordedAsync(module, reference, ct))
+            {
+                throw;
+            }
+
+            _logger.LogInformation(
+                "Gateway payment {Reference} through {Module} was recorded by a concurrent request; nothing is recorded again.",
+                reference, module);
+            return;
+        }
 
         // After the save, so a failed save repeats the whole hand-back instead of alerting about money
         // that was not recorded; once saved, the next pass finds the ledger row and returns above, so
@@ -404,7 +426,7 @@ public sealed class CompleteGatewayPaymentHandler
         // is reported and is the invoice's; otherwise a wrong amount would reach staff, and none is given.
         decimal? amount = null;
         if (status.AmountMinor is { } minor
-            && status.CurrencyNumeric is not null
+            && status.Currency is not null
             && await MatchesCurrencyAsync(invoice, status, ct))
         {
             amount = CurrencyCode.FromMinorUnits(minor, invoice.Currency);
@@ -446,7 +468,7 @@ public sealed class CompleteGatewayPaymentHandler
     /// <returns><see langword="true"/> when the reported currency does not contradict the invoice.</returns>
     private async Task<bool> MatchesCurrencyAsync(Invoice invoice, GatewayPaymentStatus status, CancellationToken ct)
     {
-        if (status.CurrencyNumeric is null)
+        if (status.Currency is null)
         {
             return true;
         }
@@ -458,7 +480,7 @@ public sealed class CompleteGatewayPaymentHandler
             .FirstOrDefaultAsync(ct);
         return numeric is not null
             && int.TryParse(numeric, out var expected)
-            && int.TryParse(status.CurrencyNumeric, out var reported)
+            && int.TryParse(status.Currency, out var reported)
             && expected == reported;
     }
 }

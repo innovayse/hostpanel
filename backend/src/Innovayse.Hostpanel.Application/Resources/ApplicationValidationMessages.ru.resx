@@ -872,6 +872,9 @@
   <data name="SendEmailTemplateSlugRequired" xml:space="preserve">
     <value>Укажите шаблон для отправки.</value>
   </data>
+  <data name="SendEmailIdempotencyKeyInvalid" xml:space="preserve">
+    <value>Ключ идемпотентности должен состоять из 64 строчных шестнадцатеричных символов.</value>
+  </data>
   <data name="ProductGroupIdInvalid" xml:space="preserve">
     <value>Укажите корректный идентификатор группы продуктов.</value>
   </data>

@@ -87,6 +87,26 @@ describe('pluginsStore.remove', () => {
     expect(store.requiresRestart).toBe(true)
   })
 
+  it('keeps an earlier restart banner when a removal needs no restart', async () => {
+    stubFetch(json({ requiresRestart: false }))
+    const store = usePluginsStore()
+    store.plugins.push({ id: 'a' } as never)
+    store.requiresRestart = true
+
+    await store.remove('a')
+    expect(store.plugins).toHaveLength(0)
+    expect(store.requiresRestart).toBe(true)
+  })
+
+  it('does not raise the restart banner when a removal needs no restart', async () => {
+    stubFetch(json({ requiresRestart: false }))
+    const store = usePluginsStore()
+    store.plugins.push({ id: 'a' } as never)
+
+    await store.remove('a')
+    expect(store.requiresRestart).toBe(false)
+  })
+
   it('keeps the plugin and the API sentence on refusal', async () => {
     stubFetch(problem('Plugin is in use.', 409))
     const store = usePluginsStore()

@@ -1,9 +1,10 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
-using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
+using Innovayse.SDK.Plugins.Manifest;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -48,7 +49,7 @@ internal static class PluginActivationTestSeeds
                 : [],
         };
 
-        return new LoadedPlugin(manifest, implementation);
+        return new LoadedPlugin(manifest, implementation, PluginViewDocuments.None);
     }
 
     /// <summary>Builds a registry holding <paramref name="plugins"/>.</summary>

@@ -76,7 +76,11 @@ export const usePluginsStore = defineStore('plugins', () => {
     const result = await runAction(actionError, () => api.removePlugin(id))
     loading.value = false
     if (result.ok) {
-      requiresRestart.value = result.value.requiresRestart
+      // Only ever raised here: a removal that needs no restart (the files were already gone) must not hide the banner
+      // an earlier install or removal still needs.
+      if (result.value.requiresRestart) {
+        requiresRestart.value = true
+      }
       plugins.value = plugins.value.filter(p => p.id !== id)
     }
     return result.ok

@@ -36,6 +36,14 @@ public sealed class PaymentReceivedHandler
         var data = new PaymentReceivedTemplateModel(
             new PaidInvoiceTemplateData(evt.InvoiceId, evt.Amount, evt.TransactionId));
 
-        await _bus.InvokeAsync(new SendEmailCommand(email, client.Language, "payment-received", data, new ContactCopy(evt.ClientId, ContactNotification.Invoice)), ct);
+        await _bus.InvokeAsync(
+            new SendEmailCommand(
+                email,
+                client.Language,
+                "payment-received",
+                data,
+                new ContactCopy(evt.ClientId, ContactNotification.Invoice),
+                IdempotencyKey: EmailIdempotencyKey.ForMessage(evt, "payment-received")),
+            ct);
     }
 }

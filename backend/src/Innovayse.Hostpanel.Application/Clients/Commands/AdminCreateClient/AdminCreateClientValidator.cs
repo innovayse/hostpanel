@@ -85,7 +85,7 @@ public sealed class AdminCreateClientValidator : LocalizedValidator<AdminCreateC
             .When(x => !string.IsNullOrEmpty(x.Preferences.Language));
 
         RuleFor(x => x.Preferences.Currency)
-            .Length(3).WithMessage(L["ClientCurrencyInvalid"])
+            .MustBeCurrencyCode(L["ClientCurrencyInvalid"])
             .When(x => !string.IsNullOrEmpty(x.Preferences.Currency));
 
         // Null means Active. A number that names no status is refused here, the same as on update,

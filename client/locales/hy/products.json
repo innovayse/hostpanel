@@ -32,7 +32,10 @@
       "popular": "⭐ Ամենահայտնի",
       "period": {
         "monthly": "/ամիս",
-        "annually": "/տարի"
+        "quarterly": "/եռամսյակ",
+        "semiannually": "/6 ամիս",
+        "annually": "/տարի",
+        "biennially": "/2 տարի"
       },
       "save": "Խնայեք {percent}%",
       "more": "+{count} ևս",

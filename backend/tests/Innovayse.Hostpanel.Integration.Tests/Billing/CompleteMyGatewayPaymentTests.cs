@@ -5,7 +5,6 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Shared.Constants;
-using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;

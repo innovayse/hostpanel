@@ -15,6 +15,12 @@ public enum PluginPackageOutcome
     /// <summary>The plugin targets an SDK version this host does not support.</summary>
     SdkVersionUnsupported,
 
+    /// <summary>
+    /// The manifest breaks one of the manifest rules (see <see cref="PluginManifestRule"/>), which the result names,
+    /// or the plugin was built against an older SDK major version than this host's.
+    /// </summary>
+    ManifestRuleBroken,
+
     /// <summary>The plugin id does not meet the plugin id rule or would resolve outside the plugins folder.</summary>
     IdInvalid,
 
@@ -29,6 +35,12 @@ public enum PluginPackageOutcome
 
     /// <summary>A trusted-package list is configured and the archive's SHA-256 is not on it.</summary>
     NotTrusted,
+
+    /// <summary>
+    /// The package fails the signature check (see <see cref="PluginSignatureRule"/>, which the result names) and the host
+    /// does not admit unsigned packages.
+    /// </summary>
+    SignatureRefused,
 
     /// <summary>The id belongs to a plugin shipped with the build, which cannot be replaced or removed.</summary>
     BuiltIn,

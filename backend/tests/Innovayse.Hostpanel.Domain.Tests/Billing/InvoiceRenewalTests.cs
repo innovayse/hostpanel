@@ -75,11 +75,11 @@ public sealed class InvoiceRenewalTests
     {
         var partial = Invoice.Create(1, Start, "USD", Now);
         partial.AddItem("x", 10m, 1);
-        partial.AddPayment(Start, "Bank", "tx1", 4m, 0m, null);
+        partial.AddPayment(Start, "Bank", "tx1", 4m, 0m, null, TransactionSource.Manual);
 
         var full = Invoice.Create(1, Start, "USD", Now);
         full.AddItem("x", 10m, 1);
-        full.AddPayment(Start, "Bank", "tx2", 10m, 0m, null);
+        full.AddPayment(Start, "Bank", "tx2", 10m, 0m, null, TransactionSource.Manual);
 
         var gateway = Invoice.Create(1, Start, "USD", Now);
         gateway.AddItem("x", 10m, 1);

@@ -4,6 +4,7 @@ using System.Text.Json;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 
@@ -46,7 +47,7 @@ public sealed class AgingInvoicesSummaryTests(IntegrationTestFactory factory) : 
             invoice.AddItem("Hosting", 100m, 1);
             db.Invoices.Add(invoice);
             await db.SaveChangesAsync();
-            db.Transactions.Add(invoice.AddPayment(DateTimeOffset.UtcNow, "Manual", $"tx-{Guid.NewGuid():N}", 40m, 0m, null));
+            db.Transactions.Add(invoice.AddPayment(DateTimeOffset.UtcNow, "Manual", $"tx-{Guid.NewGuid():N}", 40m, 0m, null, TransactionSource.Manual));
             await db.SaveChangesAsync();
         }
 

@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
+using Innovayse.Hostpanel.Domain.Servers.Enums;
 
 namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 
@@ -8,6 +9,12 @@ namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 /// </summary>
 public interface IProvisioningProviderFactory
 {
+    /// <summary>
+    /// The server modules <see cref="CreateFor"/> can build a provider for. A product with no server
+    /// group is provisioned onto a server of any of these modules, never one the factory would refuse.
+    /// </summary>
+    IReadOnlyCollection<ServerModule> SupportedModules { get; }
+
     /// <summary>
     /// Creates a provisioning provider configured with the credentials and settings of the given server.
     /// </summary>

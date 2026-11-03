@@ -6,7 +6,12 @@ using Microsoft.Extensions.Configuration;
 namespace Innovayse.Hostpanel.Integration.Tests.Auth;
 
 /// <summary>Boots Program.cs with the settings a provider-owned deployment supplies.</summary>
-internal sealed class SsoModeFactory(string connectionString) : WebApplicationFactory<Program>
+/// <param name="connectionString">The test database the host connects to.</param>
+/// <param name="redisConnection">
+/// The Redis the sign-on client package keeps sessions and its key ring in. The default is an address nothing
+/// listens on, which is enough for tests that never reach a session or protect a cookie.
+/// </param>
+internal sealed class SsoModeFactory(string connectionString, string redisConnection = "localhost:6379") : WebApplicationFactory<Program>
 {
     /// <summary>
     /// Lets the API's entry point start the host under the test server, as <see cref="IntegrationTestFactory"/>
@@ -44,7 +49,7 @@ internal sealed class SsoModeFactory(string connectionString) : WebApplicationFa
         builder.UseSetting("Auth:PublicAuthority", "https://sso.invalid");
         builder.UseSetting("Auth:ClientId", "hostpanel");
         builder.UseSetting("Auth:ClientSecret", "test-secret");
-        builder.UseSetting("Auth:RedisConnection", "localhost:6379");
+        builder.UseSetting("Auth:RedisConnection", redisConnection);
         builder.UseSetting("Sso:Authority", "https://sso.invalid");
         builder.UseSetting("Sso:ClientId", "hostpanel");
         builder.UseSetting("Sso:ServiceKey", "test-service-key");

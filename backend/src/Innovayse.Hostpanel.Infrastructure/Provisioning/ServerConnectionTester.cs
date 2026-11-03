@@ -7,7 +7,7 @@ using Innovayse.Hostpanel.Infrastructure.Integrations.Plesk;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Plesk.Models;
 using Innovayse.Hostpanel.Infrastructure.Provisioning.Settings;
 using Innovayse.Hostpanel.Infrastructure.Resilience;
-using Innovayse.SDK.Plugins;
+using Innovayse.SDK.Plugins.HostingPanel;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 

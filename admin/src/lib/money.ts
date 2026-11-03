@@ -78,14 +78,6 @@ export const currencySymbol = (code: string): string => CURRENCY_SYMBOLS[code as
 export const currencyLabel = (code: CurrencyCode): string => `${code} (${CURRENCY_SYMBOLS[code]})`
 
 /**
- * Formats an amount in dollars with two decimals.
- *
- * @param amount - Numeric value.
- * @returns For example "$12.50".
- */
-export const formatMoney = (amount: number): string => `$${amount.toFixed(2)}`
-
-/**
  * Formats a large total in the currency the API names, with grouping and no decimals (dashboard tiles).
  *
  * @param amount - Amount in the given currency.
@@ -100,15 +92,6 @@ export const formatCurrencyWhole = (amount: number, code: string): string => {
     return `${Math.round(amount).toLocaleString(MONEY_FORMAT_LOCALE)} ${code}`
   }
 }
-
-
-/**
- * Formats an amount followed by the currency code and no symbol, as the billing tables read.
- *
- * @param amount - Numeric value; a missing amount reads as zero.
- * @returns For example "12.50 USD".
- */
-export const formatUsdPlain = (amount: number | null | undefined = 0): string => `${(amount ?? 0).toFixed(2)} USD`
 
 /**
  * Formats an amount followed by the code of the currency it is in and no symbol, as the billing tables read.

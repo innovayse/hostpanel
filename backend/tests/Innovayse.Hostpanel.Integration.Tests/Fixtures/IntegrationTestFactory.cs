@@ -10,9 +10,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 
@@ -88,17 +88,15 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
 
         // Auth:Mode and EncryptionKey come from appsettings.Testing.json, which the Testing
         // environment loads before the first line of Program.cs runs; see the comment there.
-        builder.ConfigureAppConfiguration((_, config) =>
-        {
-            // Read when the DbContext is first resolved, long after Build(), so this one
-            // is safe to add here, and it has to be, because the container it names is
-            // not started until InitializeAsync runs.
-            config.AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["ConnectionStrings:DefaultConnection"] = _connectionString
-                    ?? throw new InvalidOperationException("InitializeAsync must run before the host is built.")
-            });
-        });
+        // A host setting, not ConfigureAppConfiguration: Wolverine reads the connection string for its
+        // message store while it is configured in Program.cs, before Build(), and a source added through
+        // ConfigureAppConfiguration only reaches the configuration after Build(), so Wolverine would see
+        // none and refuse to start. UseSetting is visible to the WebApplicationBuilder from its first line.
+        // The host is built on the first use of Services, which InitializeAsync makes only after it
+        // created the database this names.
+        builder.UseSetting(
+            "ConnectionStrings:DefaultConnection",
+            _connectionString ?? throw new InvalidOperationException("InitializeAsync must run before the host is built."));
 
         // Suppress Windows EventLog provider to prevent ObjectDisposedException on teardown
         builder.ConfigureLogging(logging => logging.ClearProviders());
@@ -110,6 +108,17 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
             if (_keepsProductionAdapters)
             {
                 services.AddSingleton(new ServiceRegistrationSnapshot(services.ToList()));
+            }
+
+            // Releases the listening agents of the host when its container is disposed (see the type). The release
+            // takes the Wolverine runtime in its constructor, so the container constructs the runtime first and
+            // disposes the release first: the dependency, not the registration order, decides it. Registered after
+            // the snapshot, so the guards that judge production registrations never see it; the hosts that keep
+            // the production adapters start Wolverine as well and are released the same way.
+            services.AddSingleton<IHostedService, WolverineListenerRelease>();
+
+            if (_keepsProductionAdapters)
+            {
                 return;
             }
 
@@ -179,6 +188,7 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
     public async Task InitializeAsync()
     {
         _connectionString = await SharedPostgresServer.CreateDatabaseAsync(_databaseName);
+        await OpenPoolWithoutTheHostContextAsync(_connectionString);
 
         // Apply EF Core migrations to test database
         using var scope = Services.CreateScope();
@@ -235,11 +245,50 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
         // Starting the host made Wolverine compile its handler code with Roslyn, which keeps the metadata
         // of every loaded assembly in native memory behind small managed wrappers. The collector only
         // counts managed bytes, so without this pass that memory outlives the host by minutes and piles
-        // up across classes (issue 373). One collection per released host, not per test, is enough.
+        // up across classes (issue 373). One collection per released host, not per test, is enough. The
+        // finalizers free the native blocks, and the trim then returns what glibc kept in its heap (issue 793).
         GC.Collect();
         GC.WaitForPendingFinalizers();
+        NativeHeap.Trim();
 
         GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Opens the connection pool of this factory's database before the host exists, on a thread that carries
+    /// none of the caller's execution context. Npgsql keeps one pool per connection string in a static table
+    /// and never removes it, and the pool's pruning timer captures the execution context of whoever created it.
+    /// A pool created by the host's own first query therefore captures the context of the test, which
+    /// <c>WebApplicationFactory</c> fills with a listener that refers to the factory, and so the whole host
+    /// stayed reachable from that static table after its class was done: 64 Wolverine runtimes, test servers and
+    /// service providers alive after 20 classes, and a managed heap (after a full collection) of 3.9 GB at the
+    /// 65th (issue 793). The pool itself is small and stays; the host it used to drag along is released.
+    /// </summary>
+    /// <param name="connectionString">
+    /// The connection string of this factory's database. The host reads exactly this string
+    /// (<c>ConnectionStrings:DefaultConnection</c>) and builds no <c>NpgsqlDataSource</c> of its own: EF Core's
+    /// <c>UseNpgsql(connectionString)</c> and the job lease both go through the static per-string pool, so the
+    /// host finds the pool opened here.
+    /// </param>
+    /// <returns>A task that completes when the pool has served one connection.</returns>
+    private static async Task OpenPoolWithoutTheHostContextAsync(string connectionString)
+    {
+        Task opening;
+
+        // The flow is only suppressed while the task starts; awaiting inside the block would end it on another thread.
+        // Task.Run is not there to make the call asynchronous (OpenAsync already is): it hands the work to a
+        // thread-pool thread, so the connection and the pool's timer are created by a task that starts from the
+        // empty context the suppressed flow leaves, not from a continuation of the caller's.
+        using (ExecutionContext.SuppressFlow())
+        {
+            opening = Task.Run(async () =>
+            {
+                await using var connection = new NpgsqlConnection(connectionString);
+                await connection.OpenAsync();
+            });
+        }
+
+        await opening;
     }
 
     /// <summary>Disposes through the <see cref="IAsyncDisposable"/> path; xUnit calls this one.</summary>

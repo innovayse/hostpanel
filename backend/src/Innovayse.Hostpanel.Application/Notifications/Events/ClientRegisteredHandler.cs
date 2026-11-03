@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Notifications.Commands.SendEmail;
+using Innovayse.Hostpanel.Application.Notifications.Common;
 using Innovayse.Hostpanel.Application.Notifications.Common.TemplateModels;
 using Innovayse.Hostpanel.Domain.Clients.Events;
 using Wolverine;
@@ -29,6 +30,13 @@ public sealed class ClientRegisteredHandler
         // still gets its welcome, in the default language.
         var client = await _bus.FindClientBriefAsync(evt.ClientId, withEmail: true, ct);
         var data = new WelcomeTemplateModel(new WelcomeClientTemplateData(evt.Email));
-        await _bus.InvokeAsync(new SendEmailCommand(evt.Email, client?.Language, "welcome", data), ct);
+        await _bus.InvokeAsync(
+            new SendEmailCommand(
+                evt.Email,
+                client?.Language,
+                "welcome",
+                data,
+                IdempotencyKey: EmailIdempotencyKey.ForMessage(evt, "welcome")),
+            ct);
     }
 }

@@ -6,6 +6,7 @@ using Innovayse.Hostpanel.Application.Notifications.Commands.SendEmail;
 using Innovayse.Hostpanel.Application.Notifications.Common;
 using Innovayse.Hostpanel.Application.Notifications.Common.TemplateModels;
 using Innovayse.Hostpanel.Domain.Domains.Events;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wolverine;
 
@@ -26,18 +27,24 @@ public sealed class DomainExpiringNotificationHandler
     /// <summary>The source of the current moment.</summary>
     private readonly IClock _clock;
 
+    /// <summary>The data context the domain is read from, to confirm it still belongs to the event's client.</summary>
+    private readonly IHostpanelDbContext _context;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="bus">Message bus, for dispatching the notification email command.</param>
     /// <param name="logger">Structured logger.</param>
     /// <param name="clock">The source of the current moment.</param>
+    /// <param name="context">The data context the domain is read from, to confirm it still belongs to the event's client.</param>
     public DomainExpiringNotificationHandler(
         IMessageBus bus,
         ILogger<DomainExpiringNotificationHandler> logger,
-        IClock clock)
+        IClock clock,
+        IHostpanelDbContext context)
     {
         _bus = bus;
         _logger = logger;
         _clock = clock;
+        _context = context;
     }
 
     /// <summary>
@@ -50,6 +57,20 @@ public sealed class DomainExpiringNotificationHandler
     {
         try
         {
+            // The event arrives through a durable queue, so it can arrive after the demo reset truncated
+            // the tables and reused the ids: a domain that is gone or now belongs to someone else is not
+            // the one this mail is about, and the client the event names may be a different account now.
+            var owned = await _context.Domains.AsNoTracking()
+                .AnyAsync(x => x.Id == evt.DomainId && x.ClientId == evt.ClientId, ct);
+            if (!owned)
+            {
+                _logger.LogInformation(
+                    "Domain {DomainId} of client {ClientId} no longer exists; no domain-expiring notification is sent.",
+                    evt.DomainId,
+                    evt.ClientId);
+                return;
+            }
+
             var client = await _bus.FindClientBriefAsync(evt.ClientId, withEmail: true, ct);
             if (client is null)
             {
@@ -78,7 +99,15 @@ public sealed class DomainExpiringNotificationHandler
                 evt.ExpiresAt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 daysUntilExpiry));
 
-            await _bus.InvokeAsync(new SendEmailCommand(email, client.Language, "domain-expiring", data, new ContactCopy(evt.ClientId, ContactNotification.Domain)), ct);
+            await _bus.InvokeAsync(
+                new SendEmailCommand(
+                    email,
+                    client.Language,
+                    "domain-expiring",
+                    data,
+                    new ContactCopy(evt.ClientId, ContactNotification.Domain),
+                    IdempotencyKey: EmailIdempotencyKey.ForMessage(evt, "domain-expiring")),
+                ct);
 
             _logger.LogInformation(
                 "Sent domain-expiring notification for domain {DomainName} (ID {DomainId}, expires in {Days} days) to {Email}.",

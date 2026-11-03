@@ -13,21 +13,14 @@ import {
   formatAffixed,
   formatCurrencyCode,
   formatCurrencyWhole,
-  formatMoney,
   formatPrice,
   formatReportAmount,
   formatPlainAmount,
   formatSymbolPrice,
-  formatUsdPlain,
 } from '@/lib/money'
 import { CurrencyCode } from '@/types/currency'
 
 describe('money', () => {
-  it('formats dollars with two decimals', () => {
-    expect(formatMoney(12.5)).toBe('$12.50')
-    expect(formatMoney(0)).toBe('$0.00')
-  })
-
   it('formats a price with the currency symbol and code', () => {
     expect(formatPrice(4.99, 'USD')).toBe('$4.99 USD')
     expect(formatPrice(10, 'EUR')).toBe('€10.00 EUR')
@@ -41,17 +34,6 @@ describe('money', () => {
   it('formats a price-book cell with the symbol only', () => {
     expect(formatSymbolPrice(12, 'USD')).toBe('$12.00')
     expect(formatSymbolPrice(7.5, 'EUR')).toBe('€7.50')
-  })
-})
-
-describe('billing sums', () => {
-  it('writes the amount and the USD code', () => {
-    expect(formatUsdPlain(12.5)).toBe('12.50 USD')
-  })
-
-  it('reads a missing amount as zero', () => {
-    expect(formatUsdPlain(null)).toBe('0.00 USD')
-    expect(formatUsdPlain()).toBe('0.00 USD')
   })
 })
 

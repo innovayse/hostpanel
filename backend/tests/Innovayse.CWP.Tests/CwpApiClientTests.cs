@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Innovayse.Providers.CWP;
 using Innovayse.Providers.CWP.Models;
 using Microsoft.Extensions.Logging.Abstractions;
+using Innovayse.SDK.Plugins.HostingPanel;
 
 namespace Innovayse.CWP.Tests;
 
@@ -127,7 +128,7 @@ public sealed class CwpApiClientTests : IAsyncLifetime
         cwp.Enqueue(HttpStatusCode.OK, "<html><body>Login</body></html>", "text/html");
         var client = new CwpApiClient(new HttpClient(new RedirectToStubHandler(cwp.BaseAddress)), NullLogger<CwpApiClient>.Instance);
 
-        var act = () => client.GetServerInfoAsync(new Innovayse.SDK.Plugins.HostingPanelConnection("cwp.test", 2304, "test-key"), CancellationToken.None);
+        var act = () => client.GetServerInfoAsync(new Innovayse.SDK.Plugins.HostingPanel.HostingPanelConnection("cwp.test", 2304, "test-key"), CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
@@ -140,7 +141,7 @@ public sealed class CwpApiClientTests : IAsyncLifetime
         cwp.Enqueue("""{ "status": "OK", "version": "0.9.8.1" }""");
         var client = new CwpApiClient(new HttpClient(new RedirectToStubHandler(cwp.BaseAddress)), NullLogger<CwpApiClient>.Instance);
 
-        var info = await client.GetServerInfoAsync(new Innovayse.SDK.Plugins.HostingPanelConnection("cwp.test", 2304, "test-key"), CancellationToken.None);
+        var info = await client.GetServerInfoAsync(new Innovayse.SDK.Plugins.HostingPanel.HostingPanelConnection("cwp.test", 2304, "test-key"), CancellationToken.None);
 
         info.AccountsCount.Should().Be(2);
         info.Version.Should().Be("0.9.8.1");

@@ -5,6 +5,7 @@
 import type { ClientExternalAccount } from '@/types/clientexternalaccount'
 import type { Contact } from '@/types/contact'
 import type { ContactNotifications } from '@/types/contactnotifications'
+import type { CurrencyAmount } from '@/types/currency'
 import type { EmailLog } from '@/types/emaillog'
 import type { InvoiceStatusCount } from '@/types/invoice'
 import type { PostalAddress } from '@/types/postaladdress'
@@ -107,14 +108,14 @@ export interface ClientInvoiceStatuses {
 
 /** What a client's transactions add up to. */
 export interface ClientTransactionTotals {
-  /** Total income from transactions. */
-  grossRevenue: number
-  /** Total outgoing from transactions. */
-  clientExpenses: number
-  /** Total transaction fees. */
-  totalFees: number
-  /** Computed: grossRevenue - clientExpenses - totalFees. */
-  netIncome: number
+  /** Total income from transactions, per currency. */
+  grossRevenue: CurrencyAmount[]
+  /** Total outgoing from transactions, per currency. */
+  clientExpenses: CurrencyAmount[]
+  /** Total transaction fees, per currency. */
+  totalFees: CurrencyAmount[]
+  /** Computed per currency: grossRevenue - clientExpenses - totalFees. */
+  netIncome: CurrencyAmount[]
 }
 
 /** How many services, domains, quotes and tickets a client has. */
@@ -141,8 +142,8 @@ export interface ClientSummaryData {
   invoices: ClientInvoiceStatuses
   /** Income, outgoing and fee totals from transactions. */
   transactions: ClientTransactionTotals
-  /** Current credit balance. */
-  creditBalance: number
+  /** Current credit balance, in the client's billing currency. */
+  creditBalance: CurrencyAmount
   /** Number of services, domains, quotes and tickets. */
   counts: ClientRecordCounts
   /** Last 5 email log entries. */

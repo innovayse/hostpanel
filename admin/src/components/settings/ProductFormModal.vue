@@ -36,7 +36,8 @@ import UiToggle from '@/components/ui/UiToggle.vue'
 import { Icon } from '@/lib/icons'
 import { useCurrenciesStore } from '@/stores/currencies'
 import { useServersStore } from '@/stores/servers'
-import type { CreateProductPayload, Product, ProductGroup, ProductPrice } from '@/types/product'
+import { PRODUCT_PRICE_CYCLES } from '@/types/product'
+import type { CreateProductPayload, Product, ProductGroup, ProductPrice, ProductPriceAmounts, ProductPriceCycle } from '@/types/product'
 import { ProductStatus, ProductType } from '@/types/productenums'
 import { UiTone } from '@/utils/ui/tone'
 
@@ -82,15 +83,23 @@ const emit = defineEmits<{
   clearFieldError: [field: string]
 }>()
 
-/** One pricing row per configured currency, keyed by ISO 4217 code. */
-interface PriceRow {
-  /** Whether the product is sold in this currency. */
-  enabled: boolean
-  /** Monthly price; meaningless when {@link PriceRow.enabled} is false. */
-  monthly: number
-  /** Annual price; meaningless when {@link PriceRow.enabled} is false. */
-  annual: number
-}
+/**
+ * One pricing row per configured currency, keyed by ISO 4217 code: whether the product is sold in
+ * the currency, and one amount per billing cycle (meaningless while the row is disabled; zero
+ * means the cycle is not sold).
+ */
+type PriceRow = { enabled: boolean } & Record<ProductPriceCycle, number>
+
+/**
+ * Builds a row with every cycle at zero.
+ *
+ * @param enabled - Whether the product is sold in the currency.
+ * @returns The row.
+ */
+const emptyPriceRow = (enabled: boolean): PriceRow => ({
+  enabled,
+  ...(Object.fromEntries(PRODUCT_PRICE_CYCLES.map((cycle) => [cycle, 0])) as Record<ProductPriceCycle, number>),
+})
 
 /** Whether the dialog is in edit mode (a product was provided). */
 const isEditMode = computed<boolean>(() => props.product !== null)
@@ -165,11 +174,11 @@ const resetPriceRows = (existingPrices?: ProductPrice[]): void => {
   const rows: Record<string, PriceRow> = {}
   for (const currency of currenciesStore.enabledCurrencies) {
     const existing = existingPrices?.find((p) => p.currencyCode === currency.code)
-    rows[currency.code] = {
-      enabled: currency.isBase || existing !== undefined,
-      monthly: existing?.monthly ?? 0,
-      annual: existing?.annual ?? 0,
+    const row = emptyPriceRow(currency.isBase || existing !== undefined)
+    for (const cycle of PRODUCT_PRICE_CYCLES) {
+      row[cycle] = existing?.[cycle] ?? 0
     }
+    rows[currency.code] = row
   }
   priceRows.value = rows
 }
@@ -246,7 +255,7 @@ const rowFor = (code: string): PriceRow => {
   if (existing) {
     return existing
   }
-  const blank: PriceRow = { enabled: false, monthly: 0, annual: 0 }
+  const blank = emptyPriceRow(false)
   priceRows.value[code] = blank
   return blank
 }
@@ -312,8 +321,7 @@ const buildPricesPayload = (): ProductPrice[] =>
     .filter(([, row]) => row.enabled)
     .map(([currencyCode, row]) => ({
       currencyCode,
-      monthly: row.monthly || null,
-      annual: row.annual || null,
+      ...(Object.fromEntries(PRODUCT_PRICE_CYCLES.map((cycle) => [cycle, row[cycle] || null])) as ProductPriceAmounts),
     }))
 
 /**
@@ -519,8 +527,7 @@ const handleSubmit = (): void => {
             <UiTableRow class="border-b border-border">
               <UiTableHeader align="left">{{ t('shared.enabled') }}</UiTableHeader>
               <UiTableHeader align="left">{{ t('shared.currency') }}</UiTableHeader>
-              <UiTableHeader align="left">{{ t('settings.productForm.monthly') }}</UiTableHeader>
-              <UiTableHeader align="left">{{ t('settings.productForm.annual') }}</UiTableHeader>
+              <UiTableHeader v-for="cycle in PRODUCT_PRICE_CYCLES" :key="cycle" align="left">{{ t(`settings.productForm.${cycle}`) }}</UiTableHeader>
             </UiTableRow>
           </UiTableHead>
           <UiTableBody divided>
@@ -535,22 +542,14 @@ const handleSubmit = (): void => {
                 <UiText v-else tone="primary" size="xs">{{ t('settings.productForm.base') }}</UiText>
               </UiTableCell>
               <UiTableCell class="font-medium text-text-primary">{{ currency.code }}</UiTableCell>
-              <UiTableCell>
+              <UiTableCell v-for="cycle in PRODUCT_PRICE_CYCLES" :key="cycle">
                 <UiNumberInput
-                  v-model="rowFor(currency.code).monthly"
+                  v-model="rowFor(currency.code)[cycle]"
                   :min="0"
                   :step="0.01"
                   :disabled="!rowFor(currency.code).enabled"
                   placeholder="0.00"
-                />
-              </UiTableCell>
-              <UiTableCell>
-                <UiNumberInput
-                  v-model="rowFor(currency.code).annual"
-                  :min="0"
-                  :step="0.01"
-                  :disabled="!rowFor(currency.code).enabled"
-                  placeholder="0.00"
+                  :data-testid="`product-form-price-${currency.code}-${cycle}`"
                 />
               </UiTableCell>
             </UiTableRow>

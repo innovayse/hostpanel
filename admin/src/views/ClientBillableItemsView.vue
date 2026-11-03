@@ -10,10 +10,10 @@ import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useClientBillableItemsStore } from '@/stores/clientBillableItems'
 import { useResultBanner } from '@/composables/useResultBanner'
-import { formatMoney } from '@/lib/money'
+import { formatPlainAmount } from '@/lib/money'
 import AddBillableItemModal from '@/components/clients/AddBillableItemModal.vue'
 import AddTimeBillingModal from '@/components/clients/AddTimeBillingModal.vue'
-import type { ClientBillableItem } from '@/types/billableitem'
+import type { ClientBillableItem, CurrencyAmount } from '@/types/billableitem'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
@@ -87,8 +87,16 @@ const uninvoicedItems = ref<ClientBillableItem[]>([])
 /** Invoiced billable items for this client (current page). */
 const invoicedItems = ref<ClientBillableItem[]>([])
 
-/** Sum of all uninvoiced item amounts. */
-const uninvoicedTotal = ref(0)
+/** Sums of the uninvoiced item amounts, one per currency. */
+const uninvoicedTotal = ref<CurrencyAmount[]>([])
+
+/**
+ * The uninvoiced totals, one entry per currency the items are in, written with
+ * `formatPlainAmount` and joined with commas. Amounts of different currencies are never added; with
+ * no items the label is empty, because no currency is known and none is made up.
+ */
+const uninvoicedTotalLabel = computed(() =>
+  uninvoicedTotal.value.map((entry) => formatPlainAmount(entry.amount, entry.currency)).join(', '))
 
 /** Current invoiced items page (1-based). */
 const invoicedPage = ref(1)
@@ -334,7 +342,9 @@ onMounted(() => fetchBillableItems())
     <template v-else>
       <UiStack>
         <UiHeading :level="2" variant="card">
-          {{ t('clients.clientBillableItems.uninvoicedItemsValueUsdLength', { value: uninvoicedTotal.toFixed(2), length: uninvoicedItems.length }) }}
+          {{ uninvoicedTotalLabel
+            ? t('clients.clientBillableItems.uninvoicedItemsAmountLength', { amount: uninvoicedTotalLabel, length: uninvoicedItems.length })
+            : t('clients.clientBillableItems.uninvoicedItemsLength', { length: uninvoicedItems.length }) }}
         </UiHeading>
 
         <UiCard v-if="uninvoicedItems.length > 0">
@@ -367,7 +377,7 @@ onMounted(() => fetchBillableItems())
                 </UiTableCell>
                 <UiTableCell muted>{{ item.id }}</UiTableCell>
                 <UiTableCell>{{ item.description }}</UiTableCell>
-                <UiTableCell muted>{{ formatMoney(item.amount) }}</UiTableCell>
+                <UiTableCell muted>{{ formatPlainAmount(item.amount, item.currency) }}</UiTableCell>
                 <UiTableCell>
                   <UiIconButton
                     :label="t('shared.delete')"
@@ -429,7 +439,7 @@ onMounted(() => fetchBillableItems())
               <UiTableRow v-for="item in invoicedItems" :key="item.id" hoverable>
                 <UiTableCell muted>{{ item.id }}</UiTableCell>
                 <UiTableCell>{{ item.description }}</UiTableCell>
-                <UiTableCell muted>{{ formatMoney(item.amount) }}</UiTableCell>
+                <UiTableCell muted>{{ formatPlainAmount(item.amount, item.currency) }}</UiTableCell>
                 <UiTableCell>
                   <template v-if="item.invoiceId">#{{ item.invoiceId }}</template>
                   <template v-else>&mdash;</template>

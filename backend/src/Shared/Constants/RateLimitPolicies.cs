@@ -58,4 +58,29 @@ public static class RateLimitPolicies
     /// because a per-minute budget does not describe the harm.
     /// </summary>
     public const string Concurrent = "concurrent";
+
+    /// <summary>
+    /// The ordinary budget of a plugin route that names no tier of its own. Applied by the plugin call filter, not by
+    /// <c>[EnableRateLimiting]</c>: the tier belongs to the route the plugin's manifest declares, which only the filter
+    /// can read.
+    /// </summary>
+    public const string PluginDefault = "plugin-default";
+
+    /// <summary>
+    /// The tighter budget of a plugin route that is costly or sensitive, such as one that sends messages. Applied by
+    /// the plugin call filter, like <see cref="PluginDefault"/>.
+    /// </summary>
+    public const string PluginStrict = "plugin-strict";
+
+    /// <summary>
+    /// The budget of a plugin route that does heavy work and is called rarely, such as a report or an export. Applied by
+    /// the plugin call filter, like <see cref="PluginDefault"/>.
+    /// </summary>
+    public const string PluginHeavy = "plugin-heavy";
+
+    /// <summary>
+    /// How many streaming plugin routes one caller may hold open at once. Spent on top of the route's tier, and held until
+    /// the response ends, because a stream costs what it holds, not how often it is asked for.
+    /// </summary>
+    public const string PluginStream = "plugin-stream";
 }

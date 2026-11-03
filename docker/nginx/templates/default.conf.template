@@ -13,6 +13,13 @@ upstream admin_frontend {
     server hostpanel-admin:80;
 }
 
+# Referrer-Policy default for security-headers.conf: empty when the upstream sent its own policy (the
+# header is then skipped and the upstream value passes alone), the default otherwise.
+map $upstream_http_referrer_policy $referrer_policy {
+    ""      "strict-origin-when-cross-origin";
+    default "";
+}
+
 # TLS ends at the edge, so $scheme is always http here; forward the edge's X-Forwarded-Proto or the API
 # refuses sign-in (__Host- cookies need a secure origin).
 map $http_x_forwarded_proto $panel_forwarded_proto {
@@ -29,6 +36,22 @@ server {
     server_name ${DOMAIN};
 
     client_max_body_size ${EDGE_MAX_BODY_SIZE};
+
+    # Plugin calls may answer with server-sent events: no buffering or caching, a long read timeout,
+    # HTTP/1.1 and no Connection close, so events reach the browser as the plugin writes them.
+    location ~ ^/api/(client|admin)/plugins/ {
+        include snippets/security-headers.conf;
+        proxy_pass         http://api_backend;
+        proxy_http_version 1.1;
+        proxy_set_header   Connection "";
+        proxy_buffering    off;
+        proxy_cache        off;
+        proxy_read_timeout 1h;
+        proxy_set_header   Host $host;
+        proxy_set_header   X-Real-IP $remote_addr;
+        proxy_set_header   X-Forwarded-For $remote_addr;
+        proxy_set_header   X-Forwarded-Proto $panel_forwarded_proto;
+    }
 
     # API requests
     location /api/ {

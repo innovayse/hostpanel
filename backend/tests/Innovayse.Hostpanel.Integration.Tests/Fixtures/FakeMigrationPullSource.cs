@@ -57,9 +57,25 @@ public sealed class FakeMigrationPullSource : IMigrationSource
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Runs once, the first time the totals are asked for, before they are answered. A test sets it to
+    /// make something happen between a pull reading its queued job and starting it, such as a second
+    /// pull of the same job. It is cleared before it runs, so a pull it starts reads the totals plainly.
+    /// </summary>
+    public Func<Task>? BeforeFirstTotals { get; set; }
+
     /// <inheritdoc/>
-    public Task<MigrationSourceTotals> GetTotalsAsync(MigrationSourceEndpoint source, CancellationToken ct) =>
-        Task.FromResult(Totals);
+    public async Task<MigrationSourceTotals> GetTotalsAsync(MigrationSourceEndpoint source, CancellationToken ct)
+    {
+        var hook = BeforeFirstTotals;
+        BeforeFirstTotals = null;
+        if (hook is not null)
+        {
+            await hook();
+        }
+
+        return Totals;
+    }
 
     /// <inheritdoc/>
     public Task<MigrationRecordPage<TRecord>> GetRecordPageAsync<TRecord>(

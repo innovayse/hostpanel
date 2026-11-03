@@ -1,9 +1,11 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
-using Innovayse.SDK.Plugins;
 using Innovayse.SDK.Plugins.Enums;
+using Innovayse.SDK.Plugins.Manifest;
+using Innovayse.SDK.Plugins.Payment;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -79,7 +81,7 @@ public sealed class PaymentPluginResolverTests(IntegrationTestFactory factory)
         await db.SaveChangesAsync(CancellationToken.None);
 
         var registry = new PluginRegistry();
-        registry.Register(new LoadedPlugin(Manifest(module, pluginType), implementationType ?? typeof(ConfigurationCapturingPaymentPlugin)));
+        registry.Register(new LoadedPlugin(Manifest(module, pluginType), implementationType ?? typeof(ConfigurationCapturingPaymentPlugin), PluginViewDocuments.None));
 
         var services = new ServiceCollection().BuildServiceProvider();
         var activator = new PluginActivator(

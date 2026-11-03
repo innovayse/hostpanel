@@ -21,6 +21,11 @@ internal sealed class FulfilmentScenario : IDisposable
     /// <summary>The host running on <see cref="Clock"/> with the stub plugin enabled.</summary>
     private readonly WebApplicationFactory<Program> _host;
 
+    /// <summary>
+    /// The resolver the host answers with; a test may enable further plugins on it with <see cref="AddPlugin"/>.
+    /// </summary>
+    private readonly FakeFulfilmentPluginResolver _resolver;
+
     /// <summary>Initializes a new instance of the <see cref="FulfilmentScenario"/> class.</summary>
     /// <param name="factory">The shared host the scenario host is derived from.</param>
     /// <param name="settings">Extra <c>ScheduledJobs</c> settings, by key under that section.</param>
@@ -31,6 +36,7 @@ internal sealed class FulfilmentScenario : IDisposable
         Clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
         var resolver = new FakeFulfilmentPluginResolver();
         resolver.Register(PluginId, Plugin);
+        _resolver = resolver;
         _host = factory.WithWebHostBuilder(builder =>
         {
             foreach (var (key, value) in settings ?? new Dictionary<string, string>())
@@ -62,6 +68,31 @@ internal sealed class FulfilmentScenario : IDisposable
 
     /// <summary>Gets the host the scenario runs on, for a test that calls its routes.</summary>
     public WebApplicationFactory<Program> Host => _host;
+
+    /// <summary>
+    /// Enables one more stub plugin on the scenario host, under an id of its own. The resolver is read on every
+    /// pass, so a plugin added after the host started is resolved from the next pass on.
+    /// </summary>
+    /// <returns>The new plugin id and the stub enabled under it.</returns>
+    public EnabledStubPlugin AddPlugin()
+    {
+        var added = new EnabledStubPlugin($"stub-{Guid.NewGuid():N}", new StubFulfilmentPlugin());
+        _resolver.Register(added.PluginId, added.Plugin);
+        return added;
+    }
+
+    /// <summary>
+    /// The reference the host computes for <paramref name="pluginId"/> and <paramref name="clientId"/>: the
+    /// one source an endpoint call of that plugin takes its <c>PluginCaller.ClientRef</c> from.
+    /// </summary>
+    /// <param name="pluginId">The plugin.</param>
+    /// <param name="clientId">The host's client id.</param>
+    /// <returns>The plugin's reference to the client.</returns>
+    public string ClientRefOf(string pluginId, int clientId)
+    {
+        using var scope = Services.CreateScope();
+        return scope.ServiceProvider.GetRequiredService<IPluginReferences>().ForClient(pluginId, clientId);
+    }
 
     /// <summary>
     /// Seeds a record of this scenario plugin that failed every attempt, the way the dispatcher leaves it:
@@ -110,13 +141,21 @@ internal sealed class FulfilmentScenario : IDisposable
     /// <param name="invoiceId">The invoice.</param>
     /// <param name="kinds">The kinds to write a record for, in the order they are written.</param>
     /// <returns>A task that completes when the records are saved.</returns>
-    public async Task SeedRecordsAsync(int invoiceId, params FulfilmentKind[] kinds)
+    public Task SeedRecordsAsync(int invoiceId, params FulfilmentKind[] kinds) =>
+        SeedRecordsForAsync(PluginId, invoiceId, kinds);
+
+    /// <summary>Seeds records of a plugin enabled on this scenario for an invoice, all due now.</summary>
+    /// <param name="pluginId">The plugin the records name: <see cref="PluginId"/> or one from <see cref="AddPlugin"/>.</param>
+    /// <param name="invoiceId">The invoice.</param>
+    /// <param name="kinds">The kinds to write a record for, in the order they are written.</param>
+    /// <returns>A task that completes when the records are saved.</returns>
+    public async Task SeedRecordsForAsync(string pluginId, int invoiceId, params FulfilmentKind[] kinds)
     {
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         foreach (var kind in kinds)
         {
-            db.FulfilmentRecords.Add(FulfilmentRecord.Create(invoiceId, PluginId, kind, Clock.GetUtcNow()));
+            db.FulfilmentRecords.Add(FulfilmentRecord.Create(invoiceId, pluginId, kind, Clock.GetUtcNow()));
         }
 
         await db.SaveChangesAsync(CancellationToken.None);

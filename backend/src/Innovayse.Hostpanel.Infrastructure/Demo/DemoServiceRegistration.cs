@@ -52,6 +52,7 @@ internal static class DemoServiceRegistration
         }
 
         services.AddSingleton<DemoCardState>();
+        services.AddSingleton<DemoStoredCredentialState>();
         services.AddScoped<IDemoDataManager, DemoDataManager>();
 
         services.Replace(ServiceDescriptor.Scoped<ICardPaymentGateway, DemoCardPaymentGateway>());

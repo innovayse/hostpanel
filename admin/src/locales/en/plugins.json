@@ -20,6 +20,15 @@
     "restarting": "Restarting…",
     "restartServer": "Restart Server"
   },
+  "pluginSigning": {
+    "title": "Plugin signatures",
+    "description": "Uploaded plugins run inside the server, so a production server accepts only plugin packages signed with a trusted key.",
+    "warning": "Switching this on lets the server install and load plugin packages that are unsigned, changed after signing or signed with an unknown key. Anyone who can upload a package can then run code on the server. Switch it on only for packages you have checked yourself.",
+    "notSeeded": "The {key} setting has not been seeded yet, so it cannot be changed here.",
+    "active": "Unsigned plugins are being accepted. The server no longer proves who made an uploaded plugin.",
+    "label": "Allow unsigned plugins",
+    "hint": "Off by default. A change applies to the next upload at once, and to plugins that are already installed after the next server restart. Every change is written to the activity log. A server in development mode always accepts unsigned plugins."
+  },
   "plugins": {
     "pluginManager": "Plugin Manager",
     "installAndManageProviderPlugins": "Install and manage provider plugins",

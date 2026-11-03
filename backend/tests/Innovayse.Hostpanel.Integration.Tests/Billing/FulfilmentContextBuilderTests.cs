@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Integration.Tests.Fixtures;
+using Innovayse.SDK.Plugins.Enums;
 using Innovayse.SDK.Plugins.Identity;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
@@ -17,6 +18,9 @@ public sealed class FulfilmentContextBuilderTests
 
     /// <summary>A client linked to an account in another system.</summary>
     private static readonly ExternalAccount Account = new("crm", "acc-7", null, null);
+
+    /// <summary>The receiving plugin's reference to the invoice's client, as the caller computed it.</summary>
+    private const string ClientRef = "ref-of-client-5";
 
     /// <summary>Builds an unsaved invoice that is neither paid, refunded nor lapsed.</summary>
     /// <returns>The invoice.</returns>
@@ -37,7 +41,7 @@ public sealed class FulfilmentContextBuilderTests
         line.Quantity.Should().Be(2);
         line.Amount.Should().Be(20m);
         line.Currency.Should().Be(FulfilmentInvoiceSeeds.Currency);
-        line.BillingCycle.Should().Be("annual");
+        line.BillingCycle.Should().Be(PluginBillingCycle.Annual);
     }
 
     /// <summary>The snapshot decides the line: a monthly snapshot is handed over as monthly, with no SKU when it had none.</summary>
@@ -49,10 +53,41 @@ public sealed class FulfilmentContextBuilderTests
 
         var line = FulfilmentContextBuilder.Lines(invoice).Single();
 
-        line.BillingCycle.Should().Be("monthly");
+        line.BillingCycle.Should().Be(PluginBillingCycle.Monthly);
         line.Sku.Should().BeNull();
         line.Metadata.Should().BeNull();
         line.Currency.Should().Be("USD");
+    }
+
+    /// <summary>
+    /// Every host cycle is handed over as the plugin contract's own cycle of the same name, never as a number or null.
+    /// </summary>
+    /// <param name="cycle">The cycle on the product snapshot.</param>
+    /// <param name="expected">The cycle the plugin contract carries.</param>
+    [Theory]
+    [InlineData(BillingCycle.Monthly, PluginBillingCycle.Monthly)]
+    [InlineData(BillingCycle.Annual, PluginBillingCycle.Annual)]
+    [InlineData(BillingCycle.Quarterly, PluginBillingCycle.Quarterly)]
+    [InlineData(BillingCycle.SemiAnnual, PluginBillingCycle.SemiAnnual)]
+    [InlineData(BillingCycle.Biennial, PluginBillingCycle.Biennial)]
+    public void Lines_EveryCycle_IsHandedOverAsThePluginCycleOfTheSameName(BillingCycle cycle, PluginBillingCycle expected)
+    {
+        var invoice = OpenInvoice();
+        invoice.AddItem("Hosting", 3m, 1, null, new ProductSnapshot(9, cycle, true, null, null));
+
+        FulfilmentContextBuilder.Lines(invoice).Single().BillingCycle.Should().Be(expected);
+    }
+
+    /// <summary>A cycle the host does not define is refused, never handed over as a number the plugin contract cannot read.</summary>
+    [Fact]
+    public void Lines_AnUndefinedCycle_Throws()
+    {
+        var invoice = OpenInvoice();
+        invoice.AddItem("Hosting", 3m, 1, null, new ProductSnapshot(9, (BillingCycle)999, true, null, null));
+
+        var build = () => FulfilmentContextBuilder.Lines(invoice);
+
+        build.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     /// <summary>The paid context carries the invoice, the client, the account, the payment reference and time.</summary>
@@ -61,10 +96,11 @@ public sealed class FulfilmentContextBuilderTests
     {
         var invoice = FulfilmentInvoiceSeeds.Build(5, Now);
 
-        var context = FulfilmentContextBuilder.Paid(invoice, Account);
+        var context = FulfilmentContextBuilder.Paid(invoice, ClientRef, Account);
 
         context.InvoiceId.Should().Be(invoice.Id);
         context.ClientId.Should().Be(5);
+        context.ClientRef.Should().Be(ClientRef);
         context.Account.Should().Be(Account);
         context.TransactionReference.Should().Be(FulfilmentInvoiceSeeds.PaymentReference);
         context.PaidAt.Should().Be(Now);
@@ -75,7 +111,7 @@ public sealed class FulfilmentContextBuilderTests
     [Fact]
     public void Paid_OfAnUnpaidInvoice_Throws()
     {
-        var act = () => FulfilmentContextBuilder.Paid(OpenInvoice(), null);
+        var act = () => FulfilmentContextBuilder.Paid(OpenInvoice(), ClientRef, null);
 
         act.Should().Throw<InvalidOperationException>();
     }
@@ -86,9 +122,10 @@ public sealed class FulfilmentContextBuilderTests
     {
         var invoice = FulfilmentInvoiceSeeds.Build(5, Now);
 
-        var context = FulfilmentContextBuilder.Refunded(invoice, null);
+        var context = FulfilmentContextBuilder.Refunded(invoice, ClientRef, null);
 
         context.Account.Should().BeNull();
+        context.ClientRef.Should().Be(ClientRef);
         context.RefundedAmount.Should().Be(FulfilmentInvoiceSeeds.RefundedAmount);
         context.Currency.Should().Be(FulfilmentInvoiceSeeds.Currency);
         context.TransactionReference.Should().Be(FulfilmentInvoiceSeeds.RefundReference);
@@ -99,7 +136,7 @@ public sealed class FulfilmentContextBuilderTests
     [Fact]
     public void Refunded_OfAnInvoiceWithoutRefund_Throws()
     {
-        var act = () => FulfilmentContextBuilder.Refunded(OpenInvoice(), null);
+        var act = () => FulfilmentContextBuilder.Refunded(OpenInvoice(), ClientRef, null);
 
         act.Should().Throw<InvalidOperationException>();
     }
@@ -110,19 +147,57 @@ public sealed class FulfilmentContextBuilderTests
     {
         var invoice = FulfilmentInvoiceSeeds.Build(5, Now);
 
-        var context = FulfilmentContextBuilder.Lapsed(invoice, Account);
+        var context = FulfilmentContextBuilder.Lapsed(invoice, ClientRef, Account);
 
         context.DueDate.Should().Be(Now.AddDays(-1));
         context.LapsedAt.Should().Be(Now);
         context.Account.Should().Be(Account);
+        context.ClientRef.Should().Be(ClientRef);
     }
 
     /// <summary>An invoice that has not lapsed has nothing to tell a plugin about.</summary>
     [Fact]
     public void Lapsed_OfAnInvoiceThatDidNotLapse_Throws()
     {
-        var act = () => FulfilmentContextBuilder.Lapsed(OpenInvoice(), null);
+        var act = () => FulfilmentContextBuilder.Lapsed(OpenInvoice(), ClientRef, null);
 
         act.Should().Throw<InvalidOperationException>();
+    }
+
+    /// <summary>
+    /// The refund advice context carries the asked plugin's reference, the amount asked for, the invoice currency
+    /// and the product lines.
+    /// </summary>
+    [Fact]
+    public void RefundAdvice_CarriesTheReferenceTheRequestAndTheLines()
+    {
+        var invoice = FulfilmentInvoiceSeeds.Build(5, Now);
+
+        var context = FulfilmentContextBuilder.RefundAdvice(invoice, ClientRef, Account, 7m);
+
+        context.InvoiceId.Should().Be(invoice.Id);
+        context.ClientId.Should().Be(5);
+        context.ClientRef.Should().Be(ClientRef);
+        context.Account.Should().Be(Account);
+        context.RequestedAmount.Should().Be(7m);
+        context.Currency.Should().Be(FulfilmentInvoiceSeeds.Currency);
+        context.Lines.Should().ContainSingle();
+    }
+
+    /// <summary>
+    /// The builder hands over exactly the reference it is given, so the contexts built from one invoice for two
+    /// plugins differ in the reference and in nothing else.
+    /// </summary>
+    [Fact]
+    public void Paid_ForTwoReferences_DiffersOnlyInTheReference()
+    {
+        var invoice = FulfilmentInvoiceSeeds.Build(5, Now);
+
+        var first = FulfilmentContextBuilder.Paid(invoice, "ref-a", Account);
+        var second = FulfilmentContextBuilder.Paid(invoice, "ref-b", Account);
+
+        first.ClientRef.Should().Be("ref-a");
+        second.ClientRef.Should().Be("ref-b");
+        second.Should().BeEquivalentTo(first, options => options.Excluding(c => c.ClientRef));
     }
 }

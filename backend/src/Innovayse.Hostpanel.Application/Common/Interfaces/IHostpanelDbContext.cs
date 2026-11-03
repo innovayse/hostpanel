@@ -11,6 +11,7 @@ using Innovayse.Hostpanel.Domain.Migration;
 using Innovayse.Hostpanel.Domain.Notifications;
 using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Domain.Partners;
+using Innovayse.Hostpanel.Domain.Plugins;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Projects;
 using Innovayse.Hostpanel.Domain.Servers;
@@ -232,6 +233,15 @@ public interface IHostpanelDbContext
 
     /// <summary>Gets the per-locale translations of the storefront frequently asked questions.</summary>
     public DbSet<FaqTranslation> FaqTranslations { get; }
+
+    /// <summary>Gets the values plugins keep in the host-kept plugin store, per plugin and per client reference.</summary>
+    public DbSet<PluginDataEntry> PluginDataEntries { get; }
+
+    /// <summary>
+    /// Gets the running totals of each plugin store scope (keys and characters held, per plugin and per client
+    /// reference), which the store's quota is checked against.
+    /// </summary>
+    public DbSet<PluginDataScope> PluginDataScopes { get; }
 
     /// <summary>Saves every tracked change in one transaction.</summary>
     /// <param name="ct">Cancellation token.</param>

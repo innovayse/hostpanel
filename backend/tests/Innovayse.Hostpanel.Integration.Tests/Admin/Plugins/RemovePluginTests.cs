@@ -7,34 +7,23 @@ using Innovayse.Hostpanel.Domain.Plugins;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Shared.Constants;
-using Innovayse.Hostpanel.Shared.Contracts.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Wolverine;
-using Wolverine.Tracking;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Admin.Plugins;
 
 /// <summary>
 /// <c>DELETE /api/admin/plugins/{id}</c>: installing then removing a plugin takes it out of the list, switches it off,
-/// writes the removal to the activity log and, through <c>PluginRemovedEvent</c> on the outbox, purges its stored
-/// entries and scope rows in every scope and no other plugin's; a valid id whose package is already gone is still
-/// switched off and purged and answers no restart when it has a switch row, and answers <c>PLUGIN_NOT_FOUND</c> and
-/// writes nothing when it never had one; the switch and the event commit together, so a rolled-back removal
-/// neither switches off nor purges; a plugin shipped with the build and an id breaking the plugin id rule are refused
-/// and purge nothing; a caller with only the Client role is refused, and the route is closed to a caller with no
+/// writes the removal to the activity log and keeps the plugin's stored entries and scope rows (a separate purge
+/// deletes them, see <c>PurgePluginDataTests</c>); a valid id whose package is already gone is still switched off and
+/// answers no restart when it has a switch row, and answers <c>PLUGIN_NOT_FOUND</c> and writes nothing when it never
+/// had one; the switch and the audit line commit together, so a rolled-back removal neither switches off nor records;
+/// a plugin shipped with the build and an id breaking the plugin id rule are refused and touch nothing; a caller with only the Client role is refused, and the route is closed to a caller with no
 /// credential.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>
-    /// How long a removal and the purge it sets off may take to settle. Generous because the first delivery on a host
-    /// compiles the handler chains in memory, which takes seconds on a busy machine.
-    /// </summary>
-    private static readonly TimeSpan SettleTimeout = TimeSpan.FromSeconds(60);
-
     /// <summary>A quota no seed reaches: the seeds fill the scope totals, they do not test the quota.</summary>
     private static readonly PluginStoreQuota Unbounded = new(int.MaxValue, long.MaxValue);
 
@@ -52,7 +41,7 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
         install.StatusCode.Should().Be(HttpStatusCode.OK);
         await SeedSwitchAsync(pluginId, IntegrationSettingKeys.EnabledValue);
 
-        var remove = await DeleteAndSettleAsync(client, pluginId);
+        var remove = await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
         remove.StatusCode.Should().Be(HttpStatusCode.OK);
         var removeBody = await remove.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
         removeBody.GetProperty("requiresRestart").GetBoolean().Should().BeTrue();
@@ -71,11 +60,11 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>
-    /// Removing an uploaded plugin deletes its stored entries and scope rows in every scope (plugin wide and per
-    /// client) once the removal's event is delivered, and leaves the rows of another plugin untouched.
+    /// Removing an uploaded plugin keeps its stored entries and scope rows in every scope (plugin wide and per client),
+    /// and every other plugin's rows, so a reinstall finds its state again.
     /// </summary>
     [Fact]
-    public async Task Remove_PurgesThePluginsStoredDataInEveryScopeAndKeepsOthersAsync()
+    public async Task Remove_KeepsThePluginsStoredDataAsync()
     {
         var client = await PluginsTestSeeds.AdminClientAsync(factory);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
@@ -84,35 +73,35 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
         install.StatusCode.Should().Be(HttpStatusCode.OK);
         await SeedStoreRowsAsync(pluginId, otherPluginId);
 
-        var remove = await DeleteAndSettleAsync(client, pluginId);
+        var remove = await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
 
         remove.StatusCode.Should().Be(HttpStatusCode.OK);
-        (await StoredRowCountAsync(pluginId)).Should().Be(0, "every entry of the removed plugin is purged");
-        (await ScopeRowCountAsync(pluginId)).Should().Be(0, "every scope row of the removed plugin is purged");
-        (await StoredRowCountAsync(otherPluginId)).Should().Be(2, "another plugin's entries are not touched");
-        (await ScopeRowCountAsync(otherPluginId)).Should().Be(2, "another plugin's scope rows are not touched");
+        (await StoredRowCountAsync(pluginId)).Should().Be(2, "a removal keeps the plugin's entries");
+        (await ScopeRowCountAsync(pluginId)).Should().Be(2, "a removal keeps the plugin's scope rows");
+        (await StoredRowCountAsync(otherPluginId)).Should().Be(2);
+        (await ScopeRowCountAsync(otherPluginId)).Should().Be(2);
     }
 
     /// <summary>
     /// A valid id whose package is already gone (a folder removed by hand, or a retry after a removal whose save
-    /// failed) is still switched off, recorded and purged, and answers success without a restart.
+    /// failed) is still switched off and recorded, keeps its data, and answers success without a restart.
     /// </summary>
     [Fact]
-    public async Task PackageAlreadyGone_SwitchesOffAndPurgesWithoutARestartAsync()
+    public async Task PackageAlreadyGone_SwitchesOffWithoutARestartAsync()
     {
         var client = await PluginsTestSeeds.AdminClientAsync(factory);
         var pluginId = $"never-installed-{Guid.NewGuid():N}";
         await SeedSwitchAsync(pluginId, IntegrationSettingKeys.EnabledValue);
         await SeedStoreRowsAsync(pluginId);
 
-        var response = await DeleteAndSettleAsync(client, pluginId);
+        var response = await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
         body.GetProperty("requiresRestart").GetBoolean().Should().BeFalse("no package was removed, nothing to unload");
         (await SwitchValueAsync(pluginId)).Should().Be(IntegrationSettingKeys.DisabledValue);
-        (await StoredRowCountAsync(pluginId)).Should().Be(0);
-        (await ScopeRowCountAsync(pluginId)).Should().Be(0);
+        (await StoredRowCountAsync(pluginId)).Should().Be(2, "the data is kept");
+        (await ScopeRowCountAsync(pluginId)).Should().Be(2);
 
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -122,8 +111,7 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
 
     /// <summary>
     /// A valid id whose package is gone and that was never switched on here (no switch row) answers 404
-    /// <c>PLUGIN_NOT_FOUND</c> and writes nothing: no settings row, no activity line and no removal event, so rows
-    /// stored under that id are not purged.
+    /// <c>PLUGIN_NOT_FOUND</c> and writes nothing: no settings row and no activity line.
     /// </summary>
     [Fact]
     public async Task PackageGoneAndNeverSwitchedOn_AnswersNotFoundAndWritesNothingAsync()
@@ -132,28 +120,26 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
         var pluginId = $"never-installed-{Guid.NewGuid():N}";
         await SeedStoreRowsAsync(pluginId);
 
-        var response = await DeleteAndSettleAsync(client, pluginId);
+        var response = await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_NOT_FOUND);
         (await SwitchValueAsync(pluginId)).Should().BeNull("a mistyped id must not leave a settings row behind");
         (await ActivityLineCountAsync(pluginId)).Should().Be(0, "nothing was removed, so nothing is recorded");
-        (await StoredRowCountAsync(pluginId)).Should().Be(2, "no removal event was raised, so nothing is purged");
+        (await StoredRowCountAsync(pluginId)).Should().Be(2);
         (await ScopeRowCountAsync(pluginId)).Should().Be(2);
     }
 
     /// <summary>
-    /// The switch and the removal's event are written in one transaction: a removal whose transaction rolls back
-    /// leaves the switch on and purges nothing, while a later committed removal proves the purge pipeline was running.
+    /// The switch and the audit line are written in one transaction: a removal whose transaction rolls back leaves the
+    /// switch on and records nothing.
     /// </summary>
     [Fact]
-    public async Task RolledBackRemoval_NeitherSwitchesOffNorPurgesAsync()
+    public async Task RolledBackRemoval_NeitherSwitchesOffNorRecordsAsync()
     {
         var rolledBackId = $"never-installed-{Guid.NewGuid():N}";
-        var markerId = $"never-installed-{Guid.NewGuid():N}";
         await SeedSwitchAsync(rolledBackId, IntegrationSettingKeys.EnabledValue);
-        await SeedSwitchAsync(markerId, IntegrationSettingKeys.EnabledValue);
-        await SeedStoreRowsAsync(rolledBackId, markerId);
+        await SeedStoreRowsAsync(rolledBackId);
 
         using (var scope = factory.Services.CreateScope())
         {
@@ -165,14 +151,10 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
             await transaction.RollbackAsync();
         }
 
-        var client = await PluginsTestSeeds.AdminClientAsync(factory);
-        (await DeleteAndSettleAsync(client, markerId)).StatusCode.Should().Be(HttpStatusCode.OK);
-
-        (await StoredRowCountAsync(markerId)).Should().Be(0, "the committed removal was purged");
         (await SwitchValueAsync(rolledBackId)).Should().Be(
             IntegrationSettingKeys.EnabledValue, "the switch rolled back with the transaction");
-        (await StoredRowCountAsync(rolledBackId)).Should().Be(2, "its event rolled back with the switch");
-        (await ScopeRowCountAsync(rolledBackId)).Should().Be(2);
+        (await ActivityLineCountAsync(rolledBackId)).Should().Be(0, "the audit line rolled back with it");
+        (await StoredRowCountAsync(rolledBackId)).Should().Be(2);
     }
 
     /// <summary>A plugin shipped with the build answers 409 with <c>PLUGIN_BUILT_IN</c> and stays on disk.</summary>
@@ -182,6 +164,29 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
         var client = await PluginsTestSeeds.AdminClientAsync(factory);
         var pluginId = $"test-builtin-{Guid.NewGuid():N}";
         var builtIn = PluginsTestSeeds.StageBuiltInPlugin(pluginId);
+
+        try
+        {
+            var response = await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
+
+            response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+            await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_BUILT_IN);
+            File.Exists(Path.Combine(builtIn, "plugin.json")).Should().BeTrue();
+        }
+        finally
+        {
+            Directory.Delete(builtIn, recursive: true);
+        }
+    }
+
+    /// <summary>A built-in plugin the loader refused for a broken manifest is still built-in: its removal answers 409 and the folder stays.</summary>
+    [Fact]
+    public async Task ARefusedBuiltInPlugin_CannotBeRemovedAsync()
+    {
+        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var pluginId = $"test-builtin-{Guid.NewGuid():N}";
+        var builtIn = PluginsTestSeeds.StageBuiltInPlugin(pluginId);
+        await File.WriteAllTextAsync(Path.Combine(builtIn, "plugin.json"), PluginsTestSeeds.ManifestJson(pluginId, ",\"manifestVersion\":9"));
 
         try
         {
@@ -210,7 +215,7 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
             await SeedSwitchAsync(pluginId, IntegrationSettingKeys.EnabledValue);
             await SeedStoreRowsAsync(pluginId);
 
-            var response = await DeleteAndSettleAsync(client, pluginId);
+            var response = await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
 
             response.StatusCode.Should().Be(HttpStatusCode.Conflict);
             (await SwitchValueAsync(pluginId)).Should().Be(IntegrationSettingKeys.EnabledValue);
@@ -277,36 +282,14 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>Builds the handler from a scope's own services, the way the bus would.</summary>
-    /// <param name="services">The scope whose context, store, logger and clock the handler uses.</param>
+    /// <param name="services">The scope whose context, store and logger the handler uses.</param>
     /// <returns>The handler.</returns>
     private static RemovePluginHandler NewHandler(IServiceProvider services)
     {
         return new RemovePluginHandler(
             services.GetRequiredService<IPluginPackageStore>(),
             services.GetRequiredService<IActivityLogger>(),
-            services.GetRequiredService<IHostpanelDbContext>(),
-            services.GetRequiredService<IClock>());
-    }
-
-    /// <summary>
-    /// Sends the removal and waits until every message it set off, the purge included, has been handled. Recurring
-    /// jobs are ignored, because their schedule runs beside every test and is not this test's outcome.
-    /// </summary>
-    /// <param name="client">The signed-in HTTP client.</param>
-    /// <param name="pluginId">The plugin to remove.</param>
-    /// <returns>The removal's response.</returns>
-    private async Task<HttpResponseMessage> DeleteAndSettleAsync(HttpClient client, string pluginId)
-    {
-        HttpResponseMessage? response = null;
-        await factory.Services.GetRequiredService<IHost>().TrackActivity()
-            .Timeout(SettleTimeout)
-            .IgnoreMessagesMatchingType(type => typeof(IRecurringJob).IsAssignableFrom(type))
-            .ExecuteAndWaitAsync(async Task (IMessageContext _) =>
-            {
-                response = await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
-            });
-
-        return response!;
+            services.GetRequiredService<IHostpanelDbContext>());
     }
 
     /// <summary>Stores the plugin's switch row with the given value.</summary>

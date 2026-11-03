@@ -92,6 +92,19 @@ internal sealed class PluginManifestReader
     /// </returns>
     public PluginManifest? TryRead(string manifestPath)
     {
+        return TryRead(manifestPath, out _);
+    }
+
+    /// <summary>
+    /// Reads a <c>plugin.json</c> file like <see cref="TryRead(string)"/> and, when the plugin is refused for a broken
+    /// manifest rule, also hands back that rule and its detail, so the loader can keep them for the admin list.
+    /// </summary>
+    /// <param name="manifestPath">Absolute path to the <c>plugin.json</c> file.</param>
+    /// <param name="violation">The rule the plugin breaks; <see langword="null"/> when it is read, or refused for another reason.</param>
+    /// <returns>The manifest when the file is valid; <see langword="null"/> otherwise.</returns>
+    public PluginManifest? TryRead(string manifestPath, out PluginManifestViolation? violation)
+    {
+        violation = null;
         if (!File.Exists(manifestPath))
         {
             _logger.LogWarning("Plugin manifest not found: {Path}", manifestPath);
@@ -117,7 +130,7 @@ internal sealed class PluginManifestReader
                 return null;
             }
 
-            var violation = PluginManifestValidator.Validate(manifest)
+            violation = PluginManifestValidator.Validate(manifest)
                 ?? PluginManifestValidator.ValidateSdkReference(Path.GetDirectoryName(Path.GetFullPath(manifestPath))!);
             if (violation is not null)
             {

@@ -4,6 +4,7 @@ using Innovayse.Hostpanel.API.Extensions;
 using Innovayse.Hostpanel.API.Identity;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
+using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Infrastructure.Scheduling;
 using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Extensions;
@@ -126,8 +127,17 @@ public static class DependencyInjection
                     + $"{PluginApiOptions.SectionName}:{nameof(PluginApiOptions.MaxStoreKeysPerScope)} from 1 to "
                     + $"{PluginApiOptions.MaxStoreKeysPerScopeCeiling} keys, and {PluginApiOptions.SectionName}:"
                     + $"{nameof(PluginApiOptions.MaxStoreCharsPerScope)} from {PluginApiOptions.MaxStoreCharsPerScopeFloor} to "
-                    + $"{PluginApiOptions.MaxStoreCharsPerScopeCeiling} characters.")
+                    + $"{PluginApiOptions.MaxStoreCharsPerScopeCeiling} characters, and {PluginApiOptions.SectionName}:"
+                    + $"{nameof(PluginApiOptions.CallTimeoutSeconds)} from 1 to {PluginApiOptions.SectionName}:"
+                    + $"{nameof(PluginApiOptions.MaxCallTimeoutSeconds)} (at most {PluginApiOptions.MaxCallTimeoutSecondsLimit} seconds, so "
+                    + $"CallTimeoutSeconds <= MaxCallTimeoutSeconds), and {PluginApiOptions.SectionName}:"
+                    + $"{nameof(PluginApiOptions.AbandonWaitSeconds)} from 1 to {PluginApiOptions.AbandonWaitSecondsCeiling} seconds, and "
+                    + $"{PluginApiOptions.SectionName}:{nameof(PluginApiOptions.MaxAbandonedCallsPerPlugin)} from 1 to "
+                    + $"{PluginApiOptions.MaxAbandonedCallsPerPluginCeiling} calls.")
             .ValidateOnStart();
+
+        // Counts, across requests, the plugin calls the host stopped waiting for; one instance, so the count outlives a request scope.
+        services.AddSingleton<PluginAbandonedCalls>();
 
         // The caller of the request, for handlers. Registered by type, not through a factory, so
         // Wolverine's generated handler code builds it as a constructor call like any other adapter.

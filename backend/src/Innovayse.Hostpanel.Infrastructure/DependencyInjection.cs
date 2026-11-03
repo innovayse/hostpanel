@@ -879,6 +879,8 @@ public static class DependencyInjection
         services.AddSingleton(signatureVerifier);
         var allowUnsigned = signatureVerifier.Enforced
             && AllowUnsignedSettingReader.Read(configuration.GetConnectionString("DefaultConnection"), loggerFactory.CreateLogger(nameof(PluginLoader)));
+        // A staged upgrade is swapped in before any plugin folder is scanned, so no assembly of the old version is loaded.
+        PluginUpgradeApplier.Apply(pluginOptions.InstallRoot, loggerFactory.CreateLogger(nameof(PluginUpgradeApplier)));
         PluginLoader.DiscoverAndRegister(
             services,
             [new PluginRoot(PluginOptions.BuiltInRoot, PluginOrigin.BuiltIn), new PluginRoot(pluginOptions.InstallRoot, PluginOrigin.Uploaded)],
@@ -902,6 +904,13 @@ public static class DependencyInjection
         // Hosted plugins start once the host is up and stop as it begins to stop, each failure kept to its plugin.
         // Registered in every environment: with no hosted plugin loaded it opens nothing and reads nothing.
         services.AddHostedService<HostedPluginRunner>();
+
+        // The migration hook of a plugin whose upgrade was swapped in runs once while the host is starting, before the
+        // web server accepts a request. Registered in every environment: with no pending upgrade it does nothing.
+        // The same instance is the retry the settings save calls when an operator switches an upgraded plugin on.
+        services.AddSingleton<PluginMigrationRunner>();
+        services.AddHostedService(provider => provider.GetRequiredService<PluginMigrationRunner>());
+        services.AddSingleton<IPluginMigrationRetry>(provider => provider.GetRequiredService<PluginMigrationRunner>());
 
         // Public demo. Last on purpose: when Demo:Enabled is true this swaps the outward ports
         // registered above (payment, registrar, provisioning, rates, monitoring) for offline fakes,

@@ -116,6 +116,18 @@ public static class PluginEventStream
         }
     }
 
+    /// <summary>The events that end a stream whose plugin stayed silent past the call time limit: <c>error</c> then <c>done</c>.</summary>
+    /// <param name="timeoutMessage">The sentence of the <c>error</c> event, already in the caller's language.</param>
+    /// <returns>The two events, with no text of the plugin.</returns>
+    public static IReadOnlyList<StreamedEvent> TimeoutEvents(string timeoutMessage)
+    {
+        return
+        [
+            HostEvent(PluginStreamEvent.Error, new { code = HostpanelErrorCodes.PLUGIN_TIMEOUT, message = timeoutMessage, partial = true }),
+            HostEvent(PluginStreamEvent.Done, new { }),
+        ];
+    }
+
     /// <summary>Checks one event of the plugin against what the host allows and turns it into the host's event.</summary>
     /// <param name="current">The plugin's event.</param>
     /// <param name="maxEventBytes">The most UTF-8 bytes the data may carry.</param>

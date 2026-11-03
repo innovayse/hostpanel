@@ -5,6 +5,7 @@
 import type { IntegrationDetailDto, IntegrationDto } from '../../src/types/integration'
 import { IntegrationFieldType } from '../../src/types/integration'
 import type { PluginListItemDto } from '../../src/types/plugin'
+import { PluginStatus } from '../../src/types/plugin'
 
 /** A disabled payment integration as the list endpoint returns it. */
 export const stripe: IntegrationDto = {
@@ -44,4 +45,8 @@ export const cwpPlugin: PluginListItemDto = {
   color: '#1a73e8',
   isLoaded: true,
   isBuiltIn: false,
+  status: PluginStatus.Loaded,
+  refusedRule: null,
+  refusedDetail: null,
+  stagedVersion: null,
 }

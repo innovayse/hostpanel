@@ -45,4 +45,7 @@ public enum PluginManifestRule
 
     /// <summary>The manifest id is not a valid plugin id (lowercase words joined by single hyphens).</summary>
     PluginIdInvalid = 13,
+
+    /// <summary>The manifest version is not a strict semantic version (<c>major.minor.patch</c>, no leading zeros).</summary>
+    VersionInvalid = 14,
 }

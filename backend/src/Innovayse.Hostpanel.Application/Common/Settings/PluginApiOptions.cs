@@ -59,11 +59,61 @@ public sealed class PluginApiOptions
     /// <summary>The largest <see cref="StreamEventMaxBytes"/> a deployment may configure, in bytes (1 MiB).</summary>
     public const int StreamEventMaxBytesCeiling = 1_048_576;
 
+    /// <summary>The seconds a call to a plugin route may take by default before the host cancels it (30).</summary>
+    public const int DefaultCallTimeoutSeconds = 30;
+
+    /// <summary>The seconds the ceiling of a call's time limit is set to by default (10 minutes).</summary>
+    public const int DefaultMaxCallTimeoutSeconds = 600;
+
+    /// <summary>The largest <see cref="MaxCallTimeoutSeconds"/> a deployment may configure, in seconds (1 hour).</summary>
+    public const int MaxCallTimeoutSecondsLimit = 3600;
+
+    /// <summary>The seconds the host waits, after the call limit, for a plugin that ignores its token before it abandons the call (5).</summary>
+    public const int DefaultAbandonWaitSeconds = 5;
+
+    /// <summary>The largest <see cref="AbandonWaitSeconds"/> a deployment may configure, in seconds.</summary>
+    public const int AbandonWaitSecondsCeiling = 60;
+
+    /// <summary>How many abandoned calls of one plugin may still be running by default before new calls to it are refused (8).</summary>
+    public const int DefaultMaxAbandonedCallsPerPlugin = 8;
+
+    /// <summary>The largest <see cref="MaxAbandonedCallsPerPlugin"/> a deployment may configure.</summary>
+    public const int MaxAbandonedCallsPerPluginCeiling = 1000;
+
     /// <summary>
     /// The most bytes of request body a plugin route accepts. A call that declares more, or sends more, is refused
     /// with <c>PLUGIN_REQUEST_TOO_LARGE</c> (413) before the plugin is called. The plugin sees the whole body or none of it.
     /// </summary>
     public int MaxBodyBytes { get; set; } = DefaultMaxBodyBytes;
+
+    /// <summary>
+    /// The seconds the host waits for a plugin route (1 to <see cref="MaxCallTimeoutSeconds"/>); every route gets it today. Past it the call is
+    /// cancelled through the token the plugin receives and the caller gets <c>PLUGIN_TIMEOUT</c> (504). On a streaming route
+    /// it bounds the wait for the reply, for the first event and the silence between events, never the length of a stream
+    /// that keeps sending.
+    /// </summary>
+    public int CallTimeoutSeconds { get; set; } = DefaultCallTimeoutSeconds;
+
+    /// <summary>
+    /// The longest limit any route may have (1 to <see cref="MaxCallTimeoutSecondsLimit"/> seconds), and never below
+    /// <see cref="CallTimeoutSeconds"/>. Today every route gets <see cref="CallTimeoutSeconds"/>; once the plugin SDK lets a
+    /// route ask for a longer limit, the request is honoured up to this ceiling (<see cref="CallTimeoutFor"/>).
+    /// </summary>
+    public int MaxCallTimeoutSeconds { get; set; } = DefaultMaxCallTimeoutSeconds;
+
+    /// <summary>
+    /// The seconds the host waits, after the call limit has passed, for a plugin that ignores its token to end by itself
+    /// (1 to <see cref="AbandonWaitSecondsCeiling"/>). After it the call is abandoned: the caller gets <c>PLUGIN_TIMEOUT</c>
+    /// and the plugin's work, which the host cannot stop, runs on counted against <see cref="MaxAbandonedCallsPerPlugin"/>.
+    /// </summary>
+    public int AbandonWaitSeconds { get; set; } = DefaultAbandonWaitSeconds;
+
+    /// <summary>
+    /// The most abandoned calls of one plugin that may still be running (1 to <see cref="MaxAbandonedCallsPerPluginCeiling"/>).
+    /// While a plugin is at the limit, new calls to it are refused at once with <c>PLUGIN_TIMEOUT</c> instead of piling
+    /// more work that ignores its token on the host; a call that ends frees its place.
+    /// </summary>
+    public int MaxAbandonedCallsPerPlugin { get; set; } = DefaultMaxAbandonedCallsPerPlugin;
 
     /// <summary>
     /// The seconds a streamed plugin reply may stay silent before the host writes a comment line, so a proxy and the
@@ -104,16 +154,38 @@ public sealed class PluginApiOptions
     /// </summary>
     public long ServerBodyLimit => (long)MaxBodyBytes + ReadChunkBytes + (MaxBodyBytes / 64L);
 
+    /// <summary>
+    /// Gets the limit of a call to a route: what the route asked for, or the default, and never more than the ceiling. The SDK's
+    /// route record has no such field yet, so callers pass <see langword="null"/> and every route gets
+    /// <see cref="CallTimeoutSeconds"/>; a per route limit waits for the SDK field.
+    /// </summary>
+    /// <param name="requestedSeconds">The limit the route's manifest asks for, or <see langword="null"/> (or zero or less) for none.</param>
+    /// <returns>The time the host waits for the plugin.</returns>
+    public TimeSpan CallTimeoutFor(int? requestedSeconds)
+    {
+        var seconds = requestedSeconds is > 0 ? requestedSeconds.Value : CallTimeoutSeconds;
+        return TimeSpan.FromSeconds(Math.Min(seconds, MaxCallTimeoutSeconds));
+    }
+
+    /// <summary>Gets <see cref="AbandonWaitSeconds"/> as a span.</summary>
+    public TimeSpan AbandonWait => TimeSpan.FromSeconds(AbandonWaitSeconds);
+
     /// <summary>Gets <see cref="StreamHeartbeatSeconds"/> as a span.</summary>
     public TimeSpan StreamHeartbeat => TimeSpan.FromSeconds(StreamHeartbeatSeconds);
 
     /// <summary>
     /// Whether the values are usable: a body cap of at least one byte and no more than <see cref="MaxBodyBytesCeiling"/>, and a
+    /// call limit of one second to the ceiling, which is one second to <see cref="MaxCallTimeoutSecondsLimit"/>, and an abandon wait of
+    /// one second to <see cref="AbandonWaitSecondsCeiling"/>, and 1 to <see cref="MaxAbandonedCallsPerPluginCeiling"/> abandoned calls per plugin, and a
     /// heartbeat of one second to <see cref="StreamHeartbeatSecondsCeiling"/>, and an event cap of one byte to <see cref="StreamEventMaxBytesCeiling"/>, and 1 to
     /// <see cref="MaxStoreKeysPerScopeCeiling"/> store keys per scope, and <see cref="MaxStoreCharsPerScopeFloor"/> to
     /// <see cref="MaxStoreCharsPerScopeCeiling"/> store characters per scope.
     /// </summary>
     public bool IsValid => MaxBodyBytes is >= 1 and <= MaxBodyBytesCeiling
+        && MaxCallTimeoutSeconds is >= 1 and <= MaxCallTimeoutSecondsLimit
+        && CallTimeoutSeconds >= 1 && CallTimeoutSeconds <= MaxCallTimeoutSeconds
+        && AbandonWaitSeconds is >= 1 and <= AbandonWaitSecondsCeiling
+        && MaxAbandonedCallsPerPlugin is >= 1 and <= MaxAbandonedCallsPerPluginCeiling
         && StreamHeartbeatSeconds is >= 1 and <= StreamHeartbeatSecondsCeiling
         && StreamEventMaxBytes is >= 1 and <= StreamEventMaxBytesCeiling
         && MaxStoreKeysPerScope is >= 1 and <= MaxStoreKeysPerScopeCeiling

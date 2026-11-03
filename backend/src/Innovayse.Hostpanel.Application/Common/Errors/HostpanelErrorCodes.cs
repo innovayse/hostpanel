@@ -794,6 +794,9 @@ public static class HostpanelErrorCodes
     /// <summary>The manifest id is not a valid plugin id (400).</summary>
     public const string PLUGIN_MANIFEST_ID_INVALID = "PLUGIN_MANIFEST_ID_INVALID";
 
+    /// <summary>The manifest version is not a strict semantic version such as 1.2.3 (400).</summary>
+    public const string PLUGIN_MANIFEST_VERSION_INVALID = "PLUGIN_MANIFEST_VERSION_INVALID";
+
     /// <summary>
     /// One of the archive's entries would write outside the plugin's own directory (400). The
     /// zip-slip guard's refusal, named for what a caller can act on rather than the attack it
@@ -837,6 +840,12 @@ public static class HostpanelErrorCodes
     /// <summary>The plugin ships with this build and cannot be removed or replaced by an upload (409).</summary>
     public const string PLUGIN_BUILT_IN = "PLUGIN_BUILT_IN";
 
+    /// <summary>The upload is an older version than the installed plugin and the operator did not force the downgrade (409).</summary>
+    public const string PLUGIN_DOWNGRADE_REFUSED = "PLUGIN_DOWNGRADE_REFUSED";
+
+    /// <summary>The plugin's package is still installed, so its stored data cannot be purged; remove the plugin first (409).</summary>
+    public const string PLUGIN_STILL_INSTALLED = "PLUGIN_STILL_INSTALLED";
+
     // Plugin routes
 
     /// <summary>
@@ -851,6 +860,9 @@ public static class HostpanelErrorCodes
     /// the failure reaches the caller; the host logs it with the plugin id (502).
     /// </summary>
     public const string PLUGIN_FAILED = "PLUGIN_FAILED";
+
+    /// <summary>A plugin did not answer within the call time limit (<c>PluginApi:CallTimeoutSeconds</c>); the call was cancelled and nothing of the plugin reaches the caller (504).</summary>
+    public const string PLUGIN_TIMEOUT = "PLUGIN_TIMEOUT";
 
     /// <summary>A plugin passed a store key the SDK does not allow; answered to the caller as <see cref="PLUGIN_FAILED"/> (502).</summary>
     public const string PLUGIN_STORE_KEY_INVALID = Domain.Plugins.PluginStoreErrors.KeyInvalid;
@@ -881,6 +893,15 @@ public static class HostpanelErrorCodes
 
     /// <summary>The slot needs a context id (a service or a client) and the request named none (400).</summary>
     public const string PLUGIN_SLOT_CONTEXT_REQUIRED = "PLUGIN_SLOT_CONTEXT_REQUIRED";
+
+    /// <summary>The plugin declares no widget with that id in that slot, so there is nothing to bind products to (404).</summary>
+    public const string PLUGIN_SLOT_WIDGET_NOT_FOUND = "PLUGIN_SLOT_WIDGET_NOT_FOUND";
+
+    /// <summary>
+    /// Every product id sent to bind a widget to is unknown or deleted, so nothing would be bound. Refused (400) instead of
+    /// clearing the binding, which only an explicit empty list does.
+    /// </summary>
+    public const string PLUGIN_SLOT_PRODUCTS_UNKNOWN = "PLUGIN_SLOT_PRODUCTS_UNKNOWN";
 
     // Admin: integrations
 

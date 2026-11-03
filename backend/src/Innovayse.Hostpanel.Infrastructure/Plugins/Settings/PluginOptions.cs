@@ -37,6 +37,19 @@ public sealed class PluginOptions
     /// </summary>
     public List<string> TrustedPackageSha256 { get; set; } = [];
 
+    /// <summary>The longest, in seconds, a plugin's migration hook may run before the host stops waiting for it.</summary>
+    public const int DefaultMigrationTimeoutSeconds = 120;
+
+    /// <summary>The upper bound <see cref="MigrationTimeoutSeconds"/> accepts: a migration that needs longer is not a startup hook.</summary>
+    public const int MaxMigrationTimeoutSeconds = 3_600;
+
+    /// <summary>
+    /// The longest, in seconds, one plugin's migration hook may run. Past it the host cancels the hook, stops waiting,
+    /// logs the plugin and keeps it gated until a later attempt succeeds, so a hanging hook cannot hold up startup or a
+    /// settings save. Must be between 1 and <see cref="MaxMigrationTimeoutSeconds"/>.
+    /// </summary>
+    public int MigrationTimeoutSeconds { get; set; } = DefaultMigrationTimeoutSeconds;
+
     /// <summary>The build output's plugin folder, holding the plugins shipped with the build.</summary>
     public static string BuiltInRoot => Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "plugins"));
 

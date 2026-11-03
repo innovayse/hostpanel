@@ -30,6 +30,7 @@ public static class PluginPackageErrors
             PluginPackageOutcome.NotTrusted => HostpanelErrorCodes.PLUGIN_NOT_TRUSTED,
             PluginPackageOutcome.SignatureRefused => CodeFor(
                 result.SignatureRule ?? throw new ArgumentOutOfRangeException(nameof(result), result, "A refused signature must be named.")),
+            PluginPackageOutcome.DowngradeRefused => HostpanelErrorCodes.PLUGIN_DOWNGRADE_REFUSED,
             PluginPackageOutcome.BuiltIn => HostpanelErrorCodes.PLUGIN_BUILT_IN,
             PluginPackageOutcome.NotFound => HostpanelErrorCodes.PLUGIN_NOT_FOUND,
             _ => throw new ArgumentOutOfRangeException(nameof(result), result, "A success outcome has no error code."),
@@ -57,6 +58,7 @@ public static class PluginPackageErrors
             PluginManifestRule.SlotWidgetIdInvalid => HostpanelErrorCodes.PLUGIN_SLOT_WIDGET_ID_INVALID,
             PluginManifestRule.SlotWidgetDuplicate => HostpanelErrorCodes.PLUGIN_SLOT_WIDGET_DUPLICATE,
             PluginManifestRule.PluginIdInvalid => HostpanelErrorCodes.PLUGIN_MANIFEST_ID_INVALID,
+            PluginManifestRule.VersionInvalid => HostpanelErrorCodes.PLUGIN_MANIFEST_VERSION_INVALID,
             _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, "Not a manifest rule."),
         };
     }

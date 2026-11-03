@@ -23,6 +23,13 @@ public sealed class PluginOptionsValidator : IValidateOptions<PluginOptions>
             return Fail(nameof(PluginOptions.MaxUncompressedBytes), "must be greater than zero");
         }
 
+        if (options.MigrationTimeoutSeconds is <= 0 or > PluginOptions.MaxMigrationTimeoutSeconds)
+        {
+            return Fail(
+                nameof(PluginOptions.MigrationTimeoutSeconds),
+                $"must be between 1 and {PluginOptions.MaxMigrationTimeoutSeconds} seconds");
+        }
+
         foreach (var digest in options.TrustedPackageSha256)
         {
             if (digest is null || digest.Length != 64 || !digest.All(Uri.IsHexDigit))

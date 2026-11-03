@@ -153,6 +153,18 @@ public sealed class AppPluginFixture : IAsyncLifetime
         return _logs.Entries.Count;
     }
 
+    /// <summary>Whether the host logged a Warning that names a plugin and says a given phrase, after a mark.</summary>
+    /// <param name="pluginId">The plugin id the line must name.</param>
+    /// <param name="phrase">A phrase of the line, such as <c>did not answer</c>.</param>
+    /// <param name="since">A mark from <see cref="LogMark"/>; lines logged before it (by an earlier test) are ignored.</param>
+    /// <returns><see langword="true"/> when such a warning was logged after the mark.</returns>
+    public bool LoggedWarning(string pluginId, string phrase, int since)
+    {
+        return _logs.Entries.Skip(since).Any(entry => entry.Level == LogLevel.Warning
+            && entry.Message.Contains(pluginId, StringComparison.Ordinal)
+            && entry.Message.Contains(phrase, StringComparison.Ordinal));
+    }
+
     /// <summary>Whether the host logged that a rate limit policy refused a call of a plugin, after a mark.</summary>
     /// <param name="policy">The policy that must have refused, such as <c>plugin-strict</c>.</param>
     /// <param name="pluginId">The plugin id the line must name; it is part of the bucket the line writes.</param>

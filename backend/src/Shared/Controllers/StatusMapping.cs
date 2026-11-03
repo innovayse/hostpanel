@@ -52,9 +52,13 @@ public static class StatusMapping
             "SERVICE_NOT_TERMINATED" => new(409, "Conflict"),
             // A plugin shipped with the build: the request is well-formed, the target's state refuses it.
             "PLUGIN_BUILT_IN" => new(409, "Conflict"),
+            // An upload older than the installed version, and a purge of data whose plugin is still installed: the target's state refuses it.
+            "PLUGIN_DOWNGRADE_REFUSED" or "PLUGIN_STILL_INSTALLED" => new(409, "Conflict"),
             // Exact row: a plugin's own code failed the call (a gateway between us and code we do not own, 502); the name
             // carries no token.
             "PLUGIN_FAILED" => new(502, "Bad Gateway"),
+            // Exact row: a plugin did not answer within the call time limit (a gateway that timed out, 504); the name carries no token.
+            "PLUGIN_TIMEOUT" => new(504, "Gateway Timeout"),
             // Exact row: a plugin's store for this account is full. A quota refusal answers 402 like QUOTA_EXCEEDED
             // (controllers.md), and the code needs its own row because that one matches only the exact code.
             "PLUGIN_STORE_QUOTA_EXCEEDED" => new(402, "Payment Required"),

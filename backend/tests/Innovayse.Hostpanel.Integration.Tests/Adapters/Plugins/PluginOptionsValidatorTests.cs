@@ -67,4 +67,28 @@ public sealed class PluginOptionsValidatorTests
         result.Failed.Should().BeTrue();
         result.FailureMessage.Should().Contain(nameof(PluginOptions.InstallPath));
     }
+
+    /// <summary>A migration time limit outside 1 to 3600 seconds refuses startup, naming the key.</summary>
+    /// <param name="seconds">The configured limit.</param>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-5)]
+    [InlineData(PluginOptions.MaxMigrationTimeoutSeconds + 1)]
+    public void AMigrationTimeoutOutOfRange_Fails(int seconds)
+    {
+        var result = _validator.Validate(null, new PluginOptions { MigrationTimeoutSeconds = seconds });
+
+        result.Failed.Should().BeTrue();
+        result.FailureMessage.Should().Contain(nameof(PluginOptions.MigrationTimeoutSeconds));
+    }
+
+    /// <summary>The ends of the allowed migration time limit pass.</summary>
+    /// <param name="seconds">The configured limit.</param>
+    [Theory]
+    [InlineData(1)]
+    [InlineData(PluginOptions.MaxMigrationTimeoutSeconds)]
+    public void AMigrationTimeoutInRange_Passes(int seconds)
+    {
+        _validator.Validate(null, new PluginOptions { MigrationTimeoutSeconds = seconds }).Succeeded.Should().BeTrue();
+    }
 }

@@ -1019,6 +1019,15 @@
   <data name="PluginIdInvalid" xml:space="preserve">
     <value>Идентификатор плагина может содержать только строчные латинские буквы, цифры и одиночные дефисы, не более 64 символов.</value>
   </data>
+  <data name="PluginSlotIdInvalid" xml:space="preserve">
+    <value>Некорректный идентификатор области страницы.</value>
+  </data>
+  <data name="PluginWidgetIdInvalid" xml:space="preserve">
+    <value>Некорректный идентификатор виджета.</value>
+  </data>
+  <data name="PluginProductIdsInvalid" xml:space="preserve">
+    <value>Выберите не более {0} продуктов.</value>
+  </data>
   <data name="IntegrationSlugRequired" xml:space="preserve">
     <value>Требуется указать слаг интеграции.</value>
   </data>

@@ -11,7 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Plugins;
 
 /// <summary>
 /// <see cref="PurgeRemovedPluginDataHandler"/> reached the way production reaches it, by publishing
-/// <see cref="PluginRemovedEvent"/> on the real bus: it deletes, scope by scope, every store entry of the removed plugin
+/// <see cref="PluginDataPurgeRequestedEvent"/> on the real bus: it deletes, scope by scope, every store entry of the removed plugin
 /// last written at or before the removal and every scope row it empties, across several batches; it keeps rows written
 /// or rewritten after the removal together with their scope, whose totals still describe them; it leaves another
 /// plugin's rows alone; and a second delivery, sequential or concurrent, finds nothing and completes.
@@ -48,7 +48,7 @@ public sealed class PurgeRemovedPluginDataTests(IntegrationTestFactory factory) 
         await SeedAsync(otherPluginId, "client-a", new SeedRow("cursor", "kept"));
         var removedAt = await LatestWriteAsync(pluginId);
 
-        await factory.Services.PublishAndWaitAsync(new PluginRemovedEvent(pluginId, removedAt));
+        await factory.Services.PublishAndWaitAsync(new PluginDataPurgeRequestedEvent(pluginId, removedAt));
 
         (await EntryCountAsync(pluginId)).Should().Be(0);
         (await ScopeCountAsync(pluginId)).Should().Be(0, "every emptied scope row is deleted");
@@ -68,7 +68,7 @@ public sealed class PurgeRemovedPluginDataTests(IntegrationTestFactory factory) 
         await AssertScopesMatchEntriesAsync(pluginId);
         var removedAt = await LatestWriteAsync(pluginId);
 
-        await factory.Services.PublishAndWaitAsync(new PluginRemovedEvent(pluginId, removedAt));
+        await factory.Services.PublishAndWaitAsync(new PluginDataPurgeRequestedEvent(pluginId, removedAt));
 
         (await EntryCountAsync(pluginId)).Should().Be(0);
         (await ScopeCountAsync(pluginId)).Should().Be(0);
@@ -91,7 +91,7 @@ public sealed class PurgeRemovedPluginDataTests(IntegrationTestFactory factory) 
         (await EarliestWriteAfterAsync(pluginId, removedAt))
             .Should().BeAfter(removedAt, "the newer rows are stamped later");
 
-        await factory.Services.PublishAndWaitAsync(new PluginRemovedEvent(pluginId, removedAt));
+        await factory.Services.PublishAndWaitAsync(new PluginDataPurgeRequestedEvent(pluginId, removedAt));
 
         (await KeysAsync(pluginId, "client-a"))
             .Should().Equal(new[] { "new" }, "only the row written after the removal is kept");
@@ -115,7 +115,7 @@ public sealed class PurgeRemovedPluginDataTests(IntegrationTestFactory factory) 
         var removedAt = await LatestWriteAsync(pluginId);
         await RewriteAsync(pluginId, null, "rewritten", "a longer value written after the removal");
 
-        await factory.Services.PublishAndWaitAsync(new PluginRemovedEvent(pluginId, removedAt));
+        await factory.Services.PublishAndWaitAsync(new PluginDataPurgeRequestedEvent(pluginId, removedAt));
 
         (await KeysAsync(pluginId, null)).Should().Equal("rewritten");
         (await ScopeCountAsync(pluginId)).Should().Be(1);
@@ -134,7 +134,7 @@ public sealed class PurgeRemovedPluginDataTests(IntegrationTestFactory factory) 
         var removedAt = await LatestWriteAsync(pluginId);
         await SeedAsync(pluginId, "client-a", new SeedRow("new", "after"));
 
-        await factory.Services.PublishAndWaitAsync(new PluginRemovedEvent(pluginId, removedAt));
+        await factory.Services.PublishAndWaitAsync(new PluginDataPurgeRequestedEvent(pluginId, removedAt));
 
         (await KeysAsync(pluginId, "client-a")).Should().Equal("new");
         (await ScopeCountAsync(pluginId)).Should().Be(1);
@@ -154,8 +154,8 @@ public sealed class PurgeRemovedPluginDataTests(IntegrationTestFactory factory) 
         var removedAt = await LatestWriteAsync(pluginId);
         await SeedAsync(pluginId, "client-a", new SeedRow("new", "after"));
 
-        await factory.Services.PublishAndWaitAsync(new PluginRemovedEvent(pluginId, removedAt));
-        var second = async () => await factory.Services.PublishAndWaitAsync(new PluginRemovedEvent(pluginId, removedAt));
+        await factory.Services.PublishAndWaitAsync(new PluginDataPurgeRequestedEvent(pluginId, removedAt));
+        var second = async () => await factory.Services.PublishAndWaitAsync(new PluginDataPurgeRequestedEvent(pluginId, removedAt));
 
         await second.Should().NotThrowAsync();
         (await KeysAsync(pluginId, null)).Should().BeEmpty();
@@ -207,7 +207,7 @@ public sealed class PurgeRemovedPluginDataTests(IntegrationTestFactory factory) 
             scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>(),
             scope.ServiceProvider.GetRequiredService<ILogger<PurgeRemovedPluginDataHandler>>());
 
-        await handler.HandleAsync(new PluginRemovedEvent(pluginId, removedAt), CancellationToken.None);
+        await handler.HandleAsync(new PluginDataPurgeRequestedEvent(pluginId, removedAt), CancellationToken.None);
     }
 
     /// <summary>

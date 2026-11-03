@@ -75,6 +75,7 @@ public sealed class PluginIntegrationSecretTests(IntegrationTestFactory factory)
             scope.ServiceProvider.GetRequiredService<ISecretSettingCipher>(),
             registry,
             scope.ServiceProvider.GetRequiredService<ICurrentUserService>(),
+            scope.ServiceProvider.GetRequiredService<IPluginMigrationRetry>(),
             NullLogger<SaveIntegrationConfigHandler>.Instance);
 
         var result = await handler.HandleAsync(

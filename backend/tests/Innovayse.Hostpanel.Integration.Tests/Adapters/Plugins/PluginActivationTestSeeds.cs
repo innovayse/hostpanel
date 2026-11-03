@@ -95,14 +95,17 @@ internal static class PluginActivationTestSeeds
     /// <param name="factory">The shared host, for the settings cipher.</param>
     /// <param name="db">The data context the activator reads settings from; the caller keeps it alive.</param>
     /// <param name="services">The container plugins are built from; an empty one when the plugins need nothing else.</param>
+    /// <param name="registry">The registry that holds the migration gate; an empty one (nothing pending) when omitted.</param>
     /// <returns>The activator.</returns>
-    public static PluginActivator Activator(IntegrationTestFactory factory, AppDbContext db, IServiceProvider? services = null)
+    public static PluginActivator Activator(
+        IntegrationTestFactory factory, AppDbContext db, IServiceProvider? services = null, PluginRegistry? registry = null)
     {
         return new PluginActivator(
             db,
             factory.Services.GetRequiredService<ISecretSettingCipher>(),
             services ?? new ServiceCollection().BuildServiceProvider(),
             new ConfigurationBuilder().Build(),
+            registry ?? new PluginRegistry(),
             NullLogger<PluginActivator>.Instance);
     }
 }

@@ -1,5 +1,6 @@
 using System.Reflection;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Plugins;
@@ -38,7 +39,11 @@ public static class PluginLoader
     /// <remarks>
     /// An uploaded plugin is signature-checked before any of its assemblies is loaded, because loading an assembly
     /// can already run its code. A plugin shipped with the host (<see cref="PluginOrigin.BuiltIn"/>) is not: it is
-    /// part of the host. A refused plugin is skipped alone and logged with its id and the rule it breaks.
+    /// part of the host. A refused plugin is skipped alone and logged with its id and the rule it breaks; a plugin
+    /// refused for a broken manifest rule is also kept in <see cref="PluginRegistry"/> (<see cref="RefusedPlugin"/>), in
+    /// either folder, so the admin plugin list can show it. A refused plugin claims its id like a loaded one: an upload
+    /// of the same name never loads in its place and never replaces its refusal entry. A plugin with a pending upgrade
+    /// record is flagged in the registry, which keeps it from being activated until its migration succeeds.
     /// </remarks>
     /// <param name="services">The application service collection.</param>
     /// <param name="pluginRoots">Absolute plugin folders with their origin, built-in first.</param>
@@ -62,6 +67,16 @@ public static class PluginLoader
         var pluginDirs = new List<(string Dir, PluginOrigin Origin)>();
         foreach (var root in pluginRoots)
         {
+            if (root.Origin == PluginOrigin.Uploaded)
+            {
+                // An upgrade whose migration has not succeeded keeps its plugin gated from the first moment, before the
+                // runner has had a chance to run the hook.
+                foreach (var marker in PluginUpgradeApplier.ReadPending(root.Path, logger))
+                {
+                    registry.MarkMigrationPending(marker.PluginId);
+                }
+            }
+
             if (Directory.Exists(root.Path))
             {
                 pluginDirs.AddRange(Directory.GetDirectories(root.Path).Select(dir => (dir, root.Origin)));
@@ -80,9 +95,25 @@ public static class PluginLoader
             }
 
             var manifestPath = Path.Combine(pluginDir, "plugin.json");
-            var manifest = reader.TryRead(manifestPath);
+            var manifest = reader.TryRead(manifestPath, out var violation);
             if (manifest is null)
             {
+                // A refused plugin claims its id like a loaded one, so an upload with the same name can never stand in
+                // for a built-in plugin that was refused, and can never overwrite that plugin's refusal entry.
+                var folderId = Path.GetFileName(pluginDir);
+                if (!claimedIds.Add(folderId))
+                {
+                    logger.LogWarning("Plugin folder {Dir} is refused and its id {Id} is already declared by an earlier folder — skipping", pluginDir, folderId);
+                    continue;
+                }
+
+                // Only a broken manifest rule is kept: the admin list shows its rule and detail, and the plugin
+                // is never activated. Any other unreadable manifest stays a log line.
+                if (violation is not null)
+                {
+                    registry.RegisterRefused(new RefusedPlugin(folderId, violation.Rule, violation.Detail, origin == PluginOrigin.BuiltIn));
+                }
+
                 continue;
             }
 

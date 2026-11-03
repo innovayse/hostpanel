@@ -43,6 +43,17 @@ namespace Innovayse.Hostpanel.Application.Plugins.Common;
 /// own after catching it.
 /// </para>
 /// <para>
+/// <b>A time limit per call.</b> The token the plugin receives fires after <see cref="PluginApiOptions.CallTimeoutSeconds"/>
+/// (every route today; a per route limit up to <see cref="PluginApiOptions.MaxCallTimeoutSeconds"/> waits for an SDK
+/// field); the caller then gets <c>PLUGIN_TIMEOUT</c> (504) with no text of the plugin, and the id is logged. Anything the
+/// plugin does after the token fired, a thrown exception or a reply it still returns, is a timeout. A plugin that ignores
+/// the token is abandoned after <see cref="PluginApiOptions.AbandonWaitSeconds"/>; its work runs on, counted in
+/// <see cref="PluginAbandonedCalls"/>, and while the plugin holds <see cref="PluginApiOptions.MaxAbandonedCallsPerPlugin"/> of
+/// them, new calls to it are refused at once with <c>PLUGIN_TIMEOUT</c>. The limit covers the wait for the reply; on a stream it is the longest silence between
+/// events (see <see cref="StreamIdleLimit"/>), never the total length of a stream that keeps sending. The audit line of an
+/// unsafe call is written before the plugin runs and is not changed by a timeout.
+/// </para>
+/// <para>
 /// <b>One binding per call.</b> The area's handler builds the <see cref="PluginCallBinding"/> once; the runner builds the
 /// plugin's <see cref="PluginCaller"/> from it and hands the same binding to <see cref="IPluginCallServices"/>, so the
 /// client reference the plugin sees is, by construction, the scope of its store, and the facts follow the same permissions.
@@ -75,8 +86,11 @@ public sealed class PluginCallRunner
     /// <summary>Saves the audit line before the plugin runs.</summary>
     private readonly IHostpanelDbContext _context;
 
-    /// <summary>The body cap.</summary>
+    /// <summary>The body cap, the call limit and the abandon rules.</summary>
     private readonly IOptions<PluginApiOptions> _options;
+
+    /// <summary>Counts the calls abandoned per plugin.</summary>
+    private readonly PluginAbandonedCalls _abandoned;
 
     /// <summary>Writes the sentence a problem gets when the plugin gave none.</summary>
     private readonly IErrorMessageResolver _messages;
@@ -88,7 +102,8 @@ public sealed class PluginCallRunner
     /// <param name="services">Builds the host facts and the store bound to the call.</param>
     /// <param name="activityLogger">Stages the audit line of an unsafe call.</param>
     /// <param name="context">Saves the audit line before the plugin runs.</param>
-    /// <param name="options">The body cap.</param>
+    /// <param name="options">The body cap, the call limit and the abandon rules.</param>
+    /// <param name="abandoned">Counts the calls abandoned per plugin.</param>
     /// <param name="messages">Writes the sentence a problem gets when the plugin gave none.</param>
     /// <param name="logger">Structured logger.</param>
     public PluginCallRunner(
@@ -96,6 +111,7 @@ public sealed class PluginCallRunner
         IActivityLogger activityLogger,
         IHostpanelDbContext context,
         IOptions<PluginApiOptions> options,
+        PluginAbandonedCalls abandoned,
         IErrorMessageResolver messages,
         ILogger<PluginCallRunner> logger)
     {
@@ -103,6 +119,7 @@ public sealed class PluginCallRunner
         _activityLogger = activityLogger;
         _context = context;
         _options = options;
+        _abandoned = abandoned;
         _messages = messages;
         _logger = logger;
     }
@@ -120,7 +137,7 @@ public sealed class PluginCallRunner
     /// <returns>
     /// The plugin's reply, which on a streaming route may be a stream (not enumerated here: the response enumerates it
     /// with the caller's abort token, see <see cref="PluginEventStream"/>); <c>PLUGIN_REQUEST_TOO_LARGE</c> when the body is over the cap; <c>PLUGIN_FAILED</c> when the plugin threw or broke
-    /// its contract; <c>PLUGIN_STORE_QUOTA_EXCEEDED</c> when the plugin threw after the host's store refused one of its writes
+    /// its contract; <c>PLUGIN_TIMEOUT</c> when it did not reply within the call time limit; <c>PLUGIN_STORE_QUOTA_EXCEEDED</c> when the plugin threw after the host's store refused one of its writes
     /// over the scope's quota.
     /// </returns>
     /// <exception cref="ArgumentException"><paramref name="binding"/> names another plugin than <paramref name="target"/>.</exception>
@@ -183,8 +200,17 @@ public sealed class PluginCallRunner
                 ContentType = body.Length == 0 ? null : input.ContentType,
             };
 
-            var reply = await endpoints.HandleAsync(call, ct);
-            return Map(pluginId, route, reply);
+            var limit = _options.Value.CallTimeoutFor(null);
+            var (reply, timedOut) = await CallWithinAsync(pluginId, endpoints, call, limit, ct);
+            if (timedOut)
+            {
+                // Nothing of the plugin reaches the caller; the id is the operator's lead.
+                _logger.LogWarning(
+                    "Plugin {PluginId} did not answer {Area} {Method} {Route} within {Timeout}.", pluginId, target.Area, route.Method, route.Path, limit);
+                return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_TIMEOUT);
+            }
+
+            return Map(pluginId, route, reply, limit);
         }
         catch (Exception ex) when (JobFailure.IsFailure(ex, ct))
         {
@@ -202,6 +228,67 @@ public sealed class PluginCallRunner
         }
     }
 
+    /// <summary>
+    /// Calls the plugin with a token that fires after the limit. A plugin that honours the token ends by itself; one that
+    /// ignores it is abandoned after <see cref="PluginApiOptions.AbandonWaitSeconds"/>, so the request, and the scope it holds,
+    /// can end, and its work is counted until it ends. Once the token has fired, whatever the plugin then does, throw or
+    /// return a reply, is a timeout.
+    /// </summary>
+    /// <param name="pluginId">The plugin, for the log.</param>
+    /// <param name="endpoints">The plugin's endpoints.</param>
+    /// <param name="call">The call to make.</param>
+    /// <param name="limit">How long the plugin may take to reply.</param>
+    /// <param name="ct">Cancelled when the caller leaves; it is never answered as a timeout.</param>
+    /// <returns>The plugin's reply, or <c>timedOut</c> when the limit passed before it answered or the plugin is at its abandoned limit.</returns>
+    private async Task<(PluginReply? Reply, bool TimedOut)> CallWithinAsync(
+        string pluginId, IPluginEndpoints endpoints, PluginCall call, TimeSpan limit, CancellationToken ct)
+    {
+        var options = _options.Value;
+        if (!_abandoned.HasRoom(pluginId, options.MaxAbandonedCallsPerPlugin))
+        {
+            _logger.LogWarning(
+                "Plugin {PluginId} still has {Count} abandoned calls running; the call was refused.", pluginId, _abandoned.CountOf(pluginId));
+            return (null, true);
+        }
+
+        using var timer = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timer.CancelAfter(limit);
+
+        var work = endpoints.HandleAsync(call, timer.Token);
+        using var abandon = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        var finished = await Task.WhenAny(work, Task.Delay(limit + options.AbandonWait, abandon.Token));
+        if (finished != work)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            _abandoned.Track(pluginId, work);
+            _logger.LogWarning("Plugin {PluginId} ignored its cancellation; the call was abandoned.", pluginId);
+            return (null, true);
+        }
+
+        await abandon.CancelAsync();
+        try
+        {
+            var reply = await work;
+
+            // A plugin that caught the cancellation and answered anyway answered too late.
+            return TimerFired(timer, ct) ? (null, true) : (reply, false);
+        }
+        catch (Exception) when (TimerFired(timer, ct))
+        {
+            return (null, true);
+        }
+    }
+
+    /// <summary>Whether the call's own limit, not the caller leaving, has cancelled the plugin's token.</summary>
+    /// <param name="timer">The source whose token the plugin received.</param>
+    /// <param name="ct">The caller's token.</param>
+    /// <returns><see langword="true"/> when the limit fired and the caller is still there.</returns>
+    private static bool TimerFired(CancellationTokenSource timer, CancellationToken ct)
+    {
+        return timer.IsCancellationRequested && !ct.IsCancellationRequested;
+    }
+
     /// <summary>The names of the single flags a caller holds, as the plugin lists them.</summary>
     /// <param name="held">The permissions the caller holds on the account; <see cref="ClientPermission.None"/> on an admin call.</param>
     /// <returns>The flag names; neither <c>None</c> nor the combined <c>All</c>.</returns>
@@ -217,8 +304,9 @@ public sealed class PluginCallRunner
     /// <param name="pluginId">The plugin that answered.</param>
     /// <param name="route">The route that was called; only a route that declares <c>streaming</c> may answer with a stream.</param>
     /// <param name="reply">The plugin's reply; a plugin that returns none broke its contract.</param>
+    /// <param name="limit">The call's time limit; on a stream it is the longest silence between events.</param>
     /// <returns>The reply, or the failure for a reply the host cannot forward.</returns>
-    private Result<PluginReplyDto> Map(string pluginId, PluginRoute route, PluginReply? reply)
+    private Result<PluginReplyDto> Map(string pluginId, PluginRoute route, PluginReply? reply, TimeSpan limit)
     {
         // The SDK factories refuse a status outside the contract, but the host does not rely on that: a reply built another
         // way (a reflected or subclassed type, a plugin compiled against a different SDK) is checked again here, because
@@ -238,7 +326,7 @@ public sealed class PluginCallRunner
             case PluginReplyKind.Problem:
                 return MapProblem(pluginId, reply);
             case PluginReplyKind.Stream:
-                return MapStream(pluginId, route, reply);
+                return MapStream(pluginId, route, reply, limit);
             default:
                 _logger.LogError("Plugin {PluginId} returned {Reply}, which is not a reply.", pluginId, reply?.Kind.ToString() ?? "no reply");
                 return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_FAILED);
@@ -249,12 +337,13 @@ public sealed class PluginCallRunner
     /// <param name="pluginId">The plugin that answered.</param>
     /// <param name="route">The route that was called.</param>
     /// <param name="reply">The plugin's stream reply.</param>
+    /// <param name="limit">The longest silence between events before the stream is ended with <c>PLUGIN_TIMEOUT</c>.</param>
     /// <returns>
     /// The reply carrying the events and the heartbeat, or <c>PLUGIN_FAILED</c> when the route did not declare streaming or the
     /// plugin gave no events; the events are never enumerated in that case, so an iterator that was not started holds
     /// nothing to release.
     /// </returns>
-    private Result<PluginReplyDto> MapStream(string pluginId, PluginRoute route, PluginReply reply)
+    private Result<PluginReplyDto> MapStream(string pluginId, PluginRoute route, PluginReply reply, TimeSpan limit)
     {
         if (!route.Streaming || reply.Events is null)
         {
@@ -266,7 +355,11 @@ public sealed class PluginCallRunner
         // an iterator parameter: the response enumerates with the request abort token, which replaces it.
         var failed = _messages.Resolve(HostpanelErrorCodes.PLUGIN_FAILED);
         var events = PluginEventStream.TranslateAsync(pluginId, reply.Events, failed, _logger, _options.Value.StreamEventMaxBytes, CancellationToken.None);
-        var stream = new StreamedReply(events, _options.Value.StreamHeartbeat);
+        var idle = new StreamIdleLimit(
+            limit,
+            PluginEventStream.TimeoutEvents(_messages.Resolve(HostpanelErrorCodes.PLUGIN_TIMEOUT)),
+            () => _logger.LogWarning("Plugin {PluginId} stayed silent for {Timeout} on a stream; the stream was ended.", pluginId, limit));
+        var stream = new StreamedReply(events, _options.Value.StreamHeartbeat, idle);
 
         return Result<PluginReplyDto>.Success(new PluginReplyDto(reply.Status, null, null, null, stream));
     }

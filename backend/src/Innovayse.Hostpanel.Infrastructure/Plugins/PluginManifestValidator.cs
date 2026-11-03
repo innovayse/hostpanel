@@ -12,7 +12,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 
 /// <summary>
 /// The one place the host checks a plugin manifest and the assemblies beside it against the manifest rules.
-/// Loading a plugin at startup (<see cref="PluginManifestReader.TryRead"/>) and installing an upload
+/// Loading a plugin at startup (<see cref="PluginManifestReader.TryRead(string, out PluginManifestViolation?)"/>) and installing an upload
 /// (<see cref="PluginPackageStore"/>) both ask it, so a rule is written once and holds on both paths.
 /// </summary>
 internal static partial class PluginManifestValidator
@@ -78,6 +78,14 @@ internal static partial class PluginManifestValidator
         if (!PluginIdentifier.IsValid(manifest.Id))
         {
             return new PluginManifestViolation(PluginManifestRule.PluginIdInvalid, "the manifest id is not a valid plugin id");
+        }
+
+        // The version decides upgrade, same and downgrade; a text that is not a strict version could slip past those
+        // checks, so it is refused here, on the install path and the startup path alike.
+        if (!PluginVersion.TryParse(manifest.Version, out _))
+        {
+            return new PluginManifestViolation(
+                PluginManifestRule.VersionInvalid, "the manifest version is not a valid version: use major.minor.patch, for example 1.2.3");
         }
 
         return CheckRoutes(PluginArea.Client, manifest.Api.Client)

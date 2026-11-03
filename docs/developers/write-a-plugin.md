@@ -208,23 +208,23 @@ Do **not** include the SDK assembly (`Innovayse.SDK.dll`) or any assembly the ho
 
 ### Sign the package
 
-Production servers only accept signed packages. The `PluginSigner` tool is part of the Hostpanel repository (`backend/tools/Innovayse.Hostpanel.PluginSigner`), not the SDK. Run it on the **unpacked folder** before zipping.
+Packages loaded from outside the Development and Testing environments must be signed. To skip signature checks on a non-production server, open **Plugins** in the admin panel and switch on **Allow unsigned plugins**. The `PluginSigner` tool is part of the Hostpanel repository (`backend/tools/Innovayse.Hostpanel.PluginSigner`), not the SDK. Run it on the **unpacked folder** before zipping.
 
-Generate a key pair (store the key file outside any git working tree — the tool refuses to sign if the key file is inside one):
+Generate a key pair. The key file is a base64-encoded private key; store it outside any git working tree (the tool refuses to sign if the key file is inside one):
 
 ```bash
-dotnet run --project backend/tools/Innovayse.Hostpanel.PluginSigner -- keygen my-key.pem
+dotnet run --project backend/tools/Innovayse.Hostpanel.PluginSigner -- keygen my-key.key
 ```
 
 Sign the plugin folder:
 
 ```bash
-dotnet run --project backend/tools/Innovayse.Hostpanel.PluginSigner -- sign ./MyCompany.MyGateway my-key.pem my-key-id
+dotnet run --project backend/tools/Innovayse.Hostpanel.PluginSigner -- sign ./MyCompany.MyGateway my-key.key my-key-id
 ```
 
 This writes `plugin.sig` into the folder. Zip the folder after signing.
 
-The operator must add the matching public key to `PluginSigning:OperatorKeys` in their deployment environment, or the package will be refused with `PLUGIN_SIGNATURE_KEY_UNKNOWN`. When you update a plugin, re-sign the new folder before re-zipping — updating re-checks the signature and the server will refuse a stale or missing `plugin.sig`.
+The operator must add the matching public key to `PluginSigning:OperatorKeys` in their deployment environment, or the package will be refused with `PLUGIN_NOT_TRUSTED`. When you update a plugin, re-sign the new folder before re-zipping — updating re-checks the signature and the server will refuse a stale or missing `plugin.sig`.
 
 ## Test it
 
@@ -240,7 +240,7 @@ Start a local Hostpanel stack (see [Local development](/developers/local-dev)).
 </li>
 <li>
 
-Build your class library in Release, sign the output folder with `PluginSigner`, zip it, and upload the ZIP via **Settings → Plugin Manager → Install Plugin**. On a local server (Development or Testing environment), open **Plugins** in the admin panel and switch on **Allow unsigned plugins** to skip signature verification — do not enable this on a production server.
+Build your class library in Release, sign the output folder with `PluginSigner`, zip it, and upload the ZIP via **Settings → Plugin Manager → Install Plugin**. In Development and Testing environments unsigned packages load without any switch. On other servers, open **Plugins** in the admin panel and switch on **Allow unsigned plugins** to skip signature verification.
 
 </li>
 <li>

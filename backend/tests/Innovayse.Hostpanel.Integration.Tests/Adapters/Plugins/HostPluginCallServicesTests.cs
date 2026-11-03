@@ -9,6 +9,7 @@ using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
+using Innovayse.SDK.Plugins.Enums;
 using Innovayse.SDK.Plugins.Host;
 using Innovayse.SDK.Plugins.Store;
 using Microsoft.EntityFrameworkCore;
@@ -151,14 +152,20 @@ public sealed class HostPluginCallServicesTests(IntegrationTestFactory factory) 
         (await admin.Host.ListInvoicesAsync(CancellationToken.None)).Should().BeEquivalentTo(await own.Host.ListInvoicesAsync(CancellationToken.None));
     }
 
-    /// <summary>The implementations expose exactly their interface's methods, and no interface method takes an id or a scope.</summary>
+    /// <summary>
+    /// The implementations expose exactly their interface's methods; no store method and no host read takes an id or a
+    /// scope, and the only id the host API names is the service of the two SSH members, which the host checks is the
+    /// caller's.
+    /// </summary>
     [Fact]
     public void Surface_IsExactlyTheInterfaces_WithNoIdOrScopeParameter()
     {
         PublicMethodNames(typeof(PluginHostApi)).Should().BeEquivalentTo(InterfaceMethodNames(typeof(IPluginHostApi)));
         PublicMethodNames(typeof(PluginStore)).Should().BeEquivalentTo(InterfaceMethodNames(typeof(IPluginStore)));
 
-        var parameters = typeof(IPluginHostApi).GetMethods().Concat(typeof(IPluginStore).GetMethods()).SelectMany(m => m.GetParameters());
+        string[] ssh = [nameof(IPluginHostApi.IssueSshAccessAsync), nameof(IPluginHostApi.RevokeSshAccessAsync)];
+        var parameters = typeof(IPluginHostApi).GetMethods().Where(m => !ssh.Contains(m.Name))
+            .Concat(typeof(IPluginStore).GetMethods()).SelectMany(m => m.GetParameters());
         parameters.Should().NotContain(p => p.ParameterType == typeof(int) || p.ParameterType == typeof(int?));
         parameters.Select(p => p.Name!.ToLowerInvariant())
             .Should().NotContain(n => n.Contains("clientid") || n.Contains("pluginid") || n.Contains("scope"));
@@ -205,5 +212,19 @@ public sealed class HostPluginCallServicesTests(IntegrationTestFactory factory) 
         context.ClientServices.Add(service);
         await context.SaveChangesAsync(CancellationToken.None);
         return (client.Id, service.Id);
+    }
+
+    /// <summary>Until hosting access is granted (#758), both SSH members refuse with <c>NotAllowed</c> and touch nothing.</summary>
+    /// <returns>A task.</returns>
+    [Fact]
+    public async Task SshAccess_IsRefusedAsNotAllowed()
+    {
+        var host = new PluginHostApi(PluginCallBinding.WithoutClient("p"), null!, null!, null!);
+
+        var issue = () => host.IssueSshAccessAsync(1, "label", CancellationToken.None);
+        var revoke = () => host.RevokeSshAccessAsync(1, Guid.NewGuid(), CancellationToken.None);
+
+        (await issue.Should().ThrowAsync<PluginHostAccessException>()).Which.Failure.Should().Be(PluginHostAccessFailure.NotAllowed);
+        (await revoke.Should().ThrowAsync<PluginHostAccessException>()).Which.Failure.Should().Be(PluginHostAccessFailure.NotAllowed);
     }
 }

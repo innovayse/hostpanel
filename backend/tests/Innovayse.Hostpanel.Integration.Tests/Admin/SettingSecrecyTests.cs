@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Admin.Common;
 using Innovayse.Hostpanel.Application.Admin.Extensions;
+using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.SDK.Plugins.Enums;
@@ -35,7 +36,8 @@ public sealed class SettingSecrecyTests
                 Settings = settings ?? [],
                 Fields = fields ?? [],
             },
-            typeof(object));
+            typeof(object),
+            PluginViewDocuments.None);
     }
 
     /// <summary>Builds a registry holding <paramref name="plugins"/>.</summary>

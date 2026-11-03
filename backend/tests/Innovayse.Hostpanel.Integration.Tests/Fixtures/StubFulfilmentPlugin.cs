@@ -9,11 +9,11 @@ namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 /// </summary>
 public sealed class StubFulfilmentPlugin : IFulfilmentPlugin
 {
-    /// <summary>The calls received, in order: the method name and the invoice id it carried.</summary>
-    private readonly List<(string Method, int InvoiceId)> _calls = [];
+    /// <summary>The calls received, in order.</summary>
+    private readonly List<FulfilmentCall> _calls = [];
 
     /// <summary>Gets the calls received so far, in order.</summary>
-    public IReadOnlyList<(string Method, int InvoiceId)> Calls => _calls;
+    public IReadOnlyList<FulfilmentCall> Calls => _calls;
 
     /// <summary>Gets the context of the latest paid call, or <see langword="null"/> when there was none.</summary>
     public InvoicePaidContext? LastPaid { get; private set; }
@@ -50,7 +50,7 @@ public sealed class StubFulfilmentPlugin : IFulfilmentPlugin
     public Task<RefundAdvice> AdviseRefundAsync(RefundAdviceContext context, CancellationToken ct)
     {
         LastAdvised = context;
-        _calls.Add((nameof(AdviseRefundAsync), context.InvoiceId));
+        _calls.Add(new FulfilmentCall(nameof(AdviseRefundAsync), context.InvoiceId));
         return Advice?.Invoke(context, ct) ?? Task.FromResult(new RefundAdvice(context.RequestedAmount, null));
     }
 
@@ -75,7 +75,7 @@ public sealed class StubFulfilmentPlugin : IFulfilmentPlugin
     /// <returns>A task that completes when the behaviour does.</returns>
     private Task RunAsync(string method, int invoiceId, CancellationToken ct)
     {
-        _calls.Add((method, invoiceId));
+        _calls.Add(new FulfilmentCall(method, invoiceId));
         return Behaviour?.Invoke(method, invoiceId, ct) ?? Task.CompletedTask;
     }
 }

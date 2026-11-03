@@ -9,7 +9,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 
 /// <summary>
 /// <see cref="FulfilmentDispatcher"/> against Postgres on a clock the test moves by hand: a record is
-/// delivered and marked done, the three kinds go out in order, a failure backs off and ends after the last
+/// delivered and marked done with the plugin's own client reference, the three kinds go out in order, a failure backs off and ends after the last
 /// attempt, the error text is cut, a claim holds its lease, and one plugin failing never stops the pass.
 /// </summary>
 /// <remarks>
@@ -30,7 +30,7 @@ public sealed class FulfilmentDispatcherTests(IntegrationTestFactory factory) : 
 
         await scenario.RunPassAsync();
 
-        scenario.Plugin.Calls.Should().Equal([("OnInvoicePaidAsync", invoiceId)]);
+        scenario.Plugin.Calls.Should().Equal([new FulfilmentCall("OnInvoicePaidAsync", invoiceId)]);
         var paid = scenario.Plugin.LastPaid!;
         paid.TransactionReference.Should().Be(FulfilmentInvoiceSeeds.PaymentReference);
         paid.Lines.Should().ContainSingle().Which.Currency.Should().Be(FulfilmentInvoiceSeeds.Currency);
@@ -341,5 +341,51 @@ public sealed class FulfilmentDispatcherTests(IntegrationTestFactory factory) : 
         scenario.Plugin.LastPaid!.Account.Should().NotBeNull();
         scenario.Plugin.LastPaid.Account!.Provider.Should().Be("crm");
         scenario.Plugin.LastPaid.Account.Id.Should().Be("acc-9");
+    }
+
+    /// <summary>
+    /// Paid, refunded and lapsed all carry the receiving plugin's reference to the invoice's client, and it is the
+    /// reference the host computes for that plugin and client, the one an endpoint call of that plugin receives.
+    /// </summary>
+    /// <returns>A task.</returns>
+    [Fact]
+    public async Task EveryKind_CarriesThePluginsOwnClientReference()
+    {
+        using var scenario = new FulfilmentScenario(factory);
+        var invoiceId = await scenario.SeedInvoiceAsync();
+        await scenario.SeedRecordsAsync(invoiceId, FulfilmentKind.Paid, FulfilmentKind.Refunded, FulfilmentKind.Lapsed);
+
+        await scenario.RunPassAsync();
+
+        var clientId = scenario.Plugin.LastPaid!.ClientId;
+        var expected = scenario.ClientRefOf(scenario.PluginId, clientId);
+        expected.Should().NotBeNullOrWhiteSpace();
+        expected.Should().NotBe(clientId.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        scenario.Plugin.LastPaid.ClientRef.Should().Be(expected);
+        scenario.Plugin.LastRefunded!.ClientRef.Should().Be(expected);
+        scenario.Plugin.LastLapsed!.ClientRef.Should().Be(expected);
+    }
+
+    /// <summary>
+    /// Two plugins told about the same invoice receive two different references for its client, each its own.
+    /// </summary>
+    /// <returns>A task.</returns>
+    [Fact]
+    public async Task TwoPlugins_ReceiveDifferentReferencesForOneClient()
+    {
+        using var scenario = new FulfilmentScenario(factory);
+        var other = scenario.AddPlugin();
+        var invoiceId = await scenario.SeedInvoiceAsync();
+        await scenario.SeedRecordsAsync(invoiceId, FulfilmentKind.Paid);
+        await scenario.SeedRecordsForAsync(other.PluginId, invoiceId, FulfilmentKind.Paid);
+
+        await scenario.RunPassAsync();
+
+        var first = scenario.Plugin.LastPaid!;
+        var second = other.Plugin.LastPaid!;
+        second.ClientId.Should().Be(first.ClientId);
+        first.ClientRef.Should().NotBe(second.ClientRef);
+        first.ClientRef.Should().Be(scenario.ClientRefOf(scenario.PluginId, first.ClientId));
+        second.ClientRef.Should().Be(scenario.ClientRefOf(other.PluginId, first.ClientId));
     }
 }

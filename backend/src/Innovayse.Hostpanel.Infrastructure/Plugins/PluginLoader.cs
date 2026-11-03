@@ -44,12 +44,16 @@ public static class PluginLoader
     /// <param name="pluginRoots">Absolute plugin folders with their origin, built-in first.</param>
     /// <param name="verifier">Checks the signature of an uploaded plugin and applies the host's policy.</param>
     /// <param name="allowUnsigned">Whether the admin setting "allow unsigned plugins" is on.</param>
+    /// <param name="maxViewBytes">
+    /// The largest view document a plugin may ship, in bytes (<c>Plugins:MaxViewBytes</c>); a larger one skips the plugin.
+    /// </param>
     /// <param name="loggerFactory">Logger factory used during startup loading.</param>
     public static void DiscoverAndRegister(
         IServiceCollection services,
         IReadOnlyList<PluginRoot> pluginRoots,
         PluginSignatureVerifier verifier,
         bool allowUnsigned,
+        long maxViewBytes,
         ILoggerFactory loggerFactory)
     {
         var logger = loggerFactory.CreateLogger(nameof(PluginLoader));
@@ -74,8 +78,21 @@ public static class PluginLoader
 
         foreach (var (pluginDir, origin) in pluginDirs)
         {
-            if (!PluginIdentifier.IsValid(Path.GetFileName(pluginDir)))
+            var folderName = Path.GetFileName(pluginDir);
+            if (!PluginIdentifier.IsWellFormed(folderName))
             {
+                continue;
+            }
+
+            // A well-formed folder under a reserved id is a plugin installed before the id was reserved: it is never
+            // loaded (the host's own segment would shadow its routes), but it is reported, so the operator knows why it
+            // is missing and removes it from the plugins page. A plain folder whose manifest declares a reserved id is
+            // refused by the manifest reader (PluginManifestRule.PluginIdInvalid), the one place the manifest id is checked.
+            if (PluginIdentifier.IsReserved(folderName))
+            {
+                logger.LogWarning(
+                    "Plugin folder {Dir} uses the reserved plugin id {Id}. Skipping it; remove it from the plugins page.",
+                    pluginDir, folderName);
                 continue;
             }
 
@@ -100,6 +117,15 @@ public static class PluginLoader
                 logger.LogWarning(
                     "Plugin {Id} refused by signature rule {Rule}: {Detail}. Skipping it; the other plugins still load.",
                     manifest.Id, refusal.Rule, refusal.Detail);
+                continue;
+            }
+
+            var views = PluginViewDocumentReader.Read(pluginDir, manifest, maxViewBytes);
+            if (views.Violation is not null)
+            {
+                logger.LogWarning(
+                    "Plugin {Id} refused by manifest rule {Rule}: {Detail}. Skipping it; the other plugins still load.",
+                    manifest.Id, views.Violation.Rule, views.Violation.Detail);
                 continue;
             }
 
@@ -137,7 +163,7 @@ public static class PluginLoader
             }
 
             RegisterPluginType(services, manifest, pluginType, logger);
-            registry.Register(new LoadedPlugin(manifest, pluginType));
+            registry.Register(new LoadedPlugin(manifest, pluginType, views.Views));
 
             if (manifest.ShowInIntegrations)
             {

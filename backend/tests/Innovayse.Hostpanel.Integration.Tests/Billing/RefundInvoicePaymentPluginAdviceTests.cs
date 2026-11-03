@@ -183,4 +183,41 @@ public sealed class RefundInvoicePaymentPluginAdviceTests(IntegrationTestFactory
         row.Amount.Should().Be(8m);
         row.Notes.Should().Be("Customer asked");
     }
+
+    /// <summary>
+    /// The plugin asked for advice is told its own reference to the invoice's client, the one the host computes
+    /// for that plugin and client.
+    /// </summary>
+    [Fact]
+    public async Task AdvisingPlugin_IsToldItsOwnClientReference()
+    {
+        using var scenario = new FulfilmentScenario(factory);
+        var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
+        var invoiceId = await PaidInvoiceAsync(scenario.Host, admin);
+
+        var response = await RefundAsync(admin, invoiceId, 8m);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var advised = scenario.Plugin.LastAdvised!;
+        advised.ClientRef.Should().Be(scenario.ClientRefOf(scenario.PluginId, advised.ClientId));
+    }
+
+    /// <summary>Two plugins asked about one refund are each told their own, different reference to the client.</summary>
+    [Fact]
+    public async Task TwoAdvisingPlugins_AreToldDifferentReferences()
+    {
+        using var scenario = new FulfilmentScenario(factory);
+        var other = scenario.AddPlugin();
+        var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
+        var invoiceId = await PaidInvoiceAsync(scenario.Host, admin);
+
+        var response = await RefundAsync(admin, invoiceId, 8m);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var first = scenario.Plugin.LastAdvised!;
+        var second = other.Plugin.LastAdvised!;
+        second.ClientId.Should().Be(first.ClientId);
+        first.ClientRef.Should().NotBe(second.ClientRef);
+        second.ClientRef.Should().Be(scenario.ClientRefOf(other.PluginId, first.ClientId));
+    }
 }

@@ -195,7 +195,9 @@ public sealed class PluginPackageStore : IPluginPackageStore
 
     /// <summary>
     /// Resolves the folder a plugin id names under <paramref name="root"/>, refusing any id that
-    /// breaks the plugin id rule or that would not resolve to a direct child of the root.
+    /// does not have the plugin id shape (<see cref="PluginIdentifier.IsWellFormed"/>) or that would not
+    /// resolve to a direct child of the root. A reserved id is resolved: whether a plugin may take it is
+    /// asked by install (<see cref="PluginManifestValidator.Validate"/>), never by removal.
     /// </summary>
     /// <param name="root">The absolute plugin folder.</param>
     /// <param name="id">The candidate id.</param>
@@ -204,13 +206,13 @@ public sealed class PluginPackageStore : IPluginPackageStore
     private static bool TryResolvePluginFolder(string root, string? id, out string pluginDir)
     {
         pluginDir = string.Empty;
-        if (!PluginIdentifier.IsValid(id))
+        if (!PluginIdentifier.IsWellFormed(id))
         {
             return false;
         }
 
         var resolvedRoot = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar);
-        var candidate = Path.GetFullPath(Path.Combine(resolvedRoot, id!));
+        var candidate = Path.GetFullPath(Path.Combine(resolvedRoot, id));
         if (!string.Equals(Path.GetDirectoryName(candidate), resolvedRoot, StringComparison.OrdinalIgnoreCase))
         {
             return false;
@@ -330,6 +332,8 @@ public sealed class PluginPackageStore : IPluginPackageStore
             return Refused(PluginPackageOutcome.SdkVersionUnsupported);
         }
 
+        // Only the shape is checked here, because removal resolves through the same method; a reserved manifest id
+        // passes it and is refused below by PluginManifestValidator.Validate, the one place the full id rule is asked.
         if (!TryResolvePluginFolder(installRoot, manifest.Id, out var targetDir))
         {
             _logger.LogWarning("Plugin install refused: the manifest id does not meet the plugin id rule.");
@@ -364,6 +368,12 @@ public sealed class PluginPackageStore : IPluginPackageStore
 
         // The assemblies can only be read once unpacked; the staging folder is thrown away when the check refuses.
         violation = PluginManifestValidator.ValidateSdkReference(contentDir);
+        if (violation is not null)
+        {
+            return RuleBroken(id, sha256, violation);
+        }
+
+        violation = PluginViewDocumentReader.Read(contentDir, manifest, _options.MaxViewBytes).Violation;
         if (violation is not null)
         {
             return RuleBroken(id, sha256, violation);
@@ -474,7 +484,11 @@ public sealed class PluginPackageStore : IPluginPackageStore
         }
     }
 
-    /// <summary>Reads every plugin folder's manifest under a root, skipping folders that are not plugins.</summary>
+    /// <summary>
+    /// Reads every plugin folder's manifest under a root, skipping folders that are not plugins. A folder whose
+    /// name is reserved is still read, so a plugin installed before its id was reserved is listed and can be removed
+    /// (the loader refuses to load it).
+    /// </summary>
     /// <param name="root">The plugin folder to scan.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The readable manifests.</returns>
@@ -490,7 +504,7 @@ public sealed class PluginPackageStore : IPluginPackageStore
         foreach (var dir in Directory.GetDirectories(root))
         {
             var manifestPath = Path.Combine(dir, ManifestFileName);
-            if (!PluginIdentifier.IsValid(Path.GetFileName(dir)) || !File.Exists(manifestPath))
+            if (!PluginIdentifier.IsWellFormed(Path.GetFileName(dir)) || !File.Exists(manifestPath))
             {
                 continue;
             }

@@ -15,7 +15,7 @@ internal sealed class PluginManifestReader
     internal const string SupportedSdkVersion = "1.0";
 
     /// <summary>JSON options used to deserialise manifests.</summary>
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    internal static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },

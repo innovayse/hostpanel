@@ -47,6 +47,9 @@ public sealed class UpdateSettingHandler
     /// <summary>Receives the audit line of a secret change (key only, never the value).</summary>
     private readonly ILogger<UpdateSettingHandler> _logger;
 
+    /// <summary>Drops the panels' remembered plugin availability after a plugin's own setting was saved.</summary>
+    private readonly IPluginAvailabilityInvalidator _availability;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="cipher">Encrypts a secret value before it is stored.</param>
@@ -55,6 +58,7 @@ public sealed class UpdateSettingHandler
     /// <param name="currentUser">The acting admin, named in the audit line of a secret change.</param>
     /// <param name="activityLogger">Stages the activity log line of a change to a setting that weakens a security control.</param>
     /// <param name="logger">Receives the audit line of a secret change.</param>
+    /// <param name="availability">Drops the panels' remembered plugin availability after a plugin's own setting was saved.</param>
     public UpdateSettingHandler(
         IHostpanelDbContext context,
         ISecretSettingCipher cipher,
@@ -62,7 +66,8 @@ public sealed class UpdateSettingHandler
         IBrandingStorage branding,
         ICurrentUserService currentUser,
         IActivityLogger activityLogger,
-        ILogger<UpdateSettingHandler> logger)
+        ILogger<UpdateSettingHandler> logger,
+        IPluginAvailabilityInvalidator availability)
     {
         _context = context;
         _cipher = cipher;
@@ -71,6 +76,7 @@ public sealed class UpdateSettingHandler
         _currentUser = currentUser;
         _activityLogger = activityLogger;
         _logger = logger;
+        _availability = availability;
     }
 
     /// <summary>
@@ -156,6 +162,7 @@ public sealed class UpdateSettingHandler
         }
 
         await _context.SaveChangesAsync(ct);
+        InvalidateWhenIntegrationSetting(setting.Key);
 
         // A replaced branding image leaves its old upload referenced by nothing; it is removed once
         // the new value is saved, never before, so a failed save keeps the live files in place.
@@ -197,8 +204,22 @@ public sealed class UpdateSettingHandler
         }
 
         await _context.SaveChangesAsync(ct);
+        InvalidateWhenIntegrationSetting(setting.Key);
         SecretSettingAudit.Record(_logger, setting.Key, change, _currentUser.UserId);
         return Result.Success();
+    }
+
+    /// <summary>
+    /// Drops the panels' remembered plugin availability when the saved row is an integration's switch or field, which
+    /// decide whether a plugin's pages show; any other setting leaves it alone. Called after the save has committed.
+    /// </summary>
+    /// <param name="key">The key of the saved setting.</param>
+    private void InvalidateWhenIntegrationSetting(string key)
+    {
+        if (key.StartsWith(IntegrationSettingKeys.RootPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            _availability.Invalidate();
+        }
     }
 
     /// <summary>

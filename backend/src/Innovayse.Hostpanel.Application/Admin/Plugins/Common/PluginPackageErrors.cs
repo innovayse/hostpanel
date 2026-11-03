@@ -57,6 +57,13 @@ public static class PluginPackageErrors
             PluginManifestRule.SlotWidgetIdInvalid => HostpanelErrorCodes.PLUGIN_SLOT_WIDGET_ID_INVALID,
             PluginManifestRule.SlotWidgetDuplicate => HostpanelErrorCodes.PLUGIN_SLOT_WIDGET_DUPLICATE,
             PluginManifestRule.PluginIdInvalid => HostpanelErrorCodes.PLUGIN_MANIFEST_ID_INVALID,
+            PluginManifestRule.ViewMissing => HostpanelErrorCodes.PLUGIN_VIEW_MISSING,
+            PluginManifestRule.ViewInvalid => HostpanelErrorCodes.PLUGIN_VIEW_INVALID,
+            PluginManifestRule.ViewSchemaUnsupported => HostpanelErrorCodes.PLUGIN_VIEW_SCHEMA_UNSUPPORTED,
+            PluginManifestRule.ViewBlockKindUnknown => HostpanelErrorCodes.PLUGIN_VIEW_BLOCK_KIND_UNKNOWN,
+            PluginManifestRule.ViewRouteUndeclared => HostpanelErrorCodes.PLUGIN_VIEW_ROUTE_UNDECLARED,
+            PluginManifestRule.MenuIconInvalid => HostpanelErrorCodes.PLUGIN_MENU_ICON_INVALID,
+            PluginManifestRule.PageIdInvalid => HostpanelErrorCodes.PLUGIN_PAGE_ID_INVALID,
             _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, "Not a manifest rule."),
         };
     }

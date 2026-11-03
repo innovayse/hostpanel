@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
+using Innovayse.SDK.Plugins.Enums;
 using Innovayse.SDK.Plugins.Host;
 
 /*
@@ -117,5 +118,23 @@ internal sealed class PluginHostApi : IPluginHostApi
         return rows
             .Select(i => i.ToPlugin())
             .ToList();
+    }
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Refused until the host grants hosting access (#758): no manifest is admitted with <c>hostAccess</c> yet, so
+    /// every call is <see cref="PluginHostAccessFailure.NotAllowed"/>, the answer the contract gives a plugin that did
+    /// not declare it.
+    /// </remarks>
+    public Task<PluginSshAccess> IssueSshAccessAsync(int serviceId, string label, CancellationToken ct)
+    {
+        return Task.FromException<PluginSshAccess>(new PluginHostAccessException(PluginHostAccessFailure.NotAllowed));
+    }
+
+    /// <inheritdoc/>
+    /// <remarks>Refused until #758, as <see cref="IssueSshAccessAsync"/>: no key was ever issued to a plugin.</remarks>
+    public Task RevokeSshAccessAsync(int serviceId, Guid keyId, CancellationToken ct)
+    {
+        return Task.FromException(new PluginHostAccessException(PluginHostAccessFailure.NotAllowed));
     }
 }

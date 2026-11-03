@@ -161,16 +161,19 @@ duplicate check and will be added again on a second run.
 <Callout type="warning">
 Most record types skip duplicates on a second run. Announcements, network issues, download
 categories, downloads and ticket replies have no duplicate check and will be added again.
-A record that already exists and is not one of those types is logged as Skipped with
-"Already exists" and left unchanged.
+Product groups and knowledgebase categories are reused silently. All other existing records are
+logged as Skipped with "Already exists" and left unchanged.
 </Callout>
 
 Records are matched as follows: clients by email address, contacts by email, products by name,
-product groups by name, domains by domain name, services by client and domain (or client and panel
-username), invoices by client and external id, tickets and quotes by client and subject,
-orders by order number, transactions by client and transaction id, knowledgebase articles by
-title, knowledgebase categories by name.
-For all other types, running the same job a second time only adds records that are new since the last run.
+domains by domain name, services by client and domain (or client and panel username), invoices by
+client and external id, tickets and quotes by client and subject, orders by order number,
+transactions by client and transaction id, knowledgebase articles by title.
+
+A service with neither a domain nor a panel username in the source record has no match key and
+will be imported again on a retry.
+
+For types that have a match key (clients, contacts, products, services, domains, invoices, tickets, quotes, orders, transactions and knowledgebase articles), running the same job a second time only adds records that are new since the last run.
 
 To re-import a changed record, delete it in Hostpanel first, then retry the job.
 
@@ -216,7 +219,7 @@ modules/addons/innovayse_migration/
     Module.php
     ApiKernel.php
     Router.php
-    Paging.php
+    Paging/
     Mapping/
     Database/
     Addon/

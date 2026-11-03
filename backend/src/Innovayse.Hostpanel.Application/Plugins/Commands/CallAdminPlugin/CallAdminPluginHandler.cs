@@ -3,7 +3,6 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Shared.Models;
 using Innovayse.Hostpanel.Shared.MultiTenancy;
-using Innovayse.SDK.Plugins.Endpoints;
 using Innovayse.SDK.Plugins.Enums;
 
 namespace Innovayse.Hostpanel.Application.Plugins.Commands.CallAdminPlugin;
@@ -50,12 +49,10 @@ public sealed class CallAdminPluginHandler
             return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_ROUTE_NOT_FOUND);
         }
 
-        var caller = new PluginCaller
-        {
-            ClientRef = null,
-            UserRef = _references.ForUser(target.Manifest.Id, _currentUser.RequireUserId()),
-        };
+        // No client, no reference and no permissions: the plugin sees no host facts and its plugin-wide store.
+        var pluginId = target.Manifest.Id;
+        var userRef = _references.ForUser(pluginId, _currentUser.RequireUserId());
 
-        return await _runner.RunAsync(target, caller, null, command.Input, ct);
+        return await _runner.RunAsync(target, PluginCallBinding.WithoutClient(pluginId), userRef, command.Input, ct);
     }
 }

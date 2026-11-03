@@ -4,6 +4,7 @@ using Innovayse.Hostpanel.Application.Audit.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
+using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Shared.Contracts.Interfaces;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
@@ -36,7 +37,15 @@ namespace Innovayse.Hostpanel.Application.Plugins.Common;
 /// </para>
 /// <para>
 /// <b>A plugin that throws</b> is answered <c>PLUGIN_FAILED</c> (502) with no message and no stack; the exception is logged
-/// with the plugin id. Only the caller's own cancellation propagates.
+/// with the plugin id. Only the caller's own cancellation propagates. The one exception is a throw after the host's own
+/// store refused a write over its quota (<see cref="PluginStoreQuotaSignal"/>, host state the plugin cannot set): that call
+/// is answered <c>PLUGIN_STORE_QUOTA_EXCEEDED</c> (402), whether the plugin let the store's refusal escape or threw on its
+/// own after catching it.
+/// </para>
+/// <para>
+/// <b>One binding per call.</b> The area's handler builds the <see cref="PluginCallBinding"/> once; the runner builds the
+/// plugin's <see cref="PluginCaller"/> from it and hands the same binding to <see cref="IPluginCallServices"/>, so the
+/// client reference the plugin sees is, by construction, the scope of its store, and the facts follow the same permissions.
 /// </para>
 /// </remarks>
 public sealed class PluginCallRunner
@@ -67,7 +76,7 @@ public sealed class PluginCallRunner
     private readonly IActivityLogger _activityLogger;
 
     /// <summary>Saves the audit line before the plugin runs.</summary>
-    private readonly IHostpanelDbContext _db;
+    private readonly IHostpanelDbContext _context;
 
     /// <summary>The body cap.</summary>
     private readonly IOptions<PluginApiOptions> _options;
@@ -82,7 +91,7 @@ public sealed class PluginCallRunner
     /// <param name="plugins">Finds the plugin and checks that it is switched on.</param>
     /// <param name="services">Builds the host facts and the store bound to the call.</param>
     /// <param name="activityLogger">Stages the audit line of an unsafe call.</param>
-    /// <param name="db">Saves the audit line before the plugin runs.</param>
+    /// <param name="context">Saves the audit line before the plugin runs.</param>
     /// <param name="options">The body cap.</param>
     /// <param name="messages">Writes the sentence a problem gets when the plugin gave none.</param>
     /// <param name="logger">Structured logger.</param>
@@ -90,7 +99,7 @@ public sealed class PluginCallRunner
         IPluginEndpointResolver plugins,
         IPluginCallServices services,
         IActivityLogger activityLogger,
-        IHostpanelDbContext db,
+        IHostpanelDbContext context,
         IOptions<PluginApiOptions> options,
         IErrorMessageResolver messages,
         ILogger<PluginCallRunner> logger)
@@ -98,7 +107,7 @@ public sealed class PluginCallRunner
         _plugins = plugins;
         _services = services;
         _activityLogger = activityLogger;
-        _db = db;
+        _context = context;
         _options = options;
         _messages = messages;
         _logger = logger;
@@ -136,21 +145,34 @@ public sealed class PluginCallRunner
 
     /// <summary>Calls the plugin for an already authorised caller and turns its reply into the host's.</summary>
     /// <param name="target">The matched route, from <see cref="FindAsync"/>.</param>
-    /// <param name="caller">Who is calling, with the plugin's opaque references.</param>
-    /// <param name="clientId">The host id of the client the call acts for; <see langword="null"/> on an admin call.</param>
+    /// <param name="binding">
+    /// What the call is bound to, built once by the area's handler: the plugin, the client and its opaque reference, and the
+    /// caller's permissions. The plugin's <see cref="PluginCaller"/>, the audit line, the host facts and the store all come
+    /// from it.
+    /// </param>
+    /// <param name="userRef">The plugin's opaque reference of the signed-in user.</param>
     /// <param name="input">The request, as the controller read it.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The plugin's reply, which on a streaming route may be a stream (not enumerated here: the response enumerates it
     /// with the caller's abort token, see <see cref="PluginEventStream"/>); <c>PLUGIN_REQUEST_TOO_LARGE</c> when the body is over the cap; <c>PLUGIN_FAILED</c> when the plugin threw or broke
-    /// its contract.
+    /// its contract; <c>PLUGIN_STORE_QUOTA_EXCEEDED</c> when the plugin threw after the host's store refused one of its writes
+    /// over the scope's quota.
     /// </returns>
+    /// <exception cref="ArgumentException"><paramref name="binding"/> names another plugin than <paramref name="target"/>.</exception>
     public async Task<Result<PluginReplyDto>> RunAsync(
-        PluginTarget target, PluginCaller caller, int? clientId, PluginHttpInput input, CancellationToken ct)
+        PluginTarget target, PluginCallBinding binding, string userRef, PluginHttpInput input, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(target);
-        ArgumentNullException.ThrowIfNull(caller);
+        ArgumentNullException.ThrowIfNull(binding);
+        ArgumentException.ThrowIfNullOrEmpty(userRef);
         ArgumentNullException.ThrowIfNull(input);
+
+        // A binding for another plugin would hand this plugin another plugin's references and store scope.
+        if (!string.Equals(binding.PluginId, target.Manifest.Id, StringComparison.Ordinal))
+        {
+            throw new ArgumentException("The binding names another plugin than the matched route.", nameof(binding));
+        }
 
         var route = target.Match.Route;
 
@@ -164,15 +186,24 @@ public sealed class PluginCallRunner
         // fails or the process stops. The caller (id, name, address) is stamped by the logger; the body is never logged.
         if (route.Method != PluginRouteMethod.Get)
         {
-            await _activityLogger.RecordAsync(new ActivityLogEntry(clientId, Describe(target)), ct);
-            await _db.SaveChangesAsync(ct);
+            await _activityLogger.RecordAsync(new ActivityLogEntry(binding.ClientId, Describe(target)), ct);
+            await _context.SaveChangesAsync(ct);
         }
 
         var pluginId = target.Manifest.Id;
+        var caller = new PluginCaller
+        {
+            ClientRef = binding.ClientRef,
+            UserRef = userRef,
+            Permissions = HeldNames(binding.Permissions),
+        };
+
+        // Declared outside the try so the catch can read this call's quota signal.
+        PluginCallServices? services = null;
         try
         {
             var endpoints = target.Build();
-            var services = _services.Create(new PluginCallBinding(pluginId, clientId));
+            services = _services.Create(binding);
             var call = new PluginCall
             {
                 Area = target.Area,
@@ -193,11 +224,29 @@ public sealed class PluginCallRunner
         }
         catch (Exception ex) when (JobFailure.IsFailure(ex, ct))
         {
+            // The signal is host state set only by the store when it refused a write, so a plugin cannot fake this answer.
+            if (services is { Quota.Raised: true })
+            {
+                _logger.LogWarning("Plugin {PluginId} went over its store quota.", pluginId);
+                return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_STORE_QUOTA_EXCEEDED);
+            }
+
             // Nothing of the exception reaches the caller; the log is where an operator reads it.
             _logger.LogError(
                 ex, "Plugin {PluginId} failed on {Area} {Method} {Route}.", pluginId, target.Area, route.Method, route.Path);
             return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_FAILED);
         }
+    }
+
+    /// <summary>The names of the single flags a caller holds, as the plugin lists them.</summary>
+    /// <param name="held">The permissions the caller holds on the account; <see cref="ClientPermission.None"/> on an admin call.</param>
+    /// <returns>The flag names; neither <c>None</c> nor the combined <c>All</c>.</returns>
+    private static List<string> HeldNames(ClientPermission held)
+    {
+        return Enum.GetValues<ClientPermission>()
+            .Where(flag => flag is not (ClientPermission.None or ClientPermission.All) && held.HasFlag(flag))
+            .Select(flag => flag.ToString())
+            .ToList();
     }
 
     /// <summary>Turns what the plugin answered into the host's reply.</summary>

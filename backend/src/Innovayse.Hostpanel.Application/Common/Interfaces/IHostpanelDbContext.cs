@@ -231,6 +231,12 @@ public interface IHostpanelDbContext
     /// <summary>Gets the values plugins keep in the host-kept plugin store, per plugin and per client reference.</summary>
     public DbSet<PluginDataEntry> PluginDataEntries { get; }
 
+    /// <summary>
+    /// Gets the running totals of each plugin store scope (keys and characters held, per plugin and per client
+    /// reference), which the store's quota is checked against.
+    /// </summary>
+    public DbSet<PluginDataScope> PluginDataScopes { get; }
+
     /// <summary>Saves every tracked change in one transaction.</summary>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The number of rows written.</returns>

@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
+using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services;
@@ -17,13 +18,76 @@ namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 
 /// <summary>
 /// <see cref="PluginHostApi"/> against Postgres: it shows a plugin only the bound client's profile, services and
-/// invoices, hides drafts, lists the newest 50 first, and answers a missing client like a call without one.
+/// invoices, only what the caller's permissions allow, hides drafts, lists the
+/// newest 50 first, and answers a missing client like a call without one.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class PluginHostApiTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The plugin the test bindings name; the host API never reads it.</summary>
+    private const string PluginId = "host-api-test";
+
+    /// <summary>The opaque client reference the test bindings carry; the host API never reads it.</summary>
+    private const string ClientRef = "host-api-test-client-ref";
+
     /// <summary>A fixed moment the seeded rows are dated from.</summary>
     private static readonly DateTimeOffset Origin = new(2031, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+    /// <summary>A caller holding the invoices right reads the invoices; one without it gets none.</summary>
+    [Fact]
+    public async Task Invoices_FollowTheViewPayInvoicesRightAsync()
+    {
+        var seeded = await SeedAsync("InvoiceRight", services: 1, invoices: 2);
+
+        var held = await FactsAsync(seeded.ClientId, ClientPermission.ViewPayInvoices);
+        using var scope = factory.Services.CreateScope();
+        var notHeld = await Api(scope, Binding(seeded.ClientId, ClientPermission.All & ~ClientPermission.ViewPayInvoices))
+            .ListInvoicesAsync(CancellationToken.None);
+
+        held.Invoices.Select(i => i.Id).Should().BeEquivalentTo(seeded.InvoiceIds);
+        notHeld.Should().BeEmpty();
+    }
+
+    /// <summary>A caller holding the services right reads the services; one without it gets none.</summary>
+    [Fact]
+    public async Task Services_FollowTheViewProductsServicesRightAsync()
+    {
+        var seeded = await SeedAsync("ServiceRight", services: 2, invoices: 1);
+
+        var held = await FactsAsync(seeded.ClientId, ClientPermission.ViewProductsServices);
+        using var scope = factory.Services.CreateScope();
+        var notHeld = await Api(scope, Binding(seeded.ClientId, ClientPermission.All & ~ClientPermission.ViewProductsServices))
+            .ListServicesAsync(CancellationToken.None);
+
+        held.Services.Select(s => s.Id).Should().BeEquivalentTo(seeded.ServiceIds);
+        notHeld.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Every client caller gets the name, currency and language, but the sign-in email only with the master profile right,
+    /// as a sub-user without it never sees the address in the portal.
+    /// </summary>
+    [Fact]
+    public async Task ProfileEmail_FollowsTheMasterProfileRight_WhileTheRestIsSharedAsync()
+    {
+        var registered = await ClientsTestSeeds.RegisterClientAsync(factory, "plugin-host-email-right");
+
+        using var scope = factory.Services.CreateScope();
+        var account = await scope.ServiceProvider.GetRequiredService<IIdentityProvider>().FindBySubjectAsync(registered.UserId, CancellationToken.None);
+        var holder = await Api(scope, Binding(registered.ClientId, ClientPermission.ModifyMasterProfile)).GetProfileAsync(CancellationToken.None);
+        var subUser = await Api(scope, Binding(registered.ClientId, ClientPermission.All & ~ClientPermission.ModifyMasterProfile))
+            .GetProfileAsync(CancellationToken.None);
+        var noRights = await Api(scope, Binding(registered.ClientId, ClientPermission.None)).GetProfileAsync(CancellationToken.None);
+
+        holder!.Email.Should().BeEquivalentTo(registered.Email);
+        foreach (var profile in new[] { subUser!, noRights! })
+        {
+            profile.Email.Should().BeNull();
+            profile.Name.Should().Be(holder.Name);
+            profile.Currency.Should().Be(holder.Currency);
+            profile.Language.Should().Be(account!.Language);
+        }
+    }
 
     /// <summary>Each client sees exactly its own services and invoices, and its own name.</summary>
     [Fact]
@@ -170,7 +234,7 @@ public sealed class PluginHostApiTests(IntegrationTestFactory factory) : IClassF
         using var scope = factory.Services.CreateScope();
         var resolver = scope.ServiceProvider.GetRequiredService<IPayerCurrencyResolver>();
         var expected = await resolver.ForClientAsync(seeded.ClientId, CancellationToken.None);
-        var profile = await Api(scope, seeded.ClientId).GetProfileAsync(CancellationToken.None);
+        var profile = await Api(scope, Binding(seeded.ClientId, ClientPermission.All)).GetProfileAsync(CancellationToken.None);
 
         profile!.Currency.Should().Be(expected.Code);
     }
@@ -185,8 +249,8 @@ public sealed class PluginHostApiTests(IntegrationTestFactory factory) : IClassF
         using var scope = factory.Services.CreateScope();
         var identity = scope.ServiceProvider.GetRequiredService<IIdentityProvider>();
         var account = await identity.FindBySubjectAsync(registered.UserId, CancellationToken.None);
-        var profile = await Api(scope, registered.ClientId).GetProfileAsync(CancellationToken.None);
-        var orphanProfile = await Api(scope, orphan.ClientId).GetProfileAsync(CancellationToken.None);
+        var profile = await Api(scope, Binding(registered.ClientId, ClientPermission.All)).GetProfileAsync(CancellationToken.None);
+        var orphanProfile = await Api(scope, Binding(orphan.ClientId, ClientPermission.All)).GetProfileAsync(CancellationToken.None);
 
         account.Should().NotBeNull();
         profile!.Email.Should().BeEquivalentTo(registered.Email);
@@ -197,27 +261,39 @@ public sealed class PluginHostApiTests(IntegrationTestFactory factory) : IClassF
 
     /// <summary>Builds the host API of one client from a fresh scope and reads all three facts.</summary>
     /// <param name="clientId">The client the API is bound to, or <see langword="null"/>.</param>
+    /// <param name="permissions">The permissions the caller holds; every one unless a test narrows them.</param>
     /// <returns>The profile and both lists.</returns>
-    private async Task<HostFacts> FactsAsync(int? clientId)
+    private async Task<HostFacts> FactsAsync(int? clientId, ClientPermission permissions = ClientPermission.All)
     {
         using var scope = factory.Services.CreateScope();
-        var api = Api(scope, clientId);
+        var api = Api(scope, Binding(clientId, permissions));
         return new HostFacts(
             await api.GetProfileAsync(CancellationToken.None),
             await api.ListServicesAsync(CancellationToken.None),
             await api.ListInvoicesAsync(CancellationToken.None));
     }
 
+    /// <summary>A binding of the test plugin to a client, or to none, with the caller's permissions.</summary>
+    /// <param name="clientId">The client, or <see langword="null"/> for a call without one.</param>
+    /// <param name="permissions">The permissions the caller holds; ignored without a client.</param>
+    /// <returns>The binding.</returns>
+    private static PluginCallBinding Binding(int? clientId, ClientPermission permissions)
+    {
+        return clientId is null
+            ? PluginCallBinding.WithoutClient(PluginId)
+            : PluginCallBinding.ForClient(PluginId, clientId.Value, ClientRef, permissions);
+    }
+
     /// <summary>Builds a <see cref="PluginHostApi"/> from the scope's services.</summary>
-    /// <param name="scope">The scope that supplies the context, identity provider and currency resolver.</param>
-    /// <param name="clientId">The client the API is bound to, or <see langword="null"/>.</param>
+    /// <param name="scope">The scope that supplies the facts reader, identity provider and currency resolver.</param>
+    /// <param name="binding">The call the API is bound to.</param>
     /// <returns>The API.</returns>
-    private static PluginHostApi Api(IServiceScope scope, int? clientId)
+    private static PluginHostApi Api(IServiceScope scope, PluginCallBinding binding)
     {
         var sp = scope.ServiceProvider;
         return new PluginHostApi(
-            clientId,
-            sp.GetRequiredService<AppDbContext>(),
+            binding,
+            sp.GetRequiredService<IPluginHostFactsReader>(),
             sp.GetRequiredService<IIdentityProvider>(),
             sp.GetRequiredService<IPayerCurrencyResolver>());
     }
@@ -305,7 +381,7 @@ public sealed class PluginHostApiTests(IntegrationTestFactory factory) : IClassF
     /// <param name="ExpectedName">The name the profile should show.</param>
     private sealed record Seeded(int ClientId, List<int> ServiceIds, List<int> InvoiceIds, string LastName, string ExpectedName);
 
-    /// <summary>What a plugin sees of one client through the host API.</summary>
+     /// <summary>What a plugin sees of one client through the host API.</summary>
     /// <param name="Profile">The client's profile, or <see langword="null"/> when the call has no client.</param>
     /// <param name="Services">The client's services, newest first.</param>
     /// <param name="Invoices">The client's invoices without drafts, newest first.</param>

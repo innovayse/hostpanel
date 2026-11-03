@@ -433,6 +433,7 @@ public static class DependencyInjection
         // The same rule for client services. The client-facing service handlers call it themselves.
         services.AddScoped<IServiceOwnership, ServiceOwnership>();
         services.AddScoped<IPluginSlotContextReader, PluginSlotContextReader>();
+        services.AddScoped<IPluginHostFactsReader, PluginHostFactsReader>();
 
         // What the signed-in user may do on a client account. The portal's permission filter decides
         // with it and the account endpoint reports it; both read it per request and neither trusts

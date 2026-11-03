@@ -4,7 +4,9 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Plugins.Common;
+using Innovayse.Hostpanel.Domain;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
@@ -12,6 +14,7 @@ using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.SDK.Plugins.Endpoints;
 using Innovayse.SDK.Plugins.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Plugins;
@@ -648,6 +651,133 @@ public sealed partial class CallClientPluginTests : IClassFixture<AppPluginFixtu
         text.Should().NotContain("A plugin store key").And.NotContain("letters, digits").And.NotContain("DomainRuleException");
         text.Should().NotContain("PLUGIN_STORE_KEY_INVALID");
         text.Should().NotContainAny(LeakMarkers);
+    }
+
+    /// <summary>
+    /// The client reference the plugin sees on its caller is exactly the scope its store writes under, and it is the
+    /// account's reference for this plugin: one source, never two derivations.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task TheCallersClientRef_IsTheStoreScope()
+    {
+        var (owner, http) = await OwnerAsync("scope-is-ref");
+        var key = $"scope-{Guid.NewGuid():N}";
+        _fixture.Probe.Behaviour = call =>
+        {
+            call.Store.SetAsync(key, "v", CancellationToken.None).GetAwaiter().GetResult();
+            return PluginReply.Json(new { clientRef = call.Caller.ClientRef });
+        };
+
+        var response = await CallAsync(http, HttpMethod.Get, _fixture.PluginId, "ping");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var seen = (await JsonOfAsync(response)).GetProperty("clientRef").GetString();
+        using var scope = _fixture.Factory.Services.CreateScope();
+        var row = await scope.ServiceProvider.GetRequiredService<AppDbContext>().PluginDataEntries.AsNoTracking()
+            .SingleAsync(d => d.PluginId == _fixture.PluginId && d.Key == key);
+        row.ClientRef.Should().Be(seen);
+        seen.Should().Be(scope.ServiceProvider.GetRequiredService<IPluginReferences>().ForClient(_fixture.PluginId, owner.ClientId));
+    }
+
+    /// <summary>
+    /// A sub-user's facts follow their rights, decided by the host: without the invoices, services and master profile
+    /// rights the plugin reads no invoices, no services and no email, while the account holder reads all three.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task TheHostFacts_FollowTheCallersPermissions()
+    {
+        var (owner, ownerHttp) = await OwnerAsync("facts-rights");
+        var sub = await SubUserAsync("facts-rights-sub", owner.ClientId, ClientPermission.ViewDomains);
+        await ServicesTestSeeds.SeedPendingServiceAsync(_fixture.Factory, owner.ClientId);
+        await SeedInvoiceAsync(owner.ClientId);
+        _fixture.Probe.Behaviour = call =>
+        {
+            var ct = CancellationToken.None;
+            return PluginReply.Json(new
+            {
+                email = call.Host.GetProfileAsync(ct).GetAwaiter().GetResult()!.Email,
+                services = call.Host.ListServicesAsync(ct).GetAwaiter().GetResult().Count,
+                invoices = call.Host.ListInvoicesAsync(ct).GetAwaiter().GetResult().Count,
+            });
+        };
+
+        var asHolder = await JsonOfAsync(await CallAsync(ownerHttp, HttpMethod.Get, _fixture.PluginId, "ping"));
+        var asSub = await JsonOfAsync(await CallAsync(sub, HttpMethod.Get, _fixture.PluginId, "ping"));
+
+        asHolder.GetProperty("email").GetString().Should().BeEquivalentTo(owner.Email);
+        asHolder.GetProperty("services").GetInt32().Should().Be(1);
+        asHolder.GetProperty("invoices").GetInt32().Should().Be(1);
+        asSub.GetProperty("email").ValueKind.Should().Be(JsonValueKind.Null);
+        asSub.GetProperty("services").GetInt32().Should().Be(0);
+        asSub.GetProperty("invoices").GetInt32().Should().Be(0);
+    }
+
+    /// <summary>
+    /// A store write over the scope's quota answers 402 <c>PLUGIN_STORE_QUOTA_EXCEEDED</c> with the standard error body,
+    /// whether the plugin lets the store's refusal escape or catches it and throws its own exception.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task AStoreOverItsQuota_Answers402WithTheStandardBody()
+    {
+        var registered = await ClientsTestSeeds.RegisterClientAsync(_fixture.Factory, "store-quota");
+        using var derived = _fixture.Derive(services =>
+            services.Configure<PluginApiOptions>(options => options.MaxStoreKeysPerScope = 1));
+        using var http = AppPluginFixture.WithBearerOf(derived, registered.Client);
+        var escaping = (PluginCall call) =>
+        {
+            call.Store.SetAsync($"k-{Guid.NewGuid():N}", "1", CancellationToken.None).GetAwaiter().GetResult();
+            call.Store.SetAsync($"k-{Guid.NewGuid():N}", "2", CancellationToken.None).GetAwaiter().GetResult();
+            return PluginReply.NoContent();
+        };
+
+        _fixture.Probe.Behaviour = escaping;
+        var escaped = await CallAsync(http, HttpMethod.Get, _fixture.PluginId, "ping");
+        _fixture.Probe.Behaviour = call =>
+        {
+            try
+            {
+                escaping(call);
+            }
+            catch (Exception)
+            {
+                throw new InvalidOperationException("secret-detail-of-the-plugin");
+            }
+
+            return PluginReply.NoContent();
+        };
+        var rethrown = await CallAsync(http, HttpMethod.Get, _fixture.PluginId, "ping");
+
+        foreach (var response in new[] { escaped, rethrown })
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.PaymentRequired);
+            response.Content.Headers.ContentType!.MediaType.Should().Be(ErrorBody.ContentType);
+            var body = await JsonOfAsync(response);
+            body.GetProperty("type").GetString().Should().Be(HostpanelErrorCodes.PLUGIN_STORE_QUOTA_EXCEEDED);
+            body.GetProperty("status").GetInt32().Should().Be((int)HttpStatusCode.PaymentRequired);
+            body.GetProperty("detail").GetString().Should().NotBeNullOrWhiteSpace();
+            (await response.Content.ReadAsStringAsync()).Should().NotContainAny(LeakMarkers);
+        }
+    }
+
+    /// <summary>
+    /// A plugin cannot fake the quota answer: throwing the quota code on its own, with no refusal by the host's store, is an
+    /// ordinary plugin failure, 502.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task APluginThatThrowsTheQuotaCodeItself_Answers502()
+    {
+        var (_, http) = await OwnerAsync("fake-quota");
+        _fixture.Probe.Behaviour = _ =>
+            throw new DomainRuleException(HostpanelErrorCodes.PLUGIN_STORE_QUOTA_EXCEEDED, "secret-detail-of-the-plugin");
+
+        var response = await CallAsync(http, HttpMethod.Get, _fixture.PluginId, "ping");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadGateway);
+        await ClientsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_FAILED);
     }
 
     /// <summary>Writes a value, reads it back and lists the caller's services and invoices.</summary>

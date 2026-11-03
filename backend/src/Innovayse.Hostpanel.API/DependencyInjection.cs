@@ -124,7 +124,9 @@ public static class DependencyInjection
                     + $"{nameof(PluginApiOptions.StreamHeartbeatSeconds)} from 1 to {PluginApiOptions.StreamHeartbeatSecondsCeiling} seconds, and {PluginApiOptions.SectionName}:"
                     + $"{nameof(PluginApiOptions.StreamEventMaxBytes)} from 1 to {PluginApiOptions.StreamEventMaxBytesCeiling} bytes, and "
                     + $"{PluginApiOptions.SectionName}:{nameof(PluginApiOptions.MaxStoreKeysPerScope)} from 1 to "
-                    + $"{PluginApiOptions.MaxStoreKeysPerScopeCeiling} keys.")
+                    + $"{PluginApiOptions.MaxStoreKeysPerScopeCeiling} keys, and {PluginApiOptions.SectionName}:"
+                    + $"{nameof(PluginApiOptions.MaxStoreCharsPerScope)} from {PluginApiOptions.MaxStoreCharsPerScopeFloor} to "
+                    + $"{PluginApiOptions.MaxStoreCharsPerScopeCeiling} characters.")
             .ValidateOnStart();
 
         // The caller of the request, for handlers. Registered by type, not through a factory, so

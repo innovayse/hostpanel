@@ -57,6 +57,24 @@ public sealed partial class PluginDataEntry : BaseEntity, IAggregateRoot
     /// <summary>Gets when the value was last replaced, or <see langword="null"/> while it is the first one; stamped on change.</summary>
     public DateTimeOffset? UpdatedAt { get; private set; }
 
+    /// <summary>
+    /// Gets how much of its scope's <see cref="PluginStoreQuota.MaxChars"/> this row takes: the characters of its key
+    /// plus the characters of its value.
+    /// </summary>
+    public long StoredChars => CharsOf(Key, Value);
+
+    /// <summary>
+    /// How much of a scope's <see cref="PluginStoreQuota.MaxChars"/> one key and value take. The one size rule, so a row
+    /// already stored and a write about to be made are measured alike.
+    /// </summary>
+    /// <param name="key">The key.</param>
+    /// <param name="value">The value.</param>
+    /// <returns>The characters of the key plus the characters of the value (UTF-16 characters, as stored).</returns>
+    public static long CharsOf(string key, string value)
+    {
+        return (long)key.Length + value.Length;
+    }
+
     /// <summary>Whether <paramref name="key"/> is a key the store accepts.</summary>
     /// <param name="key">The key a plugin passed.</param>
     /// <returns><see langword="true"/> when it is 1 to <see cref="MaxKeyLength"/> characters of the accepted set.</returns>
@@ -103,19 +121,14 @@ public sealed partial class PluginDataEntry : BaseEntity, IAggregateRoot
         }
     }
 
-    /// <summary>
-    /// Refuses a new key in a scope that already holds <paramref name="maxKeys"/> keys. Replacing an existing key never
-    /// asks this, so a full scope can still be updated.
-    /// </summary>
-    /// <param name="keysInScope">How many keys the plugin already keeps in this plugin and client scope.</param>
-    /// <param name="maxKeys">The most keys one scope may hold, from the host's configuration.</param>
-    /// <exception cref="DomainRuleException">Thrown when the scope is full.</exception>
-    public static void EnsureRoomForNewKey(int keysInScope, int maxKeys)
+    /// <summary>Refuses a value the store does not keep. A write asks this before it measures the value against its quota.</summary>
+    /// <param name="value">The value a plugin passed.</param>
+    /// <exception cref="DomainRuleException">Thrown when the value is missing or over <see cref="MaxValueLength"/> characters.</exception>
+    public static void EnsureValue(string? value)
     {
-        if (keysInScope >= maxKeys)
+        if (!IsValidValue(value))
         {
-            throw new DomainRuleException(
-                PluginStoreErrors.KeyLimitReached, "A plugin store scope holds no more keys than the host allows.");
+            throw new DomainRuleException(PluginStoreErrors.ValueInvalid, ValueRule);
         }
     }
 
@@ -126,17 +139,6 @@ public sealed partial class PluginDataEntry : BaseEntity, IAggregateRoot
     {
         EnsureValue(value);
         Value = value;
-    }
-
-    /// <summary>Refuses a value the store does not keep.</summary>
-    /// <param name="value">The value a plugin passed.</param>
-    /// <exception cref="DomainRuleException">Thrown when the value is missing or over <see cref="MaxValueLength"/> characters.</exception>
-    private static void EnsureValue(string? value)
-    {
-        if (!IsValidValue(value))
-        {
-            throw new DomainRuleException(PluginStoreErrors.ValueInvalid, ValueRule);
-        }
     }
 
     /// <summary>The compiled <see cref="KeyPattern"/>.</summary>

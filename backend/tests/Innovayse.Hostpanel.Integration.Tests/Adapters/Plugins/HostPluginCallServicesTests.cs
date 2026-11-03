@@ -1,7 +1,9 @@
 using System.Reflection;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Clients;
+using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services;
@@ -11,12 +13,14 @@ using Innovayse.SDK.Plugins.Host;
 using Innovayse.SDK.Plugins.Store;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 
 /// <summary>
-/// <see cref="HostPluginCallServices"/> against Postgres: the production container builds it, and one binding gives the
-/// host facts and the store scope of the same client (or of none), with no id on any method a plugin can call.
+/// <see cref="HostPluginCallServices"/> against Postgres: the production container builds it, one binding gives the
+/// host facts and the store scope of the same client (or of none), the store scope is the binding's own reference and is
+/// never derived again, each call gets its own quota signal, and no method a plugin can call takes an id.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class HostPluginCallServicesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
@@ -33,24 +37,74 @@ public sealed class HostPluginCallServicesTests(IntegrationTestFactory factory) 
         scope.ServiceProvider.GetRequiredService<IPluginCallServices>().Should().BeOfType<HostPluginCallServices>();
     }
 
-    /// <summary>A binding with a client stores under the client's reference and lists that client's services.</summary>
+    /// <summary>
+    /// A binding with a client stores under exactly the binding's reference, not one derived again from the client id,
+    /// and lists that client's services.
+    /// </summary>
     [Fact]
-    public async Task BindingWithAClient_StoresUnderTheClientReference_AndListsItsServicesAsync()
+    public async Task BindingWithAClient_StoresUnderTheBindingsReference_AndListsItsServicesAsync()
     {
         var pluginId = $"host-bound-{Guid.NewGuid():N}";
         var (clientId, serviceId) = await SeedClientWithServiceAsync();
 
+        // A reference no derivation would produce: if the factory derived the scope itself, the row would carry another one.
+        var givenRef = $"given-{Guid.NewGuid():N}";
         using var scope = factory.Services.CreateScope();
-        var services = scope.ServiceProvider.GetRequiredService<IPluginCallServices>().Create(new PluginCallBinding(pluginId, clientId));
+        var services = scope.ServiceProvider.GetRequiredService<IPluginCallServices>()
+            .Create(PluginCallBinding.ForClient(pluginId, clientId, givenRef, ClientPermission.All));
         await services.Store.SetAsync("greeting", "hello", CancellationToken.None);
         var listed = await services.Host.ListServicesAsync(CancellationToken.None);
 
-        var expectedRef = scope.ServiceProvider.GetRequiredService<IPluginReferences>().ForClient(pluginId, clientId);
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var row = await context.PluginDataEntries.AsNoTracking().SingleAsync(d => d.PluginId == pluginId);
-        row.ClientRef.Should().Be(expectedRef);
+        row.ClientRef.Should().Be(givenRef);
         row.Value.Should().Be("hello");
         listed.Select(s => s.Id).Should().Equal(serviceId);
+    }
+
+    /// <summary>The host facts the factory builds follow the binding's permissions: without the services right, no services.</summary>
+    [Fact]
+    public async Task TheFacts_FollowTheBindingsPermissionsAsync()
+    {
+        var pluginId = $"host-rights-{Guid.NewGuid():N}";
+        var (clientId, _) = await SeedClientWithServiceAsync();
+
+        using var scope = factory.Services.CreateScope();
+        var services = scope.ServiceProvider.GetRequiredService<IPluginCallServices>()
+            .Create(PluginCallBinding.ForClient(
+                pluginId, clientId, $"ref-{Guid.NewGuid():N}", ClientPermission.ViewDomains));
+
+        (await services.Host.ListServicesAsync(CancellationToken.None)).Should().BeEmpty();
+        (await services.Host.GetProfileAsync(CancellationToken.None)).Should().NotBeNull();
+    }
+
+    /// <summary>
+    /// Each call gets its own quota signal: a store that refuses a write over the quota raises the signal of its own call
+    /// and leaves another call's signal down.
+    /// </summary>
+    [Fact]
+    public async Task TheQuotaSignal_IsPerCallAsync()
+    {
+        var pluginId = $"host-quota-{Guid.NewGuid():N}";
+        using var scope = factory.Services.CreateScope();
+        var sp = scope.ServiceProvider;
+        var oneKey = Options.Create(new PluginApiOptions { MaxStoreKeysPerScope = 1 });
+        var callServices = new HostPluginCallServices(
+            sp.GetRequiredService<AppDbContext>(),
+            sp.GetRequiredService<IPluginHostFactsReader>(),
+            sp.GetRequiredService<IIdentityProvider>(),
+            sp.GetRequiredService<IPayerCurrencyResolver>(),
+            oneKey);
+
+        var over = callServices.Create(PluginCallBinding.WithoutClient(pluginId));
+        var other = callServices.Create(PluginCallBinding.WithoutClient(pluginId));
+        await over.Store.SetAsync("first", "1", CancellationToken.None);
+        var second = () => over.Store.SetAsync("second", "2", CancellationToken.None);
+
+        await second.Should().ThrowAsync<Exception>();
+        over.Quota.Raised.Should().BeTrue();
+        other.Quota.Raised.Should().BeFalse();
+        other.Quota.Should().NotBeSameAs(over.Quota);
     }
 
     /// <summary>A binding without a client writes plugin wide (null reference) and sees no host facts.</summary>
@@ -61,7 +115,7 @@ public sealed class HostPluginCallServicesTests(IntegrationTestFactory factory) 
         await SeedClientWithServiceAsync();
 
         using var scope = factory.Services.CreateScope();
-        var services = scope.ServiceProvider.GetRequiredService<IPluginCallServices>().Create(new PluginCallBinding(pluginId, null));
+        var services = scope.ServiceProvider.GetRequiredService<IPluginCallServices>().Create(PluginCallBinding.WithoutClient(pluginId));
         await services.Store.SetAsync("greeting", "hello", CancellationToken.None);
 
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -84,8 +138,11 @@ public sealed class HostPluginCallServicesTests(IntegrationTestFactory factory) 
 
         using var scope = factory.Services.CreateScope();
         var factoryOfServices = scope.ServiceProvider.GetRequiredService<IPluginCallServices>();
-        var own = factoryOfServices.Create(new PluginCallBinding(pluginId, clientId));
-        var admin = factoryOfServices.Create(new PluginCallBinding(pluginId, clientId));
+        var clientRef = scope.ServiceProvider.GetRequiredService<IPluginReferences>().ForClient(pluginId, clientId);
+        var own = factoryOfServices.Create(
+            PluginCallBinding.ForClient(pluginId, clientId, clientRef, ClientPermission.All));
+        var admin = factoryOfServices.Create(
+            PluginCallBinding.ForClient(pluginId, clientId, clientRef, ClientPermission.All));
         await own.Store.SetAsync("note", "from-client-area", CancellationToken.None);
 
         (await admin.Store.GetAsync("note", CancellationToken.None)).Should().Be("from-client-area");

@@ -2444,6 +2444,49 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("PluginDataEntries");
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Plugins.PluginDataScope", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClientRef")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("KeyCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PluginId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<long>("Revision")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("StoredChars")
+                        .HasColumnType("bigint");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PluginId", "ClientRef")
+                        .IsUnique()
+                        .HasDatabaseName("IX_PluginDataScopes_PluginId_ClientRef");
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("PluginId", "ClientRef"), false);
+
+                    b.ToTable("PluginDataScopes");
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Products.Product", b =>
                 {
                     b.Property<int>("Id")

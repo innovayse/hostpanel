@@ -180,31 +180,37 @@ public sealed class PluginDataEntryTests
         act.Should().NotThrow();
     }
 
-    /// <summary>EnsureRoomForNewKey lets a scope below the cap take one more key, down to the last free place.</summary>
-    /// <param name="keysInScope">How many keys the scope already holds.</param>
-    /// <param name="maxKeys">The cap.</param>
-    [Theory]
-    [InlineData(0, 1)]
-    [InlineData(998, 1000)]
-    [InlineData(999, 1000)]
-    public void EnsureRoomForNewKey_BelowTheCap_DoesNotThrow(int keysInScope, int maxKeys)
+    /// <summary>EnsureValue refuses a missing value and one over the cap with PLUGIN_STORE_VALUE_INVALID and lets an empty one pass.</summary>
+    [Fact]
+    public void EnsureValue_RefusesOnlyWhatIsNotAValue()
     {
-        var act = () => PluginDataEntry.EnsureRoomForNewKey(keysInScope, maxKeys);
+        var missing = () => PluginDataEntry.EnsureValue(null);
+        var big = () => PluginDataEntry.EnsureValue(new string('x', PluginDataEntry.MaxValueLength + 1));
+        var empty = () => PluginDataEntry.EnsureValue(string.Empty);
 
-        act.Should().NotThrow();
+        missing.Should().Throw<DomainRuleException>().Which.Code.Should().Be(PluginStoreErrors.ValueInvalid);
+        big.Should().Throw<DomainRuleException>().Which.Code.Should().Be(PluginStoreErrors.ValueInvalid);
+        empty.Should().NotThrow();
     }
 
-    /// <summary>EnsureRoomForNewKey refuses a new key in a scope that is at the cap or over it, with PLUGIN_STORE_KEY_LIMIT_REACHED.</summary>
-    /// <param name="keysInScope">How many keys the scope already holds.</param>
-    /// <param name="maxKeys">The cap.</param>
-    [Theory]
-    [InlineData(1, 1)]
-    [InlineData(1000, 1000)]
-    [InlineData(1001, 1000)]
-    public void EnsureRoomForNewKey_AtOrAboveTheCap_Throws(int keysInScope, int maxKeys)
+    /// <summary>CharsOf counts the key's characters plus the value's, and StoredChars measures a row the same way.</summary>
+    [Fact]
+    public void CharsOf_CountsKeyAndValue()
     {
-        var act = () => PluginDataEntry.EnsureRoomForNewKey(keysInScope, maxKeys);
+        var data = PluginDataEntry.Create("reports", "ref-1", "cursor", "\U0001F600ab");
 
-        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(PluginStoreErrors.KeyLimitReached);
+        PluginDataEntry.CharsOf("cursor", string.Empty).Should().Be(6);
+        PluginDataEntry.CharsOf("cursor", "\U0001F600ab").Should().Be(10);
+        data.StoredChars.Should().Be(10);
+    }
+
+    /// <summary>The longest key with the longest value is measured without overflow.</summary>
+    [Fact]
+    public void CharsOf_TheLargestRow_IsKeyCapPlusValueCap()
+    {
+        var size = PluginDataEntry.CharsOf(
+            new string('a', PluginDataEntry.MaxKeyLength), new string('x', PluginDataEntry.MaxValueLength));
+
+        size.Should().Be((long)PluginDataEntry.MaxKeyLength + PluginDataEntry.MaxValueLength);
     }
 }

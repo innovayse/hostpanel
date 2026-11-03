@@ -1,32 +1,43 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
-using Innovayse.Hostpanel.Domain.Billing;
-using Innovayse.Hostpanel.Infrastructure.Persistence;
+using Innovayse.Hostpanel.Domain.Clients.Enums;
+using Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
 using Innovayse.SDK.Plugins.Host;
-using Microsoft.EntityFrameworkCore;
 
 /*
- * The facts are read straight from the tables (as PayerCurrencyResolver does) because this adapter is the host's own
- * answer to an SDK contract, not a use case of one module. Each list is cut in SQL (Take), so a client with thousands
- * of rows never loads more than the SDK's 50, and only the columns the SDK record carries are selected: no notes, card
- * ids or addresses leave the query.
+ * Visibility before capability (security.md): what a plugin may read about a client is decided from the caller's
+ * permissions before anything is read, never by hiding a value once fetched. A sub-user without the invoices right never
+ * makes the invoices query run, and one without the master profile right never has the sign-in address placed in the
+ * profile. The rows of other modules come through IPluginHostFactsReader, so this adapter holds no data context.
  */
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 
 /// <summary>
-/// The SDK's <see cref="IPluginHostApi"/> for one call, bound when it is built to the call's client: no method takes an
-/// id, so a plugin reads only the facts of that client. Draft invoices are hidden (they are staff-only, the same filter
-/// the client portal uses), each list is the newest <see cref="PluginHostLimits.MaxListed"/> rows, and a client row that
-/// does not exist answers like a call without a client.
+/// The SDK's <see cref="IPluginHostApi"/> for one call, bound when it is built to the call's
+/// <see cref="PluginCallBinding"/>: no method takes an id, so a plugin reads only the facts of that client, and only
+/// what the caller could see in the portal.
 /// </summary>
+/// <remarks>
+/// <list type="bullet">
+/// <item><see cref="ListServicesAsync"/> answers empty unless the caller holds <see cref="ClientPermission.ViewProductsServices"/>.</item>
+/// <item><see cref="ListInvoicesAsync"/> answers empty unless the caller holds <see cref="ClientPermission.ViewPayInvoices"/>; drafts are never shared.</item>
+/// <item>
+/// <see cref="GetProfileAsync"/> answers the name, currency and language to any client caller, and the <c>Email</c> only when
+/// the caller holds <see cref="ClientPermission.ModifyMasterProfile"/>: the account's sign-in address is part of the master
+/// profile, which a sub-user without that right never sees in the portal either.
+/// </item>
+/// </list>
+/// Each list is the newest <see cref="PluginHostLimits.MaxListed"/> rows, and a call without a client, or whose client row
+/// is gone, gets no profile and empty lists.
+/// </remarks>
 internal sealed class PluginHostApi : IPluginHostApi
 {
-    /// <summary>The call's client, or <see langword="null"/> when the call has none.</summary>
-    private readonly int? _clientId;
+    /// <summary>The call's client and the permissions its caller holds there.</summary>
+    private readonly PluginCallBinding _binding;
 
-    /// <summary>The request's data context.</summary>
-    private readonly AppDbContext _context;
+    /// <summary>Reads the client, service and invoice rows of the bound client.</summary>
+    private readonly IPluginHostFactsReader _facts;
 
     /// <summary>The identity provider that holds the client's sign-in email and language.</summary>
     private readonly IIdentityProvider _identity;
@@ -35,14 +46,17 @@ internal sealed class PluginHostApi : IPluginHostApi
     private readonly IPayerCurrencyResolver _payerCurrency;
 
     /// <summary>Initializes the facts of one call.</summary>
-    /// <param name="clientId">The call's client, or <see langword="null"/> when the call has none.</param>
-    /// <param name="context">The request's data context.</param>
+    /// <param name="binding">The call's client and the permissions its caller holds there.</param>
+    /// <param name="facts">Reads the client, service and invoice rows of the bound client.</param>
     /// <param name="identity">The identity provider that holds the client's sign-in email and language.</param>
     /// <param name="payerCurrency">Resolves the currency the client is billed in.</param>
-    public PluginHostApi(int? clientId, AppDbContext context, IIdentityProvider identity, IPayerCurrencyResolver payerCurrency)
+    public PluginHostApi(
+        PluginCallBinding binding, IPluginHostFactsReader facts, IIdentityProvider identity, IPayerCurrencyResolver payerCurrency)
     {
-        _clientId = clientId;
-        _context = context;
+        ArgumentNullException.ThrowIfNull(binding);
+
+        _binding = binding;
+        _facts = facts;
         _identity = identity;
         _payerCurrency = payerCurrency;
     }
@@ -50,76 +64,58 @@ internal sealed class PluginHostApi : IPluginHostApi
     /// <inheritdoc/>
     public async Task<PluginClientProfile?> GetProfileAsync(CancellationToken ct)
     {
-        if (_clientId is not { } id)
+        if (_binding.ClientId is not { } id)
         {
             return null;
         }
 
-        var row = await _context.Clients
-            .AsNoTracking()
-            .Where(c => c.Id == id)
-            .Select(c => new { c.FirstName, c.LastName, c.CompanyName, c.UserId })
-            .FirstOrDefaultAsync(ct);
-        if (row is null)
+        var client = await _facts.FindClientAsync(id, ct);
+        if (client is null)
         {
             return null;
         }
 
-        var name = !string.IsNullOrWhiteSpace(row.CompanyName)
-            ? row.CompanyName.Trim()
-            : $"{row.FirstName} {row.LastName}".Trim();
+        var name = !string.IsNullOrWhiteSpace(client.CompanyName)
+            ? client.CompanyName.Trim()
+            : $"{client.FirstName} {client.LastName}".Trim();
 
-        var account = string.IsNullOrEmpty(row.UserId)
+        // The account is read for the language every client caller may see; its address is copied only for a caller who
+        // holds the master profile right, decided from the binding and not from what the read returned.
+        var account = string.IsNullOrEmpty(client.OwnerSubject)
             ? null
-            : await _identity.FindBySubjectAsync(row.UserId, ct);
+            : await _identity.FindBySubjectAsync(client.OwnerSubject, ct);
+        var email = _binding.Permissions.HasFlag(ClientPermission.ModifyMasterProfile) ? account?.Email : null;
 
         var currency = await _payerCurrency.ForClientAsync(id, ct);
 
-        return new PluginClientProfile(name, account?.Email, currency.Code, account?.Language);
+        return new PluginClientProfile(name, email, currency.Code, account?.Language);
     }
 
     /// <inheritdoc/>
     public async Task<IReadOnlyList<PluginClientService>> ListServicesAsync(CancellationToken ct)
     {
-        if (_clientId is not { } id)
+        if (_binding.ClientId is not { } id || !_binding.Permissions.HasFlag(ClientPermission.ViewProductsServices))
         {
             return [];
         }
 
-        var rows = await _context.ClientServices
-            .AsNoTracking()
-            .Where(s => s.ClientId == id)
-            .OrderByDescending(s => s.CreatedAt)
-            .ThenByDescending(s => s.Id)
-            .Take(PluginHostLimits.MaxListed)
-            .Select(s => new { s.Id, s.ProductId, s.Status, s.Domain, s.CreatedAt, s.NextRenewalAt })
-            .ToListAsync(ct);
-
+        var rows = await _facts.ListNewestServicesAsync(id, ct);
         return rows
-            .Select(s => new PluginClientService(s.Id, s.ProductId, PluginFactMapper.ToPlugin(s.Status), s.Domain, s.CreatedAt, s.NextRenewalAt))
+            .Select(s => s.ToPlugin())
             .ToList();
     }
 
     /// <inheritdoc/>
     public async Task<IReadOnlyList<PluginClientInvoice>> ListInvoicesAsync(CancellationToken ct)
     {
-        if (_clientId is not { } id)
+        if (_binding.ClientId is not { } id || !_binding.Permissions.HasFlag(ClientPermission.ViewPayInvoices))
         {
             return [];
         }
 
-        var rows = await _context.Invoices
-            .AsNoTracking()
-            .Where(Invoice.ClientVisibleFilter)
-            .Where(i => i.ClientId == id)
-            .OrderByDescending(i => i.CreatedAt)
-            .ThenByDescending(i => i.Id)
-            .Take(PluginHostLimits.MaxListed)
-            .Select(i => new { i.Id, i.Status, i.Total, i.Currency, i.InvoiceDate, i.DueDate, i.PaidAt })
-            .ToListAsync(ct);
-
+        var rows = await _facts.ListNewestInvoicesAsync(id, ct);
         return rows
-            .Select(i => new PluginClientInvoice(i.Id, PluginFactMapper.ToPlugin(i.Status), i.Total, i.Currency, i.InvoiceDate, i.DueDate, i.PaidAt))
+            .Select(i => i.ToPlugin())
             .ToList();
     }
 }

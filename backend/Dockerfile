@@ -95,9 +95,12 @@ COPY . .
 # registers). Sign-on mode refuses to build the host without its sign-on settings (this product's and
 # the shared sign-on package's); the placeholders below only let it be built here, nothing is contacted
 # because the host is never started, and the running container takes its own from the environment.
+# The durable message store refuses to build the host without a connection string, so it gets a
+# placeholder too; codegen never opens it.
 RUN SSO=$([ "$AUTH_MODE" = "sso" ] && echo "-p:InnovayseSso=true"); \
     cd src/Innovayse.Hostpanel.API && \
     ASPNETCORE_ENVIRONMENT=Testing Auth__Mode="${AUTH_MODE:-local}" \
+    ConnectionStrings__DefaultConnection="Host=codegen.invalid;Database=codegen;Username=codegen;Password=codegen" \
     Sso__Authority=https://sign-on.invalid Sso__ClientId=codegen \
     Auth__AppName=codegen Auth__Authority=https://sign-on.invalid Auth__PublicAuthority=https://sign-on.invalid \
     Auth__ClientId=codegen Auth__ClientSecret=codegen Auth__RedisConnection=localhost:6379 \

@@ -170,18 +170,45 @@ public sealed partial class CallClientPluginTests : IClassFixture<AppPluginFixtu
         await ClientsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_ROUTE_NOT_FOUND);
     }
 
-    /// <summary>A sub-user without the route's permission is refused with the existing client permission code, before plugin code runs.</summary>
+    /// <summary>A sub-user without the route's permission is told 404, as for a route that is not there, before plugin code runs.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
-    public async Task AMissingPermission_Answers403BeforeAnyPluginCodeRuns()
+    public async Task AMissingPermission_Answers404BeforeAnyPluginCodeRuns()
     {
         var (owner, _) = await OwnerAsync("missing-permission");
         var sub = await SubUserAsync("missing-permission-sub", owner.ClientId, ClientPermission.ViewDomains);
 
         var response = await CallAsync(sub, HttpMethod.Get, _fixture.PluginId, "invoices/1");
 
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-        await ClientsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.CLIENT_PERMISSION_DENIED);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        await ClientsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_ROUTE_NOT_FOUND);
+        _fixture.Probe.Constructed.Should().Be(0);
+    }
+
+    /// <summary>
+    /// A route of an installed plugin the caller may not use and a route of a plugin that is not installed answer with the
+    /// same status, code and body, and the plugin is not called, so a refusal cannot be used to list what is installed.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task AMissingPermissionAndAnUninstalledPlugin_AnswerTheSameBody()
+    {
+        var (owner, _) = await OwnerAsync("refusals-alike");
+        var sub = await SubUserAsync("refusals-alike-sub", owner.ClientId, ClientPermission.ViewDomains);
+
+        var forbiddenRoute = await CallAsync(sub, HttpMethod.Get, _fixture.PluginId, "invoices/1");
+        var absentPlugin = await CallAsync(sub, HttpMethod.Get, "no-such-plugin", "invoices/1");
+
+        forbiddenRoute.StatusCode.Should().Be(absentPlugin.StatusCode);
+        forbiddenRoute.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        var expected = await JsonOfAsync(absentPlugin);
+        var actual = await JsonOfAsync(forbiddenRoute);
+        foreach (var member in new[] { "type", "title", "status", "detail" })
+        {
+            actual.GetProperty(member).ToString().Should().Be(expected.GetProperty(member).ToString());
+        }
+
+        expected.GetProperty("type").GetString().Should().Be(HostpanelErrorCodes.PLUGIN_ROUTE_NOT_FOUND);
         _fixture.Probe.Constructed.Should().Be(0);
     }
 
@@ -233,8 +260,8 @@ public sealed partial class CallClientPluginTests : IClassFixture<AppPluginFixtu
         var refused = await CallAsync(sub, HttpMethod.Post, _fixture.PluginId, "notes");
         var served = await CallAsync(ownerHttp, HttpMethod.Post, _fixture.PluginId, "notes");
 
-        refused.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-        await ClientsTestSeeds.AssertCodeAsync(refused, HostpanelErrorCodes.CLIENT_PERMISSION_DENIED);
+        refused.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        await ClientsTestSeeds.AssertCodeAsync(refused, HostpanelErrorCodes.PLUGIN_ROUTE_NOT_FOUND);
         served.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
@@ -269,8 +296,8 @@ public sealed partial class CallClientPluginTests : IClassFixture<AppPluginFixtu
         var ping = await CallAsync(member.Client, HttpMethod.Get, _fixture.PluginId, "ping");
         var holderPing = await CallAsync(ownerHttp, HttpMethod.Get, _fixture.PluginId, "ping");
 
-        invoices.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-        await ClientsTestSeeds.AssertCodeAsync(invoices, HostpanelErrorCodes.CLIENT_PERMISSION_DENIED);
+        invoices.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        await ClientsTestSeeds.AssertCodeAsync(invoices, HostpanelErrorCodes.PLUGIN_ROUTE_NOT_FOUND);
         ping.StatusCode.Should().Be(HttpStatusCode.OK);
         var seenMember = await JsonOfAsync(ping);
         var seenHolder = await JsonOfAsync(holderPing);
@@ -305,6 +332,30 @@ public sealed partial class CallClientPluginTests : IClassFixture<AppPluginFixtu
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         await ClientsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.CLIENT_PROFILE_NOT_FOUND);
+        _fixture.Probe.Constructed.Should().Be(0);
+    }
+
+    /// <summary>
+    /// The caller's account is settled before the plugin is looked at: a caller with no account gets the profile code for an
+    /// unknown plugin, a disabled one, an undeclared route and a served route alike, so the order cannot be used to probe plugins.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task ACallerWithNoAccount_GetsTheProfileCodeWhateverThePlugin()
+    {
+        using var member = await MemberAsync("no-account-any-plugin", $"acct-{Guid.NewGuid():N}", canPurchase: true);
+
+        var unknown = await CallAsync(member.Client, HttpMethod.Get, "no-such-plugin", "ping");
+        var disabled = await CallAsync(member.Client, HttpMethod.Get, _fixture.DisabledPluginId, "ping");
+        var undeclared = await CallAsync(member.Client, HttpMethod.Get, _fixture.PluginId, "nothing/here");
+        var served = await CallAsync(member.Client, HttpMethod.Get, _fixture.PluginId, "ping");
+
+        foreach (var response in new[] { unknown, disabled, undeclared, served })
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            await ClientsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.CLIENT_PROFILE_NOT_FOUND);
+        }
+
         _fixture.Probe.Constructed.Should().Be(0);
     }
 

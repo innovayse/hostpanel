@@ -17,16 +17,16 @@ using Microsoft.Extensions.Options;
 namespace Innovayse.Hostpanel.Application.Plugins.Common;
 
 /// <summary>
-/// The part of a plugin call the client and the admin area share: matching the request to a declared route of an
-/// enabled plugin, then, once the area's own handler has authorised the caller, reading the body within the cap,
-/// auditing an unsafe call, calling the plugin and turning its reply into the host's.
+/// The part of a plugin call the client and the admin area share: once <see cref="PluginCallGate"/> has admitted the
+/// caller to a declared route of an enabled plugin, reading the body within the cap, auditing an unsafe call, calling
+/// the plugin and turning its reply into the host's.
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>Two steps, so authorisation sits between them.</b> <see cref="FindAsync"/> answers only "is there such a route
-/// on an enabled plugin" and builds nothing of the plugin; <see cref="RunAsync"/> is called only after the area's
-/// handler has decided the caller may call it. A disabled plugin, an unknown one and an undeclared route all end at the
-/// first step with the same <c>PLUGIN_ROUTE_NOT_FOUND</c>, whoever asks.
+/// <b>Two steps, so authorisation sits before the plugin.</b> <see cref="PluginCallGate"/> answers "is there such a route
+/// on an enabled plugin this caller may use" and builds nothing of the plugin; <see cref="RunAsync"/> is called only with
+/// the target it admitted. A disabled plugin, an unknown one, an undeclared route and a route the caller may not use all
+/// end at the gate with the same <c>PLUGIN_ROUTE_NOT_FOUND</c>, whoever asks.
 /// </para>
 /// <para>
 /// <b>Plugin problem codes are namespaced.</b> A problem the plugin returns becomes the standard error body with its
@@ -66,9 +66,6 @@ public sealed class PluginCallRunner
     private static readonly Regex ProblemCodePattern = new(
         @"\A[A-Za-z0-9][A-Za-z0-9_.-]{0,63}\z", RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
-    /// <summary>Finds the plugin and checks that it is switched on.</summary>
-    private readonly IPluginEndpointResolver _plugins;
-
     /// <summary>Builds the host facts and the store bound to the call.</summary>
     private readonly IPluginCallServices _services;
 
@@ -88,7 +85,6 @@ public sealed class PluginCallRunner
     private readonly ILogger<PluginCallRunner> _logger;
 
     /// <summary>Initializes a new instance of the <see cref="PluginCallRunner"/> class.</summary>
-    /// <param name="plugins">Finds the plugin and checks that it is switched on.</param>
     /// <param name="services">Builds the host facts and the store bound to the call.</param>
     /// <param name="activityLogger">Stages the audit line of an unsafe call.</param>
     /// <param name="context">Saves the audit line before the plugin runs.</param>
@@ -96,7 +92,6 @@ public sealed class PluginCallRunner
     /// <param name="messages">Writes the sentence a problem gets when the plugin gave none.</param>
     /// <param name="logger">Structured logger.</param>
     public PluginCallRunner(
-        IPluginEndpointResolver plugins,
         IPluginCallServices services,
         IActivityLogger activityLogger,
         IHostpanelDbContext context,
@@ -104,7 +99,6 @@ public sealed class PluginCallRunner
         IErrorMessageResolver messages,
         ILogger<PluginCallRunner> logger)
     {
-        _plugins = plugins;
         _services = services;
         _activityLogger = activityLogger;
         _context = context;
@@ -113,38 +107,8 @@ public sealed class PluginCallRunner
         _logger = logger;
     }
 
-    /// <summary>Matches a request to a declared route of an enabled plugin. Nothing of the plugin runs.</summary>
-    /// <param name="pluginId">The plugin id from the URL.</param>
-    /// <param name="area">The panel the request came through; only its routes are looked at.</param>
-    /// <param name="input">The request, as the controller read it.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>
-    /// The target, or <see langword="null"/> when the plugin is unknown, is not an app plugin, is switched off or not
-    /// configured, or does not declare that method and path in <paramref name="area"/>.
-    /// </returns>
-    public async Task<PluginTarget?> FindAsync(string pluginId, PluginArea area, PluginHttpInput input, CancellationToken ct)
-    {
-        ArgumentNullException.ThrowIfNull(input);
-
-        var manifest = _plugins.Find(pluginId);
-        if (manifest is null)
-        {
-            return null;
-        }
-
-        var routes = area == PluginArea.Admin ? manifest.Api.Admin : manifest.Api.Client;
-        var match = PluginRouteMatcher.Match(routes, input.Method, input.Path);
-        if (match is null)
-        {
-            return null;
-        }
-
-        var build = await _plugins.PrepareAsync(manifest.Id, ct);
-        return build is null ? null : new PluginTarget(manifest, area, match, build);
-    }
-
     /// <summary>Calls the plugin for an already authorised caller and turns its reply into the host's.</summary>
-    /// <param name="target">The matched route, from <see cref="FindAsync"/>.</param>
+    /// <param name="target">The matched route, from <see cref="PluginCallGate"/>.</param>
     /// <param name="binding">
     /// What the call is bound to, built once by the area's handler: the plugin, the client and its opaque reference, and the
     /// caller's permissions. The plugin's <see cref="PluginCaller"/>, the audit line, the host facts and the store all come

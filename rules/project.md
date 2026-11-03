@@ -399,19 +399,23 @@ docker/                              compose set (shared·dev·prod·platform), 
   same way for both. The part both areas share is `PluginCallRunner` (`Application/Plugins/Common`); each handler adds
   only its area's authorisation. Nothing about a plugin is trusted: the manifest was validated at load, and a route is
   looked up in it, never guessed.
-  - **The order is the contract, and authorisation sits before plugin code.** (1) `PluginCallRunner.FindAsync`: the plugin
-    is loaded and is an app plugin, the manifest declares that method and path in that area (`PluginRouteMatcher`:
-    segments compare ignoring case, a parameter takes one non-empty segment, a literal beats a parameter, a trailing slash
-    matches nothing) and the plugin is switched on and configured. `IPluginEndpointResolver` does this in two steps,
-    `Find` (manifest) and `PrepareAsync` (the `PluginActivator` gates, now `PrepareAsync` with `ActivateAsync` built on
-    it, without constructing the plugin): **an unknown plugin, a plugin of another type, a disabled one, an
-    unconfigured one and an undeclared route all answer the same 404 `PLUGIN_ROUTE_NOT_FOUND`**, whoever asks and whatever
-    permission they lack. (2) The area's own check. (3) `RunAsync`: the streaming route refusal, the body, the audit
-    line, then the plugin is built and called. The permission refusal therefore also comes before the plugin's
-    constructor runs.
+  - **The order is the contract, and authorisation sits before plugin code.** `PluginCallGate` (`Application/Plugins/Common`)
+    decides it, for both areas and for `PluginRateLimitFilter`, with a `PluginCallGateOutcome`. A client call: (1) the
+    caller's account from `ICallerClientResolver` (`IdentityUnavailable`, then no account, whatever the plugin);
+    (2) memory only, no I/O: the plugin is loaded and is an app plugin, and the manifest declares that method and path in
+    that area (`PluginRouteMatcher`: segments compare ignoring case, a parameter takes one non-empty segment, a literal
+    beats a parameter, a trailing slash matches nothing); (3) the route's permission; (4) only then the plugin's switch and
+    settings (`IPluginEndpointResolver.PrepareAsync`, the `PluginActivator` gates, without constructing the plugin), the
+    one database read. **An unknown plugin, a plugin of another type, a disabled one, an unconfigured one, an undeclared
+    route, a wrong method and a route the caller lacks the permission for all answer the same 404 `PLUGIN_ROUTE_NOT_FOUND`,
+    byte for byte**, and a refusal at step 2 or 3 never does the settings read, so neither the body nor the timing tells an
+    installed plugin from an absent one; the real reason is only in the Debug log, as the enum, never the client's path.
+    (5) `RunAsync`: the streaming route refusal, the body, the audit line, then the plugin is built and called. (#828 moved
+    the permission check ahead of the enabled check and turned its 403 into this 404.) The rate limit filter measures only
+    calls the gate admits, so a 429 cannot reveal a disabled or unconfigured plugin either.
   - **Client area.** The caller, the account and the permissions come from `ICallerClientResolver`, the single source of
     truth the permission attribute uses (owner, sub-user, identity plugin member). `IdentityUnavailable` answers 503
-    `IDENTITY_PLUGIN_UNAVAILABLE`; a route permission not held answers 403 `CLIENT_PERMISSION_DENIED`; a caller who acts
+    `IDENTITY_PLUGIN_UNAVAILABLE`; a route permission not held answers the 404 `PLUGIN_ROUTE_NOT_FOUND` above, not 403; a caller who acts
     for no single account answers 404 `CLIENT_PROFILE_NOT_FOUND`, because the SDK promises a client area plugin a client.
     A route `permission` is a defined `ClientPermission` name (that flag is needed), `PluginPermissions.Any` (no
     permission, but still a client) or **absent, which means `ClientPermission.All`: a route that does not say who may

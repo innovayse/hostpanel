@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Common.Settings;
+using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
@@ -254,6 +255,6 @@ public sealed class AppPluginFixture : IAsyncLifetime
             },
         };
 
-        return new LoadedPlugin(manifest, implementation);
+        return new LoadedPlugin(manifest, implementation, PluginViewDocuments.None);
     }
 }

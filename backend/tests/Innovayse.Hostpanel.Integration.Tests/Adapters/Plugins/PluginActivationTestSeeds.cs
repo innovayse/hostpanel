@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
@@ -48,7 +49,7 @@ internal static class PluginActivationTestSeeds
                 : [],
         };
 
-        return new LoadedPlugin(manifest, implementation);
+        return new LoadedPlugin(manifest, implementation, PluginViewDocuments.None);
     }
 
     /// <summary>Builds a registry holding <paramref name="plugins"/>.</summary>

@@ -552,6 +552,30 @@
 <data name="PLUGIN_MANIFEST_VERSION_INVALID" xml:space="preserve">
     <value>Մանիֆեստում հավելագրիչի տարբերակը անվավեր է․ գրեք այն major.minor.patch ձևով, օրինակ՝ 1.2.3, առանց սկզբի զրոների։</value>
   </data>
+<data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
+    <value>Այս հավելագրիչը հղում է անում ներկայացման փաստաթղթի, որը իր փաթեթում չկա։</value>
+  </data>
+<data name="PLUGIN_VIEW_INVALID" xml:space="preserve">
+    <value>Այս հավելագրիչի ներկայացման փաստաթղթերից մեկը վավեր չէ։</value>
+  </data>
+<data name="PLUGIN_VIEW_SCHEMA_UNSUPPORTED" xml:space="preserve">
+    <value>Այս հավելագրիչի ներկայացման փաստաթղթերից մեկը օգտագործում է սխեմայի տարբերակ, որը սերվերը չի աջակցում։</value>
+  </data>
+<data name="PLUGIN_VIEW_BLOCK_KIND_UNKNOWN" xml:space="preserve">
+    <value>Այս հավելագրիչի ներկայացման փաստաթղթերից մեկը օգտագործում է բլոկի տեսակ, որը սերվերին հայտնի չէ։</value>
+  </data>
+<data name="PLUGIN_VIEW_ROUTE_UNDECLARED" xml:space="preserve">
+    <value>Այս հավելագրիչի ներկայացման փաստաթղթերից մեկը կանչում է երթուղի, որը հավելագրիչը չի հայտարարում։</value>
+  </data>
+  <data name="PLUGIN_MENU_ICON_INVALID" xml:space="preserve">
+    <value>Այս հավելագրիչը ընտրացանկի կետին տալիս է պատկերակ, որը պատկերակի պարզ անուն չէ։ Օգտագործեք 1-ից 64 լատինական փոքրատառ, թվանշան և գծիկ։</value>
+  </data>
+  <data name="PLUGIN_PAGE_ID_INVALID" xml:space="preserve">
+    <value>Այս հավելագրիչը հայտարարում է էջ, որի նույնացուցիչը վավեր չէ կամ կրկնվում է նույն վահանակում։ Օգտագործեք 1-ից 64 լատինական փոքրատառ, թվանշան, գծիկ և ընդգծիկ՝ սկսելով տառով կամ թվանշանով։</value>
+  </data>
+<data name="PLUGIN_PAGE_NOT_FOUND" xml:space="preserve">
+    <value>Հավելագրիչի այդպիսի էջ չկա։</value>
+  </data>
 <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>Այդ արխիվը պարունակում է գրառում, որը կգրեր հավելագրիչի սեփական թղթապանակից դուրս, և մերժվեց։</value>
   </data>

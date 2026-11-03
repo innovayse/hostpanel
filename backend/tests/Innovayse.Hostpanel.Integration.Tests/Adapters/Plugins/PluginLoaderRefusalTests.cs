@@ -35,6 +35,7 @@ public sealed class PluginLoaderRefusalTests
                 [new PluginRoot(builtIn, PluginOrigin.BuiltIn), new PluginRoot(uploaded, PluginOrigin.Uploaded)],
                 PluginSignatureVerifier.Create(new PluginSigningOptions(), new HostingEnvironment { EnvironmentName = Environments.Development }),
                 allowUnsigned: false,
+                PluginOptions.DefaultMaxViewBytes,
                 NullLoggerFactory.Instance);
 
             var registry = services.BuildServiceProvider().GetRequiredService<PluginRegistry>();
@@ -80,6 +81,7 @@ public sealed class PluginLoaderRefusalTests
                 [new PluginRoot(builtIn, PluginOrigin.BuiltIn), new PluginRoot(uploaded, PluginOrigin.Uploaded)],
                 PluginSignatureVerifier.Create(new PluginSigningOptions(), new HostingEnvironment { EnvironmentName = Environments.Development }),
                 allowUnsigned: false,
+                PluginOptions.DefaultMaxViewBytes,
                 loggerFactory);
 
             var registry = services.BuildServiceProvider().GetRequiredService<PluginRegistry>();
@@ -115,6 +117,7 @@ public sealed class PluginLoaderRefusalTests
                 [new PluginRoot(uploaded, PluginOrigin.Uploaded)],
                 PluginSignatureVerifier.Create(new PluginSigningOptions(), new HostingEnvironment { EnvironmentName = Environments.Development }),
                 allowUnsigned: false,
+                PluginOptions.DefaultMaxViewBytes,
                 NullLoggerFactory.Instance);
 
             services.BuildServiceProvider().GetRequiredService<PluginRegistry>().GetRefusedPlugins()
@@ -144,6 +147,7 @@ public sealed class PluginLoaderRefusalTests
                 [new PluginRoot(uploaded, PluginOrigin.Uploaded)],
                 PluginSignatureVerifier.Create(new PluginSigningOptions(), new HostingEnvironment { EnvironmentName = Environments.Development }),
                 allowUnsigned: false,
+                PluginOptions.DefaultMaxViewBytes,
                 NullLoggerFactory.Instance);
 
             var registry = services.BuildServiceProvider().GetRequiredService<PluginRegistry>();
@@ -171,6 +175,7 @@ public sealed class PluginLoaderRefusalTests
                 [new PluginRoot(uploaded, PluginOrigin.Uploaded)],
                 PluginSignatureVerifier.Create(new PluginSigningOptions(), new HostingEnvironment { EnvironmentName = Environments.Development }),
                 allowUnsigned: false,
+                PluginOptions.DefaultMaxViewBytes,
                 NullLoggerFactory.Instance);
 
             services.BuildServiceProvider().GetRequiredService<PluginRegistry>().GetRefusedPlugins().Should().BeEmpty();

@@ -30,7 +30,7 @@ public sealed class DispatchFulfilmentNowTests(IntegrationTestFactory factory) :
             .Timeout(TimeSpan.FromSeconds(60))
             .InvokeMessageAndWaitAsync(new DispatchFulfilmentNowCommand());
 
-        scenario.Plugin.Calls.Should().Equal([("OnInvoicePaidAsync", invoiceId)]);
+        scenario.Plugin.Calls.Should().Equal([new FulfilmentCall("OnInvoicePaidAsync", invoiceId)]);
         session.Sent.Envelopes()
             .Where(e => e.Message is DispatchFulfilmentCronCommand or DispatchFulfilmentNowCommand)
             .Should().BeEmpty("a kick must not start a second chain");

@@ -16,9 +16,10 @@ public sealed class PurgePluginDataValidator : LocalizedValidator<PurgePluginDat
     {
         RuleFor(x => x.Id).NotEmpty().WithMessage(L["PluginIdRequired"]);
 
-        // The id selects rows and names a settings key, so only the plugin id rule's shape reaches the handler.
+        // The id selects rows and names a settings key, so only the plugin id rule's shape reaches the handler. The shape, not the
+        // full rule: a plugin installed under an id that was reserved later must still be purgeable after its removal.
         RuleFor(x => x.Id)
-            .Must(PluginIdentifier.IsValid)
+            .Must(PluginIdentifier.IsWellFormed)
             .When(x => !string.IsNullOrEmpty(x.Id))
             .WithMessage(L["PluginIdInvalid"]);
     }

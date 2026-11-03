@@ -797,6 +797,33 @@ public static class HostpanelErrorCodes
     /// <summary>The manifest version is not a strict semantic version such as 1.2.3 (400).</summary>
     public const string PLUGIN_MANIFEST_VERSION_INVALID = "PLUGIN_MANIFEST_VERSION_INVALID";
 
+    /// <summary>A page or slot names a view document the plugin package does not hold, or a path that is not a package-relative .json file (400).</summary>
+    public const string PLUGIN_VIEW_MISSING = "PLUGIN_VIEW_MISSING";
+
+    /// <summary>A view document is not a JSON object with a schema and a blocks array, or a route reference in it is not a method and a path (400).</summary>
+    public const string PLUGIN_VIEW_INVALID = "PLUGIN_VIEW_INVALID";
+
+    /// <summary>A view document declares a schema version this host does not render (400).</summary>
+    public const string PLUGIN_VIEW_SCHEMA_UNSUPPORTED = "PLUGIN_VIEW_SCHEMA_UNSUPPORTED";
+
+    /// <summary>A view document holds a block whose kind the view schema does not define (400).</summary>
+    public const string PLUGIN_VIEW_BLOCK_KIND_UNKNOWN = "PLUGIN_VIEW_BLOCK_KIND_UNKNOWN";
+
+    /// <summary>A view document names a route that the plugin does not declare in the panel that shows the view (400).</summary>
+    public const string PLUGIN_VIEW_ROUTE_UNDECLARED = "PLUGIN_VIEW_ROUTE_UNDECLARED";
+
+    /// <summary>A plugin menu names an icon that is not 1 to 64 lowercase letters, digits and hyphens (400).</summary>
+    public const string PLUGIN_MENU_ICON_INVALID = "PLUGIN_MENU_ICON_INVALID";
+
+    /// <summary>
+    /// A plugin page id is not 1 to 64 lowercase letters, digits, hyphens and underscores starting with a letter or
+    /// digit, or is declared twice in one panel (400); such a page could never be served.
+    /// </summary>
+    public const string PLUGIN_PAGE_ID_INVALID = "PLUGIN_PAGE_ID_INVALID";
+
+    /// <summary>The plugin is not available to this panel or declares no such page there (404); the two answer alike.</summary>
+    public const string PLUGIN_PAGE_NOT_FOUND = "PLUGIN_PAGE_NOT_FOUND";
+
     /// <summary>
     /// One of the archive's entries would write outside the plugin's own directory (400). The
     /// zip-slip guard's refusal, named for what a caller can act on rather than the attack it

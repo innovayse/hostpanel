@@ -48,6 +48,23 @@ public sealed class SettingTests
         setting.DomainEvents.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// A plugin installed under an id that was reserved later (<c>ui</c>) is still switched off on removal: the switch
+    /// checks only the id's shape.
+    /// </summary>
+    [Fact]
+    public void SwitchOffRemovedPlugin_ReservedId_StoresOff()
+    {
+        const string reservedId = "ui";
+        var setting = Setting.Create(
+            IntegrationSettingKeys.EnabledKey(reservedId), IntegrationSettingKeys.EnabledValue, null);
+
+        setting.SwitchOffRemovedPlugin(reservedId);
+
+        setting.Value.Should().Be(IntegrationSettingKeys.DisabledValue);
+        setting.DomainEvents.Should().BeEmpty();
+    }
+
     /// <summary>A row that is not the plugin's switch is refused and not changed.</summary>
     [Fact]
     public void SwitchOffRemovedPlugin_OnAnotherSetting_ThrowsAndChangesNothing()

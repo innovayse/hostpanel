@@ -42,18 +42,24 @@ public sealed class RemovePluginHandler
     /// <summary>The Admin module's data context: loads and saves the plugin's switch row with the audit line.</summary>
     private readonly IHostpanelDbContext _context;
 
+    /// <summary>Drops the panels' remembered plugin availability once the switch-off has committed.</summary>
+    private readonly IPluginAvailabilityInvalidator _availability;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="store">Deletes the uploaded plugin's folder, and refuses an invalid id or a built-in plugin.</param>
     /// <param name="activityLogger">Stages the audit line for the removal on the same context as the switch.</param>
     /// <param name="context">The Admin module's data context: loads and saves the plugin's switch row with the audit line.</param>
+    /// <param name="availability">Drops the panels' remembered plugin availability once the switch-off has committed.</param>
     public RemovePluginHandler(
         IPluginPackageStore store,
         IActivityLogger activityLogger,
-        IHostpanelDbContext context)
+        IHostpanelDbContext context,
+        IPluginAvailabilityInvalidator availability)
     {
         _store = store;
         _activityLogger = activityLogger;
         _context = context;
+        _availability = availability;
     }
 
     /// <summary>
@@ -108,6 +114,10 @@ public sealed class RemovePluginHandler
 
         // One save: the switch and the audit line commit together.
         await _context.SaveChangesAsync(ct);
+
+        // After the commit, never before: a lookup between an earlier drop and the commit would remember the plugin as
+        // still switched on, and the panels would keep showing its pages for the cache lifetime.
+        _availability.Invalidate();
 
         return Result<PluginActionResultDto>.Success(new PluginActionResultDto(RequiresRestart: packageRemoved));
     }

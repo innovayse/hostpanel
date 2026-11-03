@@ -19,6 +19,16 @@ public sealed class PluginOptions
     public const string DefaultInstallFolder = "plugins-installed";
 
     /// <summary>
+    /// The highest <see cref="MaxViewBytes"/> an operator may set: 4 MiB, in bytes. Every view document of every loaded
+    /// plugin is held in memory, and a page request copies its document once per language, so a view larger than this
+    /// is a memory problem rather than a page.
+    /// </summary>
+    public const long MaxViewBytesCeiling = 4L * 1024 * 1024;
+
+    /// <summary>The default <see cref="MaxViewBytes"/>: 256 KiB, in bytes, far above any hand-written view.</summary>
+    public const long DefaultMaxViewBytes = 256L * 1024;
+
+    /// <summary>
     /// The folder uploaded plugins are unpacked into, absolute or relative to the application
     /// folder. Empty means <see cref="DefaultInstallFolder"/> under the application folder.
     /// </summary>
@@ -29,6 +39,12 @@ public sealed class PluginOptions
 
     /// <summary>The most bytes an uploaded archive may unpack to, counted as it is unpacked.</summary>
     public long MaxUncompressedBytes { get; set; } = 200L * 1024 * 1024;
+
+    /// <summary>
+    /// The most bytes one plugin view document (the <c>view</c> file of a page or slot) may hold on disk, in bytes; a
+    /// larger file refuses the plugin at load and at install. 1 to <see cref="MaxViewBytesCeiling"/>.
+    /// </summary>
+    public long MaxViewBytes { get; set; } = DefaultMaxViewBytes;
 
     /// <summary>
     /// The SHA-256 digests (64 hex characters) of the plugin archives this host accepts. Empty, the

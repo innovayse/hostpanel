@@ -44,6 +44,30 @@ public sealed class PluginOptionsValidatorTests
         result.FailureMessage.Should().Contain(nameof(PluginOptions.MaxUncompressedBytes));
     }
 
+    /// <summary>A view size limit below one byte or above the ceiling refuses startup.</summary>
+    /// <param name="maxViewBytes">The out-of-range limit.</param>
+    [Theory]
+    [InlineData(0L)]
+    [InlineData(-1L)]
+    [InlineData(PluginOptions.MaxViewBytesCeiling + 1)]
+    public void AViewSizeLimitOutOfRange_Fails(long maxViewBytes)
+    {
+        var result = _validator.Validate(null, new PluginOptions { MaxViewBytes = maxViewBytes });
+
+        result.Failed.Should().BeTrue();
+        result.FailureMessage.Should().Contain(nameof(PluginOptions.MaxViewBytes));
+    }
+
+    /// <summary>The smallest and the largest allowed view size limits are accepted.</summary>
+    /// <param name="maxViewBytes">The limit at an edge of the range.</param>
+    [Theory]
+    [InlineData(1L)]
+    [InlineData(PluginOptions.MaxViewBytesCeiling)]
+    public void AViewSizeLimitAtTheEdges_Passes(long maxViewBytes)
+    {
+        _validator.Validate(null, new PluginOptions { MaxViewBytes = maxViewBytes }).Succeeded.Should().BeTrue();
+    }
+
     /// <summary>A trusted-list entry that is not a 64-character hex digest refuses startup.</summary>
     /// <param name="digest">The malformed entry.</param>
     [Theory]

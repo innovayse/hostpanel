@@ -54,6 +54,17 @@ internal static partial class PluginManifestValidator
     [GeneratedRegex(@"\A[a-z0-9][a-z0-9_-]*\z", RegexOptions.CultureInvariant)]
     private static partial Regex WidgetIdPattern();
 
+    /// <summary>The longest icon name a menu may declare, in characters; the bound is part of <see cref="IconNamePattern"/>.</summary>
+    private const int MaxIconNameLength = 64;
+
+    /// <summary>
+    /// Matches a menu icon name: 1 to <see cref="MaxIconNameLength"/> lowercase letters, digits and hyphens, so a name
+    /// can only select an icon the panel already ships, never point at a URL or carry markup. <c>\z</c>, not <c>$</c>,
+    /// so a trailing newline is refused too.
+    /// </summary>
+    [GeneratedRegex(@"\A[a-z0-9-]{1,64}\z", RegexOptions.CultureInvariant)]
+    private static partial Regex IconNamePattern();
+
     /// <summary>Matches one route parameter segment such as <c>{id}</c>, with nothing after it, not even a newline.</summary>
     [GeneratedRegex(@"\A\{[A-Za-z][A-Za-z0-9]*\}\z", RegexOptions.CultureInvariant)]
     private static partial Regex ParameterSegmentPattern();
@@ -209,15 +220,35 @@ internal static partial class PluginManifestValidator
             $"{where}: a path is lowercase segments and {{parameters}} below a leading slash, with no empty segment and no '..'");
     }
 
-    /// <summary>Checks the pages of one area: a permission the area does not take or does not know, and the path rule of routes.</summary>
+    /// <summary>
+    /// Checks the pages of one area: the page id is a <see cref="PluginPageIdentifier"/> and unique in the area, a
+    /// permission the area does not take or does not know, and the path rule of routes.
+    /// </summary>
     /// <param name="area">The panel the pages belong to.</param>
     /// <param name="ui">The menus and pages of the area.</param>
     /// <returns>The first violation, or <see langword="null"/>.</returns>
     private static PluginManifestViolation? CheckPages(PluginArea area, PluginUiArea ui)
     {
+        var seenIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (var page in ui.Pages)
         {
             var where = $"ui.{AreaMember(area)}.pages '{page.Id}' path '{page.Path}'";
+
+            // The page lookup answers 404 for an id outside this rule, so a page accepted here must meet it or it is never reachable.
+            if (!PluginPageIdentifier.IsValid(page.Id))
+            {
+                return new PluginManifestViolation(
+                    PluginManifestRule.PageIdInvalid,
+                    $"{where}: a page id is 1 to {PluginPageIdentifier.MaxLength} lowercase letters, digits, hyphens and underscores, starting with a letter or digit");
+            }
+
+            // The lookup finds a page by area and id, so a second page with the same id in one area would be shadowed.
+            if (!seenIds.Add(page.Id))
+            {
+                return new PluginManifestViolation(
+                    PluginManifestRule.PageIdInvalid, $"{where}: the page id is declared more than once in the {AreaMember(area)} area");
+            }
+
             var violation = CheckPermission(area, page.Permission, where);
             if (violation is not null)
             {
@@ -228,6 +259,28 @@ internal static partial class PluginManifestValidator
             if (!TryNormalizePath(page.Path, out _))
             {
                 return PathViolation(where);
+            }
+        }
+
+        return CheckMenuIcons(area, ui.Menus);
+    }
+
+    /// <summary>
+    /// Checks the icon each menu of one area names, when it names one. The panels look the name up in their own icon set,
+    /// so only a plain name is accepted: never a URL, markup or a path that a panel could be led to fetch or render.
+    /// </summary>
+    /// <param name="area">The panel the menus belong to.</param>
+    /// <param name="menus">The menus of the area.</param>
+    /// <returns>The first violation, or <see langword="null"/>.</returns>
+    private static PluginManifestViolation? CheckMenuIcons(PluginArea area, IReadOnlyList<PluginMenuItem> menus)
+    {
+        foreach (var menu in menus)
+        {
+            if (menu.Icon is not null && !IconNamePattern().IsMatch(menu.Icon))
+            {
+                return new PluginManifestViolation(
+                    PluginManifestRule.MenuIconInvalid,
+                    $"ui.{AreaMember(area)}.menus '{menu.Id}' icon: an icon is 1 to {MaxIconNameLength} lowercase letters, digits and hyphens");
             }
         }
 
@@ -319,8 +372,7 @@ internal static partial class PluginManifestValidator
     /// <returns>The first violation, or <see langword="null"/>.</returns>
     private static PluginManifestViolation? CheckTextKeys(PluginManifest manifest)
     {
-        var english = manifest.Locales
-            .FirstOrDefault(pair => string.Equals(pair.Key, EnglishLocale, StringComparison.OrdinalIgnoreCase)).Value;
+        var english = EnglishTexts(manifest);
 
         foreach (var (where, value, isHelpText) in TextValues(manifest))
         {
@@ -331,15 +383,48 @@ internal static partial class PluginManifestValidator
 
             var isKey = isHelpText
                 ? manifest.Locales.Values.Any(texts => texts.ContainsKey(value))
-                : TextKeyPattern().IsMatch(value);
-            if (isKey && (english is null || !english.ContainsKey(value)))
+                : IsTextKey(value);
+            if (isKey)
             {
-                return new PluginManifestViolation(
-                    PluginManifestRule.LabelKeyMissing, $"{where} uses the text key '{value}', which the '{EnglishLocale}' texts do not define");
+                var missing = CheckKeyDefined(where, value, english);
+                if (missing is not null)
+                {
+                    return missing;
+                }
             }
         }
 
         return null;
+    }
+
+    /// <summary>Gets the English texts of a manifest, the locale that must define every text key.</summary>
+    /// <param name="manifest">The manifest.</param>
+    /// <returns>The texts by key, or <see langword="null"/> when the manifest ships no English locale.</returns>
+    internal static IReadOnlyDictionary<string, string>? EnglishTexts(PluginManifest manifest)
+    {
+        return manifest.Locales
+            .FirstOrDefault(pair => string.Equals(pair.Key, EnglishLocale, StringComparison.OrdinalIgnoreCase)).Value;
+    }
+
+    /// <summary>Tells whether a label value is shaped like a text key (see <see cref="TextKeyPattern"/>) rather than plain text.</summary>
+    /// <param name="value">The label value.</param>
+    /// <returns><see langword="true"/> when the value has the shape of a text key.</returns>
+    internal static bool IsTextKey(string value)
+    {
+        return TextKeyPattern().IsMatch(value);
+    }
+
+    /// <summary>Checks that a value taken as a text key is defined in the English texts; the one rule manifest and view labels share.</summary>
+    /// <param name="where">Where the value is written, for the log.</param>
+    /// <param name="key">The text key.</param>
+    /// <param name="english">The English texts, or <see langword="null"/> when there are none.</param>
+    /// <returns>The violation, or <see langword="null"/> when the key is defined.</returns>
+    internal static PluginManifestViolation? CheckKeyDefined(string where, string key, IReadOnlyDictionary<string, string>? english)
+    {
+        return english is null || !english.ContainsKey(key)
+            ? new PluginManifestViolation(
+                PluginManifestRule.LabelKeyMissing, $"{where} uses the text key '{key}', which the '{EnglishLocale}' texts do not define")
+            : null;
     }
 
     /// <summary>Lists every text member a manifest can fill with a key: menu labels, page and slot titles, setting texts.</summary>

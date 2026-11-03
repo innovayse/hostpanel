@@ -1,4 +1,6 @@
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Innovayse.SDK.Plugins.Manifest;
@@ -201,6 +203,105 @@ public sealed class PluginManifestValidatorTests : IDisposable
         // The newline makes it plain text, so no English entry is needed; the key without it still is.
         PluginManifestValidator.Validate(Manifest(""","ui":{"client":{"menus":[{"id":"m","label":"menu.reports\n","page":"p"}]}}""")).Should().BeNull();
         AssertBreaks(Manifest(""","ui":{"client":{"menus":[{"id":"m","label":"menu.reports","page":"p"}]}}"""), PluginManifestRule.LabelKeyMissing);
+    }
+
+    /// <summary>
+    /// A menu icon that is not a plain icon name (a URL, markup, upper case, too long, empty or ending in a newline) breaks
+    /// the icon rule in either area.
+    /// </summary>
+    /// <param name="icon">The icon as written in the manifest JSON, with <c>\n</c> as a JSON escape.</param>
+    /// <param name="area">The manifest area member the menu is declared in.</param>
+    [Theory]
+    [InlineData("https://evil.example/x.svg", "client")]
+    [InlineData("<svg onload=alert(1)>", "client")]
+    [InlineData("Home", "admin")]
+    [InlineData("chart_bar", "admin")]
+    [InlineData("", "client")]
+    [InlineData("home\\n", "client")]
+    [InlineData("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "admin")]
+    public void Validate_MenuIconNotAPlainName_BreaksMenuIconInvalid(string icon, string area)
+    {
+        AssertBreaks(
+            Manifest($$$""","ui":{"{{{area}}}":{"menus":[{"id":"m","label":"Reports","page":"p","icon":"{{{icon}}}"}]}}"""),
+            PluginManifestRule.MenuIconInvalid);
+    }
+
+    /// <summary>A menu icon of lowercase letters, digits and hyphens up to 64 characters passes, and so does a menu with no icon.</summary>
+    /// <param name="icon">The icon as written in the manifest JSON.</param>
+    [Theory]
+    [InlineData("chart-bar")]
+    [InlineData("x")]
+    [InlineData("icon-2")]
+    [InlineData("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")]
+    public void Validate_MenuIconPlainName_Passes(string icon)
+    {
+        PluginManifestValidator.Validate(
+            Manifest($$$""","ui":{"client":{"menus":[{"id":"m","label":"Reports","page":"p","icon":"{{{icon}}}"}]}}""")).Should().BeNull();
+        PluginManifestValidator.Validate(
+            Manifest(""","ui":{"client":{"menus":[{"id":"m","label":"Reports","page":"p"}]}}""")).Should().BeNull();
+    }
+
+    /// <summary>The icon rule maps to its own error code.</summary>
+    [Fact]
+    public void CodeFor_MenuIconInvalid_IsPluginMenuIconInvalid()
+    {
+        PluginPackageErrors.CodeFor(PluginManifestRule.MenuIconInvalid).Should().Be(HostpanelErrorCodes.PLUGIN_MENU_ICON_INVALID);
+    }
+
+    /// <summary>A page id the page lookup would never serve is refused at install, in either area.</summary>
+    /// <param name="id">The page id as written in the manifest JSON, with <c>\n</c> as a JSON escape.</param>
+    /// <param name="area">The panel the page is declared in.</param>
+    [Theory]
+    [InlineData("Reports", "client")]
+    [InlineData("Reports", "admin")]
+    [InlineData("", "client")]
+    [InlineData("-a", "admin")]
+    [InlineData("_a", "client")]
+    [InlineData("a.b", "client")]
+    [InlineData("a/b", "admin")]
+    [InlineData("with space", "client")]
+    [InlineData("reports\\n", "admin")]
+    [InlineData("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "client")]
+    public void Validate_PageIdNotAPageIdentifier_BreaksPageIdInvalid(string id, string area)
+    {
+        AssertBreaks(
+            Manifest($$$""","ui":{"{{{area}}}":{"pages":[{"id":"{{{id}}}","path":"/p","title":"P","view":"v.json"}]}}"""),
+            PluginManifestRule.PageIdInvalid);
+    }
+
+    /// <summary>A page id of lowercase letters, digits, hyphens and underscores up to 64 characters passes.</summary>
+    /// <param name="id">The page id.</param>
+    [Theory]
+    [InlineData("reports")]
+    [InlineData("monthly-report_2")]
+    [InlineData("0")]
+    [InlineData("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")]
+    public void Validate_PageIdPageIdentifier_Passes(string id)
+    {
+        PluginManifestValidator.Validate(
+            Manifest($$$""","ui":{"client":{"pages":[{"id":"{{{id}}}","path":"/p","title":"P","view":"v.json"}]}}""")).Should().BeNull();
+    }
+
+    /// <summary>The same page id twice in one area is refused, while the same id once per area passes.</summary>
+    [Fact]
+    public void Validate_SamePageIdTwiceInOneArea_BreaksPageIdInvalid()
+    {
+        AssertBreaks(
+            Manifest(""","ui":{"client":{"pages":[{"id":"p","path":"/a","title":"A","view":"a.json"},{"id":"p","path":"/b","title":"B","view":"b.json"}]}}"""),
+            PluginManifestRule.PageIdInvalid);
+        AssertBreaks(
+            Manifest(""","ui":{"admin":{"pages":[{"id":"p","path":"/a","title":"A","view":"a.json"},{"id":"p","path":"/b","title":"B","view":"b.json"}]}}"""),
+            PluginManifestRule.PageIdInvalid);
+        PluginManifestValidator.Validate(Manifest("""
+            ,"ui":{"client":{"pages":[{"id":"p","path":"/a","title":"A","view":"a.json"}]},"admin":{"pages":[{"id":"p","path":"/a","title":"A","view":"a.json"}]}}
+            """)).Should().BeNull();
+    }
+
+    /// <summary>The page id rule maps to its own error code.</summary>
+    [Fact]
+    public void CodeFor_PageIdInvalid_IsPluginPageIdInvalid()
+    {
+        PluginPackageErrors.CodeFor(PluginManifestRule.PageIdInvalid).Should().Be(HostpanelErrorCodes.PLUGIN_PAGE_ID_INVALID);
     }
 
     /// <summary>A route path that ends in a newline is invalid, literal or parameter segment alike.</summary>

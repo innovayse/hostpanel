@@ -260,6 +260,58 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
         context.ChangeTracker.HasChanges().Should().BeFalse("a refused removal stages no switch and no event");
     }
 
+    /// <summary>
+    /// A plugin installed under an id that was reserved later (<c>ui</c>) is still listed and can be removed, and its
+    /// switch is turned off: the validator, the package store and the switch check only the id's shape on removal, so
+    /// the operator is never left with a plugin folder the panel cannot reach. Staged on disk directly, because an
+    /// install under that id is refused.
+    /// </summary>
+    [Fact]
+    public async Task APluginUnderAReservedId_IsListedAndRemovableAsync()
+    {
+        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        const string reservedId = "ui";
+        var folder = PluginsTestSeeds.InstalledFolder(reservedId);
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "plugin.json"), PluginsTestSeeds.ManifestJson(reservedId));
+
+        try
+        {
+            await SeedSwitchAsync(reservedId, IntegrationSettingKeys.EnabledValue);
+            var listed = await client.GetFromJsonAsync<List<System.Text.Json.JsonElement>>("/api/admin/plugins");
+            listed!.Should().Contain(p => p.GetProperty("id").GetString() == reservedId);
+
+            var remove = await client.DeleteAsync($"/api/admin/plugins/{reservedId}");
+
+            remove.StatusCode.Should().Be(HttpStatusCode.OK);
+            Directory.Exists(folder).Should().BeFalse();
+            (await SwitchValueAsync(reservedId)).Should().Be(IntegrationSettingKeys.DisabledValue);
+        }
+        finally
+        {
+            if (Directory.Exists(folder))
+            {
+                Directory.Delete(folder, recursive: true);
+            }
+        }
+    }
+
+    /// <summary>
+    /// An install whose manifest declares a reserved id is refused by the manifest rule with
+    /// <c>PLUGIN_MANIFEST_ID_INVALID</c>, and nothing is left in the install folder.
+    /// </summary>
+    [Fact]
+    public async Task InstallUnderAReservedId_RefusesAsync()
+    {
+        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+
+        var response = await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildValidPluginZip("ui"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_MANIFEST_ID_INVALID);
+        Directory.Exists(PluginsTestSeeds.InstalledFolder("ui")).Should().BeFalse();
+    }
+
     /// <summary>A caller with only the Client role is refused with 403.</summary>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
@@ -289,7 +341,8 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
         return new RemovePluginHandler(
             services.GetRequiredService<IPluginPackageStore>(),
             services.GetRequiredService<IActivityLogger>(),
-            services.GetRequiredService<IHostpanelDbContext>());
+            services.GetRequiredService<IHostpanelDbContext>(),
+            services.GetRequiredService<IPluginAvailabilityInvalidator>());
     }
 
     /// <summary>Stores the plugin's switch row with the given value.</summary>

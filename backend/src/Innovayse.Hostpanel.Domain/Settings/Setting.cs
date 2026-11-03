@@ -40,9 +40,11 @@ public sealed class Setting : BaseEntity, IAggregateRoot
     /// <summary>
     /// Creates the switch row of a removed plugin that never had one, already off. Its stored data is kept.
     /// </summary>
-    /// <param name="pluginId">The removed plugin's id; must meet the plugin id rule.</param>
+    /// <param name="pluginId">
+    /// The removed plugin's id; must have the plugin id shape (<see cref="PluginIdentifier.IsWellFormed"/>).
+    /// </param>
     /// <returns>A new, unpersisted switch row holding <see cref="IntegrationSettingKeys.DisabledValue"/>.</returns>
-    /// <exception cref="ArgumentException"><paramref name="pluginId"/> breaks the plugin id rule.</exception>
+    /// <exception cref="ArgumentException"><paramref name="pluginId"/> breaks the plugin id shape.</exception>
     public static Setting CreateSwitchedOffForRemovedPlugin(string pluginId)
     {
         EnsurePluginId(pluginId);
@@ -67,9 +69,12 @@ public sealed class Setting : BaseEntity, IAggregateRoot
     /// Turns a removed plugin's switch off, so a plugin that stays loaded until the restart is refused from the next
     /// call on. The plugin's stored data is kept; <see cref="RequestDataPurge"/> deletes it.
     /// </summary>
-    /// <param name="pluginId">The removed plugin's id; must meet the plugin id rule and name this row's plugin.</param>
+    /// <param name="pluginId">
+    /// The removed plugin's id; must have the plugin id shape (<see cref="PluginIdentifier.IsWellFormed"/>) and name this
+    /// row's plugin.
+    /// </param>
     /// <exception cref="ArgumentException">
-    /// <paramref name="pluginId"/> breaks the plugin id rule, or this row is not that plugin's switch.
+    /// <paramref name="pluginId"/> breaks the plugin id shape, or this row is not that plugin's switch.
     /// </exception>
     public void SwitchOffRemovedPlugin(string pluginId)
     {
@@ -82,10 +87,10 @@ public sealed class Setting : BaseEntity, IAggregateRoot
     /// purge of the plugin's stored data are one unit: the event is written to the outbox in the save that stores
     /// the request's audit line.
     /// </summary>
-    /// <param name="pluginId">The plugin whose data is purged; must meet the plugin id rule and name this row's plugin.</param>
+    /// <param name="pluginId">The plugin whose data is purged; must have the plugin id shape and name this row's plugin.</param>
     /// <param name="requestedAt">When the operator asked for the purge, UTC, read by the caller from its clock.</param>
     /// <exception cref="ArgumentException">
-    /// <paramref name="pluginId"/> breaks the plugin id rule, or this row is not that plugin's switch.
+    /// <paramref name="pluginId"/> breaks the plugin id shape, or this row is not that plugin's switch.
     /// </exception>
     public void RequestDataPurge(string pluginId, DateTimeOffset requestedAt)
     {
@@ -93,9 +98,9 @@ public sealed class Setting : BaseEntity, IAggregateRoot
         AddDomainEvent(new PluginDataPurgeRequestedEvent(pluginId, requestedAt));
     }
 
-    /// <summary>Refuses a plugin id that breaks the rule, or a row that is not that plugin's switch.</summary>
+    /// <summary>Refuses a plugin id without the plugin id shape, or a row that is not that plugin's switch.</summary>
     /// <param name="pluginId">The candidate plugin id.</param>
-    /// <exception cref="ArgumentException">The id breaks the plugin id rule, or this row is another setting.</exception>
+    /// <exception cref="ArgumentException">The id breaks the plugin id shape, or this row is another setting.</exception>
     private void EnsureSwitchOf(string pluginId)
     {
         EnsurePluginId(pluginId);
@@ -108,14 +113,17 @@ public sealed class Setting : BaseEntity, IAggregateRoot
         }
     }
 
-    /// <summary>Refuses a plugin id that breaks the plugin id rule, before it can name a key or select rows.</summary>
+    /// <summary>
+    /// Refuses an id without the plugin id shape, before it can name a key or select rows. Only the shape: a plugin
+    /// installed under an id that was reserved later must still be switched off and purged when it is removed.
+    /// </summary>
     /// <param name="pluginId">The candidate plugin id.</param>
-    /// <exception cref="ArgumentException"><paramref name="pluginId"/> breaks the plugin id rule.</exception>
+    /// <exception cref="ArgumentException"><paramref name="pluginId"/> breaks the plugin id shape.</exception>
     private static void EnsurePluginId(string pluginId)
     {
-        if (!PluginIdentifier.IsValid(pluginId))
+        if (!PluginIdentifier.IsWellFormed(pluginId))
         {
-            throw new ArgumentException("The plugin id breaks the plugin id rule.", nameof(pluginId));
+            throw new ArgumentException("The plugin id breaks the plugin id shape.", nameof(pluginId));
         }
     }
 }

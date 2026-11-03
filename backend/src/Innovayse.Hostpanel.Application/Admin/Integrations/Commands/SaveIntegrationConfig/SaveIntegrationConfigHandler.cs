@@ -42,6 +42,9 @@ public sealed class SaveIntegrationConfigHandler
     /// <summary>Receives the audit line of a secret change (key only, never the value).</summary>
     private readonly ILogger<SaveIntegrationConfigHandler> _logger;
 
+    /// <summary>Drops the panels' remembered plugin availability once the switch and fields have committed.</summary>
+    private readonly IPluginAvailabilityInvalidator _availability;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="cache">
@@ -53,6 +56,7 @@ public sealed class SaveIntegrationConfigHandler
     /// <param name="currentUser">The acting admin, named in the audit line of a secret change.</param>
     /// <param name="migrations">Runs the pending migration of an upgraded plugin once the operator has switched it on and saved its settings.</param>
     /// <param name="logger">Receives the audit line of a secret change.</param>
+    /// <param name="availability">Drops the panels' remembered plugin availability once the switch and fields have committed.</param>
     public SaveIntegrationConfigHandler(
         IHostpanelDbContext context,
         IMemoryCache cache,
@@ -60,7 +64,8 @@ public sealed class SaveIntegrationConfigHandler
         IPluginRegistry plugins,
         ICurrentUserService currentUser,
         IPluginMigrationRetry migrations,
-        ILogger<SaveIntegrationConfigHandler> logger)
+        ILogger<SaveIntegrationConfigHandler> logger,
+        IPluginAvailabilityInvalidator availability)
     {
         _migrations = migrations;
         _context = context;
@@ -69,6 +74,7 @@ public sealed class SaveIntegrationConfigHandler
         _plugins = plugins;
         _currentUser = currentUser;
         _logger = logger;
+        _availability = availability;
     }
 
     /// <summary>
@@ -142,6 +148,10 @@ public sealed class SaveIntegrationConfigHandler
         }
 
         await _context.SaveChangesAsync(ct);
+
+        // The switch and the required fields decide whether a plugin's pages show; after the commit, the panels read
+        // them again at once instead of after the cache lifetime.
+        _availability.Invalidate();
 
         foreach (var (key, change) in audit)
         {

@@ -19,6 +19,9 @@ public sealed class FulfilmentContextBuilderTests
     /// <summary>A client linked to an account in another system.</summary>
     private static readonly ExternalAccount Account = new("crm", "acc-7", null, null);
 
+    /// <summary>The receiving plugin's reference to the invoice's client, as the caller computed it.</summary>
+    private const string ClientRef = "ref-of-client-5";
+
     /// <summary>Builds an unsaved invoice that is neither paid, refunded nor lapsed.</summary>
     /// <returns>The invoice.</returns>
     private static Invoice OpenInvoice() => Invoice.Create(5, Now.AddDays(1), "USD", Now);
@@ -93,10 +96,11 @@ public sealed class FulfilmentContextBuilderTests
     {
         var invoice = FulfilmentInvoiceSeeds.Build(5, Now);
 
-        var context = FulfilmentContextBuilder.Paid(invoice, Account);
+        var context = FulfilmentContextBuilder.Paid(invoice, ClientRef, Account);
 
         context.InvoiceId.Should().Be(invoice.Id);
         context.ClientId.Should().Be(5);
+        context.ClientRef.Should().Be(ClientRef);
         context.Account.Should().Be(Account);
         context.TransactionReference.Should().Be(FulfilmentInvoiceSeeds.PaymentReference);
         context.PaidAt.Should().Be(Now);
@@ -107,7 +111,7 @@ public sealed class FulfilmentContextBuilderTests
     [Fact]
     public void Paid_OfAnUnpaidInvoice_Throws()
     {
-        var act = () => FulfilmentContextBuilder.Paid(OpenInvoice(), null);
+        var act = () => FulfilmentContextBuilder.Paid(OpenInvoice(), ClientRef, null);
 
         act.Should().Throw<InvalidOperationException>();
     }
@@ -118,9 +122,10 @@ public sealed class FulfilmentContextBuilderTests
     {
         var invoice = FulfilmentInvoiceSeeds.Build(5, Now);
 
-        var context = FulfilmentContextBuilder.Refunded(invoice, null);
+        var context = FulfilmentContextBuilder.Refunded(invoice, ClientRef, null);
 
         context.Account.Should().BeNull();
+        context.ClientRef.Should().Be(ClientRef);
         context.RefundedAmount.Should().Be(FulfilmentInvoiceSeeds.RefundedAmount);
         context.Currency.Should().Be(FulfilmentInvoiceSeeds.Currency);
         context.TransactionReference.Should().Be(FulfilmentInvoiceSeeds.RefundReference);
@@ -131,7 +136,7 @@ public sealed class FulfilmentContextBuilderTests
     [Fact]
     public void Refunded_OfAnInvoiceWithoutRefund_Throws()
     {
-        var act = () => FulfilmentContextBuilder.Refunded(OpenInvoice(), null);
+        var act = () => FulfilmentContextBuilder.Refunded(OpenInvoice(), ClientRef, null);
 
         act.Should().Throw<InvalidOperationException>();
     }
@@ -142,19 +147,57 @@ public sealed class FulfilmentContextBuilderTests
     {
         var invoice = FulfilmentInvoiceSeeds.Build(5, Now);
 
-        var context = FulfilmentContextBuilder.Lapsed(invoice, Account);
+        var context = FulfilmentContextBuilder.Lapsed(invoice, ClientRef, Account);
 
         context.DueDate.Should().Be(Now.AddDays(-1));
         context.LapsedAt.Should().Be(Now);
         context.Account.Should().Be(Account);
+        context.ClientRef.Should().Be(ClientRef);
     }
 
     /// <summary>An invoice that has not lapsed has nothing to tell a plugin about.</summary>
     [Fact]
     public void Lapsed_OfAnInvoiceThatDidNotLapse_Throws()
     {
-        var act = () => FulfilmentContextBuilder.Lapsed(OpenInvoice(), null);
+        var act = () => FulfilmentContextBuilder.Lapsed(OpenInvoice(), ClientRef, null);
 
         act.Should().Throw<InvalidOperationException>();
+    }
+
+    /// <summary>
+    /// The refund advice context carries the asked plugin's reference, the amount asked for, the invoice currency
+    /// and the product lines.
+    /// </summary>
+    [Fact]
+    public void RefundAdvice_CarriesTheReferenceTheRequestAndTheLines()
+    {
+        var invoice = FulfilmentInvoiceSeeds.Build(5, Now);
+
+        var context = FulfilmentContextBuilder.RefundAdvice(invoice, ClientRef, Account, 7m);
+
+        context.InvoiceId.Should().Be(invoice.Id);
+        context.ClientId.Should().Be(5);
+        context.ClientRef.Should().Be(ClientRef);
+        context.Account.Should().Be(Account);
+        context.RequestedAmount.Should().Be(7m);
+        context.Currency.Should().Be(FulfilmentInvoiceSeeds.Currency);
+        context.Lines.Should().ContainSingle();
+    }
+
+    /// <summary>
+    /// The builder hands over exactly the reference it is given, so the contexts built from one invoice for two
+    /// plugins differ in the reference and in nothing else.
+    /// </summary>
+    [Fact]
+    public void Paid_ForTwoReferences_DiffersOnlyInTheReference()
+    {
+        var invoice = FulfilmentInvoiceSeeds.Build(5, Now);
+
+        var first = FulfilmentContextBuilder.Paid(invoice, "ref-a", Account);
+        var second = FulfilmentContextBuilder.Paid(invoice, "ref-b", Account);
+
+        first.ClientRef.Should().Be("ref-a");
+        second.ClientRef.Should().Be("ref-b");
+        second.Should().BeEquivalentTo(first, options => options.Excluding(c => c.ClientRef));
     }
 }

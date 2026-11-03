@@ -886,6 +886,7 @@ public static class DependencyInjection
             [new PluginRoot(PluginOptions.BuiltInRoot, PluginOrigin.BuiltIn), new PluginRoot(pluginOptions.InstallRoot, PluginOrigin.Uploaded)],
             signatureVerifier,
             allowUnsigned,
+            pluginOptions.MaxViewBytes,
             loggerFactory);
 
         // Every plugin is turned into an instance by the one activator (its settings gate and configuration),
@@ -894,10 +895,18 @@ public static class DependencyInjection
         services.AddScoped<IFulfilmentPluginResolver, FulfilmentPluginResolver>();
         services.AddScoped<IIdentityPluginResolver, IdentityPluginResolver>();
 
-        // The door to the plugin API routes: the app plugin of a route, the opaque references it sees (a keyed hash
-        // under a key derived from the encryption key, so nothing is stored) and the call-bound services: the host facts
-        // of the call's client and the plugin's own store. Scoped, so a call can use them for as long as its request runs.
+        // The door to the plugin API routes and the panels' plugin pages: the app plugin of a route or page, the opaque
+        // references it sees (a keyed hash under a key derived from the encryption key, so nothing is stored) and the
+        // call-bound services: the host facts of the call's client and the plugin's own store. Scoped, so a call can use
+        // them for as long as its request runs.
         services.AddScoped<IPluginEndpointResolver, PluginEndpointResolver>();
+        services.AddScoped<IPluginUiSource, PluginUiSource>();
+
+        // The panels' plugin availability, computed for every plugin in one pass and remembered for a few seconds, so an
+        // index request is not one settings read per plugin and a page lookup costs the same for any id. Singletons: one
+        // remembered set per process, dropped through the invalidator by every use case that writes plugin settings.
+        services.AddSingleton<PluginAvailabilityCache>();
+        services.AddSingleton<IPluginAvailabilityInvalidator, PluginAvailabilityInvalidator>();
         services.AddSingleton<IPluginReferences>(new PluginReferences(encryptionKey));
         services.AddScoped<IPluginCallServices, HostPluginCallServices>();
 

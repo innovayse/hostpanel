@@ -111,7 +111,7 @@ public sealed class MyGateway : PaymentGatewayBase, IPaymentPlugin
   "category": "Payment Gateways",
   "color": "#0369a1",
   "entryPoint": "MyCompany.MyGateway.MyGateway",
-  "sdkVersion": "2.0",
+  "sdkVersion": "1.0",
   "showInIntegrations": true,
   "integrationsCategory": "Payment Gateways",
   "fields": [
@@ -177,7 +177,7 @@ Every plugin ZIP must have `plugin.json` at the root.
   { name: 'category', type: 'string', default: '', description: 'Category used to group the plugin inside the Plugin Manager.' },
   { name: 'color', type: 'string', default: '', description: 'Hex colour for the plugin icon background, e.g. #0369a1.' },
   { name: 'entryPoint', type: 'string', default: '', description: 'Fully qualified class name of the class that implements the plugin interface.' },
-  { name: 'sdkVersion', type: 'string', default: '', description: 'SDK major version the plugin was built against. The current supported value is 2. Older major versions are refused.' },
+  { name: 'sdkVersion', type: 'string', default: '', description: 'Manifest SDK version. The accepted value is 1.0. The assembly SDK major is checked separately and older majors are refused.' },
   { name: 'showInIntegrations', type: 'boolean', default: 'false', description: 'When true, the plugin appears as a card on the Integrations screen.' },
   { name: 'integrationsCategory', type: 'string', default: '', description: 'Category heading under which the card appears on the Integrations screen.' },
   { name: 'fields', type: 'array', default: '[]', description: 'Settings shown on the integration page, in order.' }
@@ -213,7 +213,7 @@ Production servers only accept signed packages. The `PluginSigner` tool is part 
 Generate a key pair (store the key file outside any git working tree — the tool refuses to sign if the key file is inside one):
 
 ```bash
-dotnet run --project backend/tools/Innovayse.Hostpanel.PluginSigner -- keygen my-key.pem my-key-id
+dotnet run --project backend/tools/Innovayse.Hostpanel.PluginSigner -- keygen my-key.pem
 ```
 
 Sign the plugin folder:
@@ -240,7 +240,7 @@ Start a local Hostpanel stack (see [Local development](/developers/local-dev)).
 </li>
 <li>
 
-Build your class library in Release, sign the output folder with `PluginSigner`, zip it, and upload the ZIP via **Settings → Plugin Manager → Install Plugin**. On a local server, set `plugins.allow_unsigned` to `true` in configuration to skip signature verification — do not enable this on a production server.
+Build your class library in Release, sign the output folder with `PluginSigner`, zip it, and upload the ZIP via **Settings → Plugin Manager → Install Plugin**. On a local server (Development or Testing environment), open **Plugins** in the admin panel and switch on **Allow unsigned plugins** to skip signature verification — do not enable this on a production server.
 
 </li>
 <li>

@@ -10,7 +10,7 @@ Hostpanel does not use webhooks. There is nothing to register at the gateway sid
 
 ## Hosted page payments
 
-When a client pays with a wallet or bank gateway, they are redirected to the gateway's hosted page. After they complete (or abandon) the payment, the gateway sends them back to Hostpanel's payment result page. Hostpanel then queries the gateway for the final result.
+When a client pays with the card or bank gateway, they are redirected to the gateway's hosted page. After they complete (or abandon) the payment, the gateway sends them back to Hostpanel's payment result page. Hostpanel then queries the gateway for the final result.
 
 Because the redirect can be interrupted (browser closed, network lost), Hostpanel does not rely solely on the return visit — the reconciliation job asks again on its own schedule.
 

@@ -9,8 +9,8 @@ namespace Innovayse.Hostpanel.Application.Billing.Common;
 
 /// <summary>
 /// Turns an invoice, with its lines and transactions loaded, into what a fulfilment plugin is handed for
-/// each thing that can happen to it: paid, refunded or lapsed. Pure: nothing is read from the database
-/// here, so the same invoice always yields the same context.
+/// each thing that can happen to it: paid, refunded, lapsed, or a refund it is asked to advise on. Pure:
+/// nothing is read from the database here, so the same invoice and reference always yield the same context.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -22,36 +22,40 @@ namespace Innovayse.Hostpanel.Application.Billing.Common;
 /// <para>
 /// Every amount is in the invoice's own currency, and each line says so.
 /// </para>
+/// <para>
+/// The client reference is computed by the caller for the plugin that will receive the context
+/// (<c>IPluginReferences.ForClient</c>), never here: a reference differs per plugin, and the builder does not
+/// know which plugin it builds for. It is the same value an endpoint call of that plugin for that client
+/// carries, so a plugin can join what it sold with what its endpoints see.
+/// </para>
 /// </remarks>
 public static class FulfilmentContextBuilder
 {
     /// <summary>Builds the context of <see cref="IFulfilmentPlugin.OnInvoicePaidAsync"/>.</summary>
     /// <param name="invoice">The paid invoice, with its items loaded.</param>
+    /// <param name="clientRef">The receiving plugin's own reference to the invoice's client.</param>
     /// <param name="account">The client's external account, or <see langword="null"/> when the client is not linked to one.</param>
     /// <returns>The paid context; the transaction reference is the payment's, or <see langword="null"/> for a manual payment.</returns>
     /// <exception cref="InvalidOperationException">The invoice has no payment date.</exception>
-    public static InvoicePaidContext Paid(Invoice invoice, ExternalAccount? account)
+    public static InvoicePaidContext Paid(Invoice invoice, string clientRef, ExternalAccount? account)
     {
-        ArgumentNullException.ThrowIfNull(invoice);
-
         var paidAt = invoice.PaidAt
             ?? throw new InvalidOperationException($"Invoice {invoice.Id} has no payment date to tell a plugin about.");
 
         return new InvoicePaidContext(
-            invoice.Id, invoice.ClientId, account, Lines(invoice), invoice.GatewayTransactionId, paidAt);
+            invoice.Id, invoice.ClientId, clientRef, account, Lines(invoice), invoice.GatewayTransactionId, paidAt);
     }
 
     /// <summary>Builds the context of <see cref="IFulfilmentPlugin.OnInvoiceRefundedAsync"/>.</summary>
     /// <param name="invoice">The refunded invoice, with its items and transactions loaded.</param>
+    /// <param name="clientRef">The receiving plugin's own reference to the invoice's client.</param>
     /// <param name="account">The client's external account, or <see langword="null"/>.</param>
     /// <returns>
     /// The refunded context: everything refunded so far, and the reference and date of the latest refund.
     /// </returns>
     /// <exception cref="InvalidOperationException">The invoice has no refund recorded.</exception>
-    public static InvoiceRefundedContext Refunded(Invoice invoice, ExternalAccount? account)
+    public static InvoiceRefundedContext Refunded(Invoice invoice, string clientRef, ExternalAccount? account)
     {
-        ArgumentNullException.ThrowIfNull(invoice);
-
         var latest = invoice.Transactions
             .Where(t => t.Type == InvoiceTransactionType.Refund)
             .OrderByDescending(t => t.Date)
@@ -62,6 +66,7 @@ public static class FulfilmentContextBuilder
         return new InvoiceRefundedContext(
             invoice.Id,
             invoice.ClientId,
+            clientRef,
             account,
             Lines(invoice),
             invoice.AmountRefunded,
@@ -72,18 +77,30 @@ public static class FulfilmentContextBuilder
 
     /// <summary>Builds the context of <see cref="IFulfilmentPlugin.OnSubscriptionLapsedAsync"/>.</summary>
     /// <param name="invoice">The lapsed invoice, with its items loaded.</param>
+    /// <param name="clientRef">The receiving plugin's own reference to the invoice's client.</param>
     /// <param name="account">The client's external account, or <see langword="null"/>.</param>
     /// <returns>The lapsed context.</returns>
     /// <exception cref="InvalidOperationException">The invoice has not lapsed.</exception>
-    public static SubscriptionLapsedContext Lapsed(Invoice invoice, ExternalAccount? account)
+    public static SubscriptionLapsedContext Lapsed(Invoice invoice, string clientRef, ExternalAccount? account)
     {
-        ArgumentNullException.ThrowIfNull(invoice);
-
         var lapsedAt = invoice.LapsedAt
             ?? throw new InvalidOperationException($"Invoice {invoice.Id} has not lapsed.");
 
         return new SubscriptionLapsedContext(
-            invoice.Id, invoice.ClientId, account, Lines(invoice), invoice.DueDate, lapsedAt);
+            invoice.Id, invoice.ClientId, clientRef, account, Lines(invoice), invoice.DueDate, lapsedAt);
+    }
+
+    /// <summary>Builds the context of <see cref="IFulfilmentPlugin.AdviseRefundAsync"/>.</summary>
+    /// <param name="invoice">The paid invoice an admin wants to refund, with its items loaded.</param>
+    /// <param name="clientRef">The asked plugin's own reference to the invoice's client.</param>
+    /// <param name="account">The client's external account, or <see langword="null"/>.</param>
+    /// <param name="requested">The amount asked for, in the invoice currency.</param>
+    /// <returns>The refund advice context, in the invoice currency.</returns>
+    public static RefundAdviceContext RefundAdvice(
+        Invoice invoice, string clientRef, ExternalAccount? account, decimal requested)
+    {
+        return new RefundAdviceContext(
+            invoice.Id, invoice.ClientId, clientRef, account, Lines(invoice), requested, invoice.Currency);
     }
 
     /// <summary>The product lines of an invoice, as a plugin sees them.</summary>
@@ -91,20 +108,25 @@ public static class FulfilmentContextBuilder
     /// <returns>One entry per line that carries a product snapshot, in line order.</returns>
     public static IReadOnlyList<FulfilmentLine> Lines(Invoice invoice)
     {
-        ArgumentNullException.ThrowIfNull(invoice);
+        List<FulfilmentLine> lines = [];
+        foreach (var item in invoice.Items.OrderBy(item => item.Id))
+        {
+            if (item.ProductSnapshot is not { } snapshot)
+            {
+                continue;
+            }
 
-        return invoice.Items
-            .OrderBy(item => item.Id)
-            .Where(item => item.ProductSnapshot is not null)
-            .Select(item => new FulfilmentLine(
-                item.ProductSnapshot!.ProductId,
-                item.ProductSnapshot.Sku,
-                item.ProductSnapshot.Metadata,
+            lines.Add(new FulfilmentLine(
+                snapshot.ProductId,
+                snapshot.Sku,
+                snapshot.Metadata,
                 item.Quantity,
                 item.Amount,
                 invoice.Currency,
-                PluginCycleOf(item.ProductSnapshot.BillingCycle)))
-            .ToList();
+                PluginCycleOf(snapshot.BillingCycle)));
+        }
+
+        return lines;
     }
 
     /// <summary>Maps the host's billing cycle to the cycle the plugin contract names.</summary>

@@ -31,7 +31,7 @@ public sealed class DispatchFulfilmentCronTests(IntegrationTestFactory factory) 
             .Timeout(TimeSpan.FromSeconds(60))
             .InvokeMessageAndWaitAsync(new DispatchFulfilmentCronCommand());
 
-        scenario.Plugin.Calls.Should().Equal([("OnInvoicePaidAsync", invoiceId)]);
+        scenario.Plugin.Calls.Should().Equal([new FulfilmentCall("OnInvoicePaidAsync", invoiceId)]);
         (await scenario.ReadAsync(invoiceId, FulfilmentKind.Paid)).Status.Should().Be(FulfilmentStatus.Done);
         var handled = session.AllRecordsInOrder()
             .First(r => r.MessageEventType == MessageEventType.ExecutionStarted

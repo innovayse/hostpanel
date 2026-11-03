@@ -124,7 +124,7 @@ public sealed class PluginActivator
         var values = await ReadConfigurationAsync(id, ct);
 
         if (!values.TryGetValue(IntegrationSettingKeys.EnabledKey(id), out var isEnabled)
-            || !string.Equals(isEnabled, "true", StringComparison.OrdinalIgnoreCase))
+            || !string.Equals(isEnabled, IntegrationSettingKeys.EnabledValue, StringComparison.OrdinalIgnoreCase))
         {
             return new PreparedPluginActivation<TContract>(id, PluginActivationOutcome.Disabled, null);
         }

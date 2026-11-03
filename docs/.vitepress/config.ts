@@ -98,6 +98,13 @@ export default defineConfig({
         items: [
           { text: 'Overview', link: '/customers/' },
           { text: 'Client portal', link: '/customers/portal' },
+          { text: 'Your account and signing in', link: '/customers/account' },
+          { text: 'Two-factor authentication', link: '/customers/two-factor' },
+          { text: 'Ordering', link: '/customers/ordering' },
+          { text: 'Invoices and paying', link: '/customers/invoices' },
+          { text: 'Services and SSH keys', link: '/customers/services' },
+          { text: 'Domains', link: '/customers/domains' },
+          { text: 'Support tickets', link: '/customers/tickets' },
         ],
       },
       {

@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
@@ -80,7 +81,7 @@ public static class PluginSlotSeeds
             Ui = new PluginUi { Slots = widgets },
         };
 
-        return new LoadedPlugin(manifest, typeof(FakeAppPlugin));
+        return new LoadedPlugin(manifest, typeof(FakeAppPlugin), PluginViewDocuments.None);
     }
 
     /// <summary>

@@ -18,9 +18,10 @@ public sealed class RemovePluginValidator : LocalizedValidator<RemovePluginComma
     {
         RuleFor(x => x.Id).NotEmpty().WithMessage(L["PluginIdRequired"]);
 
-        // The id names a folder on disk, so only the plugin id rule's shape reaches the handler.
+        // The id names a folder on disk, so only the plugin id rule's shape reaches the handler. The shape, not the
+        // full rule: a plugin installed under an id that was reserved later must still be removable.
         RuleFor(x => x.Id)
-            .Must(PluginIdentifier.IsValid)
+            .Must(PluginIdentifier.IsWellFormed)
             .When(x => !string.IsNullOrEmpty(x.Id))
             .WithMessage(L["PluginIdInvalid"]);
     }

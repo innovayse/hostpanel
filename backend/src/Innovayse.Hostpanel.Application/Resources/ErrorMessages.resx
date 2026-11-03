@@ -549,6 +549,30 @@
 <data name="PLUGIN_MANIFEST_ID_INVALID" xml:space="preserve">
     <value>The plugin id in the manifest is not valid: use lowercase letters and digits, with single hyphens between words.</value>
   </data>
+<data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
+    <value>This plugin names a view document that its package does not contain.</value>
+  </data>
+<data name="PLUGIN_VIEW_INVALID" xml:space="preserve">
+    <value>One of this plugin's view documents is not a valid view document.</value>
+  </data>
+<data name="PLUGIN_VIEW_SCHEMA_UNSUPPORTED" xml:space="preserve">
+    <value>One of this plugin's view documents uses a schema version this server does not support.</value>
+  </data>
+<data name="PLUGIN_VIEW_BLOCK_KIND_UNKNOWN" xml:space="preserve">
+    <value>One of this plugin's view documents uses a block kind that this server does not know.</value>
+  </data>
+<data name="PLUGIN_VIEW_ROUTE_UNDECLARED" xml:space="preserve">
+    <value>One of this plugin's view documents calls a route that the plugin does not declare.</value>
+  </data>
+  <data name="PLUGIN_MENU_ICON_INVALID" xml:space="preserve">
+    <value>This plugin gives a menu an icon that is not a plain icon name: use 1 to 64 lowercase letters, digits and hyphens.</value>
+  </data>
+  <data name="PLUGIN_PAGE_ID_INVALID" xml:space="preserve">
+    <value>This plugin declares a page whose id is not valid or is used twice in one panel: use 1 to 64 lowercase letters, digits, hyphens and underscores, starting with a letter or digit.</value>
+  </data>
+<data name="PLUGIN_PAGE_NOT_FOUND" xml:space="preserve">
+    <value>This plugin page does not exist.</value>
+  </data>
 <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>That archive contains an entry that would write outside the plugin's own folder and was rejected.</value>
   </data>

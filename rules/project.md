@@ -130,7 +130,8 @@ repositories. The departures are short:
 
 ```
 backend/src/
-  SharedKernel/                      BaseEntity (DomainEvents), AuditableEntity, DomainException, IDomainEvent
+  SharedKernel/                      BaseEntity (DomainEvents), AuditableEntity, DomainException, IDomainEvent,
+                                     SecretMembers, SecretMemberAttribute (Domain/ beside them; no TenantEntity)
   Shared/                            BaseApiController + StatusMapping, Result/Result<T>, ErrorResponse,
                                      ErrorBody, middleware, validation policy, resources, options
   Innovayse.Hostpanel.Domain/        entities, events, Enums/ per area. References the kernel only.
@@ -145,6 +146,14 @@ client/  admin/                    Nuxt 4 portal, Vite admin SPA — each owns i
 docker/                              compose set (shared·dev·prod·platform), nginx/, scripts/, .env.example — docker/README.md
 ```
 
+- **SharedKernel deliberately differs from the `file-layout.md` tree.** It adds
+  `Domain/SecretMembers.cs` and `Domain/SecretMemberAttribute.cs`, and has no `TenantEntity`
+  (the tree lists one; the file does not exist in this product). The reason for the two
+  additions: one masking rule shared by every layer. A record that carries a secret prints it
+  through the generated `ToString` into logs and exception messages, so Domain, Application
+  and Infrastructure all need the same answer to "which members are secret"
+  and the same printer. Only the kernel is visible to all of them, and
+  `SecretRecordPrintingTests` uses the same `SecretMembers.IsSecret` the printer uses.
 - **No repositories.** Handlers use `IHostpanelDbContext` (`Application/Common/Interfaces/`)
   directly, and the DbContext is the unit of work: a handler saves with
   `IHostpanelDbContext.SaveChangesAsync`, which also translates a concurrency conflict to
@@ -244,7 +253,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   actions are guarded by it). A plugin can grant nothing else. *Hosted* (`IHostedPlugin`): `StartAsync` runs once
   per process after the host started and `StopAsync` as it begins to stop; return from `StartAsync` once the worker
   runs, do not block on its loop.
-- **The core is plugin neutral.** `PluginNeutralCoreTests` fails when a type in the Domain, Application,
+- **The core is plugin neutral.** `PluginNeutralCoreTests` fails when a type in the Domain, Application
   Infrastructure or API assembly (base type, interface, attribute, member signature or called method), or one of
   their referenced assemblies, sits under a reserved namespace `Innovayse.<Segment>`. The reserved segments and the
   allow-list are in one place, `ReservedPluginNamespaces` in `Architecture.Tests` (today `Plugins`, `Deployment`,

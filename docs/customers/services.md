@@ -14,9 +14,8 @@ Go to **My Services**. Each service shows its status:
 |--------|--------------|
 | Pending | The order is placed but the service is not yet set up |
 | Active | The service is running |
-| Suspended | The service is paused — you cannot use it until it is reactivated |
-| Ended | The service period is over |
-| Cancelled | The service has been cancelled |
+| Suspended | The service is paused. You cannot use it until it is reactivated. |
+| Ended | The service period is over (also shown as Terminated) |
 
 ## Set up a new service
 
@@ -52,7 +51,7 @@ Click a service to open it. The **Overview** tab shows your plan, billing detail
 
 ## SSH keys
 
-An SSH key is a pair of files — a private key that stays on your computer and a public key that you add to a server. When you connect, the server checks that your private key matches the public key on file. You never need a password, and your private key never leaves your computer.
+An SSH key is a pair of files: a private key that stays on your computer and a public key that you add to a server. When you connect, the server checks that your private key matches the public key on file. You never need a password, and your private key never leaves your computer.
 
 The **SSH Keys** tab lets you manage the public keys on your hosting account.
 
@@ -108,7 +107,7 @@ Click **Revoke** next to the key, then confirm with **Revoke this key?**. The ke
 | Off the server while the service is suspended | The key is stored but inactive until the service is reactivated |
 | Revoked | The key has been removed |
 | Previous server | The key was added on a previous server and is no longer active |
-| Not found on server | The key is not on the server — click Retry to try again |
+| Not found on server | The key is not on the server. Click Retry to try again. |
 
 ### When SSH keys are not available
 
@@ -116,7 +115,7 @@ Click **Revoke** next to the key, then confirm with **Revoke this key?**. The ke
 |---------|-----------|
 | "SSH access is disabled for this hosting account. Contact support to enable it." | Ask your hosting provider to enable SSH for your account |
 | "SSH key management is not available for this type of hosting." | This hosting type does not support SSH key management |
-| "SSH key management is not enabled on this service's server yet." | The server is not yet configured for SSH key management — check back later or contact support |
+| "SSH key management is not enabled on this service's server yet." | The server is not yet configured for SSH key management. Check back later or contact support. |
 | "SSH keys can only be managed while the service is active." | Reactivate the service first |
-| "The hosting server could not be reached. Please try again later." | A temporary network issue — try again in a moment |
+| "The hosting server could not be reached. Please try again later." | A temporary network issue. Try again in a moment. |
 

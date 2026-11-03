@@ -46,7 +46,7 @@ Go to the sign-in page. The page is titled **Sign in to your account**.
 </li>
 <li>
 
-If two-factor authentication is on, you are taken to the two-factor step — see [Two-factor authentication](./two-factor).
+If two-factor authentication is on, you are taken to the two-factor step. See [Two-factor authentication](./two-factor).
 
 </li>
 </Steps>
@@ -86,7 +86,7 @@ Go to **Account**. The tabs you see depend on your permissions. The full set is:
 
 The **Account Details** tab has two sections: **Account Information** (name, company, phone, address) and **Billing Address**. Click **Edit** to change them, then **Save Changes**.
 
-**Email Preferences** — six toggles control which notification emails you receive:
+**Email Preferences**: six toggles control which notification emails you receive:
 
 | Toggle | What it controls |
 |--------|-----------------|
@@ -139,7 +139,7 @@ The **Two-Factor Authentication** card lets you enable or disable 2FA. See [Two-
 
 ## Users and permissions
 
-Go to **Account → User Management**. You can invite other people to access your account and choose what they can see or do.
+Go to **Account**, then **User Management**. You can invite other people to access your account and choose what they can see or do.
 
 ### Invite a user
 

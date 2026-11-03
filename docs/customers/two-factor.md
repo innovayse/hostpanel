@@ -9,7 +9,7 @@ Two-factor authentication (2FA) asks for a 6-digit code from an authenticator ap
 This feature is available with local accounts only. <Label type="local" />
 
 <Callout type="warning">
-Keep access to your authenticator app. There are no recovery codes — if you lose your phone and cannot access the app, you will need to contact support to regain access to your account.
+Keep access to your authenticator app. There are no recovery codes. If you lose your phone and cannot access the app, contact your hosting provider for help regaining access to your account.
 </Callout>
 
 ## Turn on two-factor authentication
@@ -17,7 +17,7 @@ Keep access to your authenticator app. There are no recovery codes — if you lo
 <Steps>
 <li>
 
-Go to **Account → Account Details** and find the **Two-Factor Authentication** card. It shows **2FA Disabled**.
+Go to **Account**, then **Account Details**, and find the **Two-Factor Authentication** card. It shows **2FA Disabled**.
 
 </li>
 <li>
@@ -70,7 +70,7 @@ There are no recovery codes. If you lose access to your authenticator app, conta
 <Steps>
 <li>
 
-Go to **Account → Account Details** and find the **Two-Factor Authentication** card. It shows **2FA Enabled**.
+Go to **Account**, then **Account Details**, and find the **Two-Factor Authentication** card. It shows **2FA Enabled**.
 
 </li>
 <li>

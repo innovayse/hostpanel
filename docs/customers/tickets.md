@@ -17,10 +17,10 @@ Go to **Support** and click **Open New Ticket**.
 <li>
 
 Fill in the form:
-- **Department** — choose the team you want to reach
-- **Subject** — a short description of your question
-- **Priority** — Low, Medium or High
-- **Message** — describe the issue in detail
+- **Department**: choose the team you want to reach
+- **Subject**: a short description of your question
+- **Priority**: Low, Medium or High
+- **Message**: describe the issue in detail
 
 </li>
 <li>
@@ -49,4 +49,4 @@ A closed ticket cannot receive new replies. Open a new ticket if you need furthe
 
 ## Announcements and knowledge base
 
-**Announcements** and **Knowledge Base** appear as separate items in the menu alongside Support Tickets. Check the knowledge base first — your question may already be answered.
+**Announcements** and **Knowledge Base** appear as separate items in the menu alongside Support Tickets. Check the knowledge base first. Your question may already be answered there.

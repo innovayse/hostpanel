@@ -13,6 +13,12 @@ import { callOf, invalid, json, problem, stubFetch } from '../../helpers/fetch'
 import { mountWithApp } from '../../helpers/mount'
 import { serverSshSettingsDto, serverSshSetupDto } from '../../helpers/serverFixtures'
 
+vi.mock('@/lib/runtimeConfig', () => ({
+  getRuntimeConfig: vi.fn(),
+}))
+
+import { getRuntimeConfig } from '@/lib/runtimeConfig'
+
 /** Settings as the API answers them. */
 const SETTINGS = serverSshSettingsDto({ serverId: 4 })
 
@@ -30,9 +36,11 @@ const SETUP_WITH_KEY = serverSshSetupDto({
 /**
  * Mounts the dialog for server 4 and waits for its two loads.
  *
+ * @param docsUrl - Docs URL to inject (default empty).
  * @returns The mounted dialog.
  */
-const mountDialog = async (): Promise<ReturnType<typeof mountWithApp>> => {
+const mountDialog = async (docsUrl = ''): Promise<ReturnType<typeof mountWithApp>> => {
+  vi.mocked(getRuntimeConfig).mockReturnValue({ docsUrl, basePath: '/', clientBaseUrl: '' })
   const wrapper = mountWithApp(ServerSshSettingsModal, { props: { serverId: 4, serverName: 'host1' } })
   await flushPromises()
   return wrapper
@@ -250,5 +258,22 @@ describe('ServerSshSettingsModal', () => {
     expect(wrapper.find('[data-testid="server-ssh-unsupported"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="server-ssh-generate"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="server-ssh-test"]').attributes('disabled')).toBeDefined()
+  })
+
+  it('hides the help link when docsUrl is empty', async () => {
+    stubFetch(json(SETTINGS), json(SETUP))
+    const wrapper = await mountDialog('')
+
+    expect(wrapper.find('[data-testid="ssh-guide-link"]').exists()).toBe(false)
+  })
+
+  it('shows the help link with the correct href and rel when docsUrl is set', async () => {
+    stubFetch(json(SETTINGS), json(SETUP))
+    const wrapper = await mountDialog('https://docs.example.com')
+    const link = wrapper.find('[data-testid="ssh-guide-link"]')
+
+    expect(link.exists()).toBe(true)
+    expect(link.attributes('href')).toBe('https://docs.example.com/servers/ssh-key-agent')
+    expect(link.attributes('rel')).toContain('noopener')
   })
 })

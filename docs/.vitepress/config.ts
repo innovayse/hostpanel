@@ -7,12 +7,61 @@
  * in Settings → Pages → Build and deployment.
  */
 import { defineConfig } from 'vitepress'
+import { existsSync, readFileSync } from 'node:fs'
+import { resolve, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+/** A group or a page of the generated endpoint sidebar; groups nest (audience, then area). */
+type GeneratedSidebarItem = { text: string; link?: string; collapsed?: boolean; items?: GeneratedSidebarItem[] }
+
+/**
+ * The endpoint groups of the API reference. `scripts/generate-api-reference.mjs` writes this file
+ * from the OpenAPI document in CI; it is not committed, so a plain checkout has no endpoint pages.
+ */
+const generatedSidebarPath = resolve(__dirname, '../api-reference/generated-sidebar.json')
+const generatedApiSidebarItems: GeneratedSidebarItem[] = existsSync(generatedSidebarPath)
+  ? JSON.parse(readFileSync(generatedSidebarPath, 'utf8'))
+  : []
+
+/** The sidebar of the API reference: the pages every endpoint shares, then the generated endpoint groups. */
+const apiReferenceSidebar: GeneratedSidebarItem[] = [
+  {
+    text: 'API reference',
+    items: [
+      { text: 'Overview', link: '/api-reference/' },
+      { text: 'Authentication', link: '/api-reference/authentication' },
+      { text: 'Errors', link: '/api-reference/errors' },
+      { text: 'Languages', link: '/api-reference/languages' },
+      { text: 'Rate limits', link: '/api-reference/rate-limits' },
+      { text: 'Pagination', link: '/api-reference/pagination' },
+    ],
+  },
+  ...generatedApiSidebarItems,
+]
+
+/**
+ * Public address of the demo admin panel and client portal.
+ * Set both to show the "Try the demo" button in the top bar.
+ * Leave empty to hide it.
+ */
+const DEMO_ADMIN_URL = process.env.DEMO_ADMIN_URL ?? ''
+const DEMO_CLIENT_URL = process.env.DEMO_CLIENT_URL ?? ''
 
 export default defineConfig({
   title: 'Hostpanel',
   description: 'Open source web hosting control panel',
   lang: 'en-US',
   cleanUrls: true,
+
+  /** Generated fragments that pages include; they are not pages of their own. */
+  srcExclude: ['api-reference/_partials/**'],
+
+  /**
+   * The site data, which holds the sidebar of every endpoint of the API reference, is large. One
+   * cached chunk costs less than repeating it in the HTML of every page.
+   */
+  metaChunk: true,
 
   /**
    * Must match the GitHub repository name so that GitHub Pages serves the site
@@ -48,116 +97,125 @@ export default defineConfig({
       { text: 'Guides', link: '/operators/' },
       { text: 'API Reference', link: '/api-reference/' },
       { text: 'Changelog', link: '/changelog/' },
+      ...(DEMO_ADMIN_URL ? [{ text: 'Try the demo', link: DEMO_ADMIN_URL }] : []),
     ],
 
-    sidebar: [
-      {
-        text: 'Get started',
-        collapsed: true,
-        items: [
-          { text: 'Introduction', link: '/get-started/' },
-          { text: 'Requirements', link: '/get-started/requirements' },
-          { text: 'Quick start', link: '/get-started/quick-start' },
-        ],
-      },
-      {
-        text: 'Operators',
-        collapsed: true,
-        items: [
-          { text: 'Overview', link: '/operators/' },
-          { text: 'Install Hostpanel', link: '/operators/install' },
-          { text: 'Upgrade', link: '/operators/upgrade' },
-          { text: 'Back up and restore', link: '/operators/backup' },
-          { text: 'Rollback', link: '/operators/rollback' },
-          { text: 'Storefront & branding', link: '/operators/storefront' },
-          { text: 'Configuration reference', link: '/operators/configuration' },
-        ],
-      },
-      {
-        text: 'Staff',
-        collapsed: true,
-        items: [
-          { text: 'Overview', link: '/staff/' },
-          { text: 'Clients, users and contacts', link: '/staff/clients' },
-          { text: 'Orders', link: '/staff/orders' },
-          { text: 'Invoices and payments', link: '/staff/billing' },
-          { text: 'Transactions, billable items and quotes', link: '/staff/transactions' },
-          { text: 'Currencies, renewals and jobs', link: '/staff/currencies' },
-          { text: 'Products and pricing', link: '/staff/products' },
-          { text: 'Domain extensions and registrars', link: '/staff/tld-pricing' },
-          { text: 'Domains', link: '/staff/domains' },
-          { text: 'Support tickets', link: '/staff/support-tickets' },
-          { text: 'Announcements, knowledge base and downloads', link: '/staff/announcements' },
-          { text: 'Network issues', link: '/staff/network-issues' },
-          { text: 'Email templates', link: '/staff/email-templates' },
-        ],
-      },
-      {
-        text: 'Customers',
-        collapsed: true,
-        items: [
-          { text: 'Overview', link: '/customers/' },
-          { text: 'Client portal', link: '/customers/portal' },
-          { text: 'Your account and signing in', link: '/customers/account' },
-          { text: 'Two-factor authentication', link: '/customers/two-factor' },
-          { text: 'Ordering', link: '/customers/ordering' },
-          { text: 'Invoices and paying', link: '/customers/invoices' },
-          { text: 'Services and SSH keys', link: '/customers/services' },
-          { text: 'Domains', link: '/customers/domains' },
-          { text: 'Support tickets', link: '/customers/tickets' },
-        ],
-      },
-      {
-        text: 'Payments',
-        collapsed: true,
-        items: [
-          { text: 'Overview', link: '/payments/' },
-          { text: 'Gateways', link: '/payments/gateways' },
-          { text: 'How online payments are confirmed', link: '/payments/confirming' },
-          { text: 'Plugins', link: '/payments/plugins' },
-        ],
-      },
-      {
-        text: 'Servers & SSH',
-        collapsed: true,
-        items: [
-          { text: 'Overview', link: '/servers/' },
-          { text: 'Servers', link: '/servers/servers' },
-          { text: 'SSH key agent', link: '/servers/ssh-key-agent' },
-          { text: 'Provisioning', link: '/servers/provisioning' },
-        ],
-      },
-      {
-        text: 'Migration',
-        collapsed: true,
-        items: [
-          { text: 'Overview', link: '/migration/' },
-          { text: 'Moving from another billing system', link: '/migration/from-another-system' },
-          { text: 'Import report and skip reasons', link: '/migration/import-report' },
-        ],
-      },
-      {
-        text: 'Developers',
-        collapsed: true,
-        items: [
-          { text: 'Overview', link: '/developers/' },
-          { text: 'Architecture', link: '/developers/architecture' },
-          { text: 'Local development', link: '/developers/local-dev' },
-          { text: 'Contributing', link: '/developers/contributing' },
-          { text: 'Translating Hostpanel', link: '/developers/translating' },
-          { text: 'Add a new language', link: '/developers/add-language' },
-          { text: 'Integrations', link: '/developers/integrations' },
-          { text: 'Write a plugin', link: '/developers/write-a-plugin' },
-        ],
-      },
-      {
-        text: 'Contributing',
-        collapsed: true,
-        items: [
-          { text: 'Components', link: '/components' },
-        ],
-      },
-    ],
+    sidebar: {
+      /** The API reference has a sidebar of its own, so its endpoint pages do not weigh down every other page. */
+      '/api-reference/': apiReferenceSidebar,
+      '/': [
+        {
+          text: 'Get started',
+          collapsed: true,
+          items: [
+            { text: 'Introduction', link: '/get-started/' },
+            { text: 'Requirements', link: '/get-started/requirements' },
+            { text: 'Quick start', link: '/get-started/quick-start' },
+          ],
+        },
+        {
+          text: 'Operators',
+          collapsed: true,
+          items: [
+            { text: 'Overview', link: '/operators/' },
+            { text: 'Install Hostpanel', link: '/operators/install' },
+            { text: 'Upgrade', link: '/operators/upgrade' },
+            { text: 'Back up and restore', link: '/operators/backup' },
+            { text: 'Rollback', link: '/operators/rollback' },
+            { text: 'Storefront & branding', link: '/operators/storefront' },
+            { text: 'Configuration reference', link: '/operators/configuration' },
+          ],
+        },
+        {
+          text: 'Staff',
+          collapsed: true,
+          items: [
+            { text: 'Overview', link: '/staff/' },
+            { text: 'Clients, users and contacts', link: '/staff/clients' },
+            { text: 'Orders', link: '/staff/orders' },
+            { text: 'Invoices and payments', link: '/staff/billing' },
+            { text: 'Transactions, billable items and quotes', link: '/staff/transactions' },
+            { text: 'Currencies, renewals and jobs', link: '/staff/currencies' },
+            { text: 'Products and pricing', link: '/staff/products' },
+            { text: 'Domain extensions and registrars', link: '/staff/tld-pricing' },
+            { text: 'Domains', link: '/staff/domains' },
+            { text: 'Support tickets', link: '/staff/support-tickets' },
+            { text: 'Announcements, knowledge base and downloads', link: '/staff/announcements' },
+            { text: 'Network issues', link: '/staff/network-issues' },
+            { text: 'Email templates', link: '/staff/email-templates' },
+          ],
+        },
+        {
+          text: 'Customers',
+          collapsed: true,
+          items: [
+            { text: 'Overview', link: '/customers/' },
+            { text: 'Client portal', link: '/customers/portal' },
+            { text: 'Your account and signing in', link: '/customers/account' },
+            { text: 'Two-factor authentication', link: '/customers/two-factor' },
+            { text: 'Ordering', link: '/customers/ordering' },
+            { text: 'Invoices and paying', link: '/customers/invoices' },
+            { text: 'Services and SSH keys', link: '/customers/services' },
+            { text: 'Domains', link: '/customers/domains' },
+            { text: 'Support tickets', link: '/customers/tickets' },
+          ],
+        },
+        {
+          text: 'Payments',
+          collapsed: true,
+          items: [
+            { text: 'Overview', link: '/payments/' },
+            { text: 'Gateways', link: '/payments/gateways' },
+            { text: 'How online payments are confirmed', link: '/payments/confirming' },
+            { text: 'Plugins', link: '/payments/plugins' },
+          ],
+        },
+        {
+          text: 'Servers & SSH',
+          collapsed: true,
+          items: [
+            { text: 'Overview', link: '/servers/' },
+            { text: 'Servers', link: '/servers/servers' },
+            { text: 'SSH key agent', link: '/servers/ssh-key-agent' },
+            { text: 'Provisioning', link: '/servers/provisioning' },
+          ],
+        },
+        {
+          text: 'Migration',
+          collapsed: true,
+          items: [
+            { text: 'Overview', link: '/migration/' },
+            { text: 'Moving from WHMCS', link: '/migration/from-another-system' },
+            { text: 'Import report and skip reasons', link: '/migration/import-report' },
+          ],
+        },
+        {
+          text: 'Developers',
+          collapsed: true,
+          items: [
+            { text: 'Overview', link: '/developers/' },
+            { text: 'Architecture overview', link: '/developers/architecture' },
+            { text: 'Backend', link: '/developers/backend' },
+            { text: 'Frontends', link: '/developers/frontends' },
+            { text: 'Run locally', link: '/developers/local-dev' },
+            { text: 'Tests and checks', link: '/developers/tests' },
+            { text: 'Where a new feature goes', link: '/developers/new-feature' },
+            { text: 'Contributing', link: '/developers/contributing' },
+            { text: 'Translating Hostpanel', link: '/developers/translating' },
+            { text: 'Add a new language', link: '/developers/add-language' },
+            { text: 'Integrations', link: '/developers/integrations' },
+            { text: 'Write a plugin', link: '/developers/write-a-plugin' },
+          ],
+        },
+        {
+          text: 'Contributing',
+          collapsed: true,
+          items: [
+            { text: 'Components', link: '/components' },
+          ],
+        },
+      ],
+    },
 
     editLink: {
       pattern: 'https://github.com/innovayse/hostpanel/edit/main/docs/:path',
@@ -178,5 +236,8 @@ export default defineConfig({
       message: 'Released under the AGPL-3.0 License.',
       copyright: 'Copyright © 2024-present Innovayse Digital Agency',
     },
+
+    demoAdminUrl: DEMO_ADMIN_URL,
+    demoClientUrl: DEMO_CLIENT_URL,
   },
 })

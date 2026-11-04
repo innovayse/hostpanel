@@ -107,7 +107,7 @@ public sealed class TicketsImporter : IMigrationEntityImporter
         var ticket = Ticket.Create(
             clientId.Value,
             rec.Subject,
-            string.IsNullOrWhiteSpace(rec.Message) ? "(no message)" : rec.Message,
+            string.IsNullOrWhiteSpace(rec.Message) ? MigrationPlaceholders.NoMessage : rec.Message,
             departmentId.Value,
             priority,
             now);

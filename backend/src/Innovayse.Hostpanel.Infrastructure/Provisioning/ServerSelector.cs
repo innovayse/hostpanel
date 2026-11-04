@@ -9,8 +9,8 @@ using Microsoft.Extensions.Logging;
 namespace Innovayse.Hostpanel.Infrastructure.Provisioning;
 
 /// <summary>
-/// Loads the candidate servers for a provisioning run and hands them to <see cref="ServerFillPolicy"/>,
-/// which decides which one receives the account.
+/// Loads the candidate servers for a provisioning run and hands them, with the fill type, to
+/// <see cref="ServerFillPolicy"/>, which decides which one receives the account.
 /// </summary>
 public sealed class ServerSelector : IServerSelector
 {
@@ -37,13 +37,14 @@ public sealed class ServerSelector : IServerSelector
     /// <returns>How to reach the selected server, or null if none are eligible.</returns>
     public async Task<ServerConnectionDto?> SelectAsync(IReadOnlyCollection<ServerModule> modules, CancellationToken ct)
     {
-        // Ordered by name because the policy keeps the given order when two servers tie on fill and capacity.
+        // Ordered by name because the policy keeps the given order when two servers tie on every key.
+        // With no group there is no fill type, so the least full server is chosen.
         var servers = await _context.Servers
             .AsNoTracking()
             .Where(s => modules.Contains(s.Module))
             .OrderBy(s => s.Name)
             .ToListAsync(ct);
-        return Choose(servers);
+        return Choose(servers, ServerFillType.LeastFull);
     }
 
     /// <summary>Lists which of the given modules have at least one enabled server.</summary>
@@ -79,27 +80,30 @@ public sealed class ServerSelector : IServerSelector
             return null;
         }
 
-        return Choose(group.Servers.Where(s => modules.Contains(s.Module)));
+        // Ordered by name so the group's fill type sees a stable order when servers tie on every key.
+        return Choose(group.Servers.Where(s => modules.Contains(s.Module)).OrderBy(s => s.Name), group.FillType);
     }
 
     /// <summary>
     /// Applies the fill policy and logs the outcome.
     /// </summary>
     /// <param name="servers">Candidate servers to choose from.</param>
+    /// <param name="fillType">How the servers are filled, from the group or least full when there is none.</param>
     /// <returns>How to reach the chosen server, or null if none qualify.</returns>
-    private ServerConnectionDto? Choose(IEnumerable<Server> servers)
+    private ServerConnectionDto? Choose(IEnumerable<Server> servers, ServerFillType fillType)
     {
-        var selected = ServerFillPolicy.SelectBest(servers);
+        var selected = ServerFillPolicy.SelectBest(servers, fillType);
         if (selected is null)
         {
-            _logger.LogWarning("No eligible servers available for provisioning");
+            _logger.LogWarning("No eligible servers available for provisioning ({FillType})", fillType);
             return null;
         }
 
         _logger.LogInformation(
-            "Selected server {ServerName} (id={ServerId}), {Accounts}/{Max} accounts ({Fill:P1} full)",
+            "Selected server {ServerName} (id={ServerId}) by {FillType}, {Accounts}/{Max} accounts ({Fill:P1} full)",
             selected.Name,
             selected.Id,
+            fillType,
             selected.AccountsCount ?? 0,
             selected.MaxAccounts?.ToString() ?? "unlimited",
             ServerFillPolicy.FillRatio(selected));

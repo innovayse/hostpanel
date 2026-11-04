@@ -62,7 +62,7 @@ public sealed class CallClientPluginHandler
     /// <returns>
     /// The plugin's reply; <c>IDENTITY_PLUGIN_UNAVAILABLE</c> when the identity plugin could not say who the caller is;
     /// <c>CLIENT_PROFILE_NOT_FOUND</c> when the caller acts for no account (settled first, for every plugin);
-    /// <c>PLUGIN_ROUTE_NOT_FOUND</c>, one answer for every one of these reasons: no app plugin has that id, the plugin does
+    /// <c>PLUGIN_ROUTE_NOT_FOUND</c>, one answer for every one of these reasons: no serving plugin has that id, the plugin does
     /// not declare that path in the client area, the path is declared for another method, the caller does not hold the
     /// route's permission, or the plugin is switched off or not configured; and what
     /// <see cref="PluginCallRunner.RunAsync"/> answers after that. The real reason is only in the Debug log.

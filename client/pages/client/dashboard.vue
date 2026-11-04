@@ -45,13 +45,16 @@
       <ClientDashboardNewsCard />
       <ClientDashboardRegisterDomainCard v-if="store.mayDo(Permission.PlaceNewOrders)" />
     </UiGrid>
+
+    <!-- Cards plugins add; read after the page mounts, nothing at all without plugins. -->
+    <PluginSlot :slot-id="PluginSlotId.DashboardCards" />
   </UiStack>
 </template>
 
 <script setup lang="ts">
 /**
  * Client dashboard: the account at a glance, with counters, attention banners, and cards for
- * services, invoices, domains, tickets, news and a quick domain search.
+ * services, invoices, domains, tickets, news and a quick domain search, then the cards plugins add.
  *
  * The page loads the data through the stores and lays the cards out; each card reads its own
  * slice from the store, and the derived lists live in {@link useDashboardSummary}.
@@ -60,6 +63,7 @@ import { RefreshCw } from 'lucide-vue-next'
 import { Permission } from '~/composables/usePermissions'
 import { useClientStore } from '~/stores/client'
 import { useContentStore } from '~/stores/content'
+import { PluginSlotId } from '~/types/pluginslotid'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 

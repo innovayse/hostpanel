@@ -18,6 +18,8 @@
  * - On 401: refreshes the session's token with its refresh token and retries the request once
  * - Throws appropriate H3 errors on failure; the sentence is always the backend's own `detail`,
  *   and the backend's `Retry-After` and `X-Request-Id` travel to the browser with it
+ * - `internalApiStream` opens a server-sent event stream and hands back the open response, so a
+ *   route can pass the events on as they arrive instead of buffering the whole reply
  *
  * @module server/utils/api
  */
@@ -50,6 +52,8 @@ interface InternalApiOptions {
   headers?: Record<string, string>
   /** Omit the bearer token, for the calls made before a session exists. */
   anonymous?: boolean
+  /** Aborts the backend call, e.g. when the browser that asked has gone away. */
+  signal?: AbortSignal
 }
 
 /** Request header that carries the visitor's address to the backend. */
@@ -373,5 +377,51 @@ export const internalApiBinaryCall = (event: H3Event, endpoint: string): Promise
       contentDisposition: response.headers.get('content-disposition'),
       cacheControl: response.headers.get('cache-control'),
     }
+  })
+}
+
+/**
+ * Opens a server-sent event stream on the backend, with the same session, token refresh and error
+ * forwarding as `internalApiCall`, and hands back the open response without reading it, so the
+ * route can pass each event on to the browser as it arrives.
+ *
+ * Native `fetch` rather than `$fetch`: `$fetch` reads the whole body before it resolves, which
+ * would hold back every event until the plugin finished. Nothing of the upstream answer but its
+ * body is handed on; its headers stay here.
+ *
+ * @param event - H3 event from the Nuxt server route handler
+ * @param endpoint - API path after `/api`, e.g. `/client/plugins/acme/sites/7/chat`
+ * @param options - Method (POST when absent), JSON body, and the signal that aborts the stream
+ * @returns The open response; its body is the event stream
+ * @throws H3Error forwarding any upstream refusal, with the backend's code and sentence
+ */
+export const internalApiStream = (
+  event: H3Event,
+  endpoint: string,
+  options: InternalApiOptions = {}
+): Promise<Response> => {
+  const url = backendUrl(endpoint)
+
+  return withSession(event, endpoint, options, async (bearerToken, watchRenewal) => {
+    const response = await fetch(url, {
+      method: options.method ?? HttpMethod.Post,
+      headers: { ...backendHeaders(event, options, bearerToken), Accept: 'text/event-stream' },
+      body: options.body === undefined || options.body === null ? undefined : JSON.stringify(options.body),
+      signal: options.signal,
+    })
+    watchRenewal({ response })
+    if (!response.ok) {
+      // Shaped like a `$fetch` rejection, so the refresh-and-retry and `backendError` read it alike.
+      const text = await response.text()
+      let data: unknown
+      try {
+        data = text ? JSON.parse(text) : undefined
+      } catch {
+        data = undefined
+      }
+      const failure: UpstreamFailure = { status: response.status, data, response }
+      throw Object.assign(new Error(`Backend stream refused with ${response.status}`), failure)
+    }
+    return response
   })
 }

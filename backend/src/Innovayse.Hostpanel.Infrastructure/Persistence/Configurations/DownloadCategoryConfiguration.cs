@@ -17,7 +17,8 @@ public sealed class DownloadCategoryConfiguration : IEntityTypeConfiguration<Dow
         builder.Property(x => x.IsHidden).IsRequired();
         builder.Property(x => x.ParentCategoryId);
 
-        builder.HasIndex(x => x.ParentCategoryId);
+        // Serves the parent lookup and the migration import find-by-name within one parent.
+        builder.HasIndex(x => new { x.ParentCategoryId, x.Name });
 
         // A category with sub-categories cannot be deleted; the delete use case refuses it first.
         builder.HasOne<DownloadCategory>()

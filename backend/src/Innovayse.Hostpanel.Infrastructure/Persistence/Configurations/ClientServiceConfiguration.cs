@@ -1,6 +1,5 @@
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Products;
-using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Infrastructure.Persistence.Converters;
 using Microsoft.EntityFrameworkCore;
@@ -51,6 +50,11 @@ public sealed class ClientServiceConfiguration : IEntityTypeConfiguration<Client
         builder.Property(x => x.SubscriptionId).HasMaxLength(256);
         builder.Property(x => x.AutoTerminateReason).HasMaxLength(2000);
         builder.Property(x => x.AdminNotes).HasMaxLength(2000);
+
+        // Every SSH key add moves SshKeyRevision in the same save as the key, so the add updates this row and the row's
+        // xmin token (above) makes two adds of one service conflict; the loser recounts, so the per-service key limit
+        // holds. An unrelated save of the same service in that window conflicts too, which the installer retries.
+        builder.Property(x => x.SshKeyRevision).IsRequired().HasDefaultValue(0L);
         builder.Ignore(x => x.DomainEvents);
 
         // A client who still has this record cannot be deleted: billing, service and support history

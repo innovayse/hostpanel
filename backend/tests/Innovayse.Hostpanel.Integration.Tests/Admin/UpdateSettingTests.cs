@@ -11,7 +11,8 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin;
 
 /// <summary>
 /// <c>PUT /api/admin/settings/{id}</c>: an admin can change a free-text or a vocabulary-bound
-/// setting's value, an unknown id is refused <c>SETTING_NOT_FOUND</c>, an out-of-vocabulary or
+/// setting's value, a row outside the general catalogue is refused <c>SETTING_NOT_EDITABLE</c>, an
+/// unknown id is refused <c>SETTING_NOT_FOUND</c>, an out-of-vocabulary or
 /// wrong-shape value is refused <c>INVALID_SETTING_VALUE</c> with a per-key message, a caller with
 /// only the Client role is refused, and the route is closed to a caller with no credential.
 /// </summary>
@@ -21,51 +22,75 @@ public sealed class UpdateSettingTests(IntegrationTestFactory factory) : IClassF
     /// <summary>An id no seeded or created setting ever takes.</summary>
     private const int NoSuchSettingId = 999_999_999;
 
-    /// <summary>An empty or absent value for a secret setting keeps the stored secret.</summary>
-    [Fact]
-    public async Task SecretKey_EmptyValue_KeepsTheStoredSecretAsync()
+    /// <summary>
+    /// A row outside the general catalogue is refused <c>SETTING_NOT_EDITABLE</c> (400) and its stored
+    /// value is left exactly as it was: integration fields (secret and plain), an integration switch,
+    /// a plugin's integration field, the setup token and a deployment key.
+    /// </summary>
+    /// <param name="key">The full setting key of the row outside the catalogue.</param>
+    /// <param name="stored">The value planted under the key before the write.</param>
+    [Theory]
+    [InlineData("integration:plesk:password", "stored-panel-password")]
+    [InlineData("integration:stripe:publishable_key", "pk_test_stored")]
+    [InlineData("integration:enom:is_enabled", "false")]
+    [InlineData("integration:acme-plugin:endpoint", "https://stored.example.com")]
+    [InlineData("auth:setup-token", "stored-setup-token")]
+    [InlineData("company.name", "HostPanel")]
+    public async Task KeyOutsideTheCatalogue_IsRefusedAndKeepsItsValueAsync(string key, string stored)
     {
         var client = await AdminTestSeeds.AdminClientAsync(factory);
-        var id = await SecretSettingTestSeeds.StoreAsync(factory, "integration:plesk:password", "stored-panel-password");
+        var id = await SecretSettingTestSeeds.StoreAsync(factory, key, stored);
+        var before = await SecretSettingTestSeeds.ReadRawAsync(factory, key);
 
+        var update = await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = "overwritten" });
         var empty = await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = string.Empty });
-        var absent = await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { });
 
-        empty.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        absent.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        (await SecretSettingTestSeeds.ReadAsync(factory, "integration:plesk:password")).Should().Be("stored-panel-password");
+        update.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await AdminTestSeeds.AssertCodeAsync(update, HostpanelErrorCodes.SETTING_NOT_EDITABLE);
+        empty.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await AdminTestSeeds.AssertCodeAsync(empty, HostpanelErrorCodes.SETTING_NOT_EDITABLE);
+        (await SecretSettingTestSeeds.ReadRawAsync(factory, key)).Should().Be(before);
     }
 
-    /// <summary>A new value for a secret setting replaces the stored one, and is not echoed back.</summary>
+    /// <summary>A plugin-system key (<c>plugins.allow_unsigned</c>) is in the catalogue and still updates.</summary>
     [Fact]
-    public async Task SecretKey_NewValue_ReplacesTheStoredSecretAsync()
+    public async Task PluginKey_AllowUnsigned_StillUpdatesAsync()
     {
         var client = await AdminTestSeeds.AdminClientAsync(factory);
-        var id = await SecretSettingTestSeeds.StoreAsync(factory, "integration:enom:api_key", "old-registrar-key");
+        var id = await AdminTestSeeds.FindSettingIdAsync(client, PluginSettingKeys.AllowUnsigned);
 
-        var update = await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = "new-registrar-key" });
-
-        update.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        (await SecretSettingTestSeeds.ReadAsync(factory, "integration:enom:api_key")).Should().Be("new-registrar-key");
-        var raw = await SecretSettingTestSeeds.ReadRawAsync(factory, "integration:enom:api_key");
-        raw.Should().NotBeNullOrEmpty().And.NotContain("new-registrar-key", "a secret is stored encrypted");
-        var read = await client.GetFromJsonAsync<JsonElement>($"/api/admin/settings/{id}");
-        read.GetRawText().Should().NotContain("new-registrar-key");
+        try
+        {
+            (await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = PluginSettingKeys.On })).StatusCode
+                .Should().Be(HttpStatusCode.NoContent);
+            var read = await client.GetFromJsonAsync<JsonElement>($"/api/admin/settings/{id}");
+            read.GetProperty("value").GetString().Should().Be(PluginSettingKeys.On);
+        }
+        finally
+        {
+            await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = PluginSettingKeys.Off });
+        }
     }
 
-    /// <summary>An explicit clear removes a secret setting's value.</summary>
+    /// <summary>A billing key in the catalogue still updates.</summary>
     [Fact]
-    public async Task SecretKey_Clear_RemovesTheStoredSecretAsync()
+    public async Task BillingKey_InvoiceDaysBefore_StillUpdatesAsync()
     {
         var client = await AdminTestSeeds.AdminClientAsync(factory);
-        var id = await SecretSettingTestSeeds.StoreAsync(factory, "integration:resellerclub:api_key", "reseller-key");
+        var id = await AdminTestSeeds.FindSettingIdAsync(client, BillingSettingKeys.InvoiceDaysBefore);
+        var original = (await client.GetFromJsonAsync<JsonElement>($"/api/admin/settings/{id}")).GetProperty("value").GetString();
 
-        var update = await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { clear = true });
-
-        update.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        (await SecretSettingTestSeeds.ReadAsync(factory, "integration:resellerclub:api_key")).Should().BeEmpty();
-        var read = await client.GetFromJsonAsync<JsonElement>($"/api/admin/settings/{id}");
-        read.GetProperty("hasValue").GetBoolean().Should().BeFalse();
+        try
+        {
+            (await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = "14" })).StatusCode
+                .Should().Be(HttpStatusCode.NoContent);
+            var read = await client.GetFromJsonAsync<JsonElement>($"/api/admin/settings/{id}");
+            read.GetProperty("value").GetString().Should().Be("14");
+        }
+        finally
+        {
+            await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = original });
+        }
     }
 
     /// <summary>A value from the key's own vocabulary is stored, in its canonical spelling.</summary>

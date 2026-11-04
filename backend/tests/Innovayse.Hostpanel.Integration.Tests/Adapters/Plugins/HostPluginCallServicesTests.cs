@@ -2,6 +2,7 @@ using System.Reflection;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Plugins.Common;
+using Innovayse.Hostpanel.Application.Services.Common;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Products;
@@ -95,7 +96,8 @@ public sealed class HostPluginCallServicesTests(IntegrationTestFactory factory) 
             sp.GetRequiredService<IPluginHostFactsReader>(),
             sp.GetRequiredService<IIdentityProvider>(),
             sp.GetRequiredService<IPayerCurrencyResolver>(),
-            oneKey);
+            oneKey,
+            sp.GetRequiredService<PluginSshAccessService>());
 
         var over = callServices.Create(PluginCallBinding.WithoutClient(pluginId));
         var other = callServices.Create(PluginCallBinding.WithoutClient(pluginId));
@@ -171,18 +173,6 @@ public sealed class HostPluginCallServicesTests(IntegrationTestFactory factory) 
             .Should().NotContain(n => n.Contains("clientid") || n.Contains("pluginid") || n.Contains("scope"));
     }
 
-    /// <summary>A null binding is refused.</summary>
-    [Fact]
-    public void Create_RefusesANullBinding()
-    {
-        using var scope = factory.Services.CreateScope();
-        var services = scope.ServiceProvider.GetRequiredService<IPluginCallServices>();
-
-        var act = () => services.Create(null!);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
-
     /// <summary>Names of the public instance methods a type declares itself.</summary>
     /// <param name="type">The implementation.</param>
     /// <returns>The method names.</returns>
@@ -214,12 +204,17 @@ public sealed class HostPluginCallServicesTests(IntegrationTestFactory factory) 
         return (client.Id, service.Id);
     }
 
-    /// <summary>Until hosting access is granted (#758), both SSH members refuse with <c>NotAllowed</c> and touch nothing.</summary>
+    /// <summary>
+    /// The host API hands both SSH members to the SSH access service (#758): an admin-area call, which acts for no
+    /// client, is refused with <c>NotAllowed</c> and touches nothing.
+    /// </summary>
     /// <returns>A task.</returns>
     [Fact]
-    public async Task SshAccess_IsRefusedAsNotAllowed()
+    public async Task SshAccess_OnAnAdminCall_IsRefusedAsNotAllowed()
     {
-        var host = new PluginHostApi(PluginCallBinding.WithoutClient("p"), null!, null!, null!);
+        using var scope = factory.Services.CreateScope();
+        var host = scope.ServiceProvider.GetRequiredService<IPluginCallServices>()
+            .Create(PluginCallBinding.WithoutClient("p")).Host;
 
         var issue = () => host.IssueSshAccessAsync(1, "label", CancellationToken.None);
         var revoke = () => host.RevokeSshAccessAsync(1, Guid.NewGuid(), CancellationToken.None);

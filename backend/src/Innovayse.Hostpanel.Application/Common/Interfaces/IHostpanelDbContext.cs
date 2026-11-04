@@ -272,6 +272,13 @@ public interface IHostpanelDbContext
     public void DetachAll();
 
     /// <summary>
+    /// Detaches one tracked entity, so a retry can read it fresh without dropping what else the request staged.
+    /// Nothing happens for an entity that is not tracked.
+    /// </summary>
+    /// <param name="entity">The entity to stop tracking.</param>
+    public void Detach(object entity);
+
+    /// <summary>
     /// Throws away every change not yet saved: added entities are detached, modified and deleted
     /// ones return to their last loaded values. Entities already saved stay tracked, so one failed
     /// write does not poison the next save of the same unit of work.

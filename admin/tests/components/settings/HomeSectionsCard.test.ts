@@ -20,8 +20,6 @@ const rows: Setting[] = Object.values(HomeSection).map((section, index) => ({
   id: index + 1,
   key: HOME_SECTION_SETTING[section],
   value: section === HomeSection.Projects ? 'false' : 'true',
-  isSecret: false,
-  hasValue: true,
 }))
 
 /**

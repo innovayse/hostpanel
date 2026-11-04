@@ -46,7 +46,8 @@ public sealed class TicketReply : BaseEntity
     /// <param name="authorName">Display name of the author.</param>
     /// <param name="isStaffReply">Whether the author is a staff member.</param>
     /// <returns>A new <see cref="TicketReply"/> instance.</returns>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="message"/> or <paramref name="authorName"/> is null or whitespace.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="message"/> is null or whitespace.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="authorName"/> is null or whitespace.</exception>
     public static TicketReply Create(string message, string authorName, bool isStaffReply)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(message);

@@ -15,7 +15,9 @@
       "welcomeBack": "С возвращением,",
       "account": "Аккаунт",
       "brand": "{site}",
-      "toggleMenu": "Открыть или закрыть меню"
+      "toggleMenu": "Открыть или закрыть меню",
+      "documentation": "Документация",
+      "help": "Справка"
     },
     "login": {
       "title": "Вход в аккаунт",

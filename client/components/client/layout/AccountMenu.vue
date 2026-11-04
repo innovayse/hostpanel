@@ -40,6 +40,22 @@
         {{ item.label }}
       </UiButton>
 
+      <template v-if="docsUrl">
+        <div class="my-1 h-px bg-gray-200 dark:bg-white/10" />
+
+        <UiLink
+          :href="docsUrl"
+          external
+          role="menuitem"
+          class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 no-underline hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10"
+          data-testid="client-account-help"
+          @click="open = false"
+        >
+          <BookOpen :size="16" :stroke-width="2" aria-hidden="true" />
+          {{ $t('client.nav.help') }}
+        </UiLink>
+      </template>
+
       <div class="my-1 h-px bg-gray-200 dark:bg-white/10" />
 
       <UiButton
@@ -66,7 +82,7 @@
  * widget (standalone or demo), so the header is never left without an account control. Purely
  * presentational: the layout hands it the profile and the already-permission-filtered links.
  */
-import { LogOut } from 'lucide-vue-next'
+import { BookOpen, LogOut } from 'lucide-vue-next'
 import type { ClientNavItem } from '~/types/clientnavitem'
 
 /** Props of ClientLayoutAccountMenu. */
@@ -96,6 +112,9 @@ const emit = defineEmits<{
 
 /** Translator for the fallback name. */
 const { t } = useI18n()
+
+/** Documentation URL from runtime config; empty when the docs site is not configured. */
+const { public: { docsUrl } } = useRuntimeConfig()
 
 /** Whether the panel is open (v-model of the popover). */
 const open = ref(false)

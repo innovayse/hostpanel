@@ -4,7 +4,9 @@ using System.Text.RegularExpressions;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Plugins;
+using Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
 using Innovayse.SDK.Plugins.Enums;
+using Innovayse.SDK.Plugins.Host;
 using Innovayse.SDK.Plugins.Manifest;
 using Innovayse.SDK.Plugins.Slots;
 
@@ -20,6 +22,9 @@ internal static partial class PluginManifestValidator
     /// <summary>The locale whose texts must define every text key a manifest uses; the other locales may fall back to it.</summary>
     private const string EnglishLocale = "en";
 
+    /// <summary>The first manifest version that may declare <c>hostAccess</c>.</summary>
+    private const int HostAccessManifestVersion = 2;
+
     /// <summary>The manifest versions this host reads: <c>1</c> (fields only) and <c>2</c> (settings, locales, api, ui).</summary>
     private static readonly IReadOnlySet<int> SupportedManifestVersions = new HashSet<int> { 1, 2 };
 
@@ -31,6 +36,17 @@ internal static partial class PluginManifestValidator
     private static readonly IReadOnlySet<string> ClientPermissionNames = Enum.GetNames<ClientPermission>()
         .Where(name => name != nameof(ClientPermission.None))
         .ToHashSet(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The capabilities this host knows and the plugin types that may carry each; <see langword="null"/> means every
+    /// type. A name missing here is refused, so a capability the host cannot honour never reaches activation.
+    /// </summary>
+    private static readonly IReadOnlyDictionary<string, PluginType?> CapabilityTypes =
+        new Dictionary<string, PluginType?>(StringComparer.Ordinal)
+        {
+            [PluginCapabilities.StoredCredentials] = PluginType.Payment,
+            [PluginCapabilities.Endpoints] = null,
+        };
 
     /// <summary>The name of the SDK assembly a plugin references, read from the assembly the host itself compiled against.</summary>
     private static readonly string SdkAssemblyName = typeof(PluginManifest).Assembly.GetName().Name!;
@@ -99,7 +115,10 @@ internal static partial class PluginManifestValidator
                 PluginManifestRule.VersionInvalid, "the manifest version is not a valid version: use major.minor.patch, for example 1.2.3");
         }
 
-        return CheckRoutes(PluginArea.Client, manifest.Api.Client)
+        return CheckHostAccess(manifest)
+            ?? CheckCapabilities(manifest)
+            ?? CheckEndpointsDeclared(manifest)
+            ?? CheckRoutes(PluginArea.Client, manifest.Api.Client)
             ?? CheckRoutes(PluginArea.Admin, manifest.Api.Admin)
             ?? CheckPages(PluginArea.Client, manifest.Ui.Client)
             ?? CheckPages(PluginArea.Admin, manifest.Ui.Admin)
@@ -177,6 +196,66 @@ internal static partial class PluginManifestValidator
             // A native library or a damaged file: it cannot have been built against the SDK, and loading it fails on its own terms.
             return null;
         }
+    }
+
+    /// <summary>
+    /// Checks that every declared capability is one the host knows, declared once, and one the plugin's type may carry.
+    /// </summary>
+    /// <param name="manifest">The manifest.</param>
+    /// <returns>The <see cref="PluginManifestRule.CapabilityNotAllowed"/> violation, or <see langword="null"/>.</returns>
+    private static PluginManifestViolation? CheckCapabilities(PluginManifest manifest)
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var capability in manifest.Capabilities)
+        {
+            // A repeat is refused rather than ignored: it is a manifest mistake, and the list is shown to the operator.
+            if (!seen.Add(capability))
+            {
+                return new PluginManifestViolation(
+                    PluginManifestRule.CapabilityNotAllowed, $"capabilities names '{capability}' twice");
+            }
+
+            if (!CapabilityTypes.TryGetValue(capability, out var only))
+            {
+                return new PluginManifestViolation(
+                    PluginManifestRule.CapabilityNotAllowed, $"capabilities names '{capability}', which this host does not define");
+            }
+
+            if (only is { } type && manifest.Type != type)
+            {
+                return new PluginManifestViolation(
+                    PluginManifestRule.CapabilityNotAllowed, $"capabilities names '{capability}', which only a {type} plugin may carry");
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Refuses <c>api</c> routes and <c>ui</c> menus, pages and slots on a plugin the host would not serve: they would be
+    /// accepted and then silently never answer, which reads as a host fault to the plugin author.
+    /// </summary>
+    /// <param name="manifest">The manifest.</param>
+    /// <returns>The <see cref="PluginManifestRule.EndpointsNotDeclared"/> violation, or <see langword="null"/>.</returns>
+    private static PluginManifestViolation? CheckEndpointsDeclared(PluginManifest manifest)
+    {
+        if (manifest.ServesEndpoints())
+        {
+            return null;
+        }
+
+        var declaresAny = manifest.Api.Client.Count > 0
+            || manifest.Api.Admin.Count > 0
+            || manifest.Ui.Client.Menus.Count > 0
+            || manifest.Ui.Client.Pages.Count > 0
+            || manifest.Ui.Admin.Menus.Count > 0
+            || manifest.Ui.Admin.Pages.Count > 0
+            || manifest.Ui.Slots.Count > 0;
+        return declaresAny
+            ? new PluginManifestViolation(
+                PluginManifestRule.EndpointsNotDeclared,
+                $"a {manifest.Type} plugin declares api or ui entries without the '{PluginCapabilities.Endpoints}' capability")
+            : null;
     }
 
     /// <summary>Checks the routes one area declares: permission, path and uniqueness.</summary>
@@ -281,6 +360,39 @@ internal static partial class PluginManifestValidator
                 return new PluginManifestViolation(
                     PluginManifestRule.MenuIconInvalid,
                     $"ui.{AreaMember(area)}.menus '{menu.Id}' icon: an icon is 1 to {MaxIconNameLength} lowercase letters, digits and hyphens");
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Checks <c>hostAccess</c>: every entry is a kind the SDK defines (<see cref="PluginHostAccess.All"/>, exact case),
+    /// none twice, and only in a version 2 manifest. An unknown kind would otherwise be shown to the admin as a capability
+    /// the host never grants, and a version 1 manifest predates the member.
+    /// </summary>
+    /// <param name="manifest">The manifest.</param>
+    /// <returns>The <see cref="PluginManifestRule.HostAccessUnknown"/> violation, or <see langword="null"/>.</returns>
+    private static PluginManifestViolation? CheckHostAccess(PluginManifest manifest)
+    {
+        if (manifest.HostAccess.Count == 0)
+        {
+            return null;
+        }
+
+        if (manifest.ManifestVersion < HostAccessManifestVersion)
+        {
+            return new PluginManifestViolation(
+                PluginManifestRule.HostAccessUnknown, "hostAccess is declared in a version 1 manifest");
+        }
+
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var kind in manifest.HostAccess)
+        {
+            if (kind is null || !PluginHostAccess.All.Contains(kind, StringComparer.Ordinal) || !seen.Add(kind))
+            {
+                return new PluginManifestViolation(
+                    PluginManifestRule.HostAccessUnknown, $"hostAccess '{kind}' is unknown or listed more than once");
             }
         }
 

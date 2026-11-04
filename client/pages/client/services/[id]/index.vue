@@ -31,6 +31,7 @@
             :service-id="serviceId"
             :sso-loading="ssoLoading"
             :sso-error="ssoError"
+            :plugin-tabs="pluginTabs"
             @cpanel="loginToCpanel"
           />
         </template>
@@ -62,6 +63,15 @@
           <ClientServicesServicePasswordForm v-else-if="activeTab === ServiceTab.Password" :service-id="serviceId" />
           <ClientServicesServiceCancelForm v-else-if="activeTab === ServiceTab.Cancel" :service-id="serviceId" />
           <ClientServicesServiceSshKeys v-else-if="activeTab === ServiceTab.Ssh" :service-id="serviceId" />
+          <UiCard v-else-if="activePluginWidget" :title="activePluginWidget.title ?? undefined">
+            <!-- Keyed by tab and service: another tab or another service is a fresh, isolated widget, never a reused one. -->
+            <PluginSlotWidget
+              :key="`${activeTab}:${serviceId}`"
+              :slot-id="PluginSlotId.ServiceTabs"
+              :widget="activePluginWidget"
+              :context="slotContext"
+            />
+          </UiCard>
         </template>
       </UiSplit>
     </template>
@@ -73,7 +83,8 @@
  * Service detail: header and notices, a side menu and the panel it selects (overview with
  * the suspension reason, details, server and usage, and invoices; change password; request cancellation). Every
  * in-flight flag and refusal sentence belongs to the service management store; the panels read
- * them there. A service that has no control-panel account yet is sent to its setup wizard.
+ * them there. A service that has no control-panel account yet is sent to its setup wizard. The
+ * tabs plugins add follow the host's own, each an isolated widget.
  */
 import { AlertCircle } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
@@ -82,6 +93,9 @@ import { serviceAwaitsSetup } from '~/utils/serviceSetup'
 import { Permission } from '~/composables/usePermissions'
 import { useClientStore } from '~/stores/client'
 import { useServiceManagementStore } from '~/stores/servicemanagement'
+import { usePluginSlot } from '~/composables/usePluginSlot'
+import type { PluginSlotWidget as PluginSlotEntry } from '~/types/pluginslotwidget'
+import { PluginSlotId } from '~/types/pluginslotid'
 import { ServiceStatus } from '~/types/servicestatus'
 import { ServiceTab } from '~/types/servicetab'
 import { SuspensionSource } from '~/types/suspensionsource'
@@ -144,8 +158,30 @@ const cancelStatus = computed(() => mgmt.cancelStatus)
  */
 const clientCurrency = computed(() => ({ code: store.user?.currency }))
 
-/** The panel shown beside the side menu, a `ServiceTab` value (a string so the menu can v-model it). */
+/** The panel shown beside the side menu, a `ServiceTab` value or a plugin tab's key (a string so the menu can v-model it). */
 const activeTab = ref<string>(ServiceTab.Overview)
+
+/** The slot's context: the service this page shows, which the host verifies is the reader's. */
+const slotContext = computed(() => ({ serviceId: String(serviceId) }))
+
+/** The tabs plugins add to this service, read after the page mounts. */
+const { widgets: pluginWidgets } = usePluginSlot(PluginSlotId.ServiceTabs, () => slotContext.value)
+
+/**
+ * The side-menu key of a plugin tab, kept apart from the host's own `ServiceTab` values. The menu renders it into
+ * `data-testid="service-tab-<key>"`, so it uses dots: neither a plugin id nor a widget id may hold one, which keeps
+ * the key unambiguous (a hyphen could not tell plugin `a-b` widget `c` from plugin `a` widget `b-c`).
+ *
+ * @param widget - The widget.
+ * @returns The key.
+ */
+const pluginTabKey = (widget: PluginSlotEntry): string => `plugin.${widget.pluginId}.${widget.id}`
+
+/** The plugin tabs as the side menu lists them; a widget with no title is labelled by its id. */
+const pluginTabs = computed(() => pluginWidgets.value.map(widget => ({ key: pluginTabKey(widget), label: widget.title ?? widget.id })))
+
+/** The plugin widget of the open tab, when a plugin tab is open. */
+const activePluginWidget = computed(() => pluginWidgets.value.find(widget => pluginTabKey(widget) === activeTab.value))
 
 /**
  * Reads the invoices raised against this service. The store keeps the list, the count of

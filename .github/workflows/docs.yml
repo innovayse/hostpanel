@@ -4,11 +4,13 @@ on:
   pull_request:
     paths:
       - 'docs/**'
+      - 'backend/**'
       - '.github/workflows/docs.yml'
   push:
     branches: [main]
     paths:
       - 'docs/**'
+      - 'backend/**'
       - '.github/workflows/docs.yml'
 
 permissions:
@@ -20,8 +22,68 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # The reference is generated from the code, never from a committed copy: this job builds the API
+  # and writes its OpenAPI document, and the build job turns that document into pages. The document
+  # is exported with the Swashbuckle CLI, which builds the application's services without starting
+  # it, so no database, mail server or sign-on service is needed. The three settings below are the
+  # ones the host reads while it is being assembled; any value will do because nothing is stored.
+  openapi:
+    name: Export OpenAPI document
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          submodules: true
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore API
+        run: dotnet restore backend/src/Innovayse.Hostpanel.API/Innovayse.Hostpanel.API.csproj -p:InnovayseSso=false
+
+      - name: Build API
+        run: dotnet build backend/src/Innovayse.Hostpanel.API/Innovayse.Hostpanel.API.csproj -c Release --no-restore -p:InnovayseSso=false
+
+      - name: Export the OpenAPI document
+        env:
+          # The CLI targets .NET 8; let it run on the .NET 9 runtime of this job.
+          DOTNET_ROLL_FORWARD: Major
+          ASPNETCORE_ENVIRONMENT: Testing
+          Auth__Mode: local
+          EncryptionKey: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+          ConnectionStrings__DefaultConnection: Host=localhost;Database=openapi;Username=openapi;Password=openapi
+        run: |
+          # Same version as the Swashbuckle package the API is built with, so the document does not depend on the tool.
+          version=$(grep -oP 'Include="Swashbuckle\.AspNetCore" Version="\K[^"]+' backend/Directory.Packages.props)
+          dotnet tool install --tool-path "$RUNNER_TEMP/tools" Swashbuckle.AspNetCore.Cli --version "$version"
+          cd backend/src/Innovayse.Hostpanel.API/bin/Release/net9.0
+          "$RUNNER_TEMP/tools/swagger" tofile --output "$GITHUB_WORKSPACE/openapi.json" Innovayse.Hostpanel.API.dll v1
+
+      - name: Check the document
+        run: |
+          node <<'EOF'
+          const document = JSON.parse(require('fs').readFileSync('openapi.json', 'utf8'))
+          const paths = Object.keys(document.paths ?? {}).length
+          if (paths < 100) {
+            console.error(`openapi.json has only ${paths} paths`)
+            process.exit(1)
+          }
+          console.log(`${document.info.title} ${document.info.version}: ${paths} paths`)
+          EOF
+
+      - name: Upload OpenAPI document
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: openapi
+          path: openapi.json
+          retention-days: 90
+
   build:
     name: Build docs
+    needs: openapi
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
@@ -29,7 +91,7 @@ jobs:
         working-directory: docs
 
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
 
@@ -42,7 +104,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Download OpenAPI document
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: openapi
+          path: ${{ github.workspace }}
+
+      - name: Generate the API reference pages
+        run: |
+          node docs/scripts/generate-api-reference.mjs openapi.json
+          node docs/scripts/generate-error-codes.mjs
+        working-directory: ${{ github.workspace }}
+
       - name: Build
+        env:
+          DEMO_ADMIN_URL: ${{ vars.DEMO_ADMIN_URL }}
+          DEMO_CLIENT_URL: ${{ vars.DEMO_CLIENT_URL }}
         run: npm run build
 
       - name: Check docs

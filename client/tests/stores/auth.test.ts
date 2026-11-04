@@ -511,6 +511,19 @@ describe('useAuthStore.endLocalSession', () => {
     expect(store.user).toBeNull()
   })
 
+  it('forgets the plugin menu and page of the person whose session ended', async () => {
+    logoutMock.mockResolvedValue(undefined)
+    const { usePluginsStore } = await import('~/stores/plugins')
+    const plugins = usePluginsStore()
+    plugins.menu = [{ label: 'My sites', icon: null, url: '/client/apps/acme-sites/sites' }]
+    plugins.uiLoaded = true
+
+    await useAuthStore().endLocalSession()
+
+    expect(plugins.menu).toEqual([])
+    expect(plugins.uiLoaded).toBe(false)
+  })
+
   it('still ends the session on this side when the clear is refused', async () => {
     logoutMock.mockRejectedValue(new Error('offline'))
     const store = useAuthStore()

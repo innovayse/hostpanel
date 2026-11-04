@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
@@ -8,7 +9,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Common;
 /// <summary>
 /// Classifies setting keys as secret for every settings read and write: the keys
 /// <see cref="SecretSettingKeys"/> names, plus every setting a loaded plugin's manifest declares with
-/// the secret kind or a kind this release does not define. The manifest's settings and its legacy fields are
+/// the secret kind or a kind this release does not define, and every built-in catalogue field whose input kind is a secret one. The manifest's settings and its legacy fields are
 /// both read, so a manifest that mixes the two keeps a secret field secret even when its settings omit it.
 /// It is the one question every handler asks, so no handler decides on its own.
 /// </summary>
@@ -39,6 +40,15 @@ public sealed class SettingSecrecy
                 .Where(s => s.IsSecret())
                 .Select(s => IntegrationSettingKeys.FieldKey(m.Id, s.Key)))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // A catalogue field typed as a credential is secret by its declaration, not only by a hand-kept key list.
+        foreach (var (slug, entry) in IntegrationCatalogue.All)
+        {
+            foreach (var field in entry.Fields.Where(f => SecretSettingKeys.IsSecretFieldType(f.Type)))
+            {
+                keys.Add(IntegrationSettingKeys.FieldKey(slug, field.Key));
+            }
+        }
 
         return new SettingSecrecy(keys);
     }

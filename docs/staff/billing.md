@@ -4,6 +4,8 @@ title: Invoices and payments
 
 # Invoices and payments <Label type="admin" />
 
+<DemoLink path="/billing/invoices" />
+
 Opening an invoice that does not exist returns `INVOICE_NOT_FOUND`.
 
 ## Invoice statuses

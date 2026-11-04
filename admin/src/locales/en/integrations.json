@@ -74,5 +74,11 @@
   },
   "integrationDetail": {
     "saved": "Settings saved."
+  },
+  "connectionState": {
+    "Connected": "Connected",
+    "Degraded": "Degraded",
+    "Unavailable": "Unavailable",
+    "Inactive": "Not checked"
   }
 }

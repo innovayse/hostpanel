@@ -1,15 +1,24 @@
+using Innovayse.Hostpanel.Domain.Servers.Enums;
+
 namespace Innovayse.Hostpanel.Domain.Servers;
 
 /// <summary>
-/// The proportional fill rule that decides which server receives the next hosting account.
+/// The rule that decides which server receives the next hosting account, driven by the group's
+/// <see cref="ServerFillType"/>.
 /// <para>
-/// 1. Disabled servers and servers at full capacity are excluded.
-/// 2. The server with the lowest fill ratio (accounts / maximum accounts) wins.
-/// 3. A tie on the ratio goes to the server with the higher maximum capacity.
-/// 4. A server with no capacity limit counts as having unlimited capacity and a 0% fill.
-/// 5. A server whose account count is unknown counts as empty.
+/// Every fill type first drops disabled servers and servers at full capacity (a server whose limit is 0
+/// is full from the start). A server whose account count is unknown counts as empty.
 /// </para>
-/// A tie on both keys keeps the order the candidates were given in.
+/// <para>
+/// <see cref="ServerFillType.LeastFull"/>: the lowest fill ratio (accounts / maximum accounts) wins; a tie
+/// goes to the default server, then to the higher maximum capacity. A server with no limit has a 0% fill
+/// and unlimited capacity.
+/// </para>
+/// <para>
+/// <see cref="ServerFillType.FillUntilFull"/>: the default server first, then servers with a limit before
+/// unlimited ones, then by name and id, so one server is filled to capacity before the next is used.
+/// </para>
+/// A tie on every key keeps the order the candidates were given in.
 /// </summary>
 public static class ServerFillPolicy
 {
@@ -17,16 +26,28 @@ public static class ServerFillPolicy
     /// Picks the server that should receive the next account.
     /// </summary>
     /// <param name="servers">Candidate servers, in the order that settles a full tie.</param>
+    /// <param name="fillType">How the group distributes accounts across its servers.</param>
     /// <returns>The chosen server, or <see langword="null"/> when no candidate is eligible.</returns>
-    public static Server? SelectBest(IEnumerable<Server> servers)
+    public static Server? SelectBest(IEnumerable<Server> servers, ServerFillType fillType)
     {
-        // OrderBy is a stable sort, so the caller's order decides between two servers that tie on both keys.
-        return servers
+        // A server with MaxAccounts = 0 has IsFull true (0 accounts >= 0), so it is dropped with the full ones.
+        var eligible = servers
             .Where(s => !s.IsDisabled)
-            .Where(s => !IsFull(s))
-            .OrderBy(FillRatio)
-            .ThenByDescending(s => s.MaxAccounts ?? int.MaxValue)
-            .FirstOrDefault();
+            .Where(s => !IsFull(s));
+
+        // OrderBy is a stable sort, so the caller's order decides between two servers that tie on every key.
+        return fillType == ServerFillType.FillUntilFull
+            ? eligible
+                .OrderByDescending(s => s.IsDefault)
+                .ThenBy(s => s.MaxAccounts is null)
+                .ThenBy(s => s.Name, StringComparer.Ordinal)
+                .ThenBy(s => s.Id)
+                .FirstOrDefault()
+            : eligible
+                .OrderBy(FillRatio)
+                .ThenByDescending(s => s.IsDefault)
+                .ThenByDescending(s => s.MaxAccounts ?? int.MaxValue)
+                .FirstOrDefault();
     }
 
     /// <summary>

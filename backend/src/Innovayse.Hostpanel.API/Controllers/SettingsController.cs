@@ -30,7 +30,7 @@ public sealed class SettingsController : BaseApiController
         _bus = bus;
     }
 
-    /// <summary>Returns all configuration settings; a secret one carries no value.</summary>
+    /// <summary>Returns the settings of the general catalogue (portal, billing and plugin system); integration and deployment rows are not listed.</summary>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with every setting; 401 when the caller is not signed in;
@@ -47,11 +47,11 @@ public sealed class SettingsController : BaseApiController
         return HandleResult(outcome);
     }
 
-    /// <summary>Returns a single setting by ID; a secret one carries no value.</summary>
+    /// <summary>Returns a single catalogue setting by ID; any other row answers as if it did not exist.</summary>
     /// <param name="id">Setting primary key.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 with the setting; 400 when a value is refused; 404 when the id names no setting;
+    /// 200 with the setting; 400 when a value is refused; 404 when the id names no catalogue setting;
     /// 401 when the caller is not signed in; 403 when the caller's role is not allowed;
     /// 429 when the rate limit is hit.
     /// </returns>
@@ -67,15 +67,13 @@ public sealed class SettingsController : BaseApiController
         return HandleResult(outcome);
     }
 
-    /// <summary>Updates the value of an existing setting.</summary>
+    /// <summary>Updates the value of an existing catalogue setting; integration fields are saved through the integration endpoints.</summary>
     /// <param name="id">Setting primary key; wins over any id in the body.</param>
-    /// <param name="command">
-    /// The new value, or <c>clear</c> to remove a secret. An empty value for a secret keeps the
-    /// stored one.
-    /// </param>
+    /// <param name="command">The new value; an empty one clears a key that seeds empty.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 204 on success; 400 when the value does not match the key's vocabulary or shape;
+    /// 204 on success; 400 when the value does not match the key's vocabulary or shape, or the row is outside the
+    /// general catalogue (<c>SETTING_NOT_EDITABLE</c>);
     /// 404 when the id names no setting; 401 when the caller is not signed in;
     /// 403 when the caller's role is not allowed;
     /// 429 when the rate limit is hit.

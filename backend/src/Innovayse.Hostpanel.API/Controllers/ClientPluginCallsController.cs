@@ -14,7 +14,7 @@ using Wolverine;
 namespace Innovayse.Hostpanel.API.Controllers;
 
 /// <summary>
-/// The one door to the client area API of every app plugin: <c>/api/client/plugins/{id}/{path}</c>. It binds the
+/// The one door to the client area API of every serving plugin: <c>/api/client/plugins/{id}/{path}</c>. It binds the
 /// request and dispatches it; the use case matches it against the routes the plugin's manifest declares, checks the
 /// caller's account and the route's permission (a refusal is a 404 like an absent route), and only then calls the plugin.
 /// </summary>
@@ -53,7 +53,7 @@ public sealed class ClientPluginCallsController : BaseApiController
         _bus = bus;
     }
 
-    /// <summary>Calls a route of an app plugin in the client area.</summary>
+    /// <summary>Calls a route of a serving plugin in the client area.</summary>
     /// <param name="id">The plugin id.</param>
     /// <param name="path">The path below the plugin's prefix, matched against its declared routes.</param>
     /// <param name="ct">Cancellation token.</param>

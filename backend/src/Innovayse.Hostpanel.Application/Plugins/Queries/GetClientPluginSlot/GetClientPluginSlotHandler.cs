@@ -1,37 +1,27 @@
-using Innovayse.Hostpanel.Application.Common.Errors;
-using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Shared.Models;
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Slots;
 
 namespace Innovayse.Hostpanel.Application.Plugins.Queries.GetClientPluginSlot;
 
 /// <summary>
-/// Handles <see cref="GetClientPluginSlotQuery"/>. The order is the contract: the slot, then the caller's account, then
-/// the context (a service must be the caller's own, <see cref="IServiceOwnership"/>), and only then the index is built, so
-/// nothing is listed for a context the caller may not see and a foreign service id cannot be told from a missing one.
+/// Handles <see cref="GetClientPluginSlotQuery"/>. The order is the contract, unchanged since #644: the slot, then the
+/// caller's account, then the context (a service must be the caller's own), and only then the index is built, so nothing
+/// is listed for a context the caller may not see and a foreign service id cannot be told from a missing one.
 /// </summary>
 public sealed class GetClientPluginSlotHandler
 {
-    /// <summary>Resolves the account the caller acts for and the permissions held there.</summary>
-    private readonly ICallerClientResolver _callerClient;
-
-    /// <summary>The rule that says a client may only name their own services.</summary>
-    private readonly IServiceOwnership _ownership;
+    /// <summary>Checks the slot, the caller and the context.</summary>
+    private readonly ClientPluginSlotGate _gate;
 
     /// <summary>Lists the widgets of the slot.</summary>
     private readonly PluginSlotIndexBuilder _index;
 
     /// <summary>Initializes the handler.</summary>
-    /// <param name="callerClient">Resolves the account the caller acts for and the permissions held there.</param>
-    /// <param name="ownership">The rule that says a client may only name their own services.</param>
+    /// <param name="gate">Checks the slot, the caller and the context.</param>
     /// <param name="index">Lists the widgets of the slot.</param>
-    public GetClientPluginSlotHandler(
-        ICallerClientResolver callerClient, IServiceOwnership ownership, PluginSlotIndexBuilder index)
+    public GetClientPluginSlotHandler(ClientPluginSlotGate gate, PluginSlotIndexBuilder index)
     {
-        _callerClient = callerClient;
-        _ownership = ownership;
+        _gate = gate;
         _index = index;
     }
 
@@ -46,43 +36,25 @@ public sealed class GetClientPluginSlotHandler
     /// </returns>
     public async Task<Result<PluginSlotIndexDto>> HandleAsync(GetClientPluginSlotQuery query, CancellationToken ct)
     {
-        var slot = PluginSlots.Find(query.SlotId);
-        if (slot is not { Area: PluginArea.Client })
+        var slot = ClientPluginSlotGate.FindSlot(query.SlotId);
+        if (slot.IsFailure)
         {
-            return Result<PluginSlotIndexDto>.FailureCode(HostpanelErrorCodes.PLUGIN_SLOT_NOT_FOUND);
+            return Result<PluginSlotIndexDto>.FailureCode(slot.ErrorCode!);
         }
 
-        var access = await _callerClient.ResolveAsync(ct);
-
-        // The plugin that decides the account did not answer: a retryable 503, not a refusal the caller could take for permanent.
-        if (access.IdentityUnavailable)
+        var caller = await _gate.ResolveCallerAsync(ct);
+        if (caller.IsFailure)
         {
-            return Result<PluginSlotIndexDto>.FailureCode(HostpanelErrorCodes.IDENTITY_PLUGIN_UNAVAILABLE);
+            return Result<PluginSlotIndexDto>.FailureCode(caller.ErrorCode!);
         }
 
-        if (access.ClientId is null)
+        var product = await _gate.VerifyContextAsync(slot.Value!, query.ServiceId, ct);
+        if (product.IsFailure)
         {
-            return Result<PluginSlotIndexDto>.FailureCode(HostpanelErrorCodes.CLIENT_PROFILE_NOT_FOUND);
+            return Result<PluginSlotIndexDto>.FailureCode(product.ErrorCode!);
         }
 
-        int? productId = null;
-        if (slot.Offers(PluginSlotContextKeys.ServiceId))
-        {
-            if (query.ServiceId is not { } serviceId)
-            {
-                return Result<PluginSlotIndexDto>.FailureCode(HostpanelErrorCodes.PLUGIN_SLOT_CONTEXT_REQUIRED);
-            }
-
-            // One query settles ownership and reads the product; a foreign and a missing service answer alike.
-            var owned = await _ownership.GetOwnedProductIdAsync(serviceId, ct);
-            if (owned.IsFailure)
-            {
-                return Result<PluginSlotIndexDto>.FailureCode(owned.ErrorCode!);
-            }
-
-            productId = owned.Value;
-        }
-
-        return Result<PluginSlotIndexDto>.Success(await _index.BuildAsync(slot, access.Permissions, productId, ct));
+        return Result<PluginSlotIndexDto>.Success(
+            await _index.BuildAsync(slot.Value!, caller.Value!.Held, product.Value, ct));
     }
 }

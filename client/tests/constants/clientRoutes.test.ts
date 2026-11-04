@@ -13,6 +13,7 @@ import {
   CLIENT_SERVICES_PATH,
   CLIENT_TICKETS_PATH,
   clientAccountTabPath,
+  clientPluginPagePath,
   clientDomainPath,
   clientInvoicePath,
   clientInvoicePayPath,
@@ -63,5 +64,13 @@ describe('client routes', () => {
       .toBe('/client/order-success?order=A+1&invoice=7&domain=a%26b.com&action=transfer')
     expect(clientOrderSuccessPath({ order: 'ORD-0042', digital: true })).toBe('/client/order-success?order=ORD-0042&digital=1')
     expect(clientOrderSuccessPath({ order: 'ORD-0042', digital: false })).toBe('/client/order-success?order=ORD-0042')
+  })
+})
+
+describe('plugin page paths', () => {
+  it('puts a plugin page under /client/apps, the plugin id encoded and a leading slash ignored', () => {
+    expect(clientPluginPagePath('acme-sites', '/sites')).toBe('/client/apps/acme-sites/sites')
+    expect(clientPluginPagePath('acme-sites', 'sites/a%2Fb')).toBe('/client/apps/acme-sites/sites/a%2Fb')
+    expect(clientPluginPagePath('acme-sites', '')).toBe('/client/apps/acme-sites')
   })
 })

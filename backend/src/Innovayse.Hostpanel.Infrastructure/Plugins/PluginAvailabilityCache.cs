@@ -10,7 +10,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
  * plugin on every page load, and the page lookup answered an unknown id without any read but an installed one after a
  * read: the time to answer told a caller which plugin ids exist, and every index request cost one query per plugin.
  *
- * So one pass computes the set of available app plugins for all of them together, and both the index and the page
+ * So one pass computes the set of available serving plugins for all of them together, and both the index and the page
  * lookup answer from that same set: an unknown id and an installed one take the same path, a lookup in memory. The set
  * lives for Lifetime (short, so a change made outside the admin use cases, such as a row edited by hand, still shows
  * within seconds) and is dropped at once by IPluginAvailabilityInvalidator after every use case that writes a plugin's
@@ -19,7 +19,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
  */
 
 /// <summary>
-/// Remembers, for <see cref="Lifetime"/>, which loaded app plugins are available to the panels, computed for every
+/// Remembers, for <see cref="Lifetime"/>, which loaded serving plugins are available to the panels, computed for every
 /// plugin in one pass. A singleton: the remembered set is shared by every request of the process.
 /// </summary>
 public sealed class PluginAvailabilityCache : IDisposable
@@ -55,9 +55,9 @@ public sealed class PluginAvailabilityCache : IDisposable
     /// <summary>
     /// Answers the remembered set while it is fresh, and otherwise computes it once, remembers it and answers it.
     /// </summary>
-    /// <param name="compute">Runs the activation gates of every loaded app plugin and returns the ids that pass.</param>
+    /// <param name="compute">Runs the activation gates of every loaded serving plugin and returns the ids that pass.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The ids of the available app plugins, compared ordinally.</returns>
+    /// <returns>The ids of the available serving plugins, compared ordinally.</returns>
     public async Task<IReadOnlySet<string>> GetOrComputeAsync(
         Func<CancellationToken, Task<IReadOnlySet<string>>> compute,
         CancellationToken ct)

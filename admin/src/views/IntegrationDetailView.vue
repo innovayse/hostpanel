@@ -166,6 +166,7 @@ onMounted(() => {
       <IntegrationStatusSidebar
         :test-result="store.testResult"
         :testing="store.testing"
+        :connection="store.current.connection"
         :endpoint-host="endpointHost"
         :hint="hint"
       />

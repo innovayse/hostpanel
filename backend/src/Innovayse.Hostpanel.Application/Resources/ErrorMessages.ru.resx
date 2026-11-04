@@ -576,6 +576,12 @@
 <data name="PLUGIN_PAGE_NOT_FOUND" xml:space="preserve">
     <value>Такой страницы плагина нет.</value>
   </data>
+  <data name="PLUGIN_ENDPOINTS_NOT_DECLARED" xml:space="preserve">
+    <value>Этот плагин объявляет маршруты, страницы или слоты, но не является плагином-приложением и не объявляет возможность «endpoints».</value>
+  </data>
+  <data name="PLUGIN_CAPABILITY_NOT_ALLOWED" xml:space="preserve">
+    <value>Этот плагин объявляет возможность, которую хост не знает или которая недоступна для его типа плагина.</value>
+  </data>
 <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>Этот архив содержит запись, которая записала бы файл вне папки плагина, и был отклонён.</value>
   </data>
@@ -621,11 +627,14 @@
 <data name="PLUGIN_SLOT_NOT_FOUND" xml:space="preserve">
     <value>Такой области страницы нет.</value>
   </data>
-<data name="PLUGIN_SLOT_CONTEXT_REQUIRED" xml:space="preserve">
-    <value>Для этой области страницы нужен контекст.</value>
-  </data>
   <data name="PLUGIN_SLOT_WIDGET_NOT_FOUND" xml:space="preserve">
     <value>Плагин не объявляет такой виджет.</value>
+  </data>
+  <data name="PLUGIN_SLOT_WIDGET_VIEW_NOT_FOUND" xml:space="preserve">
+    <value>Эта часть страницы недоступна.</value>
+  </data>
+<data name="PLUGIN_SLOT_CONTEXT_REQUIRED" xml:space="preserve">
+    <value>Для этой области страницы нужен контекст.</value>
   </data>
   <data name="PLUGIN_SLOT_PRODUCTS_UNKNOWN" xml:space="preserve">
     <value>Ни один из товаров не существует, виджет не привязан. Чтобы снять привязку, отправьте пустой список.</value>
@@ -654,11 +663,41 @@
 <data name="INTEGRATION_NOT_FOUND" xml:space="preserve">
     <value>Такая интеграция не найдена.</value>
   </data>
+<data name="INTEGRATION_FIELD_UNKNOWN" xml:space="preserve">
+    <value>Интеграция не объявляет это поле.</value>
+  </data>
+<data name="INTEGRATION_FIELD_INVALID" xml:space="preserve">
+    <value>Это значение не подходит для этого поля интеграции.</value>
+  </data>
+<data name="INTEGRATION_NOT_TESTABLE" xml:space="preserve">
+    <value>У этой интеграции нет проверки подключения.</value>
+  </data>
+<data name="PLUGIN_STATUS_HEALTHY" xml:space="preserve">
+    <value>Плагин сообщает, что работает.</value>
+  </data>
+<data name="PLUGIN_STATUS_DEGRADED" xml:space="preserve">
+    <value>Плагин работает с ограничениями.</value>
+  </data>
+<data name="PLUGIN_STATUS_REPORTED_DOWN" xml:space="preserve">
+    <value>Плагин сообщает, что сейчас не может работать.</value>
+  </data>
+<data name="PLUGIN_STATUS_INACTIVE" xml:space="preserve">
+    <value>Плагин выключен или не заполнена обязательная настройка.</value>
+  </data>
+<data name="PLUGIN_STATUS_TIMED_OUT" xml:space="preserve">
+    <value>Плагин не ответил на проверку состояния вовремя.</value>
+  </data>
+<data name="PLUGIN_STATUS_FAILED" xml:space="preserve">
+    <value>Проверка состояния плагина не удалась. Подробности в журнале сервера.</value>
+  </data>
 <data name="SETTING_NOT_FOUND" xml:space="preserve">
     <value>Такая настройка не найдена.</value>
   </data>
 <data name="INVALID_SETTING_VALUE" xml:space="preserve">
     <value>Это значение не подходит для этой настройки.</value>
+  </data>
+<data name="SETTING_NOT_EDITABLE" xml:space="preserve">
+    <value>Эту настройку нельзя изменить здесь.</value>
   </data>
 <data name="BRANDING_IMAGE_INVALID" xml:space="preserve">
     <value>Не удалось прочитать этот файл как изображение. Загрузите PNG, JPEG, WebP, GIF или BMP.</value>
@@ -1050,5 +1089,14 @@
   </data>
   <data name="FULFILMENT_ADVICE_UNAVAILABLE" xml:space="preserve">
     <value>Сейчас не удалось проверить возврат, поэтому средства не возвращены. Повторите попытку позже.</value>
+  </data>
+  <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
+    <value>Плагин запрашивает неизвестный этому серверу вид доступа к хостингу клиента, указывает его дважды или объявляет его в манифесте версии 1.</value>
+  </data>
+  <data name="PLUGIN_VIEW_CONDITION_INVALID" xml:space="preserve">
+    <value>Один из документов представления этого плагина показывает блок по условию, которое не является GET-маршрутом, полем и одним значением или коротким списком значений.</value>
+  </data>
+  <data name="PLUGIN_VIEW_FOLLOW_UP_INVALID" xml:space="preserve">
+    <value>Один из документов представления этого плагина после действия обновляет блок, которого в нём нет, или описывает повторное чтение либо сброс формы в виде, который этот сервер не принимает.</value>
   </data>
 </root>

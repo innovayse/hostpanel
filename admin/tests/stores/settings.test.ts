@@ -74,33 +74,6 @@ describe('settingsStore.updateSetting', () => {
   })
 })
 
-describe('settingsStore.clearSetting', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-  })
-
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
-  it('returns true and refreshes the list', async () => {
-    const fetchMock = stubFetch(json({}), json([{ id: 1, key: 'integration:smtp:password', value: null, isSecret: true, hasValue: false }]))
-    const store = useSettingsStore()
-
-    expect(await store.clearSetting(1)).toBe(true)
-    expect(fetchMock).toHaveBeenCalledTimes(2)
-    expect(store.settings[0]?.hasValue).toBe(false)
-  })
-
-  it('returns false with the API sentence when refused', async () => {
-    stubFetch(problem('Setting not found.', 404))
-    const store = useSettingsStore()
-
-    expect(await store.clearSetting(1)).toBe(false)
-    expect(store.actionError).toBe('Setting not found.')
-  })
-})
-
 describe('settingsStore.saveEmailTemplateVersion', () => {
   beforeEach(() => {
     setActivePinia(createPinia())

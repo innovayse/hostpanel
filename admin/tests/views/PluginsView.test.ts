@@ -29,6 +29,7 @@ const plugin = {
   refusedRule: null,
   refusedDetail: null,
   stagedVersion: null,
+  capabilities: [],
 }
 
 /**
@@ -42,7 +43,7 @@ const stubRoutes = (routes: Record<string, () => Response>) =>
   stubAllRoutes({ 'GET /api/admin/plugins/ineco/slot-widgets': () => json([]), ...routes })
 
 /** The stored "allow unsigned plugins" row, as the settings list returns it. */
-const signingRow = { id: 9, key: PluginSettingKey.AllowUnsigned, value: 'false', isSecret: false, hasValue: true }
+const signingRow = { id: 9, key: PluginSettingKey.AllowUnsigned, value: 'false' }
 
 /**
  * Mounts the screen and waits for the first load.
@@ -177,6 +178,7 @@ describe('PluginsView', () => {
 
     await wrapper.get('[data-testid="plugin-purge-ineco"]').trigger('click')
     await flushPromises()
+    /** Recorded requests to the purge endpoint of the removed plugin. */
     const purgeCalls = () => mock.mock.calls.filter(([url]) => String(url) === '/api/admin/plugins/ineco/data')
     expect(purgeCalls()).toHaveLength(0)
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')

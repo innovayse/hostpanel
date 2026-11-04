@@ -1,12 +1,10 @@
 using Innovayse.Hostpanel.Application.Billing.Common;
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Domains.Registrar;
 using Innovayse.Hostpanel.Application.Migration.Importers;
 using Innovayse.Hostpanel.Application.Migration.Pull;
 using Innovayse.Hostpanel.Application.Notifications.Rendering;
-using Innovayse.Hostpanel.Application.Notifications.Seeding;
 using Innovayse.Hostpanel.Infrastructure.Auth;
 using Innovayse.Hostpanel.Infrastructure.Auth.Settings;
 using Innovayse.Hostpanel.Infrastructure.Authorization;
@@ -433,6 +431,9 @@ public static class DependencyInjection
         // The same rule for client services. The client-facing service handlers call it themselves.
         services.AddScoped<IServiceOwnership, ServiceOwnership>();
         services.AddScoped<IPluginSlotContextReader, PluginSlotContextReader>();
+
+        // The plugin SSH issue budget: the portal's ssh-keys tier per plugin and client, over the plugin limiters (#758).
+        services.AddScoped<IPluginSshIssueLimiter, PluginSshIssueLimiter>();
         services.AddScoped<IPluginHostFactsReader, PluginHostFactsReader>();
 
         // What the signed-in user may do on a client account. The portal's permission filter decides
@@ -895,12 +896,15 @@ public static class DependencyInjection
         services.AddScoped<IFulfilmentPluginResolver, FulfilmentPluginResolver>();
         services.AddScoped<IIdentityPluginResolver, IdentityPluginResolver>();
 
-        // The door to the plugin API routes and the panels' plugin pages: the app plugin of a route or page, the opaque
+        // The door to the plugin API routes and the panels' plugin pages: the serving plugin of a route or page, the opaque
         // references it sees (a keyed hash under a key derived from the encryption key, so nothing is stored) and the
         // call-bound services: the host facts of the call's client and the plugin's own store. Scoped, so a call can use
         // them for as long as its request runs.
         services.AddScoped<IPluginEndpointResolver, PluginEndpointResolver>();
         services.AddScoped<IPluginUiSource, PluginUiSource>();
+
+        // A plugin's IPluginStatus, through the same activation gates, bounded by PluginApi:StatusTimeoutSeconds.
+        services.AddScoped<IPluginStatusProbe, PluginStatusProbe>();
 
         // The panels' plugin availability, computed for every plugin in one pass and remembered for a few seconds, so an
         // index request is not one settings read per plugin and a page lookup costs the same for any id. Singletons: one
@@ -909,6 +913,11 @@ public static class DependencyInjection
         services.AddSingleton<IPluginAvailabilityInvalidator, PluginAvailabilityInvalidator>();
         services.AddSingleton<IPluginReferences>(new PluginReferences(encryptionKey));
         services.AddScoped<IPluginCallServices, HostPluginCallServices>();
+
+        // A streamed call owns a scope of its own, opened from the root container and disposed once its stream is over,
+        // because the use case's scope ends before the response reads the stream (#851). Singleton: it holds only the
+        // container's scope factory.
+        services.AddSingleton<IPluginCallScopeFactory, PluginCallScopeFactory>();
 
         // Hosted plugins start once the host is up and stop as it begins to stop, each failure kept to its plugin.
         // Registered in every environment: with no hosted plugin loaded it opens nothing and reads nothing.

@@ -189,3 +189,14 @@ export const enableDemoMode = async (request: APIRequestContext): Promise<void> 
 export const enableSlides = async (request: APIRequestContext): Promise<void> => {
   await request.post(`${STUB_URL}/__e2e/slides`, { data: { enabled: true } })
 }
+
+/**
+ * Lists fake plugin widgets in the client area slots until the next {@link resetStub}; with none scripted every slot is empty.
+ *
+ * @param request Playwright's API request context.
+ * @param slots Widget ids per slot id, e.g. `{ 'client.dashboard.cards': ['ok', 'broken'] }`; ids are keys of `SLOT_WIDGET_VIEWS`.
+ * @returns Resolves once the stub has accepted the slots.
+ */
+export const setPluginSlots = async (request: APIRequestContext, slots: Record<string, string[]>): Promise<void> => {
+  await request.post(`${STUB_URL}/__e2e/plugin-slots`, { data: slots })
+}

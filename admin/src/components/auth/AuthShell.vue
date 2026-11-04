@@ -3,7 +3,9 @@
  * Centered card shared by the sign-in, first-run setup and email verification screens.
  *
  * Draws the brand wordmark for the active theme, the screen title and an optional subtitle; the screen's own content is the
- * default slot. It holds no state and no decoration of its own, so the three screens cannot drift.
+ * default slot. An optional `banner` slot renders full width above the card, for example the demo notice of the sign-in
+ * screen; the card stays centred in the space below it. It holds no state and no decoration of its own, so the three
+ * screens cannot drift.
  */
 import UiCard from '@/components/ui/UiCard.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
@@ -22,23 +24,26 @@ defineProps<{
 </script>
 
 <template>
-  <UiStack align="center" justify="center" class="min-h-dvh bg-surface-base p-4">
-    <UiCard padding="lg" class="w-full max-w-sm">
-      <UiStack gap="lg">
-        <UiStack direction="row" align="center" gap="sm">
-          <!-- The wordmark for the active theme: it carries the name, so no text beside it. -->
-          <BrandLogo img-class="h-9 w-auto" />
+  <div class="flex min-h-dvh flex-col bg-surface-base">
+    <slot name="banner" />
+    <UiStack align="center" justify="center" class="flex-1 p-4">
+      <UiCard padding="lg" class="w-full max-w-sm">
+        <UiStack gap="lg">
+          <UiStack direction="row" align="center" gap="sm">
+            <!-- The wordmark for the active theme: it carries the name, so no text beside it. -->
+            <BrandLogo img-class="h-9 w-auto" />
+          </UiStack>
+          <UiStack gap="xs">
+            <UiHeading :level="1" variant="page" data-testid="auth-title">
+              {{ title }}
+            </UiHeading>
+            <UiText v-if="subtitle !== undefined" tone="secondary" size="md">
+              {{ subtitle }}
+            </UiText>
+          </UiStack>
+          <slot />
         </UiStack>
-        <UiStack gap="xs">
-          <UiHeading :level="1" variant="page" data-testid="auth-title">
-            {{ title }}
-          </UiHeading>
-          <UiText v-if="subtitle !== undefined" tone="secondary" size="md">
-            {{ subtitle }}
-          </UiText>
-        </UiStack>
-        <slot />
-      </UiStack>
-    </UiCard>
-  </UiStack>
+      </UiCard>
+    </UiStack>
+  </div>
 </template>

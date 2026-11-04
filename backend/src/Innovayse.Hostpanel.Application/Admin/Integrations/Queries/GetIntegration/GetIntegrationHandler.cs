@@ -19,18 +19,24 @@ public sealed class GetIntegrationHandler
     /// <summary>Plugin registry for resolving plugin-provided integrations.</summary>
     private readonly IPluginRegistry _plugins;
 
+    /// <summary>The cached connection state of a plugin that implements <c>IPluginStatus</c>.</summary>
+    private readonly PluginConnectionReader _connections;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="plugins">Plugin registry for resolving plugin-provided integrations.</param>
-    public GetIntegrationHandler(IHostpanelDbContext context, IPluginRegistry plugins)
+    /// <param name="connections">The cached connection state of a plugin that implements <c>IPluginStatus</c>.</param>
+    public GetIntegrationHandler(IHostpanelDbContext context, IPluginRegistry plugins, PluginConnectionReader connections)
     {
         _context = context;
         _plugins = plugins;
+        _connections = connections;
     }
 
     /// <summary>
     /// Loads the configuration for the requested integration or plugin, withholds secret values, and
-    /// returns field definitions for dynamic form rendering.
+    /// returns field definitions for dynamic form rendering, whether it can be tested and, for a plugin that implements
+    /// <c>IPluginStatus</c>, its cached connection state.
     /// </summary>
     /// <param name="query">Query containing the integration slug.</param>
     /// <param name="ct">Cancellation token.</param>
@@ -65,6 +71,13 @@ public sealed class GetIntegrationHandler
                 : new IntegrationFieldValueDto(value ?? string.Empty, IsSecret: false, hasValue);
         }
 
-        return Result<IntegrationDetailDto>.Success(new IntegrationDetailDto(query.Slug, definition.Name, isEnabled, config, definition.Fields));
+        // A built-in slug the test knows keeps its own test; a plugin can be tested only through IPluginStatus.
+        var isBuiltIn = IntegrationCatalogue.TryGetTestable(query.Slug, out _);
+        var manifest = isBuiltIn ? null : _plugins.GetLoadedManifests().FirstOrDefault(m => m.Id == query.Slug);
+        var canTest = isBuiltIn || (manifest is not null && _connections.Supports(manifest.Id));
+        var connection = manifest is not null && isEnabled ? await _connections.ReadAsync(manifest, ct) : null;
+
+        return Result<IntegrationDetailDto>.Success(new IntegrationDetailDto(
+            query.Slug, definition.Name, isEnabled, config, definition.Fields, canTest, connection));
     }
 }

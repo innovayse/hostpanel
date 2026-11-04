@@ -24,6 +24,18 @@ public sealed class GetSettingsTests(IntegrationTestFactory factory) : IClassFix
         rows!.Should().Contain(r => r.GetProperty("key").GetString() == "portal.template");
     }
 
+    /// <summary>A row outside the general catalogue (an integration field) is not listed.</summary>
+    [Fact]
+    public async Task OmitsRowsOutsideTheCatalogueAsync()
+    {
+        await SecretSettingTestSeeds.StoreAsync(factory, "integration:stripe:publishable_key", "pk_test_listed");
+        var client = await AdminTestSeeds.AdminClientAsync(factory);
+
+        var rows = await client.GetFromJsonAsync<List<JsonElement>>("/api/admin/settings");
+
+        rows!.Should().NotContain(r => r.GetProperty("key").GetString() == "integration:stripe:publishable_key");
+    }
+
     /// <summary>A caller with only the Client role is refused with 403.</summary>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()

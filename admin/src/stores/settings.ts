@@ -98,20 +98,6 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   /**
-   * Removes a secret setting's stored value and refreshes the list.
-   *
-   * @param id - Setting ID.
-   * @returns True when cleared; false when refused (see `actionError`).
-   */
-  const clearSetting = async (id: number): Promise<boolean> => {
-    const result = await runAction(actionError, () => api.clearSetting(id))
-    if (result.ok) {
-      await fetchSettings()
-    }
-    return result.ok
-  }
-
-  /**
    * Uploads a branding image and returns where it is served from.
    *
    * @param kind - Which branding slot the image is for.
@@ -249,7 +235,7 @@ export const useSettingsStore = defineStore('settings', () => {
   return {
     settings, emailTemplates, products, productGroups, fieldErrors, clearFieldError,
     loading, error, actionError, uploadError,
-    fetchSettings, updateSetting, clearSetting, fetchEmailTemplates, saveEmailTemplateVersion, fetchProducts, fetchProductGroups,
+    fetchSettings, updateSetting, fetchEmailTemplates, saveEmailTemplateVersion, fetchProducts, fetchProductGroups,
     createProduct, updateProduct, uploadBrandingFile,
   }
 })

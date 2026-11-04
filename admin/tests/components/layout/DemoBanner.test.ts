@@ -1,5 +1,6 @@
 /**
  * Mount tests for DemoBanner: shown only in demo mode, with the label, the countdown and the reset note.
+ * Also covers the guide link: hidden when docsUrl is empty, shown with the correct href when set.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
@@ -7,6 +8,12 @@ import { mount } from '@vue/test-utils'
 import DemoBanner from '@/components/layout/DemoBanner.vue'
 import { useDemoStore } from '@/stores/demo'
 import { createTestI18n } from '../../helpers/i18n'
+
+vi.mock('@/lib/runtimeConfig', () => ({
+  getRuntimeConfig: vi.fn(),
+}))
+
+import { getRuntimeConfig } from '@/lib/runtimeConfig'
 
 afterEach(() => {
   vi.useRealTimers()
@@ -17,9 +24,11 @@ afterEach(() => {
  *
  * @param enabled - Whether demo mode is on.
  * @param nextResetAt - The next reset timestamp, or null.
+ * @param docsUrl - The docs URL to inject via getRuntimeConfig.
  * @returns The wrapper.
  */
-const mountBanner = (enabled: boolean, nextResetAt: string | null) => {
+const mountBanner = (enabled: boolean, nextResetAt: string | null, docsUrl = '') => {
+  vi.mocked(getRuntimeConfig).mockReturnValue({ docsUrl, basePath: '/', clientBaseUrl: '' })
   const pinia = createPinia()
   setActivePinia(pinia)
   const store = useDemoStore()
@@ -59,5 +68,18 @@ describe('DemoBanner', () => {
     await vi.advanceTimersByTimeAsync(60_000)
     expect(load).toHaveBeenCalledWith(true)
     wrapper.unmount()
+  })
+
+  it('hides the guide link when docsUrl is empty', () => {
+    const wrapper = mountBanner(true, null, '')
+    expect(wrapper.find('[data-testid="demo-banner-guide"]').exists()).toBe(false)
+  })
+
+  it('shows the guide link with the correct href when docsUrl is set', () => {
+    const wrapper = mountBanner(true, null, 'https://docs.example.com')
+    const link = wrapper.find('[data-testid="demo-banner-guide"]')
+    expect(link.exists()).toBe(true)
+    expect(link.attributes('href')).toBe('https://docs.example.com')
+    expect(link.attributes('rel')).toContain('noopener')
   })
 })

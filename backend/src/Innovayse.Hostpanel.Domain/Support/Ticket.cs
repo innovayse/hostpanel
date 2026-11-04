@@ -124,6 +124,25 @@ public sealed class Ticket : BaseEntity, IAggregateRoot
     }
 
     /// <summary>
+    /// Tells whether this ticket already held, before <paramref name="createdBefore"/>, a reply with the same
+    /// message, author and staff flag (message and author compared case-insensitively), so an import can skip
+    /// a reply an earlier run wrote. Replies created at or after the cutoff are ignored: a source reply carries
+    /// no date or id, so the same person legitimately writing the same words twice in one run must not be
+    /// mistaken for a duplicate of the reply the run itself just added.
+    /// </summary>
+    /// <param name="message">The reply body text.</param>
+    /// <param name="authorName">Display name of the reply author.</param>
+    /// <param name="isStaffReply">Whether the author is a staff member.</param>
+    /// <param name="createdBefore">The cutoff, UTC: only replies created strictly before it count.</param>
+    /// <returns><see langword="true"/> when an identical reply older than the cutoff is on the ticket.</returns>
+    public bool HasReply(string message, string authorName, bool isStaffReply, DateTimeOffset createdBefore) =>
+        _replies.Any(r =>
+            r.CreatedAt < createdBefore
+            && r.IsStaffReply == isStaffReply
+            && string.Equals(r.Message, message, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(r.AuthorName, authorName, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
     /// Moves the whole history of the ticket into the past, for tickets seeded from history rather than opened now:
     /// the ticket is opened at <paramref name="openedAt"/>, each reply follows the one before it by
     /// <paramref name="gap"/>, and feedback, when it was left, comes one gap after the last reply.

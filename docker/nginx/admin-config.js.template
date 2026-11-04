@@ -1,2 +1,2 @@
 // Generated at container start from ADMIN_BASE_URL_PATH; do not edit in the running container.
-window.__APP_CONFIG__ = { basePath: '${ADMIN_BASE_URL_PATH}', clientBaseUrl: '${CLIENT_BASE_URL}' }
+window.__APP_CONFIG__ = { basePath: '${ADMIN_BASE_URL_PATH}', clientBaseUrl: '${CLIENT_BASE_URL}', docsUrl: '${DOCS_URL}' }

@@ -576,6 +576,12 @@
 <data name="PLUGIN_PAGE_NOT_FOUND" xml:space="preserve">
     <value>Հավելագրիչի այդպիսի էջ չկա։</value>
   </data>
+  <data name="PLUGIN_ENDPOINTS_NOT_DECLARED" xml:space="preserve">
+    <value>Այս հավելագրիչը հայտարարում է երթուղիներ, էջեր կամ սլոտներ, սակայն այն հավելվածի տեսակի հավելագրիչ չէ և չի հայտարարում «endpoints» հնարավորությունը։</value>
+  </data>
+  <data name="PLUGIN_CAPABILITY_NOT_ALLOWED" xml:space="preserve">
+    <value>Այս հավելագրիչը հայտարարում է հնարավորություն, որը սերվերը չի ճանաչում կամ որը նրա տեսակի հավելագրիչը չի կարող ունենալ։</value>
+  </data>
 <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>Այդ արխիվը պարունակում է գրառում, որը կգրեր հավելագրիչի սեփական թղթապանակից դուրս, և մերժվեց։</value>
   </data>
@@ -621,11 +627,14 @@
 <data name="PLUGIN_SLOT_NOT_FOUND" xml:space="preserve">
     <value>Էջի այդ հատվածը հասանելի չէ։</value>
   </data>
-<data name="PLUGIN_SLOT_CONTEXT_REQUIRED" xml:space="preserve">
-    <value>Էջի այս հատվածի համար անհրաժեշտ է համատեքստ։</value>
-  </data>
   <data name="PLUGIN_SLOT_WIDGET_NOT_FOUND" xml:space="preserve">
     <value>Հավելագրիչը այդպիսի վիջեթ չի հայտարարել։</value>
+  </data>
+  <data name="PLUGIN_SLOT_WIDGET_VIEW_NOT_FOUND" xml:space="preserve">
+    <value>Էջի այդ մասը հասանելի չէ։</value>
+  </data>
+<data name="PLUGIN_SLOT_CONTEXT_REQUIRED" xml:space="preserve">
+    <value>Էջի այս հատվածի համար անհրաժեշտ է համատեքստ։</value>
   </data>
   <data name="PLUGIN_SLOT_PRODUCTS_UNKNOWN" xml:space="preserve">
     <value>Ապրանքներից և ոչ մեկը գոյություն չունի, վիջեթը չի կապվել։ Կապը հանելու համար ուղարկեք դատարկ ցուցակ։</value>
@@ -654,11 +663,41 @@
 <data name="INTEGRATION_NOT_FOUND" xml:space="preserve">
     <value>Այդպիսի ինտեգրում չի գտնվել։</value>
   </data>
+<data name="INTEGRATION_FIELD_UNKNOWN" xml:space="preserve">
+    <value>Ինտեգրումը չի հայտարարում այդ դաշտը։</value>
+  </data>
+<data name="INTEGRATION_FIELD_INVALID" xml:space="preserve">
+    <value>Ինտեգրման այս դաշտի համար այդ արժեքը չի ընդունվում։</value>
+  </data>
+<data name="INTEGRATION_NOT_TESTABLE" xml:space="preserve">
+    <value>Այս ինտեգրումը կապի ստուգում չունի։</value>
+  </data>
+<data name="PLUGIN_STATUS_HEALTHY" xml:space="preserve">
+    <value>Պլագինը հայտնում է, որ աշխատում է։</value>
+  </data>
+<data name="PLUGIN_STATUS_DEGRADED" xml:space="preserve">
+    <value>Պլագինն աշխատում է սահմանափակ։</value>
+  </data>
+<data name="PLUGIN_STATUS_REPORTED_DOWN" xml:space="preserve">
+    <value>Պլագինը հայտնում է, որ այս պահին չի կարող աշխատել։</value>
+  </data>
+<data name="PLUGIN_STATUS_INACTIVE" xml:space="preserve">
+    <value>Պլագինն անջատված է, կամ պարտադիր կարգավորումը լրացված չէ։</value>
+  </data>
+<data name="PLUGIN_STATUS_TIMED_OUT" xml:space="preserve">
+    <value>Պլագինը ժամանակին չպատասխանեց վիճակի ստուգմանը։</value>
+  </data>
+<data name="PLUGIN_STATUS_FAILED" xml:space="preserve">
+    <value>Պլագինի վիճակի ստուգումը ձախողվեց։ Մանրամասները սերվերի մատյանում են։</value>
+  </data>
 <data name="SETTING_NOT_FOUND" xml:space="preserve">
     <value>Այդպիսի կարգավորում չի գտնվել։</value>
   </data>
 <data name="INVALID_SETTING_VALUE" xml:space="preserve">
     <value>Այս կարգավորման համար այդ արժեքը չի ընդունվում։</value>
+  </data>
+<data name="SETTING_NOT_EDITABLE" xml:space="preserve">
+    <value>Այս կարգավորումն այստեղ հնարավոր չէ փոխել։</value>
   </data>
 <data name="BRANDING_IMAGE_INVALID" xml:space="preserve">
     <value>Այդ ֆայլը հնարավոր չեղավ կարդալ որպես պատկեր։ Վերբեռնեք PNG, JPEG, WebP, GIF կամ BMP։</value>
@@ -1050,5 +1089,14 @@
   </data>
   <data name="FULFILMENT_ADVICE_UNAVAILABLE" xml:space="preserve">
     <value>Վերադարձը հիմա հնարավոր չեղավ ստուգել, ուստի գումար չի վերադարձվել։ Փորձեք ավելի ուշ։</value>
+  </data>
+  <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
+    <value>Հավելագրիչը պահանջում է հաճախորդի հոսթինգի մուտքի տեսակ, որը այս սերվերը չգիտի, նշում է այն երկու անգամ կամ հայտարարում է 1-ին տարբերակի մանիֆեստում։</value>
+  </data>
+  <data name="PLUGIN_VIEW_CONDITION_INVALID" xml:space="preserve">
+    <value>Այս հավելագրիչի ներկայացման փաստաթղթերից մեկը բլոկը ցույց է տալիս պայմանով, որը GET երթուղի, դաշտ և մեկ արժեք կամ արժեքների կարճ ցուցակ չէ։</value>
+  </data>
+  <data name="PLUGIN_VIEW_FOLLOW_UP_INVALID" xml:space="preserve">
+    <value>Այս հավելագրիչի ներկայացման փաստաթղթերից մեկը գործողությունից հետո թարմացնում է բլոկ, որը չունի, կամ կրկնակի ընթերցումը կամ ձևի մաքրումը նկարագրում է այնպես, ինչպես այս սերվերը չի ընդունում։</value>
   </data>
 </root>

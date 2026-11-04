@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Domain.Clients.Enums;
+using Innovayse.SDK.Plugins.Enums;
 
 namespace Innovayse.Hostpanel.Application.Plugins.Common;
 
@@ -39,13 +40,22 @@ public sealed class PluginCallBinding
     /// </summary>
     public ClientPermission Permissions { get; }
 
+    /// <summary>
+    /// The panel the call came through: <see cref="PluginArea.Client"/> for <see cref="ForClient"/>,
+    /// <see cref="PluginArea.Admin"/> for <see cref="WithoutClient"/>. Access to a client's hosting is granted only on a
+    /// client-area call, and this is where the host API reads the area from, never from the plugin.
+    /// </summary>
+    public PluginArea Area { get; }
+
     /// <summary>Builds a binding; only the factories call it, so only their two shapes exist.</summary>
     /// <param name="pluginId">The plugin being called, already checked not blank.</param>
     /// <param name="clientId">The client the call acts for, or <see langword="null"/> for none.</param>
     /// <param name="clientRef">The reference of <paramref name="clientId"/>, <see langword="null"/> exactly when it is.</param>
     /// <param name="permissions">The caller's permissions on the account, <see cref="ClientPermission.None"/> without one.</param>
-    private PluginCallBinding(string pluginId, int? clientId, string? clientRef, ClientPermission permissions)
+    /// <param name="area">The panel the call came through.</param>
+    private PluginCallBinding(string pluginId, int? clientId, string? clientRef, ClientPermission permissions, PluginArea area)
     {
+        Area = area;
         PluginId = pluginId;
         ClientId = clientId;
         ClientRef = clientRef;
@@ -68,7 +78,7 @@ public sealed class PluginCallBinding
             throw new ArgumentException("A client binding needs the client's reference.", nameof(clientRef));
         }
 
-        return new PluginCallBinding(pluginId, clientId, clientRef, permissions);
+        return new PluginCallBinding(pluginId, clientId, clientRef, permissions, PluginArea.Client);
     }
 
     /// <summary>The binding of an admin call that is not about a client: no facts, a plugin-wide store.</summary>
@@ -78,7 +88,7 @@ public sealed class PluginCallBinding
     public static PluginCallBinding WithoutClient(string pluginId)
     {
         EnsurePluginId(pluginId);
-        return new PluginCallBinding(pluginId, null, null, ClientPermission.None);
+        return new PluginCallBinding(pluginId, null, null, ClientPermission.None, PluginArea.Admin);
     }
 
     /// <summary>Refuses a blank plugin id, which would scope the store and the references to no plugin.</summary>

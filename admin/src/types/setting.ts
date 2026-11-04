@@ -5,14 +5,10 @@ export interface Setting {
   id: number
   /** Setting key. */
   key: string
-  /** Setting value; always null for a secret, whose value the API never sends. */
+  /** Setting value. */
   value: string | null
   /** Optional human-readable description. */
   description?: string
-  /** Whether the setting holds a secret; it is then write only. */
-  isSecret: boolean
-  /** Whether a non-blank value is stored. */
-  hasValue: boolean
 }
 
 /** Keys of the storefront settings the admin cards edit; the strings are the rows' `key` values. */

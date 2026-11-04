@@ -7,3 +7,117 @@
   --vp-home-hero-name-background: linear-gradient(120deg, #5E8EF3 30%, #a78bfa);
   --vp-home-hero-image-background-image: linear-gradient(140deg, #5E8EF320 0%, #a78bfa20 100%);
 }
+
+/* API reference ------------------------------------------------------------------------------
+   Endpoint pages are generated from the OpenAPI document (scripts/generate-api-reference.mjs).
+   The page body sits on the left and the request and response examples in a column on the right,
+   which stays in view while the body scrolls. Below 1100px the two stack.
+   ------------------------------------------------------------------------------------------- */
+
+.api-endpoint-page .VPDoc .container,
+.api-endpoint-page .VPDoc .content-container {
+  max-width: 1180px !important;
+}
+
+.api-endpoint {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 440px);
+  gap: 32px;
+  align-items: start;
+}
+
+.api-main,
+.api-aside {
+  min-width: 0;
+}
+
+.api-aside {
+  position: sticky;
+  top: calc(var(--vp-nav-height) + 24px);
+  max-height: calc(100vh - var(--vp-nav-height) - 48px);
+  overflow-y: auto;
+}
+
+.api-aside h3 {
+  margin-top: 0;
+  font-size: 1rem;
+}
+
+@media (max-width: 1099px) {
+  .api-endpoint {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .api-aside {
+    position: static;
+    max-height: none;
+    overflow-y: visible;
+  }
+}
+
+.api-signature {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  background-color: var(--vp-c-bg-soft);
+}
+
+.api-signature code {
+  font-size: 0.95rem;
+  word-break: break-all;
+}
+
+/* Method badges: in the endpoint signature and in front of each sidebar entry. */
+.api-method,
+.api-badge {
+  display: inline-block;
+  min-width: 3.6em;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: var(--vp-font-family-mono);
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.api-method {
+  font-size: 0.8rem;
+}
+
+.api-badge {
+  margin-right: 4px;
+  font-size: 0.62rem;
+}
+
+.api-method-get,
+.api-badge-get {
+  color: var(--vp-c-green-1);
+  background-color: var(--vp-c-green-soft);
+}
+
+.api-method-post,
+.api-badge-post {
+  color: var(--vp-c-indigo-1);
+  background-color: var(--vp-c-indigo-soft);
+}
+
+.api-method-put,
+.api-badge-put,
+.api-method-patch,
+.api-badge-patch {
+  color: var(--vp-c-yellow-1);
+  background-color: var(--vp-c-yellow-soft);
+}
+
+.api-method-delete,
+.api-badge-delete {
+  color: var(--vp-c-red-1);
+  background-color: var(--vp-c-red-soft);
+}

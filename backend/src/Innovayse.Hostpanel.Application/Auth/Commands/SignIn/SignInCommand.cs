@@ -1,3 +1,6 @@
+using System.Text;
+using Innovayse.Hostpanel.SharedKernel.Domain;
+
 namespace Innovayse.Hostpanel.Application.Auth.Commands.SignIn;
 
 /// <summary>
@@ -11,4 +14,13 @@ namespace Innovayse.Hostpanel.Application.Auth.Commands.SignIn;
 /// </remarks>
 /// <param name="Email">The account's email address; <see langword="null"/> when the body omitted it.</param>
 /// <param name="Password">The password to verify; <see langword="null"/> when the body omitted it.</param>
-public sealed record SignInCommand(string? Email, string? Password);
+public sealed record SignInCommand(string? Email, string? Password)
+{
+    /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
+    /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>
+    /// <returns><see langword="true"/> when at least one member was written.</returns>
+    private bool PrintMembers(StringBuilder builder)
+    {
+        return SecretMembers.Print(this, builder);
+    }
+}

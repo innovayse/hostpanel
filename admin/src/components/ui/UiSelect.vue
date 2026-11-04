@@ -8,6 +8,7 @@
  */
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { fieldInvalidClasses } from '@/utils/ui/input'
 
 const { t } = useI18n()
 
@@ -25,6 +26,10 @@ const props = defineProps<{
   searchable?: boolean
   /** Gives the dropdown panel a wider minimum width, for long labels (country and phone lists). */
   wide?: boolean
+  /** Id of the trigger button, so a caption can point at it (`UiField` hands one out). */
+  id?: string
+  /** Marks the value as refused by the server (red border, `aria-invalid`). */
+  invalid?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -120,8 +125,10 @@ onUnmounted(() => document.removeEventListener('mousedown', onOutsideClick))
       :aria-expanded="open"
       aria-haspopup="listbox"
       data-testid="ui-select-trigger"
+      :id="props.id"
+      :aria-invalid="props.invalid || undefined"
       class="w-full flex items-center justify-between gap-2 bg-surface-field border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary outline-none focus-visible:border-primary-500/50 focus-visible:ring-2 focus-visible:ring-primary-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      :class="open ? 'border-primary-500/50 ring-2 ring-primary-500/20' : ''"
+      :class="[open ? 'border-primary-500/50 ring-2 ring-primary-500/20' : '', props.invalid ? fieldInvalidClasses : '']"
       @click="toggle"
     >
       <span class="truncate" :class="showingPlaceholder ? 'text-text-muted' : 'text-text-primary'">

@@ -157,17 +157,28 @@ The backend list above covers the core error and validation messages. The follow
 
 - `client/composables/useSeo.ts` — add an entry to `ogLocaleMap` so Open Graph and hreflang tags use the correct locale code, e.g. `[AppLocale.Fr]: 'fr_FR'`.
 - `client/server/utils/clientMenuLabels.ts` — add a new `[AppLocale.Fr]: { ... }` block to `CLIENT_MENU_MESSAGES` with the translated labels for the SSO widget menu.
-- `client/composables/useLocalizedSetting.ts` — the `getLocalized` function checks only `AppLocale.Ru` and `AppLocale.Hy`; add a branch for the new locale so per-locale settings (the contact address, office hours) are read correctly.
-- `client/plugins/live-chat.ts` — add a case to `languageOf` returning the English name of the new language, and add a branch to the `token` computed value reading the new per-locale portal setting key.
-- `client/constants/publicPortalSettingKeys.ts` — add the new chat token key (e.g. `PortalSettingKey.ChatWebsiteTokenFr`) to the allow-list so the storefront endpoint exposes it. This is optional if the operator does not use the live-chat widget.
 
 **Admin panel extras (required):**
 
-- `admin/src/lib/constants.ts` — add an entry to the `CLIENT_LANGUAGE_OPTIONS` list for the new language so it appears in the client form language selector.
+- `admin/src/lib/constants.ts` — add an entry to the `LANGUAGE_OPTIONS` list for the new language so it appears in the language selectors of the client and user forms. Its label reads a new key, `clients.clientForm.french` (use the name of your language), which you add to every language file of `admin/src/locales/<lang>/clients.json`, next to `english`, `russian` and `armenian`.
 - `admin/src/lib/storefrontTranslations.ts` — add the new locale to `STOREFRONT_LOCALES` and add a `[MessageLanguage.Fr]: blank()` entry to `blankTranslations` so storefront content forms carry a tab for the new language.
 - `admin/src/composables/useStorefrontLocaleTabs.ts` — add a tab entry for the new locale to the `tabs` computed array.
-- `admin/src/types/setting.ts` — add language-suffixed keys for contact address, contact hours and the chat token, e.g. `ContactAddressFr`, `ContactHoursFr`, `ChatWebsiteTokenFr`, plus their `SETTING_ENV` entries. Without these, the per-language portal settings panel will not save or read the new language's values.
-- `admin/src/components/settings/TrackingChatCard.vue` — add a row for the new chat token key alongside the existing Russian and Armenian rows. This is optional if the operator does not use the live-chat widget.
+
+**Settings with a language suffix (optional):**
+
+The contact address, the working hours and the live chat token each have one value per language, for example `portal.contact.address.ru` and `portal.chat.website_token.hy`. A language without its own value uses the default one, so a new language works without any of this. Add them only if the operator needs a different address, hours or chat token for the new language. Then every one of these places needs the new key, with the same suffix:
+
+- `backend/src/Innovayse.Hostpanel.Domain/Settings/PortalSettingKeys.cs` — the constants, for example `ContactAddressFr = "portal.contact.address.fr"`, and their entries in the list of defaults, with an empty default and a description such as "Office address for French visitors. Empty uses the default address."
+- `admin/src/types/setting.ts` — the `SettingKey` entries (`ContactAddressFr`, `ContactHoursFr`, `ChatWebsiteTokenFr`) and their `SettingEnv` entries, for example `CONTACT_ADDRESS_FR`.
+- `client/constants/portalSettingKey.ts` — the same keys in the `PortalSettingKey` enum.
+- `client/constants/publicPortalSettingKeys.ts` — the keys in the allow-lists, so the storefront endpoint exposes them: the contact keys and the chat token key.
+- `client/nuxt.config.ts` — the runtime config entries `portalContactAddressFr`, `portalContactHoursFr` and `portalChatWebsiteTokenFr`, each read from `NUXT_PUBLIC_PORTAL_..._FR`. They are the values a deployment sets in the environment.
+- `client/composables/useContactDetails.ts` (address), `client/composables/useContactHours.ts` (hours) and `client/composables/useLocalizedSetting.ts` — a branch for the new locale, so the right value is read.
+- `client/plugins/live-chat.ts` — the token branch, and `languageOf` for the language name the chat widget shows.
+- `admin/src/components/settings/StorefrontContentCard.vue` (address and hours fields) and `admin/src/components/settings/TrackingChatCard.vue` (token field) — one field for each new key.
+- The admin locale files — the labels of those fields: `settings.storefrontContent.contactAddressFr`, `settings.storefrontContent.contactHoursFr` (each with `label` and `hint`) and `settings.trackingChat.chat.tokenFr`, in every language of `admin/src/locales/<lang>/settings.json`.
+
+The public demo has its own sample values in `DemoPortalSettingsSeeder.cs`. Add the new language there only if the demo should show it.
 
 </li>
 </Steps>

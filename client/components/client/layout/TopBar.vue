@@ -7,13 +7,13 @@
     <!-- Left: the brand, the same lockup the storefront header draws, at every width -->
     <div class="mr-3 min-w-0">
       <UiLink to="/" tone="inherit" :underline="false" testid="client-topbar-brand" class="flex items-center gap-2">
-        <LogoLockup img-class="h-8 w-auto max-w-[160px] object-contain" mark-class="h-8 w-8" name-class="text-lg font-bold" />
+        <LogoLockup img-class="h-8 w-auto object-contain" mark-class="h-8 w-8" name-class="text-lg font-bold" />
       </UiLink>
     </div>
 
     <!-- Right: welcome text on desktop, then the controls -->
     <div class="flex min-w-0 flex-shrink-0 items-center gap-2 lg:gap-3">
-      <UiText as="span" size="sm" tone="muted" truncate class="hidden max-w-[16rem] lg:block">
+      <UiText as="span" size="sm" tone="muted" truncate class="hidden lg:block">
         {{ $t('client.nav.welcomeBack') }}
         <UiText as="span" size="sm" weight="medium" data-testid="client-topbar-name">{{ fullName }}</UiText>
       </UiText>

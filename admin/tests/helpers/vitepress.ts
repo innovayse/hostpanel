@@ -1,7 +1,9 @@
 /**
- * Minimal vitepress stub for tests that import VitePress components.
+ * Minimal stand-in for VitePress `useData`, for tests that import docs theme components.
  *
- * Returns an empty theme so components that call `useData()` do not throw.
- * Override `theme.value` in a test to set specific theme fields.
+ * Returns an empty theme so a component that calls `useData()` does not throw. A test that needs
+ * theme fields mocks `vitepress` itself and returns its own `theme` ref.
+ *
+ * @returns An object whose `theme.value` is empty.
  */
 export const useData = () => ({ theme: { value: {} } })

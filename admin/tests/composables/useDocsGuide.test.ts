@@ -23,6 +23,11 @@ import { getRuntimeConfig } from '@/lib/runtimeConfig'
 import { useRoute } from 'vue-router'
 import { DOCS_GUIDES } from '@/lib/docsGuides'
 
+/**
+ * Makes `useRoute` answer with a route at the given path.
+ *
+ * @param path - The path of the current route, for example `/servers`.
+ */
 const mockRoute = (path: string): void => {
   vi.mocked(useRoute).mockReturnValue({ path } as RouteLocationNormalizedLoaded)
 }

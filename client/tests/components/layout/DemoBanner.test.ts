@@ -26,12 +26,6 @@ afterEach(() => {
 })
 
 /**
- * Mounts the banner with the demo store in the given state.
- *
- * @param state - Fields to put on the store before mounting.
- * @returns The wrapper.
- */
-/**
  * Mounts the banner with the demo store in the given state and an optional docsUrl.
  *
  * @param state - Fields to put on the store before mounting.

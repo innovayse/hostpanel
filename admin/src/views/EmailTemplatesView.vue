@@ -28,6 +28,7 @@ import { useSettingsStore } from '@/stores/settings'
 import type { EmailTemplate, EmailTemplateContent, EmailTemplateGroup } from '@/types/emailtemplate'
 
 const { t } = useI18n()
+/** Link to the docs guide for this screen, or null when docsUrl is not configured. */
 const { guideUrl } = useDocsGuide()
 
 /** Settings store: holds the templates and the load state. */

@@ -23,6 +23,8 @@
  *   the demo banner and the sign-in hint turns it on, until the next reset;
  * - `POST /__e2e/slides`: switches the home-page slides on; the feed is empty by default (the home shows the
  *   text hero), so only the spec that covers the slider turns them on, until the next reset;
+ * - `POST /__e2e/plugin-slots`: lists fake plugin widgets per slot (`{ "client.dashboard.cards": ["ok"] }`) until
+ *   the next reset; every slot is empty by default;
  * - `POST /__e2e/email-verified`: sets whether the signed-in address reads as confirmed (it does by default),
  *   so only the spec for the verification banner turns it off, until the next reset;
  * - `POST /__e2e/account`: overrides fields of the signed-in person's account (`GET /api/auth/me`), such as
@@ -103,6 +105,15 @@ import {
   WHOIS_RECORD,
   TWO_FACTOR,
   TWO_FACTOR_REFUSED,
+  PLUGIN_CHAT_PAUSE_MS,
+  PLUGIN_CHAT_REPLY,
+  PLUGIN_ID,
+  PLUGIN_SITE,
+  pluginPage,
+  pluginUi,
+  SLOT_PLUGIN_ID,
+  SLOT_SLOW_VIEW_DELAY_MS,
+  SLOT_WIDGET_VIEWS,
 } from './fixtures.mjs'
 
 /**
@@ -182,6 +193,9 @@ let storedMethods = seedStoredMethods()
 
 /** Whether the stub serves home-page slides; off by default, a spec turns it on, a reset turns it off. */
 let slidesEnabled = false
+
+/** @type {Record<string, string[]>} Widget ids each slot lists, by slot id; empty, so no slot output, until a spec scripts it. */
+let pluginSlots = {}
 
 /** Whether the stub reports the signed-in address as confirmed; on by default, a spec turns it off, a reset turns it on. */
 let emailVerified = true
@@ -314,6 +328,107 @@ const sendProblem = (res, status, code, detail, errors) => {
   send(res, status, { type: code, title: detail, status, detail, ...(errors ? { errors } : {}) }, 'application/problem+json')
 }
 
+/** @type {string} The fake plugin site's status; publishing sets it, a reset restores it. */
+let pluginSiteStatus = PLUGIN_SITE.status
+
+/**
+ * Streams the fake plugin's chat reply: one `delta` per piece with a pause between them, then `done`, keeping the
+ * response open until the last event, so a spec sees the reply grow while the stream runs (only an unbuffered path
+ * end to end allows that) and a stop ends it early.
+ *
+ * @param {import('node:http').ServerResponse} res The response.
+ * @returns {Promise<void>} Resolves when the stream ended or the browser left.
+ */
+const streamPluginChat = async (res) => {
+  res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' })
+  for (const text of PLUGIN_CHAT_REPLY) {
+    if (res.destroyed) {
+      return
+    }
+    res.write(`event: delta\ndata: ${JSON.stringify({ text })}\n\n`)
+    await new Promise(resolve => setTimeout(resolve, PLUGIN_CHAT_PAUSE_MS))
+  }
+  res.end('event: done\ndata: {}\n\n')
+}
+
+/**
+ * Answers the fake app plugin `acme-sites`: the plugin index, the page lookup by address, and the plugin's own
+ * routes, including a streamed chat reply. Labels arrive already localised, as the real API sends them.
+ *
+ * @param {string} method HTTP method.
+ * @param {string} path Request path without the query string.
+ * @param {import('node:http').ServerResponse} res The response to write.
+ * @param {URLSearchParams} query The request's query string; the page lookup reads `path`.
+ * @param {string} language The request's `X-Language`.
+ * @returns {boolean} True when the route was handled.
+ */
+const routePlugin = (method, path, res, query, language) => {
+  const own = `/api/client/plugins/${PLUGIN_ID}`
+  if (method === 'GET' && path === '/api/client/plugins/ui') {
+    send(res, 200, pluginUi(language))
+    return true
+  }
+  // Plugin slots: the index lists the scripted widgets; a widget view answers its fixture, or the API's one 404.
+  const slotIndex = method === 'GET' ? /^\/api\/client\/plugins\/slots\/([a-z.]+)$/.exec(path) : null
+  if (slotIndex) {
+    const slotId = slotIndex[1]
+    const widgets = (pluginSlots[slotId] ?? []).map((id, order) => ({
+      pluginId: SLOT_PLUGIN_ID, id, view: `views/${id}.json`, title: `Widget ${id}`, order,
+      contextKeys: slotId === 'client.service.tabs' ? ['serviceId'] : [],
+    }))
+    send(res, 200, { slotId, widgets })
+    return true
+  }
+  const slotWidget = method === 'GET'
+    ? /^\/api\/client\/plugins\/slots\/([a-z.]+)\/widgets\/([a-z0-9-]+)\/([a-z0-9_-]+)$/.exec(path)
+    : null
+  if (slotWidget) {
+    const [, slotId, pluginId, widgetId] = slotWidget
+    const view = SLOT_WIDGET_VIEWS[widgetId]
+    if (pluginId !== SLOT_PLUGIN_ID || !view || !(pluginSlots[slotId] ?? []).includes(widgetId)) {
+      sendProblem(res, 404, 'PLUGIN_SLOT_WIDGET_VIEW_NOT_FOUND', 'This widget is not available.')
+      return true
+    }
+    const answer = { pluginId, id: widgetId, title: `Widget ${widgetId}`, externalOrigins: [], view }
+    if (widgetId === 'slow') {
+      // Answered late on purpose: the client must show its neutral note at 5 s, not wait for this.
+      setTimeout(() => send(res, 200, answer), SLOT_SLOW_VIEW_DELAY_MS)
+      return true
+    }
+    send(res, 200, answer)
+    return true
+  }
+  // The page lookup by address (#643). Every refusal is the same 404, whatever the cause, as the API answers it.
+  const lookup = /^\/api\/client\/plugins\/ui\/([^/]+)\/pages\/by-path$/.exec(path)
+  if (method === 'GET' && lookup) {
+    const view = lookup[1] === PLUGIN_ID ? pluginPage(query.get('path') ?? '', language) : null
+    if (view) {
+      send(res, 200, view)
+    } else {
+      sendProblem(res, 404, 'PLUGIN_PAGE_NOT_FOUND', 'This plugin page does not exist.')
+    }
+    return true
+  }
+  if (method === 'GET' && path === `${own}/sites`) {
+    send(res, 200, [{ id: PLUGIN_SITE.id, name: PLUGIN_SITE.name, status: pluginSiteStatus }])
+    return true
+  }
+  if (method === 'GET' && path === `${own}/sites/${PLUGIN_SITE.id}`) {
+    send(res, 200, { status: pluginSiteStatus })
+    return true
+  }
+  if (method === 'POST' && path === `${own}/sites/${PLUGIN_SITE.id}/publish`) {
+    pluginSiteStatus = 'published'
+    send(res, 204)
+    return true
+  }
+  if (method === 'POST' && path === `${own}/sites/${PLUGIN_SITE.id}/chat`) {
+    void streamPluginChat(res)
+    return true
+  }
+  return false
+}
+
 /**
  * Answers one backend route, or `false` when the stub has no fixture for it.
  *
@@ -322,10 +437,15 @@ const sendProblem = (res, status, code, detail, errors) => {
  * @param {unknown} body Parsed JSON body, or `null`.
  * @param {import('node:http').ServerResponse} res The response to write.
  * @param {URLSearchParams} [query] The request's query string, read by the routes that filter, page or price by `currency`.
+ * @param {string} [language] The request's `X-Language`, read by the routes that answer localised texts.
  * @returns {boolean} True when the route was handled.
  */
-const route = (method, path, body, res, query = new URLSearchParams()) => {
+const route = (method, path, body, res, query = new URLSearchParams(), language = 'en') => {
   const isGet = method === 'GET'
+
+  if (path.startsWith('/api/client/plugins/') && routePlugin(method, path, res, query, language)) {
+    return true
+  }
 
   // Public storefront data: read by the Nuxt server while rendering.
   if (isGet && path === '/api/settings/public') {
@@ -925,6 +1045,7 @@ const server = createServer(async (req, res) => {
     hostedGatewayEnabled = false
     storedMethods = seedStoredMethods()
     slidesEnabled = false
+    pluginSlots = {}
     account = { ...ACCOUNT }
     emailVerified = true
     tickets = seedTickets()
@@ -935,6 +1056,7 @@ const server = createServer(async (req, res) => {
     contacts = [{ ...SEEDED_CONTACT }]
     team = [{ ...TEAM_OWNER }, { ...TEAM_MEMBER }]
     sshKeys = []
+    pluginSiteStatus = PLUGIN_SITE.status
     lastSshKey = 0
     lastContactId = Number(SEEDED_CONTACT.id)
     send(res, 204)
@@ -969,6 +1091,11 @@ const server = createServer(async (req, res) => {
     send(res, 204)
     return
   }
+  if (path === '/__e2e/plugin-slots') {
+    pluginSlots = await readJson(req)
+    send(res, 204)
+    return
+  }
   if (path === '/__e2e/slides') {
     const slides = await readJson(req)
     slidesEnabled = slides.enabled === true
@@ -988,7 +1115,7 @@ const server = createServer(async (req, res) => {
   if (answerScripted(method, path, res)) {
     return
   }
-  if (!route(method, path, body, res, url.searchParams)) {
+  if (!route(method, path, body, res, url.searchParams, String(req.headers['x-language'] ?? 'en'))) {
     sendProblem(res, 404, 'NOT_FOUND', `No e2e fixture for ${method} ${path}.`)
   }
 })

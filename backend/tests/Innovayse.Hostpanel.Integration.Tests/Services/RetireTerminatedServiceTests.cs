@@ -146,7 +146,8 @@ public sealed class RetireTerminatedServiceTests(IntegrationTestFactory factory)
         await context.SaveChangesAsync(CancellationToken.None);
 
         context.CancellationRequests.Add(CancellationRequest.Create(serviceId, CancellationType.EndOfBillingPeriod, null));
-        var key = SshKey.Create(serviceId, server.Id, "acct1", "laptop", "ssh-ed25519 AAAA", $"SHA256:{Guid.NewGuid():N}");
+        var key = SshKey.Create(
+            serviceId, server.Id, "acct1", "laptop", "ssh-ed25519 AAAA", $"SHA256:{Guid.NewGuid():N}", issuedToPluginId: null);
         key.MarkInstalled();
         context.SshKeys.Add(key);
         await context.SaveChangesAsync(CancellationToken.None);

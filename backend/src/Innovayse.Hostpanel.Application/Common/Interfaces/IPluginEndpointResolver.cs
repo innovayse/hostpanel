@@ -4,7 +4,8 @@ using Hostpanel.Sdk.Plugins.Manifest;
 namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 
 /// <summary>
-/// Finds the app plugin a plugin route belongs to and hands out its endpoints, in two steps, so the host can
+/// Finds the serving plugin a plugin route belongs to (an app plugin, or a plugin of any other type that declares the
+/// <c>endpoints</c> capability) and hands out its endpoints, in two steps, so the host can
 /// authorise the caller before any plugin code runs. Implemented in Infrastructure with the same activation
 /// gates as every other plugin type.
 /// </summary>

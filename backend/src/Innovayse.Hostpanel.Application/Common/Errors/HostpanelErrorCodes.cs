@@ -809,6 +809,30 @@ public static class HostpanelErrorCodes
     /// <summary>The plugin is not available to this panel or declares no such page there (404); the two answer alike.</summary>
     public const string PLUGIN_PAGE_NOT_FOUND = "PLUGIN_PAGE_NOT_FOUND";
 
+    /// <summary>A plugin that is not an app plugin declares api routes or ui menus, pages or slots without the endpoints capability (400).</summary>
+    public const string PLUGIN_ENDPOINTS_NOT_DECLARED = "PLUGIN_ENDPOINTS_NOT_DECLARED";
+
+    /// <summary>The manifest names a capability the host does not define, or one the plugin type may not carry (400).</summary>
+    public const string PLUGIN_CAPABILITY_NOT_ALLOWED = "PLUGIN_CAPABILITY_NOT_ALLOWED";
+
+    /// <summary>
+    /// The manifest's <c>hostAccess</c> names a kind the host's SDK does not define, names one twice, or is declared in
+    /// a version 1 manifest (400, the default arm: it is answered only by a plugin install).
+    /// </summary>
+    public const string PLUGIN_HOST_ACCESS_UNKNOWN = "PLUGIN_HOST_ACCESS_UNKNOWN";
+
+    /// <summary>
+    /// A view document holds a visibility or follow-up condition that is not a GET route, a dotted field and one value
+    /// or a bounded list of values (400, the default arm: it is answered only by a plugin install).
+    /// </summary>
+    public const string PLUGIN_VIEW_CONDITION_INVALID = "PLUGIN_VIEW_CONDITION_INVALID";
+
+    /// <summary>
+    /// A view document holds a follow-up refresh that is malformed or names a block the document does not hold, or a
+    /// form reset flag that is not a boolean (400, the default arm: it is answered only by a plugin install).
+    /// </summary>
+    public const string PLUGIN_VIEW_FOLLOW_UP_INVALID = "PLUGIN_VIEW_FOLLOW_UP_INVALID";
+
     /// <summary>
     /// One of the archive's entries would write outside the plugin's own directory (400). The
     /// zip-slip guard's refusal, named for what a caller can act on rather than the attack it
@@ -873,7 +897,7 @@ public static class HostpanelErrorCodes
     // Plugin routes
 
     /// <summary>
-    /// A plugin route was called that is not served: the plugin is unknown, is not an app plugin, is switched off or
+    /// A plugin route was called that is not served: the plugin is unknown, is not a serving plugin, is switched off or
     /// not configured, or does not declare that method and path in that area. One answer for all of them, so the
     /// route cannot be probed (404).
     /// </summary>
@@ -914,6 +938,13 @@ public static class HostpanelErrorCodes
     /// panel. One answer for both (404).
     /// </summary>
     public const string PLUGIN_SLOT_NOT_FOUND = "PLUGIN_SLOT_NOT_FOUND";
+
+    /// <summary>
+    /// A client slot widget's view is not served to this caller: the slot, the context, the widget or its view does not
+    /// exist or is not the caller's to see. One answer for all of them (404), so the endpoint is no oracle. Not
+    /// <see cref="PLUGIN_SLOT_WIDGET_NOT_FOUND"/>, the operator's binding refusal, whose sentence names the plugin.
+    /// </summary>
+    public const string PLUGIN_SLOT_WIDGET_VIEW_NOT_FOUND = "PLUGIN_SLOT_WIDGET_VIEW_NOT_FOUND";
 
     /// <summary>The slot needs a context id (a service or a client) and the request named none (400).</summary>
     public const string PLUGIN_SLOT_CONTEXT_REQUIRED = "PLUGIN_SLOT_CONTEXT_REQUIRED";

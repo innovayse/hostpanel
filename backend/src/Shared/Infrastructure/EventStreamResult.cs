@@ -135,6 +135,52 @@ public sealed class EventStreamResult : IActionResult
             await lifetime.CancelAsync();
             var settled = await SettleAsync(pending, logger);
             await CloseAsync(events, settled, logger);
+            await ReleaseOwnerAsync(pending, settled, logger);
+        }
+    }
+
+    /// <summary>
+    /// Disposes what the producer held for the stream (<see cref="StreamedReply.Owner"/>) once the producer is over. When a
+    /// step was abandoned it is still running and may still use what the owner holds, so the owner is disposed when that step
+    /// ends instead of under it; the request does not wait for it.
+    /// </summary>
+    /// <param name="pending">The last step of the producer, or <see langword="null"/> when none was started.</param>
+    /// <param name="settled">Whether no step is running any more.</param>
+    /// <param name="logger">Records a disposal that failed.</param>
+    /// <returns>A task that completes when the owner has been disposed, or its disposal has been deferred to the step's end.</returns>
+    private async Task ReleaseOwnerAsync(Task<bool>? pending, bool settled, ILogger logger)
+    {
+        if (_reply.Owner is not { } owner)
+        {
+            return;
+        }
+
+        if (settled || pending is null)
+        {
+            await DisposeOwnerAsync(owner, logger);
+            return;
+        }
+
+        _ = pending.ContinueWith(
+            async _ => await DisposeOwnerAsync(owner, logger),
+            CancellationToken.None,
+            TaskContinuationOptions.None,
+            TaskScheduler.Default).Unwrap();
+    }
+
+    /// <summary>Disposes the owner of a stream, logging rather than throwing a failure: the stream is already over.</summary>
+    /// <param name="owner">The owner to dispose.</param>
+    /// <param name="logger">Records a disposal that failed.</param>
+    /// <returns>A task that completes when the owner has been disposed.</returns>
+    private static async Task DisposeOwnerAsync(IAsyncDisposable owner, ILogger logger)
+    {
+        try
+        {
+            await owner.DisposeAsync();
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "What a streamed reply's producer held failed while it was being released.");
         }
     }
 

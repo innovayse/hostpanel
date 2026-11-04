@@ -1,5 +1,9 @@
 using Hostpanel.Sdk.Packaging.Manifest;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Host;
 using Hostpanel.Sdk.Plugins.Manifest;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
+using Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
@@ -17,6 +21,20 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 /// </remarks>
 internal static class PluginManifestValidator
 {
+    /// <summary>The first manifest version that may declare <c>hostAccess</c>.</summary>
+    private const int HostAccessManifestVersion = 2;
+
+    /// <summary>
+    /// The capabilities this host knows and the plugin types that may carry each; <see langword="null"/> means every
+    /// type. A name missing here is refused, so a capability the host cannot honour never reaches activation.
+    /// </summary>
+    private static readonly IReadOnlyDictionary<string, PluginType?> CapabilityTypes =
+        new Dictionary<string, PluginType?>(StringComparer.Ordinal)
+        {
+            [PluginCapabilities.StoredCredentials] = PluginType.Payment,
+            [PluginCapabilities.Endpoints] = null,
+        };
+
     /// <summary>
     /// What the host decides for the package's rules: the manifest versions it reads (the package's default, <c>1</c> and
     /// <c>2</c>) and the permission names a client route, page or slot entry may name, every defined
@@ -41,7 +59,109 @@ internal static class PluginManifestValidator
         ArgumentNullException.ThrowIfNull(manifest);
 
         var violation = PluginManifestChecker.Validate(manifest, Options);
-        return violation is null ? null : PluginRuleMap.ToHost(violation);
+        if (violation is not null)
+        {
+            return PluginRuleMap.ToHost(violation);
+        }
+
+        // What follows is what only the host knows: the access kinds and capabilities it defines and whether it serves
+        // the plugin's endpoints. The package knows none of these.
+        return CheckHostAccess(manifest)
+            ?? CheckCapabilities(manifest)
+            ?? CheckEndpointsDeclared(manifest);
+    }
+
+    /// <summary>
+    /// Checks that every declared capability is one the host knows, declared once, and one the plugin's type may carry.
+    /// </summary>
+    /// <param name="manifest">The manifest.</param>
+    /// <returns>The <see cref="PluginManifestRule.CapabilityNotAllowed"/> violation, or <see langword="null"/>.</returns>
+    private static PluginManifestViolation? CheckCapabilities(PluginManifest manifest)
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var capability in manifest.Capabilities)
+        {
+            // A repeat is refused rather than ignored: it is a manifest mistake, and the list is shown to the operator.
+            if (!seen.Add(capability))
+            {
+                return new PluginManifestViolation(
+                    PluginManifestRule.CapabilityNotAllowed, $"capabilities names '{capability}' twice");
+            }
+
+            if (!CapabilityTypes.TryGetValue(capability, out var only))
+            {
+                return new PluginManifestViolation(
+                    PluginManifestRule.CapabilityNotAllowed, $"capabilities names '{capability}', which this host does not define");
+            }
+
+            if (only is { } type && manifest.Type != type)
+            {
+                return new PluginManifestViolation(
+                    PluginManifestRule.CapabilityNotAllowed, $"capabilities names '{capability}', which only a {type} plugin may carry");
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Refuses <c>api</c> routes and <c>ui</c> menus, pages and slots on a plugin the host would not serve: they would be
+    /// accepted and then silently never answer, which reads as a host fault to the plugin author.
+    /// </summary>
+    /// <param name="manifest">The manifest.</param>
+    /// <returns>The <see cref="PluginManifestRule.EndpointsNotDeclared"/> violation, or <see langword="null"/>.</returns>
+    private static PluginManifestViolation? CheckEndpointsDeclared(PluginManifest manifest)
+    {
+        if (manifest.ServesEndpoints())
+        {
+            return null;
+        }
+
+        var declaresAny = manifest.Api.Client.Count > 0
+            || manifest.Api.Admin.Count > 0
+            || manifest.Ui.Client.Menus.Count > 0
+            || manifest.Ui.Client.Pages.Count > 0
+            || manifest.Ui.Admin.Menus.Count > 0
+            || manifest.Ui.Admin.Pages.Count > 0
+            || manifest.Ui.Slots.Count > 0;
+        return declaresAny
+            ? new PluginManifestViolation(
+                PluginManifestRule.EndpointsNotDeclared,
+                $"a {manifest.Type} plugin declares api or ui entries without the '{PluginCapabilities.Endpoints}' capability")
+            : null;
+    }
+
+    /// <summary>
+    /// Checks <c>hostAccess</c>: every entry is a kind the SDK defines (<see cref="PluginHostAccess.All"/>, exact case),
+    /// none twice, and only in a version 2 manifest. An unknown kind would otherwise be shown to the admin as a capability
+    /// the host never grants, and a version 1 manifest predates the member.
+    /// </summary>
+    /// <param name="manifest">The manifest.</param>
+    /// <returns>The <see cref="PluginManifestRule.HostAccessUnknown"/> violation, or <see langword="null"/>.</returns>
+    private static PluginManifestViolation? CheckHostAccess(PluginManifest manifest)
+    {
+        if (manifest.HostAccess.Count == 0)
+        {
+            return null;
+        }
+
+        if (manifest.ManifestVersion < HostAccessManifestVersion)
+        {
+            return new PluginManifestViolation(
+                PluginManifestRule.HostAccessUnknown, "hostAccess is declared in a version 1 manifest");
+        }
+
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var kind in manifest.HostAccess)
+        {
+            if (kind is null || !PluginHostAccess.All.Contains(kind, StringComparer.Ordinal) || !seen.Add(kind))
+            {
+                return new PluginManifestViolation(
+                    PluginManifestRule.HostAccessUnknown, $"hostAccess '{kind}' is unknown or listed more than once");
+            }
+        }
+
+        return null;
     }
 
     /// <summary>

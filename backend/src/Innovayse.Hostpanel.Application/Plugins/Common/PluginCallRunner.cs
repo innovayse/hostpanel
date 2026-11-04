@@ -59,6 +59,14 @@ namespace Innovayse.Hostpanel.Application.Plugins.Common;
 /// plugin's <see cref="PluginCaller"/> from it and hands the same binding to <see cref="IPluginCallServices"/>, so the
 /// client reference the plugin sees is, by construction, the scope of its store, and the facts follow the same permissions.
 /// </para>
+/// <para>
+/// <b>A streaming route owns its own dependency scope (#851).</b> A stream is read by the response after this use case has
+/// returned, and the use case's scope, with the data context the store writes through, is disposed as soon as it returns.
+/// So a call to a route that declares <c>streaming</c> opens an <see cref="IPluginCallScope"/> first and takes the plugin,
+/// its host API and its store from it; when the plugin answers with a stream, the scope travels with the stream
+/// (<see cref="StreamedReply.Owner"/>) and the response disposes it once the stream ended, failed or the client left. Any
+/// other outcome disposes it before the runner returns. Every other route runs on the use case's scope as before.
+/// </para>
 /// </remarks>
 public sealed class PluginCallRunner
 {
@@ -78,8 +86,11 @@ public sealed class PluginCallRunner
     private static readonly Regex ProblemCodePattern = new(
         @"\A[A-Za-z0-9][A-Za-z0-9_.-]{0,63}\z", RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
-    /// <summary>Builds the host facts and the store bound to the call.</summary>
+    /// <summary>Builds the host facts and the store bound to a call that is not streamed, on the use case's scope.</summary>
     private readonly IPluginCallServices _services;
+
+    /// <summary>Opens the scope a call to a streaming route owns.</summary>
+    private readonly IPluginCallScopeFactory _scopes;
 
     /// <summary>Stages the audit line of an unsafe call.</summary>
     private readonly IActivityLogger _activityLogger;
@@ -100,7 +111,8 @@ public sealed class PluginCallRunner
     private readonly ILogger<PluginCallRunner> _logger;
 
     /// <summary>Initializes a new instance of the <see cref="PluginCallRunner"/> class.</summary>
-    /// <param name="services">Builds the host facts and the store bound to the call.</param>
+    /// <param name="services">Builds the host facts and the store bound to a call that is not streamed, on the use case's scope.</param>
+    /// <param name="scopes">Opens the scope a call to a streaming route owns.</param>
     /// <param name="activityLogger">Stages the audit line of an unsafe call.</param>
     /// <param name="context">Saves the audit line before the plugin runs.</param>
     /// <param name="options">The body cap, the call limit and the abandon rules.</param>
@@ -109,6 +121,7 @@ public sealed class PluginCallRunner
     /// <param name="logger">Structured logger.</param>
     public PluginCallRunner(
         IPluginCallServices services,
+        IPluginCallScopeFactory scopes,
         IActivityLogger activityLogger,
         IHostpanelDbContext context,
         IOptions<PluginApiOptions> options,
@@ -117,6 +130,7 @@ public sealed class PluginCallRunner
         ILogger<PluginCallRunner> logger)
     {
         _services = services;
+        _scopes = scopes;
         _activityLogger = activityLogger;
         _context = context;
         _options = options;
@@ -143,7 +157,8 @@ public sealed class PluginCallRunner
     /// The plugin's reply, which on a streaming route may be a stream (not enumerated here: the response enumerates it
     /// with the caller's abort token, see <see cref="PluginEventStream"/>); <c>PLUGIN_REQUEST_TOO_LARGE</c> when the body is over the cap; <c>PLUGIN_FAILED</c> when the plugin threw or broke
     /// its contract; <c>PLUGIN_TIMEOUT</c> when it did not reply within the call time limit; <c>PLUGIN_STORE_QUOTA_EXCEEDED</c> when the plugin threw after the host's store refused one of its writes
-    /// over the scope's quota.
+    /// over the scope's quota; <c>PLUGIN_ROUTE_NOT_FOUND</c> when a streaming route's plugin was switched off or lost a
+    /// required setting between the gate and its own scope's check.
     /// </returns>
     /// <exception cref="ArgumentException"><paramref name="binding"/> names another plugin than <paramref name="target"/>.</exception>
     public async Task<Result<PluginReplyDto>> RunAsync(
@@ -181,7 +196,6 @@ public sealed class PluginCallRunner
             await _context.SaveChangesAsync(ct);
         }
 
-        var pluginId = target.Manifest.Id;
         var caller = new PluginCaller
         {
             ClientRef = binding.ClientRef,
@@ -189,12 +203,72 @@ public sealed class PluginCallRunner
             Permissions = HeldNames(binding.Permissions),
         };
 
+        // Opened before the plugin is built, because only the reply tells whether the call streams, and by then the plugin and
+        // its services must already come from a scope that outlives this use case. Disposed in the finally unless a stream
+        // took it over.
+        var owned = route.Streaming ? _scopes.Open() : null;
+        try
+        {
+            var mapped = await CallAsync(target, binding, input, body, caller, owned, ct);
+            if (mapped.Value?.Stream is not null)
+            {
+                owned = null;
+            }
+
+            return mapped;
+        }
+        finally
+        {
+            if (owned is not null)
+            {
+                await owned.DisposeAsync();
+            }
+        }
+    }
+
+    /// <summary>Builds the plugin and its services, calls it within the time limit and maps its reply.</summary>
+    /// <param name="target">The matched route.</param>
+    /// <param name="binding">What the call is bound to.</param>
+    /// <param name="input">The request, as the controller read it.</param>
+    /// <param name="body">The body, already read within the cap.</param>
+    /// <param name="caller">The caller as the plugin sees it.</param>
+    /// <param name="owned">
+    /// The scope of a streaming route's call, which the plugin and its services come from; <see langword="null"/> on any
+    /// other route, which runs on the use case's scope.
+    /// </param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The mapped reply; a stream reply carries <paramref name="owned"/> as its owner.</returns>
+    private async Task<Result<PluginReplyDto>> CallAsync(
+        PluginTarget target,
+        PluginCallBinding binding,
+        PluginHttpInput input,
+        ReadOnlyMemory<byte> body,
+        PluginCaller caller,
+        IPluginCallScope? owned,
+        CancellationToken ct)
+    {
+        var route = target.Match.Route;
+        var pluginId = target.Manifest.Id;
+        var build = target.Build;
+        if (owned is not null)
+        {
+            // The gate's build is bound to the use case's scope; the stream's plugin is built from its own. A plugin switched
+            // off in the moment between the two reads answers what the gate would have answered.
+            var prepared = await owned.PrepareEndpointsAsync(pluginId, ct);
+            if (prepared is null)
+            {
+                return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_ROUTE_NOT_FOUND);
+            }
+
+            build = prepared;
+        }
+
         // Declared outside the try so the catch can read this call's quota signal.
         PluginCallServices? services = null;
         try
         {
-            var endpoints = target.Build();
-            services = _services.Create(binding);
+            var endpoints = build();
+            services = owned?.CreateServices(binding) ?? _services.Create(binding);
             var call = new PluginCall
             {
                 Area = target.Area,
@@ -221,7 +295,7 @@ public sealed class PluginCallRunner
                 return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_TIMEOUT);
             }
 
-            return Map(pluginId, target.Area, route, reply, limit);
+            return Map(pluginId, target.Area, route, reply, limit, owned);
         }
         catch (Exception ex) when (JobFailure.IsFailure(ex, ct))
         {
@@ -317,8 +391,9 @@ public sealed class PluginCallRunner
     /// <param name="route">The route that was called; only a route that declares <c>streaming</c> may answer with a stream.</param>
     /// <param name="reply">The plugin's reply; a plugin that returns none broke its contract.</param>
     /// <param name="limit">The call's time limit; on a stream it is the longest silence between events.</param>
+    /// <param name="owner">The scope a streaming route's call owns, handed to an accepted stream; otherwise <see langword="null"/>.</param>
     /// <returns>The reply, or the failure for a reply the host cannot forward.</returns>
-    private Result<PluginReplyDto> Map(string pluginId, PluginArea area, PluginRoute route, PluginReply? reply, TimeSpan limit)
+    private Result<PluginReplyDto> Map(string pluginId, PluginArea area, PluginRoute route, PluginReply? reply, TimeSpan limit, IPluginCallScope? owner)
     {
         // The SDK factories refuse a status outside the contract, but the host does not rely on that: a reply built another
         // way (a reflected or subclassed type, a plugin compiled against a different SDK) is checked again here, because
@@ -338,7 +413,7 @@ public sealed class PluginCallRunner
             case PluginReplyKind.Problem:
                 return MapProblem(pluginId, reply);
             case PluginReplyKind.Stream:
-                return MapStream(pluginId, route, reply, limit);
+                return MapStream(pluginId, route, reply, limit, owner);
             case PluginReplyKind.Raw:
                 return MapRaw(pluginId, area, reply);
             default:
@@ -387,12 +462,13 @@ public sealed class PluginCallRunner
     /// <param name="route">The route that was called.</param>
     /// <param name="reply">The plugin's stream reply.</param>
     /// <param name="limit">The longest silence between events before the stream is ended with <c>PLUGIN_TIMEOUT</c>.</param>
+    /// <param name="owner">The scope the plugin, its host API and its store came from; the response disposes it once the stream is over.</param>
     /// <returns>
     /// The reply carrying the events and the heartbeat, or <c>PLUGIN_FAILED</c> when the route did not declare streaming or the
     /// plugin gave no events; the events are never enumerated in that case, so an iterator that was not started holds
     /// nothing to release.
     /// </returns>
-    private Result<PluginReplyDto> MapStream(string pluginId, PluginRoute route, PluginReply reply, TimeSpan limit)
+    private Result<PluginReplyDto> MapStream(string pluginId, PluginRoute route, PluginReply reply, TimeSpan limit, IPluginCallScope? owner)
     {
         if (!route.Streaming || reply.Events is null)
         {
@@ -408,7 +484,7 @@ public sealed class PluginCallRunner
             limit,
             PluginEventStream.TimeoutEvents(_messages.Resolve(HostpanelErrorCodes.PLUGIN_TIMEOUT)),
             () => _logger.LogWarning("Plugin {PluginId} stayed silent for {Timeout} on a stream; the stream was ended.", pluginId, limit));
-        var stream = new StreamedReply(events, _options.Value.StreamHeartbeat, idle);
+        var stream = new StreamedReply(events, _options.Value.StreamHeartbeat, idle, owner);
 
         return Result<PluginReplyDto>.Success(new PluginReplyDto(reply.Status, null, null, null, stream));
     }

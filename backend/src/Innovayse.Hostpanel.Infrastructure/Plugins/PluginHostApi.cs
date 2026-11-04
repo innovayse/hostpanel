@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
+using Innovayse.Hostpanel.Application.Services.Common;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
 using Hostpanel.Sdk.Plugins.Enums;
@@ -10,6 +11,10 @@ using Hostpanel.Sdk.Plugins.Host;
  * permissions before anything is read, never by hiding a value once fetched. A sub-user without the invoices right never
  * makes the invoices query run, and one without the master profile right never has the sign-in address placed in the
  * profile. The rows of other modules come through IPluginHostFactsReader, so this adapter holds no data context.
+ *
+ * The two SSH methods (#758) only delegate to the Application's PluginSshAccessService with this call's binding, and turn
+ * its refusal into the SDK's PluginHostAccessException at the plugin boundary. No use case is dispatched from here: an
+ * adapter never calls a handler.
  */
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
@@ -46,20 +51,27 @@ internal sealed class PluginHostApi : IPluginHostApi
     /// <summary>Resolves the currency the client is billed in.</summary>
     private readonly IPayerCurrencyResolver _payerCurrency;
 
+    /// <summary>Issues and revokes the plugin's SSH identities for the bound client.</summary>
+    private readonly PluginSshAccessService _ssh;
+
     /// <summary>Initializes the facts of one call.</summary>
     /// <param name="binding">The call's client and the permissions its caller holds there.</param>
     /// <param name="facts">Reads the client, service and invoice rows of the bound client.</param>
     /// <param name="identity">The identity provider that holds the client's sign-in email and language.</param>
     /// <param name="payerCurrency">Resolves the currency the client is billed in.</param>
+    /// <param name="ssh">Issues and revokes the plugin's SSH identities for the bound client.</param>
     public PluginHostApi(
-        PluginCallBinding binding, IPluginHostFactsReader facts, IIdentityProvider identity, IPayerCurrencyResolver payerCurrency)
+        PluginCallBinding binding,
+        IPluginHostFactsReader facts,
+        IIdentityProvider identity,
+        IPayerCurrencyResolver payerCurrency,
+        PluginSshAccessService ssh)
     {
-        ArgumentNullException.ThrowIfNull(binding);
-
         _binding = binding;
         _facts = facts;
         _identity = identity;
         _payerCurrency = payerCurrency;
+        _ssh = ssh;
     }
 
     /// <inheritdoc/>
@@ -121,20 +133,24 @@ internal sealed class PluginHostApi : IPluginHostApi
     }
 
     /// <inheritdoc/>
-    /// <remarks>
-    /// Refused until the host grants hosting access (#758): no manifest is admitted with <c>hostAccess</c> yet, so
-    /// every call is <see cref="PluginHostAccessFailure.NotAllowed"/>, the answer the contract gives a plugin that did
-    /// not declare it.
-    /// </remarks>
-    public Task<PluginSshAccess> IssueSshAccessAsync(int serviceId, string label, CancellationToken ct)
+    public async Task<PluginSshAccess> IssueSshAccessAsync(int serviceId, string label, CancellationToken ct)
     {
-        return Task.FromException<PluginSshAccess>(new PluginHostAccessException(PluginHostAccessFailure.NotAllowed));
+        var outcome = await _ssh.IssueAsync(_binding, serviceId, label, ct);
+        if (outcome.Access is { } access)
+        {
+            return access;
+        }
+
+        throw new PluginHostAccessException(outcome.Failure ?? PluginHostAccessFailure.ServerUnavailable);
     }
 
     /// <inheritdoc/>
-    /// <remarks>Refused until #758, as <see cref="IssueSshAccessAsync"/>: no key was ever issued to a plugin.</remarks>
-    public Task RevokeSshAccessAsync(int serviceId, Guid keyId, CancellationToken ct)
+    public async Task RevokeSshAccessAsync(int serviceId, Guid keyId, CancellationToken ct)
     {
-        return Task.FromException(new PluginHostAccessException(PluginHostAccessFailure.NotAllowed));
+        var failure = await _ssh.RevokeAsync(_binding, serviceId, keyId, ct);
+        if (failure is { } refused)
+        {
+            throw new PluginHostAccessException(refused);
+        }
     }
 }

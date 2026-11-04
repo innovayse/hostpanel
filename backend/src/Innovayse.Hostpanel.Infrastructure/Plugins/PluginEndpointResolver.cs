@@ -3,14 +3,15 @@ using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Endpoints;
 using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Manifest;
+using Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 
 /// <summary>
-/// Finds the loaded plugin a route belongs to (an app plugin; for the callback door also any plugin declaring the
-/// <c>endpoints</c> capability) and prepares it through <see cref="PluginActivator"/>, so a plugin
-/// reached through a route passes the same gates as every other plugin type: it really implements
-/// <see cref="IPluginEndpoints"/>, the admin switched it on and its required settings are stored.
+/// Finds the loaded plugin a route belongs to (an app plugin, or any type declaring the <c>endpoints</c> capability)
+/// and prepares it through <see cref="PluginActivator"/>, so a plugin reached through a route passes the same gates as
+/// every other plugin type: it really implements <see cref="IPluginEndpoints"/> and every capability it declares, the
+/// admin switched it on and its required settings are stored.
 /// </summary>
 public sealed class PluginEndpointResolver : IPluginEndpointResolver
 {
@@ -34,8 +35,9 @@ public sealed class PluginEndpointResolver : IPluginEndpointResolver
     {
         var plugin = _registry.Find(pluginId);
 
-        // Only an app plugin answers routes: the loader registers IPluginEndpoints for no other type.
-        return plugin is { Manifest.Type: PluginType.App } ? plugin.Manifest : null;
+        // An app plugin, or a plugin of another type that declares the endpoints capability; anything else answers
+        // null, so the door's 404 is the same for it as for an unknown id.
+        return plugin is not null && plugin.Manifest.ServesEndpoints() ? plugin.Manifest : null;
     }
 
     /// <inheritdoc/>
@@ -58,7 +60,7 @@ public sealed class PluginEndpointResolver : IPluginEndpointResolver
     public async Task<Func<IPluginEndpoints>?> PrepareAsync(string pluginId, CancellationToken ct)
     {
         var plugin = _registry.Find(pluginId);
-        if (plugin is null)
+        if (plugin is null || !plugin.Manifest.ServesEndpoints())
         {
             return null;
         }

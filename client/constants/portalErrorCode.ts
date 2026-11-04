@@ -47,6 +47,16 @@ export const PortalErrorCode = {
    * "not found" instead of showing a failed read with a retry.
    */
   ServiceNotFound: 'SERVICE_NOT_FOUND',
+
+  /**
+   * The plugin page an address names is not one the reader may open: an unknown, disabled or unconfigured plugin, an
+   * undeclared page and a permission not held all answer this one code, so the page says "not found" with the API's
+   * sentence rather than offering a retry that cannot help.
+   */
+  PluginPageNotFound: 'PLUGIN_PAGE_NOT_FOUND',
+
+  /** The panel's own server refused a malformed address or id before asking the API (`requireRouteParam`). */
+  BadRouteParam: 'BAD_ROUTE_PARAM',
 } as const
 
 /** Any of the codes in {@link PortalErrorCode}. */

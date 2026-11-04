@@ -5,8 +5,9 @@
  *
  * A refused plugin (one that broke a manifest rule) shows a Refused badge instead of a loaded
  * status, with its id, the broken rule and the localised reason; it is never shown as enabled and
- * can only be removed. A newer upload waiting for the restart shows its staged version, and a newer
- * version in the registry shows an update badge.
+ * can only be removed. A newer upload waiting for the restart shows its staged version, a newer version in the
+ * registry shows an update badge, and each capability the manifest declares (such as serving pages from a
+ * fulfilment plugin) is shown as a badge.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -80,6 +81,15 @@ const emit = defineEmits<{
           </UiBadge>
           <UiBadge v-if="plugin.isBuiltIn" :tone="UiTone.Info" small :data-testid="`plugin-builtin-${plugin.id}`">
             {{ t('plugins.pluginCard.builtIn') }}
+          </UiBadge>
+          <UiBadge
+            v-for="capability in plugin.capabilities"
+            :key="capability"
+            :tone="UiTone.Neutral"
+            small
+            :data-testid="`plugin-capability-${plugin.id}-${capability}`"
+          >
+            {{ t(`plugins.pluginCard.capabilities.${capability}`) }}
           </UiBadge>
         </UiStack>
         <UiText tone="muted" size="sm" class="truncate">{{ plugin.description }}</UiText>

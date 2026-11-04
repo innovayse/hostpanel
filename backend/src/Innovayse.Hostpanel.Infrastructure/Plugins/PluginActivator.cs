@@ -3,6 +3,9 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Endpoints;
+using Hostpanel.Sdk.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.StoredCredentials;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,6 +36,17 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 /// </remarks>
 public sealed class PluginActivator
 {
+    /// <summary>
+    /// The SDK interface each capability promises, keyed by its manifest name. A capability the validator let through
+    /// but this map does not name cannot be checked, so it fails closed as not implemented.
+    /// </summary>
+    private static readonly IReadOnlyDictionary<string, Type> CapabilityContracts =
+        new Dictionary<string, Type>(StringComparer.Ordinal)
+        {
+            [PluginCapabilities.StoredCredentials] = typeof(IStoredCredentialPlugin),
+            [PluginCapabilities.Endpoints] = typeof(IPluginEndpoints),
+        };
+
     /// <summary>The data context, used to read the plugin's current settings rows.</summary>
     private readonly AppDbContext _db;
 
@@ -172,6 +186,19 @@ public sealed class PluginActivator
             return new PreparedPluginActivation<TContract>(id, PluginActivationOutcome.Disabled, null);
         }
 
+        // After the switch, so a plugin the admin left off is not logged as broken on every call. A declared capability
+        // is a claim like the type: a Fulfilment plugin that says "endpoints" but does not
+        // implement IPluginEndpoints is refused for every contract, so it neither sells nor serves half of itself (#818).
+        var unimplemented = UnimplementedCapability(plugin);
+        if (unimplemented is not null)
+        {
+            _logger.LogWarning(
+                "Plugin '{Module}' declares the capability '{Capability}' but its implementation type '{ImplementationType}' "
+                    + "does not implement it.",
+                id, unimplemented, plugin.ImplementationType);
+            return new PreparedPluginActivation<TContract>(id, PluginActivationOutcome.CapabilityNotImplemented, null);
+        }
+
         foreach (var field in plugin.Manifest.GetSettings())
         {
             if (!field.Required)
@@ -211,6 +238,16 @@ public sealed class PluginActivator
     {
         // Its own context per operation, never _db: a store write must not save what the caller has staged there.
         return new PluginWideStore(id, _serviceProvider.GetRequiredService<IServiceScopeFactory>());
+    }
+
+    /// <summary>Finds the first capability the manifest declares that the implementation type does not implement.</summary>
+    /// <param name="plugin">The loaded plugin.</param>
+    /// <returns>The capability name, or <see langword="null"/> when every declared capability is implemented.</returns>
+    private static string? UnimplementedCapability(LoadedPlugin plugin)
+    {
+        return plugin.Manifest.Capabilities.FirstOrDefault(capability =>
+            !CapabilityContracts.TryGetValue(capability, out var contract)
+            || !contract.IsAssignableFrom(plugin.ImplementationType));
     }
 
     /// <summary>

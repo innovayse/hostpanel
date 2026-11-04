@@ -45,6 +45,9 @@ public sealed class PluginRateLimiter : IDisposable
             [RateLimitPolicies.PluginStrict] = SlidingWindow(limits.PluginStrict, disabled),
             [RateLimitPolicies.PluginHeavy] = SlidingWindow(limits.PluginHeavy, disabled),
             [RateLimitPolicies.PluginCallback] = SlidingWindow(limits.PluginCallback, disabled),
+
+            // The portal's SSH key budget, taken by the plugin SSH issue path per plugin and client (#758).
+            [RateLimitPolicies.SshKeys] = SlidingWindow(limits.SshKeys, disabled),
         };
 
         _streams = PartitionedRateLimiter.Create<string, string>(key => disabled
@@ -63,8 +66,8 @@ public sealed class PluginRateLimiter : IDisposable
     }
 
     /// <summary>Takes one request from a tier's budget.</summary>
-    /// <param name="policy">One of <see cref="RateLimitPolicies.PluginDefault"/>, <see cref="RateLimitPolicies.PluginStrict"/>
-    /// or <see cref="RateLimitPolicies.PluginHeavy"/>.</param>
+    /// <param name="policy">One of <see cref="RateLimitPolicies.PluginDefault"/>, <see cref="RateLimitPolicies.PluginStrict"/>,
+    /// <see cref="RateLimitPolicies.PluginHeavy"/> or <see cref="RateLimitPolicies.SshKeys"/>.</param>
     /// <param name="key">The partition, from <see cref="KeyFor"/>.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The lease; <see cref="RateLimitLease.IsAcquired"/> is false when the budget is spent.</returns>

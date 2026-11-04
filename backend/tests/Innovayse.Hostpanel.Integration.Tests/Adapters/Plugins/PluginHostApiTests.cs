@@ -1,7 +1,7 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
+using Innovayse.Hostpanel.Application.Services.Common;
 using Innovayse.Hostpanel.Domain.Billing;
-using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Products;
@@ -284,8 +284,29 @@ public sealed class PluginHostApiTests(IntegrationTestFactory factory) : IClassF
             : PluginCallBinding.ForClient(PluginId, clientId.Value, ClientRef, permissions);
     }
 
+    /// <summary>
+    /// The test plugin is not loaded, so no manifest declares SSH host access for it: both SSH members refuse with
+    /// <c>NotAllowed</c> before anything is read, even for a client caller holding every permission. The granted path is
+    /// covered by <c>IssuePluginSshAccessTests</c> and <c>RevokePluginSshAccessTests</c>.
+    /// </summary>
+    /// <returns>A task.</returns>
+    [Fact]
+    public async Task SshAccess_IsRefusedAsNotAllowed()
+    {
+        using var scope = factory.Services.CreateScope();
+        var api = Api(scope, Binding(1, ClientPermission.All));
+
+        var issue = () => api.IssueSshAccessAsync(1, "label", CancellationToken.None);
+        var revoke = () => api.RevokeSshAccessAsync(1, Guid.NewGuid(), CancellationToken.None);
+
+        var issued = await issue.Should().ThrowAsync<PluginHostAccessException>();
+        issued.Which.Failure.Should().Be(PluginHostAccessFailure.NotAllowed);
+        var revoked = await revoke.Should().ThrowAsync<PluginHostAccessException>();
+        revoked.Which.Failure.Should().Be(PluginHostAccessFailure.NotAllowed);
+    }
+
     /// <summary>Builds a <see cref="PluginHostApi"/> from the scope's services.</summary>
-    /// <param name="scope">The scope that supplies the facts reader, identity provider and currency resolver.</param>
+    /// <param name="scope">The scope that supplies the facts reader, identity provider, currency resolver and SSH access.</param>
     /// <param name="binding">The call the API is bound to.</param>
     /// <returns>The API.</returns>
     private static PluginHostApi Api(IServiceScope scope, PluginCallBinding binding)
@@ -295,7 +316,8 @@ public sealed class PluginHostApiTests(IntegrationTestFactory factory) : IClassF
             binding,
             sp.GetRequiredService<IPluginHostFactsReader>(),
             sp.GetRequiredService<IIdentityProvider>(),
-            sp.GetRequiredService<IPayerCurrencyResolver>());
+            sp.GetRequiredService<IPayerCurrencyResolver>(),
+            sp.GetRequiredService<PluginSshAccessService>());
     }
 
     /// <summary>Seeds a product so services can reference it.</summary>
@@ -381,7 +403,7 @@ public sealed class PluginHostApiTests(IntegrationTestFactory factory) : IClassF
     /// <param name="ExpectedName">The name the profile should show.</param>
     private sealed record Seeded(int ClientId, List<int> ServiceIds, List<int> InvoiceIds, string LastName, string ExpectedName);
 
-     /// <summary>What a plugin sees of one client through the host API.</summary>
+    /// <summary>What a plugin sees of one client through the host API.</summary>
     /// <param name="Profile">The client's profile, or <see langword="null"/> when the call has no client.</param>
     /// <param name="Services">The client's services, newest first.</param>
     /// <param name="Invoices">The client's invoices without drafts, newest first.</param>

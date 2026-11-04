@@ -73,18 +73,49 @@ public enum PluginManifestRule
     /// <summary>The manifest version is not a strict semantic version (<c>major.minor.patch</c>, no leading zeros).</summary>
     VersionInvalid = 21,
 
+    /// <summary>
+    /// A plugin that is not an app plugin declares <c>api</c> routes or <c>ui</c> menus, pages or slots without the
+    /// <c>endpoints</c> capability, so the host would never serve them.
+    /// </summary>
+    EndpointsNotDeclared = 22,
+
+    /// <summary>
+    /// The <c>capabilities</c> list names a capability the SDK does not define, names one twice, or one the plugin type may not carry
+    /// (<c>storedCredentials</c> on anything but a payment plugin).
+    /// </summary>
+    CapabilityNotAllowed = 23,
+
+    /// <summary>
+    /// <c>hostAccess</c> names a kind of access the SDK does not define (<c>PluginHostAccess.All</c>), names one twice, or
+    /// appears in a version 1 manifest.
+    /// </summary>
+    HostAccessUnknown = 24,
+
+    /// <summary>
+    /// A view document holds a <c>visibleWhen</c>, or a follow-up <c>until</c>, that is not a condition: an object with a
+    /// GET <c>route</c>, a dotted <c>field</c> and an <c>equals</c> value or list of 1 to
+    /// <c>PluginViews.MaxConditionValues</c> values; or a <c>visibleWhen</c> on something that is not a block.
+    /// </summary>
+    ViewConditionInvalid = 25,
+
+    /// <summary>
+    /// A view document holds a <c>followUp</c> that is not <c>{ refresh, until }</c> on an action block or a form's
+    /// <c>submit</c>, whose <c>refresh</c> lists a block id the document does not hold, or a <c>resetOnSuccess</c> that is
+    /// not a boolean in a form's <c>submit</c>.
+    /// </summary>
+    ViewFollowUpInvalid = 26,
     /// <summary>A callback route in <c>api.callbacks</c> declares a permission or streams; a callback has no signed-in caller and one reply.</summary>
-    CallbackInvalid = 22,
+    CallbackInvalid = 27,
 
     /// <summary>The manifest names an <c>icon</c> file the package does not hold.</summary>
-    IconMissing = 23,
+    IconMissing = 28,
 
     /// <summary>
     /// The manifest <c>icon</c> is not a package-relative <c>.svg</c> or <c>.png</c> path, is over the size limit, is not a
     /// real PNG, or is an SVG that is not well-formed or carries script, event handlers or external references.
     /// </summary>
-    IconInvalid = 24,
+    IconInvalid = 29,
 
     /// <summary>The manifest declares the <c>endpoints</c> capability, but the entry type does not implement <c>IPluginEndpoints</c>.</summary>
-    EndpointsNotImplemented = 25,
+    EndpointsNotImplemented = 30,
 }

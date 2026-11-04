@@ -33,6 +33,7 @@ const plugin = {
   refusedRule: null,
   refusedDetail: null,
   stagedVersion: null,
+  capabilities: [],
 }
 
 /**

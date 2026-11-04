@@ -62,6 +62,19 @@ public sealed class SdkPackageTests
     }
 
     /// <summary>
+    /// The pinned SDK is at least 2.1.0, the first version with <c>PluginCapabilities.Endpoints</c> and the fulfilment
+    /// <c>ClientRef</c> the host relies on (#818, #757); a submodule moved back below it would compile against members
+    /// that no longer exist.
+    /// </summary>
+    [Fact]
+    public void Package_IsAtLeastTheVersionTheHostNeeds()
+    {
+        var version = Version.Parse(Property(LoadSharedProps(), "Version") ?? "0.0.0");
+
+        version.Should().BeGreaterThanOrEqualTo(new Version(2, 1, 0));
+    }
+
+    /// <summary>
     /// The SDK is a plain library any host may use: it references no ASP.NET Core assembly, neither as a framework
     /// reference in its project nor in the assembly it compiles to, so a plugin never needs a web stack to build.
     /// </summary>

@@ -37,21 +37,25 @@ public sealed class Setting : BaseEntity, IAggregateRoot
         new() { Key = key, Value = value, Description = description };
 
     /// <summary>
-    /// Creates the switch row of a removed plugin that never had one, already off. Its stored data is kept.
+    /// Creates the switch row of a removed plugin that never had one, already off, and raises
+    /// <see cref="PluginRemovedEvent"/>. Its stored data is kept.
     /// </summary>
     /// <param name="pluginId">
     /// The removed plugin's id; not empty. Its shape is the caller's to check: the use case's validator holds the plugin id rule.
     /// </param>
+    /// <param name="removedAt">When the plugin was removed, UTC, read by the caller from its clock.</param>
     /// <returns>A new, unpersisted switch row holding <see cref="IntegrationSettingKeys.DisabledValue"/>.</returns>
     /// <exception cref="ArgumentException"><paramref name="pluginId"/> is null, empty or white space.</exception>
-    public static Setting CreateSwitchedOffForRemovedPlugin(string pluginId)
+    public static Setting CreateSwitchedOffForRemovedPlugin(string pluginId, DateTimeOffset removedAt)
     {
         EnsurePluginId(pluginId);
 
-        return Create(
+        var setting = Create(
             IntegrationSettingKeys.EnabledKey(pluginId),
             IntegrationSettingKeys.DisabledValue,
             string.Format(CultureInfo.InvariantCulture, PluginSwitchDescriptionFormat, pluginId));
+        setting.AddDomainEvent(new PluginRemovedEvent(pluginId, removedAt));
+        return setting;
     }
 
     // ── CRUD half ──────────────────────────────────────────────────────────────
@@ -66,19 +70,22 @@ public sealed class Setting : BaseEntity, IAggregateRoot
 
     /// <summary>
     /// Turns a removed plugin's switch off, so a plugin that stays loaded until the restart is refused from the next
-    /// call on. The plugin's stored data is kept; <see cref="RequestDataPurge"/> deletes it.
+    /// call on, and raises <see cref="PluginRemovedEvent"/>. The plugin's stored data is kept; <see cref="RequestDataPurge"/>
+    /// deletes it.
     /// </summary>
     /// <param name="pluginId">
     /// The removed plugin's id; not empty, and it must name this row's plugin. The plugin id rule itself is checked by the
     /// use case's validator, so the domain does not depend on the plugin packaging package.
     /// </param>
+    /// <param name="removedAt">When the plugin was removed, UTC, read by the caller from its clock.</param>
     /// <exception cref="ArgumentException">
     /// <paramref name="pluginId"/> is empty, or this row is not that plugin's switch.
     /// </exception>
-    public void SwitchOffRemovedPlugin(string pluginId)
+    public void SwitchOffRemovedPlugin(string pluginId, DateTimeOffset removedAt)
     {
         EnsureSwitchOf(pluginId);
         Value = IntegrationSettingKeys.DisabledValue;
+        AddDomainEvent(new PluginRemovedEvent(pluginId, removedAt));
     }
 
     /// <summary>

@@ -43,6 +43,36 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
         }
     }
 
+    /// <summary>The list shows the capabilities a manifest declares, as the SDK spells them, and an empty list for none (#818).</summary>
+    [Fact]
+    public async Task APluginDeclaringCapabilities_ListsThemAsync()
+    {
+        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var pluginId = $"test-plugin-{Guid.NewGuid():N}";
+        var plainId = $"test-plugin-{Guid.NewGuid():N}";
+        var zip = PluginsTestSeeds.BuildZip(new Dictionary<string, string>
+        {
+            ["plugin.json"] = PluginsTestSeeds.ManifestJson(pluginId, ",\"manifestVersion\":2,\"capabilities\":[\"endpoints\"],\"api\":{\"admin\":[{\"method\":\"get\",\"path\":\"/stats\"}]}", "Fulfilment"),
+        });
+
+        try
+        {
+            (await PluginsTestSeeds.InstallAsync(client, zip)).StatusCode.Should().Be(HttpStatusCode.OK);
+            (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildValidPluginZip(plainId))).StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var list = await client.GetFromJsonAsync<List<JsonElement>>("/api/admin/plugins");
+
+            var row = list!.Single(p => p.GetProperty("id").GetString() == pluginId);
+            row.GetProperty("capabilities").EnumerateArray().Select(c => c.GetString()).Should().Equal("endpoints");
+            list!.Single(p => p.GetProperty("id").GetString() == plainId).GetProperty("capabilities").GetArrayLength().Should().Be(0);
+        }
+        finally
+        {
+            await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
+            await client.DeleteAsync($"/api/admin/plugins/{plainId}");
+        }
+    }
+
     /// <summary>A plugin in the build output's plugin folder is listed as built-in.</summary>
     [Fact]
     public async Task ABuiltInPlugin_IsMarkedBuiltInAsync()

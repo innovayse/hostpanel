@@ -1,6 +1,10 @@
 {
   "pluginCard": {
     "builtIn": "Built-in",
+    "capabilities": {
+      "endpoints": "Serves pages",
+      "storedCredentials": "Saved payment methods"
+    },
     "pendingRestart": "Pending restart",
     "categoryByAuthor": "{category} · by {author}",
     "removing": "Removing…",
@@ -129,6 +133,8 @@
     "AssemblyUnreadable": "A file in the plugin folder could not be read.",
     "SlotWidgetIdInvalid": "A widget id is not valid: use lowercase letters, digits, hyphens and underscores.",
     "SlotWidgetDuplicate": "The same widget id is declared twice for one slot.",
-    "PluginIdInvalid": "The plugin id is not valid: use lowercase words joined by single hyphens."
+    "PluginIdInvalid": "The plugin id is not valid: use lowercase words joined by single hyphens.",
+    "EndpointsNotDeclared": "The plugin declares routes, pages or slots, but it is not an app plugin and does not declare the endpoints capability.",
+    "CapabilityNotAllowed": "The plugin declares a capability this server does not know or its plugin type cannot carry."
   }
 }

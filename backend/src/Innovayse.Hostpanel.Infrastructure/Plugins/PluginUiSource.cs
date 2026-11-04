@@ -3,13 +3,15 @@ using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Endpoints;
 using Hostpanel.Sdk.Plugins.Enums;
+using Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 
 /// <summary>
-/// Answers which plugins' pages the panels may show from the loaded plugins, through the same
+/// Answers which plugins' pages the panels may show from the loaded serving plugins (app plugins, and plugins of any
+/// other type that declare the <c>endpoints</c> capability, #818), through the same
 /// <see cref="PluginActivator"/> gates a plugin route passes, so a page is listed exactly when the routes it calls answer.
-/// Nothing of the plugin runs here: the gates stop before its constructor. The gates' answer for every app plugin is
+/// Nothing of the plugin runs here: the gates stop before its constructor. The gates' answer for every serving plugin is
 /// computed in one pass and remembered by <see cref="PluginAvailabilityCache"/>, so the index and the page lookup read
 /// the same set and an unknown id costs exactly what an installed one does.
 /// </summary>
@@ -42,7 +44,7 @@ public sealed class PluginUiSource : IPluginUiSource
 
         // Ordered by id here, ordinal: the listing order must not depend on the registry's or a dictionary's order,
         // which changes with load order and would reorder the panels' menus between restarts.
-        return _registry.OfType(PluginType.App)
+        return Serving()
             .Where(plugin => available.Contains(plugin.Manifest.Id))
             .OrderBy(plugin => plugin.Manifest.Id, StringComparer.Ordinal)
             .Select(plugin => new PluginUiPackage(plugin.Manifest, plugin.Views))
@@ -61,16 +63,21 @@ public sealed class PluginUiSource : IPluginUiSource
         }
 
         var plugin = _registry.Find(pluginId);
-        return plugin is { Manifest.Type: PluginType.App } ? new PluginUiPackage(plugin.Manifest, plugin.Views) : null;
+        return plugin is not null && plugin.Manifest.ServesEndpoints()
+            ? new PluginUiPackage(plugin.Manifest, plugin.Views)
+            : null;
     }
 
-    /// <summary>Runs the activation gates of every loaded app plugin, in one pass, without building any of them.</summary>
+    /// <summary>Runs the activation gates of every loaded serving plugin, in one pass, without building any of them.</summary>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The ids of the app plugins that implement <see cref="IPluginEndpoints"/>, are switched on and are configured.</returns>
+    /// <returns>
+    /// The ids of the serving plugins that implement <see cref="IPluginEndpoints"/> and every capability they declare,
+    /// are switched on and are configured.
+    /// </returns>
     private async Task<IReadOnlySet<string>> ComputeAvailableAsync(CancellationToken ct)
     {
         var available = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var plugin in _registry.OfType(PluginType.App))
+        foreach (var plugin in Serving())
         {
             var prepared = await _activator.PrepareAsync<IPluginEndpoints>(plugin, ct);
             if (prepared.Outcome == PluginActivationOutcome.Activated)
@@ -80,5 +87,12 @@ public sealed class PluginUiSource : IPluginUiSource
         }
 
         return available;
+    }
+
+    /// <summary>The loaded plugins the host serves pages for, through the one predicate the route door also uses.</summary>
+    /// <returns>The serving plugins, in no particular order.</returns>
+    private IEnumerable<LoadedPlugin> Serving()
+    {
+        return _registry.LoadedPlugins.Where(plugin => plugin.Manifest.ServesEndpoints());
     }
 }

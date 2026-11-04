@@ -4,11 +4,16 @@
  * The language proof starts here: every call must stamp `X-Language` (never the retired
  * `x-locale`) from the active i18n locale, validated against `en|ru|hy`. `useApi` is checked at
  * the `useFetch` boundary it wraps (a framework function, not ours); `apiFetch` is checked
- * against a real HTTP stub server, asserting on what actually arrived.
+ * against a real HTTP stub server, asserting on what actually arrived. `apiStream` is checked the
+ * same way: it opens a server-sent event stream with `fetch`, never `EventSource`, hands the body
+ * back before the stream ends, and closes the connection when its signal aborts.
  *
  * @module tests/composables/useApi.test
  */
 
+import { createServer } from 'node:http'
+import type { Server } from 'node:http'
+import type { AddressInfo } from 'node:net'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref, toValue } from 'vue'
 import { ofetch } from 'ofetch'
@@ -31,7 +36,7 @@ let stub: StubServer | undefined
 vi.stubGlobal('toValue', toValue)
 vi.stubGlobal('useFetch', useFetchMock)
 
-const { useApi, apiFetch } = await import('~/composables/useApi')
+const { useApi, apiFetch, apiStream } = await import('~/composables/useApi')
 
 beforeEach(() => {
   locale.value = 'en'
@@ -189,5 +194,113 @@ describe('apiFetch', () => {
     await expect(apiFetch('/ping')).rejects.toMatchObject({ statusCode: 400, data: { detail: 'Bad.' } })
 
     expect(handleAuthExpired).not.toHaveBeenCalled()
+  })
+})
+
+describe('apiStream', () => {
+  /** The real `fetch`, pointed at a local server for each test. */
+  const realFetch = globalThis.fetch
+
+  /**
+   * Points `fetch` at a server and fakes the Nuxt app for the given locale.
+   *
+   * @param base - The server's base URL.
+   * @param language - Locale the fake i18n plugin reports.
+   */
+  const arrangeAt = (base: string, language: string): void => {
+    vi.stubGlobal('fetch', (url: string, init: RequestInit) => realFetch(`${base}${url}`, init))
+    vi.stubGlobal('useNuxtApp', () => ({
+      $i18n: { locale: { value: language } },
+      $handleAuthExpired: handleAuthExpired,
+      runWithContext: (callback: () => Promise<void>) => callback(),
+    }))
+  }
+
+  /**
+   * Starts the stub with a reply and points `fetch` at it.
+   *
+   * @param language - Locale the fake i18n plugin reports.
+   * @param reply - The stub's answer.
+   */
+  const arrange = async (language: string, reply: Parameters<typeof startStubServer>[0]): Promise<void> => {
+    stub = await startStubServer(reply)
+    arrangeAt(stub.baseUrl, language)
+  }
+
+  afterEach(() => {
+    vi.stubGlobal('fetch', realFetch)
+  })
+
+  it('posts the body with the language, the CSRF header and an event-stream Accept, and hands back the stream', async () => {
+    await arrange('hy', () => ({ headers: { 'content-type': 'text/event-stream' }, body: 'event: done\ndata: {}\n\n' }))
+
+    const body = await apiStream('/stream', { message: 'hi' }, new AbortController().signal)
+
+    expect(await new Response(body).text()).toBe('event: done\ndata: {}\n\n')
+    expect(stub?.requests[0]?.method).toBe(HttpMethod.Post)
+    expect(stub?.requests[0]?.headers['x-language']).toBe('hy')
+    expect(stub?.requests[0]?.headers['x-requested-with']).toBe('XMLHttpRequest')
+    expect(stub?.requests[0]?.headers['accept']).toBe('text/event-stream')
+    expect(stub?.requests[0]?.headers['content-type']).toContain('application/json')
+    expect(stub?.requests[0]?.body).toBe('{"message":"hi"}')
+  })
+
+  it('sends the default language when the locale is not one the backend ships', async () => {
+    await arrange('fr', () => ({ headers: { 'content-type': 'text/event-stream' }, body: '' }))
+
+    await apiStream('/stream', {}, new AbortController().signal)
+
+    expect(stub?.requests[0]?.headers['x-language']).toBe('en')
+  })
+
+  it('throws a refusal shaped like a $fetch rejection, running the auth guard on 401', async () => {
+    await arrange('en', () => ({ status: 401, body: { statusMessage: 'Signed out.' } }))
+
+    await expect(apiStream('/stream', {}, new AbortController().signal)).rejects.toMatchObject({ statusCode: 401, data: { statusMessage: 'Signed out.' } })
+    expect(handleAuthExpired).toHaveBeenCalledTimes(1)
+  })
+
+  it('throws any other refusal with its body and leaves the auth guard alone', async () => {
+    await arrange('en', () => ({ status: 429, body: { statusMessage: 'Too many requests.', data: { code: 'RATE_LIMITED' } } }))
+
+    await expect(apiStream('/stream', {}, new AbortController().signal)).rejects.toMatchObject({ statusCode: 429, data: { data: { code: 'RATE_LIMITED' } } })
+    expect(handleAuthExpired).not.toHaveBeenCalled()
+  })
+
+  it('throws a refusal with no JSON body with an empty body, never the response text', async () => {
+    await arrange('en', () => ({ status: 502, headers: { 'content-type': 'text/plain' }, body: 'upstream internal-host-7 failed' }))
+
+    const error = await apiStream('/stream', {}, new AbortController().signal).catch((thrown: unknown) => thrown as Record<string, unknown>)
+
+    expect(error).toMatchObject({ statusCode: 502 })
+    expect((error as { data?: unknown }).data).toBeUndefined()
+  })
+
+  it('closes the connection when its signal aborts, so the server stops writing', async () => {
+    /** Whether the server saw the connection close. */
+    let closed = false
+    const server: Server = createServer((_request, response) => {
+      response.writeHead(200, { 'content-type': 'text/event-stream' })
+      response.write('event: delta\ndata: {}\n\n')
+      response.on('close', () => {
+        closed = true
+      })
+    })
+    await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve))
+    arrangeAt(`http://127.0.0.1:${(server.address() as AddressInfo).port}`, 'en')
+    const controller = new AbortController()
+    try {
+      const body = await apiStream('/stream', {}, controller.signal)
+      const reader = body.getReader()
+      await reader.read()
+
+      controller.abort()
+
+      await expect(reader.read()).rejects.toThrow()
+      await vi.waitFor(() => expect(closed).toBe(true))
+    } finally {
+      server.closeAllConnections()
+      await new Promise<void>(resolve => server.close(() => resolve()))
+    }
   })
 })

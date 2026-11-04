@@ -172,7 +172,7 @@ skipped, so a retry only adds what is new.
 | Reason | What to do |
 |---|---|
 | Source could not be reached | Check the source URL and confirm WHMCS is running. |
-| Source refused the request, check the key | The key is wrong or the addon is not active. Re-copy the key from the job card into the addon settings. |
+| Source refused the request, check the key | The addon answered with an error status. Most often the key is wrong or the addon is not active: re-copy the key from the job card into the addon settings. The same reason is shown when the addon answers 429 (too many wrong keys from this address; wait 15 minutes), 503 (the addon cannot write its attempt log in the server's temp folder) or 500 (the export failed; check the WHMCS error log). |
 | Records could not be imported | Check the server log for details. Fix the underlying problem and retry. |
 | Import was stopped | The pull was cancelled. Retry when ready. |
 | The server stopped before the import finished | The process was interrupted (restart or crash). The recovery job runs every 5 minutes and fails any job with no heartbeat for 15 minutes (both configurable). Retry when the server is stable. |
@@ -190,7 +190,8 @@ Records are matched as follows: clients by email address, contacts by email, pro
 domains by domain name, services by client and the source service id (rows imported before the id was kept, by client and domain or panel username), invoices by
 client and external id, tickets and quotes by client and subject, orders by order number,
 transactions by client and transaction id, knowledgebase articles by title, announcements by title
-and date, network issues by title and start date, downloads by title and category, ticket replies by
+and date (by title alone when the source has no date), network issues by title and start date (by
+title alone when the source has no start date), downloads by title and category, ticket replies by
 ticket, author, role and message. Download categories are matched by name.
 
 Every service in the source record carries its own id, so a retry skips a service already imported

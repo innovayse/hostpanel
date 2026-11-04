@@ -11,11 +11,15 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 /// <param name="Version">Semver version string; empty for a removed plugin.</param>
 /// <param name="Author">Author name or organisation.</param>
 /// <param name="Description">Short description shown in the admin panel.</param>
-/// <param name="Type">Plugin type string: provisioning | payment | registrar | identity | fulfilment | hosted.</param>
+/// <param name="Type">Plugin type string: provisioning | payment | registrar | identity | fulfilment | hosted | app.</param>
 /// <param name="Category">Display category label, e.g. "Hosting / Provisioning".</param>
 /// <param name="Color">Hex colour for the plugin logo block.</param>
 /// <param name="IsLoaded">Whether the DLL was successfully loaded at startup; never true for a refused or removed row.</param>
 /// <param name="IsBuiltIn">Whether the plugin ships with the build; a built-in plugin cannot be removed.</param>
+/// <param name="Capabilities">
+/// The capabilities the manifest declares (<c>storedCredentials</c>, <c>endpoints</c>), as the SDK spells them, in
+/// manifest order; empty when it declares none and for a refused or removed row.
+/// </param>
 /// <param name="Status">Whether the row is a loaded, refused or removed plugin; serialised as the enum name.</param>
 /// <param name="RefusedRule">The manifest rule a refused plugin breaks; <see langword="null"/> otherwise.</param>
 /// <param name="RefusedDetail">Where and how the rule is broken; <see langword="null"/> unless refused.</param>
@@ -38,6 +42,7 @@ public sealed record PluginListItemDto(
     string Color,
     bool IsLoaded,
     bool IsBuiltIn,
+    IReadOnlyList<string> Capabilities,
     PluginListStatus Status = PluginListStatus.Loaded,
     PluginManifestRule? RefusedRule = null,
     string? RefusedDetail = null,

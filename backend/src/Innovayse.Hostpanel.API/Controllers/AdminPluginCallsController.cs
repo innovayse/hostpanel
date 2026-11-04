@@ -13,7 +13,7 @@ using Wolverine;
 namespace Innovayse.Hostpanel.API.Controllers;
 
 /// <summary>
-/// The one door to the admin area API of every app plugin: <c>/api/admin/plugins/{id}/ext/{path}</c>. It binds the
+/// The one door to the admin area API of every serving plugin: <c>/api/admin/plugins/{id}/ext/{path}</c>. It binds the
 /// request and dispatches it; the use case matches it against the routes the plugin's manifest declares and calls
 /// the plugin. The admin policy is the whole authorisation: an admin route declares no permission.
 /// </summary>
@@ -43,7 +43,7 @@ public sealed class AdminPluginCallsController : BaseApiController
         _bus = bus;
     }
 
-    /// <summary>Calls a route of an app plugin in the admin area.</summary>
+    /// <summary>Calls a route of a serving plugin in the admin area.</summary>
     /// <param name="id">The plugin id.</param>
     /// <param name="path">The path below the plugin's admin prefix, matched against its declared routes.</param>
     /// <param name="ct">Cancellation token.</param>

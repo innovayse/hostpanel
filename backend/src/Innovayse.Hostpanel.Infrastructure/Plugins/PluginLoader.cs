@@ -1,8 +1,8 @@
 using System.Reflection;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
-using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Extensions;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Hostpanel.Sdk.Packaging.Naming;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
@@ -17,6 +17,7 @@ using Hostpanel.Sdk.Plugins.Manifest;
 using Hostpanel.Sdk.Plugins.Payment;
 using Hostpanel.Sdk.Plugins.Provisioning;
 using Hostpanel.Sdk.Plugins.Registrar;
+using Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -208,7 +209,7 @@ public static class PluginLoader
             // A plugin that declares the endpoints capability promises the host it can answer routes. Declaring it without
             // implementing the contract is a broken manifest, refused here like any other, and kept in the registry so the
             // admin list shows why. The id is already claimed above, so an upload cannot stand in for it.
-            if (DeclaresEndpoints(manifest) && !typeof(IPluginEndpoints).IsAssignableFrom(pluginType))
+            if (manifest.Declares(PluginCapabilities.Endpoints) && !typeof(IPluginEndpoints).IsAssignableFrom(pluginType))
             {
                 var detail = $"capabilities declares '{PluginCapabilities.Endpoints}' but '{manifest.EntryPoint}' does not implement IPluginEndpoints";
                 logger.LogWarning(
@@ -251,7 +252,8 @@ public static class PluginLoader
     }
 
     /// <summary>
-    /// Registers a plugin type as a keyed scoped service under the SDK contract of its <see cref="PluginType"/>.
+    /// Registers a plugin type as a keyed scoped service under the SDK contract of its <see cref="PluginType"/>, and
+    /// also under <see cref="IPluginEndpoints"/> when a plugin of another type declares the <c>endpoints</c> capability.
     /// </summary>
     /// <param name="services">The application service collection.</param>
     /// <param name="manifest">The plugin manifest.</param>
@@ -299,20 +301,10 @@ public static class PluginLoader
                 break;
         }
 
-        // Endpoints are served for an app plugin always, and for any other type only when its manifest declares the
-        // capability. Only the public callback door uses them for a non-app plugin; the client and admin routes and the
-        // plugin UI stay app only (see PluginEndpointResolver).
-        if (manifest.Type == PluginType.App || DeclaresEndpoints(manifest))
+        // The same class answers routes too; an app plugin is already registered under this contract above.
+        if (manifest.Type != PluginType.App && manifest.ServesEndpoints())
         {
             services.AddKeyedScoped(typeof(IPluginEndpoints), manifest.Id, pluginType);
         }
-    }
-
-    /// <summary>Whether the manifest lists the <c>endpoints</c> capability.</summary>
-    /// <param name="manifest">The plugin manifest.</param>
-    /// <returns><see langword="true"/> when <see cref="PluginManifest.Capabilities"/> holds <see cref="PluginCapabilities.Endpoints"/>.</returns>
-    private static bool DeclaresEndpoints(PluginManifest manifest)
-    {
-        return manifest.Capabilities.Contains(PluginCapabilities.Endpoints, StringComparer.Ordinal);
     }
 }

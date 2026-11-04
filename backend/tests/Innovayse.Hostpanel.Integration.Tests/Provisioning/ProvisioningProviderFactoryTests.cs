@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Domain.Provisioning;
 using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel;
+using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Whm;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Plesk;
 using Innovayse.Hostpanel.Infrastructure.Provisioning;
 using Innovayse.Hostpanel.Infrastructure.Provisioning.Settings;
@@ -120,7 +121,7 @@ public sealed class ProvisioningProviderFactoryTests : IAsyncLifetime
     {
         var factory = BuildFactory(new StubHttpClientFactory(cwp7), new ProvisioningOptions());
 
-        var act = () => factory.CreateFor(ServerRow("hash", ServerModule.CPanel));
+        var act = () => factory.CreateFor(ServerRow("hash", ServerModule.DirectAdmin));
 
         act.Should().Throw<NotSupportedException>();
     }
@@ -184,6 +185,50 @@ public sealed class ProvisioningProviderFactoryTests : IAsyncLifetime
         var act = () => factory.CreateFor(ServerRow(" ", ServerModule.Plesk));
 
         act.Should().Throw<InvalidOperationException>().WithMessage("*no access hash*");
+    }
+
+    /// <summary>A cPanel server gets the WHM provider, calling WHM API 1 on the default WHM port with its token.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task CreateFor_BuildsTheCPanelProvider_OnTheDefaultWhmPortAsync()
+    {
+        var http = new StubHttpClientFactory(cwp7);
+        cwp7.Enqueue("""{"metadata":{"result":1,"reason":"OK"}}""");
+        var server = new ServerConnectionDto(1, "srv", ServerModule.CPanel, "panel.example.test", null, null, "root", "whm-token");
+        var provider = BuildFactory(http, new ProvisioningOptions()).CreateFor(server);
+
+        await provider.UnsuspendAsync("testuser", CancellationToken.None);
+
+        provider.Should().BeOfType<WhmProvisioningProvider>();
+        http.RequestedUris.Should().ContainSingle().Which.ToString()
+            .Should().Be($"https://panel.example.test:{ProvisioningOptions.DefaultCPanelWhmPort}/json-api/unsuspendacct?api.version=1&user=testuser");
+        cwp7.Requests.Should().ContainSingle().Which.Authorization.Should().Be("whm root:whm-token");
+    }
+
+    /// <summary>A cPanel server without a WHM username or API token is refused when the provider is built.</summary>
+    /// <param name="username">The server's WHM username.</param>
+    /// <param name="apiToken">The server's API token.</param>
+    [Theory]
+    [InlineData("root", null)]
+    [InlineData("root", " ")]
+    [InlineData(null, "whm-token")]
+    public void CreateFor_Throws_WhenACPanelServerHasNoUsernameOrToken(string? username, string? apiToken)
+    {
+        var factory = BuildFactory(new StubHttpClientFactory(cwp7), new ProvisioningOptions());
+        var server = new ServerConnectionDto(1, "srv", ServerModule.CPanel, "panel.example.test", null, "hash", username, apiToken);
+
+        var act = () => factory.CreateFor(server);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*no WHM username or API token*");
+    }
+
+    /// <summary>The server row prints without its API token, so a log line of it leaks nothing.</summary>
+    [Fact]
+    public void ServerConnection_ToString_HidesTheApiToken()
+    {
+        var server = new ServerConnectionDto(1, "srv", ServerModule.CPanel, "panel.example.test", null, null, "root", "whm-secret-token");
+
+        server.ToString().Should().NotContain("whm-secret-token").And.Contain("root");
     }
 
     /// <summary>The development switch returns the in-process provider and never builds a panel client.</summary>

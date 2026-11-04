@@ -2,6 +2,8 @@ using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel;
+using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Whm;
+using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Whm.Models;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Plesk;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Plesk.Models;
 using Innovayse.Hostpanel.Infrastructure.Provisioning.Settings;
@@ -25,7 +27,7 @@ public sealed class ProvisioningProviderFactory : IProvisioningProviderFactory
     /// Read-only, so no caller can change the process-wide list; test doubles reference it rather
     /// than copy it.
     /// </summary>
-    public static IReadOnlyList<ServerModule> BuiltModules { get; } = Array.AsReadOnly<ServerModule>([ServerModule.Cwp7, ServerModule.Plesk]);
+    public static IReadOnlyList<ServerModule> BuiltModules { get; } = Array.AsReadOnly<ServerModule>([ServerModule.Cwp7, ServerModule.Plesk, ServerModule.CPanel]);
 
     /// <summary>Every module, which the development fake provider stands in for.</summary>
     private static readonly IReadOnlyList<ServerModule> AllModules = Array.AsReadOnly(Enum.GetValues<ServerModule>());
@@ -78,8 +80,34 @@ public sealed class ProvisioningProviderFactory : IProvisioningProviderFactory
         {
             ServerModule.Cwp7 => CreateCwp7Provider(server),
             ServerModule.Plesk => CreatePleskProvider(server),
-            _ => throw new NotSupportedException($"No provisioning provider for module '{server.Module}'. Only CWP7 and Plesk are currently supported via the factory."),
+            ServerModule.CPanel => CreateCPanelProvider(server),
+            _ => throw new NotSupportedException($"No provisioning provider for module '{server.Module}'. Only CWP7, Plesk and cPanel are currently supported via the factory."),
         };
+    }
+
+    /// <summary>Creates a cPanel provider for the given server, talking to WHM API 1.</summary>
+    /// <param name="server">The cPanel server; its username and API token are the WHM user and its token.</param>
+    /// <returns>A configured <see cref="WhmProvisioningProvider"/>.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the server has no WHM username or no API token.</exception>
+    private WhmProvisioningProvider CreateCPanelProvider(ServerConnectionDto server)
+    {
+        if (string.IsNullOrWhiteSpace(server.Username) || string.IsNullOrWhiteSpace(server.ApiToken))
+        {
+            throw new InvalidOperationException($"Server '{server.Name}' (id={server.Id}) has no WHM username or API token configured.");
+        }
+
+        var options = _options.Value;
+        var connection = new WhmConnection(HostingPanelAddress.BaseUrl(server.Hostname, options.CPanelWhmPort), server.Username, server.ApiToken);
+        var client = new WhmApiClient(
+            _httpClientFactory.CreateClient(HttpClientNames.CPanelWhm),
+            _loggerFactory.CreateLogger<WhmApiClient>());
+
+        return new WhmProvisioningProvider(
+            connection,
+            server.IpAddress ?? server.Hostname,
+            HostingPanelAddress.BaseUrl(server.Hostname, options.CPanelUserPort),
+            client,
+            _loggerFactory.CreateLogger<WhmProvisioningProvider>());
     }
 
     /// <summary>Creates a Plesk provider for the given server.</summary>

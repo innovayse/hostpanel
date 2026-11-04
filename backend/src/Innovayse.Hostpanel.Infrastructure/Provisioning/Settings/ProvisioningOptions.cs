@@ -25,6 +25,12 @@ public sealed class ProvisioningOptions
     /// <summary>The port a Plesk server answers both its XML API and its panel on when none is configured.</summary>
     public const int DefaultPleskPort = 8443;
 
+    /// <summary>The port WHM answers its API on over HTTPS when none is configured.</summary>
+    public const int DefaultCPanelWhmPort = 2087;
+
+    /// <summary>The port cPanel answers an account owner on over HTTPS when none is configured.</summary>
+    public const int DefaultCPanelUserPort = 2083;
+
     /// <summary>
     /// When <see langword="true"/>, the provider factory returns an in-process provider that
     /// reports success without contacting any external control panel. Development and testing
@@ -50,4 +56,10 @@ public sealed class ProvisioningOptions
     /// signs in to on the same HTTPS port, so one value builds both addresses.
     /// </summary>
     public int PleskPort { get; set; } = DefaultPleskPort;
+
+    /// <summary>The port every cPanel server answers WHM API 1 on.</summary>
+    public int CPanelWhmPort { get; set; } = DefaultCPanelWhmPort;
+
+    /// <summary>The port every cPanel server answers an account owner on; the sign-in address shown to the owner is built from it.</summary>
+    public int CPanelUserPort { get; set; } = DefaultCPanelUserPort;
 }

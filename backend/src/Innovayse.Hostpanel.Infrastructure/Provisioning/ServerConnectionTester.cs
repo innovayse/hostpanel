@@ -3,6 +3,8 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.Domain.Servers.Enums;
+using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Whm;
+using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Whm.Models;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Plesk;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Plesk.Models;
 using Innovayse.Hostpanel.Infrastructure.Provisioning.Settings;
@@ -59,7 +61,7 @@ public sealed class ServerConnectionTester : IServerConnectionTester
 
     /// <summary>
     /// Tests connectivity to the server using its stored credentials.
-    /// Supports CWP7, Plesk and legacy CentOS modules; other modules return a not-supported error.
+    /// Supports CWP7, Plesk, cPanel and legacy CentOS modules; other modules return a not-supported error.
     /// </summary>
     /// <param name="server">The server to test.</param>
     /// <param name="ct">Cancellation token.</param>
@@ -70,6 +72,7 @@ public sealed class ServerConnectionTester : IServerConnectionTester
         {
             ServerModule.Cwp7 => await TestCwp7Async(server, ct),
             ServerModule.Plesk => await TestPleskAsync(server, ct),
+            ServerModule.CPanel => await TestCPanelAsync(server, ct),
             ServerModule.Centos => await TestLegacyCwpAsync(server, ct),
             _ => ServerConnectionTestResult.Failed(HostpanelErrorCodes.SERVER_CONNECTION_MODULE_UNSUPPORTED),
         };
@@ -100,6 +103,35 @@ public sealed class ServerConnectionTester : IServerConnectionTester
             // The provider's own message never reaches the caller (rules on upstream detail); it
             // is logged here for whoever has to chase the failure up.
             _logger.LogWarning(ex, "CWP7 connection test failed for server {ServerId} ({Hostname})", server.Id, server.Hostname);
+            return ServerConnectionTestResult.Failed(HostpanelErrorCodes.SERVER_CONNECTION_UNREACHABLE);
+        }
+    }
+
+    /// <summary>Tests connectivity to a cPanel server by reading the WHM version and the account count with its API token.</summary>
+    /// <param name="server">The cPanel server; its username and API token are the WHM user and its token.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The connection result.</returns>
+    private async Task<ServerConnectionTestResult> TestCPanelAsync(Server server, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(server.Username) || string.IsNullOrWhiteSpace(server.ApiToken))
+        {
+            return ServerConnectionTestResult.Failed(HostpanelErrorCodes.SERVER_CONNECTION_NO_API_KEY);
+        }
+
+        var client = new WhmApiClient(
+            _httpClientFactory.CreateClient(HttpClientNames.CPanelWhm),
+            _loggerFactory.CreateLogger<WhmApiClient>());
+        var connection = new WhmConnection(HostingPanelAddress.BaseUrl(server.Hostname, _options.Value.CPanelWhmPort), server.Username, server.ApiToken);
+        try
+        {
+            var info = await client.GetVersionAsync(connection, ct);
+            var accounts = await client.CountAccountsAsync(connection, ct);
+            return ServerConnectionTestResult.Succeeded(accounts, info.Version);
+        }
+        catch (Exception ex)
+        {
+            // WHM's own text never reaches the caller; the exception carries no URL or token.
+            _logger.LogWarning(ex, "cPanel connection test failed for server {ServerId} ({Hostname})", server.Id, server.Hostname);
             return ServerConnectionTestResult.Failed(HostpanelErrorCodes.SERVER_CONNECTION_UNREACHABLE);
         }
     }

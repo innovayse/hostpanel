@@ -17,7 +17,7 @@ Servers are grouped by module in one table per module. Each row shows **Server N
 **DEFAULT** badge marks the default server for its module. When other things are equal, the default server is preferred within its group or module when a server is picked for a new account (see [Fill types](#fill-types)).
 
 <Callout type="note">
-Only <strong>CWP7</strong> and <strong>Plesk</strong> are fully supported provisioning modules at this time. The other entries in the Module list (cPanel, DirectAdmin, CentOS, Lukittu, Virtualmin, HyperVm) are stored but do not provision accounts automatically and cannot be tested.
+<strong>CWP7</strong>, <strong>Plesk</strong> and <strong>cPanel</strong> provision accounts automatically. cPanel is new and not yet tested against a live WHM server; see <a href="./cpanel">cPanel servers</a>. The other entries in the Module list (DirectAdmin, CentOS, Lukittu, Virtualmin, HyperVm) are stored but do not provision accounts automatically and cannot be tested.
 </Callout>
 
 ## Add a server
@@ -51,7 +51,7 @@ Up to five nameservers (hostname and IP each) shown to clients when an account i
 | Username | API username |
 | Password | API password (stored encrypted) |
 | API Token | API token where the module uses token-based auth (stored encrypted) |
-| Access Hash | Used by cPanel/WHM and CWP7 for token-based authentication (stored encrypted) |
+| Access Hash | Used by CWP7 and Plesk for API authentication (stored encrypted). cPanel uses Username and API Token instead |
 | Use SSL for connections | Enables HTTPS for API requests |
 
 When editing, credential fields show **(blank = keep)**. Secrets are stored encrypted with `ENCRYPTION_KEY`. There is no port field; the panel API port is fixed per module.

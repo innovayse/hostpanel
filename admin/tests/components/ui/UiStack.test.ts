@@ -22,6 +22,22 @@ describe('UiStack', () => {
     ]))
   })
 
+  it('turns a row into a full-width column below md when asked', () => {
+    const wrapper = mount(UiStack, { props: { direction: 'row', reflowBelowMd: true } })
+
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['flex-row', 'max-md:flex-col', 'max-md:items-stretch']))
+  })
+
+  it('turns a column into a wrapping, centred line below md when asked', () => {
+    const wrapper = mount(UiStack, { props: { reflowBelowMd: true } })
+
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['flex-col', 'max-md:flex-row', 'max-md:flex-wrap', 'max-md:items-center']))
+  })
+
+  it('does not reflow unless asked', () => {
+    expect(mount(UiStack, { props: { direction: 'row' } }).classes().some(c => c.startsWith('max-md:'))).toBe(false)
+  })
+
   it('passes attributes through', () => {
     expect(mount(UiStack, { attrs: { 'data-testid': 'probe' } }).attributes('data-testid')).toBe('probe')
   })

@@ -67,6 +67,7 @@ const themeOptions = computed(() => [
  * Applies the theme the operator picked, when it is one the panel knows.
  *
  * @param value - The value picked in the select.
+ * @returns Nothing; the theme store is updated.
  */
 const chooseTheme = (value: string): void => {
   const chosen = Object.values(AdminTheme).find(known => known === value)
@@ -127,6 +128,8 @@ const notificationCount = computed<number>(() => activity.events.length)
  *
  * Naming the account lets an operator tell which account they are acting as, which matters on a
  * panel where several people share one screen.
+ *
+ * @returns The email, or the neutral admin label.
  */
 const accountLabel = computed<string>(() => auth.user?.email ?? t('common.admin'))
 
@@ -134,6 +137,7 @@ const accountLabel = computed<string>(() => auth.user?.email ?? t('common.admin'
  * Switches the active locale when the chosen code is one the panel ships.
  *
  * @param code - The code picked in the select.
+ * @returns Nothing; the active locale is updated.
  */
 const chooseLocale = (code: string): void => {
   const chosen = SUPPORTED_LOCALES.find(supported => supported === code)
@@ -207,53 +211,71 @@ onMounted(() => {
         <UiIcon :markup="MENU_MARKUP" />
       </UiIconButton>
 
-      <UiHeading :level="2" variant="card" data-testid="topbar-title">{{ pageTitle }}</UiHeading>
+      <!-- The title stays on a phone but is cut with an ellipsis, so a long Armenian or Russian title cannot push the controls on the right off the screen. -->
+      <div class="min-w-0 max-w-[7rem] truncate sm:max-w-none">
+        <UiHeading :level="2" variant="card" data-testid="topbar-title">{{ pageTitle }}</UiHeading>
+      </div>
     </UiStack>
 
     <!-- Right: theme + language + notifications + account -->
     <UiStack direction="row" align="center" gap="sm">
-      <UiSelect
-        :model-value="theme.choice"
-        :options="themeOptions"
-        :placeholder="t('layout.theme.label')"
-        :aria-label="t('layout.theme.label')"
-        class="w-28"
-        data-testid="topbar-theme"
-        @update:model-value="chooseTheme"
-      />
+      <!-- The theme picker and the Settings link do not fit a phone's top bar: Settings is in the menu drawer, and on a phone the theme stays whatever was chosen on a wider screen (the system choice by default). -->
+      <div class="hidden sm:block">
+        <UiSelect
+          :model-value="theme.choice"
+          :options="themeOptions"
+          :placeholder="t('layout.theme.label')"
+          :aria-label="t('layout.theme.label')"
+          compact
+          class="w-28"
+          data-testid="topbar-theme"
+          @update:model-value="chooseTheme"
+        />
+      </div>
       <UiSelect
         :model-value="locale"
         :options="localeOptions"
         :placeholder="localeLabels.en"
+        compact
         class="w-20"
         data-testid="topbar-locale"
         @update:model-value="chooseLocale"
       />
 
-      <!-- The badge is overlaid on the bell's top-right corner; the ring cuts it out of the bar surface. -->
+      <!--
+        The count sits outside the bell's corner so it never covers the icon. On a phone it is a small dot
+        (the bar has no room for a number; the button's label still says how many), from sm up a compact pill.
+        The ring cuts either one out of the bar surface.
+      -->
       <UiStack direction="row" align="center" class="relative">
         <UiIconButton :label="notificationLabel" data-testid="topbar-notifications" class="hover:bg-surface-hover" @click="openNotifications">
           <UiIcon :markup="BELL_MARKUP" />
         </UiIconButton>
-        <UiBadge
-          v-if="notificationCount > 0"
-          tone="primary"
-          small
-          aria-hidden="true"
-          class="pointer-events-none absolute -right-1 -top-1 min-w-[1.125rem] justify-center ring-2 ring-surface-panel"
-          data-testid="topbar-notification-count"
-        >
-          {{ notificationBadge }}
-        </UiBadge>
+        <template v-if="notificationCount > 0">
+          <span
+            aria-hidden="true"
+            class="pointer-events-none absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full bg-primary-500 ring-2 ring-surface-panel sm:hidden"
+            data-testid="topbar-notification-dot"
+          />
+          <span
+            aria-hidden="true"
+            class="pointer-events-none absolute -right-2 -top-2 hidden h-[1.0625rem] min-w-[1.0625rem] items-center justify-center rounded-full bg-primary-500 px-1 text-[0.625rem] font-semibold leading-none text-on-primary ring-2 ring-surface-panel sm:flex"
+            data-testid="topbar-notification-count"
+          >
+            {{ notificationBadge }}
+          </span>
+        </template>
       </UiStack>
 
       <UiText tone="secondary" size="md" class="hidden max-w-[12rem] truncate font-medium sm:block" data-testid="topbar-account">
         {{ accountLabel }}
       </UiText>
-      <UiLink :to="AppRoute.Settings" variant="ghost" size="sm" data-testid="topbar-settings">
-        {{ t('nav.settings') }}
-      </UiLink>
-      <UiButton type="button" variant="danger" size="sm" data-testid="topbar-sign-out" @click="signOut">
+      <div class="hidden sm:block">
+        <UiLink :to="AppRoute.Settings" variant="ghost" size="sm" data-testid="topbar-settings">
+          {{ t('nav.settings') }}
+        </UiLink>
+      </div>
+      <UiButton type="button" variant="danger" size="sm" class="whitespace-nowrap" data-testid="topbar-sign-out" @click="signOut">
         {{ t('common.signOut') }}
       </UiButton>
     </UiStack>

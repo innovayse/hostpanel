@@ -73,6 +73,15 @@ export const justifyClasses: Record<UiJustify, string> = {
   between: 'justify-between',
 }
 
+/**
+ * Classes that turn a stack the other way below the medium breakpoint (`UiStack`'s `reflowBelowMd`). They are
+ * `max-md` variants, so they win over the stack's own direction and alignment there and are inert from `md` up.
+ */
+export const reflowClasses: Record<UiDirection, string> = {
+  row: 'max-md:flex-col max-md:items-stretch',
+  column: 'max-md:flex-row max-md:flex-wrap max-md:items-center',
+}
+
 /** Column counts a grid supports. */
 export type UiGridColumns = 1 | 2 | 3 | 4 | 6
 

@@ -1,4 +1,4 @@
-import { computed } from 'vue'
+import { computed, type ComputedRef } from 'vue'
 import { useRoute } from 'vue-router'
 import { getRuntimeConfig } from '@/lib/runtimeConfig'
 import { DOCS_GUIDES } from '@/lib/docsGuides'
@@ -9,7 +9,7 @@ import { DOCS_GUIDES } from '@/lib/docsGuides'
  *
  * @returns An object with a `guideUrl` computed ref.
  */
-export const useDocsGuide = (): { guideUrl: ReturnType<typeof computed<string | null>> } => {
+export const useDocsGuide = (): { guideUrl: ComputedRef<string | null> } => {
   const route = useRoute()
   const { docsUrl } = getRuntimeConfig()
 

@@ -77,7 +77,7 @@ describe('DemoLink', () => {
     const links = wrapper.findAll('a')
 
     expect(links).toHaveLength(2)
-    expect(links[0].attributes('href')).toBe('https://demo.example.com/servers')
-    expect(links[1].attributes('href')).toBe('https://client.example.com/client/services')
+    expect(links[0]!.attributes('href')).toBe('https://demo.example.com/servers')
+    expect(links[1]!.attributes('href')).toBe('https://client.example.com/client/services')
   })
 })

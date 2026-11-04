@@ -194,11 +194,14 @@ docker/                              compose set (shared·dev·prod·platform), 
   `Assembly.LoadFrom` over it would give the process two distinct `IPaymentPlugin` types with the
   same name, after which every cast in `PluginActivator` fails. The CWP providers are
   deliberately **not** staged, so they cannot activate at runtime by accident.
-- **Plugin projects are named `Innovayse.Hostpanel.Plugins.<Name>` (#848).** The .NET plugin convention
-  `<Company>.<Product>.<Type>.<Name>` (as in `Serilog.Sinks.Console`): project, folder, assembly and root
-  namespace are `Innovayse.Hostpanel.Plugins.<Name>`, its tests `Innovayse.Hostpanel.Plugins.<Name>.Tests`, and a
+- **Plugin projects are named `Innovayse.HostpanelPlugins.<Name>` (#848).** The .NET plugin convention
+  `<Company>.<Product>.<Type>.<Name>` (as in `Serilog.Sinks.Console`), with product and type joined into one segment
+  because the host refuses every plugin assembly whose name starts with `Innovayse.Hostpanel.`
+  (`Infrastructure/Plugins/HostAssemblyNames`, `PLUGIN_HOST_ASSEMBLY_REFUSED`): that prefix is the host's own, and a plugin
+  that could take it could shadow a host assembly. The check stays; the convention moves out of its way. Project, folder, assembly and root
+  namespace are `Innovayse.HostpanelPlugins.<Name>`, its tests `Innovayse.HostpanelPlugins.<Name>.Tests`, and a
   plugin in its own repository lives in `innovayse/hostpanel-<name>` (Innovayse Sites, #844:
-  `innovayse/hostpanel-sites`, `Innovayse.Hostpanel.Plugins.Sites`). The plugin `id` in `plugin.json` never
+  `innovayse/hostpanel-sites`, `Innovayse.HostpanelPlugins.Sites`). The plugin `id` in `plugin.json` never
   changes with a rename, because stored settings and plugin data are keyed by it. The in-tree
   `Innovayse.Providers.*` projects and `Innovayse.Inecobank.Tests` predate the convention and take it as each
   moves to its own repository (#780, #841).
@@ -306,6 +309,8 @@ docker/                              compose set (shared·dev·prod·platform), 
     `empty`, `alert`, `tabs`, `chat`, `progress`. Label members (`title`, `label`, `confirm`, `placeholder`, `text`) are
     localised by the host; route members (`route`, `send`, `history`) name a declared `api` route by method and path. Checked
     at load and install (`PluginViewDocumentReader`, the `PLUGIN_VIEW_*` rules); rendered as text only, never `v-html`.
+    View state (#852, SDK 2.2.0, schema stays 1): `visibleWhen` on a block, `resetOnSuccess` in a form's `submit`,
+    `followUp` on an action or a form's `submit`; see "View state" under the view document rules.
   - **Slot ids** (`PluginSlots`): `client.dashboard.cards`, `client.service.tabs` (context `serviceId`), `admin.client.panels`
     (`clientId`), `admin.service.panels` (`serviceId`, `clientId`); indexes at `GET api/{client|admin}/plugins/slots/{slotId}`
     (see "Plugin slot index"). The plugin ids `ui` and `slots` are reserved.
@@ -409,6 +414,29 @@ docker/                              compose set (shared·dev·prod·platform), 
   `ViewRouteUndeclared` (`PLUGIN_VIEW_ROUTE_UNDECLARED`, a `PluginViewRoute` that no route of the page's or slot's area
   declares), and `LabelKeyMissing` for a key-shaped label under `PluginViews.LabelProperties` that `en` lacks
   (the same `PluginManifestValidator` check as manifest labels).
+  - **View state (#852).** Three optional members let a view react to its own data without a reload; names and caps
+    are `PluginViews` constants (`VisibleWhenProperty`, `ResetOnSuccessProperty`, `FollowUpProperty`,
+    `MaxConditionValues` 20, `MaxFollowUpRefresh` 20). One **condition** shape serves `visibleWhen` and
+    `followUp.until`: exactly `{ "route": { "method": "get", "path": … }, "field": "a.b", "equals": … }`. `route` is a
+    `GET` route declared in the page's or slot's area (undeclared is `PLUGIN_VIEW_ROUTE_UNDECLARED`, another method
+    `PLUGIN_VIEW_CONDITION_INVALID`); `field` is a dotted path (`[A-Za-z0-9_-]` segments, at most 200 characters) read
+    like `readPluginField`; `equals` is one JSON scalar or an array of 1 to 20 scalars, and the condition holds when the
+    field strictly equals one of them (no number/string coercion). Condition strings are values, never walked as labels.
+    - `visibleWhen` (any block, header actions and tab blocks included): the panel hides the block while the condition
+      is read, on a failed read, an absent field or no match, and shows it only when it holds; it is read again when the
+      block's own `id` is refreshed. Use it to hide a create form once the thing exists.
+    - `resetOnSuccess: true` (a form's `submit` only, boolean): after a successful submit every field returns to its
+      empty value.
+    - `followUp: { "refresh": [ids], "until": <condition> }` (an action block or a form's `submit`): after a successful
+      call and its normal `refresh`, the panel reads `until.route` on an interval, refreshes the listed block ids on
+      each attempt, and stops once the condition holds (after one last refresh), after the last attempt, or when the
+      page is left (late answers dropped). A failed read counts as an attempt. `refresh` is 1 to 20 ids, each the `id`
+      of a block in the same document. **The bounds are the host's, never the plugin's**:
+      `PLUGIN_FOLLOW_UP_MAX_ATTEMPTS` 20 and `PLUGIN_FOLLOW_UP_INTERVAL_MS` 3000 (about a minute) in the client.
+    - Refused at install and load: `ViewConditionInvalid` (`PLUGIN_VIEW_CONDITION_INVALID`: a bad condition, a non-`GET`
+      condition route, `visibleWhen` outside a block) and `ViewFollowUpInvalid` (`PLUGIN_VIEW_FOLLOW_UP_INVALID`: a bad
+      `followUp` shape or place, a `refresh` id no block carries, `resetOnSuccess` not a boolean or outside a `submit`),
+      each with its en/ru/hy sentence, 400.
   - **Structure.** The root is an object with an integer `schema` and a `blocks` array. Every entry of a `blocks`
     array (the root's or a tab's) and of a block's `actions` array is an object with a string `kind`; a block's `tabs`
     is an array of objects whose `blocks`, when present, follow the same rule. A block the panel would skip or crash on
@@ -803,6 +831,19 @@ docker/                              compose set (shared·dev·prod·platform), 
     already spent its tier permit.
   - A streamed call ends when the plugin ends, when the client leaves, or when the producer is silent for the call limit
     (see the stream silence limit above).
+  - **A streamed call owns its own dependency scope (#851).** A stream is read by the response after the use case has
+    returned, and Wolverine disposes the use case's scope, with the `AppDbContext` the store and the host API write through,
+    as soon as the handler returns; every streamed call that touched its store then read a disposed context. So
+    `PluginCallRunner` opens an `IPluginCallScope` (`IPluginCallScopeFactory`, `Infrastructure/Plugins/PluginCallScopeFactory`,
+    a scope of the root container) for every call to a route that declares `streaming`, before the plugin is built, and takes
+    the plugin (through that scope's `IPluginEndpointResolver`, which checks the switch and settings once more; a plugin
+    switched off since the gate answers the same 404 `PLUGIN_ROUTE_NOT_FOUND`), its store and its host API from it. When the
+    plugin answers with a stream the scope travels with it as `StreamedReply.Owner`, and `EventStreamResult` disposes it once
+    the stream ended, failed or the client left; a producer step abandoned after the settle wait keeps it until that step
+    ends, so it is never disposed under running plugin code. Any other outcome of a streaming route (JSON, problem, refusal,
+    timeout, throw) disposes it before the runner returns. Every route that does not declare `streaming` runs on the use
+    case's scope as before. `PluginStreamScopeTests` proves both doors, the store and the host API between events, and the
+    disposal after the end and after a disconnect.
 - **Plugin slot index: widgets for a verified context (#644).** The answer is `PluginSlotIndexDto` with
   `PluginSlotWidgetDto` items. **Nothing of a plugin is built or called**: the index is read from manifests, so a foreign
   id cannot reach plugin code.

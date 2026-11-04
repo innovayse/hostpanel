@@ -24,25 +24,25 @@ const summaryRoutes = [
 
 /** The two widgets of the fake plugin. */
 const widgets: PluginSlotWidgetDto[] = [
-  { pluginId: 'sites', widgetId: 'usage', label: 'Site usage', order: 1 },
-  { pluginId: 'sites', widgetId: 'builds', label: 'Recent builds', order: 2 },
+  { pluginId: 'sites', id: 'usage', view: 'views/usage.json', title: 'Site usage', order: 1, contextKeys: ['clientId'] },
+  { pluginId: 'sites', id: 'builds', view: 'views/builds.json', title: 'Recent builds', order: 2, contextKeys: ['clientId'] },
 ]
 
-test('hiding a widget saves the slot setting and removes it from the page', async ({ page }) => {
+test('hiding a widget adds its slot entry to the hide setting and removes it from the page', async ({ page }) => {
   let visible = [...widgets]
   const api = await stubApi(page, {
     signedIn: true,
     routes: [
       ...summaryRoutes,
-      { method: HttpMethod.Get, path: '/api/admin/plugins/slots/admin.client.panels', respond: () => ({ body: visible }) },
+      { method: HttpMethod.Get, path: '/api/admin/plugins/slots/admin.client.panels', respond: () => ({ body: { slotId: 'admin.client.panels', widgets: visible } }) },
       json(HttpMethod.Get, '/api/admin/settings', [
-        { id: 5, key: 'plugins.slots.admin.client.panels.hidden', value: null, isSecret: false, hasValue: false },
+        { id: 5, key: 'plugins.hidden_slot_widgets', value: 'admin.service.panels:sites:usage', isSecret: false, hasValue: true },
       ]),
       {
         method: HttpMethod.Put,
         path: '/api/admin/settings/5',
         respond: () => {
-          visible = visible.filter((widget) => widget.widgetId !== 'usage')
+          visible = visible.filter((widget) => widget.id !== 'usage')
           return { status: 204 }
         },
       },
@@ -58,13 +58,16 @@ test('hiding a widget saves the slot setting and removes it from the page', asyn
 
   await expect(page.getByTestId('plugin-widget-sites-usage')).toHaveCount(0)
   await expect(page.getByTestId('plugin-widget-sites-builds')).toBeVisible()
-  expect(api.callsTo(HttpMethod.Put, '/api/admin/settings/5')[0]?.body).toEqual({ value: 'sites:usage' })
+  // The service slot's entry stays; the new entry names the client slot.
+  expect(api.callsTo(HttpMethod.Put, '/api/admin/settings/5')[0]?.body).toEqual({
+    value: 'admin.service.panels:sites:usage,admin.client.panels:sites:usage',
+  })
 })
 
 test('a slot nobody fills leaves the page as it was', async ({ page }) => {
   await stubApi(page, {
     signedIn: true,
-    routes: [...summaryRoutes, json(HttpMethod.Get, '/api/admin/plugins/slots/admin.client.panels', [])],
+    routes: [...summaryRoutes, json(HttpMethod.Get, '/api/admin/plugins/slots/admin.client.panels', { slotId: 'admin.client.panels', widgets: [] })],
   })
 
   await page.goto('/clients/7/summary')

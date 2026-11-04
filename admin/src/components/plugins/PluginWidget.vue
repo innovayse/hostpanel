@@ -8,7 +8,7 @@
  * returns false), so the page and the sibling widgets keep rendering. The timer is cleared when the
  * body settles and when the widget is destroyed.
  */
-import { onBeforeUnmount, onErrorCaptured, ref } from 'vue'
+import { computed, onBeforeUnmount, onErrorCaptured, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Icon } from '@/lib/icons'
 import type { PluginSlotWidgetDto } from '@/types/pluginslot'
@@ -84,14 +84,24 @@ onErrorCaptured(() => {
 onBeforeUnmount(stopTimer)
 
 /** The widget's id in test ids. */
-const testId = `${props.widget.pluginId}-${props.widget.widgetId}`
+const testId = `${props.widget.pluginId}-${props.widget.id}`
+
+/**
+ * The widget's heading: its own title, or the plugin and widget ids when it declares none, the way the
+ * plugin settings page names an untitled widget.
+ *
+ * @returns The text of the heading.
+ */
+const heading = computed<string>(() =>
+  props.widget.title ?? t('plugins.pluginSlotWidgets.pluginWidget', { plugin: props.widget.pluginId, widget: props.widget.id }),
+)
 </script>
 
 <template>
   <UiCard :padding="UiCardPadding.Md" :data-testid="`plugin-widget-${testId}`">
     <UiStack>
       <UiStack direction="row" :align="UiAlignItems.Center" :justify="UiJustify.Between">
-        <UiHeading :level="2" :variant="UiHeadingVariant.Card">{{ widget.label }}</UiHeading>
+        <UiHeading :level="2" :variant="UiHeadingVariant.Card">{{ heading }}</UiHeading>
         <UiIconButton
           :label="t('plugins.pluginSlot.hide')"
           :size="UiSize.Sm"

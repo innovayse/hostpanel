@@ -6,7 +6,7 @@
 
 import { buildQuery, useApi } from '@/composables/useApi'
 import { ApiPath } from '@/lib/apiPaths'
-import type { PluginSlotContext, PluginSlotId, PluginSlotWidgetDto } from '@/types/pluginslot'
+import type { PluginSlotContext, PluginSlotId, PluginSlotIndexDto } from '@/types/pluginslot'
 
 /**
  * Endpoint functions for `/admin/plugins/slots`.
@@ -22,10 +22,10 @@ export const usePluginSlotsApi = () => {
    *
    * @param slotId - Id of the slot.
    * @param context - The client or service the page shows.
-   * @returns The widgets in display order, empty when no plugin offers one.
+   * @returns The slot's index: its id and its widgets in display order, empty when no plugin offers one.
    */
-  const getSlot = (slotId: PluginSlotId, context: PluginSlotContext): Promise<PluginSlotWidgetDto[]> =>
-    request<PluginSlotWidgetDto[]>(`${ApiPath.AdminPluginSlots}/${slotId}${buildQuery({ ...context })}`)
+  const getSlot = (slotId: PluginSlotId, context: PluginSlotContext): Promise<PluginSlotIndexDto> =>
+    request<PluginSlotIndexDto>(`${ApiPath.AdminPluginSlots}/${slotId}${buildQuery({ ...context })}`)
 
   return { getSlot }
 }

@@ -57,7 +57,7 @@ watch(() => [props.slotId, contextKey(props.context)], () => store.load(props.sl
     <UiStatusMessage :message="store.actionError" :tone="UiTone.Danger" data-testid="plugin-slot-error" />
     <PluginWidget
       v-for="widget in widgets"
-      :key="`${widget.pluginId}:${widget.widgetId}`"
+      :key="`${widget.pluginId}:${widget.id}`"
       :widget="widget"
       @hide="hide(widget)"
     >

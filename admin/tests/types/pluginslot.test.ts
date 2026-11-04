@@ -1,9 +1,15 @@
 /**
- * Unit tests for the plugin slot types: the stable slot ids, the hide setting of each slot and the
- * names that key a widget and a record.
+ * Unit tests for the plugin slot types: the stable slot ids, the one hide setting, the
+ * `slot:plugin:widget` entries it holds and the names that key a record.
  */
 import { describe, expect, it } from 'vitest'
-import { contextKey, PluginSlotHiddenSetting, PluginSlotId, widgetRef } from '@/types/pluginslot'
+import { contextKey, HIDDEN_SLOT_WIDGETS_SETTING, hiddenWidgetRefs, PluginSlotId, widgetRef } from '@/types/pluginslot'
+import type { PluginSlotWidgetDto } from '@/types/pluginslot'
+
+/** A widget as the host lists it. */
+const usage: PluginSlotWidgetDto = {
+  pluginId: 'sites', id: 'usage', view: 'views/usage.json', title: 'Usage', order: 1, contextKeys: ['clientId'],
+}
 
 describe('PluginSlotId', () => {
   it('holds the ids the SDK publishes for the admin', () => {
@@ -11,21 +17,33 @@ describe('PluginSlotId', () => {
   })
 })
 
-describe('PluginSlotHiddenSetting', () => {
-  it('names a distinct setting row for every slot', () => {
-    const keys = Object.values(PluginSlotId).map((id) => PluginSlotHiddenSetting[id])
-
-    expect(new Set(keys).size).toBe(keys.length)
-    expect(keys).toEqual([
-      'plugins.slots.admin.client.panels.hidden',
-      'plugins.slots.admin.service.panels.hidden',
-    ])
+describe('HIDDEN_SLOT_WIDGETS_SETTING', () => {
+  it('is the one row the host seeds for the hidden widgets of every slot', () => {
+    expect(HIDDEN_SLOT_WIDGETS_SETTING).toBe('plugins.hidden_slot_widgets')
   })
 })
 
 describe('widgetRef', () => {
-  it('joins the plugin and the widget id', () => {
-    expect(widgetRef({ pluginId: 'sites', widgetId: 'usage', label: 'Usage', order: 1 })).toBe('sites:usage')
+  it('names the slot, the plugin and the widget, as the host writes an entry', () => {
+    expect(widgetRef(PluginSlotId.AdminClientPanels, usage)).toBe('admin.client.panels:sites:usage')
+  })
+
+  it('names the same widget differently in another slot', () => {
+    expect(widgetRef(PluginSlotId.AdminServicePanels, usage)).not.toBe(widgetRef(PluginSlotId.AdminClientPanels, usage))
+  })
+})
+
+describe('hiddenWidgetRefs', () => {
+  it('reads an empty row as no entries', () => {
+    expect(hiddenWidgetRefs(null)).toEqual([])
+    expect(hiddenWidgetRefs('')).toEqual([])
+  })
+
+  it('trims entries and drops empty ones, the way the host reads them', () => {
+    expect(hiddenWidgetRefs(' admin.client.panels:a:b ,, admin.service.panels:c:d,')).toEqual([
+      'admin.client.panels:a:b',
+      'admin.service.panels:c:d',
+    ])
   })
 })
 

@@ -165,7 +165,7 @@ describe('ClientSummaryView', () => {
     stubRoutes({
       ...summaryRoutes(() => new Response(null, { status: 204 })),
       'GET /api/admin/plugins/slots/admin.client.panels?clientId=7': () =>
-        json([{ pluginId: 'sites', widgetId: 'usage', label: 'Site usage', order: 1 }]),
+        json({ slotId: 'admin.client.panels', widgets: [{ pluginId: 'sites', id: 'usage', view: 'views/usage.json', title: 'Site usage', order: 1, contextKeys: ['clientId'] }] }),
     })
     const wrapper = await mountSummary()
 
@@ -175,7 +175,7 @@ describe('ClientSummaryView', () => {
   it('shows no slot when no plugin offers a widget for the client', async () => {
     stubRoutes({
       ...summaryRoutes(() => new Response(null, { status: 204 })),
-      'GET /api/admin/plugins/slots/admin.client.panels?clientId=7': () => json([]),
+      'GET /api/admin/plugins/slots/admin.client.panels?clientId=7': () => json({ slotId: 'admin.client.panels', widgets: [] }),
     })
     const wrapper = await mountSummary()
 

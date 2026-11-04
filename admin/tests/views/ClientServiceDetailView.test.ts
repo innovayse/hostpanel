@@ -112,7 +112,7 @@ describe('ClientServiceDetailView', () => {
   it('lists the plugin widgets of the service in its slot', async () => {
     const { wrapper } = await mountLoaded(detail, undefined, {
       'GET /api/admin/plugins/slots/admin.service.panels?serviceId=9': () =>
-        json([{ pluginId: 'sites', widgetId: 'usage', label: 'Site usage', order: 1 }]),
+        json({ slotId: 'admin.service.panels', widgets: [{ pluginId: 'sites', id: 'usage', view: 'views/usage.json', title: 'Site usage', order: 1, contextKeys: ['serviceId'] }] }),
     })
 
     expect(wrapper.get('[data-testid="plugin-slot-admin.service.panels"]').text()).toContain('Site usage')
@@ -120,7 +120,7 @@ describe('ClientServiceDetailView', () => {
 
   it('shows no slot when no plugin offers a widget for the service', async () => {
     const { wrapper } = await mountLoaded(detail, undefined, {
-      'GET /api/admin/plugins/slots/admin.service.panels?serviceId=9': () => json([]),
+      'GET /api/admin/plugins/slots/admin.service.panels?serviceId=9': () => json({ slotId: 'admin.service.panels', widgets: [] }),
     })
 
     expect(wrapper.find('[data-testid^="plugin-slot-"]').exists()).toBe(false)

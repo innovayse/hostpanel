@@ -10,7 +10,7 @@ import PluginWidget from '@/components/plugins/PluginWidget.vue'
 import { mountWithApp } from '../../helpers/mount'
 
 /** The widget under test. */
-const widget = { pluginId: 'sites', widgetId: 'usage', label: 'Site usage', order: 1 }
+const widget = { pluginId: 'sites', id: 'usage', view: 'views/usage.json', title: 'Site usage', order: 1, contextKeys: ['clientId'] }
 
 /** A body that renders at once. */
 const Healthy = defineComponent({ render: () => h('p', { 'data-testid': 'body' }, 'All good') })
@@ -66,6 +66,13 @@ describe('PluginWidget', () => {
     expect(wrapper.text()).toContain('Site usage')
     expect(wrapper.get('[data-testid="body"]').text()).toBe('All good')
     expect(wrapper.find('[data-testid="plugin-widget-note-sites-usage"]').exists()).toBe(false)
+  })
+
+  it('names a widget that declares no title by its plugin and widget ids', async () => {
+    const wrapper = mountWithApp(PluginWidget, { props: { widget: { ...widget, title: null } } })
+    await flushPromises()
+
+    expect(wrapper.get('h2').text()).toBe('sites · usage')
   })
 
   it('emits hide from the Hide button', async () => {

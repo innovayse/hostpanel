@@ -16,11 +16,21 @@ import { stubRoutes } from '../../helpers/routes'
 /**
  * Builds a widget.
  *
- * @param widgetId - Id of the widget; also its label.
+ * @param id - Id of the widget; also its title.
  * @param order - Position in the slot.
  * @returns The widget.
  */
-const widget = (widgetId: string, order = 1): PluginSlotWidgetDto => ({ pluginId: 'sites', widgetId, label: widgetId, order })
+const widget = (id: string, order = 1): PluginSlotWidgetDto => ({
+  pluginId: 'sites', id, view: `views/${id}.json`, title: id, order, contextKeys: ['clientId'],
+})
+
+/**
+ * Builds the host's answer for the client panels slot.
+ *
+ * @param widgets - The widgets of the slot.
+ * @returns The slot index.
+ */
+const clientPanels = (...widgets: PluginSlotWidgetDto[]) => ({ slotId: 'admin.client.panels', widgets })
 
 /** A body that renders at once. */
 const Healthy = defineComponent({ render: () => h('p', { 'data-testid': 'body-ok' }, 'fine') })
@@ -50,13 +60,13 @@ const Page = defineComponent({
       { slotId: PluginSlotId.AdminClientPanels, context: { clientId: props.clientId } },
       {
         widget: ({ widget: entry }: { widget: PluginSlotWidgetDto }) =>
-          h(entry.widgetId === 'boom' ? Throwing : entry.widgetId === 'slow' ? Never : Healthy),
+          h(entry.id === 'boom' ? Throwing : entry.id === 'slow' ? Never : Healthy),
       },
     ),
 })
 
 /** The hide setting row of the client panels slot. */
-const hiddenRow = { id: 5, key: 'plugins.slots.admin.client.panels.hidden', value: null, isSecret: false, hasValue: false }
+const hiddenRow = { id: 5, key: 'plugins.hidden_slot_widgets', value: null, isSecret: false, hasValue: false }
 
 beforeEach(() => {
   vi.useFakeTimers()
@@ -69,7 +79,7 @@ afterEach(() => {
 
 describe('PluginSlot', () => {
   it('renders nothing when no plugin offers a widget', async () => {
-    stubRoutes({ 'GET /api/admin/plugins/slots': () => json([]) })
+    stubRoutes({ 'GET /api/admin/plugins/slots': () => json(clientPanels()) })
     const wrapper = mountWithApp(Page, { props: { clientId: 1 } })
     await flushPromises()
 
@@ -86,7 +96,7 @@ describe('PluginSlot', () => {
   })
 
   it('keeps a throwing and a pending widget from breaking the healthy one', async () => {
-    stubRoutes({ 'GET /api/admin/plugins/slots': () => json([widget('boom', 1), widget('slow', 2), widget('ok', 3)]) })
+    stubRoutes({ 'GET /api/admin/plugins/slots': () => json(clientPanels(widget('boom', 1), widget('slow', 2), widget('ok', 3))) })
     const wrapper = mountWithApp(Page, { props: { clientId: 1 } })
     await flushPromises()
 
@@ -101,7 +111,7 @@ describe('PluginSlot', () => {
   })
 
   it('leaves its neighbours and every timer alone when it is destroyed', async () => {
-    stubRoutes({ 'GET /api/admin/plugins/slots': () => json([widget('slow', 1), widget('ok', 2)]) })
+    stubRoutes({ 'GET /api/admin/plugins/slots': () => json(clientPanels(widget('slow', 1), widget('ok', 2))) })
     const wrapper = mountWithApp(Page, { props: { clientId: 1 } })
     await flushPromises()
     expect(vi.getTimerCount()).toBe(1)
@@ -117,7 +127,7 @@ describe('PluginSlot', () => {
       releaseOld = resolve
     })
     const mock = vi.fn((url: string) =>
-      url.includes('clientId=1') ? old : Promise.resolve(json([widget('two')])),
+      url.includes('clientId=1') ? old : Promise.resolve(json(clientPanels(widget('two')))),
     )
     vi.stubGlobal('fetch', mock)
     const wrapper = mountWithApp(Page, { props: { clientId: 1 } })
@@ -125,7 +135,7 @@ describe('PluginSlot', () => {
 
     await wrapper.setProps({ clientId: 2 })
     await flushPromises()
-    releaseOld(json([widget('one')]))
+    releaseOld(json(clientPanels(widget('one'))))
     await flushPromises()
 
     expect(wrapper.find('[data-testid="plugin-widget-sites-two"]').exists()).toBe(true)
@@ -134,7 +144,7 @@ describe('PluginSlot', () => {
 
   it('hides a widget through the slot setting', async () => {
     const routes = stubRoutes({
-      'GET /api/admin/plugins/slots': () => json([widget('ok', 1), widget('other', 2)]),
+      'GET /api/admin/plugins/slots': () => json(clientPanels(widget('ok', 1), widget('other', 2))),
       'GET /api/admin/settings': () => json([hiddenRow]),
       'PUT /api/admin/settings/5': () => new Response(null, { status: 204 }),
     })
@@ -147,12 +157,12 @@ describe('PluginSlot', () => {
     expect(wrapper.find('[data-testid="plugin-widget-sites-ok"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="plugin-widget-sites-other"]').exists()).toBe(true)
     const put = routes.mock.calls.find((call) => call[1]?.method === 'PUT')
-    expect(JSON.parse(String(put?.[1]?.body))).toEqual({ value: 'sites:ok' })
+    expect(JSON.parse(String(put?.[1]?.body))).toEqual({ value: 'admin.client.panels:sites:ok' })
   })
 
   it('shows the refusal and keeps the widget when the row was never seeded', async () => {
     stubRoutes({
-      'GET /api/admin/plugins/slots': () => json([widget('ok', 1)]),
+      'GET /api/admin/plugins/slots': () => json(clientPanels(widget('ok', 1))),
       'GET /api/admin/settings': () => json([]),
     })
     const wrapper = mountWithApp(Page, { props: { clientId: 1 } })

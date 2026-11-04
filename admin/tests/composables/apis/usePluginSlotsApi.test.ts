@@ -1,5 +1,5 @@
 /**
- * Tests for the plugin slots API composable: path, query and typed result, through the real
+ * Tests for the plugin slots API composable: path, query and the index object, through the real
  * `useApi` transport with `fetch` stubbed.
  */
 
@@ -14,16 +14,17 @@ afterEach(() => {
 
 describe('usePluginSlotsApi', () => {
   it('getSlot reads the slot with the client in the query', async () => {
-    const mock = stubFetch(json([{ pluginId: 'sites', widgetId: 'usage', label: 'Usage', order: 1 }]))
+    const usage = { pluginId: 'sites', id: 'usage', view: 'views/usage.json', title: 'Usage', order: 1, contextKeys: ['clientId'] }
+    const mock = stubFetch(json({ slotId: 'admin.client.panels', widgets: [usage] }))
 
-    const widgets = await usePluginSlotsApi().getSlot(PluginSlotId.AdminClientPanels, { clientId: 4 })
+    const index = await usePluginSlotsApi().getSlot(PluginSlotId.AdminClientPanels, { clientId: 4 })
 
-    expect(widgets).toHaveLength(1)
+    expect(index).toEqual({ slotId: 'admin.client.panels', widgets: [usage] })
     expect(String(mock.mock.calls[0]?.[0])).toContain('/admin/plugins/slots/admin.client.panels?clientId=4')
   })
 
   it('getSlot reads the slot with the service in the query', async () => {
-    const mock = stubFetch(json([]))
+    const mock = stubFetch(json({ slotId: 'admin.service.panels', widgets: [] }))
 
     await usePluginSlotsApi().getSlot(PluginSlotId.AdminServicePanels, { serviceId: 9 })
 

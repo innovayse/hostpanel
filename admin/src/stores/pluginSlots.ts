@@ -14,7 +14,7 @@ import { usePluginSlotsApi } from '@/composables/apis/usePluginSlotsApi'
 import { runAction } from '@/lib/runAction'
 import { translate } from '@/lib/translate'
 import { useSettingsStore } from '@/stores/settings'
-import { contextKey, PluginSlotHiddenSetting, widgetRef } from '@/types/pluginslot'
+import { contextKey, HIDDEN_SLOT_WIDGETS_SETTING, hiddenWidgetRefs, widgetRef } from '@/types/pluginslot'
 import type { PluginSlotContext, PluginSlotId, PluginSlotWidgetDto } from '@/types/pluginslot'
 
 /**
@@ -66,12 +66,12 @@ export const usePluginSlotsStore = defineStore('pluginSlots', () => {
     const result = await runAction(refusal, () => api.getSlot(slotId, context))
     // A newer load of the same key owns the list: a slow older answer must not overwrite it.
     if (result.ok && latest.get(key) === ticket) {
-      lists.value = { ...lists.value, [key]: result.value }
+      lists.value = { ...lists.value, [key]: result.value.widgets }
     }
   }
 
   /**
-   * Hides a widget in its slot: adds it to the slot's hide setting, then drops it from the list.
+   * Hides a widget in its slot: adds its `slot:plugin:widget` entry to the hide setting, then drops it from the list.
    *
    * @param slotId - Id of the slot.
    * @param context - The slot's context.
@@ -91,24 +91,25 @@ export const usePluginSlotsStore = defineStore('pluginSlots', () => {
         return false
       }
     }
-    const settingKey = PluginSlotHiddenSetting[slotId]
-    const row = settingsStore.settings.find((setting) => setting.key === settingKey)
+    const row = settingsStore.settings.find((setting) => setting.key === HIDDEN_SLOT_WIDGETS_SETTING)
     if (!row) {
       // The panel cannot create settings, so a host that did not seed the row is told so.
-      actionError.value = translate('plugins.pluginSlot.hideNotSeeded', { key: settingKey })
+      actionError.value = translate('plugins.pluginSlot.hideNotSeeded', { key: HIDDEN_SLOT_WIDGETS_SETTING })
       return false
     }
-    const hidden = (row.value ?? '').split(',').filter((entry) => entry !== '')
+    // One row holds the hidden widgets of every slot, so the entries of other slots are kept as they are.
+    const hidden = hiddenWidgetRefs(row.value)
+    const entry = widgetRef(slotId, widget)
     // A widget the setting already lists (the list on screen predates the host's filtering, or the
     // operator hid it in another tab) is not written twice: the row stays as it is.
-    const alreadyHidden = hidden.includes(widgetRef(widget))
-    const saved = alreadyHidden || (await settingsStore.updateSetting(row.id, [...hidden, widgetRef(widget)].join(',')))
+    const alreadyHidden = hidden.includes(entry)
+    const saved = alreadyHidden || (await settingsStore.updateSetting(row.id, [...hidden, entry].join(',')))
     if (!saved) {
       actionError.value = settingsStore.actionError
       return false
     }
     const key = listKey(slotId, context)
-    lists.value = { ...lists.value, [key]: widgetsFor(slotId, context).filter((entry) => widgetRef(entry) !== widgetRef(widget)) }
+    lists.value = { ...lists.value, [key]: widgetsFor(slotId, context).filter((listed) => widgetRef(slotId, listed) !== entry) }
     return true
   }
 

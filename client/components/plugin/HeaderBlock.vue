@@ -1,7 +1,7 @@
 <template>
   <UiPageHeader :title="block.title" class="!mb-0" data-testid="plugin-header">
     <template v-if="actions.length" #actions>
-      <PluginActionBlock v-for="action in actions" :key="action.key" :block="action.block" />
+      <PluginBlock v-for="action in actions" :key="action.key" :block="action.block" />
     </template>
   </UiPageHeader>
 </template>
@@ -9,7 +9,7 @@
 <script setup lang="ts">
 /**
  * PluginHeaderBlock - a plugin view's title, with its action buttons beside it. The title is interpolated, never
- * bound as HTML.
+ * bound as HTML. Each action is drawn through PluginBlock, so its own `visibleWhen` applies like any block's.
  */
 import type { PluginHeaderBlock } from '~/types/pluginblock'
 

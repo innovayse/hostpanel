@@ -27,12 +27,13 @@
 /**
  * PluginActionBlock - a button that calls one of the plugin's routes, named by `{ method, path }`: after the
  * confirmation the view asks for, if any; then it reads the named blocks again, opens the named page, and shows
- * the sentence the plugin answered with (`message` of the reply), or the refusal's sentence from the store.
+ * the sentence the plugin answered with (`message` of the reply), or the refusal's sentence from the store. A
+ * `followUp` then keeps reading the named blocks until the work the call started has ended (`usePluginFollowUp`).
  *
  * Who may call the route is decided by the server on the call; a refusal is shown under the button like any
  * other failure.
  */
-import { usePluginView } from '~/composables/usePluginView'
+import { usePluginFollowUp, usePluginView } from '~/composables/usePluginView'
 import { usePluginsStore } from '~/stores/plugins'
 import type { PluginActionBlock } from '~/types/pluginblock'
 import { PluginBlockTone } from '~/types/pluginblocktone'
@@ -52,6 +53,8 @@ const props = defineProps<Props>()
 const context = usePluginView()
 /** The plugin store, which makes the call. */
 const store = usePluginsStore()
+/** Starts the follow-up refresh; stopped when the block unmounts. */
+const followUp = usePluginFollowUp()
 
 /** Whether the confirmation is open. */
 const confirming = ref(false)
@@ -100,6 +103,7 @@ const run = async (): Promise<void> => {
   message.value = result.ok ? (typeof answered === 'string' ? answered : '') : result.error
   if (result.ok) {
     context.refresh(props.block.refresh ?? [])
+    followUp(props.block.followUp)
     if (props.block.navigate) {
       context.open(props.block.navigate, result.data)
     }

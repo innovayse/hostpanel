@@ -1,6 +1,6 @@
 /**
  * Pure helpers of the plugin views: the method of a block's route and filling its path, reading a page's
- * parameters from its address, the address of a linked page, reading a field of a reply, checking a link against the plugin's allowed origins, formatting a bound value, and reading a server-sent event stream.
+ * parameters from its address, the address of a linked page, reading a field of a reply, testing a view condition, checking a link against the plugin's allowed origins, formatting a bound value, and reading a server-sent event stream.
  *
  * Nothing here renders markup: every value a plugin sends is text, and the components put it in the page as text.
  *
@@ -18,6 +18,7 @@ import { PluginBlockTone } from '~/types/pluginblocktone'
 import type { PluginStreamEvent } from '~/types/pluginstreamevent'
 import { PluginValueFormat } from '~/types/pluginvalueformat'
 import type { PluginUiPage } from '~/types/pluginuipage'
+import type { PluginConditionValue, PluginViewCondition } from '~/types/pluginviewcondition'
 import type { PluginViewRoute } from '~/types/pluginviewroute'
 import { HttpMethod } from '~/types/httpmethod'
 import { UiAlertVariant, UiButtonVariant, UiTone } from '~/utils/ui/enums'
@@ -213,6 +214,24 @@ export const readPluginField = (data: unknown, field: string | undefined): unkno
     current = (current as Record<string, unknown>)[key]
   }
   return current
+}
+
+/**
+ * Whether a view condition holds for a route's reply: the condition's field, read like {@link readPluginField},
+ * strictly equals one of its values. A field the reply lacks never holds, not even against `null`.
+ *
+ * @param condition - The condition.
+ * @param data - The reply of the condition's route.
+ * @returns True when the field equals one of the values.
+ */
+export const pluginConditionHolds = (condition: PluginViewCondition, data: unknown): boolean => {
+  const value = readPluginField(data, condition.field)
+  if (value === undefined) {
+    return false
+  }
+  const expected: readonly PluginConditionValue[] = Array.isArray(condition.equals) ? condition.equals : [condition.equals]
+  // Strict on purpose: the view names `"1"` or `1`, and a status of 1 is not the word "1".
+  return expected.some(candidate => candidate === value)
 }
 
 /**

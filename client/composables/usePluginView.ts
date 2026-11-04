@@ -1,6 +1,7 @@
 /**
  * The wiring of a rendered plugin view: the view hands its context (page values, origins, refresh
- * signals) to the blocks below it, and a block reads its source route through the plugin store.
+ * signals) to the blocks below it, and a block reads its source route through the plugin store. A
+ * block's `visibleWhen` condition and an action's or form's `followUp` are read the same way.
  *
  * The context is rendering wiring, not business data, so it travels by provide/inject; every call
  * still goes through `stores/plugins.ts`.
@@ -8,12 +9,15 @@
  * @module composables/usePluginView
  */
 
-import type { InjectionKey, Ref } from 'vue'
+import type { ComputedRef, InjectionKey, Ref } from 'vue'
+import { PLUGIN_FOLLOW_UP_INTERVAL_MS, PLUGIN_FOLLOW_UP_MAX_ATTEMPTS } from '~/constants/pluginFollowUp'
 import { usePluginsStore } from '~/stores/plugins'
 import type { PluginSource } from '~/types/pluginblock'
+import type { PluginFollowUp } from '~/types/pluginfollowup'
 import { HttpMethod } from '~/types/httpmethod'
+import type { PluginViewCondition } from '~/types/pluginviewcondition'
 import type { PluginViewContext } from '~/types/pluginviewcontext'
-import { pluginRouteMethod, readPluginField } from '~/utils/plugins'
+import { pluginConditionHolds, pluginRouteMethod, readPluginField } from '~/utils/plugins'
 
 /** The injection key of the view context. */
 const PLUGIN_VIEW_KEY: InjectionKey<PluginViewContext> = Symbol('plugin-view')
@@ -126,4 +130,138 @@ export const usePluginSource = (
   watch(query, reload, { deep: true })
 
   return { value, loading, error, unavailable, reload }
+}
+
+/**
+ * Whether a block shows, by its `visibleWhen` condition: read when the block mounts and again whenever an action asks
+ * the block's own id to refresh, so a follow-up can reveal or hide it.
+ *
+ * A block with no condition always shows and reads nothing. A block with one is hidden while the condition is being
+ * read, when the read fails or is unavailable, and when the field is absent or matches none of the values: it shows
+ * only once the condition is known to hold, so a create form never flashes up for a site that already exists.
+ *
+ * @param condition - The block's condition; undefined for none.
+ * @param blockId - The block's id, which actions name to refresh it.
+ * @returns Whether the block shows.
+ */
+export const usePluginCondition = (
+  condition: () => PluginViewCondition | undefined,
+  blockId: () => string | undefined,
+): ComputedRef<boolean> => {
+  const context = usePluginView()
+  const store = usePluginsStore()
+
+  /** Whether the latest read found the condition holding. */
+  const holds = ref(false)
+  /** The number of the latest read; an answer to an older one is dropped. */
+  let latest = 0
+
+  /**
+   * Reads the condition once.
+   *
+   * @returns Resolves when the read has ended.
+   */
+  const reload = async (): Promise<void> => {
+    const request = ++latest
+    const current = condition()
+    if (!current) {
+      return
+    }
+    // The API refuses a condition on a route that is not a GET at install; this only guards, and hides the block.
+    if (pluginRouteMethod(current.route) !== HttpMethod.Get) {
+      holds.value = false
+      return
+    }
+    const result = await store.callRoute(context.pluginId, current.route, context.values)
+    if (request !== latest) {
+      return
+    }
+    holds.value = result.ok && pluginConditionHolds(current, result.data)
+  }
+
+  onMounted(() => {
+    if (condition()) {
+      context.track(reload())
+    }
+  })
+  watch(() => {
+    const id = blockId()
+    return id ? context.refreshes.value[id] ?? 0 : 0
+  }, reload)
+
+  return computed(() => !condition() || holds.value)
+}
+
+/**
+ * Runs an action's or a form's `followUp` after its call succeeded: every {@link PLUGIN_FOLLOW_UP_INTERVAL_MS} it
+ * reads the condition's route and asks the named blocks to read again, and it stops once the condition holds (after
+ * that last refresh), after {@link PLUGIN_FOLLOW_UP_MAX_ATTEMPTS} reads, or when the calling block unmounts, which is
+ * also what leaving the page does. A failed read counts as an attempt and the watch goes on.
+ *
+ * The interval and the number of attempts are the host's: a view names what to watch and never how often, so no
+ * plugin can make the panel poll faster or longer. Starting again cancels a follow-up still running, so two clicks
+ * never run two watches.
+ *
+ * @returns Starts a follow-up; undefined starts nothing.
+ */
+export const usePluginFollowUp = (): ((followUp: PluginFollowUp | undefined) => void) => {
+  const context = usePluginView()
+  const store = usePluginsStore()
+
+  /** The pending wait before the next attempt; undefined while none is pending. */
+  let timer: ReturnType<typeof setTimeout> | undefined
+  /** The number of the current follow-up; a read answering for an older one, or after unmount, is ignored. */
+  let run = 0
+
+  /**
+   * Ends the running follow-up, if any: the pending wait is cleared and a read still out is ignored when it answers.
+   *
+   * @returns Nothing.
+   */
+  const stop = (): void => {
+    run += 1
+    if (timer !== undefined) {
+      clearTimeout(timer)
+      timer = undefined
+    }
+  }
+
+  /**
+   * One attempt: reads the condition, refreshes the named blocks and waits for the next attempt unless it is over.
+   *
+   * @param current - The follow-up this attempt belongs to.
+   * @param followUp - What to watch and refresh.
+   * @param attempt - The attempt's number, from 1.
+   * @returns Resolves when the attempt has ended.
+   */
+  const attemptOnce = async (current: number, followUp: PluginFollowUp, attempt: number): Promise<void> => {
+    timer = undefined
+    const result = await store.callRoute(context.pluginId, followUp.until.route, context.values)
+    if (current !== run || result.unavailable) {
+      return
+    }
+    const done = result.ok && pluginConditionHolds(followUp.until, result.data)
+    // Refreshed after the read, so the final value the condition saw is also what the blocks show.
+    context.refresh([...followUp.refresh])
+    if (done || attempt >= PLUGIN_FOLLOW_UP_MAX_ATTEMPTS) {
+      return
+    }
+    timer = setTimeout(() => {
+      void attemptOnce(current, followUp, attempt + 1)
+    }, PLUGIN_FOLLOW_UP_INTERVAL_MS)
+  }
+
+  onUnmounted(stop)
+
+  return (followUp: PluginFollowUp | undefined): void => {
+    stop()
+    // A condition on a route that is not a GET is refused at install and could never end the watch: not started.
+    if (!followUp || pluginRouteMethod(followUp.until.route) !== HttpMethod.Get) {
+      return
+    }
+    const current = run
+    timer = setTimeout(() => {
+      void attemptOnce(current, followUp, 1)
+    }, PLUGIN_FOLLOW_UP_INTERVAL_MS)
+  }
 }

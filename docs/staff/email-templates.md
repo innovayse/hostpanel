@@ -47,7 +47,7 @@ Click **Save**.
 
 ## Placeholders
 
-Placeholders use the Liquid template language. A variable is written as `{{ name }}` or `{{ object.field }}`, with names in lowercase and underscores. Every template has access to the brand and site variables:
+Placeholders use the Liquid template language. A variable is written as <code v-pre>{{ name }}</code> or <code v-pre>{{ object.field }}</code>, with names in lowercase and underscores. Every template has access to the brand and site variables:
 
 ```liquid
 {{ brand.primary }}       — primary brand colour

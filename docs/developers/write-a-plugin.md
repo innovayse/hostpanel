@@ -12,7 +12,7 @@ The SDK project lives at `backend/src/Innovayse.SDK` in the repository. Referenc
 
 ### Name the project
 
-Name a plugin project `<Company>.HostpanelPlugins.<Name>`, the .NET plugin convention `<Company>.<Product>.<Type>.<Name>` (as in `Serilog.Sinks.Console`) with product and type joined into one segment. They are joined because the host refuses to load any plugin assembly whose name starts with `Innovayse.Hostpanel.` (`PLUGIN_HOST_ASSEMBLY_REFUSED`): that prefix belongs to the host's own assemblies, and a plugin must never be able to stand in for one. The project, its folder, its assembly and its root namespace all carry that name, and its test project adds `.Tests`. Innovayse's own plugins are `Innovayse.HostpanelPlugins.<Name>`, with tests in `Innovayse.HostpanelPlugins.<Name>.Tests`, each in its own repository `innovayse/hostpanel-<name>`: Innovayse Sites, for example, is `Innovayse.HostpanelPlugins.Sites` in `innovayse/hostpanel-sites`. The bundled `Innovayse.Providers.*` projects predate the convention and are renamed as they move to their own repositories.
+Name a plugin project `<Company>.Hostpanel.Plugins.<Name>`, the .NET plugin convention `<Company>.<Product>.<Type>.<Name>` (as in `Serilog.Sinks.Console`). The project, its folder, its assembly and its root namespace all carry that name, and its test project adds `.Tests`. Innovayse's own plugins are `Innovayse.Hostpanel.Plugins.<Name>`, with tests in `Innovayse.Hostpanel.Plugins.<Name>.Tests`, each in its own repository `innovayse/hostpanel-<name>`: Innovayse Sites, for example, is `Innovayse.Hostpanel.Plugins.Sites` in `innovayse/hostpanel-sites`. The bundled `Innovayse.Providers.*` projects predate the convention and are renamed as they move to their own repositories.
 
 The plugin `id` in `plugin.json` is not part of the name and never changes when a project is renamed: the host keys the plugin's stored settings and data by it.
 
@@ -74,7 +74,7 @@ using Innovayse.SDK.Plugins.Payment;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace MyCompany.HostpanelPlugins.MyGateway;
+namespace MyCompany.Hostpanel.Plugins.MyGateway;
 
 public sealed class MyGateway : PaymentGatewayBase, IPaymentPlugin
 {
@@ -118,7 +118,7 @@ public sealed class MyGateway : PaymentGatewayBase, IPaymentPlugin
   "type": "Payment",
   "category": "Payment Gateways",
   "color": "#0369a1",
-  "entryPoint": "MyCompany.HostpanelPlugins.MyGateway.MyGateway",
+  "entryPoint": "MyCompany.Hostpanel.Plugins.MyGateway.MyGateway",
   "sdkVersion": "1.0",
   "showInIntegrations": true,
   "integrationsCategory": "Payment Gateways",
@@ -316,7 +316,7 @@ Folder layout inside the ZIP:
 
 ```
 plugin.json                                ← at the root
-MyCompany.HostpanelPlugins.MyGateway.dll  ← your assembly
+MyCompany.Hostpanel.Plugins.MyGateway.dll  ← your assembly
 plugin.sig                                 ← signature file (required on production servers)
 ```
 
@@ -335,7 +335,7 @@ dotnet run --project backend/tools/Innovayse.Hostpanel.PluginSigner -- keygen my
 Sign the plugin folder:
 
 ```bash
-dotnet run --project backend/tools/Innovayse.Hostpanel.PluginSigner -- sign ./MyCompany.HostpanelPlugins.MyGateway my-key.key my-key-id
+dotnet run --project backend/tools/Innovayse.Hostpanel.PluginSigner -- sign ./MyCompany.Hostpanel.Plugins.MyGateway my-key.key my-key-id
 ```
 
 This writes `plugin.sig` into the folder. Zip the folder after signing.

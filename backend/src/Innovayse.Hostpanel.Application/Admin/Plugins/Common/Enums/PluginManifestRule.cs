@@ -90,4 +90,18 @@ public enum PluginManifestRule
     /// appears in a version 1 manifest.
     /// </summary>
     HostAccessUnknown = 24,
+
+    /// <summary>
+    /// A view document holds a <c>visibleWhen</c>, or a follow-up <c>until</c>, that is not a condition: an object with a
+    /// GET <c>route</c>, a dotted <c>field</c> and an <c>equals</c> value or list of 1 to
+    /// <c>PluginViews.MaxConditionValues</c> values; or a <c>visibleWhen</c> on something that is not a block.
+    /// </summary>
+    ViewConditionInvalid = 25,
+
+    /// <summary>
+    /// A view document holds a <c>followUp</c> that is not <c>{ refresh, until }</c> on an action block or a form's
+    /// <c>submit</c>, whose <c>refresh</c> lists a block id the document does not hold, or a <c>resetOnSuccess</c> that is
+    /// not a boolean in a form's <c>submit</c>.
+    /// </summary>
+    ViewFollowUpInvalid = 26,
 }

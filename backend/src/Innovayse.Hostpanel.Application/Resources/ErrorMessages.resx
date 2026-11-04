@@ -1093,4 +1093,10 @@
   <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
     <value>The plugin asks for a kind of access to client hosting that this host does not know, names one twice, or declares it in a version 1 manifest.</value>
   </data>
+  <data name="PLUGIN_VIEW_CONDITION_INVALID" xml:space="preserve">
+    <value>One of this plugin's view documents shows a block on a condition that is not a GET route, a field and one value or a short list of values.</value>
+  </data>
+  <data name="PLUGIN_VIEW_FOLLOW_UP_INVALID" xml:space="preserve">
+    <value>One of this plugin's view documents refreshes a block it does not hold after an action, or describes the follow-up or the form reset in a shape this host does not accept.</value>
+  </data>
 </root>

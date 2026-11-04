@@ -14,9 +14,12 @@ import { startHeldServer } from '../helpers/heldServer'
 import { startTransport } from '../helpers/stubTransport'
 import type { StubServer } from '../helpers/stubServer'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
-import { providePluginView, usePluginSource, usePluginView } from '~/composables/usePluginView'
+import { providePluginView, usePluginCondition, usePluginFollowUp, usePluginSource, usePluginView } from '~/composables/usePluginView'
+import { PLUGIN_FOLLOW_UP_INTERVAL_MS, PLUGIN_FOLLOW_UP_MAX_ATTEMPTS } from '~/constants/pluginFollowUp'
 import type { PluginSource } from '~/types/pluginblock'
-import { settle } from '~/tests/helpers/settle'
+import type { PluginFollowUp } from '~/types/pluginfollowup'
+import type { PluginViewCondition } from '~/types/pluginviewcondition'
+import { settle, until } from '~/tests/helpers/settle'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -173,5 +176,209 @@ describe('usePluginView', () => {
     expect(calls()).toHaveLength(0)
     expect(wrapper.get('[data-testid="unavailable"]').text()).toBe('true')
     expect(wrapper.get('[data-testid="error"]').text()).toBe('')
+  })
+})
+
+/** The condition the test block shows by; tests replace it. */
+const condition = ref<PluginViewCondition | undefined>(undefined)
+
+/** The ids the test view was asked to refresh, one entry per call. */
+const refreshed: string[][] = []
+
+/** Starts the test block's follow-up; set when the block mounts. */
+let follow: (followUp: PluginFollowUp | undefined) => void = () => undefined
+
+/** A block that shows `shown` while its condition holds and can start a follow-up. */
+const Watcher = defineComponent({
+  setup() {
+    const visible = usePluginCondition(() => condition.value, () => 'status')
+    follow = usePluginFollowUp()
+    return () => h('span', { 'data-testid': 'visible' }, visible.value ? 'shown' : 'hidden')
+  },
+})
+
+/** A view holding the watching block, recording every refresh it is asked for. */
+const WatchHost = defineComponent({
+  setup() {
+    providePluginView({
+      pluginId: 'acme-sites',
+      values: { siteId: '7' },
+      externalOrigins: [],
+      refreshes,
+      refresh: (ids: string[]) => {
+        refreshed.push(ids)
+      },
+      open: () => undefined,
+      track: () => undefined,
+    })
+    return () => h(Watcher)
+  },
+})
+
+/** The condition every test below watches: the site is live. */
+const LIVE: PluginViewCondition = { route: { method: 'get', path: '/sites/{siteId}' }, field: 'status', equals: ['live'] }
+
+/** A follow-up that refreshes the status block until the site is live. */
+const UNTIL_LIVE: PluginFollowUp = { refresh: ['status'], until: LIVE }
+
+/**
+ * Moves the faked clock and lets the reads it started answer.
+ *
+ * @param ms - How far to move it.
+ * @returns Resolves once the replies have been handled.
+ */
+const advance = async (ms: number): Promise<void> => {
+  vi.advanceTimersByTime(ms)
+  await settle()
+}
+
+describe('usePluginCondition', () => {
+  beforeEach(() => {
+    condition.value = undefined
+    refreshed.length = 0
+  })
+
+  it('shows a block with no condition and reads nothing', async () => {
+    const wrapper = mountWithKit(WatchHost)
+    await settle()
+
+    expect(wrapper.get('[data-testid="visible"]').text()).toBe('shown')
+    expect(calls()).toHaveLength(0)
+  })
+
+  it('hides the block while reading and until the field matches, and shows it once a refresh of its id finds a match', async () => {
+    stub.respondWith(() => ({ body: { status: 'building' } }))
+    condition.value = LIVE
+
+    const wrapper = mountWithKit(WatchHost)
+    expect(wrapper.get('[data-testid="visible"]').text()).toBe('hidden')
+    await settle()
+    expect(wrapper.get('[data-testid="visible"]').text()).toBe('hidden')
+
+    stub.respondWith(() => ({ body: { status: 'live' } }))
+    refreshes.value = { status: 1 }
+    await nextTick()
+    await settle()
+
+    expect(wrapper.get('[data-testid="visible"]').text()).toBe('shown')
+    expect(calls()).toHaveLength(2)
+  })
+
+  it('hides the block when the read is refused or the field is absent', async () => {
+    condition.value = LIVE
+    stub.respondWith(() => ({ status: 403, body: { statusMessage: 'No.', data: { code: 'CLIENT_PERMISSION_DENIED' } } }))
+    const refused = mountWithKit(WatchHost)
+    await settle()
+    expect(refused.get('[data-testid="visible"]').text()).toBe('hidden')
+
+    stub.respondWith(() => ({ body: {} }))
+    const absent = mountWithKit(WatchHost)
+    await settle()
+    expect(absent.get('[data-testid="visible"]').text()).toBe('hidden')
+  })
+
+  it('hides the block and reads nothing for a condition on a route that is not a GET', async () => {
+    condition.value = { ...LIVE, route: { method: 'post', path: '/sites/{siteId}' } }
+
+    const wrapper = mountWithKit(WatchHost)
+    await settle()
+
+    expect(wrapper.get('[data-testid="visible"]').text()).toBe('hidden')
+    expect(calls()).toHaveLength(0)
+  })
+})
+
+describe('usePluginFollowUp', () => {
+  beforeEach(() => {
+    condition.value = undefined
+    refreshed.length = 0
+    // Only the follow-up's own wait is faked; `setImmediate` stays real so the stub's replies arrive.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('waits the host interval, then reads and refreshes until the value is final, refreshing once more on it', async () => {
+    let reads = 0
+    stub.respondWith(() => ({ body: { status: ++reads < 3 ? 'building' : 'live' } }))
+    mountWithKit(WatchHost)
+    await settle()
+
+    follow(UNTIL_LIVE)
+    await advance(PLUGIN_FOLLOW_UP_INTERVAL_MS - 1)
+    expect(calls()).toHaveLength(0)
+
+    await advance(1)
+    expect(calls()).toHaveLength(1)
+    expect(refreshed).toEqual([['status']])
+
+    await advance(PLUGIN_FOLLOW_UP_INTERVAL_MS)
+    await advance(PLUGIN_FOLLOW_UP_INTERVAL_MS)
+    expect(calls()).toHaveLength(3)
+    expect(refreshed).toHaveLength(3)
+
+    await advance(PLUGIN_FOLLOW_UP_INTERVAL_MS * 5)
+    expect(calls()).toHaveLength(3)
+    expect(refreshed).toHaveLength(3)
+  })
+
+  it('gives up after the host\'s attempts, counting a failed read as one', async () => {
+    let reads = 0
+    // A refusal the transport does not retry (a 5xx GET is retried once by the fetch layer), so one read is one request.
+    stub.respondWith(() => (++reads % 2 === 0
+      ? { status: 422, body: { statusMessage: 'Refused.', data: { code: 'PLUGIN_REPORTED_PROBLEM' } } }
+      : { body: { status: 'building' } }))
+    mountWithKit(WatchHost)
+    await settle()
+
+    follow(UNTIL_LIVE)
+    for (let i = 0; i < PLUGIN_FOLLOW_UP_MAX_ATTEMPTS + 5; i += 1) {
+      await advance(PLUGIN_FOLLOW_UP_INTERVAL_MS)
+    }
+
+    expect(calls()).toHaveLength(PLUGIN_FOLLOW_UP_MAX_ATTEMPTS)
+    expect(refreshed).toHaveLength(PLUGIN_FOLLOW_UP_MAX_ATTEMPTS)
+  })
+
+  it('stops when its block unmounts: no further read, and a read still out refreshes nothing', async () => {
+    const server = await startHeldServer()
+    try {
+      const wrapper = mountWithKit(WatchHost)
+      follow(UNTIL_LIVE)
+      await advance(PLUGIN_FOLLOW_UP_INTERVAL_MS)
+      await until(() => server.held.length === 1, 'the first follow-up read')
+
+      wrapper.unmount()
+      server.held[0]?.answer({ status: 'building' })
+      await settle()
+      await advance(PLUGIN_FOLLOW_UP_INTERVAL_MS * 3)
+
+      expect(server.held).toHaveLength(1)
+      expect(refreshed).toHaveLength(0)
+    } finally {
+      await server.close()
+    }
+  })
+
+  it('starting again cancels the running follow-up, and nothing starts for none or a condition that is not a GET', async () => {
+    stub.respondWith(() => ({ body: { status: 'building' } }))
+    mountWithKit(WatchHost)
+    await settle()
+
+    follow(UNTIL_LIVE)
+    await advance(PLUGIN_FOLLOW_UP_INTERVAL_MS / 2)
+    follow(UNTIL_LIVE)
+    await advance(PLUGIN_FOLLOW_UP_INTERVAL_MS / 2)
+    expect(calls()).toHaveLength(0)
+    await advance(PLUGIN_FOLLOW_UP_INTERVAL_MS / 2)
+    expect(calls()).toHaveLength(1)
+
+    follow(undefined)
+    await advance(PLUGIN_FOLLOW_UP_INTERVAL_MS * 3)
+    follow({ ...UNTIL_LIVE, until: { ...LIVE, route: { method: 'post', path: '/sites/{siteId}' } } })
+    await advance(PLUGIN_FOLLOW_UP_INTERVAL_MS * 3)
+    expect(calls()).toHaveLength(1)
   })
 })

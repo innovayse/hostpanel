@@ -654,11 +654,20 @@
 <data name="INTEGRATION_NOT_FOUND" xml:space="preserve">
     <value>No such integration.</value>
   </data>
+<data name="INTEGRATION_FIELD_UNKNOWN" xml:space="preserve">
+    <value>The integration does not declare that field.</value>
+  </data>
+<data name="INTEGRATION_FIELD_INVALID" xml:space="preserve">
+    <value>That value is not accepted for this integration field.</value>
+  </data>
 <data name="SETTING_NOT_FOUND" xml:space="preserve">
     <value>No such setting.</value>
   </data>
 <data name="INVALID_SETTING_VALUE" xml:space="preserve">
     <value>That value is not accepted for this setting.</value>
+  </data>
+<data name="SETTING_NOT_EDITABLE" xml:space="preserve">
+    <value>This setting cannot be changed here.</value>
   </data>
 <data name="BRANDING_IMAGE_INVALID" xml:space="preserve">
     <value>That file could not be read as an image. Upload a PNG, JPEG, WebP, GIF or BMP.</value>

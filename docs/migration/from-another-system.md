@@ -166,9 +166,8 @@ picks it up. The **Migrated**, **Skipped** and **Failed** counters update as rec
 ## When a job fails
 
 The failure reason is shown on the job card. Click **Retry import** to queue the pull again.
-A retry resets the counters and starts from the beginning. Most record types skip duplicates on
-retry, but announcements, network issues, download categories, downloads and ticket replies have no
-duplicate check and will be added again on a second run.
+A retry resets the counters and starts from the beginning. Records that were already imported are
+skipped, so a retry only adds what is new.
 
 | Reason | What to do |
 |---|---|
@@ -181,22 +180,23 @@ duplicate check and will be added again on a second run.
 
 ## Run it again safely
 
-<Callout type="warning">
-Most record types skip duplicates on a second run. Announcements, network issues, download
-categories, downloads and ticket replies have no duplicate check and will be added again.
-Product groups and knowledgebase categories are reused silently. All other existing records are
-logged as Skipped with "Already exists" and left unchanged.
+<Callout type="note">
+Every record type skips duplicates on a second run. Product groups, knowledgebase categories and
+download categories are reused silently. All other existing records are logged as Skipped with
+"Already exists" and left unchanged.
 </Callout>
 
 Records are matched as follows: clients by email address, contacts by email, products by name,
 domains by domain name, services by client and domain (or client and panel username), invoices by
 client and external id, tickets and quotes by client and subject, orders by order number,
-transactions by client and transaction id, knowledgebase articles by title.
+transactions by client and transaction id, knowledgebase articles by title, announcements by title
+and date, network issues by title and start date, downloads by title and category, ticket replies by
+ticket, author, role and message. Download categories are matched by name.
 
 A service with neither a domain nor a panel username in the source record has no match key and
 will be imported again on a retry.
 
-For types that have a match key (clients, contacts, products, services, domains, invoices, tickets, quotes, orders, transactions and knowledgebase articles), running the same job a second time only adds records that are new since the last run.
+For types that have a match key (clients, contacts, products, services, domains, invoices, tickets, quotes, orders, transactions, knowledgebase articles, announcements, network issues, downloads and ticket replies), running the same job a second time only adds records that are new since the last run.
 
 To re-import a changed record, delete it in Hostpanel first, then retry the job.
 

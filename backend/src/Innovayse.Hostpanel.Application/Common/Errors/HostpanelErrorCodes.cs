@@ -935,6 +935,12 @@ public static class HostpanelErrorCodes
     /// <summary>The slug names neither a built-in integration nor a loaded plugin (404).</summary>
     public const string INTEGRATION_NOT_FOUND = "INTEGRATION_NOT_FOUND";
 
+    /// <summary>A saved field key is not one the integration declares, or is the reserved switch key (400).</summary>
+    public const string INTEGRATION_FIELD_UNKNOWN = "INTEGRATION_FIELD_UNKNOWN";
+
+    /// <summary>A saved field value does not fit the declared type of the field (400); <c>errors[key]</c> says what is expected.</summary>
+    public const string INTEGRATION_FIELD_INVALID = "INTEGRATION_FIELD_INVALID";
+
     // Products
 
     /// <summary>The id names no product group (404).</summary>
@@ -1021,6 +1027,13 @@ public static class HostpanelErrorCodes
     /// depends on the row being written and cannot be a single resx sentence.
     /// </summary>
     public const string INVALID_SETTING_VALUE = "INVALID_SETTING_VALUE";
+
+    /// <summary>
+    /// The general settings endpoints refuse to write this row: its key is outside the settings catalogue
+    /// (an integration field or switch, the setup token or a deployment key) (400). Integrations are saved
+    /// through their own endpoint.
+    /// </summary>
+    public const string SETTING_NOT_EDITABLE = "SETTING_NOT_EDITABLE";
 
     // Admin: branding
 

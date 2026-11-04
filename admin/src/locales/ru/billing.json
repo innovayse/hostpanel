@@ -175,8 +175,9 @@
   "offlineCC": {
     "offlineCreditCardProcessing": "Обработка офлайн-платежей по картам",
     "processOfflineCreditCardPayments": "Обработка офлайн-платежей по банковским картам",
-    "comingSoon": "Скоро появится",
-    "comingSoonDescription": "Обработка карт вручную будет доступна здесь."
+    "paymentRecorded": "Платёж записан.",
+    "processPayment": "Провести платёж",
+    "viewInvoice": "Открыть счёт №{id}"
   },
   "quoteDetail": {
     "newQuote": "Новое предложение",

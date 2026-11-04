@@ -32,7 +32,7 @@ already exist are skipped on the next run; only the ones you fixed are created.
 
 | Reason | Key | Which entities | Why | What to do |
 |---|---|---|---|---|
-| Already exists | `alreadyExists` | Clients, Contacts, Products, Services, Domains, Invoices, Tickets, Quotes, Orders, Transactions, Knowledgebase articles | The same record was found here (clients by email, contacts by email within the client, products by name, services by client and domain or client and panel username, domains by domain name, invoices by client and external id, tickets and quotes by client and subject, orders by order number, transactions by client and transaction id, knowledgebase articles by title). | Nothing. The existing record is kept. |
+| Already exists | `alreadyExists` | Clients, Contacts, Products, Services, Domains, Invoices, Tickets, Quotes, Orders, Transactions, Knowledgebase articles, Announcements, Network Issues, Downloads, Ticket Replies | The same record was found here (clients by email, contacts by email within the client, products by name, services by client and domain or client and panel username, domains by domain name, invoices by client and external id, tickets and quotes by client and subject, orders by order number, transactions by client and transaction id, knowledgebase articles by title, announcements by title and date, network issues by title and start date, downloads by title and category, ticket replies by ticket, author, role and message). | Nothing. The existing record is kept. |
 | Client not found | `clientNotFound` | Contacts, Invoices, Services, Domains, Tickets, Ticket Replies, Orders, Transactions, Quotes | The client this record belongs to was not imported here. | Check whether the client was skipped or excluded from the job, fix the cause, and retry. |
 | Account could not be created | `accountNotProvisioned` | Clients | The client's Hostpanel account could not be provisioned by the account provider. | Check the account provider configuration and retry. |
 | Product group not found | `productGroupNotFound` | Products | The product group this product belongs to is missing from the source feed. | Check WHMCS: the group must exist and be exported. Fix the data in WHMCS and retry. |
@@ -57,4 +57,4 @@ Most skip reasons have a clear fix:
 1. Resolve the cause (create the missing department, fix the source record, etc.).
 2. Run the job again, or create a new job for that entity type only.
 
-Records that have a match key are skipped on the next run if they already exist, so only the records you fixed are created. Announcements, network issues, download categories, downloads and ticket replies have no duplicate check and will be added again. See the retry warning in [Moving from WHMCS](./from-another-system).
+Records that have a match key are skipped on the next run if they already exist, so only the records you fixed are created. See the retry notes in [Moving from WHMCS](./from-another-system).

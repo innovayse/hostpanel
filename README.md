@@ -281,6 +281,23 @@ its own PostgreSQL through Testcontainers, so Docker must be running). Run `yarn
 Each app owns its Dockerfile (`backend/Dockerfile`, `client/Dockerfile`, `admin/Dockerfile`). A new payment gateway, registrar
 or control-panel integration is one of the most useful contributions: open an issue first so we can agree on the shape.
 
+### Writing a plugin
+
+Start with [docs/developers/write-a-plugin.md](docs/developers/write-a-plugin.md). In short:
+
+- **Manifest v2.** `plugin.json` with `"manifestVersion": 2` declares typed `settings`, `capabilities`, `locales`, an `api`
+  block (the HTTP routes the plugin answers), a `ui` block (menus, pages and slot widgets) and `externalOrigins`.
+- **Views.** A page or slot widget points at a JSON view document, `{ "schema": 1, "blocks": [...] }`, made of the block kinds
+  `header`, `text`, `stat`, `table`, `form`, `action`, `link`, `badge`, `empty`, `alert`, `tabs`, `chat` and `progress`. The
+  panels render it as text, never as HTML, in the visitor's language.
+- **Slots.** Widgets go into `client.dashboard.cards`, `client.service.tabs`, `admin.client.panels` or `admin.service.panels`.
+- **Endpoints.** The panels call a plugin only through the routes its `api` block declares, at
+  `/api/client/plugins/{id}/...` and `/api/admin/plugins/{id}/ext/...`. Anything undeclared, disabled or not permitted for the
+  caller answers the same 404.
+- **Trust.** An uploaded package must carry a `plugin.sig` signature from a trusted key. An operator can switch on
+  **Allow unsigned plugins** (off by default, audited) or pin archive digests with `Plugins:TrustedPackageSha256`. With no
+  plugin installed the panels look exactly as the core ships them.
+
 ## Contributing, security, license
 
 - **Contributing:** start with [good first issues](https://github.com/innovayse/hostpanel/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22),

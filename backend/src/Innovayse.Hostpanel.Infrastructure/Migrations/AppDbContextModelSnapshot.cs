@@ -3483,6 +3483,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedAt", "Title");
+
                     b.ToTable("Announcements");
                 });
 
@@ -3559,7 +3561,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CategoryId");
+                    b.HasIndex("CategoryId", "Title");
 
                     b.ToTable("Downloads");
                 });
@@ -3590,7 +3592,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ParentCategoryId");
+                    b.HasIndex("ParentCategoryId", "Name");
 
                     b.ToTable("DownloadCategories");
                 });
@@ -3710,6 +3712,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Status");
+
+                    b.HasIndex("StartDate", "Title");
 
                     b.ToTable("NetworkIssues");
                 });

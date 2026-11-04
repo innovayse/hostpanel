@@ -42,6 +42,19 @@ public sealed class GetSettingTests(IntegrationTestFactory factory) : IClassFixt
         await AdminTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.SETTING_NOT_FOUND);
     }
 
+    /// <summary>A row outside the general catalogue answers 404 <c>SETTING_NOT_FOUND</c>, like an unknown id.</summary>
+    [Fact]
+    public async Task RowOutsideTheCatalogue_RefusesNotFoundAsync()
+    {
+        var id = await SecretSettingTestSeeds.StoreAsync(factory, "integration:stripe:publishable_key", "pk_test_read");
+        var client = await AdminTestSeeds.AdminClientAsync(factory);
+
+        var response = await client.GetAsync($"/api/admin/settings/{id}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        await AdminTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.SETTING_NOT_FOUND);
+    }
+
     /// <summary>A caller with only the Client role is refused with 403.</summary>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()

@@ -2,10 +2,12 @@
 /**
  * Themed number input with increment/decrement buttons.
  *
- * Replaces `<input type="number">`, whose spinner arrows cannot be themed. Emits a clamped number.
+ * Replaces `<input type="number">`, whose spinner arrows cannot be themed. Emits a clamped number,
+ * or `null` when a `nullable` field is cleared.
  * `data-testid` and classes land on the root element.
  */
 import { computed } from 'vue'
+import { fieldInvalidClasses } from '@/utils/ui/input'
 
 /** Props for UiNumberInput. */
 const props = withDefaults(defineProps<{
@@ -28,17 +30,29 @@ const props = withDefaults(defineProps<{
   placeholder?: string
   /** Disables the input. */
   disabled?: boolean
+  /** Id of the native input, so a caption can point at it (`UiField` hands one out). */
+  id?: string
+  /** Marks the value as refused by the server (red border, `aria-invalid`). */
+  invalid?: boolean
+  /**
+   * Lets the admin clear the field: when the typed text becomes empty the model is set to `null`.
+   * Off by default, so a required field keeps its last number while the text is being retyped.
+   */
+  nullable?: boolean
 }>(), {
   min: undefined,
   max: undefined,
   step: 1,
   placeholder: '0',
   disabled: false,
+  id: undefined,
+  invalid: false,
+  nullable: false,
 })
 
 const emit = defineEmits<{
-  /** Emitted when the value changes. */
-  'update:modelValue': [value: number]
+  /** Emitted when the value changes; `null` only from a `nullable` field whose text was cleared. */
+  'update:modelValue': [value: number | null]
 }>()
 
 /**
@@ -48,6 +62,9 @@ const emit = defineEmits<{
  * a caller may hold: both become 0, a numeric string becomes its number, anything else is `NaN`.
  */
 const numericValue = computed<number>(() => Number(props.modelValue))
+
+/** Extra classes of a field flagged invalid. */
+const invalidClasses = fieldInvalidClasses
 
 /** Whether decrement is allowed. */
 const canDecrement = computed<boolean>(() => props.min === undefined || numericValue.value - props.step >= props.min)
@@ -88,10 +105,37 @@ const round = (v: number): number => {
  * @param e - The input event.
  */
 const onInput = (e: Event): void => {
-  const num = parseFloat((e.target as HTMLInputElement).value)
+  const text = (e.target as HTMLInputElement).value
+  if (props.nullable && text.trim() === '') {
+    emit('update:modelValue', null)
+    return
+  }
+  const num = parseFloat(text)
   if (!isNaN(num)) {
     emit('update:modelValue', clamp(num))
   }
+}
+
+/**
+ * Commits the value on blur: emits it clamped and rewrites the typed text to match.
+ *
+ * When the model already holds the clamped value nothing re-renders, so a typed out-of-range text
+ * (such as a negative number under `min`) would otherwise stay on screen. An empty text commits
+ * nothing: the field stays empty (or shows the value the model still holds).
+ *
+ * @param e - The blur event.
+ */
+const onBlur = (e: Event): void => {
+  const input = e.target as HTMLInputElement
+  if (input.value.trim() === '') {
+    // An empty field stays empty: committing 0 (or `min`) would turn "left blank" into a real value.
+    const held = props.modelValue
+    input.value = held === null || held === '' ? '' : String(held)
+    return
+  }
+  const clamped = clamp(numericValue.value)
+  emit('update:modelValue', clamped)
+  ;(e.target as HTMLInputElement).value = String(clamped)
 }
 
 /** Decrements the value by one step. */
@@ -119,9 +163,12 @@ const increment = (): void => {
       :value="modelValue"
       :placeholder="placeholder"
       :disabled="disabled"
+      :id="id"
+      :aria-invalid="invalid || undefined"
       class="w-full bg-surface-field border border-border rounded-[10px] pl-3 pr-8 py-2 text-[0.82rem] text-text-primary placeholder:text-text-muted outline-none focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/10 transition-colors disabled:cursor-not-allowed [appearance:textfield]"
+      :class="invalid ? invalidClasses : ''"
       @input="onInput"
-      @blur="emit('update:modelValue', clamp(numericValue))"
+      @blur="onBlur"
     >
     <!-- Spinner buttons -->
     <div class="absolute right-0 top-0 bottom-0 flex flex-col w-6 border-l border-border">

@@ -17,9 +17,9 @@ beforeEach(() => {
 
 /** The three appearance rows, as the API seeds them. */
 const rows: Setting[] = [
-  { id: 1, key: 'portal.template', value: 'aurora', isSecret: false, hasValue: true },
-  { id: 2, key: 'portal.theme.default', value: 'dark', isSecret: false, hasValue: true },
-  { id: 3, key: 'portal.theme.user_toggle', value: 'true', isSecret: false, hasValue: true },
+  { id: 1, key: 'portal.template', value: 'aurora' },
+  { id: 2, key: 'portal.theme.default', value: 'dark' },
+  { id: 3, key: 'portal.theme.user_toggle', value: 'true' },
 ]
 
 describe('PortalAppearanceCard', () => {

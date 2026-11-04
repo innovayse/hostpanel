@@ -86,6 +86,10 @@ export interface FieldDefinitionDto {
   required: boolean
   /** Allowed values for "select" type fields; absent for all others. */
   options?: string[]
+  /** Lowest accepted value of a "Number" field; absent or null when unbounded. */
+  min?: number | null
+  /** Highest accepted value of a "Number" field; absent or null when unbounded. */
+  max?: number | null
 }
 
 /** The stored state of one integration field. */
@@ -191,6 +195,10 @@ export const IntegrationFieldType = {
   Textarea: 'TextArea',
   /** A yes/no switch. */
   Toggle: 'Toggle',
+  /** A web address. */
+  Url: 'Url',
+  /** A whole or decimal number, optionally bounded by the definition's min and max. */
+  Number: 'Number',
 } as const
 
 /** One of the {@link IntegrationFieldType} values. */

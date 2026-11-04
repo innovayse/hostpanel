@@ -265,6 +265,34 @@ docker/                              compose set (shared·dev·prod·platform), 
   referenced only inside `#if INNOVAYSE_SSO`). A deployment-specific plugin is reached through an SDK contract
   loaded by `PluginLoader`, never named by the core. The test proves it bites: the same rule runs on a planted type
   in the test assembly and must report it.
+  The same rule also runs on source text (#650): `PluginNeutralSourceTests` reads the plugin ids and the entry point
+  type names from the in-tree `plugin.json` manifests (`Innovayse.Providers.*`) and fails when a Domain, Application,
+  Infrastructure, API, Shared or SharedKernel file names one, apart from the shrinking `LegacyBuiltIn` list (a stale entry
+  fails too); it is proven on an in-memory planted source. The host interfaces are held to it by vitest,
+  `admin/tests/lint/pluginNeutrality.test.ts` (the slot and plugin page components with no exemption) and
+  `client/tests/config/pluginNeutrality.test.ts`. With no plugin installed `EmptyPluginsTests` asserts that every slot index
+  and both plugin ui indexes (pages and menus) are empty lists, so the panels show only what the core provides. Neither
+  panel renders the plugin ui index yet, so there is no plugin menu to test on the frontend until it does.
+- **The plugin contract at a glance (#650).** Where each part is specified; do not restate it elsewhere, link here.
+  - **Manifest v2** (`"manifestVersion": 2`): `settings`, `capabilities`, `locales`, `api`, `ui`, `externalOrigins`. The rules
+    are in "Manifest v2" and "One manifest validator" in this section and in "Menu icons and page ids".
+  - **View schema** (`PluginViews` in the SDK, version 1): a JSON document `{ "schema": 1, "blocks": [...] }` named by the
+    `view` member of a page or slot entry. Block kinds: `header`, `text`, `stat`, `table`, `form`, `action`, `link`, `badge`,
+    `empty`, `alert`, `tabs`, `chat`, `progress`. Label members (`title`, `label`, `confirm`, `placeholder`, `text`) are
+    localised by the host; route members (`route`, `send`, `history`) name a declared `api` route by method and path. Checked
+    at load and install (`PluginViewDocumentReader`, the `PLUGIN_VIEW_*` rules); rendered as text only, never `v-html`.
+  - **Slot ids** (`PluginSlots`): `client.dashboard.cards`, `client.service.tabs` (context `serviceId`), `admin.client.panels`
+    (`clientId`), `admin.service.panels` (`serviceId`, `clientId`); indexes at `GET api/{client|admin}/plugins/slots/{slotId}`
+    (see "Plugin slot index"). The plugin ids `ui` and `slots` are reserved.
+  - **Endpoint contract**: an app plugin answers only the routes its manifest `api` block declares, through
+    `/api/client/plugins/{id}/{**path}` and `/api/admin/plugins/{id}/ext/{**path}`; every refusal before plugin code is the same
+    404 `PLUGIN_ROUTE_NOT_FOUND` (see "Plugin routes: one safe door").
+  - **Trust model**: an uploaded package carries a detached Ed25519 `plugin.sig`, checked at install and before load against the
+    maintainer and operator keys; the admin setting `plugins.allow_unsigned` admits unsigned packages (audited, off by default,
+    never enforced in Development and Testing); `Plugins:TrustedPackageSha256` pins archive digests; built-in plugins are part
+    of the image and are not signature-checked (see "Signed plugin packages").
+  - **For authors**: `docs/developers/write-a-plugin.md` is the guide. The SDK README and a sample plugin belong in the
+    `hostpanel-sdk` repository, not in this checkout's submodule.
 - **`PluginActivator` takes `IConfiguration` (documented exception to configuration.md rule 6).**
   The plugin SDK's base classes take an `IConfiguration` in their constructor, so the
   activator hands each plugin a configuration built from **its own section only**: the host's
@@ -282,7 +310,8 @@ docker/                              compose set (shared·dev·prod·platform), 
   save (`IntegrationFields`), the loader's integration entry and the field mapping
   (`PluginSettingMappingExtensions`) all go through it, and no host code reads `manifest.Fields` directly.
   The one exception is secret classification, `Application/Admin/Common/SettingSecrecy`, the only question
-  every settings read and write asks: it takes the union of `GetSettings()` and the legacy fields, so a
+  every integration read and write asks (the general settings endpoints never meet a secret: they are limited to
+  `GeneralSettingKeys`, the portal, billing and plugin keys, and refuse any other row with `SETTING_NOT_EDITABLE`): it takes the union of `GetSettings()` and the legacy fields, so a
   secret declared in either list is secret even in a manifest that mixes the two and omits it from `settings`.
   A secret is never returned in clear (`isSecret` and `hasValue` only) and is encrypted on save. A `settings`
   entry with a `type` the host does not define, and a legacy `fields` entry with a `type` the SDK does not
@@ -729,7 +758,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   app plugin and passes `PluginActivator.PrepareAsync` (enabled and configured), so a page shows exactly when its routes
   answer. The answer is computed for every plugin in one pass and kept for 10 seconds by `PluginAvailabilityCache`
   (singleton), used by the index and both page lookups alike; `IPluginAvailabilityInvalidator` drops it after the save
-  of `RemovePluginHandler`, `SaveIntegrationConfigHandler` and `UpdateSettingHandler` (for `integration:*` keys), so a
+  of `RemovePluginHandler` and `SaveIntegrationConfigHandler`, so a
   switch shows at once. The slot index (#644) does not use the cache yet; it still asks `IPluginEndpointResolver` per
   plugin.
   **Permissions:** a client page is listed or served only when `PluginClientPermissions.IsHeld(held, page.Permission)`,

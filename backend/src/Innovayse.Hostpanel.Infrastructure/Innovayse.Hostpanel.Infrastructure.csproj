@@ -73,6 +73,8 @@
   <ItemGroup>
     <!-- Invoice PDF fonts, read by Pdf/PdfFonts.cs. The production image has no system fonts. -->
     <EmbeddedResource Include="Pdf\Fonts\*.ttf" LogicalName="Innovayse.Hostpanel.Infrastructure.Pdf.Fonts.%(Filename)%(Extension)" />
+    <!-- The font licences travel with the fonts: copied to Pdf/Fonts/ in the build and publish output (the API image copies the publish output). -->
+    <Content Include="Pdf\Fonts\LICENSE-*.txt" Link="Pdf\Fonts\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <!-- PaymentPluginResolverTests moved here from Infrastructure.Tests (A6 Task 5, ruling 2):

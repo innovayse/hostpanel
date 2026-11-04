@@ -9,11 +9,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Commands.UpdateSetting;
 /// a required member, and the route overlay (<c>command with { Id = id }</c>) replaces it.
 /// </param>
 /// <param name="Value">
-/// The new value to assign. For a secret setting an empty or absent value keeps what is stored,
-/// because the admin panel never has the stored value to send back.
+/// The new value to assign. Absent or empty means the empty string, which only a key that seeds
+/// empty accepts.
 /// </param>
-/// <param name="Clear">
-/// Removes a secret setting's stored value. The explicit flag is what tells "clear it" apart from
-/// "leave it as it is", which an empty value means for a secret.
-/// </param>
-public sealed record UpdateSettingCommand(int Id, string? Value, bool Clear = false) : IDemoRestricted;
+public sealed record UpdateSettingCommand(int Id, string? Value) : IDemoRestricted;

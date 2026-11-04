@@ -31,7 +31,7 @@ public static class PluginSettingMappingExtensions
     /// <returns>
     /// The form definition. A secret (or unknown) kind maps to <see cref="IntegrationFieldType.Secret"/>, a
     /// boolean to a toggle, a textarea to a text area, a select to a select carrying the values of its options,
-    /// and a text, url or number to plain text.
+    /// a url to a url field, a number to a number field carrying its minimum and maximum, and a text to plain text.
     /// </returns>
     public static FieldDefinitionDto ToFieldDefinition(this PluginSetting setting)
     {
@@ -47,6 +47,8 @@ public static class PluginSettingMappingExtensions
             PluginSettingType.Select => IntegrationFieldType.Select,
             PluginSettingType.Textarea => IntegrationFieldType.TextArea,
             PluginSettingType.Boolean => IntegrationFieldType.Toggle,
+            PluginSettingType.Url => IntegrationFieldType.Url,
+            PluginSettingType.Number => IntegrationFieldType.Number,
             _ => IntegrationFieldType.Text,
         };
 
@@ -54,6 +56,9 @@ public static class PluginSettingMappingExtensions
             ? setting.Options.Select(o => o.Value).ToList()
             : null;
 
-        return new FieldDefinitionDto(setting.Key, setting.Label, type, setting.Required, options);
+        return new FieldDefinitionDto(setting.Key, setting.Label, type, setting.Required,
+            options,
+            setting.Type == PluginSettingType.Number ? setting.Min : null,
+            setting.Type == PluginSettingType.Number ? setting.Max : null);
     }
 }

@@ -25,6 +25,7 @@ import UiHeading from '@/components/ui/UiHeading.vue'
 import UiImage from '@/components/ui/UiImage.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
+import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -150,6 +151,31 @@ const setValue = (key: string, value: string | number | null): void => {
 }
 
 /**
+ * Reads a field's stored text as the number the number input takes.
+ *
+ * @param key - The field key.
+ * @returns The number, or null while the field is empty or holds text that is not a number.
+ */
+const numberOf = (key: string): number | null => {
+  const raw = localConfig.value[key]
+  if (raw === undefined || raw === '') {
+    return null
+  }
+  const parsed = Number(raw)
+  return Number.isNaN(parsed) ? null : parsed
+}
+
+/**
+ * Stores a number the admin entered as the string the API keeps.
+ *
+ * @param key - The field key.
+ * @param value - The entered number; null (the field was cleared) stores the empty string.
+ */
+const setNumber = (key: string, value: number | null): void => {
+  localConfig.value[key] = value === null ? '' : String(value)
+}
+
+/**
  * Select options of a field.
  *
  * @param field - The field definition.
@@ -269,11 +295,23 @@ const handleSave = (): void => {
                 </UiText>
               </UiLabel>
 
+              <UiNumberInput
+                v-else-if="field.type === IntegrationFieldType.Number"
+                :id="id"
+                :model-value="numberOf(field.key)"
+                :min="field.min ?? undefined"
+                :max="field.max ?? undefined"
+                nullable
+                :placeholder="t('integrations.integrationConfigForm.enterValue', { label: field.label })"
+                :data-testid="`integration-field-${field.key}`"
+                @update:model-value="setNumber(field.key, $event)"
+              />
+
               <UiInput
                 v-else
                 :id="id"
                 v-model="localConfig[field.key]"
-                :type="UiInputType.Text"
+                :type="field.type === IntegrationFieldType.Url ? UiInputType.Url : UiInputType.Text"
                 class="font-mono"
                 :placeholder="t('integrations.integrationConfigForm.enterValue', { label: field.label })"
                 :data-testid="`integration-field-${field.key}`"

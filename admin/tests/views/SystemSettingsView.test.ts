@@ -1,7 +1,7 @@
 /**
  * Smoke tests for SystemSettingsView: the cards and the key-value table render from the loaded
  * settings, a row is edited and saved through the store (network level), and a refusal shows the
- * API's own sentence. A secret row is write only: masked, never pre-filled, replaced or cleared.
+ * API's own sentence.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import SystemSettingsView from '@/views/SystemSettingsView.vue'
@@ -12,12 +12,9 @@ import { requestsOf, stubRouteTable } from '../helpers/routes'
 
 /** Seeded rows: one identity row and one plain row that only the table edits. */
 const stored: Setting[] = [
-  { id: 1, key: 'portal.site.name', value: 'Acme', isSecret: false, hasValue: true },
-  { id: 21, key: 'portal.contact.email', value: 'old@example.com', description: 'Contact address', isSecret: false, hasValue: true },
+  { id: 1, key: 'portal.site.name', value: 'Acme' },
+  { id: 21, key: 'portal.contact.email', value: 'old@example.com', description: 'Contact address' },
 ]
-
-/** A stored gateway credential as the API lists it: flagged secret, set, and without its value. */
-const secretRow: Setting = { id: 40, key: 'integration:stripe:secret_key', value: null, isSecret: true, hasValue: true }
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -35,7 +32,7 @@ describe('SystemSettingsView', () => {
   })
 
   it('draws the storefront card with the stored figure', async () => {
-    stubRouteTable({ 'GET /admin/settings': () => json([...stored, { id: 30, key: 'portal.stats.clients', value: '5,000+', isSecret: false, hasValue: true }]) })
+    stubRouteTable({ 'GET /admin/settings': () => json([...stored, { id: 30, key: 'portal.stats.clients', value: '5,000+' }]) })
     const { wrapper } = await mountScreen(SystemSettingsView)
 
     expect((wrapper.get('[data-testid="storefront-stats-clients"]').element as HTMLInputElement).value).toBe('5,000+')
@@ -94,52 +91,6 @@ describe('SystemSettingsView', () => {
       expect(wrapper.get('[data-testid="setting-outcome-21"]').text()).toBe('Not a valid e-mail address.')
     })
     expect((wrapper.get('[data-testid="setting-value-21"]').element as HTMLInputElement).value).toBe('nope')
-  })
-
-  it('shows a secret row masked, with no input holding a value', async () => {
-    stubRouteTable({ 'GET /admin/settings': () => json([...stored, secretRow]) })
-    const { wrapper } = await mountScreen(SystemSettingsView)
-
-    expect(wrapper.get('[data-testid="setting-secret-40-masked"]').text()).toContain('set')
-    expect(wrapper.find('[data-testid="setting-value-40"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="setting-secret-40-input"]').exists()).toBe(false)
-  })
-
-  it('replaces a secret with the typed value only', async () => {
-    const mock = stubRouteTable({
-      'GET /admin/settings': () => json([...stored, secretRow]),
-      'PUT /admin/settings/40': () => new Response(null, { status: 204 }),
-    })
-    const { wrapper } = await mountScreen(SystemSettingsView)
-
-    await wrapper.get('[data-testid="setting-secret-40-replace"]').trigger('click')
-    const input = wrapper.get('[data-testid="setting-secret-40-input"]')
-    expect(input.attributes('type')).toBe('password')
-    expect(wrapper.find('[data-testid="setting-save-40"]').exists()).toBe(false)
-    await input.setValue('sk_live_new')
-    await wrapper.get('[data-testid="setting-save-40"]').trigger('click')
-    await vi.waitFor(() => {
-      expect(requestsOf(mock)).toContain('PUT /admin/settings/40')
-    })
-
-    const put = mock.mock.calls.find((call) => (call[1] as RequestInit | undefined)?.method === 'PUT')
-    expect(JSON.parse((put?.[1] as RequestInit | undefined)?.body as string)).toEqual({ value: 'sk_live_new' })
-  })
-
-  it('clears a secret with an explicit clear request', async () => {
-    const mock = stubRouteTable({
-      'GET /admin/settings': () => json([...stored, secretRow]),
-      'PUT /admin/settings/40': () => new Response(null, { status: 204 }),
-    })
-    const { wrapper } = await mountScreen(SystemSettingsView)
-
-    await wrapper.get('[data-testid="setting-secret-40-clear"]').trigger('click')
-    await vi.waitFor(() => {
-      expect(requestsOf(mock)).toContain('PUT /admin/settings/40')
-    })
-
-    const put = mock.mock.calls.find((call) => (call[1] as RequestInit | undefined)?.method === 'PUT')
-    expect(JSON.parse((put?.[1] as RequestInit | undefined)?.body as string)).toEqual({ clear: true })
   })
 
   it('says so when there are no settings', async () => {

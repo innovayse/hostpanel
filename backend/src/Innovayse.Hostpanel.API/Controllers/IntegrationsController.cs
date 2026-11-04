@@ -73,7 +73,7 @@ public sealed class IntegrationsController : BaseApiController
     /// secret field keeps the stored value.
     /// </param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>204 on success; 400 when a field is refused or not declared by the integration; 404 with <c>INTEGRATION_NOT_FOUND</c> when the slug is not recognised; 401 without a session; 403 for a caller who is not an admin; 429 when the rate limit is hit.</returns>
+    /// <returns>204 on success; 400 with <c>INTEGRATION_FIELD_UNKNOWN</c> when a written or cleared key is not declared by the integration (exact spelling; <c>is_enabled</c> is reserved) or <c>INTEGRATION_FIELD_INVALID</c> when a value does not fit its field's type, with nothing written; 404 with <c>INTEGRATION_NOT_FOUND</c> when the slug is not recognised; 401 without a session; 403 for a caller who is not an admin; 429 when the rate limit is hit.</returns>
     [HttpPut("{slug}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]

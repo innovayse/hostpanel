@@ -9,7 +9,7 @@ import { json, stubApi } from './support/stubApi'
 import type { Setting } from '../src/types/setting'
 
 /** A free-form setting the raw table edits. */
-const timezone: Setting = { id: 90, key: 'general.timezone', value: 'UTC', description: 'Default time zone', isSecret: false, hasValue: true }
+const timezone: Setting = { id: 90, key: 'general.timezone', value: 'UTC', description: 'Default time zone' }
 
 test('editing a setting saves the new value', async ({ page }) => {
   // The settings as the "database" holds them; the PUT mutates the row so the re-read returns it.

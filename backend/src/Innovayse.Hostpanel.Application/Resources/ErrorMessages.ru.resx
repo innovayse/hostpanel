@@ -654,11 +654,20 @@
 <data name="INTEGRATION_NOT_FOUND" xml:space="preserve">
     <value>Такая интеграция не найдена.</value>
   </data>
+<data name="INTEGRATION_FIELD_UNKNOWN" xml:space="preserve">
+    <value>Интеграция не объявляет это поле.</value>
+  </data>
+<data name="INTEGRATION_FIELD_INVALID" xml:space="preserve">
+    <value>Это значение не подходит для этого поля интеграции.</value>
+  </data>
 <data name="SETTING_NOT_FOUND" xml:space="preserve">
     <value>Такая настройка не найдена.</value>
   </data>
 <data name="INVALID_SETTING_VALUE" xml:space="preserve">
     <value>Это значение не подходит для этой настройки.</value>
+  </data>
+<data name="SETTING_NOT_EDITABLE" xml:space="preserve">
+    <value>Эту настройку нельзя изменить здесь.</value>
   </data>
 <data name="BRANDING_IMAGE_INVALID" xml:space="preserve">
     <value>Не удалось прочитать этот файл как изображение. Загрузите PNG, JPEG, WebP, GIF или BMP.</value>

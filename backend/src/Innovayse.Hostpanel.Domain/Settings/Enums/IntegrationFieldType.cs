@@ -23,4 +23,10 @@ public enum IntegrationFieldType
 
     /// <summary>An on/off switch stored as <c>true</c> or <c>false</c>.</summary>
     Toggle,
+
+    /// <summary>An absolute http or https address.</summary>
+    Url,
+
+    /// <summary>A number written with an invariant decimal point, optionally bounded by the field's minimum and maximum.</summary>
+    Number,
 }

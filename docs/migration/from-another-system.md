@@ -1,21 +1,39 @@
 ---
-title: Moving from another billing system
-description: How to import clients, invoices, services and domains into Hostpanel from an existing billing system.
+title: Moving from WHMCS
+description: How to import clients, invoices, services, domains and tickets into Hostpanel from WHMCS.
 ---
 
-# Moving from another billing system
+# Moving from WHMCS
 
 <Label type="admin" />
 
-Hostpanel pulls data from the source system: a PHP addon installed there answers the panel's
-requests page by page, and Hostpanel reads and imports the records. Nothing is written back to the
-source system.
+Hostpanel imports your data from WHMCS. You install a small PHP addon in WHMCS. Hostpanel then asks
+the addon for your records, one page at a time, and imports them. Nothing is written back to WHMCS.
+
+## What you need
+
+- A WHMCS install that runs on PHP 8.1 or later. The addon uses PHP 8.1 features.
+- A public HTTPS address for that WHMCS install. Hostpanel calls it from your Hostpanel server.
+- Admin access to both systems, and FTP or SSH access to the WHMCS files.
+
+## From WHMCS in five steps
+
+1. In Hostpanel, go to **Migration Tools**, click **New Migration**, enter your WHMCS address and
+   pick the data to import. Hostpanel creates a secret key.
+2. Download `innovayse-migration.zip` from the job card and extract it into the root folder of
+   WHMCS.
+3. In WHMCS, go to **Configuration > System Settings > Addon Modules**, activate
+   **Hostpanel Migration**, click **Configure** and paste the key into **Migration Key**.
+4. In Hostpanel, click **Check**. Wait for **Plugin connected**.
+5. Click **Start Import**, then review the **Import Report** when it finishes.
+
+The sections below explain each step and what to do when something goes wrong.
 
 ## How a migration works
 
 A migration job holds a secret key. The addon on the source system reads every request, checks the
 key, and returns one page of records at a time. Hostpanel imports each page before asking for the
-next. The pull runs in the background — closing the browser does not stop it.
+next. The pull runs in the background, so closing the browser does not stop it.
 
 If the server restarts mid-pull, the recovery job (`RecoverInterruptedMigrationJobsCommand`) runs
 every five minutes and marks as failed any job whose heartbeat has not updated in the last fifteen
@@ -58,8 +76,8 @@ password reset flow before they can sign in.
 Tell your customers to use "Forgot password" the first time they sign in after the move.
 </Callout>
 
-Records the addon does not export — for example, payment gateway credentials, email logs and
-two-factor authentication settings — are not imported and must be set up again manually.
+Records the addon does not export are not imported, and you must set them up again by hand. These
+include payment gateway credentials, email logs and two-factor authentication settings.
 
 ## Before you start
 
@@ -84,28 +102,33 @@ not exist here are skipped.
 Go to **Migration Tools** in the admin panel and click **New Migration**.
 
 Fill in:
-- **Source URL** — the root address of the source system, for example `https://billing.example.com`.
-  The addon path `/modules/addons/innovayse_migration/api.php` is appended automatically.
-- **Label** (optional) — a name for this job, for example `Production Server`.
-- **Data to import** — select the record types to pull. Use **Select All** or pick individual types.
+- **Source URL**: the root address of your WHMCS install, for example `https://billing.example.com`.
+  Hostpanel adds the addon path `/modules/addons/innovayse_migration/api.php` for you. You can also
+  paste the full address that the addon's own page shows; the path is not added twice.
+- **Label** (optional): a name for this job, for example `Production Server`.
+- **Data to import**: the record types to pull. Use **Select All** or pick individual types.
 
 Click **Create Migration**. A secret key is generated for the job.
 
 </li>
 <li>
 
-**Install the addon on the source system**
+**Install the addon in WHMCS**
 
-Download `innovayse-migration.zip` from the **Setup Required** card and extract it to the root of
-the source system. The files land in:
+Download `innovayse-migration.zip` from the **Setup Required** card and extract it into the root
+folder of WHMCS. The files land in:
 
 ```
 /modules/addons/innovayse_migration/
 ```
 
-Open the source system's admin panel, go to **Admin → Addons**, find **Innovayse Migration** and
-activate it. Open the addon's settings page and paste the secret key from the **Setup Required**
-card into the **Migration Key** field.
+In the WHMCS admin area, go to **Configuration > System Settings > Addon Modules**. Find
+**Hostpanel Migration** and click **Activate**, then **Configure**. Paste the secret key from the
+**Setup Required** card into the **Migration Key** field and click **Save Changes**.
+
+Under **Access Control**, tick the admin roles that may open the addon's page in WHMCS. That page
+shows whether a key is set and the **Source URL** Hostpanel calls. The import itself does not need
+any role to be ticked.
 
 </li>
 <li>
@@ -113,11 +136,11 @@ card into the **Migration Key** field.
 **Test the connection**
 
 Click **Check**. Hostpanel calls the addon's ping endpoint. The card shows one of:
-- **Plugin connected** — the key was accepted.
-- **Checking…** — the request is in flight.
-- **Waiting for plugin…** — waiting to retry.
-- **Not reachable** — the addon did not answer or refused the key. Check the source URL, confirm
-  the addon is active, and confirm the key in the addon settings matches the one on the card.
+- **Plugin connected**: the key was accepted.
+- **Checking…**: the request is in flight.
+- **Waiting for plugin…**: waiting to retry.
+- **Not reachable**: the addon did not answer or refused the key. Check the source URL, confirm the
+  addon is active in WHMCS, and confirm the key in the addon settings matches the one on the card.
 
 </li>
 <li>
@@ -148,7 +171,7 @@ skipped, so a retry only adds what is new.
 
 | Reason | What to do |
 |---|---|
-| Source could not be reached | Check the source URL and confirm the source system is running. |
+| Source could not be reached | Check the source URL and confirm WHMCS is running. |
 | Source refused the request, check the key | The key is wrong or the addon is not active. Re-copy the key from the job card into the addon settings. |
 | Records could not be imported | Check the server log for details. Fix the underlying problem and retry. |
 | Import was stopped | The pull was cancelled. Retry when ready. |
@@ -181,7 +204,7 @@ To re-import a changed record, delete it in Hostpanel first, then retry the job.
 
 After the import completes, spot-check the data:
 
-- Client count matches the source system.
+- Client count matches WHMCS.
 - Open invoices and balances are correct.
 - Active services are on the right servers.
 - Domains have the right expiry dates.
@@ -195,8 +218,9 @@ Open the **Import Report** to review every skipped and failed record. See
 
 Once the migration is complete and verified:
 
-- Remove the addon from the source system, or clear its **Migration Key** field, so the endpoint
-  no longer accepts requests.
+- In WHMCS, clear the addon's **Migration Key** field and save. With no key set, the addon refuses
+  every request. Then deactivate the addon and delete the `modules/addons/innovayse_migration/`
+  folder.
 - Delete old migration jobs (**Delete migration**) when you no longer need their import report.
   This removes the job and its full log and cannot be undone.
 

@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
@@ -85,6 +86,10 @@ public sealed class AppPluginFixture : IAsyncLifetime
                 services.RemoveAll<PluginRegistry>();
                 services.AddSingleton(registry);
                 services.AddSingleton(Probe);
+
+                // The real scope factory, recorded, so a streaming test can await a scope's disposal.
+                services.RemoveAll<IPluginCallScopeFactory>();
+                services.AddSingleton<IPluginCallScopeFactory, RecordingPluginCallScopeFactory>();
                 services.Configure<PluginApiOptions>(options =>
                 {
                     options.MaxBodyBytes = MaxBodyBytes;
@@ -101,6 +106,9 @@ public sealed class AppPluginFixture : IAsyncLifetime
         Host.Dispose();
         await Factory.DisposeAsync();
     }
+
+    /// <summary>Gets the recorded scope factory of <see cref="Host"/>: every scope a streaming route's call opened.</summary>
+    public RecordingPluginCallScopeFactory CallScopes => (RecordingPluginCallScopeFactory)Host.Services.GetRequiredService<IPluginCallScopeFactory>();
 
     /// <summary>Makes a client of <see cref="Host"/> carrying the bearer token of an already signed-in client.</summary>
     /// <param name="signedIn">A client of another host whose bearer token is reused.</param>

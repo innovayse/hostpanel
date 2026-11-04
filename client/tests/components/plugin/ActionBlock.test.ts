@@ -1,11 +1,13 @@
 /**
  * Tests for PluginActionBlock: the call with the CSRF-carrying transport, the confirmation, the plugin's sentence,
- * a refusal's sentence, refreshing named blocks and opening the named page.
+ * a refusal's sentence, refreshing named blocks, opening the named page, and the follow-up refresh with its host
+ * bounds and its end when the block leaves the page.
  *
  * @module tests/components/plugin/ActionBlock.test
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { PLUGIN_FOLLOW_UP_INTERVAL_MS, PLUGIN_FOLLOW_UP_MAX_ATTEMPTS } from '~/constants/pluginFollowUp'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { mountBlocks, problem, ROUTES_URL, startPluginApi, TEST_ROUTES } from '~/tests/helpers/mountPlugin'
 import { PluginBlockKind } from '~/types/pluginblockkind'
@@ -15,6 +17,7 @@ import { settle } from '~/tests/helpers/settle'
 let api: StubServer | undefined
 
 afterEach(async () => {
+  vi.useRealTimers()
   await api?.close()
   api = undefined
   // Cleared before the globals are unstubbed, which takes the setup's `navigateTo` stand-in away with them.
@@ -99,5 +102,94 @@ describe('PluginActionBlock', () => {
     await unknown!.trigger('click')
     await settle()
     expect(navigateTo).not.toHaveBeenCalled()
+  })
+
+  describe('follow-up', () => {
+    /** The publish button, watching the site until it is live and refreshing the status badge meanwhile. */
+    const watching = {
+      ...publish,
+      followUp: { refresh: ['status'], until: { route: TEST_ROUTES.site, field: 'status', equals: ['live', 'failed'] } },
+    }
+
+    /** The status badge the follow-up refreshes. */
+    const badge = { kind: PluginBlockKind.Badge, id: 'status', source: { route: TEST_ROUTES.site, field: 'status' } } as const
+
+    /**
+     * The reads of the site route the stub received.
+     *
+     * @returns How many.
+     */
+    const siteReads = (): number => api!.requests.filter(request => request.method === 'GET').length
+
+    it('shows the final value without a reload, then stops reading', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+      let reads = 0
+      api = await startPluginApi({
+        [`GET ${ROUTES_URL}/sites/7`]: () => ({ body: { status: ++reads < 4 ? 'publishing' : 'live' } }),
+        [`POST ${ROUTES_URL}/sites/7/publish`]: { status: 202 },
+      })
+      const wrapper = mountBlocks([badge, watching])
+      await settle()
+      await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
+      await settle()
+      expect(wrapper.get('[data-testid="plugin-badge"]').text()).toBe('publishing')
+
+      for (let i = 0; i < 3; i += 1) {
+        vi.advanceTimersByTime(PLUGIN_FOLLOW_UP_INTERVAL_MS)
+        await settle()
+      }
+      expect(wrapper.get('[data-testid="plugin-badge"]').text()).toBe('live')
+
+      const done = siteReads()
+      vi.advanceTimersByTime(PLUGIN_FOLLOW_UP_INTERVAL_MS * 5)
+      await settle()
+      expect(siteReads()).toBe(done)
+    })
+
+    it('stops after the host\'s attempts when the value never becomes final', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+      api = await startPluginApi({
+        [`GET ${ROUTES_URL}/sites/7`]: { body: { status: 'publishing' } },
+        [`POST ${ROUTES_URL}/sites/7/publish`]: { status: 202 },
+      })
+      const wrapper = mountBlocks([watching])
+      await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
+      await settle()
+
+      for (let i = 0; i < PLUGIN_FOLLOW_UP_MAX_ATTEMPTS + 3; i += 1) {
+        vi.advanceTimersByTime(PLUGIN_FOLLOW_UP_INTERVAL_MS)
+        await settle()
+      }
+
+      expect(siteReads()).toBe(PLUGIN_FOLLOW_UP_MAX_ATTEMPTS)
+    })
+
+    it('reads nothing more once the page is left, and nothing at all after a refusal', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+      let refuse = false
+      api = await startPluginApi({
+        [`GET ${ROUTES_URL}/sites/7`]: { body: { status: 'publishing' } },
+        [`POST ${ROUTES_URL}/sites/7/publish`]: () => (refuse ? problem(409, 'Busy.') : { status: 202 }),
+      })
+      const left = mountBlocks([watching])
+      await left.get('[data-testid="plugin-action-button"]').trigger('click')
+      await settle()
+      vi.advanceTimersByTime(PLUGIN_FOLLOW_UP_INTERVAL_MS)
+      await settle()
+      expect(siteReads()).toBe(1)
+
+      left.unmount()
+      vi.advanceTimersByTime(PLUGIN_FOLLOW_UP_INTERVAL_MS * 5)
+      await settle()
+      expect(siteReads()).toBe(1)
+
+      refuse = true
+      const refused = mountBlocks([watching])
+      await refused.get('[data-testid="plugin-action-button"]').trigger('click')
+      await settle()
+      vi.advanceTimersByTime(PLUGIN_FOLLOW_UP_INTERVAL_MS * 3)
+      await settle()
+      expect(siteReads()).toBe(1)
+    })
   })
 })

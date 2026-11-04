@@ -29,6 +29,7 @@ import {
   MAX_PLUGIN_EVENT_CHARS,
   PLUGIN_STREAM_EVENT_TOO_LARGE,
   readPluginEventStream,
+  pluginConditionHolds,
   readPluginField,
 } from '~/utils/plugins'
 import { UiAlertVariant, UiButtonVariant, UiTone } from '~/utils/ui/enums'
@@ -170,6 +171,27 @@ describe('readPluginField and pluginLinkParams', () => {
     expect(pluginLinkParams({ page: 'site', params: { siteId: 'id' } }, {})).toBeNull()
     expect(pluginLinkParams({ page: 'site', params: { siteId: 'id' } }, { id: '' })).toBeNull()
     expect(pluginLinkParams({ page: 'sites' }, null)).toEqual({})
+  })
+})
+
+describe('pluginConditionHolds', () => {
+  /** The route every condition below reads. */
+  const route = { method: 'get', path: '/sites/{siteId}' }
+
+  it('holds when the field equals the one value or one of the list', () => {
+    expect(pluginConditionHolds({ route, field: 'site.status', equals: 'live' }, { site: { status: 'live' } })).toBe(true)
+    expect(pluginConditionHolds({ route, field: 'site.status', equals: ['ready', 'live'] }, { site: { status: 'ready' } })).toBe(true)
+    expect(pluginConditionHolds({ route, field: 'exists', equals: true }, { exists: true })).toBe(true)
+    expect(pluginConditionHolds({ route, field: 'site', equals: null }, { site: null })).toBe(true)
+  })
+
+  it('does not hold for another value, an absent field or a value of another type', () => {
+    expect(pluginConditionHolds({ route, field: 'site.status', equals: ['ready', 'live'] }, { site: { status: 'building' } })).toBe(false)
+    expect(pluginConditionHolds({ route, field: 'site.status', equals: null }, { site: {} })).toBe(false)
+    expect(pluginConditionHolds({ route, field: 'site.status', equals: null }, null)).toBe(false)
+    expect(pluginConditionHolds({ route, field: 'version', equals: '1' }, { version: 1 })).toBe(false)
+    expect(pluginConditionHolds({ route, field: 'version', equals: 1 }, { version: '1' })).toBe(false)
+    expect(pluginConditionHolds({ route, field: 'exists', equals: true }, { exists: 'true' })).toBe(false)
   })
 })
 

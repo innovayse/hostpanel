@@ -837,6 +837,18 @@ public static class HostpanelErrorCodes
     public const string PLUGIN_HOST_ACCESS_UNKNOWN = "PLUGIN_HOST_ACCESS_UNKNOWN";
 
     /// <summary>
+    /// A view document holds a visibility or follow-up condition that is not a GET route, a dotted field and one value
+    /// or a bounded list of values (400, the default arm: it is answered only by a plugin install).
+    /// </summary>
+    public const string PLUGIN_VIEW_CONDITION_INVALID = "PLUGIN_VIEW_CONDITION_INVALID";
+
+    /// <summary>
+    /// A view document holds a follow-up refresh that is malformed or names a block the document does not hold, or a
+    /// form reset flag that is not a boolean (400, the default arm: it is answered only by a plugin install).
+    /// </summary>
+    public const string PLUGIN_VIEW_FOLLOW_UP_INVALID = "PLUGIN_VIEW_FOLLOW_UP_INVALID";
+
+    /// <summary>
     /// One of the archive's entries would write outside the plugin's own directory (400). The
     /// zip-slip guard's refusal, named for what a caller can act on rather than the attack it
     /// blocks.

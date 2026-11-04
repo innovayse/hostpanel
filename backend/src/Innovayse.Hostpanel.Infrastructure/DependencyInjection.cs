@@ -911,6 +911,11 @@ public static class DependencyInjection
         services.AddSingleton<IPluginReferences>(new PluginReferences(encryptionKey));
         services.AddScoped<IPluginCallServices, HostPluginCallServices>();
 
+        // A streamed call owns a scope of its own, opened from the root container and disposed once its stream is over,
+        // because the use case's scope ends before the response reads the stream (#851). Singleton: it holds only the
+        // container's scope factory.
+        services.AddSingleton<IPluginCallScopeFactory, PluginCallScopeFactory>();
+
         // Hosted plugins start once the host is up and stop as it begins to stop, each failure kept to its plugin.
         // Registered in every environment: with no hosted plugin loaded it opens nothing and reads nothing.
         services.AddHostedService<HostedPluginRunner>();

@@ -6,7 +6,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest'
 import type { StubServer } from '~/tests/helpers/stubServer'
-import { mountBlocks, ROUTES_URL, startPluginApi, TEST_ROUTES } from '~/tests/helpers/mountPlugin'
+import { mountBlocks, problem, ROUTES_URL, startPluginApi, TEST_ROUTES } from '~/tests/helpers/mountPlugin'
 import { settle } from '~/tests/helpers/settle'
 import { PluginBlockKind } from '~/types/pluginblockkind'
 
@@ -48,5 +48,43 @@ describe('PluginHeaderBlock', () => {
     await settle()
 
     expect(wrapper.findAll('[data-testid="plugin-action-button"]').map(b => b.text())).toEqual(['Refresh'])
+  })
+})
+
+describe('PluginHeaderBlock action messages', () => {
+  it('shows an action\'s sentence once below the row, not under its button', async () => {
+    api = await startPluginApi({ [`POST ${ROUTES_URL}/sites/7/publish`]: { body: { message: 'Published.' } } })
+    const wrapper = mountBlocks([{
+      kind: PluginBlockKind.Header,
+      title: 'Site',
+      actions: [
+        { kind: PluginBlockKind.Action, label: 'Publish', route: TEST_ROUTES.publish },
+        { kind: PluginBlockKind.Action, label: 'Other', route: TEST_ROUTES.publish },
+      ],
+    }])
+
+    await wrapper.findAll('[data-testid="plugin-action-button"]')[0]!.trigger('click')
+    await settle()
+
+    const line = wrapper.get('[data-testid="plugin-header-message"]')
+    expect(line.text()).toBe('Published.')
+    expect(wrapper.get('[data-testid="plugin-header"]').find('[data-testid="plugin-header-message"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-action-message"]').exists()).toBe(false)
+  })
+
+  it('shows a refusal\'s sentence below the row in the danger tone', async () => {
+    api = await startPluginApi({ [`POST ${ROUTES_URL}/sites/7/publish`]: problem(409, 'The site is building.') })
+    const wrapper = mountBlocks([{
+      kind: PluginBlockKind.Header,
+      title: 'Site',
+      actions: [{ kind: PluginBlockKind.Action, label: 'Publish', route: TEST_ROUTES.publish }],
+    }])
+
+    await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
+    await settle()
+
+    const line = wrapper.get('[data-testid="plugin-header-message"]')
+    expect(line.text()).toBe('The site is building.')
+    expect(line.classes().join(' ')).toMatch(/danger|red/)
   })
 })

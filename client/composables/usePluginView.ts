@@ -265,3 +265,43 @@ export const usePluginFollowUp = (): ((followUp: PluginFollowUp | undefined) => 
     }, PLUGIN_FOLLOW_UP_INTERVAL_MS)
   }
 }
+
+/** The sentence an action answered with, as the place that shows it receives it. */
+export interface PluginActionMessage {
+  /** The sentence: the plugin's own on a success, the API's on a refusal. */
+  text: string
+  /** Whether the call failed, which decides the tone. */
+  failed: boolean
+}
+
+/**
+ * Where an action reports its sentence when something above it shows the sentences of a row of actions: the header
+ * draws one line under its whole action row, because a sentence drawn under one button grows that button's column
+ * and pulls the row out of line.
+ */
+export type PluginActionMessageOutlet = (message: PluginActionMessage) => void
+
+/** The injection key of the action message outlet. */
+const PLUGIN_ACTION_MESSAGE_KEY: InjectionKey<PluginActionMessageOutlet> = Symbol('plugin-action-message')
+
+/**
+ * Makes the calling component the place where the actions below it show their sentences.
+ *
+ * @returns The last sentence an action below reported; null until one has.
+ */
+export const providePluginActionMessages = (): Ref<PluginActionMessage | null> => {
+  const message = ref<PluginActionMessage | null>(null)
+  provide(PLUGIN_ACTION_MESSAGE_KEY, (next: PluginActionMessage) => {
+    message.value = next
+  })
+  return message
+}
+
+/**
+ * Reads the outlet an action reports its sentence to.
+ *
+ * @returns The outlet, or null when the action stands alone and shows its sentence itself.
+ */
+export const usePluginActionMessageOutlet = (): PluginActionMessageOutlet | null => {
+  return inject(PLUGIN_ACTION_MESSAGE_KEY, null)
+}

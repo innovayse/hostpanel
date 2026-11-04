@@ -10,7 +10,7 @@
     >
       {{ block.label }}
     </UiButton>
-    <UiText v-if="message" size="xs" :tone="failed ? 'danger' : 'success'" data-testid="plugin-action-message">{{ message }}</UiText>
+    <UiText v-if="message && !outlet" size="xs" :tone="failed ? 'danger' : 'success'" data-testid="plugin-action-message">{{ message }}</UiText>
     <UiConfirmDialog
       v-if="block.confirm"
       :open="confirming"
@@ -30,10 +30,11 @@
  * the sentence the plugin answered with (`message` of the reply), or the refusal's sentence from the store. A
  * `followUp` then keeps reading the named blocks until the work the call started has ended (`usePluginFollowUp`).
  *
- * Who may call the route is decided by the server on the call; a refusal is shown under the button like any
- * other failure.
+ * Who may call the route is decided by the server on the call; a refusal is shown like any other failure. A
+ * standalone action shows its sentence under its button; inside a header it hands the sentence to the header's
+ * outlet instead, so the sentence never grows one button's column and the row of buttons stays aligned.
  */
-import { usePluginFollowUp, usePluginView } from '~/composables/usePluginView'
+import { usePluginActionMessageOutlet, usePluginFollowUp, usePluginView } from '~/composables/usePluginView'
 import { usePluginsStore } from '~/stores/plugins'
 import type { PluginActionBlock } from '~/types/pluginblock'
 import { PluginBlockTone } from '~/types/pluginblocktone'
@@ -55,6 +56,8 @@ const context = usePluginView()
 const store = usePluginsStore()
 /** Starts the follow-up refresh; stopped when the block unmounts. */
 const followUp = usePluginFollowUp()
+/** The header's message line, when the action sits in one; null for a standalone action. */
+const outlet = usePluginActionMessageOutlet()
 
 /** Whether the confirmation is open. */
 const confirming = ref(false)
@@ -101,6 +104,7 @@ const run = async (): Promise<void> => {
   failed.value = !result.ok
   const answered = readPluginField(result.data, 'message')
   message.value = result.ok ? (typeof answered === 'string' ? answered : '') : result.error
+  outlet?.({ text: message.value, failed: failed.value })
   if (result.ok) {
     context.refresh(props.block.refresh ?? [])
     followUp(props.block.followUp)

@@ -1,7 +1,6 @@
 using System.Reflection;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
-using Innovayse.Hostpanel.Application.Admin.Integrations.Extensions;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Hostpanel.Sdk.Packaging.Naming;
@@ -231,8 +230,9 @@ public static class PluginLoader
                     Category: manifest.IntegrationsCategory ?? manifest.Category,
                     Type: manifest.Type,
                     Color: manifest.Color,
-                    FieldDefinitions: manifest.GetSettings()
-                        .Select(s => s.ToFieldDefinition())
+                    RequiredSettingKeys: manifest.GetSettings()
+                        .Where(s => s.Required)
+                        .Select(s => s.Key)
                         .ToList(),
                     IconUrl: icon.Icon is null ? null : PluginIconPaths.For(manifest.Id)));
 

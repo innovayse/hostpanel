@@ -66,15 +66,24 @@ public sealed class ServicesImporter : IMigrationEntityImporter
     }
 
     /// <summary>Imports one plugin-side service record, resolving its client and product first.</summary>
-    /// <param name="rec">The service record read from the source plugin.</param>
+    /// <param name="source">The service record read from the source plugin.</param>
     /// <param name="allProducts">Every product configured here, for matching the record's product name.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Whether the service was imported or skipped, and why when skipped.</returns>
     private async Task<RecordImportResult> ImportServiceAsync(
-        ServiceRecord rec,
+        ServiceRecord source,
         IReadOnlyList<Product> allProducts,
         CancellationToken ct)
     {
+        // The source id is the duplicate key and a unique, length limited column, so it is trimmed first (a stray space
+        // would make the same service look new) and a value the column cannot hold is skipped, not cut or failed on.
+        var externalId = string.IsNullOrWhiteSpace(source.ExternalId) ? null : source.ExternalId.Trim();
+        if (externalId is { Length: > ClientService.MaxExternalIdLength })
+        {
+            return RecordImportResult.Skipped(MigrationSkipReason.ExternalIdInvalid);
+        }
+
+        var rec = source with { ExternalId = externalId };
         var clientId = await _clientResolver.ResolveClientIdAsync(rec.ClientEmail, ct);
         if (clientId is null)
         {

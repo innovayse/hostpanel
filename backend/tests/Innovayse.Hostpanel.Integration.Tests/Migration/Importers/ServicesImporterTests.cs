@@ -21,6 +21,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration.Importers;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class ServicesImporterTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The id of the last job <see cref="ImportBySourceIdAsync"/> ran, for reading the skip reasons it logged.</summary>
+    private int _lastJobId;
+
     /// <summary>A service for a known client and an existing product is imported.</summary>
     [Fact]
     public async Task RunAsync_Services_ImportsAServiceForAKnownClientAsync()
@@ -253,6 +256,43 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
         Assert.Equal(new[] { $"a{tag}", $"b{tag}" }, services.Select(s => s.ExternalId).Order().ToArray());
     }
 
+    /// <summary>
+    /// A source id is trimmed before it is kept and matched, so the same id repeated in one file with stray spaces is
+    /// imported once and the repeat is skipped as already existing.
+    /// </summary>
+    [Fact]
+    public async Task RunAsync_Services_TrimsTheSourceIdAndSkipsARepeatInTheSameFileAsync()
+    {
+        var tag = Guid.NewGuid().ToString("N")[..12];
+        var services = await ImportBySourceIdAsync(
+            tag, 1, null,
+            $$"""{"ExternalId":"  s{{tag}}","Domain":null,"Username":"first{{tag}}"}""",
+            $$"""{"ExternalId":"s{{tag}}  ","Domain":null,"Username":"second{{tag}}"}""");
+
+        var service = Assert.Single(services);
+        Assert.Equal($"s{tag}", service.ExternalId);
+        await using var scope = factory.Services.CreateAsyncScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var skipped = await context.MigrationLogs.AsNoTracking().Where(l => l.JobId == _lastJobId && l.SkipReason != null).ToListAsync();
+        Assert.Equal(MigrationSkipReason.AlreadyExists, Assert.Single(skipped).SkipReason);
+    }
+
+    /// <summary>A source id longer than the column that keeps it is skipped with its own reason and nothing is imported.</summary>
+    [Fact]
+    public async Task RunAsync_Services_SkipsASourceIdLongerThanTheColumnAsync()
+    {
+        var tag = Guid.NewGuid().ToString("N")[..12];
+        var tooLong = new string('x', ClientService.MaxExternalIdLength + 1);
+        var services = await ImportBySourceIdAsync(
+            tag, 1, null, $$"""{"ExternalId":"{{tooLong}}","Domain":null,"Username":"u{{tag}}"}""");
+
+        Assert.Empty(services);
+        await using var scope = factory.Services.CreateAsyncScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var log = await context.MigrationLogs.AsNoTracking().SingleAsync(l => l.JobId == _lastJobId);
+        Assert.Equal(MigrationSkipReason.ExternalIdInvalid, log.SkipReason);
+    }
+
     /// <summary>A row imported before source ids were kept (no id) is still matched by domain, and is not imported again.</summary>
     [Fact]
     public async Task RunAsync_Services_MatchesALegacyRowWithoutASourceIdByDomainAsync()
@@ -309,6 +349,7 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
         {
             var job = await MigrationTestSeeds.SeedJobSelectingOnlyAsync(context, MigrationEntityType.Services);
             await worker.RunAsync(job.Id, CancellationToken.None);
+            _lastJobId = job.Id;
         }
 
         return await context.ClientServices.AsNoTracking().Where(s => s.ClientId == clientId).ToListAsync();

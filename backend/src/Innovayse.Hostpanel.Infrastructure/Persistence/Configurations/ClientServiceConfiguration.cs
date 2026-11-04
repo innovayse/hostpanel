@@ -10,9 +10,6 @@ namespace Innovayse.Hostpanel.Infrastructure.Persistence.Configurations;
 /// <summary>EF Core table and column configuration for <see cref="ClientService"/>.</summary>
 public sealed class ClientServiceConfiguration : IEntityTypeConfiguration<ClientService>
 {
-    /// <summary>Column width for the source system's service id.</summary>
-    private const int ExternalIdLength = 100;
-
     /// <inheritdoc/>
     public void Configure(EntityTypeBuilder<ClientService> builder)
     {
@@ -57,7 +54,7 @@ public sealed class ClientServiceConfiguration : IEntityTypeConfiguration<Client
         builder.Property(x => x.PaymentMethod).HasMaxLength(50);
         builder.Property(x => x.PromotionCode).HasMaxLength(50);
         builder.Property(x => x.SubscriptionId).HasMaxLength(256);
-        builder.Property(x => x.ExternalId).HasMaxLength(ExternalIdLength);
+        builder.Property(x => x.ExternalId).HasMaxLength(ClientService.MaxExternalIdLength);
         builder.Property(x => x.AutoTerminateReason).HasMaxLength(2000);
         builder.Property(x => x.AdminNotes).HasMaxLength(2000);
 

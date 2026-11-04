@@ -315,6 +315,22 @@ public static class BillingTestSeeds
         await context.SaveChangesAsync(CancellationToken.None);
     }
 
+    /// <summary>Writes a stored card charge claim for an invoice that is held for an operator: the gateway took the money.</summary>
+    /// <param name="host">The host whose database the invoice lives in.</param>
+    /// <param name="invoiceId">The invoice.</param>
+    /// <param name="clientId">The invoice's client.</param>
+    /// <returns>A task that completes once the claim is saved.</returns>
+    public static async Task SeedHeldClaimAsync(WebApplicationFactory<Program> host, int invoiceId, int clientId)
+    {
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var now = DateTimeOffset.UtcNow;
+        var claim = InvoicePaymentClaim.Open(invoiceId, clientId, "seed-gateway", "seed-method", $"seed-{Guid.NewGuid():N}", 1000, "USD", now);
+        claim.MarkHeld("held-tx", now);
+        context.InvoicePaymentClaims.Add(claim);
+        await context.SaveChangesAsync(CancellationToken.None);
+    }
+
     /// <summary>Reads a client's credit balance from the host's database.</summary>
     /// <param name="host">The host whose database the client lives in.</param>
     /// <param name="clientId">The client.</param>

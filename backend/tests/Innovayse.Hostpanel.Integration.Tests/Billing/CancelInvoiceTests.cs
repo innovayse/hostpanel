@@ -53,6 +53,25 @@ public sealed class CancelInvoiceTests(IntegrationTestFactory factory) : IClassF
         body.RootElement.GetProperty("status").GetString().Should().NotBe(nameof(InvoiceStatus.Cancelled));
     }
 
+    /// <summary>
+    /// An invoice with a charge held for an operator can be cancelled: cancelling is one way the operator settles it.
+    /// </summary>
+    [Fact]
+    public async Task CancellingAnInvoiceWithAHeldStoredChargeIsAllowed()
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
+        var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
+        await BillingTestSeeds.SeedHeldClaimAsync(factory, invoiceId, clientId);
+
+        var response = await admin.PostAsync($"/api/billing/{invoiceId}/cancel", content: null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var fetched = await admin.GetAsync($"/api/billing/{invoiceId}");
+        using var body = JsonDocument.Parse(await fetched.Content.ReadAsStringAsync());
+        body.RootElement.GetProperty("status").GetString().Should().Be(nameof(InvoiceStatus.Cancelled));
+    }
+
     /// <summary>Cancelling a paid invoice is refused with a 400.</summary>
     [Fact]
     public async Task CancellingAPaidInvoiceRefusesBadRequest()

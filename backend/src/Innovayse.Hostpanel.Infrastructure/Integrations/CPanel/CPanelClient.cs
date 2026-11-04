@@ -247,7 +247,9 @@ public sealed class CPanelClient
     /// <param name="account">The account entry from <c>accountsummary</c>.</param>
     /// <returns><see langword="true"/> when WHM marks the account suspended; an absent flag is <see langword="false"/>.</returns>
     private static bool IsSuspended(JsonElement account) =>
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
         account.TryGetProperty("suspended", out var flag) && HostingPanelApiReader.IsFlagSet(flag);
+#pragma warning restore CS0618
 
     /// <summary>
     /// Calls a WHM JSON API v1 function and returns the parsed <see cref="JsonDocument"/>, which

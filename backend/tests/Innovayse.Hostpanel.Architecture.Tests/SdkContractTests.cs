@@ -550,6 +550,7 @@ public sealed class SdkContractTests
             .Select(type => type.FullName).Should().BeEmpty("group each type in an area folder");
     }
 
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
     /// <summary>The 2.0.0 move: each released type is in its new namespace.</summary>
     /// <param name="type">The type under inspection.</param>
     /// <param name="expected">The namespace it must be in.</param>
@@ -585,7 +586,9 @@ public sealed class SdkContractTests
     {
         type.Namespace.Should().Be(expected);
     }
+#pragma warning restore CS0618
 
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
     /// <summary>
     /// The payment, slot, lifecycle and hosting panel records keep the members plugins compile against, so a
     /// rename of a positional record member is a red build.
@@ -606,6 +609,7 @@ public sealed class SdkContractTests
         typeof(HostingPanelV7ServerInfo).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("PackagesCount");
         typeof(FulfilmentLine).GetProperty("BillingCycle")!.PropertyType.Should().Be(typeof(PluginBillingCycle?));
     }
+#pragma warning restore CS0618
 
     /// <summary>
     /// <see cref="GatewayPaymentState"/> was released with implicit numbers, so 0, 1 and 2 are a contract a
@@ -662,6 +666,7 @@ public sealed class SdkContractTests
             .Fields.Should().BeEmpty();
     }
 
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
     /// <summary>A panel address is HTTPS on the given port, and an IPv6 literal is bracketed so its colons are not read as the port.</summary>
     /// <param name="host">The host handed to the builder.</param>
     /// <param name="expected">The base URL it must build.</param>
@@ -676,7 +681,9 @@ public sealed class SdkContractTests
         new HostingPanelConnection(host, 2304, "key").BaseUrl.Should().Be(expected);
         new Uri(expected).Port.Should().Be(2304);
     }
+#pragma warning restore CS0618
 
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
     /// <summary>A panel address needs a host: a null, empty or blank one is refused instead of building a URL without a server.</summary>
     [Fact]
     public void HostingPanelAddress_RefusesAMissingHost()
@@ -685,7 +692,9 @@ public sealed class SdkContractTests
         FluentActions.Invoking(() => HostingPanelAddress.BaseUrl(string.Empty, 2304)).Should().Throw<ArgumentException>();
         FluentActions.Invoking(() => HostingPanelAddress.BaseUrl("  ", 2304)).Should().Throw<ArgumentException>();
     }
+#pragma warning restore CS0618
 
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
     /// <summary>The account envelope is a sealed record with init-only members: nothing can change it after it is read.</summary>
     [Fact]
     public void HostingPanelApiWire_IsAnImmutableRecord()
@@ -698,6 +707,7 @@ public sealed class SdkContractTests
         HostingPanelApiWire.Failure("x").IsSuccess.Should().BeFalse();
         new HostingPanelApiWire { Status = HostingPanelApiWire.OkStatus }.IsSuccess.Should().BeTrue();
     }
+#pragma warning restore CS0618
 
     /// <summary>
     /// A base class refuses a missing id, configuration or logger when it is built and a missing key when it reads, and

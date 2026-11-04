@@ -17,7 +17,7 @@ products, billing, provisioning and integrations. A public demo
 is the same build with `Demo__Enabled=true` (`deploy:demo`); its sign-in page shows the demo accounts,
 served by `GET /api/public/demo` — they are not written in `README.md`.
 
-**This is a public, separately licensed repository.** AGPL-3.0-or-later, except the plugin SDK (`backend/src/Hostpanel.Sdk`), which is MIT (its own `LICENSE`, packed into the package) so a plugin may be free or paid, open or closed; `SdkPackageTests` pins the package metadata. The SDK lives in its own public repository, **github.com/innovayse/hostpanel-sdk**, and is a git submodule at that same path (`.gitmodules`): clone with `--recurse-submodules` (or run `git submodule update --init` after a plain clone), and an SDK change lands as a pull request there first, then as a submodule bump here. `origin` is **github.com/innovayse/hostpanel**, not GitLab. Anything written here
+**This is a public, separately licensed repository.** AGPL-3.0-or-later, except the plugin SDK (`backend/src/Hostpanel.Sdk`), which is MIT (its own `LICENSE`, packed into the package) so a plugin may be free or paid, open or closed; `SdkPackageTests` pins the package metadata. The SDK lives in its own public repository, **github.com/innovayse/hostpanel-sdk**, and is a git submodule at that same path (`.gitmodules`): clone with `--recurse-submodules` (or run `git submodule update --init` after a plain clone), and an SDK change lands as a pull request there first, then as a submodule bump here. `origin` is **github.com/innovayse/hostpanel**. Anything written here
 is read by people who have never seen the rest of the workspace, and the repo must build from
 a clone of itself alone (with its submodule) — that is why `Innovayse.Auth` is consumed as an optional package (only in an
 `InnovayseSso=true` build, see `backend/Directory.Build.props`) rather than a project reference, and why `backend/nuget.config` restricts `auditSources` to nuget.org.
@@ -180,6 +180,29 @@ docker/                              compose set (shared·dev·prod·platform), 
   the provider's own text never reaches the response. `NameAmClient` reads the e-mail, password,
   API URL and test mode saved on the admin Integrations page over the bound options
   (`IsConfiguredAsync`), so the page configures what requests use.
+- **Plugin integrations on the Integrations page (#854, #855, #856).** A plugin's form texts are resolved per request:
+  `IntegrationFields.Resolve` maps each `GetSettings()` entry with `ToFieldDefinition(PluginUiTexts)`, so the label, the
+  help text (`description`), the `placeholder` and every select option label (`optionLabels`, keyed by the stored value;
+  `options` stays the values) come in the admin's `X-Language` from the plugin's locales, English where a locale lacks the
+  key, else the text as written. Nothing is resolved at load: the loader's `PluginIntegrationEntry` carries only the
+  `RequiredSettingKeys` the list needs. A plugin is tested and shown connected through the SDK's optional `IPluginStatus`
+  only: the port `IPluginStatusProbe` (`Infrastructure/Plugins/PluginStatusProbe`) checks the implementation type without
+  running plugin code (`Supports`), then goes through `PluginActivator.PrepareAsync<IPluginStatus>` (switched on, configured,
+  no pending migration; otherwise `Inactive`, the plugin is not called) and waits at most `PluginApi:StatusTimeoutSeconds`
+  (default 5, 1 to 60): the token fires and the host stops waiting at the same moment, even for a plugin that ignores it.
+  It fails closed: a throw, a null report or an undefined health is `Failed`, no answer in time is `TimedOut`, both logged by
+  plugin id and exception type only (never the message); the plugin's `Detail` is trimmed and cut to 500 characters.
+  `PluginConnectionReader` (Application, the one reader) caches the language-neutral result per plugin
+  (`PluginStatusCacheKeys`, `PluginApi:StatusCacheSeconds`, default 300, like the hosting panel's server info), and words it
+  per read: the plugin's own `Detail` through its locales (`PluginText`) when it reported, else the host's sentence by code
+  (`PLUGIN_STATUS_HEALTHY`, `_DEGRADED`, `_REPORTED_DOWN`, `_INACTIVE`, `_TIMED_OUT`, `_FAILED`, sentences in
+  `ErrorMessages` en/ru/hy; they are answer sentences, never refusals). The list (`IntegrationListItemDto.Connection`, only
+  for a switched-on plugin) and the detail (`Connection`) read the cache; Test Connection (`TestIntegrationConnectionHandler`,
+  for a slug that is not a built-in) asks now and replaces the cache entry, answering success for `Connected` and
+  `Degraded`; a save of the integration drops the entry. `IntegrationDetailDto.CanTestConnection` is true for a built-in the
+  test knows and for a plugin that implements `IPluginStatus`; the admin hides Test Connection otherwise, and the route
+  answers 400 `INTEGRATION_NOT_TESTABLE` for such a plugin. The admin card and the status sidebar show the state
+  (`integrations.connectionState.*`, tone from `lib/tones.ts`) with the API's sentence.
 - **Enums live in `Enums/` namespaces** (`Domain/<Area>/Enums/`, `SharedKernel/Domain/Enums/`,
   `Infrastructure/Email/Enums/`); `EnumPlacementTests` enforces it.
 - **Domain refusals are `DomainException(code, message)`** (abstract, in the kernel); the exception
@@ -356,7 +379,8 @@ docker/                              compose set (shared·dev·prod·platform), 
   (`PluginManifestReader.Deserialize`, the plugin does not load), and anywhere an undefined settings kind still
   reaches the classifier it counts as secret: an unknown type never reads as plain text. A `null` `settings`
   or `fields` list reads as empty, as in the SDK. The wire
-  shape of a field definition (`FieldDefinitionDto`) is unchanged; a select carries the values of its options.
+  shape of a field definition (`FieldDefinitionDto`) keeps its members; a select carries the values of its options, and a
+  plugin setting adds its translated `description`, `placeholder` and `optionLabels` (#854).
 - **Two plugin folders: built-in and uploaded (`PluginOptions`, section `Plugins`).** The build's own
   `plugins/` folder (`PluginOptions.BuiltInRoot`) holds the plugins shipped with the build; they load
   first, are listed with `isBuiltIn: true`, and cannot be removed or replaced from the admin panel
@@ -1466,6 +1490,8 @@ backend on the shared network, and Docker's DNS round-robins between the two.
 
 All are `*.sh`, which `.gitattributes` (`*.sh text eol=lf`) pins to LF: the ssh pipe above fails with
 "Illegal option" on a CRLF copy.
+
+A Held stored charge claim (the gateway took money the invoice could not record) is resolved by an operator through a manual payment or by cancelling the invoice; only a hosted payment start and an automatic charge treat it as blocking.
 
 ## CI is on GitLab. Pull requests are on GitHub. Both halves are load-bearing.
 

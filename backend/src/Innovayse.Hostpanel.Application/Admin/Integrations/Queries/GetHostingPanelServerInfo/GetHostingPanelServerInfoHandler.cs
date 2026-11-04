@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Innovayse.Hostpanel.Application.Admin.Integrations.Queries.GetHostingPanelServerInfo;
 
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
 /// <summary>Handles <see cref="GetHostingPanelServerInfoQuery"/>: fetches live hosting panel server status, cached for 5 minutes.</summary>
 public sealed class GetHostingPanelServerInfoHandler
 {
@@ -124,3 +125,4 @@ public sealed class GetHostingPanelServerInfoHandler
         }
     }
 }
+#pragma warning restore CS0618

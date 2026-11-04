@@ -56,15 +56,7 @@ public sealed class AddInvoicePaymentTests(IntegrationTestFactory factory) : ICl
         var admin = await BillingTestSeeds.AdminClientAsync(factory);
         var clientId = await BillingTestSeeds.SeedClientAsync(factory);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 19.99m);
-        using (var scope = factory.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            var now = DateTimeOffset.UtcNow;
-            var claim = InvoicePaymentClaim.Open(invoiceId, clientId, "seed-gateway", "seed-method", $"seed-{Guid.NewGuid():N}", 1999, "USD", now);
-            claim.MarkHeld("held-tx", now);
-            db.InvoicePaymentClaims.Add(claim);
-            await db.SaveChangesAsync(CancellationToken.None);
-        }
+        await BillingTestSeeds.SeedHeldClaimAsync(factory, invoiceId, clientId);
 
         var response = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/payment", new
         {

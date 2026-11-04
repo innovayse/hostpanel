@@ -121,7 +121,7 @@ public sealed class MyBillingController : BaseApiController
     /// <returns>
     /// 200 OK with the redirect URL; 401 without a session; 404 with <c>INVOICE_NOT_FOUND</c> when it is not the caller's,
     /// or <c>CURRENCY_NOT_FOUND</c>; 400 with <c>INVOICE_NOT_PAYABLE</c>, <c>RETURN_URL_NOT_ALLOWED</c> or
-    /// <c>GATEWAY_CURRENCY_MISMATCH</c>; 409 with <c>GATEWAY_SESSION_ALREADY_STARTED</c>; 503 with
+    /// <c>GATEWAY_CURRENCY_MISMATCH</c>; 409 with <c>GATEWAY_SESSION_ALREADY_STARTED</c>, <c>INVOICE_STORED_CHARGE_UNRESOLVED</c> or <c>INVOICE_STORED_CHARGE_HELD</c>; 503 with
     /// <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c>, or with <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when the
     /// gateway fails to register the payment; 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user
     /// lacks <c>ViewPayInvoices</c>, or with <c>CLIENT_SUSPENDED</c>, <c>CLIENT_CLOSED</c> or

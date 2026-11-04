@@ -29,10 +29,10 @@
 
   <!-- ASP.NET Core & Identity -->
   <ItemGroup>
-    <PackageVersion Include="Innovayse.Auth" Version="5.1.0" />
+    <PackageVersion Include="Innovayse.Auth" Version="5.2.0" />
     <PackageVersion Include="DnsClient" Version="1.8.0" />
     <!--
-      9.0.21 rather than the 9.0.1 the other ASP.NET packages here carry: Innovayse.Auth 5.1.0
+      9.0.21 rather than the 9.0.1 the other ASP.NET packages here carry: Innovayse.Auth 5.2.0
       declares JwtBearer 9.0.21, and central package management turns the resulting
       downgrade into NU1605, which TreatWarningsAsErrors makes a restore failure.
     -->

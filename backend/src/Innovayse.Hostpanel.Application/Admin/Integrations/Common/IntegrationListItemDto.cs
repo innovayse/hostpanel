@@ -16,6 +16,10 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 /// built-in integration. The admin groups fulfilment, identity and hosted plugins by it, since no built-in
 /// category holds them.
 /// </param>
+/// <param name="Connection">
+/// The last known connection state of a plugin that implements <c>IPluginStatus</c> and is switched on, cached for
+/// <c>PluginApi:StatusCacheSeconds</c>; <see langword="null"/> for a built-in integration and for any other plugin.
+/// </param>
 /// <param name="IconUrl">
 /// Path of the admin icon endpoint (<c>/api/admin/plugins/{id}/icon</c>) for a plugin entry that ships an icon;
 /// <see langword="null"/> for a built-in integration and for a plugin without an icon.
@@ -28,4 +32,5 @@ public sealed record IntegrationListItemDto(
     bool IsConfigured,
     bool IsPlugin = false,
     PluginType? PluginType = null,
+    IntegrationConnectionDto? Connection = null,
     string? IconUrl = null);

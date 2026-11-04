@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PluginCard from '@/components/plugins/PluginCard.vue'
-import { PluginStatus } from '@/types/plugin'
+import { PluginCapability, PluginStatus } from '@/types/plugin'
 import type { PluginListItemDto } from '@/types/plugin'
 import { createTestI18n } from '../../helpers/i18n'
 
@@ -133,15 +133,15 @@ describe('PluginCard', () => {
   })
 
   it('shows a badge per declared capability', () => {
-    const wrapper = mountCard({ plugin: { ...plugin, type: 'fulfilment', capabilities: ['endpoints'] } })
+    const wrapper = mountCard({ plugin: { ...plugin, type: 'fulfilment', capabilities: [PluginCapability.Endpoints] } })
 
-    expect(wrapper.get('[data-testid="plugin-capability-ineco-endpoints"]').text()).toBe('Serves pages')
+    expect(wrapper.get('[data-testid="plugin-capability-example-pay-endpoints"]').text()).toBe('Serves pages')
   })
 
   it('shows no capability badge when none is declared', () => {
     const wrapper = mountCard()
 
-    expect(wrapper.find('[data-testid^="plugin-capability-ineco"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid^="plugin-capability-example-pay"]').exists()).toBe(false)
   })
 
   it('disables the remove button while removing', () => {

@@ -271,6 +271,7 @@ public sealed class Cwp7ProvisioningProviderTests : IAsyncLifetime
         credentials.ServerIp.Should().Be("203.0.113.10");
     }
 
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
     /// <summary>The package-list probe reports an error page as a failure, not a JSON crash.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
@@ -286,4 +287,5 @@ public sealed class Cwp7ProvisioningProviderTests : IAsyncLifetime
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
+#pragma warning restore CS0618
 }

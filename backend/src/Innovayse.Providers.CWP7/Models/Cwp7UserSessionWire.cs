@@ -3,6 +3,7 @@ using Hostpanel.Sdk.Plugins.HostingPanel;
 
 namespace Innovayse.Providers.CWP7.Models;
 
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
 /// <summary>Parsed response from the CWP7 <c>/v1/user_session</c> list action.</summary>
 /// <remarks>
 /// Its own model rather than <see cref="HostingPanelApiWire"/>: this endpoint answers with an object
@@ -19,3 +20,4 @@ internal sealed class Cwp7UserSessionWire
     [JsonPropertyName("msj")]
     public Cwp7UserSessionPayload? Payload { get; init; }
 }
+#pragma warning restore CS0618

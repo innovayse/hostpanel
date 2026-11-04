@@ -209,7 +209,7 @@ public sealed class OrdersController : BaseApiController
     /// 403 with <c>CLIENT_SUSPENDED</c>, <c>CLIENT_CLOSED</c> or <c>CLIENT_CARD_PAYMENT_DISABLED</c> when the order's account may not pay;
     /// 404 with <c>ORDER_NOT_FOUND</c> when the id and token do not match an order,
     /// <c>INVOICE_NOT_FOUND</c> or <c>CURRENCY_NOT_FOUND</c>; 409 with
-    /// <c>GATEWAY_SESSION_ALREADY_STARTED</c>; 503 with <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c> when the
+    /// <c>GATEWAY_SESSION_ALREADY_STARTED</c>, <c>INVOICE_STORED_CHARGE_UNRESOLVED</c> or <c>INVOICE_STORED_CHARGE_HELD</c>; 503 with <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c> when the
     /// payment module is not set up;
     /// 429 when the rate limit is hit.
     /// </returns>

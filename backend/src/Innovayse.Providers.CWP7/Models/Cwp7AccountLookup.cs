@@ -35,7 +35,9 @@ internal sealed record Cwp7AccountLookup(Cwp7LookupOutcome Outcome, Cwp7AccountD
             if (root.ValueKind is not JsonValueKind.Object
                 || !root.TryGetProperty("status", out var status)
                 || status.ValueKind is not JsonValueKind.String
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
                 || !string.Equals(status.GetString(), HostingPanelApiWire.OkStatus, StringComparison.OrdinalIgnoreCase)
+#pragma warning restore CS0618
                 || !root.TryGetProperty("msj", out var payload))
             {
                 return Unknown;
@@ -66,7 +68,9 @@ internal sealed record Cwp7AccountLookup(Cwp7LookupOutcome Outcome, Cwp7AccountD
             return NotFound;
         }
 
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
         var suspended = entry.TryGetProperty("suspended", out var flag) && HostingPanelApiReader.IsFlagSet(flag);
+#pragma warning restore CS0618
         return new Cwp7AccountLookup(
             Cwp7LookupOutcome.Found,
             new Cwp7AccountDetail(user!, ReadString(entry, "domain") ?? string.Empty, suspended));

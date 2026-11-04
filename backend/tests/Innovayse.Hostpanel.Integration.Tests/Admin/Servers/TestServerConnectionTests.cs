@@ -19,6 +19,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Servers;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class TestServerConnectionTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
     /// <summary>
     /// A successful probe answers 200 with the provider's reported account count, and persists the
     /// server as online.
@@ -44,7 +45,9 @@ public sealed class TestServerConnectionTests(IntegrationTestFactory factory) : 
         body.GetProperty("connected").GetBoolean().Should().BeTrue();
         body.GetProperty("accountsCount").GetInt32().Should().Be(11);
     }
+#pragma warning restore CS0618
 
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
     /// <summary>
     /// A failed probe still answers 200 (the diagnostic result is the answer the caller asked
     /// for) and never puts the provider's own exception text on the wire.
@@ -74,7 +77,9 @@ public sealed class TestServerConnectionTests(IntegrationTestFactory factory) : 
         doc.RootElement.GetProperty("errorMessage").GetString()
             .Should().Be("Could not reach the server. See the server log for detail.");
     }
+#pragma warning restore CS0618
 
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
     /// <summary>A failed probe words its reason in the language the request asked for, not in English only.</summary>
     [Fact]
     public async Task WhenProviderFails_WordsTheReasonInTheRequestLanguageAsync()
@@ -97,6 +102,7 @@ public sealed class TestServerConnectionTests(IntegrationTestFactory factory) : 
         body.GetProperty("errorMessage").GetString()
             .Should().Be("Не удалось связаться с сервером. Подробности в журнале сервера.");
     }
+#pragma warning restore CS0618
 
     /// <summary>
     /// A server whose host is the cloud metadata address is never dialled: the outbound guard

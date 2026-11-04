@@ -2,6 +2,7 @@ using Hostpanel.Sdk.Plugins.HostingPanel;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
 /// <summary>
 /// A configurable <see cref="IHostingPanelApiClient"/> standing in for the real hosting panel control-panel API a
 /// test must not call over the network. Succeeds with fixed values by default; setting
@@ -35,3 +36,4 @@ public sealed class FakeHostingPanelApiClient : IHostingPanelApiClient
         return Task.FromResult(new HostingPanelServerInfo(AccountsCount, Version));
     }
 }
+#pragma warning restore CS0618

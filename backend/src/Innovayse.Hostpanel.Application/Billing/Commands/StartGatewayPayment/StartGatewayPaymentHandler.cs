@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Billing.Common;
+using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
@@ -84,7 +85,8 @@ public sealed class StartGatewayPaymentHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The gateway redirect URL for the payer's browser, or one of: <c>INVOICE_NOT_FOUND</c>,
-    /// <c>INVOICE_NOT_PAYABLE</c>, <c>CLIENT_SUSPENDED</c>, <c>CLIENT_CLOSED</c>, <c>RETURN_URL_NOT_ALLOWED</c>,
+    /// <c>INVOICE_NOT_PAYABLE</c>, <c>INVOICE_STORED_CHARGE_UNRESOLVED</c> or <c>INVOICE_STORED_CHARGE_HELD</c> when a
+    /// stored card charge claim of the invoice blocks it, <c>CLIENT_SUSPENDED</c>, <c>CLIENT_CLOSED</c>, <c>RETURN_URL_NOT_ALLOWED</c>,
     /// <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c>, <c>GATEWAY_SESSION_ALREADY_STARTED</c>,
     /// <c>CURRENCY_NOT_FOUND</c>, <c>GATEWAY_CURRENCY_MISMATCH</c> or
     /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when the plugin fails to register the payment.
@@ -106,6 +108,14 @@ public sealed class StartGatewayPaymentHandler
         if (!invoice.IsPayable)
         {
             return Result<RedirectDto>.FailureCode(HostpanelErrorCodes.INVOICE_NOT_PAYABLE);
+        }
+
+        // A stored charge claim (in flight, or held for an operator) owns the invoice: a hosted session beside it
+        // could take the money a second time.
+        var blockedBy = await _context.InvoicePaymentClaims.BlockingClaimErrorAsync(invoice.Id, ct);
+        if (blockedBy is not null)
+        {
+            return Result<RedirectDto>.FailureCode(blockedBy);
         }
 
         // A suspended or closed account opens no new gateway session.

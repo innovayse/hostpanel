@@ -655,12 +655,14 @@ public static class DependencyInjection
         // re-reading a consumed request body, and guessing wrong re-creates a hosting account.
         // The breaker is off because the server is a per-call argument rather than a base
         // address, so one dead node would open it for every healthy one.
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
         services.AddHttpClient<IHostingPanelApiClient, CwpApiClient>(client =>
         {
             client.Timeout = HttpBackstopTimeouts.Cwp;
         })
             .AddOutboundAddressGuard()
             .AddNoRetryResilience(o => o.Cwp);
+#pragma warning restore CS0618
         // Named twin of the typed registration above, for the same reason the CWP7 pair exists:
         // CwpProvisioningProvider builds its own CwpApiClient (the interface exposes only the
         // server-info call) and resolves this client by name. That keeps the
@@ -682,12 +684,14 @@ public static class DependencyInjection
         })
             .AddOutboundAddressGuard()
             .AddNoRetryResilience(o => o.Cwp7);
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
         services.AddHttpClient<IHostingPanelV7ApiClient, Cwp7ApiClient>(client =>
         {
             client.Timeout = HttpBackstopTimeouts.Cwp7;
         })
             .AddOutboundAddressGuard()
             .AddNoRetryResilience(o => o.Cwp7);
+#pragma warning restore CS0618
 
         // Plesk XML API client, named only: the provider factory and the connection tester both
         // build a PleskApiClient over it per server, so one registration covers both paths.
@@ -881,6 +885,9 @@ public static class DependencyInjection
         // them for as long as its request runs.
         services.AddScoped<IPluginEndpointResolver, PluginEndpointResolver>();
         services.AddScoped<IPluginUiSource, PluginUiSource>();
+
+        // A plugin's IPluginStatus, through the same activation gates, bounded by PluginApi:StatusTimeoutSeconds.
+        services.AddScoped<IPluginStatusProbe, PluginStatusProbe>();
 
         // The panels' plugin availability, computed for every plugin in one pass and remembered for a few seconds, so an
         // index request is not one settings read per plugin and a page lookup costs the same for any id. Singletons: one

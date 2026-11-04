@@ -17,6 +17,7 @@ export const bankTransfer: IntegrationDto = {
   isPlugin: false,
   pluginType: null,
   iconUrl: null,
+  connection: null,
 }
 
 /** The same integration with the fields its configuration form renders. */
@@ -36,6 +37,8 @@ export const bankTransferDetail: IntegrationDetailDto = {
     { key: 'webhookUrl', label: 'Webhook URL', type: IntegrationFieldType.Url, required: false },
     { key: 'timeoutSeconds', label: 'Timeout (seconds)', type: IntegrationFieldType.Number, required: false, min: 1, max: 60 },
   ],
+  canTestConnection: true,
+  connection: null,
 }
 
 /** An installed, loaded provisioning plugin. */

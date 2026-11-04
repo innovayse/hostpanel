@@ -75,16 +75,16 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     public async Task SaveWithNewSecret_ReplacesTheStoredSecretAsync()
     {
         var client = await IntegrationsTestSeeds.AdminClientAsync(factory);
-        await SecretSettingTestSeeds.StoreAsync(factory, "integration:enom:api_key", "old-gateway-key");
+        await SecretSettingTestSeeds.StoreAsync(factory, "integration:namecheap:api_key", "old-gateway-key");
 
-        var save = await client.PutAsJsonAsync("/api/admin/integrations/smtp", new
+        var save = await client.PutAsJsonAsync("/api/admin/integrations/namecheap", new
         {
             isEnabled = false,
-            config = new Dictionary<string, string> { ["client_secret"] = "new-gateway-key" },
+            config = new Dictionary<string, string> { ["api_key"] = "new-gateway-key" },
         });
 
         save.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        (await SecretSettingTestSeeds.ReadAsync(factory, "integration:enom:api_key")).Should().Be("new-gateway-key");
+        (await SecretSettingTestSeeds.ReadAsync(factory, "integration:namecheap:api_key")).Should().Be("new-gateway-key");
     }
 
     /// <summary>An explicit clear removes the stored secret, and the detail then reports it as not set.</summary>

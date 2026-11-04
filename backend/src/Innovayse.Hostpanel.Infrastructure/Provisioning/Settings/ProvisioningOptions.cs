@@ -33,11 +33,13 @@ public sealed class ProvisioningOptions
     /// </summary>
     public bool UseFakeProvider { get; set; }
 
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
     /// <summary>
     /// The port every CWP7 server answers its REST API on. Servers carry no port of their own,
     /// so one value serves them all; the default is the number the panel contract declares.
     /// </summary>
     public int Cwp7ApiPort { get; set; } = IHostingPanelApiClient.DefaultApiPort;
+#pragma warning restore CS0618
 
     /// <summary>
     /// The port every CWP7 server's user-facing panel answers on; the sign-in address shown to an

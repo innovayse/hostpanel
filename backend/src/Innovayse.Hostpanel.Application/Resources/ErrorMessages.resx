@@ -675,6 +675,27 @@
 <data name="INTEGRATION_FIELD_INVALID" xml:space="preserve">
     <value>That value is not accepted for this integration field.</value>
   </data>
+<data name="INTEGRATION_NOT_TESTABLE" xml:space="preserve">
+    <value>This integration has no connection test.</value>
+  </data>
+<data name="PLUGIN_STATUS_HEALTHY" xml:space="preserve">
+    <value>The plugin reports that it works.</value>
+  </data>
+<data name="PLUGIN_STATUS_DEGRADED" xml:space="preserve">
+    <value>The plugin works with reduced function.</value>
+  </data>
+<data name="PLUGIN_STATUS_REPORTED_DOWN" xml:space="preserve">
+    <value>The plugin reports that it cannot do its work at the moment.</value>
+  </data>
+<data name="PLUGIN_STATUS_INACTIVE" xml:space="preserve">
+    <value>The plugin is switched off or a required setting is missing.</value>
+  </data>
+<data name="PLUGIN_STATUS_TIMED_OUT" xml:space="preserve">
+    <value>The plugin did not answer the status check in time.</value>
+  </data>
+<data name="PLUGIN_STATUS_FAILED" xml:space="preserve">
+    <value>The plugin's status check failed. See the server log for detail.</value>
+  </data>
 <data name="SETTING_NOT_FOUND" xml:space="preserve">
     <value>No such setting.</value>
   </data>
@@ -1086,6 +1107,9 @@
   </data>
 <data name="INVOICE_STORED_CHARGE_UNRESOLVED" xml:space="preserve">
     <value>The invoice has a card charge that has not finished, so it cannot be cancelled or paid by hand yet.</value>
+  </data>
+<data name="INVOICE_STORED_CHARGE_HELD" xml:space="preserve">
+    <value>The invoice has a card charge held for an operator, so it cannot be paid online until that money is settled.</value>
   </data>
 <data name="CARD_CONSENT_ALREADY_ATTACHED" xml:space="preserve">
     <value>The consent already covers a different payment method.</value>

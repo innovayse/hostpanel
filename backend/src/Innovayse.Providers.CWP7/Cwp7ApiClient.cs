@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Innovayse.Providers.CWP7;
 
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
 /// <summary>
 /// HTTP client wrapper for the Control Web Panel 7 (CWP7) REST API.
 /// Sends form-encoded POST requests to /v1/account and related endpoints.
@@ -398,3 +399,4 @@ internal sealed class Cwp7ApiClient : IHostingPanelV7ApiClient
         return result;
     }
 }
+#pragma warning restore CS0618

@@ -5,6 +5,7 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Shared.Models;
+using Hostpanel.Sdk.Plugins.Enums;
 
 namespace Innovayse.Hostpanel.Application.Admin.Integrations.Queries.GetIntegration;
 
@@ -20,18 +21,24 @@ public sealed class GetIntegrationHandler
     /// <summary>Plugin registry for resolving plugin-provided integrations.</summary>
     private readonly IPluginRegistry _plugins;
 
+    /// <summary>The cached connection state of a plugin that implements <c>IPluginStatus</c>.</summary>
+    private readonly PluginConnectionReader _connections;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="plugins">Plugin registry for resolving plugin-provided integrations.</param>
-    public GetIntegrationHandler(IHostpanelDbContext context, IPluginRegistry plugins)
+    /// <param name="connections">The cached connection state of a plugin that implements <c>IPluginStatus</c>.</param>
+    public GetIntegrationHandler(IHostpanelDbContext context, IPluginRegistry plugins, PluginConnectionReader connections)
     {
         _context = context;
         _plugins = plugins;
+        _connections = connections;
     }
 
     /// <summary>
     /// Loads the configuration for the requested integration or plugin, withholds secret values, and
-    /// returns field definitions for dynamic form rendering.
+    /// returns field definitions for dynamic form rendering, whether it can be tested and, for a plugin that implements
+    /// <c>IPluginStatus</c>, its cached connection state.
     /// </summary>
     /// <param name="query">Query containing the integration slug.</param>
     /// <param name="ct">Cancellation token.</param>
@@ -70,7 +77,15 @@ public sealed class GetIntegrationHandler
         var isPlugin = !IntegrationCatalogue.All.ContainsKey(query.Slug) && _plugins.IsLoaded(query.Slug);
         var iconUrl = isPlugin && _plugins.GetIcon(query.Slug) is not null ? PluginIconPaths.For(query.Slug) : null;
 
-        return Result<IntegrationDetailDto>.Success(
-            new IntegrationDetailDto(query.Slug, definition.Name, isEnabled, config, definition.Fields, isPlugin, iconUrl));
+        // A built-in slug the test knows keeps its own test. A plugin can be tested through IPluginStatus, or, for a
+        // payment plugin, through the gateway status probe that Test Connection falls back to.
+        var isBuiltIn = IntegrationCatalogue.TryGetTestable(query.Slug, out _);
+        var manifest = isBuiltIn ? null : _plugins.GetLoadedManifests().FirstOrDefault(m => m.Id == query.Slug);
+        var canTest = isBuiltIn
+            || (manifest is not null && (_connections.Supports(manifest.Id) || manifest.Type == PluginType.Payment));
+        var connection = manifest is not null && isEnabled ? await _connections.ReadAsync(manifest, ct) : null;
+
+        return Result<IntegrationDetailDto>.Success(new IntegrationDetailDto(
+            query.Slug, definition.Name, isEnabled, config, definition.Fields, canTest, connection, isPlugin, iconUrl));
     }
 }

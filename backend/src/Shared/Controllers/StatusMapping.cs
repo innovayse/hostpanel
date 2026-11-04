@@ -98,6 +98,8 @@ public static class StatusMapping
             // Exact row: a stored card charge of the invoice has not finished, a state conflict for cancelling or
             // paying by hand, and the name carries no CONFLICT / ALREADY token.
             "INVOICE_STORED_CHARGE_UNRESOLVED" => new(409, "Conflict"),
+            // Exact row: a stored charge of the invoice is held for an operator, the same state conflict.
+            "INVOICE_STORED_CHARGE_HELD" => new(409, "Conflict"),
             // Exact row: the hosted gateway refused or failed the refund, an upstream refusal
             // rather than a malformed request, and neither name carries the _UPSTREAM_FAILED suffix.
             "GATEWAY_REFUND_REFUSED" or "REFUND_ADVICE_UNAVAILABLE" => new(502, "Bad Gateway"),

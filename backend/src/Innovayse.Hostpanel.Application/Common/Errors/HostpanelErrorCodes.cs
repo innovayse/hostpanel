@@ -969,6 +969,27 @@ public static class HostpanelErrorCodes
     /// <summary>A saved field value does not fit the declared type of the field (400); <c>errors[key]</c> says what is expected.</summary>
     public const string INTEGRATION_FIELD_INVALID = "INTEGRATION_FIELD_INVALID";
 
+    /// <summary>The integration has no connection test: a plugin that does not implement <c>IPluginStatus</c> (400).</summary>
+    public const string INTEGRATION_NOT_TESTABLE = "INTEGRATION_NOT_TESTABLE";
+
+    /// <summary>Not a refusal: the sentence of a plugin integration that reports it works, shown on its card and in a connection test.</summary>
+    public const string PLUGIN_STATUS_HEALTHY = "PLUGIN_STATUS_HEALTHY";
+
+    /// <summary>Not a refusal: the sentence of a plugin integration that reports it works with reduced function.</summary>
+    public const string PLUGIN_STATUS_DEGRADED = "PLUGIN_STATUS_DEGRADED";
+
+    /// <summary>Not a refusal: the sentence of a plugin integration that reports it cannot do its work.</summary>
+    public const string PLUGIN_STATUS_REPORTED_DOWN = "PLUGIN_STATUS_REPORTED_DOWN";
+
+    /// <summary>Not a refusal: the plugin was not asked for its state, because it is switched off, misses a required setting or waits for its data migration.</summary>
+    public const string PLUGIN_STATUS_INACTIVE = "PLUGIN_STATUS_INACTIVE";
+
+    /// <summary>Not a refusal: the plugin did not answer its status check within the host's time limit.</summary>
+    public const string PLUGIN_STATUS_TIMED_OUT = "PLUGIN_STATUS_TIMED_OUT";
+
+    /// <summary>Not a refusal: the plugin's status check failed or gave no valid answer; the cause is in the server log.</summary>
+    public const string PLUGIN_STATUS_FAILED = "PLUGIN_STATUS_FAILED";
+
     // Products
 
     /// <summary>The id names no product group (404).</summary>
@@ -1450,8 +1471,11 @@ public static class HostpanelErrorCodes
     /// <summary>The id names no stored charge claim (404).</summary>
     public const string INVOICE_PAYMENT_CLAIM_NOT_FOUND = "INVOICE_PAYMENT_CLAIM_NOT_FOUND";
 
-    /// <summary>The invoice has a stored card charge that has not finished (in flight, or waiting for the payer or the gateway), so it cannot be cancelled or paid by hand yet (409).</summary>
+    /// <summary>The invoice has a stored card charge that has not finished (in flight, or waiting for the payer or the gateway), so it cannot be cancelled or paid by hand yet, and no hosted payment can start (409).</summary>
     public const string INVOICE_STORED_CHARGE_UNRESOLVED = "INVOICE_STORED_CHARGE_UNRESOLVED";
+
+    /// <summary>The invoice has a stored card charge held for an operator (the gateway took money the invoice could not record), so no hosted payment can start until an operator settles it by a manual payment or by cancelling the invoice (409).</summary>
+    public const string INVOICE_STORED_CHARGE_HELD = "INVOICE_STORED_CHARGE_HELD";
 
     /// <summary>The consent already covers a different payment method than the one the finished save session stored (409).</summary>
     public const string CARD_CONSENT_ALREADY_ATTACHED = "CARD_CONSENT_ALREADY_ATTACHED";

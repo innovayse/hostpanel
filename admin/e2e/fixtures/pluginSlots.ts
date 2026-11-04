@@ -24,6 +24,7 @@ export const widgetPlugin: PluginListItemDto = {
   refusedRule: null,
   refusedDetail: null,
   stagedVersion: null,
+  capabilities: [],
 }
 
 /**

@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import IntegrationCard from '@/components/integrations/IntegrationCard.vue'
 import { PluginType } from '@/types/plugin'
+import { IntegrationConnectionState } from '@/types/integration'
 import { mountWithApp } from '../../helpers/mount'
 import { integrationDto } from '../../helpers/integrationFixtures'
 
@@ -64,5 +65,31 @@ describe('IntegrationCard', () => {
     expect(withIcon.get('[data-testid="plugin-avatar-image"]').attributes('src')).toBe('/icon.png')
     expect(without.find('[data-testid="plugin-avatar-fallback"]').exists()).toBe(true)
     expect(builtIn.find('[data-testid="integration-plugin-avatar"]').exists()).toBe(false)
+  })
+
+  it('shows the connection state a plugin reported, with its message', () => {
+    const wrapper = mountWithApp(IntegrationCard, {
+      props: {
+        integration: integrationDto({
+          isPlugin: true,
+          pluginType: PluginType.Fulfilment,
+          connection: {
+            state: IntegrationConnectionState.Connected,
+            message: 'Both services answer.',
+            checkedAt: '2026-11-04T10:00:00Z',
+          },
+        }),
+      },
+    })
+
+    const connection = wrapper.get('[data-testid="integration-connection-bank-transfer"]')
+    expect(connection.text()).toContain('Connected')
+    expect(connection.text()).toContain('Both services answer.')
+  })
+
+  it('shows no connection state when the API sent none', () => {
+    const wrapper = mountWithApp(IntegrationCard, { props: { integration: integrationDto() } })
+
+    expect(wrapper.find('[data-testid="integration-connection-bank-transfer"]').exists()).toBe(false)
   })
 })

@@ -436,11 +436,12 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>
-    /// An archive whose headers understate an entry's size is still stopped by the real byte count while unpacking
-    /// (<c>PluginArchiveGuard.Extract</c>), because the declared size is only what the archive claims.
+    /// An archive whose headers understate an entry's size cannot unpack past the limit: the runtime's deflate reader
+    /// stops at the declared length, so the entry is written truncated to what it declared and never to the real
+    /// (larger) size. The real byte count in <c>PluginArchiveGuard.Extract</c> stays as a second guard.
     /// </summary>
     [Fact]
-    public async Task AnEntryLyingAboutItsSize_RefusesOnTheRealBytesAsync()
+    public async Task AnEntryLyingAboutItsSize_NeverUnpacksPastTheLimitAsync()
     {
         var host = factory.WithWebHostBuilder(builder => builder.UseSetting("Plugins:MaxUncompressedBytes", "4096"));
         var client = await PluginsTestSeeds.AdminClientAsync(factory, host);
@@ -449,11 +450,17 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
             pluginId, new Dictionary<string, string> { ["big.txt"] = new string('x', 64 * 1024) });
         UnderstateDeclaredSize(zip, "big.txt", 16);
 
-        var response = await PluginsTestSeeds.InstallAsync(client, zip);
+        try
+        {
+            var response = await PluginsTestSeeds.InstallAsync(client, zip);
 
-        response.StatusCode.Should().Be(HttpStatusCode.RequestEntityTooLarge);
-        await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_ARCHIVE_TOO_LARGE);
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            new FileInfo(Path.Combine(PluginsTestSeeds.InstalledFolder(pluginId), "big.txt")).Length.Should().Be(16);
+        }
+        finally
+        {
+            await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
+        }
     }
 
     /// <summary>

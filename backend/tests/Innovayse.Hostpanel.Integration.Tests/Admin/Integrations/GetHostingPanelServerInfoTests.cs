@@ -20,6 +20,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Integrations;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class GetHostingPanelServerInfoTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
     /// <summary>
     /// A successful hosting panel probe answers 200 connected with the provider's reported account count and
     /// version. Seeds the setting rows directly: <c>GetHostingPanelServerInfoHandler</c> reads a fixed
@@ -56,7 +57,9 @@ public sealed class GetHostingPanelServerInfoTests(IntegrationTestFactory factor
         cwp.Connections.Should().ContainSingle()
             .Which.Should().Be(new HostingPanelConnection("panel.example.com", 2304, "test-api-key"));
     }
+#pragma warning restore CS0618
 
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
     /// <summary>
     /// A stored port that is not a number falls back to <see cref="IHostingPanelApiClient.DefaultApiPort"/>
     /// rather than reaching the panel on a port nobody configured.
@@ -87,7 +90,9 @@ public sealed class GetHostingPanelServerInfoTests(IntegrationTestFactory factor
         cwp.Connections.Should().ContainSingle()
             .Which.Port.Should().Be(IHostingPanelApiClient.DefaultApiPort);
     }
+#pragma warning restore CS0618
 
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
     /// <summary>
     /// A failed probe still answers 200 with <c>connected = false</c> and puts neither the panel's
     /// host nor the provider's own exception text on the wire.
@@ -123,6 +128,7 @@ public sealed class GetHostingPanelServerInfoTests(IntegrationTestFactory factor
         doc.RootElement.GetProperty("connected").GetBoolean().Should().BeFalse();
         cwp.Connections.Should().ContainSingle();
     }
+#pragma warning restore CS0618
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
     [Fact]

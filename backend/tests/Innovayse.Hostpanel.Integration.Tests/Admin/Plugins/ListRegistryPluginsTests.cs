@@ -134,7 +134,9 @@ public sealed class ListRegistryPluginsTests(IntegrationTestFactory factory) : I
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_REGISTRY_DISABLED);
-        (await response.Content.ReadAsStringAsync()).Should().Contain("Реестр плагинов");
+        // The body is JSON, which escapes non-ASCII text, so the sentence is read from the parsed detail, not the raw string.
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("detail").GetString().Should().Contain("Реестр плагинов");
     }
 
     /// <summary>A Client-role caller is refused and a caller with no credential is unauthorised.</summary>

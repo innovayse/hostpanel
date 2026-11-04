@@ -15,6 +15,9 @@ namespace Innovayse.Hostpanel.Domain.Services;
 /// </summary>
 public sealed class ClientService : BaseEntity, IAggregateRoot
 {
+    /// <summary>The longest source service id the <see cref="ExternalId"/> column holds, in characters.</summary>
+    public const int MaxExternalIdLength = 100;
+
     /// <summary>Gets the FK to the owning client.</summary>
     public int ClientId { get; private set; }
 

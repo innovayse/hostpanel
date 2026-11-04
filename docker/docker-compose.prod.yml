@@ -112,8 +112,8 @@ services:
       PanelNetwork__HostAddresses: ${PANEL_HOST_ADDRESSES:-}
       ScheduledJobs__DisableReleaseUpdateChecks: ${DISABLE_RELEASE_UPDATE_CHECKS:-false}
       # The plugin registry the admin panel installs plugins from; off until PLUGIN_REGISTRY_BASE_URL (https) is set.
-      PluginRegistry__Enabled: ${PLUGIN_REGISTRY_ENABLED}
-      PluginRegistry__BaseUrl: ${PLUGIN_REGISTRY_BASE_URL}
+      PluginRegistry__Enabled: ${PLUGIN_REGISTRY_ENABLED:-false}
+      PluginRegistry__BaseUrl: ${PLUGIN_REGISTRY_BASE_URL:-}
     volumes:
       # Operator-uploaded branding lives in the web root; without a volume every deploy erases it.
       - hostpanel_branding:/app/wwwroot/uploads/branding

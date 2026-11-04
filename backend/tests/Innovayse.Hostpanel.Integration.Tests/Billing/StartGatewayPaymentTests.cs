@@ -198,6 +198,40 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
         plugin.CreatePaymentCallCount.Should().Be(1);
     }
 
+    /// <summary>
+    /// An invoice with a blocking stored charge claim (unfinished or held) is refused before the plugin is called, with
+    /// <c>INVOICE_STORED_CHARGE_UNRESOLVED</c> or <c>INVOICE_STORED_CHARGE_HELD</c>, so no second payment is registered.
+    /// </summary>
+    /// <param name="held"><see langword="true"/> for a held claim, <see langword="false"/> for a pending one.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task InvoiceWithABlockingStoredChargeClaimRefusesWithoutCallingTheGateway(bool held)
+    {
+        var plugin = new FakePaymentPlugin { CurrencyCode = "840" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver);
+        var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, held ? "gw-start-held" : "gw-start-claim");
+        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
+        if (held)
+        {
+            await BillingTestSeeds.SeedHeldClaimAsync(host, invoiceId, clientId);
+        }
+        else
+        {
+            await BillingTestSeeds.SeedUnresolvedClaimAsync(host, invoiceId, clientId, pending: true);
+        }
+
+        var response = await StartAsync(client, invoiceId);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(
+            held ? HostpanelErrorCodes.INVOICE_STORED_CHARGE_HELD : HostpanelErrorCodes.INVOICE_STORED_CHARGE_UNRESOLVED);
+        plugin.CreatePaymentCallCount.Should().Be(0);
+    }
+
     /// <summary>A fresh session already known to be declined is replaced with a new one.</summary>
     [Fact]
     public async Task FreshLiveSessionAlreadyDeclinedIsReplaced()

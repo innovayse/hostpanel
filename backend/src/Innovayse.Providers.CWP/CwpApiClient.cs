@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Innovayse.Providers.CWP;
 
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
 /// <summary>
 /// HTTP client wrapper for the CentOS Web Panel (CWP) REST API.
 /// Sends form-encoded POST requests to the /v1/account endpoint.
@@ -252,3 +253,4 @@ internal sealed class CwpApiClient : IHostingPanelApiClient
         return result;
     }
 }
+#pragma warning restore CS0618

@@ -87,12 +87,12 @@ test('a tab far along the strip is brought into view when its section opens', as
 
   const logTab = page.getByTestId('client-tab-log')
   await expect(logTab).toHaveAttribute('aria-selected', 'true')
-  const stripBox = await boxOf(page.getByTestId('client-nav-strip').getByRole('tablist'))
-  // The strip scrolls once the selected tab is rendered, a frame after it is marked selected, so the
-  // position is polled rather than read once. A scroll offset is a whole number of pixels while the tabs
-  // have fractional widths, so the last tab, scrolled as far as it goes, can end up to one pixel past the
-  // strip's edge; less than that is in view.
+  // The strip scrolls a frame after the tab is marked selected, and again when it changes size as the page
+  // below it loads, so both boxes are read on every poll rather than once. A scroll offset is a whole number
+  // of pixels while the tabs have fractional widths, so the last tab, scrolled as far as it goes, can end up
+  // to one pixel past the strip's edge; less than that is in view.
   await expect.poll(async () => {
+    const stripBox = await boxOf(page.getByTestId('client-nav-strip').getByRole('tablist'))
     const tabBox = await boxOf(logTab)
     return tabBox.x >= stripBox.x - SCROLL_ROUNDING_PX
       && tabBox.x + tabBox.width <= stripBox.x + stripBox.width + SCROLL_ROUNDING_PX

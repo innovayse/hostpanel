@@ -6,7 +6,7 @@
  * captions on hover). Below it the rail would take a column of a phone's width, so the same entries
  * are a horizontal, scrollable tab strip (the kit's `UiTabs`) that the layout puts above the content.
  */
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import UiSidebar from '@/components/ui/UiSidebar.vue'
@@ -139,7 +139,31 @@ const revealActiveTab = async (): Promise<void> => {
   tab?.scrollIntoView?.({ inline: 'center', block: 'nearest' })
 }
 
-onMounted(revealActiveTab)
+/**
+ * Watches the strip's size. The strip narrows after the first scroll when the page below it grows a scroll
+ * bar (the content loads after the strip), and a selected tab scrolled into view at the old width then sits
+ * past the new edge, so every resize brings it back.
+ */
+let stripResize: ResizeObserver | null = null
+
+/** Brings the selected tab into view, then keeps it there while the strip changes size. */
+onMounted(() => {
+  void revealActiveTab()
+  const list = strip.value?.$el.querySelector<HTMLElement>('[role="tablist"]')
+  if (list) {
+    stripResize = new ResizeObserver(() => {
+      void revealActiveTab()
+    })
+    stripResize.observe(list)
+  }
+})
+
+/** Stops watching the strip, so a left page holds no observer. */
+onBeforeUnmount(() => {
+  stripResize?.disconnect()
+  stripResize = null
+})
+
 watch(activeKey, revealActiveTab)
 
 /**

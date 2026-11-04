@@ -2,7 +2,7 @@
  * Mount tests for ClientInnerSidebar: the icon rail, its entries and the active mark, and the tab strip
  * that stands in for the rail on small screens.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import ClientInnerSidebar from '@/components/clients/ClientInnerSidebar.vue'
@@ -105,6 +105,55 @@ describe('ClientInnerSidebar', () => {
       expect(scrolled).toContain('client-tab-invoices')
     } finally {
       HTMLElement.prototype.scrollIntoView = original
+    }
+  })
+
+  it('brings the selected tab back into view when the strip changes size, and stops watching once left', async () => {
+    /** Callbacks of the observers the component created, so the test can play a resize. */
+    const callbacks: ResizeObserverCallback[] = []
+    /** How many observers were disconnected. */
+    let disconnected = 0
+    vi.stubGlobal('ResizeObserver', class {
+      /**
+       * Keeps the callback to play later.
+       *
+       * @param callback - The component's resize callback.
+       */
+      constructor(callback: ResizeObserverCallback) {
+        callbacks.push(callback)
+      }
+
+      /** Accepts the observed element. */
+      observe = (): void => {}
+
+      /** Not used by the component. */
+      unobserve = (): void => {}
+
+      /** Counts the disconnect on unmount. */
+      disconnect = (): void => {
+        disconnected += 1
+      }
+    })
+    const scrolled: string[] = []
+    const original = HTMLElement.prototype.scrollIntoView
+    HTMLElement.prototype.scrollIntoView = function scrollIntoView(this: HTMLElement) {
+      scrolled.push(this.getAttribute('data-testid') ?? '')
+    }
+    try {
+      const { wrapper } = await mountWithRouter('/clients/12/log')
+      await flushPromises()
+      scrolled.length = 0
+      expect(callbacks).toHaveLength(1)
+
+      callbacks[0]?.([], {} as ResizeObserver)
+      await flushPromises()
+      expect(scrolled).toEqual(['client-tab-log'])
+
+      wrapper.unmount()
+      expect(disconnected).toBe(1)
+    } finally {
+      HTMLElement.prototype.scrollIntoView = original
+      vi.unstubAllGlobals()
     }
   })
 

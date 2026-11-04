@@ -166,14 +166,14 @@ The backend list above covers the core error and validation messages. The follow
 
 **Settings with a language suffix (optional):**
 
-The contact address, the working hours and the live chat token each have one value per language, for example `portal.contact.address.ru` and `portal.chat.website_token.hy`. A language without its own value uses the default one, so a new language works without any of this. Add them only if the operator needs a different address, hours or chat token for the new language. Then every one of these places needs the new key, with the same suffix:
+The contact address, the working hours, the live chat token and the company story of the About page (`portal.about.text`) each have one value per language, for example `portal.contact.address.ru` and `portal.chat.website_token.hy`. A language without its own value uses the default one, so a new language works without any of this. Add them only if the operator needs a different address, hours, chat token or company story for the new language. Then every one of these places needs the new key, with the same suffix:
 
 - `backend/src/Innovayse.Hostpanel.Domain/Settings/PortalSettingKeys.cs` — the constants, for example `ContactAddressFr = "portal.contact.address.fr"`, and their entries in the list of defaults, with an empty default and a description such as "Office address for French visitors. Empty uses the default address."
-- `admin/src/types/setting.ts` — the `SettingKey` entries (`ContactAddressFr`, `ContactHoursFr`, `ChatWebsiteTokenFr`) and their `SettingEnv` entries, for example `CONTACT_ADDRESS_FR`.
+- `admin/src/types/setting.ts` — the `SettingKey` entries (`ContactAddressFr`, `ContactHoursFr`, `ChatWebsiteTokenFr`) and their `SettingEnv` entries, for example `CONTACT_ADDRESS_FR`. The company story has no field in the admin panel, so it needs nothing here.
 - `client/constants/portalSettingKey.ts` — the same keys in the `PortalSettingKey` enum.
-- `client/constants/publicPortalSettingKeys.ts` — the keys in the allow-lists, so the storefront endpoint exposes them: the contact keys and the chat token key.
-- `client/nuxt.config.ts` — the runtime config entries `portalContactAddressFr`, `portalContactHoursFr` and `portalChatWebsiteTokenFr`, each read from `NUXT_PUBLIC_PORTAL_..._FR`. They are the values a deployment sets in the environment.
-- `client/composables/useContactDetails.ts` (address), `client/composables/useContactHours.ts` (hours) and `client/composables/useLocalizedSetting.ts` — a branch for the new locale, so the right value is read.
+- `client/constants/publicPortalSettingKeys.ts` — the keys in the allow-lists, so the storefront endpoint exposes them: the contact keys, the chat token key and the company story key.
+- `client/nuxt.config.ts` — the runtime config entries `portalContactAddressFr`, `portalContactHoursFr`, `portalChatWebsiteTokenFr` and `portalAboutTextFr`, each read from `NUXT_PUBLIC_PORTAL_..._FR`. They are the values a deployment sets in the environment.
+- `client/composables/useContactDetails.ts` (address), `client/composables/useContactHours.ts` (hours), `client/composables/useAboutText.ts` (company story) and `client/composables/useLocalizedSetting.ts` — a branch for the new locale, so the right value is read.
 - `client/plugins/live-chat.ts` — the token branch, and `languageOf` for the language name the chat widget shows.
 - `admin/src/components/settings/StorefrontContentCard.vue` (address and hours fields) and `admin/src/components/settings/TrackingChatCard.vue` (token field) — one field for each new key.
 - The admin locale files — the labels of those fields: `settings.storefrontContent.contactAddressFr`, `settings.storefrontContent.contactHoursFr` (each with `label` and `hint`) and `settings.trackingChat.chat.tokenFr`, in every language of `admin/src/locales/<lang>/settings.json`.

@@ -7,8 +7,12 @@ namespace Innovayse.Hostpanel.Application.Billing.Commands.PayMyInvoice;
 /// charged in the currency it was issued in.
 /// </remarks>
 /// <param name="InvoiceId">The invoice to pay; the controller overlays it from the route.</param>
+/// <param name="GatewayModuleId">
+/// The payment gateway module that holds the method. Nullable for the same reason as
+/// <paramref name="PaymentMethodId"/>; the validator requires it.
+/// </param>
 /// <param name="PaymentMethodId">
-/// The card gateway payment method ID to charge. It must be one saved on the caller's own account.
+/// The gateway's reference for the saved method to charge. It must be one saved on the caller's own account.
 /// Nullable because a non-nullable member of a bound body is implicitly required, which would refuse
 /// a missing id with a framework sentence instead of the validator's.
 /// </param>
@@ -18,4 +22,4 @@ namespace Innovayse.Hostpanel.Application.Billing.Commands.PayMyInvoice;
 /// one charge, while a new pay action (after a decline, say) is a new charge. Nullable for the same
 /// reason as <paramref name="PaymentMethodId"/>; the validator requires it.
 /// </param>
-public sealed record PayMyInvoiceCommand(int InvoiceId, string? PaymentMethodId, Guid? AttemptId);
+public sealed record PayMyInvoiceCommand(int InvoiceId, string? GatewayModuleId, string? PaymentMethodId, Guid? AttemptId);

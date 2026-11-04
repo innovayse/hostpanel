@@ -108,6 +108,9 @@ public interface IHostpanelDbContext
     /// <summary>Gets the exclusive rights to charge an invoice's card, one unfinished claim per invoice.</summary>
     public DbSet<InvoicePaymentClaim> InvoicePaymentClaims { get; }
 
+    /// <summary>Gets the clients' accounts at payment gateways, one per client and gateway module.</summary>
+    public DbSet<GatewayCustomer> GatewayCustomers { get; }
+
     /// <summary>Gets the transactions table.</summary>
     public DbSet<Transaction> Transactions { get; }
 

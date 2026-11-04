@@ -1,12 +1,13 @@
 using Innovayse.Hostpanel.API.Authorization;
 using Innovayse.Hostpanel.API.Extensions;
-using Innovayse.Hostpanel.Application.Billing.Commands.ConfirmMySetupIntent;
-using Innovayse.Hostpanel.Application.Billing.Commands.CreateMySetupIntent;
+using Innovayse.Hostpanel.Application.Billing.Commands.BeginMyCardSave;
+using Innovayse.Hostpanel.Application.Billing.Commands.CompleteMyCardSave;
 using Innovayse.Hostpanel.Application.Billing.Commands.RemovePaymentMethod;
 using Innovayse.Hostpanel.Application.Billing.Commands.RevokeMyCardConsents;
 using Innovayse.Hostpanel.Application.Billing.Commands.SetDefaultPaymentMethod;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Queries.GetMyPaymentMethods;
+using Innovayse.Hostpanel.Application.Billing.Queries.ListSavedMethodModules;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Shared.Authorization;
 using Innovayse.Hostpanel.Shared.Controllers;
@@ -18,16 +19,17 @@ using Wolverine;
 namespace Innovayse.Hostpanel.API.Controllers;
 
 /// <summary>
-/// Saved-card management for the authenticated client's own account.
+/// Saved-method management for the authenticated client's own account.
 /// Every action behind the client portal policy may also answer 503 with <c>IDENTITY_PLUGIN_UNAVAILABLE</c> (and <c>Retry-After</c>)
 /// when the enabled identity plugin cannot say which account the caller acts for; the convention
 /// <c>IdentityPluginUnavailableConvention</c> declares it once in the generated document.
 /// </summary>
 /// <remarks>
 /// Whose account is always the caller's, taken from the credential: there is deliberately no
-/// route that names a client. This API never sees a card number: adding a card opens a setup intent here,
-/// the portal confirms it in the card gateway's own client-side form, and the confirmation is read back
-/// from the gateway before the card counts as saved.
+/// route that names a client. This API never sees a card number: adding a card starts a save session here,
+/// the payer completes it in the gateway's own form or page, and the result is read back from the gateway
+/// before the card counts as saved. Which gateway holds a method is part of every route and body, because a
+/// client can use more than one.
 /// </remarks>
 [Route("api/me/payment-methods")]
 [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status429TooManyRequests)]
@@ -43,15 +45,29 @@ public sealed class MyPaymentMethodsController : BaseApiController
         _bus = bus;
     }
 
-    /// <summary>Lists the authenticated client's saved cards and bank accounts.</summary>
+    /// <summary>Lists the payment gateway modules the client can save a payment method with right now.</summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with the modules, empty when no gateway offers saved methods; 401 without a session; 403 with <c>CLIENT_PERMISSION_DENIED</c>; 429 when the rate limit is hit.</returns>
+    [HttpGet("modules")]
+    [Authorize(Policy = Policies.Client)]
+    [RequiresClientPermission(ClientPermission.ViewPayInvoices)]
+    [ProducesResponseType(typeof(IReadOnlyList<SavedMethodModuleDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ListSavedMethodModulesAsync(CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<SavedMethodModuleDto>>>(new ListSavedMethodModulesQuery(), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Lists the authenticated client's saved payment methods at every gateway they have an account with.</summary>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 with the saved payment methods, empty when none have been added yet or the card gateway has
-    /// no keys; 401 without a session;
+    /// 200 with the saved payment methods, empty when none have been added yet or no gateway offers saved methods; 401 without a session;
     /// 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>ViewPayInvoices</c>, or for a
     /// caller who is not a client; 404 with <c>CLIENT_PROFILE_NOT_FOUND</c> when the caller has no
     /// client record;
-    /// 502 with <c>PAYMENT_METHOD_UPSTREAM_FAILED</c> when the card gateway refuses the call; 503 with
+    /// 502 with <c>PAYMENT_METHOD_UPSTREAM_FAILED</c> when the gateway refuses the call; 503 with
     /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when it cannot be reached; 429 when the rate limit is hit.
     /// </returns>
     [HttpGet]
@@ -71,7 +87,8 @@ public sealed class MyPaymentMethodsController : BaseApiController
     }
 
     /// <summary>Makes a saved payment method the account's default.</summary>
-    /// <param name="id">The card gateway payment method ID; wins over any id in the body.</param>
+    /// <param name="module">The payment gateway module that holds the method; wins over any module in the body.</param>
+    /// <param name="id">The gateway's reference for the method; wins over any id in the body.</param>
     /// <param name="command">Must set <see cref="SetDefaultPaymentMethodCommand.SetAsDefault"/>.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
@@ -79,11 +96,11 @@ public sealed class MyPaymentMethodsController : BaseApiController
     /// true, <c>NO_SAVED_PAYMENT_METHODS</c> or <c>PAYMENT_METHOD_NOT_OWNED</c>; 401 without a session; 403 with
     /// <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>ViewPayInvoices</c>, or for a caller who
     /// is not a client; 404 with <c>CLIENT_PROFILE_NOT_FOUND</c>; 409 with <c>PAYMENT_METHOD_UNAVAILABLE</c>
-    /// when the card gateway has no keys;
-    /// 502 with <c>PAYMENT_METHOD_UPSTREAM_FAILED</c> when the card gateway refuses the call; 503 with
+    /// when the gateway module offers no saved methods;
+    /// 502 with <c>PAYMENT_METHOD_UPSTREAM_FAILED</c> when the gateway refuses the call; 503 with
     /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when it cannot be reached; 429 when the rate limit is hit.
     /// </returns>
-    [HttpPut("{id}")]
+    [HttpPut("{module}/{id}")]
     [Authorize(Policy = Policies.Client)]
     [RequiresClientPermission(ClientPermission.ViewPayInvoices)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -95,24 +112,25 @@ public sealed class MyPaymentMethodsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> UpdateMyPaymentMethodAsync(
-        string id, [FromBody] SetDefaultPaymentMethodCommand command, CancellationToken ct)
+        string module, string id, [FromBody] SetDefaultPaymentMethodCommand command, CancellationToken ct)
     {
-        var outcome = await _bus.InvokeAsync<Result>(command with { PaymentMethodId = id }, ct);
+        var outcome = await _bus.InvokeAsync<Result>(command with { GatewayModuleId = module, PaymentMethodId = id }, ct);
         return HandleResult(outcome);
     }
 
     /// <summary>Removes a saved payment method from the authenticated client's own account.</summary>
-    /// <param name="id">The card gateway payment method ID.</param>
+    /// <param name="module">The payment gateway module that holds the method.</param>
+    /// <param name="id">The gateway's reference for the method.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 204 when removed; 400 with <c>VALIDATION_ERROR</c>, <c>NO_SAVED_PAYMENT_METHODS</c> or
     /// <c>PAYMENT_METHOD_NOT_OWNED</c>; 401 without a session; 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user
     /// lacks <c>ViewPayInvoices</c>, or for a caller who is not a client; 404 with
-    /// <c>CLIENT_PROFILE_NOT_FOUND</c>; 409 with <c>PAYMENT_METHOD_UNAVAILABLE</c> when the card gateway has no keys;
-    /// 502 with <c>PAYMENT_METHOD_UPSTREAM_FAILED</c> when the card gateway refuses the call; 503 with
+    /// <c>CLIENT_PROFILE_NOT_FOUND</c>; 409 with <c>PAYMENT_METHOD_UNAVAILABLE</c> when the gateway module offers no saved methods;
+    /// 502 with <c>PAYMENT_METHOD_UPSTREAM_FAILED</c> when the gateway refuses the call; 503 with
     /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when it cannot be reached; 429 when the rate limit is hit.
     /// </returns>
-    [HttpDelete("{id}")]
+    [HttpDelete("{module}/{id}")]
     [Authorize(Policy = Policies.Client)]
     [RequiresClientPermission(ClientPermission.ViewPayInvoices)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -123,29 +141,29 @@ public sealed class MyPaymentMethodsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
-    public async Task<IActionResult> RemoveMyPaymentMethodAsync(string id, CancellationToken ct)
+    public async Task<IActionResult> RemoveMyPaymentMethodAsync(string module, string id, CancellationToken ct)
     {
-        var outcome = await _bus.InvokeAsync<Result>(new RemovePaymentMethodCommand(id), ct);
+        var outcome = await _bus.InvokeAsync<Result>(new RemovePaymentMethodCommand(module, id), ct);
         return HandleResult(outcome);
     }
 
     /// <summary>
-    /// Starts saving a card without a payment: opens a setup intent and records the caller's agreement that the
-    /// card may be charged for renewals without them.
+    /// Starts saving a card without a payment: opens a save session at the gateway module and records the caller's
+    /// agreement that the card may be charged for renewals without them.
     /// </summary>
-    /// <param name="command">Must set <see cref="CreateMySetupIntentCommand.ConsentAccepted"/>; the origin is taken from the request, not the body.</param>
+    /// <param name="command">Must set <see cref="BeginMyCardSaveCommand.ConsentAccepted"/>; the origin is taken from the request, not the body.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 with the setup intent (id and client secret); 400 with <c>VALIDATION_ERROR</c> when the agreement is not accepted;
+    /// 200 with the save session (id, mode, and the token or redirect address); 400 with <c>VALIDATION_ERROR</c> when the agreement is not accepted;
     /// 401 without a session; 403 with <c>CLIENT_PERMISSION_DENIED</c>, <c>CLIENT_SUSPENDED</c>, <c>CLIENT_CLOSED</c> or
     /// <c>CLIENT_CARD_PAYMENT_DISABLED</c>; 404 with <c>CLIENT_PROFILE_NOT_FOUND</c>; 409 with <c>PAYMENT_METHOD_UNAVAILABLE</c>
-    /// when the card gateway has no keys; 502 with <c>PAYMENT_METHOD_UPSTREAM_FAILED</c>; 503 with
+    /// when the gateway module offers no saved methods; 502 with <c>PAYMENT_METHOD_UPSTREAM_FAILED</c>; 503 with
     /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c>; 429 when the rate limit is hit.
     /// </returns>
-    [HttpPost("setup-intent")]
+    [HttpPost("sessions")]
     [Authorize(Policy = Policies.Client)]
     [RequiresClientPermission(ClientPermission.ViewPayInvoices)]
-    [ProducesResponseType(typeof(CardSetupIntentDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(SavedMethodSessionDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
@@ -153,15 +171,15 @@ public sealed class MyPaymentMethodsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
-    public async Task<IActionResult> CreateMySetupIntentAsync([FromBody] CreateMySetupIntentCommand command, CancellationToken ct)
+    public async Task<IActionResult> BeginMyCardSaveAsync([FromBody] BeginMyCardSaveCommand command, CancellationToken ct)
     {
         // The origin is what the server saw, whatever the body says.
-        var outcome = await _bus.InvokeAsync<Result<CardSetupIntentDto>>(command with { Origin = Request.ConsentOrigin() }, ct);
+        var outcome = await _bus.InvokeAsync<Result<SavedMethodSessionDto>>(command with { Origin = Request.ConsentOrigin() }, ct);
         return HandleResult(outcome);
     }
 
-    /// <summary>Finishes saving a card: the gateway's own record of the setup intent decides whether it counts.</summary>
-    /// <param name="command">The setup intent the previous call answered with.</param>
+    /// <summary>Finishes saving a card: the gateway's own record of the save session decides whether it counts.</summary>
+    /// <param name="command">The module and save session the previous call answered with.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 204 when the card is saved and the agreement active; 400 with <c>VALIDATION_ERROR</c> or <c>PAYMENT_METHOD_NOT_OWNED</c>;
@@ -170,7 +188,7 @@ public sealed class MyPaymentMethodsController : BaseApiController
     /// <c>PAYMENT_METHOD_UNAVAILABLE</c>; 502 with <c>PAYMENT_METHOD_UPSTREAM_FAILED</c>; 503 with
     /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c>; 429 when the rate limit is hit.
     /// </returns>
-    [HttpPost("confirm-setup")]
+    [HttpPost("sessions/complete")]
     [Authorize(Policy = Policies.Client)]
     [RequiresClientPermission(ClientPermission.ViewPayInvoices)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -181,7 +199,7 @@ public sealed class MyPaymentMethodsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
-    public async Task<IActionResult> ConfirmMySetupIntentAsync([FromBody] ConfirmMySetupIntentCommand command, CancellationToken ct)
+    public async Task<IActionResult> CompleteMyCardSaveAsync([FromBody] CompleteMyCardSaveCommand command, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result>(command, ct);
         return HandleResult(outcome);

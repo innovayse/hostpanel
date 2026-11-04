@@ -26,7 +26,7 @@ const invoice = (status: InvoiceStatus) => ({
 })
 
 /** A saved card. */
-const card = { id: 'pm_1', type: PaymentMethodType.Card, description: 'Visa', gatewayName: 'stripe', cardType: 'visa', cardLastFour: '4242' }
+const card = { gatewayModuleId: 'stripe', id: 'pm_1', type: PaymentMethodType.Card, description: 'Visa', gatewayName: 'stripe', cardType: 'visa', cardLastFour: '4242' }
 
 describe('invoice payment page', () => {
   beforeEach(() => {
@@ -81,7 +81,7 @@ describe('invoice payment page', () => {
     await wrapper.find('[data-testid="invoice-pay-submit"]').trigger('click')
 
     await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-pay-success"]').exists()).toBe(true))
-    expect(billingApi.payInvoice).toHaveBeenCalledWith('41', 'pm_1', expect.any(String))
+    expect(billingApi.payInvoice).toHaveBeenCalledWith('41', 'stripe', 'pm_1', expect.any(String))
   })
 
   it('links the breadcrumb back to the invoice', async () => {

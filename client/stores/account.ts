@@ -15,6 +15,7 @@ import QRCode from 'qrcode'
 import { useAuthApi } from '~/composables/apis/useAuthApi'
 import { useBillingApi } from '~/composables/apis/useBillingApi'
 import { useClientApi } from '~/composables/apis/useClientApi'
+import { usePendingCardSave } from '~/composables/usePendingCardSave'
 import { Permission } from '~/composables/usePermissions'
 import { useAuthStore } from '~/stores/auth'
 import { useClientStore } from '~/stores/client'
@@ -25,14 +26,20 @@ import type { AccountContactInput } from '~/types/accountcontactinput'
 import type { ClientEmailSummary } from '~/types/clientemailsummary'
 import type { EmailChangeInput } from '~/types/emailchangeinput'
 import { EmailConfirmationStatus } from '~/types/emailconfirmationstatus'
+import type { CardSaveResult } from '~/types/cardsaveresult'
+import { CardSaveOutcome } from '~/types/cardsaveoutcome'
 import type { GatewayMethod } from '~/types/gatewaymethod'
+import { PaymentModule } from '~/types/paymentmodule'
 import type { PaymentMethod } from '~/types/payment'
+import { SaveMethodMode } from '~/types/savemethodmode'
+import type { SavedMethodModule } from '~/types/savedmethodmodule'
 import type { ProfileUpdate } from '~/types/profileupdate'
 import type { TeamMember } from '~/types/teammember'
 import type { InviteUserPayload } from '~/types/inviteuserpayload'
 import { TwoFactorMode } from '~/types/twofactormode'
 import type { TwoFactorSetup } from '~/types/twofactorsetup'
 import { apiErrorMessage, apiFieldErrors } from '~/lib/errorHandler'
+import { isSafeRedirectUrl } from '~/utils/externalRedirect'
 import { translate } from '~/utils/translate'
 
 /**
@@ -44,6 +51,7 @@ export const useAccountStore = defineStore('account', () => {
   const clientApi = useClientApi()
   const billingApi = useBillingApi()
   const authApi = useAuthApi()
+  const { remember: rememberCardSave, forget: forgetCardSave } = usePendingCardSave()
 
   /**
    * Field-level messages of the last refused form post (profile, contact, payment method), keyed by camelCase field name (`UiField` renders
@@ -76,6 +84,9 @@ export const useAccountStore = defineStore('account', () => {
   const paymentLoading = ref(false)
   /** The API's sentence when the saved payment methods could not be read; null when they could. */
   const paymentLoadError = ref<string | null>(null)
+
+  /** The gateway modules a payment method can be saved with; empty hides "Add card". */
+  const savedMethodModules = ref<SavedMethodModule[]>([])
 
   /** The gateways the profile can name as its default payment method. */
   const gatewayMethods = ref<GatewayMethod[]>([])
@@ -174,6 +185,24 @@ export const useAccountStore = defineStore('account', () => {
       gatewayMethods.value = await billingApi.fetchGatewayMethods()
     } catch {
       gatewayMethods.value = []
+    }
+  }
+
+  /**
+   * Reads the gateway modules a payment method can be saved with; a failure leaves the list empty,
+   * so the tab offers no "Add card" it could not honour.
+   *
+   * @returns Nothing.
+   */
+  const loadSavedMethodModules = async (): Promise<void> => {
+    if (!useClientStore().mayDo(Permission.ViewPayInvoices)) {
+      savedMethodModules.value = []
+      return
+    }
+    try {
+      savedMethodModules.value = await billingApi.listSavedMethodModules()
+    } catch {
+      savedMethodModules.value = []
     }
   }
 
@@ -459,7 +488,7 @@ export const useAccountStore = defineStore('account', () => {
   /** Id of the method being removed, or null. */
   const removingId = ref<string | null>(null)
 
-  /** Whether a card is being added (setup intent open, card being confirmed). */
+  /** Whether a card is being added (session open, card being confirmed or completed). */
   const addingCard = ref(false)
 
   /** Whether automatic charges are being turned off. */
@@ -468,14 +497,14 @@ export const useAccountStore = defineStore('account', () => {
   /**
    * Makes a saved method the default.
    *
-   * @param id - Method id.
+   * @param method - The method; its gateway module and id name it to the API.
    * @returns How it ended; on `Failed`, {@link paymentActionError} holds the sentence.
    */
-  const setDefaultPaymentMethod = async (id: string): Promise<ActionOutcome> => {
-    settingDefaultId.value = id
+  const setDefaultPaymentMethod = async (method: PaymentMethod): Promise<ActionOutcome> => {
+    settingDefaultId.value = method.id
     paymentActionError.value = ''
     try {
-      await billingApi.setDefaultPaymentMethod(id)
+      await billingApi.setDefaultPaymentMethod(method.gatewayModuleId, method.id)
       return ActionOutcome.Succeeded
     } catch (e: unknown) {
       paymentActionError.value = apiErrorMessage(e)
@@ -486,31 +515,81 @@ export const useAccountStore = defineStore('account', () => {
   }
 
   /**
-   * Saves a new card for later charges. The payer's agreement goes first, so the backend can refuse a
-   * card nobody agreed to; the card is confirmed with the payment provider in this browser; the backend then
-   * reads the result back from the provider before it counts the card as saved.
+   * Clears the sentence of the last refused payment-method action, called when the add-card
+   * dialog opens so a stale refusal is not shown.
    *
+   * @returns Nothing.
+   */
+  const clearPaymentActionError = (): void => {
+    paymentActionError.value = ''
+  }
+
+  /**
+   * Starts saving a card with a gateway module. The payer's agreement goes first, so the backend can
+   * refuse a card nobody agreed to. An embedded session is confirmed in this browser with the
+   * provider's card form and then completed here; a redirect session is returned for the tab to
+   * send the payer to the gateway, and is completed by {@link completeCardSave} when the payer is back.
+   *
+   * @param gatewayModuleId - The gateway module to save the card with.
    * @param consentAccepted - Whether the payer ticked the agreement to automatic renewal charges.
-   * @param confirmSetup - Confirms the setup intent with the mounted card element.
-   * @returns How it ended; on `Failed`, {@link paymentActionError} holds the sentence.
+   * @param confirmEmbedded - Confirms an embedded session with the mounted card form and the session's client token.
+   * @returns `Saved`, `Redirect` with the address to go to, or `Failed` with {@link paymentActionError} holding the sentence.
    */
   const addPaymentMethod = async (
+    gatewayModuleId: string,
     consentAccepted: boolean,
-    confirmSetup: (clientSecret: string) => Promise<{ id: string }>
-  ): Promise<ActionOutcome> => {
+    confirmEmbedded: (clientToken: string) => Promise<unknown>
+  ): Promise<CardSaveResult> => {
     addingCard.value = true
     paymentActionError.value = ''
     try {
-      const { setupIntentId, clientSecret } = await billingApi.createSetupIntent(consentAccepted)
-      await confirmSetup(clientSecret)
-      await billingApi.confirmSetupIntent(setupIntentId)
-      return ActionOutcome.Succeeded
+      const session = await billingApi.beginCardSave(gatewayModuleId, consentAccepted)
+      if (session.mode === SaveMethodMode.Redirect && session.redirectUrl) {
+        if (!isSafeRedirectUrl(session.redirectUrl)) {
+          // An address the browser must not follow is a failed save, not a destination.
+          paymentActionError.value = translate('checkout.errors.generic')
+          return { outcome: CardSaveOutcome.Failed, redirectUrl: null }
+        }
+        rememberCardSave(session.gatewayModuleId, session.sessionId)
+        return { outcome: CardSaveOutcome.Redirect, redirectUrl: session.redirectUrl }
+      }
+      if (session.mode !== SaveMethodMode.EmbeddedToken || !session.clientToken || session.gatewayModuleId !== PaymentModule.Stripe) {
+        // The portal only embeds the built-in card form; any other embedded module cannot be finished here.
+        paymentActionError.value = translate('client.payment.embeddedUnsupported')
+        return { outcome: CardSaveOutcome.Failed, redirectUrl: null }
+      }
+      await confirmEmbedded(session.clientToken)
+      await billingApi.completeCardSave(session.gatewayModuleId, session.sessionId)
+      return { outcome: CardSaveOutcome.Saved, redirectUrl: null }
     } catch (e: unknown) {
       // An API refusal carries `data`; anything else is the card element's own sentence from the payment provider.
       const isApiRefusal = typeof e === 'object' && e !== null && 'data' in e
       paymentActionError.value = !isApiRefusal && e instanceof Error && e.message ? e.message : apiErrorMessage(e)
+      return { outcome: CardSaveOutcome.Failed, redirectUrl: null }
+    } finally {
+      addingCard.value = false
+    }
+  }
+
+  /**
+   * Finishes saving a card for a session the payer came back from; the API call is idempotent. The
+   * remembered session is dropped either way, so a reload does not complete it again.
+   *
+   * @param gatewayModuleId - The gateway module that holds the session.
+   * @param sessionId - The session the payer was sent away with.
+   * @returns How it ended; on `Failed`, {@link paymentActionError} holds the sentence.
+   */
+  const completeCardSave = async (gatewayModuleId: string, sessionId: string): Promise<ActionOutcome> => {
+    addingCard.value = true
+    paymentActionError.value = ''
+    try {
+      await billingApi.completeCardSave(gatewayModuleId, sessionId)
+      return ActionOutcome.Succeeded
+    } catch (e: unknown) {
+      paymentActionError.value = apiErrorMessage(e)
       return ActionOutcome.Failed
     } finally {
+      forgetCardSave(gatewayModuleId)
       addingCard.value = false
     }
   }
@@ -537,14 +616,14 @@ export const useAccountStore = defineStore('account', () => {
   /**
    * Removes a saved method.
    *
-   * @param id - Method id.
+   * @param method - The method; its gateway module and id name it to the API.
    * @returns How it ended; on `Failed`, {@link paymentActionError} holds the sentence.
    */
-  const removePaymentMethod = async (id: string): Promise<ActionOutcome> => {
-    removingId.value = id
+  const removePaymentMethod = async (method: PaymentMethod): Promise<ActionOutcome> => {
+    removingId.value = method.id
     paymentActionError.value = ''
     try {
-      await billingApi.removePaymentMethod(id)
+      await billingApi.removePaymentMethod(method.gatewayModuleId, method.id)
       return ActionOutcome.Succeeded
     } catch (e: unknown) {
       paymentActionError.value = apiErrorMessage(e)
@@ -582,6 +661,8 @@ export const useAccountStore = defineStore('account', () => {
     paymentLoading,
     paymentLoadError,
     loadPaymentMethods,
+    savedMethodModules,
+    loadSavedMethodModules,
     gatewayMethods,
     loadGatewayMethods,
     fieldErrors,
@@ -616,6 +697,8 @@ export const useAccountStore = defineStore('account', () => {
     setDefaultPaymentMethod,
     removePaymentMethod,
     addPaymentMethod,
+    completeCardSave,
+    clearPaymentActionError,
     turnOffAutoCharge,
     addingCard,
     turningOffAutoCharge,

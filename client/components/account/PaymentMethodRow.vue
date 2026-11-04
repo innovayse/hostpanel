@@ -28,7 +28,7 @@
         :loading="settingDefault"
         :disabled="busy"
         :data-testid="`account-payment-default-${method.id}`"
-        @click="emit('setDefault', method.id)"
+        @click="emit('setDefault', method)"
       >
         <Star :size="13" :stroke-width="2" class="mr-1" />
         {{ $t('client.payment.setDefault') }}
@@ -39,7 +39,7 @@
         :loading="removing"
         :disabled="busy"
         :data-testid="`account-payment-remove-${method.id}`"
-        @click="emit('remove', method.id)"
+        @click="emit('remove', method)"
       >
         <Trash2 :size="13" :stroke-width="2" class="mr-1" />
         {{ $t('client.payment.remove') }}
@@ -50,7 +50,7 @@
 
 <script setup lang="ts">
 /**
- * PaymentMethodRow - one saved card or bank account with its "set default" and "remove" actions.
+ * PaymentMethodRow - one saved card with its "set default" and "remove" actions.
  *
  * Pure presentation: it announces what was asked and the tab decides what to do.
  *
@@ -85,9 +85,7 @@ const { t } = useI18n()
 
 /** Locale key of the label for each method type. */
 const TYPE_LABEL_KEYS: Record<PaymentMethodType, string> = {
-  [PaymentMethodType.Card]: 'client.payment.type.card',
-  [PaymentMethodType.BankAccount]: 'client.payment.type.bankAccount',
-  [PaymentMethodType.Other]: 'client.payment.type.other'
+  [PaymentMethodType.Card]: 'client.payment.type.card'
 }
 
 /** The translated name of the method's type. */
@@ -95,9 +93,9 @@ const typeLabel = computed<string>(() => t(TYPE_LABEL_KEYS[props.method.type]))
 
 /** Events of {@link PaymentMethodRow}. */
 const emit = defineEmits<{
-  /** The client asked to make this method the default; carries its id. */
-  setDefault: [id: string]
-  /** The client asked to remove this method; carries its id. */
-  remove: [id: string]
+  /** The client asked to make this method the default; carries the method, which names its gateway module and id. */
+  setDefault: [method: PaymentMethod]
+  /** The client asked to remove this method; carries the method, which names its gateway module and id. */
+  remove: [method: PaymentMethod]
 }>()
 </script>

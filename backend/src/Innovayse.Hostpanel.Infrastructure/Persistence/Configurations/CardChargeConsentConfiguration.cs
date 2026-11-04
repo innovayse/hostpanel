@@ -11,8 +11,14 @@ public sealed class CardChargeConsentConfiguration : IEntityTypeConfiguration<Ca
     /// <summary>Column width of an enum name stored as text.</summary>
     private const int EnumNameLength = 16;
 
-    /// <summary>Column width of a gateway id (an intent or a payment method).</summary>
+    /// <summary>Column width of a revocation reason name; <c>WithdrawnByClient</c> alone is 17 characters.</summary>
+    private const int RevocationReasonLength = 32;
+
+    /// <summary>Column width of a gateway id (a save session or a saved method).</summary>
     private const int GatewayIdLength = 255;
+
+    /// <summary>Column width of a payment gateway module id.</summary>
+    private const int ModuleIdLength = 100;
 
     /// <summary>Column width of a consent wording version.</summary>
     private const int TextVersionLength = 64;
@@ -23,29 +29,30 @@ public sealed class CardChargeConsentConfiguration : IEntityTypeConfiguration<Ca
     /// <summary>Column width of a browser's user agent string.</summary>
     private const int UserAgentLength = 512;
 
-    /// <summary>Column width of the reason an agreement was withdrawn.</summary>
-    private const int ReasonLength = 200;
-
     /// <inheritdoc/>
     public void Configure(EntityTypeBuilder<CardChargeConsent> builder)
     {
         builder.HasKey(x => x.Id);
         builder.Property(x => x.ClientId).IsRequired();
-        builder.Property(x => x.GatewayIntentId).IsRequired().HasMaxLength(GatewayIdLength);
-        builder.Property(x => x.GatewayPaymentMethodId).HasMaxLength(GatewayIdLength);
-        builder.Property(x => x.Source).IsRequired().HasConversion<string>().HasMaxLength(EnumNameLength);
+        builder.Property(x => x.GatewayModuleId).IsRequired().HasMaxLength(ModuleIdLength);
+        builder.Property(x => x.GatewaySessionId).IsRequired().HasMaxLength(GatewayIdLength);
+        builder.Property(x => x.GatewayMethodRef).HasMaxLength(GatewayIdLength);
         builder.Property(x => x.TextVersion).IsRequired().HasMaxLength(TextVersionLength);
         builder.Property(x => x.Status).IsRequired().HasConversion<string>().HasMaxLength(EnumNameLength);
         builder.Property(x => x.IpAddress).HasMaxLength(IpAddressLength);
         builder.Property(x => x.UserAgent).HasMaxLength(UserAgentLength);
         builder.Property(x => x.RequestedAt).IsRequired();
-        builder.Property(x => x.RevokedReason).HasMaxLength(ReasonLength);
+        builder.Property(x => x.RevocationReason).HasConversion<string>().HasMaxLength(RevocationReasonLength);
 
-        // One agreement per gateway intent: confirming the same intent twice finds the same row.
-        builder.HasIndex(x => x.GatewayIntentId).IsUnique();
+        // A withdrawal and an activation both rewrite the row. The token makes the save of whichever read the
+        // older state fail instead of silently overwriting the other, so a withdrawal cannot be lost.
+        builder.UseXminConcurrencyToken();
+
+        // One agreement per save session: confirming the same session twice finds the same row.
+        builder.HasIndex(x => new { x.GatewayModuleId, x.GatewaySessionId }).IsUnique();
 
         // A saved card has at most one active agreement; withdrawn ones stay as history.
-        builder.HasIndex(x => new { x.ClientId, x.GatewayPaymentMethodId })
+        builder.HasIndex(x => new { x.ClientId, x.GatewayModuleId, x.GatewayMethodRef })
             .IsUnique()
             .HasFilter("\"Status\" = 'Active'");
 

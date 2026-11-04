@@ -2,7 +2,7 @@
  * POST /api/portal/client/invoices/:id/pay
  * Charges the saved payment method for an invoice via the backend.
  *
- * Body: { paymentMethodId: string, attemptId: string }, passed through unchanged: the attempt id
+ * Body: { gatewayModuleId: string, paymentMethodId: string, attemptId: string }, passed through unchanged: the attempt id
  * is what the backend deduplicates the charge by.
  */
 

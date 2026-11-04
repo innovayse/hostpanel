@@ -11,6 +11,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { ref } from 'vue'
 import { makeContactInput } from '~/tests/helpers/accountContact'
+import { usePendingCardSave } from '~/composables/usePendingCardSave'
 import { Permission } from '~/composables/usePermissions'
 import { InvitePermissionMode } from '~/types/invitepermissionmode'
 import type { InviteUserPayload } from '~/types/inviteuserpayload'
@@ -34,8 +35,9 @@ const clientApi = {
 const billingApi = {
   setDefaultPaymentMethod: vi.fn(),
   removePaymentMethod: vi.fn(),
-  createSetupIntent: vi.fn(),
-  confirmSetupIntent: vi.fn(),
+  listSavedMethodModules: vi.fn(),
+  beginCardSave: vi.fn(),
+  completeCardSave: vi.fn(),
   turnOffAutoCharge: vi.fn(),
   fetchPaymentMethods: vi.fn(),
   fetchGatewayMethods: vi.fn()
@@ -133,6 +135,9 @@ const { EmailConfirmationStatus } = await import('~/types/emailconfirmationstatu
 const { ActionOutcome } = await import('~/types/actionoutcome')
 const { ContactSaveOutcome } = await import('~/types/contactsaveoutcome')
 const { TwoFactorMode } = await import('~/types/twofactormode')
+const { CardSaveOutcome } = await import('~/types/cardsaveoutcome')
+const { PaymentMethodType } = await import('~/types/payment')
+const { SaveMethodMode } = await import('~/types/savemethodmode')
 
 /** A refusal shaped like the API's problem body. */
 const refused = { data: { detail: 'Refused.' } }
@@ -378,12 +383,23 @@ describe('useAccountStore sign-in address', () => {
   })
 })
 
+/** One saved card of the Stripe module. */
+const savedCard = { gatewayModuleId: 'stripe', id: 'pm_1', type: PaymentMethodType.Card, description: 'Visa', gatewayName: 'stripe' }
+
+/** An embedded save session of the built-in card module. */
+const embeddedSession = { gatewayModuleId: 'stripe', sessionId: 'seti_1', mode: SaveMethodMode.EmbeddedToken, clientToken: 'sec', redirectUrl: null }
+
 describe('useAccountStore payment methods', () => {
-  it('reports Succeeded for set-default and clears the in-flight id', async () => {
+  beforeEach(() => {
+    sessionStorage.clear()
+  })
+
+  it('reports Succeeded for set-default, names the method by module and id, and clears the in-flight id', async () => {
     billingApi.setDefaultPaymentMethod.mockResolvedValue({})
     const store = useAccountStore()
 
-    expect(await store.setDefaultPaymentMethod('1')).toBe(ActionOutcome.Succeeded)
+    expect(await store.setDefaultPaymentMethod(savedCard)).toBe(ActionOutcome.Succeeded)
+    expect(billingApi.setDefaultPaymentMethod).toHaveBeenCalledWith('stripe', 'pm_1')
     expect(store.settingDefaultId).toBeNull()
   })
 
@@ -391,47 +407,129 @@ describe('useAccountStore payment methods', () => {
     billingApi.removePaymentMethod.mockRejectedValue(refused)
     const store = useAccountStore()
 
-    expect(await store.removePaymentMethod('1')).toBe(ActionOutcome.Failed)
+    expect(await store.removePaymentMethod(savedCard)).toBe(ActionOutcome.Failed)
+    expect(billingApi.removePaymentMethod).toHaveBeenCalledWith('stripe', 'pm_1')
     expect(store.paymentActionError).toBe('Refused.')
     expect(store.removingId).toBeNull()
   })
 
-  it('saves a card: opens the setup with the agreement, confirms it in the browser, then asks the backend to finish', async () => {
-    billingApi.createSetupIntent.mockResolvedValue({ setupIntentId: 'seti_1', clientSecret: 'sec' })
-    billingApi.confirmSetupIntent.mockResolvedValue({})
-    const confirmSetup = vi.fn().mockResolvedValue({ id: 'seti_1' })
+  it('reads the modules a method can be saved with, and leaves none when the read fails', async () => {
+    billingApi.listSavedMethodModules.mockResolvedValueOnce([{ module: 'stripe', displayName: 'Card' }]).mockRejectedValueOnce(refused)
     const store = useAccountStore()
 
-    expect(await store.addPaymentMethod(true, confirmSetup)).toBe(ActionOutcome.Succeeded)
+    await store.loadSavedMethodModules()
+    expect(store.savedMethodModules).toEqual([{ module: 'stripe', displayName: 'Card' }])
 
-    expect(billingApi.createSetupIntent).toHaveBeenCalledWith(true)
-    expect(confirmSetup).toHaveBeenCalledWith('sec')
-    expect(billingApi.confirmSetupIntent).toHaveBeenCalledWith('seti_1')
-    expect(store.addingCard).toBe(false)
+    await store.loadSavedMethodModules()
+    expect(store.savedMethodModules).toEqual([])
   })
 
-  it('shows the API sentence and does not finish when the backend refuses the setup', async () => {
-    billingApi.confirmSetupIntent.mockClear()
-    billingApi.createSetupIntent.mockRejectedValue(refused)
-    const confirmSetup = vi.fn()
+  it('does not ask for the modules of a person without the permission to pay invoices', async () => {
+    billingApi.listSavedMethodModules.mockClear()
+    mayDo.mockReturnValue(false)
     const store = useAccountStore()
 
-    expect(await store.addPaymentMethod(false, confirmSetup)).toBe(ActionOutcome.Failed)
+    await store.loadSavedMethodModules()
+
+    expect(billingApi.listSavedMethodModules).not.toHaveBeenCalled()
+    expect(store.savedMethodModules).toEqual([])
+  })
+
+  it('saves a card in the embedded mode: opens the session with the agreement, confirms it in the browser, then completes it', async () => {
+    billingApi.beginCardSave.mockResolvedValue(embeddedSession)
+    billingApi.completeCardSave.mockResolvedValue({})
+    const confirmEmbedded = vi.fn().mockResolvedValue({ id: 'seti_1' })
+    const store = useAccountStore()
+
+    expect(await store.addPaymentMethod('stripe', true, confirmEmbedded)).toEqual({ outcome: CardSaveOutcome.Saved, redirectUrl: null })
+
+    expect(billingApi.beginCardSave).toHaveBeenCalledWith('stripe', true)
+    expect(confirmEmbedded).toHaveBeenCalledWith('sec')
+    expect(billingApi.completeCardSave).toHaveBeenCalledWith('stripe', 'seti_1')
+    expect(store.addingCard).toBe(false)
+    expect(store.paymentActionError).toBe('')
+  })
+
+  it('answers a redirect for a hosted gateway, remembers the session and does not complete it yet', async () => {
+    billingApi.completeCardSave.mockClear()
+    billingApi.beginCardSave.mockResolvedValue({
+      gatewayModuleId: 'inecobank', sessionId: 'sess-9', mode: SaveMethodMode.Redirect, clientToken: null, redirectUrl: 'https://bank.example/save'
+    })
+    const confirmEmbedded = vi.fn()
+    const store = useAccountStore()
+
+    expect(await store.addPaymentMethod('inecobank', true, confirmEmbedded)).toEqual({ outcome: CardSaveOutcome.Redirect, redirectUrl: 'https://bank.example/save' })
+
+    expect(confirmEmbedded).not.toHaveBeenCalled()
+    expect(billingApi.completeCardSave).not.toHaveBeenCalled()
+    expect(usePendingCardSave().recall('inecobank')).toBe('sess-9')
+  })
+
+  it('says an embedded session of another module is not supported here, and does not confirm it', async () => {
+    billingApi.completeCardSave.mockClear()
+    billingApi.beginCardSave.mockResolvedValue({ ...embeddedSession, gatewayModuleId: 'other' })
+    const confirmEmbedded = vi.fn()
+    const store = useAccountStore()
+
+    expect((await store.addPaymentMethod('other', true, confirmEmbedded)).outcome).toBe(CardSaveOutcome.Failed)
+
+    expect(store.paymentActionError).toBe('client.payment.embeddedUnsupported')
+    expect(confirmEmbedded).not.toHaveBeenCalled()
+    expect(billingApi.completeCardSave).not.toHaveBeenCalled()
+  })
+
+  it('shows the API sentence and does not complete when the backend refuses to begin', async () => {
+    billingApi.completeCardSave.mockClear()
+    billingApi.beginCardSave.mockRejectedValue(refused)
+    const confirmEmbedded = vi.fn()
+    const store = useAccountStore()
+
+    expect((await store.addPaymentMethod('stripe', false, confirmEmbedded)).outcome).toBe(CardSaveOutcome.Failed)
 
     expect(store.paymentActionError).toBe('Refused.')
-    expect(confirmSetup).not.toHaveBeenCalled()
-    expect(billingApi.confirmSetupIntent).not.toHaveBeenCalled()
+    expect(confirmEmbedded).not.toHaveBeenCalled()
+    expect(billingApi.completeCardSave).not.toHaveBeenCalled()
   })
 
   it('shows the payment provider sentence when the card is refused, and tells the backend nothing', async () => {
-    billingApi.confirmSetupIntent.mockClear()
-    billingApi.createSetupIntent.mockResolvedValue({ setupIntentId: 'seti_1', clientSecret: 'sec' })
+    billingApi.completeCardSave.mockClear()
+    billingApi.beginCardSave.mockResolvedValue(embeddedSession)
     const store = useAccountStore()
 
-    expect(await store.addPaymentMethod(true, vi.fn().mockRejectedValue(new Error('Your card was declined.')))).toBe(ActionOutcome.Failed)
+    const result = await store.addPaymentMethod('stripe', true, vi.fn().mockRejectedValue(new Error('Your card was declined.')))
 
+    expect(result.outcome).toBe(CardSaveOutcome.Failed)
     expect(store.paymentActionError).toBe('Your card was declined.')
-    expect(billingApi.confirmSetupIntent).not.toHaveBeenCalled()
+    expect(billingApi.completeCardSave).not.toHaveBeenCalled()
+  })
+
+  it('completes the save of a payer who is back from the gateway and drops the remembered session', async () => {
+    billingApi.completeCardSave.mockResolvedValue({})
+    usePendingCardSave().remember('inecobank', 'sess-9')
+    const store = useAccountStore()
+
+    expect(await store.completeCardSave('inecobank', 'sess-9')).toBe(ActionOutcome.Succeeded)
+
+    expect(billingApi.completeCardSave).toHaveBeenCalledWith('inecobank', 'sess-9')
+    expect(usePendingCardSave().recall('inecobank')).toBeUndefined()
+    expect(store.addingCard).toBe(false)
+  })
+
+  it('keeps the API sentence when completing the save is refused', async () => {
+    billingApi.completeCardSave.mockRejectedValue(refused)
+    const store = useAccountStore()
+
+    expect(await store.completeCardSave('inecobank', 'sess-9')).toBe(ActionOutcome.Failed)
+    expect(store.paymentActionError).toBe('Refused.')
+  })
+
+  it('clears the last payment action sentence on request', () => {
+    const store = useAccountStore()
+    store.paymentActionError = 'Old refusal.'
+
+    store.clearPaymentActionError()
+
+    expect(store.paymentActionError).toBe('')
   })
 
   it('turns automatic charges off, and keeps the sentence when it is refused', async () => {

@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using Innovayse.Hostpanel.Application.Billing.Constants;
 using Innovayse.Hostpanel.Domain.Auth;
 using Innovayse.Hostpanel.Domain.Auth.Enums;
 using Innovayse.Hostpanel.Domain.Billing;
@@ -212,7 +213,6 @@ internal sealed class DemoPeopleSeeder
             PaymentMethodNames.Card, "Demo Client", "Long-standing customer; prefers invoices by email and pays by card.");
         client.UpdateNotifications(true, true, true, true, true, false);
         client.UpdateSettings(true, false, false, false, true, true, true);
-        client.SetCardGatewayCustomerId($"demo-customer-{client.Id}");
 
         client.AddContact(new ContactDetails(
             "Nina", "Avery", "Brightleaf Studio LLC", $"nina.avery@{FillerMailDomain}", "+1 555 0111", ContactType.Technical,
@@ -229,6 +229,9 @@ internal sealed class DemoPeopleSeeder
             $"team.finance@{FillerMailDomain}", NewGeneratedPassword(), "Lusine", "Finance", Role.Client, ct);
         client.AddUser(editor.Id, OperationsPermissions);
         client.AddUser(finance.Id, FinancePermissions);
+
+        // The sample client already has an account at the demo card gateway, so "Add card" works on first use.
+        _db.GatewayCustomers.Add(GatewayCustomer.Create(client.Id, BuiltInPaymentModules.Stripe, $"demo-customer-{client.Id}", _today));
         await _db.SaveChangesAsync(ct);
 
         // One invitation already accepted (the editor above), two still waiting for an answer.

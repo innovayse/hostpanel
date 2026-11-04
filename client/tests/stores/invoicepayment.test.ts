@@ -71,10 +71,10 @@ describe('useInvoicePaymentStore.payWithSavedMethod', () => {
     payInvoiceMock.mockResolvedValue({})
     const store = useInvoicePaymentStore()
 
-    const outcome = await store.payWithSavedMethod('7', 'pm_1', 'attempt-1')
+    const outcome = await store.payWithSavedMethod('7', 'stripe', 'pm_1', 'attempt-1')
 
     expect(outcome).toBe(ActionOutcome.Succeeded)
-    expect(payInvoiceMock).toHaveBeenCalledWith('7', 'pm_1', 'attempt-1')
+    expect(payInvoiceMock).toHaveBeenCalledWith('7', 'stripe', 'pm_1', 'attempt-1')
     expect(store.paySuccess).toBe(true)
     expect(store.submitting).toBe(false)
     expect(store.error).toBe('')
@@ -84,7 +84,7 @@ describe('useInvoicePaymentStore.payWithSavedMethod', () => {
     payInvoiceMock.mockRejectedValue({ data: { detail: 'Card declined.' } })
     const store = useInvoicePaymentStore()
 
-    const outcome = await store.payWithSavedMethod('7', 'pm_1', 'attempt-1')
+    const outcome = await store.payWithSavedMethod('7', 'stripe', 'pm_1', 'attempt-1')
 
     expect(outcome).toBe(ActionOutcome.Failed)
     expect(store.paySuccess).toBe(false)

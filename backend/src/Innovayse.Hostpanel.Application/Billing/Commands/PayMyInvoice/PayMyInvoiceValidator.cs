@@ -17,6 +17,7 @@ public sealed class PayMyInvoiceValidator : LocalizedValidator<PayMyInvoiceComma
         : base(localizer)
     {
         RuleFor(x => x.InvoiceId).MustBePositiveId(L["InvoiceIdInvalid"]);
+        RuleFor(x => x.GatewayModuleId).NotEmpty().WithMessage(L["GatewayModuleRequired"]);
         RuleFor(x => x.PaymentMethodId).NotEmpty().WithMessage(L["PaymentMethodRequired"]);
         RuleFor(x => x.AttemptId).NotEmpty().WithMessage(L["PaymentAttemptRequired"]);
     }

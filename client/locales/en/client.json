@@ -584,7 +584,7 @@
       "title": "Payment Methods",
       "permissionDenied": "Your account is not allowed to view or manage payment methods. Ask the account owner to grant you the permission to view and pay invoices.",
       "empty": "No payment methods saved",
-      "emptyDesc": "You have no saved cards. Add a card here, or tick \"Save card\" when you pay an order.",
+      "emptyDesc": "You have no saved cards. Add a card here so that renewals can be paid automatically.",
       "viewInvoices": "View invoices",
       "remove": "Remove",
       "removeConfirm": "Remove payment method?",
@@ -593,9 +593,7 @@
       "statusActive": "Active",
       "defaultBadge": "Default",
       "type": {
-        "card": "Card",
-        "bankAccount": "Bank account",
-        "other": "Payment method"
+        "card": "Card"
       },
       "removeSuccess": "Payment method removed",
       "setDefault": "Set as Default",
@@ -603,8 +601,10 @@
       "addCard": "Add card",
       "addCardTitle": "Add a card",
       "addCardDesc": "Your card details go straight to the payment provider; we never see the card number.",
-      "consent": "I agree that this card may be charged automatically, without my action, for renewals of my services until I turn this off.",
+      "consent": "I agree that this card will be charged automatically, without any further action from me, for the renewals of my services until I turn this off.",
       "consentRequired": "Tick the agreement to save the card.",
+      "module": "Payment provider",
+      "embeddedUnsupported": "Saving a card with this payment provider is not supported in this portal yet. Choose another provider.",
       "saveCard": "Save card",
       "cardSaved": "Card saved. Renewals will be charged to it automatically.",
       "autoChargeBadge": "Auto-renewal",

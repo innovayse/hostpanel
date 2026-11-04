@@ -21,14 +21,9 @@ import { useCartStore } from '~/stores/cart'
 import { useCheckoutStore } from '~/stores/checkout'
 import { useClientStore } from '~/stores/client'
 import { useCurrencyStore } from '~/stores/currency'
+import type { CardFormHandle } from '~/types/cardformhandle'
 import { CheckoutDestinationKind } from '~/types/checkoutdestinationkind'
 import { redirectToExternal } from '~/utils/externalRedirect'
-
-/** The card form below the method list, as far as the page needs to drive it. */
-export interface CardFormHandle {
-  /** Confirms the card payment once the order exists. */
-  confirmPayment: (clientSecret: string) => Promise<{ id: string }>
-}
 
 /**
  * Wires a checkout page. Call it once at the top of the page's `<script setup>` and `await` it:
@@ -132,9 +127,6 @@ export const useCheckoutPage = async () => {
   /** The card form below the method list; asked to confirm the payment once the order exists. */
   const stripeCardFormRef = ref<CardFormHandle | null>(null)
 
-  /** Whether the payer ticked "save the card for automatic renewals"; off until they choose it. */
-  const saveCard = ref(false)
-
   /**
    * Places the order through the checkout store and goes where it says.
    *
@@ -148,7 +140,6 @@ export const useCheckoutPage = async () => {
     }
     const destination = await checkout.placeOrder({
       guest: { ...form },
-      saveCard: saveCard.value,
       confirmCard: (clientSecret) => {
         if (!stripeCardFormRef.value) {
           return Promise.reject(new Error(t('checkout.errors.generic')))
@@ -194,7 +185,6 @@ export const useCheckoutPage = async () => {
     handleLogout,
     form,
     stripeCardFormRef,
-    saveCard,
     submitOrder
   }
 }

@@ -151,16 +151,22 @@ export const useInvoicePaymentStore = defineStore('invoicePayment', () => {
    * Charges the invoice to a saved payment method.
    *
    * @param invoiceId - Invoice to pay.
+   * @param gatewayModuleId - The gateway module that holds the saved payment method.
    * @param methodId - Id of the saved payment method.
    * @param attemptId - The payment attempt the caller chose for this pay action; a retry of the
    * same action passes the same one, so the gateway takes the money once.
    * @returns How the attempt ended; on failure {@link error} holds the sentence to show.
    */
-  const payWithSavedMethod = async (invoiceId: string, methodId: string, attemptId: string): Promise<ActionOutcome> => {
+  const payWithSavedMethod = async (
+    invoiceId: string,
+    gatewayModuleId: string,
+    methodId: string,
+    attemptId: string
+  ): Promise<ActionOutcome> => {
     error.value = ''
     submitting.value = true
     try {
-      await billing.payInvoice(invoiceId, methodId, attemptId)
+      await billing.payInvoice(invoiceId, gatewayModuleId, methodId, attemptId)
       paySuccess.value = true
       return ActionOutcome.Succeeded
     } catch (e: unknown) {

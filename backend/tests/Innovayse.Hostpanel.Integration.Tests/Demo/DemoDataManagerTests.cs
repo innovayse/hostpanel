@@ -288,7 +288,8 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
             .FirstAsync(c => c.CompanyName == "Brightleaf Studio LLC");
         demoClient.Contacts.Should().HaveCount(3);
         demoClient.Users.Should().HaveCount(2);
-        demoClient.CardGatewayCustomerId.Should().NotBeNullOrEmpty();
+        (await db.GatewayCustomers.AnyAsync(g => g.ClientId == demoClient.Id && g.GatewayModuleId == "stripe" && g.CustomerRef == $"demo-customer-{demoClient.Id}"))
+            .Should().BeTrue("the demo client is linked to a demo gateway customer");
         demoClient.CreditBalance.Should().BeGreaterThan(0);
         (await db.Invitations.CountAsync(i => i.ClientId == demoClient.Id && i.AcceptedAt == null)).Should().Be(2);
         (await db.ClientServices.CountAsync(s => s.ClientId == demoClient.Id)).Should().BeGreaterThan(0);

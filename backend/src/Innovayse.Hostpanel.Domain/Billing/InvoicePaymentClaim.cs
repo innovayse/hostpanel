@@ -20,6 +20,9 @@ public sealed class InvoicePaymentClaim : BaseEntity
     /// <summary>Gets the invoice being paid.</summary>
     public int InvoiceId { get; private set; }
 
+    /// <summary>Gets the payment gateway module the charge goes through.</summary>
+    public string GatewayModuleId { get; private set; } = string.Empty;
+
     /// <summary>Gets who is paying.</summary>
     public InvoicePaymentClaimKind Kind { get; private set; }
 
@@ -43,16 +46,18 @@ public sealed class InvoicePaymentClaim : BaseEntity
 
     /// <summary>Takes the right to charge an invoice.</summary>
     /// <param name="invoiceId">The invoice.</param>
+    /// <param name="gatewayModuleId">The payment gateway module the charge goes through.</param>
     /// <param name="kind">Who is paying.</param>
     /// <param name="gatewayIdempotencyKey">The key the gateway call of this claim is sent with: the client's own payment attempt for a manual payment, <see cref="AutomaticKey"/> for an automatic one.</param>
     /// <param name="now">The current moment.</param>
     /// <param name="lifetime">How long the claim counts as held when its holder never reports back.</param>
     /// <returns>A new, held claim.</returns>
-    public static InvoicePaymentClaim Start(
-        int invoiceId, InvoicePaymentClaimKind kind, string gatewayIdempotencyKey, DateTimeOffset now, TimeSpan lifetime) =>
+    public static InvoicePaymentClaim Create(
+        int invoiceId, string gatewayModuleId, InvoicePaymentClaimKind kind, string gatewayIdempotencyKey, DateTimeOffset now, TimeSpan lifetime) =>
         new()
         {
             InvoiceId = invoiceId,
+            GatewayModuleId = gatewayModuleId,
             Kind = kind,
             GatewayIdempotencyKey = gatewayIdempotencyKey,
             StartedAt = now,

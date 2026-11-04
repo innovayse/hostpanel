@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Billing.Common;
+using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -72,5 +73,41 @@ public static class CardPaymentLedgerExtensions
             .TagWith(SettlementQueryTags.LedgerRead)
             .AsNoTracking()
             .AnyAsync(t => t.PaymentMethod == paymentMethod && t.TransactionId == transactionId, ct);
+    }
+
+    /// <summary>
+    /// What became of the money of a gateway transaction that was not recorded as an invoice payment.
+    /// </summary>
+    /// <param name="context">The module's data context.</param>
+    /// <param name="transactionId">The gateway's reference of the payment.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// <see cref="CardReturnState.NotRecorded"/> when the ledger holds no handed-back row (the payment was never
+    /// answered for, or was recorded as the invoice's payment); <see cref="CardReturnState.Returned"/> when it was
+    /// refunded or credited to the balance; <see cref="CardReturnState.HeldForOperator"/> when neither could be done
+    /// and an operator has to return it.
+    /// </returns>
+    public static async Task<CardReturnState> GetReturnStateAsync(
+        this IHostpanelDbContext context, string transactionId, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        if (string.IsNullOrWhiteSpace(transactionId))
+        {
+            return CardReturnState.NotRecorded;
+        }
+
+        var returns = await context.Transactions
+            .TagWith(SettlementQueryTags.LedgerRead)
+            .AsNoTracking()
+            .Where(t => t.TransactionId == transactionId && t.InvoiceId == null)
+            .Select(t => new { t.AddedToCredit, t.AmountOut })
+            .ToListAsync(ct);
+        if (returns.Count == 0)
+        {
+            return CardReturnState.NotRecorded;
+        }
+
+        // A refund row is "in and out again" and a credit row sits on the balance; a held row is neither.
+        return returns.Any(r => r.AddedToCredit || r.AmountOut > 0m) ? CardReturnState.Returned : CardReturnState.HeldForOperator;
     }
 }

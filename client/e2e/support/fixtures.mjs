@@ -258,16 +258,23 @@ export const INVOICE = {
   transactions: [],
 }
 
-/** The saved card the pay page preselects, in the camelCase shape the backend sends. */
+/** The saved card the pay page preselects, in the camelCase shape the backend sends; it is charged for renewals automatically. */
 export const SAVED_CARD = {
+  gatewayModuleId: 'stripe',
   id: 'pm_e2e',
-  type: 'Card',
   brand: 'visa',
   last4: '4242',
   expiryMonth: 12,
   expiryYear: 2030,
   isDefault: false,
+  autoCharge: true,
 }
+
+/** The gateway modules a card can be saved with: the built-in card form, and a gateway with its own hosted page. */
+export const SAVED_METHOD_MODULES = [
+  { module: 'stripe', displayName: 'Card' },
+  { module: 'inecobank', displayName: 'Inecobank' },
+]
 
 /** Operator settings the storefront reads; a light default and an uploaded light/dark logo pair. */
 export const PUBLIC_SETTINGS = [

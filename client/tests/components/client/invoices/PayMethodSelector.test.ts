@@ -9,8 +9,8 @@ import type { PaymentMethod } from '~/types/payment'
 
 /** Two saved cards. */
 const cards = [
-  { id: 'pm_1', type: PaymentMethodType.Card, description: 'Visa', gatewayName: 'stripe', cardType: 'visa', cardLastFour: '4242', cardExpiry: '12/30' },
-  { id: 'pm_2', type: PaymentMethodType.Card, description: 'Mastercard', gatewayName: 'stripe', cardType: 'mastercard', cardLastFour: '1111', cardExpiry: '01/31' },
+  { gatewayModuleId: 'stripe', id: 'pm_1', type: PaymentMethodType.Card, description: 'Visa', gatewayName: 'stripe', cardType: 'visa', cardLastFour: '4242', cardExpiry: '12/30' },
+  { gatewayModuleId: 'stripe', id: 'pm_2', type: PaymentMethodType.Card, description: 'Mastercard', gatewayName: 'stripe', cardType: 'mastercard', cardLastFour: '1111', cardExpiry: '01/31' },
 ] as PaymentMethod[]
 
 describe('PayMethodSelector', () => {

@@ -6,12 +6,14 @@ using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
-using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Models;
+using Innovayse.SDK.Plugins.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Billing.Commands.PayMyInvoice;
@@ -23,8 +25,8 @@ namespace Innovayse.Hostpanel.Application.Billing.Commands.PayMyInvoice;
 /// <remarks>
 /// The ownership check lives here rather than at the endpoint, so it travels with the message:
 /// nothing can charge a card through <see cref="PayMyInvoiceCommand"/> without it having run. The
-/// charge goes through <see cref="ICardPaymentGateway"/>, the one port that can take money from a
-/// saved method; there is no second, direct-charge abstraction. Once the money is taken the
+/// charge goes through the stored credential capability of the payment gateway module the method is saved
+/// with (<see cref="StoredCredentialGateway"/>), so any gateway plugin that offers it can be paid with. Once the money is taken the
 /// invoice is settled by <see cref="SettleInvoiceCardPaymentCommand"/>, the one card settlement
 /// every card payment goes through.
 /// <para>
@@ -42,10 +44,10 @@ public sealed class PayMyInvoiceHandler
     /// <summary>The module's data context.</summary>
     private readonly IHostpanelDbContext _context;
 
-    /// <summary>Card payment gateway, which lists the saved methods and takes the money.</summary>
-    private readonly ICardPaymentGateway _cardGateway;
+    /// <summary>The door to the module's stored credential capability, which lists the saved methods and takes the money.</summary>
+    private readonly StoredCredentialGateway _gateway;
 
-    /// <summary>The Wolverine bus, for the Clients module's card gateway customer query and the card settlement.</summary>
+    /// <summary>The Wolverine bus, for the card settlement.</summary>
     private readonly IMessageBus _bus;
 
     /// <summary>Records the activity log line when an invoice already covered by its payments is settled.</summary>
@@ -57,30 +59,42 @@ public sealed class PayMyInvoiceHandler
     /// <summary>Hands out the exclusive right to charge the invoice, so a client's payment and the renewal job never charge it at once.</summary>
     private readonly InvoicePaymentClaimGate _claims;
 
+    /// <summary>Charges the method and settles or ends the claim.</summary>
+    private readonly InvoiceCardCharger _charger;
+
+    /// <summary>The client portal's address, for the page a payer who has to authenticate is sent to.</summary>
+    private readonly IOptions<ClientPortalOptions> _clientPortal;
+
     /// <summary>Initializes a new instance of <see cref="PayMyInvoiceHandler"/>.</summary>
     /// <param name="ownership">The rule that says a client may only pay their own invoices.</param>
     /// <param name="context">The module's data context.</param>
-    /// <param name="cardGateway">Card payment gateway, which lists the saved methods and takes the money.</param>
-    /// <param name="bus">The Wolverine bus, for the Clients module's card gateway customer query and the card settlement.</param>
+    /// <param name="gateway">The door to the module's stored credential capability.</param>
+    /// <param name="bus">The Wolverine bus, for the card settlement.</param>
     /// <param name="activity">Records the activity log line when an invoice already covered by its payments is settled.</param>
     /// <param name="clock">The clock the current moment is read from.</param>
     /// <param name="claims">Hands out the exclusive right to charge the invoice, so a client's payment and the renewal job never charge it at once.</param>
+    /// <param name="charger">Charges the method and settles or ends the claim.</param>
+    /// <param name="clientPortal">The client portal's address, for the page a payer who has to authenticate is sent to.</param>
     public PayMyInvoiceHandler(
         IInvoiceOwnership ownership,
         IHostpanelDbContext context,
-        ICardPaymentGateway cardGateway,
+        StoredCredentialGateway gateway,
         IMessageBus bus,
         IActivityLogger activity,
         IClock clock,
-        InvoicePaymentClaimGate claims)
+        InvoicePaymentClaimGate claims,
+        InvoiceCardCharger charger,
+        IOptions<ClientPortalOptions> clientPortal)
     {
         _ownership = ownership;
         _context = context;
-        _cardGateway = cardGateway;
+        _gateway = gateway;
         _bus = bus;
         _activity = activity;
         _clock = clock;
         _claims = claims;
+        _charger = charger;
+        _clientPortal = clientPortal;
     }
 
     /// <summary>Handles <see cref="PayMyInvoiceCommand"/>.</summary>
@@ -166,35 +180,22 @@ public sealed class PayMyInvoiceHandler
             return Result.Success();
         }
 
-        var configured = _cardGateway.RequireConfigured();
-        if (configured.IsFailure)
-        {
-            return configured;
-        }
-
-        // The ownership check above proved the invoice is the caller's, so the caller's own client
-        // record is the invoice's.
-        var customer = await _bus.GetCallerCardGatewayCustomerAsync(ct);
-        if (customer.IsFailure)
-        {
-            return Result.FailureCode(customer.ErrorCode!);
-        }
-
-        var customerId = customer.Value!.CustomerId;
-        if (customerId is null)
+        var module = cmd.GatewayModuleId!;
+        var customerRef = await _context.FindGatewayCustomerRefAsync(invoice.ClientId, module, ct);
+        if (customerRef is null)
         {
             return Result.FailureCode(HostpanelErrorCodes.NO_SAVED_PAYMENT_METHODS);
         }
 
-        // The id came from the caller; only a method the gateway lists under this account's own
-        // customer may be charged, so a foreign or invented id never reaches the charge.
-        var methods = await _cardGateway.ListPaymentMethodsAsync(new CardCustomerInstruction(customerId), ct);
-        if (methods.Failure is { } listFailure)
+        // The id came from the caller; only a method the gateway lists under this account's own customer may be
+        // charged, so a foreign or invented id never reaches the charge.
+        var methods = await _gateway.ListMethodsAsync(module, customerRef, ct);
+        if (methods.IsFailure)
         {
-            return Result.FailureCode(listFailure.ToPaymentMethodErrorCode());
+            return Result.FailureCode(methods.ErrorCode!);
         }
 
-        if (!methods.Methods.Any(m => m.Id == cmd.PaymentMethodId))
+        if (methods.Value!.All(m => m.MethodRef != cmd.PaymentMethodId))
         {
             return Result.FailureCode(HostpanelErrorCodes.PAYMENT_METHOD_NOT_OWNED);
         }
@@ -203,7 +204,7 @@ public sealed class PayMyInvoiceHandler
         // it at this very moment, and both charges would take money under different keys. The claim carries
         // the attempt's key, so a retry of this same attempt is still one charge at the gateway.
         var key = IdempotencyKey(invoice, cmd);
-        var acquired = await _claims.AcquireAsync(invoice, InvoicePaymentClaimKind.Manual, key, customerId, ct);
+        var acquired = await _claims.AcquireAsync(invoice, module, InvoicePaymentClaimKind.Manual, key, customerRef, ct);
         switch (acquired.Status)
         {
             case InvoicePaymentClaimAcquisition.Busy:
@@ -212,50 +213,32 @@ public sealed class PayMyInvoiceHandler
                 return Result.Success();
         }
 
+        // The amount was read before the claim was taken; it is read again, because a payment recorded in between
+        // changes what is owed.
         var claim = acquired.Claim!;
+        var current = await _context.Invoices.AsNoTracking().Include(i => i.Transactions).FirstAsync(i => i.Id == invoice.Id, ct);
+        if (!current.IsPayable || current.AmountDue <= 0m)
+        {
+            claim.MarkExpired(_clock.UtcNow);
+            await _context.SaveChangesAsync(ct);
+            return Result.FailureCode(HostpanelErrorCodes.INVOICE_NOT_PAYABLE);
+        }
 
         // Charged in the currency the invoice was issued in.
-        var amount = invoice.AmountDue;
-        var (success, transactionId, failure) = await _cardGateway.ChargeSavedPaymentMethodAsync(
-            new CardChargeInstruction(customerId, cmd.PaymentMethodId!, amount, invoice.Currency, invoice.Id, key), ct);
-
-        if (failure == CardGatewayFailure.Unavailable)
+        var payUrl = $"{_clientPortal.Value.BaseUrl.TrimEnd('/')}/client/invoices/{invoice.Id.ToString(CultureInfo.InvariantCulture)}/pay";
+        var charge = await _charger.ChargeAsync(current, claim, customerRef, cmd.PaymentMethodId!, payUrl, ct);
+        return charge.Outcome switch
         {
-            // Nothing is known about the money: the claim stays held and is reconciled before any other attempt.
-            return Result.FailureCode(HostpanelErrorCodes.PAYMENT_GATEWAY_SERVICE_UNAVAILABLE);
-        }
+            InvoiceChargeOutcome.Settled => Result.Success(),
+            InvoiceChargeOutcome.Unavailable => Result.FailureCode(HostpanelErrorCodes.PAYMENT_GATEWAY_SERVICE_UNAVAILABLE),
 
-        if (!success)
-        {
-            claim.MarkFailed(_clock.UtcNow);
-            await _context.SaveChangesAsync(ct);
-            return Result.FailureCode(HostpanelErrorCodes.GATEWAY_CHARGE_UPSTREAM_FAILED);
-        }
-
-        if (string.IsNullOrEmpty(transactionId))
-        {
-            return Result.FailureCode(HostpanelErrorCodes.GATEWAY_TRANSACTION_MISSING_UPSTREAM_FAILED);
-        }
-
-        var settled = await _bus.InvokeAsync<Result>(
-            new SettleInvoiceCardPaymentCommand(invoice.Id, transactionId, amount, invoice.Currency), ct);
-        if (settled.IsSuccess)
-        {
-            claim.MarkSettled(_clock.UtcNow);
-        }
-        else
-        {
-            claim.MarkFailed(_clock.UtcNow);
-        }
-
-        await _context.SaveChangesAsync(ct);
-        return settled;
+            // The gateway accepted the charge and has not settled it: it is looked up later, and nobody may charge meanwhile.
+            InvoiceChargeOutcome.Pending => Result.FailureCode(HostpanelErrorCodes.PAYMENT_IN_PROGRESS),
+            InvoiceChargeOutcome.NotRecorded => Result.FailureCode(charge.ErrorCode ?? HostpanelErrorCodes.GATEWAY_CHARGE_UPSTREAM_FAILED),
+            _ => Result.FailureCode(HostpanelErrorCodes.GATEWAY_CHARGE_UPSTREAM_FAILED),
+        };
     }
 
-    /// <summary>The idempotency key of the pay action: the invoice and the payment attempt the client chose for it.</summary>
-    /// <param name="invoice">The invoice paid.</param>
-    /// <param name="cmd">The command carrying the payment attempt.</param>
-    /// <returns>The key the charge is sent and looked up with.</returns>
     private static string IdempotencyKey(Invoice invoice, PayMyInvoiceCommand cmd) =>
         string.Create(CultureInfo.InvariantCulture, $"invoice-{invoice.Id}-attempt-{cmd.AttemptId!.Value:N}");
 
@@ -271,36 +254,38 @@ public sealed class PayMyInvoiceHandler
     /// <returns>
     /// The card settlement's answer for the attempt's charge; <c>INVOICE_NOT_PAYABLE</c> when the
     /// invoice is not settled or this attempt took no money; or
-    /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> / <c>PAYMENT_METHOD_UPSTREAM_FAILED</c> when the
-    /// gateway could not be asked, since then nothing is known about the attempt's money.
+    /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when the gateway could not be asked, since then nothing is
+    /// known about the attempt's money.
     /// </returns>
     private async Task<Result> ReplaySettledAttemptAsync(Invoice invoice, PayMyInvoiceCommand cmd, CancellationToken ct)
     {
-        if (!invoice.IsSettled || !_cardGateway.IsConfigured)
+        if (!invoice.IsSettled)
         {
             return Result.FailureCode(HostpanelErrorCodes.INVOICE_NOT_PAYABLE);
         }
 
-        var customer = await _bus.GetCallerCardGatewayCustomerAsync(ct);
-        var customerId = customer.IsSuccess ? customer.Value!.CustomerId : null;
-        if (customerId is null)
+        var customerRef = await _context.FindGatewayCustomerRefAsync(invoice.ClientId, cmd.GatewayModuleId!, ct);
+        if (customerRef is null)
         {
             return Result.FailureCode(HostpanelErrorCodes.INVOICE_NOT_PAYABLE);
         }
 
-        var charge = await _cardGateway.FindChargeAsync(
-            new CardChargeLookupInstruction(customerId, invoice.Id, IdempotencyKey(invoice, cmd)), ct);
-        if (charge.Failure is { } lookupFailure)
+        var found = await _gateway.FindChargeAsync(cmd.GatewayModuleId!, customerRef, IdempotencyKey(invoice, cmd), ct);
+        if (found.IsFailure)
         {
-            return Result.FailureCode(lookupFailure.ToPaymentMethodErrorCode());
+            return Result.FailureCode(found.ErrorCode!);
         }
 
-        if (!charge.Found || string.IsNullOrEmpty(charge.TransactionId))
+        var charge = found.Value!;
+        if (!charge.Found || charge.Outcome != StoredChargeOutcome.Succeeded
+            || string.IsNullOrEmpty(charge.TransactionId) || charge.AmountMinor is not { } amountMinor || string.IsNullOrEmpty(charge.Currency))
         {
             return Result.FailureCode(HostpanelErrorCodes.INVOICE_NOT_PAYABLE);
         }
 
         return await _bus.InvokeAsync<Result>(
-            new SettleInvoiceCardPaymentCommand(invoice.Id, charge.TransactionId, charge.Amount, charge.Currency), ct);
+            new SettleInvoiceCardPaymentCommand(
+                invoice.Id, charge.TransactionId, CurrencyCode.FromMinorUnits(amountMinor, charge.Currency), charge.Currency),
+            ct);
     }
 }

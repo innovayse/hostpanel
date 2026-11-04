@@ -7,8 +7,17 @@ namespace Innovayse.Hostpanel.Infrastructure.Persistence.Configurations;
 /// <summary>EF Core mapping for <see cref="InvoicePaymentClaim"/>.</summary>
 public sealed class InvoicePaymentClaimConfiguration : IEntityTypeConfiguration<InvoicePaymentClaim>
 {
+    /// <summary>
+    /// The name of the unique index that allows one unfinished claim per invoice. The database context recognises a
+    /// violation of it by this name, so the name is written once, here.
+    /// </summary>
+    public const string OpenClaimIndex = "IX_InvoicePaymentClaims_InvoiceId";
+
     /// <summary>Column width of an enum name stored as text.</summary>
     private const int EnumNameLength = 16;
+
+    /// <summary>Column width of a payment gateway module id.</summary>
+    private const int ModuleIdLength = 100;
 
     /// <summary>Column width of the gateway idempotency key.</summary>
     private const int KeyLength = 100;
@@ -18,6 +27,7 @@ public sealed class InvoicePaymentClaimConfiguration : IEntityTypeConfiguration<
     {
         builder.HasKey(x => x.Id);
         builder.Property(x => x.InvoiceId).IsRequired();
+        builder.Property(x => x.GatewayModuleId).IsRequired().HasMaxLength(ModuleIdLength);
         builder.Property(x => x.Kind).IsRequired().HasConversion<string>().HasMaxLength(EnumNameLength);
         builder.Property(x => x.GatewayIdempotencyKey).IsRequired().HasMaxLength(KeyLength);
         builder.Property(x => x.StartedAt).IsRequired();
@@ -26,7 +36,7 @@ public sealed class InvoicePaymentClaimConfiguration : IEntityTypeConfiguration<
 
         // The whole point of the table: only one unfinished claim per invoice can exist, whoever asks and
         // however many at once. A second insert is refused by the database, not by a check that could race.
-        builder.HasIndex(x => x.InvoiceId)
+        builder.HasIndex(x => x.InvoiceId, OpenClaimIndex)
             .IsUnique()
             .HasFilter("\"Outcome\" IS NULL");
 

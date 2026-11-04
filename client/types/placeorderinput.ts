@@ -11,8 +11,6 @@ import type { GuestDetails } from '~/types/guestdetails'
 export interface PlaceOrderInput {
   /** The guest's details; ignored when the visitor is signed in. */
   guest: GuestDetails
-  /** Whether the payer ticked "save the card for automatic renewals"; off unless they did. */
-  saveCard?: boolean
   /**
    * Confirms a card payment with the payment provider's card element.
    *

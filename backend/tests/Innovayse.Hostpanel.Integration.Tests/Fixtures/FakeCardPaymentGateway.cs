@@ -17,27 +17,9 @@ public sealed class FakeCardPaymentGateway : ICardPaymentGateway
     /// <inheritdoc/>
     public bool IsConfigured { get; set; }
 
-    /// <summary>
-    /// The payment methods <see cref="ListPaymentMethodsAsync"/> answers with, keyed by nothing:
-    /// every configured customer id sees the same list, since the tests that use this fake
-    /// exercise exactly one seeded client's saved cards at a time.
-    /// </summary>
-    public IReadOnlyList<CardPaymentMethodDto> SavedPaymentMethods { get; set; } = [];
 
-    /// <summary>
-    /// The failure <see cref="ListPaymentMethodsAsync"/> answers with instead of the list, as a
-    /// gateway that refuses or cannot be reached would; null to list.
-    /// </summary>
-    public CardGatewayFailure? ListFailure { get; set; }
 
-    /// <summary>
-    /// The failure <see cref="SetDefaultPaymentMethodAsync"/> and <see cref="DetachPaymentMethodAsync"/>
-    /// answer with instead of applying the change; null to apply it.
-    /// </summary>
-    public CardGatewayFailure? MethodChangeFailure { get; set; }
 
-    /// <summary>The failure <see cref="FindChargeAsync"/> answers with instead of looking; null to look.</summary>
-    public CardGatewayFailure? LookupFailure { get; set; }
 
     /// <summary>The client secret <see cref="CreatePaymentIntentAsync"/> answers with.</summary>
     public string IntentClientSecret { get; set; } = "pi_test_secret_1";
@@ -81,23 +63,12 @@ public sealed class FakeCardPaymentGateway : ICardPaymentGateway
     /// </summary>
     public Func<CardRefundInstruction, Task>? AfterRefundIssued { get; set; }
 
-    /// <summary>
-    /// What <see cref="ChargeSavedPaymentMethodAsync"/> answers with. The default transaction id is
-    /// unique per fake, as a real gateway's is: the ledger refuses a transaction it already holds.
-    /// </summary>
-    public CardChargeResult Charge { get; set; } = new(true, $"txn-saved-card-{Guid.NewGuid():N}");
 
     /// <summary>The instruction the last <see cref="CreatePaymentIntentAsync"/> call carried, or <see langword="null"/>.</summary>
     public CardPaymentIntentInstruction? LastIntentInstruction { get; private set; }
 
-    /// <summary>The instruction the last <see cref="ChargeSavedPaymentMethodAsync"/> call carried, or <see langword="null"/> when no charge was attempted.</summary>
-    public CardChargeInstruction? LastChargeInstruction { get; private set; }
 
-    /// <summary>The payment method id <see cref="SetDefaultPaymentMethodAsync"/> was last called with, or <see langword="null"/>.</summary>
-    public string? LastSetDefaultPaymentMethodId { get; private set; }
 
-    /// <summary>The payment method id <see cref="DetachPaymentMethodAsync"/> was last called with, or <see langword="null"/>.</summary>
-    public string? LastDetachedPaymentMethodId { get; private set; }
 
     /// <inheritdoc/>
     public Task<CardPaymentIntentResult> CreatePaymentIntentAsync(CardPaymentIntentInstruction instruction, CancellationToken ct)
@@ -120,169 +91,14 @@ public sealed class FakeCardPaymentGateway : ICardPaymentGateway
         return Task.FromResult(Verification);
     }
 
-    /// <summary>
-    /// The outcome of every charge the gateway took, by idempotency key. A key it has seen answers
-    /// with its first outcome, a decline included, as a real gateway replays it.
-    /// </summary>
-    public Dictionary<string, CardChargeResult> ChargesByKey { get; } = [];
 
-    /// <summary>
-    /// When set, every <see cref="ChargeSavedPaymentMethodAsync"/> call waits here until all of the
-    /// rendezvous' parties have called, so that concurrent requests have all read their invoice
-    /// unpaid before any charge is answered. Null for no waiting.
-    /// </summary>
-    public ChargeRendezvous? ChargeRendezvous { get; set; }
 
-    /// <inheritdoc/>
-    public async Task<CardChargeResult> ChargeSavedPaymentMethodAsync(CardChargeInstruction instruction, CancellationToken ct)
-    {
-        ThrowIfNotConfigured();
-        if (ChargeRendezvous is { } rendezvous)
-        {
-            await rendezvous.ArriveAsync(ct);
-        }
 
-        lock (ChargesByKey)
-        {
-            LastChargeInstruction = instruction;
-            if (!ChargesByKey.TryGetValue(instruction.IdempotencyKey, out var outcome))
-            {
-                outcome = Charge;
-                ChargesByKey[instruction.IdempotencyKey] = outcome;
-                ChargeInstructionsByKey[instruction.IdempotencyKey] = instruction;
-            }
 
-            return outcome;
-        }
-    }
 
-    /// <summary>The instruction of the first charge under each idempotency key, which says what it took.</summary>
-    public Dictionary<string, CardChargeInstruction> ChargeInstructionsByKey { get; } = [];
 
-    /// <summary>How many times <see cref="FindChargeAsync"/> was called.</summary>
-    public int ChargeLookups { get; private set; }
 
-    /// <inheritdoc/>
-    /// <remarks>Answers with the settled charge taken under the key, never charging; a decline or an unseen key is nothing found.</remarks>
-    public Task<CardChargeLookupResult> FindChargeAsync(CardChargeLookupInstruction instruction, CancellationToken ct)
-    {
-        ThrowIfNotConfigured();
-        lock (ChargesByKey)
-        {
-            ChargeLookups++;
-            if (LookupFailure is { } failure)
-            {
-                return Task.FromResult(CardChargeLookupResult.Failed(failure));
-            }
 
-            if (ChargesByKey.TryGetValue(instruction.IdempotencyKey, out var outcome) && outcome.Success)
-            {
-                var charged = ChargeInstructionsByKey[instruction.IdempotencyKey];
-                return Task.FromResult(new CardChargeLookupResult(true, outcome.TransactionId, charged.Amount, charged.Currency));
-            }
-
-            return Task.FromResult(CardChargeLookupResult.None);
-        }
-    }
-
-    /// <summary>Guards the customer maps below, which concurrent requests write.</summary>
-    private readonly object _customerLock = new();
-
-    /// <summary>The customers the gateway holds, by the key their creation carried. A key it has seen answers with its first customer, as a real gateway replays it.</summary>
-    public Dictionary<string, string> CustomersByKey { get; } = [];
-
-    /// <summary>How many customers the gateway really created (a replayed key does not count).</summary>
-    public int CustomersCreated => CustomersByKey.Count;
-
-    /// <summary>The customers deleted at the gateway, in order.</summary>
-    public List<string> DeletedCustomers { get; } = [];
-
-    /// <summary>The customer <see cref="FindCustomerAsync"/> finds for a client, by client id; a test adds one to stand for a customer created but never stored.</summary>
-    public Dictionary<int, string> OrphanCustomers { get; } = [];
-
-    /// <summary>The failure <see cref="CreateCustomerAsync"/> answers with instead of a customer; null to create.</summary>
-    public CardGatewayFailure? CustomerFailure { get; set; }
-
-    /// <summary>
-    /// Runs after a customer is created and before the gateway answers; null for none. A test throws from it
-    /// to lose the answer of a customer that does exist, or holds the request there while another one goes by.
-    /// </summary>
-    public Func<CardCreateCustomerInstruction, Task>? AfterCustomerCreated { get; set; }
-
-    /// <inheritdoc/>
-    public async Task<CardCustomerResult> CreateCustomerAsync(CardCreateCustomerInstruction instruction, CancellationToken ct)
-    {
-        ThrowIfNotConfigured();
-        if (CustomerFailure is { } failure)
-        {
-            return CardCustomerResult.Failed(failure);
-        }
-
-        string customerId;
-        lock (_customerLock)
-        {
-            if (!CustomersByKey.TryGetValue(instruction.IdempotencyKey, out customerId!))
-            {
-                customerId = $"cus_fake_{Guid.NewGuid():N}"[..24];
-                CustomersByKey[instruction.IdempotencyKey] = customerId;
-            }
-        }
-
-        if (AfterCustomerCreated is not null)
-        {
-            await AfterCustomerCreated(instruction);
-        }
-
-        return new CardCustomerResult(customerId);
-    }
-
-    /// <inheritdoc/>
-    public Task<CardCustomerResult> FindCustomerAsync(CardFindCustomerInstruction instruction, CancellationToken ct)
-    {
-        ThrowIfNotConfigured();
-        lock (_customerLock)
-        {
-            return Task.FromResult(OrphanCustomers.TryGetValue(instruction.ClientId, out var found)
-                ? new CardCustomerResult(found)
-                : CardCustomerResult.None);
-        }
-    }
-
-    /// <inheritdoc/>
-    public Task<CardGatewayOperationResult> DeleteCustomerAsync(CardCustomerInstruction instruction, CancellationToken ct)
-    {
-        ThrowIfNotConfigured();
-        lock (_customerLock)
-        {
-            DeletedCustomers.Add(instruction.CustomerId);
-        }
-
-        return Task.FromResult(CardGatewayOperationResult.Succeeded);
-    }
-
-    /// <summary>The setup intent <see cref="CreateSetupIntentAsync"/> answers with.</summary>
-    public CardSetupIntentResult SetupIntent { get; set; } = new("seti_test_1", "seti_test_1_secret");
-
-    /// <summary>What <see cref="VerifySetupIntentAsync"/> answers with; a test sets the customer and card it expects.</summary>
-    public CardSetupIntentStatus SetupVerification { get; set; } = new(true, null, "pm_saved_1");
-
-    /// <summary>The instruction the last <see cref="CreateSetupIntentAsync"/> call carried, or <see langword="null"/>.</summary>
-    public CardSetupIntentInstruction? LastSetupInstruction { get; private set; }
-
-    /// <inheritdoc/>
-    public Task<CardSetupIntentResult> CreateSetupIntentAsync(CardSetupIntentInstruction instruction, CancellationToken ct)
-    {
-        ThrowIfNotConfigured();
-        LastSetupInstruction = instruction;
-        return Task.FromResult(SetupIntent);
-    }
-
-    /// <inheritdoc/>
-    public Task<CardSetupIntentStatus> VerifySetupIntentAsync(CardSetupIntentVerifyInstruction instruction, CancellationToken ct)
-    {
-        ThrowIfNotConfigured();
-        return Task.FromResult(SetupVerification);
-    }
 
     /// <inheritdoc/>
     public async Task<CardRefundResult> RefundAsync(CardRefundInstruction instruction, CancellationToken ct)
@@ -326,41 +142,6 @@ public sealed class FakeCardPaymentGateway : ICardPaymentGateway
         }
 
         return refund;
-    }
-
-    /// <inheritdoc/>
-    public Task<CardPaymentMethodsResult> ListPaymentMethodsAsync(CardCustomerInstruction instruction, CancellationToken ct)
-    {
-        ThrowIfNotConfigured();
-        return Task.FromResult(ListFailure is { } failure
-            ? CardPaymentMethodsResult.Failed(failure)
-            : new CardPaymentMethodsResult(SavedPaymentMethods));
-    }
-
-    /// <inheritdoc/>
-    public Task<CardGatewayOperationResult> SetDefaultPaymentMethodAsync(CardDefaultMethodInstruction instruction, CancellationToken ct)
-    {
-        ThrowIfNotConfigured();
-        if (MethodChangeFailure is { } failure)
-        {
-            return Task.FromResult(new CardGatewayOperationResult(failure));
-        }
-
-        LastSetDefaultPaymentMethodId = instruction.PaymentMethodId;
-        return Task.FromResult(CardGatewayOperationResult.Succeeded);
-    }
-
-    /// <inheritdoc/>
-    public Task<CardGatewayOperationResult> DetachPaymentMethodAsync(CardDetachInstruction instruction, CancellationToken ct)
-    {
-        ThrowIfNotConfigured();
-        if (MethodChangeFailure is { } failure)
-        {
-            return Task.FromResult(new CardGatewayOperationResult(failure));
-        }
-
-        LastDetachedPaymentMethodId = instruction.PaymentMethodId;
-        return Task.FromResult(CardGatewayOperationResult.Succeeded);
     }
 
     /// <summary>

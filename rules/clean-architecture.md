@@ -166,9 +166,12 @@ public sealed class InvoicesController : BaseApiController
 
 ## Pluggable Interface Rules
 
-- Card payments go through `ICardPaymentGateway`; hosted bank pages go through the plugin SDK
+- One-off card payments at checkout go through `ICardPaymentGateway`; hosted bank pages go through the plugin SDK
   contract `IPaymentPlugin` (`Innovayse.SDK.Plugins`), which Application reaches through
-  `IPaymentPluginResolver`; there is no third, direct-charge gateway
+  `IPaymentPluginResolver`; saved payment methods and off-session charges go through the optional SDK capability
+  `IStoredCredentialPlugin`, which Application reaches only through `StoredCredentialGateway` (built on
+  `IStoredCredentialPluginResolver`), so the built-in Stripe gateway and a payment plugin are charged the same way;
+  there is no other direct-charge gateway
 - Registrar providers implement `IRegistrarProvider`
 - Provisioning providers implement `IProvisioningProvider`
 - Ports live in **Application/Common/Interfaces**, implementations in **Infrastructure**

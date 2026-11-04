@@ -906,6 +906,37 @@ which looks only at invoices that are not `Cancelled` and refuses a target that 
 renewal line, a paid line not yet applied, or a line for the same period. A unique index would need a
 filter on the invoice status, which lives on another table, so it cannot be expressed as an index.
 
+**Saved methods and automatic renewal charges (#479).** A client saves a payment method through the stored credential
+capability of a payment gateway module (the built-in Stripe gateway is one, `StripeStoredCredentialPlugin`, and a
+payment plugin that implements `IStoredCredentialPlugin` is another), and the host reaches every module through the one
+door `StoredCredentialGateway` (it turns a plugin that throws into `PAYMENT_GATEWAY_SERVICE_UNAVAILABLE`, which for a
+charge means "unknown outcome"). The built-in gateway is also gated by its switch on the admin integrations page. Three
+tables carry the policy, all keyed by gateway module:
+- `GatewayCustomers` (`ClientId`, `GatewayModuleId`, `CustomerRef`): a client's account at a module, one per client and
+  module (`IX_GatewayCustomers_ClientId_GatewayModuleId`) and one client per gateway account. `EnsureGatewayCustomer`
+  reads it or asks the capability to open the account; the loser of a race reads the winner's row.
+- `CardChargeConsents`: the client's agreement that one saved method may be charged without them, written on the server
+  with the wording version (`CardChargeConsent.CurrentTextVersion`), time, address and browser. It is `Pending` from
+  `BeginMyCardSave`, `Active` only when `CompleteMyCardSave` sees the gateway confirm the method belongs to the client's
+  account, and `Revoked` (final, with a `CardConsentRevocationReason`) when the client turns automatic charges off or the
+  method is removed. A concurrency token (`xmin`) makes the loser of an activation and a withdrawal fail instead of
+  overwriting: a withdrawal is retried until it lands, an activation gives up. A method with no active agreement is never charged
+  automatically, however it was saved.
+- `InvoicePaymentClaims`: the exclusive right to charge one invoice, taken before any money moves by both the client's
+  `PayMyInvoice` and the renewal job's `ChargeRenewalInvoice`. A partial unique index (`IX_InvoicePaymentClaims_InvoiceId`
+  where `Outcome IS NULL`) allows one unfinished claim per invoice; a second attempt gets `PAYMENT_IN_PROGRESS` (manual)
+  or is skipped (automatic). The claim's `GatewayIdempotencyKey` (at most 64 ASCII characters) is stored before the
+  capability is called and is the key the gateway deduplicates by. A claim lasts 15 minutes (`ClaimLifetime`).
+`RaiseClientRenewalInvoices` dispatches `ChargeRenewalInvoice` for an unpaid renewal invoice. It charges the default
+saved method of a module only when the client agreed to exactly that method, re-reads the agreement and the amount due
+after taking the claim, and ends the claim only when the money is accounted for: settled, declined, action required, or
+taken and handed back (`GetReturnStateAsync`). An unknown outcome, a `Pending` charge, or money taken that settlement
+could neither record nor hand back leaves the claim held, so nobody charges again. `InvoicePaymentClaimGate.ReconcileStaleAsync`
+(run by `ReconcileGatewayPaymentsCron`) looks every stale claim up by key with `FindCharge` and records a payment that
+went through whatever became of the invoice meanwhile. A decline or a payment that needs the payer sends one e-mail with
+the pay link; with no capability, no method or no agreement the invoice stays unpaid for the usual pay flow. The new
+error codes are `PAYMENT_IN_PROGRESS`, `CARD_SETUP_NOT_COMPLETED` and `CARD_SETUP_NOT_FOUND`.
+
 ### Client account status
 
 `Client.Status` is enforced, not just stored. The transitions live in the aggregate and nowhere else

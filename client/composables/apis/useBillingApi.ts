@@ -13,6 +13,8 @@ import type { GatewayCompletion } from '~/types/gatewaycompletion'
 import type { GatewayMethod } from '~/types/gatewaymethod'
 import type { PaymentMethod, PaymentMethodWire } from '~/types/payment'
 import type { PlaceOrderResult } from '~/types/placeorderresult'
+import type { SavedMethodModule } from '~/types/savedmethodmodule'
+import type { SavedMethodSession } from '~/types/savedmethodsession'
 import { PaymentTarget } from '~/types/paymenttarget'
 import { toPaymentMethod } from '~/utils/paymentMethodMapper'
 import { HttpMethod } from '~/types/httpmethod'
@@ -34,7 +36,7 @@ export const useBillingApi = () => {
     apiFetch<ClientInvoice>(`/api/portal/client/invoices/${id}`)
 
   /**
-   * Reads the client's saved cards and bank accounts as a one-shot call.
+   * Reads the client's saved cards as a one-shot call.
    *
    * @returns Every saved payment method on the account, mapped from the API's camelCase to {@link PaymentMethod}.
    * @throws Whatever `apiFetch` throws.
@@ -60,27 +62,34 @@ export const useBillingApi = () => {
    * Pays an invoice with a saved payment method.
    *
    * @param invoiceId - Invoice to pay.
+   * @param gatewayModuleId - The gateway module that holds the saved payment method.
    * @param payMethodId - Saved payment method to charge.
    * @param attemptId - The payment attempt, new for each pay action and the same on a retry of it,
    * so a retried request is one charge and a new action after a decline is a new one.
    * @returns Whatever the endpoint answers with.
    * @throws Whatever `apiFetch` throws: a declined card included.
    */
-  const payInvoice = (invoiceId: string, payMethodId: string | number, attemptId: string): Promise<unknown> =>
+  const payInvoice = (
+    invoiceId: string,
+    gatewayModuleId: string,
+    payMethodId: string | number,
+    attemptId: string
+  ): Promise<unknown> =>
     apiFetch(`/api/portal/client/invoices/${invoiceId}/pay`, {
       method: HttpMethod.Post,
-      body: { paymentMethodId: payMethodId, attemptId }
+      body: { gatewayModuleId, paymentMethodId: payMethodId, attemptId }
     })
 
   /**
    * Makes a saved payment method the account default.
    *
+   * @param gatewayModuleId - The gateway module that holds the method.
    * @param id - Payment method to promote.
    * @returns Whatever the endpoint answers with.
    * @throws Whatever `apiFetch` throws.
    */
-  const setDefaultPaymentMethod = (id: string): Promise<unknown> =>
-    apiFetch(`/api/portal/client/payment-methods/${id}`, {
+  const setDefaultPaymentMethod = (gatewayModuleId: string, id: string): Promise<unknown> =>
+    apiFetch(`/api/portal/client/payment-methods/${encodeURIComponent(gatewayModuleId)}/${encodeURIComponent(id)}`, {
       method: HttpMethod.Put,
       body: { setAsDefault: true }
     })
@@ -88,12 +97,15 @@ export const useBillingApi = () => {
   /**
    * Removes a saved payment method.
    *
+   * @param gatewayModuleId - The gateway module that holds the method.
    * @param id - Payment method to delete.
    * @returns Whatever the endpoint answers with.
    * @throws Whatever `apiFetch` throws.
    */
-  const removePaymentMethod = (id: string): Promise<unknown> =>
-    apiFetch(`/api/portal/client/payment-methods/${id}`, { method: HttpMethod.Delete })
+  const removePaymentMethod = (gatewayModuleId: string, id: string): Promise<unknown> =>
+    apiFetch(`/api/portal/client/payment-methods/${encodeURIComponent(gatewayModuleId)}/${encodeURIComponent(id)}`, {
+      method: HttpMethod.Delete
+    })
 
   /**
    * Places an order, creating the order and its invoice on the backend.
@@ -114,45 +126,55 @@ export const useBillingApi = () => {
    *
    * @param orderId - Order to charge.
    * @param paymentToken - The order's payment token, returned when it was placed.
-   * @param saveCard - Whether the payer ticked "save the card for automatic renewals".
    * @returns The client secret Stripe.js needs to confirm the card.
    * @throws Whatever `apiFetch` throws.
    */
   const createOrderPaymentIntent = (
     orderId: string | number,
-    paymentToken: string,
-    saveCard = false
+    paymentToken: string
   ): Promise<{ clientSecret: string }> =>
     apiFetch<{ clientSecret: string }>(`/api/portal/order/${orderId}/create-payment-intent`, {
       method: HttpMethod.Post,
-      body: { paymentToken, saveCard }
+      body: { paymentToken }
     })
 
   /**
-   * Starts saving a card without a payment. The payer's agreement to automatic renewal charges is sent
-   * with it; the backend records it as pending until the payment provider confirms the card.
+   * Lists the gateway modules the client can save a payment method with.
    *
-   * @param consentAccepted - Whether the payer ticked the agreement.
-   * @returns The setup intent to confirm with the card element, and its client secret.
+   * @returns The modules; empty when no gateway offers saved methods.
    * @throws Whatever `apiFetch` throws.
    */
-  const createSetupIntent = (consentAccepted: boolean): Promise<{ setupIntentId: string, clientSecret: string }> =>
-    apiFetch<{ setupIntentId: string, clientSecret: string }>('/api/portal/client/payment-methods/setup-intent', {
+  const listSavedMethodModules = (): Promise<SavedMethodModule[]> =>
+    apiFetch<SavedMethodModule[]>('/api/portal/client/payment-methods/modules')
+
+  /**
+   * Starts saving a payment method with a gateway module. The payer's agreement to automatic renewal
+   * charges is sent with it; the backend records it as pending until the save is completed.
+   *
+   * @param gatewayModuleId - The gateway module to save the method with.
+   * @param consentAccepted - Whether the payer ticked the agreement.
+   * @returns The save session: an embedded token for the card form, or the gateway page to send the payer to.
+   * @throws Whatever `apiFetch` throws.
+   */
+  const beginCardSave = (gatewayModuleId: string, consentAccepted: boolean): Promise<SavedMethodSession> =>
+    apiFetch<SavedMethodSession>('/api/portal/client/payment-methods/sessions', {
       method: HttpMethod.Post,
-      body: { consentAccepted }
+      body: { gatewayModuleId, consentAccepted }
     })
 
   /**
-   * Finishes saving a card once the card element confirmed the setup intent.
+   * Finishes saving a payment method once the payer is back from the gateway or the card form
+   * confirmed it; the call is idempotent.
    *
-   * @param setupIntentId - The setup intent {@link createSetupIntent} opened.
+   * @param gatewayModuleId - The gateway module that holds the session.
+   * @param sessionId - The session {@link beginCardSave} opened.
    * @returns Whatever the endpoint answers with.
    * @throws Whatever `apiFetch` throws.
    */
-  const confirmSetupIntent = (setupIntentId: string): Promise<unknown> =>
-    apiFetch('/api/portal/client/payment-methods/confirm-setup', {
+  const completeCardSave = (gatewayModuleId: string, sessionId: string): Promise<unknown> =>
+    apiFetch('/api/portal/client/payment-methods/sessions/complete', {
       method: HttpMethod.Post,
-      body: { setupIntentId }
+      body: { gatewayModuleId, sessionId }
     })
 
   /**
@@ -270,8 +292,9 @@ export const useBillingApi = () => {
     fetchGatewayMethods,
     createOrder,
     createOrderPaymentIntent,
-    createSetupIntent,
-    confirmSetupIntent,
+    listSavedMethodModules,
+    beginCardSave,
+    completeCardSave,
     turnOffAutoCharge,
     startOrderGatewayPayment,
     startInvoiceGatewayPayment,

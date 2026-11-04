@@ -1,13 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
-using Innovayse.Hostpanel.Application.Billing.Common;
-using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
-using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 
@@ -29,25 +24,20 @@ public sealed class PayMyInvoiceClientStatusTests(IntegrationTestFactory factory
     [InlineData(ClientStatus.Closed, HostpanelErrorCodes.CLIENT_CLOSED)]
     public async Task Pay_BySuspendedOrClosedAccount_IsRefusedAndNothingIsChargedAsync(ClientStatus status, string expectedCode)
     {
-        var cardGateway = new FakeCardPaymentGateway
-        {
-            IsConfigured = true,
-            SavedPaymentMethods = [new CardPaymentMethodDto(SavedMethodId, SavedPaymentMethodType.Card, "visa", "4242", 12, 2035, true)],
-        };
-        var host = factory.WithWebHostBuilder(builder =>
-            builder.ConfigureTestServices(services => services.AddSingleton<ICardPaymentGateway>(cardGateway)));
-        var (owner, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, $"pay-status-{status}");
-        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, $"cus_st_{Guid.NewGuid():N}"[..24]);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var gateway = StoredCredentialHost.Create(factory);
+        gateway.Plugin.Methods.Add(StoredCredentialHost.Card(SavedMethodId));
+        var (owner, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, gateway.Host, $"pay-status-{status}");
+        await gateway.LinkAsync(clientId, $"cus_st_{Guid.NewGuid():N}"[..24]);
+        var admin = await BillingTestSeeds.AdminClientAsync(factory, gateway.Host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
         await ClientStatusSeeds.SetAsync(factory, clientId, status);
 
         var response = await owner.PostAsJsonAsync(
-            $"/api/me/invoices/{invoiceId}/pay", new { paymentMethodId = SavedMethodId, attemptId = Guid.NewGuid() });
+            $"/api/me/invoices/{invoiceId}/pay", new { gatewayModuleId = StoredCredentialHost.Module, paymentMethodId = SavedMethodId, attemptId = Guid.NewGuid() });
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         await ClientsTestSeeds.AssertCodeAsync(response, expectedCode);
-        cardGateway.LastChargeInstruction.Should().BeNull();
+        gateway.Plugin.Charges.Should().BeEmpty();
         var fetched = await admin.GetFromJsonAsync<System.Text.Json.JsonElement>($"/api/billing/{invoiceId}");
         fetched.GetProperty("status").GetString().Should().Be(nameof(InvoiceStatus.Unpaid));
     }

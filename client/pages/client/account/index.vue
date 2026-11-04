@@ -89,6 +89,7 @@ await useAsyncData('client-account', () => Promise.all([
   account.loadUsers(),
   account.loadContacts(),
   account.loadEmails(),
-  account.loadPaymentMethods()
+  account.loadPaymentMethods(),
+  account.loadSavedMethodModules()
 ]))
 </script>

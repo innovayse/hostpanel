@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Monitoring;
+using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Shared.Settings;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -57,6 +58,9 @@ internal static class DemoServiceRegistration
 
         services.Replace(ServiceDescriptor.Scoped<ICardPaymentGateway, DemoCardPaymentGateway>());
         services.Replace(ServiceDescriptor.Scoped<IPaymentPluginResolver, DemoPaymentPluginResolver>());
+
+        // The demo gateway module answers through the in-memory demo plugin, never through the real gateway, whatever keys are set.
+        services.Replace(ServiceDescriptor.Scoped<IStoredCredentialPluginResolver, StoredCredentialPluginResolver>());
         services.Replace(ServiceDescriptor.Scoped<IRegistrarProvider, DemoRegistrarProvider>());
         services.Replace(ServiceDescriptor.Scoped<IRegistrarProviderFactory, DemoRegistrarProviderFactory>());
         services.Replace(ServiceDescriptor.Scoped<IProvisioningProvider, DemoProvisioningProvider>());

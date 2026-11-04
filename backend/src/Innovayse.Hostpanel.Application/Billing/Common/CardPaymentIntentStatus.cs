@@ -18,10 +18,6 @@ namespace Innovayse.Hostpanel.Application.Billing.Common;
 /// be reached, so nothing is known about the intent, or <see cref="CardGatewayFailure.Refused"/> when
 /// it refused to read it; <see langword="null"/> when the gateway answered.
 /// </param>
-/// <param name="PaymentMethodId">
-/// The payment method the intent was paid with and the gateway kept on the customer for later
-/// charges, or <see langword="null"/> when no card was saved by this payment.
-/// </param>
 public sealed record CardPaymentIntentStatus(
     bool Succeeded,
     string? TransactionId,
@@ -29,5 +25,4 @@ public sealed record CardPaymentIntentStatus(
     string Currency,
     int? OrderId,
     int? InvoiceId,
-    CardGatewayFailure? Failure = null,
-    string? PaymentMethodId = null);
+    CardGatewayFailure? Failure = null);

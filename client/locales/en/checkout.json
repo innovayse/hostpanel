@@ -58,8 +58,6 @@
       "email": "you{'@'}example.com",
       "password": "••••••••"
     },
-    "saveCard": "Save this card and charge my renewals to it automatically",
-    "saveCardHint": "Off by default. You can turn it off any time in Account → Payment methods.",
     "totalChangedConfirm": "The total changed from {shown} to {charged}. Pay the new total?",
     "card": {
       "notInitialized": "The card form is not ready yet. Please wait a moment and try again.",

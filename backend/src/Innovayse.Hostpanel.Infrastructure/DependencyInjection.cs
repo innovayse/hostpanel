@@ -531,7 +531,9 @@ public static class DependencyInjection
                 $"{StripeOptions.SectionName} is partly configured: SecretKey must be set, or the "
                     + "whole section left unset.")
             .ValidateOnStart();
+        services.AddScoped<StripeClientProvider>();
         services.AddScoped<ICardPaymentGateway, StripeService>();
+        services.AddScoped<StripeStoredCredentialPlugin>();
 
         // Payment plugins (hosted-gateway providers)
         services.AddHttpClient();
@@ -572,7 +574,8 @@ public static class DependencyInjection
             .AddInecobankResilience();
 
         services.AddScoped<IPaymentPluginResolver, PaymentPluginResolver>();
-        services.AddScoped<IStoredCredentialPluginResolver, StoredCredentialPluginResolver>();
+        services.AddScoped<StoredCredentialPluginResolver>();
+        services.AddScoped<IStoredCredentialPluginResolver, BuiltInStoredCredentialPluginResolver>();
 
         // The chat notifier, the operator's channel for public contact-form enquiries.
         // Optional in the same way the card gateway and the default registrar are: an unset section is a deployment that

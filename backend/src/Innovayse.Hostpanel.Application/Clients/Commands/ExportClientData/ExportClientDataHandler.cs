@@ -103,9 +103,9 @@ public sealed class ExportClientDataHandler
                 ? new[] { new ClientExportConsentDto(ConsentPurpose.Marketing, client.MarketingOptIn) }
                 : null,
 
-            // Card details live at the card gateway; what is held here is the preference and whether a gateway customer exists.
+            // Card details live at the card gateway; what is held here is the preference and whether a gateway account exists.
             PayMethods = wanted.Contains(ClientExportSections.PayMethods)
-                ? MapPayMethods(client)
+                ? MapPayMethods(client, await _context.GatewayCustomers.AnyAsync(g => g.ClientId == client.Id, ct))
                 : null,
         };
 
@@ -153,10 +153,10 @@ public sealed class ExportClientDataHandler
 
     /// <summary>Builds the <c>payMethods</c> section.</summary>
     /// <param name="client">The client being exported.</param>
-    /// <returns>One entry when the account has a payment preference or a card gateway customer, none otherwise.</returns>
-    private static IReadOnlyList<ClientExportPayMethodDto> MapPayMethods(Client client)
+    /// <param name="hasSavedCard">Whether the client has an account at a payment gateway, where saved cards live.</param>
+    /// <returns>One entry when the account has a payment preference or a payment gateway account, none otherwise.</returns>
+    private static IReadOnlyList<ClientExportPayMethodDto> MapPayMethods(Client client, bool hasSavedCard)
     {
-        var hasSavedCard = !string.IsNullOrEmpty(client.CardGatewayCustomerId);
         if (client.PaymentMethod is null && !hasSavedCard)
         {
             return [];

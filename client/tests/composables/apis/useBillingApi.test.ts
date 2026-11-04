@@ -13,7 +13,6 @@ import type { ExpectedRequest } from '../../helpers/stubTransport'
 import type { StubServer } from '../../helpers/stubServer'
 import { useBillingApi } from '~/composables/apis/useBillingApi'
 import { PaymentTarget } from '~/types/paymenttarget'
-import { PaymentMethodType } from '~/types/payment'
 import { HttpMethod } from '~/types/httpmethod'
 
 /** The stub started by the current test. */
@@ -34,14 +33,14 @@ const rows: ExpectedRequest[] = [
   { name: 'fetchInvoicePdf encodes the id into one path segment', call: () => api.fetchInvoicePdf('7/../x'), method: HttpMethod.Get, url: '/api/portal/client/invoices/7%2F..%2Fx/pdf' },
   { name: 'fetchPaymentMethods reads the saved methods', call: () => api.fetchPaymentMethods(), method: HttpMethod.Get, url: '/api/portal/client/payment-methods' },
   { name: 'fetchGatewayMethods reads the gateways under the order surface', call: () => api.fetchGatewayMethods(), method: HttpMethod.Get, url: '/api/portal/order/payment-methods' },
-  { name: 'payInvoice posts the saved method id and the attempt', call: () => api.payInvoice('7', 'pm_1', 'attempt-1'), method: HttpMethod.Post, url: '/api/portal/client/invoices/7/pay', body: { paymentMethodId: 'pm_1', attemptId: 'attempt-1' } },
-  { name: 'setDefaultPaymentMethod puts the default flag', call: () => api.setDefaultPaymentMethod('pm_1'), method: HttpMethod.Put, url: '/api/portal/client/payment-methods/pm_1', body: { setAsDefault: true } },
-  { name: 'removePaymentMethod deletes by id', call: () => api.removePaymentMethod('pm_1'), method: HttpMethod.Delete, url: '/api/portal/client/payment-methods/pm_1' },
+  { name: 'payInvoice posts the module, the saved method id and the attempt', call: () => api.payInvoice('7', 'stripe', 'pm_1', 'attempt-1'), method: HttpMethod.Post, url: '/api/portal/client/invoices/7/pay', body: { gatewayModuleId: 'stripe', paymentMethodId: 'pm_1', attemptId: 'attempt-1' } },
+  { name: 'setDefaultPaymentMethod puts the default flag under the module', call: () => api.setDefaultPaymentMethod('stripe', 'pm_1'), method: HttpMethod.Put, url: '/api/portal/client/payment-methods/stripe/pm_1', body: { setAsDefault: true } },
+  { name: 'removePaymentMethod deletes by module and id', call: () => api.removePaymentMethod('stripe', 'pm_1'), method: HttpMethod.Delete, url: '/api/portal/client/payment-methods/stripe/pm_1' },
   { name: 'createOrder posts the order', call: () => api.createOrder({ items: [], paymentmethod: 'stripe' }), method: HttpMethod.Post, url: '/api/portal/order/create', body: { items: [], paymentmethod: 'stripe' } },
-  { name: 'createOrderPaymentIntent posts the payment token and does not save the card by default', call: () => api.createOrderPaymentIntent(42, 'tok'), method: HttpMethod.Post, url: '/api/portal/order/42/create-payment-intent', body: { paymentToken: 'tok', saveCard: false } },
-  { name: 'createOrderPaymentIntent posts the choice to save the card', call: () => api.createOrderPaymentIntent(42, 'tok', true), method: HttpMethod.Post, url: '/api/portal/order/42/create-payment-intent', body: { paymentToken: 'tok', saveCard: true } },
-  { name: 'createSetupIntent posts the agreement', call: () => api.createSetupIntent(true), method: HttpMethod.Post, url: '/api/portal/client/payment-methods/setup-intent', body: { consentAccepted: true } },
-  { name: 'confirmSetupIntent posts the setup intent id', call: () => api.confirmSetupIntent('seti_1'), method: HttpMethod.Post, url: '/api/portal/client/payment-methods/confirm-setup', body: { setupIntentId: 'seti_1' } },
+  { name: 'createOrderPaymentIntent posts the payment token', call: () => api.createOrderPaymentIntent(42, 'tok'), method: HttpMethod.Post, url: '/api/portal/order/42/create-payment-intent', body: { paymentToken: 'tok' } },
+  { name: 'listSavedMethodModules reads the modules that can save a method', call: () => api.listSavedMethodModules(), method: HttpMethod.Get, url: '/api/portal/client/payment-methods/modules' },
+  { name: 'beginCardSave posts the module and the agreement', call: () => api.beginCardSave('stripe', true), method: HttpMethod.Post, url: '/api/portal/client/payment-methods/sessions', body: { gatewayModuleId: 'stripe', consentAccepted: true } },
+  { name: 'completeCardSave posts the module and the session', call: () => api.completeCardSave('stripe', 'seti_1'), method: HttpMethod.Post, url: '/api/portal/client/payment-methods/sessions/complete', body: { gatewayModuleId: 'stripe', sessionId: 'seti_1' } },
   { name: 'turnOffAutoCharge deletes the account agreement', call: () => api.turnOffAutoCharge(), method: HttpMethod.Delete, url: '/api/portal/client/payment-methods/auto-charge' },
   { name: 'startOrderGatewayPayment posts module, return address and token', call: () => api.startOrderGatewayPayment(42, 'inecobank', 'https://x/return', 'tok'), method: HttpMethod.Post, url: '/api/portal/order/42/gateway-payment/start', body: { module: 'inecobank', returnUrl: 'https://x/return', paymentToken: 'tok' } },
   { name: 'startInvoiceGatewayPayment posts module and return address', call: () => api.startInvoiceGatewayPayment(7, 'inecobank', 'https://x/return'), method: HttpMethod.Post, url: '/api/portal/client/invoices/7/gateway-payment/start', body: { module: 'inecobank', returnUrl: 'https://x/return' } },
@@ -69,12 +68,12 @@ describe('useBillingApi', () => {
 
   it('maps the camelCase saved methods to the client shape', async () => {
     stub = await startTransport(() => ({
-      body: [{ id: 'pm_1', type: PaymentMethodType.Card, brand: 'mastercard', last4: '4444', expiryMonth: 9, expiryYear: 2029, isDefault: true }]
+      body: [{ gatewayModuleId: 'stripe', id: 'pm_1', brand: 'mastercard', last4: '4444', expiryMonth: 9, expiryYear: 2029, isDefault: true }]
     }))
 
     const [method] = await api.fetchPaymentMethods()
 
-    expect(method).toMatchObject({ id: 'pm_1', description: 'Mastercard •••• 4444', cardExpiry: '09/29', isDefault: true })
+    expect(method).toMatchObject({ gatewayModuleId: 'stripe', id: 'pm_1', description: 'Mastercard •••• 4444', cardExpiry: '09/29', isDefault: true })
   })
 
   it('returns the PDF as a blob', async () => {

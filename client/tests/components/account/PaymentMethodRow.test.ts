@@ -9,7 +9,7 @@ import type { PaymentMethod } from '~/types/payment'
 
 /** A saved card that is not the default. */
 const method: PaymentMethod = {
-  id: '9', type: PaymentMethodType.Card, description: 'Visa •••• 4242', gatewayName: 'card',
+  gatewayModuleId: 'stripe', id: '9', type: PaymentMethodType.Card, description: 'Visa •••• 4242', gatewayName: 'card',
   cardLastFour: '4242', cardExpiry: '12/30', cardType: 'visa', isDefault: false
 }
 
@@ -27,14 +27,6 @@ describe('PaymentMethodRow', () => {
     expect(wrapper.find('[data-testid="account-payment-type"]').text()).toBe('client.payment.type.card')
   })
 
-  it('translates a bank account and any other type', () => {
-    const bank = mountAccount(PaymentMethodRow, { props: { method: { ...method, type: PaymentMethodType.BankAccount } } })
-    const other = mountAccount(PaymentMethodRow, { props: { method: { ...method, type: PaymentMethodType.Other } } })
-
-    expect(bank.find('[data-testid="account-payment-type"]').text()).toBe('client.payment.type.bankAccount')
-    expect(other.find('[data-testid="account-payment-type"]').text()).toBe('client.payment.type.other')
-  })
-
   it('marks the default method and hides "set default" on it', () => {
     const wrapper = mountAccount(PaymentMethodRow, { props: { method: { ...method, isDefault: true } } })
 
@@ -49,20 +41,20 @@ describe('PaymentMethodRow', () => {
     expect(wrapper.find('[data-testid="account-payment-default-9"]').exists()).toBe(true)
   })
 
-  it('emits the id for "set default"', async () => {
+  it('emits the method for "set default"', async () => {
     const wrapper = mountAccount(PaymentMethodRow, { props: { method } })
 
     await wrapper.find('[data-testid="account-payment-default-9"]').trigger('click')
 
-    expect(wrapper.emitted('setDefault')).toEqual([['9']])
+    expect(wrapper.emitted('setDefault')).toEqual([[method]])
   })
 
-  it('emits the id for "remove"', async () => {
+  it('emits the method for "remove"', async () => {
     const wrapper = mountAccount(PaymentMethodRow, { props: { method } })
 
     await wrapper.find('[data-testid="account-payment-remove-9"]').trigger('click')
 
-    expect(wrapper.emitted('remove')).toEqual([['9']])
+    expect(wrapper.emitted('remove')).toEqual([[method]])
   })
 
   it('disables both buttons while the method is being made the default', () => {

@@ -27,3 +27,28 @@ export const readBodyObject = async (event: H3Event): Promise<Record<string, unk
   }
   return body as Record<string, unknown>
 }
+
+/**
+ * Reads the request body and requires the named members to be strings.
+ *
+ * A route that forwards an identifier to the backend must not pass on a number, an object or a
+ * missing member as if it were one, so each is checked here; the backend still decides whether the
+ * value is meaningful.
+ *
+ * @param event - H3 event of the incoming request.
+ * @param names - The members that must be present as strings.
+ * @returns The named members, each a string.
+ * @throws H3Error 400 carrying `data.code = BAD_BODY` and no `statusMessage` when the body is not an object or a member is not a string.
+ */
+export const readBodyStrings = async <K extends string>(event: H3Event, ...names: K[]): Promise<Record<K, string>> => {
+  const body = await readBodyObject(event)
+  const picked = {} as Record<K, string>
+  for (const name of names) {
+    const value = body[name]
+    if (typeof value !== 'string') {
+      throw createError({ statusCode: 400, data: { code: BAD_BODY } })
+    }
+    picked[name] = value
+  }
+  return picked
+}

@@ -1,159 +1,155 @@
 using System.Net;
-using Innovayse.Hostpanel.Application.Billing.Common;
-using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
-using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.DependencyInjection;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 
 /// <summary>
-/// <c>DELETE /api/me/payment-methods/{id}</c> against Postgres, with card payment gateway replaced by
-/// <see cref="FakeCardPaymentGateway"/>: detaching a saved card from the authenticated client's own
-/// account, and the <c>NO_SAVED_PAYMENT_METHODS</c> / <c>PAYMENT_METHOD_NOT_OWNED</c> refusals.
+/// <c>DELETE /api/me/payment-methods/{module}/{id}</c> against Postgres, with the saved-method capability replaced
+/// by <see cref="FakeStoredCredentialPlugin"/>: detaching a saved card from the authenticated client's own
+/// account, the <c>NO_SAVED_PAYMENT_METHODS</c> / <c>PAYMENT_METHOD_NOT_OWNED</c> refusals, and that removing a card
+/// ends exactly the automatic-charge agreement made for that card at that module.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class RemovePaymentMethodTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>Builds a host whose card payment gateway calls answer from <paramref name="cardGateway"/>.</summary>
-    /// <param name="cardGateway">The fake card payment gateway service the host should report through.</param>
-    /// <param name="configured">Whether the gateway has its keys; false stands in for a deployment without them.</param>
-    /// <returns>The test host.</returns>
-    private WebApplicationFactory<Program> BuildHost(FakeCardPaymentGateway cardGateway, bool configured = true)
-    {
-        cardGateway.IsConfigured = configured;
-        return factory.WithWebHostBuilder(builder =>
-            builder.ConfigureTestServices(services => services.AddSingleton<ICardPaymentGateway>(cardGateway)));
-    }
+    /// <summary>The route of a card at the fake module.</summary>
+    /// <param name="methodRef">The card.</param>
+    /// <returns>The route.</returns>
+    private static string RouteOf(string methodRef) => $"/api/me/payment-methods/{StoredCredentialHost.Module}/{methodRef}";
 
-    /// <summary>With no card gateway keys there is no card to remove, which is a conflict rather than a 500 (#606).</summary>
+    /// <summary>With the module not offered (switched off or not installed) there is no card to remove, which is a conflict rather than a 500.</summary>
     [Fact]
-    public async Task Remove_CardGatewayNotConfigured_RefusesPaymentMethodUnavailable()
+    public async Task Remove_ModuleNotOffered_RefusesPaymentMethodUnavailable()
     {
-        var host = BuildHost(new FakeCardPaymentGateway(), configured: false);
-        var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "remove-not-configured");
-        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, $"cus_{Guid.NewGuid():N}"[..24]);
+        var gateway = StoredCredentialHost.Create(factory);
+        gateway.Resolver.Offered = false;
+        var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, gateway.Host, "remove-not-offered");
+        await gateway.LinkAsync(clientId, $"cus_{Guid.NewGuid():N}"[..24]);
 
-        var response = await client.DeleteAsync("/api/me/payment-methods/pm_1");
+        var response = await client.DeleteAsync(RouteOf("pm_1"));
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.PAYMENT_METHOD_UNAVAILABLE);
     }
 
     /// <summary>
-    /// A client with no card customer still gets <c>NO_SAVED_PAYMENT_METHODS</c> when the gateway has no keys:
-    /// that check runs before the gateway check, so the answer does not hide behind a gateway state.
+    /// A client with no account at the module still gets <c>NO_SAVED_PAYMENT_METHODS</c> when the module is not
+    /// offered: that check runs before the gateway check, so the answer does not hide behind a gateway state.
     /// </summary>
     [Fact]
-    public async Task Remove_NoCardCustomerAndGatewayNotConfigured_RefusesNoSavedPaymentMethods()
+    public async Task Remove_NoAccountAndModuleNotOffered_RefusesNoSavedPaymentMethods()
     {
-        var cardGateway = new FakeCardPaymentGateway();
-        var host = BuildHost(cardGateway, configured: false);
-        var (client, _) = await BillingTestSeeds.RegisterClientAsync(factory, host, "remove-none-not-configured");
+        var gateway = StoredCredentialHost.Create(factory);
+        gateway.Resolver.Offered = false;
+        var (client, _) = await BillingTestSeeds.RegisterClientAsync(factory, gateway.Host, "remove-none-not-offered");
 
-        var response = await client.DeleteAsync("/api/me/payment-methods/pm_1");
+        var response = await client.DeleteAsync(RouteOf("pm_1"));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.NO_SAVED_PAYMENT_METHODS);
-        cardGateway.LastDetachedPaymentMethodId.Should().BeNull();
+        gateway.Plugin.LastRemovedMethod.Should().BeNull();
     }
 
-    /// <summary>Removing a saved card the client owns detaches it from card payment gateway.</summary>
+    /// <summary>Removing a saved card the client owns detaches it at the gateway.</summary>
     [Fact]
     public async Task Remove_AnOwnedCard_DetachesIt()
     {
-        var cardGateway = new FakeCardPaymentGateway
-        {
-            SavedPaymentMethods = [new CardPaymentMethodDto("pm_1", SavedPaymentMethodType.Card, "visa", "4242", 12, 2030, true)],
-        };
-        var host = BuildHost(cardGateway);
-        var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "remove-owned");
-        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, $"cus_{Guid.NewGuid():N}"[..24]);
+        var gateway = StoredCredentialHost.Create(factory);
+        gateway.Plugin.Methods.Add(StoredCredentialHost.Card("pm_1"));
+        var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, gateway.Host, "remove-owned");
+        await gateway.LinkAsync(clientId, $"cus_{Guid.NewGuid():N}"[..24]);
 
-        var response = await client.DeleteAsync("/api/me/payment-methods/pm_1");
+        var response = await client.DeleteAsync(RouteOf("pm_1"));
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        cardGateway.LastDetachedPaymentMethodId.Should().Be("pm_1");
+        gateway.Plugin.LastRemovedMethod.Should().Be("pm_1");
     }
 
     /// <summary>A client who has never saved a card is refused with <c>NO_SAVED_PAYMENT_METHODS</c>.</summary>
     [Fact]
     public async Task Remove_WithNoSavedMethod_RefusesNoSavedPaymentMethods()
     {
-        var host = BuildHost(new FakeCardPaymentGateway());
-        var (client, _) = await BillingTestSeeds.RegisterClientAsync(factory, host, "remove-none");
+        var gateway = StoredCredentialHost.Create(factory);
+        var (client, _) = await BillingTestSeeds.RegisterClientAsync(factory, gateway.Host, "remove-none");
 
-        var response = await client.DeleteAsync("/api/me/payment-methods/pm_1");
+        var response = await client.DeleteAsync(RouteOf("pm_1"));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.NO_SAVED_PAYMENT_METHODS);
     }
 
-    /// <summary>An id that does not belong to the caller's card payment gateway customer is refused with <c>PAYMENT_METHOD_NOT_OWNED</c>.</summary>
+    /// <summary>An id that does not belong to the caller's gateway customer is refused with <c>PAYMENT_METHOD_NOT_OWNED</c>.</summary>
     [Fact]
     public async Task Remove_AnUnownedId_RefusesPaymentMethodNotOwned()
     {
-        var cardGateway = new FakeCardPaymentGateway
-        {
-            SavedPaymentMethods = [new CardPaymentMethodDto("pm_mine", SavedPaymentMethodType.Card, "visa", "4242", 12, 2030, true)],
-        };
-        var host = BuildHost(cardGateway);
-        var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "remove-unowned");
-        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, $"cus_{Guid.NewGuid():N}"[..24]);
+        var gateway = StoredCredentialHost.Create(factory);
+        gateway.Plugin.Methods.Add(StoredCredentialHost.Card("pm_mine"));
+        var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, gateway.Host, "remove-unowned");
+        await gateway.LinkAsync(clientId, $"cus_{Guid.NewGuid():N}"[..24]);
 
-        var response = await client.DeleteAsync("/api/me/payment-methods/pm_someone_elses");
+        var response = await client.DeleteAsync(RouteOf("pm_someone_elses"));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.PAYMENT_METHOD_NOT_OWNED);
+        gateway.Plugin.LastRemovedMethod.Should().BeNull();
     }
 
-    /// <summary>A card gateway that cannot be reached for the detach answers 503 with <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c>.</summary>
+    /// <summary>A gateway that cannot be reached answers 503 with <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c>, a <c>Retry-After</c>, and keeps the agreement.</summary>
     [Fact]
-    public async Task Remove_GatewayUnavailable_Answers503()
+    public async Task Remove_GatewayUnavailable_Answers503AndKeepsTheAgreement()
     {
-        var cardGateway = new FakeCardPaymentGateway
-        {
-            SavedPaymentMethods = [new CardPaymentMethodDto("pm_1", SavedPaymentMethodType.Card, "visa", "4242", 12, 2030, true)],
-            MethodChangeFailure = CardGatewayFailure.Unavailable,
-        };
-        var host = BuildHost(cardGateway);
-        var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "remove-unavailable");
-        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, $"cus_{Guid.NewGuid():N}"[..24]);
+        var gateway = StoredCredentialHost.Create(factory);
+        gateway.Plugin.Methods.Add(StoredCredentialHost.Card("pm_1"));
+        gateway.Plugin.MethodCallsThrow = true;
+        var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, gateway.Host, "remove-unavailable");
+        await gateway.LinkAsync(clientId, $"cus_{Guid.NewGuid():N}"[..24]);
+        await gateway.AddConsentAsync(clientId, "pm_1");
 
-        var response = await client.DeleteAsync("/api/me/payment-methods/pm_1");
+        var response = await client.DeleteAsync(RouteOf("pm_1"));
 
         response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
         (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.PAYMENT_GATEWAY_SERVICE_UNAVAILABLE);
         response.Headers.RetryAfter.Should().NotBeNull();
-        cardGateway.LastDetachedPaymentMethodId.Should().BeNull();
+        gateway.Plugin.LastRemovedMethod.Should().BeNull();
+        (await gateway.ConsentsOfAsync(clientId)).Should().ContainSingle().Which.Status.Should().Be(CardConsentStatus.Active);
     }
 
-    /// <summary>A card gateway that refuses the detach answers 502 with <c>PAYMENT_METHOD_UPSTREAM_FAILED</c>.</summary>
+    /// <summary>
+    /// Removing a card ends only the agreement made for that module and that card: the client's agreement for
+    /// another card, another client's agreement for the same card, and an agreement for the same method reference
+    /// at another module all stay Active.
+    /// </summary>
     [Fact]
-    public async Task Remove_GatewayRefuses_Answers502()
+    public async Task Remove_AnAgreedCard_EndsOnlyThatCardsAgreementAtThatModule()
     {
-        var cardGateway = new FakeCardPaymentGateway
-        {
-            SavedPaymentMethods = [new CardPaymentMethodDto("pm_1", SavedPaymentMethodType.Card, "visa", "4242", 12, 2030, true)],
-            MethodChangeFailure = CardGatewayFailure.Refused,
-        };
-        var host = BuildHost(cardGateway);
-        var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "remove-refused");
-        await BillingTestSeeds.StampCardCustomerAsync(host, clientId, $"cus_{Guid.NewGuid():N}"[..24]);
+        var gateway = StoredCredentialHost.Create(factory);
+        gateway.Plugin.Methods.AddRange([StoredCredentialHost.Card("pm_gone"), StoredCredentialHost.Card("pm_kept", isDefault: false)]);
+        var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, gateway.Host, "remove-agreement");
+        var (_, otherClientId) = await BillingTestSeeds.RegisterClientAsync(factory, gateway.Host, "remove-agreement-other");
+        await gateway.LinkAsync(clientId, $"cus_{Guid.NewGuid():N}"[..24]);
+        await gateway.AddConsentAsync(clientId, "pm_gone");
+        await gateway.AddConsentAsync(clientId, "pm_kept");
+        await gateway.AddConsentAsync(clientId, "pm_gone", module: "another-module");
+        await gateway.AddConsentAsync(otherClientId, "pm_gone");
 
-        var response = await client.DeleteAsync("/api/me/payment-methods/pm_1");
+        var response = await client.DeleteAsync(RouteOf("pm_gone"));
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadGateway);
-        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.PAYMENT_METHOD_UPSTREAM_FAILED);
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var own = await gateway.ConsentsOfAsync(clientId);
+        var ended = own.Single(c => c.GatewayModuleId == StoredCredentialHost.Module && c.GatewayMethodRef == "pm_gone");
+        ended.Status.Should().Be(CardConsentStatus.Revoked);
+        ended.RevocationReason.Should().Be(CardConsentRevocationReason.CardRemoved);
+        own.Single(c => c.GatewayMethodRef == "pm_kept").Status.Should().Be(CardConsentStatus.Active);
+        own.Single(c => c.GatewayModuleId == "another-module").Status.Should().Be(CardConsentStatus.Active);
+        (await gateway.ConsentsOfAsync(otherClientId)).Should().ContainSingle().Which.Status.Should().Be(CardConsentStatus.Active);
     }
 
     /// <summary>Removing a payment method is not for anonymous callers.</summary>
     [Fact]
     public async Task RemoveRefusesAnonymous()
     {
-        var response = await factory.CreateClient().DeleteAsync("/api/me/payment-methods/pm_1");
+        var response = await factory.CreateClient().DeleteAsync(RouteOf("pm_1"));
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }

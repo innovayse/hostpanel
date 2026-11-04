@@ -1,86 +1,92 @@
 using Innovayse.Hostpanel.Application.Billing.Common;
-using Innovayse.Hostpanel.Application.Billing.Extensions;
-using Innovayse.Hostpanel.Application.Clients.Extensions;
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
-using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Billing.Queries.GetMyPaymentMethods;
 
 /// <summary>
-/// Handles <see cref="GetMyPaymentMethodsQuery"/>.
+/// Handles <see cref="GetMyPaymentMethodsQuery"/>: lists the payment methods the caller has saved, at every
+/// gateway module they have an account with, and marks the ones they agreed may be charged automatically.
 /// </summary>
 public sealed class GetMyPaymentMethodsHandler
 {
-    /// <summary>The Wolverine bus, for the Clients module's card gateway customer query.</summary>
-    private readonly IMessageBus _bus;
-
-    /// <summary>Card payment gateway, for reading saved payment methods.</summary>
-    private readonly ICardPaymentGateway _cardGateway;
-
-    /// <summary>Data context, for the agreements that let a card be charged without the client.</summary>
+    /// <summary>The module's data context.</summary>
     private readonly IHostpanelDbContext _context;
 
+    /// <summary>The door to the module's stored credential capability.</summary>
+    private readonly StoredCredentialGateway _gateway;
+
+    /// <summary>Resolves the caller's client record.</summary>
+    private readonly IClientAccess _access;
+
     /// <summary>Initializes the handler.</summary>
-    /// <param name="bus">The Wolverine bus, for the Clients module's card gateway customer query.</param>
-    /// <param name="cardGateway">Card payment gateway, for reading saved payment methods.</param>
-    /// <param name="context">Data context, for the agreements that let a card be charged without the client.</param>
-    public GetMyPaymentMethodsHandler(IMessageBus bus, ICardPaymentGateway cardGateway, IHostpanelDbContext context)
+    /// <param name="context">The module's data context.</param>
+    /// <param name="gateway">The door to the module's stored credential capability.</param>
+    /// <param name="access">Resolves the caller's client record.</param>
+    public GetMyPaymentMethodsHandler(IHostpanelDbContext context, StoredCredentialGateway gateway, IClientAccess access)
     {
-        _bus = bus;
-        _cardGateway = cardGateway;
         _context = context;
+        _gateway = gateway;
+        _access = access;
     }
 
-    /// <summary>
-    /// Retrieves the saved payment methods for the authenticated client.
-    /// </summary>
-    /// <param name="query">The query. It names no account: this reads the caller's own.</param>
+    /// <summary>Handles the query.</summary>
+    /// <param name="query">The query; it names no account.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>
-    /// The client's saved cards and bank accounts, empty for a client who has never had one
-    /// attached or when the card gateway has no keys; <c>CLIENT_PROFILE_NOT_FOUND</c> when the caller has no client record; or
-    /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> / <c>PAYMENT_METHOD_UPSTREAM_FAILED</c> when the card
-    /// gateway could not be reached or refused the call.
-    /// </returns>
-    public async Task<Result<IReadOnlyList<CardPaymentMethodDto>>> HandleAsync(
-        GetMyPaymentMethodsQuery query, CancellationToken ct)
+    /// <returns>The caller's saved methods (none when no module holds any), or the gateway failure that stopped the listing.</returns>
+    public async Task<Result<IReadOnlyList<CardPaymentMethodDto>>> HandleAsync(GetMyPaymentMethodsQuery query, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var customer = await _bus.GetCallerCardGatewayCustomerAsync(ct);
-        if (customer.IsFailure)
+        var caller = await _access.RequireClientIdAsync(ct);
+        if (caller.IsFailure)
         {
-            return Result<IReadOnlyList<CardPaymentMethodDto>>.FailureCode(customer.ErrorCode!);
+            return Result<IReadOnlyList<CardPaymentMethodDto>>.FailureCode(caller.ErrorCode!);
         }
 
-        var customerId = customer.Value!.CustomerId;
-        if (customerId is null)
-        {
-            return Result.Success<IReadOnlyList<CardPaymentMethodDto>>([]);
-        }
-
-        // Without the gateway's keys no card can have been saved, and the gateway would throw on its
-        // empty key rather than answer (#606).
-        if (!_cardGateway.IsConfigured)
-        {
-            return Result.Success<IReadOnlyList<CardPaymentMethodDto>>([]);
-        }
-
-        var methods = await _cardGateway.ListPaymentMethodsAsync(new CardCustomerInstruction(customerId), ct);
-        if (methods.Failure is { } failure)
-        {
-            return Result<IReadOnlyList<CardPaymentMethodDto>>.FailureCode(failure.ToPaymentMethodErrorCode());
-        }
-
-        var agreed = await _context.CardChargeConsents
-            .Where(c => c.ClientId == customer.Value.ClientId && c.Status == CardConsentStatus.Active)
-            .Select(c => c.GatewayPaymentMethodId)
+        var clientId = caller.Value;
+        var accounts = await _context.GatewayCustomers
+            .AsNoTracking()
+            .Where(g => g.ClientId == clientId)
+            .Select(g => new { g.GatewayModuleId, g.CustomerRef })
             .ToListAsync(ct);
+        var agreed = (await _context.CardChargeConsents
+                .AsNoTracking()
+                .Where(c => c.ClientId == clientId && c.Status == CardConsentStatus.Active)
+                .Select(c => new { c.GatewayModuleId, c.GatewayMethodRef })
+                .ToListAsync(ct))
+            .Select(c => (c.GatewayModuleId, c.GatewayMethodRef))
+            .ToHashSet();
 
-        return Result.Success<IReadOnlyList<CardPaymentMethodDto>>(
-            [.. methods.Methods.Select(m => m with { AutoCharge = agreed.Contains(m.Id) })]);
+        var methods = new List<CardPaymentMethodDto>();
+        foreach (var account in accounts)
+        {
+            var listed = await _gateway.ListMethodsAsync(account.GatewayModuleId, account.CustomerRef, ct);
+            if (listed.ErrorCode == HostpanelErrorCodes.PAYMENT_METHOD_UNAVAILABLE)
+            {
+                // The module was switched off or no longer offers saved methods: nothing can be listed from it.
+                continue;
+            }
+
+            if (listed.IsFailure)
+            {
+                return Result<IReadOnlyList<CardPaymentMethodDto>>.FailureCode(listed.ErrorCode!);
+            }
+
+            methods.AddRange(listed.Value!.Select(m => new CardPaymentMethodDto(
+                account.GatewayModuleId,
+                m.MethodRef,
+                m.Brand,
+                m.Last4,
+                m.ExpiryMonth,
+                m.ExpiryYear,
+                m.IsDefault,
+                agreed.Contains((account.GatewayModuleId, m.MethodRef)))));
+        }
+
+        return Result.Success<IReadOnlyList<CardPaymentMethodDto>>(methods);
     }
 }

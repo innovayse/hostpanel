@@ -53,24 +53,30 @@ public sealed class ReconcileGatewayPaymentsCronHandler
     /// <summary>The clock every moment in this handler is read from.</summary>
     private readonly IClock _clock;
 
+    /// <summary>Settles the saved-method charges whose attempt never reported back.</summary>
+    private readonly InvoicePaymentClaimGate _claims;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context, for the invoices with a pending gateway session.</param>
     /// <param name="bus">Wolverine message bus.</param>
     /// <param name="jobs">Runs the passes under their lease and schedules the next run.</param>
     /// <param name="logger">Structured logger.</param>
     /// <param name="clock">The clock the current moment is read from.</param>
+    /// <param name="claims">Settles the saved-method charges whose attempt never reported back.</param>
     public ReconcileGatewayPaymentsCronHandler(
         IHostpanelDbContext context,
         IMessageBus bus,
         RecurringJobs jobs,
         ILogger<ReconcileGatewayPaymentsCronHandler> logger,
-        IClock clock)
+        IClock clock,
+        InvoicePaymentClaimGate claims)
     {
         _context = context;
         _bus = bus;
         _jobs = jobs;
         _logger = logger;
         _clock = clock;
+        _claims = claims;
     }
 
     /// <summary>Handles the cron command.</summary>
@@ -132,6 +138,11 @@ public sealed class ReconcileGatewayPaymentsCronHandler
             var concluded = await CompleteAsync(session, ct);
             await RecordCheckAsync(session, concluded, now, ct);
         }
+
+        // A saved-method charge whose holder never reported back is looked up at the gateway by its key and recorded,
+        // whatever became of the invoice meanwhile: a payment that went through is never left unrecorded.
+        var reconciledClaims = await _claims.ReconcileStaleAsync(ct);
+        _logger.LogInformation("Saved-method charge reconciliation: {Count} unfinished attempt(s) looked at.", reconciledClaims);
     }
 
     /// <summary>Whether the back-off since the last ask about a session has run out.</summary>

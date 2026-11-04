@@ -16,7 +16,7 @@ const billingApi = vi.hoisted(() => ({ payInvoice: vi.fn(), startInvoiceGatewayP
 vi.mock('~/composables/apis/useBillingApi', () => ({ useBillingApi: () => billingApi }))
 
 /** A saved card. */
-const card = { id: 'pm_1', type: PaymentMethodType.Card, description: 'Visa', gatewayName: 'stripe', cardType: 'visa', cardLastFour: '4242' } as PaymentMethod
+const card = { gatewayModuleId: 'stripe', id: 'pm_1', type: PaymentMethodType.Card, description: 'Visa', gatewayName: 'stripe', cardType: 'visa', cardLastFour: '4242' } as PaymentMethod
 
 /**
  * Mounts the panel after filling the store the page would have filled.
@@ -52,7 +52,7 @@ describe('PayPanel', () => {
     await wrapper.find('[data-testid="invoice-pay-submit"]').trigger('click')
 
     await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-pay-success"]').exists()).toBe(true))
-    expect(billingApi.payInvoice).toHaveBeenCalledWith('9', 'pm_1', expect.any(String))
+    expect(billingApi.payInvoice).toHaveBeenCalledWith('9', 'stripe', 'pm_1', expect.any(String))
     expect(wrapper.find('[data-testid="invoice-pay-submit"]').exists()).toBe(false)
   })
 
@@ -75,7 +75,7 @@ describe('PayPanel', () => {
     await wrapper.find('[data-testid="invoice-pay-submit"]').trigger('click')
 
     await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-pay-success"]').exists()).toBe(true))
-    const [first, second] = billingApi.payInvoice.mock.calls.map(call => call[2] as string)
+    const [first, second] = billingApi.payInvoice.mock.calls.map(call => call[3] as string)
     expect(first).toBeTruthy()
     expect(second).toBeTruthy()
     expect(second).not.toBe(first)

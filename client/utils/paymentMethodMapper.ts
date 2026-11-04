@@ -54,18 +54,17 @@ export const formatSavedExpiry = (month?: number | null, year?: number | null): 
  * @returns The method with a masked-number label, formatted expiry and default flag.
  */
 export const toPaymentMethod = (wire: PaymentMethodWire): PaymentMethod => {
-  const isBank = wire.type === PaymentMethodType.BankAccount
-  const name = wire.brand ? (isBank ? wire.brand : brandName(wire.brand)) : ''
+  const name = wire.brand ? brandName(wire.brand) : ''
   const masked = wire.last4 ? `${MASK} ${wire.last4}` : ''
   return {
+    gatewayModuleId: wire.gatewayModuleId,
     id: wire.id,
-    type: wire.type,
+    type: PaymentMethodType.Card,
     description: [name, masked].filter(Boolean).join(' '),
-    gatewayName: wire.type,
+    gatewayName: wire.gatewayModuleId,
     cardLastFour: wire.last4 ?? null,
     cardExpiry: formatSavedExpiry(wire.expiryMonth, wire.expiryYear),
-    cardType: isBank ? null : (wire.brand ?? null),
-    bankName: isBank ? (wire.brand ?? null) : null,
+    cardType: wire.brand ?? null,
     isDefault: wire.isDefault,
     autoCharge: wire.autoCharge === true
   }

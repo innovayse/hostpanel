@@ -45,6 +45,10 @@ public static class DependencyInjection
         // Hands out the exclusive right to charge an invoice's card (one automatic or manual attempt at a time).
         services.AddScoped<InvoicePaymentClaimGate>();
 
+        // The one door to a payment gateway's stored credential capability (saved methods and off-session charges).
+        services.AddScoped<StoredCredentialGateway>();
+        services.AddScoped<InvoiceCardCharger>();
+
         // The part of a plugin call the client and admin areas share: route matching, body cap, audit, reply mapping.
         services.AddScoped<PluginCallRunner>();
         services.AddScoped<PluginCallGate>();

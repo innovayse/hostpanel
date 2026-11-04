@@ -274,16 +274,16 @@ public static class BillingTestSeeds
         return await created.Content.ReadFromJsonAsync<int>();
     }
 
-    /// <summary>Stamps the client's card payment gateway customer id, the only way to make their saved payment methods reachable.</summary>
+    /// <summary>Links the client to an account at a payment gateway module, the only way to make their saved payment methods reachable.</summary>
     /// <param name="host">The host whose database the client lives in.</param>
-    /// <param name="clientId">The client to stamp.</param>
-    /// <param name="customerId">The card payment gateway customer id to write.</param>
-    public static async Task StampCardCustomerAsync(WebApplicationFactory<Program> host, int clientId, string customerId)
+    /// <param name="clientId">The client to link.</param>
+    /// <param name="module">The payment gateway module the account is with.</param>
+    /// <param name="customerRef">The gateway's reference for the account.</param>
+    public static async Task LinkGatewayCustomerAsync(WebApplicationFactory<Program> host, int clientId, string module, string customerRef)
     {
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var client = await context.Clients.FirstAsync(c => c.Id == clientId, CancellationToken.None);
-        client.SetCardGatewayCustomerId(customerId);
+        context.GatewayCustomers.Add(GatewayCustomer.Create(clientId, module, customerRef, DateTimeOffset.UtcNow));
         await context.SaveChangesAsync(CancellationToken.None);
     }
 

@@ -75,6 +75,7 @@ import {
   productsIn,
   PUBLIC_SETTINGS,
   SAVED_CARD,
+  SAVED_METHOD_MODULES,
   SEEDED_CONTACT,
   SEEDED_TICKET,
   SEEDED_TICKET_THREAD,
@@ -596,6 +597,31 @@ const route = (method, path, body, res, query = new URLSearchParams()) => {
     send(res, 200, savedCards)
     return true
   }
+  if (isGet && path === '/api/me/payment-methods/modules') {
+    send(res, 200, SAVED_METHOD_MODULES)
+    return true
+  }
+  // Saving a card: the built-in module is confirmed in the browser, any other sends the payer to its page.
+  if (method === 'POST' && path === '/api/me/payment-methods/sessions') {
+    const embedded = body?.gatewayModuleId === 'stripe'
+    send(res, 200, {
+      gatewayModuleId: body?.gatewayModuleId,
+      sessionId: 'session_e2e',
+      mode: embedded ? 'EmbeddedToken' : 'Redirect',
+      clientToken: embedded ? 'seti_secret_e2e' : null,
+      redirectUrl: embedded ? null : 'https://gateway.example/save',
+    })
+    return true
+  }
+  if (method === 'POST' && path === '/api/me/payment-methods/sessions/complete') {
+    send(res, 204)
+    return true
+  }
+  if (method === 'DELETE' && path === '/api/me/payment-methods/auto-charge') {
+    savedCards = savedCards.map((card) => ({ ...card, autoCharge: false }))
+    send(res, 204)
+    return true
+  }
   // Hosted-gateway return: the invoice id picks the outcome (an unknown id is a 404, so the page cannot tell); the state is spelled as the API sends its enum.
   const gatewayMatch = path.match(/^\/api\/me\/invoices\/(\d+)\/gateway-payment\/complete$/)
   if (method === 'POST' && gatewayMatch) {
@@ -774,15 +800,15 @@ const routeManagement = (method, path, body, res) => {
     }
   }
 
-  // Saved payment methods: set the default, remove.
-  const cardMatch = path.match(/^\/api\/me\/payment-methods\/([^/]+)$/)
+  // Saved payment methods: set the default, remove; a method is named by its gateway module and id.
+  const cardMatch = path.match(/^\/api\/me\/payment-methods\/([^/]+)\/([^/]+)$/)
   if (cardMatch && (method === 'PUT' || method === 'DELETE')) {
-    if (!savedCards.some((card) => card.id === cardMatch[1])) {
+    if (!savedCards.some((card) => card.gatewayModuleId === cardMatch[1] && card.id === cardMatch[2])) {
       sendProblem(res, 404, 'NOT_FOUND', 'Payment method not found.')
       return true
     }
     if (method === 'DELETE') {
-      savedCards = savedCards.filter((card) => card.id !== cardMatch[1])
+      savedCards = savedCards.filter((card) => card.id !== cardMatch[2])
     }
     send(res, 204)
     return true

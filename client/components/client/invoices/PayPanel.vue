@@ -89,12 +89,13 @@ const selectedMethodId = ref<string | null>(savedMethods.value[0]?.id ?? null)
 const submitPayment = async (): Promise<void> => {
   paymentStore.clearError()
 
+  const method = savedMethods.value.find(saved => saved.id === selectedMethodId.value)
   // Nothing selectable: the submit button is not rendered in this state.
-  if (selectedMethodId.value === null) {
+  if (!method) {
     return
   }
 
-  await paymentStore.payWithSavedMethod(props.invoiceId, selectedMethodId.value, crypto.randomUUID())
+  await paymentStore.payWithSavedMethod(props.invoiceId, method.gatewayModuleId, method.id, crypto.randomUUID())
 }
 
 /**

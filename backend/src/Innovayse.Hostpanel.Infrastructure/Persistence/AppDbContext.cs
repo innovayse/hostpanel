@@ -154,6 +154,9 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// <summary>Gets the exclusive rights to charge an invoice's card, one unfinished claim per invoice.</summary>
     public DbSet<InvoicePaymentClaim> InvoicePaymentClaims => Set<InvoicePaymentClaim>();
 
+    /// <summary>Gets the clients' accounts at payment gateways, one per client and gateway module.</summary>
+    public DbSet<GatewayCustomer> GatewayCustomers => Set<GatewayCustomer>();
+
     /// <summary>Gets the transactions table.</summary>
     public DbSet<Transaction> Transactions => Set<Transaction>();
 
@@ -324,7 +327,8 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// Another writer modified one of the saved aggregates concurrently, or another writer recorded the
     /// same gateway payment first (the unique reference of a gateway payment row was violated), another
     /// delivery claimed the same email first (the unique delivery key of an email log row was violated), or another
-    /// call wrote the first value of the same plugin store key, or another call opened the same plugin store scope.
+    /// call wrote the first value of the same plugin store key, or another call opened the same plugin store scope,
+    /// or another request linked the same gateway account to the client, or another payment attempt took the same invoice.
     /// </exception>
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
@@ -385,6 +389,29 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
             // same lost race as a concurrent save, so it takes the same path. PluginStore retries from a fresh read.
             throw new ConcurrencyConflictException(
                 "Another call opened the same plugin store scope concurrently.", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: GatewayCustomerConfiguration.ClientModuleIndex,
+        })
+        {
+            // Two requests opened the client's account at one gateway at once: the same lost race as a concurrent
+            // save, so it takes the same path. The loser re-reads and uses the account that won.
+            throw new ConcurrencyConflictException(
+                "Another request linked the same gateway account to the client concurrently.", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: InvoicePaymentClaimConfiguration.OpenClaimIndex,
+        })
+        {
+            // Another payment attempt took the invoice between the read and the insert of the claim: the same lost
+            // race as a concurrent save, so it takes the same path. Only this index means "busy"; any other
+            // database error is a real failure and is not hidden behind it.
+            throw new ConcurrencyConflictException(
+                "Another payment attempt took the same invoice concurrently.", ex);
         }
     }
 

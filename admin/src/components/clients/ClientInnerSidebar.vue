@@ -10,7 +10,9 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import UiSidebar from '@/components/ui/UiSidebar.vue'
+import UiStack from '@/components/ui/UiStack.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
+import { UiBreakpoint } from '@/utils/ui/layout'
 import type { UiSidebarItem } from '@/utils/ui/sidebar'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { ClientSection, clientSectionPath } from '@/lib/routes'
@@ -165,7 +167,7 @@ const openSection = async (key: string): Promise<void> => {
     data-testid="client-nav-strip"
     @update:model-value="openSection"
   />
-  <div class="hidden shrink-0 md:flex" data-testid="client-nav-rail">
+  <UiStack :visible-from="UiBreakpoint.Md" direction="row" gap="none" class="shrink-0" data-testid="client-nav-rail">
     <UiSidebar :items="navItems" :active-key="activeKey" :aria-label="t('clients.clientNav.rail')" testid="client-nav" />
-  </div>
+  </UiStack>
 </template>

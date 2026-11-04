@@ -1,7 +1,7 @@
 /**
  * Mount tests for AppSidebar: the top-level entries, sub-menus that open for the current section
  * or on click, the active marker (also on the target of a navigation still downloading), the
- * navigate event, the sign-out button, and the documentation link.
+ * navigate event, the sign-out button, the documentation link and the theme select of the menu drawer.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
@@ -10,6 +10,10 @@ import AppSidebar from '@/components/layout/AppSidebar.vue'
 import { useNavigationStore } from '@/stores/navigation'
 import { stubRoutes } from '../../helpers/routes'
 import { mountScreen, mountView } from '../../helpers/mount'
+import { pickOption, selectText } from '../../helpers/select'
+import { resetThemeDocument, stubSchemeQuery } from '../../helpers/theme'
+import { THEME_STORAGE_KEY } from '@/lib/themeBoot'
+import { AdminTheme } from '@/types/admintheme'
 
 vi.mock('@/lib/runtimeConfig', () => ({
   getRuntimeConfig: vi.fn(),
@@ -149,5 +153,22 @@ describe('AppSidebar', () => {
     expect(link.exists()).toBe(true)
     expect(link.attributes('href')).toBe('https://docs.example.com')
     expect(link.attributes('rel')).toContain('noopener')
+  })
+
+  it('offers the theme select inside the menu drawer only, and applies the choice', async () => {
+    resetThemeDocument()
+    stubSchemeQuery(false)
+    vi.mocked(getRuntimeConfig).mockReturnValue({ docsUrl: '', basePath: '/', clientBaseUrl: '' })
+    stubRoutes({})
+    const { wrapper: desktop } = await mountScreen(AppSidebar, {}, '/dashboard')
+    expect(desktop.find('[data-testid="sidebar-theme"]').exists()).toBe(false)
+
+    const { wrapper: drawer } = await mountScreen(AppSidebar, { embedded: true }, '/dashboard')
+    expect(selectText(drawer, 'sidebar-theme')).toBe('System')
+    await pickOption(drawer, 'sidebar-theme', 'Light')
+
+    expect(selectText(drawer, 'sidebar-theme')).toBe('Light')
+    expect(document.documentElement.classList.contains('light')).toBe(true)
+    expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe(AdminTheme.Light)
   })
 })

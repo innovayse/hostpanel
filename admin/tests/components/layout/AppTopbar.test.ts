@@ -58,8 +58,11 @@ describe('AppTopbar', () => {
 
     const badge = wrapper.get('[data-testid="topbar-notification-count"]')
     expect(badge.text()).toBe('9+')
-    expect(badge.classes()).toEqual(expect.arrayContaining(['absolute', '-right-2', '-top-2']))
-    expect(badge.element.parentElement?.classList.contains('relative')).toBe(true)
+    const corner = badge.element.parentElement
+    expect(corner?.classList).toContain('absolute')
+    expect(corner?.classList).toContain('-right-1')
+    expect(corner?.classList).toContain('-top-1')
+    expect(corner?.parentElement?.classList.contains('relative')).toBe(true)
     expect(wrapper.get('[data-testid="topbar-notifications"]').attributes('aria-label')).toBe('Notifications, 12 new')
   })
 
@@ -68,8 +71,13 @@ describe('AppTopbar', () => {
 
     const dot = wrapper.get('[data-testid="topbar-notification-dot"]')
     expect(dot.attributes('aria-hidden')).toBe('true')
-    expect(dot.classes()).toEqual(expect.arrayContaining(['absolute', 'rounded-full', 'sm:hidden']))
-    expect(wrapper.get('[data-testid="topbar-notification-count"]').classes()).toEqual(expect.arrayContaining(['hidden', 'sm:flex']))
+    expect(dot.text()).toBe('')
+    expect(dot.classes()).toEqual(expect.arrayContaining(['rounded-full', 'bg-primary-500']))
+    expect(dot.element.parentElement?.classList).toContain('sm:hidden')
+    const count = wrapper.get('[data-testid="topbar-notification-count"]')
+    expect(count.classes()).toEqual(expect.arrayContaining(['rounded-full', 'border']))
+    expect(count.element.parentElement?.classList).toContain('hidden')
+    expect(count.element.parentElement?.classList).toContain('sm:flex')
   })
 
   it('shows the empty message for an empty feed and hides the badge', async () => {
@@ -97,6 +105,16 @@ describe('AppTopbar', () => {
     expect(wrapper.find('[data-testid="topbar-locale"]').exists()).toBe(true)
     expect(wrapper.get('[data-testid="topbar-settings"]').attributes('href')).toBe('/settings')
     expect(wrapper.find('[data-testid="topbar-sign-out"]').exists()).toBe(true)
+  })
+
+  it('keeps the theme picker and the settings link out of a phone top bar', async () => {
+    const wrapper = await mountBar('/dashboard')
+
+    for (const id of ['topbar-theme', 'topbar-settings']) {
+      const holder = wrapper.get(`[data-testid="${id}"]`).element.parentElement
+      expect(holder?.classList).toContain('hidden')
+      expect(holder?.classList).toContain('sm:flex')
+    }
   })
 
   it('switches the theme from the theme select and remembers it', async () => {

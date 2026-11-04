@@ -5,8 +5,8 @@
  * Replaces hand-written `flex flex-col gap-4` wrappers so spacing comes from one scale.
  */
 import { computed } from 'vue'
-import { alignItemsClasses, gapClasses, justifyClasses, reflowClasses, UiDirection } from '@/utils/ui/layout'
-import type { UiAlignItems, UiGap, UiJustify } from '@/utils/ui/layout'
+import { alignItemsClasses, gapClasses, hiddenFromClasses, justifyClasses, reflowClasses, UiDirection, visibleFromClasses } from '@/utils/ui/layout'
+import type { UiAlignItems, UiBreakpoint, UiGap, UiJustify } from '@/utils/ui/layout'
 
 /** Props for UiStack. */
 const props = withDefaults(defineProps<{
@@ -26,6 +26,10 @@ const props = withDefaults(defineProps<{
    * children centred on the cross axis.
    */
   reflowBelowMd?: boolean
+  /** Shows the stack only from this breakpoint up; below it the stack and its children take no space. */
+  visibleFrom?: UiBreakpoint
+  /** Shows the stack only below this breakpoint; from it up the stack and its children take no space. */
+  hiddenFrom?: UiBreakpoint
 }>(), {
   direction: UiDirection.Column,
   gap: 'md',
@@ -33,10 +37,28 @@ const props = withDefaults(defineProps<{
   justify: 'start',
   wrap: false,
   reflowBelowMd: false,
+  visibleFrom: undefined,
+  hiddenFrom: undefined,
+})
+
+/**
+ * Display classes: plain `flex`, or the breakpoint pair that replaces it.
+ *
+ * @returns The one display class set the stack carries.
+ */
+const displayClasses = computed<string>(() => {
+  if (props.visibleFrom !== undefined) {
+    return visibleFromClasses[props.visibleFrom]
+  }
+  if (props.hiddenFrom !== undefined) {
+    return hiddenFromClasses[props.hiddenFrom]
+  }
+  return 'flex'
 })
 
 /** Layout classes. */
 const classes = computed<string[]>(() => [
+  displayClasses.value,
   props.direction === UiDirection.Row ? 'flex-row' : 'flex-col',
   gapClasses[props.gap],
   alignItemsClasses[props.align],
@@ -47,7 +69,7 @@ const classes = computed<string[]>(() => [
 </script>
 
 <template>
-  <div class="flex" :class="classes">
+  <div :class="classes">
     <slot />
   </div>
 </template>

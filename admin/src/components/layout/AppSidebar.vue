@@ -6,6 +6,7 @@
  * Responsive behaviour:
  * - lg+: full sidebar (220px), always visible
  * - Emits `navigate` on link click so the mobile drawer can close.
+ * - In the drawer (`embedded`) it also carries the theme select, which the top bar has no room for on a phone.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -18,6 +19,7 @@ import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import BrandLogo from '@/components/layout/BrandLogo.vue'
 import ReleaseUpdateNotice from '@/components/layout/ReleaseUpdateNotice.vue'
+import ThemeSelect from '@/components/layout/ThemeSelect.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -384,6 +386,11 @@ const isExpanded = (item: NavItem): boolean => {
         <span>{{ t('nav.documentation') }}</span>
       </UiLink>
     </nav>
+
+    <!-- The top bar hides its theme picker on a phone, so the drawer is where a phone changes the theme. -->
+    <UiStack v-if="embedded" gap="none" class="border-t border-border px-3 py-3">
+      <ThemeSelect data-testid="sidebar-theme" />
+    </UiStack>
 
     <!-- Release update notice: shown only when an upgrade is available -->
     <ReleaseUpdateNotice />

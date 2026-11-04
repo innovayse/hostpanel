@@ -1,9 +1,11 @@
 /**
  * Client pages at phone width: the section navigation is a horizontal tab strip above the content
  * instead of a vertical icon rail, the client header and the cards use the full width, nothing
- * scrolls sideways, a tab opens its section, and the top bar fits.
+ * scrolls sideways, a tab opens its section, the top bar fits, and the theme is changed from the menu drawer.
  */
 import { HttpMethod } from '../src/types/http'
+import { AdminTheme } from '../src/types/admintheme'
+import { THEME_STORAGE_KEY } from '../src/lib/themeBoot'
 import { expect, test } from '@playwright/test'
 import type { Locator } from '@playwright/test'
 import { adaDetail } from './fixtures/clients'
@@ -15,6 +17,9 @@ import { json, stubApi } from './support/stubApi'
 const emptyPage = { items: [], pageNumber: 1, pageSize: 5, totalCount: 0, totalPages: 0 }
 
 test.use({ viewport: { width: 390, height: 800 } })
+
+/** Most a box can sit past its scroller's edge because the browser rounds a scroll offset to whole pixels. */
+const SCROLL_ROUNDING_PX = 1
 
 /**
  * Measures an element that must be on screen.
@@ -83,9 +88,15 @@ test('a tab far along the strip is brought into view when its section opens', as
   const logTab = page.getByTestId('client-tab-log')
   await expect(logTab).toHaveAttribute('aria-selected', 'true')
   const stripBox = await boxOf(page.getByTestId('client-nav-strip').getByRole('tablist'))
-  const tabBox = await boxOf(logTab)
-  expect(tabBox.x).toBeGreaterThanOrEqual(stripBox.x)
-  expect(tabBox.x + tabBox.width).toBeLessThanOrEqual(stripBox.x + stripBox.width)
+  // The strip scrolls once the selected tab is rendered, a frame after it is marked selected, so the
+  // position is polled rather than read once. A scroll offset is a whole number of pixels while the tabs
+  // have fractional widths, so the last tab, scrolled as far as it goes, can end up to one pixel past the
+  // strip's edge; less than that is in view.
+  await expect.poll(async () => {
+    const tabBox = await boxOf(logTab)
+    return tabBox.x >= stripBox.x - SCROLL_ROUNDING_PX
+      && tabBox.x + tabBox.width <= stripBox.x + stripBox.width + SCROLL_ROUNDING_PX
+  }).toBe(true)
 })
 
 test('the client header on a phone: the status sits beside the name and Export is a row of its own', async ({ page }) => {
@@ -139,6 +150,33 @@ test('the top bar fits a phone: the sign-out button is on screen and the control
   await expect(page.getByTestId('topbar-notifications')).toBeVisible()
   await expect(page.getByTestId('topbar-theme')).toBeHidden()
   await expect(page.getByTestId('topbar-settings')).toBeHidden()
+})
+
+test('a phone changes the theme from the menu drawer, since the top bar has no room for the picker', async ({ page }) => {
+  await stubApi(page, {
+    signedIn: true,
+    routes: [
+      json(HttpMethod.Get, '/api/clients/7', adaDetail),
+      json(HttpMethod.Get, '/api/clients/7/summary', emptyClientSummary),
+      json(HttpMethod.Get, '/api/services', emptyPage),
+      json(HttpMethod.Get, '/api/domains', emptyPage),
+      json(HttpMethod.Get, '/api/billing/quotes/client/7', emptyPage),
+    ],
+  })
+  await page.emulateMedia({ colorScheme: 'dark' })
+
+  await page.goto('/clients/7/summary')
+  await expect(page.getByTestId('topbar-theme')).toBeHidden()
+
+  await page.getByTestId('topbar-toggle-sidebar').click()
+  const picker = page.getByTestId('sidebar-theme')
+  await expect(picker).toBeVisible()
+  await picker.getByTestId('ui-select-trigger').click()
+  // The options are Light, Dark and System, in that order.
+  await picker.getByTestId('ui-select-option').nth(0).click()
+
+  await expect(page.locator('html')).toHaveClass(/(^|\s)light(\s|$)/)
+  expect(await page.evaluate(key => window.localStorage.getItem(key), THEME_STORAGE_KEY)).toBe(AdminTheme.Light)
 })
 
 test('the contacts table on the profile page scrolls inside its card and does not widen the page', async ({ page }) => {

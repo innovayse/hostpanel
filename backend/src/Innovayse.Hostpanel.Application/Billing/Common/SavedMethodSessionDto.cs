@@ -1,3 +1,5 @@
+using System.Text;
+using Innovayse.Hostpanel.SharedKernel.Domain;
 using Innovayse.SDK.Plugins.Enums;
 
 namespace Innovayse.Hostpanel.Application.Billing.Common;
@@ -13,4 +15,13 @@ public sealed record SavedMethodSessionDto(
     string SessionId,
     SaveMethodMode Mode,
     string? ClientToken,
-    string? RedirectUrl);
+    string? RedirectUrl)
+{
+    /// <summary>Prints the record without its client token, which is a credential; see <see cref="SecretMembers"/>.</summary>
+    /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>
+    /// <returns><see langword="true"/> when at least one member was written.</returns>
+    private bool PrintMembers(StringBuilder builder)
+    {
+        return SecretMembers.Print(this, builder);
+    }
+}

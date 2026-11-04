@@ -1090,6 +1090,15 @@
   <data name="FULFILMENT_ADVICE_UNAVAILABLE" xml:space="preserve">
     <value>Сейчас не удалось проверить возврат, поэтому средства не возвращены. Повторите попытку позже.</value>
   </data>
+  <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
+    <value>Плагин запрашивает неизвестный этому серверу вид доступа к хостингу клиента, указывает его дважды или объявляет его в манифесте версии 1.</value>
+  </data>
+  <data name="PLUGIN_VIEW_CONDITION_INVALID" xml:space="preserve">
+    <value>Один из документов представления этого плагина показывает блок по условию, которое не является GET-маршрутом, полем и одним значением или коротким списком значений.</value>
+  </data>
+  <data name="PLUGIN_VIEW_FOLLOW_UP_INVALID" xml:space="preserve">
+    <value>Один из документов представления этого плагина после действия обновляет блок, которого в нём нет, или описывает повторное чтение либо сброс формы в виде, который этот сервер не принимает.</value>
+  </data>
   <data name="CARD_GATEWAY_CUSTOMER_ALREADY_LINKED" xml:space="preserve">
     <value>Этот клиент платёжного шлюза уже привязан к другому аккаунту.</value>
   </data>
@@ -1101,13 +1110,5 @@
   </data>
   <data name="CARD_SETUP_NOT_FOUND" xml:space="preserve">
     <value>Настройка карты с таким идентификатором на этом аккаунте не найдена.</value>
-  <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
-    <value>Плагин запрашивает неизвестный этому серверу вид доступа к хостингу клиента, указывает его дважды или объявляет его в манифесте версии 1.</value>
-  </data>
-  <data name="PLUGIN_VIEW_CONDITION_INVALID" xml:space="preserve">
-    <value>Один из документов представления этого плагина показывает блок по условию, которое не является GET-маршрутом, полем и одним значением или коротким списком значений.</value>
-  </data>
-  <data name="PLUGIN_VIEW_FOLLOW_UP_INVALID" xml:space="preserve">
-    <value>Один из документов представления этого плагина после действия обновляет блок, которого в нём нет, или описывает повторное чтение либо сброс формы в виде, который этот сервер не принимает.</value>
   </data>
 </root>

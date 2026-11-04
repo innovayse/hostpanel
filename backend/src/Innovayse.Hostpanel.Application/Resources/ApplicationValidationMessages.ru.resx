@@ -1349,11 +1349,6 @@
   <data name="ClientExternalAccountIdInvalid" xml:space="preserve">
     <value>Идентификатор внешнего аккаунта обязателен и не длиннее 256 символов.</value>
   </data>
-  <data name="CardConsentRequired" xml:space="preserve">
-    <value>Чтобы сохранить карту, нужно согласиться на автоматические списания.</value>
-  </data>
-  <data name="SaveSessionIdInvalid" xml:space="preserve">
-    <value>Идентификатор настройки карты обязателен и не длиннее 255 символов.</value>
   <data name="IntegrationFieldExpected" xml:space="preserve">
     <value>Ожидается: {0}.</value>
   </data>
@@ -1386,5 +1381,11 @@
   </data>
   <data name="IntegrationFieldExpectValue" xml:space="preserve">
     <value>непустое значение</value>
+  </data>
+  <data name="CardConsentRequired" xml:space="preserve">
+    <value>Чтобы сохранить карту, нужно согласиться на автоматические списания.</value>
+  </data>
+  <data name="SaveSessionIdInvalid" xml:space="preserve">
+    <value>Идентификатор настройки карты обязателен и не длиннее 255 символов.</value>
   </data>
 </root>

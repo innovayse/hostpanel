@@ -1349,11 +1349,6 @@
   <data name="ClientExternalAccountIdInvalid" xml:space="preserve">
     <value>The external account id is required and at most 256 characters.</value>
   </data>
-  <data name="CardConsentRequired" xml:space="preserve">
-    <value>You must agree to automatic charges to save a card.</value>
-  </data>
-  <data name="SaveSessionIdInvalid" xml:space="preserve">
-    <value>The card setup id is required and at most 255 characters.</value>
   <data name="IntegrationFieldExpected" xml:space="preserve">
     <value>Expected: {0}.</value>
   </data>
@@ -1386,5 +1381,11 @@
   </data>
   <data name="IntegrationFieldExpectValue" xml:space="preserve">
     <value>a non-empty value</value>
+  </data>
+  <data name="CardConsentRequired" xml:space="preserve">
+    <value>You must agree to automatic charges to save a card.</value>
+  </data>
+  <data name="SaveSessionIdInvalid" xml:space="preserve">
+    <value>The card setup id is required and at most 255 characters.</value>
   </data>
 </root>

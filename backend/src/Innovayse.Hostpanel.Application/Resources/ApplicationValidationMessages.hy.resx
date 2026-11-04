@@ -1349,11 +1349,6 @@
   <data name="ClientExternalAccountIdInvalid" xml:space="preserve">
     <value>Արտաքին հաշվի ID-ն պարտադիր է և ոչ ավելի քան 256 նիշ։</value>
   </data>
-  <data name="CardConsentRequired" xml:space="preserve">
-    <value>Քարտը պահպանելու համար պետք է համաձայնել ավտոմատ գանձումներին։</value>
-  </data>
-  <data name="SaveSessionIdInvalid" xml:space="preserve">
-    <value>Քարտի կարգավորման նույնացուցիչը պարտադիր է և ոչ ավելի քան 255 նիշ։</value>
   <data name="IntegrationFieldExpected" xml:space="preserve">
     <value>Սպասվում է՝ {0}։</value>
   </data>
@@ -1386,5 +1381,11 @@
   </data>
   <data name="IntegrationFieldExpectValue" xml:space="preserve">
     <value>ոչ դատարկ արժեք</value>
+  </data>
+  <data name="CardConsentRequired" xml:space="preserve">
+    <value>Քարտը պահպանելու համար պետք է համաձայնել ավտոմատ գանձումներին։</value>
+  </data>
+  <data name="SaveSessionIdInvalid" xml:space="preserve">
+    <value>Քարտի կարգավորման նույնացուցիչը պարտադիր է և ոչ ավելի քան 255 նիշ։</value>
   </data>
 </root>

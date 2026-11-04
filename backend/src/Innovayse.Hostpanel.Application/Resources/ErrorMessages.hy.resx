@@ -1090,6 +1090,15 @@
   <data name="FULFILMENT_ADVICE_UNAVAILABLE" xml:space="preserve">
     <value>Վերադարձը հիմա հնարավոր չեղավ ստուգել, ուստի գումար չի վերադարձվել։ Փորձեք ավելի ուշ։</value>
   </data>
+  <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
+    <value>Հավելագրիչը պահանջում է հաճախորդի հոսթինգի մուտքի տեսակ, որը այս սերվերը չգիտի, նշում է այն երկու անգամ կամ հայտարարում է 1-ին տարբերակի մանիֆեստում։</value>
+  </data>
+  <data name="PLUGIN_VIEW_CONDITION_INVALID" xml:space="preserve">
+    <value>Այս հավելագրիչի ներկայացման փաստաթղթերից մեկը բլոկը ցույց է տալիս պայմանով, որը GET երթուղի, դաշտ և մեկ արժեք կամ արժեքների կարճ ցուցակ չէ։</value>
+  </data>
+  <data name="PLUGIN_VIEW_FOLLOW_UP_INVALID" xml:space="preserve">
+    <value>Այս հավելագրիչի ներկայացման փաստաթղթերից մեկը գործողությունից հետո թարմացնում է բլոկ, որը չունի, կամ կրկնակի ընթերցումը կամ ձևի մաքրումը նկարագրում է այնպես, ինչպես այս սերվերը չի ընդունում։</value>
+  </data>
   <data name="CARD_GATEWAY_CUSTOMER_ALREADY_LINKED" xml:space="preserve">
     <value>Վճարային դարպասի այս հաճախորդն արդեն կապված է մեկ այլ հաշվի հետ։</value>
   </data>
@@ -1101,13 +1110,5 @@
   </data>
   <data name="CARD_SETUP_NOT_FOUND" xml:space="preserve">
     <value>Այս հաշվում նման նույնացուցիչով քարտի կարգավորում չի գտնվել։</value>
-  <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
-    <value>Հավելագրիչը պահանջում է հաճախորդի հոսթինգի մուտքի տեսակ, որը այս սերվերը չգիտի, նշում է այն երկու անգամ կամ հայտարարում է 1-ին տարբերակի մանիֆեստում։</value>
-  </data>
-  <data name="PLUGIN_VIEW_CONDITION_INVALID" xml:space="preserve">
-    <value>Այս հավելագրիչի ներկայացման փաստաթղթերից մեկը բլոկը ցույց է տալիս պայմանով, որը GET երթուղի, դաշտ և մեկ արժեք կամ արժեքների կարճ ցուցակ չէ։</value>
-  </data>
-  <data name="PLUGIN_VIEW_FOLLOW_UP_INVALID" xml:space="preserve">
-    <value>Այս հավելագրիչի ներկայացման փաստաթղթերից մեկը գործողությունից հետո թարմացնում է բլոկ, որը չունի, կամ կրկնակի ընթերցումը կամ ձևի մաքրումը նկարագրում է այնպես, ինչպես այս սերվերը չի ընդունում։</value>
   </data>
 </root>

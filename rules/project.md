@@ -219,6 +219,23 @@ docker/                              compose set (shared·dev·prod·platform), 
   stop that throws is logged with the plugin id and never stops the host or the other plugins. A plugin
   is enabled from the admin Integrations page, where it is listed (with its type) when its manifest sets
   `showInIntegrations`.
+- **Capabilities (#818).** A manifest may list `capabilities`, names from the SDK's `PluginCapabilities`:
+  `storedCredentials` (a payment plugin only, the class also implements `IStoredCredentialPlugin`) and `endpoints`
+  (any type, the class also implements `IPluginEndpoints`). A **serving plugin** is an app plugin or a plugin of any
+  other type that declares `endpoints`; `PluginManifestCapabilityExtensions.ServesEndpoints()`
+  (`Infrastructure/Plugins/Extensions`) is the one place that decides it, and the loader (which also registers such a
+  plugin under `IPluginEndpoints`), `PluginEndpointResolver`, `PluginUiSource` and the manifest validator all ask it.
+  So a `Fulfilment` plugin that sells something and gives the client a screen is one plugin, with one `ClientRef` on
+  both sides (#757). `PluginActivator` checks every declared capability against the interface it promises, after the
+  enabled switch and before the required settings: one that is not implemented refuses the plugin for **every**
+  contract (`PluginActivationOutcome.CapabilityNotImplemented`, logged with the plugin id and the capability), so a
+  plugin cannot sell while its screen silently 404s. The admin plugins list shows each declared capability
+  (`PluginListItemDto.Capabilities`). **Behaviour change:** this applies to `storedCredentials` too, as #818 asks, so a payment
+  plugin that declares it without implementing `IStoredCredentialPlugin` is no longer a plain payment plugin with no
+  stored cards: it is not activated at all (no shipped manifest declares it). `IdentityPluginResolver` counts such a
+  plugin as enabled for its conflict check, as it does one missing a required setting. The manifest validator refuses
+  an unknown capability, one declared twice and `storedCredentials` outside a payment plugin
+  (`PLUGIN_CAPABILITY_NOT_ALLOWED`); `docs/developers/write-a-plugin.md` documents both.
 - **Stored credentials are an optional payment capability.** `IStoredCredentialPlugin` (SDK) is implemented by a payment plugin on top of `IPaymentPlugin`; `IStoredCredentialPluginResolver` resolves it on top of `IPaymentPluginResolver` and answers nothing when the chosen plugin does not implement it. It is not a seventh plugin type and has no manifest type of its own.
 - **What the three newer plugin types promise.** *Fulfilment* (`IFulfilmentPlugin`): the host writes a
   `FulfilmentRecords` row in the payment's own transaction and `DispatchFulfilmentCron` delivers it, so delivery is
@@ -345,6 +362,12 @@ docker/                              compose set (shared·dev·prod·platform), 
   checks the manifest, `ValidateSdkReference` the assemblies beside it. Each rule is a `PluginManifestRule`
   (Application `Admin/Plugins/Common/Enums`), which is also its error code (`PluginPackageErrors.CodeFor`,
   `ErrorMessages` en/ru/hy, default 400): `manifestVersion` must be 1 or 2 (`PLUGIN_MANIFEST_VERSION_UNKNOWN`);
+  every `hostAccess` entry is a kind of `PluginHostAccess.All` (today `ssh`, exact case), none twice, and only in a
+  version 2 manifest (`PLUGIN_HOST_ACCESS_UNKNOWN`);
+  every `capabilities` entry is one the host defines and the plugin type may carry (`PLUGIN_CAPABILITY_NOT_ALLOWED`:
+  an unknown or wrong-case name, a name declared twice, or `storedCredentials` on anything but a payment plugin); a plugin that is not a
+  serving plugin declares no `api` route and no `ui` menu, page or slot (`PLUGIN_ENDPOINTS_NOT_DECLARED`, because the
+  host would accept them and never serve them);
   a client route, page or slot `permission` is `PluginPermissions.Any` or a defined `ClientPermission` name,
   one name, exact case, not `None` (`PLUGIN_PERMISSION_UNKNOWN`; `ClientPermission.All`, the combined flag, is a
   defined name and is accepted); an admin route, page or slot (a slot whose
@@ -498,7 +521,8 @@ docker/                              compose set (shared·dev·prod·platform), 
     zipped, after its last change. The future plugin repositories (#780) sign in their release pipeline with the same tool.
   - **Admin.** The plugins page shows the `plugins.allow_unsigned` switch (`PluginSigningCard`) with a visible warning,
     saved through the settings store like every other settings row.
-- **Plugin routes: one safe door for every app plugin (#639).** An app plugin (`PluginType.App`, `IPluginEndpoints`)
+- **Plugin routes: one safe door for every serving plugin (#639, #818).** A serving plugin (`PluginType.App`, or any type
+  declaring `endpoints`; `IPluginEndpoints`)
   answers HTTP-shaped calls the host forwards, never a request or a token. Two thin catch-all controllers bind the request
   and dispatch once: `ClientPluginCallsController` (`/api/client/plugins/{id}/{**path}`, `Policies.Client`) and
   `AdminPluginCallsController` (`/api/admin/plugins/{id}/ext/{**path}`, `Policies.Admin`; `ext` keeps it apart from the
@@ -511,11 +535,13 @@ docker/                              compose set (shared·dev·prod·platform), 
   - **The order is the contract, and authorisation sits before plugin code.** `PluginCallGate` (`Application/Plugins/Common`)
     decides it, for both areas and for `PluginRateLimitFilter`, with a `PluginCallGateOutcome`. A client call: (1) the
     caller's account from `ICallerClientResolver` (`IdentityUnavailable`, then no account, whatever the plugin);
-    (2) memory only, no I/O: the plugin is loaded and is an app plugin, and the manifest declares that method and path in
+    (2) memory only, no I/O: the plugin is loaded and is a serving plugin (an app plugin,
+    or another type that declares `endpoints`), and the manifest declares that method and path in
     that area (`PluginRouteMatcher`: segments compare ignoring case, a parameter takes one non-empty segment, a literal
     beats a parameter, a trailing slash matches nothing); (3) the route's permission; (4) only then the plugin's switch and
     settings (`IPluginEndpointResolver.PrepareAsync`, the `PluginActivator` gates, without constructing the plugin), the
-    one database read. **An unknown plugin, a plugin of another type, a disabled one, an unconfigured one, an undeclared
+    one database read. **An unknown plugin, a plugin that does not serve (another type without `endpoints`, or one whose declared
+    capability is not implemented), a disabled one, an unconfigured one, an undeclared
     route, a wrong method and a route the caller lacks the permission for all answer the same 404 `PLUGIN_ROUTE_NOT_FOUND`,
     byte for byte**, and a refusal at step 2 or 3 never does the settings read, so neither the body nor the timing tells an
     installed plugin from an absent one; the real reason is only in the Debug log, as the enum, never the client's path.
@@ -649,8 +675,8 @@ docker/                              compose set (shared·dev·prod·platform), 
     Services and invoices are newest first (`CreatedAt`, then `Id`, descending), at most `PluginHostLimits.MaxListed` (50, cut
     in SQL), and invoices pass `Invoice.ClientVisibleFilter`, so a draft is never shared. A call whose client row is gone gets a
     null profile and empty lists. Domain statuses map to SDK statuses by name in an exhaustive switch; an unknown value throws, and so does a draft invoice, which the filter keeps from ever reaching it.
-    `IssueSshAccessAsync` and `RevokeSshAccessAsync` always throw `PluginHostAccessException`
-    (`PluginHostAccessFailure.NotAllowed`) until hosting access is granted (#758): no manifest is admitted with `hostAccess` yet.
+    `IssueSshAccessAsync` and `RevokeSshAccessAsync` are served by `PluginSshAccessService` (see "SSH access to a
+    client's hosting (#758)" below).
     *Store* (`Infrastructure/Plugins/PluginStore`): table `PluginDataEntries` (aggregate `PluginDataEntry`: `PluginId`,
     `ClientRef`, `Key`, `Value` text, `CreatedAt`, `UpdatedAt`; unique `IX_PluginDataEntries_PluginId_ClientRef_Key`, nulls not
     distinct) and table `PluginDataScopes` (aggregate `PluginDataScope`: `PluginId`, `ClientRef`, `KeyCount`, `StoredChars`,
@@ -705,6 +731,55 @@ docker/                              compose set (shared·dev·prod·platform), 
       is the demo reset, which truncates every model table, the store tables included. Rows are keyed by the opaque
       `ClientRef` (no client id column), so a future client erase would compute `IPluginReferences.ForClient` per plugin that
       has rows.
+  - **SSH access to a client's hosting (#758).** `IPluginHostApi.IssueSshAccessAsync(serviceId, label)` and
+    `RevokeSshAccessAsync(serviceId, keyId)` are served by `PluginHostApi`, which only hands the call's
+    `PluginCallBinding` to `PluginSshAccessService` (Application `Services/Common`: the keys are the Services module's table) and turns a refusal into the SDK's
+    `PluginHostAccessException(PluginHostAccessFailure)`; nothing in Infrastructure dispatches a use case. The checks run
+    in this order and nothing is generated or sent before all pass: the call is a client-area call
+    (`PluginCallBinding.Area`, set only by the two factories) whose caller holds `ViewModifyPasswords` (what the portal's
+    own SSH key routes require, so a plugin never gives a sub-user more than the portal would), whose plugin's manifest
+    declares `hostAccess: ["ssh"]`, and the label is 1 to 100 characters (`NotAllowed`); the service is the binding's
+    client's (`NotFound` for a foreign and a missing one alike); its product is bound to the plugin (`NotAllowed`); SSH is
+    `Available` on it (`Unavailable`); it holds fewer than `SshLimits.MaxKeysPerService` keys (`LimitReached`); the
+    plugin's issue budget for the client is not spent (`ServerUnavailable`, fail closed: `IPluginSshIssueLimiter` takes
+    from `PluginRateLimiter`'s `ssh-keys` tier, `RateLimit:SshKeys`, keyed per plugin and `client:{id}`); then
+    `ISshIdentityGenerator` makes an Ed25519 pair and `SshKeyInstaller` installs the public half exactly as a client's key
+    (`ServerUnavailable` when the agent fails).
+    - **Bound products come from the operator's slot widget binding (#823)**, the one host-owned record of which
+      products a plugin serves; #758 keeps no binding of its own. A product is bound when an operator binding row of one
+      of the plugin's widgets names it and the product still exists. A manifest's own `productIds` never count for SSH:
+      they are the author's claim, and a plugin listing every product id would otherwise reach all hosting before anyone
+      bound it. Nothing bound means no hosting.
+    - **The key limit is exact under concurrency:** the installer's save also moves `ClientServices.SshKeyRevision`
+      (`ClientService.RecordSshKeyAdded`), so it updates the service row, whose xmin token makes two adds of one service
+      conflict; the loser counts again after a short jittered pause, at most three tries, then answers
+      `SSH_SERVER_UNAVAILABLE`. A lost race of the same key on `IX_SshKeys_ClientServiceId_Fingerprint` is mapped by
+      `AppDbContext` to the same conflict and, counted again, answers `SSH_KEY_ALREADY_INSTALLED`; any other database
+      error propagates. A retry detaches only the key and the service row it staged (`IHostpanelDbContext.Detach`), never
+      what else the request staged.
+    - **Availability is asked twice more:** right before the key pair is made, and after the install. A plugin switched
+      off or removed in between gets `NotAllowed`; a key already installed by then is revoked through `SshKeyRevocation`,
+      so no key outlives its plugin even when the removal's revoke pass ran before the key existed.
+    - The key row carries `SshKeys.IssuedToPluginId`; the client sees it among the service's keys and may revoke it like any
+      other, and the plugin may revoke only a live key issued to it (`SshKey.IsIssuedTo`, otherwise `NotFound`), through
+      the same `SshKeyRevocation` the client's revoke uses, even after its product was unbound and on an inactive service.
+    - **The issue budget is per process**, like every `PluginRateLimiter` tier: several API instances each keep their own
+      window, so a plugin may issue up to the budget times the instance count. It is a flood guard; the per-service key
+      limit, held by the service row's concurrency token, is the bound that holds across instances.
+    - **Switching a plugin off does not revoke its keys; removing it does.** There is no domain event for a switch
+      (the integration save writes a settings row like any other), and switching off is meant to be reversible: a
+      switched-off plugin is not activated, so it can neither be called nor issue or revoke a key, and the keys it was
+      issued stay on the client's **SSH Keys** tab, where the client can revoke each at any time. An operator who wants
+      them gone removes the plugin.
+    - **Removing the plugin revokes every live key issued to it.** `Setting.SwitchOffRemovedPlugin` and
+      `CreateSwitchedOffForRemovedPlugin` raise `PluginRemovedEvent` in the removal's save, and
+      `Services/Events/RevokeSshKeysOnPluginRemovedHandler` dispatches `RevokePluginIssuedSshKeysCommand`; a key the agent
+      does not confirm stays `RevokeFailed` with the reason and the handler throws, so its durable queue retries until
+      every key is off.
+    - Issue and revoke each write an activity line on the client (`Issued SSH key ... to plugin {id}`, `Plugin {id} revoked
+      SSH key ...`). **The private key is never stored, logged or put in an exception**: it exists only in the returned
+      `PluginSshAccess`; the tests assert no column of the database and no log line contains it. `HostKeyFingerprint` is
+      the agent's pinned fingerprint only when the customer-facing SSH address is the agent's own.
   - **Status codes.** `PLUGIN_ROUTE_NOT_FOUND` 404, `PLUGIN_REQUEST_TOO_LARGE` 413 (the `_TOO_LARGE` suffix),
     `PLUGIN_FAILED` 502 and `PLUGIN_STORE_QUOTA_EXCEEDED` 402 (exact `StatusMapping` rows); each has its sentence in
     en/ru/hy. `PLUGIN_STREAMING_NOT_SUPPORTED` went with #641.
@@ -728,12 +803,21 @@ docker/                              compose set (shared·dev·prod·platform), 
     (`serviceId`, and `clientId` on an admin slot). Use cases: `GetClientPluginSlotQuery` and `GetAdminPluginSlotQuery`
     (`Application/Plugins/Queries/`), sharing `PluginSlotIndexBuilder`. Rows of other modules are read through
     `IServiceOwnership` and `IPluginSlotContextReader`, never from the handler.
+  - Widget view (#646): `GET /api/client/plugins/slots/{slotId}/widgets/{pluginId}/{widgetId}?serviceId=`
+    (`GetClientPluginSlotWidgetQuery`) answers `PluginSlotWidgetViewDto {pluginId, id, title, view, externalOrigins}`, the
+    widget's view document with its labels resolved, read from the views kept at load (no plugin is built). It is served
+    only for a widget the index would list for the same caller and context: both use cases share `ClientPluginSlotGate`
+    (slot, caller, context) and `PluginSlotIndexBuilder`. Unlike the index it resolves the caller first and folds every
+    refusal (unknown or admin slot, no account, missing or foreign service, a widget that is unknown, hidden, not
+    permitted, filtered out by product or of a plugin that is off, a missing view) into one 404
+    `PLUGIN_SLOT_WIDGET_VIEW_NOT_FOUND` with the same body, as the page endpoint does; only `IDENTITY_PLUGIN_UNAVAILABLE` (503)
+    differs. The client reads each widget on its own, so a slow or broken one never holds up the page or the others.
   - Order of checks, which is the contract: the slot (unknown or of the other panel is `PLUGIN_SLOT_NOT_FOUND`), the
     caller's account, the context, then the index. A client slot's service must be the caller's own
     (`SERVICE_NOT_FOUND` for foreign and missing alike, one query that also yields the product); an admin context must
     exist (`SERVICE_NOT_FOUND`, `CLIENT_NOT_FOUND`) and a client named beside a service must be its own. A slot that needs
     a record and gets none is `PLUGIN_SLOT_CONTEXT_REQUIRED` (400, the default arm of `StatusMapping`).
-  - Filters: the plugin is an enabled, configured app plugin (the `IPluginEndpointResolver` gates); the operator has not
+  - Filters: the plugin is an enabled, configured serving plugin (the `IPluginEndpointResolver` gates); the operator has not
     hidden the widget; the caller holds its `permission` (`PluginClientPermissions`, the rule a route uses: absent means
     the account holder alone, `Any` means none, anything unparsable fails closed; an admin slot takes none); a widget
     with `productIds` is listed only when the slot's service orders one of them. Titles resolve through `PluginText`.
@@ -754,8 +838,8 @@ docker/                              compose set (shared·dev·prod·platform), 
   `PluginPagePathMatcher` picks the page: the path starts with `/`, is at most 512 characters, holds no empty, `.` or `..`
   segment, no backslash and no control character (otherwise no page), segments compare ignoring case, a parameter takes
   one segment, and the page with most literal segments wins (manifest order on a tie). **Availability is the same gate
-  as the routes:** `IPluginUiSource` (`Infrastructure/Plugins/PluginUiSource`) lists a plugin only when it is loaded, an
-  app plugin and passes `PluginActivator.PrepareAsync` (enabled and configured), so a page shows exactly when its routes
+  as the routes:** `IPluginUiSource` (`Infrastructure/Plugins/PluginUiSource`) lists a plugin only when it is loaded, a
+  serving plugin (#818) and passes `PluginActivator.PrepareAsync` (enabled and configured), so a page shows exactly when its routes
   answer. The answer is computed for every plugin in one pass and kept for 10 seconds by `PluginAvailabilityCache`
   (singleton), used by the index and both page lookups alike; `IPluginAvailabilityInvalidator` drops it after the save
   of `RemovePluginHandler` and `SaveIntegrationConfigHandler`, so a
@@ -1520,6 +1604,37 @@ rules is deleted and the ESLint conformance block applies to every `.vue` and `.
   identity provider with the caller's token for a screen's convenience; until the identity profile is an
   API concern, this stays the one exception to "a route forwards one backend call". In local mode the
   route forwards `/clients/me` and adds the permissions.
+- **Plugin pages in the client area (#645).** A page a serving plugin (#818) adds lives at `/client/apps/<plugin>/<path>`
+  (`pages/client/apps/[plugin]/[...page].vue`; `/client/**` is `ssr: false`, so it is read in the browser like every
+  client page). The page is found by its address, not by an id the client guesses: the store asks
+  `GET /api/portal/client/plugins/<plugin>/page?path=/…` (`server/api/portal/client/plugins/[plugin]/page.get.ts`, the
+  address checked by `requirePluginPagePath`, `/` alone being the plugin's root page), which forwards to the API's
+  lookup `GET /api/client/plugins/ui/{plugin}/pages/by-path` under the reserved `ui` segment; the API matches the page
+  templates and answers the view (with `externalOrigins`) or the one 404 `PLUGIN_PAGE_NOT_FOUND`, whose own sentence
+  the page shows. The parameter values are read from the address by the template the API answered
+  (`utils/plugins.ts`), and fill the `{param}` segments of the `{ method, path }` route references of the view.
+  - **Data flow.** `stores/plugins.ts` (index, page, `callRoute`, `streamRoute`) → `composables/apis/usePluginsApi.ts`
+    → `useApi.ts`. The sidebar's plugin links come from the store's index read (`GET /api/client/plugins/ui`, already
+    filtered by permission and labelled in `X-Language`), ordered by `order`, a page that takes parameters never
+    linked; the layout reads the index again when the reader switches language. The BFF does not compose the index
+    into the widget's profile menu (`profile.get.ts` stays one call). A call the page cannot make (an unfilled
+    parameter, a method the host does not call) sends nothing and shows nothing: the client writes no sentence for it,
+    and the API refuses such a view at install. Each block keeps its own result; an older answer than the latest read
+    of a page or a block is dropped.
+  - **Calls and streams.** JSON calls go through `server/api/portal/client/plugins/[plugin]/routes/[...path].ts`, a
+    stream through `.../stream/[...path].post.ts`; both read the path with `requirePluginPath` (each segment decoded
+    once, refused when empty, `.`, `..`, a backslash, a control character or a second encoding, and re-encoded) and
+    forward to `ClientPluginCallsController`. The stream is opened with native `fetch` (`internalApiStream`) and handed
+    to the browser unbuffered (`X-Accel-Buffering: no`) with the route's own headers only, never an upstream header or
+    the token; a 2xx that is not `text/event-stream` is refused with 502 `PLUGIN_STREAM_INVALID` and no sentence, the
+    backend call is aborted when the browser leaves, and a browser that left before the answer ends it quietly. The
+    browser reads it with `apiStream` (fetch + `ReadableStream`, never `EventSource`, which cannot send the CSRF and
+    language headers) and `readPluginEventStream`, which normalises line ends after joining chunks so a split `\r\n`
+    stays one line end. Stop, leaving the page and a lost connection end it; a lost connection shows `errors.noAnswer`.
+  - **Rendering.** `components/plugin/*` render the schema 1 blocks with the kit; every plugin string is interpolated
+    as text, never `v-html`. A link renders only through `pluginLinkTarget`: a host-relative path (one leading `/`,
+    never `//`, and never `/api` or below once resolved and decoded once, in any case), or an `https` URL without user
+    info on one of the plugin's `externalOrigins`, opened with `noopener noreferrer`; anything else is not rendered.
 - **The kit is `components/ui/` (`Ui*`), and screens are composed from it.** `pages/**`, `layouts/**`
   and `templates/*/{pages,sections,layout}/**` carry no raw tag at all; an area's own components
   (`components/<area>/`) compose the kit and may not hold a card-styled `div` or an interactive

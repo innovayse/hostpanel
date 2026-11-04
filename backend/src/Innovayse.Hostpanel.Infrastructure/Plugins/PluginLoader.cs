@@ -1,10 +1,11 @@
 using System.Reflection;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
-using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Extensions;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Plugins;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
+using Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
 using Innovayse.SDK.Plugins.Endpoints;
 using Innovayse.SDK.Plugins.Enums;
 using Innovayse.SDK.Plugins.Fulfilment;
@@ -224,7 +225,8 @@ public static class PluginLoader
     }
 
     /// <summary>
-    /// Registers a plugin type as a keyed scoped service under the SDK contract of its <see cref="PluginType"/>.
+    /// Registers a plugin type as a keyed scoped service under the SDK contract of its <see cref="PluginType"/>, and
+    /// also under <see cref="IPluginEndpoints"/> when a plugin of another type declares the <c>endpoints</c> capability.
     /// </summary>
     /// <param name="services">The application service collection.</param>
     /// <param name="manifest">The plugin manifest.</param>
@@ -263,6 +265,12 @@ public static class PluginLoader
                 logger.LogWarning("Unknown plugin type {Type} for plugin {Id} — skipping DI registration",
                     manifest.Type, manifest.Id);
                 break;
+        }
+
+        // The same class answers routes too; an app plugin is already registered under this contract above.
+        if (manifest.Type != PluginType.App && manifest.ServesEndpoints())
+        {
+            services.AddKeyedScoped(typeof(IPluginEndpoints), manifest.Id, pluginType);
         }
     }
 }

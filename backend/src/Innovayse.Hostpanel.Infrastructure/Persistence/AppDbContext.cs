@@ -394,6 +394,17 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
             throw new ConcurrencyConflictException(
                 "Another save bound the same plugin widget to the same product concurrently.", ex);
         }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: SshKeyConfiguration.ServiceFingerprintIndex,
+        })
+        {
+            // Two adds recorded the same key on one service at once: the same lost race as a concurrent save. The SSH
+            // key installer counts again from a fresh read and then finds the key already there.
+            throw new ConcurrencyConflictException(
+                "Another add recorded the same SSH key on the service concurrently.", ex);
+        }
     }
 
     /// <inheritdoc/>
@@ -413,6 +424,12 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
         {
             entry.State = EntityState.Detached;
         }
+    }
+
+    /// <inheritdoc/>
+    public void Detach(object entity)
+    {
+        Entry(entity).State = EntityState.Detached;
     }
 
     /// <inheritdoc/>

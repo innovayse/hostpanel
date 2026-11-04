@@ -169,6 +169,7 @@ The installer writes the base configuration from the chosen profile. An administ
 | SSH key management switched off | Stay | Client can still revoke but cannot add |
 | Agent uninstalled | Stay unless revoke-all ran first | Revokes fail (RevokeFailed) until the agent is reinstalled |
 | Identity rotated | Unaffected | Client SSH access off until the installer runs with the new key |
+| Plugin removed | Every key issued to the plugin is revoked automatically | Revoked; if the server did not confirm, RevokeFailed with reason and retried until it is |
 
 ## Agent error codes
 
@@ -214,6 +215,8 @@ grep -rl 'hostpanel:' /home/*/.ssh/authorized_keys
 ## What customers see
 
 Clients manage their SSH keys from the **SSH Keys** tab on their service in the client portal. They can add a key by pasting a public key and giving it a label, see the fingerprint and label of each installed key, and revoke any key individually. Adding and revoking operations go directly to the agent on the server; only the key fingerprint is stored in Hostpanel — never the private key.
+
+A plugin that declares SSH host access can be issued a key for a client's service whose product the operator bound one of the plugin's service widgets to on the **Plugins** page. A product listed only in the plugin's own manifest does not count: until an operator binds it, the plugin reaches no hosting. Hostpanel generates the key pair, installs the public half through this agent exactly like a key the client adds, and hands the private key to the plugin once; Hostpanel never stores or logs it. Such a key is listed on the service's **SSH Keys** tab like any other, and the client can revoke it at any time. Switching the plugin off keeps its keys (the plugin cannot use the host while it is off); removing the plugin revokes them.
 
 Add and revoke requests from the client portal are rate-limited to 20 operations per 60 seconds per client (`SshKeys` policy). This can be adjusted in the deployment's rate limit settings.
 

@@ -66,7 +66,8 @@ language. The other control endpoints are scriptable per test and cleared by `PO
 (also the log and everything a spec changed: tickets, profile, services, the domain, payment methods, contacts, the team, the two-factor flag): `POST /__e2e/script` makes one route answer a
 refusal (`scriptStub` in `support/helpers.ts`), `POST /__e2e/settings` overrides a public portal
 setting such as `portal.template` (`setPortalSetting`), `POST /__e2e/demo` turns demo mode on
-(`enableDemoMode`; it is off by default).
+(`enableDemoMode`; it is off by default), `POST /__e2e/plugin-slots` lists fake plugin widgets per
+slot (`setPluginSlots`; every slot is empty by default).
 
 The client area is entered by signing in through the BFF's own sign-in route with the stub
 customer's credentials (`signIn` in `support/helpers.ts`), which leaves the `portal_session` and

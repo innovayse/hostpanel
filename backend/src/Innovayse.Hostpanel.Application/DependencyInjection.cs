@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Clients.Commands.AcceptInvitation;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Plugins.Common;
+using Innovayse.Hostpanel.Application.Services.Common;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Application;
@@ -48,6 +49,17 @@ public static class DependencyInjection
 
         // Lists the widgets enabled plugins put into a page slot, for the client and the admin slot index.
         services.AddScoped<PluginSlotIndexBuilder>();
+
+        // The slot, caller and context checks the client slot index and the slot widget view share.
+        services.AddScoped<ClientPluginSlotGate>();
+
+        // The one path a key reaches a hosting account by and the one it leaves by, shared by the client's own SSH use
+        // cases and the plugin SSH access.
+        services.AddScoped<SshKeyInstaller>();
+        services.AddScoped<SshKeyRevocation>();
+
+        // The SSH half of the plugin host API: issues and revokes a plugin's identities for the call's client (#758).
+        services.AddScoped<PluginSshAccessService>();
 
         return services;
     }

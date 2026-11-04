@@ -1,12 +1,10 @@
 using Innovayse.Hostpanel.Application.Billing.Common;
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Domains.Registrar;
 using Innovayse.Hostpanel.Application.Migration.Importers;
 using Innovayse.Hostpanel.Application.Migration.Pull;
 using Innovayse.Hostpanel.Application.Notifications.Rendering;
-using Innovayse.Hostpanel.Application.Notifications.Seeding;
 using Innovayse.Hostpanel.Infrastructure.Auth;
 using Innovayse.Hostpanel.Infrastructure.Auth.Settings;
 using Innovayse.Hostpanel.Infrastructure.Authorization;
@@ -433,6 +431,9 @@ public static class DependencyInjection
         // The same rule for client services. The client-facing service handlers call it themselves.
         services.AddScoped<IServiceOwnership, ServiceOwnership>();
         services.AddScoped<IPluginSlotContextReader, PluginSlotContextReader>();
+
+        // The plugin SSH issue budget: the portal's ssh-keys tier per plugin and client, over the plugin limiters (#758).
+        services.AddScoped<IPluginSshIssueLimiter, PluginSshIssueLimiter>();
         services.AddScoped<IPluginHostFactsReader, PluginHostFactsReader>();
 
         // What the signed-in user may do on a client account. The portal's permission filter decides
@@ -895,7 +896,7 @@ public static class DependencyInjection
         services.AddScoped<IFulfilmentPluginResolver, FulfilmentPluginResolver>();
         services.AddScoped<IIdentityPluginResolver, IdentityPluginResolver>();
 
-        // The door to the plugin API routes and the panels' plugin pages: the app plugin of a route or page, the opaque
+        // The door to the plugin API routes and the panels' plugin pages: the serving plugin of a route or page, the opaque
         // references it sees (a keyed hash under a key derived from the encryption key, so nothing is stored) and the
         // call-bound services: the host facts of the call's client and the plugin's own store. Scoped, so a call can use
         // them for as long as its request runs.

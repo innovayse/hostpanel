@@ -12,8 +12,6 @@ public static class PluginPackageErrors
     /// <exception cref="ArgumentOutOfRangeException">The result is a success, or a broken manifest rule or a refused signature is not named.</exception>
     public static string CodeFor(PluginPackageResult result)
     {
-        ArgumentNullException.ThrowIfNull(result);
-
         if (result.Outcome == PluginPackageOutcome.ManifestRuleBroken)
         {
             return CodeFor(result.Rule ?? throw new ArgumentOutOfRangeException(nameof(result), result, "A broken manifest rule must be named."));
@@ -66,6 +64,9 @@ public static class PluginPackageErrors
             PluginManifestRule.ViewRouteUndeclared => HostpanelErrorCodes.PLUGIN_VIEW_ROUTE_UNDECLARED,
             PluginManifestRule.MenuIconInvalid => HostpanelErrorCodes.PLUGIN_MENU_ICON_INVALID,
             PluginManifestRule.PageIdInvalid => HostpanelErrorCodes.PLUGIN_PAGE_ID_INVALID,
+            PluginManifestRule.EndpointsNotDeclared => HostpanelErrorCodes.PLUGIN_ENDPOINTS_NOT_DECLARED,
+            PluginManifestRule.CapabilityNotAllowed => HostpanelErrorCodes.PLUGIN_CAPABILITY_NOT_ALLOWED,
+            PluginManifestRule.HostAccessUnknown => HostpanelErrorCodes.PLUGIN_HOST_ACCESS_UNKNOWN,
             _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, "Not a manifest rule."),
         };
     }

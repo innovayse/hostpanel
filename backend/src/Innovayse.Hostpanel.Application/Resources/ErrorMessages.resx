@@ -576,6 +576,12 @@
 <data name="PLUGIN_PAGE_NOT_FOUND" xml:space="preserve">
     <value>This plugin page does not exist.</value>
   </data>
+  <data name="PLUGIN_ENDPOINTS_NOT_DECLARED" xml:space="preserve">
+    <value>This plugin declares routes, pages or slots, but it is not an app plugin and does not declare the "endpoints" capability.</value>
+  </data>
+  <data name="PLUGIN_CAPABILITY_NOT_ALLOWED" xml:space="preserve">
+    <value>This plugin declares a capability that the host does not know or that its plugin type cannot have.</value>
+  </data>
 <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>That archive contains an entry that would write outside the plugin's own folder and was rejected.</value>
   </data>
@@ -621,11 +627,14 @@
 <data name="PLUGIN_SLOT_NOT_FOUND" xml:space="preserve">
     <value>That page area is not available.</value>
   </data>
-<data name="PLUGIN_SLOT_CONTEXT_REQUIRED" xml:space="preserve">
-    <value>A context is required for this page area.</value>
-  </data>
   <data name="PLUGIN_SLOT_WIDGET_NOT_FOUND" xml:space="preserve">
     <value>The widget is not declared by that plugin.</value>
+  </data>
+  <data name="PLUGIN_SLOT_WIDGET_VIEW_NOT_FOUND" xml:space="preserve">
+    <value>That part of the page is not available.</value>
+  </data>
+<data name="PLUGIN_SLOT_CONTEXT_REQUIRED" xml:space="preserve">
+    <value>A context is required for this page area.</value>
   </data>
   <data name="PLUGIN_SLOT_PRODUCTS_UNKNOWN" xml:space="preserve">
     <value>None of the products exist, so the widget was not bound. Send an empty list to clear the binding.</value>
@@ -1059,5 +1068,8 @@
   </data>
   <data name="FULFILMENT_ADVICE_UNAVAILABLE" xml:space="preserve">
     <value>The refund could not be checked right now, so nothing was refunded. Try again later.</value>
+  </data>
+  <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
+    <value>The plugin asks for a kind of access to client hosting that this host does not know, names one twice, or declares it in a version 1 manifest.</value>
   </data>
 </root>

@@ -24,8 +24,28 @@ const MAX_INT_KEY = 2147483647
 const SHAPES: Record<RouteParamKind, RegExp> = {
   [RouteParamKind.Int]: /^[1-9]\d{0,9}$/,
   [RouteParamKind.Guid]: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-  [RouteParamKind.Identifier]: /^[A-Za-z0-9_-]{1,128}$/
+  [RouteParamKind.Identifier]: /^[A-Za-z0-9_-]{1,128}$/,
+  [RouteParamKind.DottedName]: /^[a-z]{1,32}(\.[a-z]{1,32}){1,4}$/,
+  // The length is checked by the lookahead: 64 is the backend PluginIdentifier's maximum.
+  [RouteParamKind.PluginId]: /^(?=.{1,64}$)[a-z0-9]+(-[a-z0-9]+)*$/,
+  [RouteParamKind.PluginWidgetId]: /^[a-z0-9][a-z0-9_-]{0,63}$/
 }
+
+/**
+ * Whether a value is a positive 32-bit integer key, the `Int` rule, shared with query readers
+ * (`server/utils/slotQuery.ts`) so a query id and a route id are checked alike.
+ *
+ * @param value - The decoded value.
+ * @returns True for 1 to 2147483647 written without a sign or leading zero.
+ */
+export const isPositiveIntKey = (value: string): boolean =>
+  SHAPES[RouteParamKind.Int].test(value) && Number(value) <= MAX_INT_KEY
+
+/**
+ * Plugin ids the backend keeps for its own endpoints under `/api/client/plugins/` (the index and the slots); a plugin
+ * can never take one, so the panel's server refuses them instead of forwarding to an endpoint of another shape.
+ */
+const RESERVED_PLUGIN_IDS: ReadonlySet<string> = new Set(['ui', 'slots'])
 
 /**
  * Whether a value has the shape of the requested kind.
@@ -35,10 +55,13 @@ const SHAPES: Record<RouteParamKind, RegExp> = {
  * @returns True when the value is well formed for the kind.
  */
 const hasShape = (value: string, kind: RouteParamKind): boolean => {
-  if (!SHAPES[kind].test(value)) {
+  if (kind === RouteParamKind.Int) {
+    return isPositiveIntKey(value)
+  }
+  if (kind === RouteParamKind.PluginId && RESERVED_PLUGIN_IDS.has(value)) {
     return false
   }
-  return kind !== RouteParamKind.Int || Number(value) <= MAX_INT_KEY
+  return SHAPES[kind].test(value)
 }
 
 /**

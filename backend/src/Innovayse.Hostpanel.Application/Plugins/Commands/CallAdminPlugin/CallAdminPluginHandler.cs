@@ -43,7 +43,7 @@ public sealed class CallAdminPluginHandler
     /// <param name="command">The plugin id and the request.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// The plugin's reply; <c>PLUGIN_ROUTE_NOT_FOUND</c> when no app plugin has that id, the plugin does not declare that path
+    /// The plugin's reply; <c>PLUGIN_ROUTE_NOT_FOUND</c> when no serving plugin has that id, the plugin does not declare that path
     /// or method in the admin area, or the plugin is switched off or not configured; and what
     /// <see cref="PluginCallRunner.RunAsync"/> answers after that.
     /// </returns>

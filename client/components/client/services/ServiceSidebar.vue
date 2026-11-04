@@ -48,11 +48,12 @@
  * control panel and webmail.
  */
 import { computed } from 'vue'
-import { KeyRound, LayoutGrid, Link2, Mail, MessageSquare, Monitor, Settings, Terminal, XCircle, Zap } from 'lucide-vue-next'
+import { KeyRound, LayoutGrid, Link2, Mail, MessageSquare, Monitor, Puzzle, Settings, Terminal, XCircle, Zap } from 'lucide-vue-next'
 import { CLIENT_TICKET_NEW_PATH, clientServiceSetupPath } from '~/constants/clientRoutes'
 import { Permission } from '~/composables/usePermissions'
 import { useClientStore } from '~/stores/client'
 import type { ClientService } from '~/types/clientservice'
+import type { PluginServiceTab } from '~/types/pluginservicetab'
 import { ServiceTab } from '~/types/servicetab'
 import { canSignInToControlPanel, webmailUrl as buildWebmailUrl } from '~/utils/controlPanel'
 import { serviceSetupPending } from '~/utils/serviceSetup'
@@ -66,21 +67,25 @@ interface Props {
   service: ClientService
   /** The id of the service, for the setup link. */
   serviceId: string
-  /** The panel currently shown, a `ServiceTab` value. */
+  /** The panel currently shown, a `ServiceTab` value or a plugin tab's key. */
   activeTab: string
   /** Whether the control-panel sign-in is in flight. */
   ssoLoading: boolean
   /** The sentence for a failed automatic sign-in; empty when there is none. */
   ssoError: string
+  /** The tabs plugins add, after the host's own panels. */
+  pluginTabs?: PluginServiceTab[]
 }
 
 /** The props, read by the webmail address. */
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  pluginTabs: () => [],
+})
 
 /** Events the component raises. */
 const emit = defineEmits<{
-  /** The reader picked another panel. */
-  'update:activeTab': [value: ServiceTab]
+  /** The reader picked another panel: a `ServiceTab` value or a plugin tab's key. */
+  'update:activeTab': [value: string]
   /** The reader asked to sign in to the control panel. */
   cpanel: []
 }>()
@@ -117,5 +122,6 @@ const tabs = computed(() => [
     ? [{ key: ServiceTab.Ssh, label: t('client.services.tabSsh'), icon: Terminal }]
     : []),
   ...(canOrder.value ? [{ key: ServiceTab.Cancel, label: t('client.services.tabCancel'), icon: XCircle }] : []),
+  ...props.pluginTabs.map(tab => ({ ...tab, icon: Puzzle })),
 ])
 </script>

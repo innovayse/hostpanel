@@ -27,6 +27,12 @@ public sealed class FakeSshAgent : ISshKeyProvider
     /// <summary>When set, every call throws with this failure.</summary>
     public SshProviderFailure? FailWith { get; set; }
 
+    /// <summary>
+    /// Runs while a key is being added, after it is on the account and before the call returns, so a test can make
+    /// something happen in that window (a plugin switched off mid-issue); <see langword="null"/> for nothing.
+    /// </summary>
+    public Func<Task>? WhileAdding { get; set; }
+
     /// <summary>The binding this agent reports on ping; null like an install that predates bindings.</summary>
     public Guid? Binding { get; set; }
 
@@ -61,11 +67,14 @@ public sealed class FakeSshAgent : ISshKeyProvider
     }
 
     /// <inheritdoc/>
-    public Task AddKeyAsync(SshAccount account, Guid keyId, string publicKey, CancellationToken ct)
+    public async Task AddKeyAsync(SshAccount account, Guid keyId, string publicKey, CancellationToken ct)
     {
         Record("add", account);
         Account(account.Username)[keyId] = publicKey;
-        return Task.CompletedTask;
+        if (WhileAdding is { } during)
+        {
+            await during();
+        }
     }
 
     /// <inheritdoc/>

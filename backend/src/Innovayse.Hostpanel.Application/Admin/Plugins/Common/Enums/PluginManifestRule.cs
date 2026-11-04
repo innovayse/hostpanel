@@ -72,4 +72,22 @@ public enum PluginManifestRule
 
     /// <summary>The manifest version is not a strict semantic version (<c>major.minor.patch</c>, no leading zeros).</summary>
     VersionInvalid = 21,
+
+    /// <summary>
+    /// A plugin that is not an app plugin declares <c>api</c> routes or <c>ui</c> menus, pages or slots without the
+    /// <c>endpoints</c> capability, so the host would never serve them.
+    /// </summary>
+    EndpointsNotDeclared = 22,
+
+    /// <summary>
+    /// The <c>capabilities</c> list names a capability the SDK does not define, names one twice, or one the plugin type may not carry
+    /// (<c>storedCredentials</c> on anything but a payment plugin).
+    /// </summary>
+    CapabilityNotAllowed = 23,
+
+    /// <summary>
+    /// <c>hostAccess</c> names a kind of access the SDK does not define (<c>PluginHostAccess.All</c>), names one twice, or
+    /// appears in a version 1 manifest.
+    /// </summary>
+    HostAccessUnknown = 24,
 }

@@ -576,6 +576,12 @@
 <data name="PLUGIN_PAGE_NOT_FOUND" xml:space="preserve">
     <value>Հավելագրիչի այդպիսի էջ չկա։</value>
   </data>
+  <data name="PLUGIN_ENDPOINTS_NOT_DECLARED" xml:space="preserve">
+    <value>Այս հավելագրիչը հայտարարում է երթուղիներ, էջեր կամ սլոտներ, սակայն այն հավելվածի տեսակի հավելագրիչ չէ և չի հայտարարում «endpoints» հնարավորությունը։</value>
+  </data>
+  <data name="PLUGIN_CAPABILITY_NOT_ALLOWED" xml:space="preserve">
+    <value>Այս հավելագրիչը հայտարարում է հնարավորություն, որը սերվերը չի ճանաչում կամ որը նրա տեսակի հավելագրիչը չի կարող ունենալ։</value>
+  </data>
 <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>Այդ արխիվը պարունակում է գրառում, որը կգրեր հավելագրիչի սեփական թղթապանակից դուրս, և մերժվեց։</value>
   </data>
@@ -621,11 +627,14 @@
 <data name="PLUGIN_SLOT_NOT_FOUND" xml:space="preserve">
     <value>Էջի այդ հատվածը հասանելի չէ։</value>
   </data>
-<data name="PLUGIN_SLOT_CONTEXT_REQUIRED" xml:space="preserve">
-    <value>Էջի այս հատվածի համար անհրաժեշտ է համատեքստ։</value>
-  </data>
   <data name="PLUGIN_SLOT_WIDGET_NOT_FOUND" xml:space="preserve">
     <value>Հավելագրիչը այդպիսի վիջեթ չի հայտարարել։</value>
+  </data>
+  <data name="PLUGIN_SLOT_WIDGET_VIEW_NOT_FOUND" xml:space="preserve">
+    <value>Էջի այդ մասը հասանելի չէ։</value>
+  </data>
+<data name="PLUGIN_SLOT_CONTEXT_REQUIRED" xml:space="preserve">
+    <value>Էջի այս հատվածի համար անհրաժեշտ է համատեքստ։</value>
   </data>
   <data name="PLUGIN_SLOT_PRODUCTS_UNKNOWN" xml:space="preserve">
     <value>Ապրանքներից և ոչ մեկը գոյություն չունի, վիջեթը չի կապվել։ Կապը հանելու համար ուղարկեք դատարկ ցուցակ։</value>
@@ -1059,5 +1068,8 @@
   </data>
   <data name="FULFILMENT_ADVICE_UNAVAILABLE" xml:space="preserve">
     <value>Վերադարձը հիմա հնարավոր չեղավ ստուգել, ուստի գումար չի վերադարձվել։ Փորձեք ավելի ուշ։</value>
+  </data>
+  <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
+    <value>Հավելագրիչը պահանջում է հաճախորդի հոսթինգի մուտքի տեսակ, որը այս սերվերը չգիտի, նշում է այն երկու անգամ կամ հայտարարում է 1-ին տարբերակի մանիֆեստում։</value>
   </data>
 </root>

@@ -74,7 +74,8 @@ export const mountWithLogo = (component: Component, options: MountWithKitOptions
  * Mounts a page inside `Suspense` with the `Logo` stand-in registered.
  *
  * @param page The page under test.
+ * @param components Further components the page uses, e.g. the plugin slot of a client page.
  * @returns The wrapper, after the page has settled.
  */
-export const mountAuthPage = (page: Component): Promise<VueWrapper> =>
-  mountPage(page, { components: { Logo: APP_LOGO_STUB } })
+export const mountAuthPage = (page: Component, components: Record<string, Component> = {}): Promise<VueWrapper> =>
+  mountPage(page, { components: { Logo: APP_LOGO_STUB, ...components } })

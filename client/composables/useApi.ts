@@ -11,6 +11,11 @@
  *                 Always runs client-side so relative URLs are fine.
  *                 Same headers. On 401: delegates to the global auth guard plugin.
  *
+ * - `apiStream`: opens a server-sent event stream with `fetch` and hands back its body, for a
+ *                 reader to take events from as they arrive. `$fetch` and `EventSource` cannot:
+ *                 the first reads the whole body before resolving, the second is GET only and
+ *                 sends no custom header, so it would lose the CSRF header and the language.
+ *
  * 401 handling strategy:
  * - The Nuxt server transparently refreshes expired tokens before the client
  *   ever sees a 401. If a 401 reaches the client, it means the refresh token
@@ -202,6 +207,19 @@ const request = <T>(
 export const useApi = request as UseApi
 
 /**
+ * Calls the auth guard plugin for a session that is over, when the app has one.
+ *
+ * @returns Resolves once the guard has run.
+ */
+const handleExpiredSession = async (): Promise<void> => {
+  const nuxtApp = useNuxtApp()
+  const handleAuthExpired = nuxtApp.$handleAuthExpired as (() => Promise<void>) | undefined
+  if (handleAuthExpired) {
+    await nuxtApp.runWithContext(() => handleAuthExpired())
+  }
+}
+
+/**
  * One-shot API fetch for event handlers and Pinia stores.
  *
  * On 401 (session truly expired: server-side refresh already failed),
@@ -255,13 +273,59 @@ export const apiFetch = async <T = unknown>(
       ?? (err as ThrownStatus)?.status
 
     if (statusCode === 401) {
-      const nuxtApp = useNuxtApp()
-      const handleAuthExpired = nuxtApp.$handleAuthExpired as (() => Promise<void>) | undefined
-      if (handleAuthExpired) {
-        await nuxtApp.runWithContext(() => handleAuthExpired())
-      }
+      await handleExpiredSession()
     }
 
     throw err
   }
+}
+
+/**
+ * Opens a server-sent event stream: POSTs a JSON body and resolves with the response body as soon
+ * as the server answers, before any event has been read.
+ *
+ * Browser only (a stream is opened by a reader's action). A refusal is thrown shaped like a
+ * `$fetch` rejection, `{ statusCode, data }` with the BFF's error body, so `lib/errorHandler`
+ * reads it as any other; a 401 runs the auth guard first, as {@link apiFetch} does.
+ *
+ * @param url - API endpoint URL.
+ * @param body - The JSON body.
+ * @param signal - Aborting it closes the stream, and the server's call with it.
+ * @returns The response body, an event stream.
+ * @throws The refusal described above, or whatever `fetch` throws when nothing answered.
+ */
+export const apiStream = async (
+  url: string,
+  body: Record<string, unknown>,
+  signal: AbortSignal
+): Promise<ReadableStream<Uint8Array>> => {
+  const locale = (useNuxtApp().$i18n as LocaleHolder).locale.value
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'text/event-stream',
+      [LANGUAGE_HEADER]: resolveLanguage(locale),
+      [CSRF_HEADER]: CSRF_HEADER_VALUE
+    },
+    body: JSON.stringify(body),
+    credentials: 'same-origin',
+    signal
+  })
+
+  if (!response.ok || !response.body) {
+    let data: unknown
+    try {
+      data = await response.json()
+    }
+    catch {
+      data = undefined
+    }
+    if (response.status === 401) {
+      await handleExpiredSession()
+    }
+    throw Object.assign(new Error(`Stream refused with ${response.status}`), { statusCode: response.status, data })
+  }
+
+  return response.body
 }

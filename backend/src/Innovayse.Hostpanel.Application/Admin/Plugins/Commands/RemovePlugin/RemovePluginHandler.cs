@@ -45,21 +45,27 @@ public sealed class RemovePluginHandler
     /// <summary>Drops the panels' remembered plugin availability once the switch-off has committed.</summary>
     private readonly IPluginAvailabilityInvalidator _availability;
 
+    /// <summary>The clock the moment of the removal is read from, for the removal event.</summary>
+    private readonly IClock _clock;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="store">Deletes the uploaded plugin's folder, and refuses an invalid id or a built-in plugin.</param>
     /// <param name="activityLogger">Stages the audit line for the removal on the same context as the switch.</param>
     /// <param name="context">The Admin module's data context: loads and saves the plugin's switch row with the audit line.</param>
     /// <param name="availability">Drops the panels' remembered plugin availability once the switch-off has committed.</param>
+    /// <param name="clock">The clock the moment of the removal is read from, for the removal event.</param>
     public RemovePluginHandler(
         IPluginPackageStore store,
         IActivityLogger activityLogger,
         IHostpanelDbContext context,
-        IPluginAvailabilityInvalidator availability)
+        IPluginAvailabilityInvalidator availability,
+        IClock clock)
     {
         _store = store;
         _activityLogger = activityLogger;
         _context = context;
         _availability = availability;
+        _clock = clock;
     }
 
     /// <summary>
@@ -100,11 +106,11 @@ public sealed class RemovePluginHandler
 
         if (pluginSwitch is null)
         {
-            _context.Settings.Add(Setting.CreateSwitchedOffForRemovedPlugin(command.Id));
+            _context.Settings.Add(Setting.CreateSwitchedOffForRemovedPlugin(command.Id, _clock.UtcNow));
         }
         else
         {
-            pluginSwitch.SwitchOffRemovedPlugin(command.Id);
+            pluginSwitch.SwitchOffRemovedPlugin(command.Id, _clock.UtcNow);
         }
 
         var description = packageRemoved

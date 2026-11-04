@@ -1,11 +1,12 @@
 /**
  * Tests for `plugins/auth-guard.ts`: when the session expires the client state and the `authed`
- * cookie are cleared and the customer is sent to sign in, carrying the page they were on.
+ * cookie are cleared, the plugin menu is forgotten, and the customer is sent to sign in, carrying the page they were on.
  *
  * @module tests/plugins/auth-guard.test
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 
 /** The store reset the plugin must trigger. */
 const reset = vi.fn()
@@ -44,6 +45,20 @@ beforeEach(() => {
 })
 
 describe('auth-guard plugin', () => {
+  it('forgets the plugin menu of the person whose session ended', async () => {
+    setActivePinia(createPinia())
+    const handle = await loadHandler('/client')
+    const { usePluginsStore } = await import('~/stores/plugins')
+    const plugins = usePluginsStore()
+    plugins.menu = [{ label: 'My sites', icon: null, url: '/client/apps/acme-sites/sites' }]
+    plugins.uiLoaded = true
+
+    handle()
+
+    expect(plugins.menu).toEqual([])
+    expect(plugins.uiLoaded).toBe(false)
+  })
+
   it('clears the client state and the cookie, then goes to sign-in carrying the current page', async () => {
     const handle = await loadHandler('/client/invoices/7?tab=pay')
 

@@ -27,7 +27,8 @@ const emit = defineEmits<{
 
 <template>
   <UiAlert variant="warning" data-testid="plugins-restart-banner">
-    <UiStack direction="row" align="center" justify="between" gap="md">
+    <!-- Wraps so a narrow screen puts the button below the text instead of squeezing it. -->
+    <UiStack direction="row" align="center" justify="between" gap="md" wrap>
       <UiStack gap="xs">
         <UiText tone="warning" size="lg" class="font-medium">{{ t('plugins.restartBanner.restartRequired') }}</UiText>
         <UiText tone="muted" size="sm">{{ t('plugins.restartBanner.pluginChangesWillTakeEffect') }}</UiText>

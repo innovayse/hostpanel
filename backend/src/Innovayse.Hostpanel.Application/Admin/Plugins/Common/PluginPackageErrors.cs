@@ -67,6 +67,8 @@ public static class PluginPackageErrors
             PluginManifestRule.EndpointsNotDeclared => HostpanelErrorCodes.PLUGIN_ENDPOINTS_NOT_DECLARED,
             PluginManifestRule.CapabilityNotAllowed => HostpanelErrorCodes.PLUGIN_CAPABILITY_NOT_ALLOWED,
             PluginManifestRule.HostAccessUnknown => HostpanelErrorCodes.PLUGIN_HOST_ACCESS_UNKNOWN,
+            PluginManifestRule.ViewConditionInvalid => HostpanelErrorCodes.PLUGIN_VIEW_CONDITION_INVALID,
+            PluginManifestRule.ViewFollowUpInvalid => HostpanelErrorCodes.PLUGIN_VIEW_FOLLOW_UP_INVALID,
             _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, "Not a manifest rule."),
         };
     }

@@ -11,7 +11,9 @@
 import type { PluginBlockKind } from '~/types/pluginblockkind'
 import type { PluginBlockTone } from '~/types/pluginblocktone'
 import type { PluginFieldType } from '~/types/pluginfieldtype'
+import type { PluginFollowUp } from '~/types/pluginfollowup'
 import type { PluginValueFormat } from '~/types/pluginvalueformat'
+import type { PluginViewCondition } from '~/types/pluginviewcondition'
 import type { PluginViewRoute } from '~/types/pluginviewroute'
 
 /** A value read from a route: the route's reply, or one field of it. */
@@ -34,6 +36,8 @@ export interface PluginPageLink {
 interface PluginBlockBase {
   /** The block id, which an action's `refresh` names; optional. */
   id?: string
+  /** The block shows only while this condition holds; always shown when absent. */
+  visibleWhen?: PluginViewCondition
 }
 
 /** A title with optional actions beside it. */
@@ -126,6 +130,10 @@ export interface PluginFormBlock extends PluginBlockBase {
     label: string
     /** The ids of the blocks read again after a successful submit. */
     refresh?: string[]
+    /** Whether every field returns to empty after a successful submit. */
+    resetOnSuccess?: boolean
+    /** The blocks read again after a successful submit until a route read reaches a final value. */
+    followUp?: PluginFollowUp
   }
 }
 
@@ -145,6 +153,8 @@ export interface PluginActionBlock extends PluginBlockBase {
   refresh?: string[]
   /** The page opened after a successful call, its parameters taken from the reply. */
   navigate?: PluginPageLink
+  /** The blocks read again after a successful call until a route read reaches a final value. */
+  followUp?: PluginFollowUp
 }
 
 /** A link to one of the plugin's allowed origins. */

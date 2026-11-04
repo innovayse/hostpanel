@@ -87,3 +87,37 @@ test('Escape closes the drawer, focus is trapped while it is open and the page d
   await expect(page.locator('body')).not.toHaveClass(/overflow-hidden/)
   await expect(page.getByTestId('client-menu-toggle')).toBeFocused()
 })
+
+/** Viewport widths the header layout is checked at: a phone and a desktop. */
+const HEADER_WIDTHS = [375, 1280]
+
+for (const width of HEADER_WIDTHS) {
+  test(`the logo is on the left of the top bar and the sidebar carries no product name (${width}px)`, async ({ page, context, request, baseURL }) => {
+    await resetStub(request)
+    await signIn(context, baseURL ?? 'http://127.0.0.1:3100')
+    await page.setViewportSize({ width, height: 760 })
+    await page.goto('/client/dashboard')
+    await waitForHydration(page)
+
+    // The brand sits at the left edge of the top bar, at every width.
+    const brand = await page.getByTestId('client-topbar-brand').boundingBox()
+    const topBar = await page.getByTestId('client-topbar').boundingBox()
+    expect(brand).not.toBeNull()
+    expect(topBar).not.toBeNull()
+    expect(brand!.x - topBar!.x).toBeLessThan(40)
+
+    // The drawer starts with the menu: there is no product name above it.
+    await expect(page.getByTestId('client-sidebar-brand')).toHaveCount(0)
+
+    // The welcome line is on the right of the top bar on a desktop, and hidden on a phone.
+    const name = page.getByTestId('client-topbar-name')
+    if (width >= 1024) {
+      const box = await name.boundingBox()
+      expect(box).not.toBeNull()
+      expect(box!.x).toBeGreaterThan(brand!.x + brand!.width)
+      expect(box!.x).toBeGreaterThan(topBar!.x + topBar!.width / 2)
+    } else {
+      await expect(name).toBeHidden()
+    }
+  })
+}

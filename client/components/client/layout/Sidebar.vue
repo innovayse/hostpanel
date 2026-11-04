@@ -12,13 +12,6 @@
     :class="open ? 'translate-x-0' : '-translate-x-full invisible'"
     data-testid="client-sidebar"
   >
-    <!-- Logo: desktop only, the top bar carries the brand and the close button on mobile -->
-    <div class="hidden flex-shrink-0 items-center border-b border-gray-200 px-6 py-5 dark:border-white/10 lg:flex">
-      <UiLink to="/" tone="inherit" :underline="false" testid="client-sidebar-brand" class="text-lg font-bold">
-        {{ $t('client.nav.brand', { site: siteName }) }}
-      </UiLink>
-    </div>
-
     <!-- Navigation: scrolls when the items overflow -->
     <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-4">
       <ClientLayoutNavItem
@@ -55,7 +48,7 @@
 
 <script setup lang="ts">
 /**
- * The client area's left navigation: brand, the permitted links and the sign-out button.
+ * The client area's left navigation: the permitted links and the sign-out button.
  *
  * On mobile it is a drawer that traps focus, closes on Escape and locks the page scroll while open.
  */
@@ -73,9 +66,6 @@ interface Props {
 
 /** Props of the sidebar; `open` also drives the focus trap and scroll lock. */
 const props = defineProps<Props>()
-
-/** Operator-set site name shown as the brand. */
-const { name: siteName } = useSiteIdentity()
 
 /** Events of ClientLayoutSidebar. */
 const emit = defineEmits<{

@@ -126,32 +126,17 @@
 <data name="GATEWAY_SESSION_NOT_FOUND" xml:space="preserve">
     <value>This invoice has no gateway payment session to verify.</value>
   </data>
-<data name="PAYMENT_METHOD_NOT_OWNED" xml:space="preserve">
-    <value>That payment method does not belong to this account.</value>
-  </data>
-<data name="PAYMENT_METHOD_UNAVAILABLE" xml:space="preserve">
-    <value>Card payments are unavailable because no card gateway is configured.</value>
-  </data>
 <data name="NO_SAVED_PAYMENT_METHODS" xml:space="preserve">
     <value>This account has no saved payment methods.</value>
   </data>
 <data name="RETURN_URL_NOT_ALLOWED" xml:space="preserve">
     <value>That return address is not allowed for this deployment.</value>
   </data>
-<data name="GATEWAY_CHARGE_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The payment gateway declined the charge.</value>
-  </data>
   <data name="PAYMENT_GATEWAY_SERVICE_UNAVAILABLE" xml:space="preserve">
     <value>The payment gateway is temporarily unavailable. Please try again shortly.</value>
   </data>
   <data name="IDENTITY_PLUGIN_UNAVAILABLE" xml:space="preserve">
     <value>The service that links your account to a client profile is temporarily unavailable. Please try again shortly.</value>
-  </data>
-  <data name="PAYMENT_METHOD_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The payment gateway could not process the request for your saved payment methods. Please try again later or contact support.</value>
-  </data>
-<data name="GATEWAY_TRANSACTION_MISSING_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The payment gateway reported success but returned no transaction reference.</value>
   </data>
 <data name="CLIENT_PROFILE_NOT_FOUND" xml:space="preserve">
     <value>This account has no client profile, so there is nothing to show in the client area.</value>
@@ -570,6 +555,21 @@
   <data name="PLUGIN_MENU_ICON_INVALID" xml:space="preserve">
     <value>This plugin gives a menu an icon that is not a plain icon name: use 1 to 64 lowercase letters, digits and hyphens.</value>
   </data>
+  <data name="PLUGIN_ICON_MISSING" xml:space="preserve">
+    <value>This plugin names an icon file that is not in its package. Check the icon path in the manifest.</value>
+  </data>
+  <data name="PLUGIN_ICON_INVALID" xml:space="preserve">
+    <value>This plugin ships an icon that is not allowed. Use a package-relative SVG or PNG file under 128 KB; an SVG must not hold scripts, event handlers or links to other files.</value>
+  </data>
+  <data name="PLUGIN_ENDPOINTS_NOT_IMPLEMENTED" xml:space="preserve">
+    <value>This plugin declares the endpoints capability but does not implement it. Remove the capability from the manifest or implement the endpoints contract.</value>
+  </data>
+  <data name="PLUGIN_ICON_NOT_FOUND" xml:space="preserve">
+    <value>This plugin has no icon.</value>
+  </data>
+  <data name="PLUGIN_CALLBACK_INVALID" xml:space="preserve">
+    <value>This plugin declares a callback route that names a permission or streams its reply. A callback has no signed-in caller and answers with one reply.</value>
+  </data>
   <data name="PLUGIN_PAGE_ID_INVALID" xml:space="preserve">
     <value>This plugin declares a page whose id is not valid or is used twice in one panel: use 1 to 64 lowercase letters, digits, hyphens and underscores, starting with a letter or digit.</value>
   </data>
@@ -578,6 +578,9 @@
   </data>
 <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>That archive contains an entry that would write outside the plugin's own folder and was rejected.</value>
+  </data>
+<data name="PLUGIN_ARCHIVE_UNWRITABLE" xml:space="preserve">
+    <value>That archive contains entries that cannot be unpacked together, for example a file and a folder with the same name, and was rejected.</value>
   </data>
 <data name="PLUGIN_ID_INVALID" xml:space="preserve">
     <value>That plugin id is not valid.</value>
@@ -590,6 +593,9 @@
   </data>
 <data name="PLUGIN_HOST_ASSEMBLY_REFUSED" xml:space="preserve">
     <value>That archive contains an assembly with the name of one the server already provides and was rejected. Remove it from the package and upload again.</value>
+  </data>
+<data name="PLUGIN_ASSEMBLY_CONFLICT" xml:space="preserve">
+    <value>Another installed plugin already ships an assembly with the same file name as one in this package, so the package was rejected. The id of the conflicting plugin is in the server log. Rename or remove the assembly, or remove the other plugin, and upload again.</value>
   </data>
 <data name="PLUGIN_NOT_TRUSTED" xml:space="preserve">
     <value>That archive is not on this server's list of trusted plugin packages.</value>
@@ -910,12 +916,6 @@
   <data name="SSH_AGENT_ENDPOINT_IN_USE" xml:space="preserve">
     <value>Another server already uses this agent host and port.</value>
   </data>
-  <data name="PAYMENT_INTENT_MISMATCH" xml:space="preserve">
-    <value>This card payment does not match the invoice for this order.</value>
-  </data>
-  <data name="PAYMENT_INTENT_ALREADY_USED" xml:space="preserve">
-    <value>This card payment has already been recorded.</value>
-  </data>
   <data name="REGISTRAR_NOT_CONFIGURED" xml:space="preserve">
     <value>The registrar for this domain is not configured.</value>
   </data>
@@ -954,9 +954,6 @@
   </data>
   <data name="INVOICE_NOT_GATEWAY_PAID" xml:space="preserve">
     <value>No payment gateway took money for this invoice, so it cannot be refunded through one.</value>
-  </data>
-  <data name="CARD_REFUND_REFUSED" xml:space="preserve">
-    <value>The card payment gateway refused the refund. Any part it had already returned is recorded on the invoice.</value>
   </data>
   <data name="INVOICE_REFUND_CONFLICT" xml:space="preserve">
     <value>Another refund of this invoice is still waiting for its payment gateway. Try again once it is answered.</value>
@@ -1059,5 +1056,53 @@
   </data>
   <data name="FULFILMENT_ADVICE_UNAVAILABLE" xml:space="preserve">
     <value>The refund could not be checked right now, so nothing was refunded. Try again later.</value>
+  </data>
+<data name="STORED_CREDENTIALS_NOT_SUPPORTED" xml:space="preserve">
+    <value>This payment gateway cannot keep payment methods for later charges.</value>
+  </data>
+<data name="CARD_CONSENT_REQUIRED" xml:space="preserve">
+    <value>No consent to charge a saved payment method is on file.</value>
+  </data>
+<data name="CARD_CONSENT_NOT_FOUND" xml:space="preserve">
+    <value>That consent was not found.</value>
+  </data>
+<data name="STORED_METHOD_NOT_SAVED" xml:space="preserve">
+    <value>The payment method was not saved. Start again.</value>
+  </data>
+<data name="STORED_CHARGE_ALREADY_IN_PROGRESS" xml:space="preserve">
+    <value>A charge for this invoice is already in progress.</value>
+  </data>
+<data name="INVOICE_PAYMENT_CLAIM_NOT_FOUND" xml:space="preserve">
+    <value>That charge was not found.</value>
+  </data>
+<data name="INVOICE_STORED_CHARGE_UNRESOLVED" xml:space="preserve">
+    <value>The invoice has a card charge that has not finished, so it cannot be cancelled or paid by hand yet.</value>
+  </data>
+<data name="CARD_CONSENT_ALREADY_ATTACHED" xml:space="preserve">
+    <value>The consent already covers a different payment method.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_DISABLED" xml:space="preserve">
+    <value>The plugin registry is not switched on for this server.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_UNAVAILABLE" xml:space="preserve">
+    <value>The plugin registry could not be reached. Try again later.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_TIMED_OUT" xml:space="preserve">
+    <value>The plugin registry did not answer in time. Try again later.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_RESPONSE_INVALID" xml:space="preserve">
+    <value>The plugin registry sent an answer this server cannot use.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_PLUGIN_NOT_FOUND" xml:space="preserve">
+    <value>The plugin registry does not list that plugin or version.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_PACKAGE_REFUSED" xml:space="preserve">
+    <value>The package offered by the plugin registry was refused.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_CHECKSUM_MISMATCH" xml:space="preserve">
+    <value>The downloaded package does not match the checksum the plugin registry published, so it was not installed.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_NOT_TRUSTED" xml:space="preserve">
+    <value>The plugin registry trust setting does not allow installing this plugin.</value>
   </data>
 </root>

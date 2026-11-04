@@ -32,6 +32,9 @@ public sealed class ProviderLeakGuardMiddleware
         "Access-Control-Allow-Headers", "Access-Control-Allow-Methods", "Access-Control-Expose-Headers",
         "Access-Control-Max-Age", "Strict-Transport-Security", "X-Content-Type-Options",
 
+        // Set by InlineImage for a plugin icon: our own policy that keeps an SVG opened on its own inert.
+        "Content-Security-Policy",
+
         // Set by the sign-on callback (no-referrer) so the address carrying the code is never sent on as a
         // Referer; the edge keeps it and adds its default only when a response has none.
         "Referrer-Policy",

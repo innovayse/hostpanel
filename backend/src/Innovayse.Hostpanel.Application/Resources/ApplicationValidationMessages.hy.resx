@@ -63,10 +63,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="SetAsDefaultMustBeTrue" xml:space="preserve">
-    <value>Քարտի տվյալները հնարավոր չէ փոփոխել։ Հեռացրեք այն և ավելացրեք նոր քարտ։</value>
-    <comment>SetDefaultPaymentMethodValidator. The only update this endpoint accepts is making a card the default.</comment>
-  </data>
   <data name="ContactEmailInvalid" xml:space="preserve">
     <value>Նշեք վավեր էլ․ փոստի հասցե։</value>
     <comment>SendContactMessageHandler.</comment>
@@ -1220,9 +1216,6 @@
   <data name="PaymentMethodRequired" xml:space="preserve">
     <value>Ընտրեք վճարման եղանակը։</value>
   </data>
-  <data name="PaymentAttemptRequired" xml:space="preserve">
-    <value>Սկսեք վճարումը նորից։</value>
-  </data>
   <data name="PlaceOrderItemsRequired" xml:space="preserve">
     <value>Ավելացրեք պատվերում առնվազն մեկ ապրանք։</value>
   </data>
@@ -1250,14 +1243,14 @@
   <data name="GatewayModuleRequired" xml:space="preserve">
     <value>Ընտրեք վճարային դարպասը։</value>
   </data>
+  <data name="ConsentTextVersionInvalid" xml:space="preserve">
+    <value>Համաձայնության տեքստի տարբերակը պարտադիր է, առավելագույնը {0} նիշ։</value>
+  </data>
   <data name="ReturnUrlRequired" xml:space="preserve">
     <value>Վերադարձի հղումը պարտադիր է։</value>
   </data>
   <data name="ReturnUrlInvalid" xml:space="preserve">
     <value>Վերադարձի հղումը պետք է լինի բացարձակ http կամ https հասցե։</value>
-  </data>
-  <data name="PaymentIntentIdRequired" xml:space="preserve">
-    <value>Վճարման մտադրության նույնացուցիչը պարտադիր է։</value>
   </data>
   <data name="SshKeyIdInvalid" xml:space="preserve">
     <value>Նշեք վավեր SSH բանալի։</value>
@@ -1294,9 +1287,6 @@
   </data>
   <data name="InvoiceStatusInvalid" xml:space="preserve">
     <value>Կարգավիճակը պետք է լինի հաշիվ-ապրանքագրի հայտնի կարգավիճակներից մեկը։</value>
-  </data>
-  <data name="PaymentMethodIdRequired" xml:space="preserve">
-    <value>Նշեք պահպանված վճարման եղանակը։</value>
   </data>
   <data name="ClientNewEmailInvalid" xml:space="preserve">
     <value>Մուտքագրեք վավեր նոր էլ. հասցե։</value>
@@ -1381,5 +1371,32 @@
   </data>
   <data name="IntegrationFieldExpectValue" xml:space="preserve">
     <value>ոչ դատարկ արժեք</value>
+  </data>
+  <data name="CardConsentRequired" xml:space="preserve">
+    <value>Հաստատեք, որ պահպանված վճարման եղանակից կարելի է գանձել ձեր հաշիվ-ապրանքագրերի համար։</value>
+  </data>
+  <data name="StoredChargeSessionIdRequired" xml:space="preserve">
+    <value>Նշեք պահպանման սեսիան։</value>
+  </data>
+  <data name="CardConsentIdInvalid" xml:space="preserve">
+    <value>Նշեք համաձայնությունը։</value>
+  </data>
+  <data name="StoredChargeInvalid" xml:space="preserve">
+    <value>Նշեք գանձումը և ինչով է այն ավարտվել։</value>
+  </data>
+  <data name="InvoicePaymentClaimStatusInvalid" xml:space="preserve">
+    <value>Կարգավիճակը պետք է լինի վճարման հայտի հայտնի կարգավիճակներից մեկը։</value>
+  </data>
+  <data name="PluginVersionRequired" xml:space="preserve">
+    <value>Հավելագրիչի տարբերակը պարտադիր է։</value>
+  </data>
+  <data name="PluginVersionInvalid" xml:space="preserve">
+    <value>Հավելագրիչի տարբերակը պետք է լինի սեմանտիկ, օրինակ՝ 1.2.3։</value>
+  </data>
+  <data name="PluginRegistrySearchTooLong" xml:space="preserve">
+    <value>Որոնման տեքստը կարող է պարունակել առավելագույնը 100 նիշ։</value>
+  </data>
+  <data name="PluginRegistryCategoryInvalid" xml:space="preserve">
+    <value>Ընտրեք թույլատրելի կատեգորիա։</value>
   </data>
 </root>

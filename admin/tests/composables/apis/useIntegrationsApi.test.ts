@@ -17,17 +17,17 @@ describe('useIntegrationsApi', () => {
     const api = useIntegrationsApi()
 
     await api.listIntegrations()
-    await api.getIntegration('stripe')
+    await api.getIntegration('bank-transfer')
     expect(callOf(mock, 0)).toMatchObject({ url: '/api/admin/integrations', method: 'GET' })
-    expect(callOf(mock, 1)).toMatchObject({ url: '/api/admin/integrations/stripe', method: 'GET' })
+    expect(callOf(mock, 1)).toMatchObject({ url: '/api/admin/integrations/bank-transfer', method: 'GET' })
   })
 
   it('saveIntegration PUTs the payload', async () => {
     const mock = stubFetch(new Response(null, { status: 204 }))
 
-    await useIntegrationsApi().saveIntegration('stripe', { enabled: true, config: {} } as never)
+    await useIntegrationsApi().saveIntegration('bank-transfer', { enabled: true, config: {} } as never)
     expect(callOf(mock)).toMatchObject({
-      url: '/api/admin/integrations/stripe',
+      url: '/api/admin/integrations/bank-transfer',
       method: 'PUT',
       body: { enabled: true, config: {} },
     })
@@ -36,8 +36,8 @@ describe('useIntegrationsApi', () => {
   it('testIntegration POSTs to test and returns the result', async () => {
     const mock = stubFetch(json({ success: true }))
 
-    expect(await useIntegrationsApi().testIntegration('stripe')).toEqual({ success: true })
-    expect(callOf(mock)).toMatchObject({ url: '/api/admin/integrations/stripe/test', method: 'POST' })
+    expect(await useIntegrationsApi().testIntegration('bank-transfer')).toEqual({ success: true })
+    expect(callOf(mock)).toMatchObject({ url: '/api/admin/integrations/bank-transfer/test', method: 'POST' })
   })
 
   it('getCwpServerInfo reads the CWP server-info endpoint', async () => {

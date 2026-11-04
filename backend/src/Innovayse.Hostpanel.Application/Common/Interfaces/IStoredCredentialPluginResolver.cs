@@ -1,4 +1,4 @@
-using Innovayse.SDK.Plugins.StoredCredentials;
+using Hostpanel.Sdk.Plugins.StoredCredentials;
 
 namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 

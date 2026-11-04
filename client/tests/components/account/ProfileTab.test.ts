@@ -24,7 +24,7 @@ vi.stubGlobal('useAuthMode', () => ({ isSso: ref(false) }))
 
 /** A signed-in profile with a default gateway and a language. */
 const user: ClientUser = makeClientUser({
-  firstName: 'Jane', lastName: 'Doe', email: 'jane@example.com', permissions: Permission.All, paymentMethod: 'stripe', language: 'ru'
+  firstName: 'Jane', lastName: 'Doe', email: 'jane@example.com', permissions: Permission.All, paymentMethod: 'card_gateway', language: 'ru'
 })
 
 describe('ProfileTab', () => {
@@ -59,7 +59,7 @@ describe('ProfileTab', () => {
     const wrapper = mountAccount(ProfileTab)
     useClientStore().user = user
     useClientStore().userLoading = false
-    useAccountStore().gatewayMethods = [{ module: 'stripe', displayName: 'Credit card' }]
+    useAccountStore().gatewayMethods = [{ module: 'card_gateway', displayName: 'Credit card' }]
     await wrapper.vm.$nextTick()
 
     expect(wrapper.find('[data-testid="account-profile-view"]').exists()).toBe(true)

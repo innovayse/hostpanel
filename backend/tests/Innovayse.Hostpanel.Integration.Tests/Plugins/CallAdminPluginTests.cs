@@ -5,7 +5,7 @@ using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Infrastructure;
-using Innovayse.SDK.Plugins.Endpoints;
+using Hostpanel.Sdk.Plugins.Endpoints;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

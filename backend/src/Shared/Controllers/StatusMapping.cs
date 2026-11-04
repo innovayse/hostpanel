@@ -52,8 +52,20 @@ public static class StatusMapping
             "SERVICE_NOT_TERMINATED" => new(409, "Conflict"),
             // A plugin shipped with the build: the request is well-formed, the target's state refuses it.
             "PLUGIN_BUILT_IN" => new(409, "Conflict"),
+            // Exact row: a package whose assembly file name another plugin ships is a bad upload, a 400 like the host
+            // assembly refusal; the CONFLICT in the name must not reach the generic arm below that answers 409.
+            "PLUGIN_ASSEMBLY_CONFLICT" => new(400, "Bad Request"),
             // An upload older than the installed version, and a purge of data whose plugin is still installed: the target's state refuses it.
             "PLUGIN_DOWNGRADE_REFUSED" or "PLUGIN_STILL_INSTALLED" => new(409, "Conflict"),
+            // Exact rows: the plugin registry is a dependency of the install, not part of the caller's request. Off in this
+            // deployment is a state conflict (409); unreachable, a bad reply, a refused or altered package are a gateway
+            // failing (502); no answer in time is a gateway timeout (504); the operator's trust policy declining a
+            // package is a refusal (403). None of the names carries a token for the generic arms.
+            "PLUGIN_REGISTRY_DISABLED" => new(409, "Conflict"),
+            "PLUGIN_REGISTRY_UNAVAILABLE" or "PLUGIN_REGISTRY_RESPONSE_INVALID" or "PLUGIN_REGISTRY_PACKAGE_REFUSED"
+                or "PLUGIN_REGISTRY_CHECKSUM_MISMATCH" => new(502, "Bad Gateway"),
+            "PLUGIN_REGISTRY_TIMED_OUT" => new(504, "Gateway Timeout"),
+            "PLUGIN_REGISTRY_NOT_TRUSTED" => new(403, "Forbidden"),
             // Exact row: a plugin's own code failed the call (a gateway between us and code we do not own, 502); the name
             // carries no token.
             "PLUGIN_FAILED" => new(502, "Bad Gateway"),
@@ -80,13 +92,15 @@ public static class StatusMapping
             // Exact row: an unpaid invoice stands in the way, a state conflict, and the name carries no
             // CONFLICT / ALREADY token for the generic arms to catch.
             "RENEWAL_INVOICE_OPEN" or "CLIENT_TAX_EXEMPT" or "CLIENT_CURRENCY_LOCKED_BY_CREDIT" => new(409, "Conflict"),
-            // Exact row: the deployment has no card gateway, a state of the system rather than a
-            // malformed request, and the name carries no CONFLICT / ALREADY token for the generic arms.
-            "PAYMENT_METHOD_UNAVAILABLE" => new(409, "Conflict"),
-            // Exact row: the card gateway or the hosted gateway refused or failed the refund, an
-            // upstream refusal rather than a malformed request, and neither name carries the
-            // _UPSTREAM_FAILED suffix.
-            "CARD_REFUND_REFUSED" or "GATEWAY_REFUND_REFUSED" or "REFUND_ADVICE_UNAVAILABLE" => new(502, "Bad Gateway"),
+            // Exact row: the gateway module is off, missing or has no stored credential capability, a state of the
+            // deployment rather than a malformed request, and the name carries no CONFLICT / ALREADY token.
+            "STORED_CREDENTIALS_NOT_SUPPORTED" => new(409, "Conflict"),
+            // Exact row: a stored card charge of the invoice has not finished, a state conflict for cancelling or
+            // paying by hand, and the name carries no CONFLICT / ALREADY token.
+            "INVOICE_STORED_CHARGE_UNRESOLVED" => new(409, "Conflict"),
+            // Exact row: the hosted gateway refused or failed the refund, an upstream refusal
+            // rather than a malformed request, and neither name carries the _UPSTREAM_FAILED suffix.
+            "GATEWAY_REFUND_REFUSED" or "REFUND_ADVICE_UNAVAILABLE" => new(502, "Bad Gateway"),
             // Exact row: a fulfilment plugin's decision stands in the way of the refund, a state
             // conflict, and the name carries no CONFLICT / ALREADY token for the generic arms.
             "REFUND_BLOCKED_BY_PLUGIN" => new(409, "Conflict"),

@@ -205,6 +205,10 @@
             "component": "GatewayLogView.vue"
           },
           {
+            "path": "payment-claims",
+            "component": "PaymentClaimsView.vue"
+          },
+          {
             "path": "transactions",
             "component": "TransactionsListView.vue"
           },

@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Innovayse.SDK.Plugins.HostingPanel;
+using Hostpanel.Sdk.Plugins.HostingPanel;
 
 namespace Innovayse.Providers.CWP.Models;
 

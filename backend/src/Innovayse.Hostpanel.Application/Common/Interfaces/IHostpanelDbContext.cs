@@ -102,6 +102,15 @@ public interface IHostpanelDbContext
     /// <summary>Gets the fulfilment records: one plugin told one thing about one invoice, and how far it got.</summary>
     public DbSet<FulfilmentRecord> FulfilmentRecords { get; }
 
+    /// <summary>Gets the customers payment gateway modules keep for clients: one per client and module.</summary>
+    public DbSet<GatewayCustomer> GatewayCustomers { get; }
+
+    /// <summary>Gets the clients' consents to have a stored payment method charged without them present.</summary>
+    public DbSet<CardChargeConsent> CardChargeConsents { get; }
+
+    /// <summary>Gets the claims on invoices while a stored payment method charge is in flight.</summary>
+    public DbSet<InvoicePaymentClaim> InvoicePaymentClaims { get; }
+
     /// <summary>Gets the transactions table.</summary>
     public DbSet<Transaction> Transactions { get; }
 

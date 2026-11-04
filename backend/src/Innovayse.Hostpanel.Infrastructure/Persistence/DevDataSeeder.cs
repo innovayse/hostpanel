@@ -340,7 +340,7 @@ public sealed class DevDataSeeder
                 }
 
                 var payDate = inv.DueDate.AddDays(-Rng.Next(1, 10));
-                var gateway = Rng.Next(3) switch { 0 => PaymentMethodNames.Card, 1 => PaymentMethodNames.PayPal, _ => PaymentMethodNames.BankTransfer };
+                var gateway = Rng.Next(2) switch { 0 => PaymentMethodNames.Card, _ => PaymentMethodNames.BankTransfer };
                 var fees = Math.Round(inv.Total * 0.029m + 0.30m, 2);
 
                 var tx = InvoiceTransaction.Create(
@@ -564,7 +564,7 @@ public sealed class DevDataSeeder
         {
             var products = await _db.Products.Include(p => p.Prices).ToListAsync(ct);
             var activeClients = await _db.Clients.Where(c => c.Status == ClientStatus.Active).ToListAsync(ct);
-            var gateways = new[] { PaymentMethodNames.Card, PaymentMethodNames.PayPal, PaymentMethodNames.BankTransfer };
+            var gateways = new[] { PaymentMethodNames.Card, PaymentMethodNames.BankTransfer };
 
             for (int month = 11; month >= 0; month--)
             {
@@ -920,7 +920,7 @@ public sealed class DevDataSeeder
             ("company.logo",              "/images/logo.png",                "Path to company logo"),
             ("billing.currency",          SeedInvoiceCurrency,                           "Default billing currency"),
             ("billing.tax_rate",          "0",                               "Default tax rate percentage"),
-            ("billing.payment_gateway",   "Stripe",                        "Default payment gateway"),
+            ("billing.payment_gateway",   "bank_transfer",                 "Default payment gateway"),
             ("support.ticket_auto_close", "14",                              "Days after last reply before a ticket is auto-closed"),
             ("support.department_default","1",                               "Default department ID for new tickets"),
             ("domain.registrar_default",  "Namecheap",                       "Default domain registrar module"),

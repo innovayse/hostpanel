@@ -18,7 +18,8 @@
     "quotes": "Quotes",
     "offlineCc": "Offline CC Processing",
     "disputes": "Disputes",
-    "gatewayLog": "Gateway Log"
+    "gatewayLog": "Gateway Log",
+    "paymentClaims": "Payment Claims"
   },
   "reports": "Reports",
   "orders": "Orders",

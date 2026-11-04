@@ -62,11 +62,9 @@ describe('useInvoicePaymentForm', () => {
     const form = mountForm(optionsFor(true).options)
 
     expect(form.gateway.value).toBe(DEFAULT_PAYMENT_GATEWAY)
-    expect(form.gateway.value).toBe(PaymentGateway.Stripe)
+    expect(form.gateway.value).toBe(PaymentGateway.BankTransfer)
     expect(form.gatewayOptions.value.map((option) => option.value)).toEqual([
       PaymentGateway.BankTransfer,
-      PaymentGateway.Stripe,
-      PaymentGateway.PayPal,
     ])
   })
 
@@ -118,7 +116,6 @@ describe('useInvoicePaymentForm', () => {
     const { options, record } = optionsFor(true)
     const form = mountForm(options)
     fill(form)
-    form.gateway.value = PaymentGateway.PayPal
     form.transactionId.value = ' ref-1 '
     form.fees.value = 1.5
 
@@ -126,13 +123,13 @@ describe('useInvoicePaymentForm', () => {
 
     expect(record).toHaveBeenCalledWith(7, {
       date: new Date('2026-10-20').toISOString(),
-      gateway: PaymentGateway.PayPal,
+      gateway: PaymentGateway.BankTransfer,
       transactionId: 'ref-1',
       amount: 25,
       fees: 1.5,
     })
     expect(form.paymentDate.value).toBeNull()
-    expect(form.gateway.value).toBe(PaymentGateway.Stripe)
+    expect(form.gateway.value).toBe(PaymentGateway.BankTransfer)
     expect(form.transactionId.value).toBe('')
     expect(form.amount.value).toBe(0)
     expect(form.fees.value).toBe(0)

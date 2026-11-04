@@ -1,4 +1,4 @@
-using Innovayse.SDK.Plugins.Fulfilment;
+using Hostpanel.Sdk.Plugins.Fulfilment;
 using Microsoft.Extensions.Configuration;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;

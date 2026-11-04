@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Innovayse.Hostpanel.Application.Migration.Importers;
 
 /// <summary>
-/// Imports client service records, deduplicated by client and domain (or panel username), matched against this
+/// Imports client service records, deduplicated by client and the source's own service id (rows without one by client and domain, or panel username), matched against this
 /// install's own products by name.
 /// </summary>
 public sealed class ServicesImporter : IMigrationEntityImporter
@@ -81,8 +81,9 @@ public sealed class ServicesImporter : IMigrationEntityImporter
             return RecordImportResult.Skipped(MigrationSkipReason.ClientNotFound);
         }
 
-        // The source sends no service id of its own, so a service is matched by what identifies
-        // its hosting account for the client: the domain, else the panel username.
+        // A service is matched by the source's own id first. Only a row that holds no source id
+        // (imported before the id was kept) or a record that carries none falls back to what
+        // identifies the hosting account for the client: the domain, else the panel username.
         if (await ExistsAsync(clientId.Value, rec, ct))
         {
             return RecordImportResult.Skipped(MigrationSkipReason.AlreadyExists);
@@ -121,7 +122,8 @@ public sealed class ServicesImporter : IMigrationEntityImporter
             StatusChangedAt: rec.TerminatedAt ?? now,
             SuspensionSource: rec.Status == SourceServiceStatuses.SuspendedByAdmin ? SuspensionSource.Manual : SuspensionSource.Other,
             HostingAccount: new ServiceHostingAccount(
-                ServerId: null, Domain: rec.Domain, ProvisioningRef: rec.Username, DedicatedIp: null, Username: rec.Username, Password: null)));
+                ServerId: null, Domain: rec.Domain, ProvisioningRef: rec.Username, DedicatedIp: null, Username: rec.Username, Password: null),
+            ExternalId: rec.ExternalId));
         svc.UpdateAdminNotes(rec.AdminNotes);
 
         // Applied after the import: Import anchors a renewal date of its own, and the source's
@@ -141,24 +143,37 @@ public sealed class ServicesImporter : IMigrationEntityImporter
         return RecordImportResult.Imported;
     }
 
-    /// <summary>Whether the client already has the service the record describes, matched by domain, else by panel username.</summary>
+    /// <summary>
+    /// Whether the client already has the service the record describes: matched by the source's own id when the
+    /// record carries one, else (and for rows imported before the id was kept) by domain, else by panel username.
+    /// </summary>
     /// <param name="clientId">The local client the record belongs to.</param>
     /// <param name="rec">The service record read from the source plugin.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns><see langword="true"/> when a matching service exists; <see langword="false"/> as well when the record carries neither value.</returns>
+    /// <returns><see langword="true"/> when a matching service exists; <see langword="false"/> as well when the record carries no match key.</returns>
     private async Task<bool> ExistsAsync(int clientId, ServiceRecord rec, CancellationToken ct)
     {
+        var hasSourceId = !string.IsNullOrWhiteSpace(rec.ExternalId);
+        if (hasSourceId && await _context.ClientServices.AnyAsync(
+                s => s.ClientId == clientId && s.ExternalId == rec.ExternalId, ct))
+        {
+            return true;
+        }
+
+        // A row that already holds another source id is a different source service, even when it
+        // shares the domain or username, so with an id on the record only id-less rows can match.
+        var candidates = _context.ClientServices.Where(
+            s => s.ClientId == clientId && (!hasSourceId || s.ExternalId == null));
+
         if (!string.IsNullOrWhiteSpace(rec.Domain))
         {
             var domainLower = rec.Domain.ToLower();
-            return await _context.ClientServices.AnyAsync(
-                s => s.ClientId == clientId && s.Domain != null && s.Domain.ToLower() == domainLower, ct);
+            return await candidates.AnyAsync(s => s.Domain != null && s.Domain.ToLower() == domainLower, ct);
         }
 
         if (!string.IsNullOrWhiteSpace(rec.Username))
         {
-            return await _context.ClientServices.AnyAsync(
-                s => s.ClientId == clientId && s.Username == rec.Username, ct);
+            return await candidates.AnyAsync(s => s.Username == rec.Username, ct);
         }
 
         return false;

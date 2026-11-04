@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Domain.Services;
 /// <param name="StatusChangedAt">When the service was suspended or terminated (UTC); ignored for any other status.</param>
 /// <param name="SuspensionSource">Why a suspended service is suspended; ignored for any other status.</param>
 /// <param name="HostingAccount">The server, domain, panel reference and credentials the service is hosted under.</param>
+/// <param name="ExternalId">The service's own id in the source system, kept so a retried import recognises it; <see langword="null"/> when the source sent none.</param>
 public sealed record ServiceImport(
     int ClientId,
     int ProductId,
@@ -23,4 +24,5 @@ public sealed record ServiceImport(
     DateTimeOffset RegisteredAt,
     DateTimeOffset StatusChangedAt,
     SuspensionSource SuspensionSource,
-    ServiceHostingAccount HostingAccount);
+    ServiceHostingAccount HostingAccount,
+    string? ExternalId = null);

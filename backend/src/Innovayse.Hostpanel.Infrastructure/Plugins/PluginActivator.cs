@@ -1,3 +1,4 @@
+using Hostpanel.Sdk.Plugins.Store;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
@@ -196,7 +197,20 @@ public sealed class PluginActivator
             id,
             PluginActivationOutcome.Activated,
             () => (TContract)ActivatorUtilities.CreateInstance(
-                _serviceProvider, plugin.ImplementationType, (IConfiguration)composed));
+                _serviceProvider, plugin.ImplementationType, (IConfiguration)composed, PluginWideStoreOf(id)));
+    }
+
+    /// <summary>
+    /// Builds the plugin-wide store a plugin may take as <see cref="IPluginStore"/> in its constructor: bound to this plugin's
+    /// id and to no client, with a data context of its own for every operation, so it reads and writes the same rows as a call store without a client and never a client's rows
+    /// or another plugin's. Its limits are the call store's, and its rows are the ones the plugin purge removes.
+    /// </summary>
+    /// <param name="id">The id of the plugin being activated.</param>
+    /// <returns>The store; a plugin whose constructor does not ask for it simply never sees it.</returns>
+    private PluginWideStore PluginWideStoreOf(string id)
+    {
+        // Its own context per operation, never _db: a store write must not save what the caller has staged there.
+        return new PluginWideStore(id, _serviceProvider.GetRequiredService<IServiceScopeFactory>());
     }
 
     /// <summary>

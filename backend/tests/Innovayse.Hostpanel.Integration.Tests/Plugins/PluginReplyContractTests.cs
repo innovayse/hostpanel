@@ -1,8 +1,8 @@
 using System.Net;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Settings;
-using Innovayse.SDK.Plugins.Endpoints;
-using Innovayse.SDK.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Endpoints;
+using Hostpanel.Sdk.Plugins.Enums;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -93,6 +93,19 @@ public sealed class PluginReplyContractTests : IClassFixture<AppPluginFixture>
         var response = await CallAsync(null, $"allowed-{kind}-{status}", HttpMethod.Get, "ping");
 
         ((int)response.StatusCode).Should().Be(status);
+    }
+
+    /// <summary>A raw reply is allowed on a callback only, so on a panel route it is a plugin fault, whatever its media type.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task ARawReply_OnAPanelRoute_IsAPluginFailure()
+    {
+        _fixture.Probe.Behaviour = _ => PluginReply.Raw(200, "<b>x</b>"u8.ToArray(), "text/html");
+
+        var response = await CallAsync(null, "raw-on-panel", HttpMethod.Get, "ping");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadGateway);
+        await ClientsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_FAILED);
     }
 
     /// <summary>A body above the server's default limit, within the configured cap, reaches the plugin whole, declared or chunked.</summary>

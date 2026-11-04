@@ -41,6 +41,7 @@ public static class DependencyInjection
 
         // Asks the enabled fulfilment plugins to cap a refund before any money moves.
         services.AddScoped<RefundAdviser>();
+        services.AddScoped<GatewayPaymentCanceller>();
 
         // The part of a plugin call the client and admin areas share: route matching, body cap, audit, reply mapping.
         services.AddScoped<PluginCallRunner>();

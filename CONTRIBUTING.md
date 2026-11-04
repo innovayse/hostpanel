@@ -46,7 +46,7 @@ need any token or account.
 
 ### The plugin SDK is a submodule
 
-`backend/src/Innovayse.SDK` is a git submodule of
+`backend/src/Hostpanel.Sdk` is a git submodule of
 [innovayse/hostpanel-sdk](https://github.com/innovayse/hostpanel-sdk). Clone with
 `git clone --recurse-submodules`, or run `git submodule update --init` after a plain clone and after
 any pull that moves the submodule; without it the backend has no SDK project to build.
@@ -71,7 +71,7 @@ as source changes and eventually dies enumerating it:
 
 ```
 Unhandled exception. System.ArgumentException: An item with the same key has
-already been added. Key: /app/src/Innovayse.SDK/obj/project.nuget.cache
+already been added. Key: /app/src/Hostpanel.Sdk/obj/project.nuget.cache
    at Microsoft.DotNet.Watch.PollingDirectoryWatcher.CheckForChangedFiles()
 ```
 

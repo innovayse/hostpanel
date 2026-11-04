@@ -1,5 +1,5 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.SDK.Plugins.StoredCredentials;
+using Hostpanel.Sdk.Plugins.StoredCredentials;
 
 namespace Innovayse.Hostpanel.Infrastructure.Demo;
 
@@ -15,6 +15,9 @@ public sealed class DemoStoredCredentialState
 
     /// <summary>Save sessions that were opened and not yet completed, by session id, holding the customer they belong to.</summary>
     private readonly Dictionary<string, string> _sessions = new(StringComparer.Ordinal);
+
+    /// <summary>The method each completed save session stored, by session id, so completing a session again answers the same method.</summary>
+    private readonly Dictionary<string, SavedMethod> _completed = new(StringComparer.Ordinal);
 
     /// <summary>Stored methods by customer reference, in the order they were saved.</summary>
     private readonly Dictionary<string, List<SavedMethod>> _methods = new(StringComparer.Ordinal);
@@ -62,11 +65,16 @@ public sealed class DemoStoredCredentialState
 
     /// <summary>Finishes a save session by storing a demo card for its customer.</summary>
     /// <param name="sessionId">The session id from <see cref="OpenSession"/>.</param>
-    /// <returns>The stored method, or <see langword="null"/> when the session is unknown or was already completed.</returns>
+    /// <returns>The stored method; a session completed before answers the same method and stores nothing twice. <see langword="null"/> when the session is unknown.</returns>
     public SavedMethod? CompleteSession(string sessionId)
     {
         lock (_gate)
         {
+            if (_completed.TryGetValue(sessionId, out var already))
+            {
+                return already;
+            }
+
             if (!_sessions.Remove(sessionId, out var customerRef))
             {
                 return null;
@@ -80,6 +88,7 @@ public sealed class DemoStoredCredentialState
 
             var method = new SavedMethod($"demo-pm-{sessionId}", "visa", "4242", 12, _clock.UtcNow.Year + 3, methods.Count == 0);
             methods.Add(method);
+            _completed[sessionId] = method;
             return method;
         }
     }
@@ -169,6 +178,7 @@ public sealed class DemoStoredCredentialState
         lock (_gate)
         {
             _sessions.Clear();
+            _completed.Clear();
             _methods.Clear();
             _charges.Clear();
             _sessionCounter = 0;

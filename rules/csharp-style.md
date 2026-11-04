@@ -150,7 +150,7 @@ uses in nearly every file.** `<ImplicitUsings>enable</ImplicitUsings>` (set in
 unless it is used project-wide. What each layer holds today:
 
 - `Shared`: `Microsoft.AspNetCore.Http` and `Microsoft.Extensions.Logging`.
-- `SharedKernel`, Domain, Application, Infrastructure, API, `Innovayse.SDK` and the
+- `SharedKernel`, Domain, Application, Infrastructure, API, `Hostpanel.Sdk` and the
   `Innovayse.Providers.*` projects: no directives. In these projects each namespace is used by one
   folder only (controllers, EF configurations, handlers), not by the whole project, so the file
   stays empty except for its comment.

@@ -5,7 +5,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Innovayse.Hostpanel.Domain\Innovayse.Hostpanel.Domain.csproj" />
     <ProjectReference Include="..\Innovayse.Hostpanel.Application\Innovayse.Hostpanel.Application.csproj" />
-    <ProjectReference Include="..\Innovayse.SDK\Innovayse.SDK.csproj" />
+    <ProjectReference Include="..\Hostpanel.Sdk\Hostpanel.Sdk.csproj" />
+    <ProjectReference Include="..\Hostpanel.Sdk\Hostpanel.Sdk.Packaging\Hostpanel.Sdk.Packaging.csproj" />
     <ProjectReference Include="..\Innovayse.Providers.CWP\Innovayse.Providers.CWP.csproj" />
     <ProjectReference Include="..\Innovayse.Providers.CWP7\Innovayse.Providers.CWP7.csproj" />
   </ItemGroup>
@@ -61,7 +62,6 @@
     <!-- Branding uploads are rendered in ImageProcessing/SkiaBrandingImageProcessor.cs. -->
     <PackageReference Include="SkiaSharp" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
-    <PackageReference Include="Stripe.net" />
     <!-- Auth/PortalSessionRevoker ends the client portal's Redis sessions on a back-channel logout. -->
     <PackageReference Include="StackExchange.Redis" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />

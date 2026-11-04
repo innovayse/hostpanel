@@ -4,7 +4,7 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 
 /// <summary>
-/// <c>GET /api/me/invoices</c>, <c>GET /api/me/payment-methods</c> and <c>GET /api/clients/me</c> for a member an
+/// <c>GET /api/me/invoices</c>, <c>GET /api/me/stored-payment-methods</c> and <c>GET /api/clients/me</c> for a member an
 /// identity plugin vouches for: they act for the client linked to the plugin account and never for a client
 /// record of their own, the plugin's purchase and payment method rights decide the invoice and payment method
 /// routes, and the profile, which belongs to the account holder alone, is refused with
@@ -41,7 +41,7 @@ public sealed class PluginMemberBillingAccessTests(IntegrationTestFactory factor
 
         var list = await member.Client.GetAsync("/api/me/invoices");
         var read = await member.Client.GetAsync($"/api/me/invoices/{invoiceId}");
-        var methods = await member.Client.GetAsync("/api/me/payment-methods");
+        var methods = await member.Client.GetAsync("/api/me/stored-payment-methods");
 
         list.StatusCode.Should().Be(HttpStatusCode.OK);
         (await ClientsTestSeeds.IdsOfAsync(list)).Should().Contain(invoiceId);
@@ -75,7 +75,7 @@ public sealed class PluginMemberBillingAccessTests(IntegrationTestFactory factor
 
         var list = await member.Client.GetAsync("/api/me/invoices");
         var read = await member.Client.GetAsync($"/api/me/invoices/{invoiceId}");
-        var methods = await member.Client.GetAsync("/api/me/payment-methods");
+        var methods = await member.Client.GetAsync("/api/me/stored-payment-methods");
 
         foreach (var response in new[] { list, read, methods })
         {
@@ -91,7 +91,7 @@ public sealed class PluginMemberBillingAccessTests(IntegrationTestFactory factor
         var (member, _) = await SeedAsync("plugin-billing-payer", canPurchase: false, canManagePaymentMethods: true);
         using var memberLifetime = member;
 
-        var methods = await member.Client.GetAsync("/api/me/payment-methods");
+        var methods = await member.Client.GetAsync("/api/me/stored-payment-methods");
 
         methods.StatusCode.Should().Be(HttpStatusCode.OK);
     }

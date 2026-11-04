@@ -12,23 +12,23 @@ describe('IntegrationCard', () => {
   it('links to the configuration page and shows name and active status', () => {
     const wrapper = mountWithApp(IntegrationCard, { props: { integration: integrationDto() } })
 
-    expect(wrapper.get('[data-testid="integration-card-stripe"]').attributes('href')).toBe('/integrations/stripe/configure')
-    expect(wrapper.text()).toContain('Stripe')
-    expect(wrapper.get('[data-testid="integration-status-stripe"]').text()).toBe('Active')
+    expect(wrapper.get('[data-testid="integration-card-bank-transfer"]').attributes('href')).toBe('/integrations/bank-transfer/configure')
+    expect(wrapper.text()).toContain('Bank Transfer')
+    expect(wrapper.get('[data-testid="integration-status-bank-transfer"]').text()).toBe('Active')
   })
 
   it('shows an inactive integration as inactive', () => {
     const wrapper = mountWithApp(IntegrationCard, { props: { integration: integrationDto({ isEnabled: false }) } })
 
-    expect(wrapper.get('[data-testid="integration-status-stripe"]').text()).toBe('Inactive')
+    expect(wrapper.get('[data-testid="integration-status-bank-transfer"]').text()).toBe('Inactive')
   })
 
   it('marks an integration whose required fields are not stored as not configured', () => {
     const configured = mountWithApp(IntegrationCard, { props: { integration: integrationDto() } })
     const unconfigured = mountWithApp(IntegrationCard, { props: { integration: integrationDto({ isConfigured: false }) } })
 
-    expect(configured.find('[data-testid="integration-unconfigured-stripe"]').exists()).toBe(false)
-    expect(unconfigured.get('[data-testid="integration-unconfigured-stripe"]').text()).toBe('Not configured')
+    expect(configured.find('[data-testid="integration-unconfigured-bank-transfer"]').exists()).toBe(false)
+    expect(unconfigured.get('[data-testid="integration-unconfigured-bank-transfer"]').text()).toBe('Not configured')
   })
 
   it('marks a plugin-provided integration', () => {
@@ -47,12 +47,22 @@ describe('IntegrationCard', () => {
   ])('labels a %s plugin with its type', (pluginType, label) => {
     const wrapper = mountWithApp(IntegrationCard, { props: { integration: integrationDto({ isPlugin: true, pluginType }) } })
 
-    expect(wrapper.get('[data-testid="integration-type-stripe"]').text()).toBe(label)
+    expect(wrapper.get('[data-testid="integration-type-bank-transfer"]').text()).toBe(label)
   })
 
   it('shows no type badge on a built-in integration', () => {
     const wrapper = mountWithApp(IntegrationCard, { props: { integration: integrationDto() } })
 
-    expect(wrapper.find('[data-testid="integration-type-stripe"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="integration-type-bank-transfer"]').exists()).toBe(false)
+  })
+
+  it('shows a plugin integration with its icon and falls back to the initial', () => {
+    const withIcon = mountWithApp(IntegrationCard, { props: { integration: integrationDto({ isPlugin: true, iconUrl: '/icon.png' }) } })
+    const without = mountWithApp(IntegrationCard, { props: { integration: integrationDto({ isPlugin: true }) } })
+    const builtIn = mountWithApp(IntegrationCard, { props: { integration: integrationDto() } })
+
+    expect(withIcon.get('[data-testid="plugin-avatar-image"]').attributes('src')).toBe('/icon.png')
+    expect(without.find('[data-testid="plugin-avatar-fallback"]').exists()).toBe(true)
+    expect(builtIn.find('[data-testid="integration-plugin-avatar"]').exists()).toBe(false)
   })
 })

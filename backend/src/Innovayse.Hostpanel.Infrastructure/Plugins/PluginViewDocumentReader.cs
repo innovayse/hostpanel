@@ -2,10 +2,11 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Plugins.Common;
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Manifest;
-using Innovayse.SDK.Plugins.Slots;
-using Innovayse.SDK.Plugins.Ui;
+using Hostpanel.Sdk.Packaging.Signing;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Slots;
+using Hostpanel.Sdk.Plugins.Ui;
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 

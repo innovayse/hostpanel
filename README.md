@@ -69,8 +69,8 @@ Taken from the local development stack with its seeded sample data.
 | Admin panel | Clients, orders, products, gateways, integrations, e-mail templates, plugins, reports, audit log |
 | Demo mode | Fake payments, registrar and provisioning, caught mail, fixed sample data reset on a schedule, on a network isolated from production |
 | Languages | English, Russian and Armenian in both the portal and the admin panel |
-| Plugin SDK | `Innovayse.SDK` (MIT, a NuGet package, developed in [hostpanel-sdk](https://github.com/innovayse/hostpanel-sdk)) for your own payment, registrar, provisioning, identity, fulfilment and hosted plugins |
-| Integrations | Payments: Stripe (cards, saved cards), Inecobank (as a plugin), bank transfer. Registrars: Namecheap, Name.am. Control panels: CWP7, Plesk. Notifications: Telegram |
+| Plugin SDK | `Hostpanel.Sdk` (MIT, a NuGet package, developed in [hostpanel-sdk](https://github.com/innovayse/hostpanel-sdk)) for your own payment, registrar, provisioning, identity, fulfilment and hosted plugins |
+| Integrations | Payments: bank transfer built in; card and bank gateways install as plugins. Registrars: Namecheap, Name.am. Control panels: CWP7, Plesk. Notifications: Telegram |
 | Data import from WHMCS | A PHP addon you install in WHMCS. HostPanel pulls clients, contacts, products, orders, services, domains, invoices, transactions, quotes, tickets, announcements, knowledge base, downloads and network issues from it, page by page. See [Moving from another billing system](docs/migration/from-another-system.md) |
 
 See the [open feature requests](https://github.com/innovayse/hostpanel/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
@@ -89,14 +89,14 @@ This table compares what HostPanel and WHMCS offer today. WHMCS facts come from 
 | Where it runs | Self-hosted, with Docker | Self-hosted, or WHMCS Cloud run by the vendor |
 | Control panels | CWP7, Plesk | cPanel, Plesk, DirectAdmin and others |
 | Domain registrars | Namecheap, Name.am | Many, including Namecheap, OpenSRS and Nominet |
-| Payment gateways | Stripe, Inecobank, bank transfer | Many, including Authorize.net, BitPay and bank transfer |
+| Payment gateways | Bank transfer built in, gateways as plugins | Many, including Authorize.net, BitPay and bank transfer |
 | Extensions | A plugin SDK (MIT). Few plugins exist so far | A large marketplace of third-party modules |
 | Moving over | An importer that pulls your data out of WHMCS | Not applicable |
 
 ### What HostPanel does not have yet
 
 - cPanel and DirectAdmin provisioning.
-- PayPal and other payment gateways beyond the three above.
+- Built-in payment gateways. Card and bank gateways come as plugins.
 - Registrars other than Namecheap and Name.am, such as ResellerClub or OpenSRS.
 - Automatic tax calculation. Staff set a tax rate on each invoice by hand.
 - Automatic fraud checks on new orders. Staff can mark an order as fraud by hand.
@@ -238,7 +238,7 @@ docker compose -f docker-compose.shared.yml -f docker-compose.dev.yml up -d
 docker compose -f docker-compose.shared.yml -f docker-compose.dev.yml logs -f hostpanel-api   # migrations and seeding run on startup
 ```
 
-The plugin SDK in `backend/src/Innovayse.SDK` is a git submodule from its own repository,
+The plugin SDK in `backend/src/Hostpanel.Sdk` is a git submodule from its own repository,
 [innovayse/hostpanel-sdk](https://github.com/innovayse/hostpanel-sdk). After a plain `git clone`, and after every pull
 that moves it, run `git submodule update --init` from the repository root; without it the backend has no SDK to build.
 
@@ -275,7 +275,7 @@ its own PostgreSQL through Testcontainers, so Docker must be running). Run `yarn
 | Messaging | RabbitMQ with the Wolverine outbox | Reliable events between modules |
 | Client portal `client/` | Nuxt 4, Vue 3, TypeScript, Tailwind, Pinia | Server-rendered storefront; pages own data and SEO, `templates/` hold the switchable designs |
 | Admin panel `admin/` | Vite, Vue 3, TypeScript, Tailwind | Single-page app served by nginx |
-| Plugins | `Innovayse.SDK` and `Innovayse.Providers.*` | Six plugin types behind small interfaces, loaded at run time: payment, registrar and provisioning providers, plus fulfilment (`IFulfilmentPlugin`: deliver digital products after payment, advise on refunds), identity (`IClientResolver`: decide which client a signed-in user acts for) and hosted (`IHostedPlugin`: a background worker). The integrations listed under Features are built into the core; today only Inecobank ships as a run-time plugin. The core names no deployment-specific plugin namespace; an architecture test enforces it |
+| Plugins | `Hostpanel.Sdk` and `Innovayse.Providers.*` | Six plugin types behind small interfaces, loaded at run time: payment, registrar and provisioning providers, plus fulfilment (`IFulfilmentPlugin`: deliver digital products after payment, advise on refunds), identity (`IClientResolver`: decide which client a signed-in user acts for) and hosted (`IHostedPlugin`: a background worker). The integrations listed under Features are built into the core; payment gateways such as card processors are not built in and are installed as plugins. The core names no deployment-specific plugin namespace; an architecture test enforces it |
 | Auth | ASP.NET Core Identity, JWT in an httpOnly cookie | `local` mode by default |
 
 Each app owns its Dockerfile (`backend/Dockerfile`, `client/Dockerfile`, `admin/Dockerfile`). A new payment gateway, registrar
@@ -309,8 +309,8 @@ Start with [docs/developers/write-a-plugin.md](docs/developers/write-a-plugin.md
 - **License:** Copyright (c) 2024-2026 Innovayse LLC. Free software under the
   [GNU Affero General Public License v3.0 or later](LICENSE): use, modify and self-host it, including commercially. If you
   run a modified version as a network service, offer your users its source.
-- **Plugin SDK license:** the plugin SDK (`backend/src/Innovayse.SDK`, a git submodule of its own repository
+- **Plugin SDK license:** the plugin SDK (`backend/src/Hostpanel.Sdk`, a git submodule of its own repository
   [innovayse/hostpanel-sdk](https://github.com/innovayse/hostpanel-sdk), where it is developed and published) is under the
-  [MIT License](https://github.com/innovayse/hostpanel-sdk/blob/main/LICENSE) and ships as the `Innovayse.SDK` NuGet package,
+  [MIT License](https://github.com/innovayse/hostpanel-sdk/blob/main/LICENSE) and ships as the `Hostpanel.Sdk` NuGet package,
   so a plugin may be free or paid, open or closed source, as its author decides. Everything else in this repository stays
   AGPL-3.0-or-later.

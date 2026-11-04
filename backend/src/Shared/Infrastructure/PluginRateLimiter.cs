@@ -7,7 +7,8 @@ namespace Innovayse.Hostpanel.Shared.Infrastructure;
 /// <summary>
 /// The limiters behind the plugin routes: one sliding-window limiter per tier
 /// (<see cref="RateLimitPolicies.PluginDefault"/>, <see cref="RateLimitPolicies.PluginStrict"/>,
-/// <see cref="RateLimitPolicies.PluginHeavy"/>) and one concurrency limiter for streams
+/// <see cref="RateLimitPolicies.PluginHeavy"/>, and <see cref="RateLimitPolicies.PluginCallback"/> for the public callback
+/// door) and one concurrency limiter for streams
 /// (<see cref="RateLimitPolicies.PluginStream"/>), each partitioned by a key the caller builds from the plugin and the
 /// caller, so one plugin or one account cannot exhaust the API.
 /// </summary>
@@ -43,6 +44,7 @@ public sealed class PluginRateLimiter : IDisposable
             [RateLimitPolicies.PluginDefault] = SlidingWindow(limits.PluginDefault, disabled),
             [RateLimitPolicies.PluginStrict] = SlidingWindow(limits.PluginStrict, disabled),
             [RateLimitPolicies.PluginHeavy] = SlidingWindow(limits.PluginHeavy, disabled),
+            [RateLimitPolicies.PluginCallback] = SlidingWindow(limits.PluginCallback, disabled),
         };
 
         _streams = PartitionedRateLimiter.Create<string, string>(key => disabled

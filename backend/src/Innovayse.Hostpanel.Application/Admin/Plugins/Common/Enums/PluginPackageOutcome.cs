@@ -33,17 +33,23 @@ public enum PluginPackageOutcome
     /// <summary>An archive entry would write outside the plugin's own folder.</summary>
     ArchiveUnsafe,
 
+    /// <summary>An archive entry could not be written into the unpack folder: a file and a folder share a name, or the path is not writable.</summary>
+    ArchiveUnwritable,
+
     /// <summary>The archive has more entries, or unpacks to more bytes, than the configured limits allow.</summary>
     ArchiveTooLarge,
 
     /// <summary>The archive carries an assembly whose name belongs to the host or the framework.</summary>
     HostAssemblyRefused,
 
+    /// <summary>The archive carries an assembly whose file name another installed or staged plugin already ships.</summary>
+    AssemblyConflict,
+
     /// <summary>A trusted-package list is configured and the archive's SHA-256 is not on it.</summary>
     NotTrusted,
 
     /// <summary>
-    /// The package fails the signature check (see <see cref="PluginSignatureRule"/>, which the result names) and the host
+    /// The package fails the signature check (see <c>PluginSignatureRule</c> of the plugin packaging package, which the result names) and the host
     /// does not admit unsigned packages.
     /// </summary>
     SignatureRefused,

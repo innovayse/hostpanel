@@ -203,10 +203,6 @@
                     muted-class="text-mut2"
                   />
                 </UiGrid>
-
-                <UiStack v-if="mayPlaceOrders && selectedMethod === PaymentModule.Stripe" gap="none" class="mt-6 overflow-hidden">
-                  <CheckoutStripeCardForm ref="stripeCardFormRef" />
-                </UiStack>
               </UiCard>
             </UiStack>
           </template>
@@ -331,7 +327,6 @@ import {
 } from 'lucide-vue-next'
 import { CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
 import { BRAND_BUTTON } from '~/templates/aurora/buttons'
-import { PaymentModule } from '~/types/paymentmodule'
 import { useCheckoutPage } from '~/composables/useCheckoutPage'
 
 /** Translator for the active locale. */
@@ -359,7 +354,6 @@ const {
   userEmail,
   handleLogout,
   form,
-  stripeCardFormRef,
   submitOrder
 } = await useCheckoutPage()
 </script>

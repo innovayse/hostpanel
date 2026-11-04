@@ -40,7 +40,6 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<Client>
         builder.Property(x => x.Address2).HasMaxLength(200);
         builder.Property(x => x.Currency).HasMaxLength(3);
         builder.Property(x => x.PaymentMethod).HasMaxLength(50);
-        builder.Property(x => x.CardGatewayCustomerId).HasMaxLength(50);
 
         // The link to an account in another system is whole or absent, which the domain keeps and the
         // check enforces for every writer. One external account belongs to one client only, so the pair is

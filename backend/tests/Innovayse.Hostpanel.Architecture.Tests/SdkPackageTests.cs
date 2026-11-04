@@ -12,7 +12,7 @@ public sealed class SdkPackageTests
 {
     /// <summary>The SDK project's folder, found from the solution root (a git submodule of its own repository).</summary>
     private static readonly string SdkRoot = Path.Combine(
-        UseCaseShapeTests.FindBackendRoot(AppContext.BaseDirectory), "src", "Innovayse.SDK");
+        UseCaseShapeTests.FindBackendRoot(AppContext.BaseDirectory), "src", "Hostpanel.Sdk");
 
     /// <summary>The package licence is the MIT expression and no licence file overrides it.</summary>
     [Fact]
@@ -43,7 +43,7 @@ public sealed class SdkPackageTests
 
         Property(project, "PackageReadmeFile").Should().Be("README.md");
         PackedFiles(project).Should().Contain("README.md");
-        File.ReadAllText(Path.Combine(SdkRoot, "README.md")).Should().Contain("dotnet add package Innovayse.SDK --version");
+        File.ReadAllText(Path.Combine(SdkRoot, "README.md")).Should().Contain("dotnet add package Hostpanel.Sdk --version");
     }
 
     /// <summary>The metadata a feed shows is filled in and points at the SDK's own public repository.</summary>
@@ -52,8 +52,8 @@ public sealed class SdkPackageTests
     {
         var project = LoadProject();
 
-        Property(project, "PackageId").Should().Be("Innovayse.SDK");
-        Property(project, "Version").Should().MatchRegex(@"^\d+\.\d+\.\d+$");
+        Property(project, "PackageId").Should().Be("Hostpanel.Sdk");
+        Property(LoadSharedProps(), "Version").Should().MatchRegex(@"^\d+\.\d+\.\d+$");
         Property(project, "Description").Should().NotBeNullOrWhiteSpace();
         Property(project, "PackageTags").Should().NotBeNullOrWhiteSpace();
         Property(project, "RepositoryUrl").Should().Be("https://github.com/innovayse/hostpanel-sdk.git");
@@ -81,7 +81,14 @@ public sealed class SdkPackageTests
     /// <returns>The parsed project.</returns>
     private static XDocument LoadProject()
     {
-        return XDocument.Load(Path.Combine(SdkRoot, "Innovayse.SDK.csproj"));
+        return XDocument.Load(Path.Combine(SdkRoot, "Hostpanel.Sdk.csproj"));
+    }
+
+    /// <summary>Reads the props file beside the SDK project, where the one version of both packages is set.</summary>
+    /// <returns>The parsed props file.</returns>
+    private static XDocument LoadSharedProps()
+    {
+        return XDocument.Load(Path.Combine(SdkRoot, "Directory.Build.props"));
     }
 
     /// <summary>The value of a project property, or null when the project does not set it.</summary>

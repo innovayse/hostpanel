@@ -333,7 +333,6 @@
     "firstPaymentAmount": "First Payment Amount",
     "recurringAmount": "Recurring Amount",
     "terminationDate": "Termination Date",
-    "stripePaypal": "Stripe, PayPal...",
     "promotionCode": "Promotion Code",
     "subscriptionId": "Subscription ID",
     "autoManagement": "Auto-Management",

@@ -1,4 +1,4 @@
-using Innovayse.SDK.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Enums;
 
 namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 
@@ -16,6 +16,10 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 /// built-in integration. The admin groups fulfilment, identity and hosted plugins by it, since no built-in
 /// category holds them.
 /// </param>
+/// <param name="IconUrl">
+/// Path of the admin icon endpoint (<c>/api/admin/plugins/{id}/icon</c>) for a plugin entry that ships an icon;
+/// <see langword="null"/> for a built-in integration and for a plugin without an icon.
+/// </param>
 public sealed record IntegrationListItemDto(
     string Slug,
     string Name,
@@ -23,4 +27,5 @@ public sealed record IntegrationListItemDto(
     bool IsEnabled,
     bool IsConfigured,
     bool IsPlugin = false,
-    PluginType? PluginType = null);
+    PluginType? PluginType = null,
+    string? IconUrl = null);

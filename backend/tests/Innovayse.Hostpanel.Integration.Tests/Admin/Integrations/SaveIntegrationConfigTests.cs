@@ -75,16 +75,16 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     public async Task SaveWithNewSecret_ReplacesTheStoredSecretAsync()
     {
         var client = await IntegrationsTestSeeds.AdminClientAsync(factory);
-        await SecretSettingTestSeeds.StoreAsync(factory, "integration:stripe:secret_key", "old-gateway-key");
+        await SecretSettingTestSeeds.StoreAsync(factory, "integration:enom:api_key", "old-gateway-key");
 
-        var save = await client.PutAsJsonAsync("/api/admin/integrations/stripe", new
+        var save = await client.PutAsJsonAsync("/api/admin/integrations/smtp", new
         {
             isEnabled = false,
-            config = new Dictionary<string, string> { ["secret_key"] = "new-gateway-key" },
+            config = new Dictionary<string, string> { ["client_secret"] = "new-gateway-key" },
         });
 
         save.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        (await SecretSettingTestSeeds.ReadAsync(factory, "integration:stripe:secret_key")).Should().Be("new-gateway-key");
+        (await SecretSettingTestSeeds.ReadAsync(factory, "integration:enom:api_key")).Should().Be("new-gateway-key");
     }
 
     /// <summary>An explicit clear removes the stored secret, and the detail then reports it as not set.</summary>
@@ -92,19 +92,19 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     public async Task SaveWithClear_RemovesTheStoredSecretAsync()
     {
         var client = await IntegrationsTestSeeds.AdminClientAsync(factory);
-        await SecretSettingTestSeeds.StoreAsync(factory, "integration:smtp:password", "mail-password");
+        await SecretSettingTestSeeds.StoreAsync(factory, "integration:maxmind:license_key", "licence-to-clear");
 
-        var save = await client.PutAsJsonAsync("/api/admin/integrations/smtp", new
+        var save = await client.PutAsJsonAsync("/api/admin/integrations/maxmind", new
         {
             isEnabled = false,
-            config = new Dictionary<string, string> { ["password"] = "ignored-because-cleared" },
-            clearFields = new[] { "password" },
+            config = new Dictionary<string, string> { ["license_key"] = "ignored-because-cleared" },
+            clearFields = new[] { "license_key" },
         });
 
         save.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        (await SecretSettingTestSeeds.ReadAsync(factory, "integration:smtp:password")).Should().BeEmpty();
-        var detail = await client.GetFromJsonAsync<JsonElement>("/api/admin/integrations/smtp");
-        detail.GetProperty("config").GetProperty("password").GetProperty("hasValue").GetBoolean().Should().BeFalse();
+        (await SecretSettingTestSeeds.ReadAsync(factory, "integration:maxmind:license_key")).Should().BeEmpty();
+        var detail = await client.GetFromJsonAsync<JsonElement>("/api/admin/integrations/maxmind");
+        detail.GetProperty("config").GetProperty("license_key").GetProperty("hasValue").GetBoolean().Should().BeFalse();
     }
 
     /// <summary>A saved secret is stored encrypted: the raw column differs from the input, the read returns it.</summary>
@@ -166,6 +166,21 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
         {
             (await SecretSettingTestSeeds.ReadAsync(factory, $"integration:{slug}:{field}")).Should().BeNull($"{field} must not be written");
         }
+    }
+
+    /// <summary>Reads the stored value of each field so a later read can prove a refused save changed none of them.</summary>
+    /// <param name="slug">The integration slug.</param>
+    /// <param name="fields">The field keys to read, plus the enabled switch.</param>
+    /// <returns>The stored values in field order, <c>null</c> for a field with no row.</returns>
+    private async Task<List<string?>> SnapshotAsync(string slug, params string[] fields)
+    {
+        var values = new List<string?>();
+        foreach (var field in fields.Append("is_enabled"))
+        {
+            values.Add(await SecretSettingTestSeeds.ReadAsync(factory, $"integration:{slug}:{field}"));
+        }
+
+        return values;
     }
 
     /// <summary>A field the integration does not declare is refused INTEGRATION_FIELD_UNKNOWN and nothing is written.</summary>
@@ -235,11 +250,13 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     {
         var client = await IntegrationsTestSeeds.AdminClientAsync(factory);
 
-        var response = await SaveAsync(client, "paypal", new() { ["client_id"] = "cid", ["mode"] = "Staging" });
+        var before = await SnapshotAsync("smtp", "host", "encryption");
+
+        var response = await SaveAsync(client, "smtp", new() { ["host"] = "mail.example.test", ["encryption"] = "Staging" });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         await AdminTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.INTEGRATION_FIELD_INVALID);
-        await AssertNothingStoredAsync("paypal", "client_id", "mode");
+        (await SnapshotAsync("smtp", "host", "encryption")).Should().Equal(before, "a refused save writes nothing");
     }
 
     /// <summary>A toggle value that is not true or false is refused INTEGRATION_FIELD_INVALID, naming the field.</summary>
@@ -261,10 +278,12 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     {
         var client = await IntegrationsTestSeeds.AdminClientAsync(factory);
 
-        var response = await SaveAsync(client, "paypal", new() { ["mode"] = "Staging" });
+        var before = await SnapshotAsync("smtp", "encryption");
+
+        var response = await SaveAsync(client, "smtp", new() { ["encryption"] = "Staging" });
 
         await AdminTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.INTEGRATION_FIELD_INVALID);
-        await AssertNothingStoredAsync("paypal", "mode");
+        (await SnapshotAsync("smtp", "encryption")).Should().Equal(before, "a refused save writes nothing");
     }
 
     /// <summary>A select value in another case is stored in the declared spelling.</summary>
@@ -273,10 +292,10 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     {
         var client = await IntegrationsTestSeeds.AdminClientAsync(factory);
 
-        var response = await SaveAsync(client, "stripe", new() { ["mode"] = "test" });
+        var response = await SaveAsync(client, "smtp", new() { ["encryption"] = "ssl" });
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        (await SecretSettingTestSeeds.ReadAsync(factory, "integration:stripe:mode")).Should().Be("Test");
+        (await SecretSettingTestSeeds.ReadAsync(factory, "integration:smtp:encryption")).Should().Be("SSL");
     }
 
     /// <summary>A toggle is stored lowercased.</summary>
@@ -297,7 +316,7 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     {
         var client = await IntegrationsTestSeeds.ClientRoleClientAsync(factory, "save-integration-forbidden");
 
-        var response = await client.PutAsJsonAsync("/api/admin/integrations/stripe", new
+        var response = await client.PutAsJsonAsync("/api/admin/integrations/smtp", new
         {
             isEnabled = false,
             config = new Dictionary<string, string>(),
@@ -310,7 +329,7 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {
-        var response = await factory.CreateClient().PutAsJsonAsync("/api/admin/integrations/stripe", new
+        var response = await factory.CreateClient().PutAsJsonAsync("/api/admin/integrations/smtp", new
         {
             isEnabled = false,
             config = new Dictionary<string, string>(),

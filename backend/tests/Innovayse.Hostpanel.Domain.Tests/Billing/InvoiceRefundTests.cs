@@ -182,19 +182,68 @@ public sealed class InvoiceRefundTests
         invoice.IsRefundInFlight(Now.AddSeconds(1)).Should().BeFalse();
     }
 
-    /// <summary>A claim the gateway refused outright is given back, so the next refund need not wait.</summary>
+    /// <summary>A gateway refund claim fixes a refund id and the amount it is for.</summary>
     [Fact]
-    public void ReleaseRefundClaim_FreesTheInvoice()
+    public void BeginGatewayRefund_FixesAnIdForTheAmount()
     {
         var invoice = PaidFor(100m);
-        invoice.BeginRefund(Now);
 
-        invoice.ReleaseRefundClaim(Now);
+        var id = invoice.BeginGatewayRefund(Now, 40m);
 
-        invoice.RefundStartedAt.Should().BeNull();
-        invoice.IsRefundInFlight(Now).Should().BeFalse();
-        invoice.BeginRefund(Now.AddSeconds(1));
-        invoice.RefundStartedAt.Should().Be(Now.AddSeconds(1));
+        id.Should().NotBe(Guid.Empty);
+        invoice.PendingRefundId.Should().Be(id);
+        invoice.PendingRefundAmount.Should().Be(40m);
+        invoice.RefundStartedAt.Should().Be(Now);
+    }
+
+    /// <summary>A retry of the same amount, once the lease of an unanswered attempt has run out, gets the same id back.</summary>
+    [Fact]
+    public void BeginGatewayRefund_RetryOfTheSameAmountAfterTheLease_ReusesTheId()
+    {
+        var invoice = PaidFor(100m);
+        var first = invoice.BeginGatewayRefund(Now, 40m);
+
+        var retry = invoice.BeginGatewayRefund(Now + Invoice.RefundClaimLease, 40m);
+
+        retry.Should().Be(first);
+    }
+
+    /// <summary>A retry for another amount is another refund and gets a new id.</summary>
+    [Fact]
+    public void BeginGatewayRefund_RetryOfAnotherAmount_GetsANewId()
+    {
+        var invoice = PaidFor(100m);
+        var first = invoice.BeginGatewayRefund(Now, 40m);
+
+        var retry = invoice.BeginGatewayRefund(Now + Invoice.RefundClaimLease, 30m);
+
+        retry.Should().NotBe(first);
+        invoice.PendingRefundAmount.Should().Be(30m);
+    }
+
+    /// <summary>While the first attempt is still in flight a second claim is refused, whatever its amount.</summary>
+    [Fact]
+    public void BeginGatewayRefund_WhileInFlight_ThrowsRefundConflict()
+    {
+        var invoice = PaidFor(100m);
+        invoice.BeginGatewayRefund(Now, 40m);
+
+        var act = () => invoice.BeginGatewayRefund(Now.AddSeconds(5), 40m);
+
+        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.InvoiceRefundConflict);
+    }
+
+    /// <summary>A recorded refund ends the attempt: its id is cleared and the next refund of the same amount gets its own.</summary>
+    [Fact]
+    public void AddRefund_ClearsThePendingRefundId()
+    {
+        var invoice = PaidFor(100m);
+        var first = invoice.BeginGatewayRefund(Now, 40m);
+        invoice.AddRefund(Now, HostedGateway, "gw-ref", 40m, 0m, null, false, TransactionSource.GatewayRefund);
+
+        invoice.PendingRefundId.Should().BeNull();
+        invoice.PendingRefundAmount.Should().BeNull();
+        invoice.BeginGatewayRefund(Now.AddSeconds(1), 40m).Should().NotBe(first);
     }
 
     /// <summary>A claim that outlived its lease is treated as abandoned and no longer blocks.</summary>

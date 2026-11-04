@@ -3,7 +3,7 @@ using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Integration.Tests.Fixtures;
-using Innovayse.SDK.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Manifest;
 using Microsoft.Extensions.Logging;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
@@ -461,7 +461,6 @@ public sealed class PluginManifestValidatorTests : IDisposable
     [Theory]
     [InlineData("Innovayse.Providers.CWP")]
     [InlineData("Innovayse.Providers.CWP7")]
-    [InlineData("Innovayse.Providers.Inecobank")]
     public void TryRead_ShippedManifest_Loads(string project)
     {
         var manifestPath = ShippedManifestPath(project);

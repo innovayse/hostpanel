@@ -1,13 +1,14 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
-using Innovayse.SDK.Plugins.Endpoints;
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Endpoints;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Manifest;
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 
 /// <summary>
-/// Finds the loaded app plugin a route belongs to and prepares it through <see cref="PluginActivator"/>, so a plugin
+/// Finds the loaded plugin a route belongs to (an app plugin; for the callback door also any plugin declaring the
+/// <c>endpoints</c> capability) and prepares it through <see cref="PluginActivator"/>, so a plugin
 /// reached through a route passes the same gates as every other plugin type: it really implements
 /// <see cref="IPluginEndpoints"/>, the admin switched it on and its required settings are stored.
 /// </summary>
@@ -35,6 +36,22 @@ public sealed class PluginEndpointResolver : IPluginEndpointResolver
 
         // Only an app plugin answers routes: the loader registers IPluginEndpoints for no other type.
         return plugin is { Manifest.Type: PluginType.App } ? plugin.Manifest : null;
+    }
+
+    /// <inheritdoc/>
+    public PluginManifest? FindForCallback(string pluginId)
+    {
+        var plugin = _registry.Find(pluginId);
+        if (plugin is null)
+        {
+            return null;
+        }
+
+        // The loader registers IPluginEndpoints for an app plugin and for any plugin that declares the capability (and
+        // refuses one that declares it without implementing it), so the manifest decides here as it did there.
+        var served = plugin.Manifest.Type == PluginType.App
+            || plugin.Manifest.Capabilities.Contains(PluginCapabilities.Endpoints, StringComparer.Ordinal);
+        return served ? plugin.Manifest : null;
     }
 
     /// <inheritdoc/>

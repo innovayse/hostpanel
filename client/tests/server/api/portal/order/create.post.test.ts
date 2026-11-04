@@ -28,7 +28,7 @@ afterEach(async () => {
 describe('POST /api/portal/order/create', () => {
   it('forwards the cart body to the orders endpoint and returns the backend answer untouched', async () => {
     backend.respondWith(() => ({ body: { orderId: 7, invoiceId: 11, paymentToken: 'tok' } }))
-    const body = { items: [{ productId: 3, billingCycle: 'Monthly' }], paymentMethod: 'stripe' }
+    const body = { items: [{ productId: 3, billingCycle: 'Monthly' }], paymentMethod: 'card_gateway' }
 
     const result = await route.default(makeEvent({ body, cookies: await signedIn('jwt'), headers: { 'x-language': 'hy' } }))
 

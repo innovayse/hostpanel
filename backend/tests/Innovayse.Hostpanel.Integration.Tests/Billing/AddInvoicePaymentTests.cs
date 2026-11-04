@@ -18,6 +18,66 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class AddInvoicePaymentTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>
+    /// A manual payment is refused while a stored card charge of the invoice has not finished, so the money is not
+    /// recorded by hand and taken by the charge as well: a 409 with <c>INVOICE_STORED_CHARGE_UNRESOLVED</c>, no payment.
+    /// </summary>
+    [Fact]
+    public async Task AddPaymentWhileAStoredChargeIsUnfinishedRefusesConflict()
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
+        var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 19.99m);
+        await BillingTestSeeds.SeedUnresolvedClaimAsync(factory, invoiceId, clientId, pending: true);
+        var reference = $"pay-{Guid.NewGuid():N}";
+
+        var response = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/payment", new
+        {
+            date = DateTimeOffset.UtcNow,
+            gateway = PaymentMethodNames.Manual,
+            transactionId = reference,
+            amount = 19.99m,
+            fees = 0m,
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.INVOICE_STORED_CHARGE_UNRESOLVED);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await db.Transactions.AsNoTracking().AnyAsync(t => t.TransactionId == reference)).Should().BeFalse();
+    }
+
+    /// <summary>
+    /// A claim held for an operator does not stop a manual payment: recording it is how the operator settles the held money.
+    /// </summary>
+    [Fact]
+    public async Task AddPaymentOnAHeldClaimIsAllowed()
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
+        var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 19.99m);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            var now = DateTimeOffset.UtcNow;
+            var claim = InvoicePaymentClaim.Open(invoiceId, clientId, "seed-gateway", "seed-method", $"seed-{Guid.NewGuid():N}", 1999, "USD", now);
+            claim.MarkHeld("held-tx", now);
+            db.InvoicePaymentClaims.Add(claim);
+            await db.SaveChangesAsync(CancellationToken.None);
+        }
+
+        var response = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/payment", new
+        {
+            date = DateTimeOffset.UtcNow,
+            gateway = PaymentMethodNames.Manual,
+            transactionId = $"pay-{Guid.NewGuid():N}",
+            amount = 19.99m,
+            fees = 0m,
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
     /// <summary>Recording a manual payment against an invoice marks it paid.</summary>
     [Fact]
     public async Task AddPaymentMarksTheInvoicePaid()

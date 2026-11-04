@@ -15,6 +15,7 @@ import { ContactType } from '@/types/contact'
 import { DomainStatus } from '@/types/domain'
 import { GatewayLogResult } from '@/types/gatewaylog'
 import { FulfilmentStatus, InvoiceStatus, InvoiceTransactionType } from '@/types/invoice'
+import { InvoicePaymentClaimStatus } from '@/types/invoicepaymentclaim'
 import { MigrationLogAction, MigrationStatus } from '@/types/migration'
 import type { MigrationJob, MigrationLogEntry } from '@/types/migration'
 import { NetworkIssuePriority, NetworkIssueStatus } from '@/types/networkissue'
@@ -118,6 +119,17 @@ const FULFILMENT_STATUS_TONES: Record<FulfilmentStatus, UiTone> = {
   [FulfilmentStatus.Processing]: UiTone.Info,
   [FulfilmentStatus.Done]: UiTone.Success,
   [FulfilmentStatus.Failed]: UiTone.Danger,
+}
+
+/** Badge tone of each invoice payment claim status. */
+const PAYMENT_CLAIM_STATUS_TONES: Record<InvoicePaymentClaimStatus, UiTone> = {
+  [InvoicePaymentClaimStatus.Open]: UiTone.Info,
+  [InvoicePaymentClaimStatus.ActionRequired]: UiTone.Warning,
+  [InvoicePaymentClaimStatus.Pending]: UiTone.Info,
+  [InvoicePaymentClaimStatus.Settled]: UiTone.Success,
+  [InvoicePaymentClaimStatus.Declined]: UiTone.Danger,
+  [InvoicePaymentClaimStatus.Abandoned]: UiTone.Neutral,
+  [InvoicePaymentClaimStatus.Held]: UiTone.Warning,
 }
 
 /** Badge tone of the gateway log outcomes that are drawn in colour; the rest read neutral. */
@@ -231,6 +243,14 @@ export const transactionTypeTone = (type: string): UiTone => toneOf(TRANSACTION_
  * @returns The tone; neutral for a status this panel does not know.
  */
 export const fulfilmentStatusTone = (status: string): UiTone => toneOf(FULFILMENT_STATUS_TONES, status)
+
+/**
+ * Tone of an invoice payment claim status badge.
+ *
+ * @param status - The status string the API sent.
+ * @returns The tone; neutral for a status this panel does not know.
+ */
+export const paymentClaimStatusTone = (status: string): UiTone => toneOf(PAYMENT_CLAIM_STATUS_TONES, status)
 
 /**
  * Tone of a gateway log outcome badge.

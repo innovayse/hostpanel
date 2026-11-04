@@ -50,8 +50,8 @@ const allTabs = computed(() => [
   { value: AccountTab.Users, label: t('client.account.tabUsers'), permission: Permission.All },
   { value: AccountTab.Emails, label: t('client.account.tabEmails'), permission: Permission.ViewEmails },
   // Always listed: a person without the invoices permission opens the tab and reads why it is
-  // disabled, instead of the tab silently missing. The saved-card list is not requested for them:
-  // `loadPaymentMethods` in stores/account.ts checks `mayDo(ViewPayInvoices)` before asking.
+  // disabled, instead of the tab silently missing. The stored-methods card
+  // is not shown for them.
   { value: AccountTab.Payment, label: t('client.account.tabPayment'), permission: Permission.None }
 ])
 
@@ -88,7 +88,6 @@ await useAsyncData('client-account', () => Promise.all([
   account.loadGatewayMethods(),
   account.loadUsers(),
   account.loadContacts(),
-  account.loadEmails(),
-  account.loadPaymentMethods()
+  account.loadEmails()
 ]))
 </script>

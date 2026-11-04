@@ -2,12 +2,12 @@ using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
-using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
+using Hostpanel.Sdk.Plugins.Payment;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -15,8 +15,7 @@ namespace Innovayse.Hostpanel.Application.Billing.Commands.RefundInvoicePayment;
 
 /// <summary>
 /// Refunds all or part of what a paid invoice took and writes the client ledger row with it. A
-/// Gateway refund goes back through whatever took the money: the hosted-gateway plugin of the
-/// invoice's session, or the card gateway against the original card payment's reference.
+/// Gateway refund goes back through the hosted-gateway plugin of the invoice's session.
 /// </summary>
 /// <remarks>
 /// Every refund changes the invoice row (<see cref="Invoice.RefundStartedAt"/>), so two refunds
@@ -34,17 +33,19 @@ namespace Innovayse.Hostpanel.Application.Billing.Commands.RefundInvoicePayment;
 /// <para>
 /// Once the claim is saved, the gateway calls and the recording run on
 /// <see cref="CancellationToken.None"/>: a caller that disconnects must not abandon a refund whose
-/// money has already moved. A recording save that fails (another writer touched the invoice, a
+/// money has already moved (the request token is used only up to and including the claim save, and for Manual and
+/// CreditBalance refunds, which move no gateway money). A recording save that fails (another writer touched the invoice, a
 /// transient database error) is retried on a freshly loaded invoice, so a refund the gateway issued
 /// is never left off the ledger.
 /// </para>
 /// <para>
-/// Every card refund part carries an idempotency key built from the invoice, the charge and how much
-/// of that charge the ledger already shows refunded. When a refund dies between the gateway and the
-/// ledger, its claim stays until <see cref="Invoice.RefundClaimLease"/> runs out; the next refund
-/// then reads the same ledger, plans the same parts under the same keys, and the gateway replays the
-/// refunds it already issued instead of returning the money twice. A retry asking for a different
-/// amount reuses a key with other parameters, which the gateway refuses rather than refunds.
+/// When a refund dies between the gateway and the ledger, its claim stays until
+/// <see cref="Invoice.RefundClaimLease"/> runs out, so no blind retry returns the money twice. The claim also holds the
+/// refund's id (<see cref="Invoice.PendingRefundId"/>), saved before the gateway is called and sent to the plugin in a
+/// <see cref="RefundInstruction"/>; a retry of the same amount after the lease reuses it, so a plugin that passes it on as
+/// the gateway's idempotency key cannot refund twice. The instruction also carries what the ledger already holds as
+/// refunded through the gateway order (<see cref="RefundInstruction.AlreadyRefundedMinor"/>), so a gateway without an
+/// idempotency key can tell a retry from a new partial refund.
 /// </para>
 /// </remarks>
 public sealed class RefundInvoicePaymentHandler
@@ -57,9 +58,6 @@ public sealed class RefundInvoicePaymentHandler
 
     /// <summary>Resolves the hosted-gateway payment plugin that processed the original payment.</summary>
     private readonly IPaymentPluginResolver _pluginResolver;
-
-    /// <summary>The card gateway that refunds a payment taken by card.</summary>
-    private readonly ICardPaymentGateway _cardGateway;
 
     /// <summary>Puts a CreditBalance refund on the client's balance in the same save as the ledger row.</summary>
     private readonly IClientCredit _clientCredit;
@@ -76,7 +74,6 @@ public sealed class RefundInvoicePaymentHandler
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="pluginResolver">Resolves the hosted-gateway plugin for the invoice's gateway.</param>
-    /// <param name="cardGateway">The card gateway that refunds a payment taken by card.</param>
     /// <param name="clientCredit">Puts a CreditBalance refund on the client's balance in the same save as the ledger row.</param>
     /// <param name="adviser">Asks the enabled fulfilment plugins to cap the refund before any money moves.</param>
     /// <param name="clock">The clock the current moment is read from.</param>
@@ -84,7 +81,6 @@ public sealed class RefundInvoicePaymentHandler
     public RefundInvoicePaymentHandler(
         IHostpanelDbContext context,
         IPaymentPluginResolver pluginResolver,
-        ICardPaymentGateway cardGateway,
         IClientCredit clientCredit,
         RefundAdviser adviser,
         IClock clock,
@@ -92,7 +88,6 @@ public sealed class RefundInvoicePaymentHandler
     {
         _context = context;
         _pluginResolver = pluginResolver;
-        _cardGateway = cardGateway;
         _clientCredit = clientCredit;
         _adviser = adviser;
         _clock = clock;
@@ -107,12 +102,9 @@ public sealed class RefundInvoicePaymentHandler
     /// PartiallyRefunded;
     /// <c>INVOICE_REFUND_CONFLICT</c> when another refund of the invoice is still waiting for its
     /// gateway; <c>INVOICE_REFUND_EXCEEDS_PAID</c> when the amount is more than is still refundable,
-    /// or more than the card charges or the hosted gateway's payments still hold; <c>CLIENT_NOT_FOUND</c>
+    /// or more than the hosted gateway's payments still hold; <c>CLIENT_NOT_FOUND</c>
     /// when a CreditBalance refund has no client to credit; <c>INVOICE_NOT_GATEWAY_PAID</c> when a
-    /// Gateway refund is asked for money no gateway took; <c>PAYMENT_METHOD_UNAVAILABLE</c> when the
-    /// card gateway that took it is no longer configured; <c>CARD_REFUND_REFUSED</c> when the card
-    /// gateway refuses or fails a refund (the parts it already returned are recorded);
-    /// <c>GATEWAY_REFUND_REFUSED</c> when the hosted gateway fails it; or
+    /// Gateway refund is asked for money no gateway took; <c>GATEWAY_REFUND_REFUSED</c> when the hosted gateway fails it; or
     /// <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c> when the session's plugin is gone; <c>REFUND_ADVICE_UNAVAILABLE</c> when an
     /// enabled fulfilment plugin could not say how much may be refunded, or <c>REFUND_BLOCKED_BY_PLUGIN</c> when one allows
     /// none. A refund that lost
@@ -186,11 +178,10 @@ public sealed class RefundInvoicePaymentHandler
                 break;
         }
 
-        // A gateway that returned nothing leaves nothing to record; a claim it cleanly refused was
-        // released and is saved here, so the next refund need not wait for the lease.
+        // A gateway that returned nothing leaves nothing to record. Its claim is kept on purpose: the plugin reports a refusal
+        // and a fault alike by throwing, so the outcome is unknown and the claim (with its refund id) waits out its lease.
         if (refunds.Count == 0)
         {
-            await _context.SaveChangesAsync(ct);
             return gatewayOutcome;
         }
 
@@ -236,66 +227,9 @@ public sealed class RefundInvoicePaymentHandler
             return await RefundAtHostedGatewayAsync(invoice, module, orderId, amount, now, refunded, ct);
         }
 
-        // Otherwise the money came by card only when the ledger holds card payments for this invoice;
-        // each payment's reference is a charge the card gateway refunds, at most for what it took.
-        var cardRows = await _context.Transactions
-            .AsNoTracking()
-            .Where(t => t.InvoiceId == invoice.Id && t.PaymentMethod == PaymentMethodNames.Card)
-            .ToListAsync(ct);
-        var charges = cardRows
-            .Where(t => t.AmountIn > 0)
-            .OrderByDescending(t => t.Date)
-            .ThenByDescending(t => t.Id)
-            .ToList();
-        if (charges.Count == 0)
-        {
-            return Result.FailureCode(HostpanelErrorCodes.INVOICE_NOT_GATEWAY_PAID);
-        }
-
-        var configured = _cardGateway.RequireConfigured();
-        if (configured.IsFailure)
-        {
-            return configured;
-        }
-
-        var plan = PlanCardRefunds(invoice.Id, charges, cardRows.Sum(t => t.AmountOut), amount, invoice.Currency);
-        if (plan.Sum(p => p.Amount) < amount)
-        {
-            return Result.FailureCode(HostpanelErrorCodes.INVOICE_REFUND_EXCEEDS_PAID);
-        }
-
-        await ClaimAsync(invoice, now, ct);
-        foreach (var instruction in plan)
-        {
-            CardRefundResult refund;
-            try
-            {
-                // Not the caller's token: a disconnect must not abandon a refund already under way.
-                refund = await _cardGateway.RefundAsync(instruction, CancellationToken.None);
-            }
-            catch (Exception ex)
-            {
-                // The outcome of this charge is unknown (a timeout included), so the claim stays
-                // until its lease runs out; the retry after it replays this part by its idempotency
-                // key. The remaining charges are not asked, and the parts already returned are
-                // still recorded by the caller.
-                _logger.LogError(
-                    ex, "Card refund of invoice {InvoiceId} threw for charge {ChargeId}; {Recorded} part(s) already returned are recorded.",
-                    invoice.Id, instruction.TransactionId, refunded.Count);
-                return Result.FailureCode(HostpanelErrorCodes.CARD_REFUND_REFUSED);
-            }
-
-            if (!refund.Success)
-            {
-                // A clean refusal: this charge returned nothing, so the claim is given back.
-                invoice.ReleaseRefundClaim(now);
-                return Result.FailureCode(HostpanelErrorCodes.CARD_REFUND_REFUSED);
-            }
-
-            refunded.Add(new RefundOutcome(PaymentMethodNames.Card, refund.RefundId!, instruction.Amount));
-        }
-
-        return Result.Success();
+        // No other path takes gateway money: a payment that no hosted-gateway session recorded is
+        // not refundable through a gateway (a manual refund records it instead).
+        return Result.FailureCode(HostpanelErrorCodes.INVOICE_NOT_GATEWAY_PAID);
     }
 
     /// <summary>
@@ -335,12 +269,27 @@ public sealed class RefundInvoicePaymentHandler
         var amountMinor = CurrencyCode.ToMinorUnits(amount, invoice.Currency);
         var refundedAmount = CurrencyCode.FromMinorUnits(amountMinor, invoice.Currency);
 
-        await ClaimAsync(invoice, now, ct);
+        // The id is saved with the claim, before the gateway is called, and is the gateway's idempotency key: a retry of
+        // this refund after a timeout or a crash sends the same id and cannot refund twice.
+        var refundId = await ClaimAsync(invoice, now, refundedAmount, ct);
+
+        // What the ledger already holds as refunded at this gateway, so a gateway with no idempotency key can tell a retry
+        // of this refund from a new partial one. The pending refund is not on the ledger until it is recorded, so it is
+        // never counted; a manual or credit refund moved no gateway money and is left out. The source is a property of the
+        // ledger row (Transaction), not of the invoice's own payment line, so the ledger is what is read.
+        var gatewayRefunds = await _context.Transactions
+            .AsNoTracking()
+            .Where(t => t.InvoiceId == invoice.Id && t.Source == TransactionSource.GatewayRefund && t.PaymentMethod == module)
+            .Select(t => t.AmountOut)
+            .ToListAsync(ct);
+        var alreadyRefundedMinor = gatewayRefunds.Sum(amountOut => CurrencyCode.ToMinorUnits(amountOut, invoice.Currency));
         string reference;
         try
         {
-            // Not the caller's token: a disconnect must not abandon a refund already under way.
-            reference = await plugin.RefundAsync(gatewayOrderId, amountMinor, CancellationToken.None);
+            // CancellationToken.None on purpose: the claim is saved, so a caller that disconnects must not abandon a refund
+            // whose money may already be moving; the claim and its refund id make a later retry safe.
+            reference = await plugin.RefundAsync(
+                new RefundInstruction(gatewayOrderId, amountMinor, refundId.ToString("N"), alreadyRefundedMinor), CancellationToken.None);
         }
         catch (Exception ex)
         {
@@ -361,12 +310,15 @@ public sealed class RefundInvoicePaymentHandler
     /// </summary>
     /// <param name="invoice">The paid invoice.</param>
     /// <param name="now">The moment the refund begins.</param>
+    /// <param name="amount">The amount being refunded, in the invoice currency.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>A task that completes once the claim is saved.</returns>
-    private async Task ClaimAsync(Invoice invoice, DateTimeOffset now, CancellationToken ct)
+    /// <returns>The stable refund id, saved with the claim.</returns>
+    private async Task<Guid> ClaimAsync(Invoice invoice, DateTimeOffset now, decimal amount, CancellationToken ct)
     {
-        invoice.BeginRefund(now);
+        // The request token is right here: nothing has moved yet, so a caller that gives up simply leaves no claim.
+        var refundId = invoice.BeginGatewayRefund(now, amount);
         await _context.SaveChangesAsync(ct);
+        return refundId;
     }
 
     /// <summary>
@@ -424,43 +376,5 @@ public sealed class RefundInvoicePaymentHandler
                 now = invoice.RefundStartedAt ?? now;
             }
         }
-    }
-
-    /// <summary>
-    /// Spreads a card refund over the invoice's card charges, newest first, never asking a charge for
-    /// more than it still holds. Each part is keyed by the invoice, the charge and what the ledger
-    /// already shows refunded from that charge, so replanning the same refund yields the same keys.
-    /// </summary>
-    /// <param name="invoiceId">The invoice refunded.</param>
-    /// <param name="chargesNewestFirst">The invoice's card charges, newest first.</param>
-    /// <param name="alreadyRefunded">What earlier card refunds of this invoice returned.</param>
-    /// <param name="amount">The amount to refund now.</param>
-    /// <param name="currency">The invoice currency.</param>
-    /// <returns>
-    /// One refund instruction per charge that takes part; their sum falls short of
-    /// <paramref name="amount"/> when the charges cannot cover it.
-    /// </returns>
-    private static List<CardRefundInstruction> PlanCardRefunds(
-        int invoiceId,
-        IReadOnlyList<Transaction> chargesNewestFirst, decimal alreadyRefunded, decimal amount, string currency)
-    {
-        var plan = new List<CardRefundInstruction>();
-        var remaining = amount;
-        foreach (var charge in chargesNewestFirst)
-        {
-            // Earlier refunds were spread newest first as well, so they used up the newest charges first.
-            var used = Math.Min(charge.AmountIn, alreadyRefunded);
-            alreadyRefunded -= used;
-            var part = Math.Min(charge.AmountIn - used, remaining);
-            if (part > 0)
-            {
-                var usedMinor = CurrencyCode.ToMinorUnits(used, currency);
-                plan.Add(new CardRefundInstruction(
-                    charge.TransactionId, part, currency, $"refund-{invoiceId}-{charge.TransactionId}-{usedMinor}"));
-                remaining -= part;
-            }
-        }
-
-        return plan;
     }
 }

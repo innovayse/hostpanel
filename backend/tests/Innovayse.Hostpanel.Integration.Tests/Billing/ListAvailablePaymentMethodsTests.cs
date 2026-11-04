@@ -3,8 +3,8 @@ using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Constants;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Manifest;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
@@ -18,25 +18,22 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 /// </summary>
 /// <remarks>
 /// Bank transfer's on/off switch is exercised through the real admin
-/// integrations endpoint (our own code); the card gateway's <c>IsConfigured</c> and the loaded plugin set are
-/// faked, since neither a live card payment gateway secret nor an on-disk plugin belongs in this suite. The
-/// cases pin three gates: bank transfer is listed only when its switch is on, the card payment gateway needs
-/// both its secret key and its switch, and a hosted gateway that charges in AMD is not offered to a client
+/// integrations endpoint (our own code); the loaded plugin set is faked, since an on-disk plugin
+/// does not belong in this suite. The cases pin three gates: bank transfer is listed only when
+/// its switch is on, no built-in method offers cards, and a hosted gateway that charges in AMD is not offered to a client
 /// billed in USD, who would otherwise be refused at Place Order with a currency-mismatch error.
 /// </remarks>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class ListAvailablePaymentMethodsTests(IntegrationTestFactory factory)
     : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>Builds a host whose card payment gateway configuration and loaded plugins come from the given fakes.</summary>
-    /// <param name="cardGateway">The fake card payment gateway service the host should report through.</param>
+    /// <summary>Builds a host whose loaded plugins come from the given fake.</summary>
     /// <param name="plugins">The fake plugin registry the host should report through.</param>
     /// <returns>The test host.</returns>
-    private WebApplicationFactory<Program> BuildHost(FakeCardPaymentGateway cardGateway, FakePluginRegistry plugins) =>
+    private WebApplicationFactory<Program> BuildHost(FakePluginRegistry plugins) =>
         factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services =>
             {
-                services.AddSingleton<ICardPaymentGateway>(cardGateway);
                 services.AddSingleton<IPluginRegistry>(plugins);
             }));
 
@@ -99,7 +96,7 @@ public sealed class ListAvailablePaymentMethodsTests(IntegrationTestFactory fact
     [Fact]
     public async Task BankTransferIsNotOfferedWhenTheAdminHasItOff()
     {
-        var host = BuildHost(new FakeCardPaymentGateway(), new FakePluginRegistry());
+        var host = BuildHost(new FakePluginRegistry());
         await SwitchIntegrationAsync(host, BuiltInPaymentModules.BankTransferIntegrationSlug, enabled: false);
 
         (await ListedModulesAsync(host.CreateClient())).Should().NotContain(BuiltInPaymentModules.BankTransfer);
@@ -109,7 +106,7 @@ public sealed class ListAvailablePaymentMethodsTests(IntegrationTestFactory fact
     [Fact]
     public async Task BankTransferIsNotOfferedWhenTheSwitchWasNeverSaved()
     {
-        var host = BuildHost(new FakeCardPaymentGateway(), new FakePluginRegistry());
+        var host = BuildHost(new FakePluginRegistry());
         await ForgetIntegrationSettingsAsync(BuiltInPaymentModules.BankTransferIntegrationSlug);
 
         (await ListedModulesAsync(host.CreateClient())).Should().NotContain(BuiltInPaymentModules.BankTransfer);
@@ -119,40 +116,25 @@ public sealed class ListAvailablePaymentMethodsTests(IntegrationTestFactory fact
     [Fact]
     public async Task BankTransferIsOfferedWhenTheAdminHasItOn()
     {
-        var host = BuildHost(new FakeCardPaymentGateway(), new FakePluginRegistry());
+        var host = BuildHost(new FakePluginRegistry());
         await SwitchIntegrationAsync(host, BuiltInPaymentModules.BankTransferIntegrationSlug, enabled: true);
 
         (await ListedModulesAsync(host.CreateClient())).Should().Contain(BuiltInPaymentModules.BankTransfer);
     }
 
-    /// <summary>A secret key alone is not consent: the admin's switch still decides.</summary>
+    /// <summary>
+    /// No built-in method offers card payments: they are offered only by payment plugins, so with
+    /// no plugin loaded the list holds nothing but bank transfer.
+    /// </summary>
     [Fact]
-    public async Task CardGatewayIsNotOfferedWhenConfiguredButSwitchedOff()
+    public async Task NoPluginLoadedLeavesOnlyBankTransfer()
     {
-        var host = BuildHost(new FakeCardPaymentGateway { IsConfigured = true }, new FakePluginRegistry());
-        await SwitchIntegrationAsync(host, BuiltInPaymentModules.StripeIntegrationSlug, enabled: false);
+        var host = BuildHost(new FakePluginRegistry());
 
-        (await ListedModulesAsync(host.CreateClient())).Should().NotContain(BuiltInPaymentModules.Stripe);
-    }
+        // The switch is shared state in the one database: an earlier test may have left it off.
+        await SwitchIntegrationAsync(host, BuiltInPaymentModules.BankTransferIntegrationSlug, enabled: true);
 
-    /// <summary>The switch alone is not enough either: without a key the first call would fail.</summary>
-    [Fact]
-    public async Task CardGatewayIsNotOfferedWhenSwitchedOnButNotConfigured()
-    {
-        var host = BuildHost(new FakeCardPaymentGateway { IsConfigured = false }, new FakePluginRegistry());
-        await SwitchIntegrationAsync(host, BuiltInPaymentModules.StripeIntegrationSlug, enabled: true);
-
-        (await ListedModulesAsync(host.CreateClient())).Should().NotContain(BuiltInPaymentModules.Stripe);
-    }
-
-    /// <summary>Configured and switched on together, the card payment gateway is offered.</summary>
-    [Fact]
-    public async Task CardGatewayIsOfferedWhenConfiguredAndSwitchedOn()
-    {
-        var host = BuildHost(new FakeCardPaymentGateway { IsConfigured = true }, new FakePluginRegistry());
-        await SwitchIntegrationAsync(host, BuiltInPaymentModules.StripeIntegrationSlug, enabled: true);
-
-        (await ListedModulesAsync(host.CreateClient())).Should().Contain(BuiltInPaymentModules.Stripe);
+        (await ListedModulesAsync(host.CreateClient())).Should().OnlyContain(m => m == BuiltInPaymentModules.BankTransfer);
     }
 
     /// <summary>A plugin the resolver refuses is not listed; one it resolves is, under its manifest name.</summary>
@@ -168,7 +150,6 @@ public sealed class ListAvailablePaymentMethodsTests(IntegrationTestFactory fact
         var host = factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services =>
             {
-                services.AddScoped<ICardPaymentGateway, FakeCardPaymentGateway>();
                 services.AddSingleton<IPluginRegistry>(registry);
                 services.AddSingleton<IPaymentPluginResolver>(resolver);
             }));
@@ -179,8 +160,7 @@ public sealed class ListAvailablePaymentMethodsTests(IntegrationTestFactory fact
         // off by other tests against the same shared host and database, so asserting on the whole
         // list would pass or fail depending on which of them ran first.
         var plugins = methods!
-            .Where(m => m.Module != BuiltInPaymentModules.BankTransfer
-                        && m.Module != BuiltInPaymentModules.Stripe)
+            .Where(m => m.Module != BuiltInPaymentModules.BankTransfer)
             .ToList();
 
         var only = Assert.Single(plugins);
@@ -203,7 +183,6 @@ public sealed class ListAvailablePaymentMethodsTests(IntegrationTestFactory fact
         var host = factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services =>
             {
-                services.AddScoped<ICardPaymentGateway, FakeCardPaymentGateway>();
                 services.AddSingleton<IPluginRegistry>(registry);
                 services.AddSingleton<IPaymentPluginResolver>(resolver);
             }));
@@ -216,7 +195,7 @@ public sealed class ListAvailablePaymentMethodsTests(IntegrationTestFactory fact
     [Fact]
     public async Task ANamedCurrencyNotOnOfferListsNothing()
     {
-        var host = BuildHost(new FakeCardPaymentGateway(), new FakePluginRegistry());
+        var host = BuildHost(new FakePluginRegistry());
         await SwitchIntegrationAsync(host, BuiltInPaymentModules.BankTransferIntegrationSlug, enabled: true);
 
         (await ListedModulesAsync(host.CreateClient(), "XXX")).Should().BeEmpty();
@@ -234,7 +213,6 @@ public sealed class ListAvailablePaymentMethodsTests(IntegrationTestFactory fact
         var host = factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services =>
             {
-                services.AddScoped<ICardPaymentGateway, FakeCardPaymentGateway>();
                 services.AddSingleton<IPluginRegistry>(registry);
                 services.AddSingleton<IPaymentPluginResolver>(resolver);
             }));

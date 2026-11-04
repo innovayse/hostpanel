@@ -5,7 +5,7 @@ using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Plesk;
 using Innovayse.Hostpanel.Infrastructure.Provisioning;
 using Innovayse.Hostpanel.Infrastructure.Provisioning.Settings;
-using Innovayse.SDK.Plugins.HostingPanel;
+using Hostpanel.Sdk.Plugins.HostingPanel;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 

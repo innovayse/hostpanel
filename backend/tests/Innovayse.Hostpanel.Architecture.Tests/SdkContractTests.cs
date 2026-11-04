@@ -1,22 +1,22 @@
 using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Innovayse.SDK.Base;
-using Innovayse.SDK.Plugins.Endpoints;
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Fulfilment;
-using Innovayse.SDK.Plugins.Host;
-using Innovayse.SDK.Plugins.Hosting;
-using Innovayse.SDK.Plugins.HostingPanel;
-using Innovayse.SDK.Plugins.Identity;
-using Innovayse.SDK.Plugins.Lifecycle;
-using Innovayse.SDK.Plugins.Manifest;
-using Innovayse.SDK.Plugins.Payment;
-using Innovayse.SDK.Plugins.Provisioning;
-using Innovayse.SDK.Plugins.Registrar;
-using Innovayse.SDK.Plugins.Slots;
-using Innovayse.SDK.Plugins.Store;
-using Innovayse.SDK.Plugins.StoredCredentials;
+using Hostpanel.Sdk.Base;
+using Hostpanel.Sdk.Plugins.Endpoints;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Fulfilment;
+using Hostpanel.Sdk.Plugins.Host;
+using Hostpanel.Sdk.Plugins.Hosting;
+using Hostpanel.Sdk.Plugins.HostingPanel;
+using Hostpanel.Sdk.Plugins.Identity;
+using Hostpanel.Sdk.Plugins.Lifecycle;
+using Hostpanel.Sdk.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Payment;
+using Hostpanel.Sdk.Plugins.Provisioning;
+using Hostpanel.Sdk.Plugins.Registrar;
+using Hostpanel.Sdk.Plugins.Slots;
+using Hostpanel.Sdk.Plugins.Store;
+using Hostpanel.Sdk.Plugins.StoredCredentials;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -64,14 +64,14 @@ public sealed class SdkContractTests
     public void EndpointTypes_KeepTheirShapeAndCarryNoToken()
     {
         typeof(PluginCall).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
-            "Area", "Method", "Route", "Language", "Caller", "Host", "Store", "RouteValues", "Query", "Context", "Body", "ContentType");
+            "Area", "Method", "Route", "Language", "Caller", "Host", "Store", "RouteValues", "Query", "Context", "Body", "ContentType", "Headers");
         typeof(PluginCaller).GetProperties().Select(p => p.Name).Should().Contain(["ClientRef", "UserRef", "Permissions"]);
         typeof(PluginCaller).GetProperties().Select(p => p.Name).Should().NotContain(
             name => name.Contains("Token", StringComparison.OrdinalIgnoreCase) || name.Contains("Claims", StringComparison.OrdinalIgnoreCase));
         typeof(PluginReply).GetMethods().Where(m => m.IsStatic && m.DeclaringType == typeof(PluginReply)).Select(m => m.Name)
-            .Should().BeEquivalentTo("Json", "NoContent", "Problem", "Stream");
+            .Should().BeEquivalentTo("Json", "NoContent", "Problem", "Stream", "Raw");
         typeof(PluginReply).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
-            "Kind", "Status", "Body", "Code", "Detail", "Events");
+            "Kind", "Status", "Body", "Code", "Detail", "Events", "RawBody", "ContentType");
         typeof(PluginEvent).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Data", "Name", "Id");
     }
 
@@ -79,10 +79,10 @@ public sealed class SdkContractTests
     [Fact]
     public void PluginAppEnums_KeepTheirValuesAndStartAtOne()
     {
-        Enum.GetNames<PluginReplyKind>().Should().Equal("Json", "NoContent", "Problem", "Stream");
-        Enum.GetValues<PluginReplyKind>().Select(v => (int)v).Should().Equal(1, 2, 3, 4);
-        Enum.GetNames<PluginArea>().Should().Equal("Client", "Admin");
-        Enum.GetValues<PluginArea>().Select(v => (int)v).Should().Equal(1, 2);
+        Enum.GetNames<PluginReplyKind>().Should().Equal("Json", "NoContent", "Problem", "Stream", "Raw");
+        Enum.GetValues<PluginReplyKind>().Select(v => (int)v).Should().Equal(1, 2, 3, 4, 5);
+        Enum.GetNames<PluginArea>().Should().Equal("Client", "Admin", "Callback");
+        Enum.GetValues<PluginArea>().Select(v => (int)v).Should().Equal(1, 2, 3);
         Enum.GetNames<PluginHealth>().Should().Equal("Healthy", "Degraded", "Unavailable");
         Enum.GetValues<PluginHealth>().Select(v => (int)v).Should().Equal(1, 2, 3);
         Enum.GetNames<PluginServiceStatus>().Should().Equal("Pending", "Active", "Suspended", "Terminated");
@@ -364,7 +364,25 @@ public sealed class SdkContractTests
     {
         typeof(IStoredCredentialPlugin).IsAssignableFrom(typeof(IPaymentPlugin)).Should().BeFalse();
         typeof(IPaymentPlugin).GetMethods().Select(m => m.Name).Should().BeEquivalentTo(
-            "CreatePaymentAsync", "GetStatusAsync", "RefundAsync", "AcceptsCurrency", "get_CurrencyCode");
+            "CreatePaymentAsync", "GetStatusAsync", "RefundAsync", "RefundAsync", "AcceptsCurrency", "get_CurrencyCode");
+    }
+
+    /// <summary>
+    /// Refund idempotency and cancelling an unsettled payment (SDK 2.1.0): the refund overload takes the instruction, and
+    /// the cancel capability is its own interface on top of the payment contract with the three outcomes the host maps.
+    /// </summary>
+    [Fact]
+    public void PaymentRefundInstructionAndCancelCapability_KeepTheirShape()
+    {
+        typeof(IPaymentPlugin).GetMethods().Where(m => m.Name == "RefundAsync")
+            .Select(m => m.GetParameters().Select(p => p.ParameterType).ToArray())
+            .Should().ContainEquivalentOf(new[] { typeof(RefundInstruction), typeof(CancellationToken) });
+        typeof(RefundInstruction).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("GatewayOrderId", "AmountMinor", "RefundId", "AlreadyRefundedMinor");
+        typeof(IPaymentPlugin).IsAssignableFrom(typeof(IPaymentCancelPlugin)).Should().BeTrue();
+        typeof(IPaymentCancelPlugin).GetMethods().Select(m => m.Name).Should().BeEquivalentTo("CancelPaymentAsync");
+        typeof(PaymentCancelResult).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Outcome", "GatewayReference");
+        Enum.GetNames<PaymentCancelOutcome>().Should().Equal("Cancelled", "AlreadyCancelled", "NotCancellable");
+        Enum.GetValues<PaymentCancelOutcome>().Select(v => (int)v).Should().Equal(1, 2, 3);
     }
 
     /// <summary>The records and enums of the capability keep the members the host and the plugins compile against.</summary>
@@ -465,7 +483,7 @@ public sealed class SdkContractTests
         typeof(PluginSetting).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
             "Key", "Label", "Type", "Required", "Options", "Description", "Default", "Placeholder", "Min", "Max");
         typeof(PluginSettingOption).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Value", "Label");
-        typeof(PluginApi).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Client", "Admin");
+        typeof(PluginApi).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Client", "Admin", "Callbacks");
         typeof(PluginRoute).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Method", "Path", "Permission", "RateLimit", "Streaming");
         typeof(PluginUi).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Client", "Admin", "Slots");
         typeof(PluginUiArea).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Menus", "Pages");
@@ -524,11 +542,11 @@ public sealed class SdkContractTests
             .Select(type => type.FullName).Should().BeEmpty("interfaces live in their area folder, never in Interfaces/");
     }
 
-    /// <summary>No type sits directly in <c>Innovayse.SDK.Plugins</c>: each belongs to an area folder.</summary>
+    /// <summary>No type sits directly in <c>Hostpanel.Sdk.Plugins</c>: each belongs to an area folder.</summary>
     [Fact]
     public void SdkPlugins_HasNoTypeAtTheRootNamespace()
     {
-        Layers.AuthoredTypesOf(Layers.Sdk).Where(type => type.Namespace == "Innovayse.SDK.Plugins")
+        Layers.AuthoredTypesOf(Layers.Sdk).Where(type => type.Namespace == "Hostpanel.Sdk.Plugins")
             .Select(type => type.FullName).Should().BeEmpty("group each type in an area folder");
     }
 
@@ -536,33 +554,33 @@ public sealed class SdkContractTests
     /// <param name="type">The type under inspection.</param>
     /// <param name="expected">The namespace it must be in.</param>
     [Theory]
-    [InlineData(typeof(IPaymentPlugin), "Innovayse.SDK.Plugins.Payment")]
-    [InlineData(typeof(IProvisioningPlugin), "Innovayse.SDK.Plugins.Provisioning")]
-    [InlineData(typeof(IRegistrarPlugin), "Innovayse.SDK.Plugins.Registrar")]
-    [InlineData(typeof(IHostingPanelApiClient), "Innovayse.SDK.Plugins.HostingPanel")]
-    [InlineData(typeof(IHostingPanelV7ApiClient), "Innovayse.SDK.Plugins.HostingPanel")]
-    [InlineData(typeof(IFulfilmentPlugin), "Innovayse.SDK.Plugins.Fulfilment")]
-    [InlineData(typeof(IClientResolver), "Innovayse.SDK.Plugins.Identity")]
-    [InlineData(typeof(IHostedPlugin), "Innovayse.SDK.Plugins.Hosting")]
-    [InlineData(typeof(IStoredCredentialPlugin), "Innovayse.SDK.Plugins.StoredCredentials")]
-    [InlineData(typeof(IPluginEndpoints), "Innovayse.SDK.Plugins.Endpoints")]
-    [InlineData(typeof(IPluginHostApi), "Innovayse.SDK.Plugins.Host")]
-    [InlineData(typeof(IPluginStore), "Innovayse.SDK.Plugins.Store")]
-    [InlineData(typeof(IPluginStatus), "Innovayse.SDK.Plugins.Lifecycle")]
-    [InlineData(typeof(IPluginMigrations), "Innovayse.SDK.Plugins.Lifecycle")]
-    [InlineData(typeof(PaymentInstruction), "Innovayse.SDK.Plugins.Payment")]
-    [InlineData(typeof(PaymentSession), "Innovayse.SDK.Plugins.Payment")]
-    [InlineData(typeof(GatewayPaymentStatus), "Innovayse.SDK.Plugins.Payment")]
-    [InlineData(typeof(HostingPanelAddress), "Innovayse.SDK.Plugins.HostingPanel")]
-    [InlineData(typeof(HostingPanelApiReader), "Innovayse.SDK.Plugins.HostingPanel")]
-    [InlineData(typeof(HostingPanelApiWire), "Innovayse.SDK.Plugins.HostingPanel")]
-    [InlineData(typeof(HostingPanelConnection), "Innovayse.SDK.Plugins.HostingPanel")]
-    [InlineData(typeof(HostingPanelServerInfo), "Innovayse.SDK.Plugins.HostingPanel")]
-    [InlineData(typeof(HostingPanelV7ServerInfo), "Innovayse.SDK.Plugins.HostingPanel")]
-    [InlineData(typeof(CredentialCustomerContext), "Innovayse.SDK.Plugins.StoredCredentials")]
-    [InlineData(typeof(PluginManifest), "Innovayse.SDK.Plugins.Manifest")]
-    [InlineData(typeof(PluginField), "Innovayse.SDK.Plugins.Manifest")]
-    [InlineData(typeof(PluginCapabilities), "Innovayse.SDK.Plugins.Manifest")]
+    [InlineData(typeof(IPaymentPlugin), "Hostpanel.Sdk.Plugins.Payment")]
+    [InlineData(typeof(IProvisioningPlugin), "Hostpanel.Sdk.Plugins.Provisioning")]
+    [InlineData(typeof(IRegistrarPlugin), "Hostpanel.Sdk.Plugins.Registrar")]
+    [InlineData(typeof(IHostingPanelApiClient), "Hostpanel.Sdk.Plugins.HostingPanel")]
+    [InlineData(typeof(IHostingPanelV7ApiClient), "Hostpanel.Sdk.Plugins.HostingPanel")]
+    [InlineData(typeof(IFulfilmentPlugin), "Hostpanel.Sdk.Plugins.Fulfilment")]
+    [InlineData(typeof(IClientResolver), "Hostpanel.Sdk.Plugins.Identity")]
+    [InlineData(typeof(IHostedPlugin), "Hostpanel.Sdk.Plugins.Hosting")]
+    [InlineData(typeof(IStoredCredentialPlugin), "Hostpanel.Sdk.Plugins.StoredCredentials")]
+    [InlineData(typeof(IPluginEndpoints), "Hostpanel.Sdk.Plugins.Endpoints")]
+    [InlineData(typeof(IPluginHostApi), "Hostpanel.Sdk.Plugins.Host")]
+    [InlineData(typeof(IPluginStore), "Hostpanel.Sdk.Plugins.Store")]
+    [InlineData(typeof(IPluginStatus), "Hostpanel.Sdk.Plugins.Lifecycle")]
+    [InlineData(typeof(IPluginMigrations), "Hostpanel.Sdk.Plugins.Lifecycle")]
+    [InlineData(typeof(PaymentInstruction), "Hostpanel.Sdk.Plugins.Payment")]
+    [InlineData(typeof(PaymentSession), "Hostpanel.Sdk.Plugins.Payment")]
+    [InlineData(typeof(GatewayPaymentStatus), "Hostpanel.Sdk.Plugins.Payment")]
+    [InlineData(typeof(HostingPanelAddress), "Hostpanel.Sdk.Plugins.HostingPanel")]
+    [InlineData(typeof(HostingPanelApiReader), "Hostpanel.Sdk.Plugins.HostingPanel")]
+    [InlineData(typeof(HostingPanelApiWire), "Hostpanel.Sdk.Plugins.HostingPanel")]
+    [InlineData(typeof(HostingPanelConnection), "Hostpanel.Sdk.Plugins.HostingPanel")]
+    [InlineData(typeof(HostingPanelServerInfo), "Hostpanel.Sdk.Plugins.HostingPanel")]
+    [InlineData(typeof(HostingPanelV7ServerInfo), "Hostpanel.Sdk.Plugins.HostingPanel")]
+    [InlineData(typeof(CredentialCustomerContext), "Hostpanel.Sdk.Plugins.StoredCredentials")]
+    [InlineData(typeof(PluginManifest), "Hostpanel.Sdk.Plugins.Manifest")]
+    [InlineData(typeof(PluginField), "Hostpanel.Sdk.Plugins.Manifest")]
+    [InlineData(typeof(PluginCapabilities), "Hostpanel.Sdk.Plugins.Manifest")]
     public void ReleasedTypes_AreInTheirAreaNamespace(Type type, string expected)
     {
         type.Namespace.Should().Be(expected);

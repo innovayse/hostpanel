@@ -1,6 +1,6 @@
 using System.Reflection;
-using Innovayse.SDK.Plugins.Endpoints;
-using Innovayse.SDK.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Endpoints;
+using Hostpanel.Sdk.Plugins.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 

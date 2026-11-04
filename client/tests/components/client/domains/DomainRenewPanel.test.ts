@@ -32,7 +32,7 @@ const domain = (overrides: Partial<DomainDetail> = {}): DomainDetail => ({
 } as DomainDetail)
 
 /** A gateway the panel offers. */
-const card = { module: 'stripe', displayName: 'Stripe' }
+const card = { module: 'card_gateway', displayName: 'Card gateway' }
 
 /**
  * Mounts the panel and waits for the payment methods to arrive.
@@ -82,7 +82,7 @@ describe('DomainRenewPanel', () => {
     await wrapper.find('form').trigger('submit')
 
     await vi.waitFor(() => expect(wrapper.find('[data-testid="domain-renew-pay"]').exists()).toBe(true))
-    expect(domainsApi.createRenewOrder).toHaveBeenCalledWith('7', 1, 'stripe')
+    expect(domainsApi.createRenewOrder).toHaveBeenCalledWith('7', 1, 'card_gateway')
     expect(wrapper.find('[data-testid="domain-renew-pay"]').attributes('href')).toBe('/client/invoices/90')
   })
 

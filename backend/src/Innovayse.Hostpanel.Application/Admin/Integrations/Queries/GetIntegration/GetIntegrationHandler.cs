@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Admin.Common;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
@@ -65,6 +66,11 @@ public sealed class GetIntegrationHandler
                 : new IntegrationFieldValueDto(value ?? string.Empty, IsSecret: false, hasValue);
         }
 
-        return Result<IntegrationDetailDto>.Success(new IntegrationDetailDto(query.Slug, definition.Name, isEnabled, config, definition.Fields));
+        // A built-in integration wins over a plugin of the same slug, as it does in the list.
+        var isPlugin = !IntegrationCatalogue.All.ContainsKey(query.Slug) && _plugins.IsLoaded(query.Slug);
+        var iconUrl = isPlugin && _plugins.GetIcon(query.Slug) is not null ? PluginIconPaths.For(query.Slug) : null;
+
+        return Result<IntegrationDetailDto>.Success(
+            new IntegrationDetailDto(query.Slug, definition.Name, isEnabled, config, definition.Fields, isPlugin, iconUrl));
     }
 }

@@ -19,6 +19,10 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 /// <param name="Status">Whether the row is a loaded, refused or removed plugin; serialised as the enum name.</param>
 /// <param name="RefusedRule">The manifest rule a refused plugin breaks; <see langword="null"/> otherwise.</param>
 /// <param name="RefusedDetail">Where and how the rule is broken; <see langword="null"/> unless refused.</param>
+/// <param name="IconUrl">
+/// Path of the admin icon endpoint (<c>/api/admin/plugins/{id}/icon</c>) for a loaded plugin that ships an icon;
+/// <see langword="null"/> when it has none, so the panel shows the colour block.
+/// </param>
 /// <param name="StagedVersion">
 /// The version of a newer (or forced older) upload that waits to replace the running one at the next restart;
 /// <see langword="null"/> when nothing is staged.
@@ -37,4 +41,5 @@ public sealed record PluginListItemDto(
     PluginListStatus Status = PluginListStatus.Loaded,
     PluginManifestRule? RefusedRule = null,
     string? RefusedDetail = null,
-    string? StagedVersion = null);
+    string? StagedVersion = null,
+    string? IconUrl = null);

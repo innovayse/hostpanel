@@ -18,7 +18,6 @@ const loaders = {
   loadUsers: vi.fn(),
   loadContacts: vi.fn(),
   loadEmails: vi.fn(),
-  loadPaymentMethods: vi.fn(),
 }
 
 /** The permissions the signed-in person holds; everything unless a test narrows it. */
@@ -37,7 +36,6 @@ vi.mock('~/stores/account', () => ({
     loadUsers: loaders.loadUsers,
     loadContacts: loaders.loadContacts,
     loadEmails: loaders.loadEmails,
-    loadPaymentMethods: loaders.loadPaymentMethods,
   }),
 }))
 

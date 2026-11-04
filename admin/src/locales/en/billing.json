@@ -137,6 +137,22 @@
     "credit": "Credit",
     "pending": "Pending"
   },
+  "paymentClaims": {
+    "heading": "Held Payment Claims",
+    "subtitle": "Charges where the gateway took money the invoice could not record. Settle them by hand.",
+    "gatewayModule": "Gateway module",
+    "created": "Created",
+    "empty": "No held payment claims.",
+    "status": {
+      "Open": "Open",
+      "ActionRequired": "Action required",
+      "Pending": "Pending",
+      "Settled": "Settled",
+      "Declined": "Declined",
+      "Abandoned": "Abandoned",
+      "Held": "Held"
+    }
+  },
   "invoiceDetail": {
     "invoiceId": "Invoice #{id}",
     "manageAndViewInvoiceDetails": "Manage and view invoice details",

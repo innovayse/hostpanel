@@ -18,7 +18,7 @@ vi.mock('~/composables/apis/useCatalogApi', () => ({ useCatalogApi: () => ({}) }
 vi.mock('~/composables/apis/useCurrencyApi', () => ({ useCurrencyApi: () => ({}) }))
 
 /** A gateway. */
-const card = { module: 'stripe', displayName: 'Stripe' }
+const card = { module: 'card_gateway', displayName: 'Card gateway' }
 
 describe('domain transfer page', () => {
   beforeEach(() => {
@@ -64,7 +64,7 @@ describe('domain transfer page', () => {
     await wrapper.find('form').trigger('submit')
 
     await vi.waitFor(() => expect(wrapper.find('[data-testid="transfer-success"]').exists()).toBe(true))
-    expect(domainsApi.createTransferOrder).toHaveBeenCalledWith(expect.objectContaining({ domain: 'moving.org', eppcode: 'AUTH-1', years: 1, paymentmethod: 'stripe' }))
+    expect(domainsApi.createTransferOrder).toHaveBeenCalledWith(expect.objectContaining({ domain: 'moving.org', eppcode: 'AUTH-1', years: 1, paymentmethod: 'card_gateway' }))
     expect(wrapper.find('[data-testid="transfer-pay-invoice"]').attributes('href')).toBe('/client/invoices/90')
   })
 

@@ -71,7 +71,8 @@ public sealed class ListPluginsHandler
                 refusal is null ? PluginListStatus.Loaded : PluginListStatus.Refused,
                 refusal?.Rule,
                 refusal?.Detail,
-                package.StagedVersion));
+                package.StagedVersion,
+                refusal is null && _registry.GetIcon(manifest.Id) is not null ? PluginIconPaths.For(manifest.Id) : null));
         }
 
         var scopeOwners = _context.PluginDataScopes.AsNoTracking().Select(s => s.PluginId);

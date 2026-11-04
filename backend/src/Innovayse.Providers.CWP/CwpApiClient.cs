@@ -1,5 +1,5 @@
 using Innovayse.Providers.CWP.Models;
-using Innovayse.SDK.Plugins.HostingPanel;
+using Hostpanel.Sdk.Plugins.HostingPanel;
 using Microsoft.Extensions.Logging;
 
 namespace Innovayse.Providers.CWP;

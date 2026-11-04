@@ -1,6 +1,5 @@
 using Innovayse.Hostpanel.API.Authorization;
 using Innovayse.Hostpanel.Application.Billing.Commands.CompleteMyGatewayPayment;
-using Innovayse.Hostpanel.Application.Billing.Commands.PayMyInvoice;
 using Innovayse.Hostpanel.Application.Billing.Commands.StartMyGatewayPayment;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Queries.GetMyInvoice;
@@ -113,42 +112,6 @@ public sealed class MyBillingController : BaseApiController
     {
         var outcome = await _bus.InvokeAsync<Result<FileDownloadDto>>(new GetMyInvoicePdfQuery(id), ct);
         return FileResult(outcome);
-    }
-
-    /// <summary>
-    /// Pays an invoice belonging to the authenticated client with a payment method saved on their
-    /// account, in the invoice's own currency.
-    /// </summary>
-    /// <param name="id">Invoice primary key.</param>
-    /// <param name="command">The saved payment method to charge; its invoice id comes from the route.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>
-    /// 204 once the money is taken; 401 without a session; 404 with <c>INVOICE_NOT_FOUND</c> when it is not the caller's;
-    /// 400 with <c>PAYMENT_METHOD_NOT_OWNED</c>, <c>NO_SAVED_PAYMENT_METHODS</c> or <c>INVOICE_NOT_PAYABLE</c>;
-    /// 409 with <c>PAYMENT_METHOD_UNAVAILABLE</c> when the deployment has no card gateway, or with
-    /// <c>PAYMENT_INTENT_ALREADY_USED</c> when the gateway's transaction is already on the ledger;
-    /// 502 with <c>GATEWAY_CHARGE_UPSTREAM_FAILED</c> when the gateway declines, or with
-    /// <c>PAYMENT_METHOD_UPSTREAM_FAILED</c> when it refuses to list the saved methods or look up the charge;
-    /// 503 with <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when the gateway cannot be reached;
-    /// 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>ViewPayInvoices</c>, or with
-    /// <c>CLIENT_SUSPENDED</c>, <c>CLIENT_CLOSED</c> or <c>CLIENT_CARD_PAYMENT_DISABLED</c> when the account may not pay by card;
-    /// 429 when the rate limit is hit.
-    /// </returns>
-    [HttpPost("{id:int}/pay")]
-    [Authorize(Policy = Policies.Client)]
-    [RequiresClientPermission(ClientPermission.ViewPayInvoices)]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
-    public async Task<IActionResult> PayAsync(int id, [FromBody] PayMyInvoiceCommand command, CancellationToken ct)
-    {
-        var outcome = await _bus.InvokeAsync<Result>(command with { InvoiceId = id }, ct);
-        return HandleResult(outcome);
     }
 
     /// <summary>Starts a hosted-gateway payment for the authenticated client's invoice.</summary>

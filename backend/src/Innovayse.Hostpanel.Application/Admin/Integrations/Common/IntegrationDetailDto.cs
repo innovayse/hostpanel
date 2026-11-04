@@ -13,9 +13,16 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 /// <param name="FieldDefinitions">
 /// Ordered list of field metadata used by the admin panel to render the config form.
 /// </param>
+/// <param name="IsPlugin">True when the integration comes from an installed plugin (not built-in).</param>
+/// <param name="IconUrl">
+/// Path of the admin icon endpoint for a plugin integration that ships an icon; <see langword="null"/> for a built-in
+/// integration and for a plugin without an icon.
+/// </param>
 public sealed record IntegrationDetailDto(
     string Slug,
     string Name,
     bool IsEnabled,
     IReadOnlyDictionary<string, IntegrationFieldValueDto> Config,
-    IReadOnlyList<FieldDefinitionDto> FieldDefinitions);
+    IReadOnlyList<FieldDefinitionDto> FieldDefinitions,
+    bool IsPlugin = false,
+    string? IconUrl = null);

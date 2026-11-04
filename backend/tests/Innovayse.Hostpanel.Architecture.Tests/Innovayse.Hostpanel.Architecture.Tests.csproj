@@ -19,10 +19,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\SharedKernel\Innovayse.Hostpanel.SharedKernel.csproj" />
-    <ProjectReference Include="..\..\src\Innovayse.SDK\Innovayse.SDK.csproj" />
+    <ProjectReference Include="..\..\src\Hostpanel.Sdk\Hostpanel.Sdk.csproj" />
     <ProjectReference Include="..\..\src\Innovayse.Providers.CWP\Innovayse.Providers.CWP.csproj" />
     <ProjectReference Include="..\..\src\Innovayse.Providers.CWP7\Innovayse.Providers.CWP7.csproj" />
-    <ProjectReference Include="..\..\src\Innovayse.Providers.Inecobank\Innovayse.Providers.Inecobank.csproj" />
     <ProjectReference Include="..\..\src\Innovayse.Hostpanel.Domain\Innovayse.Hostpanel.Domain.csproj" />
     <ProjectReference Include="..\..\src\Innovayse.Hostpanel.Application\Innovayse.Hostpanel.Application.csproj" />
     <ProjectReference Include="..\..\src\Innovayse.Hostpanel.Infrastructure\Innovayse.Hostpanel.Infrastructure.csproj" />

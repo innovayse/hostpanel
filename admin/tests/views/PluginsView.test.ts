@@ -3,6 +3,8 @@
  * install, a refusal shown as the API's sentence, the retry of a refused load and the danger
  * confirmation before a removal, and the "Allow unsigned plugins" switch: shown from the stored setting, saved through
  * the settings endpoint, a refusal shown as the API's sentence, and a failed settings load with its retry.
+ * The Browse tab: hidden when the registry is switched off, shown otherwise, with the registry list, an install
+ * from it, the restart banner it raises, and the update badge on an installed plugin.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
@@ -11,24 +13,51 @@ import PluginUploader from '@/components/plugins/PluginUploader.vue'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes as stubAllRoutes } from '../helpers/routes'
 import { json, problem } from '../helpers/fetch'
+import { PluginErrorCode } from '@/types/plugin'
 import { PluginSettingKey } from '@/types/setting'
 
 /** One installed plugin as the list endpoint returns it. */
 const plugin = {
-  id: 'ineco',
-  name: 'Ineco Pay',
+  id: 'example-pay',
+  name: 'Example Pay',
   version: '1.2.0',
   author: 'Hostpanel',
   description: 'Card payments',
   type: 'payment',
   category: 'Payments',
   color: '#123456',
+  iconUrl: null,
   isLoaded: true,
   isBuiltIn: false,
   status: 'Loaded',
   refusedRule: null,
   refusedDetail: null,
   stagedVersion: null,
+}
+
+/**
+ * The answer of a server whose plugin registry is switched off.
+ *
+ * @returns The 404 problem body carrying the registry-disabled code.
+ */
+const registryDisabled = (): Response =>
+  json({ type: PluginErrorCode.RegistryDisabled, title: 'Disabled', status: 404, detail: 'The registry is off.' }, 404)
+
+/** One registry listing: the installed plugin with a newer version on offer. */
+const listing = {
+  id: 'example-pay',
+  name: 'Example Pay',
+  author: 'Hostpanel',
+  description: 'Card payments',
+  iconUrl: null,
+  category: 'Payment',
+  latestVersion: '2.0.0',
+  sdkVersion: '3.0.0',
+  verified: true,
+  pricing: 'Free',
+  installed: true,
+  installedVersion: '1.2.0',
+  updateAvailable: true,
 }
 
 /**
@@ -39,7 +68,15 @@ const plugin = {
  * @returns The fetch mock, for asserting the requests made.
  */
 const stubRoutes = (routes: Record<string, () => Response>) =>
-  stubAllRoutes({ 'GET /api/admin/plugins/ineco/slot-widgets': () => json([]), ...routes })
+  stubAllRoutes(Object.fromEntries(
+    // The first key a request line starts with wins, so the longest (most specific) key goes first: a plain
+    // override of the registry default would keep its early place and swallow `registry/updates`.
+    Object.entries({
+      'GET /api/admin/plugins/example-pay/slot-widgets': () => json([]),
+      'GET /api/admin/plugins/registry': registryDisabled,
+      ...routes,
+    }).sort(([a], [b]) => b.length - a.length),
+  ))
 
 /** The stored "allow unsigned plugins" row, as the settings list returns it. */
 const signingRow = { id: 9, key: PluginSettingKey.AllowUnsigned, value: 'false' }
@@ -64,7 +101,7 @@ describe('PluginsView', () => {
     stubRoutes({ 'GET /api/admin/plugins': () => json([plugin]) })
     const wrapper = await mountPlugins()
 
-    expect(wrapper.get('[data-testid="plugins-list"]').text()).toContain('Ineco Pay')
+    expect(wrapper.get('[data-testid="plugins-list"]').text()).toContain('Example Pay')
     expect(wrapper.find('[data-testid="plugins-empty"]').exists()).toBe(false)
   })
 
@@ -96,39 +133,39 @@ describe('PluginsView', () => {
     await wrapper.get('[data-testid="plugins-error-retry"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="plugins-list"]').text()).toContain('Ineco Pay')
+    expect(wrapper.get('[data-testid="plugins-list"]').text()).toContain('Example Pay')
   })
 
   it('removes a plugin and reloads the list', async () => {
     const mock = stubRoutes({
       'GET /api/admin/plugins': () => json([plugin]),
-      'DELETE /api/admin/plugins/ineco': () => json({ requiresRestart: true }),
+      'DELETE /api/admin/plugins/example-pay': () => json({ requiresRestart: true }),
     })
     const wrapper = await mountPlugins()
 
-    await wrapper.get('[data-testid="plugin-remove-ineco"]').trigger('click')
+    await wrapper.get('[data-testid="plugin-remove-example-pay"]').trigger('click')
     await flushPromises()
     expect(mock.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(false)
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(mock.mock.calls.some(([url, init]) => String(url) === '/api/admin/plugins/ineco' && init?.method === 'DELETE')).toBe(true)
+    expect(mock.mock.calls.some(([url, init]) => String(url) === '/api/admin/plugins/example-pay' && init?.method === 'DELETE')).toBe(true)
     expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Plugin removed.')
   })
 
   it('shows the API sentence when the removal is refused', async () => {
     stubRoutes({
       'GET /api/admin/plugins': () => json([plugin]),
-      'DELETE /api/admin/plugins/ineco': () => problem('Plugin is in use.', 409),
+      'DELETE /api/admin/plugins/example-pay': () => problem('Plugin is in use.', 409),
     })
     const wrapper = await mountPlugins()
 
-    await wrapper.get('[data-testid="plugin-remove-ineco"]').trigger('click')
+    await wrapper.get('[data-testid="plugin-remove-example-pay"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
     expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Plugin is in use.')
-    expect(wrapper.get('[data-testid="plugins-list"]').text()).toContain('Ineco Pay')
+    expect(wrapper.get('[data-testid="plugins-list"]').text()).toContain('Example Pay')
   })
 
   it('lists a refused plugin with its reason and offers no enable action', async () => {
@@ -139,18 +176,18 @@ describe('PluginsView', () => {
     })
     const wrapper = await mountPlugins()
 
-    const card = wrapper.get('[data-testid="plugin-card-ineco"]')
+    const card = wrapper.get('[data-testid="plugin-card-example-pay"]')
     expect(card.text()).toContain('Refused')
     expect(card.text()).toContain('A text key used by the plugin is missing from its English texts.')
     expect(card.text()).not.toContain('Active')
-    expect(wrapper.find('[data-testid="plugin-remove-ineco"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-remove-example-pay"]').exists()).toBe(true)
   })
 
   it('says in the removal prompt that the plugin data is kept', async () => {
     stubRoutes({ 'GET /api/admin/plugins': () => json([plugin]) })
     const wrapper = await mountPlugins()
 
-    await wrapper.get('[data-testid="plugin-remove-ineco"]').trigger('click')
+    await wrapper.get('[data-testid="plugin-remove-example-pay"]').trigger('click')
     await flushPromises()
 
     expect(wrapper.text()).toContain('Its settings and stored data are kept')
@@ -161,24 +198,24 @@ describe('PluginsView', () => {
     let rows: unknown[] = [plugin]
     const mock = stubRoutes({
       'GET /api/admin/plugins': () => json(rows),
-      'DELETE /api/admin/plugins/ineco/data': () => {
+      'DELETE /api/admin/plugins/example-pay/data': () => {
         rows = []
         return json({ requiresRestart: false })
       },
-      'DELETE /api/admin/plugins/ineco': () => {
+      'DELETE /api/admin/plugins/example-pay': () => {
         rows = [{ ...plugin, version: '', isLoaded: false, status: 'Removed' }]
         return json({ requiresRestart: true })
       },
     })
     const wrapper = await mountPlugins()
-    await wrapper.get('[data-testid="plugin-remove-ineco"]').trigger('click')
+    await wrapper.get('[data-testid="plugin-remove-example-pay"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    await wrapper.get('[data-testid="plugin-purge-ineco"]').trigger('click')
+    await wrapper.get('[data-testid="plugin-purge-example-pay"]').trigger('click')
     await flushPromises()
     /** Recorded requests to the purge endpoint of the removed plugin. */
-    const purgeCalls = () => mock.mock.calls.filter(([url]) => String(url) === '/api/admin/plugins/ineco/data')
+    const purgeCalls = () => mock.mock.calls.filter(([url]) => String(url) === '/api/admin/plugins/example-pay/data')
     expect(purgeCalls()).toHaveLength(0)
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
@@ -229,7 +266,7 @@ describe('PluginsView', () => {
     const mock = stubRoutes({ 'GET /api/admin/plugins': () => json([plugin]) })
     const wrapper = await mountPlugins()
 
-    await wrapper.get('[data-testid="plugin-remove-ineco"]').trigger('click')
+    await wrapper.get('[data-testid="plugin-remove-example-pay"]').trigger('click')
     await flushPromises()
     await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')
     await flushPromises()
@@ -310,8 +347,8 @@ describe('PluginsView', () => {
   it('lists the slot widgets of a loaded plugin and saves a binding', async () => {
     const widget = { slotId: 'admin.service.panels', widgetId: 'usage', title: 'Usage', manifestProductIds: [], productIds: [3], isBound: true }
     const mock = stubRoutes({
-      'PUT /api/admin/plugins/ineco/slot-widgets/admin.service.panels/usage': () => json({ ...widget }),
-      'GET /api/admin/plugins/ineco/slot-widgets': () => json([widget]),
+      'PUT /api/admin/plugins/example-pay/slot-widgets/admin.service.panels/usage': () => json({ ...widget }),
+      'GET /api/admin/plugins/example-pay/slot-widgets': () => json([widget]),
       'GET /api/products': () => json([{ id: 3, name: 'Shared' }, { id: 4, name: 'Reseller' }]),
       'GET /api/admin/plugins': () => json([plugin]),
       'GET /api/admin/settings': () => json([signingRow]),
@@ -330,12 +367,87 @@ describe('PluginsView', () => {
 
   it('shows the API sentence when the slot widgets cannot be loaded', async () => {
     stubRoutes({
-      'GET /api/admin/plugins/ineco/slot-widgets': () => problem('Widgets are unavailable.', 503),
+      'GET /api/admin/plugins/example-pay/slot-widgets': () => problem('Widgets are unavailable.', 503),
       'GET /api/admin/plugins': () => json([plugin]),
       'GET /api/admin/settings': () => json([signingRow]),
     })
     const wrapper = await mountPlugins()
 
     expect(wrapper.get('[data-testid="plugin-slot-widgets-error"]').text()).toContain('Widgets are unavailable.')
+  })
+
+  it('hides the Browse tab when the registry is switched off', async () => {
+    stubRoutes({ 'GET /api/admin/plugins': () => json([plugin]) })
+    const wrapper = await mountPlugins()
+
+    expect(wrapper.find('[data-testid="plugins-tabs"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugins-tab-browse"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugins-list"]').exists()).toBe(true)
+  })
+
+  it('offers the Browse tab and lists the registry, with the trust card, when the registry is on', async () => {
+    stubRoutes({
+      'GET /api/admin/plugins/registry/updates': () => json([]),
+      'GET /api/admin/plugins/registry': () => json({ items: [{ ...listing, installed: false, updateAvailable: false }], total: 1, pageSize: 10 }),
+      'GET /api/admin/plugins': () => json([plugin]),
+      'GET /api/admin/settings': () => json([signingRow, { id: 11, key: PluginSettingKey.RegistryTrust, value: 'VerifiedOnly' }]),
+    })
+    const wrapper = await mountPlugins()
+
+    await wrapper.get('[data-testid="plugins-tab-browse"]').trigger('click')
+
+    expect(wrapper.get('[data-testid="registry-card-example-pay"]').text()).toContain('Example Pay')
+    expect(wrapper.find('[data-testid="plugin-registry-trust"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugins-list"]').exists()).toBe(false)
+  })
+
+  it('installs from the registry, shows the restart banner and the staged sentence', async () => {
+    const mock = stubRoutes({
+      'POST /api/admin/plugins/registry/example-pay/install': () => json({ requiresRestart: true, stagedVersion: '2.0.0' }),
+      'GET /api/admin/plugins/registry/updates': () => json([listing]),
+      'GET /api/admin/plugins/registry': () => json({ items: [listing], total: 1, pageSize: 10 }),
+      'GET /api/admin/plugins': () => json([plugin]),
+      'GET /api/admin/settings': () => json([signingRow]),
+    })
+    const wrapper = await mountPlugins()
+
+    await wrapper.get('[data-testid="plugins-tab-browse"]').trigger('click')
+    await wrapper.get('[data-testid="registry-install-example-pay"]').trigger('click')
+    await flushPromises()
+
+    const post = mock.mock.calls.find(([, init]) => init?.method === 'POST')
+    expect(JSON.parse(String(post?.[1]?.body))).toEqual({ version: '2.0.0' })
+    expect(wrapper.find('[data-testid="plugins-restart-banner"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Version 2.0.0 uploaded and staged')
+  })
+
+  it('shows the API sentence when the registry install is refused', async () => {
+    stubRoutes({
+      'POST /api/admin/plugins/registry/example-pay/install': () => problem('That publisher is not trusted.', 403),
+      'GET /api/admin/plugins/registry/updates': () => json([listing]),
+      'GET /api/admin/plugins/registry': () => json({ items: [listing], total: 1, pageSize: 10 }),
+      'GET /api/admin/plugins': () => json([plugin]),
+      'GET /api/admin/settings': () => json([signingRow]),
+    })
+    const wrapper = await mountPlugins()
+
+    await wrapper.get('[data-testid="plugins-tab-browse"]').trigger('click')
+    await wrapper.get('[data-testid="registry-install-example-pay"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('That publisher is not trusted.')
+    expect(wrapper.find('[data-testid="plugins-restart-banner"]').exists()).toBe(false)
+  })
+
+  it('shows an update badge on an installed plugin the registry has a newer version of', async () => {
+    stubRoutes({
+      'GET /api/admin/plugins/registry/updates': () => json([listing]),
+      'GET /api/admin/plugins/registry': () => json({ items: [listing], total: 1, pageSize: 10 }),
+      'GET /api/admin/plugins': () => json([plugin]),
+      'GET /api/admin/settings': () => json([signingRow]),
+    })
+    const wrapper = await mountPlugins()
+
+    expect(wrapper.get('[data-testid="plugin-update-example-pay"]').text()).toContain('2.0.0')
   })
 })

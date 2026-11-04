@@ -274,19 +274,6 @@ public static class BillingTestSeeds
         return await created.Content.ReadFromJsonAsync<int>();
     }
 
-    /// <summary>Stamps the client's card payment gateway customer id, the only way to make their saved payment methods reachable.</summary>
-    /// <param name="host">The host whose database the client lives in.</param>
-    /// <param name="clientId">The client to stamp.</param>
-    /// <param name="customerId">The card payment gateway customer id to write.</param>
-    public static async Task StampCardCustomerAsync(WebApplicationFactory<Program> host, int clientId, string customerId)
-    {
-        using var scope = host.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var client = await context.Clients.FirstAsync(c => c.Id == clientId, CancellationToken.None);
-        client.SetCardGatewayCustomerId(customerId);
-        await context.SaveChangesAsync(CancellationToken.None);
-    }
-
     /// <summary>Adds credit to a client's balance directly against the host's database.</summary>
     /// <param name="host">The host whose database the client lives in.</param>
     /// <param name="clientId">The client to credit.</param>
@@ -297,6 +284,34 @@ public static class BillingTestSeeds
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var client = await context.Clients.FirstAsync(c => c.Id == clientId, CancellationToken.None);
         client.AddCredit(amount);
+        await context.SaveChangesAsync(CancellationToken.None);
+    }
+
+    /// <summary>Writes a stored card charge claim for an invoice that has not finished, as a charge waiting for the payer or the gateway.</summary>
+    /// <param name="host">The host whose database the invoice lives in.</param>
+    /// <param name="invoiceId">The invoice.</param>
+    /// <param name="clientId">The invoice's client.</param>
+    /// <param name="pending">
+    /// <see langword="true"/> for a charge the gateway accepted and has not settled; <see langword="false"/> for one that
+    /// waits for the payer to authenticate.
+    /// </param>
+    /// <returns>A task that completes once the claim is saved.</returns>
+    public static async Task SeedUnresolvedClaimAsync(WebApplicationFactory<Program> host, int invoiceId, int clientId, bool pending)
+    {
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var now = DateTimeOffset.UtcNow;
+        var claim = InvoicePaymentClaim.Open(invoiceId, clientId, "seed-gateway", "seed-method", $"seed-{Guid.NewGuid():N}", 1000, "USD", now);
+        if (pending)
+        {
+            claim.MarkPending();
+        }
+        else
+        {
+            claim.MarkActionRequired("https://gateway.test/authenticate", now);
+        }
+
+        context.InvoicePaymentClaims.Add(claim);
         await context.SaveChangesAsync(CancellationToken.None);
     }
 

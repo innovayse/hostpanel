@@ -11,6 +11,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Persistence.Configurations;
 /// <summary>EF Core table and column configuration for <see cref="ClientService"/>.</summary>
 public sealed class ClientServiceConfiguration : IEntityTypeConfiguration<ClientService>
 {
+    /// <summary>Column width for the source system's service id.</summary>
+    private const int ExternalIdLength = 100;
+
     /// <inheritdoc/>
     public void Configure(EntityTypeBuilder<ClientService> builder)
     {
@@ -24,6 +27,12 @@ public sealed class ClientServiceConfiguration : IEntityTypeConfiguration<Client
         // counts the dashboard and reports run.
         builder.HasIndex(x => x.ClientId);
         builder.HasIndex(x => new { x.Status, x.NextRenewalAt });
+
+        // The source system's service id, kept for migration de-duplication. A source id is unique
+        // only within one source, so it is unique per client, and only where one is set.
+        builder.HasIndex(x => new { x.ClientId, x.ExternalId })
+            .IsUnique()
+            .HasFilter("\"ExternalId\" IS NOT NULL");
 
         builder.Property(x => x.ClientId).IsRequired();
         builder.Property(x => x.ProductId).IsRequired();
@@ -49,6 +58,7 @@ public sealed class ClientServiceConfiguration : IEntityTypeConfiguration<Client
         builder.Property(x => x.PaymentMethod).HasMaxLength(50);
         builder.Property(x => x.PromotionCode).HasMaxLength(50);
         builder.Property(x => x.SubscriptionId).HasMaxLength(256);
+        builder.Property(x => x.ExternalId).HasMaxLength(ExternalIdLength);
         builder.Property(x => x.AutoTerminateReason).HasMaxLength(2000);
         builder.Property(x => x.AdminNotes).HasMaxLength(2000);
         builder.Ignore(x => x.DomainEvents);

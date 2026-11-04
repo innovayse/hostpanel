@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.API.Controllers;
+using Innovayse.Hostpanel.API.Plugins;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.AspNetCore.RateLimiting;
@@ -38,13 +39,14 @@ public sealed class AnonymousWriteRateLimitTests
             .Any(method => method is not ("GET" or "HEAD"));
     }
 
-    /// <summary>Whether the action or its controller names a rate-limit policy.</summary>
+    /// <summary>Whether the action or its controller names a rate-limit policy, or is the plugin callback door, which counts every request against its own tier.</summary>
     /// <param name="action">The controller and action.</param>
-    /// <returns><c>true</c> when <c>[EnableRateLimiting]</c> applies to it.</returns>
+    /// <returns><c>true</c> when <c>[EnableRateLimiting]</c> or <c>[PluginCallbackRateLimit]</c> applies to it.</returns>
     private static bool IsRateLimited(ControllerAction action)
     {
         return action.Action.IsDefined(typeof(EnableRateLimitingAttribute), true)
-            || action.Controller.IsDefined(typeof(EnableRateLimitingAttribute), true);
+            || action.Controller.IsDefined(typeof(EnableRateLimitingAttribute), true)
+            || action.Controller.IsDefined(typeof(PluginCallbackRateLimitAttribute), true);
     }
 
     /// <summary>The scan finds anonymous writes; a rule over zero actions would pass for the wrong reason.</summary>

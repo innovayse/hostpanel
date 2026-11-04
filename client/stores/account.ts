@@ -1,6 +1,6 @@
 /**
  * Pinia store for the changes made on the client account page: profile, sign-in address, team
- * members, contacts, two-factor and saved payment methods.
+ * members, contacts, two-factor and the default gateway.
  *
  * The page renders this state and branches on the returned outcomes; no API call and no
  * `try/catch` lives in the view. Every refusal is kept as the API's own sentence, read through
@@ -26,7 +26,6 @@ import type { ClientEmailSummary } from '~/types/clientemailsummary'
 import type { EmailChangeInput } from '~/types/emailchangeinput'
 import { EmailConfirmationStatus } from '~/types/emailconfirmationstatus'
 import type { GatewayMethod } from '~/types/gatewaymethod'
-import type { PaymentMethod } from '~/types/payment'
 import type { ProfileUpdate } from '~/types/profileupdate'
 import type { TeamMember } from '~/types/teammember'
 import type { InviteUserPayload } from '~/types/inviteuserpayload'
@@ -46,7 +45,7 @@ export const useAccountStore = defineStore('account', () => {
   const authApi = useAuthApi()
 
   /**
-   * Field-level messages of the last refused form post (profile, contact, payment method), keyed by camelCase field name (`UiField` renders
+   * Field-level messages of the last refused form post (profile, contact), keyed by camelCase field name (`UiField` renders
    * `fieldErrors[name]`); empty when the refusal was not about fields or nothing was refused.
    */
   const fieldErrors = ref<Record<string, string>>({})
@@ -69,13 +68,6 @@ export const useAccountStore = defineStore('account', () => {
   const emails = ref<ClientEmailSummary[]>([])
   /** Whether the sent-mail list is being read. */
   const emailsLoading = ref(false)
-
-  /** The saved cards and bank accounts. */
-  const paymentMethods = ref<PaymentMethod[]>([])
-  /** Whether the saved payment methods are being read. */
-  const paymentLoading = ref(false)
-  /** The API's sentence when the saved payment methods could not be read; null when they could. */
-  const paymentLoadError = ref<string | null>(null)
 
   /** The gateways the profile can name as its default payment method. */
   const gatewayMethods = ref<GatewayMethod[]>([])
@@ -138,29 +130,6 @@ export const useAccountStore = defineStore('account', () => {
       emails.value = []
     } finally {
       emailsLoading.value = false
-    }
-  }
-
-  /**
-   * Reads the saved payment methods. A failure is kept as {@link paymentLoadError}, because an
-   * unreadable list and an account with no saved cards must not look the same.
-   *
-   * @returns Nothing.
-   */
-  const loadPaymentMethods = async (): Promise<void> => {
-    if (!useClientStore().mayDo(Permission.ViewPayInvoices)) {
-      paymentMethods.value = []
-      return
-    }
-    paymentLoading.value = true
-    paymentLoadError.value = null
-    try {
-      paymentMethods.value = await billingApi.fetchPaymentMethods()
-    } catch (e: unknown) {
-      paymentMethods.value = []
-      paymentLoadError.value = apiErrorMessage(e)
-    } finally {
-      paymentLoading.value = false
     }
   }
 
@@ -448,57 +417,6 @@ export const useAccountStore = defineStore('account', () => {
     }
   }
 
-  // ── Payment methods ───────────────────────────────────────────────────────
-
-  /** The sentence for the last refused set-default or removal; empty when there is none. */
-  const paymentActionError = ref('')
-
-  /** Id of the method being made default, or null. */
-  const settingDefaultId = ref<string | null>(null)
-
-  /** Id of the method being removed, or null. */
-  const removingId = ref<string | null>(null)
-
-  /**
-   * Makes a saved method the default.
-   *
-   * @param id - Method id.
-   * @returns How it ended; on `Failed`, {@link paymentActionError} holds the sentence.
-   */
-  const setDefaultPaymentMethod = async (id: string): Promise<ActionOutcome> => {
-    settingDefaultId.value = id
-    paymentActionError.value = ''
-    try {
-      await billingApi.setDefaultPaymentMethod(id)
-      return ActionOutcome.Succeeded
-    } catch (e: unknown) {
-      paymentActionError.value = apiErrorMessage(e)
-      return ActionOutcome.Failed
-    } finally {
-      settingDefaultId.value = null
-    }
-  }
-
-  /**
-   * Removes a saved method.
-   *
-   * @param id - Method id.
-   * @returns How it ended; on `Failed`, {@link paymentActionError} holds the sentence.
-   */
-  const removePaymentMethod = async (id: string): Promise<ActionOutcome> => {
-    removingId.value = id
-    paymentActionError.value = ''
-    try {
-      await billingApi.removePaymentMethod(id)
-      return ActionOutcome.Succeeded
-    } catch (e: unknown) {
-      paymentActionError.value = apiErrorMessage(e)
-      return ActionOutcome.Failed
-    } finally {
-      removingId.value = null
-    }
-  }
-
   /**
    * Clears every modal-level error, called when a modal is (re)opened so a stale sentence
    * from the previous attempt is not shown.
@@ -523,10 +441,6 @@ export const useAccountStore = defineStore('account', () => {
     emails,
     emailsLoading,
     loadEmails,
-    paymentMethods,
-    paymentLoading,
-    paymentLoadError,
-    loadPaymentMethods,
     gatewayMethods,
     loadGatewayMethods,
     fieldErrors,
@@ -555,11 +469,6 @@ export const useAccountStore = defineStore('account', () => {
     tfaModalError,
     startTwoFactorSetup,
     submitTwoFactor,
-    paymentActionError,
-    settingDefaultId,
-    removingId,
-    setDefaultPaymentMethod,
-    removePaymentMethod,
     clearModalErrors
   }
 })

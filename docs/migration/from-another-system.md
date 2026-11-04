@@ -187,14 +187,16 @@ download categories are reused silently. All other existing records are logged a
 </Callout>
 
 Records are matched as follows: clients by email address, contacts by email, products by name,
-domains by domain name, services by client and domain (or client and panel username), invoices by
+domains by domain name, services by client and the source service id (rows imported before the id was kept, by client and domain or panel username), invoices by
 client and external id, tickets and quotes by client and subject, orders by order number,
 transactions by client and transaction id, knowledgebase articles by title, announcements by title
 and date, network issues by title and start date, downloads by title and category, ticket replies by
 ticket, author, role and message. Download categories are matched by name.
 
-A service with neither a domain nor a panel username in the source record has no match key and
-will be imported again on a retry.
+Every service in the source record carries its own id, so a retry skips a service already imported
+even when it has no domain or panel username, and two services that share a domain are both
+imported. Only services imported before the id was kept are matched by client and domain (or panel
+username); one of those with neither has no match key and is imported again on a retry.
 
 For types that have a match key (clients, contacts, products, services, domains, invoices, tickets, quotes, orders, transactions, knowledgebase articles, announcements, network issues, downloads and ticket replies), running the same job a second time only adds records that are new since the last run.
 

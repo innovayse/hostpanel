@@ -84,7 +84,7 @@ public static class RateLimitingExtensions
             .Validate(
                 o => IsPositive(o.Global) && IsPositive(o.Auth) && IsPositive(o.Upstream)
                     && IsPositive(o.Strict) && IsPositive(o.SshKeys) && IsPositive(o.PluginDefault)
-                    && IsPositive(o.PluginStrict) && IsPositive(o.PluginHeavy)
+                    && IsPositive(o.PluginStrict) && IsPositive(o.PluginHeavy) && IsPositive(o.PluginCallback)
                     && o.ConcurrentPermitLimit > 0 && o.PluginStreamPermitLimit > 0 && o.TrustedProxyCount >= 0,
                 $"Every {RateLimitOptions.SectionName} tier needs a positive PermitLimit and "
                     + "WindowSeconds, ConcurrentPermitLimit and PluginStreamPermitLimit must be positive, "
@@ -100,7 +100,8 @@ public static class RateLimitingExtensions
                     && o.SshKeys.PermitLimit <= o.Global.PermitLimit
                     && o.PluginDefault.PermitLimit <= o.Global.PermitLimit
                     && o.PluginStrict.PermitLimit <= o.Global.PermitLimit
-                    && o.PluginHeavy.PermitLimit <= o.Global.PermitLimit,
+                    && o.PluginHeavy.PermitLimit <= o.Global.PermitLimit
+                    && o.PluginCallback.PermitLimit <= o.Global.PermitLimit,
                 $"No {RateLimitOptions.SectionName} tier may allow more than Global, because the "
                     + "global budget applies to every request as well: the smaller of the two "
                     + "always binds, so a larger tier would silently have no effect.")
@@ -253,6 +254,7 @@ public static class RateLimitingExtensions
         RateLimitPolicies.PluginStrict => limits.PluginStrict.PermitLimit,
         RateLimitPolicies.PluginHeavy => limits.PluginHeavy.PermitLimit,
         RateLimitPolicies.PluginStream => limits.PluginStreamPermitLimit,
+        RateLimitPolicies.PluginCallback => limits.PluginCallback.PermitLimit,
         _ => null,
     };
 

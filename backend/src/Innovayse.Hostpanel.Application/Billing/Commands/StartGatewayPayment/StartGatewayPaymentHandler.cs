@@ -6,8 +6,8 @@ using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
 using Innovayse.Hostpanel.Shared.Settings;
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Payment;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Payment;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -17,7 +17,8 @@ namespace Innovayse.Hostpanel.Application.Billing.Commands.StartGatewayPayment;
 /// <summary>
 /// Handles <see cref="StartGatewayPaymentCommand"/>: resolves the payment plugin,
 /// registers the payment (fresh per-attempt order number; the gateway rejects
-/// reused ones), stores the session on the invoice, and returns the redirect URL.
+/// reused ones), stores the session on the invoice, and returns the redirect URL. The gateway order of
+/// a session the new one replaces is cancelled through its plugin when the plugin can (<see cref="GatewayPaymentCanceller"/>).
 /// </summary>
 public sealed class StartGatewayPaymentHandler
 {
@@ -49,6 +50,9 @@ public sealed class StartGatewayPaymentHandler
     /// <summary>Wolverine bus, used to ask the Clients module whether the invoice's account may pay.</summary>
     private readonly IMessageBus _bus;
 
+    /// <summary>Voids the gateway order of the session this attempt replaces.</summary>
+    private readonly GatewayPaymentCanceller _canceller;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="pluginResolver">Resolves the configured payment plugin for a module id.</param>
@@ -56,13 +60,15 @@ public sealed class StartGatewayPaymentHandler
     /// <param name="logger">Structured logger.</param>
     /// <param name="clock">The clock the current moment is read from.</param>
     /// <param name="bus">Wolverine bus, used to ask the Clients module whether the invoice's account may pay.</param>
+    /// <param name="canceller">Voids the gateway order of the session this attempt replaces.</param>
     public StartGatewayPaymentHandler(
         IHostpanelDbContext context,
         IPaymentPluginResolver pluginResolver,
         IOptions<CorsOptions> returnUrlOptions,
         ILogger<StartGatewayPaymentHandler> logger,
         IClock clock,
-        IMessageBus bus)
+        IMessageBus bus,
+        GatewayPaymentCanceller canceller)
     {
         _context = context;
         _pluginResolver = pluginResolver;
@@ -70,6 +76,7 @@ public sealed class StartGatewayPaymentHandler
         _logger = logger;
         _clock = clock;
         _bus = bus;
+        _canceller = canceller;
     }
 
     /// <summary>Handles the command.</summary>
@@ -108,7 +115,7 @@ public sealed class StartGatewayPaymentHandler
             return Result<RedirectDto>.FailureCode(mayPay.ErrorCode!);
         }
 
-        if (!IsReturnUrlAllowed(cmd.ReturnUrl))
+        if (!ReturnUrlPolicy.IsAllowed(cmd.ReturnUrl, _returnUrlOptions.Value))
         {
             return Result<RedirectDto>.FailureCode(HostpanelErrorCodes.RETURN_URL_NOT_ALLOWED);
         }
@@ -160,8 +167,21 @@ public sealed class StartGatewayPaymentHandler
             return Result<RedirectDto>.FailureCode(HostpanelErrorCodes.PAYMENT_GATEWAY_SERVICE_UNAVAILABLE);
         }
 
+        // The session this attempt replaces is abandoned. Read before it is overwritten; a session that took money is a
+        // settled payment, not an abandoned one, so it is left alone.
+        var abandoned = invoice is { GatewayModule: { } previousModule, GatewayOrderId: { } previousOrderId }
+            && !invoice.WasPaidThrough(previousModule)
+                ? (Module: previousModule, OrderId: previousOrderId)
+                : ((string Module, string OrderId)?)null;
+
         invoice.SetGatewaySession(cmd.Module, session.GatewayOrderId, now);
         await _context.SaveChangesAsync(ct);
+
+        // After the new session is saved, so a plugin that cannot cancel never costs the payer the new attempt.
+        if (abandoned is { } old)
+        {
+            await _canceller.CancelAsync(old.Module, old.OrderId, invoice.Id, ct);
+        }
 
         return Result.Success(new RedirectDto(session.RedirectUrl));
     }
@@ -222,23 +242,5 @@ public sealed class StartGatewayPaymentHandler
         }
 
         return !isDeclined;
-    }
-
-    /// <summary>
-    /// Whether <paramref name="returnUrl"/>'s origin is one of the panel's configured CORS
-    /// origins, so a payer can never be handed off to an attacker-controlled domain.
-    /// </summary>
-    /// <param name="returnUrl">The absolute URL the payer will be redirected back to.</param>
-    /// <returns><see langword="true"/> when the URL is absolute and its origin is allowed.</returns>
-    private bool IsReturnUrlAllowed(string returnUrl)
-    {
-        if (!Uri.TryCreate(returnUrl, UriKind.Absolute, out var uri))
-        {
-            return false;
-        }
-
-        var origin = $"{uri.Scheme}://{uri.Authority}";
-        return _returnUrlOptions.Value.Origins.Any(o =>
-            string.Equals(o.TrimEnd('/'), origin, StringComparison.OrdinalIgnoreCase));
     }
 }

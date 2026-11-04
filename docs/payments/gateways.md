@@ -4,23 +4,22 @@ title: Payment gateways
 
 # Payment gateways <Label type="admin" />
 
-Hostpanel ships with three payment methods. No payment gateway is enabled by default; an operator enables each one after entering their credentials.
+Hostpanel ships with one payment method, bank transfer. Every online payment gateway comes from a plugin that you install. No payment gateway is enabled by default; an operator enables each one after entering their credentials.
 
-## What ships with Hostpanel
+## Payment methods
 
 | Method | How it works | When to use |
 |--------|-------------|-------------|
-| **Bundled card gateway** | Card form on the checkout page; the card number never reaches Hostpanel | Accepting debit and credit cards directly at checkout |
-| **Bundled bank gateway** | Plugin; the client is redirected to the bank's hosted card page | Card payments routed through a local bank gateway |
-| **Bank Transfer** | Offline; the client pays by bank transfer and staff record the payment manually | Markets where bank transfer is the norm, or as a fallback |
+| **Bank Transfer** | Built in; offline. The client pays by bank transfer and staff record the payment manually | Markets where bank transfer is the norm, or as a fallback |
+| **Gateway plugins** | Installed by the operator; the client is usually redirected to the gateway's hosted payment page | Accepting cards or local payment methods online |
 
 <Callout type="note">
-The gateway names shown in your admin panel depend on which plugins are installed. The bundled bank gateway ships as a plugin pre-installed in the server image; it does not appear in the Plugin Manager.
+The gateways shown in your admin panel depend on which plugins are installed. To accept online payments, install a payment gateway plugin from the Plugin Manager, then configure it on its integration page. See [Plugin manager](./plugins).
 </Callout>
 
 ## The Payment Gateways screen
 
-Go to **Integrations**, category **Payment Gateways**. Each method appears as a card showing:
+Go to **Integrations**, category **Payment Gateways**. Bank Transfer and each installed gateway appear as a card showing:
 
 - **Active** — configured and enabled
 - **Inactive** — configured but not enabled
@@ -62,32 +61,12 @@ Toggle **Enabled** on. The card on the Integrations page now shows **Active**.
 ## Gateway settings
 
 <Callout type="tip">
-Use the gateway's test mode or test address before switching to live. For the card gateway, set Mode to Test or Sandbox. For the bank gateway, point Gateway base URL at the bank's test address.
+Use the gateway's test mode or test address before switching to live. Each gateway plugin documents its own fields and test setup.
 </Callout>
 
-### Bundled card gateway
+### Gateway plugins
 
-| Key | Label | Type | Required | Notes |
-|-----|-------|------|----------|-------|
-| `secret_key` | Secret Key | Secret | Yes | Never shown again after saving |
-| `publishable_key` | Publishable Key | Text | Yes | Used by the client portal's card form |
-| `mode` | Mode | Select | No | Live or Test |
-
-The client portal's card form also needs `STRIPE_PUBLISHABLE_KEY` set in the deployment environment (see [Configuration reference](/operators/configuration)). This is the same key as `publishable_key` above.
-
-### Bundled bank gateway
-
-The bank gateway is installed as a plugin and configured on its integration page.
-
-| Key | Label | Type | Required | Notes |
-|-----|-------|------|----------|-------|
-| `gateway_url` | Gateway base URL | Text | Yes | e.g. `https://pg.example.am` — use the bank's test address to run test payments |
-| `username` | API Username | Text | Yes | |
-| `password` | API Password | Secret | Yes | |
-| `currency` | Currency (ISO 4217 numeric) | Text | No | Default: `051` |
-| `language` | Payment page language | Text | No | Default: `hy` |
-
-There is no test mode switch. Point `gateway_url` at the bank's test address to run test payments.
+An installed gateway plugin lists its own fields on its integration page. The form labels, required fields and the Test Connection button are defined by the plugin, so follow the plugin's own documentation for its settings.
 
 ### Bank Transfer
 
@@ -106,7 +85,7 @@ A gateway charges only in the currencies it supports. When a client tries to pay
 
 ## What customers see
 
-Clients choose their payment method on the checkout page ("Pay by card", "Pay by bank transfer") and on the invoice pay page. After a card payment they land on the payment result page. See the [client portal guide](/customers/portal) for the full flow.
+Clients choose their payment method on the checkout page (for example "Pay by bank transfer") and on the invoice pay page. After an online payment they land on the payment result page. See the [client portal guide](/customers/portal) for the full flow.
 
 ## Screens that are not built yet
 

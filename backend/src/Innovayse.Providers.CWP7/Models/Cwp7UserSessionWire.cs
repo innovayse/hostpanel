@@ -1,5 +1,5 @@
 using System.Text.Json.Serialization;
-using Innovayse.SDK.Plugins.HostingPanel;
+using Hostpanel.Sdk.Plugins.HostingPanel;
 
 namespace Innovayse.Providers.CWP7.Models;
 

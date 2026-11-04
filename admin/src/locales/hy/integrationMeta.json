@@ -1,31 +1,14 @@
 {
-  "stripe": {
-    "shortDescription": "Ընդունեք առցանց քարտային վճարումներ Stripe վճարային հարթակի միջոցով։",
-    "fieldSecretKey": "Գաղտնի բանալի",
-    "fieldPublishableKey": "Հրապարակային բանալի",
-    "fieldMode": "Ռեժիմ"
-  },
-  "paypal": {
-    "shortDescription": "Միացրեք PayPal վճարումը այն հաճախորդների համար, ովքեր նախընտրում են այդ եղանակը։",
-    "fieldClientSecret": "Հաճախորդի գաղտնիք"
-  },
   "bankTransfer": {
     "shortDescription": "Թույլ տվեք հաճախորդներին վճարել ուղիղ բանկային փոխանցմամբ՝ ձեր բանկային տվյալներով։",
     "fieldAccountName": "Հաշվի տիրոջ անուն",
     "fieldInstructions": "Վճարման հրահանգներ"
   },
-  "inecobank": {
-    "shortDescription": "Ընդունեք հայկական բանկային քարտեր Inecobank-ի տեղակայված վճարման էջի միջոցով։",
-    "fieldGateway_url": "Դարպասի բազային URL (օրինակ՝ https://gateway.example.com)",
-    "fieldUsername": "API օգտանուն",
-    "fieldPassword": "API գաղտնաբառ",
-    "fieldCurrency": "Արժույթ (ISO 4217 թվային կոդ, լռելյայն՝ 051)",
-    "fieldLanguage": "Վճարման էջի լեզու (լռելյայն՝ hy)"
-  },
   "namecheap": {
     "shortDescription": "Գրանցեք և կառավարեք դոմեյններ Namecheap-ի ռեսելլերային API-ի միջոցով։",
     "fieldApiKey": "API բանալի",
-    "fieldClientIp": "Սպիտակ ցուցակում գտնվող հաճախորդի IP"
+    "fieldClientIp": "Սպիտակ ցուցակում գտնվող հաճախորդի IP",
+    "fieldApiUsername": "API օգտանուն"
   },
   "nameam": {
     "shortDescription": "Գրանցեք և կառավարեք .am դոմեյններ Name.am գրանցողի API-ի միջոցով։",

@@ -4,10 +4,6 @@ export const PaymentGateway = {
   None: 'None',
   /** Paid by bank transfer. */
   BankTransfer: 'BankTransfer',
-  /** Paid through Stripe. */
-  Stripe: 'Stripe',
-  /** Paid through PayPal. */
-  PayPal: 'PayPal',
 } as const
 
 /** One of the payment gateways. */

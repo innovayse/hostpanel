@@ -22,11 +22,11 @@ const mountOption = (module: string, displayName: string, modelValue?: string) =
   })
 
 describe('GatewayOption', () => {
-  it('shows the display name with the card description for a card gateway', () => {
-    const wrapper = mountOption(PaymentModule.Inecobank, 'Bank Card (Inecobank)')
+  it('shows the display name of a plugin gateway without a description', () => {
+    const wrapper = mountOption('hosted_gateway', 'Hosted gateway')
 
-    expect(wrapper.text()).toContain('Bank Card (Inecobank)')
-    expect(wrapper.text()).toContain('checkout.gatewayKinds.card')
+    expect(wrapper.text()).toContain('Hosted gateway')
+    expect(wrapper.text()).not.toContain('checkout.gatewayKinds')
     expect(wrapper.find('[data-testid="ui-tile"]').exists()).toBe(true)
   })
 
@@ -44,30 +44,30 @@ describe('GatewayOption', () => {
   })
 
   it('marks the chosen gateway', () => {
-    const on = mountOption(PaymentModule.Stripe, 'Card', PaymentModule.Stripe)
-    const off = mountOption(PaymentModule.Stripe, 'Card', PaymentModule.BankTransfer)
+    const on = mountOption('hosted_gateway', 'Card', 'hosted_gateway')
+    const off = mountOption('hosted_gateway', 'Card', PaymentModule.BankTransfer)
 
     expect(on.find('[data-testid="gw-row"]').attributes('data-state')).toBe('checked')
     expect(off.find('[data-testid="gw-row"]').attributes('data-state')).toBe('unchecked')
   })
 
   it('reports the module of the gateway that was chosen', async () => {
-    const wrapper = mountOption(PaymentModule.Stripe, 'Card')
+    const wrapper = mountOption('hosted_gateway', 'Card')
 
     await wrapper.find('[data-testid="gw-row-input"]').setValue(true)
 
-    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([PaymentModule.Stripe])
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['hosted_gateway'])
   })
 
   it('can be chosen when it is not disabled', () => {
-    const wrapper = mountOption(PaymentModule.Stripe, 'Card')
+    const wrapper = mountOption('hosted_gateway', 'Card')
 
     expect(wrapper.find('[data-testid="gw-row-input"]').attributes('disabled')).toBeUndefined()
   })
 
   it('cannot be chosen when it is disabled', () => {
     const wrapper = mountWithKit(GatewayOption, {
-      props: { method: { module: PaymentModule.Stripe, displayName: 'Card' }, name: 'gw', disabled: true },
+      props: { method: { module: 'hosted_gateway', displayName: 'Card' }, name: 'gw', disabled: true },
       attrs: { testid: 'gw-row' },
     })
 

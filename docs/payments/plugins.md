@@ -15,7 +15,7 @@ root of the package.
 
 | Plugin | Production | Development |
 |---|---|---|
-| Shipped inside the server image (the Inecobank payment plugin is one) | loads, never checked | loads |
+| Shipped inside the server image | loads, never checked | loads |
 | Uploaded, signed by a trusted key | installs and loads | installs and loads |
 | Uploaded, unsigned, changed after signing, or signed by an unknown key | refused | installs and loads |
 
@@ -145,6 +145,7 @@ and `1.0.0+7` are the same version.
   audited ("Refused Plugin Downgrade"). Upload it again with the force option (`force=true` on
   `POST /api/admin/plugins/install`) to stage it anyway.
 - **Settings and stored data are kept** through an upgrade.
+- **Saved card customers are assumed to belong to the plugin id `stripe`.** The upgrade that introduced per-gateway customers copies earlier saved card customers to the new per-gateway table as customers of the plugin with the id `stripe`, because the only gateway that ever wrote them was that one. If your card gateway plugin uses another id, install the plugin as `stripe`, or rewrite `GatewayModuleId` in `GatewayCustomers` to your plugin id before clients pay with a saved card; otherwise those clients are asked for their card again.
 - **The same version** of a plugin that is not loaded (for example a refused one) replaces the installed files at once, as
   before, and still needs a restart to apply.
 
@@ -220,6 +221,7 @@ The API returns these error codes as the `type` field of the error response body
 | `PLUGIN_SDK_ASSEMBLY_OUTDATED` | 400 | The plugin was built against an older SDK assembly major version. Rebuild against the current SDK. |
 | `PLUGIN_ASSEMBLY_UNREADABLE` | 400 | The plugin assembly or another required file cannot be read. Upload the package again. |
 | `PLUGIN_HOST_ASSEMBLY_REFUSED` | 400 | The package includes an assembly the host already provides. Remove it from the ZIP. |
+| `PLUGIN_ASSEMBLY_CONFLICT` | 400 | The package includes an assembly whose file name another installed or staged plugin already ships. Rename it or remove the other plugin. |
 | `PLUGIN_ARCHIVE_TOO_LARGE` | 413 | The uploaded archive exceeds the size limit. |
 | `PLUGIN_ARCHIVE_UNSAFE` | 400 | The archive contains unsafe entries (for example path traversal). |
 | `PLUGIN_PERMISSION_UNKNOWN` | 400 | A permission declared in the manifest does not exist. |

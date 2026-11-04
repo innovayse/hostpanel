@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using Innovayse.SDK.Plugins.Identity;
+using Hostpanel.Sdk.Plugins.Identity;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 

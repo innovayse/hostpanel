@@ -11,7 +11,7 @@
  * Playwright starts it as the first `webServer` entry (see `playwright.config.ts`); the Nuxt
  * server is started with `API_URL` pointing here.
  *
- * Besides the backend routes it exposes six test-only endpoints:
+ * Besides the backend routes it exposes seven test-only endpoints:
  * - `GET  /__e2e/requests`: every request received so far (method, path, body and the
  *   `X-Language` it carried), so a spec can assert that a form submission really reached the
  *   backend with the right body and in the right language;
@@ -27,9 +27,11 @@
  *   so only the spec for the verification banner turns it off, until the next reset;
  * - `POST /__e2e/account`: overrides fields of the signed-in person's account (`GET /api/auth/me`), such as
  *   `clientPermissions` or `clientId`, so a spec can sign in a member without a permission or a first-time buyer, until the next reset;
+ * - `POST /__e2e/gateways`: adds the hosted card gateway to the gateway list (`GET /api/payment-methods`); only bank
+ *   transfer is offered by default, so only the specs for the saved methods and the invoice payment turn it on, until the next reset;
  * - `POST /__e2e/reset`: clears the log, the scripted answers, the settings overrides, demo mode and
  *   everything a spec changed: tickets, profile, services, the domain, payment methods, contacts,
- *   the team and the two-factor flag.
+ *   the team, the saved payment methods, the hosted gateway and the two-factor flag.
  *
  * Anything it does not know answers 404 with a problem+json body, exactly as the real API
  * does for an unknown route, so a missing fixture shows up as a visible failure and not as a
@@ -66,7 +68,13 @@ import {
   GATEWAY_DECLINED_INVOICE,
   GATEWAY_METHODS,
   GATEWAY_PAID_INVOICE,
+  GATEWAY_PAGE_URL,
   GATEWAY_PENDING_INVOICE,
+  HOSTED_GATEWAY,
+  STORED_CARD_DEFAULT,
+  STORED_CARD_NEW,
+  STORED_CARD_OTHER,
+  STORED_SESSION_ID,
   INVOICE,
   KB_ARTICLES,
   ORDER,
@@ -74,7 +82,6 @@ import {
   HOSTING_SPECIFICATIONS,
   productsIn,
   PUBLIC_SETTINGS,
-  SAVED_CARD,
   SEEDED_CONTACT,
   SEEDED_TICKET,
   SEEDED_TICKET_THREAD,
@@ -160,6 +167,19 @@ let account = { ...ACCOUNT }
 /** Whether the stub reports a demo; off by default, a spec turns it on, a reset turns it off. */
 let demoEnabled = false
 
+/** Whether the gateway list also offers the hosted card gateway; off by default, a spec turns it on, a reset turns it off. */
+let hostedGatewayEnabled = false
+
+/**
+ * Builds the saved payment methods the stub starts with, so a reset can restore them.
+ *
+ * @returns {Record<string, unknown>[]} A fresh list: a default card and a second card.
+ */
+const seedStoredMethods = () => [{ ...STORED_CARD_DEFAULT }, { ...STORED_CARD_OTHER }]
+
+/** @type {Record<string, unknown>[]} The client's saved payment methods; a save, a revoke or a default change edits it, a reset restores it. */
+let storedMethods = seedStoredMethods()
+
 /** Whether the stub serves home-page slides; off by default, a spec turns it on, a reset turns it off. */
 let slidesEnabled = false
 
@@ -199,9 +219,6 @@ let nameservers = seedNameservers()
  * @returns {Record<string, unknown>} The domain.
  */
 const domainView = () => ({ ...domainState, management: { ...DOMAIN.management, nameservers } })
-
-/** @type {Record<string, unknown>[]} The saved payment methods; a removal changes them, a reset restores them. */
-let savedCards = [{ ...SAVED_CARD }]
 
 /** @type {Record<string, unknown>[]} The account's contacts; an add, an edit and a removal change them. */
 let contacts = [{ ...SEEDED_CONTACT }]
@@ -399,7 +416,7 @@ const route = (method, path, body, res, query = new URLSearchParams()) => {
     return true
   }
   if (isGet && path === '/api/payment-methods') {
-    send(res, 200, GATEWAY_METHODS)
+    send(res, 200, hostedGatewayEnabled ? [...GATEWAY_METHODS, HOSTED_GATEWAY] : GATEWAY_METHODS)
     return true
   }
 
@@ -592,10 +609,6 @@ const route = (method, path, body, res, query = new URLSearchParams()) => {
     send(res, 200, INVOICE)
     return true
   }
-  if (isGet && path === '/api/me/payment-methods') {
-    send(res, 200, savedCards)
-    return true
-  }
   // Hosted-gateway return: the invoice id picks the outcome (an unknown id is a 404, so the page cannot tell); the state is spelled as the API sends its enum.
   const gatewayMatch = path.match(/^\/api\/me\/invoices\/(\d+)\/gateway-payment\/complete$/)
   if (method === 'POST' && gatewayMatch) {
@@ -607,15 +620,20 @@ const route = (method, path, body, res, query = new URLSearchParams()) => {
     }
     return true
   }
+  // Hosted-gateway start: the stub answers the address of the bank's page; the id of an unknown invoice is a 404.
+  const gatewayStartMatch = path.match(/^\/api\/me\/invoices\/(\d+)\/gateway-payment\/start$/)
+  if (method === 'POST' && gatewayStartMatch) {
+    if (gatewayStartMatch[1] === String(INVOICE.id)) {
+      send(res, 200, { redirectUrl: GATEWAY_PAGE_URL })
+    } else {
+      sendProblem(res, 404, 'NOT_FOUND', 'Invoice not found.')
+    }
+    return true
+  }
   if (method === 'POST' && path === '/api/auth/accept-invite') {
     send(res, 200, { success: true })
     return true
   }
-  if (method === 'POST' && path === `/api/me/invoices/${INVOICE.id}/pay`) {
-    send(res, 200, { success: true })
-    return true
-  }
-
   // Order placement: the order, its invoice and the token that proves the order is the caller's.
   if (method === 'POST' && path === '/api/orders') {
     send(res, 200, ORDER)
@@ -627,7 +645,7 @@ const route = (method, path, body, res, query = new URLSearchParams()) => {
 
 /**
  * Answers the routes of the client area's management screens: one service, one domain, the
- * account's payment methods, contacts, team and two-factor.
+ * account's contacts, team and two-factor.
  *
  * @param {string} method HTTP method.
  * @param {string} path Request path without the query string.
@@ -774,20 +792,6 @@ const routeManagement = (method, path, body, res) => {
     }
   }
 
-  // Saved payment methods: set the default, remove.
-  const cardMatch = path.match(/^\/api\/me\/payment-methods\/([^/]+)$/)
-  if (cardMatch && (method === 'PUT' || method === 'DELETE')) {
-    if (!savedCards.some((card) => card.id === cardMatch[1])) {
-      sendProblem(res, 404, 'NOT_FOUND', 'Payment method not found.')
-      return true
-    }
-    if (method === 'DELETE') {
-      savedCards = savedCards.filter((card) => card.id !== cardMatch[1])
-    }
-    send(res, 204)
-    return true
-  }
-
   // Contacts of the account, kept in memory so an add, an edit and a removal show on the next read.
   if (isGet && path === '/api/clients/me/contacts') {
     send(res, 200, contacts)
@@ -837,6 +841,41 @@ const routeManagement = (method, path, body, res) => {
     return true
   }
 
+  // Saved payment methods: list, open a save session (a redirect to the gateway), complete it on return,
+  // make one the default and withdraw the consent.
+  if (isGet && path === '/api/me/stored-payment-methods') {
+    send(res, 200, storedMethods)
+    return true
+  }
+  if (method === 'POST' && path === '/api/me/stored-payment-methods/sessions') {
+    send(res, 200, { sessionId: STORED_SESSION_ID, mode: 'Redirect', clientToken: null, redirectUrl: GATEWAY_PAGE_URL })
+    return true
+  }
+  const completeMatch = path.match(/^\/api\/me\/stored-payment-methods\/sessions\/([^/]+)\/complete$/)
+  if (method === 'POST' && completeMatch) {
+    if (completeMatch[1] !== STORED_SESSION_ID) {
+      sendProblem(res, 404, 'NOT_FOUND', 'No such save session.')
+      return true
+    }
+    if (!storedMethods.some((m) => m.consentId === STORED_CARD_NEW.consentId)) {
+      storedMethods = [...storedMethods, { ...STORED_CARD_NEW }]
+    }
+    send(res, 200, STORED_CARD_NEW)
+    return true
+  }
+  const defaultMatch = path.match(/^\/api\/me\/stored-payment-methods\/consents\/(\d+)\/default$/)
+  if (method === 'POST' && defaultMatch) {
+    storedMethods = storedMethods.map((m) => ({ ...m, isDefault: String(m.consentId) === defaultMatch[1] }))
+    send(res, 204)
+    return true
+  }
+  const consentMatch = path.match(/^\/api\/me\/stored-payment-methods\/consents\/(\d+)$/)
+  if (method === 'DELETE' && consentMatch) {
+    storedMethods = storedMethods.filter((m) => String(m.consentId) !== consentMatch[1])
+    send(res, 204)
+    return true
+  }
+
   // Two-factor: enrolment, then the flag on the profile follows the accepted code.
   if (method === 'POST' && path === '/api/me/2fa/setup') {
     send(res, 200, { secret: TWO_FACTOR.secret, qrCodeUri: TWO_FACTOR.qrCodeUri })
@@ -883,6 +922,8 @@ const server = createServer(async (req, res) => {
     scripted.clear()
     settingOverrides.clear()
     demoEnabled = false
+    hostedGatewayEnabled = false
+    storedMethods = seedStoredMethods()
     slidesEnabled = false
     account = { ...ACCOUNT }
     emailVerified = true
@@ -891,7 +932,6 @@ const server = createServer(async (req, res) => {
     services = seedServices()
     domainState = { ...DOMAIN }
     nameservers = seedNameservers()
-    savedCards = [{ ...SAVED_CARD }]
     contacts = [{ ...SEEDED_CONTACT }]
     team = [{ ...TEAM_OWNER }, { ...TEAM_MEMBER }]
     sshKeys = []
@@ -920,6 +960,12 @@ const server = createServer(async (req, res) => {
   if (path === '/__e2e/demo') {
     const demo = await readJson(req)
     demoEnabled = demo.enabled === true
+    send(res, 204)
+    return
+  }
+  if (path === '/__e2e/gateways') {
+    const gateways = await readJson(req)
+    hostedGatewayEnabled = gateways.hosted === true
     send(res, 204)
     return
   }

@@ -1,5 +1,6 @@
 using System.Text;
-using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
+using Hostpanel.Sdk.Packaging.Enums;
+using Hostpanel.Sdk.Packaging.Signing;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;

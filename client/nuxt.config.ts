@@ -194,10 +194,6 @@ export default defineNuxtConfig({
       // deployed container overrides this through NUXT_PUBLIC_BILLING_PORTAL_URL, which Nitro
       // substitutes verbatim, so that value must carry no trailing slash of its own.
       billingPortalUrl: (process.env.BILLING_PORTAL_URL || '').replace(/\/+$/, ''),
-      // Stripe.js's publishable key, read by useStripe(). Public by design; the
-      // secret key is the backend's. Overridden at runtime with
-      // NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: empty leaves the card form uninitialised.
-      stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
       mainUrl: process.env.NUXT_PUBLIC_MAIN_URL || '',
       // Active portal template when the operator's portal.template setting is empty. Empty here
       // (and anything unknown) resolves to DEFAULT_TEMPLATE in templates/types.ts, the one default.

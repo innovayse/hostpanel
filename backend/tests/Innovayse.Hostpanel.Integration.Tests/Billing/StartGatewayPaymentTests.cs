@@ -4,7 +4,7 @@ using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
-using Innovayse.SDK.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Enums;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;

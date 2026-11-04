@@ -63,10 +63,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="SetAsDefaultMustBeTrue" xml:space="preserve">
-    <value>Данные карты изменить нельзя. Удалите её и добавьте новую.</value>
-    <comment>SetDefaultPaymentMethodValidator. The only update this endpoint accepts is making a card the default.</comment>
-  </data>
   <data name="ContactEmailInvalid" xml:space="preserve">
     <value>Укажите корректный адрес электронной почты.</value>
     <comment>SendContactMessageHandler.</comment>
@@ -536,9 +532,6 @@
   <data name="PaymentMethodRequired" xml:space="preserve">
     <value>Выберите способ оплаты.</value>
   </data>
-  <data name="PaymentAttemptRequired" xml:space="preserve">
-    <value>Начните оплату заново.</value>
-  </data>
   <data name="PlaceOrderItemsRequired" xml:space="preserve">
     <value>Добавьте в заказ хотя бы один товар.</value>
   </data>
@@ -566,14 +559,14 @@
   <data name="GatewayModuleRequired" xml:space="preserve">
     <value>Выберите платёжный шлюз.</value>
   </data>
+  <data name="ConsentTextVersionInvalid" xml:space="preserve">
+    <value>Версия текста согласия обязательна, не более {0} символов.</value>
+  </data>
   <data name="ReturnUrlRequired" xml:space="preserve">
     <value>Необходим адрес возврата.</value>
   </data>
   <data name="ReturnUrlInvalid" xml:space="preserve">
     <value>Адрес возврата должен быть абсолютным адресом http или https.</value>
-  </data>
-  <data name="PaymentIntentIdRequired" xml:space="preserve">
-    <value>Необходим идентификатор платёжного намерения.</value>
   </data>
   <data name="InvitationTokenRequired" xml:space="preserve">
     <value>Необходим токен приглашения.</value>
@@ -1295,9 +1288,6 @@
   <data name="InvoiceStatusInvalid" xml:space="preserve">
     <value>Статус должен быть одним из известных статусов счёта.</value>
   </data>
-  <data name="PaymentMethodIdRequired" xml:space="preserve">
-    <value>Укажите сохранённый способ оплаты.</value>
-  </data>
   <data name="ClientNewEmailInvalid" xml:space="preserve">
     <value>Укажите корректный новый адрес электронной почты.</value>
   </data>
@@ -1381,5 +1371,32 @@
   </data>
   <data name="IntegrationFieldExpectValue" xml:space="preserve">
     <value>непустое значение</value>
+  </data>
+  <data name="CardConsentRequired" xml:space="preserve">
+    <value>Подтвердите согласие на списания с сохранённого способа оплаты по вашим счетам.</value>
+  </data>
+  <data name="StoredChargeSessionIdRequired" xml:space="preserve">
+    <value>Укажите сеанс сохранения.</value>
+  </data>
+  <data name="CardConsentIdInvalid" xml:space="preserve">
+    <value>Укажите согласие.</value>
+  </data>
+  <data name="StoredChargeInvalid" xml:space="preserve">
+    <value>Укажите списание и чем оно закончилось.</value>
+  </data>
+  <data name="InvoicePaymentClaimStatusInvalid" xml:space="preserve">
+    <value>Статус должен быть одним из известных статусов платёжной заявки.</value>
+  </data>
+  <data name="PluginVersionRequired" xml:space="preserve">
+    <value>Версия плагина обязательна.</value>
+  </data>
+  <data name="PluginVersionInvalid" xml:space="preserve">
+    <value>Версия плагина должна быть семантической, например 1.2.3.</value>
+  </data>
+  <data name="PluginRegistrySearchTooLong" xml:space="preserve">
+    <value>Текст поиска может содержать не более 100 символов.</value>
+  </data>
+  <data name="PluginRegistryCategoryInvalid" xml:space="preserve">
+    <value>Выберите допустимую категорию.</value>
   </data>
 </root>

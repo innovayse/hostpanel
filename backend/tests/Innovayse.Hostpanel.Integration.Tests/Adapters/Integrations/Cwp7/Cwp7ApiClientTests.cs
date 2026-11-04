@@ -3,7 +3,7 @@ using Innovayse.Hostpanel.Domain.Provisioning;
 using Innovayse.Hostpanel.Domain.Provisioning.Enums;
 using Innovayse.Providers.CWP7;
 using Innovayse.Providers.CWP7.Models;
-using Innovayse.SDK.Plugins.HostingPanel;
+using Hostpanel.Sdk.Plugins.HostingPanel;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Integrations.Cwp7;

@@ -81,7 +81,7 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
         {
             var registry = new FakePluginRegistry();
             registry.AddRefused(new RefusedPlugin(refusedId, PluginManifestRule.RoutePathInvalid, "routes[0].path: 'Bad'", false));
-            registry.Add(PluginActivationTestSeeds.Plugin(loadedId, Innovayse.SDK.Plugins.Enums.PluginType.App, typeof(object)).Manifest);
+            registry.Add(PluginActivationTestSeeds.Plugin(loadedId, global::Hostpanel.Sdk.Plugins.Enums.PluginType.App, typeof(object)).Manifest);
 
             var rows = await NewHandler(registry).HandleAsync(new ListPluginsQuery(), CancellationToken.None);
 
@@ -101,6 +101,35 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
         {
             await client.DeleteAsync($"/api/admin/plugins/{refusedId}");
             await client.DeleteAsync($"/api/admin/plugins/{loadedId}");
+        }
+    }
+
+    /// <summary>A loaded plugin that ships an icon carries the icon endpoint as <c>iconUrl</c>; one without, and a refused row, carry null.</summary>
+    [Fact]
+    public async Task IconUrl_IsSetOnlyForALoadedPluginWithAnIconAsync()
+    {
+        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var withIconId = $"test-icon-{Guid.NewGuid():N}";
+        var plainId = $"test-plain-{Guid.NewGuid():N}";
+        (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildValidPluginZip(withIconId))).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildValidPluginZip(plainId))).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        try
+        {
+            var registry = new FakePluginRegistry();
+            registry.Add(PluginActivationTestSeeds.Plugin(withIconId, global::Hostpanel.Sdk.Plugins.Enums.PluginType.App, typeof(object)).Manifest);
+            registry.Add(PluginActivationTestSeeds.Plugin(plainId, global::Hostpanel.Sdk.Plugins.Enums.PluginType.App, typeof(object)).Manifest);
+            registry.AddIcon(withIconId, new PluginIconDto("image/png", [1, 2, 3], "\"t\""));
+
+            var rows = await NewHandler(registry).HandleAsync(new ListPluginsQuery(), CancellationToken.None);
+
+            rows.Value!.Single(r => r.Id == withIconId).IconUrl.Should().Be($"/api/admin/plugins/{withIconId}/icon");
+            rows.Value!.Single(r => r.Id == plainId).IconUrl.Should().BeNull();
+        }
+        finally
+        {
+            await client.DeleteAsync($"/api/admin/plugins/{withIconId}");
+            await client.DeleteAsync($"/api/admin/plugins/{plainId}");
         }
     }
 

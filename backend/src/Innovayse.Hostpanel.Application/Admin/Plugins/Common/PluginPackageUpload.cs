@@ -10,4 +10,8 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 /// Whether the operator accepts an upload older than the installed version. Without it a downgrade is refused with
 /// <see cref="Enums.PluginPackageOutcome.DowngradeRefused"/>.
 /// </param>
-public sealed record PluginPackageUpload(Stream Content, bool AllowUnsigned, bool ForceDowngrade = false);
+/// <param name="RequireSignature">
+/// Whether the package must carry a valid signature by a trusted key even on a host that does not enforce signatures
+/// (Development, Testing). A package fetched from the plugin registry always sets it; an upload by hand does not.
+/// </param>
+public sealed record PluginPackageUpload(Stream Content, bool AllowUnsigned, bool ForceDowngrade = false, bool RequireSignature = false);

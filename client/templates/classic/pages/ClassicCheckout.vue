@@ -180,20 +180,6 @@
                   muted-class="text-classic-muted"
                 />
               </UiGrid>
-
-              <!-- Card form -->
-              <Transition
-                enter-active-class="transition-all duration-300"
-                enter-from-class="opacity-0 max-h-0"
-                enter-to-class="opacity-100 max-h-40"
-                leave-active-class="transition-all duration-300"
-                leave-from-class="opacity-100 max-h-40"
-                leave-to-class="opacity-0 max-h-0"
-              >
-                <UiStack v-if="mayPlaceOrders && selectedMethod === PaymentModule.Stripe" gap="none" class="mt-6 overflow-hidden" data-testid="checkout-card-form">
-                  <CheckoutStripeCardForm ref="stripeCardFormRef" />
-                </UiStack>
-              </Transition>
             </UiCard>
           </UiStack>
 
@@ -314,7 +300,6 @@ import {
   Lock, ShieldCheck, Info, Receipt, HelpCircle
 } from 'lucide-vue-next'
 import { CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
-import { PaymentModule } from '~/types/paymentmodule'
 import { UiHeadingLevel } from '~/utils/ui/enums'
 import { useCheckoutPage } from '~/composables/useCheckoutPage'
 
@@ -340,7 +325,6 @@ const {
   userEmail,
   handleLogout,
   form,
-  stripeCardFormRef,
   submitOrder
 } = await useCheckoutPage()
 </script>

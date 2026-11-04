@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Shared.Models;
-using Innovayse.SDK.Plugins.Endpoints;
+using Hostpanel.Sdk.Plugins.Endpoints;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Plugins;

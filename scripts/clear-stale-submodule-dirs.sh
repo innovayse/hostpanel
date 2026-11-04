@@ -3,7 +3,7 @@
 # Removes, from a long-lived checkout, any directory that sits where .gitmodules now declares a
 # submodule but is not a git checkout itself.
 #
-# A path that was an ordinary folder and became a submodule (backend/src/Innovayse.SDK) is left
+# A path that was an ordinary folder and became a submodule (backend/src/Hostpanel.Sdk) is left
 # behind by `git checkout` on a deploy host: its build output (bin/, obj/) is untracked, so the folder
 # survives, and `git submodule update` then refuses to clone into it ("already exists and is not an
 # empty directory"). Only such a folder is removed; a submodule already checked out has a .git entry

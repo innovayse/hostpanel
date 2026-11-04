@@ -9,10 +9,10 @@ describe('OrderFact', () => {
   it('renders the caption and the slotted value', () => {
     const wrapper = mount(OrderFact, {
       props: { label: 'Payment Method' },
-      slots: { default: '<span data-testid="value">PayPal</span>' },
+      slots: { default: '<span data-testid="value">Example Gateway</span>' },
     })
 
     expect(wrapper.text()).toContain('Payment Method')
-    expect(wrapper.get('[data-testid="value"]').text()).toBe('PayPal')
+    expect(wrapper.get('[data-testid="value"]').text()).toBe('Example Gateway')
   })
 })

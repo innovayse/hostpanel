@@ -234,10 +234,13 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     /// <summary>An archive carrying an assembly the host provides is refused with <c>PLUGIN_HOST_ASSEMBLY_REFUSED</c>.</summary>
     /// <param name="assemblyFile">The offending entry's file name.</param>
     [Theory]
+    [InlineData("Hostpanel.Sdk.dll")]
     [InlineData("Innovayse.SDK.dll")]
     [InlineData("lib/Innovayse.Hostpanel.Domain.dll")]
     [InlineData("System.Text.Json.dll")]
     [InlineData("Microsoft.Extensions.Logging.Abstractions.dll")]
+    [InlineData("Innovayse.Hostpanel.Plugins.dll")]
+    [InlineData("Innovayse.Hostpanel.PluginsX.dll")]
     public async Task AnArchiveCarryingAHostAssembly_RefusesAsync(string assemblyFile)
     {
         var client = await PluginsTestSeeds.AdminClientAsync(factory);
@@ -250,6 +253,101 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_HOST_ASSEMBLY_REFUSED);
         Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+    }
+
+    /// <summary>
+    /// An assembly under the <c>Innovayse.Hostpanel.Plugins.</c> plugin namespace is not a host assembly: the package
+    /// is not refused for it, and its sibling in the host namespace still is.
+    /// </summary>
+    [Fact]
+    public async Task AnArchiveCarryingAPluginNamespaceAssembly_IsNotRefusedAsAHostAssemblyAsync()
+    {
+        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var pluginId = $"test-plugin-{Guid.NewGuid():N}";
+        var zip = PluginsTestSeeds.BuildValidPluginZip(
+            pluginId, new Dictionary<string, string> { ["Innovayse.Hostpanel.Plugins.Example.dll"] = "not really an assembly" });
+
+        try
+        {
+            var response = await PluginsTestSeeds.InstallAsync(client, zip);
+
+            // Whatever else the fake DLL meets later, it is not the host-assembly refusal.
+            (await response.Content.ReadAsStringAsync()).Should().NotContain(HostpanelErrorCodes.PLUGIN_HOST_ASSEMBLY_REFUSED);
+        }
+        finally
+        {
+            await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
+        }
+    }
+
+    /// <summary>
+    /// An archive whose assembly file name (in any case) is already shipped by another installed plugin is refused with
+    /// 400 <c>PLUGIN_ASSEMBLY_CONFLICT</c> and nothing is installed.
+    /// </summary>
+    /// <param name="installedName">The file name the other plugin ships.</param>
+    /// <param name="uploadedName">The file name the upload carries.</param>
+    [Theory]
+    [InlineData("Conflict.Lib.dll", "Conflict.Lib.dll")]
+    [InlineData("Conflict.Lib.dll", "CONFLICT.LIB.DLL")]
+    public async Task AnAssemblyNameShippedByAnotherPlugin_RefusesAsync(string installedName, string uploadedName)
+    {
+        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var otherId = $"test-plugin-{Guid.NewGuid():N}";
+        var pluginId = $"test-plugin-{Guid.NewGuid():N}";
+        Directory.CreateDirectory(PluginsTestSeeds.InstalledFolder(otherId));
+        await File.WriteAllTextAsync(Path.Combine(PluginsTestSeeds.InstalledFolder(otherId), installedName), "not really an assembly");
+
+        try
+        {
+            var zip = PluginsTestSeeds.BuildValidPluginZip(
+                pluginId, new Dictionary<string, string> { [uploadedName] = "not really an assembly" });
+
+            var response = await PluginsTestSeeds.InstallAsync(client, zip);
+
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_ASSEMBLY_CONFLICT);
+            Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        }
+        finally
+        {
+            Directory.Delete(PluginsTestSeeds.InstalledFolder(otherId), recursive: true);
+        }
+    }
+
+    /// <summary>
+    /// An upload for the plugin id that already ships the same assembly file name (an upgrade), and an upload with a
+    /// distinct assembly name, are not refused as an assembly conflict.
+    /// </summary>
+    /// <param name="sameId">Whether the installed folder with the same file name belongs to the uploaded plugin's own id.</param>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task OwnFolderOrDistinctName_IsNotAnAssemblyConflictAsync(bool sameId)
+    {
+        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var otherId = $"test-plugin-{Guid.NewGuid():N}";
+        var pluginId = sameId ? otherId : $"test-plugin-{Guid.NewGuid():N}";
+        Directory.CreateDirectory(PluginsTestSeeds.InstalledFolder(otherId));
+        await File.WriteAllTextAsync(Path.Combine(PluginsTestSeeds.InstalledFolder(otherId), "Conflict.Lib.dll"), "not really an assembly");
+
+        try
+        {
+            var zip = PluginsTestSeeds.BuildValidPluginZip(
+                pluginId, new Dictionary<string, string> { [sameId ? "Conflict.Lib.dll" : "Distinct.Lib.dll"] = "not really an assembly" });
+
+            var response = await PluginsTestSeeds.InstallAsync(client, zip);
+
+            // Whatever else the fake DLL meets later, it is not the assembly conflict.
+            (await response.Content.ReadAsStringAsync()).Should().NotContain(HostpanelErrorCodes.PLUGIN_ASSEMBLY_CONFLICT);
+        }
+        finally
+        {
+            Directory.Delete(PluginsTestSeeds.InstalledFolder(otherId), recursive: true);
+            if (!sameId && Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)))
+            {
+                Directory.Delete(PluginsTestSeeds.InstalledFolder(pluginId), recursive: true);
+            }
+        }
     }
 
     /// <summary>An archive with more entries than <c>Plugins:MaxEntryCount</c> is refused with 413.</summary>
@@ -284,6 +382,91 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
         response.StatusCode.Should().Be(HttpStatusCode.RequestEntityTooLarge);
         await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_ARCHIVE_TOO_LARGE);
         Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+    }
+
+    /// <summary>
+    /// An archive whose headers understate an entry's size is still stopped by the real byte count while unpacking
+    /// (<c>PluginArchiveGuard.Extract</c>), because the declared size is only what the archive claims.
+    /// </summary>
+    [Fact]
+    public async Task AnEntryLyingAboutItsSize_RefusesOnTheRealBytesAsync()
+    {
+        var host = factory.WithWebHostBuilder(builder => builder.UseSetting("Plugins:MaxUncompressedBytes", "4096"));
+        var client = await PluginsTestSeeds.AdminClientAsync(factory, host);
+        var pluginId = $"test-plugin-{Guid.NewGuid():N}";
+        var zip = PluginsTestSeeds.BuildValidPluginZip(
+            pluginId, new Dictionary<string, string> { ["big.txt"] = new string('x', 64 * 1024) });
+        UnderstateDeclaredSize(zip, "big.txt", 16);
+
+        var response = await PluginsTestSeeds.InstallAsync(client, zip);
+
+        response.StatusCode.Should().Be(HttpStatusCode.RequestEntityTooLarge);
+        await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_ARCHIVE_TOO_LARGE);
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+    }
+
+    /// <summary>
+    /// An entry that resolves to a sibling of the unpack folder whose name differs only in case is refused with
+    /// <c>PLUGIN_ARCHIVE_UNSAFE</c>: the containment check is exact, not case-insensitive.
+    /// </summary>
+    [Fact]
+    public async Task AnEntryReachingACaseDifferentSiblingFolder_RefusesAsync()
+    {
+        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var pluginId = $"test-plugin-{Guid.NewGuid():N}";
+        var zip = PluginsTestSeeds.BuildValidPluginZip(
+            pluginId, new Dictionary<string, string> { ["../Content/evil.txt"] = "escaped" });
+
+        var response = await PluginsTestSeeds.InstallAsync(client, zip);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_ARCHIVE_UNSAFE);
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+    }
+
+    /// <summary>
+    /// An archive holding a file and a folder of one name cannot be unpacked and is refused with
+    /// <c>PLUGIN_ARCHIVE_UNWRITABLE</c>, nothing is left behind.
+    /// </summary>
+    [Fact]
+    public async Task AFileAndAFolderOfOneName_RefusesAsUnwritableAsync()
+    {
+        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var pluginId = $"test-plugin-{Guid.NewGuid():N}";
+        var zip = PluginsTestSeeds.BuildValidPluginZip(
+            pluginId, new Dictionary<string, string> { ["lib"] = "a file", ["lib/inner.txt"] = "under the same name" });
+
+        var response = await PluginsTestSeeds.InstallAsync(client, zip);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_ARCHIVE_UNWRITABLE);
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+    }
+
+    /// <summary>Rewrites the uncompressed size one entry declares in the archive's central directory, leaving its data as it was.</summary>
+    /// <param name="zip">The archive bytes, changed in place.</param>
+    /// <param name="entryName">The entry whose declared size is understated.</param>
+    /// <param name="declaredSize">The size to declare.</param>
+    private static void UnderstateDeclaredSize(byte[] zip, string entryName, uint declaredSize)
+    {
+        var name = System.Text.Encoding.UTF8.GetBytes(entryName);
+        for (var i = 0; i + 46 <= zip.Length; i++)
+        {
+            // Central directory file header signature, then the name length at offset 28 and the size at offset 24.
+            if (zip[i] != 0x50 || zip[i + 1] != 0x4b || zip[i + 2] != 0x01 || zip[i + 3] != 0x02)
+            {
+                continue;
+            }
+
+            var nameLength = BitConverter.ToUInt16(zip, i + 28);
+            if (nameLength == name.Length && zip.AsSpan(i + 46, nameLength).SequenceEqual(name))
+            {
+                BitConverter.GetBytes(declaredSize).CopyTo(zip, i + 24);
+                return;
+            }
+        }
+
+        throw new InvalidOperationException($"The central directory has no entry named {entryName}.");
     }
 
     /// <summary>

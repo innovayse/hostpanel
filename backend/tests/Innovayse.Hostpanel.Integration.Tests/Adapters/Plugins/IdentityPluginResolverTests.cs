@@ -2,7 +2,7 @@ using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
-using Innovayse.SDK.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Enums;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;

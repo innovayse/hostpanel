@@ -29,6 +29,30 @@ public sealed class CancelInvoiceTests(IntegrationTestFactory factory) : IClassF
         body.RootElement.GetProperty("status").GetString().Should().Be(nameof(InvoiceStatus.Cancelled));
     }
 
+    /// <summary>
+    /// An invoice with a stored card charge waiting for the payer or the gateway is not cancelled: the charge could still
+    /// take money, so the refusal is a 409 with <c>INVOICE_STORED_CHARGE_UNRESOLVED</c> and the invoice stays open.
+    /// </summary>
+    /// <param name="pending"><see langword="true"/> for a pending charge, <see langword="false"/> for an action required one.</param>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task CancellingAnInvoiceWithAnUnfinishedStoredChargeRefusesConflict(bool pending)
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
+        var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
+        await BillingTestSeeds.SeedUnresolvedClaimAsync(factory, invoiceId, clientId, pending);
+
+        var response = await admin.PostAsync($"/api/billing/{invoiceId}/cancel", content: null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.INVOICE_STORED_CHARGE_UNRESOLVED);
+        var fetched = await admin.GetAsync($"/api/billing/{invoiceId}");
+        using var body = JsonDocument.Parse(await fetched.Content.ReadAsStringAsync());
+        body.RootElement.GetProperty("status").GetString().Should().NotBe(nameof(InvoiceStatus.Cancelled));
+    }
+
     /// <summary>Cancelling a paid invoice is refused with a 400.</summary>
     [Fact]
     public async Task CancellingAPaidInvoiceRefusesBadRequest()

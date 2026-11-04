@@ -126,32 +126,17 @@
 <data name="GATEWAY_SESSION_NOT_FOUND" xml:space="preserve">
     <value>У этого счёта нет платёжной сессии для проверки.</value>
   </data>
-<data name="PAYMENT_METHOD_NOT_OWNED" xml:space="preserve">
-    <value>Этот способ оплаты не принадлежит этому аккаунту.</value>
-  </data>
-<data name="PAYMENT_METHOD_UNAVAILABLE" xml:space="preserve">
-    <value>Оплата картой недоступна, так как платёжный шлюз для карт не настроен.</value>
-  </data>
 <data name="NO_SAVED_PAYMENT_METHODS" xml:space="preserve">
     <value>У этого аккаунта нет сохранённых способов оплаты.</value>
   </data>
 <data name="RETURN_URL_NOT_ALLOWED" xml:space="preserve">
     <value>Этот адрес возврата не разрешён для данного развёртывания.</value>
   </data>
-<data name="GATEWAY_CHARGE_UPSTREAM_FAILED" xml:space="preserve">
-    <value>Платёжный шлюз отклонил списание средств.</value>
-  </data>
   <data name="PAYMENT_GATEWAY_SERVICE_UNAVAILABLE" xml:space="preserve">
     <value>Платёжный шлюз временно недоступен. Повторите попытку чуть позже.</value>
   </data>
   <data name="IDENTITY_PLUGIN_UNAVAILABLE" xml:space="preserve">
     <value>Сервис, связывающий вашу учётную запись с профилем клиента, временно недоступен. Повторите попытку чуть позже.</value>
-  </data>
-  <data name="PAYMENT_METHOD_UPSTREAM_FAILED" xml:space="preserve">
-    <value>Платёжный шлюз не смог обработать запрос по вашим сохранённым способам оплаты. Повторите попытку позже или обратитесь в поддержку.</value>
-  </data>
-<data name="GATEWAY_TRANSACTION_MISSING_UPSTREAM_FAILED" xml:space="preserve">
-    <value>Платёжный шлюз сообщил об успехе, но не вернул номер транзакции.</value>
   </data>
 <data name="CLIENT_PROFILE_NOT_FOUND" xml:space="preserve">
     <value>У этого аккаунта нет клиентского профиля, поэтому в клиентской зоне нечего показать.</value>
@@ -570,6 +555,21 @@
   <data name="PLUGIN_MENU_ICON_INVALID" xml:space="preserve">
     <value>Этот плагин задаёт пункту меню значок, который не является простым именем значка: используйте от 1 до 64 строчных латинских букв, цифр и дефисов.</value>
   </data>
+  <data name="PLUGIN_ICON_MISSING" xml:space="preserve">
+    <value>Этот плагин указывает файл значка, которого нет в пакете. Проверьте путь значка в манифесте.</value>
+  </data>
+  <data name="PLUGIN_ICON_INVALID" xml:space="preserve">
+    <value>Этот плагин содержит недопустимый значок. Используйте SVG- или PNG-файл внутри пакета размером до 128 КБ; SVG не должен содержать скрипты, обработчики событий и ссылки на другие файлы.</value>
+  </data>
+  <data name="PLUGIN_ENDPOINTS_NOT_IMPLEMENTED" xml:space="preserve">
+    <value>Этот плагин объявляет возможность endpoints, но не реализует её. Уберите возможность из манифеста или реализуйте контракт endpoints.</value>
+  </data>
+  <data name="PLUGIN_ICON_NOT_FOUND" xml:space="preserve">
+    <value>У этого плагина нет значка.</value>
+  </data>
+  <data name="PLUGIN_CALLBACK_INVALID" xml:space="preserve">
+    <value>Этот плагин объявляет маршрут обратного вызова с правом доступа или потоковым ответом. У обратного вызова нет вошедшего пользователя, и он отвечает одним ответом.</value>
+  </data>
   <data name="PLUGIN_PAGE_ID_INVALID" xml:space="preserve">
     <value>Этот плагин объявляет страницу с недопустимым идентификатором или с идентификатором, повторяющимся в одной панели: используйте от 1 до 64 строчных латинских букв, цифр, дефисов и подчёркиваний, начиная с буквы или цифры.</value>
   </data>
@@ -578,6 +578,9 @@
   </data>
 <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>Этот архив содержит запись, которая записала бы файл вне папки плагина, и был отклонён.</value>
+  </data>
+<data name="PLUGIN_ARCHIVE_UNWRITABLE" xml:space="preserve">
+    <value>Этот архив содержит записи, которые нельзя распаковать вместе, например файл и папку с одним именем, и был отклонён.</value>
   </data>
 <data name="PLUGIN_ID_INVALID" xml:space="preserve">
     <value>Этот идентификатор плагина недопустим.</value>
@@ -590,6 +593,9 @@
   </data>
 <data name="PLUGIN_HOST_ASSEMBLY_REFUSED" xml:space="preserve">
     <value>Архив содержит сборку с именем той, что уже есть на сервере, и был отклонён. Удалите её из пакета и загрузите снова.</value>
+  </data>
+<data name="PLUGIN_ASSEMBLY_CONFLICT" xml:space="preserve">
+    <value>Другой установленный плагин уже содержит сборку с таким же именем файла, как в этом пакете, поэтому пакет был отклонён. Идентификатор конфликтующего плагина записан в журнале сервера. Переименуйте или удалите сборку либо удалите другой плагин и загрузите снова.</value>
   </data>
 <data name="PLUGIN_NOT_TRUSTED" xml:space="preserve">
     <value>Этого архива нет в списке доверенных пакетов плагинов на сервере.</value>
@@ -910,12 +916,6 @@
   <data name="SSH_AGENT_ENDPOINT_IN_USE" xml:space="preserve">
     <value>Этот хост и порт агента уже использует другой сервер.</value>
   </data>
-  <data name="PAYMENT_INTENT_MISMATCH" xml:space="preserve">
-    <value>Этот платёж картой не соответствует счёту этого заказа.</value>
-  </data>
-  <data name="PAYMENT_INTENT_ALREADY_USED" xml:space="preserve">
-    <value>Этот платёж картой уже зарегистрирован.</value>
-  </data>
   <data name="REGISTRAR_NOT_CONFIGURED" xml:space="preserve">
     <value>Регистратор этого домена не настроен.</value>
   </data>
@@ -954,9 +954,6 @@
   </data>
   <data name="INVOICE_NOT_GATEWAY_PAID" xml:space="preserve">
     <value>По этому счёту деньги не принимал платёжный шлюз, поэтому вернуть их через шлюз нельзя.</value>
-  </data>
-  <data name="CARD_REFUND_REFUSED" xml:space="preserve">
-    <value>Платёжный шлюз карт отклонил возврат. Часть, которую он уже вернул, записана в счёте.</value>
   </data>
   <data name="INVOICE_REFUND_CONFLICT" xml:space="preserve">
     <value>Другой возврат по этому счёту ещё ждёт ответа платёжного шлюза. Повторите, когда он завершится.</value>
@@ -1059,5 +1056,53 @@
   </data>
   <data name="FULFILMENT_ADVICE_UNAVAILABLE" xml:space="preserve">
     <value>Сейчас не удалось проверить возврат, поэтому средства не возвращены. Повторите попытку позже.</value>
+  </data>
+<data name="STORED_CREDENTIALS_NOT_SUPPORTED" xml:space="preserve">
+    <value>Этот платёжный шлюз не умеет сохранять способы оплаты для последующих списаний.</value>
+  </data>
+<data name="CARD_CONSENT_REQUIRED" xml:space="preserve">
+    <value>Нет согласия на списание с сохранённого способа оплаты.</value>
+  </data>
+<data name="CARD_CONSENT_NOT_FOUND" xml:space="preserve">
+    <value>Такое согласие не найдено.</value>
+  </data>
+<data name="STORED_METHOD_NOT_SAVED" xml:space="preserve">
+    <value>Способ оплаты не сохранён. Начните заново.</value>
+  </data>
+<data name="STORED_CHARGE_ALREADY_IN_PROGRESS" xml:space="preserve">
+    <value>Списание по этому счёту уже выполняется.</value>
+  </data>
+<data name="INVOICE_PAYMENT_CLAIM_NOT_FOUND" xml:space="preserve">
+    <value>Такое списание не найдено.</value>
+  </data>
+<data name="INVOICE_STORED_CHARGE_UNRESOLVED" xml:space="preserve">
+    <value>По счёту есть незавершённое списание с карты, поэтому его пока нельзя отменить или оплатить вручную.</value>
+  </data>
+<data name="CARD_CONSENT_ALREADY_ATTACHED" xml:space="preserve">
+    <value>Согласие уже относится к другому способу оплаты.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_DISABLED" xml:space="preserve">
+    <value>Реестр плагинов на этом сервере не включён.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_UNAVAILABLE" xml:space="preserve">
+    <value>Не удалось связаться с реестром плагинов. Повторите попытку позже.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_TIMED_OUT" xml:space="preserve">
+    <value>Реестр плагинов не ответил вовремя. Повторите попытку позже.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_RESPONSE_INVALID" xml:space="preserve">
+    <value>Реестр плагинов прислал ответ, который сервер не может использовать.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_PLUGIN_NOT_FOUND" xml:space="preserve">
+    <value>В реестре плагинов нет такого плагина или версии.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_PACKAGE_REFUSED" xml:space="preserve">
+    <value>Пакет, предложенный реестром плагинов, отклонён.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_CHECKSUM_MISMATCH" xml:space="preserve">
+    <value>Загруженный пакет не совпадает с контрольной суммой, опубликованной реестром плагинов, поэтому он не установлен.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_NOT_TRUSTED" xml:space="preserve">
+    <value>Настройка доверия к реестру плагинов не разрешает установить этот плагин.</value>
   </data>
 </root>

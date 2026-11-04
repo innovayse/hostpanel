@@ -1,4 +1,4 @@
-using Innovayse.SDK.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Enums;
 
 namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 
@@ -9,10 +9,12 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 /// <param name="Type">The plugin type its manifest declares; the admin groups and labels the plugin by it.</param>
 /// <param name="Color">Brand hex color (e.g. "#1a73e8").</param>
 /// <param name="FieldDefinitions">Config field definitions for the dynamic form.</param>
+/// <param name="IconUrl">Path of the admin icon endpoint when the plugin ships an icon; <see langword="null"/> otherwise.</param>
 public sealed record PluginIntegrationEntry(
     string Slug,
     string Name,
     string Category,
     PluginType Type,
     string Color,
-    IReadOnlyList<FieldDefinitionDto> FieldDefinitions);
+    IReadOnlyList<FieldDefinitionDto> FieldDefinitions,
+    string? IconUrl = null);

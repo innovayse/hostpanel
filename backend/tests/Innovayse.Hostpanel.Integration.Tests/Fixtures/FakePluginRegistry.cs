@@ -1,6 +1,6 @@
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.SDK.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Manifest;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
@@ -16,6 +16,14 @@ public sealed class FakePluginRegistry : IPluginRegistry
 
     /// <summary>The plugins this registry reports as refused for a broken manifest rule.</summary>
     private readonly List<RefusedPlugin> _refused = [];
+
+    /// <summary>The icons by plugin id this registry reports.</summary>
+    private readonly Dictionary<string, PluginIconDto> _icons = [];
+
+    /// <summary>Sets the icon this registry reports for a plugin.</summary>
+    /// <param name="pluginId">The plugin id.</param>
+    /// <param name="icon">The icon to report.</param>
+    public void AddIcon(string pluginId, PluginIconDto icon) => _icons[pluginId] = icon;
 
     /// <summary>Adds <paramref name="plugin"/> to the set this registry reports as refused.</summary>
     /// <param name="plugin">The refused plugin to add.</param>
@@ -33,6 +41,9 @@ public sealed class FakePluginRegistry : IPluginRegistry
 
     /// <inheritdoc/>
     public IReadOnlyCollection<PluginManifest> GetLoadedManifests() => _manifests;
+
+    /// <inheritdoc/>
+    public PluginIconDto? GetIcon(string pluginId) => _icons.GetValueOrDefault(pluginId);
 
     /// <inheritdoc/>
     public IReadOnlyCollection<RefusedPlugin> GetRefusedPlugins() => _refused;

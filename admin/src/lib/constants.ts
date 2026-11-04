@@ -73,13 +73,10 @@ export const PAYMENT_METHOD_OPTIONS: SelectOption[] = [
   { value: '', get label() { return translate('shared.none') } },
   { value: PaymentMethod.Card, get label() { return translate('billing.addTransaction.creditDebitCard') } },
   { value: PaymentMethod.BankTransfer, get label() { return translate('constants.paymentMethodOptions.bankTransfer') } },
-  { value: PaymentMethod.PayPal, label: 'PayPal' },
 ]
 
 /** Payment methods a ledger transaction can name (the empty "none" entry is the caller's). */
 export const TRANSACTION_METHOD_OPTIONS: SelectOption[] = [
-  { value: PaymentMethod.Stripe, label: 'Stripe' },
-  { value: PaymentMethod.PayPal, label: 'PayPal' },
   { value: PaymentMethod.Card, get label() { return translate('billing.addTransaction.creditDebitCard') } },
 ]
 
@@ -153,8 +150,6 @@ export const QUOTE_STAGE_OPTIONS: SelectOption[] = [
 export const GATEWAY_OPTIONS: SelectOption[] = [
   { value: PaymentGateway.None, get label() { return translate('shared.none') } },
   { value: PaymentGateway.BankTransfer, get label() { return translate('constants.paymentMethodOptions.bankTransfer') } },
-  { value: PaymentGateway.Stripe, label: 'Stripe' },
-  { value: PaymentGateway.PayPal, label: 'PayPal' },
 ]
 
 /** Order status options for filter dropdowns. */

@@ -6,9 +6,9 @@ import { toPaymentMethodOptions } from '~/utils/paymentMethodOptions'
 
 describe('toPaymentMethodOptions', () => {
   it('labels a gateway with its display name and sends its module name', () => {
-    const [option] = toPaymentMethodOptions([{ module: 'stripe', displayName: 'Card payment' }])
+    const [option] = toPaymentMethodOptions([{ module: 'card_gateway', displayName: 'Card payment' }])
 
-    expect(option).toEqual({ label: 'Card payment', value: 'stripe' })
+    expect(option).toEqual({ label: 'Card payment', value: 'card_gateway' })
   })
 
   it('falls back to the module name when the gateway has no display name', () => {

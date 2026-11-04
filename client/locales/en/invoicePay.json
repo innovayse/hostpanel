@@ -2,17 +2,14 @@
   "invoicePay": {
     "makePayment": "Make Payment",
     "invoiceNum": "Invoice #{id}",
-    "paymentMethod": "Payment Method",
-    "submitPayment": "Submit Payment",
-    "processing": "Processing...",
     "paymentsToDate": "Payments to Date",
     "balanceDue": "Balance Due",
     "alreadyPaid": "This invoice has already been paid.",
     "viewInvoice": "View Invoice",
-    "paymentSuccess": "Payment processed successfully!",
     "securityNotice": "Any data you enter here is submitted securely and is encrypted to reduce the risk of fraud",
     "payByCardHosted": "Pay by card",
-    "noSavedCardsHosted": "You have no saved cards. Choose Pay by card to finish the payment on the payment provider's secure page.",
-    "noPaymentOption": "Online payment is not available right now. Please contact support to pay this invoice."
+    "noPaymentOption": "Online payment is not available right now. Please contact support to pay this invoice.",
+    "hostedHint": "Choose Pay by card to finish the payment on the payment provider's secure page.",
+    "retry": "Try again"
   }
 }

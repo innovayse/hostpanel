@@ -10,6 +10,12 @@ A plugin is a .NET class library that references the Hostpanel SDK and adds a pa
 
 The SDK project lives at `backend/src/Innovayse.SDK` in the repository. Reference it from your class library, or reference the built `Innovayse.SDK.dll` directly. The bundled plugins in `backend/src/Innovayse.Providers.*` are the reference implementations; read their code before writing your own.
 
+### Name the project
+
+Name a plugin project `<Company>.Hostpanel.Plugins.<Name>`, the .NET plugin convention `<Company>.<Product>.<Type>.<Name>` (as in `Serilog.Sinks.Console`). The project, its folder, its assembly and its root namespace all carry that name, and its test project adds `.Tests`. Innovayse's own plugins are `Innovayse.Hostpanel.Plugins.<Name>`, with tests in `Innovayse.Hostpanel.Plugins.<Name>.Tests`, each in its own repository `innovayse/hostpanel-<name>`: Innovayse Sites, for example, is `Innovayse.Hostpanel.Plugins.Sites` in `innovayse/hostpanel-sites`. The bundled `Innovayse.Providers.*` projects predate the convention and are renamed as they move to their own repositories.
+
+The plugin `id` in `plugin.json` is not part of the name and never changes when a project is renamed: the host keys the plugin's stored settings and data by it.
+
 ## Plugin types
 
 The `PluginType` enum defines what a plugin can be:
@@ -68,6 +74,8 @@ using Innovayse.SDK.Plugins.Payment;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
+namespace MyCompany.Hostpanel.Plugins.MyGateway;
+
 public sealed class MyGateway : PaymentGatewayBase, IPaymentPlugin
 {
     public MyGateway(string pluginId, IConfiguration configuration, ILogger<MyGateway> logger)
@@ -110,7 +118,7 @@ public sealed class MyGateway : PaymentGatewayBase, IPaymentPlugin
   "type": "Payment",
   "category": "Payment Gateways",
   "color": "#0369a1",
-  "entryPoint": "MyCompany.MyGateway.MyGateway",
+  "entryPoint": "MyCompany.Hostpanel.Plugins.MyGateway.MyGateway",
   "sdkVersion": "1.0",
   "showInIntegrations": true,
   "integrationsCategory": "Payment Gateways",
@@ -220,9 +228,9 @@ Each entry in `fields`:
 Folder layout inside the ZIP:
 
 ```
-plugin.json              ← at the root
-MyCompany.MyGateway.dll  ← your assembly
-plugin.sig               ← signature file (required on production servers)
+plugin.json                                ← at the root
+MyCompany.Hostpanel.Plugins.MyGateway.dll  ← your assembly
+plugin.sig                                 ← signature file (required on production servers)
 ```
 
 Do **not** include the SDK assembly (`Innovayse.SDK.dll`) or any assembly the host already provides. The server refuses packages that contain a host assembly (`PLUGIN_HOST_ASSEMBLY_REFUSED`). A duplicate plugin `id` is skipped at startup without error — the first loaded version wins (built-in plugins load before uploaded ones).
@@ -240,7 +248,7 @@ dotnet run --project backend/tools/Innovayse.Hostpanel.PluginSigner -- keygen my
 Sign the plugin folder:
 
 ```bash
-dotnet run --project backend/tools/Innovayse.Hostpanel.PluginSigner -- sign ./MyCompany.MyGateway my-key.key my-key-id
+dotnet run --project backend/tools/Innovayse.Hostpanel.PluginSigner -- sign ./MyCompany.Hostpanel.Plugins.MyGateway my-key.key my-key-id
 ```
 
 This writes `plugin.sig` into the folder. Zip the folder after signing.

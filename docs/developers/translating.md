@@ -43,11 +43,11 @@ The admin panel has a Russian plural rule defined in `admin/src/i18n.ts`. When a
 ```ts
 // admin/src/locales/ru/billing.json
 {
-  "invoiceCount": "0 счетов | {n} счёт | {n} счёта | {n} счетов"
+  "invoiceCount": "{n} счёт | {n} счёта | {n} счетов"
 }
 ```
 
-The four slots correspond to zero, one, two–four and five-or-more respectively, matching the `russianPlural` function in `i18n.ts`.
+The three slots correspond to one, two–four and five-or-more respectively, matching the `russianPlural` function in `i18n.ts`.
 
 ## Style
 

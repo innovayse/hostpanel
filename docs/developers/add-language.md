@@ -156,12 +156,18 @@ The backend list above covers the core error and validation messages. The follow
 **Client portal extras (required for a fully translated storefront):**
 
 - `client/composables/useSeo.ts` — add an entry to `ogLocaleMap` so Open Graph and hreflang tags use the correct locale code, e.g. `[AppLocale.Fr]: 'fr_FR'`.
+- `client/server/utils/clientMenuLabels.ts` — add a new `[AppLocale.Fr]: { ... }` block to `CLIENT_MENU_MESSAGES` with the translated labels for the SSO widget menu.
+- `client/composables/useLocalizedSetting.ts` — the `getLocalized` function checks only `AppLocale.Ru` and `AppLocale.Hy`; add a branch for the new locale so per-locale settings (the contact address, office hours) are read correctly.
 - `client/plugins/live-chat.ts` — add a case to `languageOf` returning the English name of the new language, and add a branch to the `token` computed value reading the new per-locale portal setting key.
-- Add the new portal chat token setting key to `client/constants/portalSettingKey.ts`, e.g. `ChatWebsiteTokenFr = 'portal.chat.website_token.fr'`. This is optional if the operator does not use the live-chat widget.
+- `client/constants/publicPortalSettingKeys.ts` — add the new chat token key (e.g. `PortalSettingKey.ChatWebsiteTokenFr`) to the allow-list so the storefront endpoint exposes it. This is optional if the operator does not use the live-chat widget.
 
 **Admin panel extras (required):**
 
 - `admin/src/lib/constants.ts` — add an entry to the `CLIENT_LANGUAGE_OPTIONS` list for the new language so it appears in the client form language selector.
+- `admin/src/lib/storefrontTranslations.ts` — add the new locale to `STOREFRONT_LOCALES` and add a `[MessageLanguage.Fr]: blank()` entry to `blankTranslations` so storefront content forms carry a tab for the new language.
+- `admin/src/composables/useStorefrontLocaleTabs.ts` — add a tab entry for the new locale to the `tabs` computed array.
+- `admin/src/types/setting.ts` — add language-suffixed keys for contact address, contact hours and the chat token, e.g. `ContactAddressFr`, `ContactHoursFr`, `ChatWebsiteTokenFr`, plus their `SETTING_ENV` entries. Without these, the per-language portal settings panel will not save or read the new language's values.
+- `admin/src/components/settings/TrackingChatCard.vue` — add a row for the new chat token key alongside the existing Russian and Armenian rows. This is optional if the operator does not use the live-chat widget.
 
 </li>
 </Steps>

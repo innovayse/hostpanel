@@ -903,6 +903,9 @@ public static class DependencyInjection
         services.AddScoped<IPluginEndpointResolver, PluginEndpointResolver>();
         services.AddScoped<IPluginUiSource, PluginUiSource>();
 
+        // A plugin's IPluginStatus, through the same activation gates, bounded by PluginApi:StatusTimeoutSeconds.
+        services.AddScoped<IPluginStatusProbe, PluginStatusProbe>();
+
         // The panels' plugin availability, computed for every plugin in one pass and remembered for a few seconds, so an
         // index request is not one settings read per plugin and a page lookup costs the same for any id. Singletons: one
         // remembered set per process, dropped through the invalidator by every use case that writes plugin settings.

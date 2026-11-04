@@ -180,6 +180,29 @@ docker/                              compose set (shared·dev·prod·platform), 
   the provider's own text never reaches the response. `NameAmClient` reads the e-mail, password,
   API URL and test mode saved on the admin Integrations page over the bound options
   (`IsConfiguredAsync`), so the page configures what requests use.
+- **Plugin integrations on the Integrations page (#854, #855, #856).** A plugin's form texts are resolved per request:
+  `IntegrationFields.Resolve` maps each `GetSettings()` entry with `ToFieldDefinition(PluginUiTexts)`, so the label, the
+  help text (`description`), the `placeholder` and every select option label (`optionLabels`, keyed by the stored value;
+  `options` stays the values) come in the admin's `X-Language` from the plugin's locales, English where a locale lacks the
+  key, else the text as written. Nothing is resolved at load: the loader's `PluginIntegrationEntry` carries only the
+  `RequiredSettingKeys` the list needs. A plugin is tested and shown connected through the SDK's optional `IPluginStatus`
+  only: the port `IPluginStatusProbe` (`Infrastructure/Plugins/PluginStatusProbe`) checks the implementation type without
+  running plugin code (`Supports`), then goes through `PluginActivator.PrepareAsync<IPluginStatus>` (switched on, configured,
+  no pending migration; otherwise `Inactive`, the plugin is not called) and waits at most `PluginApi:StatusTimeoutSeconds`
+  (default 5, 1 to 60): the token fires and the host stops waiting at the same moment, even for a plugin that ignores it.
+  It fails closed: a throw, a null report or an undefined health is `Failed`, no answer in time is `TimedOut`, both logged by
+  plugin id and exception type only (never the message); the plugin's `Detail` is trimmed and cut to 500 characters.
+  `PluginConnectionReader` (Application, the one reader) caches the language-neutral result per plugin
+  (`PluginStatusCacheKeys`, `PluginApi:StatusCacheSeconds`, default 300, like the hosting panel's server info), and words it
+  per read: the plugin's own `Detail` through its locales (`PluginText`) when it reported, else the host's sentence by code
+  (`PLUGIN_STATUS_HEALTHY`, `_DEGRADED`, `_REPORTED_DOWN`, `_INACTIVE`, `_TIMED_OUT`, `_FAILED`, sentences in
+  `ErrorMessages` en/ru/hy; they are answer sentences, never refusals). The list (`IntegrationListItemDto.Connection`, only
+  for a switched-on plugin) and the detail (`Connection`) read the cache; Test Connection (`TestIntegrationConnectionHandler`,
+  for a slug that is not a built-in) asks now and replaces the cache entry, answering success for `Connected` and
+  `Degraded`; a save of the integration drops the entry. `IntegrationDetailDto.CanTestConnection` is true for a built-in the
+  test knows and for a plugin that implements `IPluginStatus`; the admin hides Test Connection otherwise, and the route
+  answers 400 `INTEGRATION_NOT_TESTABLE` for such a plugin. The admin card and the status sidebar show the state
+  (`integrations.connectionState.*`, tone from `lib/tones.ts`) with the API's sentence.
 - **Enums live in `Enums/` namespaces** (`Domain/<Area>/Enums/`, `SharedKernel/Domain/Enums/`,
   `Infrastructure/Email/Enums/`); `EnumPlacementTests` enforces it.
 - **Domain refusals are `DomainException(code, message)`** (abstract, in the kernel); the exception
@@ -346,7 +369,8 @@ docker/                              compose set (shared·dev·prod·platform), 
   (`PluginManifestReader.Deserialize`, the plugin does not load), and anywhere an undefined settings kind still
   reaches the classifier it counts as secret: an unknown type never reads as plain text. A `null` `settings`
   or `fields` list reads as empty, as in the SDK. The wire
-  shape of a field definition (`FieldDefinitionDto`) is unchanged; a select carries the values of its options.
+  shape of a field definition (`FieldDefinitionDto`) keeps its members; a select carries the values of its options, and a
+  plugin setting adds its translated `description`, `placeholder` and `optionLabels` (#854).
 - **Two plugin folders: built-in and uploaded (`PluginOptions`, section `Plugins`).** The build's own
   `plugins/` folder (`PluginOptions.BuiltInRoot`) holds the plugins shipped with the build; they load
   first, are listed with `isBuiltIn: true`, and cannot be removed or replaced from the admin panel

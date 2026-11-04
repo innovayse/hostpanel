@@ -80,6 +80,18 @@ public sealed class PluginApiOptions
     /// <summary>The largest <see cref="MaxAbandonedCallsPerPlugin"/> a deployment may configure.</summary>
     public const int MaxAbandonedCallsPerPluginCeiling = 1000;
 
+    /// <summary>The seconds a plugin's status check (<c>IPluginStatus</c>) may take by default before the host stops waiting (5).</summary>
+    public const int DefaultStatusTimeoutSeconds = 5;
+
+    /// <summary>The largest <see cref="StatusTimeoutSeconds"/> a deployment may configure, in seconds.</summary>
+    public const int StatusTimeoutSecondsCeiling = 60;
+
+    /// <summary>The seconds a plugin's status check stays cached by default (300, as long as the hosting panel's server info).</summary>
+    public const int DefaultStatusCacheSeconds = 300;
+
+    /// <summary>The largest <see cref="StatusCacheSeconds"/> a deployment may configure, in seconds (1 day).</summary>
+    public const int StatusCacheSecondsCeiling = 86_400;
+
     /// <summary>
     /// The most bytes of request body a plugin route accepts. A call that declares more, or sends more, is refused
     /// with <c>PLUGIN_REQUEST_TOO_LARGE</c> (413) before the plugin is called. The plugin sees the whole body or none of it.
@@ -114,6 +126,19 @@ public sealed class PluginApiOptions
     /// more work that ignores its token on the host; a call that ends frees its place.
     /// </summary>
     public int MaxAbandonedCallsPerPlugin { get; set; } = DefaultMaxAbandonedCallsPerPlugin;
+
+    /// <summary>
+    /// The seconds the host waits for a plugin's status check (1 to <see cref="StatusTimeoutSecondsCeiling"/>). The check
+    /// runs while an admin page loads, so it is short; past it the plugin's token is cancelled, the host stops waiting
+    /// and the plugin is shown as unavailable.
+    /// </summary>
+    public int StatusTimeoutSeconds { get; set; } = DefaultStatusTimeoutSeconds;
+
+    /// <summary>
+    /// The seconds a plugin's status check is reused for the Integrations page (1 to <see cref="StatusCacheSecondsCeiling"/>).
+    /// A Test Connection and a saved integration renew it at once.
+    /// </summary>
+    public int StatusCacheSeconds { get; set; } = DefaultStatusCacheSeconds;
 
     /// <summary>
     /// The seconds a streamed plugin reply may stay silent before the host writes a comment line, so a proxy and the
@@ -167,6 +192,12 @@ public sealed class PluginApiOptions
         return TimeSpan.FromSeconds(Math.Min(seconds, MaxCallTimeoutSeconds));
     }
 
+    /// <summary>Gets <see cref="StatusTimeoutSeconds"/> as a span.</summary>
+    public TimeSpan StatusTimeout => TimeSpan.FromSeconds(StatusTimeoutSeconds);
+
+    /// <summary>Gets <see cref="StatusCacheSeconds"/> as a span.</summary>
+    public TimeSpan StatusCacheLifetime => TimeSpan.FromSeconds(StatusCacheSeconds);
+
     /// <summary>Gets <see cref="AbandonWaitSeconds"/> as a span.</summary>
     public TimeSpan AbandonWait => TimeSpan.FromSeconds(AbandonWaitSeconds);
 
@@ -176,7 +207,8 @@ public sealed class PluginApiOptions
     /// <summary>
     /// Whether the values are usable: a body cap of at least one byte and no more than <see cref="MaxBodyBytesCeiling"/>, and a
     /// call limit of one second to the ceiling, which is one second to <see cref="MaxCallTimeoutSecondsLimit"/>, and an abandon wait of
-    /// one second to <see cref="AbandonWaitSecondsCeiling"/>, and 1 to <see cref="MaxAbandonedCallsPerPluginCeiling"/> abandoned calls per plugin, and a
+    /// one second to <see cref="AbandonWaitSecondsCeiling"/>, and 1 to <see cref="MaxAbandonedCallsPerPluginCeiling"/> abandoned calls per plugin, a status limit of one second to
+    /// <see cref="StatusTimeoutSecondsCeiling"/> and a status cache of one second to <see cref="StatusCacheSecondsCeiling"/>, and a
     /// heartbeat of one second to <see cref="StreamHeartbeatSecondsCeiling"/>, and an event cap of one byte to <see cref="StreamEventMaxBytesCeiling"/>, and 1 to
     /// <see cref="MaxStoreKeysPerScopeCeiling"/> store keys per scope, and <see cref="MaxStoreCharsPerScopeFloor"/> to
     /// <see cref="MaxStoreCharsPerScopeCeiling"/> store characters per scope.
@@ -186,6 +218,8 @@ public sealed class PluginApiOptions
         && CallTimeoutSeconds >= 1 && CallTimeoutSeconds <= MaxCallTimeoutSeconds
         && AbandonWaitSeconds is >= 1 and <= AbandonWaitSecondsCeiling
         && MaxAbandonedCallsPerPlugin is >= 1 and <= MaxAbandonedCallsPerPluginCeiling
+        && StatusTimeoutSeconds is >= 1 and <= StatusTimeoutSecondsCeiling
+        && StatusCacheSeconds is >= 1 and <= StatusCacheSecondsCeiling
         && StreamHeartbeatSeconds is >= 1 and <= StreamHeartbeatSecondsCeiling
         && StreamEventMaxBytes is >= 1 and <= StreamEventMaxBytesCeiling
         && MaxStoreKeysPerScope is >= 1 and <= MaxStoreKeysPerScopeCeiling

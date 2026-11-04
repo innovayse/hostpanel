@@ -185,6 +185,27 @@ Every plugin ZIP must have `plugin.json` at the root.
 
 The fields above cover manifest version 1. Manifest version 2 (`"manifestVersion": 2`) adds `settings`, `capabilities`, `locales`, `api`, `ui` and `externalOrigins`; documentation for those fields will be added in a follow-up page.
 
+### Capabilities
+
+A version 2 manifest may list `capabilities`, each a name from the SDK's `PluginCapabilities`:
+
+| Capability | Allowed on | The plugin class must also implement |
+|------------|------------|--------------------------------------|
+| `storedCredentials` | `Payment` only | `IStoredCredentialPlugin` |
+| `endpoints` | any type | `IPluginEndpoints` |
+
+An `App` plugin answers routes and shows pages, menus and slots without declaring anything. Any other type that declares
+`api` routes or `ui` menus, pages or slots must declare `endpoints`, or the package is refused at install and skipped at
+startup (`PLUGIN_ENDPOINTS_NOT_DECLARED`). This is how one plugin, for example a `Fulfilment` plugin that sells credits,
+also gives the client a screen. An unknown name, a name declared twice, or `storedCredentials` on a type other than
+`Payment` is refused the same way (`PLUGIN_CAPABILITY_NOT_ALLOWED`).
+
+A declared capability is checked against the class when the plugin is activated. If the class does not implement the
+interface a capability promises, the plugin is not activated for anything, its own type's calls included: a payment
+plugin that declares `storedCredentials` without implementing `IStoredCredentialPlugin` takes no payments, and a
+fulfilment plugin that declares `endpoints` without implementing `IPluginEndpoints` receives no fulfilment calls. The
+admin log names the plugin and the capability.
+
 Each entry in `fields`:
 
 <SettingTable :settings="[

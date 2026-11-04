@@ -21,6 +21,7 @@ import { defineStore } from 'pinia'
 import { useAuthApi } from '~/composables/apis/useAuthApi'
 import { useCartStore } from '~/stores/cart'
 import { useClientStore } from '~/stores/client'
+import { usePluginsStore } from '~/stores/plugins'
 import type { ClientUser } from '~/types/clientuser'
 import type { EmailVerifiedStatus } from '~/types/emailverifiedstatus'
 import type { LoginResult } from '~/types/loginresult'
@@ -395,6 +396,7 @@ export const useAuthStore = defineStore('auth', () => {
     // signs in next. The cart is the same kind of leftover: its lines belong to the person who
     // chose them.
     useClientStore().reset()
+    usePluginsStore().reset()
     useCartStore().clear()
   }
 
@@ -415,6 +417,7 @@ export const useAuthStore = defineStore('auth', () => {
     } catch { /* the session ends on this side either way */ }
     user.value = null
     useClientStore().reset()
+    usePluginsStore().reset()
     useCartStore().clear()
   }
 
@@ -524,6 +527,7 @@ export const useAuthStore = defineStore('auth', () => {
   const reset = (): void => {
     user.value = null
     useClientStore().reset()
+    usePluginsStore().reset()
   }
 
   return {

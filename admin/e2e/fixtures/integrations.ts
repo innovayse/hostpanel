@@ -49,4 +49,5 @@ export const cwpPlugin: PluginListItemDto = {
   refusedRule: null,
   refusedDetail: null,
   stagedVersion: null,
+  capabilities: [],
 }

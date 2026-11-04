@@ -1,5 +1,5 @@
 /**
- * Unit tests for PluginCard: name, version and status, the built-in mark, and the remove event.
+ * Unit tests for PluginCard: name, version and status, the built-in mark, the capability badges, and the remove event.
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
@@ -24,6 +24,7 @@ const plugin: PluginListItemDto = {
   refusedRule: null,
   refusedDetail: null,
   stagedVersion: null,
+  capabilities: [],
 }
 
 /**
@@ -117,6 +118,18 @@ describe('PluginCard', () => {
     const wrapper = mountCard()
 
     expect(wrapper.find('[data-testid="plugin-staged-ineco"]').exists()).toBe(false)
+  })
+
+  it('shows a badge per declared capability', () => {
+    const wrapper = mountCard({ plugin: { ...plugin, type: 'fulfilment', capabilities: ['endpoints'] } })
+
+    expect(wrapper.get('[data-testid="plugin-capability-ineco-endpoints"]').text()).toBe('Serves pages')
+  })
+
+  it('shows no capability badge when none is declared', () => {
+    const wrapper = mountCard()
+
+    expect(wrapper.find('[data-testid^="plugin-capability-ineco"]').exists()).toBe(false)
   })
 
   it('disables the remove button while removing', () => {

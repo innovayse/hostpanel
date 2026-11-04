@@ -68,6 +68,7 @@ public sealed class ListPluginsHandler
                 manifest.Color,
                 refusal is null && _registry.IsLoaded(manifest.Id),
                 package.IsBuiltIn,
+                refusal is null ? manifest.Capabilities : [],
                 refusal is null ? PluginListStatus.Loaded : PluginListStatus.Refused,
                 refusal?.Rule,
                 refusal?.Detail,
@@ -94,6 +95,6 @@ public sealed class ListPluginsHandler
     {
         return new PluginListItemDto(
             pluginId, pluginId, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty,
-            false, false, PluginListStatus.Removed);
+            false, false, [], PluginListStatus.Removed);
     }
 }

@@ -31,6 +31,8 @@ const ALLOWED_BY_FILE: Record<string, string[]> = {
   'components/layout/Footer.vue': ['max-w-[180px]'],
   'components/layout/Header.vue': ['max-w-[160px]'],
   'components/ui/UiBreadcrumbs.vue': ['max-w-[150px]'],
+  // A chat bubble is a share of the conversation's width, never the page's: the conversation sits in the container.
+  'components/ui/UiChatBubble.vue': ['max-w-[85%]'],
   'components/ui/UiContainer.vue': ['max-w-7xl'],
   'components/ui/UiDialog.vue': ['max-w-sm', 'max-w-md', 'max-w-lg', 'max-w-2xl', 'max-w-6xl'],
   'components/ui/UiDrawer.vue': ['max-w-xs', 'max-w-md', 'max-w-lg', 'max-w-2xl'],

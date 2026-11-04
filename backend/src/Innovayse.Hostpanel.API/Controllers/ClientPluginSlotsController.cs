@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.API.Authorization;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Application.Plugins.Queries.GetClientPluginSlot;
+using Innovayse.Hostpanel.Application.Plugins.Queries.GetClientPluginSlotWidget;
 using Innovayse.Hostpanel.Shared.Authorization;
 using Innovayse.Hostpanel.Shared.Controllers;
 using Innovayse.Hostpanel.Shared.Models;
@@ -53,9 +54,37 @@ public sealed class ClientPluginSlotsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> GetAsync(string slotId, [FromQuery] GetClientPluginSlotQuery query, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<PluginSlotIndexDto>>(query with { SlotId = slotId }, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Reads the view of one widget of a client area slot, for the page the caller is on.</summary>
+    /// <param name="slotId">The slot id, such as <c>client.service.tabs</c>.</param>
+    /// <param name="pluginId">The plugin that declares the widget.</param>
+    /// <param name="widgetId">The widget id.</param>
+    /// <param name="query">The context of the page: <c>serviceId</c> for a slot that offers it.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the widget and its view; 401 without a session; 403 for a caller who is not a client user; 404 with
+    /// <c>PLUGIN_SLOT_WIDGET_VIEW_NOT_FOUND</c> for every refusal (an unknown or admin slot, a caller who acts for no account, a
+    /// missing or foreign service, a widget that is unknown, hidden, not permitted, bound elsewhere or of a plugin that is
+    /// off, a missing view), the same body for all; 429 when the rate limit is hit; 503 with
+    /// <c>IDENTITY_PLUGIN_UNAVAILABLE</c> when the identity plugin could not say who the caller is.
+    /// </returns>
+    [HttpGet("{slotId}/widgets/{pluginId}/{widgetId}")]
+    [ProducesResponseType(typeof(PluginSlotWidgetViewDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> GetWidgetAsync(
+        string slotId, string pluginId, string widgetId, [FromQuery] GetClientPluginSlotWidgetQuery query, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<PluginSlotWidgetViewDto>>(
+            query with { SlotId = slotId, PluginId = pluginId, WidgetId = widgetId }, ct);
         return HandleResult(outcome);
     }
 }

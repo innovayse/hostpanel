@@ -496,3 +496,11 @@ export enum UiRichNodeType {
   /** An allow-listed element with children. */
   Element = 'element',
 }
+
+/** Which side of a conversation a chat bubble belongs to (`UiChatBubble`). */
+export enum UiChatBubbleSide {
+  /** Written by the reader: right-aligned, primary tint. */
+  Own = 'own',
+  /** Written by the other party: left-aligned, neutral. */
+  Other = 'other',
+}

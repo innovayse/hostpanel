@@ -58,6 +58,10 @@ export const PluginManifestRule = {
   SlotWidgetDuplicate: 'SlotWidgetDuplicate',
   /** The manifest id is not a valid plugin id. */
   PluginIdInvalid: 'PluginIdInvalid',
+  /** A plugin that is not an app plugin declares routes, pages or slots without the endpoints capability. */
+  EndpointsNotDeclared: 'EndpointsNotDeclared',
+  /** The manifest names a capability the server does not know or the plugin type may not carry. */
+  CapabilityNotAllowed: 'CapabilityNotAllowed',
 } as const
 
 /** One of the {@link PluginManifestRule} values. */
@@ -72,6 +76,17 @@ export const PluginErrorCode = {
 /** One of the {@link PluginErrorCode} values. */
 export type PluginErrorCode = (typeof PluginErrorCode)[keyof typeof PluginErrorCode]
 
+/** Closed set of capabilities a manifest may declare; the strings are the SDK's `PluginCapabilities` names. */
+export const PluginCapability = {
+  /** A payment plugin that can charge a saved card or account. */
+  StoredCredentials: 'storedCredentials',
+  /** A plugin of any type that also answers routes and adds pages, menus and slots. */
+  Endpoints: 'endpoints',
+} as const
+
+/** One of the {@link PluginCapability} values. */
+export type PluginCapability = (typeof PluginCapability)[keyof typeof PluginCapability]
+
 /** Summary of one installed plugin returned by GET /api/admin/plugins. */
 export interface PluginListItemDto {
   /** Unique plugin identifier, the `id` field of plugin.json. */
@@ -84,7 +99,7 @@ export interface PluginListItemDto {
   author: string
   /** Short description shown in the plugin card. */
   description: string
-  /** Plugin type in lower case: "provisioning" | "payment" | "registrar" | "identity" | "fulfilment" | "hosted". */
+  /** Plugin type in lower case: "provisioning" | "payment" | "registrar" | "identity" | "fulfilment" | "hosted" | "app". */
   type: string
   /** Display category label (e.g. "Hosting / Provisioning"). */
   category: string
@@ -102,6 +117,8 @@ export interface PluginListItemDto {
   refusedDetail: string | null
   /** Version of a newer upload staged to replace the running one at the next restart, null when none. */
   stagedVersion: string | null
+  /** The capabilities the manifest declares, in manifest order; empty when it declares none. */
+  capabilities: PluginCapability[]
 }
 
 /** Result returned by install and remove plugin operations. */

@@ -459,7 +459,7 @@ public sealed class SdkContractTests
     public void ManifestV2Types_KeepTheirShape()
     {
         typeof(PluginManifest).GetProperties().Select(p => p.Name).Should().Contain(
-            ["ManifestVersion", "Locales", "Settings", "Api", "Ui", "ExternalOrigins", "Fields"]);
+            ["ManifestVersion", "Locales", "Settings", "Api", "Ui", "ExternalOrigins", "Fields", "Capabilities", "HostAccess"]);
         typeof(PluginManifest).GetMethod(nameof(PluginManifest.GetSettings))!.ReturnType
             .Should().Be(typeof(IReadOnlyList<PluginSetting>));
         typeof(PluginSetting).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(

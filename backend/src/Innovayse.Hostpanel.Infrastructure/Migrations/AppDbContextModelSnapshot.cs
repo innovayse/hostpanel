@@ -3162,6 +3162,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<int?>("ServerId")
                         .HasColumnType("integer");
 
+                    b.Property<long>("SshKeyRevision")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -3379,6 +3384,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasMaxLength(60)
                         .HasColumnType("character varying(60)");
 
+                    b.Property<string>("IssuedToPluginId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<Guid>("KeyId")
                         .HasColumnType("uuid");
 
@@ -3416,6 +3425,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.HasIndex("ClientServiceId", "Fingerprint")
                         .IsUnique()
+                        .HasDatabaseName("IX_SshKeys_ClientServiceId_Fingerprint")
                         .HasFilter("\"SyncState\" <> 'Revoked'");
 
                     b.ToTable("SshKeys");

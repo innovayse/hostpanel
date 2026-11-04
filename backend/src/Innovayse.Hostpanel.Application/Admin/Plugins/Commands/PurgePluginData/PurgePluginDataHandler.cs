@@ -80,21 +80,22 @@ public sealed class PurgePluginDataHandler
             return Result<PluginActionResultDto>.FailureCode(HostpanelErrorCodes.PLUGIN_NOT_FOUND);
         }
 
+        var now = _clock.UtcNow;
         var switchKey = IntegrationSettingKeys.EnabledKey(command.Id);
         var pluginSwitch = await _context.Settings.FirstOrDefaultAsync(s => s.Key == switchKey, ct);
         if (pluginSwitch is null)
         {
-            pluginSwitch = Setting.CreateSwitchedOffForRemovedPlugin(command.Id);
+            pluginSwitch = Setting.CreateSwitchedOffForRemovedPlugin(command.Id, now);
             _context.Settings.Add(pluginSwitch);
         }
         else
         {
             // A package deleted by hand can leave the switch on while the plugin is still loaded: turn it off so it
             // cannot write behind the purge.
-            pluginSwitch.SwitchOffRemovedPlugin(command.Id);
+            pluginSwitch.SwitchOffRemovedPlugin(command.Id, now);
         }
 
-        pluginSwitch.RequestDataPurge(command.Id, _clock.UtcNow);
+        pluginSwitch.RequestDataPurge(command.Id, now);
         await _activityLogger.RecordAsync(
             new ActivityLogEntry(null, $"Purged Plugin Data - Plugin ID: {command.Id}"), ct);
 

@@ -40,8 +40,11 @@ const STORE_FORBIDDEN = [
 /** A string literal that starts a client-area path: `'/client`, `"/client` or `` `/client ``. */
 const CLIENT_PATH_LITERAL = /['"`]\/client(?:\/|['"`?])/
 
-/** The files allowed to spell client paths: the route table itself and the route-rule glob in the config. */
-const CLIENT_PATH_ALLOWED = new Set(['constants/clientRoutes.ts', 'nuxt.config.ts'])
+/**
+ * The files allowed to spell client paths: the route table itself, the route-rule glob in the
+ * config, and the backend's `/api/client/plugins` endpoints, which share the prefix by name only.
+ */
+const CLIENT_PATH_ALLOWED = new Set(['constants/clientRoutes.ts', 'nuxt.config.ts', 'server/utils/pluginBackendPaths.ts'])
 
 /**
  * Whether a line is only a comment, where paths are prose rather than code.

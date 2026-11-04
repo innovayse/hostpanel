@@ -1,0 +1,9 @@
+{
+  "plugins": {
+    "tableEmpty": "Nothing here yet.",
+    "chatMessage": "Your message",
+    "chatSend": "Send",
+    "chatStop": "Stop",
+    "unavailable": "This part is not available right now."
+  }
+}

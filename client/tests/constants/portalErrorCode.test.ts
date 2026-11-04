@@ -11,6 +11,8 @@ describe('PortalErrorCode', () => {
   it('keeps the wire values the API and the BFF send', () => {
     expect(PortalErrorCode.ClientProfileNotFound).toBe('CLIENT_PROFILE_NOT_FOUND')
     expect(PortalErrorCode.InviteSignInRequired).toBe('INVITE_SIGN_IN_REQUIRED')
+    expect(PortalErrorCode.PluginPageNotFound).toBe('PLUGIN_PAGE_NOT_FOUND')
+    expect(PortalErrorCode.BadRouteParam).toBe('BAD_ROUTE_PARAM')
   })
 
   it('writes every code in upper case', () => {

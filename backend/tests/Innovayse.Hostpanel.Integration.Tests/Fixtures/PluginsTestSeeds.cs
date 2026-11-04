@@ -68,8 +68,12 @@ internal static class PluginsTestSeeds
     /// <summary>The <c>plugin.json</c> text of a well-formed test plugin.</summary>
     /// <param name="pluginId">The plugin id to declare.</param>
     /// <param name="extraMembers">Further JSON members to append, each starting with a comma, for example <c>,"manifestVersion":2</c>; empty for none.</param>
+    /// <param name="type">
+    /// The plugin type to declare, as the manifest spells it; <c>App</c> for a manifest with <c>api</c> or <c>ui</c>
+    /// blocks, which any other type may carry only with the <c>endpoints</c> capability (#818).
+    /// </param>
     /// <returns>The manifest text.</returns>
-    public static string ManifestJson(string pluginId, string extraMembers = "")
+    public static string ManifestJson(string pluginId, string extraMembers = "", string type = "Provisioning")
     {
         return $$"""
             {
@@ -78,7 +82,7 @@ internal static class PluginsTestSeeds
               "version": "1.0.0",
               "author": "Test",
               "description": "A plugin used only in tests.",
-              "type": "Provisioning",
+              "type": "{{JsonEncodedText.Encode(type)}}",
               "category": "Test",
               "entryPoint": "Test.Plugin",
               "sdkVersion": "1.0"{{extraMembers}}

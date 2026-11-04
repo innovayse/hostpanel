@@ -36,7 +36,7 @@ This list is read from the controllers of the API when the site is built. The pl
 A refused call answers `429 Too Many Requests` with the standard [error body](./errors) and the code `HOSTPANEL_RATE_LIMITED`. Two headers tell you what to do:
 
 <SettingTable :settings="[
-  { name: 'Retry-After', type: 'response header', default: '—', description: 'How many seconds to wait before you try again. At least 1. For a concurrency policy it is always 1: a slot frees when another call finishes.' },
+  { name: 'Retry-After', type: 'response header', default: 'None', description: 'How many seconds to wait before you try again. At least 1. For a concurrency policy it is always 1: a slot frees when another call finishes.' },
   { name: 'X-RateLimit-Remaining', type: 'response header', default: '0', description: 'How many calls are left in the budget that refused you. Always 0 on a 429.' },
 ]" />
 

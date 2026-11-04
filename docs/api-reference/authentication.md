@@ -21,15 +21,15 @@ POST /api/auth/login
 Send the email address and the password. Answers `200` with the token, and sets the session cookie in the same response:
 
 <SettingTable :settings="[
-  { name: 'email', type: 'string', default: '—', description: 'The email address of the account.' },
-  { name: 'password', type: 'string', default: '—', description: 'The password of the account.' },
+  { name: 'email', type: 'string', default: 'None', description: 'The email address of the account.' },
+  { name: 'password', type: 'string', default: 'None', description: 'The password of the account.' },
 ]" />
 
 The response is the token and how long it lives:
 
 <SettingTable :settings="[
-  { name: 'accessToken', type: 'string', default: '—', description: 'The signed token. Send it in the Authorization header.' },
-  { name: 'expiresIn', type: 'number', default: '—', description: 'The lifetime of the token in seconds. 900, that is 15 minutes.' },
+  { name: 'accessToken', type: 'string', default: 'None', description: 'The signed token. Send it in the Authorization header.' },
+  { name: 'expiresIn', type: 'number', default: 'None', description: 'The lifetime of the token in seconds. 900, that is 15 minutes.' },
 ]" />
 
 Wrong credentials answer `SIGN_IN_UNAUTHORIZED` (401). After too many wrong passwords in a row the account is locked and answers `SIGN_IN_ACCOUNT_LOCKED` (423), see [Rate limits](./rate-limits#sign-in-lockout).
@@ -45,8 +45,8 @@ Authorization: Bearer <token>
 A token lasts 15 minutes. While you keep calling, the API hands you a fresh one: in the last third of its life, a successful response carries the new token in the `X-Renewed-Access-Token` header. Use it for your next calls. A session is never renewed past its maximum age, counted from the sign-in, and then you sign in again. An install sets that age with `SESSION_MAX_MINUTES`, 720 minutes by default.
 
 <SettingTable :settings="[
-  { name: 'Authorization', type: 'request header', default: '—', description: 'Bearer followed by the access token. When it is present, the cookie is ignored.' },
-  { name: 'X-Renewed-Access-Token', type: 'response header', default: '—', description: 'A fresh access token, sent when the one you used is in the last third of its life and the call succeeded.' },
+  { name: 'Authorization', type: 'request header', default: 'None', description: 'Bearer followed by the access token. When it is present, the cookie is ignored.' },
+  { name: 'X-Renewed-Access-Token', type: 'response header', default: 'None', description: 'A fresh access token, sent when the one you used is in the last third of its life and the call succeeded.' },
 ]" />
 
 ## Session cookie
@@ -87,8 +87,8 @@ POST /api/auth/2fa-login
 ```
 
 <SettingTable :settings="[
-  { name: 'pendingToken', type: 'string', default: '—', description: 'The pending token from the first call. It is short-lived.' },
-  { name: 'code', type: 'string', default: '—', description: 'The code from the authenticator app.' },
+  { name: 'pendingToken', type: 'string', default: 'None', description: 'The pending token from the first call. It is short-lived.' },
+  { name: 'code', type: 'string', default: 'None', description: 'The code from the authenticator app.' },
 ]" />
 
 On success the answer is the same as a sign-in without two-factor: the access token and the session cookie. A wrong code answers `TWO_FACTOR_CODE_UNAUTHORIZED` (401). A pending token that is malformed, expired or already used answers `PENDING_TOKEN_UNAUTHORIZED` (401).
@@ -98,11 +98,11 @@ On success the answer is the same as a sign-in without two-factor: the access to
 Every endpoint page states its requirement under **Access**. The requirements are these:
 
 <SettingTable :settings="[
-  { name: 'Anonymous', type: '', default: '—', description: 'No credential. The sign-in routes and the public storefront routes.' },
-  { name: 'Any signed-in user', type: '', default: '—', description: 'A valid session, of a client or of staff.' },
-  { name: 'Client', type: '', default: '—', description: 'A signed-in client user acting on their own account. A staff sign-in has no client account and is refused.' },
-  { name: 'Client permission', type: '', default: '—', description: 'Some client routes also need a permission that the account owner gave the user, such as ViewPayInvoices. A user without it gets CLIENT_PERMISSION_DENIED (403).' },
-  { name: 'Admin', type: '', default: '—', description: 'A signed-in member of staff with the Admin role.' },
+  { name: 'Anonymous', type: '', default: 'None', description: 'No credential. The sign-in routes and the public storefront routes.' },
+  { name: 'Any signed-in user', type: '', default: 'None', description: 'A valid session, of a client or of staff.' },
+  { name: 'Client', type: '', default: 'None', description: 'A signed-in client user acting on their own account. A staff sign-in has no client account and is refused.' },
+  { name: 'Client permission', type: '', default: 'None', description: 'Some client routes also need a permission that the account owner gave the user, such as ViewPayInvoices. A user without it gets CLIENT_PERMISSION_DENIED (403).' },
+  { name: 'Admin', type: '', default: 'None', description: 'A signed-in member of staff with the Admin role.' },
 ]" />
 
 The permissions a client user can hold are listed under [Users and permissions](../customers/account#permissions) in the customer guide.

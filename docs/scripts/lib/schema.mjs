@@ -115,7 +115,7 @@ export const createSchemaTools = (spec) => {
         rows.push({
           name: `${prefix}${field}`,
           type: typeLabel(property),
-          default: fallback === undefined ? '—' : String(fallback),
+          default: fallback === undefined ? 'None' : String(fallback),
           description,
         })
         if (depth >= MAX_ROW_DEPTH) { continue }

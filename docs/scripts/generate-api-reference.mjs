@@ -21,7 +21,7 @@
  * cannot place, so a page can never be silently missing.
  */
 
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { scanControllers, normalisePath } from './lib/controllers.mjs'
@@ -149,7 +149,7 @@ const splitSummary = (summary) => {
 const shorten = (text, max = 80) => {
   if (text.length <= max) { return text }
   const cut = text.slice(0, max).replace(/\s+\S*$/, '')
-  return `${cut}…`
+  return `${cut}...`
 }
 
 /** The area an operation is listed under in the sidebar: the controller route it belongs to. */
@@ -185,7 +185,7 @@ const parameterRows = (parameters) =>
     return {
       name: parameter.name,
       type: typeLabel(parameter.schema),
-      default: schema.default === undefined ? '—' : String(schema.default),
+      default: schema.default === undefined ? 'None' : String(schema.default),
       description,
     }
   })
@@ -431,8 +431,13 @@ for (const audience of AUDIENCES) {
   console.log(`${audience.key}: ${entries.length} operations in ${areas.size} areas`)
 }
 
-if (generated !== operations.length) {
-  console.error(`Generated ${generated} pages for ${operations.length} operations`)
+// Count what is on disk, not what the loop wrote: every operation of the document must have a page.
+const onDisk = AUDIENCES.reduce(
+  (total, audience) => total + (existsSync(resolve(apiDir, audience.dir)) ? readdirSync(resolve(apiDir, audience.dir)).filter((name) => name.endsWith('.md')).length : 0),
+  0,
+)
+if (generated !== operations.length || onDisk !== operations.length) {
+  console.error(`The document has ${operations.length} operations, ${generated} pages were written and ${onDisk} are on disk`)
   process.exit(1)
 }
 

@@ -654,11 +654,20 @@
 <data name="INTEGRATION_NOT_FOUND" xml:space="preserve">
     <value>Այդպիսի ինտեգրում չի գտնվել։</value>
   </data>
+<data name="INTEGRATION_FIELD_UNKNOWN" xml:space="preserve">
+    <value>Ինտեգրումը չի հայտարարում այդ դաշտը։</value>
+  </data>
+<data name="INTEGRATION_FIELD_INVALID" xml:space="preserve">
+    <value>Ինտեգրման այս դաշտի համար այդ արժեքը չի ընդունվում։</value>
+  </data>
 <data name="SETTING_NOT_FOUND" xml:space="preserve">
     <value>Այդպիսի կարգավորում չի գտնվել։</value>
   </data>
 <data name="INVALID_SETTING_VALUE" xml:space="preserve">
     <value>Այս կարգավորման համար այդ արժեքը չի ընդունվում։</value>
+  </data>
+<data name="SETTING_NOT_EDITABLE" xml:space="preserve">
+    <value>Այս կարգավորումն այստեղ հնարավոր չէ փոխել։</value>
   </data>
 <data name="BRANDING_IMAGE_INVALID" xml:space="preserve">
     <value>Այդ ֆայլը հնարավոր չեղավ կարդալ որպես պատկեր։ Վերբեռնեք PNG, JPEG, WebP, GIF կամ BMP։</value>

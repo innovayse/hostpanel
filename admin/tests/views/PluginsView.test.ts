@@ -42,7 +42,7 @@ const stubRoutes = (routes: Record<string, () => Response>) =>
   stubAllRoutes({ 'GET /api/admin/plugins/ineco/slot-widgets': () => json([]), ...routes })
 
 /** The stored "allow unsigned plugins" row, as the settings list returns it. */
-const signingRow = { id: 9, key: PluginSettingKey.AllowUnsigned, value: 'false', isSecret: false, hasValue: true }
+const signingRow = { id: 9, key: PluginSettingKey.AllowUnsigned, value: 'false' }
 
 /**
  * Mounts the screen and waits for the first load.

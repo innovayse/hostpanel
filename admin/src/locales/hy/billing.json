@@ -175,8 +175,9 @@
   "offlineCC": {
     "offlineCreditCardProcessing": "Օֆլայն քարտային վճարումների մշակում",
     "processOfflineCreditCardPayments": "Օֆլայն բանկային քարտերով վճարումների մշակում",
-    "comingSoon": "Շուտով",
-    "comingSoonDescription": "Քարտերի ձեռքով մշակումը հասանելի կլինի այստեղ։"
+    "paymentRecorded": "Վճարումը գրանցված է։",
+    "processPayment": "Մշակել վճարումը",
+    "viewInvoice": "Բացել հաշիվ №{id}"
   },
   "quoteDetail": {
     "newQuote": "Նոր առաջարկ",

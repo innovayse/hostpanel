@@ -8,6 +8,10 @@ Embedded into the Infrastructure assembly and read by `Pdf/EmbeddedFontResolver.
 | `DejaVuSans.ttf`, `DejaVuSans-Bold.ttf` | [DejaVu 2.37](https://github.com/dejavu-fonts/dejavu-fonts/releases/tag/version_2_37) (`dejavu-fonts-ttf-2.37.tar.bz2`) | `LICENSE-DejaVu.txt` (Bitstream Vera, DejaVu changes public domain) |
 | `NotoSansArmenian-Regular.ttf`, `NotoSansArmenian-Bold.ttf` | [Noto Sans Armenian v2.008](https://github.com/notofonts/armenian/releases/tag/NotoSansArmenian-v2.008), `unhinted/ttf` | `LICENSE-NotoSansArmenian.txt` (SIL OFL 1.1) |
 
+The licence texts are not embedded: the Infrastructure project copies `LICENSE-*.txt` to `Pdf/Fonts/` in the build
+and publish output, so the API image (which copies the publish output) ships them next to the binary, as the OFL
+requires. `FontLicenceTests` fails when one is missing from the output.
+
 Noto Sans Armenian is only a fallback for glyphs DejaVu Sans lacks, chiefly the dram sign (U+058F).
 
 ## Why the files are subsets

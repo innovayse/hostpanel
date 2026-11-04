@@ -5,8 +5,9 @@ namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 
 /// <summary>
 /// Selects the optimal server for provisioning a new account.
-/// Uses proportional fill strategy: picks the server with the lowest fill percentage,
-/// breaking ties by choosing the server with the higher capacity.
+/// A server group chooses by its own fill type: least full picks the lowest fill percentage, fill until full
+/// takes servers in order until each is at capacity. The default server breaks ties and leads a fill until full.
+/// With no group the least full server is chosen.
 /// </summary>
 public interface IServerSelector
 {

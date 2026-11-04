@@ -5,13 +5,14 @@ using Innovayse.Hostpanel.Application.Migration.Importers.Records;
 using Innovayse.Hostpanel.Domain.Migration;
 using Innovayse.Hostpanel.Domain.Migration.Enums;
 using Innovayse.Hostpanel.Domain.Support;
+using Microsoft.EntityFrameworkCore;
 
 namespace Innovayse.Hostpanel.Application.Migration.Importers;
 
 /// <summary>
-/// Imports announcement records. Unlike most
-/// other importers, an announcement is never deduplicated: every record the source plugin holds
-/// is created here, exactly as the worker always did.
+/// Imports announcement records. A retried or repeated run is duplicate-safe: an announcement is
+/// matched by its title (case-insensitive) and creation date, and one already held is skipped with
+/// <see cref="MigrationSkipReason.AlreadyExists"/>. A record the source left undated is matched by title alone.
 /// </summary>
 public sealed class AnnouncementsImporter : IMigrationEntityImporter
 {
@@ -40,10 +41,25 @@ public sealed class AnnouncementsImporter : IMigrationEntityImporter
     /// <summary>Imports one plugin-side announcement record.</summary>
     /// <param name="rec">The announcement record read from the source plugin.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Always <see cref="RecordImportResult.Imported"/>: an announcement is never deduplicated.</returns>
+    /// <returns>Whether the announcement was imported, or skipped as <see cref="MigrationSkipReason.AlreadyExists"/>.</returns>
     private async Task<RecordImportResult> ImportAnnouncementAsync(AnnouncementRecord rec, CancellationToken ct)
     {
+        var title = rec.Title.ToLower();
+        var createdAt = rec.CreatedAt;
+        var exists = createdAt is { } date
+            ? await _context.Announcements.AnyAsync(a => a.Title.ToLower() == title && a.CreatedAt == date, ct)
+            : await _context.Announcements.AnyAsync(a => a.Title.ToLower() == title, ct);
+        if (exists)
+        {
+            return RecordImportResult.Skipped(MigrationSkipReason.AlreadyExists);
+        }
+
         var announcement = Announcement.Create(rec.Title, rec.Content, rec.Published);
+        if (createdAt is { } writtenAt)
+        {
+            announcement.Backdate(writtenAt);
+        }
+
         _context.Announcements.Add(announcement);
         await _context.SaveChangesAsync(ct);
         return RecordImportResult.Imported;

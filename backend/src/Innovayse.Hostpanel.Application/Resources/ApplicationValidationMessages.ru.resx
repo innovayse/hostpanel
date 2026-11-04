@@ -1307,9 +1307,6 @@
   <data name="ClientEmailChangeTokenRequired" xml:space="preserve">
     <value>Ссылка подтверждения неполная. Откройте ссылку из письма ещё раз.</value>
   </data>
-  <data name="IntegrationFieldUnknown" xml:space="preserve">
-    <value>Интеграция не объявляет одно из переданных полей.</value>
-  </data>
   <data name="CurrencyCodeDuplicate" xml:space="preserve">
     <value>Каждую валюту можно указать только один раз.</value>
   </data>

@@ -65,4 +65,18 @@ describe('UiNumberInput', () => {
     expect(wrapper.emitted('update:modelValue')).toBeUndefined()
     expect(wrapper.get('input').attributes('disabled')).toBeDefined()
   })
+
+  it('puts the id on the input and flags it invalid', () => {
+    const wrapper = mount(UiNumberInput, { props: { modelValue: 5, id: 'amount', invalid: true } })
+
+    expect(wrapper.get('input').attributes('id')).toBe('amount')
+    expect(wrapper.get('input').attributes('aria-invalid')).toBe('true')
+    expect(wrapper.get('input').classes()).toContain('border-status-red/60')
+  })
+
+  it('is not flagged invalid by default', () => {
+    const wrapper = mount(UiNumberInput, { props: { modelValue: 5 } })
+
+    expect(wrapper.get('input').attributes('aria-invalid')).toBeUndefined()
+  })
 })

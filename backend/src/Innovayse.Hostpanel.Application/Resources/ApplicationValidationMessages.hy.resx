@@ -1307,9 +1307,6 @@
   <data name="ClientEmailChangeTokenRequired" xml:space="preserve">
     <value>Հաստատման հղումը թերի է։ Կրկին բացեք նամակի հղումը։</value>
   </data>
-  <data name="IntegrationFieldUnknown" xml:space="preserve">
-    <value>Ինտեգրացիան չի հայտարարում ուղարկված դաշտերից մեկը։</value>
-  </data>
   <data name="CurrencyCodeDuplicate" xml:space="preserve">
     <value>Յուրաքանչյուր արժույթ կարելի է նշել միայն մեկ անգամ։</value>
   </data>

@@ -11,9 +11,13 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 /// <param name="Type">Input kind of the field; a secret kind is rendered as a write-only box.</param>
 /// <param name="Required">Whether the field must be non-empty before the integration can be enabled.</param>
 /// <param name="Options">Allowed values for "select" type fields; null for all other types.</param>
+/// <param name="Min">Smallest accepted value of a number field; null for no lower bound or any other type.</param>
+/// <param name="Max">Largest accepted value of a number field; null for no upper bound or any other type.</param>
 public sealed record FieldDefinitionDto(
     string Key,
     string Label,
     IntegrationFieldType Type,
     bool Required,
-    IReadOnlyList<string>? Options = null);
+    IReadOnlyList<string>? Options = null,
+    decimal? Min = null,
+    decimal? Max = null);

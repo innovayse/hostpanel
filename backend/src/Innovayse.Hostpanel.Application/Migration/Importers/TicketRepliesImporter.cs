@@ -11,6 +11,8 @@ namespace Innovayse.Hostpanel.Application.Migration.Importers;
 
 /// <summary>
 /// Imports ticket reply records onto the ticket they belong to, matched by client and subject.
+/// A retried or repeated run is duplicate-safe: a reply whose message, author and staff flag the
+/// ticket already holds is skipped with <see cref="MigrationSkipReason.AlreadyExists"/>.
 /// </summary>
 public sealed class TicketRepliesImporter : IMigrationEntityImporter
 {
@@ -77,18 +79,25 @@ public sealed class TicketRepliesImporter : IMigrationEntityImporter
             return RecordImportResult.Skipped(MigrationSkipReason.TicketNotFound);
         }
 
+        // Normalised exactly as on write, so a blank value matches the placeholder it was stored as.
+        var message = string.IsNullOrWhiteSpace(rec.Message) ? "(no message)" : rec.Message;
+        // TicketReply.AuthorName is NOT NULL and defaults to empty, so a missing author is stored as the
+        // empty string: a neutral value, never display text. The frontend renders its own fallback.
+        var authorName = string.IsNullOrWhiteSpace(rec.AuthorName) ? string.Empty : rec.AuthorName;
+
+        // Checked before the closed-ticket rule: a reply imported earlier stays "already exists"
+        // even when the ticket was closed since.
+        if (ticket.HasReply(message, authorName, rec.IsStaffReply))
+        {
+            return RecordImportResult.Skipped(MigrationSkipReason.AlreadyExists);
+        }
+
         if (ticket.Status == TicketStatus.Closed)
         {
             return RecordImportResult.Skipped(MigrationSkipReason.TicketClosed);
         }
 
-        ticket.AddReply(
-            string.IsNullOrWhiteSpace(rec.Message) ? "(no message)" : rec.Message,
-            // TicketReply.AuthorName is NOT NULL and defaults to empty, so a missing author is stored as the
-            // empty string: a neutral value, never display text. The frontend renders its own fallback.
-            string.IsNullOrWhiteSpace(rec.AuthorName) ? string.Empty : rec.AuthorName,
-            rec.IsStaffReply,
-            _clock.UtcNow);
+        ticket.AddReply(message, authorName, rec.IsStaffReply, _clock.UtcNow);
 
         await _context.SaveChangesAsync(ct);
         return RecordImportResult.Imported;

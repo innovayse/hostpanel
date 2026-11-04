@@ -104,11 +104,12 @@ public sealed class Ticket : BaseEntity, IAggregateRoot
     /// Raises <see cref="TicketRepliedEvent"/>.
     /// </summary>
     /// <param name="message">The reply body text.</param>
-    /// <param name="authorName">Display name of the reply author.</param>
+    /// <param name="authorName">Display name of the reply author; empty when the source recorded none.</param>
     /// <param name="isStaffReply">Whether the author is a staff member.</param>
     /// <param name="occurredAt">The moment the reply was posted, UTC.</param>
     /// <exception cref="DomainRuleException">Thrown when the ticket is already closed.</exception>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="message"/> or <paramref name="authorName"/> is null or whitespace.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="message"/> is null or whitespace.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="authorName"/> is null.</exception>
     public void AddReply(string message, string authorName, bool isStaffReply, DateTimeOffset occurredAt)
     {
         if (Status == TicketStatus.Closed)
@@ -122,6 +123,20 @@ public sealed class Ticket : BaseEntity, IAggregateRoot
         Status = isStaffReply ? TicketStatus.AwaitingReply : TicketStatus.Open;
         AddDomainEvent(new TicketRepliedEvent(Id, isStaffReply) { OccurredAt = occurredAt });
     }
+
+    /// <summary>
+    /// Tells whether this ticket already holds a reply with the same message, author and staff flag
+    /// (message and author compared case-insensitively), so an import can skip a reply it wrote earlier.
+    /// </summary>
+    /// <param name="message">The reply body text.</param>
+    /// <param name="authorName">Display name of the reply author.</param>
+    /// <param name="isStaffReply">Whether the author is a staff member.</param>
+    /// <returns><see langword="true"/> when an identical reply is already on the ticket.</returns>
+    public bool HasReply(string message, string authorName, bool isStaffReply) =>
+        _replies.Any(r =>
+            r.IsStaffReply == isStaffReply
+            && string.Equals(r.Message, message, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(r.AuthorName, authorName, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// Moves the whole history of the ticket into the past, for tickets seeded from history rather than opened now:

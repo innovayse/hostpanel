@@ -84,15 +84,72 @@ public sealed class SaveIntegrationConfigHandler
     /// <param name="command">The save integration config command.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// Success, or <c>INTEGRATION_NOT_FOUND</c> when the slug names neither a built-in integration
-    /// nor a loaded plugin.
+    /// Success; <c>INTEGRATION_NOT_FOUND</c> when the slug names neither a built-in integration
+    /// nor a loaded plugin; <c>INTEGRATION_FIELD_UNKNOWN</c> when a written or cleared key is not
+    /// declared (exact spelling) or is the reserved switch key; <c>INTEGRATION_FIELD_INVALID</c> when a
+    /// value does not fit its field's type, with what the field expects in <c>errors[key]</c>. Nothing is
+    /// written on a refusal.
     /// </returns>
     public async Task<Result> HandleAsync(SaveIntegrationConfigCommand command, CancellationToken ct)
     {
         var slug = command.Slug;
-        if (IntegrationFields.Resolve(slug, _plugins) is null)
+        var definition = IntegrationFields.Resolve(slug, _plugins);
+        if (definition is null)
         {
             return Result.FailureCode(HostpanelErrorCodes.INTEGRATION_NOT_FOUND);
+        }
+
+        // Only the declared fields can be written, matched exactly: a case variant is a different key and is refused,
+        // and the switch key is reserved to IsEnabled even if a plugin manifest declares a field of that name.
+        var declared = new Dictionary<string, FieldDefinitionDto>(StringComparer.Ordinal);
+        foreach (var field in definition.Fields.Where(f => f.Key != IntegrationSettingKeys.IsEnabledField))
+        {
+            declared.TryAdd(field.Key, field);
+        }
+
+        var secrecy = SettingSecrecy.From(_plugins);
+        var clear = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var fieldKey in command.ClearFields ?? [])
+        {
+            if (!declared.ContainsKey(fieldKey))
+            {
+                return Unknown(fieldKey);
+            }
+
+            clear.Add(fieldKey);
+        }
+
+        // Everything is checked before the first row is touched, so a refusal leaves nothing written.
+        var writes = new List<(string Key, string Value, bool IsSecret, string FieldKey)>();
+        foreach (var (fieldKey, fieldValue) in command.Config)
+        {
+            if (!declared.TryGetValue(fieldKey, out var field))
+            {
+                return Unknown(fieldKey);
+            }
+
+            if (clear.Contains(field.Key))
+            {
+                continue; // Cleared below; a clear wins over a value sent alongside it.
+            }
+
+            var key = IntegrationSettingKeys.FieldKey(slug, field.Key);
+            var isSecret = secrecy.IsSecret(key);
+
+            // The admin panel never receives a secret, so an empty secret field means "unchanged".
+            if (isSecret && string.IsNullOrWhiteSpace(fieldValue))
+            {
+                continue;
+            }
+
+            var check = IntegrationFieldValueRules.Check(field, fieldValue);
+            if (!check.IsValid)
+            {
+                return Result.FailureWithDetail(
+                    check.Text, HostpanelErrorCodes.INTEGRATION_FIELD_INVALID, field.Key, check.Text);
+            }
+
+            writes.Add((key, check.Text, isSecret, field.Key));
         }
 
         // Upsert the is_enabled flag.
@@ -102,28 +159,11 @@ public sealed class SaveIntegrationConfigHandler
             $"Whether the {slug} integration is enabled.",
             ct);
 
-        var secrecy = SettingSecrecy.From(_plugins);
-        var clear = new HashSet<string>(command.ClearFields ?? [], StringComparer.OrdinalIgnoreCase);
         var audit = new List<(string Key, SecretSettingChange Change)>();
-
-        foreach (var (fieldKey, fieldValue) in command.Config)
+        foreach (var (key, value, isSecret, fieldKey) in writes)
         {
-            if (clear.Contains(fieldKey))
-            {
-                continue; // Cleared below; a clear wins over a value sent alongside it.
-            }
-
-            var key = IntegrationSettingKeys.FieldKey(slug, fieldKey);
-            var isSecret = secrecy.IsSecret(key);
-
-            // The admin panel never receives a secret, so an empty secret field means "unchanged".
-            if (isSecret && string.IsNullOrWhiteSpace(fieldValue))
-            {
-                continue;
-            }
-
             // A secret is stored encrypted; the readers that need it decrypt through the same cipher.
-            var stored = isSecret ? _cipher.Protect(fieldValue!) : fieldValue ?? string.Empty;
+            var stored = isSecret ? _cipher.Protect(value) : value;
             await UpsertAsync(key, stored, $"{slug} integration field: {fieldKey}.", ct);
             if (isSecret)
             {
@@ -174,6 +214,15 @@ public sealed class SaveIntegrationConfigHandler
         }
 
         return Result.Success();
+    }
+
+    /// <summary>Builds the refusal for a field key the integration does not declare.</summary>
+    /// <param name="fieldKey">The submitted key.</param>
+    /// <returns>The <c>INTEGRATION_FIELD_UNKNOWN</c> refusal, naming the key in <c>errors</c>.</returns>
+    private static Result Unknown(string fieldKey)
+    {
+        const string message = "This field is not declared by the integration.";
+        return Result.FailureWithDetail(message, HostpanelErrorCodes.INTEGRATION_FIELD_UNKNOWN, fieldKey, message);
     }
 
     /// <summary>

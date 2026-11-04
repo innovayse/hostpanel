@@ -26,10 +26,14 @@ export const stripeDetail: IntegrationDetailDto = {
   config: {
     secretKey: { value: null, isSecret: true, hasValue: false },
     publishableKey: { value: '', isSecret: false, hasValue: false },
+    webhookUrl: { value: '', isSecret: false, hasValue: false },
+    timeoutSeconds: { value: '30', isSecret: false, hasValue: true },
   },
   fieldDefinitions: [
     { key: 'secretKey', label: 'Secret key', type: IntegrationFieldType.Password, required: true },
     { key: 'publishableKey', label: 'Publishable key', type: IntegrationFieldType.Text, required: false },
+    { key: 'webhookUrl', label: 'Webhook URL', type: IntegrationFieldType.Url, required: false },
+    { key: 'timeoutSeconds', label: 'Timeout (seconds)', type: IntegrationFieldType.Number, required: false, min: 1, max: 60 },
   ],
 }
 

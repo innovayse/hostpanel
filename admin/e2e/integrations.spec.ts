@@ -40,12 +40,18 @@ test('saving the configuration sends the enabled flag and the field values', asy
   await page.getByTestId('integration-enabled').click()
   await fieldOf(page, 'integration-field-secretKey').fill('sk_test_123')
   await fieldOf(page, 'integration-field-publishableKey').fill('pk_test_123')
+  await fieldOf(page, 'integration-field-webhookUrl').fill('https://hooks.example.com/stripe')
   await page.getByTestId('integration-save').click()
 
   await expect.poll(() => api.callsTo(HttpMethod.Put, `/api/admin/integrations/${stripe.slug}`).length).toBe(1)
   expect(api.callsTo(HttpMethod.Put, `/api/admin/integrations/${stripe.slug}`)[0]?.body).toEqual({
     isEnabled: true,
-    config: { secretKey: 'sk_test_123', publishableKey: 'pk_test_123' },
+    config: {
+      secretKey: 'sk_test_123',
+      publishableKey: 'pk_test_123',
+      webhookUrl: 'https://hooks.example.com/stripe',
+      timeoutSeconds: '30',
+    },
   })
 })
 

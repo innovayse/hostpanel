@@ -25,6 +25,7 @@ import UiHeading from '@/components/ui/UiHeading.vue'
 import UiImage from '@/components/ui/UiImage.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
+import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -150,6 +151,27 @@ const setValue = (key: string, value: string | number | null): void => {
 }
 
 /**
+ * Reads a field's stored text as the number the number input takes.
+ *
+ * @param key - The field key.
+ * @returns The number, or null while the field is empty.
+ */
+const numberOf = (key: string): number | null => {
+  const raw = localConfig.value[key]
+  return raw === undefined || raw === '' ? null : Number(raw)
+}
+
+/**
+ * Stores a number the admin entered as the string the API keeps.
+ *
+ * @param key - The field key.
+ * @param value - The entered number.
+ */
+const setNumber = (key: string, value: number): void => {
+  localConfig.value[key] = String(value)
+}
+
+/**
  * Select options of a field.
  *
  * @param field - The field definition.
@@ -269,11 +291,22 @@ const handleSave = (): void => {
                 </UiText>
               </UiLabel>
 
+              <UiNumberInput
+                v-else-if="field.type === IntegrationFieldType.Number"
+                :id="id"
+                :model-value="numberOf(field.key)"
+                :min="field.min ?? undefined"
+                :max="field.max ?? undefined"
+                :placeholder="t('integrations.integrationConfigForm.enterValue', { label: field.label })"
+                :data-testid="`integration-field-${field.key}`"
+                @update:model-value="setNumber(field.key, $event)"
+              />
+
               <UiInput
                 v-else
                 :id="id"
                 v-model="localConfig[field.key]"
-                :type="UiInputType.Text"
+                :type="field.type === IntegrationFieldType.Url ? UiInputType.Url : UiInputType.Text"
                 class="font-mono"
                 :placeholder="t('integrations.integrationConfigForm.enterValue', { label: field.label })"
                 :data-testid="`integration-field-${field.key}`"

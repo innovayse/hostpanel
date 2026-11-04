@@ -1307,9 +1307,6 @@
   <data name="ClientEmailChangeTokenRequired" xml:space="preserve">
     <value>The confirmation link is incomplete. Open the link from the email again.</value>
   </data>
-  <data name="IntegrationFieldUnknown" xml:space="preserve">
-    <value>The integration does not declare one of the submitted fields.</value>
-  </data>
   <data name="CurrencyCodeDuplicate" xml:space="preserve">
     <value>Each currency may be listed only once.</value>
   </data>

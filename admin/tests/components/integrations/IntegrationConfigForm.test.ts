@@ -134,4 +134,34 @@ describe('IntegrationConfigForm', () => {
     const testing = mountForm({ testing: true })
     expect(testing.get('[data-testid="integration-save"]').attributes('disabled')).toBeDefined()
   })
+
+  it('renders a Url field as a url input and a Number field as a bounded number input', () => {
+    const wrapper = mountForm({
+      integration: integrationDetail({
+        config: { webhookUrl: { value: 'https://hooks.example.com', isSecret: false, hasValue: true }, retries: { value: '3', isSecret: false, hasValue: true } },
+        fieldDefinitions: [
+          { key: 'webhookUrl', label: 'Webhook URL', type: IntegrationFieldType.Url, required: false },
+          { key: 'retries', label: 'Retries', type: IntegrationFieldType.Number, required: false, min: 1, max: 5 },
+        ],
+      }),
+    })
+
+    expect(wrapper.get('[data-testid="integration-field-webhookUrl"]').attributes('type')).toBe('url')
+    expect((wrapper.get('[data-testid="integration-field-webhookUrl"]').element as HTMLInputElement).value).toBe('https://hooks.example.com')
+    expect(wrapper.find('[data-testid="integration-field-retries"]').exists()).toBe(true)
+  })
+
+  it('sends a number field as its string value', async () => {
+    const wrapper = mountForm({
+      integration: integrationDetail({
+        config: { retries: { value: '3', isSecret: false, hasValue: true } },
+        fieldDefinitions: [{ key: 'retries', label: 'Retries', type: IntegrationFieldType.Number, required: false, min: 1, max: 5 }],
+      }),
+    })
+
+    await wrapper.get('[data-testid="integration-save"]').trigger('click')
+
+    const payload = wrapper.emitted('save')?.[0]?.[0] as { config: Record<string, string> }
+    expect(payload.config.retries).toBe('3')
+  })
 })

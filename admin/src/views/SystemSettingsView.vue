@@ -3,15 +3,11 @@
  * System settings view: the storefront's identity, content, appearance and branding cards, then the
  * key-value list of every other global setting.
  *
- * A secret row (an integration credential, the setup token) is write only: the API sends whether it
- * is set, never its value, so the row shows a masked placeholder with Replace and Clear instead of
- * the stored text.
- *
  * Only the first load replaces the page with a loading state: every save re-fetches the list, and
  * swapping the cards for a spinner and back would unmount them and drop every unsaved draft in the
  * other cards. A refused first load shows the API's sentence with a retry instead of the cards.
  *
- * The outcome of a save or clear (success, or the API's sentence) shows next to the control that
+ * The outcome of a save (success, or the API's sentence) shows next to the control that
  * was saved: inside its card, or in the value cell of its table row.
  */
 import { onMounted, ref } from 'vue'
@@ -22,7 +18,6 @@ import HomeSectionsCard from '@/components/settings/HomeSectionsCard.vue'
 import HostingDetailsCard from '@/components/settings/HostingDetailsCard.vue'
 import PortalAppearanceCard from '@/components/settings/PortalAppearanceCard.vue'
 import SettingOutcome from '@/components/settings/SettingOutcome.vue'
-import SecretSettingField from '@/components/settings/SecretSettingField.vue'
 import SettingsLoading from '@/components/settings/SettingsLoading.vue'
 import SiteIdentityCard from '@/components/settings/SiteIdentityCard.vue'
 import StorefrontContentCard from '@/components/settings/StorefrontContentCard.vue'
@@ -48,10 +43,10 @@ const { t } = useI18n()
 /** Settings store: the list, the loading flag and the refusal sentence. */
 const store = useSettingsStore()
 
-/** True while a table row's save or clear is in flight, so the table disables its controls. */
+/** True while a table row's save is in flight, so the table disables its controls. */
 const saving = ref(false)
 
-/** How the last save or clear of each table row went, keyed by setting id; cleared by the next edit. */
+/** How the last save of each table row went, keyed by setting id; cleared by the next edit. */
 const rowOutcomes = ref<Record<number, SettingSaveResult | null>>({})
 
 /**
@@ -62,12 +57,6 @@ const rowOutcomes = ref<Record<number, SettingSaveResult | null>>({})
  * be saved along with the others.
  */
 const drafts = ref<Record<number, string>>({})
-
-/**
- * Bumped after every saved table row. It keys the secret controls, so a saved replacement closes
- * its input and shows the masked placeholder again even though the row's "set" state is unchanged.
- */
-const savedVersion = ref(0)
 
 /**
  * Reads the outcome of the store's last action: saved, or the API's refusal sentence.
@@ -92,17 +81,15 @@ onMounted(store.fetchSettings)
 const onSave = async (id: number, value: string): Promise<SettingSaveResult> => resultOf(await store.updateSetting(id, value))
 
 /**
- * Current text for a row: the operator's unsaved edit, or the stored value. A secret row starts
- * empty, because its stored value never reaches the browser.
+ * Current text for a row: the operator's unsaved edit, or the stored value.
  *
  * @param setting - The settings row.
  * @returns The text the input shows.
  */
-const draftOf = (setting: Setting): string => drafts.value[setting.id] ?? (setting.isSecret ? '' : setting.value ?? '')
+const draftOf = (setting: Setting): string => drafts.value[setting.id] ?? (setting.value ?? '')
 
 /**
- * Whether a row has an edit worth saving. For a secret only a typed replacement counts: an empty
- * value would keep the stored one, so there is nothing to save.
+ * Whether a row has an edit worth saving.
  *
  * @param setting - The settings row.
  * @returns True when the draft differs from the stored value.
@@ -110,9 +97,6 @@ const draftOf = (setting: Setting): string => drafts.value[setting.id] ?? (setti
 const isDirty = (setting: Setting): boolean => {
   if (!(setting.id in drafts.value)) {
     return false
-  }
-  if (setting.isSecret) {
-    return (drafts.value[setting.id] ?? '').trim().length > 0
   }
   return drafts.value[setting.id] !== (setting.value ?? '')
 }
@@ -126,22 +110,6 @@ const isDirty = (setting: Setting): boolean => {
 const edit = (setting: Setting, value: string): void => {
   drafts.value[setting.id] = value
   rowOutcomes.value[setting.id] = null
-}
-
-/**
- * Removes a secret row's stored value and drops any typed replacement.
- *
- * @param setting - The secret settings row.
- */
-const clearRow = async (setting: Setting): Promise<void> => {
-  rowOutcomes.value[setting.id] = null
-  saving.value = true
-  const cleared = await store.clearSetting(setting.id)
-  saving.value = false
-  rowOutcomes.value[setting.id] = resultOf(cleared)
-  if (cleared) {
-    delete drafts.value[setting.id]
-  }
 }
 
 /**
@@ -165,7 +133,6 @@ const saveRow = async (setting: Setting): Promise<void> => {
   rowOutcomes.value[setting.id] = result
   if (result.saved) {
     delete drafts.value[setting.id]
-    savedVersion.value += 1
   }
 }
 </script>
@@ -210,20 +177,7 @@ const saveRow = async (setting: Setting): Promise<void> => {
               <UiTableCell class="font-mono text-text-primary">{{ setting.key }}</UiTableCell>
               <UiTableCell>
                 <UiStack direction="row" align="center" gap="sm">
-                  <SecretSettingField
-                    v-if="setting.isSecret"
-                    :key="`${setting.id}-${savedVersion}`"
-                    :has-value="setting.hasValue"
-                    :model-value="draftOf(setting)"
-                    size="sm"
-                    :disabled="saving"
-                    :testid="`setting-secret-${setting.id}`"
-                    class="min-w-48 flex-1"
-                    @update:model-value="edit(setting, $event)"
-                    @clear="clearRow(setting)"
-                  />
                   <UiInput
-                    v-else
                     :model-value="draftOf(setting)"
                     type="text"
                     size="sm"

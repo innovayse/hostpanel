@@ -175,8 +175,9 @@
   "offlineCC": {
     "offlineCreditCardProcessing": "Offline Credit Card Processing",
     "processOfflineCreditCardPayments": "Process offline credit card payments",
-    "comingSoon": "Coming soon",
-    "comingSoonDescription": "Offline card processing will be available here."
+    "paymentRecorded": "Payment recorded.",
+    "processPayment": "Process payment",
+    "viewInvoice": "View invoice #{id}"
   },
   "quoteDetail": {
     "newQuote": "New Quote",

@@ -17,12 +17,12 @@ beforeEach(() => {
 
 /** Every row the card edits, as the API seeds them. */
 const rows: Setting[] = [
-  { id: 1, key: 'portal.analytics.gtm_id', value: '', isSecret: false, hasValue: false },
-  { id: 2, key: 'portal.chat.provider', value: '', isSecret: false, hasValue: false },
-  { id: 3, key: 'portal.chat.base_url', value: 'https://chat.example.com', isSecret: false, hasValue: true },
-  { id: 4, key: 'portal.chat.website_token', value: '', isSecret: false, hasValue: false },
-  { id: 5, key: 'portal.chat.website_token.ru', value: '', isSecret: false, hasValue: false },
-  { id: 6, key: 'portal.chat.website_token.hy', value: '', isSecret: false, hasValue: false },
+  { id: 1, key: 'portal.analytics.gtm_id', value: '' },
+  { id: 2, key: 'portal.chat.provider', value: '' },
+  { id: 3, key: 'portal.chat.base_url', value: 'https://chat.example.com' },
+  { id: 4, key: 'portal.chat.website_token', value: '' },
+  { id: 5, key: 'portal.chat.website_token.ru', value: '' },
+  { id: 6, key: 'portal.chat.website_token.hy', value: '' },
 ]
 
 describe('TrackingChatCard', () => {

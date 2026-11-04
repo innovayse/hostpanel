@@ -486,8 +486,8 @@ docker/                              compose set (shared·dev·prod·platform), 
     signing tool runs on the publisher's own folder and has no such guarantee.
     `PluginSignaturePayload.Header` carries the version, so a change of format is a new header, not a silent clash.
   - **Trusted keys** are public keys only (`PluginSigningOptions`, sealed, `SectionName = "PluginSigning"`, validated
-    at startup by `PluginSigningOptionsValidator`): `MaintainerKeys` ships in `appsettings.json` (empty until the
-    maintainers publish a key; nothing placeholder is shipped, tests generate their own keys per run) and `OperatorKeys`
+    at startup by `PluginSigningOptionsValidator`): `MaintainerKeys` ships in `appsettings.json` (the Innovayse key
+    `innovayse-2026`; its private half is never in a repository or on a host, tests generate their own keys per run) and `OperatorKeys`
     is the operator's own (`PluginSigning__OperatorKeys__0__KeyId` and `__PublicKey`, the base64 of the 32-byte raw
     key). Two lists because configuration arrays merge by index: one list would let an operator's first entry replace
     the maintainers' first. The trusted set is both lists; a key id may appear once. A private key is never in the

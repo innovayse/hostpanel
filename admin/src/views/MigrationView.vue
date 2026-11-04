@@ -103,6 +103,7 @@ const createError = ref<string | null>(null)
 
 /** The outcome line of the last create or delete. */
 const feedback = useResultBanner()
+/** Link to the docs guide for this screen, or null when docsUrl is not configured. */
 const { guideUrl } = useDocsGuide()
 
 /** Tone of the outcome line: danger for a refusal, success otherwise. */

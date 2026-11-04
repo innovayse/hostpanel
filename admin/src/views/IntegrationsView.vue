@@ -17,11 +17,13 @@ import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import { useDocsGuide } from '@/composables/useDocsGuide'
+import PageHelpLink from '@/components/layout/PageHelpLink.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 
 /** Translation function. */
 const { t } = useI18n()
+/** Link to the docs guide for this screen, or null when docsUrl is not configured. */
 const { guideUrl } = useDocsGuide()
 
 /** Current route, whose param names the category. */
@@ -64,7 +66,7 @@ onMounted(store.fetchAll)
   <UiStack gap="md" class="w-full">
     <UiPageHeader :title="activeCategoryLabel" :subtitle="subtitle">
       <template v-if="guideUrl" #actions>
-        <a :href="guideUrl" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary" data-testid="page-help-link">{{ t('common.help') }}</a>
+        <PageHelpLink :url="guideUrl" />
       </template>
     </UiPageHeader>
 

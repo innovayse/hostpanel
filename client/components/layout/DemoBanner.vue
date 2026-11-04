@@ -18,7 +18,7 @@
         <UiText as="span" size="sm" tone="inherit" class="min-w-0 break-words" :class="tone.body" data-testid="demo-banner-note">{{ $t('demo.note') }}</UiText>
         <UiLink
           v-if="docsUrl"
-          :href="`${docsUrl.replace(/\/+$/, '')}/customers/portal`"
+          :href="`${docsUrl}/customers/portal`"
           external
           class="shrink-0 text-sm font-medium underline"
           :class="tone.title"

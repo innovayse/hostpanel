@@ -199,7 +199,7 @@ export default defineNuxtConfig({
       // NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: empty leaves the card form uninitialised.
       stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
       mainUrl: process.env.NUXT_PUBLIC_MAIN_URL || '',
-      docsUrl: process.env.NUXT_PUBLIC_DOCS_URL || '',
+      docsUrl: (process.env.NUXT_PUBLIC_DOCS_URL || '').replace(/\/+$/, ''),
       // Active portal template when the operator's portal.template setting is empty. Empty here
       // (and anything unknown) resolves to DEFAULT_TEMPLATE in templates/types.ts, the one default.
       portalTemplate: process.env.NUXT_PUBLIC_PORTAL_TEMPLATE || '',

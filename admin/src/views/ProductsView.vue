@@ -91,6 +91,7 @@ onMounted(loadAll)
 
 /** The success line of the last save, shown above the table; a refusal shows inside the dialog. */
 const feedback = useResultBanner()
+/** Link to the docs guide for this screen, or null when docsUrl is not configured. */
 const { guideUrl } = useDocsGuide()
 
 /**

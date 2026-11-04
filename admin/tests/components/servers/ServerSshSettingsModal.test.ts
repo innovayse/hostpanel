@@ -264,13 +264,13 @@ describe('ServerSshSettingsModal', () => {
     stubFetch(json(SETTINGS), json(SETUP))
     const wrapper = await mountDialog('')
 
-    expect(wrapper.find('[data-testid="page-help-link"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="ssh-guide-link"]').exists()).toBe(false)
   })
 
   it('shows the help link with the correct href and rel when docsUrl is set', async () => {
     stubFetch(json(SETTINGS), json(SETUP))
     const wrapper = await mountDialog('https://docs.example.com')
-    const link = wrapper.find('[data-testid="page-help-link"]')
+    const link = wrapper.find('[data-testid="ssh-guide-link"]')
 
     expect(link.exists()).toBe(true)
     expect(link.attributes('href')).toBe('https://docs.example.com/servers/ssh-key-agent')

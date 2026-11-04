@@ -22,7 +22,9 @@ defineProps<{
 </script>
 
 <template>
-  <UiStack align="center" justify="center" class="min-h-dvh bg-surface-base p-4">
+  <div class="min-h-dvh bg-surface-base">
+    <slot name="banner" />
+    <UiStack align="center" justify="center" class="p-4">
     <UiCard padding="lg" class="w-full max-w-sm">
       <UiStack gap="lg">
         <UiStack direction="row" align="center" gap="sm">
@@ -41,4 +43,5 @@ defineProps<{
       </UiStack>
     </UiCard>
   </UiStack>
+  </div>
 </template>

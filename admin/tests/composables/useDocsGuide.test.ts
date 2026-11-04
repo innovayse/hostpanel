@@ -27,6 +27,10 @@ const mockRoute = (path: string): void => {
   vi.mocked(useRoute).mockReturnValue({ path } as RouteLocationNormalizedLoaded)
 }
 
+/**
+ * Mounts a minimal component that calls `useDocsGuide` and captures the return value.
+ * The non-null assertion is safe because `setup` runs synchronously during `mount`.
+ */
 const mountGuide = (): ReturnType<typeof useDocsGuide> => {
   let result: ReturnType<typeof useDocsGuide> | undefined
   mount(defineComponent({
@@ -35,6 +39,7 @@ const mountGuide = (): ReturnType<typeof useDocsGuide> => {
       return () => h('div')
     },
   }))
+  // setup() runs synchronously, so result is always assigned before mount returns
   return result!
 }
 

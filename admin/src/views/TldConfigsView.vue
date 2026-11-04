@@ -57,6 +57,7 @@ const store = useTldConfigsStore()
 
 /** The result banner for import, sync and delete. */
 const banner = useResultBanner()
+/** Link to the docs guide for this screen, or null when docsUrl is not configured. */
 const { guideUrl } = useDocsGuide()
 
 /** Tone of the result banner: danger for a refusal, success otherwise. */

@@ -43,6 +43,9 @@ jobs:
         run: npm ci
 
       - name: Build
+        env:
+          DEMO_ADMIN_URL: ${{ vars.DEMO_ADMIN_URL }}
+          DEMO_CLIENT_URL: ${{ vars.DEMO_CLIENT_URL }}
         run: npm run build
 
       - name: Check docs

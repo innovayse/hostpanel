@@ -21,6 +21,7 @@
 import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getRuntimeConfig } from '@/lib/runtimeConfig'
+import { SSH_KEY_AGENT_GUIDE } from '@/lib/docsGuides'
 import { storeToRefs } from 'pinia'
 import { useServerSshStore } from '@/stores/serverssh'
 import type { ServerSshSettingsDto, ServerSshSettingsPayload, SshAgentNetworkLines } from '@/types/serverssh'
@@ -51,7 +52,7 @@ const { t } = useI18n()
 /** Full URL to the SSH key agent guide, or null when docsUrl is not configured. */
 const sshGuideUrl = computed<string | null>(() => {
   const { docsUrl } = getRuntimeConfig()
-  return docsUrl ? `${docsUrl}/servers/ssh-key-agent` : null
+  return docsUrl ? `${docsUrl}/${SSH_KEY_AGENT_GUIDE}` : null
 })
 
 /** Props for ServerSshSettingsModal. */
@@ -288,7 +289,7 @@ watch(settings, (loaded) => {
         :href="sshGuideUrl"
         external
         class="text-sm"
-        data-testid="page-help-link"
+        data-testid="ssh-guide-link"
       >{{ t('common.help') }} →</UiLink>
       <UiAlert v-if="error" variant="error" data-testid="server-ssh-error">{{ error }}</UiAlert>
       <UiSkeleton v-if="loading && !settings" :lines="4" data-testid="server-ssh-loading" />

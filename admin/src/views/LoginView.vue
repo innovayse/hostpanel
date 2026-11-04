@@ -211,8 +211,10 @@ onMounted(async () => {
 </script>
 
 <template>
-  <DemoBanner />
   <AuthShell :title="t('auth.login.adminPanel')" :subtitle="subtitle">
+    <template #banner>
+      <DemoBanner />
+    </template>
     <UiStack gap="md">
       <!-- First-run notice: shown before and after sign-in, because it is true either way. -->
       <UiAlert

@@ -15,6 +15,7 @@ import Screenshot from './components/Screenshot.vue'
 import PageFeedback from './components/PageFeedback.vue'
 import HomeSearch from './components/HomeSearch.vue'
 import DemoLink from './components/DemoLink.vue'
+import HomeDemoButton from './components/HomeDemoButton.vue'
 
 /** The theme object exported to VitePress. */
 export default {
@@ -26,6 +27,7 @@ export default {
   Layout() {
     return h(DefaultTheme.Layout, null, {
       'doc-after': () => h(PageFeedback),
+      'home-hero-actions-after': () => h(HomeDemoButton),
     })
   },
   /**

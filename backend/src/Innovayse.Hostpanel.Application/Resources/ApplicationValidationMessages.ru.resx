@@ -1019,6 +1019,15 @@
   <data name="PluginIdInvalid" xml:space="preserve">
     <value>Идентификатор плагина может содержать только строчные латинские буквы, цифры и одиночные дефисы, не более 64 символов.</value>
   </data>
+  <data name="PluginSlotIdInvalid" xml:space="preserve">
+    <value>Некорректный идентификатор области страницы.</value>
+  </data>
+  <data name="PluginWidgetIdInvalid" xml:space="preserve">
+    <value>Некорректный идентификатор виджета.</value>
+  </data>
+  <data name="PluginProductIdsInvalid" xml:space="preserve">
+    <value>Выберите не более {0} продуктов.</value>
+  </data>
   <data name="IntegrationSlugRequired" xml:space="preserve">
     <value>Требуется указать слаг интеграции.</value>
   </data>
@@ -1298,9 +1307,6 @@
   <data name="ClientEmailChangeTokenRequired" xml:space="preserve">
     <value>Ссылка подтверждения неполная. Откройте ссылку из письма ещё раз.</value>
   </data>
-  <data name="IntegrationFieldUnknown" xml:space="preserve">
-    <value>Интеграция не объявляет одно из переданных полей.</value>
-  </data>
   <data name="CurrencyCodeDuplicate" xml:space="preserve">
     <value>Каждую валюту можно указать только один раз.</value>
   </data>
@@ -1348,5 +1354,37 @@
   </data>
   <data name="SaveSessionIdInvalid" xml:space="preserve">
     <value>Идентификатор настройки карты обязателен и не длиннее 255 символов.</value>
+  <data name="IntegrationFieldExpected" xml:space="preserve">
+    <value>Ожидается: {0}.</value>
+  </data>
+  <data name="IntegrationFieldUnknown" xml:space="preserve">
+    <value>Это поле не объявлено интеграцией.</value>
+  </data>
+  <data name="IntegrationFieldExpectSecret" xml:space="preserve">
+    <value>непустое значение; чтобы оставить сохранённый секрет, не передавайте поле</value>
+  </data>
+  <data name="IntegrationFieldExpectUrl" xml:space="preserve">
+    <value>абсолютный адрес http или https</value>
+  </data>
+  <data name="IntegrationFieldExpectToggle" xml:space="preserve">
+    <value>true или false</value>
+  </data>
+  <data name="IntegrationFieldExpectSelect" xml:space="preserve">
+    <value>одно из: {0}</value>
+  </data>
+  <data name="IntegrationFieldExpectNumberRange" xml:space="preserve">
+    <value>число от {0} до {1}</value>
+  </data>
+  <data name="IntegrationFieldExpectNumberMin" xml:space="preserve">
+    <value>число не менее {0}</value>
+  </data>
+  <data name="IntegrationFieldExpectNumberMax" xml:space="preserve">
+    <value>число не более {0}</value>
+  </data>
+  <data name="IntegrationFieldExpectNumber" xml:space="preserve">
+    <value>число</value>
+  </data>
+  <data name="IntegrationFieldExpectValue" xml:space="preserve">
+    <value>непустое значение</value>
   </data>
 </root>

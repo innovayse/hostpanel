@@ -25,6 +25,6 @@ internal sealed class FakeAppPlugin : IPluginEndpoints
     public Task<PluginReply> HandleAsync(PluginCall call, CancellationToken ct)
     {
         _probe.Calls.Enqueue(call);
-        return Task.FromResult(_probe.Behaviour(call));
+        return _probe.AsyncBehaviour is { } scripted ? scripted(call, ct) : Task.FromResult(_probe.Behaviour(call));
     }
 }

@@ -7,13 +7,14 @@ using Innovayse.Hostpanel.Domain.Migration;
 using Innovayse.Hostpanel.Domain.Migration.Enums;
 using Innovayse.Hostpanel.Domain.Support;
 using Innovayse.Hostpanel.Domain.Support.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace Innovayse.Hostpanel.Application.Migration.Importers;
 
 /// <summary>
-/// Imports network issue records. Like
-/// announcements, a network issue is never deduplicated: every record the source plugin holds
-/// is created here, exactly as the worker always did.
+/// Imports network issue records. A retried or repeated run is duplicate-safe: an issue is matched
+/// by its title (case-insensitive) and start date, and one already held is skipped with
+/// <see cref="MigrationSkipReason.AlreadyExists"/>. A record the source left without a start date is matched by title alone.
 /// </summary>
 public sealed class NetworkIssuesImporter : IMigrationEntityImporter
 {
@@ -47,9 +48,25 @@ public sealed class NetworkIssuesImporter : IMigrationEntityImporter
     /// <summary>Imports one plugin-side network issue record.</summary>
     /// <param name="rec">The network issue record read from the source plugin.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Always <see cref="RecordImportResult.Imported"/>: a network issue is never deduplicated.</returns>
+    /// <returns>Whether the network issue was imported, or skipped as <see cref="MigrationSkipReason.AlreadyExists"/>.</returns>
     private async Task<RecordImportResult> ImportNetworkIssueAsync(NetworkIssueRecord rec, CancellationToken ct)
     {
+        var title = rec.Title.ToLower();
+        // Cut to the stored precision so the date compares equal to the one a first run wrote.
+        var sourceStart = rec.StartDate is { } sourceDate ? MigrationTimestamps.ToMicroseconds(sourceDate) : (DateTimeOffset?)null;
+        // Lookup is served by IX_NetworkIssues_StartDate_Title (the equality column leads); the title-only
+        // fallback for an undated record has no usable index and is a sequential scan, acceptable for a rare case.
+        var exists = sourceStart is { } startDate
+            ? await _context.NetworkIssues.AnyAsync(i => i.StartDate == startDate && i.Title.ToLower() == title, ct)
+            : await _context.NetworkIssues.AnyAsync(i => i.Title.ToLower() == title, ct);
+        if (exists)
+        {
+            return RecordImportResult.Skipped(MigrationSkipReason.AlreadyExists);
+        }
+
+        // Computed once so the stored start date is the one the record was matched on.
+        var start = sourceStart ?? _clock.UtcNow;
+
         var type = rec.Type?.ToLowerInvariant() switch
         {
             SourceNetworkIssueValues.ServerType => NetworkIssueType.Server,
@@ -69,7 +86,7 @@ public sealed class NetworkIssuesImporter : IMigrationEntityImporter
             type,
             server: null,
             priority,
-            rec.StartDate ?? _clock.UtcNow,
+            start,
             string.IsNullOrWhiteSpace(rec.Description) ? "(no description)" : rec.Description);
 
         if (rec.Status?.ToLowerInvariant() == SourceNetworkIssueValues.Resolved)

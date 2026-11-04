@@ -17,7 +17,7 @@ import type { Setting } from '@/types/setting'
  */
 const switchFor = (value: string, fallback = 'false') => {
   /** The settings list holding the one row. */
-  const settings = ref<Setting[]>([{ id: 3, key: 'plugins.allow_unsigned', value, isSecret: false, hasValue: value.length > 0 }])
+  const settings = ref<Setting[]>([{ id: 3, key: 'plugins.allow_unsigned', value }])
   /** The draft of the row, read by the switch. */
   const draft = useSettingDraft(settings, 'plugins.allow_unsigned', fallback)
   return { draft, enabled: useSettingSwitch(draft) }

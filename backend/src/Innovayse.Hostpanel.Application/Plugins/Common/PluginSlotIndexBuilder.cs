@@ -13,17 +13,20 @@ namespace Innovayse.Hostpanel.Application.Plugins.Common;
 /// area's own handler before this runs, and nothing it returns depends on what a plugin would answer.
 /// </summary>
 /// <remarks>
-/// A widget is listed when its plugin is an app plugin that is loaded, switched on and configured (the same gates a
+/// A widget is listed when its plugin is a serving plugin (an app plugin, or any type declaring the <c>endpoints</c>
+/// capability, #818) that is loaded, switched on and configured (the same gates a
 /// plugin route passes, <see cref="IPluginEndpointResolver"/>), the operator has not hidden it
 /// (<see cref="PluginSettingKeys.HiddenSlotWidgets"/>), the viewer holds its permission (client slots) and the slot's
-/// service is one of the products it is bound to (a widget with no products is for every product).
+/// service is one of the products it is bound to (the operator's binding when the widget was ever bound, even if
+/// every product of it was deleted since, which shows it nowhere; else the manifest <c>productIds</c>; a widget with
+/// neither is for every product).
 /// </remarks>
 public sealed class PluginSlotIndexBuilder
 {
     /// <summary>The plugins loaded at startup and their manifests.</summary>
     private readonly IPluginRegistry _registry;
 
-    /// <summary>Finds an app plugin and checks that it is switched on, without building it.</summary>
+    /// <summary>Finds a serving plugin and checks that it is switched on, without building it.</summary>
     private readonly IPluginEndpointResolver _plugins;
 
     /// <summary>Reads the operator's hidden widgets setting.</summary>
@@ -31,7 +34,7 @@ public sealed class PluginSlotIndexBuilder
 
     /// <summary>Initializes a new instance of the <see cref="PluginSlotIndexBuilder"/> class.</summary>
     /// <param name="registry">The plugins loaded at startup and their manifests.</param>
-    /// <param name="plugins">Finds an app plugin and checks that it is switched on, without building it.</param>
+    /// <param name="plugins">Finds a serving plugin and checks that it is switched on, without building it.</param>
     /// <param name="context">Reads the operator's hidden widgets setting.</param>
     public PluginSlotIndexBuilder(IPluginRegistry registry, IPluginEndpointResolver plugins, IPluginSlotContextReader context)
     {
@@ -53,6 +56,11 @@ public sealed class PluginSlotIndexBuilder
         var hiddenValue = await _context.ReadHiddenWidgetsAsync(ct);
         var hidden = PluginSettingKeys.HiddenWidgets(hiddenValue);
 
+        // Read once per slot: every stored operator binding row of its widgets, rows of deleted products included, so a
+        // widget the operator bound is told apart from one never bound.
+        var bound = (await _context.ListBindingsAsync(null, slot.Id, ct))
+            .ToLookup(binding => (binding.PluginId, binding.WidgetId));
+
         var widgets = new List<PluginSlotWidgetDto>();
         foreach (var manifest in _registry.GetLoadedManifests())
         {
@@ -60,7 +68,7 @@ public sealed class PluginSlotIndexBuilder
                 .Where(entry => entry.Slot == slot.Id
                     && !hidden.Contains(PluginSettingKeys.HiddenWidgetEntry(slot.Id, manifest.Id, entry.Id))
                     && (slot.Area != PluginArea.Client || PluginClientPermissions.IsHeld(held, entry.Permission))
-                    && IsBoundTo(entry, productId))
+                    && IsBoundTo(entry, bound[(manifest.Id, entry.Id)].ToList(), productId))
                 .ToList();
 
             // The switch is read only for a plugin that has something to show, and nothing of the plugin is built.
@@ -84,13 +92,22 @@ public sealed class PluginSlotIndexBuilder
 
     /// <summary>Whether a widget may be shown for the slot's product.</summary>
     /// <param name="entry">The widget.</param>
+    /// <param name="operatorRows">The binding rows the operator stored for the widget, of deleted products too; empty when it was never bound.</param>
     /// <param name="productId">The product of the slot's service, or <see langword="null"/> when the slot has none.</param>
     /// <returns>
-    /// <see langword="true"/> for a widget bound to no product; otherwise only when <paramref name="productId"/> is one of
-    /// its products, so a bound widget never shows where there is no service to check.
+    /// For a widget the operator bound: only when <paramref name="productId"/> is one of its existing products, so a widget
+    /// whose products were all deleted shows nowhere. For a widget never bound: the manifest binding applies, and a widget
+    /// with none is for every product. A bound widget never shows where there is no service to check.
     /// </returns>
-    private static bool IsBoundTo(PluginSlotEntry entry, int? productId)
+    private static bool IsBoundTo(PluginSlotEntry entry, IReadOnlyList<PluginSlotBindingDto> operatorRows, int? productId)
     {
-        return entry.ProductIds.Count == 0 || (productId is { } product && entry.ProductIds.Contains(product));
+        // Fail closed: the binding feeds access decisions, so a binding that lost its products must not widen to the manifest.
+        if (operatorRows.Count > 0)
+        {
+            return productId is { } bound && operatorRows.Any(row => row.ProductExists && row.ProductId == bound);
+        }
+
+        IReadOnlyCollection<int> products = entry.ProductIds;
+        return products.Count == 0 || (productId is { } product && products.Contains(product));
     }
 }

@@ -15,6 +15,7 @@
  * @module tests/helpers/bffHarness
  */
 
+import { EventEmitter } from 'node:events'
 import { ofetch } from 'ofetch'
 import { vi } from 'vitest'
 import type { H3Event } from 'h3'
@@ -68,6 +69,10 @@ export interface FakeEvent extends Required<Omit<FakeEventInit, 'body' | 'method
   status: number | undefined
   /** Location a `sendRedirect` was given. */
   redirectedTo: string | undefined
+  /** The stream a `sendStream` was given. */
+  sentStream: ReadableStream<Uint8Array> | undefined
+  /** The Node objects a route listens on: the response emits `close` when the browser goes away. */
+  node: { res: EventEmitter }
 }
 
 /** The runtime config the routes read; `apiUrl` and `ssoUrl` follow the running stub. */
@@ -95,6 +100,8 @@ export const makeEvent = (init: FakeEventInit = {}): H3Event & FakeEvent => {
     responseHeaders: {},
     status: undefined,
     redirectedTo: undefined,
+    sentStream: undefined,
+    node: { res: new EventEmitter() },
   } as unknown as H3Event & FakeEvent
 }
 
@@ -115,6 +122,9 @@ vi.stubGlobal('getRequestIP', (event: FakeEvent) => event.socketAddress || undef
 vi.stubGlobal('setResponseStatus', (event: FakeEvent, status: number) => {
   event.status = status
 })
+vi.stubGlobal('sendStream', (event: FakeEvent, stream: ReadableStream<Uint8Array>) => {
+  event.sentStream = stream
+})
 vi.stubGlobal('sendRedirect', (event: FakeEvent, location: string) => {
   event.redirectedTo = location
   return location
@@ -132,16 +142,27 @@ vi.stubGlobal('setResponseHeaders', (event: FakeEvent, headers: Record<string, s
 vi.stubGlobal('defineCachedEventHandler', <T>(handler: T): T => handler)
 vi.stubGlobal('useRuntimeConfig', () => runtimeConfig)
 
-const { getApiUrl, internalApiBinaryCall, internalApiCall } = await import('~/server/utils/api')
+const { getApiUrl, internalApiBinaryCall, internalApiCall, internalApiStream } = await import('~/server/utils/api')
 // No `sessionRedis` in the runtime config, so the real store is the in-process one.
 const { useSessionStore } = await import('~/server/utils/session-store')
 const { SessionCookie } = await import('~/constants/sessionCookie')
 const { requireRouteParam } = await import('~/server/utils/requireRouteParam')
+const { readBodyObject } = await import('~/server/utils/readBodyObject')
+const { pluginQuery, requirePluginPagePath, requirePluginPath } = await import('~/server/utils/pluginPath')
+const { readSlotQuery } = await import('~/server/utils/slotQuery')
+const { PluginBackendPaths } = await import('~/server/utils/pluginBackendPaths')
 
 vi.stubGlobal('internalApiCall', internalApiCall)
 vi.stubGlobal('internalApiBinaryCall', internalApiBinaryCall)
 vi.stubGlobal('getApiUrl', getApiUrl)
 vi.stubGlobal('requireRouteParam', requireRouteParam)
+vi.stubGlobal('internalApiStream', internalApiStream)
+vi.stubGlobal('readBodyObject', readBodyObject)
+vi.stubGlobal('requirePluginPath', requirePluginPath)
+vi.stubGlobal('requirePluginPagePath', requirePluginPagePath)
+vi.stubGlobal('readSlotQuery', readSlotQuery)
+vi.stubGlobal('pluginQuery', pluginQuery)
+vi.stubGlobal('PluginBackendPaths', PluginBackendPaths)
 
 /**
  * Sets runtime-config entries a route reads (auth mode, SSO callback and public addresses).

@@ -13,9 +13,19 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 /// <param name="FieldDefinitions">
 /// Ordered list of field metadata used by the admin panel to render the config form.
 /// </param>
+/// <param name="CanTestConnection">
+/// Whether Test Connection can check this integration: a built-in one the test knows, or a plugin that implements
+/// <c>IPluginStatus</c>. The panel hides the button otherwise.
+/// </param>
+/// <param name="Connection">
+/// The last known connection state of a plugin that implements <c>IPluginStatus</c>; <see langword="null"/> for a
+/// built-in integration and any other plugin.
+/// </param>
 public sealed record IntegrationDetailDto(
     string Slug,
     string Name,
     bool IsEnabled,
     IReadOnlyDictionary<string, IntegrationFieldValueDto> Config,
-    IReadOnlyList<FieldDefinitionDto> FieldDefinitions);
+    IReadOnlyList<FieldDefinitionDto> FieldDefinitions,
+    bool CanTestConnection,
+    IntegrationConnectionDto? Connection);

@@ -23,5 +23,8 @@ public sealed class NetworkIssueConfiguration : IEntityTypeConfiguration<Network
         builder.Property(x => x.CreatedAt).IsRequired();
 
         builder.HasIndex(x => x.Status);
+
+        // Natural key the migration import looks an issue up by (date first, the title is compared lower-cased); not unique, an outage can recur under one title.
+        builder.HasIndex(x => new { x.StartDate, x.Title });
     }
 }

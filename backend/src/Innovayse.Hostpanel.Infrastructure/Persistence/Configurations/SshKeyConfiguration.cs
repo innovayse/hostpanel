@@ -9,6 +9,12 @@ namespace Innovayse.Hostpanel.Infrastructure.Persistence.Configurations;
 /// <summary>EF Core configuration for <see cref="SshKey"/> (table <c>SshKeys</c>).</summary>
 public sealed class SshKeyConfiguration : IEntityTypeConfiguration<SshKey>
 {
+    /// <summary>
+    /// The name of the unique index on a service's live key fingerprints, the default EF already gave it, named here so
+    /// <see cref="AppDbContext"/> can tell its violation from any other.
+    /// </summary>
+    public const string ServiceFingerprintIndex = "IX_SshKeys_ClientServiceId_Fingerprint";
+
     /// <inheritdoc/>
     public void Configure(EntityTypeBuilder<SshKey> builder)
     {
@@ -21,6 +27,9 @@ public sealed class SshKeyConfiguration : IEntityTypeConfiguration<SshKey>
         builder.Property(x => x.Fingerprint).IsRequired().HasMaxLength(60);
         builder.Property(x => x.SyncState).IsRequired().HasConversion<string>().HasMaxLength(20);
         builder.Property(x => x.LastSyncError).HasConversion(new SshProviderFailureConverter()).HasMaxLength(64);
+
+        // The plugin id rule (PluginIdentifier) caps an id at 64 characters; null for a key the client added.
+        builder.Property(x => x.IssuedToPluginId).HasMaxLength(64);
 
         builder.Ignore(x => x.IsActive);
 
@@ -37,6 +46,7 @@ public sealed class SshKeyConfiguration : IEntityTypeConfiguration<SshKey>
         // concurrent adds cannot both be recorded. Revoked rows are history and do not count.
         builder.HasIndex(x => new { x.ClientServiceId, x.Fingerprint })
             .IsUnique()
-            .HasFilter("\"SyncState\" <> 'Revoked'");
+            .HasFilter("\"SyncState\" <> 'Revoked'")
+            .HasDatabaseName(ServiceFingerprintIndex);
     }
 }

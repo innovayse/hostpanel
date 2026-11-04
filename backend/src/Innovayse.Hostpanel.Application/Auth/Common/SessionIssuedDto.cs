@@ -1,4 +1,6 @@
+using System.Text;
 using Innovayse.Hostpanel.Shared.Models.Interfaces;
+using Innovayse.Hostpanel.SharedKernel.Domain;
 
 namespace Innovayse.Hostpanel.Application.Auth.Common;
 
@@ -12,4 +14,12 @@ public sealed record SessionIssuedDto(string AccessToken, int ExpiresIn) : ISess
 {
     /// <summary>The token the session cookie carries: the access token itself.</summary>
     string? ISessionGrant.SessionToken => AccessToken;
+
+    /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
+    /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>
+    /// <returns><see langword="true"/> when at least one member was written.</returns>
+    private bool PrintMembers(StringBuilder builder)
+    {
+        return SecretMembers.Print(this, builder);
+    }
 }

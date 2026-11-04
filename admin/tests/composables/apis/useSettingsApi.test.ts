@@ -27,13 +27,6 @@ describe('useSettingsApi', () => {
     expect(callOf(mock)).toMatchObject({ url: '/api/admin/settings/4', method: 'PUT', body: { value: 'on' } })
   })
 
-  it('clearSetting PUTs an explicit clear by id', async () => {
-    const mock = stubFetch(new Response(null, { status: 204 }))
-
-    await useSettingsApi().clearSetting(7)
-    expect(callOf(mock)).toMatchObject({ url: '/api/admin/settings/7', method: 'PUT', body: { clear: true } })
-  })
-
   it('listEmailTemplates reads its endpoint', async () => {
     const mock = stubFetch(json([]))
 

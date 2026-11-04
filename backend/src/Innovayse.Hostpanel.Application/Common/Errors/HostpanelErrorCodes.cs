@@ -806,6 +806,9 @@ public static class HostpanelErrorCodes
     /// <summary>The manifest id is not a valid plugin id (400).</summary>
     public const string PLUGIN_MANIFEST_ID_INVALID = "PLUGIN_MANIFEST_ID_INVALID";
 
+    /// <summary>The manifest version is not a strict semantic version such as 1.2.3 (400).</summary>
+    public const string PLUGIN_MANIFEST_VERSION_INVALID = "PLUGIN_MANIFEST_VERSION_INVALID";
+
     /// <summary>A page or slot names a view document the plugin package does not hold, or a path that is not a package-relative .json file (400).</summary>
     public const string PLUGIN_VIEW_MISSING = "PLUGIN_VIEW_MISSING";
 
@@ -832,6 +835,30 @@ public static class HostpanelErrorCodes
 
     /// <summary>The plugin is not available to this panel or declares no such page there (404); the two answer alike.</summary>
     public const string PLUGIN_PAGE_NOT_FOUND = "PLUGIN_PAGE_NOT_FOUND";
+
+    /// <summary>A plugin that is not an app plugin declares api routes or ui menus, pages or slots without the endpoints capability (400).</summary>
+    public const string PLUGIN_ENDPOINTS_NOT_DECLARED = "PLUGIN_ENDPOINTS_NOT_DECLARED";
+
+    /// <summary>The manifest names a capability the host does not define, or one the plugin type may not carry (400).</summary>
+    public const string PLUGIN_CAPABILITY_NOT_ALLOWED = "PLUGIN_CAPABILITY_NOT_ALLOWED";
+
+    /// <summary>
+    /// The manifest's <c>hostAccess</c> names a kind the host's SDK does not define, names one twice, or is declared in
+    /// a version 1 manifest (400, the default arm: it is answered only by a plugin install).
+    /// </summary>
+    public const string PLUGIN_HOST_ACCESS_UNKNOWN = "PLUGIN_HOST_ACCESS_UNKNOWN";
+
+    /// <summary>
+    /// A view document holds a visibility or follow-up condition that is not a GET route, a dotted field and one value
+    /// or a bounded list of values (400, the default arm: it is answered only by a plugin install).
+    /// </summary>
+    public const string PLUGIN_VIEW_CONDITION_INVALID = "PLUGIN_VIEW_CONDITION_INVALID";
+
+    /// <summary>
+    /// A view document holds a follow-up refresh that is malformed or names a block the document does not hold, or a
+    /// form reset flag that is not a boolean (400, the default arm: it is answered only by a plugin install).
+    /// </summary>
+    public const string PLUGIN_VIEW_FOLLOW_UP_INVALID = "PLUGIN_VIEW_FOLLOW_UP_INVALID";
 
     /// <summary>
     /// One of the archive's entries would write outside the plugin's own directory (400). The
@@ -876,10 +903,16 @@ public static class HostpanelErrorCodes
     /// <summary>The plugin ships with this build and cannot be removed or replaced by an upload (409).</summary>
     public const string PLUGIN_BUILT_IN = "PLUGIN_BUILT_IN";
 
+    /// <summary>The upload is an older version than the installed plugin and the operator did not force the downgrade (409).</summary>
+    public const string PLUGIN_DOWNGRADE_REFUSED = "PLUGIN_DOWNGRADE_REFUSED";
+
+    /// <summary>The plugin's package is still installed, so its stored data cannot be purged; remove the plugin first (409).</summary>
+    public const string PLUGIN_STILL_INSTALLED = "PLUGIN_STILL_INSTALLED";
+
     // Plugin routes
 
     /// <summary>
-    /// A plugin route was called that is not served: the plugin is unknown, is not an app plugin, is switched off or
+    /// A plugin route was called that is not served: the plugin is unknown, is not a serving plugin, is switched off or
     /// not configured, or does not declare that method and path in that area. One answer for all of them, so the
     /// route cannot be probed (404).
     /// </summary>
@@ -890,6 +923,9 @@ public static class HostpanelErrorCodes
     /// the failure reaches the caller; the host logs it with the plugin id (502).
     /// </summary>
     public const string PLUGIN_FAILED = "PLUGIN_FAILED";
+
+    /// <summary>A plugin did not answer within the call time limit (<c>PluginApi:CallTimeoutSeconds</c>); the call was cancelled and nothing of the plugin reaches the caller (504).</summary>
+    public const string PLUGIN_TIMEOUT = "PLUGIN_TIMEOUT";
 
     /// <summary>A plugin passed a store key the SDK does not allow; answered to the caller as <see cref="PLUGIN_FAILED"/> (502).</summary>
     public const string PLUGIN_STORE_KEY_INVALID = Domain.Plugins.PluginStoreErrors.KeyInvalid;
@@ -918,13 +954,56 @@ public static class HostpanelErrorCodes
     /// </summary>
     public const string PLUGIN_SLOT_NOT_FOUND = "PLUGIN_SLOT_NOT_FOUND";
 
+    /// <summary>
+    /// A client slot widget's view is not served to this caller: the slot, the context, the widget or its view does not
+    /// exist or is not the caller's to see. One answer for all of them (404), so the endpoint is no oracle. Not
+    /// <see cref="PLUGIN_SLOT_WIDGET_NOT_FOUND"/>, the operator's binding refusal, whose sentence names the plugin.
+    /// </summary>
+    public const string PLUGIN_SLOT_WIDGET_VIEW_NOT_FOUND = "PLUGIN_SLOT_WIDGET_VIEW_NOT_FOUND";
+
     /// <summary>The slot needs a context id (a service or a client) and the request named none (400).</summary>
     public const string PLUGIN_SLOT_CONTEXT_REQUIRED = "PLUGIN_SLOT_CONTEXT_REQUIRED";
+
+    /// <summary>The plugin declares no widget with that id in that slot, so there is nothing to bind products to (404).</summary>
+    public const string PLUGIN_SLOT_WIDGET_NOT_FOUND = "PLUGIN_SLOT_WIDGET_NOT_FOUND";
+
+    /// <summary>
+    /// Every product id sent to bind a widget to is unknown or deleted, so nothing would be bound. Refused (400) instead of
+    /// clearing the binding, which only an explicit empty list does.
+    /// </summary>
+    public const string PLUGIN_SLOT_PRODUCTS_UNKNOWN = "PLUGIN_SLOT_PRODUCTS_UNKNOWN";
 
     // Admin: integrations
 
     /// <summary>The slug names neither a built-in integration nor a loaded plugin (404).</summary>
     public const string INTEGRATION_NOT_FOUND = "INTEGRATION_NOT_FOUND";
+
+    /// <summary>A saved field key is not one the integration declares, or is the reserved switch key (400).</summary>
+    public const string INTEGRATION_FIELD_UNKNOWN = "INTEGRATION_FIELD_UNKNOWN";
+
+    /// <summary>A saved field value does not fit the declared type of the field (400); <c>errors[key]</c> says what is expected.</summary>
+    public const string INTEGRATION_FIELD_INVALID = "INTEGRATION_FIELD_INVALID";
+
+    /// <summary>The integration has no connection test: a plugin that does not implement <c>IPluginStatus</c> (400).</summary>
+    public const string INTEGRATION_NOT_TESTABLE = "INTEGRATION_NOT_TESTABLE";
+
+    /// <summary>Not a refusal: the sentence of a plugin integration that reports it works, shown on its card and in a connection test.</summary>
+    public const string PLUGIN_STATUS_HEALTHY = "PLUGIN_STATUS_HEALTHY";
+
+    /// <summary>Not a refusal: the sentence of a plugin integration that reports it works with reduced function.</summary>
+    public const string PLUGIN_STATUS_DEGRADED = "PLUGIN_STATUS_DEGRADED";
+
+    /// <summary>Not a refusal: the sentence of a plugin integration that reports it cannot do its work.</summary>
+    public const string PLUGIN_STATUS_REPORTED_DOWN = "PLUGIN_STATUS_REPORTED_DOWN";
+
+    /// <summary>Not a refusal: the plugin was not asked for its state, because it is switched off, misses a required setting or waits for its data migration.</summary>
+    public const string PLUGIN_STATUS_INACTIVE = "PLUGIN_STATUS_INACTIVE";
+
+    /// <summary>Not a refusal: the plugin did not answer its status check within the host's time limit.</summary>
+    public const string PLUGIN_STATUS_TIMED_OUT = "PLUGIN_STATUS_TIMED_OUT";
+
+    /// <summary>Not a refusal: the plugin's status check failed or gave no valid answer; the cause is in the server log.</summary>
+    public const string PLUGIN_STATUS_FAILED = "PLUGIN_STATUS_FAILED";
 
     // Products
 
@@ -1012,6 +1091,13 @@ public static class HostpanelErrorCodes
     /// depends on the row being written and cannot be a single resx sentence.
     /// </summary>
     public const string INVALID_SETTING_VALUE = "INVALID_SETTING_VALUE";
+
+    /// <summary>
+    /// The general settings endpoints refuse to write this row: its key is outside the settings catalogue
+    /// (an integration field or switch, the setup token or a deployment key) (400). Integrations are saved
+    /// through their own endpoint.
+    /// </summary>
+    public const string SETTING_NOT_EDITABLE = "SETTING_NOT_EDITABLE";
 
     // Admin: branding
 

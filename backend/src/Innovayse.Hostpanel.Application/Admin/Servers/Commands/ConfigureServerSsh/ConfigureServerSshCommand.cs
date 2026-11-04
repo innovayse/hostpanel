@@ -1,3 +1,6 @@
+using System.Text;
+using Innovayse.Hostpanel.SharedKernel.Domain;
+
 namespace Innovayse.Hostpanel.Application.Admin.Servers.Commands.ConfigureServerSsh;
 
 /// <summary>Admin: creates or replaces a server's SSH key management settings.</summary>
@@ -23,4 +26,13 @@ public sealed record ConfigureServerSshCommand(
     string? AgentPrivateKey,
     string AgentHostKeyFingerprint,
     int ConnectTimeoutSeconds = 10,
-    int OperationTimeoutSeconds = 20);
+    int OperationTimeoutSeconds = 20)
+{
+    /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
+    /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>
+    /// <returns><see langword="true"/> when at least one member was written.</returns>
+    private bool PrintMembers(StringBuilder builder)
+    {
+        return SecretMembers.Print(this, builder);
+    }
+}

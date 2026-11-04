@@ -29,11 +29,12 @@ public sealed class HostedPluginRunnerTests(IntegrationTestFactory factory) : IC
         var failing = PluginActivationTestSeeds.NewId("a-hosted");
         var healthy = PluginActivationTestSeeds.NewId("b-hosted");
         await PluginActivationTestSeeds.EnableAsync(db, failing, healthy);
-        await using var services = Container(db, journal);
-        var runner = Runner(
-            services,
+        await using var services = Container(
+            db,
+            journal,
             PluginActivationTestSeeds.Plugin(failing, PluginType.Hosted, typeof(StartFailingHostedPlugin)),
             PluginActivationTestSeeds.Plugin(healthy, PluginType.Hosted, typeof(RecordingHostedPlugin)));
+        var runner = Runner(services);
 
         var start = () => runner.StartedAsync(CancellationToken.None);
         await start.Should().NotThrowAsync();
@@ -54,11 +55,12 @@ public sealed class HostedPluginRunnerTests(IntegrationTestFactory factory) : IC
         var failing = PluginActivationTestSeeds.NewId("a-hosted");
         var healthy = PluginActivationTestSeeds.NewId("b-hosted");
         await PluginActivationTestSeeds.EnableAsync(db, failing, healthy);
-        await using var services = Container(db, journal);
-        var runner = Runner(
-            services,
+        await using var services = Container(
+            db,
+            journal,
             PluginActivationTestSeeds.Plugin(failing, PluginType.Hosted, typeof(StopFailingHostedPlugin)),
             PluginActivationTestSeeds.Plugin(healthy, PluginType.Hosted, typeof(RecordingHostedPlugin)));
+        var runner = Runner(services);
         await runner.StartedAsync(CancellationToken.None);
 
         var stop = () => runner.StoppingAsync(CancellationToken.None);
@@ -76,10 +78,11 @@ public sealed class HostedPluginRunnerTests(IntegrationTestFactory factory) : IC
         var journal = new HostedPluginJournal();
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await using var services = Container(db, journal);
-        var runner = Runner(
-            services,
+        await using var services = Container(
+            db,
+            journal,
             PluginActivationTestSeeds.Plugin(PluginActivationTestSeeds.NewId("hosted"), PluginType.Hosted, typeof(RecordingHostedPlugin)));
+        var runner = Runner(services);
 
         await runner.StartedAsync(CancellationToken.None);
         await runner.StoppingAsync(CancellationToken.None);
@@ -101,8 +104,11 @@ public sealed class HostedPluginRunnerTests(IntegrationTestFactory factory) : IC
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var id = PluginActivationTestSeeds.NewId("fulfil");
         await PluginActivationTestSeeds.EnableAsync(db, id);
-        await using var services = Container(db, journal);
-        var runner = Runner(services, PluginActivationTestSeeds.Plugin(id, PluginType.Fulfilment, typeof(RecordingHostedPlugin)));
+        await using var services = Container(
+            db,
+            journal,
+            PluginActivationTestSeeds.Plugin(id, PluginType.Fulfilment, typeof(RecordingHostedPlugin)));
+        var runner = Runner(services);
 
         await runner.StartedAsync(CancellationToken.None);
         await runner.StoppingAsync(CancellationToken.None);
@@ -113,12 +119,14 @@ public sealed class HostedPluginRunnerTests(IntegrationTestFactory factory) : IC
 
     /// <summary>
     /// The container the runner activates plugins from: the real activator over the test's own data context,
-    /// and the journal the test plugins take in their constructor.
+    /// the journal the test plugins take in their constructor, and the registry the activator checks for a pending
+    /// migration.
     /// </summary>
     /// <param name="db">The data context the activator reads settings from; the test keeps it alive.</param>
     /// <param name="journal">The journal the test plugins record into.</param>
+    /// <param name="plugins">The plugins the registry reports as loaded.</param>
     /// <returns>The container; the test disposes it.</returns>
-    private ServiceProvider Container(AppDbContext db, HostedPluginJournal journal)
+    private ServiceProvider Container(AppDbContext db, HostedPluginJournal journal, params LoadedPlugin[] plugins)
     {
         var services = new ServiceCollection();
         services.AddLogging();
@@ -126,18 +134,20 @@ public sealed class HostedPluginRunnerTests(IntegrationTestFactory factory) : IC
         services.AddSingleton(factory.Services.GetRequiredService<ISecretSettingCipher>());
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
         services.AddSingleton(journal);
+        var registry = PluginActivationTestSeeds.Registry(plugins);
+        services.AddSingleton(registry);
+        services.AddSingleton<IPluginRegistry>(registry);
         services.AddScoped<PluginActivator>();
         return services.BuildServiceProvider();
     }
 
-    /// <summary>Builds the runner over a registry holding <paramref name="plugins"/>.</summary>
+    /// <summary>Builds the runner over the container's registry.</summary>
     /// <param name="services">The container the runner opens its scope in.</param>
-    /// <param name="plugins">The plugins the registry reports as loaded.</param>
     /// <returns>The runner.</returns>
-    private static HostedPluginRunner Runner(ServiceProvider services, params LoadedPlugin[] plugins)
+    private static HostedPluginRunner Runner(ServiceProvider services)
     {
         return new HostedPluginRunner(
-            PluginActivationTestSeeds.Registry(plugins),
+            services.GetRequiredService<PluginRegistry>(),
             services.GetRequiredService<IServiceScopeFactory>(),
             NullLogger<HostedPluginRunner>.Instance);
     }

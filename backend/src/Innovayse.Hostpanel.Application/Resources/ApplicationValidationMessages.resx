@@ -1019,6 +1019,15 @@
   <data name="PluginIdInvalid" xml:space="preserve">
     <value>A plugin id uses only lower-case letters, digits and single hyphens, up to 64 characters.</value>
   </data>
+  <data name="PluginSlotIdInvalid" xml:space="preserve">
+    <value>The slot id is not valid.</value>
+  </data>
+  <data name="PluginWidgetIdInvalid" xml:space="preserve">
+    <value>The widget id is not valid.</value>
+  </data>
+  <data name="PluginProductIdsInvalid" xml:space="preserve">
+    <value>Choose up to {0} products.</value>
+  </data>
   <data name="IntegrationSlugRequired" xml:space="preserve">
     <value>An integration slug is required.</value>
   </data>
@@ -1298,9 +1307,6 @@
   <data name="ClientEmailChangeTokenRequired" xml:space="preserve">
     <value>The confirmation link is incomplete. Open the link from the email again.</value>
   </data>
-  <data name="IntegrationFieldUnknown" xml:space="preserve">
-    <value>The integration does not declare one of the submitted fields.</value>
-  </data>
   <data name="CurrencyCodeDuplicate" xml:space="preserve">
     <value>Each currency may be listed only once.</value>
   </data>
@@ -1348,5 +1354,37 @@
   </data>
   <data name="SaveSessionIdInvalid" xml:space="preserve">
     <value>The card setup id is required and at most 255 characters.</value>
+  <data name="IntegrationFieldExpected" xml:space="preserve">
+    <value>Expected: {0}.</value>
+  </data>
+  <data name="IntegrationFieldUnknown" xml:space="preserve">
+    <value>This field is not declared by the integration.</value>
+  </data>
+  <data name="IntegrationFieldExpectSecret" xml:space="preserve">
+    <value>a non-blank value; leave the field out to keep the stored secret</value>
+  </data>
+  <data name="IntegrationFieldExpectUrl" xml:space="preserve">
+    <value>an absolute http or https address</value>
+  </data>
+  <data name="IntegrationFieldExpectToggle" xml:space="preserve">
+    <value>true or false</value>
+  </data>
+  <data name="IntegrationFieldExpectSelect" xml:space="preserve">
+    <value>one of {0}</value>
+  </data>
+  <data name="IntegrationFieldExpectNumberRange" xml:space="preserve">
+    <value>a number from {0} to {1}</value>
+  </data>
+  <data name="IntegrationFieldExpectNumberMin" xml:space="preserve">
+    <value>a number of at least {0}</value>
+  </data>
+  <data name="IntegrationFieldExpectNumberMax" xml:space="preserve">
+    <value>a number of at most {0}</value>
+  </data>
+  <data name="IntegrationFieldExpectNumber" xml:space="preserve">
+    <value>a number</value>
+  </data>
+  <data name="IntegrationFieldExpectValue" xml:space="preserve">
+    <value>a non-empty value</value>
   </data>
 </root>

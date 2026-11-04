@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Innovayse.SDK.Plugins.Manifest;
+using Innovayse.SDK.Plugins.Ui;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 
@@ -529,6 +530,98 @@ public sealed class PluginViewDocumentReaderTests : IDisposable
         read.Violation!.Rule.Should().Be(PluginManifestRule.ViewMissing);
         read.Violation.Detail.Should().Contain("views/a.json").And.Contain("IOException");
         read.Violation.Detail.Should().NotContain(_folder);
+    }
+
+    /// <summary>A manifest whose admin page shows <c>views/a.json</c> and whose admin api declares GET /site and POST /publish.</summary>
+    /// <returns>The manifest.</returns>
+    private static PluginManifest StateManifest()
+    {
+        return Manifest(""","api":{"admin":[{"method":"get","path":"/site"},{"method":"post","path":"/publish"}]},"ui":{"admin":{"pages":[{"id":"overview","path":"/o","title":"O","view":"views/a.json"}]}}""");
+    }
+
+    /// <summary>A visibility condition, a form reset and follow-ups on an action and a form submit are accepted, and a condition value is not read as a label key.</summary>
+    [Fact]
+    public void Read_ViewStateMembers_AreAccepted()
+    {
+        Write("views/a.json", """
+            {"schema":1,"blocks":[
+              {"kind":"stat","id":"status","label":"Status","source":{"route":{"method":"get","path":"/site"},"field":"site.status"}},
+              {"kind":"form","fields":[],"visibleWhen":{"route":{"method":"get","path":"/site"},"field":"site","equals":null},
+               "submit":{"route":{"method":"post","path":"/publish"},"label":"Create","resetOnSuccess":true,
+                 "followUp":{"refresh":["status"],"until":{"route":{"method":"get","path":"/site"},"field":"site.status","equals":"ready"}}}},
+              {"kind":"action","label":"Publish","route":{"method":"post","path":"/publish"},
+               "followUp":{"refresh":["status"],"until":{"route":{"method":"get","path":"/site"},"field":"site.status","equals":["live","failed.key",3,true]}}}
+            ]}
+            """);
+
+        var read = PluginViewDocumentReader.Read(_folder, StateManifest(), MaxViewBytes);
+
+        read.Violation.Should().BeNull();
+    }
+
+    /// <summary>A condition that is not exactly a GET route, a dotted field and a value or bounded list of scalars breaks ViewConditionInvalid.</summary>
+    /// <param name="condition">The condition JSON.</param>
+    [Theory]
+    [InlineData("""{"route":{"method":"post","path":"/publish"},"field":"a","equals":"x"}""")]
+    [InlineData("""{"field":"a","equals":"x"}""")]
+    [InlineData("""{"route":{"method":"get","path":"/site"},"equals":"x"}""")]
+    [InlineData("""{"route":{"method":"get","path":"/site"},"field":"a"}""")]
+    [InlineData("""{"route":{"method":"get","path":"/site"},"field":"a..b","equals":"x"}""")]
+    [InlineData("""{"route":{"method":"get","path":"/site"},"field":"a","equals":[]}""")]
+    [InlineData("""{"route":{"method":"get","path":"/site"},"field":"a","equals":{"v":1}}""")]
+    [InlineData("""{"route":{"method":"get","path":"/site"},"field":"a","equals":[["x"]]}""")]
+    [InlineData("""{"route":{"method":"get","path":"/site"},"field":"a","equals":"x","extra":1}""")]
+    [InlineData("\"ready\"")]
+    public void Read_ConditionMalformed_BreaksViewConditionInvalid(string condition)
+    {
+        Write("views/a.json", $$"""{"schema":1,"blocks":[{"kind":"text","text":"Hi","visibleWhen":{{condition}}}]}""");
+
+        AssertBreaks(StateManifest(), PluginManifestRule.ViewConditionInvalid);
+    }
+
+    /// <summary>A condition listing more values than the SDK bound breaks ViewConditionInvalid.</summary>
+    [Fact]
+    public void Read_ConditionOverValueBound_BreaksViewConditionInvalid()
+    {
+        var values = string.Join(",", Enumerable.Range(0, PluginViews.MaxConditionValues + 1));
+        Write("views/a.json", $$$"""{"schema":1,"blocks":[{"kind":"text","text":"Hi","visibleWhen":{"route":{"method":"get","path":"/site"},"field":"a","equals":[{{{values}}}]}}]}""");
+
+        AssertBreaks(StateManifest(), PluginManifestRule.ViewConditionInvalid);
+    }
+
+    /// <summary>A visibility condition on an object that is not a block breaks ViewConditionInvalid.</summary>
+    [Fact]
+    public void Read_VisibleWhenOutsideBlock_BreaksViewConditionInvalid()
+    {
+        Write("views/a.json", """{"schema":1,"blocks":[{"kind":"tabs","tabs":[{"id":"t","title":"T","visibleWhen":{"route":{"method":"get","path":"/site"},"field":"a","equals":"x"},"blocks":[]}]}]}""");
+
+        AssertBreaks(StateManifest(), PluginManifestRule.ViewConditionInvalid);
+    }
+
+    /// <summary>A condition route the area does not declare breaks ViewRouteUndeclared, like every other route reference.</summary>
+    [Fact]
+    public void Read_ConditionRouteUndeclared_BreaksViewRouteUndeclared()
+    {
+        Write("views/a.json", """{"schema":1,"blocks":[{"kind":"text","text":"Hi","visibleWhen":{"route":{"method":"get","path":"/other"},"field":"a","equals":"x"}}]}""");
+
+        AssertBreaks(StateManifest(), PluginManifestRule.ViewRouteUndeclared);
+    }
+
+    /// <summary>A follow-up that is malformed, misplaced or refreshes an unknown block, and a reset flag that is not a boolean in a submit, break ViewFollowUpInvalid.</summary>
+    /// <param name="block">The block JSON placed beside a stat block whose id is <c>status</c>.</param>
+    [Theory]
+    [InlineData("""{"kind":"action","label":"P","route":{"method":"post","path":"/publish"},"followUp":{"refresh":["nope"],"until":{"route":{"method":"get","path":"/site"},"field":"a","equals":"x"}}}""")]
+    [InlineData("""{"kind":"action","label":"P","route":{"method":"post","path":"/publish"},"followUp":{"refresh":[],"until":{"route":{"method":"get","path":"/site"},"field":"a","equals":"x"}}}""")]
+    [InlineData("""{"kind":"action","label":"P","route":{"method":"post","path":"/publish"},"followUp":{"refresh":["status"]}}""")]
+    [InlineData("""{"kind":"action","label":"P","route":{"method":"post","path":"/publish"},"followUp":{"refresh":[""],"until":{"route":{"method":"get","path":"/site"},"field":"a","equals":"x"}}}""")]
+    [InlineData("""{"kind":"text","text":"Hi","followUp":{"refresh":["status"],"until":{"route":{"method":"get","path":"/site"},"field":"a","equals":"x"}}}""")]
+    [InlineData("""{"kind":"form","fields":[],"resetOnSuccess":true,"submit":{"route":{"method":"post","path":"/publish"},"label":"S"}}""")]
+    [InlineData("""{"kind":"form","fields":[],"submit":{"route":{"method":"post","path":"/publish"},"label":"S","resetOnSuccess":"yes"}}""")]
+    public void Read_FollowUpOrResetMalformed_BreaksViewFollowUpInvalid(string block)
+    {
+        Write("views/a.json", $$"""{"schema":1,"blocks":[{"kind":"stat","id":"status","label":"S","value":"x"},{{block}}]}""");
+
+        AssertBreaks(StateManifest(), PluginManifestRule.ViewFollowUpInvalid);
     }
 
     /// <summary>Builds a valid document whose nesting reaches the given depth, the root counted as one level.</summary>

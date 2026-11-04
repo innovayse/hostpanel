@@ -10,7 +10,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Commands.UpdateSetting;
 ///     Validates <see cref="UpdateSettingCommand"/> before it reaches the handler. <c>Value</c> is
 ///     only capped here: an empty string is meaningful for some keys and refused for
 ///     others, and only the handler, which loads the row, knows which. The cap is the one the
-///     column is sized for once a secret value is encrypted.
+///     column is sized for.
 /// </summary>
 public sealed class UpdateSettingValidator : LocalizedValidator<UpdateSettingCommand>
 {

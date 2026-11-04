@@ -1,12 +1,11 @@
 /**
- * Tests for ComingSoonPage and the four screens built on it: the header and the "coming soon" block
+ * Tests for ComingSoonPage and the three screens built on it: the header and the "coming soon" block
  * render with the supplied wording, and each screen shows its own title.
  */
 import { describe, expect, it } from 'vitest'
 import ComingSoonPage from '@/components/layout/ComingSoonPage.vue'
 import DisputesView from '@/views/DisputesView.vue'
 import ManageAffiliatesView from '@/views/ManageAffiliatesView.vue'
-import OfflineCCView from '@/views/OfflineCCView.vue'
 import ServiceAddonsView from '@/views/ServiceAddonsView.vue'
 import { Icon } from '@/lib/icons'
 import { mountWithApp } from '../../helpers/mount'
@@ -29,7 +28,6 @@ describe('screens built on ComingSoonPage', () => {
     [ManageAffiliatesView, 'Manage Affiliates'],
     [ServiceAddonsView, 'Service Addons'],
     [DisputesView, 'List Disputes'],
-    [OfflineCCView, 'Offline Credit Card Processing'],
   ])('shows its own title and the coming soon block', (view, title) => {
     const wrapper = mountWithApp(view)
 

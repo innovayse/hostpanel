@@ -2,6 +2,8 @@ using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Audit.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Plugins;
+using Innovayse.Hostpanel.Domain.Plugins.Enums;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -10,10 +12,13 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Commands.InstallPlugin;
 
 /// <summary>
 /// Handles <see cref="InstallPluginCommand"/>: hands the upload to the plugin store, which checks
-/// and unpacks it, and records the install in the activity log.
+/// and unpacks or stages it, and records the install or the staged upgrade in the activity log.
 /// </summary>
 public sealed class InstallPluginHandler
 {
+    /// <summary>The most characters of an id or version written to an audit line; the values come from an uploaded manifest.</summary>
+    private const int MaxAuditValueLength = 64;
+
     /// <summary>Checks and unpacks the uploaded archive.</summary>
     private readonly IPluginPackageStore _store;
 
@@ -40,7 +45,9 @@ public sealed class InstallPluginHandler
     /// <param name="command">Command containing the uploaded ZIP stream.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// A result requiring a restart, or <c>PLUGIN_MANIFEST_INVALID</c> when the upload is empty, not
+    /// A result requiring a restart (carrying <c>StagedVersion</c> when the upload is an upgrade or a forced downgrade
+    /// that waits for the restart), <c>PLUGIN_DOWNGRADE_REFUSED</c> when the upload is older than the installed version
+    /// and the downgrade was not forced, or <c>PLUGIN_MANIFEST_INVALID</c> when the upload is empty, not
     /// a readable archive, or its <c>plugin.json</c> is missing or malformed;
     /// <c>PLUGIN_SDK_VERSION_UNSUPPORTED</c> when the plugin targets a different SDK version;
     /// one of the manifest rule codes (<c>PLUGIN_MANIFEST_VERSION_UNKNOWN</c>, <c>PLUGIN_SDK_ASSEMBLY_OUTDATED</c>,
@@ -67,16 +74,66 @@ public sealed class InstallPluginHandler
             .Select(s => s.Value)
             .FirstOrDefaultAsync(ct));
 
-        var outcome = await _store.InstallAsync(new PluginPackageUpload(command.Content!, allowUnsigned), ct);
-        if (outcome.Outcome != PluginPackageOutcome.Installed)
+        var outcome = await _store.InstallAsync(new PluginPackageUpload(command.Content!, allowUnsigned, command.ForceDowngrade), ct);
+        if (outcome.Outcome == PluginPackageOutcome.DowngradeRefused)
+        {
+            // A refused downgrade is a security-relevant attempt (it is how a fixed flaw is brought back), so it is audited too.
+            await _activityLogger.RecordAsync(
+                new ActivityLogEntry(
+                    null,
+                    $"Refused Plugin Downgrade - Plugin ID: {Clean(outcome.PluginId)} - Version: {Clean(outcome.PreviousVersion)} to {Clean(outcome.Version)} - SHA-256: {outcome.Sha256}"),
+                ct);
+            await _db.SaveChangesAsync(ct);
+            return Result<PluginActionResultDto>.FailureCode(PluginPackageErrors.CodeFor(outcome));
+        }
+
+        if (outcome.Outcome is not (PluginPackageOutcome.Installed or PluginPackageOutcome.Staged))
         {
             return Result<PluginActionResultDto>.FailureCode(PluginPackageErrors.CodeFor(outcome));
         }
 
-        await _activityLogger.RecordAsync(
-            new ActivityLogEntry(null, $"Installed Plugin - Plugin ID: {outcome.PluginId} - SHA-256: {outcome.Sha256}"), ct);
+        var staged = outcome.Outcome == PluginPackageOutcome.Staged;
+        await _activityLogger.RecordAsync(new ActivityLogEntry(null, DescribeAccepted(outcome, staged)), ct);
         await _db.SaveChangesAsync(ct);
 
-        return Result<PluginActionResultDto>.Success(new PluginActionResultDto(RequiresRestart: true));
+        return Result<PluginActionResultDto>.Success(
+            new PluginActionResultDto(RequiresRestart: true, StagedVersion: staged ? outcome.Version : null));
+    }
+
+    /// <summary>Writes the activity log line of an install or a staged package.</summary>
+    /// <param name="outcome">The store's result, an install or a staged package.</param>
+    /// <param name="staged">Whether the package waits for the restart.</param>
+    /// <returns>The line: an install, a staged upgrade, a staged replacement of the same version or a forced downgrade.</returns>
+    private static string DescribeAccepted(PluginPackageResult outcome, bool staged)
+    {
+        if (!staged)
+        {
+            return $"Installed Plugin - Plugin ID: {Clean(outcome.PluginId)} - SHA-256: {outcome.Sha256}";
+        }
+
+        var title = PluginVersion.Compare(outcome.PreviousVersion, outcome.Version) switch
+        {
+            PluginVersionChange.Newer => "Staged Plugin Upgrade",
+            PluginVersionChange.Same => "Staged Plugin Replacement",
+            _ => "Forced Plugin Downgrade",
+        };
+        return $"{title} - Plugin ID: {Clean(outcome.PluginId)} - Version: {Clean(outcome.PreviousVersion)} to {Clean(outcome.Version)} - SHA-256: {outcome.Sha256}";
+    }
+
+    /// <summary>
+    /// Makes a value taken from an uploaded manifest safe for a one-line audit text: control characters (a line break
+    /// would forge a second line) become spaces and the length is capped.
+    /// </summary>
+    /// <param name="value">The text from the manifest or the store.</param>
+    /// <returns>The cleaned text; empty for <see langword="null"/>.</returns>
+    private static string Clean(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return string.Empty;
+        }
+
+        var cleaned = new string(value.Select(c => char.IsControl(c) ? ' ' : c).ToArray());
+        return cleaned.Length <= MaxAuditValueLength ? cleaned : cleaned[..MaxAuditValueLength];
     }
 }

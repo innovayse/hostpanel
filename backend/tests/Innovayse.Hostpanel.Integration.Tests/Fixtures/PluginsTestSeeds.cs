@@ -68,8 +68,12 @@ internal static class PluginsTestSeeds
     /// <summary>The <c>plugin.json</c> text of a well-formed test plugin.</summary>
     /// <param name="pluginId">The plugin id to declare.</param>
     /// <param name="extraMembers">Further JSON members to append, each starting with a comma, for example <c>,"manifestVersion":2</c>; empty for none.</param>
+    /// <param name="type">
+    /// The plugin type to declare, as the manifest spells it; <c>App</c> for a manifest with <c>api</c> or <c>ui</c>
+    /// blocks, which any other type may carry only with the <c>endpoints</c> capability (#818).
+    /// </param>
     /// <returns>The manifest text.</returns>
-    public static string ManifestJson(string pluginId, string extraMembers = "")
+    public static string ManifestJson(string pluginId, string extraMembers = "", string type = "Provisioning")
     {
         return $$"""
             {
@@ -78,7 +82,7 @@ internal static class PluginsTestSeeds
               "version": "1.0.0",
               "author": "Test",
               "description": "A plugin used only in tests.",
-              "type": "Provisioning",
+              "type": "{{JsonEncodedText.Encode(type)}}",
               "category": "Test",
               "entryPoint": "Test.Plugin",
               "sdkVersion": "1.0"{{extraMembers}}
@@ -142,6 +146,27 @@ internal static class PluginsTestSeeds
         return BuildZip(entries);
     }
 
+    /// <summary>Builds a well-formed plugin ZIP that declares a given version.</summary>
+    /// <param name="pluginId">The plugin id to write into <c>plugin.json</c>.</param>
+    /// <param name="version">The version to declare.</param>
+    /// <returns>The ZIP archive's raw bytes.</returns>
+    public static byte[] BuildVersionedPluginZip(string pluginId, string version)
+    {
+        return BuildZip(new Dictionary<string, string>
+        {
+            ["plugin.json"] = ManifestJson(pluginId).Replace("\"version\": \"1.0.0\"", $"\"version\": \"{version}\""),
+            ["readme.txt"] = $"version {version}",
+        });
+    }
+
+    /// <summary>The folder an upgrade of an uploaded plugin waits in until the next restart, under the default settings.</summary>
+    /// <param name="pluginId">The plugin id.</param>
+    /// <returns>The absolute folder path.</returns>
+    public static string StagedFolder(string pluginId)
+    {
+        return Path.Combine(new PluginOptions().InstallRoot, ".staged", pluginId);
+    }
+
     /// <summary>Builds a ZIP with no <c>plugin.json</c> at its root.</summary>
     /// <returns>The ZIP archive's raw bytes.</returns>
     public static byte[] BuildZipWithoutManifest()
@@ -186,14 +211,15 @@ internal static class PluginsTestSeeds
     /// <summary>Posts a multipart install request carrying the given ZIP bytes.</summary>
     /// <param name="client">Authenticated admin client.</param>
     /// <param name="zipBytes">The archive to upload.</param>
+    /// <param name="force">Whether to ask for an older version to be accepted (<c>?force=true</c>).</param>
     /// <returns>The install response.</returns>
-    public static async Task<HttpResponseMessage> InstallAsync(HttpClient client, byte[] zipBytes)
+    public static async Task<HttpResponseMessage> InstallAsync(HttpClient client, byte[] zipBytes, bool force = false)
     {
         using var content = new MultipartFormDataContent();
         var fileContent = new ByteArrayContent(zipBytes);
         fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/zip");
         content.Add(fileContent, "file", "plugin.zip");
-        return await client.PostAsync("/api/admin/plugins/install", content);
+        return await client.PostAsync(force ? "/api/admin/plugins/install?force=true" : "/api/admin/plugins/install", content);
     }
 
     /// <summary>Posts a multipart install request whose form carries no file at all.</summary>

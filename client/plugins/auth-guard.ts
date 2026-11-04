@@ -18,6 +18,7 @@
  */
 
 import { useClientStore } from '~/stores/client'
+import { usePluginsStore } from '~/stores/plugins'
 import { isPrivateClientPath, loginPathWithReturn } from '~/utils/returnPath'
 import { SessionCookie } from '~/constants/sessionCookie'
 
@@ -38,6 +39,8 @@ export default defineNuxtPlugin(() => {
         try {
           const store = useClientStore()
           store.reset()
+          // The plugin index belongs to the person whose session ended; the next one reads their own.
+          usePluginsStore().reset()
         } catch {
           // Store may not be initialized
         }

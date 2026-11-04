@@ -3,7 +3,6 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Innovayse.Hostpanel.Integration.Tests.Fixtures.Enums;
 using Innovayse.Hostpanel.Integration.Tests.Shared;
 using Innovayse.SDK.Plugins.Endpoints;
@@ -11,6 +10,7 @@ using Innovayse.SDK.Plugins.Enums;
 using Innovayse.SDK.Plugins.Fulfilment;
 using Innovayse.SDK.Plugins.Hosting;
 using Innovayse.SDK.Plugins.Identity;
+using Innovayse.SDK.Plugins.Manifest;
 using Innovayse.SDK.Plugins.Payment;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -51,6 +51,26 @@ public sealed class PluginLoaderTests
     }
 
     /// <summary>
+    /// A non-app plugin declaring the endpoints capability is registered under its type's contract and under
+    /// <see cref="IPluginEndpoints"/>, keyed by its id, so the route door and its fulfilment calls reach one class (#818).
+    /// </summary>
+    [Fact]
+    public void RegisterPluginType_FulfilmentWithEndpointsCapability_AlsoRegistersEndpoints()
+    {
+        var services = new ServiceCollection();
+        var plugin = PluginCapabilitySeeds.Plugin(
+            PluginActivationTestSeeds.NewId("sell"), PluginType.Fulfilment, typeof(FulfilmentEndpointsPlugin), PluginCapabilities.Endpoints);
+
+        PluginLoader.RegisterPluginType(services, plugin.Manifest, typeof(FulfilmentEndpointsPlugin), NullLogger.Instance);
+
+        services.Select(d => d.ServiceType).Should().BeEquivalentTo([typeof(IFulfilmentPlugin), typeof(IPluginEndpoints)]);
+        services.Should().OnlyContain(d => d.IsKeyedService
+            && Equals(d.ServiceKey, plugin.Manifest.Id)
+            && d.KeyedImplementationType == typeof(FulfilmentEndpointsPlugin)
+            && d.Lifetime == ServiceLifetime.Scoped);
+    }
+
+    /// <summary>
     /// A plugin whose manifest breaks a rule is skipped with a logged reason naming its id and the rule, and the
     /// plugin beside it still loads: one bad plugin never stops the others.
     /// </summary>
@@ -69,8 +89,7 @@ public sealed class PluginLoaderTests
                 var folder = Directory.CreateDirectory(Path.Combine(root, id)).FullName;
                 File.WriteAllText(
                     Path.Combine(folder, "plugin.json"),
-                    PluginsTestSeeds.ManifestJson(id, extra)
-                        .Replace("\"Provisioning\"", "\"App\"", StringComparison.Ordinal)
+                    PluginsTestSeeds.ManifestJson(id, extra, "App")
                         .Replace("Test.Plugin", "Fixture.AppPlugin", StringComparison.Ordinal));
 
                 // A fresh assembly per plugin: the loader loads into the default context, which holds one assembly per name.
@@ -283,8 +302,7 @@ public sealed class PluginLoaderTests
         var folder = Directory.CreateDirectory(Path.Combine(root, id)).FullName;
         File.WriteAllText(
             Path.Combine(folder, "plugin.json"),
-            PluginsTestSeeds.ManifestJson(id)
-                .Replace("\"Provisioning\"", "\"App\"", StringComparison.Ordinal)
+            PluginsTestSeeds.ManifestJson(id, type: "App")
                 .Replace("Test.Plugin", "Fixture.AppPlugin", StringComparison.Ordinal));
 
         // A fresh assembly name per plugin: the loader loads into the default context, which holds one assembly per name.

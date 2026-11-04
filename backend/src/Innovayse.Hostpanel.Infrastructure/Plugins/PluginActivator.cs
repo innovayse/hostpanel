@@ -2,6 +2,9 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
+using Innovayse.SDK.Plugins.Endpoints;
+using Innovayse.SDK.Plugins.Manifest;
+using Innovayse.SDK.Plugins.StoredCredentials;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,6 +35,17 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 /// </remarks>
 public sealed class PluginActivator
 {
+    /// <summary>
+    /// The SDK interface each capability promises, keyed by its manifest name. A capability the validator let through
+    /// but this map does not name cannot be checked, so it fails closed as not implemented.
+    /// </summary>
+    private static readonly IReadOnlyDictionary<string, Type> CapabilityContracts =
+        new Dictionary<string, Type>(StringComparer.Ordinal)
+        {
+            [PluginCapabilities.StoredCredentials] = typeof(IStoredCredentialPlugin),
+            [PluginCapabilities.Endpoints] = typeof(IPluginEndpoints),
+        };
+
     /// <summary>The data context, used to read the plugin's current settings rows.</summary>
     private readonly AppDbContext _db;
 
@@ -51,19 +65,25 @@ public sealed class PluginActivator
     /// <summary>Structured logger: a misconfigured plugin is left out silently otherwise, so each such gate logs why.</summary>
     private readonly ILogger<PluginActivator> _logger;
 
+    /// <summary>Tells whether a plugin's data migration is still pending, which keeps the plugin from being activated.</summary>
+    private readonly IPluginRegistry _registry;
+
     /// <summary>Initializes a new instance of the <see cref="PluginActivator"/> class.</summary>
     /// <param name="db">The data context, used to read the plugin's current settings rows.</param>
     /// <param name="cipher">Decrypts the stored secret fields before they reach the plugin.</param>
     /// <param name="serviceProvider">Service provider used to construct the plugin instance with its other dependencies.</param>
     /// <param name="hostConfiguration">Host application configuration; only the plugin's own section is ever read from it.</param>
+    /// <param name="registry">Tells whether a plugin's data migration is still pending, which keeps the plugin from being activated.</param>
     /// <param name="logger">Structured logger: a misconfigured plugin is left out silently otherwise, so each such gate logs why.</param>
     public PluginActivator(
         AppDbContext db,
         ISecretSettingCipher cipher,
         IServiceProvider serviceProvider,
         IConfiguration hostConfiguration,
+        IPluginRegistry registry,
         ILogger<PluginActivator> logger)
     {
+        _registry = registry;
         _db = db;
         _cipher = cipher;
         _serviceProvider = serviceProvider;
@@ -103,7 +123,35 @@ public sealed class PluginActivator
     /// plugin from the configuration read here. Gates are logged exactly as <see cref="ActivateAsync{TContract}"/>
     /// logs them.
     /// </returns>
-    public async Task<PreparedPluginActivation<TContract>> PrepareAsync<TContract>(LoadedPlugin plugin, CancellationToken ct)
+    public Task<PreparedPluginActivation<TContract>> PrepareAsync<TContract>(LoadedPlugin plugin, CancellationToken ct)
+        where TContract : class
+    {
+        return PrepareAsync<TContract>(plugin, gateOnMigration: true, ct);
+    }
+
+    /// <summary>
+    /// Activates a plugin as <typeparamref name="TContract"/> for its own migration hook, which is the one caller that
+    /// must reach a plugin the migration gate keeps from everyone else. Every other gate still applies.
+    /// </summary>
+    /// <typeparam name="TContract">The SDK contract of the migration hook.</typeparam>
+    /// <param name="plugin">The loaded plugin.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The outcome and, when it is <see cref="PluginActivationOutcome.Activated"/>, the instance.</returns>
+    internal async Task<PluginActivation<TContract>> ActivateForMigrationAsync<TContract>(LoadedPlugin plugin, CancellationToken ct)
+        where TContract : class
+    {
+        var prepared = await PrepareAsync<TContract>(plugin, gateOnMigration: false, ct);
+        return new PluginActivation<TContract>(prepared.PluginId, prepared.Outcome, prepared.Create?.Invoke());
+    }
+
+    /// <summary>The gates both entry points share.</summary>
+    /// <typeparam name="TContract">The SDK contract the caller is going to call the plugin through.</typeparam>
+    /// <param name="plugin">The loaded plugin.</param>
+    /// <param name="gateOnMigration">Whether a plugin with a pending data migration is refused.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The outcome and the deferred build.</returns>
+    private async Task<PreparedPluginActivation<TContract>> PrepareAsync<TContract>(
+        LoadedPlugin plugin, bool gateOnMigration, CancellationToken ct)
         where TContract : class
     {
         var id = plugin.Manifest.Id;
@@ -121,12 +169,33 @@ public sealed class PluginActivator
             return new PreparedPluginActivation<TContract>(id, PluginActivationOutcome.ContractNotImplemented, null);
         }
 
+        // Fails closed: an upgraded plugin whose migration has not succeeded would run new code on old data. Checked
+        // before any settings are read, so the gate costs a memory lookup. Lifted by the migration, not by the operator.
+        if (gateOnMigration && _registry.IsMigrationPending(id))
+        {
+            _logger.LogWarning("Plugin '{Module}' is not activated: its data migration after the upgrade has not succeeded yet.", id);
+            return new PreparedPluginActivation<TContract>(id, PluginActivationOutcome.MigrationPending, null);
+        }
+
         var values = await ReadConfigurationAsync(id, ct);
 
         if (!values.TryGetValue(IntegrationSettingKeys.EnabledKey(id), out var isEnabled)
             || !string.Equals(isEnabled, IntegrationSettingKeys.EnabledValue, StringComparison.OrdinalIgnoreCase))
         {
             return new PreparedPluginActivation<TContract>(id, PluginActivationOutcome.Disabled, null);
+        }
+
+        // After the switch, so a plugin the admin left off is not logged as broken on every call. A declared capability
+        // is a claim like the type: a Fulfilment plugin that says "endpoints" but does not
+        // implement IPluginEndpoints is refused for every contract, so it neither sells nor serves half of itself (#818).
+        var unimplemented = UnimplementedCapability(plugin);
+        if (unimplemented is not null)
+        {
+            _logger.LogWarning(
+                "Plugin '{Module}' declares the capability '{Capability}' but its implementation type '{ImplementationType}' "
+                    + "does not implement it.",
+                id, unimplemented, plugin.ImplementationType);
+            return new PreparedPluginActivation<TContract>(id, PluginActivationOutcome.CapabilityNotImplemented, null);
         }
 
         foreach (var field in plugin.Manifest.GetSettings())
@@ -155,6 +224,16 @@ public sealed class PluginActivator
             PluginActivationOutcome.Activated,
             () => (TContract)ActivatorUtilities.CreateInstance(
                 _serviceProvider, plugin.ImplementationType, (IConfiguration)composed));
+    }
+
+    /// <summary>Finds the first capability the manifest declares that the implementation type does not implement.</summary>
+    /// <param name="plugin">The loaded plugin.</param>
+    /// <returns>The capability name, or <see langword="null"/> when every declared capability is implemented.</returns>
+    private static string? UnimplementedCapability(LoadedPlugin plugin)
+    {
+        return plugin.Manifest.Capabilities.FirstOrDefault(capability =>
+            !CapabilityContracts.TryGetValue(capability, out var contract)
+            || !contract.IsAssignableFrom(plugin.ImplementationType));
     }
 
     /// <summary>

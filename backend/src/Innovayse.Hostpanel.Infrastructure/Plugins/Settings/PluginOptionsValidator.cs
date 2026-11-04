@@ -21,6 +21,13 @@ public sealed class PluginOptionsValidator : IValidateOptions<PluginOptions>
             return Fail(nameof(PluginOptions.MaxUncompressedBytes), "must be greater than zero");
         }
 
+        if (options.MigrationTimeoutSeconds is <= 0 or > PluginOptions.MaxMigrationTimeoutSeconds)
+        {
+            return Fail(
+                nameof(PluginOptions.MigrationTimeoutSeconds),
+                $"must be between 1 and {PluginOptions.MaxMigrationTimeoutSeconds} seconds");
+        }
+
         if (options.MaxViewBytes < 1 || options.MaxViewBytes > PluginOptions.MaxViewBytesCeiling)
         {
             return Fail(

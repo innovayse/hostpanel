@@ -3,7 +3,8 @@
  * Dynamic config form for a single integration.
  *
  * Renders the fields the API describes in `integration.fieldDefinitions`, each as the kit control
- * its `type` asks for. Emits `save` and `test` to the parent, which owns the requests.
+ * its `type` asks for, with the label, help text, placeholder and option labels the API already translated.
+ * Test Connection is shown only when `integration.canTestConnection` says the integration can be tested. Emits `save` and `test` to the parent, which owns the requests.
  *
  * A secret field (the API marks it `isSecret` and never sends its value) is write only: it shows a
  * masked placeholder with Replace and Clear, its value is sent only when the admin typed a
@@ -25,6 +26,7 @@ import UiHeading from '@/components/ui/UiHeading.vue'
 import UiImage from '@/components/ui/UiImage.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
+import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -150,13 +152,47 @@ const setValue = (key: string, value: string | number | null): void => {
 }
 
 /**
+ * Reads a field's stored text as the number the number input takes.
+ *
+ * @param key - The field key.
+ * @returns The number, or null while the field is empty or holds text that is not a number.
+ */
+const numberOf = (key: string): number | null => {
+  const raw = localConfig.value[key]
+  if (raw === undefined || raw === '') {
+    return null
+  }
+  const parsed = Number(raw)
+  return Number.isNaN(parsed) ? null : parsed
+}
+
+/**
+ * Stores a number the admin entered as the string the API keeps.
+ *
+ * @param key - The field key.
+ * @param value - The entered number; null (the field was cleared) stores the empty string.
+ */
+const setNumber = (key: string, value: number | null): void => {
+  localConfig.value[key] = value === null ? '' : String(value)
+}
+
+/**
  * Select options of a field.
  *
  * @param field - The field definition.
  * @returns The options in the shape the select takes.
  */
 const optionsOf = (field: FieldDefinitionDto): { value: string; label: string }[] =>
-  (field.options ?? []).map(option => ({ value: option, label: option }))
+  (field.options ?? []).map(option => ({ value: option, label: field.optionLabels?.[option] ?? option }))
+
+/**
+ * The hint of an empty input: the plugin's own placeholder, already translated by the API, else the generic one.
+ *
+ * @param field - The field definition.
+ * @returns The placeholder text.
+ */
+const placeholderOf = (field: FieldDefinitionDto): string =>
+  field.placeholder ?? t('integrations.integrationConfigForm.enterValue', { label: field.label })
 
 /**
  * Stores a boolean field as the string the API keeps.
@@ -215,6 +251,7 @@ const handleSave = (): void => {
         <template v-for="field in props.integration.fieldDefinitions ?? []" :key="field.key">
           <UiField
             :label="field.label"
+            :hint="field.description ?? undefined"
             :required="field.required"
             :class="field.type === IntegrationFieldType.Textarea ? 'md:col-span-2' : ''"
           >
@@ -244,7 +281,7 @@ const handleSave = (): void => {
                 :id="id"
                 v-model="localConfig[field.key]"
                 rows="3"
-                :placeholder="t('integrations.integrationConfigForm.enterValue', { label: field.label })"
+                :placeholder="placeholderOf(field)"
                 :data-testid="`integration-field-${field.key}`"
               />
 
@@ -269,13 +306,25 @@ const handleSave = (): void => {
                 </UiText>
               </UiLabel>
 
+              <UiNumberInput
+                v-else-if="field.type === IntegrationFieldType.Number"
+                :id="id"
+                :model-value="numberOf(field.key)"
+                :min="field.min ?? undefined"
+                :max="field.max ?? undefined"
+                nullable
+                :placeholder="placeholderOf(field)"
+                :data-testid="`integration-field-${field.key}`"
+                @update:model-value="setNumber(field.key, $event)"
+              />
+
               <UiInput
                 v-else
                 :id="id"
                 v-model="localConfig[field.key]"
-                :type="UiInputType.Text"
+                :type="field.type === IntegrationFieldType.Url ? UiInputType.Url : UiInputType.Text"
                 class="font-mono"
-                :placeholder="t('integrations.integrationConfigForm.enterValue', { label: field.label })"
+                :placeholder="placeholderOf(field)"
                 :data-testid="`integration-field-${field.key}`"
               />
             </template>
@@ -295,7 +344,9 @@ const handleSave = (): void => {
         >
           {{ t('shared.saveChanges') }}
         </UiButton>
+        <!-- Hidden when the API says the integration has no test (a plugin without the status capability). -->
         <UiButton
+          v-if="integration.canTestConnection"
           type="button"
           variant="secondary"
           :loading="testing"

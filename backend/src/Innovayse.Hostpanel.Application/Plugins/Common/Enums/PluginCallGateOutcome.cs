@@ -15,7 +15,7 @@ public enum PluginCallGateOutcome
     /// <summary>The caller acts for no single account (<c>CLIENT_PROFILE_NOT_FOUND</c>).</summary>
     NoAccount = 3,
 
-    /// <summary>No loaded app plugin has that id (<c>PLUGIN_ROUTE_NOT_FOUND</c>).</summary>
+    /// <summary>No loaded serving plugin has that id (<c>PLUGIN_ROUTE_NOT_FOUND</c>).</summary>
     UnknownPlugin = 4,
 
     /// <summary>The plugin declares no route with that path in the area, whatever the method (<c>PLUGIN_ROUTE_NOT_FOUND</c>).</summary>

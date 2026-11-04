@@ -1,3 +1,6 @@
+using System.Text;
+using Innovayse.Hostpanel.SharedKernel.Domain;
+
 namespace Innovayse.Hostpanel.Application.Orders.Common;
 
 /// <summary>Result DTO returned after successfully placing an order.</summary>
@@ -16,4 +19,13 @@ namespace Innovayse.Hostpanel.Application.Orders.Common;
 /// </param>
 /// <param name="Currency">ISO 4217 code of the currency the order is billed in.</param>
 public sealed record PlaceOrderResultDto(
-    int OrderId, string OrderNumber, int InvoiceId, string PaymentToken, decimal Total, string Currency);
+    int OrderId, string OrderNumber, int InvoiceId, string PaymentToken, decimal Total, string Currency)
+{
+    /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
+    /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>
+    /// <returns><see langword="true"/> when at least one member was written.</returns>
+    private bool PrintMembers(StringBuilder builder)
+    {
+        return SecretMembers.Print(this, builder);
+    }
+}

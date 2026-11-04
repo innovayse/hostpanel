@@ -10,8 +10,9 @@ namespace Innovayse.Hostpanel.Application.Plugins.Events;
  * Why this is a queued event handler that returns Task, why it purges scope by scope, and why it stops at the moment of
  * the removal.
  *
- * PluginRemovedEvent is written to the outbox in the same save that switches the removed plugin off
- * (RemovePluginHandler), so this purge runs if and only if the removal committed. Returning Task, not Result, is
+ * PluginDataPurgeRequestedEvent is written to the outbox in the same save that records the operator's purge
+ * (PurgePluginDataHandler), so this purge runs if and only if the request committed. A removal alone never raises it:
+ * the data is kept until an operator asks. Returning Task, not Result, is
  * what QueuedDelivery.IsQueued reads: the chain gets a durable inbox (DurableQueuePolicy) and the cooldown and
  * durable retries of DurableDeliveryRetryPolicy, so a database outage mid-purge is retried and survives a restart.
  * Exceptions are therefore left to propagate; catching them would turn a failed purge into a silent success.
@@ -64,7 +65,7 @@ public sealed class PurgeRemovedPluginDataHandler
     /// <param name="evt">The removal, naming the plugin and the moment it was switched off.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes once no row of the plugin from before the removal is left.</returns>
-    public async Task HandleAsync(PluginRemovedEvent evt, CancellationToken ct)
+    public async Task HandleAsync(PluginDataPurgeRequestedEvent evt, CancellationToken ct)
     {
         var scopeIds = await _context.PluginDataScopes
             .AsNoTracking()

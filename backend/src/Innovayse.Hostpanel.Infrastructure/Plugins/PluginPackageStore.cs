@@ -5,6 +5,7 @@ using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Plugins;
+using Innovayse.Hostpanel.Domain.Plugins.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
 using Innovayse.SDK.Plugins.Manifest;
@@ -17,7 +18,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 /// File system implementation of <see cref="IPluginPackageStore"/>. An upload is streamed to a
 /// private staging folder, checked in full (size, entry count, manifest, id, paths, assembly names, signature,
 /// trusted digests), unpacked there, and only then moved into place with a single folder rename, so
-/// a refused or failed install leaves nothing behind and a half-written plugin is never visible.
+/// a refused or failed install leaves nothing behind and a half-written plugin is never visible. An upload for a
+/// plugin that is loaded, or whose version differs from the installed (or already staged) one, is staged once it passed
+/// the same checks, not swapped: <see cref="PluginUpgradeApplier"/> swaps it in at the next startup, so the folder of a
+/// loaded plugin is never overwritten. An upload that is not provably newer than what the restart installs is refused
+/// unless the downgrade is forced.
 /// </summary>
 public sealed class PluginPackageStore : IPluginPackageStore
 {
@@ -48,15 +53,28 @@ public sealed class PluginPackageStore : IPluginPackageStore
     /// <summary>Checks the detached signature of an unpacked upload and applies the host's policy for unsigned packages.</summary>
     private readonly PluginSignatureVerifier _signatures;
 
+    /// <summary>Tells whether a plugin is loaded, whose folder must then never be overwritten in place.</summary>
+    private readonly IPluginRegistry _registry;
+
     /// <summary>Initializes the store.</summary>
     /// <param name="options">Upload folder, limits and the trusted-package list.</param>
     /// <param name="signatures">Checks the detached signature of an unpacked upload and applies the host's policy for unsigned packages.</param>
+    /// <param name="registry">Tells whether a plugin is loaded, whose folder must then never be overwritten in place.</param>
     /// <param name="logger">Records why an upload was refused; the response carries only a code.</param>
-    public PluginPackageStore(IOptions<PluginOptions> options, PluginSignatureVerifier signatures, ILogger<PluginPackageStore> logger)
+    public PluginPackageStore(
+        IOptions<PluginOptions> options, PluginSignatureVerifier signatures, IPluginRegistry registry, ILogger<PluginPackageStore> logger)
     {
         _options = options.Value;
         _signatures = signatures;
+        _registry = registry;
         _logger = logger;
+    }
+
+    /// <inheritdoc/>
+    public bool HasPackageFolder(string pluginId)
+    {
+        return (TryResolvePluginFolder(PluginOptions.BuiltInRoot, pluginId, out var builtIn) && Directory.Exists(builtIn))
+            || (TryResolvePluginFolder(_options.InstallRoot, pluginId, out var uploaded) && Directory.Exists(uploaded));
     }
 
     /// <inheritdoc/>
@@ -87,7 +105,7 @@ public sealed class PluginPackageStore : IPluginPackageStore
 
             try
             {
-                return await UnpackAndCommitAsync(archivePath, work, installRoot, sha256, upload.AllowUnsigned, ct);
+                return await UnpackAndCommitAsync(archivePath, work, installRoot, sha256, upload, ct);
             }
             catch (InvalidDataException ex)
             {
@@ -121,6 +139,9 @@ public sealed class PluginPackageStore : IPluginPackageStore
         await CommitLock.WaitAsync(ct);
         try
         {
+            // An upgrade staged for a removed plugin must not come back at the next startup.
+            DiscardStaged(installRoot, id);
+            PluginUpgradeApplier.DeleteMarker(installRoot, id);
             if (!Directory.Exists(pluginDir))
             {
                 return new PluginPackageResult(PluginPackageOutcome.NotFound, id, null);
@@ -147,18 +168,22 @@ public sealed class PluginPackageStore : IPluginPackageStore
         var result = new List<InstalledPluginPackage>();
         var builtInIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var manifest in await ReadManifestsAsync(PluginOptions.BuiltInRoot, ct))
+        foreach (var (folder, manifest) in await ReadManifestsAsync(PluginOptions.BuiltInRoot, ct))
         {
             builtInIds.Add(manifest.Id);
-            result.Add(new InstalledPluginPackage(manifest, IsBuiltIn: true));
+            result.Add(new InstalledPluginPackage(manifest, IsBuiltIn: true, folder));
         }
 
-        foreach (var manifest in await ReadManifestsAsync(_options.InstallRoot, ct))
+        foreach (var (folder, manifest) in await ReadManifestsAsync(_options.InstallRoot, ct))
         {
             // The loader lets the built-in copy win, so an upload with the same id is never the one listed.
             if (!builtInIds.Contains(manifest.Id))
             {
-                result.Add(new InstalledPluginPackage(manifest, IsBuiltIn: false));
+                // Read only for a valid id: it becomes a path.
+                var staged = PluginIdentifier.IsValid(manifest.Id)
+                    ? PluginUpgradeApplier.ReadVersion(StagedFolder(_options.InstallRoot, manifest.Id))
+                    : null;
+                result.Add(new InstalledPluginPackage(manifest, IsBuiltIn: false, folder, staged));
             }
         }
 
@@ -275,12 +300,12 @@ public sealed class PluginPackageStore : IPluginPackageStore
     /// <param name="work">This install's private staging folder.</param>
     /// <param name="installRoot">The upload folder.</param>
     /// <param name="sha256">The archive's digest, carried into the result for the audit line.</param>
-    /// <param name="allowUnsigned">Whether the admin setting "allow unsigned plugins" is on.</param>
+    /// <param name="upload">The upload: whether unsigned packages are allowed and whether a downgrade is forced.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The outcome.</returns>
     /// <exception cref="InvalidDataException">The archive is not a readable ZIP file.</exception>
     private async Task<PluginPackageResult> UnpackAndCommitAsync(
-        string archivePath, string work, string installRoot, string sha256, bool allowUnsigned, CancellationToken ct)
+        string archivePath, string work, string installRoot, string sha256, PluginPackageUpload upload, CancellationToken ct)
     {
         using var archive = ZipFile.OpenRead(archivePath);
 
@@ -380,7 +405,7 @@ public sealed class PluginPackageStore : IPluginPackageStore
         }
 
         // The signature covers the unpacked files, so it is checked here, after the archive is unpacked and before the move into place.
-        var signature = _signatures.Check(contentDir, id, PluginOrigin.Uploaded, allowUnsigned, _logger);
+        var signature = _signatures.Check(contentDir, id, PluginOrigin.Uploaded, upload.AllowUnsigned, _logger);
         if (signature is not null)
         {
             _logger.LogWarning(
@@ -388,8 +413,92 @@ public sealed class PluginPackageStore : IPluginPackageStore
             return new PluginPackageResult(PluginPackageOutcome.SignatureRefused, id, sha256, SignatureRule: signature.Rule);
         }
 
-        await CommitAsync(contentDir, targetDir, work, ct);
-        return new PluginPackageResult(PluginPackageOutcome.Installed, id, sha256);
+        // The folder of a plugin that is loaded is never overwritten in place: its assemblies are in use, so any upload
+        // for it, an upgrade, a downgrade or the same version again, waits in the staged folder for the restart. The
+        // comparison is against what the restart will install, which is the staged upload when there is one. A version
+        // that cannot be compared (the installed manifest is unreadable) is not provably an upgrade and counts as an older one.
+        var installedVersion = PluginUpgradeApplier.ReadVersion(targetDir);
+        var stagedVersion = PluginUpgradeApplier.ReadVersion(StagedFolder(installRoot, id));
+        var reference = stagedVersion ?? installedVersion;
+        var isLoaded = _registry.IsLoaded(id);
+        if (reference is not null || isLoaded)
+        {
+            var change = PluginVersion.Compare(reference, manifest.Version);
+            if (change is PluginVersionChange.Older or PluginVersionChange.Incomparable && !upload.ForceDowngrade)
+            {
+                _logger.LogWarning(
+                    "Plugin install refused: {PluginId} {Version} is not newer than {Reference} and the downgrade is not forced.",
+                    id, manifest.Version, reference);
+                return new PluginPackageResult(
+                    PluginPackageOutcome.DowngradeRefused, id, sha256, Version: manifest.Version, PreviousVersion: reference);
+            }
+
+            if (change != PluginVersionChange.Same || isLoaded || stagedVersion is not null)
+            {
+                await StageAsync(contentDir, installRoot, id, ct);
+                return new PluginPackageResult(
+                    PluginPackageOutcome.Staged, id, sha256, Version: manifest.Version, PreviousVersion: reference);
+            }
+        }
+
+        await CommitAsync(contentDir, targetDir, work, installRoot, id, ct);
+        return new PluginPackageResult(PluginPackageOutcome.Installed, id, sha256, Version: manifest.Version);
+    }
+
+    /// <summary>
+    /// Drops the upgrade staged for a plugin. The folder is first renamed out of the staged area, so a delete that fails
+    /// halfway can never leave a half-deleted upgrade for the next startup to swap in; what is left of it is in the work
+    /// folder, which the next startup sweeps.
+    /// </summary>
+    /// <param name="installRoot">The upload folder.</param>
+    /// <param name="id">A plugin id that already meets the plugin id rule.</param>
+    private void DiscardStaged(string installRoot, string id)
+    {
+        var staged = StagedFolder(installRoot, id);
+        if (!Directory.Exists(staged))
+        {
+            return;
+        }
+
+        var trash = Path.Combine(installRoot, StagingFolderName, Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.GetDirectoryName(trash)!);
+        Directory.Move(staged, trash);
+        DeleteQuietly(trash);
+    }
+
+    /// <summary>The folder an upgrade of one plugin waits in until the next startup.</summary>
+    /// <param name="installRoot">The upload folder.</param>
+    /// <param name="id">A plugin id that already meets the plugin id rule.</param>
+    /// <returns>The absolute staged folder path.</returns>
+    private static string StagedFolder(string installRoot, string id)
+    {
+        return Path.Combine(installRoot, PluginFolders.Staged, id);
+    }
+
+    /// <summary>
+    /// Moves the unpacked upgrade into the staged folder of its plugin, replacing an earlier staged upload of the same
+    /// plugin, so the folder always holds the last upload that passed every check.
+    /// </summary>
+    /// <param name="contentDir">The unpacked plugin in the staging folder.</param>
+    /// <param name="installRoot">The upload folder.</param>
+    /// <param name="id">The plugin id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes once the upgrade is staged.</returns>
+    private async Task StageAsync(string contentDir, string installRoot, string id, CancellationToken ct)
+    {
+        await CommitLock.WaitAsync(ct);
+        try
+        {
+            var staged = StagedFolder(installRoot, id);
+            DiscardStaged(installRoot, id);
+
+            Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
+            Directory.Move(contentDir, staged);
+        }
+        finally
+        {
+            CommitLock.Release();
+        }
     }
 
     /// <summary>Unpacks every entry into <paramref name="contentDir"/>, counting the real bytes written.</summary>
@@ -454,13 +563,17 @@ public sealed class PluginPackageStore : IPluginPackageStore
     /// <param name="contentDir">The unpacked plugin in the staging folder.</param>
     /// <param name="targetDir">The plugin's final folder.</param>
     /// <param name="work">This install's staging folder, where the earlier upload is set aside.</param>
+    /// <param name="installRoot">The upload folder.</param>
+    /// <param name="id">The plugin id; an unreadable staged upgrade of it is dropped, because this upload supersedes it.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes once the plugin is in place.</returns>
-    private static async Task CommitAsync(string contentDir, string targetDir, string work, CancellationToken ct)
+    private async Task CommitAsync(string contentDir, string targetDir, string work, string installRoot, string id, CancellationToken ct)
     {
         await CommitLock.WaitAsync(ct);
         try
         {
+            DiscardStaged(installRoot, id);
+
             var previous = Path.Combine(work, "previous");
             var replaced = Directory.Exists(targetDir);
             if (replaced)
@@ -491,11 +604,11 @@ public sealed class PluginPackageStore : IPluginPackageStore
     /// </summary>
     /// <param name="root">The plugin folder to scan.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The readable manifests.</returns>
-    private async Task<IReadOnlyList<PluginManifest>> ReadManifestsAsync(
+    /// <returns>The readable manifests, each with the name of the folder it was read from.</returns>
+    private async Task<IReadOnlyList<(string Folder, PluginManifest Manifest)>> ReadManifestsAsync(
         string root, CancellationToken ct)
     {
-        var manifests = new List<PluginManifest>();
+        var manifests = new List<(string Folder, PluginManifest Manifest)>();
         if (!Directory.Exists(root))
         {
             return manifests;
@@ -514,7 +627,7 @@ public sealed class PluginPackageStore : IPluginPackageStore
                 var manifest = PluginManifestReader.Deserialize(await File.ReadAllTextAsync(manifestPath, ct));
                 if (manifest is not null)
                 {
-                    manifests.Add(manifest);
+                    manifests.Add((Path.GetFileName(dir), manifest));
                 }
             }
             catch (JsonException ex)

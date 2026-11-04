@@ -20,6 +20,13 @@
   <a href="https://discord.gg/NfqTkyTgD"><img alt="Chat on Discord" src="https://img.shields.io/badge/chat-on%20Discord-5865F2?logo=discord&logoColor=white"></a>
 </p>
 
+<p align="center">
+  <b>Try the demo:</b>
+  <a href="https://demo-hostpanel.innovayse.com">client portal</a> ·
+  <a href="https://demo-hostpanel-admin.innovayse.com">admin panel</a><br>
+  <sub>Sample data, reset regularly. The demo sign-in details are on each login page.</sub>
+</p>
+
 ---
 
 ## Why HostPanel
@@ -30,10 +37,22 @@ your own machine and extend.
 
 - **You own it.** AGPL-3.0, self-hosted with Docker, no per-client licence fee.
 - **Modern stack.** ASP.NET Core 9 and PostgreSQL behind a Nuxt 4 storefront and a Vue 3 admin panel.
-- **Built to be extended.** Payment gateways, registrars and provisioning panels are plugins behind
-  small interfaces, with an SDK for writing your own.
+- **Built to be extended.** Payment gateways, registrars and control panels sit behind small
+  interfaces. You can add your own with the plugin SDK, without changing the core.
 - **Ready in minutes.** Prebuilt multi-arch images (`amd64`, `arm64`) on Docker Hub and an installer
   that sets up HTTPS for you.
+
+## Screenshots
+
+| Admin dashboard | Clients |
+|---|---|
+| <img src="docs/public/screenshots/admin-dashboard.png" alt="Admin dashboard" width="420"> | <img src="docs/public/screenshots/admin-clients.png" alt="Clients list" width="420"> |
+| **Invoices** | **Products** |
+| <img src="docs/public/screenshots/admin-invoices.png" alt="Invoices list" width="420"> | <img src="docs/public/screenshots/admin-products.png" alt="Products list" width="420"> |
+| **Client portal** | **Client area** |
+| <img src="docs/public/screenshots/portal-home.png" alt="Client portal home page" width="420"> | <img src="docs/public/screenshots/portal-client-area.png" alt="Client area dashboard" width="420"> |
+
+Taken from the local development stack with its seeded sample data.
 
 ## Features
 
@@ -51,10 +70,38 @@ your own machine and extend.
 | Demo mode | Fake payments, registrar and provisioning, caught mail, fixed sample data reset on a schedule, on a network isolated from production |
 | Languages | English, Russian and Armenian in both the portal and the admin panel |
 | Plugin SDK | `Innovayse.SDK` (MIT, a NuGet package, developed in [hostpanel-sdk](https://github.com/innovayse/hostpanel-sdk)) for your own payment, registrar, provisioning, identity, fulfilment and hosted plugins |
-| Data import | Importers for moving clients and data from another billing system |
+| Integrations | Payments: Stripe (cards, saved cards), Inecobank (as a plugin), bank transfer. Registrars: Namecheap, Name.am. Control panels: CWP7, Plesk. Notifications: Telegram |
+| Data import from WHMCS | A PHP addon you install in WHMCS. HostPanel pulls clients, contacts, products, orders, services, domains, invoices, transactions, quotes, tickets, announcements, knowledge base, downloads and network issues from it, page by page. See [Moving from another billing system](docs/migration/from-another-system.md) |
 
 See the [open feature requests](https://github.com/innovayse/hostpanel/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
 for what is coming next.
+
+## HostPanel vs WHMCS
+
+This table compares what HostPanel and WHMCS offer today. WHMCS facts come from its own [pricing page](https://www.whmcs.com/pricing/), its
+[documentation](https://docs.whmcs.com/9-0/tags/php) and the
+[module list](https://docs.webpros.cloud/docs/whmcs-cloud/included-modules/) of its publisher, WebPros.
+
+| | HostPanel | WHMCS |
+|---|---|---|
+| License | AGPL-3.0, full source on GitHub | Commercial licence. Its PHP files are encoded and need the ionCube Loader |
+| Cost | No licence fee | Monthly plans, priced by the number of active clients |
+| Where it runs | Self-hosted, with Docker | Self-hosted, or WHMCS Cloud run by the vendor |
+| Control panels | CWP7, Plesk | cPanel, Plesk, DirectAdmin and others |
+| Domain registrars | Namecheap, Name.am | Many, including Namecheap, OpenSRS and Nominet |
+| Payment gateways | Stripe, Inecobank, bank transfer | Many, including Authorize.net, BitPay and bank transfer |
+| Extensions | A plugin SDK (MIT). Few plugins exist so far | A large marketplace of third-party modules |
+| Moving over | An importer that pulls your data out of WHMCS | Not applicable |
+
+### What HostPanel does not have yet
+
+- cPanel and DirectAdmin provisioning.
+- PayPal and other payment gateways beyond the three above.
+- Registrars other than Namecheap and Name.am, such as ResellerClub or OpenSRS.
+- Automatic tax calculation. Staff set a tax rate on each invoice by hand.
+- Automatic fraud checks on new orders. Staff can mark an order as fraud by hand.
+- A hosted option. You run HostPanel on your own server.
+- A marketplace of ready-made modules.
 
 ## Quick start with Docker
 
@@ -146,8 +193,8 @@ The API runs with `Demo__Enabled`: the adapters are fakes, outgoing mail goes to
 re-seeded every `DEMO_RESET_INTERVAL_HOURS` hours with the accounts from `DEMO_ADMIN_*` and `DEMO_CLIENT_*`. The seed is
 fixed and deterministic: the same sample data on every reset, rich enough to show every feature, and the site name is
 `Hostpanel Demo`. It uses its own `hostpanel-demo-*` containers, volumes and a private network, and its three public-facing services sit on the dedicated external network `hostpanel_demo_edge` (create it once: `docker network create --subnet 172.29.0.0/16 hostpanel_demo_edge`), never the production network, so it cannot reach a
-production stack on the same host. See [docker/README.md](docker/README.md). A public instance is at
-[hostpanel.innovayse.com](https://hostpanel.innovayse.com).
+production stack on the same host. See [docker/README.md](docker/README.md). A public instance is running: the
+[client portal](https://demo-hostpanel.innovayse.com) and the [admin panel](https://demo-hostpanel-admin.innovayse.com).
 
 ## Storefront content
 
@@ -228,11 +275,28 @@ its own PostgreSQL through Testcontainers, so Docker must be running). Run `yarn
 | Messaging | RabbitMQ with the Wolverine outbox | Reliable events between modules |
 | Client portal `client/` | Nuxt 4, Vue 3, TypeScript, Tailwind, Pinia | Server-rendered storefront; pages own data and SEO, `templates/` hold the switchable designs |
 | Admin panel `admin/` | Vite, Vue 3, TypeScript, Tailwind | Single-page app served by nginx |
-| Plugins | `Innovayse.SDK` and `Innovayse.Providers.*` | Six plugin types behind small interfaces, all loaded at run time: payment, registrar and provisioning providers, plus fulfilment (`IFulfilmentPlugin`: deliver digital products after payment, advise on refunds), identity (`IClientResolver`: decide which client a signed-in user acts for) and hosted (`IHostedPlugin`: a background worker). The core names no deployment-specific plugin namespace; an architecture test enforces it |
+| Plugins | `Innovayse.SDK` and `Innovayse.Providers.*` | Six plugin types behind small interfaces, loaded at run time: payment, registrar and provisioning providers, plus fulfilment (`IFulfilmentPlugin`: deliver digital products after payment, advise on refunds), identity (`IClientResolver`: decide which client a signed-in user acts for) and hosted (`IHostedPlugin`: a background worker). The integrations listed under Features are built into the core; today only Inecobank ships as a run-time plugin. The core names no deployment-specific plugin namespace; an architecture test enforces it |
 | Auth | ASP.NET Core Identity, JWT in an httpOnly cookie | `local` mode by default |
 
 Each app owns its Dockerfile (`backend/Dockerfile`, `client/Dockerfile`, `admin/Dockerfile`). A new payment gateway, registrar
 or control-panel integration is one of the most useful contributions: open an issue first so we can agree on the shape.
+
+### Writing a plugin
+
+Start with [docs/developers/write-a-plugin.md](docs/developers/write-a-plugin.md). In short:
+
+- **Manifest v2.** `plugin.json` with `"manifestVersion": 2` declares typed `settings`, `capabilities`, `locales`, an `api`
+  block (the HTTP routes the plugin answers), a `ui` block (menus, pages and slot widgets) and `externalOrigins`.
+- **Views.** A page or slot widget points at a JSON view document, `{ "schema": 1, "blocks": [...] }`, made of the block kinds
+  `header`, `text`, `stat`, `table`, `form`, `action`, `link`, `badge`, `empty`, `alert`, `tabs`, `chat` and `progress`. The
+  panels render it as text, never as HTML, in the visitor's language.
+- **Slots.** Widgets go into `client.dashboard.cards`, `client.service.tabs`, `admin.client.panels` or `admin.service.panels`.
+- **Endpoints.** The panels call a plugin only through the routes its `api` block declares, at
+  `/api/client/plugins/{id}/...` and `/api/admin/plugins/{id}/ext/...`. Anything undeclared, disabled or not permitted for the
+  caller answers the same 404.
+- **Trust.** An uploaded package must carry a `plugin.sig` signature from a trusted key. An operator can switch on
+  **Allow unsigned plugins** (off by default, audited) or pin archive digests with `Plugins:TrustedPackageSha256`. With no
+  plugin installed the panels look exactly as the core ships them.
 
 ## Contributing, security, license
 

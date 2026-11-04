@@ -549,6 +549,9 @@
 <data name="PLUGIN_MANIFEST_ID_INVALID" xml:space="preserve">
     <value>The plugin id in the manifest is not valid: use lowercase letters and digits, with single hyphens between words.</value>
   </data>
+<data name="PLUGIN_MANIFEST_VERSION_INVALID" xml:space="preserve">
+    <value>The plugin version in the manifest is not valid: write it as major.minor.patch, for example 1.2.3, with no leading zeros.</value>
+  </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>This plugin names a view document that its package does not contain.</value>
   </data>
@@ -572,6 +575,12 @@
   </data>
 <data name="PLUGIN_PAGE_NOT_FOUND" xml:space="preserve">
     <value>This plugin page does not exist.</value>
+  </data>
+  <data name="PLUGIN_ENDPOINTS_NOT_DECLARED" xml:space="preserve">
+    <value>This plugin declares routes, pages or slots, but it is not an app plugin and does not declare the "endpoints" capability.</value>
+  </data>
+  <data name="PLUGIN_CAPABILITY_NOT_ALLOWED" xml:space="preserve">
+    <value>This plugin declares a capability that the host does not know or that its plugin type cannot have.</value>
   </data>
 <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>That archive contains an entry that would write outside the plugin's own folder and was rejected.</value>
@@ -606,17 +615,35 @@
 <data name="PLUGIN_BUILT_IN" xml:space="preserve">
     <value>This plugin ships with the server and cannot be removed or replaced.</value>
   </data>
+<data name="PLUGIN_DOWNGRADE_REFUSED" xml:space="preserve">
+    <value>This is an older version than the installed plugin. Upload it again with the downgrade confirmed to install it anyway.</value>
+  </data>
+<data name="PLUGIN_STILL_INSTALLED" xml:space="preserve">
+    <value>This plugin is still installed. Remove it before purging the data it kept.</value>
+  </data>
 <data name="PLUGIN_ROUTE_NOT_FOUND" xml:space="preserve">
     <value>Nothing is served at this address.</value>
   </data>
 <data name="PLUGIN_SLOT_NOT_FOUND" xml:space="preserve">
     <value>That page area is not available.</value>
   </data>
+  <data name="PLUGIN_SLOT_WIDGET_NOT_FOUND" xml:space="preserve">
+    <value>The widget is not declared by that plugin.</value>
+  </data>
+  <data name="PLUGIN_SLOT_WIDGET_VIEW_NOT_FOUND" xml:space="preserve">
+    <value>That part of the page is not available.</value>
+  </data>
 <data name="PLUGIN_SLOT_CONTEXT_REQUIRED" xml:space="preserve">
     <value>A context is required for this page area.</value>
   </data>
+  <data name="PLUGIN_SLOT_PRODUCTS_UNKNOWN" xml:space="preserve">
+    <value>None of the products exist, so the widget was not bound. Send an empty list to clear the binding.</value>
+  </data>
 <data name="PLUGIN_FAILED" xml:space="preserve">
     <value>The plugin could not complete the request. Please try again later.</value>
+  </data>
+<data name="PLUGIN_TIMEOUT" xml:space="preserve">
+    <value>The plugin took too long to answer. Please try again later.</value>
   </data>
 <data name="PLUGIN_STORE_QUOTA_EXCEEDED" xml:space="preserve">
     <value>This plugin's storage for this account is full. Please contact support.</value>
@@ -636,11 +663,41 @@
 <data name="INTEGRATION_NOT_FOUND" xml:space="preserve">
     <value>No such integration.</value>
   </data>
+<data name="INTEGRATION_FIELD_UNKNOWN" xml:space="preserve">
+    <value>The integration does not declare that field.</value>
+  </data>
+<data name="INTEGRATION_FIELD_INVALID" xml:space="preserve">
+    <value>That value is not accepted for this integration field.</value>
+  </data>
+<data name="INTEGRATION_NOT_TESTABLE" xml:space="preserve">
+    <value>This integration has no connection test.</value>
+  </data>
+<data name="PLUGIN_STATUS_HEALTHY" xml:space="preserve">
+    <value>The plugin reports that it works.</value>
+  </data>
+<data name="PLUGIN_STATUS_DEGRADED" xml:space="preserve">
+    <value>The plugin works with reduced function.</value>
+  </data>
+<data name="PLUGIN_STATUS_REPORTED_DOWN" xml:space="preserve">
+    <value>The plugin reports that it cannot do its work at the moment.</value>
+  </data>
+<data name="PLUGIN_STATUS_INACTIVE" xml:space="preserve">
+    <value>The plugin is switched off or a required setting is missing.</value>
+  </data>
+<data name="PLUGIN_STATUS_TIMED_OUT" xml:space="preserve">
+    <value>The plugin did not answer the status check in time.</value>
+  </data>
+<data name="PLUGIN_STATUS_FAILED" xml:space="preserve">
+    <value>The plugin's status check failed. See the server log for detail.</value>
+  </data>
 <data name="SETTING_NOT_FOUND" xml:space="preserve">
     <value>No such setting.</value>
   </data>
 <data name="INVALID_SETTING_VALUE" xml:space="preserve">
     <value>That value is not accepted for this setting.</value>
+  </data>
+<data name="SETTING_NOT_EDITABLE" xml:space="preserve">
+    <value>This setting cannot be changed here.</value>
   </data>
 <data name="BRANDING_IMAGE_INVALID" xml:space="preserve">
     <value>That file could not be read as an image. Upload a PNG, JPEG, WebP, GIF or BMP.</value>
@@ -1044,5 +1101,13 @@
   </data>
   <data name="CARD_SETUP_NOT_FOUND" xml:space="preserve">
     <value>No card setup with that id was found on this account.</value>
+  <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
+    <value>The plugin asks for a kind of access to client hosting that this host does not know, names one twice, or declares it in a version 1 manifest.</value>
+  </data>
+  <data name="PLUGIN_VIEW_CONDITION_INVALID" xml:space="preserve">
+    <value>One of this plugin's view documents shows a block on a condition that is not a GET route, a field and one value or a short list of values.</value>
+  </data>
+  <data name="PLUGIN_VIEW_FOLLOW_UP_INVALID" xml:space="preserve">
+    <value>One of this plugin's view documents refreshes a block it does not hold after an action, or describes the follow-up or the form reset in a shape this host does not accept.</value>
   </data>
 </root>

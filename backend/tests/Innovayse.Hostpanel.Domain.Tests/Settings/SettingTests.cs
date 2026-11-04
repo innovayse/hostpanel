@@ -35,12 +35,9 @@ public sealed class SettingTests
         setting.Key.Should().Be("site:name");
     }
 
-    /// <summary>
-    /// Switching off an enabled plugin's switch stores the off value and raises exactly one
-    /// <see cref="PluginRemovedEvent"/> naming the plugin and the removal moment.
-    /// </summary>
+    /// <summary>Switching off an enabled plugin's switch stores the off value and announces the removal only (#758), never a purge: the data is kept.</summary>
     [Fact]
-    public void SwitchOffRemovedPlugin_OnTheSwitch_StoresOffAndRaisesTheRemoval()
+    public void SwitchOffRemovedPlugin_OnTheSwitch_StoresOffAndKeepsTheData()
     {
         var setting = Setting.Create(
             IntegrationSettingKeys.EnabledKey(PluginId), IntegrationSettingKeys.EnabledValue, null);
@@ -48,16 +45,15 @@ public sealed class SettingTests
         setting.SwitchOffRemovedPlugin(PluginId, RemovedAt);
 
         setting.Value.Should().Be(IntegrationSettingKeys.DisabledValue);
-        setting.DomainEvents.Should().ContainSingle()
-            .Which.Should().Be(new PluginRemovedEvent(PluginId, RemovedAt));
+        setting.DomainEvents.Should().ContainSingle().Which.Should().Be(new PluginRemovedEvent(PluginId, RemovedAt));
     }
 
     /// <summary>
-    /// A plugin installed under an id that was reserved later (<c>ui</c>) is still switched off and announced for purge
-    /// on removal: the switch checks only the id's shape.
+    /// A plugin installed under an id that was reserved later (<c>ui</c>) is still switched off on removal: the switch
+    /// checks only the id's shape.
     /// </summary>
     [Fact]
-    public void SwitchOffRemovedPlugin_ReservedId_StoresOffAndRaisesTheRemoval()
+    public void SwitchOffRemovedPlugin_ReservedId_StoresOff()
     {
         const string reservedId = "ui";
         var setting = Setting.Create(
@@ -66,11 +62,10 @@ public sealed class SettingTests
         setting.SwitchOffRemovedPlugin(reservedId, RemovedAt);
 
         setting.Value.Should().Be(IntegrationSettingKeys.DisabledValue);
-        setting.DomainEvents.Should().ContainSingle()
-            .Which.Should().Be(new PluginRemovedEvent(reservedId, RemovedAt));
+        setting.DomainEvents.Should().ContainSingle().Which.Should().Be(new PluginRemovedEvent(reservedId, RemovedAt));
     }
 
-    /// <summary>A row that is not the plugin's switch is refused and neither changed nor announced.</summary>
+    /// <summary>A row that is not the plugin's switch is refused and not changed.</summary>
     [Fact]
     public void SwitchOffRemovedPlugin_OnAnotherSetting_ThrowsAndChangesNothing()
     {
@@ -81,7 +76,6 @@ public sealed class SettingTests
 
         act.Should().Throw<ArgumentException>();
         setting.Value.Should().Be(IntegrationSettingKeys.EnabledValue);
-        setting.DomainEvents.Should().BeEmpty();
     }
 
     /// <summary>An id breaking the plugin id rule is refused, even on a row whose key it would match.</summary>
@@ -95,23 +89,18 @@ public sealed class SettingTests
         var act = () => setting.SwitchOffRemovedPlugin(invalidId, RemovedAt);
 
         act.Should().Throw<ArgumentException>();
-        setting.DomainEvents.Should().BeEmpty();
     }
 
-    /// <summary>
-    /// The factory for a plugin that never had a switch row builds that row already off, keyed as the activator reads
-    /// it, and raises the same single <see cref="PluginRemovedEvent"/>.
-    /// </summary>
+    /// <summary>The factory for a plugin that never had a switch row builds that row already off, keyed as the activator reads it, and announces the removal.</summary>
     [Fact]
-    public void CreateSwitchedOffForRemovedPlugin_BuildsTheOffSwitchAndRaisesTheRemoval()
+    public void CreateSwitchedOffForRemovedPlugin_BuildsTheOffSwitch()
     {
         var setting = Setting.CreateSwitchedOffForRemovedPlugin(PluginId, RemovedAt);
 
         setting.Key.Should().Be(IntegrationSettingKeys.EnabledKey(PluginId));
         setting.Value.Should().Be(IntegrationSettingKeys.DisabledValue);
         setting.Description.Should().Contain(PluginId);
-        setting.DomainEvents.Should().ContainSingle()
-            .Which.Should().Be(new PluginRemovedEvent(PluginId, RemovedAt));
+        setting.DomainEvents.Should().ContainSingle().Which.Should().Be(new PluginRemovedEvent(PluginId, RemovedAt));
     }
 
     /// <summary>The factory refuses an id breaking the plugin id rule, so no key can be built from it.</summary>
@@ -121,5 +110,32 @@ public sealed class SettingTests
         var act = () => Setting.CreateSwitchedOffForRemovedPlugin("../outside", RemovedAt);
 
         act.Should().Throw<ArgumentException>();
+    }
+
+    /// <summary>A purge request raises exactly one event naming the plugin and the moment, and leaves the value alone.</summary>
+    [Fact]
+    public void RequestDataPurge_OnTheSwitch_RaisesThePurgeEvent()
+    {
+        var setting = Setting.Create(
+            IntegrationSettingKeys.EnabledKey(PluginId), IntegrationSettingKeys.DisabledValue, null);
+
+        setting.RequestDataPurge(PluginId, RemovedAt);
+
+        setting.Value.Should().Be(IntegrationSettingKeys.DisabledValue);
+        setting.DomainEvents.Should().ContainSingle()
+            .Which.Should().Be(new PluginDataPurgeRequestedEvent(PluginId, RemovedAt));
+    }
+
+    /// <summary>A purge request on another setting is refused and announces nothing.</summary>
+    [Fact]
+    public void RequestDataPurge_OnAnotherSetting_ThrowsAndRaisesNothing()
+    {
+        var setting = Setting.Create(
+            IntegrationSettingKeys.EnabledKey("other-plugin"), IntegrationSettingKeys.DisabledValue, null);
+
+        var act = () => setting.RequestDataPurge(PluginId, RemovedAt);
+
+        act.Should().Throw<ArgumentException>();
+        setting.DomainEvents.Should().BeEmpty();
     }
 }

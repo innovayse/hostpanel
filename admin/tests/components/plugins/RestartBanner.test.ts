@@ -22,4 +22,12 @@ describe('RestartBanner', () => {
     expect(wrapper.get('[data-testid="plugins-restart"]').attributes('disabled')).toBeDefined()
     expect(wrapper.text()).toContain('Restarting')
   })
+
+  it('spreads text and button across the alert and wraps on a narrow screen', () => {
+    const wrapper = mount(RestartBanner, { props: { restarting: false }, global: { plugins: [createTestI18n()] } })
+    const row = wrapper.get('[data-testid="ui-alert-body"] > div')
+
+    expect(row.classes()).toEqual(expect.arrayContaining(['flex-row', 'justify-between', 'flex-wrap']))
+    expect(row.find('[data-testid="plugins-restart"]').exists()).toBe(true)
+  })
 })

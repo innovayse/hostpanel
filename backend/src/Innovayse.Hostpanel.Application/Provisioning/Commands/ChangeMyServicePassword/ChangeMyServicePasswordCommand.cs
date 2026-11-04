@@ -1,5 +1,7 @@
+using System.Text;
 using Innovayse.Hostpanel.Application.Services.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.SharedKernel.Domain;
 
 namespace Innovayse.Hostpanel.Application.Provisioning.Commands.ChangeMyServicePassword;
 
@@ -16,4 +18,13 @@ namespace Innovayse.Hostpanel.Application.Provisioning.Commands.ChangeMyServiceP
 /// <param name="ServiceId">Primary key of the service, which must belong to the caller.</param>
 /// <param name="NewPassword">The new hosting account password.</param>
 public sealed record ChangeMyServicePasswordCommand(int ServiceId, string NewPassword)
-    : ICallerScopedServiceMessage;
+    : ICallerScopedServiceMessage
+{
+    /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
+    /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>
+    /// <returns><see langword="true"/> when at least one member was written.</returns>
+    private bool PrintMembers(StringBuilder builder)
+    {
+        return SecretMembers.Print(this, builder);
+    }
+}

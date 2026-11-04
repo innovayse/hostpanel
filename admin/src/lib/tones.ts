@@ -14,6 +14,7 @@ import { ClientStatus } from '@/types/client'
 import { ContactType } from '@/types/contact'
 import { DomainStatus } from '@/types/domain'
 import { GatewayLogResult } from '@/types/gatewaylog'
+import { IntegrationConnectionState } from '@/types/integration'
 import { FulfilmentStatus, InvoiceStatus, InvoiceTransactionType } from '@/types/invoice'
 import { MigrationLogAction, MigrationStatus } from '@/types/migration'
 import type { MigrationJob, MigrationLogEntry } from '@/types/migration'
@@ -375,3 +376,11 @@ export const statusLabel = (options: ReadonlyArray<{ value: string; label: strin
  * @returns The label to show.
  */
 export const ticketStatusLabel = (status: string): string => translateOrRaw(`ticketStatus.${status}`, status)
+
+/** Badge tone of each plugin integration connection state. */
+export const integrationConnectionTone: Record<IntegrationConnectionState, UiTone> = {
+  [IntegrationConnectionState.Connected]: UiTone.Success,
+  [IntegrationConnectionState.Degraded]: UiTone.Warning,
+  [IntegrationConnectionState.Unavailable]: UiTone.Danger,
+  [IntegrationConnectionState.Inactive]: UiTone.Neutral,
+}

@@ -16,22 +16,22 @@ beforeEach(() => {
 
 /** Every row the card edits, as the API seeds them. */
 const rows: Setting[] = [
-  { id: 1, key: 'portal.stats.clients', value: '5,000+', isSecret: false, hasValue: true },
-  { id: 2, key: 'portal.stats.uptime', value: '99.9%', isSecret: false, hasValue: true },
-  { id: 3, key: 'portal.stats.regions', value: '12', isSecret: false, hasValue: true },
-  { id: 4, key: 'portal.hero.badge', value: 'New', isSecret: false, hasValue: true },
-  { id: 5, key: 'portal.contact.email', value: 'hi@example.com', isSecret: false, hasValue: true },
-  { id: 6, key: 'portal.contact.phone', value: '+1 555', isSecret: false, hasValue: true },
-  { id: 7, key: 'portal.contact.whatsapp', value: '+1 556', isSecret: false, hasValue: true },
-  { id: 8, key: 'portal.contact.telegram', value: '@acme', isSecret: false, hasValue: true },
-  { id: 9, key: 'portal.contact.address', value: '1 Main St', isSecret: false, hasValue: true },
-  { id: 10, key: 'portal.contact.map_url', value: 'https://maps.example.com/x', isSecret: false, hasValue: true },
-  { id: 11, key: 'portal.contact.hours', value: 'Mon-Fri 09:00-18:00', isSecret: false, hasValue: true },
-  { id: 12, key: 'portal.contact.hours.ru', value: 'Пн-Пт 09:00-18:00', isSecret: false, hasValue: true },
-  { id: 13, key: 'portal.contact.hours.hy', value: 'Երկ-Ուրբ 09:00-18:00', isSecret: false, hasValue: true },
-  { id: 14, key: 'portal.contact.timezone', value: 'UTC+4', isSecret: false, hasValue: true },
-  { id: 15, key: 'portal.contact.address.ru', value: 'ул. Примерная, 1', isSecret: false, hasValue: true },
-  { id: 16, key: 'portal.contact.address.hy', value: 'Օրինակ փողոց 1', isSecret: false, hasValue: true },
+  { id: 1, key: 'portal.stats.clients', value: '5,000+' },
+  { id: 2, key: 'portal.stats.uptime', value: '99.9%' },
+  { id: 3, key: 'portal.stats.regions', value: '12' },
+  { id: 4, key: 'portal.hero.badge', value: 'New' },
+  { id: 5, key: 'portal.contact.email', value: 'hi@example.com' },
+  { id: 6, key: 'portal.contact.phone', value: '+1 555' },
+  { id: 7, key: 'portal.contact.whatsapp', value: '+1 556' },
+  { id: 8, key: 'portal.contact.telegram', value: '@acme' },
+  { id: 9, key: 'portal.contact.address', value: '1 Main St' },
+  { id: 10, key: 'portal.contact.map_url', value: 'https://maps.example.com/x' },
+  { id: 11, key: 'portal.contact.hours', value: 'Mon-Fri 09:00-18:00' },
+  { id: 12, key: 'portal.contact.hours.ru', value: 'Пн-Пт 09:00-18:00' },
+  { id: 13, key: 'portal.contact.hours.hy', value: 'Երկ-Ուրբ 09:00-18:00' },
+  { id: 14, key: 'portal.contact.timezone', value: 'UTC+4' },
+  { id: 15, key: 'portal.contact.address.ru', value: 'ул. Примерная, 1' },
+  { id: 16, key: 'portal.contact.address.hy', value: 'Օրինակ փողոց 1' },
 ]
 
 /**

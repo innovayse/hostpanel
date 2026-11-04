@@ -86,7 +86,7 @@ public sealed class PaymentPluginResolverTests(IntegrationTestFactory factory)
         var services = new ServiceCollection().BuildServiceProvider();
         var activator = new PluginActivator(
             db, factory.Services.GetRequiredService<ISecretSettingCipher>(), services, hostConfig ?? new ConfigurationBuilder().Build(),
-            NullLogger<PluginActivator>.Instance);
+            registry, NullLogger<PluginActivator>.Instance);
         return new PaymentPluginResolver(activator, registry, NullLogger<PaymentPluginResolver>.Instance);
     }
 

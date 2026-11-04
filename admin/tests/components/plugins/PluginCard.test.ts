@@ -1,13 +1,15 @@
 /**
- * Unit tests for PluginCard: name, version and status, the built-in mark, and the remove event.
+ * Unit tests for PluginCard: name, version and status, the built-in mark, the capability badges, and the remove event.
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PluginCard from '@/components/plugins/PluginCard.vue'
+import { PluginStatus } from '@/types/plugin'
+import type { PluginListItemDto } from '@/types/plugin'
 import { createTestI18n } from '../../helpers/i18n'
 
 /** An installed plugin that is already running. */
-const plugin = {
+const plugin: PluginListItemDto = {
   id: 'ineco',
   name: 'Ineco Pay',
   version: '1.2.0',
@@ -18,6 +20,11 @@ const plugin = {
   color: '#123456',
   isLoaded: true,
   isBuiltIn: false,
+  status: PluginStatus.Loaded,
+  refusedRule: null,
+  refusedDetail: null,
+  stagedVersion: null,
+  capabilities: [],
 }
 
 /**
@@ -63,6 +70,66 @@ describe('PluginCard', () => {
     const wrapper = mountCard()
 
     expect(wrapper.find('[data-testid="plugin-builtin-ineco"]').exists()).toBe(false)
+  })
+
+  it('shows a refused plugin with its id, rule, localised reason and detail, never as active', () => {
+    const wrapper = mountCard({
+      plugin: {
+        ...plugin,
+        isLoaded: false,
+        status: 'Refused',
+        refusedRule: 'PermissionUnknown',
+        refusedDetail: 'Billing.Everything',
+      },
+    })
+
+    expect(wrapper.get('[data-testid="plugin-refused-ineco"]').text()).toBe('Refused')
+    const refusal = wrapper.get('[data-testid="plugin-refusal-ineco"]').text()
+    expect(refusal).toContain('A client entry names a permission that does not exist.')
+    expect(refusal).toContain('ineco')
+    expect(refusal).toContain('PermissionUnknown')
+    expect(refusal).toContain('Billing.Everything')
+    expect(wrapper.text()).not.toContain('Active')
+    expect(wrapper.text()).not.toContain('Pending restart')
+  })
+
+  it('lets a refused plugin be removed', async () => {
+    const wrapper = mountCard({ plugin: { ...plugin, isLoaded: false, status: 'Refused', refusedRule: 'RouteDuplicate' } })
+
+    await wrapper.get('[data-testid="plugin-remove-ineco"]').trigger('click')
+
+    expect(wrapper.emitted('remove')).toEqual([['ineco']])
+  })
+
+  it('shows no refusal block for a loaded plugin', () => {
+    const wrapper = mountCard()
+
+    expect(wrapper.find('[data-testid="plugin-refused-ineco"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-refusal-ineco"]').exists()).toBe(false)
+  })
+
+  it('shows the staged version of a pending upgrade', () => {
+    const wrapper = mountCard({ plugin: { ...plugin, stagedVersion: '1.3.0' } })
+
+    expect(wrapper.get('[data-testid="plugin-staged-ineco"]').text()).toContain('Version 1.3.0 staged')
+  })
+
+  it('shows no staged mark when no upgrade waits', () => {
+    const wrapper = mountCard()
+
+    expect(wrapper.find('[data-testid="plugin-staged-ineco"]').exists()).toBe(false)
+  })
+
+  it('shows a badge per declared capability', () => {
+    const wrapper = mountCard({ plugin: { ...plugin, type: 'fulfilment', capabilities: ['endpoints'] } })
+
+    expect(wrapper.get('[data-testid="plugin-capability-ineco-endpoints"]').text()).toBe('Serves pages')
+  })
+
+  it('shows no capability badge when none is declared', () => {
+    const wrapper = mountCard()
+
+    expect(wrapper.find('[data-testid^="plugin-capability-ineco"]').exists()).toBe(false)
   })
 
   it('disables the remove button while removing', () => {

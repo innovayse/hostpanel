@@ -6,6 +6,12 @@ public enum PluginPackageOutcome
     /// <summary>The package was installed and replaces any earlier upload with the same id.</summary>
     Installed,
 
+    /// <summary>
+    /// The upload is a different version of an already installed plugin and was staged: it replaces the installed
+    /// package at the next restart, which then runs the plugin's migration hook once.
+    /// </summary>
+    Staged,
+
     /// <summary>The installed package was removed.</summary>
     Removed,
 
@@ -44,6 +50,9 @@ public enum PluginPackageOutcome
 
     /// <summary>The id belongs to a plugin shipped with the build, which cannot be replaced or removed.</summary>
     BuiltIn,
+
+    /// <summary>The upload is older than the installed version and the operator did not force the downgrade.</summary>
+    DowngradeRefused,
 
     /// <summary>No uploaded plugin with that id exists.</summary>
     NotFound,

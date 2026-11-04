@@ -44,6 +44,10 @@ public sealed class ModuleTableOwnershipTests
 
         // Provisioning is the hosting side of the Services module: it drives the same ClientServices rows through their lifecycle.
         ["Provisioning"] = "Services",
+
+        // Plugin management (Application/Admin/Plugins) and the plugin runtime (Application/Plugins) are one feature split by audience:
+        // the operator lists, removes and purges the plugin store rows (PluginDataScopes) that the runtime writes, so the tables belong to Admin.
+        ["Plugins"] = "Admin",
     };
 
     /// <summary>No Application class touches a set owned by another module unless it is an allow-listed read model.</summary>

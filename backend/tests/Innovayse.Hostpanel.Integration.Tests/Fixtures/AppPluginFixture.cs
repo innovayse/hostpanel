@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
@@ -85,6 +86,10 @@ public sealed class AppPluginFixture : IAsyncLifetime
                 services.RemoveAll<PluginRegistry>();
                 services.AddSingleton(registry);
                 services.AddSingleton(Probe);
+
+                // The real scope factory, recorded, so a streaming test can await a scope's disposal.
+                services.RemoveAll<IPluginCallScopeFactory>();
+                services.AddSingleton<IPluginCallScopeFactory, RecordingPluginCallScopeFactory>();
                 services.Configure<PluginApiOptions>(options =>
                 {
                     options.MaxBodyBytes = MaxBodyBytes;
@@ -101,6 +106,9 @@ public sealed class AppPluginFixture : IAsyncLifetime
         Host.Dispose();
         await Factory.DisposeAsync();
     }
+
+    /// <summary>Gets the recorded scope factory of <see cref="Host"/>: every scope a streaming route's call opened.</summary>
+    public RecordingPluginCallScopeFactory CallScopes => (RecordingPluginCallScopeFactory)Host.Services.GetRequiredService<IPluginCallScopeFactory>();
 
     /// <summary>Makes a client of <see cref="Host"/> carrying the bearer token of an already signed-in client.</summary>
     /// <param name="signedIn">A client of another host whose bearer token is reused.</param>
@@ -152,6 +160,18 @@ public sealed class AppPluginFixture : IAsyncLifetime
     public int LogMark()
     {
         return _logs.Entries.Count;
+    }
+
+    /// <summary>Whether the host logged a Warning that names a plugin and says a given phrase, after a mark.</summary>
+    /// <param name="pluginId">The plugin id the line must name.</param>
+    /// <param name="phrase">A phrase of the line, such as <c>did not answer</c>.</param>
+    /// <param name="since">A mark from <see cref="LogMark"/>; lines logged before it (by an earlier test) are ignored.</param>
+    /// <returns><see langword="true"/> when such a warning was logged after the mark.</returns>
+    public bool LoggedWarning(string pluginId, string phrase, int since)
+    {
+        return _logs.Entries.Skip(since).Any(entry => entry.Level == LogLevel.Warning
+            && entry.Message.Contains(pluginId, StringComparison.Ordinal)
+            && entry.Message.Contains(phrase, StringComparison.Ordinal));
     }
 
     /// <summary>Whether the host logged that a rate limit policy refused a call of a plugin, after a mark.</summary>

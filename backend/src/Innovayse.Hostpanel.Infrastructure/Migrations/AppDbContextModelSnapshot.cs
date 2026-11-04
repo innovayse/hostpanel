@@ -2644,6 +2644,44 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("PluginDataScopes");
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Plugins.PluginSlotProductBinding", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PluginId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SlotId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("WidgetId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PluginId", "SlotId", "WidgetId", "ProductId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_PluginSlotProductBindings_PluginId_SlotId_WidgetId_ProductId");
+
+                    b.ToTable("PluginSlotProductBindings");
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Products.Product", b =>
                 {
                     b.Property<int>("Id")
@@ -3281,6 +3319,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<int?>("ServerId")
                         .HasColumnType("integer");
 
+                    b.Property<long>("SshKeyRevision")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -3498,6 +3541,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasMaxLength(60)
                         .HasColumnType("character varying(60)");
 
+                    b.Property<string>("IssuedToPluginId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<Guid>("KeyId")
                         .HasColumnType("uuid");
 
@@ -3535,6 +3582,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.HasIndex("ClientServiceId", "Fingerprint")
                         .IsUnique()
+                        .HasDatabaseName("IX_SshKeys_ClientServiceId_Fingerprint")
                         .HasFilter("\"SyncState\" <> 'Revoked'");
 
                     b.ToTable("SshKeys");
@@ -3601,6 +3649,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasColumnType("character varying(500)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt", "Title");
 
                     b.ToTable("Announcements");
                 });
@@ -3678,7 +3728,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CategoryId");
+                    b.HasIndex("CategoryId", "Title");
 
                     b.ToTable("Downloads");
                 });
@@ -3709,7 +3759,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ParentCategoryId");
+                    b.HasIndex("ParentCategoryId", "Name");
 
                     b.ToTable("DownloadCategories");
                 });
@@ -3829,6 +3879,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Status");
+
+                    b.HasIndex("StartDate", "Title");
 
                     b.ToTable("NetworkIssues");
                 });

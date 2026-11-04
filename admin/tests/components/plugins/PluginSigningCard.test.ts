@@ -25,7 +25,7 @@ beforeEach(() => {
 const propsFor = (value: string | null) => ({
   settings: (value === null
     ? []
-    : [{ id: 9, key: PluginSettingKey.AllowUnsigned, value, isSecret: false, hasValue: true }]) as Setting[],
+    : [{ id: 9, key: PluginSettingKey.AllowUnsigned, value }]) as Setting[],
   save,
 })
 

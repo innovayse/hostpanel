@@ -235,6 +235,19 @@ export const useBillingStore = defineStore('billing', () => {
     mutateInvoice(id, () => api.addPayment(id, payment))
 
   /**
+   * Records a payment against an invoice without reloading it, for screens that do not show the
+   * invoice (the Offline CC form). The invoice screen uses {@link addPayment}, which reloads.
+   *
+   * @param id - The invoice id.
+   * @param payment - Payment details.
+   * @returns True when recorded; false when refused (see `error` and `fieldErrors`).
+   */
+  const recordPayment = async (id: number, payment: InvoicePaymentPayload): Promise<boolean> => {
+    const result = await run(() => api.addPayment(id, payment))
+    return result.ok
+  }
+
+  /**
    * Applies a credit amount to an invoice, then reloads it.
    *
    * @param id - The invoice id.
@@ -394,6 +407,7 @@ export const useBillingStore = defineStore('billing', () => {
     publishInvoice,
     cancelInvoice,
     addPayment,
+    recordPayment,
     applyCredit,
     removeCredit,
     refundPayment,

@@ -971,6 +971,15 @@
   <data name="PluginIdInvalid" xml:space="preserve">
     <value>Հավելագրիչի նույնացուցիչը կարող է պարունակել միայն փոքրատառ լատինական տառեր, թվեր և միայնակ գծիկներ՝ առավելագույնը 64 նիշ։</value>
   </data>
+  <data name="PluginSlotIdInvalid" xml:space="preserve">
+    <value>Էջի հատվածի նույնացուցիչը սխալ է։</value>
+  </data>
+  <data name="PluginWidgetIdInvalid" xml:space="preserve">
+    <value>Վիջեթի նույնացուցիչը սխալ է։</value>
+  </data>
+  <data name="PluginProductIdsInvalid" xml:space="preserve">
+    <value>Ընտրեք առավելագույնը {0} ապրանք։</value>
+  </data>
   <data name="IntegrationSlugRequired" xml:space="preserve">
     <value>Ինտեգրման սլագը պարտադիր է։</value>
   </data>
@@ -1298,9 +1307,6 @@
   <data name="ClientEmailChangeTokenRequired" xml:space="preserve">
     <value>Հաստատման հղումը թերի է։ Կրկին բացեք նամակի հղումը։</value>
   </data>
-  <data name="IntegrationFieldUnknown" xml:space="preserve">
-    <value>Ինտեգրացիան չի հայտարարում ուղարկված դաշտերից մեկը։</value>
-  </data>
   <data name="CurrencyCodeDuplicate" xml:space="preserve">
     <value>Յուրաքանչյուր արժույթ կարելի է նշել միայն մեկ անգամ։</value>
   </data>
@@ -1348,5 +1354,37 @@
   </data>
   <data name="SaveSessionIdInvalid" xml:space="preserve">
     <value>Քարտի կարգավորման նույնացուցիչը պարտադիր է և ոչ ավելի քան 255 նիշ։</value>
+  <data name="IntegrationFieldExpected" xml:space="preserve">
+    <value>Սպասվում է՝ {0}։</value>
+  </data>
+  <data name="IntegrationFieldUnknown" xml:space="preserve">
+    <value>Այս դաշտը ինտեգրացիայի կողմից հայտարարված չէ։</value>
+  </data>
+  <data name="IntegrationFieldExpectSecret" xml:space="preserve">
+    <value>ոչ դատարկ արժեք․ պահված գաղտնիքը պահպանելու համար դաշտը մի ուղարկեք</value>
+  </data>
+  <data name="IntegrationFieldExpectUrl" xml:space="preserve">
+    <value>բացարձակ http կամ https հասցե</value>
+  </data>
+  <data name="IntegrationFieldExpectToggle" xml:space="preserve">
+    <value>true կամ false</value>
+  </data>
+  <data name="IntegrationFieldExpectSelect" xml:space="preserve">
+    <value>մեկը՝ {0}</value>
+  </data>
+  <data name="IntegrationFieldExpectNumberRange" xml:space="preserve">
+    <value>թիվ {0}-ից մինչև {1}</value>
+  </data>
+  <data name="IntegrationFieldExpectNumberMin" xml:space="preserve">
+    <value>թիվ՝ առնվազն {0}</value>
+  </data>
+  <data name="IntegrationFieldExpectNumberMax" xml:space="preserve">
+    <value>թիվ՝ առավելագույնը {0}</value>
+  </data>
+  <data name="IntegrationFieldExpectNumber" xml:space="preserve">
+    <value>թիվ</value>
+  </data>
+  <data name="IntegrationFieldExpectValue" xml:space="preserve">
+    <value>ոչ դատարկ արժեք</value>
   </data>
 </root>

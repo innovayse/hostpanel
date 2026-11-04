@@ -39,7 +39,15 @@ export interface StubReply {
   body?: unknown
   /** Extra response headers. */
   headers?: Record<string, string>
+  /**
+   * Never answers: the request stays open until the stub closes. Stands in for a dependency that is too
+   * slow, so a caller's own time limit can be tested against a real socket.
+   */
+  hold?: boolean
 }
+
+/** A reply function; a promise answers when it settles, so a test can hold a reply back and release it later. */
+export type StubHandler = (request: StubRequest) => StubReply | Promise<StubReply>
 
 /** A running stub. */
 export interface StubServer {
@@ -48,7 +56,7 @@ export interface StubServer {
   /** Every request received, in order. */
   requests: StubRequest[]
   /** Replaces the handler for the following requests. */
-  respondWith: (handler: (request: StubRequest) => StubReply) => void
+  respondWith: (handler: StubHandler) => void
   /** Stops the server. */
   close: () => Promise<void>
 }
@@ -60,7 +68,7 @@ export interface StubServer {
  * @returns The running stub.
  */
 export const startStubServer = async (
-  handler: (request: StubRequest) => StubReply = () => ({ body: {} }),
+  handler: StubHandler = () => ({ body: {} }),
 ): Promise<StubServer> => {
   const requests: StubRequest[] = []
   let respond = handler
@@ -78,7 +86,7 @@ export const startStubServer = async (
     req.on('data', (chunk: Buffer) => {
       chunks.push(chunk)
     })
-    req.on('end', () => {
+    req.on('end', async () => {
       const request: StubRequest = {
         method: req.method ?? 'GET',
         url: req.url ?? '/',
@@ -86,7 +94,11 @@ export const startStubServer = async (
         body: Buffer.concat(chunks).toString('utf8'),
       }
       requests.push(request)
-      const reply = respond(request)
+      const reply = await respond(request)
+      if (reply.hold || res.destroyed) {
+        // Left open on purpose; `close` ends it with the rest of the connections.
+        return
+      }
       const isText = typeof reply.body === 'string'
       res.writeHead(reply.status ?? 200, {
         ...CORS_HEADERS,
@@ -111,6 +123,8 @@ export const startStubServer = async (
     },
     close: () => new Promise<void>((resolve, reject) => {
       server.close((error) => (error ? reject(error) : resolve()))
+      // A held request keeps its connection open, and `close` alone would wait for it forever.
+      server.closeAllConnections()
     }),
   }
 }

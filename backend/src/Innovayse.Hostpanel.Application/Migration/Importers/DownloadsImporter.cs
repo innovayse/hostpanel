@@ -5,12 +5,15 @@ using Innovayse.Hostpanel.Application.Migration.Importers.Records;
 using Innovayse.Hostpanel.Domain.Migration;
 using Innovayse.Hostpanel.Domain.Migration.Enums;
 using Innovayse.Hostpanel.Domain.Support;
+using Microsoft.EntityFrameworkCore;
 
 namespace Innovayse.Hostpanel.Application.Migration.Importers;
 
 /// <summary>
-/// Imports download categories, then downloadable files placed into the imported category (or the
-/// first available one; a file is skipped when there is no category at all).
+/// Imports download categories (matched by name among top-level categories, created when missing),
+/// then downloadable files placed into the imported category (or the first available one; a file is
+/// skipped when there is no category at all). A file is matched by title (case-insensitive) and
+/// category, and one already held is skipped with <see cref="MigrationSkipReason.AlreadyExists"/>.
 /// </summary>
 public sealed class DownloadsImporter : IMigrationEntityImporter
 {
@@ -47,6 +50,17 @@ public sealed class DownloadsImporter : IMigrationEntityImporter
         {
             foreach (var cat in page)
             {
+                var name = cat.Name.ToLower();
+                var existingId = await _context.DownloadCategories
+                    .Where(c => c.ParentCategoryId == null && c.Name.ToLower() == name)
+                    .Select(c => (int?)c.Id)
+                    .FirstOrDefaultAsync(ct);
+                if (existingId is not null)
+                {
+                    catIdMap[cat.Id] = existingId.Value;
+                    continue;
+                }
+
                 var newCat = DownloadCategory.Create(cat.Name, cat.Description ?? string.Empty, cat.Hidden, null);
                 _context.DownloadCategories.Add(newCat);
                 await _context.SaveChangesAsync(ct);
@@ -71,6 +85,14 @@ public sealed class DownloadsImporter : IMigrationEntityImporter
             var resolvedTitle = !string.IsNullOrWhiteSpace(rec.Title) ? rec.Title
                 : !string.IsNullOrWhiteSpace(rec.Filename) ? rec.Filename
                 : MigrationDefaults.DownloadTitle;
+
+            var lowerTitle = resolvedTitle.ToLower();
+            var localCategoryId = catId.Value;
+            var exists = await _context.Downloads.AnyAsync(d => d.CategoryId == localCategoryId && d.Title.ToLower() == lowerTitle, ct);
+            if (exists)
+            {
+                return RecordImportResult.Skipped(MigrationSkipReason.AlreadyExists);
+            }
 
             var download = Download.Create(
                 resolvedTitle,

@@ -148,15 +148,6 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// <summary>Gets the fulfilment records: one plugin told one thing about one invoice, and how far it got.</summary>
     public DbSet<FulfilmentRecord> FulfilmentRecords => Set<FulfilmentRecord>();
 
-    /// <summary>Gets the clients' agreements that a saved card may be charged without them, and their withdrawals.</summary>
-    public DbSet<CardChargeConsent> CardChargeConsents => Set<CardChargeConsent>();
-
-    /// <summary>Gets the exclusive rights to charge an invoice's card, one unfinished claim per invoice.</summary>
-    public DbSet<InvoicePaymentClaim> InvoicePaymentClaims => Set<InvoicePaymentClaim>();
-
-    /// <summary>Gets the clients' accounts at payment gateways, one per client and gateway module.</summary>
-    public DbSet<GatewayCustomer> GatewayCustomers => Set<GatewayCustomer>();
-
     /// <summary>Gets the transactions table.</summary>
     public DbSet<Transaction> Transactions => Set<Transaction>();
 
@@ -308,6 +299,18 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// </summary>
     public DbSet<PluginDataScope> PluginDataScopes => Set<PluginDataScope>();
 
+    /// <summary>Gets the products an operator bound plugin slot widgets to after install; see <see cref="PluginSlotProductBinding"/>.</summary>
+    public DbSet<PluginSlotProductBinding> PluginSlotProductBindings => Set<PluginSlotProductBinding>();
+
+    /// <summary>Gets the clients' agreements that a saved card may be charged without them, and their withdrawals.</summary>
+    public DbSet<CardChargeConsent> CardChargeConsents => Set<CardChargeConsent>();
+
+    /// <summary>Gets the exclusive rights to charge an invoice's card, one unfinished claim per invoice.</summary>
+    public DbSet<InvoicePaymentClaim> InvoicePaymentClaims => Set<InvoicePaymentClaim>();
+
+    /// <summary>Gets the clients' accounts at payment gateways, one per client and gateway module.</summary>
+    public DbSet<GatewayCustomer> GatewayCustomers => Set<GatewayCustomer>();
+
     /// <summary>
     /// Gets the Data Protection key ring, shared by every instance so a token protected by one
     /// instance is read by any other and outlives a redeploy. Named by this property like every
@@ -327,8 +330,7 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// Another writer modified one of the saved aggregates concurrently, or another writer recorded the
     /// same gateway payment first (the unique reference of a gateway payment row was violated), another
     /// delivery claimed the same email first (the unique delivery key of an email log row was violated), or another
-    /// call wrote the first value of the same plugin store key, or another call opened the same plugin store scope,
-    /// or another request linked the same gateway account to the client, or another payment attempt took the same invoice.
+    /// call wrote the first value of the same plugin store key, or another call opened the same plugin store scope.
     /// </exception>
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
@@ -393,6 +395,28 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException
         {
             SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: PluginSlotProductBindingConfiguration.BindingIndex,
+        })
+        {
+            // Two operator saves bound the same widget to the same product at once: the same lost race as a concurrent
+            // save, so it takes the same path. The save handler retries once from a fresh read.
+            throw new ConcurrencyConflictException(
+                "Another save bound the same plugin widget to the same product concurrently.", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: SshKeyConfiguration.ServiceFingerprintIndex,
+        })
+        {
+            // Two adds recorded the same key on one service at once: the same lost race as a concurrent save. The SSH
+            // key installer counts again from a fresh read and then finds the key already there.
+            throw new ConcurrencyConflictException(
+                "Another add recorded the same SSH key on the service concurrently.", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
             ConstraintName: GatewayCustomerConfiguration.ClientModuleIndex,
         })
         {
@@ -419,12 +443,25 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken ct) => Database.BeginTransactionAsync(ct);
 
     /// <inheritdoc/>
+    public async Task LockForTransactionAsync(string key, CancellationToken ct)
+    {
+        // The 64-bit hash of the key is the lock id; the lock is released by the server when the transaction ends.
+        await Database.ExecuteSqlAsync($"SELECT pg_advisory_xact_lock(hashtextextended({key}, 0))", ct);
+    }
+
+    /// <inheritdoc/>
     public void DetachAll()
     {
         foreach (var entry in ChangeTracker.Entries().ToList())
         {
             entry.State = EntityState.Detached;
         }
+    }
+
+    /// <inheritdoc/>
+    public void Detach(object entity)
+    {
+        Entry(entity).State = EntityState.Detached;
     }
 
     /// <inheritdoc/>

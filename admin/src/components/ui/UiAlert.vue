@@ -61,8 +61,10 @@ const iconPath = computed<string>(() => (tone.value === UiTone.Warning ? WARNING
       <line x1="12" y1="9" x2="12" y2="13" />
       <line x1="12" y1="17" x2="12.01" y2="17" />
     </svg>
-    <span class="text-[0.82rem] text-text-primary">
+    <!-- The message takes the rest of the row, so content laid out inside it (a row with an
+         action pushed to the far edge) spans the whole alert instead of its own width. -->
+    <div class="flex-1 min-w-0 text-[0.82rem] text-text-primary" data-testid="ui-alert-body">
       <slot />
-    </span>
+    </div>
   </div>
 </template>

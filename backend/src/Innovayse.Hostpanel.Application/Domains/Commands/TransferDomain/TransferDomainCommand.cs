@@ -1,3 +1,6 @@
+using System.Text;
+using Innovayse.Hostpanel.SharedKernel.Domain;
+
 namespace Innovayse.Hostpanel.Application.Domains.Commands.TransferDomain;
 
 /// <summary>Command to initiate an incoming domain transfer for a client.</summary>
@@ -19,4 +22,13 @@ public sealed record TransferDomainCommand(
     decimal RecurringAmount = 0,
     string? PaymentMethod = null,
     int Years = 1,
-    string? PriceCurrency = null);
+    string? PriceCurrency = null)
+{
+    /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
+    /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>
+    /// <returns><see langword="true"/> when at least one member was written.</returns>
+    private bool PrintMembers(StringBuilder builder)
+    {
+        return SecretMembers.Print(this, builder);
+    }
+}

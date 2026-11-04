@@ -103,7 +103,7 @@ const removeLine = (index: number): void => {
                 :min="1"
                 placeholder="1"
                 :data-testid="`billing-quote-item-quantity-${index}`"
-                @update:model-value="patch(index, { quantity: $event })"
+                @update:model-value="patch(index, { quantity: $event ?? 0 })"
               />
             </UiTableCell>
             <UiTableCell>
@@ -122,7 +122,7 @@ const removeLine = (index: number): void => {
                 :min="0"
                 placeholder="0.00"
                 :data-testid="`billing-quote-item-price-${index}`"
-                @update:model-value="patch(index, { unitPrice: $event })"
+                @update:model-value="patch(index, { unitPrice: $event ?? 0 })"
               />
             </UiTableCell>
             <UiTableCell>
@@ -132,7 +132,7 @@ const removeLine = (index: number): void => {
                 :min="0"
                 :max="MAX_PERCENT"
                 placeholder="0"
-                @update:model-value="patch(index, { discountPercent: $event })"
+                @update:model-value="patch(index, { discountPercent: $event ?? 0 })"
               />
             </UiTableCell>
             <UiTableCell align="center">

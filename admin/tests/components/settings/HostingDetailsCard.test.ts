@@ -16,18 +16,18 @@ beforeEach(() => {
 
 /** Every row the card edits, as the API seeds them: text rows empty or filled, switches empty. */
 const rows: Setting[] = [
-  { id: 1, key: 'portal.stats.response_time', value: '180 ms', isSecret: false, hasValue: true },
-  { id: 2, key: 'portal.stats.sites_hosted', value: '', isSecret: false, hasValue: false },
-  { id: 3, key: 'portal.stats.support_response', value: '', isSecret: false, hasValue: false },
-  { id: 4, key: 'portal.installer.app_count', value: '150+', isSecret: false, hasValue: true },
-  { id: 5, key: 'portal.guarantee.money_back_days', value: '30', isSecret: false, hasValue: true },
-  { id: 6, key: 'portal.support.response.chat', value: '', isSecret: false, hasValue: false },
-  { id: 7, key: 'portal.support.response.ticket', value: '', isSecret: false, hasValue: false },
-  { id: 8, key: 'portal.support.response.email', value: '', isSecret: false, hasValue: false },
-  { id: 9, key: 'portal.support.response.phone', value: '', isSecret: false, hasValue: false },
-  { id: 10, key: 'portal.features.ssl', value: 'true', isSecret: false, hasValue: true },
-  { id: 11, key: 'portal.features.ddos', value: '', isSecret: false, hasValue: false },
-  { id: 12, key: 'portal.guarantee.no_hidden_fees', value: '', isSecret: false, hasValue: false },
+  { id: 1, key: 'portal.stats.response_time', value: '180 ms' },
+  { id: 2, key: 'portal.stats.sites_hosted', value: '' },
+  { id: 3, key: 'portal.stats.support_response', value: '' },
+  { id: 4, key: 'portal.installer.app_count', value: '150+' },
+  { id: 5, key: 'portal.guarantee.money_back_days', value: '30' },
+  { id: 6, key: 'portal.support.response.chat', value: '' },
+  { id: 7, key: 'portal.support.response.ticket', value: '' },
+  { id: 8, key: 'portal.support.response.email', value: '' },
+  { id: 9, key: 'portal.support.response.phone', value: '' },
+  { id: 10, key: 'portal.features.ssl', value: 'true' },
+  { id: 11, key: 'portal.features.ddos', value: '' },
+  { id: 12, key: 'portal.guarantee.no_hidden_fees', value: '' },
 ]
 
 /**

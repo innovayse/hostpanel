@@ -6,8 +6,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useBillingStore } from '@/stores/billing'
+import { PaymentGateway } from '@/types/gateway'
 import { InvoiceRefundType } from '@/types/invoice'
-import { json, problem, stubFetch, stubOffline, callOf } from '../helpers/fetch'
+import { invalid, json, problem, stubFetch, stubOffline, callOf } from '../helpers/fetch'
 import { stubRoutes } from '../helpers/routes'
 
 /** Sentence the client writes when nothing answered. */
@@ -134,11 +135,50 @@ describe('billingStore mutations', () => {
     expect(await store.updateItems(5, [])).toBe(true)
     expect(await store.updateOptions(5, { invoiceDate: 'a', dueDate: 'b', paymentMethod: 'Manual', taxRate: 0 })).toBe(true)
     expect(await store.updateNotes(5, 'n')).toBe(true)
-    expect(await store.addPayment(5, { date: 'a', gateway: 'g', transactionId: 't', amount: 1 })).toBe(true)
+    expect(await store.addPayment(5, { date: 'a', gateway: PaymentGateway.Stripe, transactionId: 't', amount: 1 })).toBe(true)
     expect(await store.applyCredit(5, 1)).toBe(true)
     expect(await store.removeCredit(5, 1)).toBe(true)
     expect(await store.refundPayment(5, { amount: 1, refundType: InvoiceRefundType.Gateway })).toBe(true)
     expect(mock).toHaveBeenCalledTimes(14)
+  })
+})
+
+describe('billingStore recordPayment', () => {
+  /** A payment as the Offline CC screen builds it. */
+  const PAYMENT = { date: '2026-10-20T00:00:00.000Z', gateway: PaymentGateway.Stripe, transactionId: 'ref-1', amount: 25, fees: 0 }
+
+  it('posts the payment to the invoice and does not reload it', async () => {
+    const mock = stubFetch(new Response(null, { status: 204 }))
+    const store = useBillingStore()
+
+    const ok = await store.recordPayment(7, PAYMENT)
+
+    expect(ok).toBe(true)
+    expect(store.error).toBeNull()
+    expect(store.loading).toBe(false)
+    expect(mock).toHaveBeenCalledTimes(1)
+    const call = callOf(mock)
+    expect(call.url).toBe('/api/billing/7/payment')
+    expect(call.method).toBe('POST')
+    expect(call.body).toEqual(PAYMENT)
+    expect(store.currentInvoice).toBeNull()
+  })
+
+  it('keeps the API sentence when the payment is refused', async () => {
+    stubFetch(problem('The amount exceeds the balance.', 409))
+    const store = useBillingStore()
+
+    expect(await store.recordPayment(7, PAYMENT)).toBe(false)
+    expect(store.error).toBe('The amount exceeds the balance.')
+  })
+
+  it('keeps the per-field messages of a validation refusal', async () => {
+    stubFetch(invalid('Check the amount.', { amount: ['Amount must be positive.'] }))
+    const store = useBillingStore()
+
+    await store.recordPayment(7, PAYMENT)
+
+    expect(store.fieldErrors.amount).toBe('Amount must be positive.')
   })
 })
 

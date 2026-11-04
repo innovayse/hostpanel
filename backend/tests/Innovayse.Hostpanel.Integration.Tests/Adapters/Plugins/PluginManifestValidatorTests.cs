@@ -2,7 +2,6 @@ using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Innovayse.SDK.Plugins.Manifest;
 using Microsoft.Extensions.Logging;
 
@@ -30,12 +29,15 @@ public sealed class PluginManifestValidatorTests : IDisposable
         Directory.Delete(_folder, recursive: true);
     }
 
-    /// <summary>Reads a version 2 manifest with the given members after the required ones.</summary>
+    /// <summary>
+    /// Reads a version 2 app manifest with the given members after the required ones. The type is App so the rules
+    /// under test are reached: any other type with api or ui blocks breaks EndpointsNotDeclared first (#818).
+    /// </summary>
     /// <param name="extra">Extra JSON members, each starting with a comma.</param>
     /// <returns>The manifest.</returns>
     private static PluginManifest Manifest(string extra)
     {
-        return PluginManifestReader.Deserialize(PluginsTestSeeds.ManifestJson("rules-plugin", ",\"manifestVersion\":2" + extra))!;
+        return PluginManifestReader.Deserialize(PluginsTestSeeds.ManifestJson("rules-plugin", ",\"manifestVersion\":2" + extra, "App"))!;
     }
 
     /// <summary>Asserts that a manifest breaks exactly one given rule.</summary>
@@ -53,6 +55,23 @@ public sealed class PluginManifestValidatorTests : IDisposable
         AssertBreaks(PluginManifestReader.Deserialize(PluginsTestSeeds.ManifestJson("p", ",\"manifestVersion\":3"))!, PluginManifestRule.ManifestVersionUnknown);
         AssertBreaks(PluginManifestReader.Deserialize(PluginsTestSeeds.ManifestJson("p", ",\"manifestVersion\":0"))!, PluginManifestRule.ManifestVersionUnknown);
         PluginManifestValidator.Validate(PluginManifestReader.Deserialize(PluginsTestSeeds.ManifestJson("p"))!).Should().BeNull();
+    }
+
+    /// <summary>A plugin version that is not a strict semantic version breaks the version rule.</summary>
+    /// <param name="version">The version text in the manifest.</param>
+    [Theory]
+    [InlineData("")]
+    [InlineData("1.0")]
+    [InlineData("01.0.0")]
+    [InlineData("1.0.0.0")]
+    [InlineData("v1.0.0")]
+    [InlineData("1.0.0+")]
+    [InlineData("4294967296.0.0")]
+    public void Validate_InvalidPluginVersion_BreaksVersionInvalid(string version)
+    {
+        var json = PluginsTestSeeds.ManifestJson("p").Replace("\"version\": \"1.0.0\"", $"\"version\": \"{version}\"");
+
+        AssertBreaks(PluginManifestReader.Deserialize(json)!, PluginManifestRule.VersionInvalid);
     }
 
     /// <summary>A client route, page or slot entry may name Any or a defined client permission, and nothing else.</summary>
@@ -472,7 +491,7 @@ public sealed class PluginManifestValidatorTests : IDisposable
         var folder = Directory.CreateDirectory(Path.Combine(_folder, "rules-plugin")).FullName;
         File.WriteAllText(
             Path.Combine(folder, "plugin.json"),
-            PluginsTestSeeds.ManifestJson("rules-plugin", ",\"manifestVersion\":2,\"api\":{\"admin\":[{\"method\":\"get\",\"path\":\"/a\",\"permission\":\"Any\"}]}"));
+            PluginsTestSeeds.ManifestJson("rules-plugin", ",\"manifestVersion\":2,\"api\":{\"admin\":[{\"method\":\"get\",\"path\":\"/a\",\"permission\":\"Any\"}]}", "App"));
         var logger = new CapturingLogger<PluginManifestReader>();
 
         var manifest = new PluginManifestReader(logger).TryRead(Path.Combine(folder, "plugin.json"));

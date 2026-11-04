@@ -5,7 +5,6 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
 using Innovayse.Hostpanel.Shared.Constants;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -95,6 +94,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     /// <param name="code">The error code the rule answers with.</param>
     [Theory]
     [InlineData(",\"manifestVersion\":9", "PLUGIN_MANIFEST_VERSION_UNKNOWN")]
+    [InlineData(",\"manifestVersion\":2,\"capabilities\":[\"teleport\"]", "PLUGIN_CAPABILITY_NOT_ALLOWED")]
     [InlineData(",\"manifestVersion\":2,\"api\":{\"client\":[{\"method\":\"get\",\"path\":\"/a\",\"permission\":\"Nonsense\"}]}", "PLUGIN_PERMISSION_UNKNOWN")]
     [InlineData(",\"manifestVersion\":2,\"api\":{\"admin\":[{\"method\":\"get\",\"path\":\"/a\",\"permission\":\"Any\"}]}", "PLUGIN_ADMIN_PERMISSION_DECLARED")]
     [InlineData(",\"manifestVersion\":2,\"api\":{\"client\":[{\"method\":\"get\",\"path\":\"/A/../b\"}]}", "PLUGIN_ROUTE_PATH_INVALID")]
@@ -104,10 +104,61 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     [InlineData(",\"manifestVersion\":2,\"ui\":{\"slots\":[{\"id\":\"s\",\"slot\":\"client.dashboard.cards\",\"view\":\"v.json\",\"contextKeys\":[\"serviceId\"]}]}", "PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED")]
     public async Task AManifestBreakingARule_RefusesWithTheLocalisedMessageAsync(string extraMembers, string code)
     {
+        await AssertRefusedAsync(PluginsTestSeeds.ManifestJson($"test-plugin-{Guid.NewGuid():N}", extraMembers, "App"), code);
+    }
+
+    /// <summary>
+    /// A fulfilment plugin that declares routes without the endpoints capability is refused with its localised rule
+    /// error and nothing is installed (#818).
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task AFulfilmentPluginWithRoutesButNoEndpointsCapability_IsRefusedAsync()
+    {
+        await AssertRefusedAsync(
+            PluginsTestSeeds.ManifestJson(
+                $"test-plugin-{Guid.NewGuid():N}",
+                ",\"manifestVersion\":2,\"api\":{\"admin\":[{\"method\":\"get\",\"path\":\"/stats\"}]}",
+                "Fulfilment"),
+            HostpanelErrorCodes.PLUGIN_ENDPOINTS_NOT_DECLARED);
+    }
+
+    /// <summary>A fulfilment plugin that declares routes together with the endpoints capability is installed (#818).</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task AFulfilmentPluginWithEndpointsCapability_IsInstalledAsync()
+    {
+        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var pluginId = $"test-plugin-{Guid.NewGuid():N}";
+        var zip = PluginsTestSeeds.BuildZip(new Dictionary<string, string>
+        {
+            ["plugin.json"] = PluginsTestSeeds.ManifestJson(pluginId, ",\"manifestVersion\":2,\"capabilities\":[\"endpoints\"],\"api\":{\"admin\":[{\"method\":\"get\",\"path\":\"/stats\"}]}", "Fulfilment"),
+        });
+
+        try
+        {
+            var response = await PluginsTestSeeds.InstallAsync(client, zip);
+
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            File.Exists(Path.Combine(PluginsTestSeeds.InstalledFolder(pluginId), "plugin.json")).Should().BeTrue();
+        }
+        finally
+        {
+            await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
+        }
+    }
+
+    /// <summary>Installs a package holding only the given manifest and asserts the localised refusal and that nothing was left behind.</summary>
+    /// <param name="manifestJson">The <c>plugin.json</c> text.</param>
+    /// <param name="code">The error code the refusal must carry.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    private async Task AssertRefusedAsync(string manifestJson, string code)
+    {
+        using var manifest = System.Text.Json.JsonDocument.Parse(manifestJson);
+        var pluginId = manifest.RootElement.GetProperty("id").GetString()!;
         var client = await PluginsTestSeeds.AdminClientAsync(factory);
         client.DefaultRequestHeaders.Add("X-Language", "ru");
-        var pluginId = $"test-plugin-{Guid.NewGuid():N}";
-        var zip = PluginsTestSeeds.BuildZip(new Dictionary<string, string> { ["plugin.json"] = PluginsTestSeeds.ManifestJson(pluginId, extraMembers) });
+        var zip = PluginsTestSeeds.BuildZip(new Dictionary<string, string> { ["plugin.json"] = manifestJson });
 
         var response = await PluginsTestSeeds.InstallAsync(client, zip);
 

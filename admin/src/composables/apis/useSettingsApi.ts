@@ -39,16 +39,6 @@ export const useSettingsApi = () => {
     request<void>(`${ApiPath.AdminSettings}/${id}`, { method: HttpMethod.Put, body: JSON.stringify({ value }) })
 
   /**
-   * Removes a secret setting's stored value. An empty value would keep it, so clearing is its own
-   * explicit request.
-   *
-   * @param id - Setting id.
-   * @returns Nothing; the API answers 204.
-   */
-  const clearSetting = (id: number): Promise<void> =>
-    request<void>(`${ApiPath.AdminSettings}/${id}`, { method: HttpMethod.Put, body: JSON.stringify({ clear: true }) })
-
-  /**
    * Lists the email templates.
    *
    * @returns Every language version of every template.
@@ -113,7 +103,6 @@ export const useSettingsApi = () => {
   return {
     listSettings,
     updateSetting,
-    clearSetting,
     listEmailTemplates,
     createEmailTemplate,
     updateEmailTemplate,

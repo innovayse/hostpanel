@@ -20,6 +20,7 @@
  */
 import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { getRuntimeConfig } from '@/lib/runtimeConfig'
 import { storeToRefs } from 'pinia'
 import { useServerSshStore } from '@/stores/serverssh'
 import type { ServerSshSettingsDto, ServerSshSettingsPayload, SshAgentNetworkLines } from '@/types/serverssh'
@@ -45,6 +46,12 @@ import UiToggle from '@/components/ui/UiToggle.vue'
 
 /** Translation function. */
 const { t } = useI18n()
+
+/** Full URL to the SSH key agent guide, or null when docsUrl is not configured. */
+const sshGuideUrl = computed<string | null>(() => {
+  const { docsUrl } = getRuntimeConfig()
+  return docsUrl ? `${docsUrl}/servers/ssh-key-agent` : null
+})
 
 /** Props for ServerSshSettingsModal. */
 const props = defineProps<{
@@ -275,6 +282,13 @@ watch(settings, (loaded) => {
 <template>
   <UiDialog :title="t('servers.ssh.title', { name: props.serverName })" size="lg" @close="emit('close')">
     <UiStack gap="lg">
+      <a
+        v-if="sshGuideUrl"
+        :href="sshGuideUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="text-sm text-blue-600 hover:underline dark:text-blue-400"
+      >{{ t('common.help') }} →</a>
       <UiAlert v-if="error" variant="error" data-testid="server-ssh-error">{{ error }}</UiAlert>
       <UiSkeleton v-if="loading && !settings" :lines="4" data-testid="server-ssh-loading" />
 

@@ -34,6 +34,7 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
+import { useDocsGuide } from '@/composables/useDocsGuide'
 import { Icon } from '@/lib/icons'
 import { formatRelativeFromNow } from '@/lib/format'
 import { formatMarginPercent, formatTldPrice, marginPercentTone } from '@/lib/tldPricing'
@@ -55,6 +56,7 @@ const store = useTldConfigsStore()
 
 /** The result banner for import, sync and delete. */
 const banner = useResultBanner()
+const { guideUrl } = useDocsGuide()
 
 /** Tone of the result banner: danger for a refusal, success otherwise. */
 const bannerTone = computed<UiTone>(() => (banner.isError.value ? UiTone.Danger : UiTone.Success))
@@ -294,6 +296,7 @@ const tldActions = (item: TldConfigListItem): UiRowAction[] => {
   <UiStack gap="none" data-testid="tld-configs-view">
     <UiPageHeader :title="t('settings.tldConfigs.tldPricing')" :subtitle="t('settings.tldConfigs.configureDomainExtensionPricingAnd')">
       <template #actions>
+        <a v-if="guideUrl" :href="guideUrl" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary" data-testid="page-help-link">{{ t('common.help') }}</a>
         <!-- Import from a provider: choosing one starts the import -->
         <UiSelect
           model-value=""

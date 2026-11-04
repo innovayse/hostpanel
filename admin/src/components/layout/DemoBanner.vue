@@ -13,9 +13,13 @@ import UiBadge from '@/components/ui/UiBadge.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { MS_PER_MINUTE } from '@/lib/limits'
+import { getRuntimeConfig } from '@/lib/runtimeConfig'
 
 /** Translation function. */
 const { t } = useI18n()
+
+/** Documentation URL from runtime config; empty when the docs site is not configured. */
+const { docsUrl } = getRuntimeConfig()
 
 /** Demo store: whether demo mode is on and when the data resets. */
 const demo = useDemoStore()
@@ -84,5 +88,13 @@ const timeLeft = computed<string | null>(() => {
       </UiText>
       <UiText size="sm" tone="secondary">{{ t('demo.banner.dataResets') }}</UiText>
     </UiStack>
+    <a
+      v-if="docsUrl"
+      :href="docsUrl"
+      target="_blank"
+      rel="noopener"
+      class="ml-auto shrink-0 text-xs font-medium underline"
+      data-testid="demo-banner-guide"
+    >{{ t('demo.banner.guide') }}</a>
   </UiAlert>
 </template>

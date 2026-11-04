@@ -24,6 +24,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useDemoStore } from '@/stores/demo'
 import { AuthMode, SignInResult } from '@/types/auth'
 import AuthShell from '@/components/auth/AuthShell.vue'
+import DemoBanner from '@/components/layout/DemoBanner.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiForm from '@/components/ui/UiForm.vue'
@@ -210,6 +211,7 @@ onMounted(async () => {
 </script>
 
 <template>
+  <DemoBanner />
   <AuthShell :title="t('auth.login.adminPanel')" :subtitle="subtitle">
     <UiStack gap="md">
       <!-- First-run notice: shown before and after sign-in, because it is true either way. -->

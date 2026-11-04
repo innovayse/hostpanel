@@ -1,0 +1,17 @@
+import { AppRoute } from '@/lib/routes'
+
+/**
+ * Maps each admin route to its documentation guide path (relative to the docs base URL).
+ * Used by `useDocsGuide` to build the help link for a screen.
+ *
+ * Keep this map in one place: adding a guide for a new screen means one line here.
+ */
+export const DOCS_GUIDES: Partial<Record<string, string>> = {
+  [AppRoute.Servers]: 'servers/servers',
+  [AppRoute.IntegrationsPayments]: 'payments/gateways',
+  [AppRoute.Migration]: 'operators/migration',
+  [AppRoute.SettingsEmailTemplates]: 'staff/email-templates',
+  [AppRoute.SettingsTldPricing]: 'staff/tld-pricing',
+  [AppRoute.SettingsProducts]: 'staff/products',
+  [AppRoute.BillingInvoices]: 'staff/billing',
+} as const

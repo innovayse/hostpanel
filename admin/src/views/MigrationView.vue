@@ -12,6 +12,7 @@ import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useMigrationStore } from '@/stores/migration'
 import { useResultBanner } from '@/composables/useResultBanner'
+import { useDocsGuide } from '@/composables/useDocsGuide'
 import { isJobActive, migrationStatusLabelKey } from '@/lib/migrationStatus'
 import { migrationStatusTone } from '@/lib/tones'
 import { MIGRATION_ENTITY_KEYS, MigrationStatus } from '@/types/migration'
@@ -101,6 +102,7 @@ const createError = ref<string | null>(null)
 
 /** The outcome line of the last create or delete. */
 const feedback = useResultBanner()
+const { guideUrl } = useDocsGuide()
 
 /** Tone of the outcome line: danger for a refusal, success otherwise. */
 const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
@@ -270,6 +272,7 @@ onUnmounted(() => {
       :subtitle="t('migration.migration.importExistingClientDataInto')"
     >
       <template #actions>
+        <a v-if="guideUrl" :href="guideUrl" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary" data-testid="page-help-link">{{ t('common.help') }}</a>
         <UiButton variant="primary" data-testid="migration-new" @click="showNewJobModal = true">
           {{ t('migration.migration.newMigration') }}
         </UiButton>

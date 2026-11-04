@@ -16,11 +16,13 @@ import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
+import { useDocsGuide } from '@/composables/useDocsGuide'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 
 /** Translation function. */
 const { t } = useI18n()
+const { guideUrl } = useDocsGuide()
 
 /** Current route, whose param names the category. */
 const route = useRoute()
@@ -60,7 +62,11 @@ onMounted(store.fetchAll)
 
 <template>
   <UiStack gap="md" class="w-full">
-    <UiPageHeader :title="activeCategoryLabel" :subtitle="subtitle" />
+    <UiPageHeader :title="activeCategoryLabel" :subtitle="subtitle">
+      <template v-if="guideUrl" #actions>
+        <a :href="guideUrl" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary" data-testid="page-help-link">{{ t('common.help') }}</a>
+      </template>
+    </UiPageHeader>
 
     <!-- Loading -->
     <UiSkeleton v-if="store.loading && filtered.length === 0" :lines="3" data-testid="integrations-loading" />

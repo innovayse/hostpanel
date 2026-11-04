@@ -185,6 +185,8 @@ services:
       NUXT_PUBLIC_PORTAL_SOCIAL_LINKEDIN: ${NUXT_PUBLIC_PORTAL_SOCIAL_LINKEDIN:-}
       NUXT_PUBLIC_PORTAL_SOCIAL_FACEBOOK: ${NUXT_PUBLIC_PORTAL_SOCIAL_FACEBOOK:-}
       NUXT_PUBLIC_PORTAL_HOSTING_DEMO_URL: ${NUXT_PUBLIC_PORTAL_HOSTING_DEMO_URL:-}
+      # Public address of the documentation website; empty hides all documentation links.
+      NUXT_PUBLIC_DOCS_URL: ${DOCS_URL:-}
       NUXT_PUBLIC_PORTAL_CONTACT_ADDRESS: ${NUXT_PUBLIC_PORTAL_CONTACT_ADDRESS:-}
       NUXT_PUBLIC_PORTAL_CONTACT_MAP_URL: ${NUXT_PUBLIC_PORTAL_CONTACT_MAP_URL:-}
       NUXT_PUBLIC_PORTAL_STATS_CLIENTS: ${NUXT_PUBLIC_PORTAL_STATS_CLIENTS:-}
@@ -262,6 +264,8 @@ services:
       ADMIN_BASE_URL_PATH: ${ADMIN_BASE_URL_PATH}
       # The storefront's public origin: the admin resolves the storefront's relative image paths against it.
       CLIENT_BASE_URL: ${CLIENT_BASE_URL:-}
+      # Public address of the documentation website; empty hides all documentation links.
+      DOCS_URL: ${DOCS_URL:-}
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:80/config.js"]
       interval: 30s

@@ -1,4 +1,5 @@
 <template>
+  <LayoutDemoBanner />
   <ClientAuthShell :title="$t('client.login.title')" :subtitle="$t('client.login.subtitle')">
     <UiAlert v-if="authStore.error" variant="error" class="mb-4" data-testid="login-error">
       {{ authStore.error }}

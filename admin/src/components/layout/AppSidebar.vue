@@ -21,6 +21,7 @@ import ReleaseUpdateNotice from '@/components/layout/ReleaseUpdateNotice.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { getRuntimeConfig } from '@/lib/runtimeConfig'
 import { AppRoute } from '@/lib/routes'
 
 /** A sub-menu child item. */
@@ -86,6 +87,12 @@ const CHEVRON_MARKUP = '<polyline points="9 18 15 12 9 6"/>'
 
 /** Sign-out glyph. */
 const SIGN_OUT_MARKUP = '<path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>'
+
+/** Book / documentation glyph. */
+const BOOK_MARKUP = '<path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>'
+
+/** Documentation URL from runtime config; empty when the docs site is not configured. */
+const { docsUrl } = getRuntimeConfig()
 
 /** Top-level navigation items with SVG path icons. */
 const navItems: NavItem[] = [
@@ -337,6 +344,18 @@ const isExpanded = (item: NavItem): boolean => {
           </UiLink>
         </template>
       </UiStack>
+      <!-- Documentation link: shown only when docsUrl is configured -->
+      <a
+        v-if="docsUrl"
+        :href="docsUrl"
+        target="_blank"
+        rel="noopener"
+        class="mt-2 flex items-center gap-2.5 rounded-[9px] px-3 py-2 text-[0.84rem] font-medium no-underline text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-all duration-150"
+        data-testid="nav-documentation"
+      >
+        <UiIcon :markup="BOOK_MARKUP" size="sm" class="opacity-60" />
+        <span>{{ t('nav.documentation') }}</span>
+      </a>
     </nav>
 
     <!-- Release update notice: shown only when an upgrade is available -->

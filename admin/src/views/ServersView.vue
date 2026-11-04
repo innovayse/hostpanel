@@ -37,6 +37,7 @@ import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
+import { useDocsGuide } from '@/composables/useDocsGuide'
 
 /** Translation function and the active locale (for date formatting). */
 const { t, locale } = useI18n()
@@ -84,6 +85,7 @@ const sshServerTarget = ref<ServerDto | null>(null)
 
 /** The outcome line of the last save or delete. */
 const feedback = useResultBanner()
+const { guideUrl } = useDocsGuide()
 
 /** Tone of the outcome line: danger for a refusal, success otherwise. */
 const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
@@ -374,6 +376,7 @@ onMounted(loadAll)
       :subtitle="t('servers.servers.manageProvisioningServersAndLoad')"
     >
       <template #actions>
+        <a v-if="guideUrl" :href="guideUrl" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary" data-testid="page-help-link">{{ t('common.help') }}</a>
         <UiButton variant="secondary" data-testid="servers-add-group" @click="openAddGroup">
           {{ t('servers.servers.createGroup') }}
         </UiButton>

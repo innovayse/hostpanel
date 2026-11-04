@@ -74,7 +74,11 @@ const slideClasses: Record<UiDrawerSide, { active: string, leaveActive: string, 
 /** Whether the panel has finished sliding in: the close button shows only then, and goes the moment it is asked to close. */
 const settled = ref(false)
 
-/** Marks the panel as fully open once it has slid in. */
+/**
+ * Marks the panel as fully open once it has slid in, so its close button shows.
+ *
+ * @returns Nothing; the panel's settled state is set.
+ */
 const onOpened = (): void => {
   settled.value = true
 }
@@ -106,43 +110,43 @@ const onKeydown = useModalSurface(panel, () => props.open, close)
       :leave-to-class="slideClasses[side].hidden"
       @after-enter="onOpened"
     >
-    <div v-if="open" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" @click.self="close">
-      <aside
-        ref="panel"
-        role="dialog"
-        aria-modal="true"
-        :aria-labelledby="titleId"
-        tabindex="-1"
-        class="absolute top-0 bottom-0 w-full bg-surface-card shadow-2xl flex flex-col overflow-hidden outline-none"
-        :class="[narrow ? 'max-w-xs' : 'max-w-md', sideClasses[side]]"
-        @keydown="onKeydown"
-      >
-        <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-border shrink-0">
-          <UiHeading :id="titleId" :level="2" variant="card">
-            {{ title }}
-          </UiHeading>
-          <UiIconButton
-            :label="t('ui.dialog.close')"
-            size="sm"
-            class="transition-opacity duration-150"
-            :class="settled ? 'opacity-100' : 'invisible opacity-0'"
-            data-testid="drawer-close"
-            @click="close"
-          >
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </UiIconButton>
-        </div>
-        <div class="flex-1 min-h-0 overflow-y-auto" :class="flush ? '' : 'p-6'" data-testid="drawer-body">
-          <slot />
-        </div>
-        <div v-if="$slots.footer" class="flex justify-end gap-2 px-6 py-4 border-t border-border shrink-0">
-          <slot name="footer" />
-        </div>
-      </aside>
-    </div>
+      <div v-if="open" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" @click.self="close">
+        <aside
+          ref="panel"
+          role="dialog"
+          aria-modal="true"
+          :aria-labelledby="titleId"
+          tabindex="-1"
+          class="absolute top-0 bottom-0 w-full bg-surface-card shadow-2xl flex flex-col overflow-hidden outline-none"
+          :class="[narrow ? 'max-w-xs' : 'max-w-md', sideClasses[side]]"
+          @keydown="onKeydown"
+        >
+          <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-border shrink-0">
+            <UiHeading :id="titleId" :level="2" variant="card">
+              {{ title }}
+            </UiHeading>
+            <UiIconButton
+              :label="t('ui.dialog.close')"
+              size="sm"
+              class="transition-opacity duration-150"
+              :class="settled ? 'opacity-100' : 'invisible opacity-0'"
+              data-testid="drawer-close"
+              @click="close"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </UiIconButton>
+          </div>
+          <div class="flex-1 min-h-0 overflow-y-auto" :class="flush ? '' : 'p-6'" data-testid="drawer-body">
+            <slot />
+          </div>
+          <div v-if="$slots.footer" class="flex justify-end gap-2 px-6 py-4 border-t border-border shrink-0">
+            <slot name="footer" />
+          </div>
+        </aside>
+      </div>
     </Transition>
   </Teleport>
 </template>

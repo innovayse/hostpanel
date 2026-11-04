@@ -337,22 +337,22 @@ const isExpanded = (item: NavItem): boolean => {
               :data-testid="`${testidOf(item.to)}-submenu`"
             >
               <div class="min-h-0 overflow-hidden">
-              <UiStack gap="xs" class="py-1 pl-9">
-                <UiLink
-                  v-for="child in item.children"
-                  :key="child.to"
-                  :to="child.to"
-                  variant="plain"
-                  class="relative flex items-center gap-2 rounded-[7px] px-3 py-[5px] text-[0.78rem] font-medium no-underline transition-all duration-150 before:absolute before:-left-4 before:-top-1 before:w-px before:bg-border-strong before:content-[''] before:h-[calc(100%+0.25rem)] first:before:-top-1.5 first:before:h-[calc(100%+0.5rem)] last:before:h-[calc(50%+0.25rem)] first:last:before:h-[calc(50%+0.5rem)] after:absolute after:-left-4 after:top-1/2 after:h-px after:w-3 after:transition-colors after:duration-300 after:content-['']"
-                  :class="isChildActive(child.to)
-                    ? 'bg-primary-500/10 text-primary-400 after:bg-primary-400'
-                    : 'text-text-muted after:bg-border-strong hover:bg-surface-hover hover:text-text-secondary hover:after:bg-text-muted'"
-                  :data-testid="testidOf(child.to)"
-                  @click="emit('navigate')"
-                >
-                  {{ t(child.labelKey) }}
-                </UiLink>
-              </UiStack>
+                <UiStack gap="xs" class="py-1 pl-9">
+                  <UiLink
+                    v-for="child in item.children"
+                    :key="child.to"
+                    :to="child.to"
+                    variant="plain"
+                    class="relative flex items-center gap-2 rounded-[7px] px-3 py-[5px] text-[0.78rem] font-medium no-underline transition-all duration-150 before:absolute before:-left-4 before:-top-1 before:w-px before:bg-border-strong before:content-[''] before:h-[calc(100%+0.25rem)] first:before:-top-1.5 first:before:h-[calc(100%+0.5rem)] last:before:h-[calc(50%+0.25rem)] first:last:before:h-[calc(50%+0.5rem)] after:absolute after:-left-4 after:top-1/2 after:h-px after:w-3 after:transition-colors after:duration-300 after:content-['']"
+                    :class="isChildActive(child.to)
+                      ? 'bg-primary-500/10 text-primary-400 after:bg-primary-400'
+                      : 'text-text-muted after:bg-border-strong hover:bg-surface-hover hover:text-text-secondary hover:after:bg-text-muted'"
+                    :data-testid="testidOf(child.to)"
+                    @click="emit('navigate')"
+                  >
+                    {{ t(child.labelKey) }}
+                  </UiLink>
+                </UiStack>
               </div>
             </div>
           </div>

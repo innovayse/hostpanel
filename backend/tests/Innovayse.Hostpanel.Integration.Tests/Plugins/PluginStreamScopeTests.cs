@@ -9,7 +9,8 @@ namespace Innovayse.Hostpanel.Integration.Tests.Plugins;
 /// <summary>
 /// A streamed plugin reply owns its own dependency scope (#851): the store and the host API the plugin received stay usable
 /// between events after the use case has returned, through the client and the admin door alike, and the scope, with its data
-/// context, is disposed once the stream ended and once the client left. Before the fix every store read inside a stream
+/// context, is disposed once the stream ended and once the client left. Disposal is observed through
+/// <see cref="RecordingPluginCallScopeFactory"/> (the real factory, recorded), never by reading a disposed context. Before the fix every store read inside a stream
 /// threw <see cref="ObjectDisposedException"/> on the use case's disposed context.
 /// </summary>
 public sealed class PluginStreamScopeTests : IClassFixture<AppPluginFixture>
@@ -32,6 +33,7 @@ public sealed class PluginStreamScopeTests : IClassFixture<AppPluginFixture>
     {
         _fixture = fixture;
         _fixture.Probe.Reset();
+        _fixture.CallScopes.Reset();
     }
 
     /// <summary>
@@ -75,34 +77,11 @@ public sealed class PluginStreamScopeTests : IClassFixture<AppPluginFixture>
         }
     }
 
-    /// <summary>Waits until the store's scope has been disposed, which a read on it then reports.</summary>
-    /// <param name="store">The store the plugin received.</param>
-    /// <returns>A task that completes once a read throws <see cref="ObjectDisposedException"/>; the test fails after the patience.</returns>
-    private static async Task WaitUntilDisposedAsync(IPluginStore store)
+    /// <summary>The one scope the call opened; a streaming route's call opens exactly one.</summary>
+    /// <returns>The recorded scope.</returns>
+    private RecordedPluginCallScope OnlyScope()
     {
-        var deadline = DateTime.UtcNow + Patience;
-        while (DateTime.UtcNow < deadline)
-        {
-            try
-            {
-                await store.GetAsync(Key, CancellationToken.None);
-            }
-            catch (ObjectDisposedException)
-            {
-                return;
-            }
-
-            await Task.Delay(TimeSpan.FromMilliseconds(50));
-        }
-
-        throw new TimeoutException("The streamed call's scope was not disposed.");
-    }
-
-    /// <summary>The single call the probe saw.</summary>
-    /// <returns>The call.</returns>
-    private PluginCall OnlyCall()
-    {
-        return _fixture.Probe.Calls.Should().ContainSingle().Subject;
+        return _fixture.CallScopes.Opened.Should().ContainSingle().Subject;
     }
 
     /// <summary>
@@ -123,7 +102,7 @@ public sealed class PluginStreamScopeTests : IClassFixture<AppPluginFixture>
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.Should().Be("data: start\n\ndata: stored\n\ndata: profile\n\ndata: Eva Bakery\n\n");
         _fixture.LoggedFailureOf(_fixture.PluginId).Should().BeFalse();
-        await WaitUntilDisposedAsync(OnlyCall().Store);
+        await OnlyScope().Disposed.WaitAsync(Patience);
     }
 
     /// <summary>An admin stream, whose store is plugin wide and whose host API knows no client, works the same way.</summary>
@@ -139,7 +118,7 @@ public sealed class PluginStreamScopeTests : IClassFixture<AppPluginFixture>
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.Should().Be("data: start\n\ndata: stored\n\ndata: no-profile\n\ndata: Eva Bakery\n\n");
-        await WaitUntilDisposedAsync(OnlyCall().Store);
+        await OnlyScope().Disposed.WaitAsync(Patience);
     }
 
     /// <summary>A client that leaves mid stream cancels the plugin, and the stream's scope is disposed after that.</summary>
@@ -158,12 +137,15 @@ public sealed class PluginStreamScopeTests : IClassFixture<AppPluginFixture>
         {
             (await reader.ReadLineAsync().WaitAsync(Patience)).Should().Be("data: first");
 
+            // The stream is open and the plugin waits: its scope must still be alive.
+            OnlyScope().Disposed.IsCompleted.Should().BeFalse();
+
             // Disposing the response before the stream has ended is the client closing the connection.
             response.Dispose();
         }
 
         await cancelled.Task.WaitAsync(Patience);
-        await WaitUntilDisposedAsync(OnlyCall().Store);
+        await OnlyScope().Disposed.WaitAsync(Patience);
     }
 
     /// <summary>A streaming route that answers with one JSON document keeps working; its scope ends with the call.</summary>
@@ -183,6 +165,6 @@ public sealed class PluginStreamScopeTests : IClassFixture<AppPluginFixture>
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         (await response.Content.ReadAsStringAsync()).Should().Contain("json");
-        await WaitUntilDisposedAsync(OnlyCall().Store);
+        await OnlyScope().Disposed.WaitAsync(Patience);
     }
 }

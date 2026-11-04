@@ -194,6 +194,14 @@ docker/                              compose set (shared·dev·prod·platform), 
   `Assembly.LoadFrom` over it would give the process two distinct `IPaymentPlugin` types with the
   same name, after which every cast in `PluginActivator` fails. The CWP providers are
   deliberately **not** staged, so they cannot activate at runtime by accident.
+- **Plugin projects are named `Innovayse.Hostpanel.Plugins.<Name>` (#848).** The .NET plugin convention
+  `<Company>.<Product>.<Type>.<Name>` (as in `Serilog.Sinks.Console`): project, folder, assembly and root
+  namespace are `Innovayse.Hostpanel.Plugins.<Name>`, its tests `Innovayse.Hostpanel.Plugins.<Name>.Tests`, and a
+  plugin in its own repository lives in `innovayse/hostpanel-<name>` (Innovayse Sites, #844:
+  `innovayse/hostpanel-sites`, `Innovayse.Hostpanel.Plugins.Sites`). The plugin `id` in `plugin.json` never
+  changes with a rename, because stored settings and plugin data are keyed by it. The in-tree
+  `Innovayse.Providers.*` projects and `Innovayse.Inecobank.Tests` predate the convention and take it as each
+  moves to its own repository (#780, #841).
 - **The SDK is grouped by area (since SDK 2.0.0; the submodule pins 2.1.0, commit `6a725c2`, which adds the `Ui`
   view schema, `externalOrigins`, the endpoints capability and the fulfilment `ClientRef`).** Every SDK type lives in
   `Plugins/<Area>/` and its namespace equals the folder: `Payment`, `Provisioning`, `Registrar`, `HostingPanel`, `Hosting`,

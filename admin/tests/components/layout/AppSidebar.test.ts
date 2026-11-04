@@ -1,7 +1,7 @@
 /**
  * Mount tests for AppSidebar: the top-level entries, sub-menus that open for the current section
  * or on click, the active marker (also on the target of a navigation still downloading), the
- * navigate event and the sign-out button.
+ * navigate event, the sign-out button, the documentation link and the theme select of the menu drawer.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
@@ -9,15 +9,27 @@ import type { RouteLocationNormalized } from 'vue-router'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import { useNavigationStore } from '@/stores/navigation'
 import { stubRoutes } from '../../helpers/routes'
-import { mountView } from '../../helpers/mount'
+import { mountScreen, mountView } from '../../helpers/mount'
+import { pickOption, selectText } from '../../helpers/select'
+import { resetThemeDocument, stubSchemeQuery } from '../../helpers/theme'
+import { THEME_STORAGE_KEY } from '@/lib/themeBoot'
+import { AdminTheme } from '@/types/admintheme'
+
+vi.mock('@/lib/runtimeConfig', () => ({
+  getRuntimeConfig: vi.fn(),
+}))
+
+import { getRuntimeConfig } from '@/lib/runtimeConfig'
 
 /**
  * Mounts the sidebar at a path.
  *
  * @param path - The current route.
+ * @param docsUrl - Docs URL to inject (default empty).
  * @returns The wrapper.
  */
-const mountSidebar = async (path: string) => {
+const mountSidebar = async (path: string, docsUrl = '') => {
+  vi.mocked(getRuntimeConfig).mockReturnValue({ docsUrl, basePath: '/', clientBaseUrl: '' })
   stubRoutes({})
   return mountView(AppSidebar, { path })
 }
@@ -34,6 +46,18 @@ describe('AppSidebar', () => {
     expect(wrapper.get('[data-testid="nav-servers"]').attributes('href')).toBe('/servers')
     expect(wrapper.get('[data-testid="nav-migration"]').attributes('href')).toBe('/migration')
     expect(wrapper.get('[data-testid="nav-clients"]').element.tagName).toBe('BUTTON')
+  })
+
+  it('shows the logo and a fixed width on the desktop, and neither inside the menu drawer', async () => {
+    stubRoutes({})
+    const desktop = await mountView(AppSidebar, { path: '/dashboard' })
+    expect(desktop.get('[data-testid="app-sidebar"]').classes()).toContain('w-[220px]')
+    expect(desktop.find('[data-testid="app-sidebar"] img, [data-testid="app-sidebar"] svg').exists()).toBe(true)
+
+    const { wrapper: embedded } = await mountScreen(AppSidebar, { embedded: true }, '/dashboard')
+    expect(embedded.get('[data-testid="app-sidebar"]').classes()).toEqual(expect.arrayContaining(['w-full']))
+    expect(embedded.get('[data-testid="app-sidebar"]').classes()).not.toContain('w-[220px]')
+    expect(embedded.find('[data-testid="app-sidebar"] > div.border-b').exists()).toBe(false)
   })
 
   it('opens the sub-menu of the current section and marks the current child', async () => {
@@ -53,6 +77,25 @@ describe('AppSidebar', () => {
     expect(wrapper.get('[data-testid="nav-storefront-projects"]').attributes('href')).toBe('/storefront/projects')
     expect(wrapper.get('[data-testid="nav-storefront-faqs"]').classes()).toContain('text-primary-400')
     expect(wrapper.get('[data-testid="nav-storefront-locations"]').attributes('href')).toBe('/storefront/locations')
+  })
+
+  it('keeps a closed sub-menu out of reach and opens it over a transition, not by switching it on', async () => {
+    const wrapper = await mountSidebar('/dashboard')
+    const submenu = wrapper.get('[data-testid="nav-billing-submenu"]')
+
+    expect(submenu.attributes('inert')).toBeDefined()
+    expect(submenu.classes()).toEqual(expect.arrayContaining(['grid-rows-[0fr]', 'opacity-0', 'duration-300']))
+
+    await wrapper.get('[data-testid="nav-billing"]').trigger('click')
+
+    expect(submenu.attributes('inert')).toBeUndefined()
+    expect(submenu.classes()).toEqual(expect.arrayContaining(['grid-rows-[1fr]', 'opacity-100']))
+  })
+
+  it('gives the list a quiet scrollbar that shows on hover', async () => {
+    const wrapper = await mountSidebar('/dashboard')
+
+    expect(wrapper.get('nav').classes()).toContain('scroll-subtle')
   })
 
   it('opens a closed sub-menu when its toggle is clicked', async () => {
@@ -95,5 +138,37 @@ describe('AppSidebar', () => {
     const wrapper = await mountSidebar('/dashboard')
 
     expect(wrapper.find('[data-testid="sidebar-sign-out"]').exists()).toBe(true)
+  })
+
+  it('hides the documentation link when docsUrl is empty', async () => {
+    const wrapper = await mountSidebar('/dashboard', '')
+
+    expect(wrapper.find('[data-testid="nav-documentation"]').exists()).toBe(false)
+  })
+
+  it('shows the documentation link with the correct href and rel when docsUrl is set', async () => {
+    const wrapper = await mountSidebar('/dashboard', 'https://docs.example.com')
+    const link = wrapper.find('[data-testid="nav-documentation"]')
+
+    expect(link.exists()).toBe(true)
+    expect(link.attributes('href')).toBe('https://docs.example.com')
+    expect(link.attributes('rel')).toContain('noopener')
+  })
+
+  it('offers the theme select inside the menu drawer only, and applies the choice', async () => {
+    resetThemeDocument()
+    stubSchemeQuery(false)
+    vi.mocked(getRuntimeConfig).mockReturnValue({ docsUrl: '', basePath: '/', clientBaseUrl: '' })
+    stubRoutes({})
+    const { wrapper: desktop } = await mountScreen(AppSidebar, {}, '/dashboard')
+    expect(desktop.find('[data-testid="sidebar-theme"]').exists()).toBe(false)
+
+    const { wrapper: drawer } = await mountScreen(AppSidebar, { embedded: true }, '/dashboard')
+    expect(selectText(drawer, 'sidebar-theme')).toBe('System')
+    await pickOption(drawer, 'sidebar-theme', 'Light')
+
+    expect(selectText(drawer, 'sidebar-theme')).toBe('Light')
+    expect(document.documentElement.classList.contains('light')).toBe(true)
+    expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe(AdminTheme.Light)
   })
 })

@@ -357,7 +357,8 @@ onBeforeUnmount(() => {
 
 <template>
   <UiForm v-if="store.current" stacked @submit="handleSave">
-    <UiStack direction="row" :justify="UiJustify.End" :align="UiAlignItems.Center" gap="sm">
+    <!-- Below md the notice and both buttons are one full-width column, so Cancel and Save are the same size; from md up they are a row at the right. -->
+    <UiStack direction="row" :justify="UiJustify.End" :align="UiAlignItems.Center" gap="sm" reflow-below-md>
       <UiAlert v-if="saveSuccess" variant="success" class="flex-1" data-testid="client-profile-saved">
         {{ t('shared.changesSavedSuccessfully') }}
       </UiAlert>
@@ -600,7 +601,7 @@ onBeforeUnmount(() => {
       </UiStack>
     </UiGrid>
 
-    <UiCard>
+    <UiCard padding="md" class="overflow-x-auto">
       <UiStack>
         <UiHeading :level="2" variant="card">
           {{ t('clients.clientProfile.contactsLength', { length: store.current.contacts.length }) }}

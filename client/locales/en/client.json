@@ -15,7 +15,9 @@
       "welcomeBack": "Welcome back,",
       "account": "Account",
       "brand": "{site}",
-      "toggleMenu": "Toggle menu"
+      "toggleMenu": "Toggle menu",
+      "documentation": "Documentation",
+      "help": "Help"
     },
     "login": {
       "title": "Sign in to your account",

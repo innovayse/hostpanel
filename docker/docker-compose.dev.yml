@@ -235,6 +235,7 @@ services:
       NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_RU: ${NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_RU}
       NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_HY: ${NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_HY}
       BILLING_PORTAL_URL: ${BILLING_PORTAL_URL}
+      NUXT_PUBLIC_DOCS_URL: ${DOCS_URL:-}
       # Where the signed-in sessions are kept (the tokens never reach the browser): the API's Redis.
       NUXT_SESSION_REDIS: ${REDIS_CONNECTION}
       # Key the stored sessions are encrypted with; optional here because the dev server runs in development mode.

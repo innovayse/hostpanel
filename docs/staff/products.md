@@ -4,6 +4,8 @@ title: Products and pricing
 
 # Products and pricing <Label type="admin" />
 
+<DemoLink path="/settings/products" />
+
 Opening a product that does not exist returns `PRODUCT_NOT_FOUND`. Ordering a product that is not Active returns `PRODUCT_NOT_AVAILABLE`. If no base currency has been set up, price lookups return `BASE_CURRENCY_NOT_CONFIGURED`.
 
 ## How products are organised

@@ -195,6 +195,7 @@ export default defineNuxtConfig({
       // substitutes verbatim, so that value must carry no trailing slash of its own.
       billingPortalUrl: (process.env.BILLING_PORTAL_URL || '').replace(/\/+$/, ''),
       mainUrl: process.env.NUXT_PUBLIC_MAIN_URL || '',
+      docsUrl: (process.env.NUXT_PUBLIC_DOCS_URL || '').replace(/\/+$/, ''),
       // Active portal template when the operator's portal.template setting is empty. Empty here
       // (and anything unknown) resolves to DEFAULT_TEMPLATE in templates/types.ts, the one default.
       portalTemplate: process.env.NUXT_PUBLIC_PORTAL_TEMPLATE || '',

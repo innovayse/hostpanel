@@ -4,6 +4,8 @@ title: Payment gateways
 
 # Payment gateways <Label type="admin" />
 
+<DemoLink path="/integrations/payments" />
+
 Hostpanel ships with one payment method, bank transfer. Every online payment gateway comes from a plugin that you install. No payment gateway is enabled by default; an operator enables each one after entering their credentials.
 
 ## Payment methods

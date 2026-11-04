@@ -15,7 +15,9 @@
       "welcomeBack": "Բարի վերադարձ,",
       "account": "Հաշիվ",
       "brand": "{site}",
-      "toggleMenu": "Բացել կամ փակել մենյուն"
+      "toggleMenu": "Բացել կամ փակել մենյուն",
+      "documentation": "Փաստաթղթեր",
+      "help": "Օժանդակություն"
     },
     "login": {
       "title": "Մուտք գործել հաշիվ",

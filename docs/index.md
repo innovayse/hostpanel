@@ -71,6 +71,8 @@ features:
 
 <HomeSearch />
 
+<DemoLink path="/" clientPath="/" />
+
 ## Popular guides
 
 - [Quick start](/get-started/quick-start) — up and running in under 10 minutes

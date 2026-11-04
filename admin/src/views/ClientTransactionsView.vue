@@ -212,7 +212,7 @@ onMounted(() => fetchTransactions())
         />
       </UiGrid>
 
-      <UiCard>
+      <UiCard class="overflow-x-auto">
         <UiTable
           density="comfortable"
           :empty="store.transactions.length === 0"

@@ -239,7 +239,7 @@ const contactActions = (contact: Contact): UiRowAction[] => {
       </UiButton>
     </UiStack>
 
-    <UiCard v-if="contacts.length > 0">
+    <UiCard v-if="contacts.length > 0" class="overflow-x-auto">
       <UiTable density="comfortable" data-testid="client-contacts-table">
         <UiTableHead>
           <UiTableRow>

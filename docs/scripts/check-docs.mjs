@@ -12,7 +12,7 @@
  * full list.
  */
 
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { join, relative, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -102,8 +102,8 @@ const sidebarLinks = () => {
 const collectMd = (dir, base = '') => {
   const entries = readdirSync(dir, { withFileTypes: true })
   return entries.flatMap((e) => {
-    // Skip directories that are not user-facing docs pages.
-    if (e.isDirectory() && (e.name === 'brand' || e.name === 'node_modules' || e.name.startsWith('.'))) { return [] }
+    // Skip directories that are not user-facing docs pages (generated partials start with _).
+    if (e.isDirectory() && (e.name === 'brand' || e.name === 'node_modules' || e.name.startsWith('.') || e.name.startsWith('_'))) { return [] }
     if (e.isDirectory()) { return collectMd(join(dir, e.name), `${base}/${e.name}`) }
     if (extname(e.name) !== '.md') { return [] }
     const stem = e.name.replace(/\.md$/, '')
@@ -113,6 +113,22 @@ const collectMd = (dir, base = '') => {
 }
 
 const links = sidebarLinks()
+
+/**
+ * Adds every link of a sidebar item and, recursively, of the groups inside it.
+ * @param {{ link?: string, items?: object[] }} item
+ */
+const addSidebarLinks = (item) => {
+  if (item.link) { links.add(item.link.replace(/\/$/, '')) }
+  for (const child of item.items ?? []) { addSidebarLinks(child) }
+}
+
+// Also collect links from generated-sidebar.json when present (API reference endpoint pages,
+// grouped by audience and then by area).
+const generatedSidebarPath = join(docsRoot, 'api-reference', 'generated-sidebar.json')
+if (existsSync(generatedSidebarPath)) {
+  for (const group of JSON.parse(readFileSync(generatedSidebarPath, 'utf8'))) { addSidebarLinks(group) }
+}
 
 // Pages intentionally excluded from the sidebar (home page, components demo).
 const excluded = new Set(['', '/components'])

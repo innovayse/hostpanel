@@ -9,5 +9,6 @@
   "toggleSidebar": "Ցույց տալ/թաքցնել մենյուն",
   "viewAllNotifications": "Դիտել բոլոր ծանուցումները",
   "newCount": "{count} նոր | {count} նոր",
-  "noNotifications": "Ծանուցումներ չկան"
+  "noNotifications": "Ծանուցումներ չկան",
+  "help": "Օժանդակություն"
 }

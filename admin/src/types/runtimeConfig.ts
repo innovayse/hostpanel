@@ -13,4 +13,9 @@ export interface AppRuntimeConfig {
    * admin's own origin.
    */
   clientBaseUrl: string
+  /**
+   * Public address of the documentation website, e.g. `https://innovayse.github.io/hostpanel/`.
+   * Empty string means documentation links are hidden.
+   */
+  docsUrl: string
 }

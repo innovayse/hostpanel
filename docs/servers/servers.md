@@ -4,6 +4,8 @@ title: Servers and server groups
 
 # Servers and server groups <Label type="admin" />
 
+<DemoLink path="/servers" />
+
 Go to **Servers** to manage provisioning servers and load-balancing groups. Subtitle: "Manage provisioning servers and load-balancing groups."
 
 ## The server list

@@ -4,6 +4,8 @@ title: Domain extensions and registrars
 
 # Domain extensions and registrars <Label type="admin" />
 
+<DemoLink path="/settings/tld-pricing" />
+
 ## Registrars
 
 Hostpanel ships two working registrar providers. Configure them under **Integrations**, category **Domain Registrars**.

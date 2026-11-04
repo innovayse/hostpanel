@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.app.json",
-  "include": ["env.d.ts", "src/**/*", "src/**/*.vue", "src/**/*.json", "tests/**/*", "scripts/**/*", "eslint.config.ts", "../docs/.vitepress/theme/components/DemoLink.vue"],
+  "include": ["env.d.ts", "src/**/*", "src/**/*.vue", "src/**/*.json", "tests/**/*", "scripts/**/*", "eslint.config.ts"],
   "exclude": [],
   "compilerOptions": {
     "composite": true,

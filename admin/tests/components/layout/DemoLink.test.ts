@@ -14,7 +14,7 @@ vi.mock('vitepress', () => ({
 }))
 
 import { useData } from 'vitepress'
-import DemoLink from '../../../../docs/.vitepress/theme/components/DemoLink.vue'
+import DemoLink from '@docs/DemoLink.vue'
 
 /**
  * Mounts DemoLink with the given theme config.

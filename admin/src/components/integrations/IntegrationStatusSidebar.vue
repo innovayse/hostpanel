@@ -2,13 +2,13 @@
 /**
  * Right sidebar for the integration detail page.
  *
- * Displays the connection test state (in flight, the result of this session's test, or not tested
- * yet) and an optional contextual hint. No test moment is stored, so only a test run on this page is
- * shown.
+ * Displays the connection test state (in flight, the result of this session's test, the plugin's
+ * last reported connection state, or not tested yet) and an optional contextual hint.
  */
 import { useI18n } from 'vue-i18n'
 import { formatClock } from '@/lib/format'
-import type { IntegrationTestResult } from '@/types/integration'
+import type { IntegrationConnection, IntegrationTestResult } from '@/types/integration'
+import { integrationConnectionTone } from '@/lib/tones'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -30,6 +30,8 @@ defineProps<{
   endpointHost?: string
   /** Optional hint text shown in a callout box. */
   hint?: string
+  /** Last connection state a plugin reported, shown while no test ran on this page; null or absent for none. */
+  connection?: IntegrationConnection | null
 }>()
 
 /**
@@ -81,6 +83,18 @@ const formatDuration = (ms: number): string =>
           <UiStack v-if="testResult.durationMs !== undefined" direction="row" gap="sm">
             <UiText tone="muted" size="xs">{{ t('integrations.integrationStatusSidebar.roundTrip') }}</UiText>
             <UiText tone="secondary" size="xs">{{ formatDuration(testResult.durationMs) }}</UiText>
+          </UiStack>
+        </UiStack>
+
+        <!-- No test on this page yet, but the plugin reported its state (cached by the API) -->
+        <UiStack v-else-if="connection" gap="xs" data-testid="integration-status-connection">
+          <UiBadge :tone="integrationConnectionTone[connection.state]" dot>
+            {{ t(`integrations.connectionState.${connection.state}`) }}
+          </UiBadge>
+          <UiText tone="muted" size="sm">{{ connection.message }}</UiText>
+          <UiStack direction="row" gap="sm">
+            <UiText tone="muted" size="xs">{{ t('integrations.integrationStatusSidebar.tested') }}</UiText>
+            <UiText tone="secondary" size="xs">{{ formatClock(connection.checkedAt, locale) }}</UiText>
           </UiStack>
         </UiStack>
 

@@ -669,6 +669,27 @@
 <data name="INTEGRATION_FIELD_INVALID" xml:space="preserve">
     <value>Это значение не подходит для этого поля интеграции.</value>
   </data>
+<data name="INTEGRATION_NOT_TESTABLE" xml:space="preserve">
+    <value>У этой интеграции нет проверки подключения.</value>
+  </data>
+<data name="PLUGIN_STATUS_HEALTHY" xml:space="preserve">
+    <value>Плагин сообщает, что работает.</value>
+  </data>
+<data name="PLUGIN_STATUS_DEGRADED" xml:space="preserve">
+    <value>Плагин работает с ограничениями.</value>
+  </data>
+<data name="PLUGIN_STATUS_REPORTED_DOWN" xml:space="preserve">
+    <value>Плагин сообщает, что сейчас не может работать.</value>
+  </data>
+<data name="PLUGIN_STATUS_INACTIVE" xml:space="preserve">
+    <value>Плагин выключен или не заполнена обязательная настройка.</value>
+  </data>
+<data name="PLUGIN_STATUS_TIMED_OUT" xml:space="preserve">
+    <value>Плагин не ответил на проверку состояния вовремя.</value>
+  </data>
+<data name="PLUGIN_STATUS_FAILED" xml:space="preserve">
+    <value>Проверка состояния плагина не удалась. Подробности в журнале сервера.</value>
+  </data>
 <data name="SETTING_NOT_FOUND" xml:space="preserve">
     <value>Такая настройка не найдена.</value>
   </data>

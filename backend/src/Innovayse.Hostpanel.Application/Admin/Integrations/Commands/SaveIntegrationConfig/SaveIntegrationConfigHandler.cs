@@ -225,6 +225,9 @@ public sealed class SaveIntegrationConfigHandler
             _cache.Remove(HostingPanelCacheKeys.Cwp);
         }
 
+        // A plugin's cached status check described the switch and settings just replaced (a no-op for a built-in slug).
+        _cache.Remove(PluginStatusCacheKeys.For(slug));
+
         return Result.Success();
     }
 

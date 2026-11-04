@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
  * Displays a single integration as a clickable card with logo, title, description, and status,
- * marking a plugin with its declared type and an integration whose required fields are not all stored
- * as not configured.
+ * marking a plugin with its declared type, an integration whose required fields are not all stored
+ * as not configured, and a plugin that reports its connection state with that state.
  *
  * Clicking the card navigates to the integration's configuration page.
  */
@@ -18,6 +18,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { integrationConfigurePath } from '@/lib/routes'
 import { UiTone } from '@/utils/ui/tone'
+import { integrationConnectionTone } from '@/lib/tones'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -71,6 +72,14 @@ const meta = INTEGRATION_META[props.integration.slug as IntegrationSlug]
           >
             {{ t('integrations.integrationCard.notConfigured') }}
           </UiBadge>
+        </UiStack>
+
+        <!-- The plugin's own report (IPluginStatus), worded by the API; absent for built-ins and other plugins. -->
+        <UiStack v-if="integration.connection" gap="xs" :data-testid="`integration-connection-${integration.slug}`">
+          <UiBadge :tone="integrationConnectionTone[integration.connection.state]" dot small>
+            {{ t(`integrations.connectionState.${integration.connection.state}`) }}
+          </UiBadge>
+          <UiText tone="muted" size="sm">{{ integration.connection.message }}</UiText>
         </UiStack>
 
         <UiText tone="muted" size="md" class="flex-1">

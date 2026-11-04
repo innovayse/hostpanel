@@ -960,6 +960,27 @@ public static class HostpanelErrorCodes
     /// <summary>A saved field value does not fit the declared type of the field (400); <c>errors[key]</c> says what is expected.</summary>
     public const string INTEGRATION_FIELD_INVALID = "INTEGRATION_FIELD_INVALID";
 
+    /// <summary>The integration has no connection test: a plugin that does not implement <c>IPluginStatus</c> (400).</summary>
+    public const string INTEGRATION_NOT_TESTABLE = "INTEGRATION_NOT_TESTABLE";
+
+    /// <summary>Not a refusal: the sentence of a plugin integration that reports it works, shown on its card and in a connection test.</summary>
+    public const string PLUGIN_STATUS_HEALTHY = "PLUGIN_STATUS_HEALTHY";
+
+    /// <summary>Not a refusal: the sentence of a plugin integration that reports it works with reduced function.</summary>
+    public const string PLUGIN_STATUS_DEGRADED = "PLUGIN_STATUS_DEGRADED";
+
+    /// <summary>Not a refusal: the sentence of a plugin integration that reports it cannot do its work.</summary>
+    public const string PLUGIN_STATUS_REPORTED_DOWN = "PLUGIN_STATUS_REPORTED_DOWN";
+
+    /// <summary>Not a refusal: the plugin was not asked for its state, because it is switched off, misses a required setting or waits for its data migration.</summary>
+    public const string PLUGIN_STATUS_INACTIVE = "PLUGIN_STATUS_INACTIVE";
+
+    /// <summary>Not a refusal: the plugin did not answer its status check within the host's time limit.</summary>
+    public const string PLUGIN_STATUS_TIMED_OUT = "PLUGIN_STATUS_TIMED_OUT";
+
+    /// <summary>Not a refusal: the plugin's status check failed or gave no valid answer; the cause is in the server log.</summary>
+    public const string PLUGIN_STATUS_FAILED = "PLUGIN_STATUS_FAILED";
+
     // Products
 
     /// <summary>The id names no product group (404).</summary>

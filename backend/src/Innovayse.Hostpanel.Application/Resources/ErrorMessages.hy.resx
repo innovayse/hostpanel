@@ -669,6 +669,27 @@
 <data name="INTEGRATION_FIELD_INVALID" xml:space="preserve">
     <value>Ինտեգրման այս դաշտի համար այդ արժեքը չի ընդունվում։</value>
   </data>
+<data name="INTEGRATION_NOT_TESTABLE" xml:space="preserve">
+    <value>Այս ինտեգրումը կապի ստուգում չունի։</value>
+  </data>
+<data name="PLUGIN_STATUS_HEALTHY" xml:space="preserve">
+    <value>Պլագինը հայտնում է, որ աշխատում է։</value>
+  </data>
+<data name="PLUGIN_STATUS_DEGRADED" xml:space="preserve">
+    <value>Պլագինն աշխատում է սահմանափակ։</value>
+  </data>
+<data name="PLUGIN_STATUS_REPORTED_DOWN" xml:space="preserve">
+    <value>Պլագինը հայտնում է, որ այս պահին չի կարող աշխատել։</value>
+  </data>
+<data name="PLUGIN_STATUS_INACTIVE" xml:space="preserve">
+    <value>Պլագինն անջատված է, կամ պարտադիր կարգավորումը լրացված չէ։</value>
+  </data>
+<data name="PLUGIN_STATUS_TIMED_OUT" xml:space="preserve">
+    <value>Պլագինը ժամանակին չպատասխանեց վիճակի ստուգմանը։</value>
+  </data>
+<data name="PLUGIN_STATUS_FAILED" xml:space="preserve">
+    <value>Պլագինի վիճակի ստուգումը ձախողվեց։ Մանրամասները սերվերի մատյանում են։</value>
+  </data>
 <data name="SETTING_NOT_FOUND" xml:space="preserve">
     <value>Այդպիսի կարգավորում չի գտնվել։</value>
   </data>

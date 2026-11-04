@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
+using Innovayse.Hostpanel.Application.Admin.Integrations.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
@@ -40,6 +41,12 @@ public sealed class TestIntegrationConnectionHandler
     /// <summary>The source of the current moment.</summary>
     private readonly IClock _clock;
 
+    /// <summary>The loaded plugins, for a slug that names no built-in integration.</summary>
+    private readonly IPluginRegistry _plugins;
+
+    /// <summary>Asks a plugin that implements <c>IPluginStatus</c> and caches its answer for the Integrations page.</summary>
+    private readonly PluginConnectionReader _connections;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="pluginResolver">Payment plugin resolver, used for live gateway probes.</param>
@@ -47,14 +54,20 @@ public sealed class TestIntegrationConnectionHandler
     /// <param name="probes">Live credential checks for built-in integrations, matched by slug.</param>
     /// <param name="logger">Logs a provider failure without putting its detail on the wire.</param>
     /// <param name="clock">The source of the current moment.</param>
+    /// <param name="plugins">The loaded plugins, for a slug that names no built-in integration.</param>
+    /// <param name="connections">Asks a plugin that implements <c>IPluginStatus</c> and caches its answer for the Integrations page.</param>
     public TestIntegrationConnectionHandler(
         IHostpanelDbContext context,
         IPaymentPluginResolver pluginResolver,
         IMemoryCache cache,
         IEnumerable<IIntegrationConnectionProbe> probes,
         ILogger<TestIntegrationConnectionHandler> logger,
-        IClock clock)
+        IClock clock,
+        IPluginRegistry plugins,
+        PluginConnectionReader connections)
     {
+        _plugins = plugins;
+        _connections = connections;
         _context = context;
         _pluginResolver = pluginResolver;
         _cache = cache;
@@ -73,7 +86,7 @@ public sealed class TestIntegrationConnectionHandler
     /// An <see cref="IntegrationTestResultDto"/> with <c>Success = true</c> when fully configured
     /// (or successfully probed), or <c>Success = false</c> listing what is missing or reporting the
     /// probe's outcome, or <c>INTEGRATION_NOT_FOUND</c> when the slug names neither a built-in
-    /// integration nor a loaded plugin.
+    /// integration nor a loaded plugin, or <c>INTEGRATION_NOT_TESTABLE</c> for a plugin without <c>IPluginStatus</c>.
     /// </returns>
     public async Task<Result<IntegrationTestResultDto>> HandleAsync(
         TestIntegrationConnectionCommand command, CancellationToken ct)
@@ -82,7 +95,7 @@ public sealed class TestIntegrationConnectionHandler
 
         if (!IntegrationCatalogue.TryGetTestable(command.Slug, out var meta))
         {
-            return Result<IntegrationTestResultDto>.FailureCode(HostpanelErrorCodes.INTEGRATION_NOT_FOUND);
+            return await TestPluginAsync(command.Slug, ct);
         }
 
         var result = await RunTestAsync(command.Slug, meta.RequiredFields, testedAt, ct);
@@ -95,6 +108,36 @@ public sealed class TestIntegrationConnectionHandler
         }
 
         return Result<IntegrationTestResultDto>.Success(result);
+    }
+
+    /// <summary>
+    /// Tests a plugin integration by asking its <c>IPluginStatus</c> now (#855). The answer also replaces the cached
+    /// state its card shows, so the page and the test never disagree.
+    /// </summary>
+    /// <param name="slug">The plugin id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// The outcome in the request's language; <c>INTEGRATION_NOT_FOUND</c> when no plugin with that id is loaded,
+    /// <c>INTEGRATION_NOT_TESTABLE</c> when it does not implement <c>IPluginStatus</c>.
+    /// </returns>
+    private async Task<Result<IntegrationTestResultDto>> TestPluginAsync(string slug, CancellationToken ct)
+    {
+        var manifest = _plugins.GetLoadedManifests().FirstOrDefault(m => m.Id == slug);
+        if (manifest is null)
+        {
+            return Result<IntegrationTestResultDto>.FailureCode(HostpanelErrorCodes.INTEGRATION_NOT_FOUND);
+        }
+
+        var connection = await _connections.RefreshAsync(manifest, ct);
+        if (connection is null)
+        {
+            return Result<IntegrationTestResultDto>.FailureCode(HostpanelErrorCodes.INTEGRATION_NOT_TESTABLE);
+        }
+
+        // Degraded still works, with reduced function, so it passes; the message says which.
+        var works = connection.State is IntegrationConnectionState.Connected or IntegrationConnectionState.Degraded;
+        return Result<IntegrationTestResultDto>.Success(
+            new IntegrationTestResultDto(works, connection.Message, connection.CheckedAt));
     }
 
     /// <summary>Runs the field-completeness check and, where supported, the live probe.</summary>

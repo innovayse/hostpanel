@@ -18,6 +18,7 @@ export const integrationDto = (overrides: Partial<IntegrationDto> = {}): Integra
   isConfigured: true,
   isPlugin: false,
   pluginType: null,
+  connection: null,
   ...overrides,
 })
 
@@ -44,5 +45,7 @@ export const integrationDetail = (overrides: Partial<IntegrationDetailDto> = {})
     { key: 'note', label: 'Note', type: IntegrationFieldType.Textarea, required: false },
     { key: 'live', label: 'Live payments', type: IntegrationFieldType.Toggle, required: false },
   ],
+  canTestConnection: true,
+  connection: null,
   ...overrides,
 })

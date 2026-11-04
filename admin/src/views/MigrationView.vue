@@ -13,6 +13,7 @@ import { useI18n } from 'vue-i18n'
 import { useMigrationStore } from '@/stores/migration'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { useDocsGuide } from '@/composables/useDocsGuide'
+import PageHelpLink from '@/components/layout/PageHelpLink.vue'
 import { isJobActive, migrationStatusLabelKey } from '@/lib/migrationStatus'
 import { migrationStatusTone } from '@/lib/tones'
 import { MIGRATION_ENTITY_KEYS, MigrationStatus } from '@/types/migration'
@@ -272,7 +273,7 @@ onUnmounted(() => {
       :subtitle="t('migration.migration.importExistingClientDataInto')"
     >
       <template #actions>
-        <a v-if="guideUrl" :href="guideUrl" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary" data-testid="page-help-link">{{ t('common.help') }}</a>
+        <PageHelpLink :url="guideUrl" />
         <UiButton variant="primary" data-testid="migration-new" @click="showNewJobModal = true">
           {{ t('migration.migration.newMigration') }}
         </UiButton>

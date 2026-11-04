@@ -15,6 +15,7 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import { useDocsGuide } from '@/composables/useDocsGuide'
+import PageHelpLink from '@/components/layout/PageHelpLink.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -99,7 +100,7 @@ onMounted(() => store.fetchEmailTemplates())
   <UiStack>
     <UiPageHeader :title="t('settings.emailTemplates.emailTemplates')" data-testid="email-templates-header">
       <template v-if="guideUrl" #actions>
-        <a :href="guideUrl" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary" data-testid="page-help-link">{{ t('common.help') }}</a>
+        <PageHelpLink :url="guideUrl" />
       </template>
     </UiPageHeader>
 

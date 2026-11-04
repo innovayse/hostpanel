@@ -1,7 +1,10 @@
 /**
  * Tests for useDocsGuide: returns null when docsUrl is absent or the route is unmapped,
- * and returns the full guide URL when both are set.
+ * and returns the full guide URL when both are set. Also verifies every mapped docs path
+ * resolves to a real file under docs/.
  */
+import { existsSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
@@ -18,6 +21,7 @@ vi.mock('vue-router', () => ({
 
 import { getRuntimeConfig } from '@/lib/runtimeConfig'
 import { useRoute } from 'vue-router'
+import { DOCS_GUIDES } from '@/lib/docsGuides'
 
 const mockRoute = (path: string): void => {
   vi.mocked(useRoute).mockReturnValue({ path } as RouteLocationNormalizedLoaded)
@@ -62,4 +66,16 @@ describe('useDocsGuide', () => {
     const { guideUrl } = mountGuide()
     expect(guideUrl.value).toBe('https://docs.example.com/staff/billing')
   })
+})
+
+describe('DOCS_GUIDES paths', () => {
+  const docsRoot = resolve(__dirname, '../../../docs')
+
+  it.each(Object.entries(DOCS_GUIDES))(
+    'mapped path %s → %s resolves to a real .md file',
+    (_route, docPath) => {
+      const mdFile = resolve(docsRoot, `${docPath}.md`)
+      expect(existsSync(mdFile), `missing: docs/${docPath}.md`).toBe(true)
+    },
+  )
 })

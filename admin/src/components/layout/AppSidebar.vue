@@ -345,17 +345,16 @@ const isExpanded = (item: NavItem): boolean => {
         </template>
       </UiStack>
       <!-- Documentation link: shown only when docsUrl is configured -->
-      <a
+      <UiLink
         v-if="docsUrl"
         :href="docsUrl"
-        target="_blank"
-        rel="noopener"
+        external
         class="mt-2 flex items-center gap-2.5 rounded-[9px] px-3 py-2 text-[0.84rem] font-medium no-underline text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-all duration-150"
         data-testid="nav-documentation"
       >
         <UiIcon :markup="BOOK_MARKUP" size="sm" class="opacity-60" />
         <span>{{ t('nav.documentation') }}</span>
-      </a>
+      </UiLink>
     </nav>
 
     <!-- Release update notice: shown only when an upgrade is available -->

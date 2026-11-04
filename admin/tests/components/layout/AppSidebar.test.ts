@@ -1,7 +1,7 @@
 /**
  * Mount tests for AppSidebar: the top-level entries, sub-menus that open for the current section
  * or on click, the active marker (also on the target of a navigation still downloading), the
- * navigate event and the sign-out button.
+ * navigate event, the sign-out button, and the documentation link.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
@@ -11,13 +11,21 @@ import { useNavigationStore } from '@/stores/navigation'
 import { stubRoutes } from '../../helpers/routes'
 import { mountView } from '../../helpers/mount'
 
+vi.mock('@/lib/runtimeConfig', () => ({
+  getRuntimeConfig: vi.fn(),
+}))
+
+import { getRuntimeConfig } from '@/lib/runtimeConfig'
+
 /**
  * Mounts the sidebar at a path.
  *
  * @param path - The current route.
+ * @param docsUrl - Docs URL to inject (default empty).
  * @returns The wrapper.
  */
-const mountSidebar = async (path: string) => {
+const mountSidebar = async (path: string, docsUrl = '') => {
+  vi.mocked(getRuntimeConfig).mockReturnValue({ docsUrl, basePath: '/', clientBaseUrl: '' })
   stubRoutes({})
   return mountView(AppSidebar, { path })
 }
@@ -95,5 +103,20 @@ describe('AppSidebar', () => {
     const wrapper = await mountSidebar('/dashboard')
 
     expect(wrapper.find('[data-testid="sidebar-sign-out"]').exists()).toBe(true)
+  })
+
+  it('hides the documentation link when docsUrl is empty', async () => {
+    const wrapper = await mountSidebar('/dashboard', '')
+
+    expect(wrapper.find('[data-testid="nav-documentation"]').exists()).toBe(false)
+  })
+
+  it('shows the documentation link with the correct href and rel when docsUrl is set', async () => {
+    const wrapper = await mountSidebar('/dashboard', 'https://docs.example.com')
+    const link = wrapper.find('[data-testid="nav-documentation"]')
+
+    expect(link.exists()).toBe(true)
+    expect(link.attributes('href')).toBe('https://docs.example.com')
+    expect(link.attributes('rel')).toContain('noopener')
   })
 })

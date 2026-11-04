@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      'vitepress': fileURLToPath(new URL('./tests/helpers/vitepress.ts', import.meta.url)),
     },
   },
   test: {

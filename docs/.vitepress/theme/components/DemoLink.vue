@@ -16,12 +16,12 @@ const { theme } = useData()
 
 const adminUrl = computed<string | null>(() => {
   const base: string = (theme.value as Record<string, string>).demoAdminUrl ?? ''
-  return base && props.path ? `${base}${props.path}` : null
+  return base && props.path ? `${base.replace(/\/+$/, '')}${props.path}` : null
 })
 
 const clientUrl = computed<string | null>(() => {
   const base: string = (theme.value as Record<string, string>).demoClientUrl ?? ''
-  return base && props.clientPath ? `${base}${props.clientPath}` : null
+  return base && props.clientPath ? `${base.replace(/\/+$/, '')}${props.clientPath}` : null
 })
 
 const show = computed(() => adminUrl.value !== null || clientUrl.value !== null)

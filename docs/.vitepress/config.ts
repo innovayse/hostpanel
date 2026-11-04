@@ -13,8 +13,8 @@ import { defineConfig } from 'vitepress'
  * Set both to show the "Try the demo" button in the top bar.
  * Leave empty to hide it.
  */
-const DEMO_ADMIN_URL = ''
-const DEMO_CLIENT_URL = ''
+const DEMO_ADMIN_URL = process.env.DEMO_ADMIN_URL ?? ''
+const DEMO_CLIENT_URL = process.env.DEMO_CLIENT_URL ?? ''
 
 export default defineConfig({
   title: 'Hostpanel',

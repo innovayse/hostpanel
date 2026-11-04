@@ -14,9 +14,9 @@ export const useDocsGuide = (): { guideUrl: ReturnType<typeof computed<string | 
   const { docsUrl } = getRuntimeConfig()
 
   const guideUrl = computed<string | null>(() => {
-    if (!docsUrl) return null
+    if (!docsUrl) { return null }
     const path = DOCS_GUIDES[route.path]
-    if (!path) return null
+    if (!path) { return null }
     return `${docsUrl}/${path}`
   })
 

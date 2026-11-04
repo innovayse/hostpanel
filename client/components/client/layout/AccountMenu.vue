@@ -43,10 +43,9 @@
       <template v-if="docsUrl">
         <div class="my-1 h-px bg-gray-200 dark:bg-white/10" />
 
-        <a
+        <UiLink
           :href="docsUrl"
-          target="_blank"
-          rel="noopener"
+          external
           role="menuitem"
           class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 no-underline hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10"
           data-testid="client-account-help"
@@ -54,7 +53,7 @@
         >
           <BookOpen :size="16" :stroke-width="2" aria-hidden="true" />
           {{ $t('client.nav.help') }}
-        </a>
+        </UiLink>
       </template>
 
       <div class="my-1 h-px bg-gray-200 dark:bg-white/10" />

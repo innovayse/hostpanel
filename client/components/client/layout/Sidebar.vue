@@ -32,16 +32,15 @@
 
     <!-- Documentation link: shown only when docsUrl is configured -->
     <div v-if="docsUrl" class="flex-shrink-0 border-t border-gray-100 px-3 py-3 dark:border-white/5">
-      <a
+      <UiLink
         :href="docsUrl"
-        target="_blank"
-        rel="noopener"
+        external
         class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-600 no-underline hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
         data-testid="client-nav-documentation"
       >
         <BookOpen :size="18" :stroke-width="2" aria-hidden="true" />
         {{ $t('client.nav.documentation') }}
-      </a>
+      </UiLink>
     </div>
 
     <!-- Sign out: always at the bottom -->

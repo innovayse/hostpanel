@@ -29,6 +29,7 @@ import { UiTone } from '@/utils/ui/tone'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiLink from '@/components/ui/UiLink.vue'
 import UiCodeBlock from '@/components/ui/UiCodeBlock.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiField from '@/components/ui/UiField.vue'
@@ -282,13 +283,13 @@ watch(settings, (loaded) => {
 <template>
   <UiDialog :title="t('servers.ssh.title', { name: props.serverName })" size="lg" @close="emit('close')">
     <UiStack gap="lg">
-      <a
+      <UiLink
         v-if="sshGuideUrl"
         :href="sshGuideUrl"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="text-sm text-blue-600 hover:underline dark:text-blue-400"
-      >{{ t('common.help') }} →</a>
+        external
+        class="text-sm"
+        data-testid="page-help-link"
+      >{{ t('common.help') }} →</UiLink>
       <UiAlert v-if="error" variant="error" data-testid="server-ssh-error">{{ error }}</UiAlert>
       <UiSkeleton v-if="loading && !settings" :lines="4" data-testid="server-ssh-loading" />
 

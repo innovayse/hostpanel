@@ -16,15 +16,14 @@
         <UiBadge variant="info" class="shrink-0" data-testid="demo-banner-label">{{ $t('demo.label') }}</UiBadge>
         <UiText v-if="resetText" as="span" size="sm" tone="inherit" :class="tone.title" data-testid="demo-banner-reset">{{ resetText }}</UiText>
         <UiText as="span" size="sm" tone="inherit" class="min-w-0 break-words" :class="tone.body" data-testid="demo-banner-note">{{ $t('demo.note') }}</UiText>
-        <a
+        <UiLink
           v-if="docsUrl"
-          :href="docsUrl"
-          target="_blank"
-          rel="noopener"
+          :href="`${docsUrl.replace(/\/+$/, '')}/customers/portal`"
+          external
           class="shrink-0 text-sm font-medium underline"
           :class="tone.title"
           data-testid="demo-banner-guide"
-        >{{ $t('demo.guide') }}</a>
+        >{{ $t('demo.guide') }}</UiLink>
       </UiStack>
     </UiContainer>
   </UiStack>

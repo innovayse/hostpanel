@@ -9,6 +9,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { useDocsGuide } from '@/composables/useDocsGuide'
+import PageHelpLink from '@/components/layout/PageHelpLink.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -242,7 +243,7 @@ onMounted(() => load(1))
   <UiStack data-testid="billing-invoices-view">
     <UiPageHeader :title="t('shared.invoices')" :subtitle="t('billing.invoicesList.manageBillingInvoices')">
       <template #actions>
-        <a v-if="guideUrl" :href="guideUrl" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary" data-testid="page-help-link">{{ t('common.help') }}</a>
+        <PageHelpLink :url="guideUrl" />
         <UiButton variant="secondary" data-testid="billing-invoices-filter-toggle" @click="filtersOpen = !filtersOpen">
           {{ filtersOpen ? t('shared.hideFilters') : t('shared.searchFilter') }}
         </UiButton>

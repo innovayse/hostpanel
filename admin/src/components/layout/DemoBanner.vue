@@ -9,6 +9,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDemoStore } from '@/stores/demo'
 import UiAlert from '@/components/ui/UiAlert.vue'
+import UiLink from '@/components/ui/UiLink.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -88,13 +89,12 @@ const timeLeft = computed<string | null>(() => {
       </UiText>
       <UiText size="sm" tone="secondary">{{ t('demo.banner.dataResets') }}</UiText>
     </UiStack>
-    <a
+    <UiLink
       v-if="docsUrl"
       :href="docsUrl"
-      target="_blank"
-      rel="noopener"
+      external
       class="ml-auto shrink-0 text-xs font-medium underline"
       data-testid="demo-banner-guide"
-    >{{ t('demo.banner.guide') }}</a>
+    >{{ t('demo.banner.guide') }}</UiLink>
   </UiAlert>
 </template>

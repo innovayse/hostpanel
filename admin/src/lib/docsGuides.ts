@@ -9,7 +9,7 @@ import { AppRoute } from '@/lib/routes'
 export const DOCS_GUIDES: Partial<Record<string, string>> = {
   [AppRoute.Servers]: 'servers/servers',
   [AppRoute.IntegrationsPayments]: 'payments/gateways',
-  [AppRoute.Migration]: 'operators/migration',
+  [AppRoute.Migration]: 'migration/from-another-system',
   [AppRoute.SettingsEmailTemplates]: 'staff/email-templates',
   [AppRoute.SettingsTldPricing]: 'staff/tld-pricing',
   [AppRoute.SettingsProducts]: 'staff/products',

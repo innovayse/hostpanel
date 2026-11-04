@@ -98,6 +98,13 @@ export default defineConfig({
         items: [
           { text: 'Overview', link: '/customers/' },
           { text: 'Client portal', link: '/customers/portal' },
+          { text: 'Your account and signing in', link: '/customers/account' },
+          { text: 'Two-factor authentication', link: '/customers/two-factor' },
+          { text: 'Ordering', link: '/customers/ordering' },
+          { text: 'Invoices and paying', link: '/customers/invoices' },
+          { text: 'Services and SSH keys', link: '/customers/services' },
+          { text: 'Domains', link: '/customers/domains' },
+          { text: 'Support tickets', link: '/customers/tickets' },
         ],
       },
       {
@@ -106,6 +113,7 @@ export default defineConfig({
         items: [
           { text: 'Overview', link: '/payments/' },
           { text: 'Gateways', link: '/payments/gateways' },
+          { text: 'How online payments are confirmed', link: '/payments/confirming' },
           { text: 'Plugins', link: '/payments/plugins' },
         ],
       },
@@ -124,7 +132,8 @@ export default defineConfig({
         collapsed: true,
         items: [
           { text: 'Overview', link: '/migration/' },
-          { text: 'Moving from another billing system', link: '/migration/from-another-system' },
+          { text: 'Moving from WHMCS', link: '/migration/from-another-system' },
+          { text: 'Import report and skip reasons', link: '/migration/import-report' },
         ],
       },
       {
@@ -137,6 +146,7 @@ export default defineConfig({
           { text: 'Contributing', link: '/developers/contributing' },
           { text: 'Translating', link: '/developers/translating' },
           { text: 'Integrations', link: '/developers/integrations' },
+          { text: 'Write a plugin', link: '/developers/write-a-plugin' },
         ],
       },
       {

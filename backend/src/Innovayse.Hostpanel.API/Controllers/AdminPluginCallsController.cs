@@ -56,7 +56,7 @@ public sealed class AdminPluginCallsController : BaseApiController
     /// nor a bearer token; 404 with <c>PLUGIN_ROUTE_NOT_FOUND</c> when the plugin, the route or the plugin's switch is not
     /// there; 413 with <c>PLUGIN_REQUEST_TOO_LARGE</c> when the body is over <c>PluginApi:MaxBodyBytes</c>; 429 when the
     /// plugin route's rate limit tier, or the caller's open streams, are spent; 502 with
-    /// <c>PLUGIN_FAILED</c> when the plugin threw; 503 when the plugin chooses it.
+    /// <c>PLUGIN_FAILED</c> when the plugin threw; 504 with <c>PLUGIN_TIMEOUT</c> when it did not answer in time; 503 when the plugin chooses it.
     /// </returns>
     [HttpGet("{id}/ext/{**path}")]
     [HttpPost("{id}/ext/{**path}")]
@@ -77,6 +77,7 @@ public sealed class AdminPluginCallsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status504GatewayTimeout)]
     public async Task<IActionResult> CallAsync(string id, string? path, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<PluginReplyDto>>(

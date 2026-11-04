@@ -118,7 +118,7 @@ const patch = (change: Partial<TransactionFormValues>): void => {
             :min="0"
             placeholder="0.00"
             data-testid="billing-transaction-amount-in"
-            @update:model-value="patch({ amountIn: $event })"
+            @update:model-value="patch({ amountIn: $event ?? 0 })"
           />
         </UiField>
         <UiField :label="t('shared.amountOut')" :error="fieldErrors.amountOut">
@@ -128,7 +128,7 @@ const patch = (change: Partial<TransactionFormValues>): void => {
             :min="0"
             placeholder="0.00"
             data-testid="billing-transaction-amount-out"
-            @update:model-value="patch({ amountOut: $event })"
+            @update:model-value="patch({ amountOut: $event ?? 0 })"
           />
         </UiField>
       </UiGrid>
@@ -153,7 +153,7 @@ const patch = (change: Partial<TransactionFormValues>): void => {
             :step="0.01"
             :min="0"
             placeholder="0.00"
-            @update:model-value="patch({ fees: $event })"
+            @update:model-value="patch({ fees: $event ?? 0 })"
           />
         </UiField>
       </UiGrid>

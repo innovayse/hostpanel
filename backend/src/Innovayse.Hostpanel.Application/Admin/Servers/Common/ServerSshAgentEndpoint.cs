@@ -1,3 +1,6 @@
+using System.Text;
+using Innovayse.Hostpanel.SharedKernel.Domain;
+
 namespace Innovayse.Hostpanel.Application.Admin.Servers.Common;
 
 /// <summary>
@@ -30,4 +33,13 @@ public sealed record ServerSshAgentEndpoint(
     string? AgentPrivateKey,
     string AgentHostKeyFingerprint,
     int ConnectTimeoutSeconds,
-    int OperationTimeoutSeconds);
+    int OperationTimeoutSeconds)
+{
+    /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
+    /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>
+    /// <returns><see langword="true"/> when at least one member was written.</returns>
+    private bool PrintMembers(StringBuilder builder)
+    {
+        return SecretMembers.Print(this, builder);
+    }
+}

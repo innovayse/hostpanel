@@ -120,4 +120,21 @@ describe('UiSelect', () => {
     expect(wrapper.attributes('data-testid')).toBe('probe')
     expect(wrapper.get('[role="listbox"]').classes()).toContain('min-w-[18rem]')
   })
+
+  it('puts the id on the trigger and flags it invalid', () => {
+    const wrapper = mount(UiSelect, {
+      props: { modelValue: 'a', options, id: 'method', invalid: true },
+      global: { plugins: [createTestI18n()] },
+    })
+
+    expect(wrapper.get('button').attributes('id')).toBe('method')
+    expect(wrapper.get('button').attributes('aria-invalid')).toBe('true')
+    expect(wrapper.get('button').classes()).toContain('border-status-red/60')
+  })
+
+  it('is not flagged invalid by default', () => {
+    const wrapper = mountSelect({ modelValue: 'a' })
+
+    expect(wrapper.get('button').attributes('aria-invalid')).toBeUndefined()
+  })
 })

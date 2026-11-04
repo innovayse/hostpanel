@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
@@ -42,7 +43,7 @@ public sealed class PluginActivatorRequiredSettingTests(IntegrationTestFactory f
             Fields = fields ?? [],
         };
 
-        return new LoadedPlugin(manifest, typeof(ConfigurationCapturingPaymentPlugin));
+        return new LoadedPlugin(manifest, typeof(ConfigurationCapturingPaymentPlugin), PluginViewDocuments.None);
     }
 
     /// <summary>Enables the plugin, optionally stores its required value, and activates it.</summary>

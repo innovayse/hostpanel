@@ -68,6 +68,31 @@ public sealed class InstallPluginSignatureTests(IntegrationTestFactory factory) 
         Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
     }
 
+    /// <summary>
+    /// An upgrade of an installed plugin is signature-checked like a first install: an unsigned newer version is
+    /// refused with <c>PLUGIN_UNSIGNED</c> and nothing is staged.
+    /// </summary>
+    [Fact]
+    public async Task AnEnforcingHost_RefusesAnUnsignedUpgradeAndStagesNothingAsync()
+    {
+        var client = await EnforcingClientAsync();
+        var pluginId = $"test-plugin-{Guid.NewGuid():N}";
+        (await PluginsTestSeeds.InstallAsync(client, PluginSigningTestSeeds.SignedZip(pluginId))).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        try
+        {
+            var response = await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "2.0.0"));
+
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_UNSIGNED);
+            Directory.Exists(PluginsTestSeeds.StagedFolder(pluginId)).Should().BeFalse("a refused upgrade is never staged");
+        }
+        finally
+        {
+            await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
+        }
+    }
+
     /// <summary>A <c>plugin.sig</c> that cannot be read is refused as <c>PLUGIN_SIGNATURE_MALFORMED</c>, in Armenian when asked.</summary>
     [Fact]
     public async Task AnEnforcingHost_RefusesAnUnreadableSignatureAsync()

@@ -1,3 +1,6 @@
+using System.Text;
+using Innovayse.Hostpanel.SharedKernel.Domain;
+
 namespace Innovayse.Hostpanel.Application.Orders.Commands.StartOrderGatewayPayment;
 
 /// <summary>Starts a hosted-gateway payment for the invoice an order was billed on.</summary>
@@ -16,4 +19,13 @@ namespace Innovayse.Hostpanel.Application.Orders.Commands.StartOrderGatewayPayme
 /// enough.
 /// </param>
 public sealed record StartOrderGatewayPaymentCommand(
-    int OrderId, string Module, string ReturnUrl, string? PaymentToken);
+    int OrderId, string Module, string ReturnUrl, string? PaymentToken)
+{
+    /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
+    /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>
+    /// <returns><see langword="true"/> when at least one member was written.</returns>
+    private bool PrintMembers(StringBuilder builder)
+    {
+        return SecretMembers.Print(this, builder);
+    }
+}

@@ -29,6 +29,10 @@ namespace Innovayse.Hostpanel.Application.Billing.Common;
 /// A record whose plugin is not enabled is left alone, with no attempt spent, until the plugin is.
 /// </para>
 /// <para>
+/// Every context carries the client reference of the plugin it is delivered to (<see cref="IPluginReferences"/>),
+/// so two plugins told about one invoice see two different references for its client.
+/// </para>
+/// <para>
 /// A plugin that throws or does not answer in time fails only its own attempt: the error is recorded
 /// for staff (never shown to a client) and the pass goes on to the next record.
 /// </para>
@@ -44,6 +48,12 @@ public sealed class FulfilmentDispatcher
     /// <summary>Resolves the fulfilment plugins an admin has switched on.</summary>
     private readonly IFulfilmentPluginResolver _plugins;
 
+    /// <summary>
+    /// Computes the receiving plugin's own reference to the invoice's client, the same one an endpoint call of
+    /// that plugin for that client carries.
+    /// </summary>
+    private readonly IPluginReferences _references;
+
     /// <summary>The timings of the dispatch: batch size, call timeout and claim lease.</summary>
     private readonly IOptions<ScheduledJobsOptions> _options;
 
@@ -57,6 +67,7 @@ public sealed class FulfilmentDispatcher
     /// <param name="context">The data context the records and invoices are read and saved through.</param>
     /// <param name="accounts">Reads the external account a client is linked to.</param>
     /// <param name="plugins">Resolves the fulfilment plugins an admin has switched on.</param>
+    /// <param name="references">Computes the receiving plugin's own reference to the invoice's client.</param>
     /// <param name="options">The timings of the dispatch: batch size, call timeout and claim lease.</param>
     /// <param name="clock">The clock every moment in a pass is read from.</param>
     /// <param name="logger">Structured logger.</param>
@@ -64,6 +75,7 @@ public sealed class FulfilmentDispatcher
         IHostpanelDbContext context,
         IClientExternalAccounts accounts,
         IFulfilmentPluginResolver plugins,
+        IPluginReferences references,
         IOptions<ScheduledJobsOptions> options,
         IClock clock,
         ILogger<FulfilmentDispatcher> logger)
@@ -71,6 +83,7 @@ public sealed class FulfilmentDispatcher
         _context = context;
         _accounts = accounts;
         _plugins = plugins;
+        _references = references;
         _options = options;
         _clock = clock;
         _logger = logger;
@@ -235,22 +248,25 @@ public sealed class FulfilmentDispatcher
             .SingleAsync(i => i.Id == record.InvoiceId, ct);
         var account = await _accounts.FindAsync(invoice.ClientId, ct);
 
+        // Computed for the plugin the record names, never shared between plugins: each plugin sees its own
+        // reference, the one its endpoint calls for this client carry, and none can be matched with another's.
+        var clientRef = _references.ForClient(record.PluginId, invoice.ClientId);
+
         switch (record.Kind)
         {
             case FulfilmentKind.Paid:
-                await plugin.OnInvoicePaidAsync(FulfilmentContextBuilder.Paid(invoice, account), ct);
+                await plugin.OnInvoicePaidAsync(FulfilmentContextBuilder.Paid(invoice, clientRef, account), ct);
                 break;
             case FulfilmentKind.Refunded:
-                await plugin.OnInvoiceRefundedAsync(FulfilmentContextBuilder.Refunded(invoice, account), ct);
+                await plugin.OnInvoiceRefundedAsync(FulfilmentContextBuilder.Refunded(invoice, clientRef, account), ct);
                 break;
             case FulfilmentKind.Lapsed:
-                await plugin.OnSubscriptionLapsedAsync(FulfilmentContextBuilder.Lapsed(invoice, account), ct);
+                await plugin.OnSubscriptionLapsedAsync(FulfilmentContextBuilder.Lapsed(invoice, clientRef, account), ct);
                 break;
             default:
                 throw new InvalidOperationException($"A fulfilment record of kind {record.Kind} has no plugin method.");
         }
     }
-
 
     /// <summary>Records a failed attempt on the claimed record and logs it.</summary>
     /// <param name="record">The claimed record.</param>

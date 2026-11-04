@@ -1,4 +1,6 @@
+using System.Text;
 using Innovayse.Hostpanel.Application.Orders.Common;
+using Innovayse.Hostpanel.SharedKernel.Domain;
 
 namespace Innovayse.Hostpanel.Application.Domains.Commands.TransferMyDomain;
 
@@ -25,4 +27,13 @@ public sealed record TransferMyDomainCommand(
     string DomainName,
     string EppCode,
     int Years,
-    string PaymentMethod);
+    string PaymentMethod)
+{
+    /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
+    /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>
+    /// <returns><see langword="true"/> when at least one member was written.</returns>
+    private bool PrintMembers(StringBuilder builder)
+    {
+        return SecretMembers.Print(this, builder);
+    }
+}

@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
+using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
 using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Innovayse.Hostpanel.Integration.Tests.Fixtures.Enums;
 using Innovayse.Hostpanel.Integration.Tests.Shared;
@@ -87,6 +88,7 @@ public sealed class PluginLoaderTests
                 [new PluginRoot(root, PluginOrigin.Uploaded)],
                 PluginSigningTestSeeds.Verifier(enforced: false),
                 allowUnsigned: false,
+                PluginOptions.DefaultMaxViewBytes,
                 loggerFactory);
 
             var registry = services.BuildServiceProvider().GetRequiredService<IPluginRegistry>();
@@ -220,6 +222,41 @@ public sealed class PluginLoaderTests
         }
     }
 
+    /// <summary>
+    /// A plugin folder named with a reserved id is skipped with a warning naming the id, and a plain folder whose
+    /// manifest declares a reserved id is refused by the manifest rule <see cref="PluginManifestRule.PluginIdInvalid"/>;
+    /// the plugin beside them still loads.
+    /// </summary>
+    [Fact]
+    public void DiscoverAndRegister_ReservedId_SkipsThePluginWithAWarning()
+    {
+        var root = PluginSigningTestSeeds.NewFolder("loader-reserved");
+        try
+        {
+            WriteAppPlugin(root, "plain-plugin");
+            WriteAppPlugin(root, "ui");
+            var declaring = WriteAppPlugin(root, "declares-reserved");
+            var manifestPath = Path.Combine(declaring.Folder, "plugin.json");
+            File.WriteAllText(
+                manifestPath,
+                File.ReadAllText(manifestPath).Replace("\"declares-reserved\"", "\"ui\"", StringComparison.Ordinal));
+
+            var (registry, logs) = Discover(
+                [new PluginRoot(root, PluginOrigin.Uploaded)], PluginSigningTestSeeds.Verifier(enforced: false), allowUnsigned: false);
+
+            registry.IsLoaded("plain-plugin").Should().BeTrue();
+            registry.IsLoaded("ui").Should().BeFalse();
+            logs.Entries.Should().Contain(e => e.Level == LogLevel.Warning
+                && e.Message.Contains("reserved plugin id") && e.Message.Contains("ui"));
+            logs.Entries.Should().Contain(e => e.Level == LogLevel.Warning
+                && e.Message.Contains(nameof(PluginManifestRule.PluginIdInvalid)));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
     /// <summary>Runs the loader over the given roots on a bare service collection.</summary>
     /// <param name="roots">The plugin roots, with their origin.</param>
     /// <param name="verifier">The signature policy.</param>
@@ -232,7 +269,7 @@ public sealed class PluginLoaderTests
         using var loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(logs));
         var services = new ServiceCollection();
 
-        PluginLoader.DiscoverAndRegister(services, roots, verifier, allowUnsigned, loggerFactory);
+        PluginLoader.DiscoverAndRegister(services, roots, verifier, allowUnsigned, PluginOptions.DefaultMaxViewBytes, loggerFactory);
 
         return (services.BuildServiceProvider().GetRequiredService<IPluginRegistry>(), logs);
     }

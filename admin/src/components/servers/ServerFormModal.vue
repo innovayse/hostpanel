@@ -366,6 +366,7 @@ const handleSubmit = (): void => {
               <UiNumberInput
                 v-model="form.maxAccounts"
                 :min="1"
+                nullable
                 :placeholder="t('servers.serverForm.unlimited')"
                 data-testid="server-form-max-accounts"
               />

@@ -1,6 +1,8 @@
+using System.Text;
 using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
+using Innovayse.Hostpanel.SharedKernel.Domain;
 
 namespace Innovayse.Hostpanel.Application.Clients.Commands.AdminCreateClient;
 
@@ -40,4 +42,13 @@ public sealed record AdminCreateClientCommand(
     ClientPreferencesDto Preferences,
     ClientStatus? Status,
     ContactNotifications? Notifications = null,
-    ClientSettingsDto? Settings = null);
+    ClientSettingsDto? Settings = null)
+{
+    /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
+    /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>
+    /// <returns><see langword="true"/> when at least one member was written.</returns>
+    private bool PrintMembers(StringBuilder builder)
+    {
+        return SecretMembers.Print(this, builder);
+    }
+}

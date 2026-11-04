@@ -19,9 +19,13 @@ The setup wizard is refused until the service's first invoice is paid in full (`
 
 The provisioner selects a server as follows:
 
-1. If the product has a **Server Group**, a server is chosen from that group. Disabled servers and full servers are skipped. The server with the lowest fill ratio wins; ties go to the server with the higher account limit, then by name.
-2. If the product has no server group, the module must be unambiguous: if only one supported module is in use across all servers, that module's least-full server is used. If more than one module is in use, the order fails with `PRODUCT_SERVER_GROUP_REQUIRED`.
+1. If the product has a **Server Group**, a server is chosen from that group by the group's fill type. Disabled servers and full servers are skipped, and a Max Accounts of 0 counts as full. A server with no maximum is never full.
+   - **LeastFull:** the lowest fill ratio wins; ties go to the default server, then to the larger capacity, then to the first by name.
+   - **FillUntilFull:** the default server is used first, then servers with a limit in name order, then servers with no limit as overflow. A server is filled until its maximum, then the next one is used.
+2. If the product has no server group, the module must be unambiguous: if only one supported module is in use across all servers, that module's server is chosen with LeastFull, which always applies without a group. If more than one module is in use, the order fails with `PRODUCT_SERVER_GROUP_REQUIRED`.
 3. If no eligible server exists, the operation fails with `NO_ELIGIBLE_SERVER`.
+
+The default server is preferred within its group or module when other things are equal. Account counts come from connection tests and the Sync Server Account Counts job, so fill is approximate between syncs.
 
 ### What happens on provisioning
 

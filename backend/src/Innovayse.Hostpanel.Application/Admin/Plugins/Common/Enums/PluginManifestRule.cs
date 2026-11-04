@@ -45,4 +45,31 @@ public enum PluginManifestRule
 
     /// <summary>The manifest id is not a valid plugin id (lowercase words joined by single hyphens).</summary>
     PluginIdInvalid = 13,
+
+    /// <summary>A page or slot names a view document the package does not hold, or a path that is not a package-relative <c>.json</c> file.</summary>
+    ViewMissing = 14,
+
+    /// <summary>A view document is not a JSON object with a <c>schema</c> and a <c>blocks</c> array, or holds a malformed route reference.</summary>
+    ViewInvalid = 15,
+
+    /// <summary>A view document declares a <c>schema</c> version this host does not render.</summary>
+    ViewSchemaUnsupported = 16,
+
+    /// <summary>A view document holds a block whose <c>kind</c> the view schema does not define.</summary>
+    ViewBlockKindUnknown = 17,
+
+    /// <summary>A view document names a route the plugin does not declare in the area that shows the view.</summary>
+    ViewRouteUndeclared = 18,
+
+    /// <summary>A menu names an icon that is not 1 to 64 lowercase letters, digits and hyphens.</summary>
+    MenuIconInvalid = 19,
+
+    /// <summary>
+    /// A client or admin page id is not a <c>PluginPageIdentifier</c> (1 to 64 lowercase letters, digits, hyphens and
+    /// underscores, starting with a letter or digit), or the same page id is declared twice in one area.
+    /// </summary>
+    PageIdInvalid = 20,
+
+    /// <summary>The manifest version is not a strict semantic version (<c>major.minor.patch</c>, no leading zeros).</summary>
+    VersionInvalid = 21,
 }

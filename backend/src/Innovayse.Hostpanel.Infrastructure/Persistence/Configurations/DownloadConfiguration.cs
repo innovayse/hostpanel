@@ -29,6 +29,7 @@ public sealed class DownloadConfiguration : IEntityTypeConfiguration<Download>
             .HasForeignKey(x => x.CategoryId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(x => x.CategoryId);
+        // Serves the category lookup and the migration import find-by-title within one category.
+        builder.HasIndex(x => new { x.CategoryId, x.Title });
     }
 }

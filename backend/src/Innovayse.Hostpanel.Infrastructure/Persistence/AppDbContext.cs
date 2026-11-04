@@ -12,6 +12,7 @@ using Innovayse.Hostpanel.Domain.Migration;
 using Innovayse.Hostpanel.Domain.Notifications;
 using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Domain.Partners;
+using Innovayse.Hostpanel.Domain.Plugins;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Projects;
 using Innovayse.Hostpanel.Domain.Scheduling;
@@ -283,6 +284,25 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     public DbSet<FaqTranslation> FaqTranslations => Set<FaqTranslation>();
 
     /// <summary>
+    /// Gets the values plugins keep in their host-kept store, one row per plugin, opaque client reference (or none, for a
+    /// plugin-wide value) and key. Written by the store adapter; on the Application port only for the Plugins module's
+    /// purge on uninstall.
+    /// </summary>
+    public DbSet<PluginDataEntry> PluginDataEntries => Set<PluginDataEntry>();
+
+    /// <summary>
+    /// Gets the running totals of each plugin store scope (keys held, characters held, write revision), one row per
+    /// plugin and opaque client reference (or none, for the plugin-wide scope). Every store write updates its scope's
+    /// row, whose concurrency token serializes the writes of one scope and keeps the quota exact. It is on the
+    /// Application port (<c>IHostpanelDbContext</c>) too, because the Plugins module's purge of a removed plugin
+    /// releases and deletes these rows there.
+    /// </summary>
+    public DbSet<PluginDataScope> PluginDataScopes => Set<PluginDataScope>();
+
+    /// <summary>Gets the products an operator bound plugin slot widgets to after install; see <see cref="PluginSlotProductBinding"/>.</summary>
+    public DbSet<PluginSlotProductBinding> PluginSlotProductBindings => Set<PluginSlotProductBinding>();
+
+    /// <summary>
     /// Gets the Data Protection key ring, shared by every instance so a token protected by one
     /// instance is read by any other and outlives a redeploy. Named by this property like every
     /// other table; the framework entity's own columns (<c>Id</c>, <c>FriendlyName</c>, <c>Xml</c>)
@@ -299,8 +319,9 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// <returns>The number of rows written.</returns>
     /// <exception cref="ConcurrencyConflictException">
     /// Another writer modified one of the saved aggregates concurrently, or another writer recorded the
-    /// same gateway payment first (the unique reference of a gateway payment row was violated), or another
-    /// delivery claimed the same email first (the unique delivery key of an email log row was violated).
+    /// same gateway payment first (the unique reference of a gateway payment row was violated), another
+    /// delivery claimed the same email first (the unique delivery key of an email log row was violated), or another
+    /// call wrote the first value of the same plugin store key, or another call opened the same plugin store scope.
     /// </exception>
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
@@ -340,10 +361,50 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
             throw new ConcurrencyConflictException(
                 "Another delivery claimed the same email concurrently.", ex);
         }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: PluginDataEntryConfiguration.ScopeKeyIndex,
+        })
+        {
+            // Two calls wrote the first value of one plugin store key at once: the same lost race as a concurrent
+            // save, so it takes the same path. PluginStore answers it by writing over the row that won.
+            throw new ConcurrencyConflictException(
+                "Another call wrote the same plugin store key concurrently.", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: PluginDataScopeConfiguration.ScopeIndex,
+        })
+        {
+            // Two calls made the first write of one plugin store scope at once and both opened its totals row: the
+            // same lost race as a concurrent save, so it takes the same path. PluginStore retries from a fresh read.
+            throw new ConcurrencyConflictException(
+                "Another call opened the same plugin store scope concurrently.", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: PluginSlotProductBindingConfiguration.BindingIndex,
+        })
+        {
+            // Two operator saves bound the same widget to the same product at once: the same lost race as a concurrent
+            // save, so it takes the same path. The save handler retries once from a fresh read.
+            throw new ConcurrencyConflictException(
+                "Another save bound the same plugin widget to the same product concurrently.", ex);
+        }
     }
 
     /// <inheritdoc/>
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken ct) => Database.BeginTransactionAsync(ct);
+
+    /// <inheritdoc/>
+    public async Task LockForTransactionAsync(string key, CancellationToken ct)
+    {
+        // The 64-bit hash of the key is the lock id; the lock is released by the server when the transaction ends.
+        await Database.ExecuteSqlAsync($"SELECT pg_advisory_xact_lock(hashtextextended({key}, 0))", ct);
+    }
 
     /// <inheritdoc/>
     public void DetachAll()

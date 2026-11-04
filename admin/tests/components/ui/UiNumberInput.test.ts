@@ -57,6 +57,34 @@ describe('UiNumberInput', () => {
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([1])
   })
 
+  it('emits nothing and stays empty when blurred while empty', async () => {
+    const wrapper = mount(UiNumberInput, { props: { modelValue: null, min: 0 } })
+
+    await wrapper.get('input').trigger('blur')
+
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+    expect((wrapper.get('input').element as HTMLInputElement).value).toBe('')
+  })
+
+  it('emits null when a nullable field is cleared and ignores a cleared required one', async () => {
+    const nullable = mount(UiNumberInput, { props: { modelValue: 5, nullable: true } })
+    const required = mount(UiNumberInput, { props: { modelValue: 5 } })
+
+    await nullable.get('input').setValue('')
+    await required.get('input').setValue('')
+
+    expect(nullable.emitted('update:modelValue')).toEqual([[null]])
+    expect(required.emitted('update:modelValue')).toBeUndefined()
+  })
+
+  it('clamps a typed value under min on blur', async () => {
+    const wrapper = mount(UiNumberInput, { props: { modelValue: -3, min: 0 } })
+
+    await wrapper.get('input').trigger('blur')
+
+    expect(wrapper.emitted('update:modelValue')).toEqual([[0]])
+  })
+
   it('ignores everything while disabled', async () => {
     const wrapper = mount(UiNumberInput, { props: { modelValue: 5, disabled: true } })
 
@@ -64,5 +92,19 @@ describe('UiNumberInput', () => {
 
     expect(wrapper.emitted('update:modelValue')).toBeUndefined()
     expect(wrapper.get('input').attributes('disabled')).toBeDefined()
+  })
+
+  it('puts the id on the input and flags it invalid', () => {
+    const wrapper = mount(UiNumberInput, { props: { modelValue: 5, id: 'amount', invalid: true } })
+
+    expect(wrapper.get('input').attributes('id')).toBe('amount')
+    expect(wrapper.get('input').attributes('aria-invalid')).toBe('true')
+    expect(wrapper.get('input').classes()).toContain('border-status-red/60')
+  })
+
+  it('is not flagged invalid by default', () => {
+    const wrapper = mount(UiNumberInput, { props: { modelValue: 5 } })
+
+    expect(wrapper.get('input').attributes('aria-invalid')).toBeUndefined()
   })
 })

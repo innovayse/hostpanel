@@ -13,7 +13,7 @@ import type { Setting, SettingSave } from '@/types/setting'
  * @param value - Stored value of the row under test.
  * @returns A ref holding one row.
  */
-const settingsWith = (value: string) => ref<Setting[]>([{ id: 7, key: 'portal.template', value, isSecret: false, hasValue: value.length > 0 }])
+const settingsWith = (value: string) => ref<Setting[]>([{ id: 7, key: 'portal.template', value }])
 
 describe('useSettingDraft', () => {
   it('shows the stored value, and the fallback when the row is empty or missing', () => {
@@ -69,13 +69,13 @@ describe('useSettingDraft', () => {
     draft.value.value = 'classic'
 
     // The save was refused: the list is reloaded unchanged and the edit must survive.
-    settings.value = [{ id: 7, key: 'portal.template', value: 'nova', isSecret: false, hasValue: true }]
+    settings.value = [{ id: 7, key: 'portal.template', value: 'nova' }]
     await nextTick()
     expect(draft.value.value).toBe('classic')
     expect(draft.dirty.value).toBe(true)
 
     // The save went through: the stored value now equals the edit, so the draft clears.
-    settings.value = [{ id: 7, key: 'portal.template', value: 'classic', isSecret: false, hasValue: true }]
+    settings.value = [{ id: 7, key: 'portal.template', value: 'classic' }]
     await nextTick()
     expect(draft.dirty.value).toBe(false)
     expect(draft.value.value).toBe('classic')

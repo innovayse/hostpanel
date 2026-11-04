@@ -1,3 +1,6 @@
+using System.Text;
+using Innovayse.Hostpanel.SharedKernel.Domain;
+
 namespace Innovayse.Hostpanel.Application.Auth.Commands.TwoFactorSignIn;
 
 /// <summary>
@@ -6,4 +9,13 @@ namespace Innovayse.Hostpanel.Application.Auth.Commands.TwoFactorSignIn;
 /// </summary>
 /// <param name="PendingToken">The pending token from the password step; <see langword="null"/> when the body omitted it.</param>
 /// <param name="Code">The one-time code; <see langword="null"/> when the body omitted it.</param>
-public sealed record TwoFactorSignInCommand(string? PendingToken, string? Code);
+public sealed record TwoFactorSignInCommand(string? PendingToken, [property: SecretMember] string? Code)
+{
+    /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
+    /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>
+    /// <returns><see langword="true"/> when at least one member was written.</returns>
+    private bool PrintMembers(StringBuilder builder)
+    {
+        return SecretMembers.Print(this, builder);
+    }
+}

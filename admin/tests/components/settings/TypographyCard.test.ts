@@ -17,8 +17,8 @@ beforeEach(() => {
 
 /** Both face rows, as the API seeds them. */
 const rows: Setting[] = [
-  { id: 1, key: 'portal.brand.font_heading', value: '', isSecret: false, hasValue: false },
-  { id: 2, key: 'portal.brand.font_body', value: 'inter', isSecret: false, hasValue: true },
+  { id: 1, key: 'portal.brand.font_heading', value: '' },
+  { id: 2, key: 'portal.brand.font_body', value: 'inter' },
 ]
 
 describe('TypographyCard', () => {

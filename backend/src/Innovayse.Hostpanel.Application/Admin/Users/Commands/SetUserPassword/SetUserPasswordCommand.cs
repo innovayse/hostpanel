@@ -1,4 +1,6 @@
+using System.Text;
 using Innovayse.Hostpanel.Shared.Contracts.Interfaces;
+using Innovayse.Hostpanel.SharedKernel.Domain;
 
 namespace Innovayse.Hostpanel.Application.Admin.Users.Commands.SetUserPassword;
 
@@ -12,4 +14,13 @@ namespace Innovayse.Hostpanel.Application.Admin.Users.Commands.SetUserPassword;
 /// required, so the request would be refused before the overlay could run.
 /// </param>
 /// <param name="Password">The new password to set.</param>
-public sealed record SetUserPasswordCommand(string? Id, string Password) : IDemoRestricted;
+public sealed record SetUserPasswordCommand(string? Id, string Password) : IDemoRestricted
+{
+    /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
+    /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>
+    /// <returns><see langword="true"/> when at least one member was written.</returns>
+    private bool PrintMembers(StringBuilder builder)
+    {
+        return SecretMembers.Print(this, builder);
+    }
+}

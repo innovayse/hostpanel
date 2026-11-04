@@ -1,3 +1,6 @@
+using System.Text;
+using Innovayse.Hostpanel.SharedKernel.Domain;
+
 namespace Innovayse.Hostpanel.Domain.Servers;
 
 /// <summary>
@@ -11,4 +14,12 @@ public sealed record ServerCredentials(string? Password, string? ApiToken, strin
 {
     /// <summary>Gets the value that carries no secret.</summary>
     public static ServerCredentials None { get; } = new(null, null, null);
+
+    /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
+    /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>
+    /// <returns><see langword="true"/> when at least one member was written.</returns>
+    private bool PrintMembers(StringBuilder builder)
+    {
+        return SecretMembers.Print(this, builder);
+    }
 }

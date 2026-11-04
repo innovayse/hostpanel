@@ -7,8 +7,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import PluginsView from '@/views/PluginsView.vue'
+import PluginUploader from '@/components/plugins/PluginUploader.vue'
 import { mountRouted } from '../helpers/mount'
-import { stubRoutes } from '../helpers/routes'
+import { stubRoutes as stubAllRoutes } from '../helpers/routes'
 import { json, problem } from '../helpers/fetch'
 import { PluginSettingKey } from '@/types/setting'
 
@@ -24,10 +25,24 @@ const plugin = {
   color: '#123456',
   isLoaded: true,
   isBuiltIn: false,
+  status: 'Loaded',
+  refusedRule: null,
+  refusedDetail: null,
+  stagedVersion: null,
 }
 
+/**
+ * Stubs the routes a test names plus an empty slot widget list for the plugin: routes match by prefix, so
+ * without it the widget request would be answered by the plugin list route.
+ *
+ * @param routes - Answers keyed by the start of `METHOD url`.
+ * @returns The fetch mock, for asserting the requests made.
+ */
+const stubRoutes = (routes: Record<string, () => Response>) =>
+  stubAllRoutes({ 'GET /api/admin/plugins/ineco/slot-widgets': () => json([]), ...routes })
+
 /** The stored "allow unsigned plugins" row, as the settings list returns it. */
-const signingRow = { id: 9, key: PluginSettingKey.AllowUnsigned, value: 'false', isSecret: false, hasValue: true }
+const signingRow = { id: 9, key: PluginSettingKey.AllowUnsigned, value: 'false' }
 
 /**
  * Mounts the screen and waits for the first load.
@@ -116,6 +131,100 @@ describe('PluginsView', () => {
     expect(wrapper.get('[data-testid="plugins-list"]').text()).toContain('Ineco Pay')
   })
 
+  it('lists a refused plugin with its reason and offers no enable action', async () => {
+    stubRoutes({
+      'GET /api/admin/plugins': () => json([
+        { ...plugin, isLoaded: false, status: 'Refused', refusedRule: 'LabelKeyMissing', refusedDetail: 'menu.title' },
+      ]),
+    })
+    const wrapper = await mountPlugins()
+
+    const card = wrapper.get('[data-testid="plugin-card-ineco"]')
+    expect(card.text()).toContain('Refused')
+    expect(card.text()).toContain('A text key used by the plugin is missing from its English texts.')
+    expect(card.text()).not.toContain('Active')
+    expect(wrapper.find('[data-testid="plugin-remove-ineco"]').exists()).toBe(true)
+  })
+
+  it('says in the removal prompt that the plugin data is kept', async () => {
+    stubRoutes({ 'GET /api/admin/plugins': () => json([plugin]) })
+    const wrapper = await mountPlugins()
+
+    await wrapper.get('[data-testid="plugin-remove-ineco"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Its settings and stored data are kept')
+  })
+
+  it('purges the kept data of a removed plugin behind a confirmation', async () => {
+    // The list follows the server: installed, then removed with its data kept, then gone after the purge.
+    let rows: unknown[] = [plugin]
+    const mock = stubRoutes({
+      'GET /api/admin/plugins': () => json(rows),
+      'DELETE /api/admin/plugins/ineco/data': () => {
+        rows = []
+        return json({ requiresRestart: false })
+      },
+      'DELETE /api/admin/plugins/ineco': () => {
+        rows = [{ ...plugin, version: '', isLoaded: false, status: 'Removed' }]
+        return json({ requiresRestart: true })
+      },
+    })
+    const wrapper = await mountPlugins()
+    await wrapper.get('[data-testid="plugin-remove-ineco"]').trigger('click')
+    await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
+    await flushPromises()
+
+    await wrapper.get('[data-testid="plugin-purge-ineco"]').trigger('click')
+    await flushPromises()
+    /** Recorded requests to the purge endpoint of the removed plugin. */
+    const purgeCalls = () => mock.mock.calls.filter(([url]) => String(url) === '/api/admin/plugins/ineco/data')
+    expect(purgeCalls()).toHaveLength(0)
+    await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
+    await flushPromises()
+
+    expect(purgeCalls()).toHaveLength(1)
+    expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Plugin data purged.')
+    expect(wrapper.find('[data-testid="plugins-kept-data"]').exists()).toBe(false)
+  })
+
+  it('says a newer upload is staged and shows the restart banner', async () => {
+    stubRoutes({
+      'GET /api/admin/plugins': () => json([plugin]),
+      'POST /api/admin/plugins/install': () => json({ requiresRestart: true, stagedVersion: '1.3.0' }),
+    })
+    const wrapper = await mountPlugins()
+
+    wrapper.getComponent(PluginUploader).vm.$emit('upload', new File(['z'], 'new.zip'))
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Version 1.3.0 uploaded and staged.')
+    expect(wrapper.find('[data-testid="plugins-restart-banner"]').exists()).toBe(true)
+  })
+
+  it('shows the downgrade refusal and forces the older version after a confirmation', async () => {
+    const mock = stubRoutes({
+      'GET /api/admin/plugins': () => json([plugin]),
+      'POST /api/admin/plugins/install?force=true': () => json({ requiresRestart: true }),
+      'POST /api/admin/plugins/install': () => json(
+        { type: 'PLUGIN_DOWNGRADE_REFUSED', title: 'Refused', status: 409, detail: 'Version 1.0.0 is older than 1.2.0.' },
+        409,
+      ),
+    })
+    const wrapper = await mountPlugins()
+
+    wrapper.getComponent(PluginUploader).vm.$emit('upload', new File(['z'], 'old.zip'))
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Version 1.0.0 is older than 1.2.0.')
+    expect(wrapper.find('[data-testid="plugins-restart-banner"]').exists()).toBe(false)
+    await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
+    await flushPromises()
+
+    expect(mock.mock.calls.some(([url]) => String(url) === '/api/admin/plugins/install?force=true')).toBe(true)
+    expect(wrapper.find('[data-testid="plugins-restart-banner"]').exists()).toBe(true)
+  })
+
   it('keeps the plugin when the removal confirmation is dismissed', async () => {
     const mock = stubRoutes({ 'GET /api/admin/plugins': () => json([plugin]) })
     const wrapper = await mountPlugins()
@@ -196,5 +305,37 @@ describe('PluginsView', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-testid="plugin-allow-unsigned"]').exists()).toBe(true)
+  })
+
+  it('lists the slot widgets of a loaded plugin and saves a binding', async () => {
+    const widget = { slotId: 'admin.service.panels', widgetId: 'usage', title: 'Usage', manifestProductIds: [], productIds: [3], isBound: true }
+    const mock = stubRoutes({
+      'PUT /api/admin/plugins/ineco/slot-widgets/admin.service.panels/usage': () => json({ ...widget }),
+      'GET /api/admin/plugins/ineco/slot-widgets': () => json([widget]),
+      'GET /api/products': () => json([{ id: 3, name: 'Shared' }, { id: 4, name: 'Reseller' }]),
+      'GET /api/admin/plugins': () => json([plugin]),
+      'GET /api/admin/settings': () => json([signingRow]),
+    })
+    const wrapper = await mountPlugins()
+
+    expect(wrapper.get('[data-testid="plugin-widget-chosen"]').text()).toContain('Shared')
+
+    await wrapper.get('[data-testid="plugin-widget-remove-3"]').trigger('click')
+    await wrapper.get('[data-testid="plugin-widget-save"]').trigger('click')
+    await flushPromises()
+
+    const put = mock.mock.calls.find(([, init]) => init?.method === 'PUT')
+    expect(JSON.parse(String(put?.[1]?.body))).toEqual({ productIds: [] })
+  })
+
+  it('shows the API sentence when the slot widgets cannot be loaded', async () => {
+    stubRoutes({
+      'GET /api/admin/plugins/ineco/slot-widgets': () => problem('Widgets are unavailable.', 503),
+      'GET /api/admin/plugins': () => json([plugin]),
+      'GET /api/admin/settings': () => json([signingRow]),
+    })
+    const wrapper = await mountPlugins()
+
+    expect(wrapper.get('[data-testid="plugin-slot-widgets-error"]').text()).toContain('Widgets are unavailable.')
   })
 })

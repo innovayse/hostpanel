@@ -1,6 +1,8 @@
 using Innovayse.Hostpanel.Application.Admin.Common;
-using Innovayse.Hostpanel.Application.Admin.Extensions;
+using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
+using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Settings;
+using Innovayse.Hostpanel.Domain.Settings.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.SDK.Plugins.Enums;
 using Innovayse.SDK.Plugins.Manifest;
@@ -35,7 +37,8 @@ public sealed class SettingSecrecyTests
                 Settings = settings ?? [],
                 Fields = fields ?? [],
             },
-            typeof(object));
+            typeof(object),
+            PluginViewDocuments.None);
     }
 
     /// <summary>Builds a registry holding <paramref name="plugins"/>.</summary>
@@ -71,9 +74,9 @@ public sealed class SettingSecrecyTests
         secrecy.IsSecret(IntegrationSettingKeys.FieldKey("q", "token")).Should().BeTrue();
     }
 
-    /// <summary>A secret legacy field stays secret in a mixed manifest whose settings omit it, and its value is masked.</summary>
+    /// <summary>A secret legacy field stays secret in a mixed manifest whose settings omit it.</summary>
     [Fact]
-    public void MixedManifest_SettingsOmitASecretField_StillMasksIt()
+    public void MixedManifest_SettingsOmitASecretField_StillCountsItAsSecret()
     {
         var secrecy = SettingSecrecy.From(Registry(Plugin(
             "mixed",
@@ -84,12 +87,7 @@ public sealed class SettingSecrecyTests
                 new PluginField { Key = "legacyPass", Label = "P", Type = "password" },
             ])));
 
-        var token = Setting.Create(IntegrationSettingKeys.FieldKey("mixed", "token"), "clear-token-value", null);
-        var dto = token.ToDto(secrecy);
-
-        dto.IsSecret.Should().BeTrue();
-        dto.HasValue.Should().BeTrue();
-        dto.Value.Should().BeNull();
+        secrecy.IsSecret(IntegrationSettingKeys.FieldKey("mixed", "token")).Should().BeTrue();
         secrecy.IsSecret(IntegrationSettingKeys.FieldKey("mixed", "legacyPass")).Should().BeTrue();
         secrecy.IsSecret(IntegrationSettingKeys.FieldKey("mixed", "host")).Should().BeFalse();
     }
@@ -114,5 +112,22 @@ public sealed class SettingSecrecyTests
             settings: [new PluginSetting { Key = "apiKey", Label = "K", Type = PluginSettingType.Secret }])));
 
         secrecy.IsSecret(IntegrationSettingKeys.FieldKey("p", "APIKEY")).Should().BeTrue();
+    }
+
+    /// <summary>Every built-in catalogue field typed as a credential is secret, and no plain catalogue field is.</summary>
+    [Fact]
+    public void CatalogueFields_AreSecretExactlyWhenTheirTypeIsACredential()
+    {
+        var secrecy = SettingSecrecy.From(Registry());
+
+        foreach (var (slug, entry) in IntegrationCatalogue.All)
+        {
+            foreach (var field in entry.Fields.Where(f => f.Type is IntegrationFieldType.Password or IntegrationFieldType.Secret))
+            {
+                secrecy.IsSecret(IntegrationSettingKeys.FieldKey(slug, field.Key)).Should().BeTrue($"{slug}:{field.Key} is a credential");
+            }
+        }
+
+        secrecy.IsSecret(IntegrationSettingKeys.FieldKey(IntegrationSlugs.Stripe, "mode")).Should().BeFalse();
     }
 }

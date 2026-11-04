@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
@@ -80,12 +81,12 @@ public sealed class PaymentPluginResolverTests(IntegrationTestFactory factory)
         await db.SaveChangesAsync(CancellationToken.None);
 
         var registry = new PluginRegistry();
-        registry.Register(new LoadedPlugin(Manifest(module, pluginType), implementationType ?? typeof(ConfigurationCapturingPaymentPlugin)));
+        registry.Register(new LoadedPlugin(Manifest(module, pluginType), implementationType ?? typeof(ConfigurationCapturingPaymentPlugin), PluginViewDocuments.None));
 
         var services = new ServiceCollection().BuildServiceProvider();
         var activator = new PluginActivator(
             db, factory.Services.GetRequiredService<ISecretSettingCipher>(), services, hostConfig ?? new ConfigurationBuilder().Build(),
-            NullLogger<PluginActivator>.Instance);
+            registry, NullLogger<PluginActivator>.Instance);
         return new PaymentPluginResolver(activator, registry, NullLogger<PaymentPluginResolver>.Instance);
     }
 

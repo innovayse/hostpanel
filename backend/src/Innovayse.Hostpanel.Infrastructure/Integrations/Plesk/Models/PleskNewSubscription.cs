@@ -1,3 +1,6 @@
+using System.Text;
+using Innovayse.Hostpanel.SharedKernel.Domain;
+
 namespace Innovayse.Hostpanel.Infrastructure.Integrations.Plesk.Models;
 
 /// <summary>What creating a subscription for a customer needs.</summary>
@@ -13,4 +16,13 @@ public sealed record PleskNewSubscription(
     string IpAddress,
     string PlanName,
     string SystemUser,
-    string Password);
+    string Password)
+{
+    /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
+    /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>
+    /// <returns><see langword="true"/> when at least one member was written.</returns>
+    private bool PrintMembers(StringBuilder builder)
+    {
+        return SecretMembers.Print(this, builder);
+    }
+}

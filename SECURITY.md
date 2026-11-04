@@ -26,6 +26,7 @@ reporting, if you can.
 ## Scope
 
 In scope: this repository (API, client portal, admin panel, Docker setup).
-Out of scope: the public demo at hostpanel.innovayse.com (it is reset regularly and uses
-published credentials), denial-of-service by traffic volume, and findings that need an
+Out of scope: the public demo at demo-hostpanel.innovayse.com and
+demo-hostpanel-admin.innovayse.com (it is reset regularly and shows its sign-in details on each
+login page), denial-of-service by traffic volume, and findings that need an
 already compromised server.

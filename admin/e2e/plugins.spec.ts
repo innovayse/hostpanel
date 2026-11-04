@@ -94,7 +94,7 @@ test('a refused install shows the API sentence', async ({ page }) => {
 
 test('the allow unsigned switch warns, and saving it writes the setting', async ({ page }) => {
   // The one settings row the server holds; the save changes it.
-  const row: Setting = { id: 9, key: PluginSettingKey.AllowUnsigned, value: 'false', isSecret: false, hasValue: true }
+  const row: Setting = { id: 9, key: PluginSettingKey.AllowUnsigned, value: 'false' }
 
   const api = await stubApi(page, {
     signedIn: true,

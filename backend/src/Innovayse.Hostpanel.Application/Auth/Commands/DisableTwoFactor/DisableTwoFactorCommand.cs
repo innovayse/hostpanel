@@ -1,3 +1,6 @@
+using System.Text;
+using Innovayse.Hostpanel.SharedKernel.Domain;
+
 namespace Innovayse.Hostpanel.Application.Auth.Commands.DisableTwoFactor;
 
 /// <summary>Switches two-factor authentication off.</summary>
@@ -9,4 +12,13 @@ namespace Innovayse.Hostpanel.Application.Auth.Commands.DisableTwoFactor;
 /// <param name="CurrentPassword">
 /// The account's current password, required where this deployment owns the accounts. Never logged.
 /// </param>
-public sealed record DisableTwoFactorCommand(string Code, string? CurrentPassword = null);
+public sealed record DisableTwoFactorCommand([property: SecretMember] string Code, string? CurrentPassword = null)
+{
+    /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
+    /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>
+    /// <returns><see langword="true"/> when at least one member was written.</returns>
+    private bool PrintMembers(StringBuilder builder)
+    {
+        return SecretMembers.Print(this, builder);
+    }
+}

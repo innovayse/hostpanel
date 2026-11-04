@@ -794,6 +794,36 @@ public static class HostpanelErrorCodes
     /// <summary>The manifest id is not a valid plugin id (400).</summary>
     public const string PLUGIN_MANIFEST_ID_INVALID = "PLUGIN_MANIFEST_ID_INVALID";
 
+    /// <summary>The manifest version is not a strict semantic version such as 1.2.3 (400).</summary>
+    public const string PLUGIN_MANIFEST_VERSION_INVALID = "PLUGIN_MANIFEST_VERSION_INVALID";
+
+    /// <summary>A page or slot names a view document the plugin package does not hold, or a path that is not a package-relative .json file (400).</summary>
+    public const string PLUGIN_VIEW_MISSING = "PLUGIN_VIEW_MISSING";
+
+    /// <summary>A view document is not a JSON object with a schema and a blocks array, or a route reference in it is not a method and a path (400).</summary>
+    public const string PLUGIN_VIEW_INVALID = "PLUGIN_VIEW_INVALID";
+
+    /// <summary>A view document declares a schema version this host does not render (400).</summary>
+    public const string PLUGIN_VIEW_SCHEMA_UNSUPPORTED = "PLUGIN_VIEW_SCHEMA_UNSUPPORTED";
+
+    /// <summary>A view document holds a block whose kind the view schema does not define (400).</summary>
+    public const string PLUGIN_VIEW_BLOCK_KIND_UNKNOWN = "PLUGIN_VIEW_BLOCK_KIND_UNKNOWN";
+
+    /// <summary>A view document names a route that the plugin does not declare in the panel that shows the view (400).</summary>
+    public const string PLUGIN_VIEW_ROUTE_UNDECLARED = "PLUGIN_VIEW_ROUTE_UNDECLARED";
+
+    /// <summary>A plugin menu names an icon that is not 1 to 64 lowercase letters, digits and hyphens (400).</summary>
+    public const string PLUGIN_MENU_ICON_INVALID = "PLUGIN_MENU_ICON_INVALID";
+
+    /// <summary>
+    /// A plugin page id is not 1 to 64 lowercase letters, digits, hyphens and underscores starting with a letter or
+    /// digit, or is declared twice in one panel (400); such a page could never be served.
+    /// </summary>
+    public const string PLUGIN_PAGE_ID_INVALID = "PLUGIN_PAGE_ID_INVALID";
+
+    /// <summary>The plugin is not available to this panel or declares no such page there (404); the two answer alike.</summary>
+    public const string PLUGIN_PAGE_NOT_FOUND = "PLUGIN_PAGE_NOT_FOUND";
+
     /// <summary>
     /// One of the archive's entries would write outside the plugin's own directory (400). The
     /// zip-slip guard's refusal, named for what a caller can act on rather than the attack it
@@ -837,6 +867,12 @@ public static class HostpanelErrorCodes
     /// <summary>The plugin ships with this build and cannot be removed or replaced by an upload (409).</summary>
     public const string PLUGIN_BUILT_IN = "PLUGIN_BUILT_IN";
 
+    /// <summary>The upload is an older version than the installed plugin and the operator did not force the downgrade (409).</summary>
+    public const string PLUGIN_DOWNGRADE_REFUSED = "PLUGIN_DOWNGRADE_REFUSED";
+
+    /// <summary>The plugin's package is still installed, so its stored data cannot be purged; remove the plugin first (409).</summary>
+    public const string PLUGIN_STILL_INSTALLED = "PLUGIN_STILL_INSTALLED";
+
     // Plugin routes
 
     /// <summary>
@@ -851,6 +887,21 @@ public static class HostpanelErrorCodes
     /// the failure reaches the caller; the host logs it with the plugin id (502).
     /// </summary>
     public const string PLUGIN_FAILED = "PLUGIN_FAILED";
+
+    /// <summary>A plugin did not answer within the call time limit (<c>PluginApi:CallTimeoutSeconds</c>); the call was cancelled and nothing of the plugin reaches the caller (504).</summary>
+    public const string PLUGIN_TIMEOUT = "PLUGIN_TIMEOUT";
+
+    /// <summary>A plugin passed a store key the SDK does not allow; answered to the caller as <see cref="PLUGIN_FAILED"/> (502).</summary>
+    public const string PLUGIN_STORE_KEY_INVALID = Domain.Plugins.PluginStoreErrors.KeyInvalid;
+
+    /// <summary>A plugin passed a missing or oversized store value; answered to the caller as <see cref="PLUGIN_FAILED"/> (502).</summary>
+    public const string PLUGIN_STORE_VALUE_INVALID = Domain.Plugins.PluginStoreErrors.ValueInvalid;
+
+    /// <summary>
+    /// A plugin's write would take its store scope past the configured number of keys
+    /// (<c>PluginApi:MaxStoreKeysPerScope</c>) or characters (<c>PluginApi:MaxStoreCharsPerScope</c>) (402).
+    /// </summary>
+    public const string PLUGIN_STORE_QUOTA_EXCEEDED = Domain.Plugins.PluginStoreErrors.QuotaExceeded;
 
     /// <summary>The request body is larger than the host passes to a plugin (<c>PluginApi:MaxBodyBytes</c>), checked before the plugin is called (413).</summary>
     public const string PLUGIN_REQUEST_TOO_LARGE = "PLUGIN_REQUEST_TOO_LARGE";
@@ -870,10 +921,25 @@ public static class HostpanelErrorCodes
     /// <summary>The slot needs a context id (a service or a client) and the request named none (400).</summary>
     public const string PLUGIN_SLOT_CONTEXT_REQUIRED = "PLUGIN_SLOT_CONTEXT_REQUIRED";
 
+    /// <summary>The plugin declares no widget with that id in that slot, so there is nothing to bind products to (404).</summary>
+    public const string PLUGIN_SLOT_WIDGET_NOT_FOUND = "PLUGIN_SLOT_WIDGET_NOT_FOUND";
+
+    /// <summary>
+    /// Every product id sent to bind a widget to is unknown or deleted, so nothing would be bound. Refused (400) instead of
+    /// clearing the binding, which only an explicit empty list does.
+    /// </summary>
+    public const string PLUGIN_SLOT_PRODUCTS_UNKNOWN = "PLUGIN_SLOT_PRODUCTS_UNKNOWN";
+
     // Admin: integrations
 
     /// <summary>The slug names neither a built-in integration nor a loaded plugin (404).</summary>
     public const string INTEGRATION_NOT_FOUND = "INTEGRATION_NOT_FOUND";
+
+    /// <summary>A saved field key is not one the integration declares, or is the reserved switch key (400).</summary>
+    public const string INTEGRATION_FIELD_UNKNOWN = "INTEGRATION_FIELD_UNKNOWN";
+
+    /// <summary>A saved field value does not fit the declared type of the field (400); <c>errors[key]</c> says what is expected.</summary>
+    public const string INTEGRATION_FIELD_INVALID = "INTEGRATION_FIELD_INVALID";
 
     // Products
 
@@ -961,6 +1027,13 @@ public static class HostpanelErrorCodes
     /// depends on the row being written and cannot be a single resx sentence.
     /// </summary>
     public const string INVALID_SETTING_VALUE = "INVALID_SETTING_VALUE";
+
+    /// <summary>
+    /// The general settings endpoints refuse to write this row: its key is outside the settings catalogue
+    /// (an integration field or switch, the setup token or a deployment key) (400). Integrations are saved
+    /// through their own endpoint.
+    /// </summary>
+    public const string SETTING_NOT_EDITABLE = "SETTING_NOT_EDITABLE";
 
     // Admin: branding
 

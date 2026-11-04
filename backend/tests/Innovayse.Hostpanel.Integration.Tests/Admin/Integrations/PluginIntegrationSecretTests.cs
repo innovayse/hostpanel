@@ -1,6 +1,9 @@
 using Innovayse.Hostpanel.Application.Admin.Integrations.Commands.SaveIntegrationConfig;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Queries.GetIntegration;
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Plugins.Common;
+using Innovayse.Hostpanel.Application.Resources;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Domain.Settings.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
@@ -11,6 +14,7 @@ using Innovayse.SDK.Plugins.Manifest;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Admin.Integrations;
@@ -47,7 +51,8 @@ public sealed class PluginIntegrationSecretTests(IntegrationTestFactory factory)
                 SdkVersion = "1.0",
                 Settings = settings,
             },
-            typeof(object)));
+            typeof(object),
+            PluginViewDocuments.None));
         return registry;
     }
 
@@ -62,6 +67,24 @@ public sealed class PluginIntegrationSecretTests(IntegrationTestFactory factory)
         ];
     }
 
+    /// <summary>Builds the real save handler over the scope's services and the given registry.</summary>
+    /// <param name="scope">The scope the handler's services come from.</param>
+    /// <param name="registry">The registry holding the plugin.</param>
+    /// <returns>The handler.</returns>
+    private static SaveIntegrationConfigHandler Handler(IServiceScope scope, PluginRegistry registry)
+    {
+        return new SaveIntegrationConfigHandler(
+            scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>(),
+            scope.ServiceProvider.GetRequiredService<IMemoryCache>(),
+            scope.ServiceProvider.GetRequiredService<ISecretSettingCipher>(),
+            registry,
+            scope.ServiceProvider.GetRequiredService<ICurrentUserService>(),
+            scope.ServiceProvider.GetRequiredService<IPluginMigrationRetry>(),
+            NullLogger<SaveIntegrationConfigHandler>.Instance,
+            scope.ServiceProvider.GetRequiredService<IPluginAvailabilityInvalidator>(),
+            scope.ServiceProvider.GetRequiredService<IStringLocalizer<ApplicationValidationMessages>>());
+    }
+
     /// <summary>Saves a secret and a plain value for the plugin through the real save handler.</summary>
     /// <param name="scope">The scope the handler's services come from.</param>
     /// <param name="registry">The registry holding the plugin.</param>
@@ -69,13 +92,7 @@ public sealed class PluginIntegrationSecretTests(IntegrationTestFactory factory)
     /// <returns>A task that completes when the save has finished.</returns>
     private static async Task SaveAsync(IServiceScope scope, PluginRegistry registry, string id)
     {
-        var handler = new SaveIntegrationConfigHandler(
-            scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>(),
-            scope.ServiceProvider.GetRequiredService<IMemoryCache>(),
-            scope.ServiceProvider.GetRequiredService<ISecretSettingCipher>(),
-            registry,
-            scope.ServiceProvider.GetRequiredService<ICurrentUserService>(),
-            NullLogger<SaveIntegrationConfigHandler>.Instance);
+        var handler = Handler(scope, registry);
 
         var result = await handler.HandleAsync(
             new SaveIntegrationConfigCommand(
@@ -129,6 +146,75 @@ public sealed class PluginIntegrationSecretTests(IntegrationTestFactory factory)
         plain.Value.Should().Be("https://example.test");
         detail.FieldDefinitions.Single(f => f.Key == "apiKey").Type.Should().Be(IntegrationFieldType.Secret);
         detail.FieldDefinitions.Single(f => f.Key == "apiKey").Required.Should().BeTrue();
-        detail.FieldDefinitions.Single(f => f.Key == "host").Type.Should().Be(IntegrationFieldType.Text);
+        detail.FieldDefinitions.Single(f => f.Key == "host").Type.Should().Be(IntegrationFieldType.Url);
+    }
+
+    /// <summary>A key the manifest does not declare, in any spelling, is refused and nothing is stored.</summary>
+    /// <param name="key">The submitted key.</param>
+    /// <returns>A task that completes when the assertions are done.</returns>
+    [Theory]
+    [InlineData("undeclared")]
+    [InlineData("APIKEY")]
+    [InlineData("is_enabled2")]
+    public async Task SaveIntegrationConfig_UndeclaredKey_IsRefusedAndNothingIsStored(string key)
+    {
+        var id = PluginActivationTestSeeds.NewId("undeclared");
+        using var scope = factory.Services.CreateScope();
+
+        var result = await Handler(scope, Registry(id, Settings())).HandleAsync(
+            new SaveIntegrationConfigCommand(
+                id,
+                true,
+                new Dictionary<string, string?> { ["host"] = "https://example.test", [key] = "value" }),
+            CancellationToken.None);
+
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorCode.Should().Be(HostpanelErrorCodes.INTEGRATION_FIELD_UNKNOWN);
+        var db = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await db.Settings.AsNoTracking().CountAsync(s => s.Key.StartsWith(IntegrationSettingKeys.Prefix(id)))).Should().Be(0);
+    }
+
+    /// <summary>A manifest that declares the reserved switch key does not make it writable.</summary>
+    /// <returns>A task that completes when the assertions are done.</returns>
+    [Fact]
+    public async Task SaveIntegrationConfig_ManifestDeclaringIsEnabled_IsStillRefused()
+    {
+        var id = PluginActivationTestSeeds.NewId("reserved");
+        using var scope = factory.Services.CreateScope();
+        var registry = Registry(id, new PluginSetting { Key = "is_enabled", Label = "Switch", Type = PluginSettingType.Text });
+
+        var result = await Handler(scope, registry).HandleAsync(
+            new SaveIntegrationConfigCommand(id, false, new Dictionary<string, string?> { ["is_enabled"] = "true" }),
+            CancellationToken.None);
+
+        result.ErrorCode.Should().Be(HostpanelErrorCodes.INTEGRATION_FIELD_UNKNOWN);
+    }
+
+    /// <summary>A plugin url setting refuses a relative address and a number setting refuses a value outside its bounds.</summary>
+    /// <returns>A task that completes when the assertions are done.</returns>
+    [Fact]
+    public async Task SaveIntegrationConfig_UrlAndNumberSettings_AreCheckedByType()
+    {
+        var id = PluginActivationTestSeeds.NewId("typed");
+        using var scope = factory.Services.CreateScope();
+        var registry = Registry(
+            id,
+            new PluginSetting { Key = "host", Label = "Host", Type = PluginSettingType.Url },
+            new PluginSetting { Key = "retries", Label = "Retries", Type = PluginSettingType.Number, Min = 1, Max = 5 });
+        var handler = Handler(scope, registry);
+
+        var badUrl = await handler.HandleAsync(
+            new SaveIntegrationConfigCommand(id, true, new Dictionary<string, string?> { ["host"] = "not a url" }),
+            CancellationToken.None);
+        var badNumber = await handler.HandleAsync(
+            new SaveIntegrationConfigCommand(id, true, new Dictionary<string, string?> { ["retries"] = "9" }),
+            CancellationToken.None);
+        var ok = await handler.HandleAsync(
+            new SaveIntegrationConfigCommand(id, true, new Dictionary<string, string?> { ["retries"] = "3" }),
+            CancellationToken.None);
+
+        badUrl.ErrorCode.Should().Be(HostpanelErrorCodes.INTEGRATION_FIELD_INVALID);
+        badNumber.ErrorCode.Should().Be(HostpanelErrorCodes.INTEGRATION_FIELD_INVALID);
+        ok.IsSuccess.Should().BeTrue();
     }
 }

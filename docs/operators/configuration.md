@@ -352,8 +352,14 @@ Plugin settings are not in .env. Set them on the API service in a compose overri
 | `Plugins__InstallPath` | *(empty, falls back to `plugins-installed` beside the app)* | Directory where the API installs plugin packages. |
 | `Plugins__MaxEntryCount` | `1000` | Maximum number of files in a plugin zip archive. |
 | `Plugins__MaxUncompressedBytes` | `209715200` | Maximum total uncompressed size of a plugin archive in bytes (200 MiB). |
+| `Plugins__MigrationTimeoutSeconds` | `120` | Longest one plugin migration hook may run after an upgrade, in seconds (1 to 3600). Past it the host stops waiting and keeps the plugin switched off until a later attempt succeeds. |
+| `Plugins__MaxViewBytes` | `262144` | Maximum size in bytes of one plugin view document (a page or slot `view` file, 256 KiB); a larger file refuses the plugin at load and at install. 1 to 4194304 (4 MiB). |
 | `Plugins__TrustedPackageSha256__0`, `__1`, ... | n/a | SHA-256 hashes of plugin packages to trust unconditionally. Each hash is a separate indexed key. |
 | `PluginApi__MaxBodyBytes` | `1048576` | Largest request body the host reads for a plugin route, in bytes (1 to 67108864). |
+| `PluginApi__CallTimeoutSeconds` | `30` | Seconds the host waits for a plugin route to answer (1 to the ceiling below). Past it the plugin is cancelled through its token and the caller gets `PLUGIN_TIMEOUT` (504). On a streamed reply it covers the wait for the reply and for the first event and the silence between events, never the length of a stream that keeps sending. |
+| `PluginApi__MaxCallTimeoutSeconds` | `600` | The ceiling for a per route limit (1 to 3600). Every route gets `CallTimeoutSeconds` today; a route will be able to ask for a longer limit, up to this, once the plugin SDK has a field for it. Must be at least `CallTimeoutSeconds`. |
+| `PluginApi__AbandonWaitSeconds` | `5` | Seconds, after the call limit, the host waits for a plugin that ignores its cancellation before it abandons the call (1 to 60). The caller gets `PLUGIN_TIMEOUT` either way. |
+| `PluginApi__MaxAbandonedCallsPerPlugin` | `8` | Most abandoned calls of one plugin that may still be running (1 to 1000). At the limit, new calls to that plugin are refused at once with `PLUGIN_TIMEOUT` until one of them ends. |
 | `PluginApi__StreamHeartbeatSeconds` | `15` | Seconds a streamed plugin reply may stay silent before the host writes a comment line to keep the connection alive (1 to 300). |
 | `PluginApi__StreamEventMaxBytes` | `65536` | Largest data of one event of a streamed plugin reply, in bytes (1 to 1048576). A plugin that sends a larger event ends the stream with an `error` event. |
 | `PluginSigning__MaintainerKeys__0__KeyId`, `__PublicKey`, ... | *(shipped in the image)* | Ed25519 signing key entries for the official plugin maintainers. Shipped in the image; operators do not set these. |

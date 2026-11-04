@@ -803,14 +803,14 @@ public sealed class DevDataSeeder
 
         (string Name, decimal Price, int ExpiresInDays, bool AutoRenew, bool WhoisPrivacy, string Registrar)[] domainDefs =
         [
-            ("example.test",        12.99m, 365,  true,  true,  "Namecheap"),
-            ("ownerbusiness.com",    12.99m, 180,  true,  false, "Namecheap"),
-            ("customershop.net",     11.99m, 90,   true,  true,  "Name.am"),
-            ("developerlab.io",      39.99m, 270,  false, false, "Namecheap"),
-            ("managerhub.com",       12.99m, 400,  true,  true,  "Namecheap"),
-            ("partnersolutions.org", 10.99m,  10,  true,  false, "Name.am"),
-            ("resellerpro.com",      12.99m, 500,  true,  true,  "Namecheap"),
-            ("ownersite.am",          8.99m, 60,   false, false, "Name.am"),
+            ("example.test",       12.99m, 365,  true,  true,  "Namecheap"),
+            ("example.com",        12.99m, 180,  true,  false, "Namecheap"),
+            ("example.net",        11.99m, 90,   true,  true,  "Name.am"),
+            ("developer-lab.test", 39.99m, 270,  false, false, "Namecheap"),
+            ("manager-hub.test",   12.99m, 400,  true,  true,  "Namecheap"),
+            ("example.org",        10.99m, 10,   true,  false, "Name.am"),
+            ("reseller-pro.test",  12.99m, 500,  true,  true,  "Namecheap"),
+            ("owner-site.test",     8.99m, 60,   false, false, "Name.am"),
         ];
 
         for (var i = 0; i < domainDefs.Length; i++)

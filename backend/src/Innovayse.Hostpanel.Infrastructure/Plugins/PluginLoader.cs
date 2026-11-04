@@ -1,5 +1,6 @@
 using System.Reflection;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Plugins;
@@ -38,18 +39,26 @@ public static class PluginLoader
     /// <remarks>
     /// An uploaded plugin is signature-checked before any of its assemblies is loaded, because loading an assembly
     /// can already run its code. A plugin shipped with the host (<see cref="PluginOrigin.BuiltIn"/>) is not: it is
-    /// part of the host. A refused plugin is skipped alone and logged with its id and the rule it breaks.
+    /// part of the host. A refused plugin is skipped alone and logged with its id and the rule it breaks; a plugin
+    /// refused for a broken manifest rule is also kept in <see cref="PluginRegistry"/> (<see cref="RefusedPlugin"/>), in
+    /// either folder, so the admin plugin list can show it. A refused plugin claims its id like a loaded one: an upload
+    /// of the same name never loads in its place and never replaces its refusal entry. A plugin with a pending upgrade
+    /// record is flagged in the registry, which keeps it from being activated until its migration succeeds.
     /// </remarks>
     /// <param name="services">The application service collection.</param>
     /// <param name="pluginRoots">Absolute plugin folders with their origin, built-in first.</param>
     /// <param name="verifier">Checks the signature of an uploaded plugin and applies the host's policy.</param>
     /// <param name="allowUnsigned">Whether the admin setting "allow unsigned plugins" is on.</param>
+    /// <param name="maxViewBytes">
+    /// The largest view document a plugin may ship, in bytes (<c>Plugins:MaxViewBytes</c>); a larger one skips the plugin.
+    /// </param>
     /// <param name="loggerFactory">Logger factory used during startup loading.</param>
     public static void DiscoverAndRegister(
         IServiceCollection services,
         IReadOnlyList<PluginRoot> pluginRoots,
         PluginSignatureVerifier verifier,
         bool allowUnsigned,
+        long maxViewBytes,
         ILoggerFactory loggerFactory)
     {
         var logger = loggerFactory.CreateLogger(nameof(PluginLoader));
@@ -62,6 +71,16 @@ public static class PluginLoader
         var pluginDirs = new List<(string Dir, PluginOrigin Origin)>();
         foreach (var root in pluginRoots)
         {
+            if (root.Origin == PluginOrigin.Uploaded)
+            {
+                // An upgrade whose migration has not succeeded keeps its plugin gated from the first moment, before the
+                // runner has had a chance to run the hook.
+                foreach (var marker in PluginUpgradeApplier.ReadPending(root.Path, logger))
+                {
+                    registry.MarkMigrationPending(marker.PluginId);
+                }
+            }
+
             if (Directory.Exists(root.Path))
             {
                 pluginDirs.AddRange(Directory.GetDirectories(root.Path).Select(dir => (dir, root.Origin)));
@@ -74,15 +93,44 @@ public static class PluginLoader
 
         foreach (var (pluginDir, origin) in pluginDirs)
         {
-            if (!PluginIdentifier.IsValid(Path.GetFileName(pluginDir)))
+            var folderName = Path.GetFileName(pluginDir);
+            if (!PluginIdentifier.IsWellFormed(folderName))
             {
                 continue;
             }
 
+            // A well-formed folder under a reserved id is a plugin installed before the id was reserved: it is never
+            // loaded (the host's own segment would shadow its routes), but it is reported, so the operator knows why it
+            // is missing and removes it from the plugins page. A plain folder whose manifest declares a reserved id is
+            // refused by the manifest reader (PluginManifestRule.PluginIdInvalid), the one place the manifest id is checked.
+            if (PluginIdentifier.IsReserved(folderName))
+            {
+                logger.LogWarning(
+                    "Plugin folder {Dir} uses the reserved plugin id {Id}. Skipping it; remove it from the plugins page.",
+                    pluginDir, folderName);
+                continue;
+            }
+
             var manifestPath = Path.Combine(pluginDir, "plugin.json");
-            var manifest = reader.TryRead(manifestPath);
+            var manifest = reader.TryRead(manifestPath, out var violation);
             if (manifest is null)
             {
+                // A refused plugin claims its id like a loaded one, so an upload with the same name can never stand in
+                // for a built-in plugin that was refused, and can never overwrite that plugin's refusal entry.
+                var folderId = Path.GetFileName(pluginDir);
+                if (!claimedIds.Add(folderId))
+                {
+                    logger.LogWarning("Plugin folder {Dir} is refused and its id {Id} is already declared by an earlier folder — skipping", pluginDir, folderId);
+                    continue;
+                }
+
+                // Only a broken manifest rule is kept: the admin list shows its rule and detail, and the plugin
+                // is never activated. Any other unreadable manifest stays a log line.
+                if (violation is not null)
+                {
+                    registry.RegisterRefused(new RefusedPlugin(folderId, violation.Rule, violation.Detail, origin == PluginOrigin.BuiltIn));
+                }
+
                 continue;
             }
 
@@ -100,6 +148,15 @@ public static class PluginLoader
                 logger.LogWarning(
                     "Plugin {Id} refused by signature rule {Rule}: {Detail}. Skipping it; the other plugins still load.",
                     manifest.Id, refusal.Rule, refusal.Detail);
+                continue;
+            }
+
+            var views = PluginViewDocumentReader.Read(pluginDir, manifest, maxViewBytes);
+            if (views.Violation is not null)
+            {
+                logger.LogWarning(
+                    "Plugin {Id} refused by manifest rule {Rule}: {Detail}. Skipping it; the other plugins still load.",
+                    manifest.Id, views.Violation.Rule, views.Violation.Detail);
                 continue;
             }
 
@@ -137,7 +194,7 @@ public static class PluginLoader
             }
 
             RegisterPluginType(services, manifest, pluginType, logger);
-            registry.Register(new LoadedPlugin(manifest, pluginType));
+            registry.Register(new LoadedPlugin(manifest, pluginType, views.Views));
 
             if (manifest.ShowInIntegrations)
             {

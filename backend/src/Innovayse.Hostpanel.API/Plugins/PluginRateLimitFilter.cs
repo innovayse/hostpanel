@@ -1,5 +1,4 @@
 using System.Threading.RateLimiting;
-using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Extensions;
@@ -24,11 +23,14 @@ namespace Innovayse.Hostpanel.API.Plugins;
 /// known to the rate limiting middleware, which runs before routing reaches the plugin and picks its policy from an
 /// attribute. This filter is the first point where the signed-in caller, the plugin and the route are all known, and it
 /// is still ahead of model binding, the body and the bus. A request that matches no declared route is not measured here
-/// (the use case answers its 404), and is still counted by the global limiter like every request.
+/// (the use case answers its 404), and neither is a call that use case refuses as "no such route": a disabled or
+/// unconfigured plugin, a route the caller lacks the permission for, a caller with no account. The decision is
+/// <see cref="PluginCallGate"/>'s, the one the use cases ask, so a 429 never tells an installed plugin, or a route that is
+/// not the caller's to see, from one that is not there. All are still counted by the global limiter like every request.
 /// </para>
 /// <para>
-/// <b>Who is counted.</b> A client call is counted per client account, resolved by <see cref="ICallerClientResolver"/>, the
-/// same answer the portal policy and the use case share (a caller with no single account is counted as that user); an admin
+/// <b>Who is counted.</b> A client call is counted per client account, resolved through <see cref="PluginCallGate"/>, the
+/// same answer the portal policy and the use case share (a caller with no single account is not counted); an admin
 /// call is counted per administrator. The plugin id is part of the key, so a busy plugin never spends another plugin's
 /// budget.
 /// </para>
@@ -49,11 +51,8 @@ public sealed class PluginRateLimitFilter : IAsyncResourceFilter
     /// <summary>The limiters of the plugin tiers and streams.</summary>
     private readonly PluginRateLimiter _limiter;
 
-    /// <summary>Finds the manifest of the plugin the request names.</summary>
-    private readonly IPluginEndpointResolver _plugins;
-
-    /// <summary>Resolves the client account a client call acts for.</summary>
-    private readonly ICallerClientResolver _callerClient;
+    /// <summary>Decides whether the use case would serve the call or refuse it as "no such route"; the same gate the use cases ask.</summary>
+    private readonly PluginCallGate _gate;
 
     /// <summary>The signed-in caller.</summary>
     private readonly ICurrentUserService _currentUser;
@@ -61,20 +60,17 @@ public sealed class PluginRateLimitFilter : IAsyncResourceFilter
     /// <summary>Initializes the filter.</summary>
     /// <param name="area">The panel the controller serves.</param>
     /// <param name="limiter">The limiters of the plugin tiers and streams.</param>
-    /// <param name="plugins">Finds the manifest of the plugin the request names.</param>
-    /// <param name="callerClient">Resolves the client account a client call acts for.</param>
+    /// <param name="gate">Decides whether the use case would serve the call or refuse it as "no such route".</param>
     /// <param name="currentUser">The signed-in caller.</param>
     public PluginRateLimitFilter(
         PluginArea area,
         PluginRateLimiter limiter,
-        IPluginEndpointResolver plugins,
-        ICallerClientResolver callerClient,
+        PluginCallGate gate,
         ICurrentUserService currentUser)
     {
         _area = area;
         _limiter = limiter;
-        _plugins = plugins;
-        _callerClient = callerClient;
+        _gate = gate;
         _currentUser = currentUser;
     }
 
@@ -94,16 +90,31 @@ public sealed class PluginRateLimitFilter : IAsyncResourceFilter
         // and the path they match.
         var pluginId = context.RouteData.Values["id"] as string;
         var input = PluginHttpInputReader.Read(http.Request, context.RouteData.Values["path"] as string);
-        var manifest = pluginId is null ? null : _plugins.Find(pluginId);
-        var routes = manifest is null ? null : _area == PluginArea.Admin ? manifest.Api.Admin : manifest.Api.Client;
-        var route = routes is null ? null : PluginRouteMatcher.Match(routes, input.Method, input.Path)?.Route;
-        if (manifest is null || route is null)
+        if (pluginId is null)
         {
             await next();
             return;
         }
 
-        var key = PluginRateLimiter.KeyFor(manifest.Id, await SubjectAsync(ct));
+        // The gate is the use case's own decision: a call it would refuse as "no such route" (unknown or disabled plugin,
+        // undeclared route, wrong method, missing permission, no account) is not measured, or a 429 after a burst would tell
+        // an installed plugin, or a route the caller may not see, from one that is not there.
+        var decision = _area == PluginArea.Admin
+            ? await _gate.EvaluateAdminAsync(pluginId, input, ct)
+            : await _gate.EvaluateClientAsync(pluginId, input, ct);
+        if (decision is not { Target: { } target })
+        {
+            await next();
+            return;
+        }
+
+        var manifest = target.Manifest;
+        var route = target.Match.Route;
+        var subject = _area == PluginArea.Admin
+            ? $"admin:{_currentUser.RequireUserId()}"
+            : $"client:{decision.ClientId}";
+
+        var key = PluginRateLimiter.KeyFor(manifest.Id, subject);
 
         var tier = TierOf(route);
         var lease = await _limiter.AcquireAsync(tier, key, ct);
@@ -139,24 +150,6 @@ public sealed class PluginRateLimitFilter : IAsyncResourceFilter
             PluginRateLimitPolicy.Heavy => RateLimitPolicies.PluginHeavy,
             _ => RateLimitPolicies.PluginDefault,
         };
-    }
-
-    /// <summary>Works out who the call is counted for.</summary>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>
-    /// <c>client:{id}</c> for a client call made for one account, <c>user:{id}</c> for a client call that acts for none, and
-    /// <c>admin:{id}</c> for an admin call.
-    /// </returns>
-    private async Task<string> SubjectAsync(CancellationToken ct)
-    {
-        var userId = _currentUser.RequireUserId();
-        if (_area == PluginArea.Admin)
-        {
-            return $"admin:{userId}";
-        }
-
-        var access = await _callerClient.ResolveAsync(ct);
-        return access.ClientId is { } clientId ? $"client:{clientId}" : $"user:{userId}";
     }
 
     /// <summary>Answers the request with the platform's 429.</summary>

@@ -16,8 +16,8 @@ namespace Innovayse.Hostpanel.Application.Admin.Seeding;
 /// never seeded cannot be added there.
 /// </para>
 /// <para>
-/// The key list itself is <see cref="PortalSettingKeys.Defaults"/>, shared with the
-/// public allow-list so the two cannot drift apart.
+/// The key list itself is <see cref="GeneralSettingKeys.Defaults"/> (portal, billing and plugin keys), the
+/// same catalogue the general settings endpoints are limited to, so the two cannot drift apart.
 /// </para>
 /// <para>
 /// Like <c>DefaultDepartmentsSeeder</c> this runs in every environment, not only
@@ -47,7 +47,7 @@ public static class PortalSettingsSeeder
         var created = 0;
 
         // Billing and plugin keys ride the same seeder so both startup and the demo reset (the two callers) seed them.
-        var defaults = PortalSettingKeys.Defaults.Concat(BillingSettingKeys.Defaults).Concat(PluginSettingKeys.Defaults).ToList();
+        var defaults = GeneralSettingKeys.Defaults;
         foreach (var (key, value, description) in defaults)
         {
             // Tracked, not AsNoTracking: a newly created

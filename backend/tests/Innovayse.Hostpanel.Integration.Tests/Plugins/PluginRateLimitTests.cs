@@ -1,6 +1,7 @@
 using System.Net;
 using System.Threading.RateLimiting;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Settings;
@@ -261,6 +262,54 @@ public sealed class PluginRateLimitTests : IClassFixture<AppPluginFixture>
 
         using var served = await ClientCallAsync(http, "ping");
         served.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    /// <summary>
+    /// A route the caller lacks the permission for is not measured, so a 429 never tells it from an undeclared route: it
+    /// keeps answering its own 404, however often it is called.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task APermissionlessRoute_IsNotMeasuredAndAnswers404()
+    {
+        using var host = LimitedHost();
+        var (owner, _) = await OwnerAsync(host, "plugin-limit-permissionless");
+        var linked = await ClientsTestSeeds.LinkedToAsync(
+            _fixture.Factory, "plugin-limit-permissionless-sub", owner.ClientId, ClientPermission.ViewDomains);
+        using var sub = AppPluginFixture.WithBearerOf(host, linked);
+
+        for (var i = 0; i < Permits + 1; i++)
+        {
+            using var response = await ClientCallAsync(sub, "invoices/1");
+            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            await ClientsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_ROUTE_NOT_FOUND);
+        }
+
+        _fixture.Probe.Constructed.Should().Be(0);
+    }
+
+    /// <summary>
+    /// A plugin that is switched off is not measured, so a 429 never tells it from an unknown plugin: it keeps answering its
+    /// own 404 however often it is called, while a permitted caller on an enabled route is still refused once the budget is spent.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task ADisabledPlugin_IsNotMeasuredWhileAnEnabledRouteStillIs()
+    {
+        using var host = LimitedHost();
+        var (_, http) = await OwnerAsync(host, "plugin-limit-disabled");
+
+        for (var i = 0; i < Permits + 2; i++)
+        {
+            using var response = await ClientCallAsync(http, "ping", _fixture.DisabledPluginId);
+            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            await ClientsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_ROUTE_NOT_FOUND);
+        }
+
+        await SpendAsync(() => ClientCallAsync(http, "ping"), Permits);
+        using var refused = await ClientCallAsync(http, "ping");
+        refused.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
+        _fixture.Probe.Constructed.Should().Be(Permits);
     }
 
     /// <summary>

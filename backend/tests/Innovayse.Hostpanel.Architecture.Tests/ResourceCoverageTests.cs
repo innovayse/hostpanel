@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Resources;
 using System.Text.RegularExpressions;
+using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Resources;
 using Innovayse.Hostpanel.Shared.Constants;
@@ -28,7 +29,12 @@ public sealed partial class ResourceCoverageTests
     /// The codes that answer a status <c>rules/api.md</c> does not list, each with that status and why. An entry is
     /// temporary by construction: <see cref="EveryStatusException_IsStillNeeded"/> fails once the code stops answering it.
     /// </summary>
-    private static readonly IReadOnlyDictionary<string, int> StatusExceptions = new Dictionary<string, int>();
+    private static readonly IReadOnlyDictionary<string, int> StatusExceptions = new Dictionary<string, int>
+    {
+        // A plugin did not answer within the call time limit: the host is a gateway to code it does not own (#792), so the
+        // answer is 504, the status for an upstream that timed out, which 502 (it failed) does not say.
+        [HostpanelErrorCodes.PLUGIN_TIMEOUT] = 504,
+    };
 
     /// <summary>The codes the registry declares.</summary>
     private static readonly IReadOnlyList<string> Codes = typeof(HostpanelErrorCodes)
@@ -195,9 +201,12 @@ public sealed partial class ResourceCoverageTests
         unused.Should().BeEmpty("ApplicationValidationMessages.resx holds keys no validator uses");
     }
 
-    /// <summary>Matches a localizer lookup by a literal key, <c>L["Key"]</c> or <c>L["Key", arg]</c>.</summary>
+    /// <summary>
+    /// Matches a localizer lookup by a literal key, <c>L["Key"]</c> or <c>L["Key", arg]</c> as a validator writes it,
+    /// or <c>_localizer["Key"]</c> as a handler holding the localizer in a field writes it.
+    /// </summary>
     /// <returns>The compiled expression; group <c>key</c> is the resource key.</returns>
-    [GeneratedRegex("""\bL\["(?<key>\w+)"\s*[,\]]""")]
+    [GeneratedRegex("""\b(?:L|_localizer)\["(?<key>\w+)"\s*[,\]]""")]
     private static partial Regex LocalizerLookup();
 
     /// <summary>Matches an XML documentation line, whose examples are not lookups.</summary>
@@ -205,10 +214,19 @@ public sealed partial class ResourceCoverageTests
     [GeneratedRegex("^\\s*///.*$", RegexOptions.Multiline)]
     private static partial Regex DocumentationLine();
 
-    /// <summary>The keys the Application sources look up through a localizer.</summary>
+    /// <summary>
+    /// The keys the Application sources look up through a localizer, plus the expectation keys
+    /// <see cref="IntegrationFieldValueRules"/> names as constants: they are handed to the localizer by key,
+    /// never written as a literal lookup, so the source scan cannot see them.
+    /// </summary>
     /// <returns>The distinct keys.</returns>
     private static HashSet<string> ValidatorKeys()
     {
+        var expectationKeys = typeof(IntegrationFieldValueRules)
+            .GetFields(BindingFlags.Public | BindingFlags.Static)
+            .Where(field => field.IsLiteral && field.FieldType == typeof(string))
+            .Select(field => (string)field.GetRawConstantValue()!);
+
         var backendRoot = UseCaseShapeTests.FindBackendRoot(AppContext.BaseDirectory);
         var applicationRoot = Path.Combine(backendRoot, "src", "Innovayse.Hostpanel.Application");
 
@@ -218,6 +236,7 @@ public sealed partial class ResourceCoverageTests
                            && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
             .SelectMany(path => LocalizerLookup().Matches(DocumentationLine().Replace(File.ReadAllText(path), string.Empty)))
             .Select(match => match.Groups["key"].Value)
+            .Concat(expectationKeys)
             .ToHashSet(StringComparer.Ordinal);
     }
 

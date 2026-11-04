@@ -57,5 +57,6 @@
     "faqs": "Вопросы и ответы",
     "locations": "Расположение серверов"
   },
-  "servicesTitle": "Услуги"
+  "servicesTitle": "Услуги",
+  "documentation": "Документация"
 }

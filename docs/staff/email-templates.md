@@ -4,6 +4,8 @@ title: Email templates
 
 # Email templates <Label type="admin" />
 
+<DemoLink path="/settings/email-templates" />
+
 ## How templates work
 
 Each email template has a **slug** that identifies it in the code. One version is stored per language (English, Russian and Armenian). Some templates are created at start-up; others are created on first use. If a version does not exist for the client's language, the email is sent in English.

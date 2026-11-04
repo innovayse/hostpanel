@@ -37,6 +37,8 @@ import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
+import { useDocsGuide } from '@/composables/useDocsGuide'
+import PageHelpLink from '@/components/layout/PageHelpLink.vue'
 
 /** Translation function and the active locale (for date formatting). */
 const { t, locale } = useI18n()
@@ -84,6 +86,8 @@ const sshServerTarget = ref<ServerDto | null>(null)
 
 /** The outcome line of the last save or delete. */
 const feedback = useResultBanner()
+/** Link to the docs guide for this screen, or null when docsUrl is not configured. */
+const { guideUrl } = useDocsGuide()
 
 /** Tone of the outcome line: danger for a refusal, success otherwise. */
 const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
@@ -374,6 +378,7 @@ onMounted(loadAll)
       :subtitle="t('servers.servers.manageProvisioningServersAndLoad')"
     >
       <template #actions>
+        <PageHelpLink :url="guideUrl" />
         <UiButton variant="secondary" data-testid="servers-add-group" @click="openAddGroup">
           {{ t('servers.servers.createGroup') }}
         </UiButton>

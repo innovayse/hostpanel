@@ -8,6 +8,14 @@
  */
 import { defineConfig } from 'vitepress'
 
+/**
+ * Public address of the demo admin panel and client portal.
+ * Set both to show the "Try the demo" button in the top bar.
+ * Leave empty to hide it.
+ */
+const DEMO_ADMIN_URL = process.env.DEMO_ADMIN_URL ?? ''
+const DEMO_CLIENT_URL = process.env.DEMO_CLIENT_URL ?? ''
+
 export default defineConfig({
   title: 'Hostpanel',
   description: 'Open source web hosting control panel',
@@ -48,6 +56,7 @@ export default defineConfig({
       { text: 'Guides', link: '/operators/' },
       { text: 'API Reference', link: '/api-reference/' },
       { text: 'Changelog', link: '/changelog/' },
+      ...(DEMO_ADMIN_URL ? [{ text: 'Try the demo', link: DEMO_ADMIN_URL }] : []),
     ],
 
     sidebar: [
@@ -181,5 +190,8 @@ export default defineConfig({
       message: 'Released under the AGPL-3.0 License.',
       copyright: 'Copyright © 2024-present Innovayse Digital Agency',
     },
+
+    demoAdminUrl: DEMO_ADMIN_URL,
+    demoClientUrl: DEMO_CLIENT_URL,
   },
 })

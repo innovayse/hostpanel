@@ -34,6 +34,7 @@ export const normalizeOrigin = (raw: string | undefined): string => (raw ?? '').
 export const getRuntimeConfig = (): AppRuntimeConfig => ({
   basePath: normalizeBasePath(window.__APP_CONFIG__?.basePath),
   clientBaseUrl: normalizeOrigin(window.__APP_CONFIG__?.clientBaseUrl),
+  docsUrl: normalizeOrigin(window.__APP_CONFIG__?.docsUrl),
 })
 
 /**

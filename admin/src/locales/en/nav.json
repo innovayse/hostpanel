@@ -57,5 +57,6 @@
     "faqs": "FAQ",
     "locations": "Server locations"
   },
-  "servicesTitle": "Services"
+  "servicesTitle": "Services",
+  "documentation": "Documentation"
 }

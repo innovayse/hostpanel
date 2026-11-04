@@ -5,7 +5,8 @@
     "soon": "less than a minute",
     "minutes": "{minutes}m",
     "hoursMinutes": "{hours}h {minutes}m",
-    "dataResets": "Everything you change here is temporary and is reset on a schedule."
+    "dataResets": "Everything you change here is temporary and is reset on a schedule.",
+    "guide": "New here? Read the guide"
   },
   "login": {
     "hint": "This is a public demo. Use the account below to look around.",

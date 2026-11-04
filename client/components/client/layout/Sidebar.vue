@@ -30,6 +30,19 @@
       />
     </nav>
 
+    <!-- Documentation link: shown only when docsUrl is configured -->
+    <div v-if="docsUrl" class="flex-shrink-0 border-t border-gray-100 px-3 py-3 dark:border-white/5">
+      <UiLink
+        :href="docsUrl"
+        external
+        class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-600 no-underline hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
+        data-testid="client-nav-documentation"
+      >
+        <BookOpen :size="18" :stroke-width="2" aria-hidden="true" />
+        {{ $t('client.nav.documentation') }}
+      </UiLink>
+    </div>
+
     <!-- Sign out: always at the bottom -->
     <div class="flex-shrink-0 border-t border-gray-100 px-3 py-3 dark:border-white/5">
       <UiButton variant="ghost" full-width class="!justify-start gap-3 hover:!text-red-500" data-testid="client-sign-out" @click="emit('signOut')">
@@ -46,7 +59,7 @@
  *
  * On mobile it is a drawer that traps focus, closes on Escape and locks the page scroll while open.
  */
-import { LogOut } from 'lucide-vue-next'
+import { BookOpen, LogOut } from 'lucide-vue-next'
 import { useOverlay } from '~/utils/ui/overlay'
 import type { ClientNavItem } from '~/types/clientnavitem'
 
@@ -71,6 +84,9 @@ const emit = defineEmits<{
   /** The visitor asked to sign out. */
   signOut: []
 }>()
+
+/** Documentation URL from runtime config; empty when the docs site is not configured. */
+const { public: { docsUrl } } = useRuntimeConfig()
 
 /** The drawer element; while open on mobile it traps focus and holds the page scroll lock. */
 const asideRef = ref<HTMLElement | null>(null)

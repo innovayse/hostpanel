@@ -7,6 +7,8 @@ description: How to import clients, invoices, services, domains and tickets into
 
 <Label type="admin" />
 
+<DemoLink path="/migration" />
+
 Hostpanel imports your data from WHMCS. You install a small PHP addon in WHMCS. Hostpanel then asks
 the addon for your records, one page at a time, and imports them. Nothing is written back to WHMCS.
 

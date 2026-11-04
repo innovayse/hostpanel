@@ -4,6 +4,8 @@ title: Payment gateways
 
 # Payment gateways <Label type="admin" />
 
+<DemoLink path="/integrations/payments" />
+
 Hostpanel ships with three payment methods. No payment gateway is enabled by default; an operator enables each one after entering their credentials.
 
 ## What ships with Hostpanel

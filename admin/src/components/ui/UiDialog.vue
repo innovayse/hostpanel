@@ -7,6 +7,11 @@
  * button coloured by `tone`; it replaces the former confirmation modal. The panel is teleported to
  * `<body>`, closes on Escape or a backdrop click, keeps Tab inside and returns focus to the opener.
  * Callers mount it with `v-if`, or drive it with `open`.
+ *
+ * It fades and scales in and out (`UiTransition`, nothing moves under reduced motion). Focus goes to the panel
+ * at once, so Escape and Tab work while it appears, and to the first control when the enter has ended. While it
+ * is leaving, Escape, a backdrop click, the close button and Confirm do nothing, so a request cannot fire twice.
+ * A parent that removes it with `v-if` skips the leave: the page scroll and the focus are given back at once.
  */
 import { computed, ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -14,9 +19,11 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiText from '@/components/ui/UiText.vue'
+import UiTransition from '@/components/ui/UiTransition.vue'
 import { toneSolidClasses } from '@/utils/ui/tone'
 import type { UiTone } from '@/utils/ui/tone'
 import { useModalSurface } from '@/utils/ui/modalSurface'
+import { modalPanelClasses, UiTransitionKind } from '@/utils/ui/transition'
 import { UiDialogSize, UiDialogVariant } from '@/utils/ui/dialog'
 
 /**
@@ -94,13 +101,25 @@ const confirmText = computed<string>(() => {
   return props.confirmLabel ?? t('ui.dialog.confirm')
 })
 
-/** Requests closing. */
+/** Whether the leave animation is running; no request may be made from a dialog that is going away. */
+const leaving = ref(false)
+
+/** Requests closing, unless the dialog is already leaving. */
 const close = (): void => {
-  emit('close')
+  if (!leaving.value) {
+    emit('close')
+  }
 }
 
-/** Keyboard handler: Escape closes, Tab stays inside. */
-const onKeydown = useModalSurface(panel, () => props.open, close)
+/** Confirms, unless the dialog is already leaving. */
+const confirm = (): void => {
+  if (!leaving.value) {
+    emit('confirm')
+  }
+}
+
+/** Keyboard handler (Escape closes, Tab stays inside), and the focus move for the end of the enter. */
+const { onKeydown, focusIn } = useModalSurface(panel, () => props.open, close)
 
 /** Closes on a backdrop click when allowed. */
 const onBackdrop = (): void => {
@@ -112,9 +131,16 @@ const onBackdrop = (): void => {
 
 <template>
   <Teleport to="body">
+    <UiTransition
+      :kind="UiTransitionKind.Dialog"
+      appear
+      @after-enter="focusIn"
+      @before-leave="leaving = true"
+      @after-leave="leaving = false"
+    >
     <div
       v-if="open"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      class="group/overlay fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
       @click.self="onBackdrop"
     >
       <div
@@ -125,7 +151,7 @@ const onBackdrop = (): void => {
         :aria-labelledby="title ? titleId : undefined"
         tabindex="-1"
         class="bg-surface-card border border-border-strong rounded-xl shadow-2xl w-full max-h-[calc(100dvh-2rem)] overflow-hidden flex flex-col outline-none"
-        :class="sizeClasses[size]"
+        :class="[sizeClasses[size], modalPanelClasses.dialog]"
         @keydown="onKeydown"
       >
         <div v-if="title" class="flex items-center justify-between gap-3 px-6 pt-6 pb-4 shrink-0">
@@ -160,7 +186,7 @@ const onBackdrop = (): void => {
             data-testid="dialog-confirm"
             class="px-4 py-2 text-[0.82rem] font-medium rounded-lg transition cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60 disabled:opacity-50 disabled:cursor-not-allowed"
             :class="confirmClasses"
-            @click="emit('confirm')"
+            @click="confirm"
           >
             {{ confirmText }}
           </UiButton>
@@ -170,5 +196,6 @@ const onBackdrop = (): void => {
         </div>
       </div>
     </div>
+    </UiTransition>
   </Teleport>
 </template>

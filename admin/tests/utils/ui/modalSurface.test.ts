@@ -8,6 +8,9 @@ import type { Ref } from 'vue'
 import { afterEach, describe, expect, it } from 'vitest'
 import { useModalSurface } from '@/utils/ui/modalSurface'
 
+/** The `focusIn` of the surface mounted last, which a test calls as the enter animation would at its end. */
+let focusSurface: () => void = () => undefined
+
 /**
  * Builds a surface component whose open state is controlled by the test.
  *
@@ -20,8 +23,9 @@ const surface = (open: Ref<boolean>, onClose: () => void) =>
     setup: () => {
       /** The surface element handed to the behaviour. */
       const panel = ref<HTMLElement | null>(null)
-      const onKeydown = useModalSurface(panel, () => open.value, onClose)
-      return () => h('div', { ref: panel, tabindex: -1, onKeydown }, [h('button', { id: 'inside' }, 'inside')])
+      const { onKeydown, focusIn } = useModalSurface(panel, () => open.value, onClose)
+      focusSurface = focusIn
+      return () => h('div', { ref: panel, id: 'panel', tabindex: -1, onKeydown }, [h('button', { id: 'inside' }, 'inside')])
     },
   })
 
@@ -67,20 +71,39 @@ describe('useModalSurface', () => {
     open.value = true
     await nextTick()
     await nextTick()
+    // At once only the panel itself holds focus, so Escape and Tab already work while it appears.
+    expect(document.activeElement?.id).toBe('panel')
+    focusSurface()
     expect(document.activeElement?.id).toBe('inside')
     open.value = false
     await nextTick()
     expect(document.activeElement).toBe(opener)
   })
 
-  it('takes focus on mount when it starts open', async () => {
+  it('takes focus on mount when it starts open, and moves it to the first control at the end of the enter', async () => {
     mount(
       surface(ref(true), () => undefined),
       { attachTo: document.body },
     )
     await nextTick()
     await nextTick()
+    expect(document.activeElement?.id).toBe('panel')
+    focusSurface()
     expect(document.activeElement?.id).toBe('inside')
+  })
+
+  it('does not move focus to the first control once the surface has closed', async () => {
+    /** Open flag the test flips. */
+    const open = ref(true)
+    mount(
+      surface(open, () => undefined),
+      { attachTo: document.body },
+    )
+    await nextTick()
+    open.value = false
+    await nextTick()
+    focusSurface()
+    expect(document.activeElement?.id).not.toBe('inside')
   })
 
   it('closes only the topmost of nested surfaces, whichever one the keystroke reached', async () => {

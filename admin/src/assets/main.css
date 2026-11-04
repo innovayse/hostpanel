@@ -98,6 +98,11 @@
   --color-status-green:  #34d399;
   --color-status-yellow: #fbbf24;
 
+  /* Motion: how long the kit's open and close animations take. Dropdowns are quick, panels and dialogs a little slower. */
+  --duration-fast: 100ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms;
+
   /* Fonts */
   --font-display: 'Syne', sans-serif;
   --font-sans:    'Inter', system-ui, sans-serif;

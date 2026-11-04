@@ -1,15 +1,19 @@
 <script setup lang="ts">
 /**
- * Side panel that slides over the page edge (filters, detail peek).
+ * Side panel that slides over the page edge (filters, detail peek, the menu on a phone).
  *
  * Teleported to `<body>`; closes on Escape or a backdrop click, keeps Tab inside and returns focus
- * to the opener. The default slot is the body and `footer` an optional pinned action row.
+ * to the opener. The default slot is the body and `footer` an optional pinned action row. It slides in from its
+ * edge (`UiTransition`, nothing moves under reduced motion); focus goes to the first control when the enter has
+ * ended, the close button shows only once the panel is in, and a request made while it is leaving is ignored.
  */
-import { ref, useId, watch } from 'vue'
+import { ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
+import UiTransition from '@/components/ui/UiTransition.vue'
 import { useModalSurface } from '@/utils/ui/modalSurface'
+import { modalPanelClasses, UiTransitionKind } from '@/utils/ui/transition'
 import type { UiDrawerSide } from '@/utils/ui/drawer'
 
 const { t } = useI18n()
@@ -49,68 +53,59 @@ const sideClasses: Record<UiDrawerSide, string> = {
   right: 'right-0 border-l border-border-strong',
 }
 
-/** How long the panel takes to slide in or out, in milliseconds (the classes below say the same as `duration-300`). */
-const SLIDE_MS = 300
-
-/**
- * Classes of the open and close animation per edge. The overlay fades and its panel (`aside`) slides, both over
- * {@link SLIDE_MS}; the panel is reached with the `[&>aside]` variant because the transition runs on the overlay.
- * Whoever asks for reduced motion gets the drawer without the movement. While it slides out the close button is
- * hidden by `[&_[data-testid=drawer-close]]:invisible`.
- */
-const slideClasses: Record<UiDrawerSide, { active: string, leaveActive: string, hidden: string }> = {
-  left: {
-    active: 'transition-opacity duration-300 ease-out [&>aside]:transition-transform [&>aside]:duration-300 [&>aside]:ease-out motion-reduce:transition-none motion-reduce:[&>aside]:transition-none',
-    leaveActive: 'transition-opacity duration-300 ease-in [&>aside]:transition-transform [&>aside]:duration-300 [&>aside]:ease-in motion-reduce:transition-none motion-reduce:[&>aside]:transition-none [&_[data-testid=drawer-close]]:invisible',
-    hidden: 'opacity-0 [&>aside]:-translate-x-full',
-  },
-  right: {
-    active: 'transition-opacity duration-300 ease-out [&>aside]:transition-transform [&>aside]:duration-300 [&>aside]:ease-out motion-reduce:transition-none motion-reduce:[&>aside]:transition-none',
-    leaveActive: 'transition-opacity duration-300 ease-in [&>aside]:transition-transform [&>aside]:duration-300 [&>aside]:ease-in motion-reduce:transition-none motion-reduce:[&>aside]:transition-none [&_[data-testid=drawer-close]]:invisible',
-    hidden: 'opacity-0 [&>aside]:translate-x-full',
-  },
+/** Panel motion per edge. */
+const slideClasses: Record<UiDrawerSide, string> = {
+  left: modalPanelClasses.drawerLeft,
+  right: modalPanelClasses.drawerRight,
 }
 
-/** Whether the panel has finished sliding in: the close button shows only then, and goes the moment it is asked to close. */
+/** Whether the leave animation is running; no request may be made from a drawer that is going away. */
+const leaving = ref(false)
+
+/** Whether the panel has finished sliding in: the close button shows only then, so it never slides across the page. */
 const settled = ref(false)
 
-/**
- * Marks the panel as fully open once it has slid in, so its close button shows.
- *
- * @returns Nothing; the panel's settled state is set.
- */
-const onOpened = (): void => {
-  settled.value = true
-}
-
-// Ready for the next opening. The button of a panel that is leaving is hidden by the leave classes above (the
-// leaving panel is no longer re-rendered, so its own state cannot do it).
-watch(() => props.open, (isOpen) => {
-  if (!isOpen) {
-    settled.value = false
-  }
-})
-
-/** Requests closing. */
+/** Requests closing, unless the drawer is already leaving. */
 const close = (): void => {
-  emit('close')
+  if (!leaving.value) {
+    emit('close')
+  }
 }
 
-/** Keyboard handler: Escape closes, Tab stays inside. */
-const onKeydown = useModalSurface(panel, () => props.open, close)
+/** Keyboard handler (Escape closes, Tab stays inside), and the focus move for the end of the enter. */
+const { onKeydown, focusIn } = useModalSurface(panel, () => props.open, close)
+
+/**
+ * Marks the panel as in and moves focus to its first control, once the enter has ended.
+ *
+ * @returns Nothing; the settled state is set and focus is moved.
+ */
+const onEntered = (): void => {
+  settled.value = true
+  focusIn()
+}
+
+/**
+ * Starts the leave: requests are ignored from now on and the close button goes at once.
+ *
+ * @returns Nothing; the leaving and settled states are set.
+ */
+const onLeaving = (): void => {
+  leaving.value = true
+  settled.value = false
+}
 </script>
 
 <template>
   <Teleport to="body">
-    <Transition
-      :duration="SLIDE_MS"
-      :enter-active-class="slideClasses[side].active"
-      :leave-active-class="slideClasses[side].leaveActive"
-      :enter-from-class="slideClasses[side].hidden"
-      :leave-to-class="slideClasses[side].hidden"
-      @after-enter="onOpened"
+    <UiTransition
+      :kind="UiTransitionKind.Drawer"
+      appear
+      @after-enter="onEntered"
+      @before-leave="onLeaving"
+      @after-leave="leaving = false"
     >
-      <div v-if="open" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" @click.self="close">
+      <div v-if="open" class="group/overlay fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" @click.self="close">
         <aside
           ref="panel"
           role="dialog"
@@ -118,7 +113,7 @@ const onKeydown = useModalSurface(panel, () => props.open, close)
           :aria-labelledby="titleId"
           tabindex="-1"
           class="absolute top-0 bottom-0 w-full bg-surface-card shadow-2xl flex flex-col overflow-hidden outline-none"
-          :class="[narrow ? 'max-w-xs' : 'max-w-md', sideClasses[side]]"
+          :class="[narrow ? 'max-w-xs' : 'max-w-md', sideClasses[side], slideClasses[side]]"
           @keydown="onKeydown"
         >
           <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-border shrink-0">
@@ -128,7 +123,7 @@ const onKeydown = useModalSurface(panel, () => props.open, close)
             <UiIconButton
               :label="t('ui.dialog.close')"
               size="sm"
-              class="transition-opacity duration-150"
+              class="transition-opacity duration-(--duration-fast) motion-reduce:transition-none"
               :class="settled ? 'opacity-100' : 'invisible opacity-0'"
               data-testid="drawer-close"
               @click="close"
@@ -147,6 +142,6 @@ const onKeydown = useModalSurface(panel, () => props.open, close)
           </div>
         </aside>
       </div>
-    </Transition>
+    </UiTransition>
   </Teleport>
 </template>

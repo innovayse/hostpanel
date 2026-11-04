@@ -19,9 +19,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                 table: "DownloadCategories");
 
             migrationBuilder.CreateIndex(
-                name: "IX_NetworkIssues_Title_StartDate",
+                name: "IX_NetworkIssues_StartDate_Title",
                 table: "NetworkIssues",
-                columns: new[] { "Title", "StartDate" });
+                columns: new[] { "StartDate", "Title" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Downloads_CategoryId_Title",
@@ -34,16 +34,16 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                 columns: new[] { "ParentCategoryId", "Name" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Announcements_Title_CreatedAt",
+                name: "IX_Announcements_CreatedAt_Title",
                 table: "Announcements",
-                columns: new[] { "Title", "CreatedAt" });
+                columns: new[] { "CreatedAt", "Title" });
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropIndex(
-                name: "IX_NetworkIssues_Title_StartDate",
+                name: "IX_NetworkIssues_StartDate_Title",
                 table: "NetworkIssues");
 
             migrationBuilder.DropIndex(
@@ -55,7 +55,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                 table: "DownloadCategories");
 
             migrationBuilder.DropIndex(
-                name: "IX_Announcements_Title_CreatedAt",
+                name: "IX_Announcements_CreatedAt_Title",
                 table: "Announcements");
 
             migrationBuilder.CreateIndex(

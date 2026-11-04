@@ -32,7 +32,7 @@ public sealed class IntegrationFieldValueRulesTests
         check.Text.Should().Be(value);
     }
 
-    /// <summary>A relative address, another scheme or plain text is refused with an Expected sentence.</summary>
+    /// <summary>A relative address, another scheme or plain text is refused with the address expectation key.</summary>
     /// <param name="value">The value.</param>
     [Theory]
     [InlineData("example.test")]
@@ -44,7 +44,7 @@ public sealed class IntegrationFieldValueRulesTests
         var check = IntegrationFieldValueRules.Check(Field(IntegrationFieldType.Url), value);
 
         check.IsValid.Should().BeFalse();
-        check.Text.Should().StartWith("Expected: ");
+        check.Text.Should().Be(IntegrationFieldValueRules.ExpectUrl);
     }
 
     /// <summary>A number inside the bounds is accepted, with an invariant decimal point.</summary>
@@ -75,7 +75,8 @@ public sealed class IntegrationFieldValueRulesTests
         var check = IntegrationFieldValueRules.Check(Field(IntegrationFieldType.Number, min: 1, max: 10), value);
 
         check.IsValid.Should().BeFalse();
-        check.Text.Should().StartWith("Expected: ").And.Contain("1").And.Contain("10");
+        check.Text.Should().Be(IntegrationFieldValueRules.ExpectNumberRange);
+        check.Arguments.Should().Equal("1", "10");
     }
 
     /// <summary>A select value is stored in the spelling the field declares.</summary>
@@ -95,15 +96,41 @@ public sealed class IntegrationFieldValueRulesTests
         var check = IntegrationFieldValueRules.Check(Field(IntegrationFieldType.Select, options: ["Live", "Test"]), "staging");
 
         check.IsValid.Should().BeFalse();
-        check.Text.Should().StartWith("Expected: ").And.Contain("Live").And.Contain("Test");
+        check.Text.Should().Be(IntegrationFieldValueRules.ExpectSelect);
+        check.Arguments.Should().Equal("Live, Test");
     }
 
-    /// <summary>An empty select value is accepted when not required and refused when required.</summary>
-    [Fact]
-    public void Select_Empty_DependsOnRequired()
+    /// <summary>
+    /// An empty value is accepted for every non-secret type, required or not: a required field is enforced when the
+    /// integration is activated, so a half-configured or disabled integration can still be saved.
+    /// </summary>
+    /// <param name="type">The field type.</param>
+    /// <param name="required">Whether the field is required.</param>
+    [Theory]
+    [InlineData(IntegrationFieldType.Url, true)]
+    [InlineData(IntegrationFieldType.Url, false)]
+    [InlineData(IntegrationFieldType.Number, true)]
+    [InlineData(IntegrationFieldType.Number, false)]
+    [InlineData(IntegrationFieldType.Select, true)]
+    [InlineData(IntegrationFieldType.Select, false)]
+    [InlineData(IntegrationFieldType.Toggle, true)]
+    [InlineData(IntegrationFieldType.Toggle, false)]
+    [InlineData(IntegrationFieldType.Text, true)]
+    [InlineData(IntegrationFieldType.Text, false)]
+    public void Empty_IsAcceptedForEveryTypeWhetherOrNotRequired(IntegrationFieldType type, bool required)
     {
-        IntegrationFieldValueRules.Check(Field(IntegrationFieldType.Select, options: ["A"]), string.Empty).IsValid.Should().BeTrue();
-        IntegrationFieldValueRules.Check(Field(IntegrationFieldType.Select, true, ["A"]), null).IsValid.Should().BeFalse();
+        var field = Field(type, required, ["A"], 1, 10);
+
+        foreach (var empty in new string?[] { null, string.Empty, "   " })
+        {
+            var check = IntegrationFieldValueRules.Check(field, empty);
+
+            check.IsValid.Should().BeTrue();
+            if (type is not (IntegrationFieldType.Text or IntegrationFieldType.TextArea))
+            {
+                check.Text.Should().BeEmpty();
+            }
+        }
     }
 
     /// <summary>A toggle is stored lowercased; anything but true or false is refused.</summary>

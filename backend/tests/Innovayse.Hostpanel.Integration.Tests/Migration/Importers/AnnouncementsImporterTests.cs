@@ -129,4 +129,22 @@ public sealed class AnnouncementsImporterTests(IntegrationTestFactory factory) :
         Assert.Equal(1, second.AnnouncementsImported);
         Assert.Equal(0, second.AnnouncementsSkipped);
     }
+
+    /// <summary>A source date finer than a microsecond still matches on a retry, because it is stored at microsecond precision.</summary>
+    [Fact]
+    public async Task RunAsync_Announcements_SubMicrosecondDateIsStillDuplicateOnRetryAsync()
+    {
+        var marker = Guid.NewGuid().ToString("N");
+        var source = SourceWith($$"""[{"Title":"{{marker}}","Content":"Body","Published":true,"CreatedAt":"2025-01-01T00:00:00.1234567Z"}]""");
+        using var host = MigrationTestSeeds.HostWithFakeSource(factory, source);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+
+        await PullAsync(scope);
+        var second = await PullAsync(scope);
+
+        Assert.Equal(1, await context.Announcements.AsNoTracking().CountAsync(a => a.Title == marker));
+        Assert.Equal(0, second.AnnouncementsImported);
+        Assert.Equal(1, second.AnnouncementsSkipped);
+    }
 }

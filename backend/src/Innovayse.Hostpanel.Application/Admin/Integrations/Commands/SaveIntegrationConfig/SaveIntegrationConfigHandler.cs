@@ -3,11 +3,13 @@ using Innovayse.Hostpanel.Application.Admin.Common.Enums;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Resources;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Shared.Models;
 using Innovayse.Hostpanel.Shared.MultiTenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace Innovayse.Hostpanel.Application.Admin.Integrations.Commands.SaveIntegrationConfig;
@@ -45,6 +47,12 @@ public sealed class SaveIntegrationConfigHandler
     /// <summary>Drops the panels' remembered plugin availability once the switch and fields have committed.</summary>
     private readonly IPluginAvailabilityInvalidator _availability;
 
+    /// <summary>
+    /// Words the per-field sentences of <c>errors[key]</c> in the request's language. The boundary forwards
+    /// <c>errors</c> as written, so these sentences, unlike <c>Result.Error</c>, are read by the person.
+    /// </summary>
+    private readonly IStringLocalizer<ApplicationValidationMessages> _localizer;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="cache">
@@ -57,6 +65,7 @@ public sealed class SaveIntegrationConfigHandler
     /// <param name="migrations">Runs the pending migration of an upgraded plugin once the operator has switched it on and saved its settings.</param>
     /// <param name="logger">Receives the audit line of a secret change.</param>
     /// <param name="availability">Drops the panels' remembered plugin availability once the switch and fields have committed.</param>
+    /// <param name="localizer">Words the per-field sentences in the request's language.</param>
     public SaveIntegrationConfigHandler(
         IHostpanelDbContext context,
         IMemoryCache cache,
@@ -65,7 +74,8 @@ public sealed class SaveIntegrationConfigHandler
         ICurrentUserService currentUser,
         IPluginMigrationRetry migrations,
         ILogger<SaveIntegrationConfigHandler> logger,
-        IPluginAvailabilityInvalidator availability)
+        IPluginAvailabilityInvalidator availability,
+        IStringLocalizer<ApplicationValidationMessages> localizer)
     {
         _migrations = migrations;
         _context = context;
@@ -75,6 +85,7 @@ public sealed class SaveIntegrationConfigHandler
         _currentUser = currentUser;
         _logger = logger;
         _availability = availability;
+        _localizer = localizer;
     }
 
     /// <summary>
@@ -145,8 +156,9 @@ public sealed class SaveIntegrationConfigHandler
             var check = IntegrationFieldValueRules.Check(field, fieldValue);
             if (!check.IsValid)
             {
+                var message = Expected(check);
                 return Result.FailureWithDetail(
-                    check.Text, HostpanelErrorCodes.INTEGRATION_FIELD_INVALID, field.Key, check.Text);
+                    message, HostpanelErrorCodes.INTEGRATION_FIELD_INVALID, field.Key, message);
             }
 
             writes.Add((key, check.Text, isSecret, field.Key));
@@ -219,10 +231,19 @@ public sealed class SaveIntegrationConfigHandler
     /// <summary>Builds the refusal for a field key the integration does not declare.</summary>
     /// <param name="fieldKey">The submitted key.</param>
     /// <returns>The <c>INTEGRATION_FIELD_UNKNOWN</c> refusal, naming the key in <c>errors</c>.</returns>
-    private static Result Unknown(string fieldKey)
+    private Result Unknown(string fieldKey)
     {
-        const string message = "This field is not declared by the integration.";
+        var message = _localizer["IntegrationFieldUnknown"].Value;
         return Result.FailureWithDetail(message, HostpanelErrorCodes.INTEGRATION_FIELD_UNKNOWN, fieldKey, message);
+    }
+
+    /// <summary>Words a refused value's expectation as "Expected: ...", in the request's language.</summary>
+    /// <param name="check">The refused check, carrying the expectation's key and arguments.</param>
+    /// <returns>The complete sentence.</returns>
+    private string Expected(IntegrationFieldValueCheck check)
+    {
+        var expectation = _localizer[check.Text, check.Arguments].Value;
+        return _localizer["IntegrationFieldExpected", expectation].Value;
     }
 
     /// <summary>

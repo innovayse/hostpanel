@@ -45,9 +45,12 @@ public sealed class AnnouncementsImporter : IMigrationEntityImporter
     private async Task<RecordImportResult> ImportAnnouncementAsync(AnnouncementRecord rec, CancellationToken ct)
     {
         var title = rec.Title.ToLower();
-        var createdAt = rec.CreatedAt;
+        // Cut to the stored precision so the date compares equal to the one a first run wrote.
+        var createdAt = rec.CreatedAt is { } sourceDate ? MigrationTimestamps.ToMicroseconds(sourceDate) : (DateTimeOffset?)null;
+        // Lookup is served by IX_Announcements_CreatedAt_Title (the equality column leads); the title-only
+        // fallback for an undated record has no usable index and is a sequential scan, acceptable for a rare case.
         var exists = createdAt is { } date
-            ? await _context.Announcements.AnyAsync(a => a.Title.ToLower() == title && a.CreatedAt == date, ct)
+            ? await _context.Announcements.AnyAsync(a => a.CreatedAt == date && a.Title.ToLower() == title, ct)
             : await _context.Announcements.AnyAsync(a => a.Title.ToLower() == title, ct);
         if (exists)
         {

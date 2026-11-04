@@ -52,9 +52,12 @@ public sealed class NetworkIssuesImporter : IMigrationEntityImporter
     private async Task<RecordImportResult> ImportNetworkIssueAsync(NetworkIssueRecord rec, CancellationToken ct)
     {
         var title = rec.Title.ToLower();
-        var sourceStart = rec.StartDate;
+        // Cut to the stored precision so the date compares equal to the one a first run wrote.
+        var sourceStart = rec.StartDate is { } sourceDate ? MigrationTimestamps.ToMicroseconds(sourceDate) : (DateTimeOffset?)null;
+        // Lookup is served by IX_NetworkIssues_StartDate_Title (the equality column leads); the title-only
+        // fallback for an undated record has no usable index and is a sequential scan, acceptable for a rare case.
         var exists = sourceStart is { } startDate
-            ? await _context.NetworkIssues.AnyAsync(i => i.Title.ToLower() == title && i.StartDate == startDate, ct)
+            ? await _context.NetworkIssues.AnyAsync(i => i.StartDate == startDate && i.Title.ToLower() == title, ct)
             : await _context.NetworkIssues.AnyAsync(i => i.Title.ToLower() == title, ct);
         if (exists)
         {

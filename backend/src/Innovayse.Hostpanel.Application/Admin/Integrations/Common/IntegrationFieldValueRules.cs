@@ -6,16 +6,48 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 /// <summary>
 /// Checks one submitted integration field value against the type its definition declares and returns the value
 /// to store. The save handler asks it for every field before it writes any, so a value that does not fit is
-/// refused instead of being stored as text for a reader to trip over later.
+/// refused instead of being stored as text for a reader to trip over later. A refusal names a resource key and its
+/// arguments, never a sentence, so the handler words it in the request's language.
 /// </summary>
+/// <remarks>
+/// Whether a field is required is not decided here: an empty value is accepted for every type, because a required
+/// field is enforced when the integration is activated and must not block saving a half-configured or disabled one.
+/// </remarks>
 public static class IntegrationFieldValueRules
 {
+    /// <summary>Resource key of the sentence for a secret that must be non-blank.</summary>
+    public const string ExpectSecret = "IntegrationFieldExpectSecret";
+
+    /// <summary>Resource key of the sentence for an absolute http or https address.</summary>
+    public const string ExpectUrl = "IntegrationFieldExpectUrl";
+
+    /// <summary>Resource key of the sentence for a boolean.</summary>
+    public const string ExpectToggle = "IntegrationFieldExpectToggle";
+
+    /// <summary>Resource key of the sentence for one of the declared options; argument 0 is the joined options.</summary>
+    public const string ExpectSelect = "IntegrationFieldExpectSelect";
+
+    /// <summary>Resource key of the sentence for a bounded number; arguments are the lower and upper bound.</summary>
+    public const string ExpectNumberRange = "IntegrationFieldExpectNumberRange";
+
+    /// <summary>Resource key of the sentence for a number with a lower bound; argument 0 is the bound.</summary>
+    public const string ExpectNumberMin = "IntegrationFieldExpectNumberMin";
+
+    /// <summary>Resource key of the sentence for a number with an upper bound; argument 0 is the bound.</summary>
+    public const string ExpectNumberMax = "IntegrationFieldExpectNumberMax";
+
+    /// <summary>Resource key of the sentence for an unbounded number.</summary>
+    public const string ExpectNumber = "IntegrationFieldExpectNumber";
+
+    /// <summary>Resource key of the sentence for a type with no narrower rule.</summary>
+    public const string ExpectValue = "IntegrationFieldExpectValue";
+
     /// <summary>Checks a value against its field definition.</summary>
     /// <param name="field">The field's declared definition.</param>
     /// <param name="value">The submitted value; <c>null</c> reads as empty.</param>
     /// <returns>
     /// A <see cref="IntegrationFieldValueCheck"/> carrying the canonical value to store when the value fits, or the
-    /// "Expected: ..." sentence naming what the field accepts when it does not.
+    /// resource key and arguments naming what the field accepts when it does not.
     /// </returns>
     public static IntegrationFieldValueCheck Check(FieldDefinitionDto field, string? value)
     {
@@ -27,7 +59,7 @@ public static class IntegrationFieldValueRules
         if (field.Type is IntegrationFieldType.Secret or IntegrationFieldType.Password)
         {
             return string.IsNullOrWhiteSpace(text)
-                ? IntegrationFieldValueCheck.Refused("a non-blank value; leave the field out to keep the stored secret")
+                ? IntegrationFieldValueCheck.Refused(ExpectSecret)
                 : IntegrationFieldValueCheck.Accepted(text);
         }
 
@@ -39,10 +71,8 @@ public static class IntegrationFieldValueRules
         var trimmed = text.Trim();
         if (trimmed.Length == 0)
         {
-            // An empty value clears the field; a required one cannot be left empty by the save itself.
-            return field.Required
-                ? IntegrationFieldValueCheck.Refused(Describe(field))
-                : IntegrationFieldValueCheck.Accepted(string.Empty);
+            // An empty value clears the field, whatever the type or Required says: required is enforced at activation.
+            return IntegrationFieldValueCheck.Accepted(string.Empty);
         }
 
         return field.Type switch
@@ -51,7 +81,7 @@ public static class IntegrationFieldValueRules
             IntegrationFieldType.Number => CheckNumber(field, trimmed),
             IntegrationFieldType.Select => CheckSelect(field, trimmed),
             IntegrationFieldType.Toggle => CheckToggle(trimmed),
-            _ => IntegrationFieldValueCheck.Refused(Describe(field)),
+            _ => Describe(field),
         };
     }
 
@@ -64,7 +94,7 @@ public static class IntegrationFieldValueRules
             && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
         return ok
             ? IntegrationFieldValueCheck.Accepted(value)
-            : IntegrationFieldValueCheck.Refused("an absolute http or https address");
+            : IntegrationFieldValueCheck.Refused(ExpectUrl);
     }
 
     /// <summary>Checks an invariant-culture number inside the field's bounds.</summary>
@@ -80,7 +110,7 @@ public static class IntegrationFieldValueRules
             out var number);
         if (!parsed || (field.Min is { } min && number < min) || (field.Max is { } max && number > max))
         {
-            return IntegrationFieldValueCheck.Refused(Describe(field));
+            return Describe(field);
         }
 
         return IntegrationFieldValueCheck.Accepted(value);
@@ -95,7 +125,7 @@ public static class IntegrationFieldValueRules
         var options = field.Options ?? [];
         var match = options.FirstOrDefault(o => string.Equals(o, value, StringComparison.OrdinalIgnoreCase));
         return match is null
-            ? IntegrationFieldValueCheck.Refused(Describe(field))
+            ? Describe(field)
             : IntegrationFieldValueCheck.Accepted(match);
     }
 
@@ -106,27 +136,28 @@ public static class IntegrationFieldValueRules
     {
         return bool.TryParse(value, out var flag)
             ? IntegrationFieldValueCheck.Accepted(flag ? "true" : "false")
-            : IntegrationFieldValueCheck.Refused("true or false");
+            : IntegrationFieldValueCheck.Refused(ExpectToggle);
     }
 
-    /// <summary>Names what a field of this type accepts.</summary>
+    /// <summary>Builds the refusal naming what a field of this type accepts.</summary>
     /// <param name="field">The field definition.</param>
-    /// <returns>The expectation, without the "Expected: " prefix.</returns>
-    private static string Describe(FieldDefinitionDto field)
+    /// <returns>The refusal, carrying the resource key and arguments of the expectation.</returns>
+    private static IntegrationFieldValueCheck Describe(FieldDefinitionDto field)
     {
         return field.Type switch
         {
-            IntegrationFieldType.Url => "an absolute http or https address",
-            IntegrationFieldType.Toggle => "true or false",
-            IntegrationFieldType.Select => $"one of {string.Join(", ", field.Options ?? [])}",
+            IntegrationFieldType.Url => IntegrationFieldValueCheck.Refused(ExpectUrl),
+            IntegrationFieldType.Toggle => IntegrationFieldValueCheck.Refused(ExpectToggle),
+            IntegrationFieldType.Select => IntegrationFieldValueCheck.Refused(
+                ExpectSelect, string.Join(", ", field.Options ?? [])),
             IntegrationFieldType.Number => (field.Min, field.Max) switch
             {
-                ({ } lo, { } hi) => $"a number from {Format(lo)} to {Format(hi)}",
-                ({ } lo, null) => $"a number of at least {Format(lo)}",
-                (null, { } hi) => $"a number of at most {Format(hi)}",
-                _ => "a number",
+                ({ } lo, { } hi) => IntegrationFieldValueCheck.Refused(ExpectNumberRange, Format(lo), Format(hi)),
+                ({ } lo, null) => IntegrationFieldValueCheck.Refused(ExpectNumberMin, Format(lo)),
+                (null, { } hi) => IntegrationFieldValueCheck.Refused(ExpectNumberMax, Format(hi)),
+                _ => IntegrationFieldValueCheck.Refused(ExpectNumber),
             },
-            _ => "a non-empty value",
+            _ => IntegrationFieldValueCheck.Refused(ExpectValue),
         };
     }
 

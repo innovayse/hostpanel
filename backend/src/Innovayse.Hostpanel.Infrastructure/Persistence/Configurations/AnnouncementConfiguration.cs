@@ -27,7 +27,7 @@ public sealed class AnnouncementConfiguration : IEntityTypeConfiguration<Announc
         builder.Property(x => x.CreatedAt)
             .IsRequired();
 
-        // Natural key the migration import looks an announcement up by; not unique, history may repeat a title.
-        builder.HasIndex(x => new { x.Title, x.CreatedAt });
+        // Natural key the migration import looks an announcement up by (date first, the title is compared lower-cased); not unique, history may repeat a title.
+        builder.HasIndex(x => new { x.CreatedAt, x.Title });
     }
 }

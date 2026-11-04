@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Innovayse.Hostpanel.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261104040839_ImportDedupeIndexes")]
+    [Migration("20261104055416_ImportDedupeIndexes")]
     partial class ImportDedupeIndexes
     {
         /// <inheritdoc />
@@ -3486,7 +3486,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Title", "CreatedAt");
+                    b.HasIndex("CreatedAt", "Title");
 
                     b.ToTable("Announcements");
                 });
@@ -3716,7 +3716,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.HasIndex("Status");
 
-                    b.HasIndex("Title", "StartDate");
+                    b.HasIndex("StartDate", "Title");
 
                     b.ToTable("NetworkIssues");
                 });

@@ -104,12 +104,11 @@ public sealed class Ticket : BaseEntity, IAggregateRoot
     /// Raises <see cref="TicketRepliedEvent"/>.
     /// </summary>
     /// <param name="message">The reply body text.</param>
-    /// <param name="authorName">Display name of the reply author; empty when the source recorded none.</param>
+    /// <param name="authorName">Display name of the reply author.</param>
     /// <param name="isStaffReply">Whether the author is a staff member.</param>
     /// <param name="occurredAt">The moment the reply was posted, UTC.</param>
     /// <exception cref="DomainRuleException">Thrown when the ticket is already closed.</exception>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="message"/> is null or whitespace.</exception>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="authorName"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="message"/> or <paramref name="authorName"/> is null or whitespace.</exception>
     public void AddReply(string message, string authorName, bool isStaffReply, DateTimeOffset occurredAt)
     {
         if (Status == TicketStatus.Closed)
@@ -125,16 +124,21 @@ public sealed class Ticket : BaseEntity, IAggregateRoot
     }
 
     /// <summary>
-    /// Tells whether this ticket already holds a reply with the same message, author and staff flag
-    /// (message and author compared case-insensitively), so an import can skip a reply it wrote earlier.
+    /// Tells whether this ticket already held, before <paramref name="createdBefore"/>, a reply with the same
+    /// message, author and staff flag (message and author compared case-insensitively), so an import can skip
+    /// a reply an earlier run wrote. Replies created at or after the cutoff are ignored: a source reply carries
+    /// no date or id, so the same person legitimately writing the same words twice in one run must not be
+    /// mistaken for a duplicate of the reply the run itself just added.
     /// </summary>
     /// <param name="message">The reply body text.</param>
     /// <param name="authorName">Display name of the reply author.</param>
     /// <param name="isStaffReply">Whether the author is a staff member.</param>
-    /// <returns><see langword="true"/> when an identical reply is already on the ticket.</returns>
-    public bool HasReply(string message, string authorName, bool isStaffReply) =>
+    /// <param name="createdBefore">The cutoff, UTC: only replies created strictly before it count.</param>
+    /// <returns><see langword="true"/> when an identical reply older than the cutoff is on the ticket.</returns>
+    public bool HasReply(string message, string authorName, bool isStaffReply, DateTimeOffset createdBefore) =>
         _replies.Any(r =>
-            r.IsStaffReply == isStaffReply
+            r.CreatedAt < createdBefore
+            && r.IsStaffReply == isStaffReply
             && string.Equals(r.Message, message, StringComparison.OrdinalIgnoreCase)
             && string.Equals(r.AuthorName, authorName, StringComparison.OrdinalIgnoreCase));
 

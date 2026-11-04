@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Application.Admin.Integrations.Queries.GetIntegration;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
+using Innovayse.Hostpanel.Application.Resources;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Domain.Settings.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
@@ -13,6 +14,7 @@ using Innovayse.SDK.Plugins.Manifest;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Admin.Integrations;
@@ -79,7 +81,8 @@ public sealed class PluginIntegrationSecretTests(IntegrationTestFactory factory)
             scope.ServiceProvider.GetRequiredService<ICurrentUserService>(),
             scope.ServiceProvider.GetRequiredService<IPluginMigrationRetry>(),
             NullLogger<SaveIntegrationConfigHandler>.Instance,
-            scope.ServiceProvider.GetRequiredService<IPluginAvailabilityInvalidator>());
+            scope.ServiceProvider.GetRequiredService<IPluginAvailabilityInvalidator>(),
+            scope.ServiceProvider.GetRequiredService<IStringLocalizer<ApplicationValidationMessages>>());
     }
 
     /// <summary>Saves a secret and a plain value for the plugin through the real save handler.</summary>

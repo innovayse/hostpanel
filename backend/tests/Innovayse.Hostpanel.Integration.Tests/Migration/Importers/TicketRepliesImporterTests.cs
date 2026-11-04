@@ -170,6 +170,40 @@ public sealed class TicketRepliesImporterTests(IntegrationTestFactory factory) :
         Assert.Equal(2, job.TicketRepliesImported);
     }
 
+    /// <summary>The same person writing the same words twice in one run gets both replies, since only replies older than the job count as duplicates.</summary>
+    [Fact]
+    public async Task RunAsync_TicketReplies_IdenticalRepliesInOneRunAreBothImportedAsync()
+    {
+        var source = SourceWith("[]");
+        using var host = MigrationTestSeeds.HostWithFakeSource(factory, source);
+        using var scope = host.Services.CreateScope();
+        var ticket = await SeedTicketAsync(scope);
+        source.SetDatasetJson("ticket_replies", $"[{ReplyJson(ticket, "OK", "Agent", true)},{ReplyJson(ticket, "OK", "Agent", true)}]");
+
+        var job = await PullAsync(scope);
+
+        Assert.Equal(2, await ReplyCountAsync(scope, ticket.TicketId));
+        Assert.Equal(2, job.TicketRepliesImported);
+    }
+
+    /// <summary>A retry of a run that imported two identical replies skips both and adds none.</summary>
+    [Fact]
+    public async Task RunAsync_TicketReplies_RetrySkipsIdenticalRepliesImportedEarlierAsync()
+    {
+        var source = SourceWith("[]");
+        using var host = MigrationTestSeeds.HostWithFakeSource(factory, source);
+        using var scope = host.Services.CreateScope();
+        var ticket = await SeedTicketAsync(scope);
+        source.SetDatasetJson("ticket_replies", $"[{ReplyJson(ticket, "OK", "Agent", true)},{ReplyJson(ticket, "OK", "Agent", true)}]");
+        await PullAsync(scope);
+
+        var second = await PullAsync(scope);
+
+        Assert.Equal(2, await ReplyCountAsync(scope, ticket.TicketId));
+        Assert.Equal(0, second.TicketRepliesImported);
+        Assert.Equal(2, second.TicketRepliesSkipped);
+    }
+
     /// <summary>A ticket closed between two runs still reports the earlier reply as already existing, not as a closed ticket.</summary>
     [Fact]
     public async Task RunAsync_TicketReplies_ClosedBetweenRunsReportsAlreadyExistsAsync()
@@ -193,7 +227,7 @@ public sealed class TicketRepliesImporterTests(IntegrationTestFactory factory) :
         Assert.Equal(1, await ReplyCountAsync(scope, ticket.TicketId));
     }
 
-    /// <summary>A blank message and author are normalised as on write, so the retry matches the stored placeholder.</summary>
+    /// <summary>A blank message and author are normalised to the shared placeholders, so the retry matches the stored form.</summary>
     [Fact]
     public async Task RunAsync_TicketReplies_BlankValuesMatchTheirNormalisedFormAsync()
     {

@@ -12,7 +12,7 @@ namespace Innovayse.Hostpanel.Application.Migration.Importers;
 /// <summary>
 /// Imports ticket reply records onto the ticket they belong to, matched by client and subject.
 /// A retried or repeated run is duplicate-safe: a reply whose message, author and staff flag the
-/// ticket already holds is skipped with <see cref="MigrationSkipReason.AlreadyExists"/>.
+/// ticket already held before this job was created is skipped with <see cref="MigrationSkipReason.AlreadyExists"/>.
 /// </summary>
 public sealed class TicketRepliesImporter : IMigrationEntityImporter
 {
@@ -50,13 +50,14 @@ public sealed class TicketRepliesImporter : IMigrationEntityImporter
 
     /// <inheritdoc/>
     public Task ImportAsync(MigrationJob job, CancellationToken ct) =>
-        _runner.RunAsync(new MigrationRecordRun<TicketReplyRecord>(job, EntityType, "ticket_replies", ImportReplyAsync), ct);
+        _runner.RunAsync(new MigrationRecordRun<TicketReplyRecord>(job, EntityType, "ticket_replies", (rec, token) => ImportReplyAsync(job, rec, token)), ct);
 
     /// <summary>Imports one plugin-side ticket reply record.</summary>
+    /// <param name="job">The migration job being run; replies that existed before it was created count as duplicates.</param>
     /// <param name="rec">The ticket reply record read from the source plugin.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Whether the ticket reply was imported or skipped, and why when skipped.</returns>
-    private async Task<RecordImportResult> ImportReplyAsync(TicketReplyRecord rec, CancellationToken ct)
+    private async Task<RecordImportResult> ImportReplyAsync(MigrationJob job, TicketReplyRecord rec, CancellationToken ct)
     {
         var clientId = await _clientResolver.ResolveClientIdAsync(rec.ClientEmail, ct);
         if (clientId is null)
@@ -80,14 +81,14 @@ public sealed class TicketRepliesImporter : IMigrationEntityImporter
         }
 
         // Normalised exactly as on write, so a blank value matches the placeholder it was stored as.
-        var message = string.IsNullOrWhiteSpace(rec.Message) ? "(no message)" : rec.Message;
-        // TicketReply.AuthorName is NOT NULL and defaults to empty, so a missing author is stored as the
-        // empty string: a neutral value, never display text. The frontend renders its own fallback.
-        var authorName = string.IsNullOrWhiteSpace(rec.AuthorName) ? string.Empty : rec.AuthorName;
+        var message = string.IsNullOrWhiteSpace(rec.Message) ? MigrationPlaceholders.NoMessage : rec.Message;
+        var authorName = string.IsNullOrWhiteSpace(rec.AuthorName) ? MigrationPlaceholders.UnknownAuthor : rec.AuthorName;
 
         // Checked before the closed-ticket rule: a reply imported earlier stays "already exists"
-        // even when the ticket was closed since.
-        if (ticket.HasReply(message, authorName, rec.IsStaffReply))
+        // even when the ticket was closed since. Only replies that existed before this job was created
+        // count: the source record has no date or id, so a reply this same run added must not make a
+        // legitimately repeated one ("OK" twice) look like a duplicate.
+        if (ticket.HasReply(message, authorName, rec.IsStaffReply, job.CreatedAt))
         {
             return RecordImportResult.Skipped(MigrationSkipReason.AlreadyExists);
         }

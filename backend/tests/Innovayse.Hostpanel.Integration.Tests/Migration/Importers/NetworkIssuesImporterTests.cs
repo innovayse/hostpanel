@@ -115,4 +115,22 @@ public sealed class NetworkIssuesImporterTests(IntegrationTestFactory factory) :
         Assert.Equal(0, second.NetworkIssuesImported);
         Assert.Equal(1, second.NetworkIssuesSkipped);
     }
+
+    /// <summary>A source start date finer than a microsecond still matches on a retry, because it is stored at microsecond precision.</summary>
+    [Fact]
+    public async Task RunAsync_NetworkIssues_SubMicrosecondStartDateIsStillDuplicateOnRetryAsync()
+    {
+        var title = $"issue-{Guid.NewGuid():N}";
+        var source = SourceWith($$"""[{"Title":"{{title}}","Type":"server","Status":"open","Priority":"high","Description":"Outage","StartDate":"2025-01-01T00:00:00.1234567Z","EndDate":null}]""");
+        using var host = MigrationTestSeeds.HostWithFakeSource(factory, source);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+
+        await PullAsync(scope);
+        var second = await PullAsync(scope);
+
+        Assert.Equal(1, await context.NetworkIssues.AsNoTracking().CountAsync(i => i.Title == title));
+        Assert.Equal(0, second.NetworkIssuesImported);
+        Assert.Equal(1, second.NetworkIssuesSkipped);
+    }
 }

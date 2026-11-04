@@ -177,6 +177,7 @@ describe('PluginsView', () => {
 
     await wrapper.get('[data-testid="plugin-purge-ineco"]').trigger('click')
     await flushPromises()
+    /** Recorded requests to the purge endpoint of the removed plugin. */
     const purgeCalls = () => mock.mock.calls.filter(([url]) => String(url) === '/api/admin/plugins/ineco/data')
     expect(purgeCalls()).toHaveLength(0)
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')

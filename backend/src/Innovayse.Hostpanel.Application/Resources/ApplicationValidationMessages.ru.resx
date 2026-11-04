@@ -1349,4 +1349,37 @@
   <data name="ClientExternalAccountIdInvalid" xml:space="preserve">
     <value>Идентификатор внешнего аккаунта обязателен и не длиннее 256 символов.</value>
   </data>
+  <data name="IntegrationFieldExpected" xml:space="preserve">
+    <value>Ожидается: {0}.</value>
+  </data>
+  <data name="IntegrationFieldUnknown" xml:space="preserve">
+    <value>Это поле не объявлено интеграцией.</value>
+  </data>
+  <data name="IntegrationFieldExpectSecret" xml:space="preserve">
+    <value>непустое значение; чтобы оставить сохранённый секрет, не передавайте поле</value>
+  </data>
+  <data name="IntegrationFieldExpectUrl" xml:space="preserve">
+    <value>абсолютный адрес http или https</value>
+  </data>
+  <data name="IntegrationFieldExpectToggle" xml:space="preserve">
+    <value>true или false</value>
+  </data>
+  <data name="IntegrationFieldExpectSelect" xml:space="preserve">
+    <value>одно из: {0}</value>
+  </data>
+  <data name="IntegrationFieldExpectNumberRange" xml:space="preserve">
+    <value>число от {0} до {1}</value>
+  </data>
+  <data name="IntegrationFieldExpectNumberMin" xml:space="preserve">
+    <value>число не менее {0}</value>
+  </data>
+  <data name="IntegrationFieldExpectNumberMax" xml:space="preserve">
+    <value>число не более {0}</value>
+  </data>
+  <data name="IntegrationFieldExpectNumber" xml:space="preserve">
+    <value>число</value>
+  </data>
+  <data name="IntegrationFieldExpectValue" xml:space="preserve">
+    <value>непустое значение</value>
+  </data>
 </root>

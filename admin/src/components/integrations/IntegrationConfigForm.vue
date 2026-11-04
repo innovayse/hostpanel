@@ -154,21 +154,25 @@ const setValue = (key: string, value: string | number | null): void => {
  * Reads a field's stored text as the number the number input takes.
  *
  * @param key - The field key.
- * @returns The number, or null while the field is empty.
+ * @returns The number, or null while the field is empty or holds text that is not a number.
  */
 const numberOf = (key: string): number | null => {
   const raw = localConfig.value[key]
-  return raw === undefined || raw === '' ? null : Number(raw)
+  if (raw === undefined || raw === '') {
+    return null
+  }
+  const parsed = Number(raw)
+  return Number.isNaN(parsed) ? null : parsed
 }
 
 /**
  * Stores a number the admin entered as the string the API keeps.
  *
  * @param key - The field key.
- * @param value - The entered number.
+ * @param value - The entered number; null (the field was cleared) stores the empty string.
  */
-const setNumber = (key: string, value: number): void => {
-  localConfig.value[key] = String(value)
+const setNumber = (key: string, value: number | null): void => {
+  localConfig.value[key] = value === null ? '' : String(value)
 }
 
 /**
@@ -297,6 +301,7 @@ const handleSave = (): void => {
                 :model-value="numberOf(field.key)"
                 :min="field.min ?? undefined"
                 :max="field.max ?? undefined"
+                nullable
                 :placeholder="t('integrations.integrationConfigForm.enterValue', { label: field.label })"
                 :data-testid="`integration-field-${field.key}`"
                 @update:model-value="setNumber(field.key, $event)"

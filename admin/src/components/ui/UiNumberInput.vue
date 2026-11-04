@@ -2,7 +2,8 @@
 /**
  * Themed number input with increment/decrement buttons.
  *
- * Replaces `<input type="number">`, whose spinner arrows cannot be themed. Emits a clamped number.
+ * Replaces `<input type="number">`, whose spinner arrows cannot be themed. Emits a clamped number,
+ * or `null` when a `nullable` field is cleared.
  * `data-testid` and classes land on the root element.
  */
 import { computed } from 'vue'
@@ -33,6 +34,11 @@ const props = withDefaults(defineProps<{
   id?: string
   /** Marks the value as refused by the server (red border, `aria-invalid`). */
   invalid?: boolean
+  /**
+   * Lets the admin clear the field: when the typed text becomes empty the model is set to `null`.
+   * Off by default, so a required field keeps its last number while the text is being retyped.
+   */
+  nullable?: boolean
 }>(), {
   min: undefined,
   max: undefined,
@@ -41,11 +47,12 @@ const props = withDefaults(defineProps<{
   disabled: false,
   id: undefined,
   invalid: false,
+  nullable: false,
 })
 
 const emit = defineEmits<{
-  /** Emitted when the value changes. */
-  'update:modelValue': [value: number]
+  /** Emitted when the value changes; `null` only from a `nullable` field whose text was cleared. */
+  'update:modelValue': [value: number | null]
 }>()
 
 /**
@@ -98,7 +105,12 @@ const round = (v: number): number => {
  * @param e - The input event.
  */
 const onInput = (e: Event): void => {
-  const num = parseFloat((e.target as HTMLInputElement).value)
+  const text = (e.target as HTMLInputElement).value
+  if (props.nullable && text.trim() === '') {
+    emit('update:modelValue', null)
+    return
+  }
+  const num = parseFloat(text)
   if (!isNaN(num)) {
     emit('update:modelValue', clamp(num))
   }
@@ -108,11 +120,19 @@ const onInput = (e: Event): void => {
  * Commits the value on blur: emits it clamped and rewrites the typed text to match.
  *
  * When the model already holds the clamped value nothing re-renders, so a typed out-of-range text
- * (such as a negative number under `min`) would otherwise stay on screen.
+ * (such as a negative number under `min`) would otherwise stay on screen. An empty text commits
+ * nothing: the field stays empty (or shows the value the model still holds).
  *
  * @param e - The blur event.
  */
 const onBlur = (e: Event): void => {
+  const input = e.target as HTMLInputElement
+  if (input.value.trim() === '') {
+    // An empty field stays empty: committing 0 (or `min`) would turn "left blank" into a real value.
+    const held = props.modelValue
+    input.value = held === null || held === '' ? '' : String(held)
+    return
+  }
   const clamped = clamp(numericValue.value)
   emit('update:modelValue', clamped)
   ;(e.target as HTMLInputElement).value = String(clamped)

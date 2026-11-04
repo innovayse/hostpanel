@@ -107,7 +107,7 @@ Add an entry to the `i18n.locales` list in `client/nuxt.config.ts`:
 locales: [
   { code: 'en', name: 'English',   language: 'en-US' },
   { code: 'ru', name: 'Русский',   language: 'ru-RU' },
-  { code: 'hy', name: 'Հայerен', language: 'hy-AM' },
+  { code: 'hy', name: 'Հայերեն', language: 'hy-AM' },
   { code: 'fr', name: 'Français',  language: 'fr-FR' }, // add here
 ],
 ```
@@ -147,7 +147,21 @@ public static readonly IReadOnlyList<string> SupportedLocales = ["en", "ru", "hy
 </li>
 <li>
 
-Search the backend for other places that list languages before writing this step, since the list above may not be complete.
+The backend list above covers the core error and validation messages. The following places also need updating for a complete language addition:
+
+**Required — the language will not work without these:**
+
+- `SupportedLanguages.All` and `LocaleOptions.SupportedLocales` as shown above.
+
+**Client portal extras (required for a fully translated storefront):**
+
+- `client/composables/useSeo.ts` — add an entry to `ogLocaleMap` so Open Graph and hreflang tags use the correct locale code, e.g. `[AppLocale.Fr]: 'fr_FR'`.
+- `client/plugins/live-chat.ts` — add a case to `languageOf` returning the English name of the new language, and add a branch to the `token` computed value reading the new per-locale portal setting key.
+- Add the new portal chat token setting key to `client/constants/portalSettingKey.ts`, e.g. `ChatWebsiteTokenFr = 'portal.chat.website_token.fr'`. This is optional if the operator does not use the live-chat widget.
+
+**Admin panel extras (required):**
+
+- `admin/src/lib/constants.ts` — add an entry to the `CLIENT_LANGUAGE_OPTIONS` list for the new language so it appears in the client form language selector.
 
 </li>
 </Steps>

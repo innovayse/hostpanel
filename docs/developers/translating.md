@@ -17,8 +17,8 @@ English is the source language and the fallback when a text is missing in anothe
 |------|------|-----------|
 | Admin panel | `admin/src/locales/<lang>/<area>.json` | `admin/src/locales/messages.ts` |
 | Client portal | `client/locales/<lang>/<module>.json` | `client/plugins/i18n.ts` (`MODULES` list) |
-| API error messages | `backend/src/Innovayse.Hostpanel.Application/Resources/ErrorMessages.resx` (en) with `ErrorMessages.ru.resx` / `ErrorMessages.hy.resx` | `LocaleOptions.SupportedLocales` |
-| API validation messages | `ApplicationValidationMessages*.resx` in `Application/Resources/` and `ValidationMessages*.resx` in `Shared/Resources/` | `LocaleOptions.SupportedLocales` |
+| API error messages | `backend/src/Innovayse.Hostpanel.Application/Resources/ErrorMessages.resx` (en) with `ErrorMessages.ru.resx` / `ErrorMessages.hy.resx` | Language is read from the `X-Language` request header; `Accept-Language` is not used. Unknown or missing values fall back to `en`. |
+| API validation messages | `ApplicationValidationMessages*.resx` in `Application/Resources/` and `ValidationMessages*.resx` in `Shared/Resources/` | Same as above: `X-Language` header, fallback to `en`. |
 | Email templates | Edited per language in the admin panel, not in files | |
 | Storefront content | Entered per language in the admin panel | |
 
@@ -38,7 +38,16 @@ Never rename a key in a translation file. Only change the value.
 
 Keep every `{name}` placeholder exactly as it appears in the English source. The parity tests check them and fail if a placeholder is missing or renamed.
 
-The admin panel has a Russian plural rule defined in `admin/src/i18n.ts`. When adding a plural form in Russian, follow the rule already there.
+The admin panel has a Russian plural rule defined in `admin/src/i18n.ts`. When adding a plural form in Russian, follow the rule already there. For example:
+
+```ts
+// admin/src/locales/ru/billing.json
+{
+  "invoiceCount": "0 счетов | {n} счёт | {n} счёта | {n} счетов"
+}
+```
+
+The four slots correspond to zero, one, two–four and five-or-more respectively, matching the `russianPlural` function in `i18n.ts`.
 
 ## Style
 
@@ -46,11 +55,11 @@ Short, plain sentences. Use the same terms as the rest of the language. A small 
 
 | English | Русский | Հայերեն |
 |---------|---------|---------|
-| invoice | Счета | Հաշիվներ |
-| service | Услуги | Ծառայություններ |
-| ticket | тикет | Տոմսեր |
-| server | Серверы | Սերվերներ |
-| client | Клиенты | Հաճախորդներ |
+| Invoices | Счета | Հաշիվ-ապրանքագրեր |
+| Services | Услуги | Ծառայություններ |
+| Support Tickets | Тикеты поддержки | Աջակցության հայտեր |
+| Servers | Серверы | Սերվերներ |
+| Clients | Клиенты | Հաճախորդներ |
 
 Do not add product names that are not in the English source.
 
@@ -70,7 +79,19 @@ cd admin && npm run lint:i18n
 cd client && yarn lint:i18n
 ```
 
+```bash [API]
+cd backend && dotnet test tests/Innovayse.Hostpanel.Architecture.Tests --filter ResourceCoverageTests
+```
+
 :::
+
+A run with missing keys looks like this:
+
+```
+lint:i18n failed: 2 problem(s).
+  missing in ru: nav.documentation
+  missing in hy: nav.documentation
+```
 
 The admin panel check reports missing keys, extra keys, unused keys and translation calls with no English source. The test files `admin/tests/locales/parity.test.ts` and `admin/tests/locales/messages.test.ts` check that all languages have the same keys and that no placeholders are missing.
 
@@ -82,9 +103,11 @@ The client portal `lint:i18n` and `client/tests/locales/parity.test.ts` check th
 
 Start the dev stack (see [Run locally](./local-dev)).
 
+- **Demo:** if a public demo is available, the "Try the demo" button in the docs navigation bar opens the admin panel. Switch language there to check the current state without a local stack.
 - **Admin panel:** use the language switcher in the top bar. The choice is stored in the browser as `admin.locale`.
-- **Client portal:** use the language switcher, which adds `/ru` or `/hy` to the URL. English is served without a prefix.
+- **Client portal:** use the language switcher, which adds `/ru` or `/hy` to the URL. English is served without a prefix. See [Client portal](../customers/portal) for a tour of what customers see.
 - **API error messages:** send `X-Language: en`, `X-Language: ru` or `X-Language: hy` on any request and read the `detail` field of the error body. Any unsupported value falls back to `en`.
+- **Email templates:** translated versions are managed in the admin panel. See [Email templates](../staff/email-templates) for how to add a language version.
 
 ## Send the change
 

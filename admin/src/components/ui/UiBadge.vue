@@ -2,7 +2,8 @@
 /**
  * Small status pill (e.g. "Active", "Overdue").
  *
- * `tone` colours it from the theme tokens; `dot` prepends a status dot.
+ * `tone` colours it from the theme tokens; `dot` prepends a status dot; `marker` draws the dot alone, with
+ * no text, for a place too small for one (an unread marker on an icon).
  */
 import { computed } from 'vue'
 import { toneBadgeClasses, toneDotClasses } from '@/utils/ui/tone'
@@ -16,10 +17,13 @@ const props = withDefaults(defineProps<{
   dot?: boolean
   /** Compact padding and type size. */
   small?: boolean
+  /** Draws a solid dot of the tone instead of the pill, and no text; the slot is not rendered. */
+  marker?: boolean
 }>(), {
   tone: 'neutral',
   dot: false,
   small: false,
+  marker: false,
 })
 
 /** Colour classes of the tone. */
@@ -33,7 +37,9 @@ const sizeClasses = computed<string>(() => (props.small ? 'px-1.5 py-0 text-[0.6
 </script>
 
 <template>
+  <span v-if="marker" class="block h-2.5 w-2.5 rounded-full" :class="dotClasses" />
   <span
+    v-else
     class="inline-flex w-fit max-w-full items-center gap-1.5 rounded-full border font-medium whitespace-nowrap"
     :class="[toneClasses, sizeClasses]"
   >

@@ -113,7 +113,7 @@ onMounted(() => fetchDomains())
       @retry="fetchDomains()"
     />
 
-    <UiCard v-else-if="domains.length > 0">
+    <UiCard v-else-if="domains.length > 0" class="overflow-x-auto">
       <UiTable density="comfortable" data-testid="client-domains-table">
         <UiTableHead>
           <UiTableRow>

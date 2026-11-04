@@ -347,7 +347,7 @@ onMounted(() => fetchBillableItems())
             : t('clients.clientBillableItems.uninvoicedItemsLength', { length: uninvoicedItems.length }) }}
         </UiHeading>
 
-        <UiCard v-if="uninvoicedItems.length > 0">
+        <UiCard v-if="uninvoicedItems.length > 0" class="overflow-x-auto">
           <UiTable density="comfortable" data-testid="client-billable-uninvoiced-table">
             <UiTableHead>
               <UiTableRow>
@@ -425,7 +425,7 @@ onMounted(() => fetchBillableItems())
       <UiStack>
         <UiHeading :level="2" variant="card">{{ t('clients.clientBillableItems.invoicedItems') }}</UiHeading>
 
-        <UiCard v-if="invoicedItems.length > 0">
+        <UiCard v-if="invoicedItems.length > 0" class="overflow-x-auto">
           <UiTable density="comfortable" data-testid="client-billable-invoiced-table">
             <UiTableHead>
               <UiTableRow>

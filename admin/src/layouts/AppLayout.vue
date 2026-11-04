@@ -46,8 +46,8 @@ const closeDrawer = (): void => {
     </UiStack>
 
     <!-- Sidebar: drawer on smaller screens -->
-    <UiDrawer :open="drawerOpen" side="left" :title="t('layout.menu')" @close="closeDrawer">
-      <AppSidebar @navigate="closeDrawer" />
+    <UiDrawer :open="drawerOpen" side="left" :title="t('layout.menu')" flush narrow @close="closeDrawer">
+      <AppSidebar embedded @navigate="closeDrawer" />
     </UiDrawer>
 
     <!-- Main column: topbar + content -->

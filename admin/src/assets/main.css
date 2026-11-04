@@ -136,6 +136,19 @@
   }
 }
 
+/* A quiet vertical scrollbar for a list that scrolls inside a panel (the navigation): thin, and invisible until
+   the pointer is over the list or it is being scrolled, then a soft neutral thumb that fades in. The standard
+   properties are used on purpose: they take precedence over the loud gradient thumb of the global rule above. */
+@utility scroll-subtle {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 300ms ease;
+  &:hover,
+  &:focus-within {
+    scrollbar-color: var(--border-strong) transparent;
+  }
+}
+
 @utility gradient-brand {
   background: linear-gradient(135deg, #0ea5e9, #8b5cf6);
 }

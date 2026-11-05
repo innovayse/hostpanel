@@ -17,7 +17,6 @@
     <PackageReference Include="Swashbuckle.AspNetCore" />
     <PackageReference Include="Swashbuckle.AspNetCore.Annotations" />
     <PackageReference Include="WolverineFx" />
-    <PackageReference Include="WolverineFx.RuntimeCompilation" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -33,6 +32,22 @@
     <PackageReference Include="System.Security.Cryptography.Xml">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(OmitRuntimeCompilation)' != 'true'">
+    <!--
+      Wolverine 6 keeps the Roslyn compiler out of core. Development (TypeLoadMode.Auto), the integration suite
+      (Dynamic) and the `codegen write` step of the image build compile handler code at runtime and need it; a
+      production host runs the code that step generated (TypeLoadMode.Static) and never calls it, so the
+      production image's restore and publish set OmitRuntimeCompilation=true (backend/Dockerfile) and ship
+      neither this package nor the scripting and Visual Basic Roslyn assemblies it adds (about 9 MB). A host
+      that was left in Dynamic or Auto there then fails at startup with Wolverine's "no IAssemblyGenerator"
+      message instead of compiling. The core Roslyn assemblies stay in the image regardless: they arrive
+      through WolverineFx.EntityFrameworkCore's own dependencies. The package registers itself when
+      referenced, so no code mentions it. A plain restore or build leaves the property unset, which keeps the
+      reference for everyone else.
+    -->
+    <PackageReference Include="WolverineFx.RuntimeCompilation" />
   </ItemGroup>
 
   <ItemGroup>

@@ -106,8 +106,21 @@ RUN SSO=$([ "$AUTH_MODE" = "sso" ] && echo "-p:InnovayseSso=true"); \
 
 ARG VERSION=0.0.0-dev
 
+# The published host runs the code generated above (TypeLoadMode.Static) and never compiles, so Wolverine's
+# runtime compiler package (WolverineFx.RuntimeCompilation, which Wolverine 6 moved out of core) stays out of
+# it, with the scripting and Visual Basic Roslyn assemblies it adds. The codegen step above still needed it,
+# so it is dropped only here, by restoring the API project again with OmitRuntimeCompilation=true (a property
+# of the API project, set on restore and publish alike: the restore decides which packages the publish
+# copies). The packages are already in the cache from the first restore; the secret is mounted again only so
+# a cache miss cannot fail on a private feed.
+RUN --mount=type=secret,id=nuget_credentials,required=false \
+    SSO=$([ "$AUTH_MODE" = "sso" ] && echo "-p:InnovayseSso=true"); \
+    if [ -s /run/secrets/nuget_credentials ]; then export NuGetPackageSourceCredentials_innovayse="$(cat /run/secrets/nuget_credentials)"; fi; \
+    dotnet restore src/Innovayse.Hostpanel.API/Innovayse.Hostpanel.API.csproj -p:OmitRuntimeCompilation=true $SSO
+
 RUN SSO=$([ "$AUTH_MODE" = "sso" ] && echo "-p:InnovayseSso=true"); \
     dotnet publish src/Innovayse.Hostpanel.API/Innovayse.Hostpanel.API.csproj -c Release -o /out --no-restore \
+        /p:OmitRuntimeCompilation=true \
         /p:ErrorOnDuplicatePublishOutputFiles=false \
         /p:Version=$VERSION \
         /p:InformationalVersion=$VERSION \

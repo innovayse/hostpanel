@@ -1055,10 +1055,27 @@ docker/                              compose set (shared·dev·prod·platform), 
 
 ## CQRS — Wolverine, conforming
 
-Wolverine 6.8.0. `Extensions/MessagingRegistration.cs` registers discovery over the API and
+Wolverine 6.61.0. `Extensions/MessagingRegistration.cs` registers discovery over the API and
 Application assemblies; handlers are never registered by hand and never called directly. One
 folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
 
+- **Handler code is generated at image build time and loaded, never compiled, in production.**
+  `MessagingRegistration.TypeLoadModeFor` picks `Static` everywhere except Development (`Auto`) and the
+  Testing environment of the integration suite (`Dynamic`). The API Dockerfile runs `codegen write`, which
+  compiles with Roslyn and so needs the `WolverineFx.RuntimeCompilation` package (Wolverine 6 moved the
+  compiler out of core), then restores and publishes the API with `OmitRuntimeCompilation=true`, which the
+  API csproj honours by leaving that one reference out: the published image carries neither the package
+  nor the scripting and Visual Basic Roslyn assemblies it adds (about 9 MB). The core Roslyn assemblies
+  (`Microsoft.CodeAnalysis*`, `BuildHost-*`) stay in the image regardless, because
+  `WolverineFx.EntityFrameworkCore` depends on `Microsoft.CodeAnalysis.CSharp.Workspaces`,
+  `Microsoft.CodeAnalysis.Workspaces.MSBuild` and `Microsoft.EntityFrameworkCore.Design` itself; dropping them
+  would mean hand-listing a transitive closure of a package that may load it. A plain restore or build leaves
+  the property unset, so Development, the tests and `dotnet watch` keep the package.
+  Since Wolverine 6.30 a `Static` host refuses to start (`MissingPreBuiltTypesException`, naming the chains)
+  when a handler chain's generated type is missing, where earlier versions started healthy and lost the
+  messages of that type; `Production.AssertAllPreGeneratedTypesExist` is set in `Static` mode as well, for the
+  environment check over every code collection. `WolverineStartupTests` pins both, and starts the current
+  Wolverine on a message store schema created by 5.41 (`Fixtures/wolverine-5.41-schema.sql`).
 - **Handlers return `Result` / `Result<T>`** (`Shared/Models`); controllers derive from
   `BaseApiController` and return through `HandleResult`, which maps the failure code to a status
   with `StatusMapping`. Every controller derives from it (`ControllerBaseTests`); handlers and
@@ -1394,7 +1411,7 @@ feature does not exist is not kept. The decisions:
 
 ## Stack
 
-.NET 9 · Wolverine 6.8.0 (WolverineFx.Postgresql, WolverineFx.EntityFrameworkCore) · EF Core 9 + Npgsql 9 · PostgreSQL 17 · ASP.NET Identity (local
+.NET 9 · Wolverine 6.61.0 (WolverineFx.Postgresql, WolverineFx.EntityFrameworkCore) · EF Core 9 + Npgsql 9 · PostgreSQL 17 · ASP.NET Identity (local
 mode) + JWT bearer · `Innovayse.Auth` (cookie session for the admin SPA, sso builds only) · SkiaSharp (branding images) ·
 Serilog · Scalar + Swashbuckle · Mapster · MailKit · Otp.NET · Fluid.Core ·
 DnsClient · Redis (sessions + data-protection key ring) · RabbitMQ · xUnit + FluentAssertions +

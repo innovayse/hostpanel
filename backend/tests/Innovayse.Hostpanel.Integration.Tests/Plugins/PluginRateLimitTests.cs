@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Threading.RateLimiting;
 using Innovayse.Hostpanel.Application.Common.Errors;
@@ -131,9 +132,10 @@ public sealed class PluginRateLimitTests : IClassFixture<AppPluginFixture>
     }
 
     /// <summary>
-    /// Asserts a response is the platform's 429 for a policy: problem+json with the rate limit code, and of the limiter's
-    /// headers exactly <c>Retry-After</c> and <c>X-RateLimit-Remaining</c>, because the leak guard strips the others. Which
-    /// policy refused is read from the warning the limiter logs.
+    /// Asserts a response is the platform's 429 for a policy: problem+json with the rate limit code, and the limiter's
+    /// headers: <c>Retry-After</c>, and <c>X-RateLimit-Remaining</c> of 0, a positive <c>X-RateLimit-Limit</c>, an
+    /// <c>X-RateLimit-Reset</c> timestamp and the <c>X-RateLimit-Policy</c> that refused. The same policy is read from the
+    /// warning the limiter logs.
     /// </summary>
     /// <param name="response">The refusal.</param>
     /// <param name="policy">The policy that must have refused.</param>
@@ -144,7 +146,9 @@ public sealed class PluginRateLimitTests : IClassFixture<AppPluginFixture>
         response.Content.Headers.ContentType!.MediaType.Should().Be("application/problem+json");
         response.Headers.RetryAfter.Should().NotBeNull();
         response.Headers.GetValues("X-RateLimit-Remaining").Should().ContainSingle().Which.Should().Be("0");
-        response.Headers.Select(header => header.Key).Should().NotContain(["X-RateLimit-Policy", "X-RateLimit-Limit", "X-RateLimit-Reset"]);
+        response.Headers.GetValues("X-RateLimit-Policy").Should().ContainSingle().Which.Should().Be(policy);
+        long.Parse(response.Headers.GetValues("X-RateLimit-Limit").Single(), CultureInfo.InvariantCulture).Should().BePositive();
+        long.Parse(response.Headers.GetValues("X-RateLimit-Reset").Single(), CultureInfo.InvariantCulture).Should().BePositive();
         _fixture.LoggedRateLimitRefusal(policy, _fixture.PluginId, _logMark).Should().BeTrue();
         await ClientsTestSeeds.AssertCodeAsync(response, SharedErrorCodes.RateLimited);
     }

@@ -45,6 +45,15 @@ describe('docker/nginx/admin.conf', () => {
     expect(shell).toContain('Cache-Control "no-cache"')
   })
 
+  it('revalidates the theme pre-paint script, which keeps its name across releases, under the same policy as the shell', () => {
+    const start = CONFIG.indexOf('location = /theme-boot.js')
+    const block = CONFIG.slice(start, CONFIG.indexOf('}', start))
+
+    expect(start).toBeGreaterThan(-1)
+    expect(block).toContain('snippets/admin-csp.conf')
+    expect(block).toContain('Cache-Control "no-cache"')
+  })
+
   it('answers a missing asset with a 404, never with the HTML shell', () => {
     const assets = CONFIG.slice(CONFIG.indexOf('location /assets/'), CONFIG.indexOf('}', CONFIG.indexOf('location /assets/')))
 

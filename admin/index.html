@@ -28,8 +28,8 @@
     <meta name="msapplication-config" content="browserconfig.xml">
     <!--
       The browser chrome colour: the panel's page background in each scheme (main.css).
-      The theme pre-paint script (src/lib/themeBoot.ts) is inlined at the end of <head> by the
-      admin-theme-boot plugin in vite.config.ts: it applies the stored light/dark choice and
+      The theme pre-paint script (src/lib/themeBoot.ts) is added at the end of <head> as the
+      same-origin file theme-boot.js by the admin-theme-boot plugin (src/lib/themeBootPlugin.ts): it applies the stored light/dark choice and
       rewrites these metas before the first paint, so the panel never flashes the wrong scheme.
     -->
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f4f6fb">

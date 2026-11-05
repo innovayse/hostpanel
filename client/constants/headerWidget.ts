@@ -4,7 +4,7 @@
  * @module constants/headerWidget
  */
 
-/** Path of the widget script on the main portal's host. */
+/** Path of the widget script on this portal's own origin, relayed from the shell by `server/routes/widget`. */
 export const HEADER_WIDGET_PATH = '/widget/header.js'
 
 /**

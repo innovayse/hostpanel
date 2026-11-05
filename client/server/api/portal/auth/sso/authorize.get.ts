@@ -8,6 +8,8 @@
  * to their links) is passed on as `login_hint`, so the identity provider picks or pre-fills that
  * account instead of whichever one it signed in last.
  *
+ * The page to return to is `returnTo`, or `redirect` as the header widget spells it; the referring page is the fallback.
+ *
  * `prompt=none` is the silent probe (`server/middleware/sso-silent.ts`); it is recorded as a silent
  * attempt, any other request as an interactive one.
  *
@@ -27,7 +29,8 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const prompt = readQueryString(query.prompt)
   const loginHint = readQueryString(query[LOGIN_HINT_QUERY])
-  const requestedReturnTo = readQueryString(query.returnTo)
+  // The header widget's add-account link names the page to return to as `redirect`, like its switch link.
+  const requestedReturnTo = readQueryString(query.returnTo) || readQueryString(query.redirect)
 
   // Save current page so callback can return here instead of always going to dashboard
   let returnTo = requestedReturnTo || ''

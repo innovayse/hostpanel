@@ -1597,14 +1597,24 @@ default, so `docker/docker-compose.prod.yml` spells every one of them that way. 
 in `docker/docker-compose.dev.yml` are silently ignored on a deployed host**, so the value stays
 at its build-time default and no `.env` edit can change it.
 
-**The client image has no build args.** The app-launcher `<script src="…/widget/header.js">` tag is
-added by `plugins/header-widget.ts` from `runtimeConfig.public.mainUrl`, so `NUXT_PUBLIC_MAIN_URL`
+**The client image has no build args.** The app-launcher `<script src="/widget/header.js">` tag is
+added by `plugins/header-widget.ts` when `runtimeConfig.public.mainUrl` is set, so `NUXT_PUBLIC_MAIN_URL`
 is plain runtime env. `site.url` is read at runtime by nuxt-site-config from `NUXT_PUBLIC_SITE_URL`
 (set in `docker-compose.prod.yml`); the esbuild `drop` depends only on `NODE_ENV`, not on a
 deployment. Do not add a `process.env` read outside `runtimeConfig` that differs per deployment.
 
-That widget is a host-provided header widget, not served by this product. It must be HTTPS on an HTTPS
-deployment or the browser blocks it as mixed content and the client dashboard's hydration
+That widget is a host-provided header widget, written elsewhere, but it is **served from this portal's own origin**:
+`server/routes/widget/[file].get.ts` relays `header.js` and `header.v2.js` from `MAIN_APP_URL` (five minutes' cache, the last copy kept when the host is unreachable, only those two names). The script builds every
+address for switching account, adding an account, its configuration and its launcher from the origin it was
+served from; loaded from the host's origin it sent the switch through the host's sign-in client and callback, so
+the visitor landed on a page that does not exist here and kept the old account. Served from here, those
+addresses are this portal's own: `GET /api/portal/auth/sso/switch` and `GET /api/portal/auth/sso/authorize`
+(which reads the page to return to as `returnTo` or, as the widget spells it, `redirect`). The three other
+addresses the widget asks of its origin are answered by `server/routes/api/portal/public/config.get.ts` (the
+sign-on address), `.../apps.get.ts` (the launcher list, read from the host, empty when it is unreachable) and
+`server/routes/account.get.ts` (a redirect to the host's account centre). All of them answer 404 unless the
+widget is enabled (`isHeaderWidgetEnabled`). The host's address must be HTTPS on an HTTPS
+deployment or the browser blocks the script as mixed content and the client dashboard's hydration
 hangs.
 
 **The `dark` / `light` class on `<html>` has exactly one writer: `client/plugins/color-mode.ts`.**

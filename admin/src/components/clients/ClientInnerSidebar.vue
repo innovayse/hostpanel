@@ -140,13 +140,15 @@ const revealActiveTab = async (): Promise<void> => {
 }
 
 /**
- * Watches the strip's size. The strip narrows after the first scroll when the page below it grows a scroll
- * bar (the content loads after the strip), and a selected tab scrolled into view at the old width then sits
- * past the new edge, so every resize brings it back.
+ * Watches the strip's size and the size of every tab. The strip narrows after the first scroll when the page
+ * below it grows a scroll bar (the content loads after the strip), and a tab changes width when the web font
+ * replaces the fallback one after that scroll. The list keeps its box in the second case (it scrolls, so its
+ * width does not follow its content), so the tabs are watched too. A selected tab scrolled into view before
+ * either change then sits past the edge, so every change brings it back.
  */
 let stripResize: ResizeObserver | null = null
 
-/** Brings the selected tab into view, then keeps it there while the strip changes size. */
+/** Brings the selected tab into view, then keeps it there while the strip or its tabs change size. */
 onMounted(() => {
   void revealActiveTab()
   const list = strip.value?.$el.querySelector<HTMLElement>('[role="tablist"]')
@@ -155,6 +157,9 @@ onMounted(() => {
       void revealActiveTab()
     })
     stripResize.observe(list)
+    list.querySelectorAll<HTMLElement>('[role="tab"]').forEach((tab) => {
+      stripResize?.observe(tab)
+    })
   }
 })
 

@@ -38,7 +38,7 @@ const { useAuthStore } = await import('~/stores/auth')
 const { useClientStore } = await import('~/stores/client')
 
 /** The theme and language controls need runtime services this test does not provide. */
-const STUBS = { UiThemeToggle: true, UiLanguageSwitcher: true, UiCookieBanner: { template: '<div data-testid="cookie-banner" />' } }
+const STUBS = { UiThemeToggle: true, UiLanguageSwitcher: true, LogoLockup: true, UiCookieBanner: { template: '<div data-testid="cookie-banner" />' } }
 
 /** The signed-in person the identity call answers with. */
 const ME = makeClientUser({ email: 'ada@example.com', permissions: Permission.All })
@@ -259,7 +259,7 @@ describe('client layout', () => {
     expect(wrapper.find('[data-testid="client-sidebar"]').classes()).toContain('-translate-x-full')
   })
 
-  it('opens one drawer below the top bar, with a single brand and close control', async () => {
+  it('opens one drawer below the top bar, with no brand of its own and no close control', async () => {
     const wrapper = await mountLayout()
     await wrapper.find('[data-testid="client-menu-toggle"]').trigger('click')
 
@@ -267,7 +267,9 @@ describe('client layout', () => {
     expect(classes).toContain('absolute')
     expect(classes).not.toContain('fixed')
     expect(wrapper.find('[data-testid="client-sidebar-backdrop"]').classes()).toContain('absolute')
-    expect(wrapper.find('[data-testid="client-sidebar-brand"]').element.parentElement?.classList.contains('hidden')).toBe(true)
+    // The brand lives in the top bar only; the drawer starts with the menu.
+    expect(wrapper.find('[data-testid="client-sidebar-brand"]').exists()).toBe(false)
+    expect(wrapper.findAll('[data-testid="client-topbar-brand"]')).toHaveLength(1)
     expect(wrapper.find('[data-testid="client-sidebar-close"]').exists()).toBe(false)
   })
 

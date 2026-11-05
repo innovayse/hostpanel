@@ -46,6 +46,25 @@ export const usePluginView = (): PluginViewContext => {
   return context
 }
 
+/** The injection key that tells a block it sits in a split pane, which gives it its height on a wide screen. */
+const PLUGIN_PANE_KEY: InjectionKey<boolean> = Symbol('plugin-pane')
+
+/**
+ * Tells the blocks below the calling component that they sit in a split pane.
+ *
+ * @returns Nothing.
+ */
+export const providePluginPane = (): void => {
+  provide(PLUGIN_PANE_KEY, true)
+}
+
+/**
+ * Whether the calling block sits in a split pane.
+ *
+ * @returns True inside a pane.
+ */
+export const usePluginPane = (): boolean => inject(PLUGIN_PANE_KEY, false)
+
 /** What {@link usePluginSource} answers. */
 export interface PluginSourceState {
   /** The value read: the reply, or its `field`; undefined until read or after a failure. */

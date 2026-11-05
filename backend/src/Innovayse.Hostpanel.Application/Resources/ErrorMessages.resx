@@ -1147,4 +1147,13 @@
   <data name="PLUGIN_VIEW_FOLLOW_UP_INVALID" xml:space="preserve">
     <value>One of this plugin's view documents refreshes a block it does not hold after an action, or describes the follow-up or the form reset in a shape this host does not accept.</value>
   </data>
+  <data name="PLUGIN_PAGE_LAYOUT_UNKNOWN" xml:space="preserve">
+    <value>One of this plugin's pages asks for a layout this host does not know, or an admin page asks for a layout at all.</value>
+  </data>
+  <data name="PLUGIN_VIEW_SPLIT_INVALID" xml:space="preserve">
+    <value>One of this plugin's view documents holds a split that does not have exactly two panes of blocks, or a split inside a split.</value>
+  </data>
+  <data name="PLUGIN_VIEW_PREVIEW_INVALID" xml:space="preserve">
+    <value>One of this plugin's view documents holds a preview with invalid sources or size, or shows a preview anywhere but on a client page.</value>
+  </data>
 </root>

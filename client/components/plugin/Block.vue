@@ -18,7 +18,9 @@ import PluginEmptyBlock from '~/components/plugin/EmptyBlock.vue'
 import PluginFormBlock from '~/components/plugin/FormBlock.vue'
 import PluginHeaderBlock from '~/components/plugin/HeaderBlock.vue'
 import PluginLinkBlock from '~/components/plugin/LinkBlock.vue'
+import PluginPreviewBlock from '~/components/plugin/PreviewBlock.vue'
 import PluginProgressBlock from '~/components/plugin/ProgressBlock.vue'
+import PluginSplitBlock from '~/components/plugin/SplitBlock.vue'
 import PluginStatBlock from '~/components/plugin/StatBlock.vue'
 import PluginTableBlock from '~/components/plugin/TableBlock.vue'
 import PluginTabsBlock from '~/components/plugin/TabsBlock.vue'
@@ -54,6 +56,8 @@ const RENDERERS: Readonly<Record<PluginBlockKind, Component>> = {
   [PluginBlockKind.Tabs]: PluginTabsBlock,
   [PluginBlockKind.Chat]: PluginChatBlock,
   [PluginBlockKind.Progress]: PluginProgressBlock,
+  [PluginBlockKind.Split]: PluginSplitBlock,
+  [PluginBlockKind.Preview]: PluginPreviewBlock,
 }
 
 /** The component of this block, or undefined for an unknown kind (`hasOwn`, so `__proto__` is no kind either). */

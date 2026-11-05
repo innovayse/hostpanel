@@ -36,6 +36,8 @@ const { default: LayoutDemoBanner } = await import('~/components/layout/DemoBann
 const { Permission } = await import('~/composables/usePermissions')
 const { useAuthStore } = await import('~/stores/auth')
 const { useClientStore } = await import('~/stores/client')
+const { usePluginsStore } = await import('~/stores/plugins')
+const { default: ClientLayoutSidebar } = await import('~/components/client/layout/Sidebar.vue')
 
 /** The theme and language controls need runtime services this test does not provide. */
 const STUBS = { UiThemeToggle: true, UiLanguageSwitcher: true, LogoLockup: true, UiCookieBanner: { template: '<div data-testid="cookie-banner" />' } }
@@ -103,6 +105,51 @@ const mountLayout = async () => {
 }
 
 describe('client layout', () => {
+  describe('workspace page', () => {
+    /** The address of the workspace page these tests hold in the store. */
+    const PAGE_PATH = '/client/apps/acme/sites/7'
+
+    /**
+     * Mounts the layout at an address with a plugin page in the store.
+     *
+     * @param path - The address on screen.
+     * @param layout - The page's layout.
+     * @returns The wrapper.
+     */
+    const mountAt = async (path: string, layout: string) => {
+      vi.stubGlobal('useRoute', () => ({ params: {}, query: {}, path, fullPath: path, meta: {} }))
+      const wrapper = await mountLayout()
+      usePluginsStore().page = {
+        pluginId: 'acme', id: 'sites', path: '/sites/{id}', title: 'Sites', view: { schema: 1, blocks: [] },
+        externalOrigins: [], layout, frameOrigins: [],
+      } as never
+      await nextTick()
+      return wrapper
+    }
+
+    it('drops the gutter and hides the side menu on a wide screen', async () => {
+      const wrapper = await mountAt(PAGE_PATH, 'workspace')
+
+      expect(wrapper.get('main > div').classes()).not.toContain('p-6')
+      expect(wrapper.get('main > div').classes()).toContain('flex-1')
+      expect(wrapper.findComponent(ClientLayoutSidebar).classes()).toContain('lg:hidden')
+    })
+
+    it('keeps the usual frame for a standard page', async () => {
+      const wrapper = await mountAt(PAGE_PATH, 'standard')
+
+      expect(wrapper.get('main > div').classes()).toContain('p-6')
+      expect(wrapper.findComponent(ClientLayoutSidebar).classes()).not.toContain('lg:hidden')
+    })
+
+    it('keeps the usual frame once the reader left the page the store still holds', async () => {
+      const wrapper = await mountAt('/client/dashboard', 'workspace')
+
+      expect(wrapper.get('main > div').classes()).toContain('p-6')
+      expect(wrapper.findComponent(ClientLayoutSidebar).classes()).not.toContain('lg:hidden')
+    })
+  })
+
   it('mounts the cookie banner inside the client area', async () => {
     const wrapper = await mountLayout()
 

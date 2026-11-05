@@ -12,6 +12,7 @@ import type { PluginBlockKind } from '~/types/pluginblockkind'
 import type { PluginBlockTone } from '~/types/pluginblocktone'
 import type { PluginFieldType } from '~/types/pluginfieldtype'
 import type { PluginFollowUp } from '~/types/pluginfollowup'
+import type { PluginPreviewSize } from '~/types/pluginpreviewsize'
 import type { PluginValueFormat } from '~/types/pluginvalueformat'
 import type { PluginViewCondition } from '~/types/pluginviewcondition'
 import type { PluginViewRoute } from '~/types/pluginviewroute'
@@ -273,6 +274,40 @@ export interface PluginProgressBlock extends PluginBlockBase {
   source?: PluginSource
 }
 
+/** One pane of a split block. */
+export interface PluginSplitPane {
+  /** The blocks the pane shows, in order. */
+  blocks: PluginBlock[]
+}
+
+/** Two panes side by side, the first on top on a phone. */
+export interface PluginSplitBlock extends PluginBlockBase {
+  /** The kind. */
+  kind: PluginBlockKind.Split
+  /** The two panes; the install check refuses any other number. */
+  panes: PluginSplitPane[]
+}
+
+/** One named address a preview block can show. */
+export interface PluginPreviewSource extends PluginSource {
+  /** The source id, unique within the block. */
+  id: string
+  /** The switch's label and the frame's title. */
+  label: string
+}
+
+/** One address in a sandboxed frame, with a source and a size switch. */
+export interface PluginPreviewBlock extends PluginBlockBase {
+  /** The kind. */
+  kind: PluginBlockKind.Preview
+  /** The heading above the frame. */
+  title?: string
+  /** The size shown first; desktop when absent. */
+  size?: PluginPreviewSize
+  /** The addresses, 1 to 5; the first is shown first. */
+  sources: PluginPreviewSource[]
+}
+
 /** One block of a plugin view. */
 export type PluginBlock =
   | PluginHeaderBlock
@@ -288,3 +323,5 @@ export type PluginBlock =
   | PluginTabsBlock
   | PluginChatBlock
   | PluginProgressBlock
+  | PluginSplitBlock
+  | PluginPreviewBlock

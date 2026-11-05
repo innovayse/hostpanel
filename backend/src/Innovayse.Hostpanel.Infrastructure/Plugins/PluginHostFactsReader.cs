@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Services.Enums;
 using Microsoft.EntityFrameworkCore;
 
 /*
@@ -61,5 +62,21 @@ public sealed class PluginHostFactsReader : IPluginHostFactsReader
             .Take(PluginHostLimits.MaxListed)
             .Select(i => new PluginHostInvoiceDto(i.Id, i.Status, i.Total, i.Currency, i.InvoiceDate, i.DueDate, i.PaidAt))
             .ToListAsync(ct);
+    }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<string>> ListActiveServiceDomainsAsync(
+        int clientId, IReadOnlyCollection<int> productIds, CancellationToken ct)
+    {
+        var domains = await _context.ClientServices
+            .AsNoTracking()
+            .Where(s => s.ClientId == clientId && s.Status == ServiceStatus.Active && s.Domain != null && productIds.Contains(s.ProductId))
+            .OrderByDescending(s => s.CreatedAt)
+            .ThenByDescending(s => s.Id)
+            .Take(PluginHostLimits.MaxListed)
+            .Select(s => s.Domain)
+            .ToListAsync(ct);
+
+        return domains.OfType<string>().ToList();
     }
 }

@@ -19,6 +19,10 @@ export interface PluginPageView {
   title: string
   /** The web origins the plugin's absolute links may open (the manifest's `externalOrigins`); empty allows host-relative links only. */
   externalOrigins: string[]
+  /** How the page is drawn, `PluginPageLayout` as a wire string; anything unknown reads as standard. */
+  layout: string
+  /** The exact origins a preview block may frame, computed by the host per caller; never read from a view or a reply. */
+  frameOrigins: string[]
   /** The view document. */
   view: PluginView
 }

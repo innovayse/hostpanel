@@ -60,6 +60,8 @@ export interface PluginMountContext {
   values?: Record<string, string>
   /** The allowed link origins. */
   externalOrigins?: string[]
+  /** The exact origins a preview block may frame. */
+  frameOrigins?: string[]
   /** Further mount options. */
   options?: MountWithKitOptions
 }
@@ -79,6 +81,7 @@ export const mountBlocks = (blocks: PluginBlock[], context: PluginMountContext =
       view: { schema: 1, blocks },
       values: context.values ?? { siteId: '7' },
       externalOrigins: context.externalOrigins ?? ['https://*.sites.example.test'],
+      frameOrigins: context.frameOrigins ?? [],
     },
     components: { ...PLUGIN_COMPONENTS, ...context.options?.components },
   })

@@ -14,7 +14,7 @@ import { UiAlign } from '~/utils/ui/enums'
 
 /** Props of TableTd. */
 interface Props {
-  /** Text alignment; omitted inherits. */
+  /** Text alignment; left when omitted, like the header. */
   align?: `${UiAlign}`
 }
 
@@ -31,6 +31,6 @@ const alignClass = computed(() => {
   if (props.align === UiAlign.Right) {
     return 'text-right'
   }
-  return ''
+  return 'text-left'
 })
 </script>

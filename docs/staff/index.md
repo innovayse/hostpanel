@@ -1,5 +1,7 @@
 ---
 title: Staff guide
+description: "Staff guide to the Hostpanel admin panel: clients, orders, invoices, products, domains, support tickets, network issues and email templates."
+keywords: "staff guide, admin panel, hosting billing, clients, orders, support"
 ---
 
 # Staff guide

@@ -1,5 +1,7 @@
 ---
 title: Pagination
+description: "How Hostpanel list endpoints return one page at a time: the Page and PageSize query parameters and the PaginatedList response body."
+keywords: "api pagination, page, pagesize, paginatedlist"
 ---
 
 # Pagination

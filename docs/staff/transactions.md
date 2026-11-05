@@ -1,5 +1,7 @@
 ---
 title: Transactions, billable items and quotes
+description: "Review transactions in Hostpanel and manage billable items, client quotes, cancellation requests and the client statement."
+keywords: "transactions, billable items, quotes, cancellation requests, client statement"
 ---
 
 # Transactions, billable items and quotes <Label type="admin" />

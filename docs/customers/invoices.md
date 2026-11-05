@@ -1,5 +1,7 @@
 ---
 title: Invoices and paying
+description: "View and pay Hostpanel invoices, read invoice statuses, download a PDF and find out why a service was suspended."
+keywords: "client invoices, pay invoice, invoice pdf, service suspended"
 ---
 
 # Invoices and paying

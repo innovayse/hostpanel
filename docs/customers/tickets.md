@@ -1,5 +1,7 @@
 ---
 title: Support tickets
+description: "Open a support ticket in the Hostpanel client portal, follow up on it and read announcements and the knowledge base."
+keywords: "support tickets, open ticket, knowledge base, announcements"
 ---
 
 # Support tickets

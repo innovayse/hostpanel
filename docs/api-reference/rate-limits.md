@@ -1,5 +1,7 @@
 ---
 title: Rate limits
+description: "How the Hostpanel API counts requests, the policies that apply, what a 429 means behind a proxy, the settings that tune them and sign-in lockout."
+keywords: "api rate limits, 429 too many requests, rate limit policy, sign-in lockout"
 ---
 
 # Rate limits

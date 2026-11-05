@@ -6,9 +6,15 @@
   "scripts": {
     "dev": "vitepress dev",
     "build": "vitepress build",
-    "preview": "vitepress preview"
+    "preview": "vitepress preview",
+    "test": "vitest run"
   },
   "devDependencies": {
-    "vitepress": "1.6.4"
+    "@vueuse/core": "12.8.2",
+    "@vueuse/integrations": "12.8.2",
+    "mark.js": "8.11.1",
+    "minisearch": "7.2.0",
+    "vitepress": "1.6.4",
+    "vitest": "^2.1.9"
   }
 }

@@ -1,5 +1,7 @@
 ---
 title: Overview
+description: "Overview of the Hostpanel REST API: its audiences, request and response formats, the health endpoint and the layout of the generated endpoint pages."
+keywords: "hostpanel rest api, api overview, api audiences, health endpoint"
 ---
 
 # API overview

@@ -1,5 +1,7 @@
 ---
 title: Support tickets
+description: "Work the Hostpanel ticket queue: departments, statuses and priorities, answering, closing, predefined replies and support reports."
+keywords: "support tickets, ticket queue, departments, predefined replies, support reports"
 ---
 
 # Support tickets <Label type="admin" />

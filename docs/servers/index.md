@@ -1,5 +1,7 @@
 ---
 title: Servers & SSH
+description: "Server management in Hostpanel: add servers and groups, provision hosting accounts automatically and deploy the SSH key agent."
+keywords: "server management, servers, ssh, provisioning, ssh key agent"
 ---
 
 # Servers & SSH

@@ -1,5 +1,7 @@
 ---
 title: Your account and signing in
+description: "Create a Hostpanel client account, sign in, reset a forgotten password, edit your account details and manage users and permissions."
+keywords: "client account, sign in, forgot password, account details, users and permissions"
 ---
 
 # Your account and signing in
